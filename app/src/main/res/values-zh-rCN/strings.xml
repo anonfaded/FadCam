@@ -4,11 +4,11 @@
     <string name="trash_auto_delete_info_immediate">项目将立即删除。</string>
     <string name="app_icon_description">为您的应用选择图标和名称。这将更改其在主屏幕上的显示方式。</string>
     <string name="check_for_updates">检查更新</string>
-    <string name="fadsec_info">FadCam是FadSec实验室套件的一部分。欲了解更多详情，请点击下方查看源码按钮。</string>
+    <string name="fadsec_info">ServaCam是FadSec实验室套件的一部分。欲了解更多详情，请点击下方查看源码按钮。</string>
     <string name="app_description"><![CDATA[
-    FadCam是一个以隐私为首要重心的开源无广告的视频录制软件. 此软件能通过Github和README中的官方链接获取.
+    ServaCam是一个以隐私为首要重心的开源无广告的视频录制软件. 此软件能通过Github和README中的官方链接获取.
     <br/><br/>
-    FadCam 已在热门的 YouTube 频道中亮相，如 <font color="#cfbafd">HowToMen</font> 和 <font color="#cfbafd">Xtream Droid</font>，还在 <font color="#cfbafd">GrapheneOS</font> 及其他 55+ 著名平台上被讨论。
+    ServaCam 已在热门的 YouTube 频道中亮相，如 <font color="#cfbafd">HowToMen</font> 和 <font color="#cfbafd">Xtream Droid</font>，还在 <font color="#cfbafd">GrapheneOS</font> 及其他 55+ 著名平台上被讨论。
     ]]></string>
     <string name="view_source_code">查看源码</string>
     <string name="buy_me_a_coffee">请我一杯咖啡 ☕</string>
@@ -86,13 +86,13 @@
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>免责声明</item>
-        <item>FadCam会收集用户数据吗?</item>
-        <item>FadCam是否有广告?</item>
-        <item>为什么FadCam会请求访问位置信息?</item>
+        <item>ServaCam会收集用户数据吗?</item>
+        <item>ServaCam是否有广告?</item>
+        <item>为什么ServaCam会请求访问位置信息?</item>
         <item>为什么需要互联网权限？</item>
         <item>是否会有数据存储在外部服务器?</item>
         <item>视频录制完后会发生什么?</item>
-        <item>FadCam有没有将我的数据分享给第三方?</item>
+        <item>ServaCam有没有将我的数据分享给第三方?</item>
         <item> </item>
         <item> </item>
         <item>使用问题</item>
@@ -107,15 +107,15 @@
         <item> </item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-        <item>FadCam不支持任何不道德或非法使用本软件的行为。未经允许的监视或侵犯隐私等滥用行为均严重违反我们的原则. FadCam作者对任何滥用本应用程序的行为以及导致的结果概不负责.
+        <item>ServaCam不支持任何不道德或非法使用本软件的行为。未经允许的监视或侵犯隐私等滥用行为均严重违反我们的原则. ServaCam作者对任何滥用本应用程序的行为以及导致的结果概不负责.
         </item>
-        <item>不, FadCam不收集任何用户数据.</item>
-        <item>不, FadCam无广告.</item>
+        <item>不, ServaCam不收集任何用户数据.</item>
+        <item>不, ServaCam无广告.</item>
         <item>用于添加位置信息水印的功能.</item>
         <item>用于自动检查更新。</item>
         <item>不, 所有数据都会存储在你的设备上.</item>
         <item>你录制的视频都只会存储在手机里.</item>
-        <item>不，FadCam 不会共享或收集任何数据，甚至不会收集崩溃日志。</item>
+        <item>不，ServaCam 不会共享或收集任何数据，甚至不会收集崩溃日志。</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -129,19 +129,19 @@
         <item>去看看我们的官方GitHub仓库获取更新.</item>
         <item> </item>
     </string-array>
-    <string name="dialog_welcome_title">欢迎使用FadCam！</string>
+    <string name="dialog_welcome_title">欢迎使用ServaCam！</string>
     <string name="note_under_dev">重要提示: 本软件仍处于开发阶段，新功能会逐步加入。</string>
     <string name="stay_updated_title">保持更新：</string>
     <string name="button_readme_github">GitHub仓库</string>
     <string name="community_title">加入官方社区:</string>
     <string name="discord_title">Discord服务器</string>
-    <string name="thankyou_msg">感谢你使用FadCam!</string>
+    <string name="thankyou_msg">感谢你使用ServaCam!</string>
     <string name="settings_title">设置</string>
     <string name="array_watermark_time_fadcam">时间与\"Fadcam\"字样</string>
     <string name="array_watermark_timeonly">仅时间</string>
     <string name="array_watermark_nomark">无水印</string>
     <string name="toast_video_not_found">出错：视频未找到</string>
-    <string name="toast_video_saved">视频已保存至Download目录的FadCam文件夹中</string>
+    <string name="toast_video_saved">视频已保存至Download目录的ServaCam文件夹中</string>
     <string name="toast_video_save_fail">视频保存失败</string>
     <string name="rename_video_title">重命名视频</string>
     <string name="toast_rename_name_empty">名称不可为空</string>
@@ -276,20 +276,20 @@
     <!-- Debug Settings -->
     <string name="setting_debug_title">调试日志</string>
     <string name="note_debug">启用调试日志文件生成\n(默认: 已禁用)</string>
-    <string name="note_debug_extra">启用后，将在Downloads/FadCam文件夹中创建调试日志文件。这有助于诊断应用问题。</string>
+    <string name="note_debug_extra">启用后，将在Downloads/ServaCam文件夹中创建调试日志文件。这有助于诊断应用问题。</string>
     <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">下次启动时显示引导</string>
-    <string name="note_onboarding">启用后，下次打开FadCam时将看到应用介绍和权限指南。</string>
+    <string name="note_onboarding">启用后，下次打开ServaCam时将看到应用介绍和权限指南。</string>
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">启动时自动检查更新</string>
-    <string name="note_auto_update_check">如果启用，FadCam将在您每次打开应用时检查更新。关闭以禁用启动时自动检查更新。\n(默认: 开)</string>
+    <string name="note_auto_update_check">如果启用，ServaCam将在您每次打开应用时检查更新。关闭以禁用启动时自动检查更新。\n(默认: 开)</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">存储位置</string>
     <string name="storage_location_description">选择保存录像的位置。</string>
     <string name="storage_location_internal">内部应用存储（默认，私有）</string>
     <string name="storage_location_custom">自定义位置（SD卡/其他，相册可见）</string>
     <string name="storage_location_choose_folder">选择文件夹</string>
-    <string name="storage_location_note">注意：使用自定义位置会使视频可被其他应用访问（例如，相册）。内部存储使视频对FadCam保持私有。</string>
+    <string name="storage_location_note">注意：使用自定义位置会使视频可被其他应用访问（例如，相册）。内部存储使视频对ServaCam保持私有。</string>
     <string name="storage_icon_description">存储图标</string>
     <string name="location_icon_description">位置图标</string>
     <string name="location_embedding_icon_description">位置嵌入图标</string>
@@ -318,16 +318,16 @@
     <string name="onboarding_intro_line3">为您而设计，而非广告商。</string>
     <string name="language_change_later_note">您可以稍后在设置中更改此项。</string>
     <string name="permissions_required">需要权限</string>
-    <string name="permissions_description">FadCam需要访问您的相机、麦克风和存储空间来录制和保存视频。</string>
+    <string name="permissions_description">ServaCam需要访问您的相机、麦克风和存储空间来录制和保存视频。</string>
     <string name="grant_permissions">授予权限</string>
     <string name="permissions_note">您必须授予所有权限才能继续。</string>
     <string name="permissions_granted">所有权限已授予！</string>
     <string name="open_settings">打开设置</string>
     <string name="disable_battery_optimization">禁用电池优化</string>
     <string name="onboarding_human_title">验证您是否为人类</string>
-    <string name="onboarding_human_desc">嗯... 好吧。这些规则是不可协商的。如果您不能同意，请立即卸载FadCam。</string>
-    <string name="onboarding_human_checkbox1">我不会使用FadCam违反任何法律、侵犯他人隐私或做令人不适的事情。如果我犯错，开发者概不负责。（那是我的责任。）</string>
-    <string name="onboarding_human_checkbox2">我在使用前就已经爱上了FadCam。（非可选）</string>
+    <string name="onboarding_human_desc">嗯... 好吧。这些规则是不可协商的。如果您不能同意，请立即卸载ServaCam。</string>
+    <string name="onboarding_human_checkbox1">我不会使用ServaCam违反任何法律、侵犯他人隐私或做令人不适的事情。如果我犯错，开发者概不负责。（那是我的责任。）</string>
+    <string name="onboarding_human_checkbox2">我在使用前就已经爱上了ServaCam。（非可选）</string>
     <string name="onboarding_human_button">让我进入！</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">排序方式</string>
@@ -340,8 +340,8 @@
     <!-- Remote Tab Strings -->
     <string name="remote_access_title">远程访问/控制</string>
     <string name="remote_toast_coming_soon">即将推出！In Sha Allah</string>
-    <string name="remote_coming_soon">FadCam的远程控制功能即将推出。</string>
-    <string name="remote_feature_description">使用二维码配对FadCam客户端，实现安全的本地网络远程控制：开始/停止录制、预览、缩放、切换摄像头等功能—全部采用端到端加密。</string>
+    <string name="remote_coming_soon">ServaCam的远程控制功能即将推出。</string>
+    <string name="remote_feature_description">使用二维码配对ServaCam客户端，实现安全的本地网络远程控制：开始/停止录制、预览、缩放、切换摄像头等功能—全部采用端到端加密。</string>
     <!-- Strings for TrashFragment -->
     <string name="trash_auto_deleted_toast">已自动删除%1$d个旧项目。</string>
     <string name="trash_empty_toast_message">没有项目可删除。</string>
@@ -360,7 +360,7 @@
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">未选择任何项目。</string>
     <string name="trash_dialog_restore_title">恢复所选项目？</string>
-    <string name="trash_dialog_restore_message">将%1$d个项目恢复到公共Downloads/FadCam/文件夹？</string>
+    <string name="trash_dialog_restore_message">将%1$d个项目恢复到公共Downloads/ServaCam/文件夹？</string>
     <string name="trash_restore_success_toast">已恢复%1$d个项目。</string>
     <string name="trash_restore_fail_toast">恢复项目时出错。某些文件可能未被恢复或相册可能未更新。请检查应用的存储权限。</string>
     <string name="trash_restore_cancelled_toast">已取消恢复。</string>
@@ -482,9 +482,9 @@
     <string name="shortcut_purpose_start">此快捷方式使用后置摄像头开始录制。</string>
     <string name="video_menu_save_copy_or_move_title">保存至图库</string>
     <string name="video_menu_save_copy">复制至图库</string>
-    <string name="video_menu_save_helper_downloads_fadcam">将视频保存至 Downloads/FadCam</string>
+    <string name="video_menu_save_helper_downloads_fadcam">将视频保存至 Downloads/ServaCam</string>
     <string name="video_menu_save_move">移动到图库</string>
-    <string name="video_menu_save_move_desc">将文件移动到 Downloads/FadCam（节省存储空间）</string>
+    <string name="video_menu_save_move_desc">将文件移动到 Downloads/ServaCam（节省存储空间）</string>
     <string name="video_menu_save_longpress_helper">长按保存到图库以选择复制或移动</string>
     <string name="video_info_codec">编解码器</string>
     <string name="video_info_file_name">文件名</string>
@@ -566,15 +566,15 @@
     <string name="torch_cancel">取消</string>
     <string name="torch_recording_note">录制过程中无法切换手电筒</string>
     <string name="torch_both">前后手电筒同时开启</string>
-    <string name="note_debug_detailed">启用后，我们会在您的“Downloads/FadCam/”目录中生成调试日志文件 (FADCAM_debug.html)。当您需要报告问题时，请分享此文件以协助我们排查。关闭本选项将不再记录。\n请注意：开启调试日志可能会在录制时拖慢应用。如非必要，请保持关闭。</string>
+    <string name="note_debug_detailed">启用后，我们会在您的“Downloads/ServaCam/”目录中生成调试日志文件 (FADCAM_debug.html)。当您需要报告问题时，请分享此文件以协助我们排查。关闭本选项将不再记录。\n请注意：开启调试日志可能会在录制时拖慢应用。如非必要，请保持关闭。</string>
     <string name="watermark_preview_heading">预览</string>
     <string name="watermark_options_heading">选项</string>
     <string name="watermark_style_row_title">水印样式</string>
-    <string name="watermark_style_time_fadcam_label">FadCam 时间</string>
+    <string name="watermark_style_time_fadcam_label">ServaCam 时间</string>
     <string name="watermark_style_timeonly_label">时间戳</string>
     <string name="watermark_style_badge_label">仅品牌标签</string>
     <string name="watermark_style_none_label">无水印</string>
-    <string name="helper_watermark_preview">水印将以此样式显示在录制视频的左上角。\n冷知识：FadCam v1.0 的首发时间为 2024年7月10日 下午04:47。</string>
+    <string name="helper_watermark_preview">水印将以此样式显示在录制视频的左上角。\n冷知识：ServaCam v1.0 的首发时间为 2024年7月10日 下午04:47。</string>
     <string name="helper_location_watermark_option">切换是否将设备位置信息叠加在视频上，需要位置权限。</string>
     <string name="location_watermark_sheet_title">位置叠加</string>
     <string name="location_watermark_switch_label">位置叠加</string>
@@ -587,7 +587,7 @@
     <string name="widgets_helper_text">将快捷操作固定到主屏幕，以便快速访问</string>
     <string name="widgets_pin_unsupported">您的启动器不支持固定小组件</string>
     <string name="widget_clock_title">时钟小组件</string>
-    <string name="widgets_pin_fallback">若未出现提示，请长按主屏幕，打开“小组件”菜单，并拖拽 FadCam 时钟小组件。</string>
+    <string name="widgets_pin_fallback">若未出现提示，请长按主屏幕，打开“小组件”菜单，并拖拽 ServaCam 时钟小组件。</string>
     <string name="widget_customize_title">自定义时钟小组件</string>
     <string name="widget_customize_description">自定义时钟小组件显示时间与日期的方式</string>
     <string name="widget_time_format_title">时间格式</string>
@@ -757,7 +757,7 @@
     <string name="records_search_hint">搜索录制内容…</string>
     <string name="saf_permission_missing_dialog_instructions">缺少存储访问权限。请授予对所选文件夹的访问权。</string>
     <string name="saf_permission_missing_dialog_title">需要存储访问权限</string>
-    <string name="saf_permission_missing_dialog_message_for_start_recording">为将录制内容保存到自定义位置，FadCam 需要权限以访问您所选的文件夹。请在系统提示时授予访问权限。</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">为将录制内容保存到自定义位置，ServaCam 需要权限以访问您所选的文件夹。请在系统提示时授予访问权限。</string>
     <string name="grant_permission_button">授予权限</string>
     <string name="trash_auto_delete_picker_helper">选择何时自动删除垃圾箱中的项目。</string>
     <string name="support_ko_fi">在 Ko-fi 上支持我们</string>
@@ -765,7 +765,7 @@
     <string name="kofi_button_text">请我喝杯咖啡 (Ko-fi)</string>
     <string name="kofi_footer_text">匠心打造于 FadSecLab</string>
     <string name="choose_language">选择语言</string>
-    <string name="onboarding_human_checkbox3">我同意隐私政策</string>
+
     <string name="applock_set_pin_enable">设置PIN码并启用</string>
     <string name="applock_helper_create">使用4位数字PIN码、密码或指纹为“录制”标签页创建保护。当应用进入后台时，该标签页将自动锁定。</string>
     <string name="applock_helper_manage_disabled">标签页锁定PIN码已设置。开启切换开关，即可在返回应用时要求输入PIN码。</string>
@@ -814,7 +814,7 @@
     <string name="universal_paused">已暂停</string>
     <string name="universal_stop">停止</string>
     <string name="setting_notification_appearance">通知外观</string>
-    <string name="note_notification_appearance">自定义录制通知的外观\n（默认值：FadCam）</string>
+    <string name="note_notification_appearance">自定义录制通知的外观\n（默认值：ServaCam）</string>
     <string name="hide_stop_button">隐藏停止按钮</string>
     <string name="note_hide_stop_button">隐藏通知中的停止按钮\n（默认值：已禁用）</string>
     <string name="notification_style_row_title">通知样式</string>
@@ -862,7 +862,7 @@
     <string name="restore_destination_original_desc">恢复至原始的 SAF 位置</string>
     <string name="restore_confirm_title">确认恢复</string>
     <string name="restore_confirm_message">是否将%1$d个项目还原为%2$s？</string>
-    <string name="restore_destination_downloads_desc">公共 Downloads/FadCam/ folder</string>
+    <string name="restore_destination_downloads_desc">公共 Downloads/ServaCam/ folder</string>
     <string name="restore_progress_title">恢复文件</string>
     <string name="restore_success_message">已成功将%1$d个项目还原到%2$s</string>
     <string name="restore_error_message">部分项目恢复失败</string>
@@ -887,7 +887,7 @@
     <string name="display_settings_title">显示设置</string>
     <string name="back">后置</string>
     <string name="front">前置</string>
-    <string name="video_menu_save_copy_desc">在 Downloads/FadCam 文件夹中创建副本（保留原始文件）</string>
+    <string name="video_menu_save_copy_desc">在 Downloads/ServaCam 文件夹中创建副本（保留原始文件）</string>
     <string name="file_operation_copied_to_gallery">%1$s已复制到图库</string>
     <string name="file_operation_moved_to_gallery">%1$s已移至图库</string>
     <string name="file_operation_deleted">%1$s已删除</string>
@@ -910,7 +910,7 @@
     <string name="quick_speed_option_1_75">1.75x</string>
     <string name="quick_speed_option_2">2x</string>
     <string name="quick_speed_option_2_5">2.5x</string>
-    <string name="watermark_preview_sample_fadcam">由 FadCam 拍摄 - %1$s</string>
+    <string name="watermark_preview_sample_fadcam">由 ServaCam 拍摄 - %1$s</string>
     <string name="watermark_preview_sample_timeonly">%1$s</string>
     <string name="controls_hide_delay_subtitle">%1$ds</string>
     <string name="seek_amount_subtitle">%1$ds</string>
@@ -1006,9 +1006,9 @@
     <string name="delete_all">删除全部</string>
     <string name="new_project">新建项目</string>
     <string name="delete">删除</string>
-    <string name="fadcam_pro_title">FadCam Pro</string>
+    <string name="fadcam_pro_title">ServaCam Pro</string>
     <string name="fadcam_pro_subtitle">完全私密的高级功能</string>
-    <string name="fadcam_pro_get_button">获取 FadCam Pro</string>
+    <string name="fadcam_pro_get_button">获取 ServaCam Pro</string>
     <string name="fadcam_pro_free">免费</string>
     <string name="fadcam_pro_lab_label">实验室 (Lab)</string>
     <string name="fadcam_pro_early_bird">🎉 在 2025 年 12 月 23 日之前免费！之后，只需 $15 即可获取终身访问权限。</string>
@@ -1017,8 +1017,8 @@
     <string name="fadcam_pro_benefit_lifetime_updates">终身更新：持续获取新功能、性能改进和错误修复</string>
     <string name="fadcam_pro_benefit_support">即时支持：通过 Discord 提供直接的工单帮助</string>
     <string name="fadcam_pro_coming_soon">Pro+ 和 Lab 功能即将到来，包括自定义图标上传、自定义应用名称和 FadDrive 云同步。</string>
-    <string name="fadcam_pro_support_message">FadCam 将永远保持免费，无广告、无追踪。这个项目完全由我一个人独立维护，需要持续的时间和精力。升级到 Pro（目前免费）有助于支持开发，作为回报，我能够在完整的免费版本之外，通过 Pro 功能提供额外价值。感谢您支持这个项目 :)</string>
-    <string name="fadcam_pro_separate_apk">独立应用 • 与 FadCam 配合使用</string>
+    <string name="fadcam_pro_support_message">ServaCam 将永远保持免费，无广告、无追踪。这个项目完全由我一个人独立维护，需要持续的时间和精力。升级到 Pro（目前免费）有助于支持开发，作为回报，我能够在完整的免费版本之外，通过 Pro 功能提供额外价值。感谢您支持这个项目 :)</string>
+    <string name="fadcam_pro_separate_apk">独立应用 • 与 ServaCam 配合使用</string>
     <string name="fadcam_pro_feature_everything_icon">全部</string>
     <string name="fadcam_pro_feature_everything">全部</string>
     <string name="fadcam_pro_feature_custom_icon">自定义应用图标</string>
@@ -1029,7 +1029,7 @@
     <string name="player_info_title">关于视频播放器</string>
     <string name="player_info_content"><![CDATA[
 <b>分段式 MP4 格式</b><br/><br/>
-FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多个小片段，而不是一个完整的文件。这样做的好处是，如果在录制过程中出现问题，您只丢失最后几秒钟，而不是整个视频。<br/><br/>
+ServaCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多个小片段，而不是一个完整的文件。这样做的好处是，如果在录制过程中出现问题，您只丢失最后几秒钟，而不是整个视频。<br/><br/>
 如果您视频的最后几秒看起来卡住或静止，请不要担心——这不是一个错误！当您停止录制时，当前片段可能仍在完成其循环（约 3 秒），这可能会在结尾留下一个短暂的静止画面。<br/><br/>
 <b>播放器限制</b><br/><br/>
 内置视频播放器存在一些安卓系统限制。您可能会注意到进度条或波形图看起来有些卡顿——这是正常行为，并非错误。<br/><br/>

@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:background="@android:color/transparent">
 
-    <com.fadcam.ui.IconRainView
+    <com.servalabs.cam.ui.IconRainView
         android:id="@+id/iconRainView"
         android:layout_width="0dp"
         android:layout_height="0dp"

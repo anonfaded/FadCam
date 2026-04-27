@@ -1,6 +1,6 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="Base.Theme.FadCam" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.ServaCam" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
         <item name="android:fontFamily">@font/ubuntu_regular</item>
@@ -14,12 +14,12 @@
         <item name="colorSwitchTrack">@color/gray500</item>
         <item name="colorDialog">@color/gray</item>
         <item name="colorStatusBar">@color/gray</item>
-        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
-        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Dialog</item>
+        <item name="toolbarStyle">@style/Widget.ServaCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.ServaCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ServaCam.Dialog</item>
         <!-- Switch styling -->
-        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="switchStyle">@style/Widget.ServaCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.ServaCam.Switch</item>
         <!-- Picker gradient colors -->
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">@color/red_theme_primary_variant</item>
@@ -54,8 +54,8 @@
         <item name="android:windowBackground">@color/black</item>
         <item name="android:navigationBarColor">@color/black</item></style>
 
-    <!-- Splash theme leveraging AndroidX SplashScreen attributes (Fix Start Theme.FadCam.Splash) -->
-    <style name="Theme.FadCam.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+    <!-- Splash theme leveraging AndroidX SplashScreen attributes (Fix Start Theme.ServaCam.Splash) -->
+    <style name="Theme.ServaCam.Splash" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Solid dark background -->
         <item name="android:windowBackground">@color/black</item>
         <!-- SplashScreen API attrs -->
@@ -64,11 +64,11 @@
         <item name="android:statusBarColor">@color/black</item>
         <item name="android:navigationBarColor">@color/black</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="postSplashScreenTheme">@style/Base.Theme.FadCam</item>
+        <item name="postSplashScreenTheme">@style/Base.Theme.ServaCam</item>
     </style>
-    <!-- Splash theme end (Fix End Theme.FadCam.Splash) -->
+    <!-- Splash theme end (Fix End Theme.ServaCam.Splash) -->
 
-    <style name="Theme.FadCam.Amoled" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.ServaCam.Amoled" parent="Theme.Material3.Dark.NoActionBar">
         <!-- Completely black background everywhere - using explicit black colors -->
         <item name="android:colorBackground">@color/black</item>
         <item name="colorSurface">@color/amoled_card</item>
@@ -96,14 +96,14 @@
         <item name="colorSurface">@color/amoled_surface</item>
         <item name="colorOnSurface">@color/amoled_text_primary</item>
         <!-- Dialog theme override -->
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Amoled.MaterialAlertDialog</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ServaCam.Amoled.MaterialAlertDialog</item>
         <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Card and surface styles -->
-        <item name="cardViewStyle">@style/Theme.FadCam.AmoledCardView</item>
-        <item name="bottomNavigationStyle">@style/Theme.FadCam.AmoledBottomNavigation</item>
+        <item name="cardViewStyle">@style/Theme.ServaCam.AmoledCardView</item>
+        <item name="bottomNavigationStyle">@style/Theme.ServaCam.AmoledBottomNavigation</item>
         <!-- Switch styling -->
-        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="switchStyle">@style/Widget.ServaCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.ServaCam.Switch</item>
         <item name="colorTopBar">@color/amoled_black_pure</item>
         <item name="colorBottomNav">@color/amoled_black_pure</item>
         <item name="colorHeading">@color/amoled_heading</item>
@@ -140,15 +140,15 @@
         <item name="pickerIconTint">@color/amoled_picker_icon_tint</item>
         <item name="pickerSliderActive">@color/amoled_picker_slider_active</item>
         <item name="pickerSliderInactive">@color/amoled_picker_slider_inactive</item>
-        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
-        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
+        <item name="toolbarStyle">@style/Widget.ServaCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.ServaCam.BottomNavigationView</item>
     </style>
 
-    <style name="Theme.FadCam.AmoledCardView" parent="Widget.MaterialComponents.CardView">
+    <style name="Theme.ServaCam.AmoledCardView" parent="Widget.MaterialComponents.CardView">
         <item name="cardBackgroundColor">@color/amoled_surface</item>
     </style>
 
-    <style name="Theme.FadCam.AmoledBottomNavigation" parent="Widget.Material3.BottomNavigationView">
+    <style name="Theme.ServaCam.AmoledBottomNavigation" parent="Widget.Material3.BottomNavigationView">
         <item name="android:minHeight">64dp</item>
         <item name="android:background">@color/amoled_background</item>
         <item name="itemIconTint">@color/amoled_text_primary</item>
@@ -159,7 +159,7 @@
         <item name="itemPaddingBottom">0dp</item>
     </style>
 
-    <style name="ThemeOverlay.FadCam.Amoled.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.ServaCam.Amoled.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:textColorPrimary">@color/amoled_text_primary</item>
         <item name="android:textColorSecondary">@color/amoled_text_primary</item>
         <item name="android:background">@color/amoled_surface</item>
@@ -171,7 +171,7 @@
         <item name="android:textColor">@color/amoled_text_primary</item>
     </style>
 
-    <style name="Theme.FadCam.Red" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.ServaCam.Red" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/red_theme_primary_variant</item>
         <item name="colorBottomNav">@color/red_theme_primary_variant</item>
         <item name="colorHeading">@color/red_theme_primary</item>
@@ -197,17 +197,17 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/red_theme_text_secondary_dark</item>
-        <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
-        <item name="android:buttonStyle">@style/Widget.FadCam.Red.Button</item>
+        <item name="android:dialogTheme">@style/ThemeOverlay.ServaCam.Red.Dialog</item>
+        <item name="android:buttonStyle">@style/Widget.ServaCam.Red.Button</item>
         <item name="android:editTextBackground">@drawable/red_theme_edittext_bg</item>
-        <item name="android:popupMenuStyle">@style/Widget.FadCam.Red.PopupMenu</item>
-        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
-        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Red.Dialog</item>
+        <item name="android:popupMenuStyle">@style/Widget.ServaCam.Red.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.ServaCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.ServaCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ServaCam.Red.Dialog</item>
         <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Switch styling -->
-        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="switchStyle">@style/Widget.ServaCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.ServaCam.Switch</item>
         <!-- Picker gradient colors - subtle red gradient for red theme -->
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF2B0000</item>
@@ -238,7 +238,7 @@
         <item name="pickerSliderInactive">@color/red_theme_slider_inactive</item>
     </style>
 
-    <style name="ThemeOverlay.FadCam.Red.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.ServaCam.Red.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">@color/red_theme_surface_dark</item>
         <item name="android:textColor">@android:color/white</item>
         <item name="android:textColorPrimary">@android:color/white</item>
@@ -247,23 +247,23 @@
         <item name="colorOnPrimary">@android:color/white</item>
     </style>
 
-    <style name="Widget.FadCam.Red.Button" parent="Widget.Material3.Button">
+    <style name="Widget.ServaCam.Red.Button" parent="Widget.Material3.Button">
         <item name="android:background">@color/red_theme_primary</item>
         <item name="android:textColor">@color/white</item>
     </style>
 
-    <style name="Widget.FadCam.Red.PopupMenu" parent="Widget.Material3.PopupMenu">
+    <style name="Widget.ServaCam.Red.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@color/red_theme_surface_dark</item>
         <item name="android:textColor">@color/white</item>
     </style>
 
     <!-- Universal switch style that adapts to theme colors -->
-    <style name="Widget.FadCam.Switch" parent="Widget.MaterialComponents.CompoundButton.Switch">
+    <style name="Widget.ServaCam.Switch" parent="Widget.MaterialComponents.CompoundButton.Switch">
         <item name="thumbTint">@color/switch_thumb</item>
         <item name="trackTint">@color/switch_track</item>
     </style>
 
-    <style name="Theme.FadCam.Gold" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.ServaCam.Gold" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/gold_theme_primary_variant</item>
         <item name="colorBottomNav">@color/gold_theme_primary_variant</item>
         <item name="colorHeading">@color/gold_theme_primary</item>
@@ -289,17 +289,17 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/gold_theme_text_secondary_dark</item>
-        <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.Gold.Dialog</item>
-        <item name="android:buttonStyle">@style/Widget.FadCam.Gold.Button</item>
+        <item name="android:dialogTheme">@style/ThemeOverlay.ServaCam.Gold.Dialog</item>
+        <item name="android:buttonStyle">@style/Widget.ServaCam.Gold.Button</item>
         <item name="android:editTextBackground">@drawable/gold_theme_edittext_bg</item>
-        <item name="android:popupMenuStyle">@style/Widget.FadCam.Gold.PopupMenu</item>
-        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
-        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Gold.Dialog</item>
+        <item name="android:popupMenuStyle">@style/Widget.ServaCam.Gold.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.ServaCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.ServaCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ServaCam.Gold.Dialog</item>
         <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Switch styling -->
-        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="switchStyle">@style/Widget.ServaCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.ServaCam.Switch</item>
         <!-- Picker gradient colors - subtle gold gradient -->
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF2B1A00</item>
@@ -330,7 +330,7 @@
         <item name="pickerSliderInactive">@color/gold_theme_slider_inactive</item>
     </style>
 
-    <style name="ThemeOverlay.FadCam.Gold.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.ServaCam.Gold.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">@color/gold_theme_surface_dark</item>
         <item name="android:textColor">@android:color/white</item>
         <item name="android:textColorPrimary">@android:color/white</item>
@@ -339,17 +339,17 @@
         <item name="colorOnPrimary">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.Gold.Button" parent="Widget.Material3.Button">
+    <style name="Widget.ServaCam.Gold.Button" parent="Widget.Material3.Button">
         <item name="android:background">@color/gold_theme_primary</item>
         <item name="android:textColor">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.Gold.PopupMenu" parent="Widget.Material3.PopupMenu">
+    <style name="Widget.ServaCam.Gold.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@color/gold_theme_surface_dark</item>
         <item name="android:textColor">@color/white</item>
     </style>
 
-    <style name="Theme.FadCam.SilentForest" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.ServaCam.SilentForest" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/silentforest_theme_primary_variant</item>
         <item name="colorBottomNav">@color/silentforest_theme_primary_variant</item>
         <item name="colorHeading">@color/silentforest_theme_primary</item>
@@ -375,17 +375,17 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/silentforest_theme_text_secondary_dark</item>
-        <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.SilentForest.Dialog</item>
-        <item name="android:buttonStyle">@style/Widget.FadCam.SilentForest.Button</item>
+        <item name="android:dialogTheme">@style/ThemeOverlay.ServaCam.SilentForest.Dialog</item>
+        <item name="android:buttonStyle">@style/Widget.ServaCam.SilentForest.Button</item>
         <item name="android:editTextBackground">@drawable/silentforest_theme_edittext_bg</item>
-        <item name="android:popupMenuStyle">@style/Widget.FadCam.SilentForest.PopupMenu</item>
-        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
-        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.SilentForest.Dialog</item>
+        <item name="android:popupMenuStyle">@style/Widget.ServaCam.SilentForest.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.ServaCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.ServaCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ServaCam.SilentForest.Dialog</item>
         <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Switch styling -->
-        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="switchStyle">@style/Widget.ServaCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.ServaCam.Switch</item>
         <!-- Picker gradient colors - subtle forest gradient -->
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF001A17</item>
@@ -416,7 +416,7 @@
         <item name="pickerSliderInactive">@color/silentforest_theme_slider_inactive</item>
     </style>
 
-    <style name="ThemeOverlay.FadCam.SilentForest.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.ServaCam.SilentForest.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">@color/silentforest_theme_surface_dark</item>
         <item name="android:textColor">@android:color/white</item>
         <item name="android:textColorPrimary">@android:color/white</item>
@@ -425,17 +425,17 @@
         <item name="colorOnPrimary">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.SilentForest.Button" parent="Widget.Material3.Button">
+    <style name="Widget.ServaCam.SilentForest.Button" parent="Widget.Material3.Button">
         <item name="android:background">@color/silentforest_theme_primary</item>
         <item name="android:textColor">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.SilentForest.PopupMenu" parent="Widget.Material3.PopupMenu">
+    <style name="Widget.ServaCam.SilentForest.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@color/silentforest_theme_surface_dark</item>
         <item name="android:textColor">@color/white</item>
     </style>
 
-    <style name="Theme.FadCam.ShadowAlloy" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.ServaCam.ShadowAlloy" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/shadowalloy_theme_primary_variant</item>
         <item name="colorBottomNav">@color/shadowalloy_theme_primary_variant</item>
         <item name="colorHeading">@color/shadowalloy_theme_primary</item>
@@ -461,17 +461,17 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/shadowalloy_theme_text_secondary_dark</item>
-        <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.ShadowAlloy.Dialog</item>
-        <item name="android:buttonStyle">@style/Widget.FadCam.ShadowAlloy.Button</item>
+        <item name="android:dialogTheme">@style/ThemeOverlay.ServaCam.ShadowAlloy.Dialog</item>
+        <item name="android:buttonStyle">@style/Widget.ServaCam.ShadowAlloy.Button</item>
         <item name="android:editTextBackground">@drawable/shadowalloy_theme_edittext_bg</item>
-        <item name="android:popupMenuStyle">@style/Widget.FadCam.ShadowAlloy.PopupMenu</item>
-        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
-        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.ShadowAlloy.Dialog</item>
+        <item name="android:popupMenuStyle">@style/Widget.ServaCam.ShadowAlloy.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.ServaCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.ServaCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ServaCam.ShadowAlloy.Dialog</item>
         <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Switch styling -->
-        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="switchStyle">@style/Widget.ServaCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.ServaCam.Switch</item>
         <!-- Picker gradient colors - subtle silver gradient -->
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF1A1A1A</item>
@@ -502,7 +502,7 @@
         <item name="pickerSliderInactive">@color/shadowalloy_theme_slider_inactive</item>
     </style>
 
-    <style name="ThemeOverlay.FadCam.ShadowAlloy.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.ServaCam.ShadowAlloy.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">@color/shadowalloy_theme_surface_dark</item>
         <item name="android:textColor">@android:color/white</item>
         <item name="android:textColorPrimary">@android:color/white</item>
@@ -511,17 +511,17 @@
         <item name="colorOnPrimary">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.ShadowAlloy.Button" parent="Widget.Material3.Button">
+    <style name="Widget.ServaCam.ShadowAlloy.Button" parent="Widget.Material3.Button">
         <item name="android:background">@color/shadowalloy_theme_primary</item>
         <item name="android:textColor">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.ShadowAlloy.PopupMenu" parent="Widget.Material3.PopupMenu">
+    <style name="Widget.ServaCam.ShadowAlloy.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@color/shadowalloy_theme_surface_dark</item>
         <item name="android:textColor">@color/white</item>
     </style>
 
-    <style name="Theme.FadCam.PookiePink" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.ServaCam.PookiePink" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/pookiepink_theme_primary_variant</item>
         <item name="colorBottomNav">@color/pookiepink_theme_primary_variant</item>
         <item name="colorHeading">@color/pookiepink_theme_primary</item>
@@ -547,17 +547,17 @@
         <item name="android:textColor">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/pookiepink_theme_text_secondary_dark</item>
-        <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.PookiePink.Dialog</item>
-        <item name="android:buttonStyle">@style/Widget.FadCam.PookiePink.Button</item>
+        <item name="android:dialogTheme">@style/ThemeOverlay.ServaCam.PookiePink.Dialog</item>
+        <item name="android:buttonStyle">@style/Widget.ServaCam.PookiePink.Button</item>
         <item name="android:editTextBackground">@drawable/pookiepink_theme_edittext_bg</item>
-        <item name="android:popupMenuStyle">@style/Widget.FadCam.PookiePink.PopupMenu</item>
-        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
-        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.PookiePink.Dialog</item>
+        <item name="android:popupMenuStyle">@style/Widget.ServaCam.PookiePink.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.ServaCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.ServaCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ServaCam.PookiePink.Dialog</item>
         <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Switch styling -->
-        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="switchStyle">@style/Widget.ServaCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.ServaCam.Switch</item>
         <!-- Picker gradient colors - subtle pink gradient -->
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF2B0A1A</item>
@@ -588,7 +588,7 @@
         <item name="pickerSliderInactive">@color/pookiepink_theme_slider_inactive</item>
     </style>
 
-    <style name="ThemeOverlay.FadCam.PookiePink.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.ServaCam.PookiePink.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">@color/pookiepink_theme_surface_dark</item>
         <item name="android:textColor">@android:color/white</item>
         <item name="android:textColorPrimary">@android:color/white</item>
@@ -597,17 +597,17 @@
         <item name="colorOnPrimary">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.PookiePink.Button" parent="Widget.Material3.Button">
+    <style name="Widget.ServaCam.PookiePink.Button" parent="Widget.Material3.Button">
         <item name="android:background">@color/pookiepink_theme_primary</item>
         <item name="android:textColor">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.PookiePink.PopupMenu" parent="Widget.Material3.PopupMenu">
+    <style name="Widget.ServaCam.PookiePink.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@color/pookiepink_theme_surface_dark</item>
         <item name="android:textColor">@color/white</item>
     </style>
 
-    <style name="Theme.FadCam.SnowVeil" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.ServaCam.SnowVeil" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/snowveil_theme_primary_variant</item>
         <item name="colorBottomNav">@color/snowveil_theme_primary_variant</item>
         <item name="colorHeading">@color/snowveil_theme_heading_on_blue</item>
@@ -633,16 +633,16 @@
         <item name="android:textColor">@color/black</item>
         <item name="android:textColorPrimary">@color/black</item>
         <item name="android:textColorSecondary">@color/snowveil_theme_text_secondary_light</item>
-        <item name="android:dialogTheme">@style/ThemeOverlay.FadCam.SnowVeil.Dialog</item>
-        <item name="android:buttonStyle">@style/Widget.FadCam.SnowVeil.Button</item>
+        <item name="android:dialogTheme">@style/ThemeOverlay.ServaCam.SnowVeil.Dialog</item>
+        <item name="android:buttonStyle">@style/Widget.ServaCam.SnowVeil.Button</item>
         <item name="android:editTextBackground">@drawable/snowveil_theme_edittext_bg</item>
-        <item name="android:popupMenuStyle">@style/Widget.FadCam.SnowVeil.PopupMenu</item>
-        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar.Light</item>
-        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView.Light</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.SnowVeil.Dialog</item>
+        <item name="android:popupMenuStyle">@style/Widget.ServaCam.SnowVeil.PopupMenu</item>
+        <item name="toolbarStyle">@style/Widget.ServaCam.Toolbar.Light</item>
+        <item name="bottomNavigationStyle">@style/Widget.ServaCam.BottomNavigationView.Light</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ServaCam.SnowVeil.Dialog</item>
         <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <!-- Force pure white CardView backgrounds for better contrast with black text -->
-        <item name="cardViewStyle">@style/Theme.FadCam.SnowVeilCardView</item>
+        <item name="cardViewStyle">@style/Theme.ServaCam.SnowVeilCardView</item>
         <!-- Improve contrast for Snow Veil theme -->
         <item name="android:iconTint">@color/black</item>
         <item name="colorControlNormal">@color/black</item>
@@ -651,10 +651,10 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
         <!-- Switch styling -->
-        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="checkboxStyle">@style/Widget.FadCam.SnowVeil.Checkbox</item>
-        <item name="radioButtonStyle">@style/Widget.FadCam.SnowVeil.RadioButton</item>
+        <item name="switchStyle">@style/Widget.ServaCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.ServaCam.Switch</item>
+        <item name="checkboxStyle">@style/Widget.ServaCam.SnowVeil.Checkbox</item>
+        <item name="radioButtonStyle">@style/Widget.ServaCam.SnowVeil.RadioButton</item>
         <!-- Picker gradient colors - subtle blue gradient like other themes -->
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF001A2B</item>
@@ -686,29 +686,29 @@
     </style>
 
     <!-- Add CardView style for Snow Veil theme with dark background for better contrast -->
-    <style name="Theme.FadCam.SnowVeilCardView" parent="Widget.MaterialComponents.CardView">
+    <style name="Theme.ServaCam.SnowVeilCardView" parent="Widget.MaterialComponents.CardView">
         <item name="cardBackgroundColor">#2E2E2E</item>
         <item name="cardElevation">2dp</item>
         <item name="cardCornerRadius">12dp</item>
     </style>
 
     <!-- Add additional styles for Snow Veil theme components -->
-    <style name="Widget.FadCam.SnowVeil.Switch" parent="Widget.MaterialComponents.CompoundButton.Switch">
+    <style name="Widget.ServaCam.SnowVeil.Switch" parent="Widget.MaterialComponents.CompoundButton.Switch">
         <item name="thumbTint">@color/black</item>
         <item name="trackTint">@color/snowveil_theme_accent</item>
     </style>
 
-    <style name="Widget.FadCam.SnowVeil.Checkbox" parent="Widget.MaterialComponents.CompoundButton.CheckBox">
+    <style name="Widget.ServaCam.SnowVeil.Checkbox" parent="Widget.MaterialComponents.CompoundButton.CheckBox">
         <item name="android:buttonTint">@color/black</item>
         <item name="android:textColor">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.SnowVeil.RadioButton" parent="Widget.MaterialComponents.CompoundButton.RadioButton">
+    <style name="Widget.ServaCam.SnowVeil.RadioButton" parent="Widget.MaterialComponents.CompoundButton.RadioButton">
         <item name="android:buttonTint">@color/black</item>
         <item name="android:textColor">@color/black</item>
     </style>
 
-    <style name="ThemeOverlay.FadCam.SnowVeil.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.ServaCam.SnowVeil.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">@color/snowveil_theme_surface_light</item>
         <item name="android:textColor">@android:color/black</item>
         <item name="android:textColorPrimary">@android:color/black</item>
@@ -717,23 +717,23 @@
         <item name="colorOnPrimary">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.SnowVeil.Button" parent="Widget.Material3.Button">
+    <style name="Widget.ServaCam.SnowVeil.Button" parent="Widget.Material3.Button">
         <item name="android:background">@color/snowveil_theme_primary</item>
         <item name="android:textColor">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.SnowVeil.PopupMenu" parent="Widget.Material3.PopupMenu">
+    <style name="Widget.ServaCam.SnowVeil.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@color/snowveil_theme_surface_light</item>
         <item name="android:textColor">@color/black</item>
     </style>
 
-    <style name="Widget.FadCam.Toolbar.Light" parent="Widget.MaterialComponents.Toolbar">
+    <style name="Widget.ServaCam.Toolbar.Light" parent="Widget.MaterialComponents.Toolbar">
         <item name="android:background">?attr/colorTopBar</item>
         <item name="titleTextColor">@android:color/black</item>
         <item name="subtitleTextColor">@android:color/black</item>
     </style>
 
-    <style name="Widget.FadCam.BottomNavigationView.Light" parent="Widget.Material3.BottomNavigationView">
+    <style name="Widget.ServaCam.BottomNavigationView.Light" parent="Widget.Material3.BottomNavigationView">
         <item name="android:minHeight">64dp</item>
         <item name="android:background">?attr/colorBottomNav</item>
         <item name="itemIconTint">@color/black</item>
@@ -742,17 +742,17 @@
         <item name="labelVisibilityMode">selected</item>
         <item name="itemPaddingTop">0dp</item>
         <item name="itemPaddingBottom">0dp</item>
-        <item name="itemTextAppearanceActive">@style/TextAppearance.FadCam.BottomNav.Active</item>
-        <item name="itemTextAppearanceInactive">@style/TextAppearance.FadCam.BottomNav.Inactive</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.ServaCam.BottomNav.Active</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.ServaCam.BottomNav.Inactive</item>
     </style>
 
-    <style name="Widget.FadCam.Toolbar" parent="Widget.MaterialComponents.Toolbar">
+    <style name="Widget.ServaCam.Toolbar" parent="Widget.MaterialComponents.Toolbar">
         <item name="android:background">?attr/colorTopBar</item>
         <item name="titleTextColor">@android:color/white</item>
         <item name="subtitleTextColor">@android:color/white</item>
     </style>
 
-    <style name="Widget.FadCam.BottomNavigationView" parent="Widget.Material3.BottomNavigationView">
+    <style name="Widget.ServaCam.BottomNavigationView" parent="Widget.Material3.BottomNavigationView">
         <item name="android:minHeight">64dp</item>
         <item name="android:background">?attr/colorBottomNav</item>
         <item name="itemIconTint">@color/white</item>
@@ -761,24 +761,24 @@
         <item name="labelVisibilityMode">selected</item>
         <item name="itemPaddingTop">0dp</item>
         <item name="itemPaddingBottom">0dp</item>
-        <item name="itemTextAppearanceActive">@style/TextAppearance.FadCam.BottomNav.Active</item>
-        <item name="itemTextAppearanceInactive">@style/TextAppearance.FadCam.BottomNav.Inactive</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.ServaCam.BottomNav.Active</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.ServaCam.BottomNav.Inactive</item>
     </style>
 
-    <style name="TextAppearance.FadCam.BottomNav.Active" parent="TextAppearance.MaterialComponents.Caption">
+    <style name="TextAppearance.ServaCam.BottomNav.Active" parent="TextAppearance.MaterialComponents.Caption">
         <item name="android:textSize">10sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:includeFontPadding">true</item>
     </style>
 
-    <style name="TextAppearance.FadCam.BottomNav.Inactive" parent="TextAppearance.MaterialComponents.Caption">
+    <style name="TextAppearance.ServaCam.BottomNav.Inactive" parent="TextAppearance.MaterialComponents.Caption">
         <item name="android:textSize">10sp</item>
         <item name="android:fontFamily">sans-serif</item>
         <item name="android:includeFontPadding">true</item>
     </style>
 
     <!-- Fix Start: Add theme overlays for bottom sheets and dialogs for all themes -->
-    <style name="ThemeOverlay.FadCam.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+    <style name="ThemeOverlay.ServaCam.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="android:background">?attr/colorDialog</item>
         <item name="android:textColor">@android:color/white</item>
         <item name="android:textColorPrimary">@android:color/white</item>
@@ -787,17 +787,17 @@
     </style>
 
     <!-- Add Snow Veil specific bottom sheet style -->
-    <style name="ThemeOverlay.FadCam.SnowVeil.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+    <style name="ThemeOverlay.ServaCam.SnowVeil.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
         <item name="android:background">@color/snowveil_theme_surface_light</item>
         <item name="android:textColor">@android:color/black</item>
         <item name="android:textColorPrimary">@android:color/black</item>
         <item name="android:textColorSecondary">@android:color/black</item>
         <item name="colorPrimary">@color/snowveil_theme_primary</item>
         <item name="colorOnPrimary">@android:color/black</item>
-        <item name="radioButtonStyle">@style/Widget.FadCam.SnowVeil.RadioButton</item>
+        <item name="radioButtonStyle">@style/Widget.ServaCam.SnowVeil.RadioButton</item>
     </style>
 
-    <style name="ThemeOverlay.FadCam.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.ServaCam.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:background">?attr/colorDialog</item>
         <item name="android:textColor">@android:color/white</item>
         <item name="android:textColorPrimary">@android:color/white</item>
@@ -808,7 +808,7 @@
     <!-- Fix End: Add theme overlays for bottom sheets and dialogs for all themes -->
 
     <!-- Fix Start: Add always-dark Midnight Dusk theme -->
-    <style name="Theme.FadCam.MidnightDusk" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.ServaCam.MidnightDusk" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:fontFamily">@font/ubuntu_regular</item>
         <item name="android:statusBarColor">@color/gray</item>
         <item name="colorTopBar">@color/gray</item>
@@ -819,9 +819,9 @@
         <item name="colorSwitchTrack">@color/gray500</item>
         <item name="colorDialog">@color/gray</item>
         <item name="colorStatusBar">@color/gray</item>
-        <item name="toolbarStyle">@style/Widget.FadCam.Toolbar</item>
-        <item name="bottomNavigationStyle">@style/Widget.FadCam.BottomNavigationView</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.FadCam.Dialog</item>
+        <item name="toolbarStyle">@style/Widget.ServaCam.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.ServaCam.BottomNavigationView</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ServaCam.Dialog</item>
         <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialogTheme</item>
         <item name="android:colorBackground">@color/black</item>
         <item name="colorSurface">@color/midnight_dusk_bg</item>
@@ -841,8 +841,8 @@
         <item name="android:textColorPrimary">@color/white</item>
         <item name="android:textColorSecondary">@color/gray_text_light</item>
         <!-- Switch styling -->
-        <item name="switchStyle">@style/Widget.FadCam.Switch</item>
-        <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
+        <item name="switchStyle">@style/Widget.ServaCam.Switch</item>
+        <item name="materialSwitchStyle">@style/Widget.ServaCam.Switch</item>
         <!-- Picker gradient colors - subtle purple gradient for midnight dusk -->
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF1A0D2B</item>
@@ -869,7 +869,7 @@
     <!-- Fix End: Add always-dark Midnight Dusk theme -->
 
     <!-- Transparent dialog theme for overlay activities -->
-    <style name="Theme.FadCam.TransparentDialog" parent="Theme.Material3.DayNight.Dialog.Alert">
+    <style name="Theme.ServaCam.TransparentDialog" parent="Theme.Material3.DayNight.Dialog.Alert">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowContentOverlay">@null</item>
@@ -903,7 +903,7 @@
     <!-- WATCH-SPECIFIC THEME: MaterialComponents for better Wear OS compatibility
          Material3 has rendering issues on small round Wear OS screens.
          This theme is applied programmatically in WatchMainActivity.onCreate(). -->
-    <style name="Theme.FadCam.WatchCompat" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.ServaCam.WatchCompat" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Explicit window background to prevent rendering issues -->
         <item name="android:windowBackground">@color/black</item>
         <item name="android:windowNoTitle">true</item>

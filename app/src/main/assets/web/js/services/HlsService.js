@@ -32,12 +32,12 @@ class HlsService {
         const baseConfig = { ...CONFIG.HLS_CONFIG };
         
         // Check if we're in cloud mode and have a stream token
-        const isCloudMode = typeof FadCamRemote !== 'undefined' && 
-                           typeof FadCamRemote.isCloudMode === 'function' && 
-                           FadCamRemote.isCloudMode();
+        const isCloudMode = typeof ServaCamRemote !== 'undefined' && 
+                           typeof ServaCamRemote.isCloudMode === 'function' && 
+                           ServaCamRemote.isCloudMode();
         
         if (isCloudMode) {
-            const streamToken = FadCamRemote.getStreamToken();
+            const streamToken = ServaCamRemote.getStreamToken();
             if (streamToken) {
                 console.log('[HlsService] ☁️ Cloud mode detected, using URL token auth');
                 
@@ -56,11 +56,11 @@ class HlsService {
                 };
 
                 // Use the E2E-decrypting fragment loader if available
-                if (typeof FadCamFragLoader !== 'undefined') {
-                    baseConfig.fLoader = FadCamFragLoader;
+                if (typeof ServaCamFragLoader !== 'undefined') {
+                    baseConfig.fLoader = ServaCamFragLoader;
                     console.log('[HlsService] 🔐 E2E fragment loader attached');
                 } else {
-                    console.warn('[HlsService] FadCamFragLoader not loaded — segments will NOT be decrypted');
+                    console.warn('[HlsService] ServaCamFragLoader not loaded — segments will NOT be decrypted');
                 }
             } else {
                 console.warn('[HlsService] ☁️ Cloud mode but no stream token available!');

@@ -8,7 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import com.fadcam.R;
+import com.servalabs.cam.R;
 import com.guardanis.applock.AppLock;
 import com.guardanis.applock.password.PasswordInputController;
 import com.guardanis.applock.pin.PINInputController;

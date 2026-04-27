@@ -80,7 +80,7 @@ applyTo: '**'
 - Use ligature icons (`TextView`) for pickers/sheets. ImageView only as fallback.  
 - Do not add new vector/SVG drawables unless required for branding.
 
-### 🎨 FadCam UI Styling
+### 🎨 Serva Cam UI Styling
 - Shared tappable rows use `@drawable/settings_home_row_bg` with 4dp inset ripple.  
 - Rows inside group cards: `@style/SettingsGroupRow` (centered, gutters: 14dp start, 12dp end).  
 - Leading icon: 24dp square, marginEnd 16dp.  

@@ -1,4 +1,4 @@
-# Privacy Policy for FadCam
+# Privacy Policy for ServaCam
 
 **Last Edited:** December 16, 2025
 
@@ -24,4 +24,4 @@ We do not use analytics, advertising, or any tracking services.
 
 ## Summary
 
-FadCam is a privacy-focused camera app that operates completely offline and respects your data.
+ServaCam is a privacy-focused camera app that operates completely offline and respects your data.

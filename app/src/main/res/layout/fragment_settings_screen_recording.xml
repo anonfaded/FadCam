@@ -235,7 +235,7 @@
 
                 <View style="@style/SettingsDivider" />
 
-                <!-- Video Splitting Row (shared with FadCam) -->
+                <!-- Video Splitting Row (shared with ServaCam) -->
                 <LinearLayout
                     android:id="@+id/row_video_splitting"
                     style="@style/SettingsGroupRow">

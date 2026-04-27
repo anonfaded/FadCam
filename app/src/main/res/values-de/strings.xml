@@ -2,15 +2,15 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="auto_delete_immediate">Sofort</string>
     <string name="trash_auto_delete_info_immediate">Elemente werden sofort gelöscht.</string>
-    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_name" translatable="false">ServaCam</string>
     <string name="app_icon_description">Wähle ein Symbol und einen Namen für die App. Dadurch wird die Anzeige der App auf dem Startbildschirm geändert.</string>
     <string name="check_for_updates">Auf Updates überprüfen</string>
-    <string name="fadsec_info">FadCam ist Teil der FadSec Lab Suite. Für weitere Informationen klicke unten auf \'Quellcode anzeigen\'.</string>
+    <string name="fadsec_info">ServaCam ist Teil der FadSec Lab Suite. Für weitere Informationen klicke unten auf \'Quellcode anzeigen\'.</string>
     <string name="app_description">
     <![CDATA[
-    FadCam ist eine werbefreie Open-Source-Videoaufzeichnungs-App, die den Datenschutz priorisiert, indem sie keine Daten verfolgt oder erfasst. Es ist exklusiv auf GitHub und über die im README genannten offiziellen Links erhältlich.
+    ServaCam ist eine werbefreie Open-Source-Videoaufzeichnungs-App, die den Datenschutz priorisiert, indem sie keine Daten verfolgt oder erfasst. Es ist exklusiv auf GitHub und über die im README genannten offiziellen Links erhältlich.
     <br/><br/>
-    FadCam wurde auf bekannten YouTube-Kanälen wie <font color="#cfbafd">HowToMen</font> und <font color="#cfbafd">Xtream Droid</font> vorgestellt, als auch bei <font color="#cfbafd">GrapheneOS</font> und 55+ weiteren nennenswerten Stellen erwähnt.
+    ServaCam wurde auf bekannten YouTube-Kanälen wie <font color="#cfbafd">HowToMen</font> und <font color="#cfbafd">Xtream Droid</font> vorgestellt, als auch bei <font color="#cfbafd">GrapheneOS</font> und 55+ weiteren nennenswerten Stellen erwähnt.
     ]]>
 </string>
     <string name="view_source_code">Quellcode anzeigen</string>
@@ -131,7 +131,7 @@
     <string name="setting_codec_title">Video-Codec</string>
     <string name="note_codec">Codec auswählen\n(Standard: %1$s)\nTipp: Mit H.265 (HEVC) können Sie bei gleicher Qualität etwa die halbe Bitrate von H.264 verwenden. Beispiel: Für FHD verwenden Sie 8 Mbit/s anstelle von 16 Mbit/s.</string>
     <string name="setting_watermark">Wasserzeichen</string>
-    <string name="note_watermark">Wasserzeichenoption auswählen\n(Standard: Zeitstempel mit FadCam)</string>
+    <string name="note_watermark">Wasserzeichenoption auswählen\n(Standard: Zeitstempel mit ServaCam)</string>
     <string name="note_watermark_extra">Für ein schnelles Speichern wähle \'Kein Wasserzeichen\'. Das Hinzufügen eines Wasserzeichens dauert etwas länger bei der Verarbeitung, aber es lohnt sich!</string>
     <string name="setting_location_title">Standortdaten</string>
     <string name="note_location">Standortdaten in Wasserzeichen einfügen. \nBenötigt aktiviertes GPS \n(Standard: Deaktiviert)</string>
@@ -157,13 +157,13 @@
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>HAFTUNGSAUSSCHLUSS</item>
-        <item>Sammelt FadCam irgendwelche Nutzerdaten?</item>
-        <item>Gibt es Werbung in FadCam?</item>
-        <item>Warum benötigt FadCam Zugriff auf den Standort?</item>
+        <item>Sammelt ServaCam irgendwelche Nutzerdaten?</item>
+        <item>Gibt es Werbung in ServaCam?</item>
+        <item>Warum benötigt ServaCam Zugriff auf den Standort?</item>
         <item>Warum ist die Internet-Berechtigung erforderlich?</item>
         <item>Werden Daten auf externen Servern gespeichert?</item>
         <item>Was passiert nach der Aufnahme mit meinen Videos?</item>
-        <item>Teilt FadCam meine Daten mit Dritten?</item>
+        <item>Teilt ServaCam meine Daten mit Dritten?</item>
         <item> </item>
         <item> </item>
         <item>Allgemein</item>
@@ -178,15 +178,15 @@
         <item> </item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-        <item>FadCam duldet oder unterstützt keine unethische oder illegale Nutzung dieser Software. Missbrauch, wie z.B. unerlaubte Überwachung oder Verletzung der Privatsphäre, verstößt strikt gegen unsere Richtlinien. Die Autoren sind nicht für den Missbrauch der Anwendung verantwortlich.
+        <item>ServaCam duldet oder unterstützt keine unethische oder illegale Nutzung dieser Software. Missbrauch, wie z.B. unerlaubte Überwachung oder Verletzung der Privatsphäre, verstößt strikt gegen unsere Richtlinien. Die Autoren sind nicht für den Missbrauch der Anwendung verantwortlich.
         </item>
-        <item>Nein, FadCam sammelt keinerlei Nutzerdaten.</item>
-        <item>Nein, FadCam ist komplett werbefrei.</item>
+        <item>Nein, ServaCam sammelt keinerlei Nutzerdaten.</item>
+        <item>Nein, ServaCam ist komplett werbefrei.</item>
         <item>Um Standortinformationen zu deinen Wasserzeichen hinzuzufügen.</item>
         <item>Für die automatische Update-Prüfung.</item>
         <item>Nein, alle Daten werden auf deinem Gerät gespeichert.</item>
         <item>Deine Videos werden lokal auf deinem Gerät gespeichert.</item>
-        <item>Nein, FadCam teilt oder sammelt keine Daten, nicht einmal Absturzprotokolle.</item>
+        <item>Nein, ServaCam teilt oder sammelt keine Daten, nicht einmal Absturzprotokolle.</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -200,21 +200,21 @@
         <item>Überprüfe das offizielle GitHub-Repo für Updates.</item>
         <item> </item>
     </string-array>
-    <string name="dialog_welcome_title">Willkommen bei FadCam!</string>
+    <string name="dialog_welcome_title">Willkommen bei ServaCam!</string>
     <string name="note_under_dev">Wichtig: Diese App befindet sich derzeit in der Entwicklung. Neue Funktionen werden regelmäßig hinzugefügt.</string>
     <!-- removed: rencent_updates_title and upcoming_features_title (centralized changelog) -->
     <string name="stay_updated_title">Bleib auf dem Laufenden:</string>
     <string name="button_readme_github">GitHub-Repository</string>
     <string name="community_title">Tritt unserer Community bei:</string>
     <string name="discord_title">Discord-Server</string>
-    <string name="thankyou_msg">Danke, dass du FadCam nutzt!</string>
+    <string name="thankyou_msg">Danke, dass du ServaCam nutzt!</string>
     <string name="settings_title">Einstellungen</string>
     <string name="array_watermark_time_fadcam">Zeit mit Fadcam</string>
     <string name="array_watermark_timeonly">Zeitstempel</string>
     <string name="array_watermark_nomark">Kein Wasserzeichen</string>
     <!-- recent_features and upcoming_features removed (not used in bottom sheet) -->
     <string name="toast_video_not_found">Fehler: Video nicht gefunden</string>
-    <string name="toast_video_saved">Video im FadCam-Ordner unter Downloads gespeichert</string>
+    <string name="toast_video_saved">Video im ServaCam-Ordner unter Downloads gespeichert</string>
     <string name="toast_video_save_fail">Video konnte nicht gespeichert werden</string>
     <string name="rename_video_title">Video umbenennen</string>
     <string name="rename_video_hint">Neuen Namen eingeben</string>
@@ -260,7 +260,7 @@
     <string name="torch_both">Beide Taschenlampen</string>
     <string name="setting_debug_title">Debug-Protokollierung</string>
     <string name="note_debug">Debug-Protokolldateierzeugung aktivieren\n(Standard: Deaktiviert)</string>
-    <string name="note_debug_extra">Wenn aktiviert, wird eine Debug-Protokolldatei im Ordner Downloads/FadCam erstellt. Dies kann bei der Diagnose von App-Problemen helfen.</string>
+    <string name="note_debug_extra">Wenn aktiviert, wird eine Debug-Protokolldatei im Ordner Downloads/ServaCam erstellt. Dies kann bei der Diagnose von App-Problemen helfen.</string>
     <string name="torch_shortcut_short_label">Taschenlampe</string>
     <string name="torch_shortcut_long_label">Taschenlampe umschalten</string>
     <string name="torch_shortcut_disabled">Taschenlampen-Umschaltung ist derzeit nicht verfügbar</string>
@@ -314,8 +314,8 @@
     <string name="theme_snowveil">Schneeschleier</string>
     <string name="remote_access_title">Fernzugriff/Steuerung</string>
     <string name="remote_toast_coming_soon">Kommt bald! In Sha Allah</string>
-    <string name="remote_coming_soon">Die Fernsteuerung für FadCam kommt bald.</string>
-    <string name="remote_feature_description">Kopple FadCam-Clients über einen QR-Code für eine sichere Fernsteuerung im lokalen Netzwerk: Aufnahme starten/stoppen, Vorschau, Zoom, Kamera wechseln und mehr – alles mit Ende-zu-Ende-Verschlüsselung.</string>
+    <string name="remote_coming_soon">Die Fernsteuerung für ServaCam kommt bald.</string>
+    <string name="remote_feature_description">Kopple ServaCam-Clients über einen QR-Code für eine sichere Fernsteuerung im lokalen Netzwerk: Aufnahme starten/stoppen, Vorschau, Zoom, Kamera wechseln und mehr – alles mit Ende-zu-Ende-Verschlüsselung.</string>
     <string name="setting_audio_title">Audioaufnahme</string>
     <string name="note_audio">Aktiviere oder deaktiviere die Audioaufnahme für Videos.\n(Standard: Aktiviert)</string>
     <string name="button_audio_settings">Audio-Einstellungen</string>
@@ -393,7 +393,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">Keine Elemente ausgewählt.</string>
     <string name="trash_dialog_restore_title">Ausgewählte wiederherstellen?</string>
-    <string name="trash_dialog_restore_message">%1$d Element(e) in den öffentlichen Ordner Downloads/FadCam/ wiederherstellen?</string>
+    <string name="trash_dialog_restore_message">%1$d Element(e) in den öffentlichen Ordner Downloads/ServaCam/ wiederherstellen?</string>
     <string name="trash_restore_success_toast">%1$d Element(e) wiederhergestellt.</string>
     <string name="trash_restore_fail_toast">Fehler beim Wiederherstellen der Elemente. Einige Dateien wurden möglicherweise nicht wiederhergestellt oder die Galerie wurde nicht aktualisiert. Überprüfe die App-Berechtigungen für den Speicher.</string>
     <string name="trash_restore_cancelled_toast">Wiederherstellung abgebrochen.</string>
@@ -406,7 +406,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="records_search_hint">Aufnahmen durchsuchen …</string>
     <string name="saf_permission_missing_dialog_instructions">SAF-Berechtigung fehlt. Bitte gewähre Zugriff auf den gewählten Ordner.</string>
     <string name="saf_permission_missing_dialog_title">SAF-Berechtigung erforderlich</string>
-    <string name="saf_permission_missing_dialog_message_for_start_recording">Um Aufnahmen an einem benutzerdefinierten Ort zu speichern, benötigt FadCam die Berechtigung, auf den ausgewählten Ordner zuzugreifen. Bitte erteile den Zugriff, wenn du dazu aufgefordert wirst.</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">Um Aufnahmen an einem benutzerdefinierten Ort zu speichern, benötigt ServaCam die Berechtigung, auf den ausgewählten Ordner zuzugreifen. Bitte erteile den Zugriff, wenn du dazu aufgefordert wirst.</string>
     <string name="grant_permission_button">Berechtigung erteilen</string>
     <!-- Strings for Trash Auto-Delete Feature -->
     <plurals name="trash_auto_delete_info_days">
@@ -462,22 +462,22 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="audio_input_source_headphones_no_mic">Kopfhörer erkannt (kein Mikrofon)</string>
     <!-- Fix Start: Add onboarding toggle strings -->
     <string name="setting_onboarding_title">Onboarding beim nächsten Start anzeigen</string>
-    <string name="note_onboarding">Aktiviere dies, um die App-Einführung und die Berechtigungsanleitung beim nächsten Öffnen von FadCam zu sehen.</string>
+    <string name="note_onboarding">Aktiviere dies, um die App-Einführung und die Berechtigungsanleitung beim nächsten Öffnen von ServaCam zu sehen.</string>
     <!-- Fix End: Add onboarding toggle strings -->
 
     <string name="choose_language">Sprache auswählen</string>
     <string name="language_change_later_note">Du kannst dies später in den Einstellungen ändern.</string>
     <string name="permissions_required">Berechtigungen erforderlich</string>
-    <string name="permissions_description">FadCam benötigt Zugriff auf deine Kamera, dein Mikrofon und deinen Speicher, um Videos aufzunehmen und zu speichern.</string>
+    <string name="permissions_description">ServaCam benötigt Zugriff auf deine Kamera, dein Mikrofon und deinen Speicher, um Videos aufzunehmen und zu speichern.</string>
     <string name="grant_permissions">Berechtigungen erteilen</string>
     <string name="permissions_note">Du musst alle Berechtigungen erteilen, um fortzufahren.</string>
     <string name="permissions_granted">Alle Berechtigungen erteilt!</string>
     <string name="open_settings">Einstellungen öffnen</string>
     <string name="disable_battery_optimization">Akku-Optimierung deaktivieren</string>
     <string name="onboarding_human_title">Bestätige, dass du ein Mensch bist</string>
-    <string name="onboarding_human_desc">Hmmmm... also gut. Diese Regeln sind nicht verhandelbar. Wenn du nicht zustimmen kannst, deinstalliere FadCam bitte sofort.</string>
-    <string name="onboarding_human_checkbox1">Ich werde FadCam nicht benutzen, um Gesetze zu brechen, die Privatsphäre von irgendjemandem zu verletzen oder ein Spinner zu sein. Der Entwickler ist raus, wenn ich Mist baue. (Das geht auf meine Kappe.)</string>
-    <string name="onboarding_human_checkbox2">Ich liebe FadCam schon, bevor ich es überhaupt benutzt habe. (Nicht optional)</string>
+    <string name="onboarding_human_desc">Hmmmm... also gut. Diese Regeln sind nicht verhandelbar. Wenn du nicht zustimmen kannst, deinstalliere ServaCam bitte sofort.</string>
+    <string name="onboarding_human_checkbox1">Ich werde ServaCam nicht benutzen, um Gesetze zu brechen, die Privatsphäre von irgendjemandem zu verletzen oder ein Spinner zu sein. Der Entwickler ist raus, wenn ich Mist baue. (Das geht auf meine Kappe.)</string>
+    <string name="onboarding_human_checkbox2">Ich liebe ServaCam schon, bevor ich es überhaupt benutzt habe. (Nicht optional)</string>
     <string name="onboarding_human_button">Lass mich rein!</string>
     <string name="trash_select_all">Alle auswählen</string>
     <!-- Fix Start: Update location permission message -->
@@ -533,10 +533,10 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="app_icon_alternative" translatable="false">Kamera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">Sumud (صُمود)</string>
-    <string name="app_icon_pakistan" translatable="false">FadCam</string>
+    <string name="app_icon_pakistan" translatable="false">ServaCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor (FadCam ++)</string>
-    <string name="app_icon_bat" translatable="false">FadCam</string>
+    <string name="app_icon_noor" translatable="false">Noor (ServaCam ++)</string>
+    <string name="app_icon_bat" translatable="false">ServaCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notizen</string>
     <string name="app_icon_calculator" translatable="false">Rechner</string>
@@ -551,7 +551,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="changelog_label">Was ist neu</string>
     <!-- Fix Start: Add auto update check toggle strings -->
     <string name="setting_auto_update_check_title">Automatische Update-Prüfung beim Start</string>
-    <string name="note_auto_update_check">Wenn aktiviert, prüft FadCam bei jedem Öffnen der App auf Updates. Deaktiviere dies, um automatische Update-Prüfungen beim Start zu deaktivieren.\n(Standard: An)</string>
+    <string name="note_auto_update_check">Wenn aktiviert, prüft ServaCam bei jedem Öffnen der App auf Updates. Deaktiviere dies, um automatische Update-Prüfungen beim Start zu deaktivieren.\n(Standard: An)</string>
     <!-- Fix End: Add auto update check toggle strings -->
 
     <!-- Storage Location Settings -->
@@ -560,7 +560,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="storage_location_internal">Interner App-Speicher (Standard, Privat)</string>
     <string name="storage_location_custom">Benutzerdefinierter Ort (SD-Karte/Andere, Galerie sichtbar)</string>
     <string name="storage_location_choose_folder">Ordner auswählen</string>
-    <string name="storage_location_note">Hinweis: Die Verwendung von benutzerdefinierten Orten macht Videos für andere Apps zugänglich (z.B. Galerie). Interner Speicher hält sie für FadCam privat.</string>
+    <string name="storage_location_note">Hinweis: Die Verwendung von benutzerdefinierten Orten macht Videos für andere Apps zugänglich (z.B. Galerie). Interner Speicher hält sie für ServaCam privat.</string>
     <string name="storage_icon_description">Speicher-Symbol</string>
     <string name="location_icon_description">Standort-Symbol</string>
     <string name="location_embedding_icon_description">Symbol für Standorteinbettung</string>
@@ -626,13 +626,13 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <!-- Additional Notification Customization Strings -->
     <!-- Adding notification appearance strings -->
     <string name="setting_notification_appearance">Erscheinungsbild der Benachrichtigung</string>
-    <string name="note_notification_appearance">Passe das Erscheinungsbild der Aufnahmebenachrichtigung an\n(Standard: FadCam)</string>
+    <string name="note_notification_appearance">Passe das Erscheinungsbild der Aufnahmebenachrichtigung an\n(Standard: ServaCam)</string>
     <string name="hide_stop_button">Stopp-Taste ausblenden</string>
     <string name="note_hide_stop_button">Blende die Stopp-Taste in der Benachrichtigung aus\n(Standard: Deaktiviert)</string>
     <string name="notification_preview">Benachrichtigungsvorschau</string>
     <string name="notification_stop">STOPP</string>
     <string-array name="notification_appearance_options">
-        <item>FadCam (Standard)</item>
+        <item>ServaCam (Standard)</item>
         <item>Systemaktualisierung</item>
         <item>Herunterladen</item>
         <item>Synchronisierung</item>

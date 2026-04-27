@@ -273,7 +273,7 @@
                     android:textStyle="bold"
                     android:textColor="?attr/colorHeading" />
 
-                <com.fadcam.ui.AvatarToggleView
+                <com.servalabs.cam.ui.AvatarToggleView
                     android:id="@+id/streaming_toggle"
                     android:layout_width="52dp"
                     android:layout_height="52dp"
@@ -526,7 +526,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="2. Begin recording on FadCam"
+                    android:text="2. Begin recording on ServaCam"
                     android:textSize="13sp"
                     android:textColor="?attr/colorHeading"
                     android:layout_marginBottom="6dp" />

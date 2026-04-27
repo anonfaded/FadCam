@@ -1,4 +1,4 @@
-name: Build FadCam Pro Variants (Pre-built)
+name: Build Serva Cam Pro Variants (Pre-built)
 
 on:
   workflow_dispatch:
@@ -72,22 +72,22 @@ jobs:
           
       - name: Build summary
         run: |
-          echo "## ✅ FadCam Pro Variants Built Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Serva Cam Pro Variants Built Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Built Variants:**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 1. Notes Pro" >> $GITHUB_STEP_SUMMARY
-          echo "- Package ID: com.fadcam.pro.notes" >> $GITHUB_STEP_SUMMARY
+          echo "- Package ID: com.servalabs.cam.pro.notes" >> $GITHUB_STEP_SUMMARY
           echo "- App Name: Notes" >> $GITHUB_STEP_SUMMARY
           echo "- File: app-notesPro-arm64-v8a-release.apk" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 2. Calculator Pro" >> $GITHUB_STEP_SUMMARY
-          echo "- Package ID: com.fadcam.pro.calc" >> $GITHUB_STEP_SUMMARY
+          echo "- Package ID: com.servalabs.cam.pro.calc" >> $GITHUB_STEP_SUMMARY
           echo "- App Name: Calculator" >> $GITHUB_STEP_SUMMARY
           echo "- File: app-calcPro-arm64-v8a-release.apk" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 3. Weather Pro" >> $GITHUB_STEP_SUMMARY
-          echo "- Package ID: com.fadcam.pro.weather" >> $GITHUB_STEP_SUMMARY
+          echo "- Package ID: com.servalabs.cam.pro.weather" >> $GITHUB_STEP_SUMMARY
           echo "- App Name: Weather" >> $GITHUB_STEP_SUMMARY
           echo "- File: app-weatherPro-arm64-v8a-release.apk" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

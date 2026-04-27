@@ -1,11 +1,11 @@
 /**
- * ApiService - Unified HTTP API wrapper for FadCam Dashboard
+ * ApiService - Unified HTTP API wrapper for ServaCam Dashboard
  * 
  * Supports two modes (single source of truth):
  * - Local Mode: Calls phone's HTTP server directly (192.168.x.x)
  * - Cloud Mode: Calls relay server for status, commands go through relay queue
  * 
- * The mode is automatically detected based on FadCamRemote.isCloudMode()
+ * The mode is automatically detected based on ServaCamRemote.isCloudMode()
  * 
  * Architecture:
  * ┌─────────────────────────────────────────────────────────────────┐
@@ -26,7 +26,7 @@ class ApiService {
         this.relayBaseUrl = 'https://live.fadseclab.com:8443';
         this.statusCache = null;
         this.lastFetchTime = 0;
-        this.streamContext = null; // Set from FadCamRemote
+        this.streamContext = null; // Set from ServaCamRemote
     }
     
     // =========================================================================
@@ -38,9 +38,9 @@ class ApiService {
      * Cloud mode = accessed via web (fadseclab.com) with valid stream context
      */
     isCloudMode() {
-        return typeof FadCamRemote !== 'undefined' && 
-               typeof FadCamRemote.isCloudMode === 'function' && 
-               FadCamRemote.isCloudMode();
+        return typeof ServaCamRemote !== 'undefined' && 
+               typeof ServaCamRemote.isCloudMode === 'function' && 
+               ServaCamRemote.isCloudMode();
     }
     
     /**
@@ -51,7 +51,7 @@ class ApiService {
     }
     
     /**
-     * Set stream context (called from FadCamRemote after auth)
+     * Set stream context (called from ServaCamRemote after auth)
      * Commands in cloud mode are sent via HTTP relay (phone polls every 1.5s).
      */
     setStreamContext(ctx) {
@@ -102,11 +102,11 @@ class ApiService {
     }
     
     /**
-     * Get stream access token from FadCamRemote
+     * Get stream access token from ServaCamRemote
      */
     _getStreamToken() {
-        if (typeof FadCamRemote !== 'undefined' && typeof FadCamRemote.getStreamToken === 'function') {
-            return FadCamRemote.getStreamToken();
+        if (typeof ServaCamRemote !== 'undefined' && typeof ServaCamRemote.getStreamToken === 'function') {
+            return ServaCamRemote.getStreamToken();
         }
         return null;
     }
@@ -638,7 +638,7 @@ const apiService = new ApiService();
 
 /**
  * Initialize ApiService stream context
- * Called from FadCamRemote after successful auth
+ * Called from ServaCamRemote after successful auth
  */
 function initCloudApiService(streamContext) {
     apiService.setStreamContext(streamContext);

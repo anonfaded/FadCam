@@ -1,0 +1,270 @@
+package com.servalabs.cam.ui;
+
+import com.servalabs.cam.Log;
+import com.servalabs.cam.FLog;
+import android.app.Dialog;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+import java.util.ArrayList;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import com.servalabs.cam.ui.AvatarToggleView;
+import androidx.fragment.app.DialogFragment;
+import com.servalabs.cam.R;
+import com.servalabs.cam.SharedPreferencesManager;
+import com.servalabs.cam.ui.picker.OptionItem;
+import com.servalabs.cam.ui.picker.PickerBottomSheetFragment;
+import com.google.android.material.sidesheet.SideSheetDialog;
+
+/**
+ * HomeSidebarFragment
+ * Side overlay with settings-style grouped rows for Home options (tips, etc).
+ * Based on RecordsSidebarFragment pattern.
+ */
+public class HomeSidebarFragment extends DialogFragment {
+
+    private String resultKey = "home_sidebar_result";
+
+    public static HomeSidebarFragment newInstance() {
+        return new HomeSidebarFragment();
+    }
+
+    public void setResultKey(String key) {
+        this.resultKey = key;
+    }
+
+    @NonNull
+    @Override
+    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+        // Create a Material SideSheetDialog to host the sidebar content
+        SideSheetDialog dialog = new SideSheetDialog(requireContext());
+
+        // Make window background fully transparent so our gradient shape shows without gray corners
+        if (dialog.getWindow() != null) {
+            android.view.Window window = dialog.getWindow();
+            window.setBackgroundDrawable(
+                new android.graphics.drawable.ColorDrawable(
+                    android.graphics.Color.TRANSPARENT
+                )
+            );
+            // Remove decor view padding/insets that can cause gray strips
+            android.view.View decor = window.getDecorView();
+            if (decor instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) decor).setPadding(0, 0, 0, 0);
+                decor.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            }
+        }
+        
+        // Use setOnShowListener to clear any Material Components backgrounds after dialog is shown
+        dialog.setOnShowListener(d -> {
+            android.view.View container = dialog.findViewById(android.R.id.content);
+            if (container != null && container instanceof android.view.ViewGroup) {
+                android.view.ViewGroup group = (android.view.ViewGroup) container;
+                // Recursively clear backgrounds from all child views that Material added
+                clearMaterialBackgrounds(group);
+            }
+        });
+        
+        return dialog;
+    }
+    
+    private void clearMaterialBackgrounds(android.view.ViewGroup group) {
+        for (int i = 0; i < group.getChildCount(); i++) {
+            android.view.View child = group.getChildAt(i);
+            // Skip the actual content (ScrollView with our gradient drawable)
+            if (child.getId() != R.id.home_sidebar_root_scroll) {
+                child.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                if (child instanceof android.view.ViewGroup) {
+                    clearMaterialBackgrounds((android.view.ViewGroup) child);
+                }
+            }
+        }
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(
+        @NonNull LayoutInflater inflater,
+        @Nullable ViewGroup container,
+        @Nullable Bundle savedInstanceState
+    ) {
+        // Inflate the side sheet content (modal side sheet provided by Material components)
+        return inflater.inflate(
+            R.layout.fragment_home_sidebar,
+            container,
+            false
+        );
+    }
+
+    @Override
+    public void onViewCreated(
+        @NonNull View view,
+        @Nullable Bundle savedInstanceState
+    ) {
+        super.onViewCreated(view, savedInstanceState);
+
+        // Handle close button
+        ImageView closeButton = view.findViewById(R.id.home_sidebar_close_btn);
+        if (closeButton != null) {
+            closeButton.setOnClickListener(v -> dismiss());
+        }
+
+        // Tips row
+        View tipsRow = view.findViewById(R.id.row_tips);
+        if (tipsRow != null) {
+            tipsRow.setOnClickListener(v -> {
+                openTipsPicker();
+                dismiss();
+            });
+        }
+
+        // Preview control row - bind to existing layout elements and use centralized strings/prefs.
+        try {
+            final SharedPreferencesManager sp =
+                SharedPreferencesManager.getInstance(requireContext());
+
+            View previewRow = view.findViewById(R.id.row_preview_toggle);
+            if (previewRow != null) {
+                TextView tvTitle = previewRow.findViewById(R.id.tv_preview_toggle_title);
+                TextView tvSub   = previewRow.findViewById(R.id.tv_preview_toggle_sub);
+                AvatarToggleView swPreview = previewRow.findViewById(R.id.iv_preview_toggle);
+
+                if (tvTitle != null) tvTitle.setText(R.string.ui_preview_area);
+
+                boolean current = Boolean.TRUE.equals(sp.isPreviewEnabled());
+                if (tvSub != null) {
+                    tvSub.setText(current
+                        ? getString(R.string.setting_enabled_msg)
+                        : getString(R.string.setting_disabled_msg));
+                }
+                if (swPreview != null) {
+                    swPreview.setChecked(current);
+                    swPreview.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                        sp.setPreviewEnabled(isChecked);
+                        if (tvSub != null) {
+                            tvSub.setText(isChecked
+                                ? getString(R.string.setting_enabled_msg)
+                                : getString(R.string.setting_disabled_msg));
+                        }
+                        try {
+                            Bundle b = new Bundle();
+                            b.putBoolean("preview_enabled", isChecked);
+                            getParentFragmentManager().setFragmentResult(resultKey, b);
+                        } catch (Exception ignored) {}
+                    });
+                    previewRow.setOnClickListener(v -> swPreview.performClick());
+                }
+            }
+
+            View quickActionsRow = view.findViewById(R.id.row_preview_quick_actions_toggle);
+            if (quickActionsRow != null) {
+                TextView tvSub = quickActionsRow.findViewById(R.id.tv_preview_quick_actions_sub);
+                AvatarToggleView sw = quickActionsRow.findViewById(R.id.switch_preview_quick_actions_toggle);
+                if (sw != null) {
+                    boolean current = sp.isPreviewQuickActionsAlwaysVisible();
+                    sw.setChecked(current);
+                    if (tvSub != null) {
+                        tvSub.setText(current
+                            ? getString(R.string.preview_quick_actions_state_always)
+                            : getString(R.string.preview_quick_actions_state_recording_only));
+                    }
+                    sw.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                        sp.setPreviewQuickActionsAlwaysVisible(isChecked);
+                        if (tvSub != null) {
+                            tvSub.setText(isChecked
+                                ? getString(R.string.preview_quick_actions_state_always)
+                                : getString(R.string.preview_quick_actions_state_recording_only));
+                        }
+                        try {
+                            Bundle b = new Bundle();
+                            b.putBoolean("preview_quick_actions_always_visible", isChecked);
+                            getParentFragmentManager().setFragmentResult(resultKey, b);
+                        } catch (Exception ignored) {}
+                    });
+                    quickActionsRow.setOnClickListener(v -> sw.performClick());
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(
+                "HomeSidebar",
+                "Failed to bind preview control",
+                e
+            );
+        }
+
+        // Discord branding row
+        View discordRow = view.findViewById(R.id.row_discord_branding);
+        if (discordRow != null) {
+            discordRow.setOnClickListener(v -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://discord.gg/kvAZvdkuuN"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    FLog.w("HomeSidebar", "Failed to open Discord link", e);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // Set the sheet edge to START (left side) after the view is created
+        Dialog dialog = getDialog();
+        if (dialog instanceof SideSheetDialog) {
+            try {
+                ((SideSheetDialog) dialog).setSheetEdge(
+                    android.view.Gravity.START
+                );
+            } catch (Exception ignored) {
+                // Fallback if setSheetEdge fails
+            }
+        }
+
+        // Clear any default container backgrounds from the SideSheet host views to avoid gray edges around rounded corners
+        View root = getView();
+        if (root != null) {
+            View p = (View) root.getParent();
+            int guard = 0;
+            while (p != null && guard < 5) {
+                // climb a few levels safely
+                try {
+                    if (p.getBackground() != null) {
+                        p.setBackgroundColor(
+                            android.graphics.Color.TRANSPARENT
+                        );
+                    }
+                } catch (Exception ignored) {}
+                if (!(p.getParent() instanceof View)) break;
+                p = (View) p.getParent();
+                guard++;
+            }
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // AvatarToggleView handles its own animation cleanup via onDetachedFromWindow().
+    }
+
+    private void openTipsPicker() {
+        // Use the new TipsCarouselFragment for better tips display
+        TipsCarouselFragment tipsCarousel = TipsCarouselFragment.newInstance();
+        tipsCarousel.show(getParentFragmentManager(), "tips_carousel");
+    }
+
+    @Override
+    public int getTheme() {
+        return R.style.CustomSideSheetDialogTheme;
+    }
+
+}

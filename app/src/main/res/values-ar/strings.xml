@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="check_for_updates">التحقق من التحديثات</string>
-    <string name="fadsec_info">FadCam هو جزء من مجموعة أدوات FadSec. لمزيد من التفاصيل، يرجى النقر على زر "عرض الشيفرة المصدرية" أدناه</string>
+    <string name="fadsec_info">ServaCam هو جزء من مجموعة أدوات FadSec. لمزيد من التفاصيل، يرجى النقر على زر "عرض الشيفرة المصدرية" أدناه</string>
     <string name="app_description">\n    <![CDATA[
-    FadCam هو برنامج تسجيل فيديو مفتوح المصدر يركز على الخصوصية ولا يحتوي على إعلانات. يمكن الحصول على البرنامج من خلال روابط GitHub وREADME الرسمية.
+    ServaCam هو برنامج تسجيل فيديو مفتوح المصدر يركز على الخصوصية ولا يحتوي على إعلانات. يمكن الحصول على البرنامج من خلال روابط GitHub وREADME الرسمية.
     <br/><br/>
-    تم عرض FadCam في قنوات يوتيوب الشهيرة <font color="#cfbafd">HowToMen</font> و <font color="#cfbafd">Xtream Droid</font>، وتم ذكره أيضًا في أنظمة <font color="#cfbafd">GrapheneOS</font> و+55 من الأنظمة الأخرى المعروفة.
+    تم عرض ServaCam في قنوات يوتيوب الشهيرة <font color="#cfbafd">HowToMen</font> و <font color="#cfbafd">Xtream Droid</font>، وتم ذكره أيضًا في أنظمة <font color="#cfbafd">GrapheneOS</font> و+55 من الأنظمة الأخرى المعروفة.
     ]]>\n</string>
     <string name="view_source_code">عرض الشيفرة المصدرية</string>
     <string name="buy_me_a_coffee">اشترِ لي قهوة ☕</string>
@@ -83,13 +83,13 @@
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>إخلاء المسؤولية</item>
-        <item>هل يجمع FadCam بيانات المستخدمين؟</item>
-        <item>هل يحتوي FadCam على إعلانات؟</item>
-        <item>لماذا يطلب FadCam الوصول إلى بيانات الموقع؟</item>
-        <item>هل يتصل FadCam بالإنترنت؟</item>
+        <item>هل يجمع ServaCam بيانات المستخدمين؟</item>
+        <item>هل يحتوي ServaCam على إعلانات؟</item>
+        <item>لماذا يطلب ServaCam الوصول إلى بيانات الموقع؟</item>
+        <item>هل يتصل ServaCam بالإنترنت؟</item>
         <item>هل سيتم تخزين البيانات على خوادم خارجية؟</item>
         <item>ماذا يحدث بعد تسجيل الفيديو؟</item>
-        <item>هل يشارك FadCam بياناتي مع أطراف ثالثة؟</item>
+        <item>هل يشارك ServaCam بياناتي مع أطراف ثالثة؟</item>
         <item> </item>
         <item> </item>
         <item>أسئلة الاستخدام</item>
@@ -104,14 +104,14 @@
         <item> </item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-        <item>لا يدعم FadCam أي استخدام غير أخلاقي أو غير قانوني للبرنامج. تتعارض التصرفات مثل المراقبة غير المصرح بها أو انتهاك الخصوصية مع مبادئنا بشدة. لا يتحمل مؤلفو FadCam أي مسؤولية عن أي إساءة استخدام للبرنامج والنتائج التي تترتب عليها.</item>
-        <item>لا، FadCam لا يجمع أي بيانات للمستخدمين.</item>
-        <item>لا، FadCam خالٍ من الإعلانات.</item>
+        <item>لا يدعم ServaCam أي استخدام غير أخلاقي أو غير قانوني للبرنامج. تتعارض التصرفات مثل المراقبة غير المصرح بها أو انتهاك الخصوصية مع مبادئنا بشدة. لا يتحمل مؤلفو ServaCam أي مسؤولية عن أي إساءة استخدام للبرنامج والنتائج التي تترتب عليها.</item>
+        <item>لا، ServaCam لا يجمع أي بيانات للمستخدمين.</item>
+        <item>لا، ServaCam خالٍ من الإعلانات.</item>
         <item>لاستخدام وظيفة إضافة علامة مائية لبيانات الموقع.</item>
-        <item>لا، FadCam لا يتصل بالإنترنت.</item>
+        <item>لا، ServaCam لا يتصل بالإنترنت.</item>
         <item>لا، جميع البيانات تُخزن على جهازك.</item>
         <item>الفيديوهات التي تسجلها سيتم تخزينها فقط على هاتفك.</item>
-        <item>لا، FadCam لا يخزن أو يشارك أي معلومات.</item>
+        <item>لا، ServaCam لا يخزن أو يشارك أي معلومات.</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -125,20 +125,20 @@
         <item>انتقل إلى مستودع GitHub الرسمي لدينا للحصول على التحديثات.</item>
         <item> </item>
     </string-array>
-    <string name="dialog_welcome_title">مرحبًا بك في FadCam!</string>
+    <string name="dialog_welcome_title">مرحبًا بك في ServaCam!</string>
     <string name="note_under_dev">تنبيه هام: هذا البرنامج لا يزال في مرحلة التطوير. سيتم إضافة ميزات جديدة تدريجياً</string>
     <!-- removed: rencent_updates_title and upcoming_features_title (centralized changelog) -->
     <string name="stay_updated_title">ابقَ على اطلاع</string>
     <string name="button_readme_github">مستودع GitHub</string>
     <string name="community_title">انضم إلى المجتمع الرسمي:</string>
     <string name="discord_title">خادم Discord</string>
-    <string name="thankyou_msg">شكرًا لك على استخدام FadCam!</string>
+    <string name="thankyou_msg">شكرًا لك على استخدام ServaCam!</string>
     <string name="settings_title">الإعدادات</string>
     <string name="array_watermark_time_fadcam">الوقت و"Fadcam"</string>
     <string name="array_watermark_timeonly">الوقت فقط</string>
     <string name="array_watermark_nomark">بدون علامة مائية</string>
     <string name="toast_video_not_found">خطأ: لم يتم العثور على الفيديو</string>
-    <string name="toast_video_saved">تم حفظ الفيديو في مجلد FadCam داخل دليل التنزيلات</string>
+    <string name="toast_video_saved">تم حفظ الفيديو في مجلد ServaCam داخل دليل التنزيلات</string>
     <string name="toast_video_save_fail">فشل حفظ الفيديو</string>
     <string name="rename_video_title">إعادة تسمية الفيديو</string>
     <string name="toast_rename_name_empty">لا يمكن أن يكون الاسم فارغًا</string>
@@ -277,20 +277,20 @@
     <!-- Debug Settings -->
     <string name="setting_debug_title">تسجيل التصحيح</string>
     <string name="note_debug">تفعيل إنشاء ملف سجل التصحيح \n(الافتراضي: معطل)</string>
-    <string name="note_debug_extra">عند التفعيل، سيتم إنشاء ملف سجل تصحيح في مجلد التنزيلات/FadCam. يمكن أن يساعد ذلك في تشخيص مشاكل التطبيق.</string>
+    <string name="note_debug_extra">عند التفعيل، سيتم إنشاء ملف سجل تصحيح في مجلد التنزيلات/ServaCam. يمكن أن يساعد ذلك في تشخيص مشاكل التطبيق.</string>
     <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">عرض التوجيه عند التشغيل التالي</string>
-    <string name="note_onboarding">قم بالتفعيل لرؤية مقدمة التطبيق ودليل الأذونات في المرة القادمة التي تفتح فيها FadCam.</string>
+    <string name="note_onboarding">قم بالتفعيل لرؤية مقدمة التطبيق ودليل الأذونات في المرة القادمة التي تفتح فيها ServaCam.</string>
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">فحص التحديثات التلقائي عند بدء التشغيل</string>
-    <string name="note_auto_update_check">إذا كان مفعلاً، سيقوم FadCam بالتحقق من التحديثات في كل مرة تفتح فيها التطبيق. قم بإيقاف التشغيل لتعطيل فحص التحديثات التلقائي عند بدء التشغيل.\n(الافتراضي: مفعل)</string>
+    <string name="note_auto_update_check">إذا كان مفعلاً، سيقوم ServaCam بالتحقق من التحديثات في كل مرة تفتح فيها التطبيق. قم بإيقاف التشغيل لتعطيل فحص التحديثات التلقائي عند بدء التشغيل.\n(الافتراضي: مفعل)</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">موقع التخزين</string>
     <string name="storage_location_description">اختر مكان حفظ التسجيلات.</string>
     <string name="storage_location_internal">تخزين التطبيق الداخلي (افتراضي، خاص)</string>
     <string name="storage_location_custom">موقع مخصص (بطاقة SD/أخرى، مرئي في المعرض)</string>
     <string name="storage_location_choose_folder">اختيار المجلد</string>
-    <string name="storage_location_note">ملاحظة: استخدام مواقع مخصصة يجعل مقاطع الفيديو متاحة للتطبيقات الأخرى (مثل المعرض). التخزين الداخلي يبقيها خاصة بـ FadCam.</string>
+    <string name="storage_location_note">ملاحظة: استخدام مواقع مخصصة يجعل مقاطع الفيديو متاحة للتطبيقات الأخرى (مثل المعرض). التخزين الداخلي يبقيها خاصة بـ ServaCam.</string>
     <string name="storage_icon_description">أيقونة التخزين</string>
     <string name="location_icon_description">أيقونة الموقع</string>
     <string name="location_embedding_icon_description">أيقونة تضمين الموقع</string>
@@ -319,16 +319,16 @@
     <string name="onboarding_intro_line3">مصمم من أجلك — وليس للمعلنين.</string>
     <string name="language_change_later_note">يمكنك تغيير هذا لاحقًا في الإعدادات.</string>
     <string name="permissions_required">الأذونات المطلوبة</string>
-    <string name="permissions_description">تحتاج FadCam إلى الوصول إلى الكاميرا والميكروفون والتخزين لتسجيل وحفظ مقاطع الفيديو.</string>
+    <string name="permissions_description">تحتاج ServaCam إلى الوصول إلى الكاميرا والميكروفون والتخزين لتسجيل وحفظ مقاطع الفيديو.</string>
     <string name="grant_permissions">منح الأذونات</string>
     <string name="permissions_note">يجب عليك منح جميع الأذونات للمتابعة.</string>
     <string name="permissions_granted">تم منح جميع الأذونات!</string>
     <string name="open_settings">فتح الإعدادات</string>
     <string name="disable_battery_optimization">تعطيل تحسين البطارية</string>
     <string name="onboarding_human_title">تحقق إذا كنت إنسانًا</string>
-    <string name="onboarding_human_desc">هممم... حسنًا. هذه القواعد غير قابلة للتفاوض. إذا لم تتمكن من الموافقة، يرجى إلغاء تثبيت FadCam الآن.</string>
-    <string name="onboarding_human_checkbox1">لن أستخدم FadCam لخرق أي قوانين، أو انتهاك خصوصية أي شخص، أو أكون مزعجًا. المطور غير مسؤول إذا أخطأت. (هذا على عاتقي.)</string>
-    <string name="onboarding_human_checkbox2">أنا بالفعل أحب FadCam قبل حتى استخدامه. (غير اختياري)</string>
+    <string name="onboarding_human_desc">هممم... حسنًا. هذه القواعد غير قابلة للتفاوض. إذا لم تتمكن من الموافقة، يرجى إلغاء تثبيت ServaCam الآن.</string>
+    <string name="onboarding_human_checkbox1">لن أستخدم ServaCam لخرق أي قوانين، أو انتهاك خصوصية أي شخص، أو أكون مزعجًا. المطور غير مسؤول إذا أخطأت. (هذا على عاتقي.)</string>
+    <string name="onboarding_human_checkbox2">أنا بالفعل أحب ServaCam قبل حتى استخدامه. (غير اختياري)</string>
     <string name="onboarding_human_button">دعني أدخل!</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">ترتيب حسب</string>
@@ -341,8 +341,8 @@
     <!-- Remote Tab Strings -->
     <string name="remote_access_title">التحكم عن بعد</string>
     <string name="remote_toast_coming_soon">قريباً! إن شاء الله</string>
-    <string name="remote_coming_soon">التحكم عن بعد لتطبيق FadCam قادم قريباً.</string>
-    <string name="remote_feature_description">قم بإقران أجهزة FadCam باستخدام رمز QR للتحكم عن بعد الآمن عبر الشبكة المحلية: بدء/إيقاف التسجيل، المعاينة، التكبير، تبديل الكاميرا، والمزيد - كل ذلك مع تشفير من طرف إلى طرف.</string>
+    <string name="remote_coming_soon">التحكم عن بعد لتطبيق ServaCam قادم قريباً.</string>
+    <string name="remote_feature_description">قم بإقران أجهزة ServaCam باستخدام رمز QR للتحكم عن بعد الآمن عبر الشبكة المحلية: بدء/إيقاف التسجيل، المعاينة، التكبير، تبديل الكاميرا، والمزيد - كل ذلك مع تشفير من طرف إلى طرف.</string>
     <!-- Strings for TrashFragment -->
     <string name="trash_auto_deleted_toast">تم حذف %1$d عنصر قديم تلقائيًا.</string>
     <string name="trash_empty_toast_message">لا توجد عناصر للحذف.</string>
@@ -361,7 +361,7 @@
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">لم يتم تحديد أي عناصر.</string>
     <string name="trash_dialog_restore_title">استعادة المحدد؟</string>
-    <string name="trash_dialog_restore_message">استعادة %1$d عنصر إلى مجلد Downloads/FadCam/ العام؟</string>
+    <string name="trash_dialog_restore_message">استعادة %1$d عنصر إلى مجلد Downloads/ServaCam/ العام؟</string>
     <string name="trash_restore_success_toast">تم استعادة %1$d عنصر.</string>
     <string name="trash_restore_fail_toast">خطأ في استعادة العناصر. قد لا تكون بعض الملفات قد تمت استعادتها أو قد لا يتم تحديث المعرض. تحقق من أذونات التطبيق للتخزين.</string>
     <string name="trash_restore_cancelled_toast">تم إلغاء الاستعادة.</string>

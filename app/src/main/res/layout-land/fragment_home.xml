@@ -54,7 +54,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <com.fadcam.ui.ShimmerTextView 
+            <com.servalabs.cam.ui.ShimmerTextView 
                 android:id="@+id/btnGetPro"
                 android:layout_width="wrap_content"
                 android:layout_height="26dp"
@@ -95,7 +95,7 @@
     <!-- Left Panel: Stats and Info (Half Screen) -->
     <LinearLayout android:id="@+id/leftPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="6dp" android:layout_marginTop="4dp" android:layout_marginEnd="0dp" android:layout_marginBottom="0dp" android:background="@drawable/bg_home_card_rail_section" android:orientation="vertical" android:paddingStart="4dp" android:paddingTop="4dp" android:paddingEnd="4dp" android:paddingBottom="4dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/cardRailToggleLandscape" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
-        <!-- Mode Switcher (FadCam, FadRec, FadMic) - Compact for landscape -->
+        <!-- Mode Switcher (ServaCam, FadRec, FadMic) - Compact for landscape -->
         <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginBottom="0dp" />
 
         <!-- Scrollable content area (landscape-only):
@@ -131,14 +131,14 @@
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp">
 
                                 <FrameLayout android:layout_width="32dp" android:layout_height="28dp" android:layout_marginEnd="6dp">
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="#4CAF50" android:textSize="20sp" android:gravity="center" />
+                                    <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="#4CAF50" android:textSize="20sp" android:gravity="center" />
                                 </FrameLayout>
 
                                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
 
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Rear Camera" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" />
+                                    <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvCameraTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Rear Camera" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" />
 
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvCameraSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4K • 60fps" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
+                                    <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvCameraSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="4K • 60fps" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
                                 </LinearLayout>
 
                                 <ImageView android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
@@ -178,7 +178,7 @@
 
                                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
 
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1h 30m" android:textColor="#F44336" android:textSize="13sp" android:textStyle="bold" />
+                                    <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1h 30m" android:textColor="#F44336" android:textSize="13sp" android:textStyle="bold" />
 
                                     <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_time_left" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
                                 </LinearLayout>
@@ -214,17 +214,17 @@
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp">
 
                                 <FrameLayout android:layout_width="32dp" android:layout_height="28dp" android:layout_marginEnd="6dp">
-                                    <com.fadcam.ui.utils.StorageProgressRingView android:id="@+id/storageProgressRing" android:layout_width="22dp" android:layout_height="22dp" android:layout_gravity="center" android:contentDescription="Available space progress" />
+                                    <com.servalabs.cam.ui.utils.StorageProgressRingView android:id="@+id/storageProgressRing" android:layout_width="22dp" android:layout_height="22dp" android:layout_gravity="center" android:contentDescription="Available space progress" />
                                 </FrameLayout>
 
                                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
 
                                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                                        <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1.13 GB" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" />
+                                        <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1.13 GB" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" />
                                         <TextView android:id="@+id/tvSpaceTotal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="2dp" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
                                     </LinearLayout>
 
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/storage_available_space" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
+                                    <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvSpaceSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/storage_available_space" android:textColor="?attr/homeRailTextSecondary" android:textSize="11sp" />
                                 </LinearLayout>
 
                                 <ImageView android:layout_width="12dp" android:layout_height="12dp" android:layout_marginStart="2dp" android:src="@drawable/ic_arrow_right" android:tint="#555555" android:contentDescription="Open settings" />
@@ -306,7 +306,7 @@
                                 android:textStyle="bold" />
                             </LinearLayout>
 
-                            <com.fadcam.ui.utils.AnimatedTextView
+                            <com.servalabs.cam.ui.utils.AnimatedTextView
                                 android:id="@+id/tvElapsedTitle"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -323,7 +323,7 @@
                                 android:textSize="21sp"
                                 android:textStyle="bold" />
 
-                            <com.fadcam.ui.utils.ElapsedCompactAnimatedView
+                            <com.servalabs.cam.ui.utils.ElapsedCompactAnimatedView
                                 android:id="@+id/viewElapsedCompact"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -363,11 +363,11 @@
 
                             <LinearLayout android:id="@+id/layoutClockContent" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
 
-                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:textStyle="bold" android:layout_gravity="top" android:textColor="?attr/colorHeading" android:includeFontPadding="false" />
+                                <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:textStyle="bold" android:layout_gravity="top" android:textColor="?attr/colorHeading" android:includeFontPadding="false" />
 
-                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateEnglish" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" android:layout_gravity="left" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
+                                <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvDateEnglish" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="13sp" android:layout_gravity="left" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
 
-                                <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="wrap_content" android:layout_gravity="end" android:layout_height="wrap_content" android:textSize="13sp" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
+                                <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="wrap_content" android:layout_gravity="end" android:layout_height="wrap_content" android:textSize="13sp" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
                             </LinearLayout>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
@@ -382,11 +382,11 @@
                             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="4dp">
                                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
                                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_videos" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" android:layout_marginEnd="4dp" android:tag="preserve_color" />
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="?attr/homeRailTextSecondary" android:textSize="13sp" android:tag="preserve_color" />
+                                    <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvVideoCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="?attr/homeRailTextSecondary" android:textSize="13sp" android:tag="preserve_color" />
                                 </LinearLayout>
                                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="1dp">
                                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/stats_label_used" android:textColor="?attr/homeRailTextPrimary" android:textSize="13sp" android:textStyle="bold" android:layout_marginEnd="4dp" android:tag="preserve_color" />
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvVideoSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 B" android:textColor="?attr/homeRailTextSecondary" android:textSize="13sp" android:tag="preserve_color" />
+                                    <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvVideoSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0 B" android:textColor="?attr/homeRailTextSecondary" android:textSize="13sp" android:tag="preserve_color" />
                                 </LinearLayout>
                             </LinearLayout>
 
@@ -658,7 +658,7 @@
                 android:nextFocusUp="@+id/cardRailToggleLandscape"
                 android:nextFocusDown="@+id/buttonStartStop" />
 
-                <com.fadcam.ui.utils.AnimatedMaterialButton
+                <com.servalabs.cam.ui.utils.AnimatedMaterialButton
                     android:id="@+id/buttonStartStop"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

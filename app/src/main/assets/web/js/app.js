@@ -1,5 +1,5 @@
 /**
- * FadCam Web Dashboard
+ * ServaCam Web Dashboard
  * Main application bootstrap
  */
 
@@ -8,7 +8,7 @@ let dashboardViewModel = null;
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('[App] Initializing FadCam Web Dashboard...');
+    console.log('[App] Initializing ServaCam Web Dashboard...');
     
     // Initialize ViewModel
     dashboardViewModel = new DashboardViewModel();

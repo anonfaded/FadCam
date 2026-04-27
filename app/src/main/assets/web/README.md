@@ -1,6 +1,6 @@
-# FadCam Live Streaming Web Interface
+# ServaCam Live Streaming Web Interface
 
-This folder contains the web interface for FadCam's HLS live streaming feature.
+This folder contains the web interface for ServaCam's HLS live streaming feature.
 
 ## Files
 

@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>FadCam Remote</title>
+    <title>ServaCam Remote</title>
     <link rel="icon" type="image/png" href="assets/images/favicon.webp">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -41,9 +41,9 @@
             <span class="hamburger-line short-left"></span>
         </button>
         <h1>
-            <a id="headerLogoLink" href="https://id.fadseclab.com/lab" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;" title="FadCam Lab">
-                <img src="assets/images/favicon.webp" alt="FadCam" style="width: 28px; height: 28px; border-radius: 6px;">
-                FadCam Remote
+            <a id="headerLogoLink" href="https://id.fadseclab.com/lab" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;" title="ServaCam Lab">
+                <img src="assets/images/favicon.webp" alt="ServaCam" style="width: 28px; height: 28px; border-radius: 6px;">
+                ServaCam Remote
             </a>
         </h1>
         <!-- Header Actions (Notification + Profile) -->
@@ -475,11 +475,11 @@
             <!-- End Sidebar Scrollable Content -->
             </div>
 
-            <!-- FadCam Pro Premium Button -->
-            <button id="proButton" onclick="showProModal(); return false;" class="pro-shimmer-button" title="FadCam Pro - Premium Features">
+            <!-- ServaCam Pro Premium Button -->
+            <button id="proButton" onclick="showProModal(); return false;" class="pro-shimmer-button" title="ServaCam Pro - Premium Features">
                 <span class="pro-shimmer"></span>
                 <span class="pro-button-text">
-                    <i class="fas fa-crown" style="margin-right: 8px;"></i>FadCam Pro
+                    <i class="fas fa-crown" style="margin-right: 8px;"></i>ServaCam Pro
                 </span>
             </button>
 
@@ -493,7 +493,7 @@
                         <i class="fab fa-discord"></i>
                         <span>Discord</span>
                     </a>
-                    <a href="https://github.com/anonfaded/FadCam" target="_blank" title="GitHub Repository" class="footer-link">
+                    <a href="https://github.com/anonfaded/ServaCam" target="_blank" title="GitHub Repository" class="footer-link">
                         <i class="fab fa-github"></i>
                         <span>GitHub</span>
                     </a>
@@ -515,7 +515,7 @@
             <div class="video-container">
                 <!-- No autoplay - we call play() manually when stream is ready. This prevents MIME type errors on empty video -->
                 <video id="videoPlayer" playsinline muted controls></video>
-                <div class="video-overlay" id="videoOverlay" onclick="(function(){ const s = currentStatus; const cloud = typeof FadCamRemote !== 'undefined' && FadCamRemote.isCloudMode && FadCamRemote.isCloudMode(); const age = s?.lastRelayUploadMs > 0 ? (Date.now() - s.lastRelayUploadMs) : -1; const fresh = !cloud || age === -1 || age < 60000; if (s?.state === 'ready' && s?.isRecording && fresh) playStream(); else console.log('[Video] Stream not ready or relay stale'); })()">
+                <div class="video-overlay" id="videoOverlay" onclick="(function(){ const s = currentStatus; const cloud = typeof ServaCamRemote !== 'undefined' && ServaCamRemote.isCloudMode && ServaCamRemote.isCloudMode(); const age = s?.lastRelayUploadMs > 0 ? (Date.now() - s.lastRelayUploadMs) : -1; const fresh = !cloud || age === -1 || age < 60000; if (s?.state === 'ready' && s?.isRecording && fresh) playStream(); else console.log('[Video] Stream not ready or relay stale'); })()">
                     <div class="overlay-content">
                         <div class="overlay-icon" id="overlayIcon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -683,17 +683,17 @@
         </div>
     </div>
 
-    <!-- FadCam Pro Modal -->
+    <!-- ServaCam Pro Modal -->
     <div class="modal" id="proModal">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header" style="background: linear-gradient(135deg, #d4af37 0%, #c19a3a 100%); border-bottom: 2px solid #d4af37;">
-                <h2 style="color: #1a1a1a; display: flex; align-items: center; gap: 8px;"><i class="fas fa-crown"></i>FadCam Pro</h2>
+                <h2 style="color: #1a1a1a; display: flex; align-items: center; gap: 8px;"><i class="fas fa-crown"></i>ServaCam Pro</h2>
                 <button class="modal-close" onclick="hideProModal()" style="color: #1a1a1a;">✕</button>
             </div>
             <div class="modal-body" style="background: linear-gradient(180deg, #0d1117 0%, #161b22 100%); padding: 24px; max-height: 80vh; overflow-y: auto;">
                 <div style="text-align: center; margin-bottom: 24px;">
                     <div style="font-size: 48px; margin-bottom: 12px;"><i class="fas fa-star" style="color: #d4af37;"></i></div>
-                    <h3 style="font-size: 20px; font-weight: 700; color: #e6edf3; margin: 0 0 8px 0;">FadCam Pro</h3>
+                    <h3 style="font-size: 20px; font-weight: 700; color: #e6edf3; margin: 0 0 8px 0;">ServaCam Pro</h3>
                     <p style="color: #8b949e; margin: 0; font-size: 13px;">Premium features for complete discretion</p>
                 </div>
 
@@ -751,7 +751,7 @@
 
                 <!-- Alert messages -->
                 <div style="background: rgba(76, 175, 80, 0.1); border-left: 3px solid #4caf50; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-                    <p style="color: #4caf50; font-size: 12px; margin: 0; line-height: 1.5;"><i class="fas fa-gift" style="margin-right: 6px;"></i><strong>Early bird offer!</strong> FadCam Pro is currently free. Soon transitioning to paid access.</p>
+                    <p style="color: #4caf50; font-size: 12px; margin: 0; line-height: 1.5;"><i class="fas fa-gift" style="margin-right: 6px;"></i><strong>Early bird offer!</strong> ServaCam Pro is currently free. Soon transitioning to paid access.</p>
                 </div>
 
                 <div style="background: rgba(244, 67, 54, 0.1); border-left: 3px solid #f44336; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
@@ -759,11 +759,11 @@
                 </div>
 
                 <a href="https://www.patreon.com/posts/fadcam-pro-free-145013262" target="_blank" style="display: block; width: 100%; padding: 14px; background: linear-gradient(135deg, #d4af37 0%, #c19a3a 100%); color: #1a1a1a; text-align: center; border-radius: 12px; text-decoration: none; font-weight: 700; border: none; cursor: pointer; font-size: 14px; transition: all 200ms ease;">
-                    <i class="fas fa-crown" style="margin-right: 6px;"></i>Get FadCam Pro
+                    <i class="fas fa-crown" style="margin-right: 6px;"></i>Get ServaCam Pro
                 </a>
 
                 <p style="text-align: left; color: #6e7681; font-size: 11px; margin-top: 16px; margin-bottom: 0; line-height: 1.6;">
-                    FadCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing work. Upgrading to Pro (currently free) helps support development, and in return I'm able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)
+                    ServaCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing work. Upgrading to Pro (currently free) helps support development, and in return I'm able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)
                 </p>
             </div>
         </div>
@@ -1145,9 +1145,9 @@
     <script src="js/constants/NotificationConstants.js?v=2.5.0"></script>
     <script src="js/services/AuthService.js?v=2.5.0"></script>
     <!-- RealtimeCommandService REMOVED: Commands now use HTTP polling only -->
-    <!-- E2E Stream Encryption: must load before HlsService so FadCamFragLoader is ready -->
+    <!-- E2E Stream Encryption: must load before HlsService so ServaCamFragLoader is ready -->
     <script src="js/services/E2EKeyManager.js?v=1.0.0"></script>
-    <script src="js/services/FadCamFragLoader.js?v=1.0.0"></script>
+    <script src="js/services/ServaCamFragLoader.js?v=1.0.0"></script>
     <script src="js/services/ApiService.js?v=2.8.0"></script>
     <script src="js/services/HlsService.js?v=2.7.0"></script>
     <script src="js/services/FadexNotificationManager.js?v=2.5.0"></script>
@@ -3005,8 +3005,8 @@
             // Cloud mode: Use relay server URL
             // Local mode: Use phone's direct URL
             let streamUrl;
-            if (typeof FadCamRemote !== 'undefined' && FadCamRemote.isCloudMode && FadCamRemote.isCloudMode()) {
-                streamUrl = FadCamRemote.getRelayHlsUrl();
+            if (typeof ServaCamRemote !== 'undefined' && ServaCamRemote.isCloudMode && ServaCamRemote.isCloudMode()) {
+                streamUrl = ServaCamRemote.getRelayHlsUrl();
                 if (!streamUrl) {
                     console.error('[HlsService] Cloud mode but no relay HLS URL available');
                     hlsLoaded = false; // Reset so auto-play can retry on next poll
@@ -3019,9 +3019,9 @@
             }
             
             // Debug: Fetch manifest to see what's being served (cloud mode uses token in xhrSetup)
-            const _debugIsCloud = typeof FadCamRemote !== 'undefined' && FadCamRemote.isCloudMode && FadCamRemote.isCloudMode();
+            const _debugIsCloud = typeof ServaCamRemote !== 'undefined' && ServaCamRemote.isCloudMode && ServaCamRemote.isCloudMode();
             const debugUrl = _debugIsCloud
-                ? (() => { const t = FadCamRemote.getStreamToken(); return t ? `${streamUrl}?token=${encodeURIComponent(t)}` : streamUrl; })()
+                ? (() => { const t = ServaCamRemote.getStreamToken(); return t ? `${streamUrl}?token=${encodeURIComponent(t)}` : streamUrl; })()
                 : streamUrl;
             fetch(debugUrl)
                 .then(r => r.text())
@@ -3082,7 +3082,7 @@
         /**
          * Update controls disabled state based on server connectivity (Step 6.11.3.2)
          * When offline, gray out ALL interactive elements to prevent user confusion
-         * Footer buttons (API, FadCam Pro, social links) remain always enabled
+         * Footer buttons (API, ServaCam Pro, social links) remain always enabled
          * @param {boolean} disabled - Whether controls should be disabled
          */
         function updateControlsDisabledState(disabled) {
@@ -3414,7 +3414,7 @@
             // If no segment was uploaded in the last 60 seconds, the stream is stale/dead
             // (recording may have stopped or uploads failed) even if state=ready.
             // lastRelayUploadMs=0 means it's a new session that hasn't uploaded yet — allow through.
-            const isCloudStream = typeof FadCamRemote !== 'undefined' && FadCamRemote.isCloudMode && FadCamRemote.isCloudMode();
+            const isCloudStream = typeof ServaCamRemote !== 'undefined' && ServaCamRemote.isCloudMode && ServaCamRemote.isCloudMode();
             const relayAge = status.lastRelayUploadMs > 0 ? (Date.now() - status.lastRelayUploadMs) : -1;
             const isRelayFresh = !isCloudStream || relayAge === -1 || relayAge < 60000;
 
@@ -3572,7 +3572,7 @@
             serverLED.className = stalenessLedMap[stalenessState] || 'led-dot online';
             // Add tooltip showing age or helpful info when offline
             if (stalenessState === 'offline') {
-                serverLED.title = 'Server is offline. Start streaming from the Remote tab in FadCam app.';
+                serverLED.title = 'Server is offline. Start streaming from the Remote tab in ServaCam app.';
             } else {
                 serverLED.title = stalenessAge ? `Last update: ${stalenessAge}` : '';
             }
@@ -3582,7 +3582,7 @@
                 serverStatusLabel.textContent = textInfo.text;
                 serverStatusLabel.className = textInfo.class;
                 if (stalenessState === 'offline') {
-                    serverStatusLabel.title = 'Server is offline. Start streaming from the Remote tab in FadCam app.';
+                    serverStatusLabel.title = 'Server is offline. Start streaming from the Remote tab in ServaCam app.';
                 } else {
                     serverStatusLabel.title = stalenessAge ? `Last update: ${stalenessAge}` : '';
                 }
@@ -3896,12 +3896,12 @@
         function updateE2EFooterVisibility() {
             const footer = document.getElementById('e2eStreamFooter');
             if (!footer) return;
-            const isCloud = typeof FadCamRemote !== 'undefined' &&
-                            typeof FadCamRemote.isCloudMode === 'function' &&
-                            FadCamRemote.isCloudMode();
-            const hasE2E = typeof FadCamRemote !== 'undefined' &&
-                           typeof FadCamRemote.getE2EVerifyTag === 'function' &&
-                           !!FadCamRemote.getE2EVerifyTag();
+            const isCloud = typeof ServaCamRemote !== 'undefined' &&
+                            typeof ServaCamRemote.isCloudMode === 'function' &&
+                            ServaCamRemote.isCloudMode();
+            const hasE2E = typeof ServaCamRemote !== 'undefined' &&
+                           typeof ServaCamRemote.getE2EVerifyTag === 'function' &&
+                           !!ServaCamRemote.getE2EVerifyTag();
             footer.style.display = (isCloud && hasE2E) ? 'flex' : 'none';
         }
 
@@ -4311,7 +4311,7 @@
         }
 
         /**
-         * Show FadCam Pro modal
+         * Show ServaCam Pro modal
          */
         function showProModal() {
             document.getElementById('proModal').classList.add('visible');
@@ -5511,9 +5511,9 @@
          * Logout and clear session
          */
         async function logoutNow() {
-            const isCloud = typeof FadCamRemote !== 'undefined' &&
-                            typeof FadCamRemote.isCloudMode === 'function' &&
-                            FadCamRemote.isCloudMode();
+            const isCloud = typeof ServaCamRemote !== 'undefined' &&
+                            typeof ServaCamRemote.isCloudMode === 'function' &&
+                            ServaCamRemote.isCloudMode();
 
             // Close the profile dropdown before showing dialog
             document.getElementById('profileDropdown')?.classList.remove('visible');
@@ -5537,8 +5537,8 @@
                     }
                     showToast('🔒 Encryption key cleared — re-enter LabPass to resume', 3000);
                     // Re-show the unlock modal so the user can enter a different LabPass
-                    if (typeof FadCamRemote.showE2EUnlockModal === 'function') {
-                        FadCamRemote.showE2EUnlockModal();
+                    if (typeof ServaCamRemote.showE2EUnlockModal === 'function') {
+                        ServaCamRemote.showE2EUnlockModal();
                     }
                 } catch (error) {
                     console.error('[Auth] Failed to clear E2E key:', error);
@@ -5677,9 +5677,9 @@
                     e.stopPropagation();
 
                     // Update logout item label based on mode
-                    const isCloud = typeof FadCamRemote !== 'undefined' &&
-                                    typeof FadCamRemote.isCloudMode === 'function' &&
-                                    FadCamRemote.isCloudMode();
+                    const isCloud = typeof ServaCamRemote !== 'undefined' &&
+                                    typeof ServaCamRemote.isCloudMode === 'function' &&
+                                    ServaCamRemote.isCloudMode();
                     const logoutIcon  = document.getElementById('profileLogoutIcon');
                     const logoutLabel = document.getElementById('profileLogoutLabel');
                     const securityItem = document.getElementById('profileSecurityItem');
@@ -5743,7 +5743,7 @@
             <div class="lock-screen-icon">
                 <i class="fas fa-lock"></i>
             </div>
-            <h2>FadCam Remote Locked</h2>
+            <h2>ServaCam Remote Locked</h2>
             <p>Enter your password to unlock</p>
             <div class="lock-screen-form">
                 <input type="password" id="lockPassword" class="lock-password-input" placeholder="Password" autocomplete="current-password">
@@ -5755,7 +5755,7 @@
         </div>
     </div>
 
-    <!-- FadCam Remote Cloud Integration (only loads features on web access) -->
+    <!-- ServaCam Remote Cloud Integration (only loads features on web access) -->
     <script src="js/fadcam-remote.js?v=2.5.0"></script>
 </body>
 </html>

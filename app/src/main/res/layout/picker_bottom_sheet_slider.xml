@@ -108,7 +108,7 @@
                             android:textSize="16sp"
                             android:textAlignment="viewStart" />
 
-                        <com.fadcam.ui.AvatarToggleView
+                        <com.servalabs.cam.ui.AvatarToggleView
                             android:id="@+id/picker_switch"
                             android:layout_width="52dp"
                             android:layout_height="52dp"
@@ -141,7 +141,7 @@
 
                         <com.google.android.material.slider.Slider
                             android:id="@+id/picker_slider"
-                            style="@style/Widget.FadCam.BottomSheetSlider"
+                            style="@style/Widget.ServaCam.BottomSheetSlider"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"

@@ -322,7 +322,7 @@ class FadexNotificationManager {
             // Detect web/cloud access (fadseclab.com, localhost) vs local phone access (IP)
             // Uses isWebAccess() not isCloudMode() because notifications start polling before
             // stream auth completes (streamContext is still null during early polls)
-            const isCloud = window.FadCamRemote && window.FadCamRemote.isWebAccess && window.FadCamRemote.isWebAccess();
+            const isCloud = window.ServaCamRemote && window.ServaCamRemote.isWebAccess && window.ServaCamRemote.isWebAccess();
 
             let json;
 

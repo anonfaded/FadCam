@@ -61,7 +61,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- FadCam -->
+        <!-- ServaCam -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/mode_fadcam"
             android:layout_width="match_parent"
@@ -92,7 +92,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="FadCam"
+                    android:text="ServaCam"
                     android:textColor="@android:color/white"
                     android:textSize="13sp"/>
                 <TextView
@@ -107,13 +107,14 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- FadRec -->
+        <!-- FadRec (Hidden) -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/mode_fadrec"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:clickable="true"
             android:focusable="true"
+            android:visibility="gone"
             app:cardBackgroundColor="@android:color/transparent"
             app:cardCornerRadius="8dp"
             app:cardElevation="0dp"

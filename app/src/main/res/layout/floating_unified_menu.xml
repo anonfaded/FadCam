@@ -237,7 +237,7 @@
                     android:maxLines="2"
                     android:breakStrategy="balanced" />
 
-                <com.fadcam.ui.AvatarToggleView
+                <com.servalabs.cam.ui.AvatarToggleView
                     android:id="@+id/annotationSwitch"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
@@ -272,7 +272,7 @@
                     android:textSize="12sp"
                     android:textColor="#FFFFFF" />
 
-                <com.fadcam.ui.AvatarToggleView
+                <com.servalabs.cam.ui.AvatarToggleView
                     android:id="@+id/snapGuidesSwitch"
                     android:layout_width="48dp"
                     android:layout_height="48dp"

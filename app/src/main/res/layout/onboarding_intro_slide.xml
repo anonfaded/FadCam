@@ -14,7 +14,7 @@
         android:clipChildren="false"
         android:clipToPadding="false">
 
-        <com.fadcam.ui.IconRainView
+        <com.servalabs.cam.ui.IconRainView
             android:id="@+id/iconRainView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

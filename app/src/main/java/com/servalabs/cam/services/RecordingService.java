@@ -1,0 +1,6661 @@
+package com.servalabs.cam.services;
+
+import com.servalabs.cam.Log;
+import com.servalabs.cam.FLog;
+import android.Manifest;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.SurfaceTexture;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureRequest;
+import android.media.MediaRecorder;
+import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.ParcelFileDescriptor;
+import android.os.PowerManager.WakeLock;
+import android.os.SystemClock;
+import android.util.Size;
+import android.view.Surface;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.documentfile.provider.DocumentFile;
+
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.pm.ServiceInfo;
+
+import com.servalabs.cam.CameraType;
+import com.servalabs.cam.Constants;
+import com.servalabs.cam.MainActivity;
+import com.servalabs.cam.R;
+import com.servalabs.cam.RecordingState;
+import com.servalabs.cam.SharedPreferencesManager; // Use your manager
+import com.servalabs.cam.Utils;
+import com.servalabs.cam.VideoCodec;
+import com.servalabs.cam.ui.LocationHelper;
+import com.servalabs.cam.ui.GeotagHelper;
+import com.servalabs.cam.utils.PhotoStorageHelper;
+import com.servalabs.cam.utils.RecordingStoragePaths;
+import com.servalabs.cam.utils.RuntimeCompat;
+import com.servalabs.cam.utils.ServiceStartPolicy;
+import com.servalabs.cam.forensics.service.DigitalForensicsEventRecorder;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+// Add Intent import
+
+// Add Uri import
+// Import your Constants class
+// Add if needed
+// Add if needed
+
+import android.media.MediaRecorder.OnInfoListener;
+
+import org.osmdroid.util.GeoPoint;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+// Add to the beginning of the file
+import android.media.MediaMetadataRetriever;
+import android.graphics.BitmapFactory;
+
+import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession;
+import com.servalabs.cam.utils.DeviceHelper;
+import com.servalabs.cam.utils.camera.HighSpeedCaptureHelper;
+import com.servalabs.cam.utils.camera.vendor.SamsungFrameRateHelper;
+
+// Add import
+import com.servalabs.cam.opengl.GLRecordingPipeline;
+import com.servalabs.cam.opengl.WatermarkInfoProvider;
+
+import android.util.Range;
+import android.graphics.Rect;
+import android.hardware.camera2.params.MeteringRectangle;
+import android.hardware.camera2.CameraMetadata;
+import android.media.Image;
+import android.media.ImageReader;
+
+public class RecordingService extends Service {
+
+    private static final int NOTIFICATION_ID = 1;
+    private static final String CHANNEL_ID = "RecordingServiceChannel";
+    private static final String TAG = "RecordingService"; // Use standard Log TAG
+    private static final long FORENSICS_HEARTBEAT_INTERVAL_MS = 1600L;
+    private static volatile boolean isCameraResourceReleasing = false;
+    
+    private long lastStartAttemptTime = 0;
+    private static final long MIN_START_INTERVAL_MS = 2000; // 2 seconds minimum between starts
+
+    private CameraDevice cameraDevice;
+    private CameraCaptureSession captureSession;
+    private CaptureRequest.Builder captureRequestBuilder;
+    private CameraCharacteristics currentCameraCharacteristics;
+    private Surface previewSurface; // Surface from UI if preview enabled
+    private boolean previewSurfaceAdded = false; // Flag to track if preview surface was added to session
+
+    private LocationHelper locationHelper;
+    private LocationGeocoder locationGeocoder;
+    private GeotagHelper geotagHelper;
+    
+    // Location watermark update tracking - separate from main watermark update
+    private long lastLocationWatermarkUpdateMs = 0;
+    private String cachedLocationWatermarkText = "";
+
+    private RecordingState recordingState = RecordingState.NONE;
+    private boolean previewOnlyActive = false;
+    private boolean pendingPreviewOnlyStart = false;
+    private volatile boolean previewSessionConfigInFlight = false;
+    private AtomicInteger ffmpegProcessingTaskCount = new AtomicInteger(0);
+
+    private boolean isRecordingTorchEnabled = false;
+
+    private CameraManager cameraManager; // Primary camera manager
+    private Handler backgroundHandler; // For camera operations
+    private HandlerThread backgroundThread; // Background thread for camera operations
+
+    private long recordingStartTime;
+    private long pauseStartedAt;
+    private long accumulatedPausedDurationMs;
+
+    private SharedPreferencesManager sharedPreferencesManager; // Your settings manager
+
+    private boolean isRolloverClosingOldSession = false; // Flag to manage state during segment rollover when the old
+                                                         // session is closing
+
+    private WakeLock recordingWakeLock;
+
+    private boolean isCameraOpen = false;
+
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    // Cached notification large icon — decoded once and reused to avoid BitmapFactory on every build.
+    private android.graphics.Bitmap cachedNotificationIconBitmap = null;
+    private int cachedNotificationIconResId = -1;
+
+    private boolean pendingStartRecording = false;
+
+    private volatile boolean isStopping = false;
+
+    // Camera switch state management
+    private volatile boolean isSwitchingCamera = false;
+    private CameraType cameraSwitchPreviousType = null;
+    private long cameraSwitchStartTimeNanos = -1L;
+
+    // Gate first-start until preview surface is ready (to avoid first-run EGL race)
+    private boolean waitForPreviewBeforeStart = false;
+    private Runnable previewWaitTimeoutRunnable = null;
+
+    // Runtime camera control values that override saved preferences during active
+    // recording
+    private Integer runtimeExposureCompensation = null;
+    private Boolean runtimeAeLock = null;
+    private Integer runtimeAfMode = null;
+    private boolean pendingDeferredAeLockEnable = false;
+    private long aeLockConvergenceToken = 0L;
+    private boolean manualAeLockActive = false;
+    // Locks per-session output folder so split segments don't jump folders during camera switches.
+    private RecordingStoragePaths.CameraSource recordingSessionCameraSource = RecordingStoragePaths.CameraSource.BACK;
+    // Motion Lab (advanced, opt-in): sidecar analysis path. No control-flow impact unless explicitly wired later.
+    private boolean motionLabEnabledForSession = false;
+    private ImageReader motionAnalysisReader;
+    private long motionAnalysisIntervalMs = 333L; // ~3fps default
+    private long lastMotionAnalysisTimestampMs = 0L;
+    private volatile com.servalabs.cam.motion.domain.detector.MotionDetector motionDetector =
+            new com.servalabs.cam.motion.domain.detector.FrameDiffMotionDetector();
+    private volatile com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector efficientDetDetector;
+    private com.servalabs.cam.motion.domain.policy.MotionPolicy motionPolicy =
+            new com.servalabs.cam.motion.domain.policy.MotionPolicy();
+    private com.servalabs.cam.motion.domain.state.MotionStateMachine motionStateMachine;
+    private boolean motionAutoPaused = false;
+    private boolean motionSafeMode = false;
+    private int motionConsecutivePersonHits = 0;
+    private long motionFramesAnalyzed = 0L;
+    private long motionTriggerActionCount = 0L;
+    private long motionSuppressedSignalCount = 0L;
+    private float motionScoreEma = Float.NaN;
+    private long motionLastDebugBroadcastMs = 0L;
+    private long motionLastTelemetryLogMs = 0L;
+    private long motionPersonLikelyUntilMs = 0L;
+    private volatile boolean motionOpenCvActive = false;
+    private volatile boolean motionDetectorWarmupScheduled = false;
+    private volatile boolean motionDetectorWarmupCompleted = false;
+    private java.util.concurrent.ExecutorService motionDetectorWarmupExecutor;
+    private DigitalForensicsEventRecorder digitalForensicsEventRecorder;
+    private boolean motionLastPersonDetected = false;
+    private float motionLastPersonConfidence = 0f;
+    private float motionLastScore = 0f;
+    private float motionLastChangedArea = 0f;
+    private float motionLastStrongArea = 0f;
+    private float motionLastCenterX = 0.5f;
+    private float motionLastCenterY = 0.5f;
+    private float motionLastBoxWidth = 0.16f;
+    private float motionLastBoxHeight = 0.16f;
+    private String motionLastEventType = null;
+    private String motionLastClassName = null;
+    private float motionLastDetectionConfidence = 0f;
+    private boolean motionLastGlobalSuppressed = false;
+    private long motionLastForensicsHeartbeatMs = 0L;
+    private String motionLastOverlayPayload = null;
+    private long motionJpegAttemptCount = 0L;
+    private long motionJpegSuccessCount = 0L;
+    private long motionJpegSkipCount = 0L;
+    private long motionJpegEncodeTotalMs = 0L;
+    private long motionLastPerfLogMs = 0L;
+
+    // --- Lifecycle Methods ---
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        // Initialize essential components first
+        sharedPreferencesManager = SharedPreferencesManager.getInstance(getApplicationContext());
+
+        // Only initialize LocationHelper if location is explicitly enabled
+        if (sharedPreferencesManager != null && sharedPreferencesManager.isLocalisationEnabled()) {
+            locationHelper = new LocationHelper(this); // For watermark text
+            // Also initialize geocoder for reverse geocoding (non-blocking, cached)
+            // Uses Nominatim (free, open-source) - no API keys needed
+            locationGeocoder = new LocationGeocoder();
+        } else {
+            // location feature disabled
+        }
+
+        // Initialize GeotagHelper only if location embedding is enabled
+        if (sharedPreferencesManager != null && sharedPreferencesManager.isLocationEmbeddingEnabled()) {
+            try {
+                geotagHelper = new GeotagHelper(this); // For metadata embedding
+                boolean started = geotagHelper.startUpdates();
+            } catch (Exception e) {
+                FLog.e(TAG, "Error initializing GeotagHelper", e);
+            }
+        } else {
+            // location embedding disabled
+        }
+
+        createNotificationChannel(); // Setup notifications early
+
+        cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        if (cameraManager == null) {
+            FLog.e(TAG, "Failed to get CameraManager service.");
+            stopSelf(); // Cannot function without CameraManager
+            return;
+        }
+
+        backgroundThread = new HandlerThread("CameraBackground");
+        backgroundThread.start();
+        backgroundHandler = new Handler(backgroundThread.getLooper());
+        motionDetectorWarmupExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
+
+        // Initialize PowerManager and WakeLock
+        android.os.PowerManager powerManager = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+        recordingWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "ServaCam:RecordingService");
+        try {
+            digitalForensicsEventRecorder = new DigitalForensicsEventRecorder(getApplicationContext());
+        } catch (Exception e) {
+            FLog.w(TAG, "Digital forensics event recorder init failed", e);
+            digitalForensicsEventRecorder = null;
+        }
+
+        FLog.i(TAG, "Motion detectors deferred: service startup uses lazy background warmup only when Motion Lab is enabled");
+
+        // Broadcast initial camera resource availability
+        broadcastCameraResourceAvailability(true);
+    }
+
+    private void scheduleMotionDetectorWarmupIfNeeded() {
+        if (!motionLabEnabledForSession || motionDetectorWarmupCompleted || motionDetectorWarmupScheduled) {
+            return;
+        }
+        if (motionDetectorWarmupExecutor == null) {
+            FLog.w(TAG, "Motion detector warmup requested before executor was ready");
+            return;
+        }
+
+        motionDetectorWarmupScheduled = true;
+        motionDetectorWarmupExecutor.execute(() -> {
+            long startMs = SystemClock.elapsedRealtime();
+            FLog.i(TAG, "Motion detector warmup started off the recording hot path");
+
+            try {
+                if (efficientDetDetector == null) {
+                    try {
+                        com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector detector =
+                                new com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector(getApplicationContext());
+                        if (detector.isAvailable()) {
+                            efficientDetDetector = detector;
+                            FLog.i(TAG, "EfficientDet detector available: true");
+                        } else {
+                            FLog.w(TAG, "EfficientDet detector warmup completed but detector is unavailable");
+                        }
+                    } catch (Throwable t) {
+                        FLog.w(TAG, "EfficientDet warmup failed; continuing without AI detector", t);
+                    }
+                }
+
+                if (!motionOpenCvActive) {
+                    try {
+                        motionDetector = new com.servalabs.cam.motion.domain.detector.OpenCvMog2MotionDetector();
+                        motionOpenCvActive = true;
+                        FLog.i(TAG, "Motion detector backend: OpenCV MOG2");
+                    } catch (Throwable t) {
+                        motionDetector = new com.servalabs.cam.motion.domain.detector.FrameDiffMotionDetector();
+                        motionOpenCvActive = false;
+                        FLog.w(TAG, "OpenCV backend unavailable; keeping FrameDiffMotionDetector", t);
+                    }
+                }
+            } finally {
+                motionDetectorWarmupCompleted = true;
+                long elapsedMs = SystemClock.elapsedRealtime() - startMs;
+                FLog.i(TAG, "Motion detector warmup finished in " + elapsedMs
+                        + " ms, aiReady=" + (efficientDetDetector != null)
+                        + ", openCv=" + motionOpenCvActive);
+            }
+        });
+    }
+
+    // method(applyExposureCompensation)-----------
+    /**
+     * Apply exposure compensation index if supported by the camera.
+     * This will update the existing captureRequestBuilder and call
+     * setRepeatingRequest.
+     */
+    private void applyExposureCompensation(int evIndex) {
+        int clamped = evIndex;
+        if (currentCameraCharacteristics != null) {
+            Range<Integer> range = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+            if (range != null) {
+                // Persist the device's actual range so RemoteStreamManager can surface it
+                try {
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.setExposureCompensationRange(range.getLower(), range.getUpper());
+                    }
+                } catch (Exception ignored) {}
+                clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evIndex));
+            }
+            // Get and persist the EV step factor for web dashboard
+            try {
+                android.util.Rational stepRational = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+                if (stepRational != null && sharedPreferencesManager != null) {
+                    float stepFloat = stepRational.floatValue();
+                    sharedPreferencesManager.setExposureCompensationStep(stepFloat);
+                }
+            } catch (Exception ignored) {}
+        }
+        // Persist immediately so the next recording session always starts from the latest value.
+        // This also protects against stale saved EV when runtime overrides are cleared.
+        try {
+            if (sharedPreferencesManager != null) {
+                sharedPreferencesManager.setSavedExposureCompensation(clamped);
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null)
+            return;
+        final int clampedEv = clamped;
+
+        // Track runtime exposure compensation to override saved preferences
+        runtimeExposureCompensation = clampedEv;
+
+        // CRITICAL: Apply exposure through GL pipeline for immediate visual effect
+        // Convert EV index to actual EV stops for GL shader
+        float evStops = 0.0f;
+        try {
+            android.util.Rational stepRational = currentCameraCharacteristics
+                    .get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+            if (stepRational != null) {
+                evStops = clampedEv * stepRational.floatValue();
+            } else {
+                // Fallback: assume 1/3 EV step (common default)
+                evStops = clampedEv * 0.33f;
+            }
+        } catch (Exception e) {
+            evStops = clampedEv * 0.33f; // Safe fallback
+        }
+
+        // Apply exposure through GL pipeline for immediate visual effect in preview and
+        // recording
+        if (glRecordingPipeline != null) {
+            glRecordingPipeline.setExposureCompensation(evStops);
+            FLog.d(TAG,
+                    "Applied EV compensation through GL pipeline: index=" + clampedEv + " -> " + evStops + " EV stops");
+        }
+
+        try {
+            // CRITICAL: Ensure AE mode is ON for exposure compensation to work
+            // Many camera drivers ignore exposure compensation if AE mode is not explicitly
+            // set
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+
+            // If AE lock was enabled, changing exposure compensation may be ignored by the
+            // driver.
+            // Detect and temporarily clear AE lock so the AE algorithm can apply the
+            // compensation.
+            Boolean aeLockNow = captureRequestBuilder.get(CaptureRequest.CONTROL_AE_LOCK);
+            boolean hadAeLock = aeLockNow != null && aeLockNow;
+            if (hadAeLock) {
+                FLog.d(TAG, "applyExposureCompensation: AE lock was enabled; temporarily clearing to apply EV");
+                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+            }
+
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, clampedEv);
+            FLog.d(TAG, "applyExposureCompensation: setting EV index=" + clampedEv + " (hadAeLock=" + hadAeLock
+                    + ") with AE_MODE_ON");
+            // If we're in a constrained high-speed session, we must use setRepeatingBurst
+            try {
+                // AGGRESSIVE: Multiple attempts for stubborn camera drivers
+                // Some drivers need multiple capture/setRepeating calls to apply exposure
+                // compensation
+                for (int attempt = 0; attempt < 2; attempt++) {
+                    try {
+                        // Do a capture first to prime the driver with logging
+                        captureSession.capture(captureRequestBuilder.build(),
+                                new CameraCaptureSession.CaptureCallback() {
+                                    @Override
+                                    public void onCaptureCompleted(@NonNull CameraCaptureSession session,
+                                            @NonNull CaptureRequest request,
+                                            @NonNull android.hardware.camera2.TotalCaptureResult result) {
+                                        Integer appliedEv = result.get(
+                                                android.hardware.camera2.CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION);
+                                        Integer aeMode = result
+                                                .get(android.hardware.camera2.CaptureResult.CONTROL_AE_MODE);
+                                        FLog.d(TAG, "EV prime capture completed: Applied EV=" + appliedEv +
+                                                ", AE Mode=" + aeMode + ", Target EV=" + clampedEv);
+                                    }
+
+                                    @Override
+                                    public void onCaptureFailed(@NonNull CameraCaptureSession session,
+                                            @NonNull CaptureRequest request,
+                                            @NonNull android.hardware.camera2.CaptureFailure failure) {
+                                        FLog.w(TAG, "EV prime capture failed: " + failure.getReason());
+                                    }
+                                }, backgroundHandler);
+
+                        // Small delay to let the driver process the capture
+                        if (backgroundHandler != null) {
+                            backgroundHandler.post(() -> {
+                                try {
+                                    // Then update the repeating request
+                                    if (captureSession instanceof android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession) {
+                                        android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession hs = (android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession) captureSession;
+                                        java.util.List<android.hardware.camera2.CaptureRequest> highSpeedRequests = hs
+                                                .createHighSpeedRequestList(captureRequestBuilder.build());
+                                        hs.setRepeatingBurst(highSpeedRequests, null, backgroundHandler);
+                                        FLog.d(TAG, "Updated high-speed repeating burst with EV=" + clampedEv);
+                                    } else {
+                                        captureSession.setRepeatingRequest(captureRequestBuilder.build(), null,
+                                                backgroundHandler);
+                                        FLog.d(TAG, "Updated standard repeating request with EV=" + clampedEv);
+                                    }
+                                } catch (Exception e) {
+                                    FLog.d(TAG, "Delayed setRepeating failed: " + e.getMessage());
+                                }
+                            });
+                        }
+
+                        // If first attempt succeeded, break
+                        break;
+                    } catch (Exception attemptEx) {
+                        FLog.d(TAG, "applyExposureCompensation: attempt " + (attempt + 1) + " failed: "
+                                + attemptEx.getMessage());
+                        if (attempt == 0) {
+                            // Wait a bit before retry
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                            }
+                        }
+                    }
+                }
+            } catch (Exception outerEx) {
+                // Final fallback: simple setRepeatingRequest
+                try {
+                    captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                } catch (Exception fallbackEx) {
+                    FLog.d(TAG, "Even fallback setRepeating failed: " + fallbackEx.getMessage());
+                }
+            }
+            // Note: we intentionally do not re-enable AE lock here. Restoring it
+            // immediately can prevent the
+            // exposure compensation from taking effect on some devices. The AE lock tile
+            // controls AE lock explicitly.
+        } catch (Exception e) {
+            // Catch any remaining exceptions to avoid crashing the service
+            FLog.w(TAG, "applyExposureCompensation: Unexpected error: " + e.getMessage());
+        }
+    }
+    // method(applyExposureCompensation)-----------
+
+    /**
+     * Toggle AE lock during a running session.
+     */
+    private void applyAeLock(boolean lock) {
+        try {
+            if (sharedPreferencesManager != null) {
+                sharedPreferencesManager.setSavedAeLock(lock);
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null)
+            return;
+        Boolean aeLockSupported = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE);
+        if (aeLockSupported == null || !aeLockSupported)
+            return;
+
+        // Track runtime AE lock to override saved preferences
+        runtimeAeLock = lock;
+        aeLockConvergenceToken++;
+        final long lockToken = aeLockConvergenceToken;
+
+        try {
+            if (!lock) {
+                if (manualAeLockActive) {
+                    // Return to normal AE pipeline when manual lock is released.
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+                    captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                    manualAeLockActive = false;
+                    FLog.d(TAG, "applyAeLock(false): released manual AE lock and restored AE_MODE_ON");
+                } else {
+                    captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+                    captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                }
+                return;
+            }
+
+            if (lock) {
+                // Force EV convergence first, then lock AE. This avoids locking too early on
+                // fresh starts where AE has not yet converged to the requested compensation.
+                int evToUse = (runtimeExposureCompensation != null)
+                        ? runtimeExposureCompensation
+                        : (sharedPreferencesManager != null ? sharedPreferencesManager.getSavedExposureCompensation() : 0);
+                if (currentCameraCharacteristics != null) {
+                    Range<Integer> range = currentCameraCharacteristics
+                            .get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+                    if (range != null) {
+                        evToUse = Math.max(range.getLower(), Math.min(range.getUpper(), evToUse));
+                    }
+                }
+                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+                captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                applyExposureCompensation(evToUse);
+                FLog.d(TAG, "applyAeLock(true): refreshed EV while unlocked (index=" + evToUse
+                        + "), waiting for AE convergence + exposure stability");
+                attemptAeLockAfterConvergence(evToUse, 0, lockToken, -1L, -1, 0);
+                return;
+            }
+        } catch (CameraAccessException | IllegalStateException e) {
+            // ignore
+        }
+    }
+
+    private void attemptAeLockAfterConvergence(final int targetEv, final int attempt, final long token,
+            final long prevExposureNs, final int prevIso, final int stableCount) {
+        if (backgroundHandler == null || captureSession == null || captureRequestBuilder == null) {
+            return;
+        }
+        // Cancel stale convergence workflows.
+        if (token != aeLockConvergenceToken) {
+            return;
+        }
+        // Respect current user intent if lock was turned off mid-flight.
+        boolean shouldStillLock = (runtimeAeLock != null)
+                ? runtimeAeLock
+                : (sharedPreferencesManager != null && sharedPreferencesManager.isAeLockedSaved());
+        if (!shouldStillLock) {
+            return;
+        }
+
+        final int maxAttempts = 22; // ~2.6s at 120ms intervals
+        final int stableRequired = 4;
+        try {
+            captureSession.capture(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureCompleted(@NonNull CameraCaptureSession session,
+                        @NonNull CaptureRequest request,
+                        @NonNull android.hardware.camera2.TotalCaptureResult result) {
+                    if (token != aeLockConvergenceToken) {
+                        return;
+                    }
+                    Integer aeState = result.get(android.hardware.camera2.CaptureResult.CONTROL_AE_STATE);
+                    Integer appliedEv = result
+                            .get(android.hardware.camera2.CaptureResult.CONTROL_AE_EXPOSURE_COMPENSATION);
+                    Long exposureTimeNs = result.get(android.hardware.camera2.CaptureResult.SENSOR_EXPOSURE_TIME);
+                    Integer iso = result.get(android.hardware.camera2.CaptureResult.SENSOR_SENSITIVITY);
+                    boolean converged = aeState != null && (aeState == android.hardware.camera2.CaptureResult.CONTROL_AE_STATE_CONVERGED
+                            || aeState == android.hardware.camera2.CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED
+                            || aeState == android.hardware.camera2.CaptureResult.CONTROL_AE_STATE_LOCKED);
+                    boolean evMatched = appliedEv != null && appliedEv == targetEv;
+                    boolean frameStable = false;
+                    if (exposureTimeNs != null && iso != null && prevExposureNs > 0 && prevIso > 0) {
+                        double expDeltaRatio = Math.abs(exposureTimeNs - prevExposureNs)
+                                / (double) Math.max(1L, prevExposureNs);
+                        double isoDeltaRatio = Math.abs(iso - prevIso) / (double) Math.max(1, prevIso);
+                        frameStable = expDeltaRatio < 0.08d && isoDeltaRatio < 0.10d;
+                    }
+                    int nextStableCount = frameStable ? (stableCount + 1) : 0;
+
+                    if ((converged && evMatched && nextStableCount >= stableRequired) || attempt >= maxAttempts) {
+                        try {
+                            if (captureRequestBuilder == null || captureSession == null || token != aeLockConvergenceToken) {
+                                return;
+                            }
+                            boolean manualLocked = tryApplyManualExposureLock(exposureTimeNs, iso);
+                            if (!manualLocked) {
+                                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, true);
+                                captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                            }
+                            FLog.d(TAG, "applyAeLock(true): lock enabled after convergence check. mode="
+                                    + (manualLocked ? "manual_ae_off" : "ae_lock")
+                                    + ", attempt=" + attempt
+                                    + ", aeState=" + aeState + ", appliedEv=" + appliedEv
+                                    + ", stableCount=" + nextStableCount + ", exposureNs=" + exposureTimeNs
+                                    + ", iso=" + iso);
+                        } catch (Exception e) {
+                            FLog.w(TAG, "applyAeLock(true): failed to enable lock after convergence check", e);
+                        }
+                        return;
+                    }
+
+                    backgroundHandler.postDelayed(
+                            () -> attemptAeLockAfterConvergence(
+                                    targetEv,
+                                    attempt + 1,
+                                    token,
+                                    exposureTimeNs != null ? exposureTimeNs : prevExposureNs,
+                                    iso != null ? iso : prevIso,
+                                    nextStableCount),
+                            120);
+                }
+
+                @Override
+                public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request,
+                        @NonNull android.hardware.camera2.CaptureFailure failure) {
+                    if (token != aeLockConvergenceToken || backgroundHandler == null) {
+                        return;
+                    }
+                    if (attempt >= maxAttempts) {
+                        return;
+                    }
+                    backgroundHandler.postDelayed(
+                            () -> attemptAeLockAfterConvergence(targetEv, attempt + 1, token, prevExposureNs, prevIso,
+                                    stableCount),
+                            220);
+                }
+            }, backgroundHandler);
+        } catch (Exception e) {
+            if (attempt >= maxAttempts || backgroundHandler == null || token != aeLockConvergenceToken) {
+                return;
+            }
+            backgroundHandler.postDelayed(
+                    () -> attemptAeLockAfterConvergence(targetEv, attempt + 1, token, prevExposureNs, prevIso,
+                            stableCount),
+                    250);
+        }
+    }
+
+    /**
+     * Change AF mode (e.g., continuous video, off, etc.) when supported.
+     */
+    private void applyAfMode(int afMode) {
+        try {
+            if (sharedPreferencesManager != null) {
+                sharedPreferencesManager.setSavedAfMode(afMode);
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null)
+            return;
+        int[] modes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+        if (modes == null)
+            return;
+        boolean supported = false;
+        for (int m : modes)
+            if (m == afMode) {
+                supported = true;
+                break;
+            }
+        if (!supported)
+            return;
+
+        // Track runtime AF mode to override saved preferences
+        runtimeAfMode = afMode;
+
+        try {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, afMode);
+            // If switching to auto or continuous, ensure the AF trigger is reset
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_IDLE);
+            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+        } catch (CameraAccessException | IllegalStateException e) {
+            // ignore
+        }
+    }
+
+    /**
+     * Apply zoom ratio to the current capture session.
+     * Reads saved pan offsets so zoom + pan are always applied together.
+     * Also saves the zoom ratio to preferences for the current camera type.
+     */
+    private void applyZoomRatio(float zoomRatio) {
+        CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+        float panX = sharedPreferencesManager.getSpecificPanX(currentCamera);
+        float panY = sharedPreferencesManager.getSpecificPanY(currentCamera);
+        applyZoomAndPan(zoomRatio, panX, panY);
+    }
+
+    /**
+     * Apply zoom + 2-D pan to the capture session via SCALER_CROP_REGION.
+     * <p>
+     * Computes a crop rectangle that achieves the requested zoom ratio and
+     * offsets its centre by the normalised pan values (−1…+1 → full sensor
+     * edge in each direction, 0 = centre).
+     * <p>
+     * On API ≥ 30 CONTROL_ZOOM_RATIO is reset to 1.0 so that the crop region
+     * alone controls both zoom and pan without double-zooming.
+     *
+     * @param zoomRatio zoom magnification (≥ 1.0)
+     * @param panX      horizontal pan, −1.0 (left) … +1.0 (right), 0 = centre
+     * @param panY      vertical pan,   −1.0 (top)  … +1.0 (bottom), 0 = centre
+     */
+    private void applyZoomAndPan(float zoomRatio, float panX, float panY) {
+        FLog.d(TAG, "applyZoomAndPan: ratio=" + zoomRatio + " panX=" + panX + " panY=" + panY);
+
+        if (captureRequestBuilder == null || captureSession == null) {
+            FLog.w(TAG, "Cannot apply zoom/pan - capture session not ready");
+            return;
+        }
+
+        try {
+            android.util.Range<Float> zoomRatioRange = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && currentCameraCharacteristics != null) {
+                zoomRatioRange = currentCameraCharacteristics.get(
+                        android.hardware.camera2.CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE);
+            }
+
+            float minSupportedZoom = zoomRatioRange != null ? zoomRatioRange.getLower() : 1.0f;
+            float maxSupportedZoom = zoomRatioRange != null ? zoomRatioRange.getUpper() : Math.max(1.0f, zoomRatio);
+            float clampedZoom = Math.max(minSupportedZoom, Math.min(maxSupportedZoom, zoomRatio));
+            float clampedPanX = Math.max(-1.0f, Math.min(1.0f, panX));
+            float clampedPanY = Math.max(-1.0f, Math.min(1.0f, panY));
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && zoomRatioRange != null && clampedZoom < 1.0f) {
+                if (currentCameraCharacteristics != null) {
+                    android.graphics.Rect activeArray = currentCameraCharacteristics
+                            .get(android.hardware.camera2.CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+                    if (activeArray != null) {
+                        captureRequestBuilder.set(
+                                android.hardware.camera2.CaptureRequest.SCALER_CROP_REGION,
+                                activeArray);
+                    }
+                }
+
+                captureRequestBuilder.set(
+                        android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO,
+                        clampedZoom);
+                captureSession.setRepeatingRequest(
+                        captureRequestBuilder.build(), null, backgroundHandler);
+
+                CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+                sharedPreferencesManager.setSpecificZoomRatio(currentCamera, clampedZoom);
+                sharedPreferencesManager.setSpecificPan(currentCamera, 0.0f, 0.0f);
+                FLog.d(TAG, "applyZoomAndPan: CONTROL_ZOOM_RATIO ultra-wide ratio=" + clampedZoom);
+                return;
+            }
+
+            if (currentCameraCharacteristics != null) {
+                android.graphics.Rect activeArray = currentCameraCharacteristics
+                        .get(android.hardware.camera2.CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+                if (activeArray != null) {
+                    int sensorW = activeArray.width();
+                    int sensorH = activeArray.height();
+
+                    // Crop size that achieves the requested zoom
+                    int cropW = Math.round(sensorW / clampedZoom);
+                    int cropH = Math.round(sensorH / clampedZoom);
+
+                    // Maximum pan range from centre (so the crop stays inside the sensor)
+                    int maxOffX = (sensorW - cropW) / 2;
+                    int maxOffY = (sensorH - cropH) / 2;
+
+                    // Crop centre with pan offset
+                    int cx = activeArray.left + sensorW / 2 + Math.round(clampedPanX * maxOffX);
+                    int cy = activeArray.top  + sensorH / 2 + Math.round(clampedPanY * maxOffY);
+
+                    int cropLeft  = Math.max(activeArray.left,  cx - cropW / 2);
+                    int cropTop   = Math.max(activeArray.top,   cy - cropH / 2);
+                    int cropRight = Math.min(activeArray.right,  cropLeft + cropW);
+                    int cropBottom = Math.min(activeArray.bottom, cropTop  + cropH);
+
+                    android.graphics.Rect cropRegion = new android.graphics.Rect(
+                            cropLeft, cropTop, cropRight, cropBottom);
+                    captureRequestBuilder.set(
+                            android.hardware.camera2.CaptureRequest.SCALER_CROP_REGION, cropRegion);
+
+                    // On API ≥ 30 reset zoom ratio to 1 so crop is the sole zoom/pan mechanism
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        captureRequestBuilder.set(
+                                android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO, 1.0f);
+                    }
+
+                    captureSession.setRepeatingRequest(
+                            captureRequestBuilder.build(), null, backgroundHandler);
+
+                    // Persist both zoom and pan
+                    CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+                    sharedPreferencesManager.setSpecificZoomRatio(currentCamera, clampedZoom);
+                    sharedPreferencesManager.setSpecificPan(currentCamera, clampedPanX, clampedPanY);
+
+                    FLog.d(TAG, "applyZoomAndPan OK – crop=" + cropRegion + " zoom=" + clampedZoom);
+                    return;
+                }
+            }
+
+            // Fallback: API ≥ 30 zoom-ratio only (no pan), or warn for older APIs
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                captureRequestBuilder.set(
+                        android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO, clampedZoom);
+                captureSession.setRepeatingRequest(
+                        captureRequestBuilder.build(), null, backgroundHandler);
+                CameraType currentCamera = sharedPreferencesManager.getCameraSelection();
+                sharedPreferencesManager.setSpecificZoomRatio(currentCamera, clampedZoom);
+                FLog.d(TAG, "applyZoomAndPan: CONTROL_ZOOM_RATIO fallback (no sensor info) ratio=" + clampedZoom);
+            } else {
+                FLog.w(TAG, "applyZoomAndPan: no sensor characteristics available; zoom not applied");
+            }
+
+        } catch (android.hardware.camera2.CameraAccessException | IllegalStateException e) {
+            FLog.e(TAG, "applyZoomAndPan failed: " + e.getMessage());
+        }
+    }
+
+    private void applyFrontVideoMirror(boolean enabled) {
+        if (glRecordingPipeline == null) {
+            return;
+        }
+        glRecordingPipeline.setFrontVideoMirrorEnabled(enabled);
+        FLog.d(TAG, "Applied front video mirror=" + enabled + " to GL pipeline");
+    }
+
+    /**
+     * Perform a tap-to-focus at normalized preview coordinates (0..1).
+     * This method maps preview coordinates into sensor region space and issues AF
+     * regions + trigger.
+     */
+    private void performTapToFocus(float nx, float ny) {
+        FLog.d(TAG, "performTapToFocus called with normalized coords: " + nx + ", " + ny);
+
+        if (currentCameraCharacteristics == null || captureRequestBuilder == null || captureSession == null
+                || cameraDevice == null) {
+            FLog.w(TAG, "Cannot perform tap-to-focus: camera components not ready");
+            return;
+        }
+
+        // Metering regions require sensor coordinates. We'll map normalized preview
+        // coords to - if available - active array size.
+        Rect activeArray = currentCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        if (activeArray == null) {
+            FLog.w(TAG, "Cannot perform tap-to-focus: active array size not available");
+            return;
+        }
+
+        int x = activeArray.left + (int) (nx * activeArray.width());
+        int y = activeArray.top + (int) (ny * activeArray.height());
+
+        // Clamp coordinates to active array bounds before creating rectangle
+        // This prevents IllegalArgumentException when normalized coords go out of bounds (>1.0)
+        x = Math.max(activeArray.left, Math.min(activeArray.right, x));
+        y = Math.max(activeArray.top, Math.min(activeArray.bottom, y));
+
+        FLog.d(TAG, "Mapped to sensor coords: " + x + ", " + y + " (active array: " + activeArray + ")");
+
+        // Create a small region around the tap point
+        int half = Math.max(10, Math.min(activeArray.width(), activeArray.height()) / 20);
+        Rect area = new Rect(
+                Math.max(activeArray.left, x - half),
+                Math.max(activeArray.top, y - half),
+                Math.min(activeArray.right, x + half),
+                Math.min(activeArray.bottom, y + half));
+
+        MeteringRectangle mr = new MeteringRectangle(area, MeteringRectangle.METERING_WEIGHT_MAX - 1);
+        try {
+            // Store the current AF mode to restore it later
+            Integer currentAfMode = captureRequestBuilder.get(CaptureRequest.CONTROL_AF_MODE);
+
+            // Set focus and metering regions
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_REGIONS, new MeteringRectangle[] { mr });
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_REGIONS, new MeteringRectangle[] { mr });
+
+            // Always switch to AUTO mode for tap-to-focus, regardless of current mode
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START);
+
+            FLog.d(TAG, "Tap-to-focus triggered at normalized coords: " + nx + ", " + ny + " -> sensor coords: " + x
+                    + ", " + y);
+
+            captureSession.capture(captureRequestBuilder.build(), null, backgroundHandler);
+
+            // After a short delay, restore the previous AF mode (or use runtime/saved
+            // preferences)
+            if (backgroundHandler != null) {
+                backgroundHandler.postDelayed(() -> {
+                    try {
+                        // Restore AF mode: use runtime value if available, otherwise saved preference,
+                        // otherwise continuous
+                        int afModeToRestore = (runtimeAfMode != null) ? runtimeAfMode
+                                : (currentAfMode != null) ? currentAfMode
+                                        : CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+
+                        // Verify the mode is supported
+                        int[] supportedModes = currentCameraCharacteristics
+                                .get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+                        boolean isSupported = false;
+                        if (supportedModes != null) {
+                            for (int mode : supportedModes) {
+                                if (mode == afModeToRestore) {
+                                    isSupported = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (isSupported) {
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, afModeToRestore);
+                            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
+                                    CameraMetadata.CONTROL_AF_TRIGGER_IDLE);
+                            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                            FLog.d(TAG, "Restored AF mode to: " + afModeToRestore + " after tap-to-focus");
+                        }
+                    } catch (Exception e) {
+                        FLog.w(TAG, "Error restoring AF mode after tap-to-focus: " + e.getMessage());
+                    }
+                }, 1000); // 1 second delay to allow focus to complete
+            }
+        } catch (CameraAccessException | IllegalStateException e) {
+            // ignore
+        }
+    }
+
+    // --- onStartCommand (Ensure START action ignores processing state) ---
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent == null) {
+            FLog.d(TAG, "onStartCommand received null intent. Ensuring service stays alive.");
+            return START_STICKY;
+        }
+        String action = intent.getAction();
+        if (action == null) {
+            FLog.w(TAG, "onStartCommand: Action is null.");
+            return START_STICKY;
+        }
+        if ("ACTION_APP_BACKGROUND".equals(action)) {
+            FLog.d(TAG, "Received ACTION_APP_BACKGROUND: releasing preview EGL/GL resources");
+            if (glRecordingPipeline != null) {
+                try {
+                    glRecordingPipeline.releasePreviewResources(); // Only release preview EGL/GL
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error releasing preview EGL/GL on app background", e);
+                }
+            }
+            return START_STICKY;
+        } else if ("ACTION_APP_FOREGROUND".equals(action)) {
+            FLog.d(TAG, "Received ACTION_APP_FOREGROUND: re-initializing pipeline if recording in progress");
+            if (sharedPreferencesManager != null && sharedPreferencesManager.isRecordingInProgress()) {
+                // Defensive: only re-initialize if not already running
+                if (glRecordingPipeline == null) {
+                    // Recreate pipeline and surfaces (minimal, actual re-init logic may be more
+                    // complex)
+                    // You may want to trigger the same logic as when starting recording
+                    // For now, just log and rely on UI/fragment to trigger full re-init
+                    FLog.d(TAG, "App foregrounded and recording in progress, pipeline will be re-initialized by UI");
+                }
+            }
+            // Preview-only recovery path after external camera contention/background return.
+            if (previewOnlyActive && recordingState == RecordingState.NONE) {
+                if (previewSurface != null && previewSurface.isValid()) {
+                    FLog.d(TAG, "ACTION_APP_FOREGROUND: recovering preview-only camera session");
+                    ensurePreviewOnlyGlPipeline();
+                    if (cameraDevice == null) {
+                        openCamera();
+                    } else if (captureSession == null) {
+                        createCameraPreviewSession();
+                    }
+                } else {
+                    pendingPreviewOnlyStart = true;
+                    FLog.d(TAG, "ACTION_APP_FOREGROUND: preview-only active but surface missing, waiting for ACTION_CHANGE_SURFACE");
+                }
+            }
+            return START_STICKY;
+        }
+        if (Constants.INTENT_ACTION_START_PREVIEW_ONLY.equals(action)) {
+            CameraType selectedType = sharedPreferencesManager.getCameraSelection();
+            if (selectedType != null && selectedType.isDual()) {
+                FLog.w(TAG, "Preview-only mode is not supported for Dual PiP");
+                Toast.makeText(this, "Live preview is available only for Front/Back camera", Toast.LENGTH_SHORT).show();
+                return START_STICKY;
+            }
+            if (isWorkingInProgress()) {
+                FLog.d(TAG, "Ignoring preview-only start: recording already active");
+                return START_STICKY;
+            }
+            setupSurfaceTexture(intent);
+            if (previewSurface == null || !previewSurface.isValid()) {
+                pendingPreviewOnlyStart = true;
+                previewOnlyActive = false;
+                pendingStartRecording = false;
+                recordingState = RecordingState.NONE;
+                FLog.d(TAG, "Preview-only start deferred: preview surface not ready yet");
+                return START_STICKY;
+            }
+            pendingPreviewOnlyStart = false;
+            previewOnlyActive = true;
+            pendingStartRecording = false;
+            recordingState = RecordingState.NONE;
+            ensurePreviewOnlyGlPipeline();
+            openCamera();
+            broadcastOnPreviewOnlyStarted();
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_STOP_PREVIEW_ONLY.equals(action)) {
+            boolean wasPreviewOnlyActive = previewOnlyActive;
+            pendingPreviewOnlyStart = false;
+            stopPreviewOnlyMode();
+            if (!wasPreviewOnlyActive) {
+                // Idempotent stop: still notify UI to reconcile any stale local state.
+                broadcastOnPreviewOnlyStopped();
+                if (!isWorkingInProgress()) {
+                    stopSelf();
+                }
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_START_RECORDING.equals(action)) {
+            pendingPreviewOnlyStart = false;
+            if (previewOnlyActive) {
+                FLog.d(TAG, "Transitioning from preview-only to recording mode");
+                previewOnlyActive = false;
+                previewSessionConfigInFlight = false;
+                releasePreviewOnlyGlPipeline();
+                broadcastOnPreviewOnlyStopped();
+            }
+            
+            // STREAM ENFORCEMENT GATE: Validate and gate streaming mode
+            boolean streamingEnabled = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
+            String presetName = fadcamPrefs.getString("quality_preset", "HIGH");
+            int presetBitrate = fadcamPrefs.getInt("stream_bitrate", 5_000_000);
+            int presetFps = fadcamPrefs.getInt("stream_fps_cap", 30);
+            
+            if (streamingEnabled) {
+                FLog.i(TAG, "🔴 [STREAM MODE ENFORCED] Starting recording with streaming server ACTIVE");
+                FLog.i(TAG, "   Preset: " + presetName + " | Bitrate: " + (presetBitrate/1_000_000) + " Mbps | FPS cap: " + presetFps + "fps");
+                // Validate preset values were actually stored
+                if (presetBitrate <= 0 || presetFps <= 0) {
+                    FLog.e(TAG, "❌ INVALID STREAM PRESET - bitrate=" + presetBitrate + ", fps=" + presetFps);
+                    mainHandler.post(() -> Toast.makeText(getApplicationContext(), 
+                        "Stream preset invalid - check quality settings", Toast.LENGTH_SHORT).show());
+                    return START_STICKY;
+                }
+            } else {
+                FLog.i(TAG, "📺 [NORMAL RECORDING] Starting recording - streaming server OFF");
+            }
+            
+            // Check for rapid start attempts
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastStartAttemptTime < MIN_START_INTERVAL_MS) {
+                FLog.w(TAG, "START_RECORDING rejected - too rapid. Last attempt was " + 
+                      (currentTime - lastStartAttemptTime) + "ms ago");
+                mainHandler.post(() -> {
+                    Toast.makeText(getApplicationContext(),
+                            "Please wait before starting recording again",
+                            Toast.LENGTH_SHORT).show();
+                });
+                return START_STICKY;
+            }
+            lastStartAttemptTime = currentTime;
+            
+            // ----- Check for camera resource cooldown -----
+            // Check if camera resources are still being released
+            if (isCameraResourceReleasing) {
+                FLog.w(TAG, "START_RECORDING rejected - camera resources still being released");
+                // Show toast on UI thread
+                mainHandler.post(() -> {
+                    Toast.makeText(getApplicationContext(),
+                            R.string.camera_resources_cooldown,
+                            Toast.LENGTH_LONG).show();
+                });
+                // Don't stop the service yet as FFmpeg might still be running
+                return START_STICKY;
+            }
+
+            // Reset recording state if it's somehow corrupted or inconsistent
+            if (recordingState != RecordingState.NONE && cameraDevice == null) {
+                FLog.w(TAG,
+                        "Recording state inconsistency detected. Resetting state from " + recordingState + " to NONE.");
+                recordingState = RecordingState.NONE;
+                sharedPreferencesManager.setRecordingInProgress(false);
+            }
+            
+            // Additional safety check: if we're in STARTING state but no camera setup is pending,
+            // it means we got stuck in a previous rapid start attempt
+            if (recordingState == RecordingState.STARTING && !pendingStartRecording && cameraDevice == null) {
+                FLog.w(TAG, "Found stuck STARTING state with no pending operations. Resetting to NONE.");
+                recordingState = RecordingState.NONE;
+                sharedPreferencesManager.setRecordingInProgress(false);
+            }
+
+            // Only proceed if we're in NONE state
+            if (recordingState == RecordingState.NONE) {
+                // Update the UI and Service state atomically
+                recordingState = RecordingState.STARTING;
+                clearRecordingTimelineState();
+                sharedPreferencesManager.setRecordingInProgress(true);
+                CameraType selectedType = sharedPreferencesManager.getCameraSelection();
+                recordingSessionCameraSource = selectedType == CameraType.FRONT
+                        ? RecordingStoragePaths.CameraSource.FRONT
+                        : RecordingStoragePaths.CameraSource.BACK;
+                configureMotionLabForSession();
+
+                // Set initial torch state
+                isRecordingTorchEnabled = intent.getBooleanExtra(Constants.INTENT_EXTRA_INITIAL_TORCH_STATE, false);
+
+                // Set up preview surface if provided
+                setupSurfaceTexture(intent);
+
+                // run -----------
+                try {
+                    boolean previewEnabled = sharedPreferencesManager != null
+                            && sharedPreferencesManager.isPreviewEnabled();
+                    boolean hasValidPreview = (previewSurface != null && previewSurface.isValid());
+                    waitForPreviewBeforeStart = previewEnabled && !hasValidPreview;
+
+                    if (waitForPreviewBeforeStart) {
+                        // Install a short timeout to avoid getting stuck if preview never arrives
+                        if (previewWaitTimeoutRunnable != null) {
+                            try {
+                                mainHandler.removeCallbacks(previewWaitTimeoutRunnable);
+                            } catch (Throwable ignore) {
+                            }
+                        }
+                        previewWaitTimeoutRunnable = () -> {
+                            if (recordingState == RecordingState.STARTING) {
+                                FLog.w(TAG,
+                                        "Preview wait timeout reached; proceeding without preview to start recording safely");
+                                waitForPreviewBeforeStart = false;
+                                attemptStartRecordingIfReady();
+                            }
+                        };
+                        // Give TextureView a moment to initialize on cold start
+                        mainHandler.postDelayed(previewWaitTimeoutRunnable, 1500);
+                    }
+                } catch (Exception e) {
+                    FLog.w(TAG, "Error evaluating preview-wait condition; proceeding without wait", e);
+                    waitForPreviewBeforeStart = false;
+                }
+                // run -----------
+
+                // Start foreground service
+                setupRecordingInProgressNotification();
+
+                // Begin camera/recording setup
+                if (cameraDevice == null) {
+                    pendingStartRecording = true;
+                    openCamera();
+                } else {
+                    attemptStartRecordingIfReady();
+                }
+
+                // Notify UI that we're starting
+                broadcastOnRecordingStarted();
+
+                return START_STICKY;
+            } else {
+                // If we're not in NONE state, log a warning and notify the user
+                FLog.w(TAG, "Cannot start recording, already in state: " + recordingState);
+                Toast.makeText(this, getString(R.string.recording_already_active), Toast.LENGTH_SHORT).show();
+                return START_STICKY;
+            }
+        } else if (Constants.INTENT_ACTION_STOP_RECORDING.equals(action)) {
+            FLog.i(TAG, "dispatch stop_action_received via onStartCommand");
+            stopRecording();
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_PAUSE_RECORDING.equals(action)) {
+            pauseRecording();
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_RESUME_RECORDING.equals(action)) {
+            // Set up preview surface if provided (important when resuming)
+            setupSurfaceTexture(intent);
+            resumeRecording();
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SWITCH_CAMERA.equals(action)) {
+            // Handle live camera switch during recording
+            String newCameraTypeStr = intent.getStringExtra(Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH);
+            if (newCameraTypeStr != null) {
+                try {
+                    CameraType newCameraType = CameraType.valueOf(newCameraTypeStr);
+                    if (previewOnlyActive && recordingState == RecordingState.NONE) {
+                        switchCameraPreviewOnly(newCameraType);
+                    } else {
+                        switchCameraLive(newCameraType);
+                    }
+                } catch (IllegalArgumentException e) {
+                    FLog.e(TAG, "Invalid camera type in switch intent: " + newCameraTypeStr, e);
+                    broadcastOnCameraSwitchFailed("Invalid camera type", null);
+                }
+            } else {
+                FLog.e(TAG, "Camera switch intent missing " + Constants.INTENT_EXTRA_CAMERA_TYPE_SWITCH);
+                broadcastOnCameraSwitchFailed("Missing camera type parameter", null);
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_CHANGE_SURFACE.equals(action)) {
+            // Handle surface changes for preview
+            setupSurfaceTexture(intent);
+            if (pendingPreviewOnlyStart && previewSurface != null && previewSurface.isValid() && !isWorkingInProgress()) {
+                FLog.d(TAG, "Starting deferred preview-only mode after valid surface arrived");
+                pendingPreviewOnlyStart = false;
+                previewOnlyActive = true;
+                pendingStartRecording = false;
+                recordingState = RecordingState.NONE;
+                ensurePreviewOnlyGlPipeline();
+                openCamera();
+                broadcastOnPreviewOnlyStarted();
+            }
+            // NOTE: setupSurfaceTexture already calls glRecordingPipeline.setPreviewSurface()
+            // Do NOT call it again here to avoid double-debounce churn
+            // surface change when using GL path -----------
+            // If we're still in STARTING and were waiting for preview, attempt to start now
+            if (recordingState == RecordingState.STARTING && waitForPreviewBeforeStart && previewSurface != null
+                    && previewSurface.isValid()) {
+                attemptStartRecordingIfReady();
+            }
+            // Do NOT recreate camera session here for GL-based recording, as preview is
+            // rendered via EGL in renderer
+            // Reconfiguration during active recording may cause driver instability on first
+            // run
+            if (glRecordingPipeline == null && (isRecording() || isPaused() || previewOnlyActive)) {
+                // Avoid session churn in preview-only mode: if we already have an active
+                // capture session and a valid camera, keep the current repeating request.
+                if (previewOnlyActive && (previewSessionConfigInFlight || (captureSession != null && cameraDevice != null))) {
+                    FLog.d(TAG, "ACTION_CHANGE_SURFACE: preview-only session already active/in-flight; skipping session recreate");
+                } else {
+                    // Only reconfigure if we're not on GL path (legacy/fallback)
+                    createCameraPreviewSession();
+                }
+            }
+            // surface change when using GL path -----------
+            FLog.d(TAG,
+                    "ACTION_CHANGE_SURFACE handled: preview surface updated, camera session reconfigured if needed. No pipeline re-init.");
+            return START_STICKY;
+        } else if (Constants.BROADCAST_ON_RECORDING_STATE_REQUEST.equals(action)) {
+            // Handle UI state sync requests
+            FLog.d(TAG, "Responding to state request");
+            broadcastOnRecordingStateCallback();
+            if (!isWorkingInProgress()) {
+                stopSelf();
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_TOGGLE_RECORDING_TORCH.equals(action)) {
+            // Handle torch toggle requests
+            // If service was started via startForegroundService(), we MUST call startForeground()
+            // within 5 seconds to avoid crash
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isWorkingInProgress()) {
+                // Service is not recording, so start a minimal foreground notification
+                try {
+                    NotificationCompat.Builder minimalBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                            .setContentTitle(getString(R.string.app_name))
+                            .setContentText("Torch toggled")
+                            .setSmallIcon(R.drawable.ic_notification_icon);
+                    startForeground(NOTIFICATION_ID, minimalBuilder.build());
+                    // Stop the service immediately after torch toggle since we're not recording
+                    new Handler(Looper.getMainLooper()).postDelayed(this::stopSelf, 100);
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error starting foreground for torch toggle", e);
+                }
+            }
+            toggleRecordingTorch();
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_EXPOSURE_COMPENSATION.equals(action)) {
+            // Set exposure compensation index while recording
+            if (intent.hasExtra(Constants.EXTRA_EXPOSURE_COMPENSATION)) {
+                int ev = intent.getIntExtra(Constants.EXTRA_EXPOSURE_COMPENSATION, 0);
+                applyExposureCompensation(ev);
+            android.content.Intent exposureBroadcast = new android.content.Intent(
+                Constants.BROADCAST_ON_EXPOSURE_CHANGED);
+            exposureBroadcast.putExtra(
+                Constants.EXTRA_BROADCAST_EXPOSURE_COMPENSATION,
+                sharedPreferencesManager.getSavedExposureCompensation());
+            androidx.localbroadcastmanager.content.LocalBroadcastManager
+                .getInstance(this)
+                .sendBroadcast(exposureBroadcast);
+            com.servalabs.cam.streaming.RemoteStreamManager.getInstance().invalidateStatusCache();
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_TOGGLE_AE_LOCK.equals(action)) {
+            boolean lock = intent.getBooleanExtra(Constants.EXTRA_AE_LOCK, false);
+            applyAeLock(lock);
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_AF_MODE.equals(action)) {
+            if (intent.hasExtra(Constants.EXTRA_AF_MODE)) {
+                int afMode = intent.getIntExtra(Constants.EXTRA_AF_MODE,
+                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
+                applyAfMode(afMode);
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_TAP_TO_FOCUS.equals(action)) {
+            FLog.d(TAG, "Received TAP_TO_FOCUS intent");
+            if (intent.hasExtra(Constants.EXTRA_FOCUS_X) && intent.hasExtra(Constants.EXTRA_FOCUS_Y)) {
+                float nx = intent.getFloatExtra(Constants.EXTRA_FOCUS_X, 0.5f);
+                float ny = intent.getFloatExtra(Constants.EXTRA_FOCUS_Y, 0.5f);
+                FLog.d(TAG, "TAP_TO_FOCUS intent has coordinates: " + nx + ", " + ny);
+                performTapToFocus(nx, ny);
+            } else {
+                FLog.w(TAG, "TAP_TO_FOCUS intent missing coordinates");
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_ZOOM_RATIO.equals(action)) {
+            if (intent.hasExtra(Constants.EXTRA_ZOOM_RATIO)) {
+                float zoomRatio = intent.getFloatExtra(Constants.EXTRA_ZOOM_RATIO, 1.0f);
+                // Accept optional pan offsets; if absent, preserve the currently-saved pan
+                if (intent.hasExtra(Constants.EXTRA_PAN_X) || intent.hasExtra(Constants.EXTRA_PAN_Y)) {
+                    float panX = intent.getFloatExtra(Constants.EXTRA_PAN_X, 0.0f);
+                    float panY = intent.getFloatExtra(Constants.EXTRA_PAN_Y, 0.0f);
+                    applyZoomAndPan(zoomRatio, panX, panY);
+                    // Notify HomeFragment so pan overlay updates in real time
+                    android.content.Intent zoomBcast = new android.content.Intent(Constants.BROADCAST_ON_ZOOM_CHANGED);
+                    CameraType cam = sharedPreferencesManager.getCameraSelection();
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_ZOOM_RATIO, sharedPreferencesManager.getSpecificZoomRatio(cam));
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_X, sharedPreferencesManager.getSpecificPanX(cam));
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_Y, sharedPreferencesManager.getSpecificPanY(cam));
+                    androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(zoomBcast);
+                } else {
+                    applyZoomRatio(zoomRatio); // preserves saved pan internally
+                    // Notify HomeFragment; read effective pan from SharedPreferences
+                    CameraType cam = sharedPreferencesManager.getCameraSelection();
+                    float broadcastPanX = sharedPreferencesManager.getSpecificPanX(cam);
+                    float broadcastPanY = sharedPreferencesManager.getSpecificPanY(cam);
+                    android.content.Intent zoomBcast = new android.content.Intent(Constants.BROADCAST_ON_ZOOM_CHANGED);
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_ZOOM_RATIO, zoomRatio);
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_X, broadcastPanX);
+                    zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_Y, broadcastPanY);
+                    androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(zoomBcast);
+                }
+                com.servalabs.cam.streaming.RemoteStreamManager.getInstance().invalidateStatusCache();
+            }
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_FRONT_VIDEO_MIRROR.equals(action)) {
+            boolean enabled = intent.getBooleanExtra(
+                    Constants.EXTRA_FRONT_VIDEO_MIRROR_ENABLED,
+                    sharedPreferencesManager.isFrontVideoMirrorEnabled());
+            sharedPreferencesManager.setFrontVideoMirrorEnabled(enabled);
+            applyFrontVideoMirror(enabled);
+            // Notify HomeFragment so mirror button visual state updates
+            android.content.Intent mirrorBcast = new android.content.Intent(Constants.BROADCAST_ON_MIRROR_CHANGED);
+            mirrorBcast.putExtra(Constants.EXTRA_MIRROR_ENABLED, enabled);
+            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(mirrorBcast);
+            return START_STICKY;
+        } else if (Constants.INTENT_ACTION_CAPTURE_PHOTO.equals(action)) {
+            capturePhotoFromRecording();
+            return START_STICKY;
+        }
+
+        else if (Constants.INTENT_ACTION_REINITIALIZE_LOCATION.equals(action)) {
+            // Handle request to reinitialize location helpers after settings change
+            FLog.d(TAG, "Handling REINITIALIZE_LOCATION intent");
+
+            // Extract the embedding preference directly from intent if available
+            boolean forceInit = intent.getBooleanExtra("force_init", false);
+            boolean embedLocationFromIntent = intent.getBooleanExtra("embed_location", false);
+            boolean hasLocationPermission = intent.getBooleanExtra("has_permission", false);
+
+            // Log the values for debugging
+            FLog.d(TAG, "Location intent extras:");
+            FLog.d(TAG, "  - force_init: " + forceInit);
+            FLog.d(TAG, "  - embed_location: " + embedLocationFromIntent);
+            FLog.d(TAG, "  - has_permission: " + hasLocationPermission);
+
+            // If embed_location is true but permission is not granted, log warning
+            if (embedLocationFromIntent && !hasLocationPermission) {
+                FLog.w(TAG, "Warning: Location embedding requested but permission is not granted");
+                // Don't override preference in this case - let the UI control it
+            }
+            // If intent explicitly specifies the embed_location value, use it to force
+            // override the preference
+            else if (intent.hasExtra("embed_location")) {
+                FLog.d(TAG, "Intent explicitly specifies embed_location=" + embedLocationFromIntent);
+
+                // Force the preference to match what was sent in the intent
+                if (sharedPreferencesManager.isLocationEmbeddingEnabled() != embedLocationFromIntent) {
+                    FLog.d(TAG, "Updating preferences to match intent value");
+                    sharedPreferencesManager.sharedPreferences.edit()
+                            .putBoolean(Constants.PREF_EMBED_LOCATION_DATA, embedLocationFromIntent)
+                            .apply();
+                }
+            }
+
+            // Now reinitialize with potential updated preferences
+            reinitializeLocationHelpers(forceInit);
+            return START_STICKY;
+        }
+
+        else {
+            FLog.w(TAG, "Unknown action received: " + action);
+            if (!isWorkingInProgress())
+                stopSelf();
+            return START_NOT_STICKY;
+        }
+    }
+
+    private void capturePhotoFromRecording() {
+        boolean canCaptureFromSession =
+                recordingState == RecordingState.IN_PROGRESS
+                        || recordingState == RecordingState.PAUSED
+                        || (previewOnlyActive && recordingState == RecordingState.NONE);
+        if (glRecordingPipeline == null || !canCaptureFromSession) {
+            mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                    R.string.photo_capture_preview_unavailable, Toast.LENGTH_SHORT).show());
+            return;
+        }
+        glRecordingPipeline.capturePhotoFrame(bitmap -> {
+            if (bitmap == null) {
+                mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                        R.string.photo_capture_failed, Toast.LENGTH_SHORT).show());
+                return;
+            }
+            if (backgroundHandler == null) {
+                bitmap.recycle();
+                return;
+            }
+            backgroundHandler.post(() -> {
+                CameraType selected = sharedPreferencesManager != null
+                        ? sharedPreferencesManager.getCameraSelection()
+                        : CameraType.BACK;
+                PhotoStorageHelper.ShotSource shotSource = selected == CameraType.FRONT
+                        ? PhotoStorageHelper.ShotSource.SELFIE
+                        : PhotoStorageHelper.ShotSource.BACK;
+                Bitmap bitmapForSave = bitmap;
+                if (previewOnlyActive && recordingState == RecordingState.NONE) {
+                    Bitmap normalized = normalizePreviewOnlyShotBitmap(bitmapForSave);
+                    if (normalized != null && normalized != bitmapForSave) {
+                        bitmapForSave.recycle();
+                        bitmapForSave = normalized;
+                    }
+                    Bitmap cropped = cropVerticalLetterbox(bitmapForSave);
+                    if (cropped != null && cropped != bitmapForSave) {
+                        bitmapForSave.recycle();
+                        bitmapForSave = cropped;
+                    }
+                }
+                Uri savedUri = PhotoStorageHelper.saveJpegBitmap(
+                        getApplicationContext(),
+                        bitmapForSave,
+                        true,
+                        shotSource);
+                bitmapForSave.recycle();
+                if (savedUri != null) {
+                    Intent updateIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+                    updateIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
+                    updateIntent.putExtra(Constants.EXTRA_RECORDING_URI_STRING, savedUri.toString());
+                    sendBroadcast(updateIntent);
+                    mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                            R.string.photo_capture_saved, Toast.LENGTH_SHORT).show());
+                } else {
+                    mainHandler.post(() -> Toast.makeText(getApplicationContext(),
+                            R.string.photo_capture_failed, Toast.LENGTH_SHORT).show());
+                }
+            });
+        });
+    }
+
+    @Nullable
+    private Bitmap normalizePreviewOnlyShotBitmap(@NonNull Bitmap source) {
+        try {
+            Size target = sharedPreferencesManager != null
+                    ? sharedPreferencesManager.getCameraResolution()
+                    : null;
+            int targetW = target != null ? target.getWidth() : 1080;
+            int targetH = target != null ? target.getHeight() : 1920;
+            String orientation = sharedPreferencesManager != null
+                    ? sharedPreferencesManager.getVideoOrientation()
+                    : SharedPreferencesManager.ORIENTATION_PORTRAIT;
+            boolean portrait = SharedPreferencesManager.ORIENTATION_PORTRAIT.equalsIgnoreCase(orientation);
+            if (portrait && targetW > targetH) {
+                int tmp = targetW;
+                targetW = targetH;
+                targetH = tmp;
+            } else if (!portrait && targetH > targetW) {
+                int tmp = targetW;
+                targetW = targetH;
+                targetH = tmp;
+            }
+            int srcW = source.getWidth();
+            int srcH = source.getHeight();
+            if (srcW <= 0 || srcH <= 0 || targetW <= 0 || targetH <= 0) {
+                return source;
+            }
+            float scale = Math.max(targetW / (float) srcW, targetH / (float) srcH);
+            int scaledW = Math.max(1, Math.round(srcW * scale));
+            int scaledH = Math.max(1, Math.round(srcH * scale));
+            Bitmap scaled = (scaledW == srcW && scaledH == srcH)
+                    ? source
+                    : Bitmap.createScaledBitmap(source, scaledW, scaledH, true);
+            int x = Math.max(0, (scaledW - targetW) / 2);
+            int y = Math.max(0, (scaledH - targetH) / 2);
+            int cropW = Math.min(targetW, scaledW);
+            int cropH = Math.min(targetH, scaledH);
+            Bitmap out = Bitmap.createBitmap(scaled, x, y, cropW, cropH);
+            if (scaled != source && scaled != out) {
+                scaled.recycle();
+            }
+            return out;
+        } catch (Exception e) {
+            FLog.w(TAG, "normalizePreviewOnlyShotBitmap failed", e);
+            return source;
+        }
+    }
+
+    @Nullable
+    private Bitmap cropVerticalLetterbox(@NonNull Bitmap source) {
+        try {
+            int width = source.getWidth();
+            int height = source.getHeight();
+            if (width < 4 || height < 4) {
+                return source;
+            }
+            int top = 0;
+            int bottom = height - 1;
+            while (top < height - 2 && isRowMostlyBlack(source, top, width)) {
+                top++;
+            }
+            while (bottom > top + 1 && isRowMostlyBlack(source, bottom, width)) {
+                bottom--;
+            }
+            int croppedHeight = bottom - top + 1;
+            if (top <= 1 && bottom >= height - 2) {
+                return source;
+            }
+            if (croppedHeight < height / 2) {
+                // Avoid aggressive crop if detection is uncertain.
+                return source;
+            }
+            return Bitmap.createBitmap(source, 0, top, width, croppedHeight);
+        } catch (Exception e) {
+            FLog.w(TAG, "cropVerticalLetterbox failed", e);
+            return source;
+        }
+    }
+
+    private boolean isRowMostlyBlack(@NonNull Bitmap bitmap, int y, int width) {
+        int step = Math.max(1, width / 64);
+        int samples = 0;
+        int dark = 0;
+        for (int x = 0; x < width; x += step) {
+            int p = bitmap.getPixel(x, y);
+            int r = (p >> 16) & 0xff;
+            int g = (p >> 8) & 0xff;
+            int b = p & 0xff;
+            int luma = (r * 299 + g * 587 + b * 114) / 1000;
+            if (luma < 14) {
+                dark++;
+            }
+            samples++;
+        }
+        return samples > 0 && dark >= (samples * 0.94f);
+    }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null; // Not a bound service
+    }
+
+    @Override
+    public void onDestroy() {
+        FLog.d(TAG, "onDestroy: Service being destroyed...");
+
+        // Stop any active reconnection attempts
+        stopReconnectionAttempts();
+
+        // Make sure dummy surface is released
+        releaseDummyBackgroundSurface();
+
+        // Ensure all location services are properly stopped
+        if (geotagHelper != null) {
+            try {
+                geotagHelper.stopUpdates();
+                FLog.d(TAG, "GeotagHelper: Stopped location updates");
+            } catch (Exception e) {
+                FLog.e(TAG, "Error stopping GeotagHelper updates", e);
+            }
+        }
+
+        if (locationHelper != null) {
+            try {
+                locationHelper.stopLocationUpdates();
+                FLog.d(TAG, "LocationHelper: Stopped location updates for watermarking");
+            } catch (Exception e) {
+                FLog.e(TAG, "Error stopping LocationHelper updates", e);
+            }
+        }
+
+        if (locationGeocoder != null) {
+            try {
+                locationGeocoder.shutdown();
+                FLog.d(TAG, "LocationGeocoder: Shutdown geocoding service");
+            } catch (Exception e) {
+                FLog.e(TAG, "Error shutting down LocationGeocoder", e);
+            }
+        }
+
+        // Force recording to stop if somehow it's still active
+        if (recordingState != RecordingState.NONE) {
+            FLog.w(TAG, "Service being destroyed while recording is active. Forcing stop.");
+            try {
+                stopRecording();
+            } catch (Exception e) {
+                FLog.e(TAG, "Error stopping recording during service destruction", e);
+            }
+        }
+
+        // Clean up camera resources
+        try {
+            releaseRecordingResources();
+        } catch (Exception e) {
+            FLog.e(TAG, "Error releasing resources during service destruction", e);
+        }
+
+        // Release wake lock if still held
+        if (recordingWakeLock != null && recordingWakeLock.isHeld()) {
+            try {
+                recordingWakeLock.release();
+                FLog.d(TAG, "Recording WakeLock released during service destruction.");
+            } catch (Exception e) {
+                FLog.e(TAG, "Error releasing wake lock", e);
+            }
+        }
+
+        // Stop background thread to prevent memory leak
+        if (backgroundThread != null) {
+            try {
+                backgroundThread.quitSafely();
+                backgroundThread.join(1000);
+                FLog.d(TAG, "Background thread stopped successfully.");
+            } catch (InterruptedException e) {
+                FLog.e(TAG, "Error stopping background thread", e);
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        if (motionDetectorWarmupExecutor != null) {
+            try {
+                motionDetectorWarmupExecutor.shutdownNow();
+            } catch (Exception e) {
+                FLog.w(TAG, "Error shutting down motion detector warmup executor", e);
+            }
+            motionDetectorWarmupExecutor = null;
+        }
+
+        FLog.d(TAG, "Service destroyed.");
+        // Clean up GeotagHelper when service is destroyed
+        super.onDestroy();
+    }
+    // --- End Lifecycle Methods ---
+
+    // --- Core Recording Logic ---
+    private void stopRecording() {
+        if (isStopping) {
+            FLog.w(TAG, "stopRecording: Already in stopping process, ignoring duplicate call");
+            return;
+        }
+
+        isStopping = true;
+        FLog.i(TAG, ">> stopRecording sequence initiated. Current state: " + recordingState);
+
+        // Stop black frame rendering if active
+        stopBlackFrameRendering();
+
+        // Stop reconnection attempts if active
+        stopReconnectionAttempts();
+
+        if (recordingState == RecordingState.NONE) {
+            FLog.d(TAG, "stopRecording called but state is already NONE, just cleaning up");
+            sharedPreferencesManager.setRecordingInProgress(false);
+            if (!isWorkingInProgress())
+                stopSelf();
+            if (recordingWakeLock != null && recordingWakeLock.isHeld())
+                recordingWakeLock.release();
+            if (safRecordingPfd != null) {
+                try {
+                    safRecordingPfd.close();
+                    FLog.d(TAG, "Closed SAF ParcelFileDescriptor after recording");
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error closing SAF ParcelFileDescriptor", e);
+                }
+                safRecordingPfd = null;
+            }
+            // ⚠️ Also close segment PFD if it exists
+            if (currentSegmentParcelFileDescriptor != null) {
+                try {
+                    currentSegmentParcelFileDescriptor.close();
+                    FLog.d(TAG, "Closed current segment ParcelFileDescriptor during early cleanup");
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error closing segment PFD during early cleanup", e);
+                }
+                currentSegmentParcelFileDescriptor = null;
+            }
+            isStopping = false; // Reset stopping flag if we're already stopped
+            return;
+        }
+
+        if (motionLabEnabledForSession) {
+            FLog.i(TAG, "MotionLab summary: frames=" + motionFramesAnalyzed
+                    + ", actions=" + motionTriggerActionCount
+                    + ", suppressed=" + motionSuppressedSignalCount
+                    + ", safeMode=" + motionSafeMode
+                    + ", detectorAvailable=" + (efficientDetDetector != null && efficientDetDetector.isAvailable()));
+        }
+        if (digitalForensicsEventRecorder != null) {
+            long timelineMs = getEffectiveTimelineMs();
+            digitalForensicsEventRecorder.flush(timelineMs);
+        }
+
+        // First update the state to prevent any new operations
+        recordingState = RecordingState.NONE;
+        sharedPreferencesManager.setRecordingInProgress(false);
+        com.servalabs.cam.ActiveRecordingStats.clearActiveSegment();
+        
+        // Notify RemoteStreamManager that recording stopped
+        try {
+            com.servalabs.cam.streaming.RemoteStreamManager.getInstance().stopRecording();
+            FLog.i(TAG, "🛑 RemoteStreamManager notified: recording stopped");
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to notify RemoteStreamManager about recording stop", e);
+        }
+
+        recordingStartTime = 0L;
+        pauseStartedAt = 0L;
+        accumulatedPausedDurationMs = 0L;
+        clearRecordingTimelineState();
+
+        // Stop foreground service and cancel notification early to improve
+        // responsiveness
+        stopForeground(true);
+        cancelNotification();
+
+        // Use a background thread for resource cleanup to avoid blocking the main
+        // thread
+        new Thread(() -> {
+            try {
+                // Set camera resources as releasing and broadcast early
+                setCameraResourcesReleasing(true);
+                broadcastOnRecordingStopped();
+
+                // First stop the capture session
+                if (captureSession != null) {
+                    try {
+                        FLog.d(TAG, "Stopping repeating request and closing capture session");
+                        captureSession.stopRepeating();
+                        captureSession.close();
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error closing capture session", e);
+                    } finally {
+                        captureSession = null;
+                    }
+                }
+
+                // Give some time for the session to close
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                
+                // Stop and release the GL pipeline
+                if (glRecordingPipeline != null) {
+                    try {
+                        FLog.d(TAG, "Stopping GLRecordingPipeline");
+                        glRecordingPipeline.stopRecording();
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error stopping GLRecordingPipeline", e);
+                    } finally {
+                        glRecordingPipeline = null;
+                    }
+                }
+
+                // Delete temporary file if in STREAM_ONLY mode
+                if (currentSegmentFile != null && currentSegmentFile.exists()) {
+                    com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+                        com.servalabs.cam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                    if (streamingMode == com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY) {
+                        boolean deleted = currentSegmentFile.delete();
+                        if (deleted) {
+                            FLog.i(TAG, "🗑️ STREAM_ONLY: Deleted temporary file: " + currentSegmentFile.getName());
+                        } else {
+                            FLog.w(TAG, "⚠️ Failed to delete temporary file: " + currentSegmentFile.getAbsolutePath());
+                        }
+                    }
+                }
+
+                // STREAM_ONLY: Clean up ALL tracked temporary files (internal storage)
+                // Handles segment splits where multiple temp files were created
+                if (!streamOnlyTempFiles.isEmpty()) {
+                    FLog.i(TAG, "🗑️ STREAM_ONLY: Cleaning up " + streamOnlyTempFiles.size() + " tracked temp files");
+                    for (File tempFile : streamOnlyTempFiles) {
+                        if (tempFile != null && tempFile.exists()) {
+                            boolean deleted = tempFile.delete();
+                            FLog.i(TAG, "🗑️ STREAM_ONLY: " + (deleted ? "Deleted" : "FAILED to delete") + " temp: " + tempFile.getName());
+                        }
+                    }
+                    streamOnlyTempFiles.clear();
+                }
+
+                // STREAM_ONLY (SAF): Clean up tracked SAF URIs (SD card storage)
+                // These are 0-byte files created for the GL pipeline but never written to
+                if (!streamOnlySafUris.isEmpty()) {
+                    FLog.i(TAG, "🗑️ STREAM_ONLY (SAF): Cleaning up " + streamOnlySafUris.size() + " tracked SAF files");
+                    for (String uriStr : streamOnlySafUris) {
+                        try {
+                            Uri safUri = Uri.parse(uriStr);
+                            androidx.documentfile.provider.DocumentFile docFile =
+                                    androidx.documentfile.provider.DocumentFile.fromSingleUri(RecordingService.this, safUri);
+                            if (docFile != null && docFile.exists()) {
+                                boolean deleted = docFile.delete();
+                                FLog.i(TAG, "🗑️ STREAM_ONLY (SAF): " + (deleted ? "Deleted" : "FAILED to delete") + " URI: " + uriStr);
+                            }
+                        } catch (Exception e) {
+                            FLog.w(TAG, "⚠️ STREAM_ONLY (SAF): Error deleting URI: " + uriStr + " - " + e.getMessage());
+                        }
+                    }
+                    streamOnlySafUris.clear();
+                }
+
+                // Give some time for the GL pipeline to release resources
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+
+                // REMUX: Removed as per user request (writing directly to .mp4 now)
+                // com.servalabs.cam.media.VideoFileProcessor.CRASH_SAFE_EXTENSION cleanup check removed.
+
+                // Close the camera device last
+                if (cameraDevice != null) {
+                    try {
+                        FLog.d(TAG, "Closing camera device");
+                        cameraDevice.close();
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error closing camera device", e);
+                    } finally {
+                        cameraDevice = null;
+                        isCameraOpen = false;
+                    }
+                }
+
+                // Final cleanup on the main thread
+                mainHandler.post(() -> {
+                    // Release wake lock if held
+                    if (recordingWakeLock != null && recordingWakeLock.isHeld()) {
+                        try {
+                            recordingWakeLock.release();
+                            FLog.d(TAG, "Recording wake lock released");
+                        } catch (Exception e) {
+                            FLog.e(TAG, "Error releasing wake lock", e);
+                        }
+                    }
+
+                    // -----
+                    if (safRecordingPfd != null) {
+                        try {
+                            safRecordingPfd.close();
+                            FLog.d(TAG, "Closed SAF ParcelFileDescriptor after recording (background thread)");
+                        } catch (Exception e) {
+                            FLog.e(TAG, "Error closing SAF ParcelFileDescriptor (background thread)", e);
+                        }
+                        safRecordingPfd = null;
+                    }
+                    
+                    // ⚠️ CRITICAL: Close current segment PFD for video splitting (SAF mode)
+                    // This keeps the PFD alive during segment rollover to prevent EBADF errors
+                    if (currentSegmentParcelFileDescriptor != null) {
+                        try {
+                            currentSegmentParcelFileDescriptor.close();
+                            FLog.d(TAG, "Closed current segment ParcelFileDescriptor after recording");
+                        } catch (Exception e) {
+                            FLog.e(TAG, "Error closing current segment PFD", e);
+                        }
+                        currentSegmentParcelFileDescriptor = null;
+                    }
+                    // -----
+                    // Check if service can stop
+                    checkIfServiceCanStop();
+
+                    // Reset stopping flag
+                    isStopping = false;
+
+                    // Clear any pending recording start flag
+                    pendingStartRecording = false;
+
+                    // Send broadcast to notify that recording is complete so RecordsFragment can
+                    // refresh
+                    try {
+                        Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+                        recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, true);
+                        // Note: We don't have the specific URI here, but RecordsFragment will do a full
+                        // refresh
+                        sendBroadcast(recordingCompleteIntent);
+                        FLog.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE for list refresh");
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error broadcasting recording complete", e);
+                    }
+
+                    FLog.d(TAG, "stopRecording sequence completed successfully");
+                });
+            } catch (Exception e) {
+                FLog.e(TAG, "Error in stopRecording cleanup thread", e);
+                mainHandler.post(() -> {
+                    isStopping = false;
+                    pendingStartRecording = false;
+
+                    // Send broadcast even on error so RecordsFragment can refresh and clear any
+                    // temp states
+                    try {
+                        Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+                        recordingCompleteIntent.putExtra(Constants.EXTRA_RECORDING_SUCCESS, false);
+                        sendBroadcast(recordingCompleteIntent);
+                        FLog.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE (error case) for list refresh");
+                    } catch (Exception broadcastError) {
+                        FLog.e(TAG, "Error broadcasting recording complete on error", broadcastError);
+                    }
+                });
+            }
+        }, "RecordingStopThread").start();
+    }
+
+    private void pauseRecording() {
+        if (recordingState != RecordingState.IN_PROGRESS)
+            return;
+        if (glRecordingPipeline != null)
+            glRecordingPipeline.pauseRecording(); // if supported
+        if (pauseStartedAt <= 0L) {
+            pauseStartedAt = SystemClock.elapsedRealtime();
+        }
+        persistRecordingTimelineState();
+        recordingState = RecordingState.PAUSED;
+        sharedPreferencesManager.setRecordingInProgress(false);
+        // Notify RemoteStreamManager so status JSON reflects paused state
+        com.servalabs.cam.streaming.RemoteStreamManager.getInstance().pauseRecording();
+        setupRecordingResumeNotification();
+        showRecordingInPausedToast();
+        broadcastOnRecordingPaused();
+    }
+
+    private void resumeRecording() {
+        if (recordingState != RecordingState.PAUSED)
+            return;
+        if (glRecordingPipeline != null)
+            glRecordingPipeline.resumeRecording(); // if supported
+        if (pauseStartedAt > 0L) {
+            accumulatedPausedDurationMs += Math.max(0L, SystemClock.elapsedRealtime() - pauseStartedAt);
+            pauseStartedAt = 0L;
+        }
+        persistRecordingTimelineState();
+        recordingState = RecordingState.IN_PROGRESS;
+        sharedPreferencesManager.setRecordingInProgress(true);
+        // Notify RemoteStreamManager so status JSON reflects resumed (recording) state
+        com.servalabs.cam.streaming.RemoteStreamManager.getInstance().resumeRecording();
+        setupRecordingInProgressNotification();
+        showRecordingResumedToast();
+        broadcastOnRecordingResumed();
+    }
+
+    /**
+     * Switches cameras during active recording.
+     * Performs a seamless switch from current camera to target camera while maintaining recording.
+     * 
+     * Architecture:
+     * 1. Pause recording (stop frame capture)
+     * 2. Drain encoder (flush pending frames)
+     * 3. Close current camera/session
+     * 4. Open new camera
+     * 5. Resume recording (restart frame capture)
+     * 
+     * Expected duration: 150-350ms (typically ~200ms)
+     * 
+     * @param newCameraType Target camera: FRONT or BACK
+     */
+    private void switchCameraLive(@NonNull CameraType newCameraType) {
+        // Validate preconditions
+        if (isSwitchingCamera) {
+            FLog.w(TAG, "Camera switch already in progress, ignoring request");
+            broadcastOnCameraSwitchFailed("Switch already in progress", newCameraType);
+            return;
+        }
+
+        if (recordingState != RecordingState.IN_PROGRESS) {
+            FLog.w(TAG, "Cannot switch camera: recording state is " + recordingState + ", need IN_PROGRESS");
+            broadcastOnCameraSwitchFailed("Recording not in progress (state: " + recordingState + ")", newCameraType);
+            return;
+        }
+
+        if (glRecordingPipeline == null || captureSession == null) {
+            FLog.e(TAG, "Cannot switch camera: pipeline or capture session is null");
+            broadcastOnCameraSwitchFailed("Recording pipeline not initialized", newCameraType);
+            return;
+        }
+
+        CameraType currentType = sharedPreferencesManager.getCameraSelection();
+        if (currentType == newCameraType) {
+            FLog.w(TAG, "Camera is already " + newCameraType + ", ignoring switch");
+            broadcastOnCameraSwitchFailed("Already on " + newCameraType, newCameraType);
+            return;
+        }
+
+        // Mark switch in progress
+        isSwitchingCamera = true;
+        cameraSwitchPreviousType = currentType;
+        cameraSwitchStartTimeNanos = System.nanoTime();
+
+        try {
+            FLog.i(TAG, "========== CAMERA SWITCH START ==========");
+            FLog.i(TAG, "Switching camera: " + currentType + " → " + newCameraType);
+            broadcastOnCameraSwitchStarted(currentType, newCameraType);
+
+            // PHASE 0: Prepare pipeline for camera switch (timestamp handling)
+            FLog.d(TAG, "PHASE 0: Preparing pipeline for camera switch");
+            if (glRecordingPipeline != null) {
+                glRecordingPipeline.prepareCameraSwitch();
+            }
+
+            // PHASE 1: Pause recording
+            FLog.d(TAG, "PHASE 1: Pausing recording");
+            pauseRecording();
+
+            // PHASE 2: Drain encoder
+            FLog.d(TAG, "PHASE 2: Draining encoder (timeout: 200ms)");
+            drainEncoderBeforeCameraSwitch(200);
+
+            // PHASE 3: Close resources
+            FLog.d(TAG, "PHASE 3: Closing camera session and device");
+            closeCameraResourcesForSwitch();
+
+            // PHASE 4: Update preference
+            FLog.d(TAG, "PHASE 4: Updating camera selection preference");
+            sharedPreferencesManager.sharedPreferences
+                .edit()
+                .putString(Constants.PREF_CAMERA_SELECTION, newCameraType.toString())
+                .apply();
+
+            // PHASE 5: Open new camera
+            FLog.d(TAG, "PHASE 5: Opening new camera");
+            openCamera(); // Will use updated preference
+
+            // PHASE 6: Resume recording
+            FLog.d(TAG, "PHASE 6: Resuming recording");
+            resumeRecording();
+
+            // Brief delay to allow first frame from new camera
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                FLog.w(TAG, "Interrupted waiting for new camera frame");
+            }
+
+            long durationMs = (System.nanoTime() - cameraSwitchStartTimeNanos) / 1_000_000L;
+            FLog.i(TAG, "========== CAMERA SWITCH SUCCESS ==========");
+            FLog.i(TAG, "Camera switched to " + newCameraType + " in " + durationMs + "ms");
+            broadcastOnCameraSwitchComplete(currentType, newCameraType);
+
+        } catch (Exception e) {
+            FLog.e(TAG, "FATAL: Camera switch failed with exception", e);
+            long durationMs = (System.nanoTime() - cameraSwitchStartTimeNanos) / 1_000_000L;
+            FLog.i(TAG, "========== CAMERA SWITCH FAILED ==========");
+            FLog.i(TAG, "Camera switch took " + durationMs + "ms before failure");
+
+            // Attempt recovery: try to resume old camera
+            FLog.w(TAG, "Attempting recovery: reopening " + cameraSwitchPreviousType + " camera");
+            try {
+                sharedPreferencesManager.sharedPreferences
+                    .edit()
+                    .putString(Constants.PREF_CAMERA_SELECTION, cameraSwitchPreviousType.toString())
+                    .apply();
+                openCamera();
+                resumeRecording();
+                FLog.i(TAG, "Recovery successful: recording resumed on " + cameraSwitchPreviousType);
+                broadcastOnCameraSwitchFailed("Switch failed but recovered on " + cameraSwitchPreviousType, newCameraType);
+            } catch (Exception recoveryError) {
+                FLog.e(TAG, "CRITICAL: Recovery failed, recording is likely corrupted", recoveryError);
+                // Stop recording to avoid further corruption
+                try {
+                    stopRecording();
+                } catch (Exception stopError) {
+                    FLog.e(TAG, "Error stopping recording during recovery failure", stopError);
+                }
+                broadcastOnCameraSwitchFailed("Switch failed AND recovery failed: " + e.getMessage(), newCameraType);
+            }
+        } finally {
+            isSwitchingCamera = false;
+            cameraSwitchPreviousType = null;
+            cameraSwitchStartTimeNanos = -1L;
+            FLog.d(TAG, "Camera switch cleanup complete");
+        }
+    }
+
+    private void switchCameraPreviewOnly(@NonNull CameraType newCameraType) {
+        if (!previewOnlyActive) {
+            FLog.w(TAG, "Preview-only camera switch ignored: preview-only mode is not active");
+            return;
+        }
+        if (newCameraType.isDual()) {
+            broadcastOnCameraSwitchFailed("Dual camera is not supported in preview-only mode", newCameraType);
+            return;
+        }
+
+        CameraType currentType = sharedPreferencesManager.getCameraSelection();
+        if (currentType == newCameraType) {
+            FLog.d(TAG, "Preview-only camera switch ignored: already on " + newCameraType);
+            return;
+        }
+
+        FLog.i(TAG, "Preview-only camera switch: " + currentType + " -> " + newCameraType);
+        try {
+            sharedPreferencesManager.sharedPreferences
+                .edit()
+                .putString(Constants.PREF_CAMERA_SELECTION, newCameraType.toString())
+                .apply();
+
+            previewSessionConfigInFlight = false;
+            if (captureSession != null) {
+                try {
+                    captureSession.stopRepeating();
+                } catch (Exception ignored) {
+                }
+                try {
+                    captureSession.close();
+                } catch (Exception ignored) {
+                }
+                captureSession = null;
+            }
+            if (cameraDevice != null) {
+                try {
+                    cameraDevice.close();
+                } catch (Exception ignored) {
+                }
+                cameraDevice = null;
+            }
+            isCameraOpen = false;
+            if (glRecordingPipeline != null && previewSurface != null && previewSurface.isValid()) {
+                glRecordingPipeline.setPreviewSurfaceImmediate(previewSurface);
+            }
+            openCamera();
+            broadcastOnCameraSwitchComplete(currentType, newCameraType);
+        } catch (Exception e) {
+            FLog.e(TAG, "Preview-only camera switch failed", e);
+            try {
+                sharedPreferencesManager.sharedPreferences
+                    .edit()
+                    .putString(Constants.PREF_CAMERA_SELECTION, currentType.toString())
+                    .apply();
+            } catch (Exception ignored) {
+            }
+            broadcastOnCameraSwitchFailed("Preview-only camera switch failed: " + e.getMessage(), newCameraType);
+        }
+    }
+
+    /**
+     * Drains the video encoder to ensure all buffered frames are written to muxer
+     * before camera switch. This prevents mixing frames from old and new cameras.
+     * 
+     * @param timeoutMs Maximum time to wait for drain to complete
+     */
+    private void drainEncoderBeforeCameraSwitch(long timeoutMs) {
+        if (glRecordingPipeline == null) {
+            FLog.w(TAG, "Cannot drain encoder: pipeline is null");
+            return;
+        }
+
+        long startTime = System.currentTimeMillis();
+        long elapsedMs = 0;
+
+        // Give the render loop time to drain naturally
+        while (elapsedMs < timeoutMs) {
+            try {
+                Thread.sleep(10); // Check every 10ms
+                elapsedMs = System.currentTimeMillis() - startTime;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                FLog.w(TAG, "Interrupted during encoder drain");
+                break;
+            }
+        }
+
+        FLog.d(TAG, "Encoder drain completed after " + elapsedMs + "ms (timeout: " + timeoutMs + "ms)");
+    }
+
+    /**
+     * Closes the current camera session and device in preparation for switching to a new camera.
+     * Must be called during a pause state to avoid frame loss.
+     */
+    private void closeCameraResourcesForSwitch() {
+        try {
+            // Close the capture session
+            if (captureSession != null) {
+                try {
+                    FLog.d(TAG, "Closing capture session");
+                    captureSession.close();
+                } catch (Exception e) {
+                    FLog.w(TAG, "Error closing capture session", e);
+                }
+                captureSession = null;
+            }
+
+            // Close the camera device
+            if (cameraDevice != null) {
+                try {
+                    FLog.d(TAG, "Closing camera device");
+                    cameraDevice.close();
+                } catch (Exception e) {
+                    FLog.w(TAG, "Error closing camera device", e);
+                }
+                cameraDevice = null;
+            }
+
+            isCameraOpen = false;
+            FLog.d(TAG, "Camera resources closed successfully");
+        } catch (Exception e) {
+            FLog.e(TAG, "Unexpected error closing camera resources", e);
+        }
+    }
+
+    /**
+     * Broadcasts camera switch started event with source and target camera types.
+     */
+    private void broadcastOnCameraSwitchStarted(@NonNull CameraType fromType, @NonNull CameraType toType) {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_CAMERA_SWITCH_STARTED);
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_FROM, fromType.toString());
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_TO, toType.toString());
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+        FLog.d(TAG, "Broadcast: CAMERA_SWITCH_STARTED (" + fromType + " → " + toType + ")");
+    }
+
+    /**
+     * Broadcasts camera switch complete event with source and target camera types.
+     */
+    private void broadcastOnCameraSwitchComplete(@NonNull CameraType fromType, @NonNull CameraType toType) {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_CAMERA_SWITCH_COMPLETE);
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_FROM, fromType.toString());
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_TO, toType.toString());
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+        FLog.d(TAG, "Broadcast: CAMERA_SWITCH_COMPLETE (" + fromType + " → " + toType + ")");
+    }
+
+    /**
+     * Broadcasts camera switch failed event with error reason and attempted camera type.
+     */
+    private void broadcastOnCameraSwitchFailed(@NonNull String errorReason, @Nullable CameraType attemptedType) {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_CAMERA_SWITCH_FAILED);
+        broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_SWITCH_ERROR_REASON, errorReason);
+        if (attemptedType != null) {
+            broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_ATTEMPTED, attemptedType.toString());
+        }
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+        FLog.d(TAG, "Broadcast: CAMERA_SWITCH_FAILED (reason: " + errorReason + ", attempted: " + attemptedType + ")");
+    }
+
+    private void releaseRecordingResources() {
+        if (isStopping)
+            return;
+
+        // Release dummy background surface first
+        releaseDummyBackgroundSurface();
+        releaseMotionAnalysisReader();
+
+        isStopping = true;
+        try {
+            if (captureSession != null) {
+                captureSession.close();
+            }
+        } catch (Exception e) {
+        } finally {
+            captureSession = null;
+        }
+        try {
+            if (cameraDevice != null) {
+                cameraDevice.close();
+            }
+        } catch (Exception e) {
+        } finally {
+            cameraDevice = null;
+        }
+        if (glRecordingPipeline != null) {
+            glRecordingPipeline.stopRecording();
+            glRecordingPipeline = null;
+        }
+        // -----
+        if (safRecordingPfd != null) {
+            try {
+                safRecordingPfd.close();
+                FLog.d(TAG, "Closed SAF ParcelFileDescriptor after resource cleanup");
+            } catch (Exception e) {
+                FLog.e(TAG, "Error closing SAF ParcelFileDescriptor (resource cleanup)", e);
+            }
+            safRecordingPfd = null;
+        }
+        
+        // ⚠️ CRITICAL: Close segment PFD for video splitting (SAF mode)
+        if (currentSegmentParcelFileDescriptor != null) {
+            try {
+                currentSegmentParcelFileDescriptor.close();
+                FLog.d(TAG, "Closed current segment ParcelFileDescriptor (resource cleanup)");
+            } catch (Exception e) {
+                FLog.e(TAG, "Error closing segment PFD (resource cleanup)", e);
+            }
+            currentSegmentParcelFileDescriptor = null;
+        }
+        // -----
+        recordingState = RecordingState.NONE;
+        sharedPreferencesManager.setRecordingInProgress(false);
+    }
+
+    private void configureMotionLabForSession() {
+        motionLabEnabledForSession = sharedPreferencesManager != null && sharedPreferencesManager.isMotionModeEnabled();
+        lastMotionAnalysisTimestampMs = 0L;
+        motionAutoPaused = false;
+        motionSafeMode = RuntimeCompat.shouldUseSafeMotionAnalysis(getApplicationContext());
+        motionConsecutivePersonHits = 0;
+        motionFramesAnalyzed = 0L;
+        motionTriggerActionCount = 0L;
+        motionSuppressedSignalCount = 0L;
+        motionScoreEma = Float.NaN;
+        motionLastDebugBroadcastMs = 0L;
+        motionLastTelemetryLogMs = 0L;
+        motionPersonLikelyUntilMs = 0L;
+        motionLastForensicsHeartbeatMs = 0L;
+        motionJpegAttemptCount = 0L;
+        motionJpegSuccessCount = 0L;
+        motionJpegSkipCount = 0L;
+        motionJpegEncodeTotalMs = 0L;
+        motionLastPerfLogMs = 0L;
+        motionStateMachine = motionLabEnabledForSession
+                ? new com.servalabs.cam.motion.domain.state.MotionStateMachine(motionPolicy)
+                : null;
+        if (!motionLabEnabledForSession) {
+            releaseMotionAnalysisReader();
+        } else {
+            scheduleMotionDetectorWarmupIfNeeded();
+        }
+        if (sharedPreferencesManager != null) {
+            int sensitivity = sharedPreferencesManager.getMotionSensitivity();
+            int fps = sharedPreferencesManager.getMotionAnalysisFps();
+            int debounce = sharedPreferencesManager.getMotionDebounceMs();
+            int postRoll = sharedPreferencesManager.getMotionPostRollMs();
+            String scope = sharedPreferencesManager.getDfCaptureScope();
+            float start = motionPolicy.startThresholdFromSensitivity(sensitivity);
+            float stop = motionPolicy.stopThresholdFromSensitivity(sensitivity);
+        }
+    }
+
+    private void maybeAttachMotionAnalysisSurface(List<Surface> surfaces, int targetFrameRate) {
+        if (!motionLabEnabledForSession) {
+            return;
+        }
+        // Keep combination safe for first rollout.
+        if (targetFrameRate >= 60) {
+            disableMotionLabForSession("unsupported_high_fps_" + targetFrameRate);
+            return;
+        }
+        Surface surface = getOrCreateMotionAnalysisSurface();
+        if (surface != null) {
+            surfaces.add(surface);
+            FLog.d(TAG, "Motion analysis surface attached to camera session");
+        } else {
+            disableMotionLabForSession("analysis_surface_unavailable");
+        }
+    }
+
+    private void disableMotionLabForSession(String reason) {
+        if (!motionLabEnabledForSession) {
+            return;
+        }
+        motionLabEnabledForSession = false;
+        motionStateMachine = null;
+        motionAutoPaused = false;
+        releaseMotionAnalysisReader();
+        FLog.w(TAG, "Motion Lab disabled for current session. reason=" + reason + "; continuing normal recording flow");
+    }
+
+    private Surface getOrCreateMotionAnalysisSurface() {
+        try {
+            int analysisFps = sharedPreferencesManager != null ? sharedPreferencesManager.getMotionAnalysisFps() : 3;
+            if (motionOpenCvActive && !motionSafeMode) {
+                // Keep detector responsive while limiting CPU spikes.
+                analysisFps = Math.max(3, Math.min(6, analysisFps));
+            }
+            if (motionSafeMode) {
+                analysisFps = Math.min(2, analysisFps);
+            }
+            motionAnalysisIntervalMs = Math.max(100L, 1000L / Math.max(1, analysisFps));
+            Size selected = sharedPreferencesManager != null
+                    ? sharedPreferencesManager.getCameraResolution()
+                    : Constants.DEFAULT_VIDEO_RESOLUTION;
+            int divisor = motionSafeMode ? 6 : (motionOpenCvActive ? 1 : 2);
+            int maxWidth = motionSafeMode ? 192 : (motionOpenCvActive ? 1280 : 640);
+            int maxHeight = motionSafeMode ? 108 : (motionOpenCvActive ? 720 : 360);
+            int width = Math.max(96, Math.min(maxWidth, selected.getWidth() / divisor));
+            int height = Math.max(54, Math.min(maxHeight, selected.getHeight() / divisor));
+            boolean recreate = motionAnalysisReader == null
+                    || motionAnalysisReader.getWidth() != width
+                    || motionAnalysisReader.getHeight() != height;
+            if (recreate) {
+                releaseMotionAnalysisReader();
+                motionAnalysisReader = ImageReader.newInstance(width, height, android.graphics.ImageFormat.YUV_420_888, 2);
+                motionAnalysisReader.setOnImageAvailableListener(reader -> {
+                    Image image = null;
+                    try {
+                        image = reader.acquireLatestImage();
+                        if (image == null) {
+                            return;
+                        }
+                        long now = SystemClock.elapsedRealtime();
+                        if (now - lastMotionAnalysisTimestampMs < motionAnalysisIntervalMs) {
+                            return;
+                        }
+                        lastMotionAnalysisTimestampMs = now;
+                        float rawMotionScore = motionDetector.detectScore(image);
+                        com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket =
+                                com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector.FramePacket.copyFrom(image);
+                        image.close();
+                        image = null;
+                        processMotionFrame(rawMotionScore, framePacket, now);
+                    } catch (Throwable t) {
+                        FLog.w(TAG, "Motion analysis frame processing failed", t);
+                    } finally {
+                        if (image != null) {
+                            image.close();
+                        }
+                    }
+                }, backgroundHandler);
+                FLog.d(TAG, "Created motion analysis reader: " + width + "x" + height + " @" + analysisFps + "fps");
+            }
+            return motionAnalysisReader.getSurface();
+        } catch (Throwable t) {
+            FLog.e(TAG, "Unable to create motion analysis surface", t);
+            releaseMotionAnalysisReader();
+            return null;
+        }
+    }
+
+    private void processMotionFrame(
+            float rawMotionScore,
+            @Nullable com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket,
+            long nowMs
+    ) {
+        motionFramesAnalyzed++;
+        // OpenCV MOG2 outputs are intentionally conservative; normalize to policy scale.
+        if (motionOpenCvActive) {
+            rawMotionScore = Math.min(1f, rawMotionScore * 1.35f);
+        }
+        if (Float.isNaN(motionScoreEma)) {
+            motionScoreEma = rawMotionScore;
+        } else {
+            // Rise fast to avoid missed starts; decay slower to avoid threshold chatter.
+            float riseAlpha = 0.72f;
+            float fallAlpha = 0.34f;
+            float alpha = rawMotionScore >= motionScoreEma ? riseAlpha : fallAlpha;
+            motionScoreEma = (alpha * rawMotionScore) + ((1f - alpha) * motionScoreEma);
+        }
+        float motionScore = motionScoreEma;
+        List<com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult> detections =
+                (efficientDetDetector != null && framePacket != null)
+                        ? efficientDetDetector.detect(framePacket)
+                        : java.util.Collections.emptyList();
+        com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult primaryDetection =
+                efficientDetDetector != null ? efficientDetDetector.choosePrimary(detections) : null;
+        float personConfidence = efficientDetDetector != null ? efficientDetDetector.bestPersonConfidence(detections) : 0f;
+        boolean personDetectedRaw = efficientDetDetector != null && efficientDetDetector.hasPerson(detections);
+        if (personDetectedRaw) {
+            motionConsecutivePersonHits++;
+        } else {
+            motionConsecutivePersonHits = Math.max(0, motionConsecutivePersonHits - 1);
+        }
+        int requiredHits = motionSafeMode ? 3 : 2;
+        boolean personDetected = personDetectedRaw && motionConsecutivePersonHits >= requiredHits;
+        if (personDetectedRaw && personConfidence >= 0.62f) {
+            motionPersonLikelyUntilMs = nowMs + 2500L;
+        }
+        // Keep person-confirmed signal stable across single-frame classifier misses.
+        if (!personDetected && motionConsecutivePersonHits >= requiredHits && personConfidence >= 0.55f) {
+            personDetected = true;
+        }
+        boolean personLikely = personDetected
+                || (personDetectedRaw && personConfidence >= 0.70f)
+                || nowMs <= motionPersonLikelyUntilMs;
+        float debugChangedArea = 0f;
+        float debugStrongArea = 0f;
+        float debugMeanDelta = 0f;
+        float debugBackgroundDelta = 0f;
+        float debugMaxDelta = 0f;
+        float debugCenterX = 0.5f;
+        float debugCenterY = 0.5f;
+        boolean debugGlobalSuppressed = false;
+        if (motionDetector instanceof com.servalabs.cam.motion.domain.detector.MotionDebugInfoProvider) {
+            com.servalabs.cam.motion.domain.detector.MotionDebugInfoProvider detector =
+                    (com.servalabs.cam.motion.domain.detector.MotionDebugInfoProvider) motionDetector;
+            debugChangedArea = detector.getLastChangedAreaRatio();
+            debugStrongArea = detector.getLastStrongAreaRatio();
+            debugMeanDelta = detector.getLastMeanDelta();
+            debugBackgroundDelta = detector.getLastBackgroundDelta();
+            debugMaxDelta = detector.getLastMaxDelta();
+            debugCenterX = detector.getLastMotionCenterX();
+            debugCenterY = detector.getLastMotionCenterY();
+            debugGlobalSuppressed = detector.isLastGlobalMotionSuppressed();
+        }
+        com.servalabs.cam.motion.domain.state.MotionSessionState stateBefore =
+                motionStateMachine != null ? motionStateMachine.getState() : null;
+        if (motionStateMachine != null && sharedPreferencesManager != null) {
+            com.servalabs.cam.motion.domain.model.MotionSettings settings = new com.servalabs.cam.motion.domain.model.MotionSettings(
+                    sharedPreferencesManager.isMotionModeEnabled(),
+                    com.servalabs.cam.motion.domain.model.MotionTriggerMode.ANY_MOTION,
+                    sharedPreferencesManager.getMotionSensitivity(),
+                    sharedPreferencesManager.getMotionAnalysisFps(),
+                    sharedPreferencesManager.getMotionDebounceMs(),
+                    sharedPreferencesManager.getMotionPostRollMs(),
+                    sharedPreferencesManager.getMotionPreRollSeconds(),
+                    sharedPreferencesManager.isMotionAutoTorchEnabled());
+            float startThreshold = motionPolicy.startThresholdFromSensitivity(settings.getSensitivity());
+            com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction action =
+                    motionStateMachine.onSignal(settings, new com.servalabs.cam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            motionScore,
+                            personDetected));
+            if (action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionStateMachine.getState() != com.servalabs.cam.motion.domain.state.MotionSessionState.RECORDING
+                    && !debugGlobalSuppressed
+                    && personLikely
+                    && personConfidence >= 0.70f
+                    && debugChangedArea >= 0.008f
+                    && debugMeanDelta >= 0.005f
+                    && debugStrongArea >= 0.008f) {
+                // Dedicated far-subject lane: small distant motion often has tiny changed area.
+                float farAssistFloor = Math.max(
+                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.02f,
+                        startThreshold * 0.88f
+                );
+                float farAssistScore = Math.max(motionScore, Math.min(1f, farAssistFloor));
+                if (farAssistScore > motionScore) {
+                    action = motionStateMachine.onSignal(settings, new com.servalabs.cam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            farAssistScore,
+                            true));
+                    motionScore = farAssistScore;
+                }
+            }
+            if (action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionStateMachine.getState() != com.servalabs.cam.motion.domain.state.MotionSessionState.RECORDING
+                    && !debugGlobalSuppressed
+                    && motionOpenCvActive
+                    && debugChangedArea >= 0.004f
+                    && debugChangedArea <= 0.085f
+                    && debugMeanDelta >= 0.007f
+                    && (debugStrongArea >= 0.018f || debugMaxDelta >= 0.58f)
+                    && rawMotionScore >= 0.06f) {
+                // Edge-entry lane: catches partial face / hand / corner movement bursts.
+                float edgeAssistFloor = Math.max(
+                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.03f,
+                        startThreshold * 0.90f
+                );
+                float edgeAssistScore = Math.max(motionScore, Math.min(1f, edgeAssistFloor));
+                if (edgeAssistScore > motionScore) {
+                    action = motionStateMachine.onSignal(settings, new com.servalabs.cam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            edgeAssistScore,
+                            personLikely));
+                    motionScore = edgeAssistScore;
+                }
+            }
+            if (action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionStateMachine.getState() != com.servalabs.cam.motion.domain.state.MotionSessionState.RECORDING
+                    && !debugGlobalSuppressed
+                    && motionOpenCvActive
+                    && personLikely
+                    && personConfidence >= 0.66f
+                    && debugMeanDelta >= 0.008f
+                    && debugMaxDelta >= 0.48f
+                    && (debugChangedArea >= 0.003f || debugStrongArea >= 0.010f)) {
+                // Micro-entry lane: partial face/hand at edge should start quickly.
+                float microEntryFloor = Math.max(
+                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.045f,
+                        startThreshold * 0.94f
+                );
+                float microEntryScore = Math.max(motionScore, Math.min(1f, microEntryFloor));
+                if (microEntryScore > motionScore) {
+                    action = motionStateMachine.onSignal(settings, new com.servalabs.cam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            microEntryScore,
+                            true));
+                    motionScore = microEntryScore;
+                }
+            }
+            if (action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionStateMachine.getState() != com.servalabs.cam.motion.domain.state.MotionSessionState.RECORDING
+                    && !debugGlobalSuppressed
+                    && debugChangedArea >= 0.05f
+                    && debugMeanDelta >= 0.010f
+                    && debugStrongArea >= 0.020f
+                    && personLikely) {
+                // Assist far/low-contrast motion so starts are not missed when person is confirmed.
+                float assistedFloor = Math.max(startThreshold * 0.84f,
+                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.015f);
+                float assistedScore = Math.max(motionScore, Math.min(1f, assistedFloor));
+                if (assistedScore > motionScore) {
+                    action = motionStateMachine.onSignal(settings, new com.servalabs.cam.motion.domain.model.MotionSignal(
+                            nowMs,
+                            assistedScore,
+                            personLikely));
+                    motionScore = assistedScore;
+                }
+            }
+            if (action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && stateBefore == com.servalabs.cam.motion.domain.state.MotionSessionState.IDLE
+                    && personDetectedRaw
+                    && personConfidence >= (debugGlobalSuppressed ? 0.78f : 0.60f)
+                    && (!debugGlobalSuppressed || debugChangedArea < 0.45f)) {
+                float boostedScore = Math.max(
+                        motionScore,
+                        startThreshold + (debugGlobalSuppressed ? 0.08f : 0.03f)
+                );
+                action = motionStateMachine.onSignal(settings, new com.servalabs.cam.motion.domain.model.MotionSignal(
+                        nowMs,
+                        Math.min(1f, boostedScore),
+                        true
+                ));
+                if (action != com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
+                    motionScore = boostedScore;
+                    personDetected = true;
+                }
+            }
+            applyMotionTransitionAction(action);
+            motionLastPersonDetected = personDetected;
+            motionLastPersonConfidence = personConfidence;
+            motionLastScore = motionScore;
+            motionLastChangedArea = debugChangedArea;
+            motionLastStrongArea = debugStrongArea;
+            if (primaryDetection != null) {
+                motionLastCenterX = primaryDetection.centerX;
+                motionLastCenterY = primaryDetection.centerY;
+                motionLastBoxWidth = primaryDetection.width;
+                motionLastBoxHeight = primaryDetection.height;
+                motionLastEventType = primaryDetection.coarseType;
+                motionLastClassName = primaryDetection.className;
+                motionLastDetectionConfidence = primaryDetection.confidence;
+            } else {
+                motionLastEventType = null;
+                motionLastClassName = null;
+                motionLastDetectionConfidence = 0f;
+            }
+            motionLastOverlayPayload = buildOverlayPayloadFromDetections(detections);
+            motionLastGlobalSuppressed = debugGlobalSuppressed;
+            if (action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
+                    && motionScore > 0f
+                    && stateBefore == com.servalabs.cam.motion.domain.state.MotionSessionState.IDLE) {
+                motionSuppressedSignalCount++;
+            }
+            if (stateBefore != motionStateMachine.getState() ||
+                    action != com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
+                FLog.d(TAG, "MotionLab: score=" + String.format(Locale.US, "%.3f", motionScore)
+                        + ", raw=" + String.format(Locale.US, "%.3f", rawMotionScore)
+                        + ", thresholds(start/stop)="
+                        + String.format(Locale.US, "%.3f", startThreshold)
+                        + "/"
+                        + String.format(Locale.US, "%.3f", motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()))
+                        + ", personRaw=" + personDetectedRaw
+                        + ", personConf=" + String.format(Locale.US, "%.3f", personConfidence)
+                        + ", area=" + String.format(Locale.US, "%.3f", debugChangedArea)
+                        + ", strong=" + String.format(Locale.US, "%.3f", debugStrongArea)
+                        + ", meanDelta=" + String.format(Locale.US, "%.3f", debugMeanDelta)
+                        + ", bgDelta=" + String.format(Locale.US, "%.3f", debugBackgroundDelta)
+                        + ", maxDelta=" + String.format(Locale.US, "%.3f", debugMaxDelta)
+                        + ", globalSuppressed=" + debugGlobalSuppressed
+                        + ", personHits=" + motionConsecutivePersonHits + "/" + requiredHits
+                        + ", person=" + personDetected
+                        + ", state=" + motionStateMachine.getState()
+                        + ", action=" + action
+                        + ", counters={frames=" + motionFramesAnalyzed
+                        + ", actions=" + motionTriggerActionCount
+                        + ", suppressed=" + motionSuppressedSignalCount + "}");
+            }
+            if ((nowMs - motionLastTelemetryLogMs) >= 10000L) {
+                motionLastTelemetryLogMs = nowMs;
+                FLog.d(TAG, "MotionLab Live: state=" + motionStateMachine.getState()
+                        + ", action=" + action
+                        + ", backend=" + (motionOpenCvActive ? "opencv_mog2" : "frame_diff")
+                        + ", raw=" + String.format(Locale.US, "%.3f", rawMotionScore)
+                        + ", smoothed=" + String.format(Locale.US, "%.3f", motionScore)
+                        + ", startThreshold=" + String.format(Locale.US, "%.3f", startThreshold)
+                        + ", stopThreshold=" + String.format(Locale.US, "%.3f", motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()))
+                        + ", person=" + personDetected
+                        + ", personConf=" + String.format(Locale.US, "%.3f", personConfidence)
+                        + ", area=" + String.format(Locale.US, "%.3f", debugChangedArea)
+                        + ", strong=" + String.format(Locale.US, "%.3f", debugStrongArea)
+                        + ", meanDelta=" + String.format(Locale.US, "%.3f", debugMeanDelta)
+                        + ", bgDelta=" + String.format(Locale.US, "%.3f", debugBackgroundDelta)
+                        + ", maxDelta=" + String.format(Locale.US, "%.3f", debugMaxDelta)
+                        + ", globalSuppressed=" + debugGlobalSuppressed);
+            }
+            boolean forensicsCaptureEnabled = sharedPreferencesManager != null
+                    && sharedPreferencesManager.isDigitalForensicsEnabled()
+                    && sharedPreferencesManager.isDfEvidenceCollectionEnabled();
+            boolean shouldEmitForensicsSnapshot = digitalForensicsEventRecorder != null
+                    && forensicsCaptureEnabled
+                    && motionStateMachine.getState() == com.servalabs.cam.motion.domain.state.MotionSessionState.RECORDING
+                    && (nowMs - motionLastForensicsHeartbeatMs) >= FORENSICS_HEARTBEAT_INTERVAL_MS;
+            boolean shouldEmitDebugFrame = (nowMs - motionLastDebugBroadcastMs) >= 900L
+                    || stateBefore != motionStateMachine.getState()
+                    || (action != null && action != com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE);
+            boolean shouldEncodeJpeg = shouldEncodeFrameJpeg(shouldEmitForensicsSnapshot, shouldEmitDebugFrame);
+            byte[] frameJpeg = null;
+            if (shouldEncodeJpeg) {
+                motionJpegAttemptCount++;
+                long encodeStart = SystemClock.elapsedRealtime();
+                frameJpeg = buildMotionDebugFrameJpeg(framePacket);
+                motionJpegEncodeTotalMs += Math.max(0L, SystemClock.elapsedRealtime() - encodeStart);
+                if (frameJpeg != null && frameJpeg.length > 0) {
+                    motionJpegSuccessCount++;
+                } else {
+                    motionJpegSkipCount++;
+                }
+            } else {
+                motionJpegSkipCount++;
+            }
+            maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personConfidence, stateBefore, frameJpeg, debugChangedArea, debugStrongArea, debugMeanDelta, debugBackgroundDelta, debugMaxDelta, debugGlobalSuppressed);
+
+            if (shouldEmitForensicsSnapshot) {
+                motionLastForensicsHeartbeatMs = nowMs;
+                long timelineMs = getEffectiveTimelineMs();
+                digitalForensicsEventRecorder.onDetections(
+                        getCurrentRecordingMediaUri(),
+                        timelineMs,
+                        detections,
+                        frameJpeg,
+                        recordingSessionCameraSource == RecordingStoragePaths.CameraSource.FRONT,
+                        getCurrentSensorOrientationDegrees(),
+                        sharedPreferencesManager != null ? sharedPreferencesManager.getVideoOrientation() : "portrait",
+                        shouldMirrorForensicsSnapshots()
+                );
+                if ((nowMs - motionLastTelemetryLogMs) >= 10000L) {
+                    FLog.i(TAG, "Forensics heartbeat: detections=" + detections.size()
+                            + ", personConf=" + String.format(Locale.US, "%.2f", personConfidence)
+                            + ", frame=" + (framePacket != null ? framePacket.width + "x" + framePacket.height : "none")
+                            + ", front=" + (recordingSessionCameraSource == RecordingStoragePaths.CameraSource.FRONT));
+                }
+            }
+            maybeLogForensicsPerf(nowMs);
+        }
+    }
+
+    private void applyMotionTransitionAction(com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction action) {
+        if (!motionLabEnabledForSession || action == null || action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
+            return;
+        }
+        // Run control actions on main thread to stay consistent with service state updates.
+        mainHandler.post(() -> {
+            if (!motionLabEnabledForSession) {
+                return;
+            }
+            if (action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.START_RECORDING) {
+                reportForensicsMotionTransition(action);
+                if (recordingState == RecordingState.PAUSED && motionAutoPaused) {
+                    FLog.i(TAG, "MotionLab action START_RECORDING -> resuming recording");
+                    motionTriggerActionCount++;
+                    motionAutoPaused = false;
+                    Intent resumeIntent = new Intent(getApplicationContext(), RecordingService.class);
+                    resumeIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
+                    ServiceStartPolicy.startRecordingAction(getApplicationContext(), resumeIntent);
+                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                        setMotionTorchState(true);
+                    }
+                }
+                return;
+            }
+            if (action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.STOP_RECORDING) {
+                reportForensicsMotionTransition(action);
+                if (recordingState == RecordingState.IN_PROGRESS) {
+                    FLog.i(TAG, "MotionLab action STOP_RECORDING -> pausing recording");
+                    motionTriggerActionCount++;
+                    motionAutoPaused = true;
+                    Intent pauseIntent = new Intent(getApplicationContext(), RecordingService.class);
+                    pauseIntent.setAction(Constants.INTENT_ACTION_PAUSE_RECORDING);
+                    ServiceStartPolicy.startRecordingAction(getApplicationContext(), pauseIntent);
+                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                        setMotionTorchState(false);
+                    }
+                }
+            }
+        });
+    }
+
+    private void reportForensicsMotionTransition(com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction action) {
+        if (digitalForensicsEventRecorder == null || action == null) {
+            return;
+        }
+        String activeMediaUri = getCurrentRecordingMediaUri();
+        long timelineMs = getEffectiveTimelineMs();
+
+        if (action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.START_RECORDING) {
+            // Real-time recorder updates are now driven by per-frame detection heartbeats.
+            return;
+        } else if (action == com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.STOP_RECORDING) {
+            digitalForensicsEventRecorder.onMotionStop(timelineMs);
+        }
+    }
+
+    private String getCurrentRecordingMediaUri() {
+        if (currentSegmentUriString != null && !currentSegmentUriString.isEmpty()) {
+            return currentSegmentUriString;
+        }
+        if (currentSegmentPath != null && !currentSegmentPath.isEmpty()) {
+            if (currentSegmentPath.startsWith("content://")) {
+                return currentSegmentPath;
+            }
+            return Uri.fromFile(new File(currentSegmentPath)).toString();
+        }
+        if (currentSegmentFile != null) {
+            return Uri.fromFile(currentSegmentFile).toString();
+        }
+        return null;
+    }
+
+    @Nullable
+    private String buildForensicsOverlayPayload() {
+        if (sharedPreferencesManager == null || !sharedPreferencesManager.isDfOverlayEnabled()) {
+            return null;
+        }
+        if (!motionLabEnabledForSession) {
+            return null;
+        }
+        String payload = motionLastOverlayPayload;
+        if (payload == null || payload.isEmpty()) {
+            return null;
+        }
+
+        String watermarkText = buildBaseWatermarkText();
+        if (watermarkText == null) {
+            watermarkText = "";
+        }
+        watermarkText = watermarkText.replace("\n", " ").replace("\r", " ").replace("||wm||", " ");
+
+        return "__DF_OVERLAY__:" + payload
+                + "||wm||" + watermarkText;
+    }
+
+    @Nullable
+    private String buildOverlayPayloadFromDetections(
+            @Nullable List<com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult> detections
+    ) {
+        if (detections == null || detections.isEmpty()) {
+            return null;
+        }
+        StringBuilder out = new StringBuilder();
+        int emitted = 0;
+        for (com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult detection : detections) {
+            if (detection == null || detection.confidence < 0.45f) {
+                continue;
+            }
+            if (emitted >= 6) {
+                break;
+            }
+            if (out.length() > 0) {
+                out.append(';');
+            }
+            String label = detection.className == null ? "object" : detection.className.trim().toLowerCase(Locale.US);
+            out.append(label).append('|')
+                    .append(String.format(Locale.US, "%.4f", Math.max(0f, Math.min(1f, detection.confidence)))).append('|')
+                    .append(String.format(Locale.US, "%.4f", clamp01(detection.centerX))).append('|')
+                    .append(String.format(Locale.US, "%.4f", clamp01(detection.centerY))).append('|')
+                    .append(String.format(Locale.US, "%.4f", clampBox(detection.width))).append('|')
+                    .append(String.format(Locale.US, "%.4f", clampBox(detection.height))).append('|')
+                    .append(detection.coarseType == null ? "OBJECT" : detection.coarseType.toUpperCase(Locale.US));
+            emitted++;
+        }
+        return out.length() == 0 ? null : out.toString();
+    }
+
+    private String buildBaseWatermarkText() {
+        if (sharedPreferencesManager == null) {
+            return "";
+        }
+        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
+        String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
+        String customText = sharedPreferencesManager.getWatermarkCustomText();
+        String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
+        String finalText;
+        switch (watermarkOption) {
+            case "timestamp_fadcam":
+                finalText = "Captured by <FADCAM_ICON> - " + getCurrentTimestamp() + locationText + customTextLine;
+                break;
+            case "badge_fadcam":
+                finalText = "Captured by <FADCAM_ICON>" + customTextLine;
+                break;
+            case "timestamp":
+                finalText = getCurrentTimestamp() + locationText + customTextLine;
+                break;
+            case "no_watermark":
+                finalText = "";
+                break;
+            default:
+                finalText = "Captured by ServaCam - " + getCurrentTimestamp() + locationText + customTextLine;
+        }
+        if (!finalText.isEmpty()) {
+            FLog.d(TAG, "🎬 Watermark text generated: [" + finalText.replace("\n", " | ") + "]");
+        }
+        return finalText;
+    }
+
+    private void ensureWatermarkInfoProvider() {
+        if (watermarkInfoProvider != null) return;
+        watermarkInfoProvider = new WatermarkInfoProvider() {
+            @Override
+            public String getWatermarkText() {
+                String dfOverlayPayload = buildForensicsOverlayPayload();
+                if (dfOverlayPayload != null) {
+                    return dfOverlayPayload;
+                }
+                String watermarkOption = sharedPreferencesManager.getWatermarkOption();
+                String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
+                String customText = sharedPreferencesManager.getWatermarkCustomText();
+                String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
+                String finalText;
+                switch (watermarkOption) {
+                    case "timestamp_fadcam":
+                        finalText = "Captured by <FADCAM_ICON> - " + getCurrentTimestamp() + locationText + customTextLine;
+                        break;
+                    case "badge_fadcam":
+                        finalText = "Captured by <FADCAM_ICON>" + customTextLine;
+                        break;
+                    case "timestamp":
+                        finalText = getCurrentTimestamp() + locationText + customTextLine;
+                        break;
+                    case "no_watermark":
+                        finalText = "";
+                        break;
+                    default:
+                        finalText = "Captured by ServaCam - " + getCurrentTimestamp() + locationText + customTextLine;
+                }
+                if (!finalText.isEmpty()) {
+                    // Watermark text built; logging omitted (fires every second during recording)
+                }
+                return finalText;
+            }
+        };
+    }
+
+    private float clamp01(float value) {
+        return Math.max(0f, Math.min(1f, value));
+    }
+
+    private float clampBox(float value) {
+        return Math.max(0.02f, Math.min(0.90f, value));
+    }
+
+    private void setMotionTorchState(boolean shouldBeOn) {
+        if (recordingState != RecordingState.IN_PROGRESS && recordingState != RecordingState.PAUSED) {
+            return;
+        }
+        if (isRecordingTorchEnabled == shouldBeOn) {
+            return;
+        }
+        FLog.d(TAG, "MotionLab torch auto-control: target=" + shouldBeOn + ", current=" + isRecordingTorchEnabled);
+        toggleRecordingTorch();
+    }
+
+    private void maybeBroadcastMotionDebug(
+            float rawScore,
+            float smoothedScore,
+            com.servalabs.cam.motion.domain.model.MotionSettings settings,
+            com.servalabs.cam.motion.domain.state.MotionSessionState currentState,
+            com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction action,
+            boolean personDetected,
+            float personConfidence,
+            com.servalabs.cam.motion.domain.state.MotionSessionState previousState,
+            @Nullable byte[] frameJpeg,
+            float changedAreaRatio,
+            float strongAreaRatio,
+            float meanDelta,
+            float backgroundDelta,
+            float maxDelta,
+            boolean globalSuppressed
+    ) {
+        long now = SystemClock.elapsedRealtime();
+        boolean significant = previousState != currentState
+                || (action != null && action != com.servalabs.cam.motion.domain.state.MotionStateMachine.TransitionAction.NONE);
+        if (!significant && (now - motionLastDebugBroadcastMs) < 900L) {
+            return;
+        }
+        motionLastDebugBroadcastMs = now;
+
+        Intent debugIntent = new Intent(Constants.BROADCAST_MOTION_LAB_DEBUG);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_RAW_SCORE, rawScore);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_SCORE, smoothedScore);
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_START_THRESHOLD,
+                motionPolicy.startThresholdFromSensitivity(settings.getSensitivity())
+        );
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_STOP_THRESHOLD,
+                motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity())
+        );
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_STATE,
+                currentState == null ? "UNKNOWN" : currentState.name()
+        );
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_ACTION,
+                action == null ? "NONE" : action.name()
+        );
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_PERSON, personDetected);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_PERSON_CONF, personConfidence);
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_CLASS_NAME,
+                motionLastClassName == null ? "" : motionLastClassName
+        );
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_CLASS_CONF, motionLastDetectionConfidence);
+        debugIntent.putExtra(
+                Constants.EXTRA_MOTION_DEBUG_EVENT_TYPE,
+                motionLastEventType == null ? "" : motionLastEventType
+        );
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_CHANGED_AREA, changedAreaRatio);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_STRONG_AREA, strongAreaRatio);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_MEAN_DELTA, meanDelta);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_BG_DELTA, backgroundDelta);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_MAX_DELTA, maxDelta);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED, globalSuppressed);
+        if (frameJpeg != null && frameJpeg.length > 0) {
+            debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG, frameJpeg);
+        }
+        sendBroadcast(debugIntent);
+    }
+
+    @Nullable
+    private byte[] buildMotionDebugFrameJpeg(
+            @Nullable com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket
+    ) {
+        if (framePacket == null) {
+            return null;
+        }
+        try {
+            int width = framePacket.width;
+            int height = framePacket.height;
+            if (width <= 0 || height <= 0) {
+                return null;
+            }
+            byte[] nv21 = framePacketToNv21(framePacket);
+            if (nv21 == null || nv21.length == 0) {
+                return null;
+            }
+            android.graphics.YuvImage yuvImage = new android.graphics.YuvImage(
+                    nv21,
+                    android.graphics.ImageFormat.NV21,
+                    width,
+                    height,
+                    null
+            );
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            boolean encoded = yuvImage.compressToJpeg(new Rect(0, 0, width, height), 72, outputStream);
+            if (!encoded) {
+                return null;
+            }
+            return outputStream.toByteArray();
+        } catch (IllegalStateException ignored) {
+            return null;
+        } catch (Throwable t) {
+            FLog.v(TAG, "MotionLab debug frame skipped");
+            return null;
+        }
+    }
+
+    private boolean shouldEncodeFrameJpeg(boolean shouldEmitForensicsSnapshot, boolean shouldEmitDebugFrame) {
+        if (shouldEmitForensicsSnapshot) {
+            return true;
+        }
+        if (!shouldEmitDebugFrame) {
+            return false;
+        }
+        return sharedPreferencesManager != null && sharedPreferencesManager.isMotionDebugUiActive();
+    }
+
+    private int getCurrentSensorOrientationDegrees() {
+        if (currentCameraCharacteristics == null) {
+            return 90;
+        }
+        Integer so = currentCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+        return so == null ? 90 : so;
+    }
+
+    private boolean shouldMirrorForensicsSnapshots() {
+        // Keep snapshots aligned with recorded output, not selfie-preview mirror.
+        return false;
+    }
+
+    private void maybeLogForensicsPerf(long nowMs) {
+        if ((nowMs - motionLastPerfLogMs) < 10000L) {
+            return;
+        }
+        motionLastPerfLogMs = nowMs;
+        long avgEncodeMs = motionJpegSuccessCount <= 0
+                ? 0L
+                : (motionJpegEncodeTotalMs / Math.max(1L, motionJpegSuccessCount));
+        FLog.i(TAG, "ForensicsPerf: frames=" + motionFramesAnalyzed
+                + ", jpegAttempt=" + motionJpegAttemptCount
+                + ", jpegOk=" + motionJpegSuccessCount
+                + ", jpegSkip=" + motionJpegSkipCount
+                + ", avgEncodeMs=" + avgEncodeMs
+                + ", actions=" + motionTriggerActionCount
+                + ", suppressed=" + motionSuppressedSignalCount);
+    }
+
+    @Nullable
+    private byte[] framePacketToNv21(
+            @NonNull com.servalabs.cam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket
+    ) {
+        int width = framePacket.width;
+        int height = framePacket.height;
+        if (width <= 0 || height <= 0) {
+            return null;
+        }
+        int ySize = width * height;
+        int uvSize = ySize / 2;
+        byte[] out = new byte[ySize + uvSize];
+
+        // Y plane
+        for (int row = 0; row < height; row++) {
+            int srcRow = row * framePacket.yRowStride;
+            int dstRow = row * width;
+            for (int col = 0; col < width; col++) {
+                int srcIndex = srcRow + (col * framePacket.yPixelStride);
+                out[dstRow + col] = framePacket.y[srcIndex];
+            }
+        }
+
+        int uvHeight = height / 2;
+        int uvWidth = width / 2;
+        int dst = ySize;
+        for (int row = 0; row < uvHeight; row++) {
+            int uvRow = row * framePacket.uvRowStride;
+            for (int col = 0; col < uvWidth; col++) {
+                int uvIndex = uvRow + (col * framePacket.uvPixelStride);
+                byte v = framePacket.v[uvIndex];
+                byte u = framePacket.u[uvIndex];
+                out[dst++] = v;
+                out[dst++] = u;
+            }
+        }
+        return out;
+    }
+
+    private void releaseMotionAnalysisReader() {
+        if (motionAnalysisReader != null) {
+            try {
+                motionAnalysisReader.setOnImageAvailableListener(null, null);
+                motionAnalysisReader.close();
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed releasing motion analysis reader", e);
+            } finally {
+                motionAnalysisReader = null;
+            }
+        }
+    }
+
+    /**
+     * Checks if the service has any active work (recording, pausing, or processing)
+     * and calls stopSelf() if it is completely idle.
+     * This should be called whenever a task completes (recording stops, processing
+     * finishes).
+     */
+    private void checkIfServiceCanStop() {
+        // Read volatile flag and check state atomically as best as possible
+
+        FLog.d(TAG, "checkIfServiceCanStop: RecordingState=" + recordingState + ", FfmpegTasks="
+                + ffmpegProcessingTaskCount.get());
+
+        // Use the new shouldServiceStayAlive method to determine if service should
+        // continue running
+        if (!shouldServiceStayAlive()) {
+            FLog.i(TAG, "No active recording or background processing detected. Stopping service.");
+            // Remove from foreground first to avoid ANR if stopSelf takes time
+            stopForeground(true);
+            stopSelf(); // Stop the service as its work is done.
+        } else {
+            FLog.d(TAG, "Service continues running (Tasks active).");
+        }
+
+    }
+
+    private void openCamera() {
+        if (cameraManager == null) {
+            FLog.e(TAG, "openCamera: CameraManager (class field) is null.");
+            if (recordingState == RecordingState.STARTING)
+                recordingState = RecordingState.NONE;
+            stopSelf();
+            return;
+        }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            FLog.e(TAG, "openCamera: Camera permission denied.");
+            if (recordingState == RecordingState.STARTING)
+                recordingState = RecordingState.NONE;
+            Toast.makeText(this, "Camera permission denied for service", Toast.LENGTH_LONG).show();
+            stopSelf();
+            return;
+        }
+
+        CameraType selectedType = sharedPreferencesManager.getCameraSelection();
+
+        // DUAL_PIP is handled by DualCameraRecordingService — guard against accidental use here.
+        if (selectedType != null && selectedType.isDual()) {
+            FLog.w(TAG, "openCamera: DUAL_PIP reached RecordingService — falling back to BACK");
+            selectedType = CameraType.BACK;
+        }
+
+        String cameraToOpenId = null;
+
+        try {
+            String[] basicCameraIds = cameraManager.getCameraIdList();
+            
+            // If no cameras found, cameraserver might be restarting - try once more
+            if (basicCameraIds.length == 0) {
+                FLog.w(TAG, "No cameras found on first attempt, waiting 1s and retrying...");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                basicCameraIds = cameraManager.getCameraIdList();
+                if (basicCameraIds.length == 0) {
+                    FLog.e(TAG, "Still no cameras after retry. CameraServer may be crashed or unavailable.");
+                    Toast.makeText(this, "Camera service not responding. Try again.", Toast.LENGTH_LONG).show();
+                    if (recordingState == RecordingState.STARTING)
+                        recordingState = RecordingState.NONE;
+                    stopSelf();
+                    return;
+                }
+            }
+            
+            Set<String> allAvailableCameraIds = new HashSet<>(Arrays.asList(basicCameraIds));
+
+            // On Android P+, also include physical cameras from logical cameras
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                for (String id : basicCameraIds) {
+                    try {
+                        CameraCharacteristics chars = cameraManager.getCameraCharacteristics(id);
+                        Set<String> physicalIds = chars.getPhysicalCameraIds();
+                        if (physicalIds != null && !physicalIds.isEmpty()) {
+                            allAvailableCameraIds.addAll(physicalIds);
+                            FLog.d(TAG, "Added physical camera IDs from logical camera " + id + ": " + physicalIds);
+                        }
+                    } catch (Exception e) {
+                        FLog.w(TAG, "Error checking physical IDs for camera " + id, e);
+                    }
+                }
+            }
+
+            String[] availableCameraIds = allAvailableCameraIds.toArray(new String[0]);
+
+            if (selectedType == CameraType.FRONT) {
+                for (String id : availableCameraIds) {
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                    Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        cameraToOpenId = id;
+                        break;
+                    }
+                }
+            } else { // CameraType.BACK
+                String preferredBackId = sharedPreferencesManager.getSelectedBackCameraId();
+                boolean isValidAndAvailable = false;
+
+                // First, check if the preferred camera ID exists in our available cameras
+                for (String id : availableCameraIds) {
+                    if (id.equals(preferredBackId)) {
+                        try {
+                            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                            Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+
+                            // For physical cameras, they might not have LENS_FACING_BACK set
+                            // but if they're in our availableCameraIds and were detected as back cameras
+                            // in SettingsFragment, we should trust that they're valid back cameras
+                            if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                                isValidAndAvailable = true;
+                                break;
+                            } else {
+                                // For physical cameras, check if this ID was part of a logical back camera
+                                // If it's in our availableCameraIds, it means it was detected as a back camera
+                                FLog.w(TAG, "Preferred back ID " + preferredBackId + " exists but LENS_FACING is: "
+                                        + facing);
+
+                                // Additional validation: check if this is a physical camera from a logical back
+                                // camera
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                    boolean isPhysicalBackCamera = isPhysicalBackCamera(preferredBackId, basicCameraIds,
+                                            cameraManager);
+                                    if (isPhysicalBackCamera) {
+                                        isValidAndAvailable = true;
+                                        FLog.d(TAG, "Preferred camera ID '" + preferredBackId
+                                                + "' validated as physical back camera");
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (CameraAccessException e) {
+                            FLog.e(TAG, "Error getting characteristics for preferred camera " + preferredBackId, e);
+                        }
+                    }
+                }
+
+                if (isValidAndAvailable) {
+                    cameraToOpenId = preferredBackId;
+                } else {
+                    FLog.w(TAG,
+                            "Preferred back camera ID '" + preferredBackId
+                                    + "' is invalid or unavailable. Falling back to default ID '"
+                                    + Constants.DEFAULT_BACK_CAMERA_ID + "'.");
+                    cameraToOpenId = Constants.DEFAULT_BACK_CAMERA_ID;
+                    boolean defaultExistsAndIsBack = false;
+                    for (String id : availableCameraIds) {
+                        if (id.equals(cameraToOpenId)) {
+                            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                            Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                            if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                                defaultExistsAndIsBack = true;
+                            }
+                            break;
+                        }
+                    }
+                    if (!defaultExistsAndIsBack) {
+                        FLog.e(TAG, "Critical: Default back camera ID '" + cameraToOpenId
+                                + "' not found or not back-facing! Cannot select default back camera.");
+                        String fallbackBackId = null;
+                        for (String id : availableCameraIds) {
+                            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(id);
+                            Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                            if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                                FLog.w(TAG, "Using first available back camera as final fallback: " + id);
+                                fallbackBackId = id;
+                                break;
+                            }
+                        }
+                        if (fallbackBackId != null) {
+                            cameraToOpenId = fallbackBackId;
+                        } else {
+                            cameraToOpenId = null;
+                            FLog.e(TAG, "Could not find any back-facing camera.");
+                        }
+                    }
+                }
+            }
+
+            if (cameraToOpenId == null) {
+                FLog.e(TAG, "Could not determine a valid camera ID to open for selected type: " + selectedType);
+                Toast.makeText(this, "Failed to find selected camera", Toast.LENGTH_LONG).show();
+                if (recordingState == RecordingState.STARTING)
+                    recordingState = RecordingState.NONE;
+                stopSelf();
+                return;
+            }
+
+            if (cameraDevice != null) {
+                FLog.w(TAG, "openCamera: Closing existing cameraDevice instance first.");
+                try {
+                    cameraDevice.close();
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error explicitly closing existing cameraDevice prior to opening new one", e);
+                }
+                cameraDevice = null;
+            }
+
+            final int MAX_RETRIES = 3;
+            final long RETRY_DELAY_MS = 2000;
+            int attempt = 0;
+            String finalCameraToOpenId = cameraToOpenId;
+
+            while (attempt < MAX_RETRIES) {
+                try {
+                    cameraManager.openCamera(finalCameraToOpenId, cameraStateCallback, backgroundHandler);
+                    return;
+                } catch (CameraAccessException e) {
+                    FLog.e(TAG, "openCamera: Camera Access Exception on attempt " + (attempt + 1) + " for ID "
+                            + finalCameraToOpenId, e);
+                    // Use direct integer values for error codes for broader compatibility
+                    int reason = e.getReason();
+                    if (reason == 1 /* ERROR_CAMERA_DISABLED */ ||
+                            reason == 4 /* ERROR_CAMERA_IN_USE */) {
+                        attempt++;
+                        if (attempt < MAX_RETRIES) {
+                            FLog.w(TAG, "Camera disabled (1) or in use (4), reason: " + reason + ". Retrying in "
+                                    + RETRY_DELAY_MS + "ms... (" + attempt + "/" + MAX_RETRIES + ")");
+                            try {
+                                Thread.sleep(RETRY_DELAY_MS);
+                            } catch (InterruptedException ie) {
+                                FLog.w(TAG, "Camera open retry delay interrupted", ie);
+                                Thread.currentThread().interrupt();
+                                if (recordingState == RecordingState.STARTING)
+                                    recordingState = RecordingState.NONE;
+                                stopSelf();
+                                return;
+                            }
+                        } else {
+                            FLog.e(TAG, "Max retries reached for camera " + finalCameraToOpenId + ". Giving up. Reason: "
+                                    + reason);
+                            if (recordingState == RecordingState.STARTING)
+                                recordingState = RecordingState.NONE;
+                            Toast.makeText(this, "Camera repeatedly unavailable (Reason: " + reason + "). Stopping.",
+                                    Toast.LENGTH_LONG).show();
+                            stopSelf();
+                            return;
+                        }
+                    } else {
+                        FLog.e(TAG, "Unrecoverable CameraAccessException (Reason: " + reason + "). Not retrying.", e);
+                        if (recordingState == RecordingState.STARTING)
+                            recordingState = RecordingState.NONE;
+                        Toast.makeText(this, "Camera access error: " + reason, Toast.LENGTH_LONG).show();
+                        stopSelf();
+                        return;
+                    }
+                } catch (IllegalArgumentException e) {
+                    FLog.e(TAG, "openCamera: Illegal Argument Exception (likely invalid camera ID '"
+                            + finalCameraToOpenId + "'). Attempt: " + (attempt + 1), e);
+                    if (recordingState == RecordingState.STARTING)
+                        recordingState = RecordingState.NONE;
+                    Toast.makeText(this, "Invalid camera configuration.", Toast.LENGTH_LONG).show();
+                    stopSelf();
+                    return;
+                } catch (Exception e) {
+                    FLog.e(TAG, "openCamera: Unexpected error on attempt " + (attempt + 1) + " for ID "
+                            + finalCameraToOpenId, e);
+                    if (recordingState == RecordingState.STARTING)
+                        recordingState = RecordingState.NONE;
+                    Toast.makeText(this, "Unexpected camera error.", Toast.LENGTH_LONG).show();
+                    stopSelf();
+                    return;
+                }
+            }
+        } catch (CameraAccessException e) {
+            FLog.e(TAG, "openCamera: Initial Camera Access Exception (listing/characteristics)", e);
+            if (recordingState == RecordingState.STARTING)
+                recordingState = RecordingState.NONE;
+            Toast.makeText(this, "Failed to access camera details.", Toast.LENGTH_LONG).show();
+            stopSelf();
+        } catch (IllegalArgumentException e) {
+            FLog.e(TAG, "openCamera: Outer Illegal Argument Exception (likely invalid camera ID '" + cameraToOpenId
+                    + "' for characteristics)", e);
+            if (recordingState == RecordingState.STARTING)
+                recordingState = RecordingState.NONE;
+            Toast.makeText(this, "Invalid camera setup.", Toast.LENGTH_LONG).show();
+            stopSelf();
+        } catch (Exception e) {
+            FLog.e(TAG, "openCamera: Unexpected outer error", e);
+            if (recordingState == RecordingState.STARTING)
+                recordingState = RecordingState.NONE;
+            Toast.makeText(this, "Critical camera system error.", Toast.LENGTH_LONG).show();
+            stopSelf();
+        }
+    }
+
+    private final CameraDevice.StateCallback cameraStateCallback = new CameraDevice.StateCallback() {
+        @Override
+        public void onOpened(@NonNull CameraDevice camera) {
+            cameraDevice = camera;
+            isCameraOpen = true;
+
+            // Check if we're waiting for camera to resume normal recording
+            if (recordingState == RecordingState.WAITING_FOR_CAMERA && pendingCameraReconnect) {
+                FLog.d(TAG, "Camera reconnected after interruption, resuming normal recording");
+                pendingCameraReconnect = false;
+                stopReconnectionAttempts();
+
+                // First pause any ongoing work with black frames
+                final boolean wasRenderingBlackFrames = isRenderingBlackFrames;
+
+                // Use a longer delay between stopping black frames and starting camera session
+                // to ensure all GL resources are properly cleaned up
+                mainHandler.post(() -> {
+                    try {
+                        // First, stop black frame rendering to free up GL resources
+                        if (wasRenderingBlackFrames) {
+                            stopBlackFrameRendering();
+
+                            // Add a delay to ensure cleanup is complete
+                            FLog.d(TAG, "Waiting for black frame renderer cleanup before reconnecting camera");
+
+                            // Resume camera session after delay
+                            mainHandler.postDelayed(() -> resumeCameraAfterReconnection(), 1500);
+                        } else {
+                            // If we weren't rendering black frames, proceed immediately
+                            resumeCameraAfterReconnection();
+                        }
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error during camera reconnection sequence", e);
+                        // Fall back to black frame rendering
+                        recordingState = RecordingState.WAITING_FOR_CAMERA;
+                        startBlackFrameRendering();
+                    }
+                });
+                return;
+            }
+
+            // CRITICAL FIX: Handle camera switch scenario
+            // When camera opens during PAUSED state, we need to create a capture session
+            // so frames will be available when resumeRecording() is called
+            if (recordingState == RecordingState.PAUSED && isSwitchingCamera) {
+                FLog.d(TAG, "Camera opened during camera switch (PAUSED state) - creating capture session");
+                try {
+                    createCameraPreviewSession();
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error creating capture session during camera switch", e);
+                    // Attempt recovery
+                    try {
+                        stopRecording();
+                    } catch (Exception stopError) {
+                        FLog.e(TAG, "Error stopping recording during camera switch error recovery", stopError);
+                    }
+                }
+                return;
+            }
+
+            // Check if we have a pending recording start request
+            if (pendingStartRecording) {
+                pendingStartRecording = false; // Reset the flag
+                mainHandler.post(RecordingService.this::attemptStartRecordingIfReady);
+            } else {
+                FLog.d(TAG, "Camera opened but no pending recording start");
+                // If we're not starting recording, create a preview session
+                if (previewSurface != null) {
+                    try {
+                        createCameraPreviewSession();
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error creating preview session", e);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera) {
+            FLog.d(TAG, "Camera device disconnected");
+
+            // Store camera state before closing
+            boolean wasRecording = (recordingState == RecordingState.IN_PROGRESS);
+
+            // Close camera device
+            if (cameraDevice != null) {
+                cameraDevice.close();
+                cameraDevice = null;
+            }
+            isCameraOpen = false;
+
+            // Reset the pending flag if camera disconnected
+            if (pendingStartRecording) {
+                FLog.w(TAG, "Camera disconnected while pendingStartRecording=true, resetting flag");
+                pendingStartRecording = false;
+            }
+
+            // If we were recording, switch to black frame mode
+            if (wasRecording) {
+                FLog.w(TAG, "Camera disconnected during recording, switching to black frame mode");
+
+                // Use a small delay to avoid race conditions with camera state changes
+                mainHandler.postDelayed(() -> {
+                    handleCameraInterruption();
+                }, 300);
+            } else if (recordingState != RecordingState.NONE && recordingState != RecordingState.WAITING_FOR_CAMERA) {
+                // For other states like PAUSED, just stop recording
+                FLog.w(TAG, "Camera disconnected while in state " + recordingState + ", stopping recording");
+                stopRecording();
+            } else if (previewOnlyActive) {
+                FLog.w(TAG, "Camera disconnected during preview-only, scheduling recovery");
+                mainHandler.postDelayed(() -> {
+                    if (!previewOnlyActive || recordingState != RecordingState.NONE) {
+                        return;
+                    }
+                    if (previewSurface == null || !previewSurface.isValid()) {
+                        pendingPreviewOnlyStart = true;
+                        FLog.d(TAG, "Preview-only recovery deferred: waiting for valid surface");
+                        return;
+                    }
+                    try {
+                        ensurePreviewOnlyGlPipeline();
+                        openCamera();
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Preview-only recovery failed", e);
+                    }
+                }, 450);
+            }
+        }
+
+        @Override
+        public void onError(@NonNull CameraDevice camera, int error) {
+            FLog.e(TAG, "Camera device error: " + error);
+
+            // Store camera state before closing
+            boolean wasRecording = (recordingState == RecordingState.IN_PROGRESS);
+
+            if (cameraDevice != null) {
+                cameraDevice.close();
+                cameraDevice = null;
+            }
+            isCameraOpen = false;
+
+            // Reset the pending flag if camera error
+            if (pendingStartRecording) {
+                FLog.w(TAG, "Camera error while pendingStartRecording=true, resetting flag");
+                pendingStartRecording = false;
+            }
+
+            // If error is camera in use and we were recording, switch to black frame mode
+            if ((error == CameraDevice.StateCallback.ERROR_CAMERA_IN_USE ||
+                    error == CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE) &&
+                    wasRecording) {
+                FLog.w(TAG, "Camera in use error during recording, switching to black frame mode");
+
+                // Use a small delay to avoid race conditions with camera state changes
+                mainHandler.postDelayed(() -> {
+                    handleCameraInterruption();
+                }, 300);
+            }
+            // For other errors or states, stop recording
+            else if (recordingState != RecordingState.NONE && recordingState != RecordingState.WAITING_FOR_CAMERA) {
+                FLog.w(TAG, "Camera error during recording, stopping recording");
+                stopRecording();
+            } else if (previewOnlyActive) {
+                FLog.w(TAG, "Camera error during preview-only, scheduling recovery");
+                mainHandler.postDelayed(() -> {
+                    if (!previewOnlyActive || recordingState != RecordingState.NONE) {
+                        return;
+                    }
+                    if (previewSurface == null || !previewSurface.isValid()) {
+                        pendingPreviewOnlyStart = true;
+                        FLog.d(TAG, "Preview-only recovery deferred after error: waiting for valid surface");
+                        return;
+                    }
+                    try {
+                        ensurePreviewOnlyGlPipeline();
+                        openCamera();
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Preview-only recovery after error failed", e);
+                    }
+                }, 550);
+            }
+
+            // Show error to user
+            String errorMsg;
+            switch (error) {
+                case CameraDevice.StateCallback.ERROR_CAMERA_IN_USE:
+                    errorMsg = getString(R.string.camera_error_in_use);
+                    break;
+                case CameraDevice.StateCallback.ERROR_MAX_CAMERAS_IN_USE:
+                    errorMsg = getString(R.string.camera_error_max_cameras);
+                    break;
+                case CameraDevice.StateCallback.ERROR_CAMERA_DISABLED:
+                    errorMsg = getString(R.string.camera_error_disabled);
+                    break;
+                case CameraDevice.StateCallback.ERROR_CAMERA_DEVICE:
+                    errorMsg = getString(R.string.camera_error_device);
+                    break;
+                case CameraDevice.StateCallback.ERROR_CAMERA_SERVICE:
+                    errorMsg = getString(R.string.camera_error_service);
+                    break;
+                default:
+                    errorMsg = getString(R.string.camera_error_unknown) + " (" + error + ")";
+            }
+
+            final String finalErrorMsg = errorMsg;
+            // mainHandler.post(() -> Toast.makeText(getApplicationContext(), finalErrorMsg,
+            // Toast.LENGTH_LONG).show());
+        }
+
+        @Override
+        public void onClosed(@NonNull CameraDevice camera) {
+            FLog.d(TAG, "Camera device closed");
+            isCameraOpen = false;
+
+            // If we were in segment rollover, continue with the rollover process
+            if (isRolloverClosingOldSession) {
+                FLog.d(TAG, "Camera closed during segment rollover, proceeding with rollover");
+                isRolloverClosingOldSession = false;
+                proceedWithRolloverAfterOldSessionClosed();
+            }
+
+            // Reset the pending flag if camera closed
+            if (pendingStartRecording) {
+                FLog.w(TAG, "Camera closed while pendingStartRecording=true, resetting flag");
+                pendingStartRecording = false;
+            }
+        }
+    };
+
+    // wait -----------
+    private void attemptStartRecordingIfReady() {
+        try {
+            if (recordingState != RecordingState.STARTING) {
+                FLog.d(TAG, "attemptStartRecordingIfReady: Not in STARTING state (" + recordingState + ")");
+                return;
+            }
+            // Ensure camera is opened before starting
+            if (cameraDevice == null) {
+                pendingStartRecording = true;
+                return;
+            }
+            if (waitForPreviewBeforeStart) {
+                boolean ready = previewSurface != null && previewSurface.isValid();
+                if (!ready) {
+                    return;
+                }
+                waitForPreviewBeforeStart = false;
+            }
+            // Clear timeout if set
+            if (previewWaitTimeoutRunnable != null) {
+                try {
+                    mainHandler.removeCallbacks(previewWaitTimeoutRunnable);
+                } catch (Throwable ignore) {
+                }
+                previewWaitTimeoutRunnable = null;
+            }
+            // Dispatch to background handler — GLRecordingPipeline creation (MediaCodec + EGL + TFLite/OpenCV) is heavy
+            // and must NOT run on the main thread to avoid ~800ms Choreographer frame skips.
+            backgroundHandler.post(this::startRecording);
+        } catch (Exception e) {
+            FLog.e(TAG, "attemptStartRecordingIfReady: error starting", e);
+            stopRecording();
+        }
+    }
+    // wait -----------
+
+    /**
+     * Helper method to resume normal recording after camera reconnection.
+     * This is called after any black frame rendering has been properly stopped.
+     */
+    private void resumeCameraAfterReconnection() {
+        try {
+            FLog.d(TAG, "Resuming normal camera recording after reconnection");
+
+            // Create camera session first
+            createCameraPreviewSession();
+
+            // Wait a moment for the session to be fully configured
+            mainHandler.postDelayed(() -> {
+                try {
+                    // Update recording state
+                    recordingState = RecordingState.IN_PROGRESS;
+
+                    // Broadcast to UI so HomeFragment can restore buttons/preview
+                    broadcastOnRecordingResumed();
+
+                    // Show notification about recording resumed
+                    setupRecordingInProgressNotification();
+
+                    // Show toast to user
+                    // Toast.makeText(RecordingService.this,
+                    // R.string.camera_reconnection_success,
+                    // Toast.LENGTH_SHORT).show();
+
+                    FLog.i(TAG, "Normal recording resumed after camera reconnection");
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error finalizing camera reconnection", e);
+                    // If we fail at this stage, fall back to black frames
+                    if (recordingState == RecordingState.IN_PROGRESS) {
+                        recordingState = RecordingState.WAITING_FOR_CAMERA;
+                        startBlackFrameRendering();
+                    }
+                }
+            }, 1000); // Longer delay to ensure session is ready
+        } catch (Exception e) {
+            FLog.e(TAG, "Error creating camera session after reconnection", e);
+            // Continue with black frames if we can't resume normal recording
+            recordingState = RecordingState.WAITING_FOR_CAMERA;
+            startBlackFrameRendering();
+        }
+    }
+
+    private void createCameraPreviewSession() {
+        if (cameraDevice == null) {
+            FLog.e(TAG, "createCameraPreviewSession: cameraDevice is null!");
+            if (previewOnlyActive) {
+                stopPreviewOnlyMode();
+            } else {
+                stopRecording(); // Cannot create session without camera
+            }
+            return;
+        }
+        // If using OpenGL pipeline for watermarking
+        if (glRecordingPipeline != null) {
+            Surface glSurface = glRecordingPipeline.getCameraInputSurface();
+            List<Surface> surfaces = new ArrayList<>();
+            if (glSurface != null) {
+                surfaces.add(glSurface);
+            } else {
+                FLog.e(TAG, "GL pipeline camera input surface is null!");
+            }
+            // Do NOT add previewSurface to Camera2 session outputs
+            // if (previewSurface != null) {
+            // surfaces.add(previewSurface);
+            // } else {
+            // FLog.w(TAG, "Preview surface is null; preview will be disabled.");
+            // }
+            if (surfaces.isEmpty()) {
+                FLog.e(TAG, "No valid surfaces for camera session!");
+                if (previewOnlyActive) {
+                    FLog.w(TAG, "Preview-only active but no UI surface yet; waiting for ACTION_CHANGE_SURFACE");
+                    return;
+                }
+                stopRecording();
+                return;
+            }
+            // Get camera characteristics for frame rate handling
+            CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+            String cameraId = getCameraId(cameraManager, cameraType);
+            CameraCharacteristics characteristics = null;
+            if (cameraId != null) {
+                try {
+                    characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error getting camera characteristics", e);
+                }
+            }
+            // method(createCameraPreviewSession)-----------
+            // Use per-camera FPS setting and only choose HSR if selected resolution
+            // supports it
+            int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            
+            // Apply streaming FPS cap only when server is actually ON
+            boolean isStreamingForFps1 = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
+            if (isStreamingForFps1) {
+                int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+                if (streamFpsCap > 0 && targetFrameRate > streamFpsCap) {
+                    FLog.i(TAG, "[STREAM PRESET] Capping camera FPS: " + targetFrameRate + " → " + streamFpsCap + "fps (server ON)");
+                    targetFrameRate = streamFpsCap;
+                }
+            } else {
+                FLog.d(TAG, "[RECORDING] Server OFF — using full FPS from settings: " + targetFrameRate + "fps");
+            }
+            
+            boolean isHighFrameRate = targetFrameRate >= 60;
+            boolean useHighSpeedSession = false;
+            Size selected = sharedPreferencesManager.getCameraResolution();
+            maybeAttachMotionAnalysisSurface(surfaces, targetFrameRate);
+
+            if (isHighFrameRate && characteristics != null) {
+                showFrameRateToast(targetFrameRate);
+
+                if (DeviceHelper.isSamsung()) {
+                    // Unify Samsung path with Pixel: always use standard session (no HSR).
+                    FLog.d(TAG, "Samsung device: forcing standard session for " + targetFrameRate
+                            + "fps to match Pixel behavior");
+                    useHighSpeedSession = false;
+                } else if (HighSpeedCaptureHelper.isHighSpeedSupported(characteristics, targetFrameRate)) {
+                    Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate,
+                            selected.getWidth(), selected.getHeight());
+                    if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
+                        FLog.d(TAG, "HSR supported at selected size for " + targetFrameRate + "fps");
+                        useHighSpeedSession = true;
+                    } else {
+                        FLog.d(TAG, "HSR supported but selected size incompatible; using standard session");
+                        useHighSpeedSession = false;
+                    }
+                }
+            }
+
+            if (useHighSpeedSession) {
+                currentCameraCharacteristics = characteristics;
+                createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
+            } else {
+                currentCameraCharacteristics = characteristics;
+                createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
+            }
+            // method(createCameraPreviewSession)-----------
+            return;
+        }
+
+        FLog.d(TAG, "createCameraPreviewSession: Creating session...");
+        try {
+            List<Surface> surfaces = new ArrayList<>();
+            if (glRecordingPipeline != null) {
+                surfaces.add(glRecordingPipeline.getCameraInputSurface());
+            }
+            if (previewSurface != null) {
+                surfaces.add(previewSurface);
+                previewSurfaceAdded = true;
+                FLog.d(TAG, "Using valid preview surface from UI");
+            } else if (dummyBackgroundSurface != null && dummyBackgroundSurface.isValid()) {
+                // Use dummy surface when UI surface is gone (app backgrounded)
+                // to prevent recording issues like green frames
+                surfaces.add(dummyBackgroundSurface);
+                FLog.d(TAG, "Using dummy surface (app backgrounded) to maintain stable recording");
+                previewSurfaceAdded = true;
+            } else {
+                FLog.d(TAG, "No valid preview or dummy surface available");
+            }
+
+            // Get camera characteristics for frame rate handling
+            CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+            String cameraId = getCameraId(cameraManager, cameraType);
+            CameraCharacteristics characteristics = null;
+
+            if (cameraId != null) {
+                characteristics = cameraManager.getCameraCharacteristics(cameraId);
+            }
+
+            // Get target frame rate from settings for specific camera
+            int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            
+            // Apply streaming FPS cap only when server is actually ON
+            boolean isStreamingForFps2 = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
+            if (isStreamingForFps2) {
+                int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+                if (streamFpsCap > 0 && targetFrameRate > streamFpsCap) {
+                    FLog.i(TAG, "[STREAM PRESET] Capping camera FPS: " + targetFrameRate + " → " + streamFpsCap + "fps (server ON)");
+                    targetFrameRate = streamFpsCap;
+                }
+            } else {
+                FLog.d(TAG, "[RECORDING] Server OFF — using full FPS from settings: " + targetFrameRate + "fps");
+            }
+            maybeAttachMotionAnalysisSurface(surfaces, targetFrameRate);
+
+            // Log device info once for debugging
+            DeviceHelper.logDeviceInfo();
+
+            // Check if we need to use high-speed session for 60fps+ recording
+            boolean isHighFrameRate = targetFrameRate >= 60;
+            boolean useHighSpeedSession = false;
+
+            // Continue with existing code...
+            // Rest of the method stays the same
+
+            // For high frame rates, evaluate if we should use high-speed session
+            if (isHighFrameRate && characteristics != null) {
+                // Unify Samsung path with Pixel: never force HSR on Samsung
+                if (DeviceHelper.isSamsung()) {
+                    FLog.d(TAG, "Samsung device: using standard session (no HSR) for " + targetFrameRate + "fps");
+                    showFrameRateToast(targetFrameRate);
+                    useHighSpeedSession = false;
+                }
+                // For other devices, check if high-speed is supported
+                else if (HighSpeedCaptureHelper.isHighSpeedSupported(characteristics, targetFrameRate)) {
+                    Size selected = sharedPreferencesManager.getCameraResolution();
+                    Size hs = HighSpeedCaptureHelper.getBestHighSpeedSize(characteristics, targetFrameRate,
+                            selected.getWidth(), selected.getHeight());
+                    if (hs != null && hs.getWidth() == selected.getWidth() && hs.getHeight() == selected.getHeight()) {
+                        FLog.d(TAG, "High-speed session supported at selected size for " + targetFrameRate + "fps");
+                        useHighSpeedSession = true;
+                    } else {
+                        FLog.d(TAG, "HSR supported but not at selected size; using standard session");
+                        useHighSpeedSession = false;
+                    }
+
+                    // Show toast informing the user about experimental 60fps
+                    showFrameRateToast(targetFrameRate);
+                } else {
+                    FLog.d(TAG, "High-speed not supported for " + targetFrameRate +
+                            "fps, using standard session");
+
+                    // Show toast informing the user that high frame rate may not be fully supported
+                    showFrameRateToast(targetFrameRate);
+                }
+            }
+
+            // Create the appropriate type of session
+            if (useHighSpeedSession) {
+                // For high-speed sessions
+                currentCameraCharacteristics = characteristics;
+                createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
+            } else {
+                // Create a standard session with appropriate frame rate settings
+                currentCameraCharacteristics = characteristics;
+                createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
+            }
+        } catch (CameraAccessException e) {
+            FLog.e(TAG, "createCameraPreviewSession: Camera Access Exception", e);
+            if (previewOnlyActive) {
+                stopPreviewOnlyMode();
+            } else {
+                stopRecording();
+            }
+        } catch (IllegalStateException e) {
+            FLog.e(TAG, "createCameraPreviewSession: IllegalStateException", e);
+            if (previewOnlyActive) {
+                stopPreviewOnlyMode();
+            } else {
+                stopRecording();
+            }
+        } catch (Exception e) {
+            FLog.e(TAG, "createCameraPreviewSession: Exception", e);
+            if (previewOnlyActive) {
+                stopPreviewOnlyMode();
+            } else {
+                stopRecording();
+            }
+        }
+    }
+
+    private final CameraCaptureSession.StateCallback captureSessionCallback = new CameraCaptureSession.StateCallback() {
+        @Override
+        public void onConfigured(@NonNull CameraCaptureSession session) {
+            previewSessionConfigInFlight = false;
+            if (isStopping || cameraDevice == null || (recordingState == RecordingState.NONE && !previewOnlyActive)) {
+                FLog.w(TAG,
+                        "onConfigured: Service is stopping, camera device is null, or recording state is NONE. Aborting.");
+                return;
+            }
+            captureSession = session;
+            try {
+                // Set auto control mode
+                captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+
+                // CRITICAL: Re-apply camera preferences in session callback to ensure they
+                // stick
+                // This ensures AE mode, exposure compensation, and other settings are not lost
+                try {
+                    applySavedCameraPrefsToBuilder(captureRequestBuilder);
+                } catch (Exception e) {
+                    FLog.w(TAG, "Failed to re-apply camera prefs in callback: " + e.getMessage());
+                }
+
+                // Set torch/flash mode
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
+                        isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
+                // Defensive: check session state before using
+                if (captureSession == null || cameraDevice == null
+                        || (recordingState == RecordingState.NONE && !previewOnlyActive)) {
+                    FLog.w(TAG,
+                            "onConfigured: Session or cameraDevice became null before setRepeatingRequest. Aborting.");
+                    return;
+                }
+                // Start repeating request
+                try {
+                    session.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                    maybeApplyDeferredAeLockAfterSessionStart("standard");
+                } catch (IllegalStateException ise) {
+                    FLog.e(TAG, "setRepeatingRequest failed: session likely closed", ise);
+                    if (previewOnlyActive) {
+                        stopPreviewOnlyMode();
+                    } else {
+                        stopRecording();
+                    }
+                    return;
+                }
+                // Start the GL pipeline only after session is configured and repeating request
+                // is set
+                if (glRecordingPipeline != null && !previewOnlyActive) {
+                    glRecordingPipeline.startRecording();
+                }
+                // Handle recording state
+                handleSessionConfigured();
+            } catch (CameraAccessException e) {
+                FLog.e(TAG, "Error starting repeating request", e);
+                if (previewOnlyActive) {
+                    stopPreviewOnlyMode();
+                } else {
+                    stopRecording();
+                }
+            }
+        }
+
+        @Override
+        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+            previewSessionConfigInFlight = false;
+            if (isStopping)
+                return;
+            FLog.e(TAG, "Standard capture session configuration failed");
+            if (previewOnlyActive) {
+                stopPreviewOnlyMode();
+            } else {
+                stopRecording();
+            }
+        }
+
+        @Override
+        public void onClosed(@NonNull CameraCaptureSession session) {
+            previewSessionConfigInFlight = false;
+            if (isStopping)
+                return;
+            FLog.d(TAG, "Capture session closed");
+
+            if (session == captureSession) {
+                captureSession = null;
+            }
+
+            if (isRolloverClosingOldSession) {
+                FLog.d(TAG, "Capture session closed as part of rollover");
+                isRolloverClosingOldSession = false;
+                proceedWithRolloverAfterOldSessionClosed();
+            }
+        }
+    };
+
+    /**
+     * Callback for high-speed session state changes
+     */
+    private final CameraCaptureSession.StateCallback highSpeedSessionCallback = new CameraCaptureSession.StateCallback() {
+
+        @Override
+        public void onConfigured(@NonNull CameraCaptureSession session) {
+            if (isStopping || cameraDevice == null) {
+                FLog.e(TAG, "onConfigured: Service is stopping or camera closed before high-speed session configured");
+                return;
+            }
+
+            try {
+                FLog.d(TAG, "High-speed session configured successfully");
+                captureSession = session;
+
+                // For high-speed sessions, we need to create a list of requests for burst
+                CameraConstrainedHighSpeedCaptureSession highSpeedSession = (CameraConstrainedHighSpeedCaptureSession) session;
+
+                List<CaptureRequest> highSpeedRequests = highSpeedSession
+                        .createHighSpeedRequestList(captureRequestBuilder.build());
+
+                // Start repeating burst for high-speed recording
+                highSpeedSession.setRepeatingBurst(highSpeedRequests, null, backgroundHandler);
+                maybeApplyDeferredAeLockAfterSessionStart("high-speed");
+
+                // Handle recording state
+                handleSessionConfigured();
+            } catch (CameraAccessException e) {
+                FLog.e(TAG, "Error setting up high-speed repeating burst", e);
+                stopRecording();
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                FLog.e(TAG, "Error in high-speed session configuration", e);
+                stopRecording();
+            }
+        }
+
+        @Override
+        public void onConfigureFailed(@NonNull CameraCaptureSession session) {
+            if (isStopping)
+                return;
+            FLog.e(TAG, "High-speed session configuration failed");
+
+            try {
+                // Can't get surfaces from the failed session, need to recreate them
+                CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+                CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+                String cameraId = getCameraId(cameraManager, cameraType);
+                CameraCharacteristics characteristics = null;
+
+                if (cameraId != null) {
+                    characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                }
+                // fallback --------------
+                int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+
+                // Recreate surfaces for standard session
+                List<Surface> surfaces = new ArrayList<>();
+                if (glRecordingPipeline != null && glRecordingPipeline.getCameraInputSurface() != null) {
+                    surfaces.add(glRecordingPipeline.getCameraInputSurface());
+                }
+
+                // Add preview surface if available
+                if (previewSurface != null) {
+                    surfaces.add(previewSurface);
+                }
+
+                // Create standard session as fallback
+                if (!surfaces.isEmpty()) {
+                    createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
+                } else {
+                    FLog.e(TAG, "Failed to create surfaces for fallback session");
+                    stopRecording();
+                }
+                // --------------
+            } catch (Exception e) {
+                FLog.e(TAG, "Failed to create fallback session after high-speed failure", e);
+                stopRecording();
+            }
+        }
+
+        @Override
+        public void onClosed(@NonNull CameraCaptureSession session) {
+            if (isStopping)
+                return;
+            // Handle session closure same as standard session
+            if (captureSessionCallback != null) {
+                captureSessionCallback.onClosed(session);
+            }
+        }
+    };
+
+    /**
+     * Handles errors that occur during the preparation or execution of video
+     * processing.
+     * Logs the error, shows a Toast, resets the processing flag, and attempts to
+     * clean up
+     * the temporary input file associated with the failed process.
+     *
+     * @param errorMessage          A description of the error that occurred.
+     * @param internalTempInputPath The URI (as String) or absolute path of the
+     *                              temporary input file
+     *                              that should be cleaned up because its processing
+     *                              failed. Can be null.
+     */
+    // Helper to handle storage setup errors consistently
+    private void handleProcessingError(String errorMessage, @Nullable String internalTempInputPath) {
+        FLog.e(TAG, "Processing Error: " + errorMessage);
+        Toast.makeText(this, "Error processing video recording", Toast.LENGTH_LONG).show();
+
+        // If an input path/URI was provided, log attempt to clean it
+        if (internalTempInputPath != null) {
+            FLog.d(TAG, "handleProcessingError: Original temp file to keep (maybe): " + internalTempInputPath);
+            // We generally DO NOT delete the input temp file on processing errors,
+            // as it might be the only copy left. We just log it.
+            // CleanupTemporaryFile() call will be skipped if processing failed.
+        } else {
+            FLog.w(TAG, "handleProcessingError called without specific input path reference.");
+        }
+
+        // Check if the service should stop now that processing has failed/stopped
+        if (!isWorkingInProgress()) {
+            FLog.d(TAG, "handleProcessingError: No other work pending, stopping service.");
+            stopSelf();
+        }
+    }
+
+    // Use this primarily for file paths, maybe less critical for content:// URIs
+    private String escapeFFmpegPath(String path) {
+        if (path == null)
+            return "";
+        // For content URIs, usually best not to quote/escape unless specifically needed
+        if (path.startsWith("content://")) {
+            return path;
+        } else {
+            // Escape single quotes for shell safety when wrapping path in single quotes
+            return "'" + path.replace("'", "'\\''") + "'";
+        }
+    }
+
+    // Helper to handle storage setup errors consistently
+    private void handleStorageError(String message) {
+        FLog.e(TAG, message);
+        Toast.makeText(this, message + ", Using Internal.", Toast.LENGTH_LONG).show();
+        sharedPreferencesManager.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+        sharedPreferencesManager.setCustomStorageUri(null);
+        // Note: Do not call stopSelf here, let setupMediaRecorder fail naturally
+    }
+    // --- End Watermarking & Processing ---
+
+    // --- Helper Methods ---
+    private void setupSurfaceTexture(Intent intent) {
+        Surface oldPreviewSurface = previewSurface; // Store old surface to check for changes
+        if (intent != null) {
+            boolean hasSurfaceExtra = intent.hasExtra("SURFACE");
+            if (hasSurfaceExtra) {
+                previewSurface = intent.getParcelableExtra("SURFACE");
+            }
+            boolean isFullscreenTransition = intent.getBooleanExtra("IS_FULLSCREEN_TRANSITION", false);
+            boolean validOldSurface = oldPreviewSurface != null && oldPreviewSurface.isValid();
+            boolean validNewSurface = previewSurface != null && previewSurface.isValid();
+            
+            if (glRecordingPipeline != null) {
+                if (validNewSurface) {
+                    FLog.d(TAG, "Setting preview surface to GL pipeline (immediate=" + isFullscreenTransition + ")");
+                    // Use IMMEDIATE mode for fullscreen to bypass 200ms debounce
+                    if (isFullscreenTransition) {
+                        glRecordingPipeline.setPreviewSurfaceImmediate(previewSurface);
+                    } else {
+                        glRecordingPipeline.setPreviewSurface(previewSurface);
+                    }
+                } else if (hasSurfaceExtra) {
+                    glRecordingPipeline.setPreviewSurface(null);
+                }
+            }
+            // Only create dummy surface if truly backgrounding, not transitioning to fullscreen
+            if (validOldSurface && !validNewSurface && isRecordingOrPaused() && !isFullscreenTransition) {
+                FLog.d(TAG, "Surface lost while recording - creating dummy surface to prevent recording issues");
+                createDummyBackgroundSurface();
+            } else if (isFullscreenTransition) {
+                FLog.d(TAG, "Surface null due to fullscreen transition - skipping dummy surface creation");
+            }
+            int width = intent.getIntExtra("SURFACE_WIDTH", -1);
+            int height = intent.getIntExtra("SURFACE_HEIGHT", -1);
+            // Update the GL pipeline with the new dimensions if available
+            if (glRecordingPipeline != null && validNewSurface && width > 0 && height > 0) {
+                glRecordingPipeline.updateSurfaceDimensions(width, height);
+            }
+        }
+    }
+
+    private int getVideoBitrate() {
+        int videoBitrate;
+        boolean isStreaming = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        
+        if (isStreaming) {
+            // Server is ON: enforce stream quality preset bitrate, ignore user settings
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("ServaCamPrefs", android.content.Context.MODE_PRIVATE);
+            int streamBitrate = fadcamPrefs.getInt("stream_bitrate", -1);
+            String preset = fadcamPrefs.getString("quality_preset", "HIGH");
+            if (streamBitrate > 0) {
+                videoBitrate = streamBitrate;
+                FLog.i(TAG, "[STREAM PRESET] Bitrate enforced: " + (videoBitrate / 1_000_000) + " Mbps (preset=" + preset + ") — user settings ignored");
+            } else {
+                // Preset not set yet, fall back to default HIGH
+                videoBitrate = 5_000_000;
+                FLog.w(TAG, "[STREAM PRESET] Server ON but no preset stored — using default HIGH (5 Mbps)");
+            }
+        } else if (sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
+            videoBitrate = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000) * 1000;
+            FLog.d(TAG, "[RECORDING] Using custom bitrate: " + (videoBitrate / 1000) + " kbps");
+        } else {
+            videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(),
+                    sharedPreferencesManager.getVideoFrameRate());
+            FLog.d(TAG, "[RECORDING] Using auto-estimated bitrate: " + (videoBitrate / 1000) + " kbps");
+        }
+        return videoBitrate;
+    }
+
+    private int getFontSizeBasedOnBitrate() {
+        int fontSize;
+        long videoBitrate = getVideoBitrate();
+        if (videoBitrate <= 1_000_000)
+            fontSize = 12; // <= 1 Mbps (Approx SD)
+        else if (videoBitrate <= 5_000_000)
+            fontSize = 16; // <= 5 Mbps (Approx HD)
+        else if (videoBitrate <= 15_000_000)
+            fontSize = 24; // <= 15 Mbps (Approx FHD)
+        else
+            fontSize = 30; // Higher bitrates (e.g., 4K)
+        FLog.d(TAG, "Determined Font Size: " + fontSize + " for bitrate " + videoBitrate);
+        return fontSize;
+    }
+
+    private String getCurrentTimestamp() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH); // 12-hour format with
+                                                                                               // AM/PM
+        return convertArabicNumeralsToEnglish(sdf.format(new Date()));
+    }
+
+    private String convertArabicNumeralsToEnglish(String text) {
+        if (text == null)
+            return null;
+        return text.replaceAll("٠", "0")
+                .replaceAll("١", "1")
+                .replaceAll("٢", "2")
+                .replaceAll("٣", "3")
+                .replaceAll("٤", "4")
+                .replaceAll("٥", "5")
+                .replaceAll("٦", "6")
+                .replaceAll("٧", "7")
+                .replaceAll("٨", "8")
+                .replaceAll("٩", "9");
+    }
+
+    private String getLocationData() {
+        if (locationHelper == null) {
+            FLog.w(TAG, "❌ LocationHelper not initialized - location watermark DISABLED");
+            return ""; // Return empty, not "Not available" to avoid user confusion
+        }
+        
+        long currentTimeMs = System.currentTimeMillis();
+        long locationUpdateIntervalMs = sharedPreferencesManager.getWatermarkUpdateInterval();
+        long timeSinceLastUpdateMs = currentTimeMs - lastLocationWatermarkUpdateMs;
+        
+        FLog.d(TAG, "📍 Location update check: interval=" + locationUpdateIntervalMs + "ms, elapsed=" + timeSinceLastUpdateMs + "ms");
+        
+        // Only refresh location data if enough time has passed
+        if (timeSinceLastUpdateMs >= locationUpdateIntervalMs) {
+            FLog.d(TAG, "📍 Fetching fresh location data (interval elapsed)");
+            
+            String locData = locationHelper.getLocationData();
+            // Avoid logging precise coordinates; getLocationData() already logs a redacted version
+            FLog.d(TAG, "📍 Raw location from helper: " + (locData != null && locData.contains("Lat=") ? "[coords present]" : "[no coords]"));
+            
+            // Avoid adding "Location not available" to watermark, just add lat/lon if present
+            if (locData == null || !locData.contains("Lat=")) {
+                FLog.w(TAG, "❌ Location data invalid or missing GPS coordinates");
+                cachedLocationWatermarkText = "";
+            } else {
+                // Apply format preference
+                String format = sharedPreferencesManager.getWatermarkLocationFormat();
+                FLog.d(TAG, "📍 Location format preference: " + format);
+                
+                if ("address".equals(format)) {
+                    if (locationGeocoder != null) {
+                        // Get coordinates from LocationHelper's current location
+                        org.osmdroid.util.GeoPoint geoPoint = locationHelper.getCurrentLocation();
+                        if (geoPoint != null) {
+                            // Log redacted coords (~1km precision) for privacy
+                            FLog.d(TAG, "📍 Coordinates: ~" + String.format(java.util.Locale.US, "%.2f", geoPoint.getLatitude()) + ", ~" + String.format(java.util.Locale.US, "%.2f", geoPoint.getLongitude()));
+                            
+                            // Trigger async geocoding if not already cached
+                            locationGeocoder.geocodeAsync(geoPoint.getLatitude(), geoPoint.getLongitude(), result -> {
+                                FLog.d(TAG, "🌐 Geocode callback: result ready=" + !result.isEmpty());
+                            });
+                            
+                            // Try to get cached result if available
+                            LocationGeocoder.GeocodeResult result = locationGeocoder.getCurrentResult();
+                            if (!result.isEmpty()) {
+                                cachedLocationWatermarkText = "\nLat= " + geoPoint.getLatitude() + ", Lon= " + geoPoint.getLongitude()
+                                     + "\n" + result.formatted;
+                                FLog.d(TAG, "📍 address format applied");
+                            } else {
+                                cachedLocationWatermarkText = locData;
+                                FLog.d(TAG, "📍 Geocoding result not ready, using coordinates only");
+                            }
+                        } else {
+                            cachedLocationWatermarkText = locData;
+                            FLog.w(TAG, "❌ GeoPoint is null, using coordinates only");
+                        }
+                    } else {
+                        cachedLocationWatermarkText = locData;
+                        FLog.w(TAG, "❌ LocationGeocoder not initialized, using coordinates only");
+                    }
+                } else {
+                    // Default: coordinates only
+                    cachedLocationWatermarkText = locData;
+                    FLog.d(TAG, "📍 Using coordinates-only format");
+                }
+            }
+            
+            lastLocationWatermarkUpdateMs = currentTimeMs;
+            FLog.d(TAG, "📍 Location watermark cache updated");
+        } else {
+            FLog.d(TAG, "📍 Using cached location data (too soon to update)");
+        }
+        
+        return cachedLocationWatermarkText;
+    }
+
+    private String escapeFFmpegString(String text) {
+        if (text == null)
+            return "";
+        return text
+                .replace("\\", "\\\\") // Escape backslashes
+                .replace(":", "\\:") // Escape colons
+                .replace("'", "") // Remove single quotes entirely (safer than escaping)
+                .replace("\"", "") // Remove double quotes
+                .replace("%", "%%"); // Escape percent signs
+    }
+
+    private void persistRecordingTimelineState() {
+        getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putLong(Constants.PREF_RECORDING_START_TIME, recordingStartTime)
+            .putLong(Constants.PREF_RECORDING_PAUSE_STARTED_AT, pauseStartedAt)
+            .putLong(Constants.PREF_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs)
+            .commit();
+    }
+
+    private void clearRecordingTimelineState() {
+        getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .remove(Constants.PREF_RECORDING_START_TIME)
+            .remove(Constants.PREF_RECORDING_PAUSE_STARTED_AT)
+            .remove(Constants.PREF_RECORDING_ACCUMULATED_PAUSED_DURATION)
+            .apply();
+        FLog.d(TAG, "✅ SERVICE: Cleared recording timeline state from SharedPreferences");
+    }
+
+    private long getEffectiveTimelineMs() {
+        if (recordingStartTime <= 0L) {
+            return 0L;
+        }
+        long anchor = (recordingState == RecordingState.PAUSED && pauseStartedAt > 0L)
+                ? pauseStartedAt
+                : SystemClock.elapsedRealtime();
+        return Math.max(0L, anchor - recordingStartTime - accumulatedPausedDurationMs);
+    }
+
+    // --- End Helper Methods ---
+
+    // --- Broadcasts ---
+    private void broadcastOnRecordingStarted() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STARTED);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
+        sendBroadcast(broadcastIntent);
+    }
+
+    private void broadcastOnRecordingResumed() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_RESUMED);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
+        sendBroadcast(broadcastIntent);
+        FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_RESUMED");
+    }
+
+    private void broadcastOnRecordingPaused() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_PAUSED);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
+        sendBroadcast(broadcastIntent);
+        FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_PAUSED");
+    }
+
+    private void broadcastOnRecordingStopped() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STOPPED);
+        sendBroadcast(broadcastIntent);
+        FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STOPPED");
+    }
+
+    private void broadcastOnPreviewOnlyStarted() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_PREVIEW_ONLY_STARTED);
+        broadcastIntent.putExtra(Constants.EXTRA_PREVIEW_ONLY_ACTIVE, true);
+        sendBroadcast(broadcastIntent);
+        FLog.d(TAG, "Broadcasted: BROADCAST_ON_PREVIEW_ONLY_STARTED");
+    }
+
+    private void broadcastOnPreviewOnlyStopped() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_PREVIEW_ONLY_STOPPED);
+        broadcastIntent.putExtra(Constants.EXTRA_PREVIEW_ONLY_ACTIVE, false);
+        sendBroadcast(broadcastIntent);
+        FLog.d(TAG, "Broadcasted: BROADCAST_ON_PREVIEW_ONLY_STOPPED");
+    }
+
+    private void broadcastOnRecordingStateCallback() {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_STATE, recordingState);
+        broadcastIntent.putExtra(Constants.EXTRA_PREVIEW_ONLY_ACTIVE, previewOnlyActive);
+        // Include start time so late joiners (e.g., fragment after orientation change) can restore elapsed timer
+        if (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED) {
+            broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
+        }
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
+        sendBroadcast(broadcastIntent);
+        FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STATE_CALLBACK with state: " + recordingState +
+                ", startTime=" + (recordingState == RecordingState.IN_PROGRESS || recordingState == RecordingState.PAUSED ? recordingStartTime : -1));
+    }
+    // --- End Broadcasts ---
+
+    // --- Notifications ---
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Get the custom channel name or use a generic name
+            String channelName = sharedPreferencesManager.getNotificationChannelName();
+            CharSequence name = (channelName != null) ? channelName
+                    : getString(R.string.notification_channel_recording, getString(R.string.app_name));
+
+            // Use a generic description that doesn't reveal the app's purpose
+            String description = getString(R.string.notification_channel_description);
+            int importance = NotificationManager.IMPORTANCE_LOW; // Low importance to be less intrusive
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            channel.setSound(null, null); // No sound
+            channel.enableVibration(false); // No vibration
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            } else {
+                FLog.e(TAG, "NotificationManager service not found.");
+            }
+        }
+    }
+
+    private void setupRecordingInProgressNotification() {
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            FLog.w(TAG, "POST_NOTIFICATIONS permission not granted, skipping notification setup.");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                try {
+                    // On Tiramisu+, we can start foreground without permission. Create a minimal
+                    // notification.
+                    NotificationCompat.Builder minimalBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                            .setContentTitle(getString(R.string.app_name))
+                            .setSmallIcon(R.drawable.ic_notification_icon);
+
+                    // Check CAMERA and RECORD_AUDIO permissions before declaring service types
+                    int foregroundServiceType = 0;
+                    if (ActivityCompat.checkSelfPermission(this,
+                            Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        foregroundServiceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA;
+                    } else {
+                        FLog.w(TAG, "CAMERA permission not granted, starting foreground without CAMERA type");
+                    }
+                    if (ActivityCompat.checkSelfPermission(this,
+                            Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                        foregroundServiceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+                    } else {
+                        FLog.w(TAG, "RECORD_AUDIO permission not granted, starting foreground without MICROPHONE type");
+                    }
+
+                    if (foregroundServiceType == 0) {
+                        FLog.e(TAG, "Neither CAMERA nor RECORD_AUDIO permission granted, cannot start foreground service");
+                        stopSelf();
+                        return;
+                    }
+
+                    startForeground(NOTIFICATION_ID, minimalBuilder.build(), foregroundServiceType);
+                    FLog.d(TAG, "Started foreground without notification permission (Tiramisu+).");
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error starting foreground on Tiramisu+ without permission", e);
+                    stopSelf();
+                }
+            } else {
+                Toast.makeText(this, "Notification permission needed", Toast.LENGTH_LONG).show();
+                stopSelf();
+            }
+            return;
+        }
+
+        // STEP 1: Show a simple, fast notification immediately to satisfy the OS
+        // requirement.
+        NotificationCompat.Builder immediateBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification_icon)
+                .setContentTitle(getString(R.string.notification_video_recording))
+                .setContentText("Initializing...");
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Check CAMERA and RECORD_AUDIO permissions before declaring service types (Android 14+ requirement)
+            int foregroundServiceType = 0;
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                foregroundServiceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA;
+            } else {
+                FLog.w(TAG, "CAMERA permission not granted, starting foreground without CAMERA type");
+            }
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                foregroundServiceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+            } else {
+                FLog.w(TAG, "RECORD_AUDIO permission not granted, starting foreground without MICROPHONE type");
+            }
+
+            if (foregroundServiceType == 0) {
+                FLog.e(TAG, "Neither CAMERA nor RECORD_AUDIO permission granted, cannot start foreground service");
+                stopSelf();
+                return;
+            }
+
+            startForeground(NOTIFICATION_ID, immediateBuilder.build(), foregroundServiceType);
+        } else {
+            startForeground(NOTIFICATION_ID, immediateBuilder.build());
+        }
+        // STEP 2: Build the full notification with custom icon on background thread
+        // (bitmap decode must NOT block the main/GL thread — this was causing Davey! frames)
+        backgroundHandler.post(() -> {
+            NotificationCompat.Builder fullNotificationBuilder = createBaseNotificationBuilder(); // This method
+                                                                                                  // contains the slow
+                                                                                                  // bitmap operations
+            String notificationText = sharedPreferencesManager.getNotificationText(false);
+            boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+
+            fullNotificationBuilder.setContentText(notificationText != null ? notificationText
+                    : getString(R.string.notification_video_recording_progress_description));
+
+            if (!hideStopButton) {
+                fullNotificationBuilder.clearActions()
+                        .addAction(new NotificationCompat.Action(
+                                R.drawable.stop_rounded,
+                                getString(R.string.button_stop),
+                                createStopRecordingIntent()));
+            }
+
+            // STEP 3: Update the notification with the full content.
+            NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, fullNotificationBuilder.build());
+        });
+    }
+
+    private void setupRecordingResumeNotification() { // Notification shown when PAUSED
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            FLog.w(TAG, "POST_NOTIFICATIONS permission not granted, skipping notification update.");
+            return; // Don't crash if user denied permission after start
+        }
+
+        // Get custom notification text if set
+        String notificationText = sharedPreferencesManager.getNotificationText(true);
+        boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+
+        NotificationCompat.Builder builder = createBaseNotificationBuilder()
+                .setContentText(notificationText != null ? notificationText
+                        : getString(R.string.notification_video_recording_paused_description))
+                .clearActions(); // Remove previous actions
+
+        // Add resume action
+        builder.addAction(new NotificationCompat.Action(
+                R.drawable.play_button_rounded, // Use Play icon for Resume action
+                getString(R.string.button_resume),
+                createResumeRecordingIntent()));
+
+        // Add stop action only if not hidden
+        if (!hideStopButton) {
+            builder.addAction(new NotificationCompat.Action(
+                    R.drawable.stop_rounded,
+                    getString(R.string.button_stop),
+                    createStopRecordingIntent()));
+        }
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.notify(NOTIFICATION_ID, builder.build()); // Just update existing notification
+        FLog.d(TAG, "Foreground notification updated for PAUSED.");
+    }
+
+    private NotificationCompat.Builder createBaseNotificationBuilder() {
+        // Get custom notification title if set
+        String notificationTitle = sharedPreferencesManager.getNotificationTitle();
+        String preset = sharedPreferencesManager.getNotificationPreset();
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(notificationTitle != null ? notificationTitle
+                        : getString(R.string.notification_video_recording))
+                .setOngoing(true) // Makes it non-dismissible
+                .setSilent(true) // Suppress sound/vibration defaults
+                .setPriority(NotificationCompat.PRIORITY_LOW);
+
+        // Choose appropriate icon based on notification preset
+        int smallIconResId;
+        switch (preset) {
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYSTEM_UPDATE:
+                smallIconResId = android.R.drawable.stat_sys_download;
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_DOWNLOADING:
+                smallIconResId = android.R.drawable.stat_sys_download;
+                break;
+            case SharedPreferencesManager.NOTIFICATION_PRESET_SYNCING:
+                smallIconResId = android.R.drawable.stat_notify_sync;
+                break;
+            default:
+                smallIconResId = R.drawable.ic_notification_icon;
+                break;
+        }
+
+        builder.setSmallIcon(smallIconResId);
+
+        // method(createBaseNotificationBuilder_large_icon)-----------
+        // Set custom large icon based on currently selected app icon for discretion
+        int largeIconResId = getCurrentAppIconResourceId();
+        if (largeIconResId != cachedNotificationIconResId || cachedNotificationIconBitmap == null) {
+            android.graphics.Bitmap fresh = loadNotificationLargeIconBitmap(largeIconResId);
+            if (cachedNotificationIconBitmap != null) cachedNotificationIconBitmap.recycle();
+            cachedNotificationIconBitmap = fresh;
+            cachedNotificationIconResId = largeIconResId;
+        }
+        if (cachedNotificationIconBitmap != null) {
+            builder.setLargeIcon(cachedNotificationIconBitmap);
+        }
+        // method(createBaseNotificationBuilder_large_icon)-----------
+
+        // Set a generic content intent that doesn't reveal the app
+        if (!SharedPreferencesManager.NOTIFICATION_PRESET_DEFAULT.equals(preset)) {
+            // For non-default presets, use a blank PendingIntent that does nothing
+            Intent emptyIntent = new Intent();
+            PendingIntent emptyPendingIntent = PendingIntent.getActivity(this, 0, emptyIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            builder.setContentIntent(emptyPendingIntent);
+        } else {
+            // For default preset, use normal app opening intent
+            builder.setContentIntent(createOpenAppIntent());
+        }
+
+        return builder;
+    }
+
+    // method(getCurrentAppIconResourceId)-----------
+    /**
+     * Gets the resource ID for the currently selected app icon to use as
+     * notification large icon.
+     * This ensures the notification uses the same icon as the user has selected for
+     * the app launcher,
+     * maintaining discretion and consistency.
+     * 
+     * @return Resource ID of the current app icon, or 0 if not found
+     */
+    private int getCurrentAppIconResourceId() {
+        String currentAppIcon = sharedPreferencesManager.getCurrentAppIcon();
+        return sharedPreferencesManager.getAppIconResId(currentAppIcon);
+    }
+
+    // method(loadNotificationLargeIconBitmap)-----------
+    /**
+     * Renders the given icon resource (mipmap/drawable; vector/adaptive/webp/png)
+     * into
+     * a Bitmap sized for notification large icons. This ensures we always provide a
+     * rasterized PNG-like bitmap even when the source is vector or adaptive.
+     */
+    private @Nullable android.graphics.Bitmap loadNotificationLargeIconBitmap(int resId) {
+        if (resId == 0)
+            return null;
+        try {
+            // First try decoding directly (works for PNG/WEBP bitmaps)
+            android.graphics.Bitmap direct = android.graphics.BitmapFactory.decodeResource(getResources(), resId);
+            int targetW = getResources().getDimensionPixelSize(android.R.dimen.notification_large_icon_width);
+            int targetH = getResources().getDimensionPixelSize(android.R.dimen.notification_large_icon_height);
+            int target = Math.max(1, Math.min(targetW, targetH));
+            if (direct != null) {
+                if (direct.getWidth() == target && direct.getHeight() == target)
+                    return direct;
+                // Scale to target square for consistency
+                return android.graphics.Bitmap.createScaledBitmap(direct, target, target, true);
+            }
+
+            // Fallback: render any Drawable (vector/adaptive) to bitmap
+            android.graphics.drawable.Drawable d = androidx.appcompat.content.res.AppCompatResources.getDrawable(this,
+                    resId);
+            if (d == null)
+                return null;
+            android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(target, target,
+                    android.graphics.Bitmap.Config.ARGB_8888);
+            android.graphics.Canvas canvas = new android.graphics.Canvas(bmp);
+            d.setBounds(0, 0, target, target);
+            d.draw(canvas);
+            return bmp;
+        } catch (Throwable t) {
+            FLog.w(TAG, "loadNotificationLargeIconBitmap: failed to render icon", t);
+            return null;
+        }
+    }
+    // method(loadNotificationLargeIconBitmap)-----------
+    // method(getCurrentAppIconResourceId)-----------
+
+    private void cancelNotification() {
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.cancel(NOTIFICATION_ID);
+        FLog.d(TAG, "Cancelled notification.");
+    }
+
+    private PendingIntent createOpenAppIntent() {
+        Intent openAppIntent = new Intent(this, MainActivity.class);
+        // Standard flags to bring existing task to front or start new
+        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        // Use FLAG_IMMUTABLE for security best practices on newer Androids
+        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                : PendingIntent.FLAG_UPDATE_CURRENT;
+        return PendingIntent.getActivity(this, 0, openAppIntent, flags);
+    }
+
+    private PendingIntent createStopRecordingIntent() {
+        Intent stopIntent = new Intent(this, RecordingService.class);
+        stopIntent.setAction(Constants.INTENT_ACTION_STOP_RECORDING);
+        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                : PendingIntent.FLAG_UPDATE_CURRENT;
+        return PendingIntent.getService(this, 1, stopIntent, flags); // Use unique request code (1)
+    }
+
+    private PendingIntent createResumeRecordingIntent() {
+        Intent resumeIntent = new Intent(this, RecordingService.class);
+        resumeIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
+        // Make sure surface data isn't needed here - pass null if required or handle
+        // differently
+        int flags = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                : PendingIntent.FLAG_UPDATE_CURRENT;
+        return PendingIntent.getService(this, 2, resumeIntent, flags); // Use unique request code (2)
+    }
+
+    // --- Toast Helpers ---
+    private void showRecordingResumedToast() {
+        Utils.showQuickToast(this, R.string.video_recording_resumed);
+    }
+
+    private void showRecordingInPausedToast() {
+        Utils.showQuickToast(this, R.string.video_recording_paused);
+    }
+    // --- End Toast Helpers ---
+
+    // --- Torch Logic ---
+
+    private void toggleRecordingTorch() {
+        if (captureRequestBuilder != null && captureSession != null && cameraDevice != null) {
+            if (recordingState == RecordingState.IN_PROGRESS
+                    || recordingState == RecordingState.PAUSED
+                    || previewOnlyActive) {
+                try {
+                    isRecordingTorchEnabled = !isRecordingTorchEnabled; // Toggle the state for the session
+                    FLog.d(TAG, "Toggling recording torch via CaptureRequest. New state: " + isRecordingTorchEnabled);
+
+                    captureRequestBuilder.set(CaptureRequest.FLASH_MODE,
+                            isRecordingTorchEnabled ? CaptureRequest.FLASH_MODE_TORCH : CaptureRequest.FLASH_MODE_OFF);
+
+                    // Apply the change by updating the repeating request
+                    captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                    FLog.d(TAG, "Recording torch repeating request updated.");
+
+                    // Broadcast state change TO THE UI so it can update its torch button
+                    Intent intent = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED);
+                    intent.putExtra(Constants.INTENT_EXTRA_TORCH_STATE, isRecordingTorchEnabled);
+                    sendBroadcast(intent);
+                    
+                    // Update SharedPreferences so RemoteStreamManager can read current torch state
+                    android.content.SharedPreferences prefs = android.preference.PreferenceManager.getDefaultSharedPreferences(this);
+                    prefs.edit()
+                        .putBoolean(Constants.PREF_TORCH_STATE, isRecordingTorchEnabled)
+                        .apply();
+
+                } catch (CameraAccessException e) {
+                    FLog.e(TAG, "Could not toggle recording torch via CaptureRequest: " + e.getMessage());
+                    isRecordingTorchEnabled = !isRecordingTorchEnabled; // Revert state on error
+                } catch (IllegalStateException e) {
+                    FLog.e(TAG, "Could not toggle recording torch via CaptureRequest - session/camera closed?", e);
+                    isRecordingTorchEnabled = !isRecordingTorchEnabled; // Revert state on error
+                }
+            } else {
+                FLog.w(TAG, "Cannot toggle recording torch via CaptureRequest - not IN_PROGRESS or PAUSED. State: "
+                        + recordingState);
+                // If not recording, HomeFragment should handle torch directly via
+                // CameraManager.setTorchMode()
+            }
+        } else {
+            FLog.w(TAG,
+                    "Cannot toggle recording torch via CaptureRequest - session, request builder, or camera device is null.");
+        }
+    }
+
+    // --- Status Check ---
+    public boolean isRecording() {
+        return recordingState == RecordingState.IN_PROGRESS;
+    }
+
+    public boolean isPaused() {
+        return recordingState == RecordingState.PAUSED;
+    }
+
+    /**
+     * Combined helper to check if recording is active or paused
+     */
+    public boolean isRecordingOrPaused() {
+        return isRecording() || isPaused() || recordingState == RecordingState.WAITING_FOR_CAMERA;
+    }
+
+    // Combined status check
+    public boolean isWorkingInProgress() {
+
+        // Only consider recording states (not FFmpeg processing) for determining if
+        // camera is busy
+        // This allows new recordings to start while FFmpeg is still processing in the
+        // background
+        // CRITICAL: WAITING_FOR_CAMERA must be included - service should stay alive
+        // while attempting camera reconnection after interruption (e.g., another app took camera)
+        return recordingState == RecordingState.IN_PROGRESS ||
+                recordingState == RecordingState.PAUSED ||
+                recordingState == RecordingState.STARTING ||
+                recordingState == RecordingState.WAITING_FOR_CAMERA ||
+                previewOnlyActive;
+
+    }
+
+    /**
+     * Check if the service should stay alive (either recording is in progress or
+     * FFmpeg is processing)
+     * This is different from isWorkingInProgress() which only checks if recording
+     * is active
+     */
+    private boolean shouldServiceStayAlive() {
+        return ffmpegProcessingTaskCount.get() > 0 ||
+                recordingState == RecordingState.IN_PROGRESS ||
+                recordingState == RecordingState.PAUSED ||
+                recordingState == RecordingState.STARTING ||
+                recordingState == RecordingState.WAITING_FOR_CAMERA;
+    }
+
+    private void handleSegmentRolloverInternal() {
+        FLog.i(TAG,
+                "handleSegmentRolloverInternal: NO-OP with setNextOutputFile. All rollover handled in OnInfoListener.");
+    }
+
+    private void proceedWithRolloverAfterOldSessionClosed() {
+        FLog.i(TAG,
+                "proceedWithRolloverAfterOldSessionClosed: NO-OP with setNextOutputFile. All rollover handled in OnInfoListener.");
+    }
+
+    @Nullable
+    private File resolveInternalRecordingVideoDir(boolean isStreamAndSave) {
+        if (isStreamAndSave) {
+            return RecordingStoragePaths.getInternalCategoryDir(this, RecordingStoragePaths.Category.STREAM, true);
+        }
+        return RecordingStoragePaths.getInternalCameraSourceDir(this, recordingSessionCameraSource, true);
+    }
+
+    @Nullable
+    private DocumentFile resolveSafRecordingVideoDir(@Nullable String customUriString, boolean isStreamAndSave) {
+        if (customUriString == null || customUriString.isEmpty()) return null;
+        if (isStreamAndSave) {
+            return RecordingStoragePaths.getSafCategoryDir(
+                    this,
+                    customUriString,
+                    RecordingStoragePaths.Category.STREAM,
+                    true);
+        }
+        return RecordingStoragePaths.getSafCameraSourceDir(this, customUriString, recordingSessionCameraSource, true);
+    }
+
+    private File createNextSegmentOutputFile(int nextSegmentNumber) {
+        String storageMode = sharedPreferencesManager.getStorageMode();
+        
+        // Use "Stream_" prefix only if streaming is actually enabled (server running)
+        boolean isStreamingActive = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+            com.servalabs.cam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+        String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+        
+        if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+            // SAF/DocumentFile mode
+            String customUriString = sharedPreferencesManager.getCustomStorageUri();
+            if (customUriString == null) {
+                FLog.e(TAG, "createNextSegmentOutputFile: Custom storage selected but URI is null");
+                return null;
+            }
+            DocumentFile pickedDir = resolveSafRecordingVideoDir(customUriString, isStreamAndSave);
+            if (pickedDir == null || !pickedDir.canWrite()) {
+                FLog.e(TAG, "createNextSegmentOutputFile: Cannot write to selected custom directory");
+                return null;
+            }
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+            String segmentSuffix = String.format(Locale.US, "_part%d", nextSegmentNumber);
+            String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
+                    + Constants.RECORDING_FILE_EXTENSION;
+            DocumentFile nextDocFile = pickedDir.createFile("video/" + Constants.RECORDING_FILE_EXTENSION,
+                    baseFilename);
+            if (nextDocFile == null || !nextDocFile.exists()) {
+                FLog.e(TAG, "createNextSegmentOutputFile: Failed to create DocumentFile in SAF: " + baseFilename);
+                return null;
+            }
+            try {
+                // Open a ParcelFileDescriptor for the next segment
+                ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(nextDocFile.getUri(), "w");
+                if (pfd == null) {
+                    FLog.e(TAG, "createNextSegmentOutputFile: Failed to open ParcelFileDescriptor for next SAF URI: "
+                            + nextDocFile.getUri());
+                    return null;
+                }
+                pfd.close(); // Immediately close, as the pipeline will open as needed
+            } catch (Exception e) {
+                FLog.e(TAG, "createNextSegmentOutputFile: Exception opening PFD for next SAF URI", e);
+                return null;
+            }
+            FLog.i(TAG, "Next segment SAF file created: " + nextDocFile.getUri());
+            return null;
+        } else {
+            // Internal storage mode - Use same directory and naming as first segment
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+            String segmentSuffix = String.format(Locale.US, "_part%d", nextSegmentNumber);
+            String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
+                    + Constants.RECORDING_FILE_EXTENSION;
+
+            // Use the same directory as the first segment (app's external files directory)
+            File videoDir = resolveInternalRecordingVideoDir(isStreamAndSave);
+            if (videoDir == null) {
+                FLog.e(TAG, "Cannot create recording directory for split segment");
+                Toast.makeText(this, "Error creating recording directory", Toast.LENGTH_LONG).show();
+                return null;
+            }
+
+            // Create the file directly in the final directory
+            File nextFile = new File(videoDir, baseFilename);
+            FLog.i(TAG, "Next segment file created: " + nextFile.getAbsolutePath());
+            return nextFile;
+        }
+    }
+
+    // Helper to check if a wired mic is connected
+    private boolean isWiredMicConnected() {
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS);
+            for (AudioDeviceInfo device : devices) {
+                if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
+                        device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                        device.getType() == AudioDeviceInfo.TYPE_USB_DEVICE ||
+                        device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET) {
+                    return true;
+                }
+            }
+        } else {
+            Intent intent = registerReceiver(null, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
+            return intent != null && intent.getIntExtra("state", 0) == 1;
+        }
+        return false;
+    }
+
+    /**
+     * Sets the camera resource releasing state and schedules it to be available
+     * again after a cooldown period.
+     * Also broadcasts the availability state change to the UI components.
+     * 
+     * @param releasing True if camera resources are being released, false otherwise
+     */
+    private void setCameraResourcesReleasing(boolean releasing) {
+        isCameraResourceReleasing = releasing;
+        FLog.d(TAG, "Camera resources releasing state set to: " + releasing);
+
+        // Broadcast the current availability state
+        broadcastCameraResourceAvailability(!releasing);
+
+        // If we're releasing resources, schedule them to become available after a
+        // cooldown
+        if (releasing) {
+            mainHandler.postDelayed(() -> {
+                isCameraResourceReleasing = false;
+                FLog.d(TAG, "Camera resource cooldown ended, resources available now");
+
+                // Broadcast that camera resources are available again
+                broadcastCameraResourceAvailability(true);
+            }, Constants.CAMERA_RESOURCE_COOLDOWN_MS);
+        }
+    }
+
+    /**
+     * Broadcasts the camera resource availability state to UI components
+     * 
+     * @param available True if camera resources are available for a new recording
+     */
+    private void broadcastCameraResourceAvailability(boolean available) {
+        Intent availabilityIntent = new Intent(Constants.ACTION_CAMERA_RESOURCE_AVAILABILITY);
+        availabilityIntent.putExtra(Constants.EXTRA_CAMERA_RESOURCES_AVAILABLE, available);
+        sendBroadcast(availabilityIntent);
+    }
+
+    /**
+     * Helper method to verify if location metadata was successfully embedded in a
+     * video file
+     * This method will add logs that you can filter for "METADATA_CHECK" to trace
+     * the issue
+     * 
+     * @param videoFilePath Path to the final processed video file
+     */
+    private void verifyLocationMetadata(String videoFilePath) {
+        if (videoFilePath == null) {
+            FLog.e(TAG, "METADATA_CHECK: Video file path is null");
+            return;
+        }
+
+        FLog.d(TAG, "METADATA_CHECK: Checking for location metadata in " + videoFilePath);
+
+        try {
+            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+            retriever.setDataSource(videoFilePath);
+
+            // Get location data
+            String locationString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_LOCATION);
+
+            if (locationString != null && !locationString.isEmpty()) {
+                FLog.d(TAG, "METADATA_CHECK: Found location data in video: " + locationString);
+            } else {
+                FLog.e(TAG, "METADATA_CHECK: No location metadata found in processed video!");
+                FLog.e(TAG, "METADATA_CHECK: This suggests the metadata was lost during processing");
+            }
+
+            // Check a few other metadata fields to see if any metadata is preserved
+            String duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            String width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            String height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+
+            FLog.d(TAG, "METADATA_CHECK: Other metadata - Duration: " + duration +
+                    ", Resolution: " + width + "x" + height);
+
+            retriever.release();
+        } catch (Exception e) {
+            FLog.e(TAG, "METADATA_CHECK: Error checking metadata", e);
+        }
+    }
+
+    /**
+     * Reinitializes location helpers based on current preference settings
+     * Called when location settings are changed while the service is running
+     */
+    private void reinitializeLocationHelpers() {
+        reinitializeLocationHelpers(false);
+    }
+
+    /**
+     * Reinitializes location helpers based on current preference settings
+     * 
+     * @param forceInit Force reinitialization even if settings haven't changed
+     */
+    private void reinitializeLocationHelpers(boolean forceInit) {
+        FLog.d(TAG, "==== Reinitializing Location Helpers ====");
+        FLog.d(TAG, "Current preferences: location=" + sharedPreferencesManager.isLocalisationEnabled() +
+                ", embedding=" + sharedPreferencesManager.isLocationEmbeddingEnabled());
+
+        // Handle LocationHelper for watermark
+        boolean locationEnabled = sharedPreferencesManager.isLocalisationEnabled();
+        if (locationEnabled) {
+            if (locationHelper == null || forceInit) {
+                try {
+                    // Clean up existing helper if needed
+                    if (locationHelper != null) {
+                        locationHelper.stopLocationUpdates();
+                    }
+
+                    locationHelper = new LocationHelper(this);
+                    // Also initialize geocoder for reverse geocoding
+                    // Uses Nominatim (free, open-source) - no API keys needed
+                    if (locationGeocoder != null) {
+                        locationGeocoder.shutdown();
+                    }
+                    locationGeocoder = new LocationGeocoder();
+                    FLog.d(TAG, "Created new LocationHelper and LocationGeocoder for watermark");
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error initializing LocationHelper/Geocoder", e);
+                }
+            } else {
+                FLog.d(TAG, "LocationHelper already exists, no need to recreate");
+            }
+        } else {
+            if (locationHelper != null) {
+                try {
+                    locationHelper.stopLocationUpdates();
+                    FLog.d(TAG, "Stopped existing LocationHelper");
+                    locationHelper = null;
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error stopping LocationHelper", e);
+                }
+            }
+            if (locationGeocoder != null) {
+                try {
+                    locationGeocoder.shutdown();
+                    locationGeocoder = null;
+                    FLog.d(TAG, "Shutdown LocationGeocoder");
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error shutting down LocationGeocoder", e);
+                }
+            }
+        }
+
+        // Handle GeotagHelper for metadata embedding
+        boolean embeddingEnabled = sharedPreferencesManager.isLocationEmbeddingEnabled();
+        if (embeddingEnabled) {
+            boolean needsNewHelper = geotagHelper == null || forceInit;
+
+            if (needsNewHelper) {
+                try {
+                    // Clean up existing helper if needed
+                    if (geotagHelper != null) {
+                        geotagHelper.stopUpdates();
+                    }
+
+                    // Create new helper
+                    geotagHelper = new GeotagHelper(this);
+                    boolean started = geotagHelper.startUpdates();
+                    FLog.d(TAG, "Created new GeotagHelper for metadata embedding. Updates started: " + started);
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error initializing GeotagHelper", e);
+                }
+            } else {
+                FLog.d(TAG, "GeotagHelper already exists, ensuring updates are started");
+                // Make sure updates are started even if helper exists
+                try {
+                    boolean started = geotagHelper.startUpdates();
+                    FLog.d(TAG, "Ensured GeotagHelper updates are active: " + started);
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error starting GeotagHelper updates", e);
+                }
+            }
+
+        } else {
+            if (geotagHelper != null) {
+                try {
+                    geotagHelper.stopUpdates();
+                    FLog.d(TAG, "Stopped existing GeotagHelper");
+                    geotagHelper = null;
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error stopping GeotagHelper", e);
+                }
+            }
+        }
+
+        FLog.d(TAG, "==== Location Helpers Reinitialization Complete ====");
+    }
+
+    /**
+     * Creates a high-speed constrained capture session for 60fps+ recording
+     */
+    private void createHighSpeedSession(List<Surface> surfaces, CameraCharacteristics characteristics,
+            int targetFrameRate, CameraType cameraType) {
+        try {
+            // For high-speed recording, we need a constrained high-speed capture session
+            FLog.d(TAG, "Creating constrained high-speed session for " + targetFrameRate + "fps");
+
+            // Get the best size for high-speed recording
+            Size highSpeedSize = HighSpeedCaptureHelper.getBestHighSpeedSize(
+                    characteristics, targetFrameRate, 0, 0);
+
+            if (highSpeedSize == null) {
+                FLog.d(TAG, "No suitable high-speed size found");
+                // Fallback to standard session
+                createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
+                return;
+            }
+
+            // Configure a builder for high-speed recording
+            captureRequestBuilder = HighSpeedCaptureHelper.configureHighSpeedRequestBuilder(
+                    cameraDevice, null, targetFrameRate, characteristics);
+
+            // Apply saved user camera prefs (if any) so recording respects user choices on
+            // start
+            try {
+                applySavedCameraPrefsToBuilder(captureRequestBuilder);
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed to apply saved camera prefs to high-speed builder: " + e.getMessage());
+            }
+
+            if (captureRequestBuilder == null) {
+                FLog.d(TAG, "Failed to create high-speed request builder");
+                // Fallback to standard session
+                createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
+                return;
+            }
+
+            // Add surfaces as targets
+            for (Surface surface : surfaces) {
+                captureRequestBuilder.addTarget(surface);
+            }
+
+            // Apply zoom settings for back camera
+            applyZoomSettings(captureRequestBuilder, cameraType);
+
+            // Set torch mode if enabled
+            if (isRecordingTorchEnabled) {
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+            } else {
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+            }
+
+            // Create the constrained high-speed session
+            cameraDevice.createConstrainedHighSpeedCaptureSession(
+                    surfaces,
+                    highSpeedSessionCallback,
+                    backgroundHandler);
+
+            FLog.d(TAG, "Requested constrained high-speed capture session creation");
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to create high-speed session", e);
+            // Fallback to standard session
+            try {
+                createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
+            } catch (Exception e2) {
+                FLog.e(TAG, "Failed to create fallback standard session", e2);
+                stopRecording();
+            }
+        }
+    }
+
+    /**
+     * Fallback to create a standard session with the best possible frame rate
+     * settings
+     */
+    private void createStandardSession(List<Surface> surfaces, int targetFrameRate,
+            CameraCharacteristics characteristics, CameraType cameraType) {
+        try {
+            // Create standard request builder
+            captureRequestBuilder = cameraDevice.createCaptureRequest(
+                    previewOnlyActive ? CameraDevice.TEMPLATE_PREVIEW : CameraDevice.TEMPLATE_RECORD);
+
+            // Add surfaces as targets
+            for (Surface surface : surfaces) {
+                captureRequestBuilder.addTarget(surface);
+            }
+
+            // Apply frame rate settings
+            applyFrameRateSettings(captureRequestBuilder, targetFrameRate, characteristics);
+
+            // CRITICAL: Apply saved camera preferences for standard session too!
+            // This was missing and causing exposure/AE/AF controls to not work
+            try {
+                applySavedCameraPrefsToBuilder(captureRequestBuilder);
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed to apply saved camera prefs to standard builder: " + e.getMessage());
+            }
+
+            // Apply zoom settings for back camera
+            applyZoomSettings(captureRequestBuilder, cameraType);
+
+            // Set torch mode if enabled
+            if (isRecordingTorchEnabled) {
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH);
+            } else {
+                captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
+            }
+
+            // Create the session
+            if (previewOnlyActive) {
+                previewSessionConfigInFlight = true;
+            }
+            cameraDevice.createCaptureSession(surfaces, captureSessionCallback, backgroundHandler);
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to create standard session", e);
+            previewSessionConfigInFlight = false;
+            if (previewOnlyActive) {
+                stopPreviewOnlyMode();
+            } else {
+                stopRecording();
+            }
+        }
+    }
+
+    /**
+     * Apply saved AF/AE/EV preferences into the provided builder where supported.
+     */
+    private void applySavedCameraPrefsToBuilder(CaptureRequest.Builder builder) {
+        if (builder == null || sharedPreferencesManager == null)
+            return;
+        try {
+            // CRITICAL: Always enable AE mode for exposure compensation to work
+            builder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+
+            int savedEv = sharedPreferencesManager.getSavedExposureCompensation();
+            Boolean aeLock = sharedPreferencesManager.isAeLockedSaved();
+            int afModePref = sharedPreferencesManager.getSavedAfMode();
+
+            FLog.d(TAG, "applySavedCameraPrefsToBuilder: savedEv=" + savedEv + ", aeLock=" + aeLock +
+                    ", afMode=" + afModePref);
+
+            if (currentCameraCharacteristics != null) {
+                // Apply EV: use runtime value if available, otherwise saved value
+                Range<Integer> range = currentCameraCharacteristics
+                        .get(CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE);
+                if (range != null) {
+                    int evToUse = (runtimeExposureCompensation != null) ? runtimeExposureCompensation : savedEv;
+                    int clamped = Math.max(range.getLower(), Math.min(range.getUpper(), evToUse));
+                    builder.set(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, clamped);
+
+                    // CRITICAL: Also apply EV to GL pipeline for visual effect
+                    // Convert EV index to actual EV stops for GL shader
+                    float evStops = 0.0f;
+                    try {
+                        android.util.Rational stepRational = currentCameraCharacteristics
+                                .get(CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP);
+                        if (stepRational != null) {
+                            evStops = clamped * stepRational.floatValue();
+                        } else {
+                            // Fallback: assume 1/3 EV step (common default)
+                            evStops = clamped * 0.33f;
+                        }
+                    } catch (Exception e) {
+                        evStops = clamped * 0.33f; // Safe fallback
+                    }
+
+                    // Apply exposure through GL pipeline for immediate visual effect in preview and
+                    // recording
+                    if (glRecordingPipeline != null) {
+                        glRecordingPipeline.setExposureCompensation(evStops);
+                    }
+                } else {
+                    FLog.w(TAG, "EV compensation range not available from camera characteristics");
+                }
+
+                // Apply AE lock: use runtime value if available, otherwise saved value
+                Boolean aeLockSupported = currentCameraCharacteristics
+                        .get(CameraCharacteristics.CONTROL_AE_LOCK_AVAILABLE);
+                if (aeLockSupported != null && aeLockSupported) {
+                    boolean lockToUse = (runtimeAeLock != null) ? runtimeAeLock : (aeLock != null && aeLock);
+                    if (lockToUse && runtimeAeLock == null) {
+                        // Fresh session + saved lock=true: let AE converge with EV first, then lock.
+                        builder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+                        pendingDeferredAeLockEnable = true;
+                        FLog.d(TAG, "Deferring saved AE lock enable until after repeating starts");
+                    } else {
+                        builder.set(CaptureRequest.CONTROL_AE_LOCK, lockToUse);
+                        pendingDeferredAeLockEnable = false;
+                    }
+                } else {
+                    FLog.w(TAG, "AE lock not supported by camera characteristics");
+                    pendingDeferredAeLockEnable = false;
+                }
+
+                // Apply AF mode: use runtime value if available, otherwise saved value
+                int[] modes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES);
+                if (modes != null && modes.length > 0) {
+                    int afModeToUse = (runtimeAfMode != null) ? runtimeAfMode : afModePref;
+                    boolean supported = false;
+                    for (int m : modes)
+                        if (m == afModeToUse) {
+                            supported = true;
+                            break;
+                        }
+                    if (supported) {
+                        builder.set(CaptureRequest.CONTROL_AF_MODE, afModeToUse);
+                    } else {
+                        FLog.w(TAG, "AF mode " + afModeToUse + " not supported, available modes: "
+                                + java.util.Arrays.toString(modes));
+                    }
+                } else {
+                    FLog.w(TAG, "AF modes not available from camera characteristics");
+                }
+            } else {
+                FLog.e(TAG, "applySavedCameraPrefsToBuilder: currentCameraCharacteristics is null!");
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Error applying camera prefs: " + e.getMessage());
+        }
+    }
+
+    private void maybeApplyDeferredAeLockAfterSessionStart(String sessionType) {
+        if (!pendingDeferredAeLockEnable || backgroundHandler == null) {
+            return;
+        }
+        pendingDeferredAeLockEnable = false;
+        backgroundHandler.postDelayed(() -> {
+            try {
+                if (captureSession == null || captureRequestBuilder == null || currentCameraCharacteristics == null) {
+                    return;
+                }
+                boolean shouldLock = (runtimeAeLock != null)
+                        ? runtimeAeLock
+                        : (sharedPreferencesManager != null && sharedPreferencesManager.isAeLockedSaved());
+                if (!shouldLock) {
+                    return;
+                }
+                FLog.d(TAG, "Applying deferred AE lock after " + sessionType + " session start");
+                applyAeLock(true);
+            } catch (Exception e) {
+                FLog.w(TAG, "Deferred AE lock apply failed", e);
+            }
+        }, 900);
+    }
+
+    private boolean tryApplyManualExposureLock(Long exposureTimeNs, Integer iso) {
+        if (captureRequestBuilder == null || captureSession == null || currentCameraCharacteristics == null
+                || exposureTimeNs == null || iso == null) {
+            return false;
+        }
+        try {
+            int[] aeModes = currentCameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES);
+            boolean aeOffSupported = false;
+            if (aeModes != null) {
+                for (int mode : aeModes) {
+                    if (mode == CaptureRequest.CONTROL_AE_MODE_OFF) {
+                        aeOffSupported = true;
+                        break;
+                    }
+                }
+            }
+            Range<Long> expRange = currentCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
+            Range<Integer> isoRange = currentCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE);
+            if (!aeOffSupported || expRange == null || isoRange == null) {
+                return false;
+            }
+
+            long clampedExp = Math.max(expRange.getLower(), Math.min(expRange.getUpper(), exposureTimeNs));
+            int clampedIso = Math.max(isoRange.getLower(), Math.min(isoRange.getUpper(), iso));
+
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+            captureRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, clampedExp);
+            captureRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, clampedIso);
+            captureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+            manualAeLockActive = true;
+            FLog.d(TAG, "Manual AE lock applied: exposureNs=" + clampedExp + ", iso=" + clampedIso);
+            return true;
+        } catch (Exception e) {
+            FLog.w(TAG, "Manual AE lock unsupported/failed; falling back to AE lock", e);
+            return false;
+        }
+    }
+
+    /**
+     * Apply appropriate frame rate settings based on device type
+     */
+    private void applyFrameRateSettings(CaptureRequest.Builder builder, int targetFrameRate,
+            CameraCharacteristics characteristics) {
+        // Apply a safe AE target FPS range. Prefer exact [X,X], otherwise pick a
+        // supported range including X
+        android.util.Range<Integer> chosen = null;
+        try {
+            if (characteristics != null) {
+                android.util.Range<Integer>[] ranges = characteristics
+                        .get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+                if (ranges != null && ranges.length > 0) {
+                    // Prefer exact constant range first
+                    for (android.util.Range<Integer> r : ranges) {
+                        if (r.getLower() == targetFrameRate && r.getUpper() == targetFrameRate) {
+                            chosen = r;
+                            break;
+                        }
+                    }
+                    // Then any range that contains the target
+                    if (chosen == null) {
+                        for (android.util.Range<Integer> r : ranges) {
+                            if (r.getLower() <= targetFrameRate && r.getUpper() >= targetFrameRate) {
+                                chosen = r;
+                                break;
+                            }
+                        }
+                    }
+                    // Finally, pick the closest upper bound
+                    if (chosen == null) {
+                        android.util.Range<Integer> best = ranges[0];
+                        int bestDiff = Math.abs(best.getUpper() - targetFrameRate);
+                        for (android.util.Range<Integer> r : ranges) {
+                            int diff = Math.abs(r.getUpper() - targetFrameRate);
+                            if (diff < bestDiff) {
+                                best = r;
+                                bestDiff = diff;
+                            }
+                        }
+                        chosen = best;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to choose AE FPS range from characteristics", e);
+        }
+        if (chosen == null) {
+            chosen = new android.util.Range<>(targetFrameRate, targetFrameRate);
+        }
+        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, chosen);
+
+        // Apply Samsung-specific keys if applicable
+        // Do not apply Samsung vendor keys: unify behavior with standard devices
+        // (Pixel-like)
+
+        // Unified behavior: no Huawei/Samsung vendor keys; rely on AE range only.
+    }
+
+    /**
+     * Apply zoom settings for the specified camera type
+     */
+    private void applyZoomSettings(CaptureRequest.Builder builder, CameraType cameraType) {
+        // Get zoom ratio from settings for the specific camera type
+        float zoomRatio = sharedPreferencesManager.getSpecificZoomRatio(cameraType);
+
+        // Apply zoom ratio to the capture request
+        // CONTROL_ZOOM_RATIO was added in Android 11 (API 30)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            builder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio);
+        }
+    }
+
+    /**
+     * Previously showed toast messages for high frame rates
+     * Now just logs the message as warnings are shown permanently in the settings
+     * UI
+     */
+    private void showFrameRateToast(int frameRate) {
+        // Frame rate warnings are now shown permanently in the settings UI
+        // This method is kept to avoid refactoring all callers
+
+        if (frameRate >= 60) {
+            // Just log the high frame rate usage
+            if (DeviceHelper.isSamsung()) {
+                FLog.d(TAG, "Using experimental " + frameRate + "fps mode for Samsung");
+            } else {
+                FLog.d(TAG, "Using experimental " + frameRate + "fps mode");
+            }
+        }
+    }
+
+    /**
+     * Helper method to get the proper camera ID based on camera type.
+     * Only supports FRONT and BACK — DUAL_PIP is handled by DualCameraRecordingService.
+     */
+    private String getCameraId(CameraManager cameraManager, CameraType cameraType) {
+        if (cameraManager == null)
+            return null;
+
+        // DUAL_PIP should never reach RecordingService; route through DualCameraRecordingService instead.
+        if (cameraType != null && cameraType.isDual()) {
+            FLog.w(TAG, "getCameraId called with DUAL_PIP — falling back to BACK camera ID");
+            cameraType = CameraType.BACK;
+        }
+
+        try {
+            if (cameraType == CameraType.BACK) {
+                // For back camera, use the selected back camera ID
+                return sharedPreferencesManager.getSelectedBackCameraId();
+            } else {
+                // For front camera, find the first front-facing camera
+                String[] cameraIds = cameraManager.getCameraIdList();
+                for (String id : cameraIds) {
+                    CameraCharacteristics chars = cameraManager.getCameraCharacteristics(id);
+                    Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        return id;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            FLog.e(TAG, "Error finding camera ID", e);
+        }
+
+        return null;
+    }
+
+    /**
+     * Handle common tasks after any session is configured
+     */
+    private void handleSessionConfigured() {
+        if (previewOnlyActive && recordingState == RecordingState.NONE) {
+            FLog.d(TAG, "Preview-only camera session configured");
+            return;
+        }
+        // Handle recording states
+        if (recordingState == RecordingState.STARTING) {
+            try {
+                // Start the MediaRecorder
+
+                recordingState = RecordingState.IN_PROGRESS;
+
+                // Use SystemClock.elapsedRealtime() instead of System.currentTimeMillis() for
+                // consistency with HomeFragment
+                recordingStartTime = SystemClock.elapsedRealtime();
+                pauseStartedAt = 0L;
+                accumulatedPausedDurationMs = 0L;
+
+                persistRecordingTimelineState();
+
+                // Setup notification
+                setupRecordingInProgressNotification();
+
+                // Broadcast that recording has started
+                broadcastOnRecordingStarted();
+
+                // Notify RemoteStreamManager about active recording file
+                if (currentSegmentFile != null) {
+                    try {
+                        com.servalabs.cam.streaming.RemoteStreamManager.getInstance()
+                            .startRecording(currentSegmentFile);
+                        FLog.i(TAG, "🎬 RemoteStreamManager notified: recording started");
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
+                    }
+                }
+                if (motionLabEnabledForSession) {
+                    // In Motion Lab, arm in paused state first and let motion transitions resume recording.
+                    FLog.i(TAG, "MotionLab armed: entering paused state until trigger");
+                    motionAutoPaused = true;
+                    pauseRecording();
+                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                        setMotionTorchState(false);
+                    }
+                }
+            } catch (Exception e) {
+                FLog.e(TAG, "Failed to start recording", e);
+                stopRecording();
+            }
+        } else if (recordingState == RecordingState.IN_PROGRESS) {
+            // This typically means the session was reconfigured
+            FLog.d(TAG, "Session reconfigured while recording is in progress");
+            setupRecordingInProgressNotification();
+        } else if (recordingState == RecordingState.PAUSED) {
+            // Handle paused state
+            FLog.d(TAG, "Session configured while in PAUSED state");
+            setupRecordingResumeNotification();
+        }
+    }
+
+    private void stopPreviewOnlyMode() {
+        pendingPreviewOnlyStart = false;
+        if (!previewOnlyActive) {
+            return;
+        }
+        previewOnlyActive = false;
+        releasePreviewOnlyGlPipeline();
+        try {
+            if (captureSession != null) {
+                try {
+                    captureSession.stopRepeating();
+                } catch (Exception ignore) {
+                }
+                captureSession.close();
+                captureSession = null;
+            }
+            if (cameraDevice != null) {
+                cameraDevice.close();
+                cameraDevice = null;
+            }
+            isCameraOpen = false;
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed while stopping preview-only mode", e);
+        }
+        broadcastOnPreviewOnlyStopped();
+        if (!isWorkingInProgress()) {
+            stopSelf();
+        }
+    }
+
+    private void ensurePreviewOnlyGlPipeline() {
+        try {
+            ensureWatermarkInfoProvider();
+            if (glRecordingPipeline != null) {
+                if (previewSurface != null && previewSurface.isValid()) {
+                    glRecordingPipeline.setPreviewSurfaceImmediate(previewSurface);
+                }
+                glRecordingPipeline.startPreviewOnlyRendering();
+                glRecordingPipeline.updateWatermark();
+                return;
+            }
+
+            Size resolution = sharedPreferencesManager.getCameraResolution();
+            int videoWidth = resolution.getWidth();
+            int videoHeight = resolution.getHeight();
+            CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+            int videoFramerate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            String orientation = sharedPreferencesManager.getVideoOrientation();
+            VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
+
+            int sensorOrientation = 0;
+            try {
+                CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+                String cameraId = getCameraId(cameraManager, cameraType);
+                if (cameraId != null) {
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                    Integer so = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                    if (so != null) sensorOrientation = so;
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "Preview-only: failed to read sensor orientation", e);
+            }
+
+            File previewTempFile = new File(getCacheDir(),
+                    "preview_gl_temp_" + System.currentTimeMillis() + ".mp4");
+            glRecordingPipeline = new com.servalabs.cam.opengl.GLRecordingPipeline(
+                    this,
+                    watermarkInfoProvider,
+                    videoWidth,
+                    videoHeight,
+                    videoFramerate,
+                    previewTempFile.getAbsolutePath(),
+                    0L,
+                    1,
+                    new GLSegmentCallback(),
+                    previewSurface,
+                    orientation,
+                    sensorOrientation,
+                    selectedCodec,
+                    null,
+                    null
+            );
+            glRecordingPipeline.prepareSurfaces();
+            glRecordingPipeline.startPreviewOnlyRendering();
+            glRecordingPipeline.updateWatermark();
+            FLog.d(TAG, "Preview-only GL pipeline initialized");
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to initialize preview-only GL pipeline", e);
+            releasePreviewOnlyGlPipeline();
+        }
+    }
+
+    private void releasePreviewOnlyGlPipeline() {
+        if (glRecordingPipeline == null) return;
+        try {
+            glRecordingPipeline.stopPreviewOnlyRendering();
+        } catch (Exception e) {
+            FLog.w(TAG, "Error stopping preview-only renderer", e);
+        }
+        try {
+            glRecordingPipeline.stopRecording();
+        } catch (Exception e) {
+            FLog.w(TAG, "Error releasing preview-only GL pipeline", e);
+        }
+        glRecordingPipeline = null;
+    }
+
+    // Add these fields to RecordingService class
+    private GLRecordingPipeline glRecordingPipeline;
+    private WatermarkInfoProvider watermarkInfoProvider;
+    
+    // Track current segment file for streaming
+    private File currentSegmentFile;
+    private String currentSegmentPath;
+    private String currentSegmentUriString;
+    
+    // ⚠️ CRITICAL: Track ParcelFileDescriptors for SAF segments to prevent premature closure
+    // The try-with-resources was auto-closing the PFD while the raw FileDescriptor was still
+    // being used by the GL pipeline, causing EBADF (Bad File Descriptor) errors on write.
+    // Keep TWO references:
+    // - currentSegmentParcelFileDescriptor: NEW PFD that GL pipeline will use
+    // - previousSegmentParcelFileDescriptor: OLD PFD that old muxer is still finalizing
+    // Only close previousSegmentParcelFileDescriptor AFTER old muxer is completely stopped
+    private ParcelFileDescriptor currentSegmentParcelFileDescriptor;
+    private ParcelFileDescriptor previousSegmentParcelFileDescriptor;
+    
+    // Track all temporary files created during STREAM_ONLY mode for cleanup
+    // In STREAM_ONLY, 0-byte segment files are created (GL pipeline needs a handle)
+    // but no data is written. All of them must be deleted when recording stops.
+    private final java.util.List<File> streamOnlyTempFiles = new java.util.ArrayList<>();
+    private final java.util.List<String> streamOnlySafUris = new java.util.ArrayList<>();
+    
+    // Add this helper method for OpenGL pipeline direct output
+    private File getFinalOutputFile() {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String segmentSuffix = ""; // No segment number for the initial file
+        
+        // Use "Stream_" prefix only if streaming is actually enabled (server running)
+        boolean isStreamingActive = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+            com.servalabs.cam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+        String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+        String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
+                + Constants.RECORDING_FILE_EXTENSION;
+        File videoDir = resolveInternalRecordingVideoDir(isStreamAndSave);
+        if (videoDir == null) {
+            FLog.e(TAG, "Cannot create internal recording directory for active session");
+            Toast.makeText(this, "Error creating internal storage directory", Toast.LENGTH_LONG).show();
+            return null;
+        }
+        return new File(videoDir, baseFilename);
+    }
+
+    // Inner class for OpenGL pipeline segment callback
+    private class GLSegmentCallback implements com.servalabs.cam.opengl.GLRecordingPipeline.SegmentCallback {
+        @Override
+        public void onSegmentRollover(int nextSegmentNumber) {
+            FLog.d(TAG, "GLSegmentCallback.onSegmentRollover called for segment " + nextSegmentNumber);
+            String storageMode = sharedPreferencesManager.getStorageMode();
+            VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
+            if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+                FLog.d(TAG, "Using custom storage mode (SAF) for segment rollover");
+                // SAF: create new file and open new ParcelFileDescriptor
+                String customUriString = sharedPreferencesManager.getCustomStorageUri();
+                if (customUriString == null) {
+                    FLog.e(TAG, "Segment rollover: Custom storage selected but URI is null");
+                    stopRecording();
+                    return;
+                }
+                boolean isStreamingActive = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+                com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode streamingMode =
+                        com.servalabs.cam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isStreamAndSave = isStreamingActive
+                        && (streamingMode == com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+                androidx.documentfile.provider.DocumentFile pickedDir = resolveSafRecordingVideoDir(
+                        customUriString, isStreamAndSave);
+                if (pickedDir == null || !pickedDir.canWrite()) {
+                    FLog.e(TAG, "Segment rollover: Cannot write to selected custom directory");
+                    stopRecording();
+                    return;
+                }
+                String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+                String segmentSuffix = String.format(Locale.US, "_part%d", nextSegmentNumber);
+                String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+                String baseFilename = filenamePrefix + timestamp + segmentSuffix + ".mp4";
+                FLog.d(TAG, "Creating new segment file: " + baseFilename);
+                androidx.documentfile.provider.DocumentFile videoFile = pickedDir.createFile("video/mp4", baseFilename);
+                if (videoFile == null) {
+                    FLog.e(TAG, "Segment rollover: Failed to create SAF file");
+                    stopRecording();
+                    return;
+                }
+                Uri safUri = videoFile.getUri();
+                currentSegmentUriString = safUri.toString();
+                currentSegmentPath = safUri.toString();
+                currentSegmentFile = null;
+                com.servalabs.cam.ActiveRecordingStats.rolloverToNewSegment(null, safUri.toString(), RecordingService.this);
+                // Track SAF URI for STREAM_ONLY cleanup during segment rollover
+                boolean isStreamOnlyRollover = isStreamingActive
+                        && (streamingMode == com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                if (isStreamOnlyRollover) {
+                    streamOnlySafUris.add(safUri.toString());
+                    FLog.i(TAG, "📺 STREAM_ONLY (SAF rollover): Tracking temp URI: " + safUri);
+                }
+                
+                // ⚠️ CRITICAL FIX v2: Defer closing old PFD until muxer is completely done
+                // Timeline:
+                // 1. onSegmentRollover(N) called - GL pipeline switches to new segment
+                // 2. Old muxer (segment N-1) still needs its PFD for async finalization
+                // 3. onSegmentRollover(N+1) called - NOW it's safe to close segment N-1's PFD
+                //    because GLRecordingPipeline has already completed rollover for segment N
+                
+                // Close the PREVIOUS segment's PFD (segment N-1)
+                // Safe because GL pipeline finished handling it during the last transition
+                if (previousSegmentParcelFileDescriptor != null) {
+                    try {
+                        previousSegmentParcelFileDescriptor.close();
+                        FLog.d(TAG, "Closed previous-previous segment's ParcelFileDescriptor (deferred close)");
+                    } catch (Exception e) {
+                        FLog.w(TAG, "Error closing deferred PFD", e);
+                    }
+                    previousSegmentParcelFileDescriptor = null;
+                }
+                
+                // Move current PFD to previous before opening new one
+                previousSegmentParcelFileDescriptor = currentSegmentParcelFileDescriptor;
+                currentSegmentParcelFileDescriptor = null;
+                
+                // Now open the new PFD for the new segment
+                try {
+                    ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(safUri, "w");
+                    if (pfd == null) {
+                        FLog.e(TAG, "Segment rollover: Failed to open ParcelFileDescriptor for SAF URI");
+                        stopRecording();
+                        return;
+                    }
+                    
+                    // Store the NEW PFD as current
+                    currentSegmentParcelFileDescriptor = pfd;
+                    FLog.d(TAG, "Successfully created new segment file with SAF: " + videoFile.getName());
+                    
+                    if (glRecordingPipeline != null) {
+                        // Pass the raw FileDescriptor to the pipeline
+                        // The ParcelFileDescriptor wrapper stays alive in currentSegmentParcelFileDescriptor
+                        glRecordingPipeline.setNextOutput(null, pfd.getFileDescriptor());
+                        FLog.d(TAG, "Set next output to file descriptor for segment " + nextSegmentNumber);
+                    } else {
+                        FLog.e(TAG, "glRecordingPipeline is null, cannot set next output");
+                        // Clean up the PFD if we can't use it
+                        pfd.close();
+                        currentSegmentParcelFileDescriptor = null;
+                    }
+                } catch (Exception e) {
+                    FLog.e(TAG, "Segment rollover: Exception opening PFD for SAF URI", e);
+                    currentSegmentParcelFileDescriptor = null;
+                    stopRecording();
+                }
+            } else {
+                FLog.d(TAG, "Using internal storage for segment rollover");
+                
+                // Notify RemoteStreamManager about COMPLETED segment (before creating next)
+                // Fragments are delivered via FragmentedMp4MuxerWrapper callbacks (patched Media3)
+                if (currentSegmentFile != null && currentSegmentFile.exists()) {
+                    long fileSize = currentSegmentFile.length();
+                    FLog.i(TAG, "📹 SEGMENT ROLLOVER: #" + (nextSegmentNumber - 1) + 
+                        ", Size: " + (fileSize / 1024) + " KB, Path: " + currentSegmentFile.getName());
+                } else {
+                    FLog.w(TAG, "⚠️ Segment rollover but no current segment file");
+                }
+                
+                // Internal: use createNextSegmentOutputFile()
+                File nextFile = createNextSegmentOutputFile(nextSegmentNumber);
+                if (nextFile == null) {
+                    FLog.e(TAG, "Segment rollover: Failed to create next segment file");
+                    stopRecording();
+                    return;
+                }
+                FLog.d(TAG, "Successfully created new segment file: " + nextFile.getAbsolutePath());
+                
+                // Track this as current segment
+                currentSegmentFile = nextFile;
+                currentSegmentPath = nextFile.getAbsolutePath();
+                currentSegmentUriString = Uri.fromFile(nextFile).toString();
+                com.servalabs.cam.ActiveRecordingStats.rolloverToNewSegment(nextFile.getAbsolutePath(), null, RecordingService.this);
+                
+                if (glRecordingPipeline != null) {
+                    glRecordingPipeline.setNextOutput(nextFile.getAbsolutePath(), null);
+                    FLog.d(TAG, "Set next output to path: " + nextFile.getAbsolutePath() + " for segment "
+                            + nextSegmentNumber);
+                } else {
+                    FLog.e(TAG, "glRecordingPipeline is null, cannot set next output");
+                }
+            }
+        }
+    }
+
+    // Update startRecording to use new GLRecordingPipeline constructor
+    private void startRecording() {
+        if (recordingState != RecordingState.STARTING) {
+            FLog.e(TAG, "startRecording was called but state is " + recordingState + ", expected STARTING");
+            return;
+        }
+
+        // Clear STREAM_ONLY temp file tracking from any previous session
+        streamOnlyTempFiles.clear();
+        streamOnlySafUris.clear();
+
+        // Clear runtime overrides so saved preferences take priority on fresh recording
+        // session
+        runtimeExposureCompensation = null;
+        runtimeAeLock = null;
+        runtimeAfMode = null;
+        pendingDeferredAeLockEnable = false;
+
+        createNotificationChannel();
+
+        if (sharedPreferencesManager.isLocationEmbeddingEnabled()) {
+            new Thread(() -> {
+                try {
+                    if (geotagHelper == null)
+                        geotagHelper = new GeotagHelper(this);
+                    geotagHelper.startUpdates();
+                    Thread.sleep(800);
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error initializing GeotagHelper", e);
+                }
+            }).start();
+        }
+
+        try {
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                    ActivityCompat.checkSelfPermission(this,
+                            Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                FLog.e(TAG, "Permissions missing, cannot start recording.");
+                Toast.makeText(this, "Permissions required for recording", Toast.LENGTH_LONG).show();
+                recordingState = RecordingState.NONE;
+                sharedPreferencesManager.setRecordingInProgress(false);
+                stopSelf();
+                return;
+            }
+
+            if (recordingWakeLock != null && !recordingWakeLock.isHeld())
+                recordingWakeLock.acquire();
+
+            ensureWatermarkInfoProvider();
+
+            // Re-fetch streaming state and config at actual recording start
+            boolean isStreamingActive = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
+            
+            // Resolution always from Recording Settings — presets only control bitrate + FPS
+            String orientation = sharedPreferencesManager.getVideoOrientation();
+            Size resolution = sharedPreferencesManager.getCameraResolution();
+            int videoWidth  = resolution.getWidth();
+            int videoHeight = resolution.getHeight();
+            
+            int recordingBitrate = getVideoBitrate();  // Reads preset bitrate if streaming
+            int recordingFps = sharedPreferencesManager.getSpecificVideoFrameRate(sharedPreferencesManager.getCameraSelection());
+            if (isStreamingActive && recordingFps > 0) {
+                int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+                if (streamFpsCap > 0 && recordingFps > streamFpsCap) {
+                    recordingFps = streamFpsCap;  // Apply FPS cap
+                }
+            }
+            
+            FLog.i(TAG, "🎬 [RECORDING INITIALIZED] Res: " + videoWidth + "x" + videoHeight + " | FPS: " + recordingFps + " | Bitrate: " + (recordingBitrate/1_000_000) + "Mbps"
+                + (isStreamingActive ? " [STREAM PRESET ACTIVE]" : " [Normal recording]"));
+
+            // Get sensor orientation
+            CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+            String cameraId = getCameraId(cameraManager, cameraType);
+            int sensorOrientation = 0;
+            if (cameraId != null) {
+                try {
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                    Integer so = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                    if (so != null)
+                        sensorOrientation = so;
+                } catch (Exception e) {
+                    FLog.e(TAG, "Error getting sensor orientation", e);
+                }
+            }
+            int videoBitrate = getVideoBitrate();
+            
+            // Get camera's target framerate and apply streaming FPS cap if server is ON
+            int videoFramerate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+            if (isStreamingActive) {
+                int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+                if (streamFpsCap > 0 && videoFramerate > streamFpsCap) {
+                    FLog.i(TAG, "[STREAM PRESET] Applying FPS cap at MediaRecorder: " + videoFramerate + " → " + streamFpsCap + "fps");
+                    videoFramerate = streamFpsCap;
+                }
+            }
+            // Set splitSizeBytes to 0 if video splitting is disabled
+            long splitSizeBytes = 0;
+            if (sharedPreferencesManager.isVideoSplittingEnabled()) {
+                splitSizeBytes = sharedPreferencesManager.getVideoSplitSizeBytes();
+            } else {
+            }
+            int initialSegmentNumber = 1;
+            GLSegmentCallback segmentCallback = new GLSegmentCallback();
+
+            String storageMode = sharedPreferencesManager.getStorageMode();
+            VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
+            if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
+                String customUriString = sharedPreferencesManager.getCustomStorageUri();
+                if (customUriString == null) {
+                    FLog.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
+                    Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
+                    stopSelf();
+                    return;
+                }
+                boolean isSafStreamingActive = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+                com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+                    com.servalabs.cam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isStreamAndSave = isSafStreamingActive
+                        && (streamingMode == com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+                androidx.documentfile.provider.DocumentFile pickedDir = resolveSafRecordingVideoDir(
+                        customUriString, isStreamAndSave);
+                if (pickedDir == null || !pickedDir.canWrite()) {
+                    FLog.e(TAG, "Cannot write to selected custom directory");
+                    Toast.makeText(this, "Cannot write to selected custom directory", Toast.LENGTH_LONG).show();
+                    stopSelf();
+                    return;
+                }
+                String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+                String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
+                String baseFilename = filenamePrefix + timestamp + ".mp4";
+                androidx.documentfile.provider.DocumentFile videoFile = pickedDir.createFile("video/mp4", baseFilename);
+                if (videoFile == null) {
+                    FLog.e(TAG, "Failed to create SAF file");
+                    Toast.makeText(this, "Failed to create file for writing", Toast.LENGTH_LONG).show();
+                    stopSelf();
+                    return;
+                }
+                Uri safUri = videoFile.getUri();
+                currentSegmentUriString = safUri.toString();
+                currentSegmentPath = safUri.toString();
+                currentSegmentFile = null;
+                com.servalabs.cam.ActiveRecordingStats.setActiveSegment(null, safUri.toString());
+                // Track SAF URI for STREAM_ONLY cleanup (0-byte files created but no data written)
+                boolean isStreamOnlySaf = isStreamingActive
+                        && (streamingMode == com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                if (isStreamOnlySaf) {
+                    streamOnlySafUris.add(safUri.toString());
+                    FLog.i(TAG, "📺 STREAM_ONLY (SAF): Tracking temp URI for cleanup: " + safUri);
+                }
+                // -----
+                safRecordingPfd = getContentResolver().openFileDescriptor(safUri, "w");
+                if (safRecordingPfd == null) {
+                    FLog.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
+                    Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
+                    stopSelf();
+                    return;
+                }
+                // Get location data for metadata embedding
+                Float latitude = null;
+                Float longitude = null;
+                if (geotagHelper != null && geotagHelper.hasLocation()) {
+                    android.location.Location location = geotagHelper.getCurrentLocation();
+                    if (location != null) {
+                        latitude = (float) location.getLatitude();
+                        longitude = (float) location.getLongitude();
+                        FLog.d(TAG, "Using location for SAF recording: " + latitude + ", " + longitude);
+                    }
+                } else {
+                }
+                
+                glRecordingPipeline = new com.servalabs.cam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
+                        videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes,
+                        initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation,
+                        selectedCodec, latitude, longitude);
+            } else {
+                // Get location data for metadata embedding
+                Float latitude = null;
+                Float longitude = null;
+                if (geotagHelper != null && geotagHelper.hasLocation()) {
+                    android.location.Location location = geotagHelper.getCurrentLocation();
+                    if (location != null) {
+                        latitude = (float) location.getLatitude();
+                        longitude = (float) location.getLongitude();
+                        FLog.d(TAG, "Using location for internal recording: " + latitude + ", " + longitude);
+                    }
+                } else {
+                    FLog.d(TAG, "No location available for internal recording metadata");
+                }
+                
+                // Check streaming mode to determine output file handling
+                com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
+                    com.servalabs.cam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isStreamOnly = (streamingMode == com.servalabs.cam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                
+                File outputFile;
+                if (isStreamOnly) {
+                    // STREAM_ONLY: Use temporary file that will be deleted after recording
+                    outputFile = new File(getCacheDir(), "stream_temp_" + System.currentTimeMillis() + ".mp4");
+                    streamOnlyTempFiles.add(outputFile); // Track for cleanup
+                    FLog.i(TAG, "📺 STREAM_ONLY mode: Using temporary file: " + outputFile.getName());
+                } else {
+                    // STREAM_AND_SAVE: Write directly to final MP4 file (removed .tmp/remux logic)
+                    outputFile = getFinalOutputFile();
+                    FLog.d(TAG, "💾 STREAM_AND_SAVE mode: Writing directly to file: " + outputFile.getAbsolutePath());
+                }
+                
+                // Track initial segment file for streaming
+                currentSegmentFile = outputFile;
+                currentSegmentPath = outputFile.getAbsolutePath();
+                currentSegmentUriString = Uri.fromFile(outputFile).toString();
+                com.servalabs.cam.ActiveRecordingStats.setActiveSegment(outputFile.getAbsolutePath(), null);
+                
+                glRecordingPipeline = new com.servalabs.cam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
+                        videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber,
+                        segmentCallback, previewSurface, orientation, sensorOrientation, selectedCodec, latitude, longitude);
+            }
+
+            glRecordingPipeline.prepareSurfaces();
+
+            // Notify RemoteStreamManager that recording started
+            try {
+                if (currentSegmentFile != null) {
+                    com.servalabs.cam.streaming.RemoteStreamManager.getInstance().startRecording(currentSegmentFile);
+                    FLog.i(TAG, "🎬 RemoteStreamManager notified: recording started for file: "
+                            + currentSegmentFile.getAbsolutePath());
+                } else {
+                    // SAF mode: no File object available, use flag-based notification
+                    com.servalabs.cam.streaming.RemoteStreamManager.getInstance().startRecordingSaf();
+                }
+            } catch (Exception e) {
+                FLog.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
+            }
+
+            createCameraPreviewSession();
+        } catch (Exception e) {
+            FLog.e(TAG, "CRITICAL FAILURE IN startRecording", e);
+
+            // Broadcast the failure to the UI with details
+            java.io.StringWriter sw = new java.io.StringWriter();
+            java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+            e.printStackTrace(pw);
+            String stackTrace = sw.toString();
+
+            Intent failureIntent = new Intent(Constants.ACTION_RECORDING_FAILED);
+            failureIntent.putExtra(Constants.EXTRA_ERROR_MESSAGE, e.getMessage());
+            failureIntent.putExtra(Constants.EXTRA_STACK_TRACE, stackTrace);
+            try {
+                sendBroadcast(failureIntent);
+            } catch (Throwable t) {
+                FLog.e(TAG, "Failed to broadcast recording failure", t);
+            }
+
+            // Clean up and stop the service
+            recordingState = RecordingState.NONE;
+            sharedPreferencesManager.setRecordingInProgress(false);
+            stopRecording();
+        }
+    }
+
+    // Add this field to the class
+    private Surface dummyBackgroundSurface = null; // Used as fallback when app is backgrounded
+    private SurfaceTexture dummySurfaceTexture = null; // Used to create dummy surface
+
+    // Add this method to create a dummy surface
+    private void createDummyBackgroundSurface() {
+        // Release any existing dummy resources
+        releaseDummyBackgroundSurface();
+
+        try {
+            // Create a 1x1 SurfaceTexture (minimal size/resources)
+            dummySurfaceTexture = new SurfaceTexture(0);
+            dummySurfaceTexture.setDefaultBufferSize(1, 1);
+            dummyBackgroundSurface = new Surface(dummySurfaceTexture);
+
+            FLog.d(TAG, "Created dummy background surface to prevent green screen on Samsung");
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to create dummy background surface", e);
+            dummySurfaceTexture = null;
+            dummyBackgroundSurface = null;
+        }
+    }
+
+    // Add this method to release the dummy surface
+    private void releaseDummyBackgroundSurface() {
+        if (dummyBackgroundSurface != null) {
+            try {
+                dummyBackgroundSurface.release();
+            } catch (Exception e) {
+                FLog.e(TAG, "Error releasing dummyBackgroundSurface", e);
+            } finally {
+                dummyBackgroundSurface = null;
+            }
+        }
+
+        if (dummySurfaceTexture != null) {
+            try {
+                dummySurfaceTexture.release();
+            } catch (Exception e) {
+                FLog.e(TAG, "Error releasing dummySurfaceTexture", e);
+            } finally {
+                dummySurfaceTexture = null;
+            }
+        }
+    }
+
+    // Flag to track if we need to automatically resume recording after camera
+    // interruption
+    private boolean pendingCameraReconnect = false;
+    private static final long RECONNECT_RETRY_DELAY_MS = 2000; // 2 seconds between reconnection attempts
+    private Handler reconnectHandler = new Handler(Looper.getMainLooper());
+    private Runnable reconnectRunnable;
+
+    /**
+     * Starts periodic attempts to reconnect to the camera
+     * 
+     * @param cameraId The ID of the camera to reconnect to
+     */
+    private void startCameraReconnectionAttempts(String cameraId) {
+        if (reconnectRunnable != null) {
+            reconnectHandler.removeCallbacks(reconnectRunnable);
+        }
+        reconnectRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!pendingCameraReconnect) {
+                    FLog.d(TAG, "Camera reconnection attempts stopped by flag");
+                    return;
+                }
+                tryReconnectCamera(cameraId);
+                // Always schedule the next attempt as long as pendingCameraReconnect is true
+                if (pendingCameraReconnect) {
+                    reconnectHandler.postDelayed(this, RECONNECT_RETRY_DELAY_MS);
+                }
+            }
+        };
+        reconnectHandler.post(reconnectRunnable);
+        FLog.d(TAG, "Started camera reconnection attempts (infinite)");
+    }
+
+    /**
+     * Helper method to check if a camera ID is a physical camera from a logical
+     * back camera
+     * This is needed because physical cameras might not have LENS_FACING_BACK set
+     * properly
+     * 
+     * @param cameraId       The camera ID to check
+     * @param basicCameraIds Array of basic camera IDs from getCameraIdList()
+     * @param cameraManager  The camera manager instance
+     * @return true if this is a physical camera from a logical back camera
+     */
+    @RequiresApi(api = Build.VERSION_CODES.P)
+    private boolean isPhysicalBackCamera(String cameraId, String[] basicCameraIds, CameraManager cameraManager) {
+        try {
+            // Check if this camera ID is a physical camera from any logical back camera
+            for (String logicalId : basicCameraIds) {
+                CameraCharacteristics logicalChars = cameraManager.getCameraCharacteristics(logicalId);
+                Integer logicalFacing = logicalChars.get(CameraCharacteristics.LENS_FACING);
+
+                // Only check logical cameras that are back-facing
+                if (logicalFacing != null && logicalFacing == CameraCharacteristics.LENS_FACING_BACK) {
+                    Set<String> physicalIds = logicalChars.getPhysicalCameraIds();
+                    if (physicalIds != null && physicalIds.contains(cameraId)) {
+                        FLog.d(TAG, "Camera ID '" + cameraId + "' is a physical camera from logical back camera '"
+                                + logicalId + "'");
+                        return true;
+                    }
+                }
+            }
+        } catch (CameraAccessException e) {
+            FLog.e(TAG, "Error checking if camera " + cameraId + " is a physical back camera", e);
+        }
+        return false;
+    }
+
+    /**
+     * Attempts to reconnect to the camera
+     * 
+     * @param cameraId The ID of the camera to reconnect to
+     */
+    private void tryReconnectCamera(String cameraId) {
+        try {
+            FLog.d(TAG, "Attempting to reconnect camera: " + cameraId);
+            cameraManager.openCamera(cameraId, cameraStateCallback, backgroundHandler);
+        } catch (Exception e) {
+            FLog.e(TAG, "Error reconnecting to camera", e);
+        }
+    }
+
+    /**
+     * Handles camera interruptions by continuing to record with black frames.
+     * This is called when the camera is disconnected or encounters an error during
+     * recording.
+     */
+    private void handleCameraInterruption() {
+        if (recordingState != RecordingState.IN_PROGRESS) {
+            FLog.w(TAG,
+                    "handleCameraInterruption called but not in IN_PROGRESS state, current state: " + recordingState);
+            return;
+        }
+
+        FLog.i(TAG, "Camera interrupted during recording - switching to black frame mode");
+
+        // Save the current camera ID for reconnection
+        String cameraToReconnect = null;
+        try {
+            CameraType cameraType = sharedPreferencesManager.getCameraSelection();
+            cameraToReconnect = getCameraId(cameraManager, cameraType);
+            if (cameraToReconnect == null) {
+                FLog.e(TAG, "Could not determine camera ID for reconnection");
+                cameraToReconnect = "0"; // Default to first camera
+            }
+        } catch (Exception e) {
+            FLog.e(TAG, "Error determining camera ID for reconnection", e);
+            cameraToReconnect = "0"; // Default to first camera
+        }
+
+        // Update recording state to a special state
+        recordingState = RecordingState.WAITING_FOR_CAMERA;
+
+        // Show notification about camera interruption
+        setupCameraInterruptionNotification();
+
+        // Start camera reconnection attempts
+        pendingCameraReconnect = true;
+
+        // Start a thread to render black frames while the camera is unavailable
+        startBlackFrameRendering();
+
+        // Start camera reconnection attempts
+        startCameraReconnectionAttempts(cameraToReconnect);
+
+        FLog.i(TAG, "Recording continuing with black frames, attempting camera reconnection");
+    }
+
+    private Handler blackFrameHandler;
+    private HandlerThread blackFrameThread;
+    private boolean isRenderingBlackFrames = false;
+    private static final int BLACK_FRAME_INTERVAL_MS = 33; // ~30fps
+
+    /**
+     * Starts rendering black frames to keep the recording going when camera is
+     * unavailable.
+     */
+    private void startBlackFrameRendering() {
+        if (isRenderingBlackFrames) {
+            FLog.d(TAG, "Already rendering black frames");
+            return;
+        }
+
+        if (glRecordingPipeline == null) {
+            FLog.e(TAG, "Cannot start black frame rendering - pipeline is null");
+            return;
+        }
+
+        // Create a dedicated thread for rendering black frames
+        blackFrameThread = new HandlerThread("BlackFrameRenderer");
+        blackFrameThread.start();
+        blackFrameHandler = new Handler(blackFrameThread.getLooper());
+
+        isRenderingBlackFrames = true;
+
+        // Create a runnable that renders black frames at regular intervals
+        Runnable blackFrameRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!isRenderingBlackFrames || recordingState != RecordingState.WAITING_FOR_CAMERA) {
+                    FLog.d(TAG, "Stopping black frame rendering");
+                    stopBlackFrameRendering();
+                    return;
+                }
+
+                // Render a black frame - don't try to recreate renderer if it fails
+                if (glRecordingPipeline != null) {
+                    try {
+                        glRecordingPipeline.renderBlackFrame();
+                    } catch (Exception e) {
+                        // Expected during camera disconnection - log at debug level
+                        FLog.d(TAG, "Expected exception rendering black frame during camera disconnection");
+                    }
+                }
+
+                // Schedule the next frame - even if this one failed
+                // The video will just have some dropped frames, which is better than stopping
+                if (isRenderingBlackFrames && blackFrameHandler != null) {
+                    blackFrameHandler.postDelayed(this, BLACK_FRAME_INTERVAL_MS);
+                }
+            }
+        };
+
+        // Start rendering black frames
+        blackFrameHandler.post(blackFrameRunnable);
+        FLog.d(TAG, "Started rendering black frames");
+    }
+
+    /**
+     * Stops rendering black frames.
+     */
+    private void stopBlackFrameRendering() {
+        // Set flag first to prevent new frames from being scheduled
+        isRenderingBlackFrames = false;
+        FLog.d(TAG, "Stopping black frame rendering");
+
+        // Cancel all pending messages in handler
+        if (blackFrameHandler != null) {
+            blackFrameHandler.removeCallbacksAndMessages(null);
+        }
+
+        // Stop the thread safely
+        final HandlerThread threadToCleanup = blackFrameThread; // Local reference for cleanup
+        blackFrameThread = null; // Clear reference immediately to prevent new usage
+
+        // Clean up the thread on a background thread to avoid blocking
+        new Thread(() -> {
+            try {
+                if (threadToCleanup != null) {
+                    threadToCleanup.quitSafely();
+                    try {
+                        // Wait with timeout for thread to exit
+                        threadToCleanup.join(1000);
+                    } catch (InterruptedException e) {
+                        FLog.w(TAG, "Interrupted while waiting for black frame thread to exit", e);
+                    }
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "Error cleaning up black frame thread", e);
+            }
+        }, "BlackFrameCleanupThread").start();
+
+        // Clear handler reference
+        blackFrameHandler = null;
+
+        FLog.d(TAG, "Stopped rendering black frames");
+    }
+
+    /**
+     * Sets up a notification to inform the user that recording is continuing with
+     * black frames
+     * due to camera interruption.
+     */
+    private void setupCameraInterruptionNotification() {
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            FLog.w(TAG, "POST_NOTIFICATIONS permission not granted, skipping notification update.");
+            return;
+        }
+
+        NotificationCompat.Builder builder = createBaseNotificationBuilder()
+                .setContentTitle(getString(R.string.camera_interrupted_title))
+                .setContentText(getString(R.string.camera_interrupted_description))
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(getString(R.string.camera_interrupted_description)))
+                .clearActions();
+
+        // Add stop action
+        boolean hideStopButton = sharedPreferencesManager.isNotificationStopButtonHidden();
+        if (!hideStopButton) {
+            builder.addAction(new NotificationCompat.Action(
+                    R.drawable.stop_rounded,
+                    getString(R.string.button_stop),
+                    createStopRecordingIntent()));
+        }
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
+        FLog.d(TAG, "Camera interruption notification displayed");
+    }
+
+    /**
+     * Stops any ongoing camera reconnection attempts.
+     */
+    private void stopReconnectionAttempts() {
+        pendingCameraReconnect = false;
+        if (reconnectHandler != null && reconnectRunnable != null) {
+            reconnectHandler.removeCallbacks(reconnectRunnable);
+        }
+        FLog.d(TAG, "Camera reconnection attempts stopped");
+    }
+
+    // Add this field to the class
+    private ParcelFileDescriptor safRecordingPfd = null;
+}

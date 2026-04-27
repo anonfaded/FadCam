@@ -1,16 +1,16 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_name" translatable="false">ServaCam</string>
     <string name="app_icon_description">Выберите значок и название для вашего приложения. Это изменит его вид на главном экране.</string>
     <string name="check_for_updates">Проверить наличие обновлений</string>
     <string name="accessibility_thumbnail_progress">%1$d%% просмотрено</string>
-    <string name="fadsec_info">FadCam является частью пакета FadSec Lab. Для получения дополнительной информации нажмите «Просмотреть исходный код» ниже.</string>
+    <string name="fadsec_info">ServaCam является частью пакета FadSec Lab. Для получения дополнительной информации нажмите «Просмотреть исходный код» ниже.</string>
 
 
     <string name="app_description">
         <![CDATA[
-    FadCam - это бесплатное приложение для записи видео с открытым исходным кодом, которое prioritizes конфиденциальность, не отслеживая и не собирая никаких данных. Оно доступно исключительно на GitHub и через официальные ссылки, упомянутые в README.
+    ServaCam - это бесплатное приложение для записи видео с открытым исходным кодом, которое prioritizes конфиденциальность, не отслеживая и не собирая никаких данных. Оно доступно исключительно на GitHub и через официальные ссылки, упомянутые в README.
     <br/><br/>
-    FadCam был представлен на популярных YouTube-каналах, таких как <font color="#cfbafd">HowToMen</font> и <font color="#cfbafd">Xtream Droid</font>, а также обсуждался в <font color="#cfbafd">GrapheneOS</font> и 55+ других заметных местах.
+    ServaCam был представлен на популярных YouTube-каналах, таких как <font color="#cfbafd">HowToMen</font> и <font color="#cfbafd">Xtream Droid</font>, а также обсуждался в <font color="#cfbafd">GrapheneOS</font> и 55+ других заметных местах.
     ]]>
     </string>
 
@@ -151,12 +151,12 @@
     <string name="front">Фронтальная</string>
     <string name="video_menu_del">Удалить</string>
     <string name="video_menu_save">Сохранить в галерею</string>
-    <string name="video_menu_save_helper_downloads_fadcam">Видео будет сохранено в Downloads/FadCam</string>
+    <string name="video_menu_save_helper_downloads_fadcam">Видео будет сохранено в Downloads/ServaCam</string>
     <string name="video_menu_save_copy_or_move_title">Сохранить в галерею</string>
     <string name="video_menu_save_copy">Копировать в галерею</string>
-    <string name="video_menu_save_copy_desc">Создать копию в Downloads/FadCam (оригинальный файл сохранён)</string>
+    <string name="video_menu_save_copy_desc">Создать копию в Downloads/ServaCam (оригинальный файл сохранён)</string>
     <string name="video_menu_save_move">Переместить в галерею</string>
-    <string name="video_menu_save_move_desc">Переместить файл в Downloads/FadCam (экономит место)</string>
+    <string name="video_menu_save_move_desc">Переместить файл в Downloads/ServaCam (экономит место)</string>
     <string name="video_menu_save_longpress_helper">Длительное нажатие "Сохранить в галерею" для выбора между копированием или перемещением</string>
 
     <!-- File Operation Completion Messages -->
@@ -223,7 +223,7 @@
     <string name="setting_codec_title">Видеокодек</string>
     <string name="note_codec">Выберите кодек\n(По умолчанию: %1$s)\nСовет: С H.265 (HEVC) вы можете использовать примерно половину битрейта H.264 при том же качестве. Пример: Для FHD используйте 8 Мбит/с вместо 16 Мбит/с.</string>
     <string name="setting_watermark">Водяной знак</string>
-    <string name="note_watermark">Выберите вариант водяного знака\n(По умолчанию: Временная метка с FadCam)</string>
+    <string name="note_watermark">Выберите вариант водяного знака\n(По умолчанию: Временная метка с ServaCam)</string>
     <string name="note_watermark_extra">Для быстрого сохранения выберите \'Без водяного знака\'. Добавляете водяной знак? Стоит подождать, всего чуть дольше для обработки!</string>
     <string name="setting_location_title">Данные о местоположении</string>
     <string name="note_location">Включить данные о местоположении в водяной знак. \nТребуется включённый GPS \n(По умолчанию: Отключено)</string>
@@ -256,13 +256,13 @@
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>ОТКАЗ ОТ ОТВЕТСТВЕННОСТИ</item>
-        <item>Собирает ли FadCam какие-либо пользовательские данные?</item>
-        <item>Есть ли реклама в FadCam?</item>
-        <item>Почему FadCam запрашивает доступ к местоположению?</item>
+        <item>Собирает ли ServaCam какие-либо пользовательские данные?</item>
+        <item>Есть ли реклама в ServaCam?</item>
+        <item>Почему ServaCam запрашивает доступ к местоположению?</item>
         <item>Почему требуется разрешение на интернет?</item>
         <item>Хранятся ли данные на внешних серверах?</item>
         <item>Что происходит с моими видео после записи?</item>
-        <item>Делится ли FadCam моими данными с третьими сторонами?</item>
+        <item>Делится ли ServaCam моими данными с третьими сторонами?</item>
         <item></item>
         <item></item>
         <item>Общее</item>
@@ -274,15 +274,15 @@
         <item></item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-        <item>FadCam не одобряет и не поддерживает любое неэтичное или незаконное использование этого программного обеспечения. Злоупотребление, такое как несанкционированное наблюдение или вторжение в частную жизнь, строго противоречит нашим рекомендациям. Автор не несёт ответственности за любое злоупотребление приложением.
+        <item>ServaCam не одобряет и не поддерживает любое неэтичное или незаконное использование этого программного обеспечения. Злоупотребление, такое как несанкционированное наблюдение или вторжение в частную жизнь, строго противоречит нашим рекомендациям. Автор не несёт ответственности за любое злоупотребление приложением.
         </item>
-        <item>Нет, FadCam не собирает никаких пользовательских данных.</item>
-        <item>Нет, FadCam полностью без рекламы.</item>
+        <item>Нет, ServaCam не собирает никаких пользовательских данных.</item>
+        <item>Нет, ServaCam полностью без рекламы.</item>
         <item>Для добавления информации о местоположении в ваши водяные знаки.</item>
         <item>Для автоматической проверки обновлений.</item>
         <item>Нет, все данные хранятся на вашем устройстве.</item>
         <item>Ваши видео сохраняются локально на вашем устройстве.</item>
-        <item>Нет, FadCam не делится и не собирает никаких данных, даже журналы сбоев.</item>
+        <item>Нет, ServaCam не делится и не собирает никаких данных, даже журналы сбоев.</item>
         <item></item>
         <item></item>
         <item></item>
@@ -294,7 +294,7 @@
         <item>Проверьте официальный репозиторий GitHub на наличие обновлений.</item>
         <item></item>
     </string-array>
-    <string name="dialog_welcome_title">Добро пожаловать в FadCam!</string>
+    <string name="dialog_welcome_title">Добро пожаловать в ServaCam!</string>
     <string name="note_from_developer_title">Заметка от разработчика</string>
     <string name="note_from_developer_subtitle">README, ссылки и обновления</string>
     <string name="note_under_dev">Важно: Это приложение находится в разработке. Новые функции добавляются регулярно.</string>
@@ -303,7 +303,7 @@
     <string name="button_readme_github">Репозиторий GitHub</string>
     <string name="community_title">Присоединяйтесь к нашему сообществу:</string>
     <string name="discord_title">Сервер Discord</string>
-    <string name="thankyou_msg">Спасибо за использование FadCam!</string>
+    <string name="thankyou_msg">Спасибо за использование ServaCam!</string>
     <string name="settings_title">Настройки</string>
     <string name="array_watermark_time_fadcam">Время с Fadcam</string>
     <string name="array_watermark_timeonly">Временная метка</string>
@@ -318,7 +318,7 @@
     <string name="quick_speed_option_2">2x</string>
     <string name="quick_speed_option_2_5">2.5x</string>
     <string name="quick_speed_option_custom">Пользовательская</string>
-    <string name="toast_video_saved">Видео сохранено в папку FadCam в Загрузках</string>
+    <string name="toast_video_saved">Видео сохранено в папку ServaCam в Загрузках</string>
     <string name="toast_video_save_fail">Не удалось сохранить видео</string>
     <string name="rename_video_title">Переименовать видео</string>
     <string name="rename_video_hint">Введите новое имя</string>
@@ -418,19 +418,19 @@
     <string name="torch_both">Оба фонарика</string>
     <string name="setting_debug_title">Отладочное логирование</string>
     <string name="note_debug">Включить генерацию файла отладочного журнала \n(По умолчанию: Отключено)</string>
-    <string name="note_debug_detailed">При включении FadCam записывает файл отладочного журнала HTML (FADCAM_debug.html) в общедоступную папку Downloads/FadCam/. Поделитесь этим файлом при сообщении о проблемах. Выключите, чтобы остановить будущие записи.\nПримечание: Отладочное логирование может добавить накладные расходы на производительность во время записи — держите выключенным, если не устраняете неисправности.</string>
-    <string name="note_debug_extra">При включении файл отладочного журнала будет создан в папке Downloads/FadCam. Это может помочь диагностировать проблемы с приложением.</string>
+    <string name="note_debug_detailed">При включении ServaCam записывает файл отладочного журнала HTML (FADCAM_debug.html) в общедоступную папку Downloads/ServaCam/. Поделитесь этим файлом при сообщении о проблемах. Выключите, чтобы остановить будущие записи.\nПримечание: Отладочное логирование может добавить накладные расходы на производительность во время записи — держите выключенным, если не устраняете неисправности.</string>
+    <string name="note_debug_extra">При включении файл отладочного журнала будет создан в папке Downloads/ServaCam. Это может помочь диагностировать проблемы с приложением.</string>
     <!-- Watermark unified strings -->
     <string name="watermark_preview_heading">Предпросмотр</string>
     <string name="watermark_options_heading">Параметры</string>
     <string name="watermark_style_row_title">Стиль водяного знака</string>
-    <string name="watermark_preview_sample_fadcam">Записано FadCam - %1$s</string>
+    <string name="watermark_preview_sample_fadcam">Записано ServaCam - %1$s</string>
     <string name="watermark_preview_sample_timeonly">%1$s</string>
-    <string name="watermark_style_time_fadcam_label">Время с FadCam</string>
+    <string name="watermark_style_time_fadcam_label">Время с ServaCam</string>
     <string name="watermark_style_timeonly_label">Временная метка</string>
     <string name="watermark_style_badge_label">Только метка бренда</string>
     <string name="watermark_style_none_label">Без водяного знака</string>
-    <string name="helper_watermark_preview">Так водяной знак будет отображаться в верхнем левом углу вашего записанного видео.\nЗабавный факт: 10/Июл/2024 04:47 PM - когда FadCam v1.0 впервые вышел.</string>
+    <string name="helper_watermark_preview">Так водяной знак будет отображаться в верхнем левом углу вашего записанного видео.\nЗабавный факт: 10/Июл/2024 04:47 PM - когда ServaCam v1.0 впервые вышел.</string>
     <string name="helper_location_watermark_option">Переключить добавление местоположения вашего устройства как наложения. Требуется разрешение на местоположение.</string>
     <string name="location_watermark_sheet_title">Наложение местоположения</string>
     <string name="location_watermark_switch_label">Наложение местоположения</string>
@@ -450,7 +450,7 @@
     <string name="widgets_helper_text">Закрепите быстрые действия на главном экране для мгновенного доступа.</string>
     <string name="widgets_pin_unsupported">Закрепление виджетов не поддерживается вашим лаунчером.</string>
     <string name="widget_clock_title">Виджет часов</string>
-    <string name="widgets_pin_fallback">Если запрос не появляется, длительно нажмите главный экран, откройте Виджеты и перетащите виджет часов FadCam.</string>
+    <string name="widgets_pin_fallback">Если запрос не появляется, длительно нажмите главный экран, откройте Виджеты и перетащите виджет часов ServaCam.</string>
 
     <!-- Widget Customization -->
     <string name="widget_customize_title">Настроить виджет часов</string>
@@ -660,8 +660,8 @@
     <string name="remote_access_title">Удалённый доступ/управление</string>
     <string name="remote_toast_coming_soon">Скоро! Инша Аллах</string>
     <string name="coming_soon_toast">Скоро! Инша Аллах</string>
-    <string name="remote_coming_soon">Удалённое управление для FadCam скоро появится.</string>
-    <string name="remote_feature_description">Свяжите клиенты FadCam с помощью QR-кода для безопасного удалённого управления в локальной сети: запуск/остановка записи, превью, зум, переключение камеры и многое другое — всё с end-to-end шифрованием.</string>
+    <string name="remote_coming_soon">Удалённое управление для ServaCam скоро появится.</string>
+    <string name="remote_feature_description">Свяжите клиенты ServaCam с помощью QR-кода для безопасного удалённого управления в локальной сети: запуск/остановка записи, превью, зум, переключение камеры и многое другое — всё с end-to-end шифрованием.</string>
     <string name="faditor_mini_title">Faditor Mini</string>
     <string name="faditor_mini_coming_soon">Скоро — лёгкий редактор</string>
     <string name="faditor_mini_toast">Faditor Mini — скоро</string>
@@ -778,7 +778,7 @@
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">Элементы не выбраны.</string>
     <string name="trash_dialog_restore_title">Восстановить выбранные?</string>
-    <string name="trash_dialog_restore_message">Восстановить %1$d элементов в общедоступную папку Downloads/FadCam/?</string>
+    <string name="trash_dialog_restore_message">Восстановить %1$d элементов в общедоступную папку Downloads/ServaCam/?</string>
     <string name="trash_restore_success_toast">%1$d элементов восстановлено.</string>
     <string name="trash_restore_fail_toast">Ошибка восстановления элементов. Некоторые файлы могут не быть восстановлены или галерея не обновлена. Проверьте разрешения приложения на хранение.</string>
     <string name="trash_restore_cancelled_toast">Восстановление отменено.</string>
@@ -799,7 +799,7 @@
     <string name="records_search_hint">Поиск записей…</string>
     <string name="saf_permission_missing_dialog_instructions">Отсутствует разрешение SAF. Пожалуйста, предоставьте доступ к выбранной папке.</string>
     <string name="saf_permission_missing_dialog_title">Требуется разрешение SAF</string>
-    <string name="saf_permission_missing_dialog_message_for_start_recording">Для сохранения записей в пользовательское расположение FadCam нуждается в доступе к выбранной папке. Пожалуйста, предоставьте доступ при запросе.</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">Для сохранения записей в пользовательское расположение ServaCam нуждается в доступе к выбранной папке. Пожалуйста, предоставьте доступ при запросе.</string>
     <string name="grant_permission_button">Предоставить разрешение</string>
 
     <!-- Strings for Trash Auto-Delete Feature -->
@@ -860,14 +860,14 @@
 
     <!-- Fix Start: Add onboarding toggle strings -->
     <string name="setting_onboarding_title">Показать введение</string>
-    <string name="note_onboarding">Включите, чтобы увидеть введение в приложение и руководство по разрешениям при следующем открытии FadCam.</string>
+    <string name="note_onboarding">Включите, чтобы увидеть введение в приложение и руководство по разрешениям при следующем открытии ServaCam.</string>
     <!-- Fix End: Add onboarding toggle strings -->
 
     <string name="choose_language">Выбрать язык</string>
     <string name="language_change_later_note">Вы можете изменить это позже в Настройках.</string>
 
     <string name="permissions_required">Требуются разрешения</string>
-    <string name="permissions_description">FadCam нужен доступ к вашей камере, микрофону и хранилищу для записи и сохранения видео.</string>
+    <string name="permissions_description">ServaCam нужен доступ к вашей камере, микрофону и хранилищу для записи и сохранения видео.</string>
     <string name="grant_permissions">Предоставить разрешения</string>
     <string name="permissions_note">Вы должны предоставить все разрешения, чтобы продолжить.</string>
     <string name="permissions_granted">Все разрешения предоставлены!</string>
@@ -877,10 +877,10 @@
     <string name="disable_battery_optimization">Отключить оптимизацию батареи</string>
 
     <string name="onboarding_human_title">Подтвердите, что вы человек</string>
-    <string name="onboarding_human_desc">Хммм... ладно. Эти правила не подлежат обсуждению. Если вы не можете согласиться, пожалуйста, удалите FadCam прямо сейчас.</string>
-    <string name="onboarding_human_checkbox1">Я не буду использовать FadCam для нарушения законов, вторжения в чью-либо приватность или быть creep\'ом. Разработчик вне картины, если я напортачу. (Это на мне.)</string>
-    <string name="onboarding_human_checkbox2">Я уже люблю FadCam ещё до использования. (Не опционально)</string>
-    <string name="onboarding_human_checkbox3">Я согласен с Политикой конфиденциальности</string>
+    <string name="onboarding_human_desc">Хммм... ладно. Эти правила не подлежат обсуждению. Если вы не можете согласиться, пожалуйста, удалите ServaCam прямо сейчас.</string>
+    <string name="onboarding_human_checkbox1">Я не буду использовать ServaCam для нарушения законов, вторжения в чью-либо приватность или быть creep\'ом. Разработчик вне картины, если я напортачу. (Это на мне.)</string>
+    <string name="onboarding_human_checkbox2">Я уже люблю ServaCam ещё до использования. (Не опционально)</string>
+
     <string name="onboarding_human_button">Впустите меня!</string>
 
 
@@ -953,10 +953,10 @@
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
-    <string name="app_icon_pakistan" translatable="false">FadCam</string>
+    <string name="app_icon_pakistan" translatable="false">ServaCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
     <string name="app_icon_noor" translatable="false">Noor</string>
-    <string name="app_icon_bat" translatable="false">FadCam</string>
+    <string name="app_icon_bat" translatable="false">ServaCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>
     <string name="app_icon_calculator" translatable="false">Calculator</string>
@@ -975,7 +975,7 @@
 
     <!-- Fix Start: Add auto update check toggle strings -->
     <string name="setting_auto_update_check_title">Автоматическая проверка обновлений</string>
-    <string name="note_auto_update_check">Если включено, FadCam будет проверять обновления каждый раз при открытии приложения. Отключите, чтобы отключить автоматические проверки обновлений при запуске.\n(По умолчанию: Включено)</string>
+    <string name="note_auto_update_check">Если включено, ServaCam будет проверять обновления каждый раз при открытии приложения. Отключите, чтобы отключить автоматические проверки обновлений при запуске.\n(По умолчанию: Включено)</string>
     <!-- Fix End: Add auto update check toggle strings -->
 
     <!-- Storage Location Settings -->
@@ -998,7 +998,7 @@
     <string name="storage_location_internal">Внутреннее хранилище приложения (По умолчанию, Приватное)</string>
     <string name="storage_location_custom">Пользовательское расположение (SD-карта/Другое, Видно в Галерее)</string>
     <string name="storage_location_choose_folder">Выбрать папку</string>
-    <string name="storage_location_note">Примечание: Использование пользовательских расположений делает видео доступными для других приложений (например, Галереи). Внутреннее хранилище сохраняет их приватными для FadCam.</string>
+    <string name="storage_location_note">Примечание: Использование пользовательских расположений делает видео доступными для других приложений (например, Галереи). Внутреннее хранилище сохраняет их приватными для ServaCam.</string>
     <string name="storage_sheet_title">Расположение хранения</string>
     <string name="storage_option_use_internal">Использовать внутреннее хранилище</string>
     <string name="storage_option_switch_internal">Переключиться на внутреннее хранилище</string>
@@ -1102,7 +1102,7 @@
     <!-- Additional Notification Customization Strings -->
     <!-- Adding notification appearance strings -->
     <string name="setting_notification_appearance">Внешний вид уведомлений</string>
-    <string name="note_notification_appearance">Настройте внешний вид уведомления о записи\n(По умолчанию: FadCam)</string>
+    <string name="note_notification_appearance">Настройте внешний вид уведомления о записи\n(По умолчанию: ServaCam)</string>
     <string name="hide_stop_button">Скрыть кнопку стоп</string>
     <string name="note_hide_stop_button">Скрыть кнопку стоп в уведомлении\n(По умолчанию: Отключено)</string>
     <string name="notification_preview">Предпросмотр уведомления</string>
@@ -1118,7 +1118,7 @@
     <string name="notification_custom_text_placeholder">Описание (например, Обновление в процессе)</string>
 
     <string-array name="notification_appearance_options">
-        <item>FadCam (по умолчанию)</item>
+        <item>ServaCam (по умолчанию)</item>
         <item>Системное обновление</item>
         <item>Загрузка</item>
         <item>Синхронизация</item>
@@ -1181,7 +1181,7 @@
     <!-- Trash Restore Destination Strings -->
     <string name="restore_destination_title">Выбрать место восстановления</string>
     <string name="restore_destination_downloads">Папка Загрузки</string>
-    <string name="restore_destination_downloads_desc">Публичная папка Downloads/FadCam/</string>
+    <string name="restore_destination_downloads_desc">Публичная папка Downloads/ServaCam/</string>
     <string name="restore_destination_internal">Внутреннее хранилище</string>
     <string name="restore_destination_internal_desc">Приватное хранилище приложения</string>
     <string name="restore_destination_original">Исходное место</string>
@@ -1216,10 +1216,10 @@
     <string name="new_project">Новый проект</string>
     <string name="delete">Удалить</string>
 
-    <!-- FadCam Pro Strings -->
-    <string name="fadcam_pro_title">FadCam Pro</string>
+    <!-- ServaCam Pro Strings -->
+    <string name="fadcam_pro_title">ServaCam Pro</string>
     <string name="fadcam_pro_subtitle">Премиум-функции для полной дискретности</string>
-    <string name="fadcam_pro_get_button">Получить FadCam Pro</string>
+    <string name="fadcam_pro_get_button">Получить ServaCam Pro</string>
     <string name="fadcam_pro_free">Бесплатно</string>
     <string name="fadcam_pro_column_label">Pro</string>
     <string name="fadcam_pro_proplus_label">Pro+</string>
@@ -1231,8 +1231,8 @@
     <string name="fadcam_pro_benefit_lifetime_updates">Пожизненные обновления: Всегда получайте новые функции, улучшения и исправления ошибок</string>
     <string name="fadcam_pro_benefit_support">Мгновенная поддержка: Прямая помощь через тикеты в Discord</string>
     <string name="fadcam_pro_coming_soon">Pro+ и Lab функции скоро с загрузкой пользовательских иконок, пользовательскими именами приложений и FadDrive облачным синком.</string>
-    <string name="fadcam_pro_support_message">FadCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing time and work. Upgrading to Pro (currently free) helps support development, and in return I’m able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)</string>
-    <string name="fadcam_pro_separate_apk">Отдельное приложение • Работает рядом с FadCam</string>
+    <string name="fadcam_pro_support_message">ServaCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing time and work. Upgrading to Pro (currently free) helps support development, and in return I’m able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)</string>
+    <string name="fadcam_pro_separate_apk">Отдельное приложение • Работает рядом с ServaCam</string>
     <string name="fadcam_pro_feature_everything_icon">Всё</string>
     <string name="fadcam_pro_feature_everything">Всё</string>
     <string name="fadcam_pro_feature_custom_icon">Пользовательская иконка приложения</string>
@@ -1246,7 +1246,7 @@
     <string name="player_info_title">О видеоплеере</string>
     <string name="player_info_content"><![CDATA[
 <b>Формат фрагментированного MP4</b><br/><br/>
-FadCam использует фрагментированный формат MP4 для записей. Это означает, что видео сохраняются в небольших сегментах вместо одного полного файла. Преимущество в том, что если что-то пойдёт не так во время записи, вы потеряете только последние несколько секунд вместо всего видео.<br/><br/>
+ServaCam использует фрагментированный формат MP4 для записей. Это означает, что видео сохраняются в небольших сегментах вместо одного полного файла. Преимущество в том, что если что-то пойдёт не так во время записи, вы потеряете только последние несколько секунд вместо всего видео.<br/><br/>
 Если последние несколько секунд вашего видео кажутся замороженными или устаревшими, не волнуйтесь — это не баг! Когда вы останавливаете запись, текущий фрагмент может ещё завершать свой цикл (~3 секунды), что может оставить краткий устаревший кадр в конце.<br/><br/>
 <b>Ограничения плеера</b><br/><br/>
 Встроенный видеоплеер имеет некоторые системные ограничения Android. Вы можете заметить, что полоса прогресса или волновая форма появляются слегка неуклюже — это нормальное поведение и не баг.<br/><br/>
@@ -1343,7 +1343,7 @@ FadCam использует фрагментированный формат MP4 
     <string name="stream_notes_wifi">• Клиенты должны быть в той же WiFi-сети для доступа к стриму</string>
     <string name="stream_notes_quality">• Качество стрима (LOW/MEDIUM/HIGH/ULTRA) контролирует ограничение FPS и битрейта для предотвращения сетевых проблем</string>
     <string name="stream_notes_resolution">• Ориентация и разрешение стрима берутся из ваших обычных настроек записи (Настройки видео → Разрешение и ориентация). Измените их, если хотите изменить размеры стрима</string>
-    <string name="stream_notes_cellular">⚠️ Только WiFi: мобильные сети блокируют входящие соединения. Для бесперебойной потоковой передачи из любой сети (WiFi, LTE, везде), обновитесь до FadCam Pro+. Транслируйте отовсюду по всему миру с приватной сгенерированной ссылкой—без переадресации портов, без изменений маршрутизатора, без сетевых ограничений</string>
+    <string name="stream_notes_cellular">⚠️ Только WiFi: мобильные сети блокируют входящие соединения. Для бесперебойной потоковой передачи из любой сети (WiFi, LTE, везде), обновитесь до ServaCam Pro+. Транслируйте отовсюду по всему миру с приватной сгенерированной ссылкой—без переадресации портов, без изменений маршрутизатора, без сетевых ограничений</string>
     <string name="stream_notes_android14_screen">⚠️ Android 14+: Системное ограничение блокирует запись при выключенном экране. Решения: (1) Включите «Черный экран» в Настройки → Безопасность, или (2) Отключите блокировку экрана (без PIN/пароля/отпечатка). Оба способа позволяют беспроблемной удаленной записи</string>
     
 </resources>

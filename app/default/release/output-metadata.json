@@ -1,0 +1,67 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "com.servalabs.cam",
+  "variantName": "defaultRelease",
+  "elements": [
+    {
+      "type": "UNIVERSAL",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 35,
+      "versionName": "4.0.0",
+      "outputFile": "app-default-universal-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "armeabi-v7a"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 35,
+      "versionName": "4.0.0",
+      "outputFile": "app-default-armeabi-v7a-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "arm64-v8a"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 35,
+      "versionName": "4.0.0",
+      "outputFile": "app-default-arm64-v8a-release.apk"
+    }
+  ],
+  "elementType": "File",
+  "baselineProfiles": [
+    {
+      "minApi": 28,
+      "maxApi": 30,
+      "baselineProfiles": [
+        "baselineProfiles/1/app-default-universal-release.dm",
+        "baselineProfiles/1/app-default-armeabi-v7a-release.dm",
+        "baselineProfiles/1/app-default-arm64-v8a-release.dm"
+      ]
+    },
+    {
+      "minApi": 31,
+      "maxApi": 2147483647,
+      "baselineProfiles": [
+        "baselineProfiles/0/app-default-universal-release.dm",
+        "baselineProfiles/0/app-default-armeabi-v7a-release.dm",
+        "baselineProfiles/0/app-default-arm64-v8a-release.dm"
+      ]
+    }
+  ],
+  "minSdkVersionForDexing": 24
+}

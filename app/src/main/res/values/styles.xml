@@ -22,7 +22,7 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
-    <style name="Widget.FadCam.BottomSheetSlider" parent="Widget.Material3.Slider">
+    <style name="Widget.ServaCam.BottomSheetSlider" parent="Widget.Material3.Slider">
         <item name="trackColorActive">?attr/pickerSliderActive</item>
         <item name="trackColorInactive">?attr/pickerSliderInactive</item>
         <item name="tickColorActive">?attr/pickerSliderActive</item>
@@ -35,7 +35,7 @@
         <item name="haloRadius">18dp</item>
     </style>
 
-    <style name="Widget.FadCam.RecordsFilterChip" parent="Widget.Material3.Chip.Filter">
+    <style name="Widget.ServaCam.RecordsFilterChip" parent="Widget.Material3.Chip.Filter">
         <item name="chipMinHeight">28dp</item>
         <item name="android:minHeight">28dp</item>
         <item name="ensureMinTouchTargetSize">false</item>
@@ -151,13 +151,13 @@
         <item name="android:windowAnimationStyle">@null</item>
     </style>
 
-    <!-- FadCam Pro Activity Theme with Ubuntu Font -->
-    <style name="FadCamProTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <!-- ServaCam Pro Activity Theme with Ubuntu Font -->
+    <style name="ServaCamProTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:fontFamily">@font/ubuntu_regular</item>
     </style>
 
     <!-- Faditor Editor dark immersive theme -->
-    <style name="Theme.FadCam.FaditorEditor" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.ServaCam.FaditorEditor" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:colorBackground">#FF0D0D0D</item>
         <item name="colorSurface">#FF1A1A1A</item>
         <item name="colorSurfaceVariant">#FF252525</item>

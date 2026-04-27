@@ -9,15 +9,15 @@ FORMAT GUIDELINES:
 - This version is a patch update to v3.0.0, addressing critical bug regarding MIC and F-Droid compatibility.
 
 # ⚠️ Breaking Change ⚠️
-- FadCam now uses fragmented MP4 format for video files. It is better to backup your existing videos before updating, just in case.
+- ServaCam now uses fragmented MP4 format for video files. It is better to backup your existing videos before updating, just in case.
 
 ---
 
 # ✨ New Features  
 
-- **FadCam Pro**: Free until December 23, 2025 only. Get customized builds with custom notification icons.
+- **ServaCam Pro**: Free until December 23, 2025 only. Get customized builds with custom notification icons.
 - **FadRec**: New screen recorder with annotation tools (pen, eraser, text, shapes) and layer management.
-- **FadCam Remote**: Stream your camera live over local network with remote control and real-time monitoring.
+- **ServaCam Remote**: Stream your camera live over local network with remote control and real-time monitoring.
 - **Custom Watermark**: Add personalized text to your videos (license plate, location, etc.).
 - **In-App What's New**: New feature highlights after updates, no external links needed.
 

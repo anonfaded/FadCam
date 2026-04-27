@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_name" translatable="false">ServaCam</string>
     <string name="app_icon_description">Da khpal app lapara yao icon aw num entekhab ka. Da ba staso pa home screen bandi da shakaridalo tarika badla ki.</string>
     <string name="check_for_updates">Updates kho nesta?</string>
-    <string name="fadsec_info">FadCam app da FadSec Lab suite yo hissa da. Nur maloomat da paara, laandi \'Source Code ogorai\' bandi click kai.</string>
+    <string name="fadsec_info">ServaCam app da FadSec Lab suite yo hissa da. Nur maloomat da paara, laandi \'Source Code ogorai\' bandi click kai.</string>
     <string name="app_description">
     <![CDATA[
-    FadCam yao ad-free, open-source video recording app da che privacy ta tarjeeh warkawi aw sta data na track kai aw na ye jama kai. Da sirf pa GitHub aw pa README ke che kam official links di, sirf alta dastiyab de.
+    ServaCam yao ad-free, open-source video recording app da che privacy ta tarjeeh warkawi aw sta data na track kai aw na ye jama kai. Da sirf pa GitHub aw pa README ke che kam official links di, sirf alta dastiyab de.
     <br/><br/>
-    FadCam pa mashhoor YouTube channels bandi feature shawe de, agha ke <font color="#cfbafd">HowToMen</font> aw <font color="#cfbafd">Xtream Droid</font> shamil di, aw da <font color="#cfbafd">GrapheneOS</font> aw 55+ nor articles ki ham feature shwe de.
+    ServaCam pa mashhoor YouTube channels bandi feature shawe de, agha ke <font color="#cfbafd">HowToMen</font> aw <font color="#cfbafd">Xtream Droid</font> shamil di, aw da <font color="#cfbafd">GrapheneOS</font> aw 55+ nor articles ki ham feature shwe de.
     ]]>
     </string>
     <string name="view_source_code">Source Code ogorai</string>
@@ -78,7 +78,7 @@
     <string name="setting_quailty_title">Da Video Quality</string>
     <string name="note_quailty">Quality intikhab kai\n(Default: HD)</string>
     <string name="setting_watermark">Watermark</string>
-    <string name="note_watermark">Watermark option intikhab kai\n(Default: Timestamp sara da FadCam)</string>
+    <string name="note_watermark">Watermark option intikhab kai\n(Default: Timestamp sara da ServaCam)</string>
     <string name="note_watermark_extra">Oke zar video save kol we, nu \'No Watermark\' intekhab kae. Watermark am add kol gware? Nu byam hes khabara nada, bs lag wakh ba der akhli!</string>
     <string name="setting_location_title">Da Location Data</string>
     <string name="note_location">Da location data am watermark ki shamil kae. \nGPS pehla zaruri on kol de \n(Default: Disabled)</string>
@@ -99,13 +99,13 @@
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>DISCLAIMER</item>
-        <item>FadCam da user data jama kai zan sara?</item>
+        <item>ServaCam da user data jama kai zan sara?</item>
         <item>Di app ki ishtehar am shta?</item>
-        <item>FadCam da location access wali gwari?</item>
+        <item>ServaCam da location access wali gwari?</item>
         <item>Da internet permission walae zarurat de?</item>
         <item>Hes runga data pa external servers bande store kegi?</item>
         <item>Zama videos sara sa kegi record kolo na pas?</item>
-        <item>FadCam zama data third party services ta legi?</item>
+        <item>ServaCam zama data third party services ta legi?</item>
         <item> </item>
         <item> </item>
         <item>General</item>
@@ -119,15 +119,15 @@
         <item> </item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-        <item>FadCam hes am ghair akhlaqi ya illegal istemal la nade. Misuse, da cha surveillance ya privacy ki da dakhal, zamung da guidelines khilaf di. Da de app authors hes qisam am misuse jawabgar na di.
+        <item>ServaCam hes am ghair akhlaqi ya illegal istemal la nade. Misuse, da cha surveillance ya privacy ki da dakhal, zamung da guidelines khilaf di. Da de app authors hes qisam am misuse jawabgar na di.
 </item>
-        <item>Na, FadCam hes kisam user data na jama kai.</item>
-        <item>Na, FadCam bilkul ad-free dai.</item>
+        <item>Na, ServaCam hes kisam user data na jama kai.</item>
+        <item>Na, ServaCam bilkul ad-free dai.</item>
         <item>Da location info watermark ke shaamil kawalo dapara.</item>
         <item>Da automatic update checking da para.</item>
         <item>Na, tola data sta pa device bandi store kigi.</item>
         <item>Sta videos sta pa device ki internal app storage ke save kigi.</item>
-        <item>Na, FadCam hes data na share kai ao na jama kai, hatta crash logs hum na.</item>
+        <item>Na, ServaCam hes data na share kai ao na jama kai, hatta crash logs hum na.</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -146,13 +146,13 @@
     <string name="button_readme_github">GitHub Repository</string>
     <string name="community_title">Zamung Community ki shamil shae:</string>
     <string name="discord_title">Da Discord Server</string>
-    <string name="thankyou_msg">FadCam istemal kolo dapara manana!</string>
+    <string name="thankyou_msg">ServaCam istemal kolo dapara manana!</string>
     <string name="settings_title">Settings</string>
     <string name="array_watermark_time_fadcam">Wakh, sara da Fadcam</string>
     <string name="array_watermark_timeonly">Timestamp</string>
     <string name="array_watermark_nomark">No Watermark</string>
     <string name="toast_video_not_found">Error: Video milao na shwa</string>
-    <string name="toast_video_saved">Video ~/Downloads/FadCam folder ki save shwa</string>
+    <string name="toast_video_saved">Video ~/Downloads/ServaCam folder ki save shwa</string>
     <string name="toast_video_save_fail">Video save kolo ke fail shwa</string>
     <string name="rename_video_title">Video la num badal kae</string>
     <string name="rename_video_hint">Nawe num olekai</string>
@@ -295,20 +295,20 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <!-- Debug Settings -->
     <string name="setting_debug_title">Debug Logging</string>
     <string name="note_debug">Da debug log file jorolo faal ka \n(Default: Ghair Faal)</string>
-    <string name="note_debug_extra">Kala che faal shi, yaw debug log file ba pa Downloads/FadCam folder ke jorol kegi. Da dé pa app problems ke madad kole shi.</string>
+    <string name="note_debug_extra">Kala che faal shi, yaw debug log file ba pa Downloads/ServaCam folder ke jorol kegi. Da dé pa app problems ke madad kole shi.</string>
     <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">Pa Raatluky Sho Ke Onboarding Warshayi</string>
-    <string name="note_onboarding">Faal ka che pa raatluky karazan ke da FadCam da app pezhandana aw ejazat larshowuna wuwiny.</string>
+    <string name="note_onboarding">Faal ka che pa raatluky karazan ke da ServaCam da app pezhandana aw ejazat larshowuna wuwiny.</string>
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Pa Sho Ke Automatic Update Check</string>
-    <string name="note_auto_update_check">Ke faal wi, FadCam ba har kala che ta app kholé update check kawi. Da automatic update check band kolo lapara dé ghair faal ka.\n(Default: On)</string>
+    <string name="note_auto_update_check">Ke faal wi, ServaCam ba har kala che ta app kholé update check kawi. Da automatic update check band kolo lapara dé ghair faal ka.\n(Default: On)</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Da Zakhira Zai</string>
     <string name="storage_location_description">Ka zakhira kawal chi videos cherta sakli.</string>
     <string name="storage_location_internal">Da App Dakhili Zakhira (Default, Private)</string>
     <string name="storage_location_custom">Khoso Zai (SD Card/Nor, Da Gallery La Khwaa Katey Kegi)</string>
     <string name="storage_location_choose_folder">Folder Entekhab Ka</string>
-    <string name="storage_location_note">Yadawana: Da khoso zai karwal videos noro app ta kesheena kedole shi (masalan, Gallery). Dakhili zakhira videos yawazi FadCam ta private sati.</string>
+    <string name="storage_location_note">Yadawana: Da khoso zai karwal videos noro app ta kesheena kedole shi (masalan, Gallery). Dakhili zakhira videos yawazi ServaCam ta private sati.</string>
     <string name="storage_icon_description">Da Zakhira Icon</string>
     <string name="location_icon_description">Da Mawqeiyat Icon</string>
     <string name="location_embedding_icon_description">Da Mawqeiyat Shamil Kawlo Icon</string>
@@ -328,16 +328,16 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="onboarding_intro_line3">او ستاسو لپاره جوړ شوی - نه د اعلان ورکوونکو لپاره.</string>
     <string name="language_change_later_note">تاسو کولای شئ دا وروسته په تنظیماتو کې بدل کړئ.</string>
     <string name="permissions_required">اجازې ته اړتیا ده</string>
-    <string name="permissions_description">FadCam د ویډیو ثبتولو او ساتلو لپاره ستاسو کامرې، مایکروفون، او زېرمتون ته لاسرسي ته اړتیا لري.</string>
+    <string name="permissions_description">ServaCam د ویډیو ثبتولو او ساتلو لپاره ستاسو کامرې، مایکروفون، او زېرمتون ته لاسرسي ته اړتیا لري.</string>
     <string name="grant_permissions">اجازې ورکړئ</string>
     <string name="permissions_note">د دوام لپاره تاسو باید ټولې اجازې ورکړئ.</string>
     <string name="permissions_granted">ټولې اجازې ورکړل شوې!</string>
     <string name="open_settings">تنظیمات خلاص کړئ</string>
     <string name="disable_battery_optimization">د بیټرۍ آپټیمایزيشن غیر فعاله کړئ</string>
     <string name="onboarding_human_title">تصدیق کړئ که تاسو انسان یاست</string>
-    <string name="onboarding_human_desc">هممم... سمه ده. دا قواعد غیر قابل مذاکره دي. که تاسو نشئ منلی، مهرباني وکړئ FadCam همدا اوس له منځه یوسئ.</string>
-    <string name="onboarding_human_checkbox1">زه به FadCam د کوم قانون ماتولو، د چا محرمیت ته تېری کولو، یا د عجیبه کارونو لپاره نه کاروم. که چېرې زه غلطي وکړم، د پروګرام جوړوونکی مسؤل نه دی. (دا زما مسؤلیت دی).</string>
-    <string name="onboarding_human_checkbox2">زه لا له کارولو مخکې له FadCam سره مینه لرم. (اختیاري نه دی)</string>
+    <string name="onboarding_human_desc">هممم... سمه ده. دا قواعد غیر قابل مذاکره دي. که تاسو نشئ منلی، مهرباني وکړئ ServaCam همدا اوس له منځه یوسئ.</string>
+    <string name="onboarding_human_checkbox1">زه به ServaCam د کوم قانون ماتولو، د چا محرمیت ته تېری کولو، یا د عجیبه کارونو لپاره نه کاروم. که چېرې زه غلطي وکړم، د پروګرام جوړوونکی مسؤل نه دی. (دا زما مسؤلیت دی).</string>
+    <string name="onboarding_human_checkbox2">زه لا له کارولو مخکې له ServaCam سره مینه لرم. (اختیاري نه دی)</string>
     <string name="onboarding_human_button">اجازه راکړئ ننوځم!</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Tartib ka</string>
@@ -350,8 +350,8 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <!-- Remote Tab Strings -->
     <string name="remote_access_title">Da liray control</string>
     <string name="remote_toast_coming_soon">Zur razee! In Sha Allah</string>
-    <string name="remote_coming_soon">Da FadCam lapara da liray control zur razee.</string>
-    <string name="remote_feature_description">Da QR code pa mreshta sara FadCam clients jora ka da secure, mahali network control lapara: record shoro/band kawalo, preview, zoom, camera switch kawalo, aw nor dher - tol da end-to-end encryption sara.</string>
+    <string name="remote_coming_soon">Da ServaCam lapara da liray control zur razee.</string>
+    <string name="remote_feature_description">Da QR code pa mreshta sara ServaCam clients jora ka da secure, mahali network control lapara: record shoro/band kawalo, preview, zoom, camera switch kawalo, aw nor dher - tol da end-to-end encryption sara.</string>
     <!-- Strings for TrashFragment -->
     <string name="trash_auto_deleted_toast">%1$d zorani items pa khpala delete shwal.</string>
     <string name="trash_empty_toast_message">Da delete kawalo lapara kho item neshta.</string>
@@ -370,7 +370,7 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">Kho item na day khwakharai shwai.</string>
     <string name="trash_dialog_restore_title">Khwakharai Items Berta Restore Sho?</string>
-    <string name="trash_dialog_restore_message">%1$d items da public Downloads/FadCam/ folder ta berta restore sho?</string>
+    <string name="trash_dialog_restore_message">%1$d items da public Downloads/ServaCam/ folder ta berta restore sho?</string>
     <string name="trash_restore_success_toast">%1$d items berta restore shwal.</string>
     <string name="trash_restore_fail_toast">Da items pa berta restore kawalo ki ghalati. Shaied dzini files restore na shi ya gallery update na shi. Da app storage permissions check ka.</string>
     <string name="trash_restore_cancelled_toast">Berta restore kawalo laghawa shwa.</string>
@@ -413,7 +413,7 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="trash_select_all">Tol Khwakhara Ka</string>
     <!-- Adding notification customization strings -->
     <string name="setting_notification_appearance">Da Notification Zaher</string>
-    <string name="note_notification_appearance">Da recording notification zaher badal kai\n(Default: FadCam)</string>
+    <string name="note_notification_appearance">Da recording notification zaher badal kai\n(Default: ServaCam)</string>
     <string name="hide_stop_button">Da bandawalo button pat kai</string>
     <string name="note_hide_stop_button">Pa notification ke da bandawalo button pat kai\n(Default: Disabled)</string>
     <string name="notification_preview">Da notification namoona</string>
@@ -423,7 +423,7 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="notification_video_recording_progress_description">Recording rawan de</string>
     <string name="notification_stop">BAND</string>
     <string-array name="notification_appearance_options">
-        <item>FadCam (default)</item>
+        <item>ServaCam (default)</item>
         <item>Da system update</item>
         <item>Download kawol</item>
         <item>Sync kawol</item>

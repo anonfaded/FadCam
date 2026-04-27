@@ -5,7 +5,7 @@
     
     <!-- App-specific external files directory (getExternalFilesDir()) -->
     <external-files-path name="external_files" path="." />
-    <external-files-path name="fadcam_files" path="FadCam" />
+    <external-files-path name="fadcam_files" path="ServaCam" />
     
     <!-- Cache directories -->
     <cache-path name="cache" path="." />

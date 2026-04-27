@@ -38,7 +38,7 @@
             android:layout_marginStart="16dp"
             android:orientation="vertical">
 
-            <com.fadcam.ui.utils.AnimatedTextView
+            <com.servalabs.cam.ui.utils.AnimatedTextView
                 android:id="@+id/title_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -187,7 +187,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_trash_all"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        style="@style/Widget.ServaCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checked="true"
@@ -195,14 +195,14 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_trash_videos"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        style="@style/Widget.ServaCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/nav_records" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_trash_evidence"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        style="@style/Widget.ServaCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/forensics_gallery_title" />
@@ -319,7 +319,7 @@
     </LinearLayout>
 
     <!-- Gallery-style fast scroller (overlays content) -->
-    <com.fadcam.ui.GalleryFastScroller
+    <com.servalabs.cam.ui.GalleryFastScroller
         android:id="@+id/fast_scroller"
         android:layout_width="0dp"
         android:layout_height="0dp"

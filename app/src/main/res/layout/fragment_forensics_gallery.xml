@@ -92,7 +92,7 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_gallery_all"
-                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            style="@style/Widget.ServaCam.RecordsFilterChip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:checked="true"
@@ -100,28 +100,28 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_gallery_person"
-                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            style="@style/Widget.ServaCam.RecordsFilterChip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/forensics_filter_person" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_gallery_vehicle"
-                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            style="@style/Widget.ServaCam.RecordsFilterChip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/forensics_filter_vehicle" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_gallery_pet"
-                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            style="@style/Widget.ServaCam.RecordsFilterChip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/forensics_filter_pet" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_gallery_object"
-                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            style="@style/Widget.ServaCam.RecordsFilterChip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/forensics_filter_object" />
@@ -306,7 +306,7 @@
         app:srcCompat="@drawable/ic_double_chevron"
         app:useCompatPadding="true" />
 
-    <com.fadcam.ui.GalleryFastScroller
+    <com.servalabs.cam.ui.GalleryFastScroller
         android:id="@+id/fast_scroller"
         android:layout_width="0dp"
         android:layout_height="0dp"

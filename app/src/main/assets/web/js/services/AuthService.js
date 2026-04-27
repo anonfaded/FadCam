@@ -1,5 +1,5 @@
 /**
- * AuthService - Handles authentication for FadCam Remote
+ * AuthService - Handles authentication for ServaCam Remote
  * Manages session tokens, login/logout, and auth state
  */
 class AuthService {

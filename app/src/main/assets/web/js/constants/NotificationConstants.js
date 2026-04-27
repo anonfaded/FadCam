@@ -29,7 +29,7 @@ const NotificationConstants = {
      * Points to master branch for production
      * When DEBUG_MODE is false, this URL is used for fetching notifications
      */
-    GITHUB_NOTIFICATION_URL: 'https://raw.githubusercontent.com/anonfaded/FadCam/master/app/src/main/assets/web/fadex/pushnotification.jsonc',
+    GITHUB_NOTIFICATION_URL: 'https://raw.githubusercontent.com/anonfaded/ServaCam/master/app/src/main/assets/web/fadex/pushnotification.jsonc',
 
     // ============= RETRY POLICY =============
     /**

@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="#FF0D0D0D"
     android:fitsSystemWindows="true"
-    tools:context="com.fadcam.ui.faditor.FaditorEditorActivity">
+    tools:context="com.servalabs.cam.ui.faditor.FaditorEditorActivity">
 
 <LinearLayout
     android:id="@+id/editor_root"
@@ -100,7 +100,7 @@
             android:contentDescription="@string/faditor_add_asset_image" />
 
         <!-- Crop overlay (on top of player, hidden by default) -->
-        <com.fadcam.ui.faditor.crop.CropOverlayView
+        <com.servalabs.cam.ui.faditor.crop.CropOverlayView
             android:id="@+id/crop_overlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -250,7 +250,7 @@
             android:overScrollMode="always"
             android:fadingEdge="none">
 
-            <com.fadcam.ui.faditor.timeline.EditorTimelineView
+            <com.servalabs.cam.ui.faditor.timeline.EditorTimelineView
                 android:id="@+id/editor_timeline_view"
                 android:layout_width="wrap_content"
                 android:layout_height="140dp"

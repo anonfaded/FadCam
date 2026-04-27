@@ -18,7 +18,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.widget.AppCompatEditText;
 
-import com.fadcam.R;
+import com.servalabs.cam.R;
 
 public class PasswordInputView extends LinearLayout implements TextWatcher {
 

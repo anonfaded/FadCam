@@ -222,7 +222,7 @@
                         android:textColor="@android:color/darker_gray"
                         android:textSize="12sp" />
                 </LinearLayout>
-                <com.fadcam.ui.AvatarToggleView
+                <com.servalabs.cam.ui.AvatarToggleView
                     android:id="@+id/row_lab_hide_thumbnails_switch"
                     android:layout_width="52dp"
                     android:layout_height="52dp"

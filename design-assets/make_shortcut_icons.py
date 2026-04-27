@@ -7,7 +7,7 @@
 from PIL import Image, ImageDraw, ImageFont
 import os
 
-DRAWABLE_DIR = "/Users/faded/Documents/repos/github/FadCam/app/src/main/res/drawable"
+DRAWABLE_DIR = "/Users/faded/Documents/repos/github/ServaCam/app/src/main/res/drawable"
 DOWNLOADS_DIR = os.path.expanduser("~/Downloads/fadcam_shortcuts_icons")
 
 ICONS = {

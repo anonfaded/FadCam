@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-# FadCam Build Script with TUI & Progress Bar
+# ServaCam Build Script with TUI & Progress Bar
 # Interactive menu when run without arguments
 
 set -e
@@ -79,7 +79,7 @@ show_help() {
     clear
     echo ""
     echo -e "${BRIGHT_RED}${BOLD}╔══════════════════════════════════════╗${RESET}"
-    echo -e "${BRIGHT_RED}${BOLD}║     🔴 FadCam Build Manager 🔴       ║${RESET}"
+    echo -e "${BRIGHT_RED}${BOLD}║     🔴 ServaCam Build Manager 🔴       ║${RESET}"
     echo -e "${BRIGHT_RED}${BOLD}╚══════════════════════════════════════╝${RESET}"
     echo ""
     echo -e "${BRIGHT_RED}${BOLD}Usage:${RESET}"
@@ -111,7 +111,7 @@ show_menu() {
     clear
     echo ""
     echo -e "${BRIGHT_RED}${BOLD}╔══════════════════════════════════════╗${RESET}"
-    echo -e "${BRIGHT_RED}${BOLD}║     🔴 FadCam Build Manager 🔴       ║${RESET}"
+    echo -e "${BRIGHT_RED}${BOLD}║     🔴 ServaCam Build Manager 🔴       ║${RESET}"
     echo -e "${BRIGHT_RED}${BOLD}╚══════════════════════════════════════╝${RESET}"
     echo ""
     echo -e "${RED}Available Options:${RESET}"
@@ -290,13 +290,13 @@ execute_build() {
             echo ""
             print_status "🚀" "Launching app on all devices..."
             
-            local PACKAGE_NAME="com.fadcam.beta"
-            [ "$BUILD_TYPE" = "release" ] && PACKAGE_NAME="com.fadcam"
+            local PACKAGE_NAME="com.servalabs.cam.beta"
+            [ "$BUILD_TYPE" = "release" ] && PACKAGE_NAME="com.servalabs.cam"
             
             # Use am start with proper activity path - this is the Android standard
             adb devices | grep -E '^[a-zA-Z0-9].*[[:space:]]device$' | while read -r device _; do
                 # Launch the app (Android's official way) - note: full class path needed
-                if adb -s "$device" shell am start -W -n "${PACKAGE_NAME}/com.fadcam.SplashActivity" 2>/dev/null; then
+                if adb -s "$device" shell am start -W -n "${PACKAGE_NAME}/com.servalabs.cam.SplashActivity" 2>/dev/null; then
                     echo -e "  ${BRIGHT_RED}[${device:0:16}]${RESET} ✅ Launched successfully"
                 else
                     echo -e "  ${BRIGHT_RED}[${device:0:16}]${RESET} ⚠️ Launch may have failed"

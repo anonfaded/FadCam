@@ -50,6 +50,6 @@
         android:maxLines="8"
         android:ellipsize="none"
         android:lineSpacingExtra="2dp"
-        tools:text="FadCam_20250828_213415.mp4" />
+        tools:text="ServaCam_20250828_213415.mp4" />
 
 </LinearLayout>

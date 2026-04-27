@@ -19,16 +19,16 @@
   "notifications": {
     "intro": {
       "version": 1,
-      "title": "Welcome to FadCam Remote",
+      "title": "Welcome to ServaCam Remote",
       "subtitle": "Control your device from a feature rich web dashboard",
-      "description": "Welcome to FadCam Remote Dashboard!\n\nUse the sidebar to control your device:\n• Toggle recording on/off\n• Adjust camera settings\n• Monitor stream quality\n• View real-time status\n• Change system preferences\n\nYou can manage everything directly from this interface. Enjoy seamless remote control!\n\nIf you love FadCam and want to support development, consider becoming a patron: https://patreon.com/Fadedx",
+      "description": "Welcome to ServaCam Remote Dashboard!\n\nUse the sidebar to control your device:\n• Toggle recording on/off\n• Adjust camera settings\n• Monitor stream quality\n• View real-time status\n• Change system preferences\n\nYou can manage everything directly from this interface. Enjoy seamless remote control!\n\nIf you love ServaCam and want to support development, consider becoming a patron: https://patreon.com/Fadedx",
       "priority": "info",
       "draft": false,
       "expiry": -1
     },
     "main": {
       "version": 4,
-      "title": "FadCam Updates",
+      "title": "ServaCam Updates",
       "subtitle": "Stay tuned for notifications",
       "description": "Check back soon for latest updates and announcements!",
       "priority": "info",

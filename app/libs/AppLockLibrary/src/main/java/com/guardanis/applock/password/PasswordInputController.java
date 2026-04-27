@@ -17,7 +17,7 @@ public class PasswordInputController {
     private InputEventListener listener;
 
     public PasswordInputController(Context context, View parent) {
-        this(parent.findViewById(com.fadcam.R.id.pin__password_input_view));
+        this(parent.findViewById(com.servalabs.cam.R.id.pin__password_input_view));
     }
 
     public PasswordInputController(PasswordInputView passwordInputView) {

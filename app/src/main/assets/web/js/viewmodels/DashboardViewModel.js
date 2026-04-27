@@ -5,7 +5,7 @@
  * - Local mode: Phone's HTTP server (192.168.x.x)
  * - Cloud mode: Relay server (live.fadseclab.com:8443)
  * 
- * ApiService automatically detects the mode based on FadCamRemote.isCloudMode()
+ * ApiService automatically detects the mode based on ServaCamRemote.isCloudMode()
  * 
  * Multi-tab support (Step 6.11.5.4):
  * Uses BroadcastChannel to coordinate polling across tabs. Only the active/visible
@@ -136,7 +136,7 @@ class DashboardViewModel {
     async initialize() {
         console.log('[DashboardViewModel] Initializing...');
         
-        // Listen for cloud mode ready event (FadCamRemote sets up stream context)
+        // Listen for cloud mode ready event (ServaCamRemote sets up stream context)
         if (typeof eventBus !== 'undefined') {
             eventBus.on('cloud-mode-ready', (ctx) => {
                 console.log('[DashboardViewModel] ☁️ Cloud mode ready, reinitializing...', ctx);
@@ -172,9 +172,9 @@ class DashboardViewModel {
             console.error('❌ [DashboardViewModel] Failed to update status:', error.message);
             
             // Determine if we're in cloud mode (web access)
-            const isWebMode = typeof FadCamRemote !== 'undefined' && 
-                              typeof FadCamRemote.isWebAccess === 'function' && 
-                              FadCamRemote.isWebAccess();
+            const isWebMode = typeof ServaCamRemote !== 'undefined' && 
+                              typeof ServaCamRemote.isWebAccess === 'function' && 
+                              ServaCamRemote.isWebAccess();
             
             // Emit offline status with cloudMode flag for proper staleness detection
             this.statusModel.update({ state: 'offline', cloudMode: isWebMode });

@@ -148,28 +148,28 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_24h"
-                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            style="@style/Widget.ServaCam.RecordsFilterChip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/intel_range_24h" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_7d"
-                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            style="@style/Widget.ServaCam.RecordsFilterChip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/intel_range_7d" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_30d"
-                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            style="@style/Widget.ServaCam.RecordsFilterChip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/intel_range_30d" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_all"
-                            style="@style/Widget.FadCam.RecordsFilterChip"
+                            style="@style/Widget.ServaCam.RecordsFilterChip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:checked="true"

@@ -30,9 +30,9 @@
 -dontwarn sun.misc.**
 
 # Application classes that will be serialized/deserialized over Gson
--keep class com.fadcam.model.** { <fields>; }
--keep class com.fadcam.data.** { <fields>; }
--keep class com.fadcam.trash.** { <fields>; }
+-keep class com.servalabs.cam.model.** { <fields>; }
+-keep class com.servalabs.cam.data.** { <fields>; }
+-keep class com.servalabs.cam.trash.** { <fields>; }
 
 # Keep only necessary resources - this is critical for icons to display properly
 # Instead of keeping all resources, keep only what's needed
@@ -65,7 +65,7 @@
 -keep class com.arthenica.ffmpegkit.Statistics { *; }
 -keep class com.arthenica.smartexception.java.Exceptions { *; }
 -dontwarn com.arthenica.ffmpegkit.**
--keep class com.fadcam.utils.FFmpegUtil { *; }
+-keep class com.servalabs.cam.utils.FFmpegUtil { *; }
 
 # Keep only essential drawable resources
 -keep public class * extends android.graphics.drawable.Drawable {
@@ -154,14 +154,14 @@
 -keep public class * extends android.content.BroadcastReceiver
 -keep public class * extends android.content.ContentProvider
 
-# Specifically keep FadCam's MainActivity and its inner classes (for aliases)
--keep public class com.fadcam.MainActivity { *; }
--keep public class com.fadcam.MainActivity$* { *; }
+# Specifically keep ServaCam's MainActivity and its inner classes (for aliases)
+-keep public class com.servalabs.cam.MainActivity { *; }
+-keep public class com.servalabs.cam.MainActivity$* { *; }
 
 # Also keep other essential activities and your Application class
--keep public class com.fadcam.SplashActivity { *; }
--keep public class com.fadcam.ui.OnboardingActivity { *; }
--keep public class com.fadcam.FadCamApplication { *; }
+-keep public class com.servalabs.cam.SplashActivity { *; }
+-keep public class com.servalabs.cam.ui.OnboardingActivity { *; }
+-keep public class com.servalabs.cam.ServaCamApplication { *; }
 
 # Aggressive optimization settings
 -repackageclasses ''

@@ -11,6 +11,9 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -23,7 +26,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "FadCam"
+rootProject.name = "ServaCam"
 include(":app")
 
 // Include patched Media3 as composite build for live streaming support

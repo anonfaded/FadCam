@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
-    <com.fadcam.ui.ZoomableImageView
+    <com.servalabs.cam.ui.ZoomableImageView
         android:id="@+id/imageViewerImage"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

@@ -2,4 +2,4 @@
 • Performance: 45-50% less CPU, 28-33% better battery, 30% less memory.
 • UX: Cleaner interface, better settings, improved audio.
 • Fixes: Video corruption, memory leaks, stability.
-• Transforms FadCam into a full multimedia suite with privacy focus.
+• Transforms ServaCam into a full multimedia suite with privacy focus.

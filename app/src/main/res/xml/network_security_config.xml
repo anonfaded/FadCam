@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Network Security Configuration for FadCam
+    Network Security Configuration for ServaCam
     
     This config allows cleartext HTTP traffic only to localhost,
     which is required for CloudStatusManager to call the local

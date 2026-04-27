@@ -5,8 +5,9 @@ plugins {
 }
 
 android {
-    namespace = "com.fadcam"
+    namespace = "com.servalabs.cam"
     compileSdk = 36
+    ndkVersion = "28.0.12433566"
 
     val isBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
     val isProBuild = gradle.startParameter.taskNames.any { it.lowercase().contains("pro") }
@@ -28,17 +29,27 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.fadcam"
+        applicationId = "com.servalabs.cam"
         minSdk = 24
         targetSdk = 36
         versionCode = 35
         versionName = "4.0.0"
         vectorDrawables.useSupportLibrary = true
         
-        // Fix 16KB native library alignment for Android 15
+        // Fix 16KB native library alignment for Android 15+
         // Generate full native debug symbols so they can be uploaded to Play Console
         ndk {
             debugSymbolLevel = "FULL"
+        }
+
+        @Suppress("UnstableApiUsage")
+        externalNativeBuild {
+            ndkBuild {
+                arguments("-Wl,-z,max-page-size=16384")
+            }
+            cmake {
+                arguments("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON", "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384")
+            }
         }
     }
 
@@ -67,7 +78,7 @@ android {
             applicationIdSuffix = ".beta"
             isDebuggable = true
             versionNameSuffix = "-beta"
-            resValue("string", "app_name", "FadCam Beta")
+            resValue("string", "app_name", "Serva Cam Beta")
         }
         
         release {
@@ -110,7 +121,7 @@ android {
             }
             versionNameSuffix = "-Pro+"
             // Custom app name via gradle property
-            val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro+"
+            val customAppName = project.findProperty("customAppName")?.toString() ?: "Serva Cam Pro+"
             resValue("string", "app_name", customAppName)
         }
     }
@@ -198,7 +209,7 @@ android {
             excludes += listOf("**/x86/**", "**/x86_64/**", "**/mips/**", "**/mips64/**")
             // OpenCV and ffmpeg-kit both bundle libc++_shared.so. Keep one copy.
             pickFirsts += listOf("**/libc++_shared.so")
-            // Enable 16KB page size alignment for Android 15 compatibility
+            // Disable legacy packaging to allow AGP 8.5.1+ to align libs to 16KB
             useLegacyPackaging = false
         }
         resources {

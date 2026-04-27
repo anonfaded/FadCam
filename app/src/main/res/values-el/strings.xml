@@ -2,15 +2,15 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="auto_delete_immediate">Άμεση</string>
     <string name="trash_auto_delete_info_immediate">Τα στοιχεία διαγράφονται άμεσα.</string>
-    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_name" translatable="false">ServaCam</string>
     <string name="app_icon_description">Επιλέξτε ένα εικονίδιο και όνομα για την εφαρμογή σας. Αυτό θα αλλάξει την εμφάνισή της στην αρχική σας οθόνη.</string>
     <string name="check_for_updates">Έλεγχος για Ενημερώσεις</string>
-    <string name="fadsec_info">Το FadCam είναι μέρος της σουίτας FadSec Lab. Για περισσότερες πληροφορίες, κάντε κλικ στην επιλογή «προβολή πηγαίου κώδικα» παρακάτω.</string>
+    <string name="fadsec_info">Το ServaCam είναι μέρος της σουίτας FadSec Lab. Για περισσότερες πληροφορίες, κάντε κλικ στην επιλογή «προβολή πηγαίου κώδικα» παρακάτω.</string>
     <string name="app_description">
     <![CDATA[
-    Το FadCam είναι μια εφαρμογή εγγραφής βίντεο ανοιχτού κώδικα, χωρίς διαφημίσεις, που δίνει προτεραιότητα στην ιδιωτικότητα, καθώς δεν παρακολουθεί ούτε συλλέγει δεδομένα. Είναι διαθέσιμο αποκλειστικά στο GitHub και μέσω των επίσημων συνδέσμων που αναφέρονται στο README.
+    Το ServaCam είναι μια εφαρμογή εγγραφής βίντεο ανοιχτού κώδικα, χωρίς διαφημίσεις, που δίνει προτεραιότητα στην ιδιωτικότητα, καθώς δεν παρακολουθεί ούτε συλλέγει δεδομένα. Είναι διαθέσιμο αποκλειστικά στο GitHub και μέσω των επίσημων συνδέσμων που αναφέρονται στο README.
     <br/><br/>
-    Το FadCam έχει παρουσιαστεί σε δημοφιλή κανάλια YouTube όπως τα <font color="#cfbafd">HowToMen</font> και <font color="#cfbafd">Xtream Droid</font>, καθώς και συζητήθηκε στα <font color="#cfbafd">GrapheneOS</font> και σε 55+ άλλα αξιόλογα σημεία.
+    Το ServaCam έχει παρουσιαστεί σε δημοφιλή κανάλια YouTube όπως τα <font color="#cfbafd">HowToMen</font> και <font color="#cfbafd">Xtream Droid</font>, καθώς και συζητήθηκε στα <font color="#cfbafd">GrapheneOS</font> και σε 55+ άλλα αξιόλογα σημεία.
     ]]>
 </string>
     <string name="view_source_code">Προβολή Πηγαίου Κώδικα</string>
@@ -133,7 +133,7 @@
 (Προεπιλογή: %1$s)
 Συμβουλή: Με το H.265 (HEVC), μπορείτε να χρησιμοποιήσετε περίπου το μισό bitrate του H.264 για ίδια ποιότητα. Παράδειγμα: Για FHD, χρησιμοποιήστε 8 Mbps αντί για 16 Mbps.</string>
     <string name="setting_watermark">Υδατογράφημα</string>
-    <string name="note_watermark">Επιλέξτε επιλογή υδατογραφήματος\n(Προεπιλογή: Σφραγίδα χρόνου με FadCam)</string>
+    <string name="note_watermark">Επιλέξτε επιλογή υδατογραφήματος\n(Προεπιλογή: Σφραγίδα χρόνου με ServaCam)</string>
     <string name="note_watermark_extra">Για γρήγορη αποθήκευση, επιλέξτε \'Χωρίς Υδατογράφημα\'. Προσθέτετε υδατογράφημα; Αξίζει η αναμονή, λίγο περισσότερο για επεξεργασία!</string>
     <string name="setting_location_title">Δεδομένα Τοποθεσίας</string>
     <string name="note_location">Συμπεριλάβετε δεδομένα τοποθεσίας στο υδατογράφημα.\nΑπαιτείται ενεργοποιημένο GPS\n(Προεπιλογή: Απενεργοποιημένο)</string>
@@ -159,13 +159,13 @@
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>ΑΠΟΠΟΙΗΣΗ ΕΥΘΥΝΩΝ</item>
-        <item>Συλλέγει το FadCam δεδομένα χρήστη;</item>
-        <item>Υπάρχουν διαφημίσεις στο FadCam;</item>
-        <item>Γιατί το FadCam ζητάει πρόσβαση στην τοποθεσία;</item>
-        <item>Συνδέεται το FadCam στο διαδίκτυο;</item>
+        <item>Συλλέγει το ServaCam δεδομένα χρήστη;</item>
+        <item>Υπάρχουν διαφημίσεις στο ServaCam;</item>
+        <item>Γιατί το ServaCam ζητάει πρόσβαση στην τοποθεσία;</item>
+        <item>Συνδέεται το ServaCam στο διαδίκτυο;</item>
         <item>Αποθηκεύονται δεδομένα σε εξωτερικούς διακομιστές;</item>
         <item>Τι συμβαίνει με τα βίντεό μου μετά την εγγραφή;</item>
-        <item>Κοινοποιεί το FadCam τα δεδομένα μου σε τρίτους;</item>
+        <item>Κοινοποιεί το ServaCam τα δεδομένα μου σε τρίτους;</item>
         <item> </item>
         <item> </item>
         <item>Γενικά</item>
@@ -179,15 +179,15 @@
         <item> </item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-        <item>Το FadCam δεν επιτρέπει ούτε υποστηρίζει οποιαδήποτε ανήθικη ή παράνομη χρήση αυτού του λογισμικού. Η κακή χρήση, όπως μη εξουσιοδοτημένη παρακολούθηση ή εισβολή στην ιδιωτικότητα, είναι αυστηρά αντίθετη με τις οδηγίες μας. Οι δημιουργοί δεν ευθύνονται για οποιαδήποτε κακή χρήση της εφαρμογής.
+        <item>Το ServaCam δεν επιτρέπει ούτε υποστηρίζει οποιαδήποτε ανήθικη ή παράνομη χρήση αυτού του λογισμικού. Η κακή χρήση, όπως μη εξουσιοδοτημένη παρακολούθηση ή εισβολή στην ιδιωτικότητα, είναι αυστηρά αντίθετη με τις οδηγίες μας. Οι δημιουργοί δεν ευθύνονται για οποιαδήποτε κακή χρήση της εφαρμογής.
         </item>
-        <item>Όχι, το FadCam δεν συλλέγει δεδομένα χρήστη.</item>
-        <item>Όχι, το FadCam είναι εντελώς δωρεάν από διαφημίσεις.</item>
+        <item>Όχι, το ServaCam δεν συλλέγει δεδομένα χρήστη.</item>
+        <item>Όχι, το ServaCam είναι εντελώς δωρεάν από διαφημίσεις.</item>
         <item>Για προσθήκη πληροφοριών τοποθεσίας στα υδατογραφήματά σας.</item>
-        <item>Όχι, το FadCam δεν συνδέεται στο διαδίκτυο.</item>
+        <item>Όχι, το ServaCam δεν συνδέεται στο διαδίκτυο.</item>
         <item>Όχι, όλα τα δεδομένα αποθηκεύονται στη συσκευή σας.</item>
         <item>Τα βίντεό σας αποθηκεύονται τοπικά στη συσκευή σας.</item>
-        <item>Όχι, το FadCam δεν μοιράζεται ούτε συλλέγει δεδομένα.</item>
+        <item>Όχι, το ServaCam δεν μοιράζεται ούτε συλλέγει δεδομένα.</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -200,20 +200,20 @@
         <item>Ελέγξτε το επίσημο αποθετήριο GitHub για ενημερώσεις.</item>
         <item> </item>
     </string-array>
-    <string name="dialog_welcome_title">Καλώς ήρθατε στο FadCam!</string>
+    <string name="dialog_welcome_title">Καλώς ήρθατε στο ServaCam!</string>
     <string name="note_under_dev">Σημαντικό: Αυτή η εφαρμογή βρίσκεται υπό ανάπτυξη. Προστίθενται τακτικά νέες λειτουργίες.</string>
     <!-- removed: rencent_updates_title and upcoming_features_title (centralized changelog) -->
     <string name="stay_updated_title">Μείνετε Ενημερωμένοι:</string>
     <string name="button_readme_github">Αποθετήριο GitHub</string>
     <string name="community_title">Εγγραφείτε στην Κοινότητά μας:</string>
     <string name="discord_title">Διακομιστής Discord</string>
-    <string name="thankyou_msg">Ευχαριστούμε που χρησιμοποιείτε το FadCam!</string>
+    <string name="thankyou_msg">Ευχαριστούμε που χρησιμοποιείτε το ServaCam!</string>
     <string name="settings_title">Ρυθμίσεις</string>
     <string name="array_watermark_time_fadcam">Ώρα με Fadcam</string>
     <string name="array_watermark_timeonly">Σφραγίδα Ώρας</string>
     <string name="array_watermark_nomark">Χωρίς Υδατογράφημα</string>
     <string name="toast_video_not_found">Σφάλμα: Το βίντεο δεν βρέθηκε</string>
-    <string name="toast_video_saved">Το βίντεο αποθηκεύτηκε στον φάκελο FadCam στις Λήψεις</string>
+    <string name="toast_video_saved">Το βίντεο αποθηκεύτηκε στον φάκελο ServaCam στις Λήψεις</string>
     <string name="toast_video_save_fail">Αποτυχία αποθήκευσης βίντεο</string>
     <string name="rename_video_title">Μετονομασία Βίντεο</string>
     <string name="rename_video_hint">Εισάγετε νέο όνομα</string>
@@ -259,7 +259,7 @@
     <string name="torch_both">Και οι Δύο Φακοί</string>
     <string name="setting_debug_title">Καταγραφή Εντοπισμού Σφαλμάτων</string>
     <string name="note_debug">Ενεργοποίηση δημιουργίας αρχείου καταγραφής εντοπισμού σφαλμάτων\n(Προεπιλογή: Απενεργοποιημένο)</string>
-    <string name="note_debug_extra">Όταν είναι ενεργοποιημένη, ένα αρχείο καταγραφής εντοπισμού σφαλμάτων θα δημιουργηθεί στο φάκελο Downloads/FadCam. Αυτό μπορεί να βοηθήσει στη διάγνωση προβλημάτων εφαρμογής.</string>
+    <string name="note_debug_extra">Όταν είναι ενεργοποιημένη, ένα αρχείο καταγραφής εντοπισμού σφαλμάτων θα δημιουργηθεί στο φάκελο Downloads/ServaCam. Αυτό μπορεί να βοηθήσει στη διάγνωση προβλημάτων εφαρμογής.</string>
     <string name="torch_shortcut_short_label">Φακός</string>
     <string name="torch_shortcut_long_label">Εναλλαγή Φακού</string>
     <string name="torch_shortcut_disabled">Η εναλλαγή φακού είναι προς το παρόν μη διαθέσιμη</string>
@@ -311,8 +311,8 @@
     <string name="theme_snowveil">Πέπλο Χιονιού</string>
     <string name="remote_access_title">Απομακρυσμένη Πρόσβαση/Έλεγχος</string>
     <string name="remote_toast_coming_soon">Έρχεται σύντομα! In Sha Allah</string>
-    <string name="remote_coming_soon">Η απομακρυσμένη ρύθμιση για το FadCam θα είναι διαθέσιμη σύντομα.</string>
-    <string name="remote_feature_description">Συνδυάστε πελάτες FadCam χρησιμοποιώντας κωδικό QR για ασφαλή, τοπικού δικτύου απομακρυσμένο έλεγχο: έναρξη/διακοπή εγγραφής, προεπισκόπηση, ζουμ, αλλαγή κάμερας και πολλά άλλα—όλα με κρυπτογράφηση από άκρο σε άκρο.</string>
+    <string name="remote_coming_soon">Η απομακρυσμένη ρύθμιση για το ServaCam θα είναι διαθέσιμη σύντομα.</string>
+    <string name="remote_feature_description">Συνδυάστε πελάτες ServaCam χρησιμοποιώντας κωδικό QR για ασφαλή, τοπικού δικτύου απομακρυσμένο έλεγχο: έναρξη/διακοπή εγγραφής, προεπισκόπηση, ζουμ, αλλαγή κάμερας και πολλά άλλα—όλα με κρυπτογράφηση από άκρο σε άκρο.</string>
     <string name="setting_audio_title">Ηχογράφηση</string>
     <string name="note_audio">Ενεργοποιήστε ή απενεργοποιήστε την ηχογράφηση για βίντεο.\n(Προεπιλογή: Ενεργοποιημένο)</string>
     <string name="button_audio_settings">Ρυθμίσεις Ήχου</string>
@@ -382,7 +382,7 @@
     <string name="universal_delete">Διαγραφή</string>
     <string name="trash_no_items_selected_toast">Δεν επιλέχθηκε κανένα στοιχείο.</string>
     <string name="trash_dialog_restore_title">Επαναφορά Επιλεγμένων;</string>
-    <string name="trash_dialog_restore_message">Επαναφορά %1$d στοιχείου(ων) στον δημόσιο φάκελο Downloads/FadCam/;</string>
+    <string name="trash_dialog_restore_message">Επαναφορά %1$d στοιχείου(ων) στον δημόσιο φάκελο Downloads/ServaCam/;</string>
     <string name="trash_restore_success_toast">%1$d στοιχείο(α) επαναφέρθηκε(αν).</string>
     <string name="trash_restore_fail_toast">Σφάλμα επαναφοράς στοιχείων. Ορισμένα αρχεία ενδέχεται να μην έχουν επαναφερθεί ή η συλλογή ενδέχεται να μην ενημερώθηκε. Ελέγξτε τις άδειες εφαρμογών για τον χώρο αποθήκευσης.</string>
     <string name="trash_restore_cancelled_toast">Η επαναφορά ακυρώθηκε.</string>
@@ -395,7 +395,7 @@
     <string name="records_search_hint">Αναζήτηση εγγραφών…</string>
     <string name="saf_permission_missing_dialog_instructions">Λείπει η άδεια SAF. Παραχωρήστε πρόσβαση στον επιλεγμένο φάκελο.</string>
     <string name="saf_permission_missing_dialog_title">Απαιτείται Άδεια SAF</string>
-    <string name="saf_permission_missing_dialog_message_for_start_recording">Για να αποθηκεύσετε τις εγγραφές σε προσαρμοσμένη τοποθεσία, το FadCam χρειάζεται άδεια πρόσβασης στον επιλεγμένο φάκελο. Παραχωρήστε πρόσβαση όταν σας ζητηθεί.</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">Για να αποθηκεύσετε τις εγγραφές σε προσαρμοσμένη τοποθεσία, το ServaCam χρειάζεται άδεια πρόσβασης στον επιλεγμένο φάκελο. Παραχωρήστε πρόσβαση όταν σας ζητηθεί.</string>
     <string name="grant_permission_button">Παραχώρηση Άδειας</string>
     <plurals name="trash_auto_delete_info_days">
         <item quantity="one">Τα στοιχεία διαγράφονται αυτόματα μετά από %1$d ημέρα.</item>
@@ -447,20 +447,20 @@
     <string name="choose">Επιλέξτε</string>
     <string name="audio_input_source_headphones_no_mic">Ανιχνεύτηκαν ακουστικά (χωρίς μικρόφωνο)</string>
     <string name="setting_onboarding_title">Εμφάνιση Οδηγού κατά την Επόμενη Εκκίνηση</string>
-    <string name="note_onboarding">Ενεργοποιήστε για να δείτε την εισαγωγή της εφαρμογής και τον οδηγό αδειών την επόμενη φορά που θα ανοίξετε το FadCam.</string>
+    <string name="note_onboarding">Ενεργοποιήστε για να δείτε την εισαγωγή της εφαρμογής και τον οδηγό αδειών την επόμενη φορά που θα ανοίξετε το ServaCam.</string>
     <string name="choose_language">Επιλέξτε Γλώσσα</string>
     <string name="language_change_later_note">Μπορείτε να το αλλάξετε αργότερα στις Ρυθμίσεις.</string>
     <string name="permissions_required">Απαιτούνται Άδειες</string>
-    <string name="permissions_description">Το FadCam χρειάζεται πρόσβαση στην κάμερα, το μικρόφωνο και τον χώρο αποθήκευσης για εγγραφή και αποθήκευση βίντεο.</string>
+    <string name="permissions_description">Το ServaCam χρειάζεται πρόσβαση στην κάμερα, το μικρόφωνο και τον χώρο αποθήκευσης για εγγραφή και αποθήκευση βίντεο.</string>
     <string name="grant_permissions">Παραχώρηση Αδειών</string>
     <string name="permissions_note">Πρέπει να παραχωρήσετε όλες τις άδειες για να συνεχίσετε.</string>
     <string name="permissions_granted">Όλες οι άδειες παραχωρήθηκαν!</string>
     <string name="open_settings">Άνοιγμα Ρυθμίσεων</string>
     <string name="disable_battery_optimization">Απενεργοποίηση Βελτιστοποίησης Μπαταρίας</string>
     <string name="onboarding_human_title">Επαλήθευση εάν είστε άνθρωπος</string>
-    <string name="onboarding_human_desc">Χμ... εντάξει. Αυτοί οι κανόνες είναι αδιαπραγμάτευτοι. Αν δεν μπορείτε να συμφωνήσετε, απεγκαταστήστε το FadCam τώρα.</string>
-    <string name="onboarding_human_checkbox1">Δεν θα χρησιμοποιήσω το FadCam για να παραβιάσω νόμους, να εισβάλλω στην ιδιωτική ζωή κανενός ή να γίνω ανατριχιαστικός. Ο προγραμματιστής δεν φέρει ευθύνη αν χρησιμοποιήσω την εφαρμογή για λάθος σκοπούς. (Αυτό είναι δική μου ευθύνη.)</string>
-    <string name="onboarding_human_checkbox2">Ήδη λατρεύω το FadCam πριν καν το χρησιμοποιήσω. (Όχι προαιρετικό)</string>
+    <string name="onboarding_human_desc">Χμ... εντάξει. Αυτοί οι κανόνες είναι αδιαπραγμάτευτοι. Αν δεν μπορείτε να συμφωνήσετε, απεγκαταστήστε το ServaCam τώρα.</string>
+    <string name="onboarding_human_checkbox1">Δεν θα χρησιμοποιήσω το ServaCam για να παραβιάσω νόμους, να εισβάλλω στην ιδιωτική ζωή κανενός ή να γίνω ανατριχιαστικός. Ο προγραμματιστής δεν φέρει ευθύνη αν χρησιμοποιήσω την εφαρμογή για λάθος σκοπούς. (Αυτό είναι δική μου ευθύνη.)</string>
+    <string name="onboarding_human_checkbox2">Ήδη λατρεύω το ServaCam πριν καν το χρησιμοποιήσω. (Όχι προαιρετικό)</string>
     <string name="onboarding_human_button">Επιτρέψτε μου να μπω!</string>
     <string name="camera_resources_cooldown">Παρακαλώ περιμένετε λίγο πριν ξεκινήσετε νέα εγγραφή</string>
     <string name="trash_select_all">Επιλογή Όλων</string>
@@ -516,10 +516,10 @@
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">Sumud (صُمود)</string>
-    <string name="app_icon_pakistan" translatable="false">FadCam</string>
+    <string name="app_icon_pakistan" translatable="false">ServaCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor (FadCam ++)</string>
-    <string name="app_icon_bat" translatable="false">FadCam</string>
+    <string name="app_icon_noor" translatable="false">Noor (ServaCam ++)</string>
+    <string name="app_icon_bat" translatable="false">ServaCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>
     <string name="app_icon_calculator" translatable="false">Calculator</string>
@@ -532,13 +532,13 @@
     <string name="app_icon_preview">Προεπισκόπηση εικονιδίου εφαρμογής</string>
     <string name="changelog_label">Τι Νέο</string>
     <string name="setting_auto_update_check_title">Αυτόματος Έλεγχος Ενημερώσεων κατά την Εκκίνηση</string>
-    <string name="note_auto_update_check">Εάν είναι ενεργοποιημένο, το FadCam θα ελέγχει για ενημερώσεις κάθε φορά που ανοίγετε την εφαρμογή. Απενεργοποιήστε το για απενεργοποίηση των αυτόματων ελέγχων ενημέρωσης κατά την εκκίνηση.\n(Προεπιλογή: Ενεργό)</string>
+    <string name="note_auto_update_check">Εάν είναι ενεργοποιημένο, το ServaCam θα ελέγχει για ενημερώσεις κάθε φορά που ανοίγετε την εφαρμογή. Απενεργοποιήστε το για απενεργοποίηση των αυτόματων ελέγχων ενημέρωσης κατά την εκκίνηση.\n(Προεπιλογή: Ενεργό)</string>
     <string name="storage_location_title">Θέση Αποθήκευσης</string>
     <string name="storage_location_description">Επιλέξτε πού αποθηκεύονται οι εγγραφές.</string>
     <string name="storage_location_internal">Εσωτερική Αποθήκευση Εφαρμογής (Προεπιλογή, Ιδιωτική)</string>
     <string name="storage_location_custom">Προσαρμοσμένη Τοποθεσία (Κάρτα SD/Άλλο, Ορατή στη Συλλογή)</string>
     <string name="storage_location_choose_folder">Επιλέξτε Φάκελο</string>
-    <string name="storage_location_note">Σημείωση: Η χρήση προσαρμοσμένων τοποθεσιών καθιστά τα βίντεο προσβάσιμα από άλλες εφαρμογές (π.χ., Συλλογή). Η εσωτερική αποθήκευση τα διατηρεί ιδιωτικά στο FadCam.</string>
+    <string name="storage_location_note">Σημείωση: Η χρήση προσαρμοσμένων τοποθεσιών καθιστά τα βίντεο προσβάσιμα από άλλες εφαρμογές (π.χ., Συλλογή). Η εσωτερική αποθήκευση τα διατηρεί ιδιωτικά στο ServaCam.</string>
     <string name="storage_icon_description">Εικονίδιο Αποθήκευσης</string>
     <string name="location_icon_description">Εικονίδιο Τοποθεσίας</string>
     <string name="location_embedding_icon_description">Εικονίδιο Ενσωμάτωσης Τοποθεσίας</string>
@@ -598,13 +598,13 @@
     <string name="notification_title_custom_default">Ειδοποίηση</string>
     <string name="notification_settings_saved">Οι ρυθμίσεις ειδοποιήσεων αποθηκεύτηκαν</string>
     <string name="setting_notification_appearance">Εμφάνιση Ειδοποίησης</string>
-    <string name="note_notification_appearance">Προσαρμόστε την εμφάνιση της ειδοποίησης εγγραφής\n(Προεπιλογή: FadCam)</string>
+    <string name="note_notification_appearance">Προσαρμόστε την εμφάνιση της ειδοποίησης εγγραφής\n(Προεπιλογή: ServaCam)</string>
     <string name="hide_stop_button">Απόκρυψη κουμπιού διακοπής</string>
     <string name="note_hide_stop_button">Απόκρυψη του κουμπιού διακοπής στην ειδοποίηση\n(Προεπιλογή: Απενεργοποιημένο)</string>
     <string name="notification_preview">Προεπισκόπηση ειδοποίησης</string>
     <string name="notification_stop">ΔΙΑΚΟΠΗ</string>
     <string-array name="notification_appearance_options">
-        <item>FadCam (προεπιλογή)</item>
+        <item>ServaCam (προεπιλογή)</item>
         <item>Ενημέρωση Συστήματος</item>
         <item>Λήψη</item>
         <item>Συγχρονισμός</item>

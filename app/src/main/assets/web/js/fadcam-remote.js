@@ -1,5 +1,5 @@
 /**
- * FadCam Remote Cloud Integration
+ * ServaCam Remote Cloud Integration
  * 
  * Adds cloud features to the dashboard when accessed via web.
  * Shows on: fadseclab.com, localhost
@@ -70,7 +70,7 @@
   function getHandoffToken() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
-    console.log('[FadCamRemote] getHandoffToken:', { 
+    console.log('[ServaCamRemote] getHandoffToken:', { 
       search: window.location.search, 
       hasToken: !!token,
       tokenLength: token?.length 
@@ -114,9 +114,9 @@
     // that were already unlocked.
     if (e2eVerifyTag) {
       localStorage.setItem(CLOUD_CONFIG.STORAGE_KEYS.E2E_VERIFY_TAG, e2eVerifyTag);
-      console.log('[FadCamRemote] E2E verify_tag stored from token exchange');
+      console.log('[ServaCamRemote] E2E verify_tag stored from token exchange');
     } else {
-      console.log('[FadCamRemote] Token exchange returned null e2e_verify_tag — keeping existing tag if any');
+      console.log('[ServaCamRemote] Token exchange returned null e2e_verify_tag — keeping existing tag if any');
     }
   }
 
@@ -142,7 +142,7 @@
   
   // Exchange handoff token for session (called when arriving from Lab)
   async function exchangeHandoffToken(token, deviceId) {
-    console.log('[FadCamRemote] Exchanging handoff token...');
+    console.log('[ServaCamRemote] Exchanging handoff token...');
     
     try {
       const response = await fetch(`${CLOUD_CONFIG.SUPABASE_URL}/functions/v1/exchange-handoff-token`, {
@@ -167,11 +167,11 @@
       cleanUrl.searchParams.delete('token');
       window.history.replaceState({}, document.title, cleanUrl.toString());
       
-      console.log('[FadCamRemote] Token exchanged successfully for user:', result.user.email);
+      console.log('[ServaCamRemote] Token exchanged successfully for user:', result.user.email);
       return result;
       
     } catch (error) {
-      console.error('[FadCamRemote] Token exchange failed:', error);
+      console.error('[ServaCamRemote] Token exchange failed:', error);
       throw error;
     }
   }
@@ -329,7 +329,7 @@
           // Race condition: verify_tag not yet in Supabase (PBKDF2 still running on device).
           // Derive and store the key without server validation. If the password is wrong the
           // stream decryption will fail and the e2e-decryption-failed event will re-prompt.
-          console.log('[FadCamRemote] No verify_tag available — unlocking without server validation (first-time / race condition)');
+          console.log('[ServaCamRemote] No verify_tag available — unlocking without server validation (first-time / race condition)');
           await E2EKeyManager.unlockNoVerify(pw, userId);
         } else {
           const ok = await E2EKeyManager.unlock(pw, userId, verifyTag);
@@ -348,11 +348,11 @@
           setTimeout(() => el.remove(), 300);
         }
         delete window.__e2eUnlockSubmit;
-        console.log('[FadCamRemote] E2E unlocked successfully');
+        console.log('[ServaCamRemote] E2E unlocked successfully');
         // Notify the stream player to reload so it can decrypt with the new key
         window.dispatchEvent(new CustomEvent('e2e-stream-ready'));
       } catch (err) {
-        console.error('[FadCamRemote] E2E unlock error:', err);
+        console.error('[ServaCamRemote] E2E unlock error:', err);
         if (errEl) errEl.textContent = err.message || 'Unlock failed. Please try again.';
         if (btn) { btn.disabled = false; btn.textContent = 'Unlock Stream'; }
       }
@@ -366,21 +366,21 @@
   async function checkAndShowE2EUnlock() {
     const verifyTag = getE2EVerifyTag();
     if (!verifyTag) {
-      console.log('[FadCamRemote] No E2E verify_tag — stream is not encrypted');
+      console.log('[ServaCamRemote] No E2E verify_tag — stream is not encrypted');
       return;
     }
 
     if (typeof E2EKeyManager === 'undefined') {
-      console.warn('[FadCamRemote] E2EKeyManager not loaded — cannot check E2E state');
+      console.warn('[ServaCamRemote] E2EKeyManager not loaded — cannot check E2E state');
       return;
     }
 
     const initialized = await E2EKeyManager.isInitialized();
     if (!initialized) {
-      console.log('[FadCamRemote] E2E key not in IndexedDB — showing unlock modal');
+      console.log('[ServaCamRemote] E2E key not in IndexedDB — showing unlock modal');
       showE2EUnlockModal();
     } else {
-      console.log('[FadCamRemote] E2E key already in IndexedDB — stream ready');
+      console.log('[ServaCamRemote] E2E key already in IndexedDB — stream ready');
     }
   }
 
@@ -391,7 +391,7 @@
   // (handled inside showE2EUnlockModal's submit handler).
   let _e2eModalShowing = false;
   window.addEventListener('e2e-decryption-failed', async (ev) => {
-    console.warn('[FadCamRemote] e2e-decryption-failed event received:', ev.detail);
+    console.warn('[ServaCamRemote] e2e-decryption-failed event received:', ev.detail);
     // Skip if the unlock modal is already visible (avoid overlapping prompts)
     if (_e2eModalShowing || document.getElementById('e2e-unlock-overlay')) {
       return;
@@ -410,7 +410,7 @@
   
   // Initialize stream context for device
   async function initStreamContext(deviceId) {
-    console.log('[FadCamRemote] Initializing stream for device:', deviceId);
+    console.log('[ServaCamRemote] Initializing stream for device:', deviceId);
     
     // Show connecting overlay
     showStreamOverlay('Connecting...', 'Authenticating with FadSec Cloud');
@@ -418,14 +418,14 @@
     try {
       // Check for handoff token first (coming from Lab)
       const handoffToken = getHandoffToken();
-      console.log('[FadCamRemote] Token check result:', { 
+      console.log('[ServaCamRemote] Token check result:', { 
         handoffToken: handoffToken ? handoffToken.substring(0, 8) + '...' : null,
         willExchange: !!handoffToken 
       });
       let session = null;
       
       if (handoffToken) {
-        console.log('[FadCamRemote] HAS handoff token, will exchange...');
+        console.log('[ServaCamRemote] HAS handoff token, will exchange...');
         // Exchange handoff token for session
         try {
           const result = await exchangeHandoffToken(handoffToken, deviceId);
@@ -445,18 +445,18 @@
           return;
         }
       } else {
-        console.log('[FadCamRemote] NO handoff token, checking stored session...');
+        console.log('[ServaCamRemote] NO handoff token, checking stored session...');
         // No handoff token - check for stored session
         session = getStoredSession();
         const storedStreamToken = getStreamToken();
-        console.log('[FadCamRemote] Stored session:', session ? 'exists' : 'none', 'Stream token:', storedStreamToken ? 'exists' : 'none');
+        console.log('[ServaCamRemote] Stored session:', session ? 'exists' : 'none', 'Stream token:', storedStreamToken ? 'exists' : 'none');
         
         if (!session || !storedStreamToken) {
-          console.log('[FadCamRemote] No session or token, will redirect to Lab in 1.5s');
+          console.log('[ServaCamRemote] No session or token, will redirect to Lab in 1.5s');
           // No session - redirect to Lab to login
           showStreamOverlay('Not Logged In', 'Redirecting to login...');
           setTimeout(() => {
-            console.log('[FadCamRemote] Redirecting NOW to:', CLOUD_CONFIG.LAB_URL);
+            console.log('[ServaCamRemote] Redirecting NOW to:', CLOUD_CONFIG.LAB_URL);
             window.location.href = CLOUD_CONFIG.LAB_URL;
           }, 1500);
           return;
@@ -465,7 +465,7 @@
         // CRITICAL SECURITY: Validate stored session with server before granting access
         // This ensures users with revoked access cannot bypass tier restrictions
         // If tier/beta status changed since last login, this will catch it
-        console.log('[FadCamRemote] 🔐 Validating stored session with server...');
+        console.log('[ServaCamRemote] 🔐 Validating stored session with server...');
         let validationPassed = false;
         try {
           const validationResponse = await fetch(`${CLOUD_CONFIG.SUPABASE_URL}/functions/v1/verify-stream-token`, {
@@ -480,11 +480,11 @@
           });
           
           if (validationResponse.ok) {
-            console.log('[FadCamRemote] ✅ Session validated - user has current access');
+            console.log('[ServaCamRemote] ✅ Session validated - user has current access');
             validationPassed = true;
           } else if (validationResponse.status === 401) {
             // 401 = Token truly expired or invalid — hard fail
-            console.error('[FadCamRemote] ❌ Token rejected (401) — clearing session');
+            console.error('[ServaCamRemote] ❌ Token rejected (401) — clearing session');
             localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.SESSION);
             localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.USER);
             localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN);
@@ -496,10 +496,10 @@
           } else {
             // 403 or other = could be CORS/routing issue (X-Original-URI missing)
             // Fall back to client-side JWT expiry check
-            console.warn(`[FadCamRemote] ⚠️ Server validation returned ${validationResponse.status} — checking token locally`);
+            console.warn(`[ServaCamRemote] ⚠️ Server validation returned ${validationResponse.status} — checking token locally`);
           }
         } catch (validationError) {
-          console.warn('[FadCamRemote] ⚠️ Session validation network error:', validationError.message);
+          console.warn('[ServaCamRemote] ⚠️ Session validation network error:', validationError.message);
           // Network error — fall back to client-side check instead of hard fail
         }
         
@@ -511,7 +511,7 @@
               const payload = JSON.parse(atob(parts[1]));
               const now = Math.floor(Date.now() / 1000);
               if (payload.exp && payload.exp < now) {
-                console.error('[FadCamRemote] ❌ Token expired locally — clearing session');
+                console.error('[ServaCamRemote] ❌ Token expired locally — clearing session');
                 localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.SESSION);
                 localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.USER);
                 localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN);
@@ -519,10 +519,10 @@
                 setTimeout(() => { window.location.href = CLOUD_CONFIG.LAB_URL; }, 3000);
                 return;
               }
-              console.log('[FadCamRemote] ✅ Token not expired locally — proceeding with stored session');
+              console.log('[ServaCamRemote] ✅ Token not expired locally — proceeding with stored session');
             }
           } catch (e) {
-            console.error('[FadCamRemote] ❌ Cannot decode stored token — clearing session');
+            console.error('[ServaCamRemote] ❌ Cannot decode stored token — clearing session');
             localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.SESSION);
             localStorage.removeItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN);
             showStreamOverlay('Invalid Session', 'Redirecting to login...');
@@ -547,10 +547,10 @@
       // Initialize CloudApiService for cloud mode
       if (typeof initCloudApiService === 'function') {
         initCloudApiService(streamContext);
-        console.log('[FadCamRemote] CloudApiService initialized');
+        console.log('[ServaCamRemote] CloudApiService initialized');
       }
       
-      console.log('[FadCamRemote] Stream context ready:', streamContext);
+      console.log('[ServaCamRemote] Stream context ready:', streamContext);
 
       // Show E2E unlock modal if verify_tag is present but key is not in IndexedDB
       await checkAndShowE2EUnlock();
@@ -561,7 +561,7 @@
       }
       
     } catch (error) {
-      console.error('[FadCamRemote] Stream init failed:', error);
+      console.error('[ServaCamRemote] Stream init failed:', error);
       showStreamOverlay('Connection Failed', 'Unable to connect to device. Please try again.');
     }
   }
@@ -620,11 +620,11 @@
   // Show device banner at top
   // NOTE: Device banner removed - logo in header always links to Lab (set in HTML)
   
-  // Add FadCam Remote menu item to profile dropdown
+  // Add ServaCam Remote menu item to profile dropdown
   function addCloudMenuItem() {
     const dropdown = document.getElementById('profileDropdown');
     if (!dropdown) {
-      console.error('[FadCamRemote] Profile dropdown not found');
+      console.error('[ServaCamRemote] Profile dropdown not found');
       return;
     }
     
@@ -635,7 +635,7 @@
     
     menuItem.innerHTML = `
       <i class="fas fa-cloud" style="color: #00d4ff;"></i> 
-      <span>FadCam Remote</span>
+      <span>ServaCam Remote</span>
     `;
     menuItem.onclick = () => window.open(CLOUD_CONFIG.LAB_URL, '_blank');
     
@@ -647,22 +647,22 @@
       dropdown.appendChild(menuItem);
     }
     
-    console.log('[FadCamRemote] Menu item added');
+    console.log('[ServaCamRemote] Menu item added');
   }
   
   // Initialize
   function init() {
     if (!isWebAccess()) {
-      console.log('[FadCamRemote] Local/LAN access, skipping cloud features');
+      console.log('[ServaCamRemote] Local/LAN access, skipping cloud features');
       return;
     }
     
-    console.log('[FadCamRemote] Web access detected, adding cloud features...');
+    console.log('[ServaCamRemote] Web access detected, adding cloud features...');
     
     // Check if we're in streaming mode
     const deviceId = getStreamDeviceId();
     if (deviceId) {
-      console.log('[FadCamRemote] Streaming mode for device:', deviceId);
+      console.log('[ServaCamRemote] Streaming mode for device:', deviceId);
       initStreamContext(deviceId);
     } else {
       // Demo mode - just add menu item
@@ -678,7 +678,7 @@
   }
   
   // Export for testing and integration
-  window.FadCamRemote = {
+  window.ServaCamRemote = {
     getStreamDeviceId,
     isStreamingMode,
     isCloudMode,

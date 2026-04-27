@@ -3,12 +3,12 @@
     <string name="auto_delete_immediate">Anında</string>
     <string name="trash_auto_delete_info_immediate">Öğeler anında silinir.</string>
     <string name="check_for_updates">Güncellemeleri Kontrol Et</string>
-    <string name="fadsec_info">FadCam, FadSec Lab paketinin bir parçasıdır. Daha fazla bilgi için aşağıda \'kaynak kodu görüntüle\' seçeneğine tıklayın.</string>
+    <string name="fadsec_info">ServaCam, FadSec Lab paketinin bir parçasıdır. Daha fazla bilgi için aşağıda \'kaynak kodu görüntüle\' seçeneğine tıklayın.</string>
     <string name="app_description">
     <![CDATA[
-    FadCam, herhangi bir veri izleme veya toplama yapmadan gizliliğe öncelik veren, reklamsız ve açık kaynaklı bir video kayıt uygulamasıdır. Yalnızca GitHub ve README\'de belirtilen resmi bağlantılar üzerinden erişilebilir.
+    ServaCam, herhangi bir veri izleme veya toplama yapmadan gizliliğe öncelik veren, reklamsız ve açık kaynaklı bir video kayıt uygulamasıdır. Yalnızca GitHub ve README\'de belirtilen resmi bağlantılar üzerinden erişilebilir.
     <br/><br/>
-    FadCam, <font color="#cfbafd">HowToMen</font> ve <font color="#cfbafd">Xtream Droid</font> gibi popüler YouTube kanallarında yer almış, ayrıca <font color="#cfbafd">GrapheneOS</font> ve 55+ diğer önemli platformda tartışılmıştır.
+    ServaCam, <font color="#cfbafd">HowToMen</font> ve <font color="#cfbafd">Xtream Droid</font> gibi popüler YouTube kanallarında yer almış, ayrıca <font color="#cfbafd">GrapheneOS</font> ve 55+ diğer önemli platformda tartışılmıştır.
     ]]>
 </string>
     <string name="view_source_code">Kaynak Kodu Görüntüle</string>
@@ -117,7 +117,7 @@
     <string name="setting_quailty_title">Video Kalitesi</string>
     <string name="note_quailty">Kalite seçin\n(Varsayılan: HD)</string>
     <string name="setting_watermark">Filigran</string>
-    <string name="note_watermark">Filigran seçeneğini belirleyin\n(Varsayılan: Zaman Damgası ile FadCam)</string>
+    <string name="note_watermark">Filigran seçeneğini belirleyin\n(Varsayılan: Zaman Damgası ile ServaCam)</string>
     <string name="note_watermark_extra">Hızlı kaydetme için \'Filigran Yok\' seçeneğini tercih edin. Filigran eklemek mi istiyorsunuz? Beklemeye değer, sadece biraz daha uzun sürüyor!</string>
     <string name="setting_location_title">Konum Verileri</string>
     <string name="note_location">Filigrana konum verileri ekleyin. \nGPS\'in etkin olması gerekir \n(Varsayılan: Devre Dışı)</string>
@@ -138,13 +138,13 @@
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>FERAGATNAME</item>
-        <item>FadCam kullanıcı verisi topluyor mu?</item>
-        <item>FadCam\'de reklam var mı?</item>
-        <item>FadCam neden konum erişimi istiyor?</item>
+        <item>ServaCam kullanıcı verisi topluyor mu?</item>
+        <item>ServaCam\'de reklam var mı?</item>
+        <item>ServaCam neden konum erişimi istiyor?</item>
         <item>İnternet izni neden gerekiyor?</item>
         <item>Herhangi bir veri harici sunucularda saklanıyor mu?</item>
         <item>Kayıttan sonra videolarıma ne oluyor?</item>
-        <item>FadCam verilerimi üçüncü taraflarla paylaşıyor mu?</item>
+        <item>ServaCam verilerimi üçüncü taraflarla paylaşıyor mu?</item>
         <item> </item>
         <item> </item>
         <item>Genel</item>
@@ -158,15 +158,15 @@
         <item> </item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-        <item>FadCam, bu yazılımın etik dışı veya yasa dışı kullanımını onaylamaz veya desteklemez. Yetkisiz gözetim veya gizliliğin ihlali gibi kötüye kullanımlar kesinlikle kurallarımıza aykırıdır. Yazarlar, uygulamanın kötüye kullanımından sorumlu değildir.
+        <item>ServaCam, bu yazılımın etik dışı veya yasa dışı kullanımını onaylamaz veya desteklemez. Yetkisiz gözetim veya gizliliğin ihlali gibi kötüye kullanımlar kesinlikle kurallarımıza aykırıdır. Yazarlar, uygulamanın kötüye kullanımından sorumlu değildir.
         </item>
-        <item>Hayır, FadCam herhangi bir kullanıcı verisi toplamaz.</item>
-        <item>Hayır, FadCam tamamen reklamsızdır.</item>
+        <item>Hayır, ServaCam herhangi bir kullanıcı verisi toplamaz.</item>
+        <item>Hayır, ServaCam tamamen reklamsızdır.</item>
         <item>Filigranlarınıza konum bilgisi eklemek için.</item>
         <item>Otomatik güncelleme kontrolü için.</item>
         <item>Hayır, tüm veriler cihazınızda saklanır.</item>
         <item>Videolarınız cihazınızda yerel olarak saklanır.</item>
-        <item>Hayır, FadCam hiç veri paylaşmaz veya toplamaz, çökme günlükleri bile dahil.</item>
+        <item>Hayır, ServaCam hiç veri paylaşmaz veya toplamaz, çökme günlükleri bile dahil.</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -179,19 +179,19 @@
         <item>Güncellemeler için resmi GitHub deposunu kontrol edin.</item>
         <item> </item>
     </string-array>
-    <string name="dialog_welcome_title">FadCam\'e Hoş Geldiniz!</string>
+    <string name="dialog_welcome_title">ServaCam\'e Hoş Geldiniz!</string>
     <string name="note_under_dev">Önemli: Bu uygulama şu anda geliştirme aşamasında. Yeni özellikler düzenli olarak ekleniyor.</string>
     <string name="stay_updated_title">Güncel Kalın:</string>
     <string name="button_readme_github">GitHub Deposu</string>
     <string name="community_title">Topluluğumuza Katılın:</string>
     <string name="discord_title">Discord Sunucusu</string>
-    <string name="thankyou_msg">FadCam\'i kullandığınız için teşekkür ederiz!</string>
+    <string name="thankyou_msg">ServaCam\'i kullandığınız için teşekkür ederiz!</string>
     <string name="settings_title">Ayarlar</string>
-    <string name="array_watermark_time_fadcam">FadCam ile Zaman</string>
+    <string name="array_watermark_time_fadcam">ServaCam ile Zaman</string>
     <string name="array_watermark_timeonly">Zaman Damgası</string>
     <string name="array_watermark_nomark">Filigran Yok</string>
     <string name="toast_video_not_found">Hata: Video bulunamadı</string>
-    <string name="toast_video_saved">Video, İndirilenler\'deki FadCam klasörüne kaydedildi</string>
+    <string name="toast_video_saved">Video, İndirilenler\'deki ServaCam klasörüne kaydedildi</string>
     <string name="toast_video_save_fail">Video kaydedilemedi</string>
     <string name="rename_video_title">Videoyu Yeniden Adlandır</string>
     <string name="rename_video_hint">Yeni adı girin</string>
@@ -376,20 +376,20 @@
     <!-- Debug Settings -->
     <string name="setting_debug_title">Hata Ayıklama Günlüğü</string>
     <string name="note_debug">Hata ayıklama günlüğü dosyası oluşturmayı etkinleştir \n(Varsayılan: Devre Dışı)</string>
-    <string name="note_debug_extra">Etkinleştirildiğinde, İndirilenler/FadCam klasöründe bir hata ayıklama günlüğü dosyası oluşturulur. Bu, uygulama sorunlarını teşhis etmeye yardımcı olabilir.</string>
+    <string name="note_debug_extra">Etkinleştirildiğinde, İndirilenler/ServaCam klasöründe bir hata ayıklama günlüğü dosyası oluşturulur. Bu, uygulama sorunlarını teşhis etmeye yardımcı olabilir.</string>
     <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">Sonraki Başlatmada Karşılama Ekranını Göster</string>
-    <string name="note_onboarding">FadCam\'i bir sonraki açışınızda uygulama tanıtımını ve izin kılavuzunu görmek için etkinleştirin.</string>
+    <string name="note_onboarding">ServaCam\'i bir sonraki açışınızda uygulama tanıtımını ve izin kılavuzunu görmek için etkinleştirin.</string>
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Başlangıçta Otomatik Güncelleme Kontrolü</string>
-    <string name="note_auto_update_check">Etkinleştirilirse, FadCam uygulamayı her açtığınızda güncellemeleri kontrol eder. Başlangıçta otomatik güncelleme kontrollerini devre dışı bırakmak için kapatın.\n(Varsayılan: Açık)</string>
+    <string name="note_auto_update_check">Etkinleştirilirse, ServaCam uygulamayı her açtığınızda güncellemeleri kontrol eder. Başlangıçta otomatik güncelleme kontrollerini devre dışı bırakmak için kapatın.\n(Varsayılan: Açık)</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Depolama Konumu</string>
     <string name="storage_location_description">Kayıtların nereye kaydedileceğini seçin.</string>
     <string name="storage_location_internal">Dahili Uygulama Depolama (Varsayılan, Özel)</string>
     <string name="storage_location_custom">Özel Konum (SD Kart/Diğer, Galeride Görünür)</string>
     <string name="storage_location_choose_folder">Klasör Seç</string>
-    <string name="storage_location_note">Not: Özel konumlar kullanmak, videoların diğer uygulamalar tarafından erişilebilir olmasını sağlar (örn., Galeri). Dahili depolama, videoları yalnızca FadCam\'e özel tutar.</string>
+    <string name="storage_location_note">Not: Özel konumlar kullanmak, videoların diğer uygulamalar tarafından erişilebilir olmasını sağlar (örn., Galeri). Dahili depolama, videoları yalnızca ServaCam\'e özel tutar.</string>
     <string name="storage_icon_description">Depolama İkonu</string>
     <string name="location_icon_description">Konum İkonu</string>
     <string name="location_embedding_icon_description">Konum Gömme İkonu</string>
@@ -409,16 +409,16 @@
     <string name="onboarding_intro_line3">ve reklamcılar için değil, sizin için oluşturuldu.</string>
     <string name="language_change_later_note">Bunu daha sonra Ayarlar\'dan değiştirebilirsiniz.</string>
     <string name="permissions_required">İzinler Gerekli</string>
-    <string name="permissions_description">FadCam, video kaydetmek ve kaydetmek için kameranıza, mikrofonunuza ve depolamanıza erişim gerektirir.</string>
+    <string name="permissions_description">ServaCam, video kaydetmek ve kaydetmek için kameranıza, mikrofonunuza ve depolamanıza erişim gerektirir.</string>
     <string name="grant_permissions">İzinleri Ver</string>
     <string name="permissions_note">Devam etmek için tüm izinleri vermeniz gerekir.</string>
     <string name="permissions_granted">Tüm izinler verildi!</string>
     <string name="open_settings">Ayarları Aç</string>
     <string name="disable_battery_optimization">Pil Optimizasyonunu Devre Dışı Bırak</string>
     <string name="onboarding_human_title">İnsan olduğunuzu doğrulayın</string>
-    <string name="onboarding_human_desc">Hmmmm... tamam. Bu kurallar pazarlık edilemez. Kabul edemiyorsanız, lütfen FadCam\'i hemen kaldırın.</string>
-    <string name="onboarding_human_checkbox1">FadCam\'i herhangi bir yasayı çiğnemek, birinin mahremiyetine saldırmak veya ürkütücü olmak için kullanmayacağım. Eğer hata yaparsam, geliştirici sorumlu değildir. (Bu benim sorumluluğum.)</string>
-    <string name="onboarding_human_checkbox2">FadCam\'i kullanmadan önce bile seviyorum. (İsteğe bağlı değil)</string>
+    <string name="onboarding_human_desc">Hmmmm... tamam. Bu kurallar pazarlık edilemez. Kabul edemiyorsanız, lütfen ServaCam\'i hemen kaldırın.</string>
+    <string name="onboarding_human_checkbox1">ServaCam\'i herhangi bir yasayı çiğnemek, birinin mahremiyetine saldırmak veya ürkütücü olmak için kullanmayacağım. Eğer hata yaparsam, geliştirici sorumlu değildir. (Bu benim sorumluluğum.)</string>
+    <string name="onboarding_human_checkbox2">ServaCam\'i kullanmadan önce bile seviyorum. (İsteğe bağlı değil)</string>
     <string name="onboarding_human_button">İçeri girmeme izin ver!</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Sıralama Kriteri</string>
@@ -431,8 +431,8 @@
     <!-- Remote Tab Strings -->
     <string name="remote_access_title">Uzaktan Erişim/Kontrol</string>
     <string name="remote_toast_coming_soon">Yakında! İnşallah</string>
-    <string name="remote_coming_soon">FadCam için uzaktan kontrol yakında geliyor.</string>
-    <string name="remote_feature_description">FadCam cihazlarını QR kodu kullanarak güvenli, yerel ağ uzaktan kontrolü için eşleştirin: kaydetmeyi başlat/durdur, önizleme, yakınlaştırma, kamera değiştirme ve daha fazlası—hepsi uçtan uca şifreleme ile.</string>
+    <string name="remote_coming_soon">ServaCam için uzaktan kontrol yakında geliyor.</string>
+    <string name="remote_feature_description">ServaCam cihazlarını QR kodu kullanarak güvenli, yerel ağ uzaktan kontrolü için eşleştirin: kaydetmeyi başlat/durdur, önizleme, yakınlaştırma, kamera değiştirme ve daha fazlası—hepsi uçtan uca şifreleme ile.</string>
     <!-- Fix Start: Add camera cooldown message -->
     <!-- Fix End: Add camera cooldown message -->
 
@@ -453,7 +453,7 @@
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">Seçili öğe yok.</string>
     <string name="trash_dialog_restore_title">Seçilenleri Geri Yükle?</string>
-    <string name="trash_dialog_restore_message">%1$d öğeyi Downloads/FadCam/ klasörüne geri yüklensin mi?</string>
+    <string name="trash_dialog_restore_message">%1$d öğeyi Downloads/ServaCam/ klasörüne geri yüklensin mi?</string>
     <string name="trash_restore_success_toast">%1$d öğe geri yüklendi.</string>
     <string name="trash_restore_fail_toast">Öğeleri geri yüklerken hata oluştu. Bazı dosyalar geri yüklenmemiş veya galeri güncellenememiş olabilir. Depolama izinlerini kontrol edin.</string>
     <string name="trash_restore_cancelled_toast">Geri yükleme iptal edildi.</string>

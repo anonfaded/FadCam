@@ -1,0 +1,183 @@
+package com.servalabs.cam.ui;
+
+import com.servalabs.cam.Log;
+import com.servalabs.cam.FLog;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+import androidx.viewpager2.widget.ViewPager2;
+
+import com.servalabs.cam.Constants;
+import com.servalabs.cam.R;
+import com.servalabs.cam.SharedPreferencesManager;
+
+/**
+ * Watch-optimized main activity for Wear OS smartwatch devices.
+ *
+ * <p>4-page swipe navigation:</p>
+ * <ol>
+ *   <li>Camera — {@link WatchCameraFragment}</li>
+ *   <li>Records — {@link WatchRecordsFragment}</li>
+ *   <li>Remote  — {@link WatchRemoteFragment}</li>
+ *   <li>Settings — {@link WatchSettingsFragment}</li>
+ * </ol>
+ *
+ * <p>An overlay FrameLayout ({@code R.id.overlay_fragment_container}) allows
+ * full-screen overlay fragments (e.g. {@link TrashFragment}) to be shown via
+ * {@link OverlayNavUtil}.</p>
+ */
+public class WatchMainActivity extends AppCompatActivity {
+
+    private static final int PAGE_COUNT = 4;
+
+    private ViewPager2 viewPager;
+    private final View[] dots = new View[PAGE_COUNT];
+    private boolean uiInitialized = false;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        // WATCH-SPECIFIC FIX: Override manifest theme for better Wear OS compatibility
+        // Material3 has rendering issues on small round Wear OS screens
+        // MaterialComponents (Material 2) works better on all screen sizes including watch
+        FLog.d("WatchMainActivity", "Overriding theme to MaterialComponents for Wear OS");
+        setTheme(R.style.Theme_ServaCam_WatchCompat);
+        
+        super.onCreate(savedInstanceState);
+
+        // DEBUG: Log device characteristics for Wear OS diagnosis
+        FLog.d("WatchMainActivity", "=== WATCH ACTIVITY LIFECYCLE ===");
+        FLog.d("WatchMainActivity", "Display dimensions: " + 
+            getResources().getDisplayMetrics().widthPixels + "x" + 
+            getResources().getDisplayMetrics().heightPixels);
+        FLog.d("WatchMainActivity", "Screen density: " + 
+            getResources().getDisplayMetrics().density);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            FLog.d("WatchMainActivity", "Is round watch: " + 
+                getResources().getConfiguration().isScreenRound());
+        }
+        FLog.d("WatchMainActivity", "API level: " + android.os.Build.VERSION.SDK_INT);
+        FLog.d("WatchMainActivity", "Device: " + android.os.Build.DEVICE);
+        
+        // Check for onboarding BEFORE applying theme or setting content view
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+
+        // Check if this is a first install
+        boolean firstInstallChecked = sharedPreferencesManager.sharedPreferences
+                .getBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, false);
+
+        if (!firstInstallChecked) {
+            // This is definitely a first install or app data was cleared
+            // Force onboarding to show by setting the flag to false
+            FLog.d("WatchMainActivity", "First install detected! Forcing onboarding to show.");
+            sharedPreferencesManager.sharedPreferences.edit()
+                    .putBoolean(Constants.COMPLETED_ONBOARDING_KEY, false)
+                    .putBoolean(Constants.FIRST_INSTALL_CHECKED_KEY, true)
+                    .commit(); // Use commit() for immediate effect
+        }
+
+        // Check for onboarding
+        boolean completedOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.COMPLETED_ONBOARDING_KEY, false);
+        boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
+        FLog.d("WatchMainActivity", "DEBUG - COMPLETED_ONBOARDING_KEY raw value: " + completedOnboarding);
+        FLog.d("WatchMainActivity", "DEBUG - isShowOnboarding() result: " + showOnboarding);
+        FLog.d("WatchMainActivity", "Should show onboarding: " + showOnboarding);
+
+        if (showOnboarding) {
+            // User has NOT completed onboarding yet - show full onboarding first
+            Intent intent = new Intent(this, OnboardingActivity.class);
+            startActivity(intent);
+            // Don't finish - let OnboardingActivity return here when completed
+            return;
+        }
+
+        // Onboarding completed, initialize UI
+        initializeUI();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Check if onboarding was completed while we were paused
+        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        boolean completedOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.COMPLETED_ONBOARDING_KEY, false);
+
+        if (completedOnboarding && !uiInitialized) {
+            // Onboarding just completed, initialize UI now
+            initializeUI();
+        }
+    }
+
+    private void initializeUI() {
+        if (uiInitialized) return; // Already initialized
+
+        FLog.d("WatchMainActivity", "Initializing UI...");
+        setContentView(R.layout.activity_watch_main);
+        FLog.d("WatchMainActivity", "Content view set");
+
+        viewPager = findViewById(R.id.watch_viewpager);
+        dots[0]   = findViewById(R.id.dot_0);
+        dots[1]   = findViewById(R.id.dot_1);
+        dots[2]   = findViewById(R.id.dot_2);
+        dots[3]   = findViewById(R.id.dot_3);
+
+        FLog.d("WatchMainActivity", "ViewPager and dots found");
+
+        viewPager.setAdapter(new WatchPagerAdapter(this));
+        viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                updateDots(position);
+            }
+        });
+
+        updateDots(0);
+        uiInitialized = true;
+    }
+
+    /** Disable viewpager swiping while an overlay is showing. */
+    public void setSwipeEnabled(boolean enabled) {
+        viewPager.setUserInputEnabled(enabled);
+    }
+
+    private void updateDots(int selectedPage) {
+        for (int i = 0; i < PAGE_COUNT; i++) {
+            if (dots[i] != null) {
+                dots[i].setBackgroundResource(
+                        i == selectedPage
+                                ? R.drawable.watch_dot_selected
+                                : R.drawable.watch_dot_unselected);
+            }
+        }
+    }
+
+    private static final class WatchPagerAdapter extends FragmentStateAdapter {
+        WatchPagerAdapter(@NonNull FragmentActivity fa) {
+            super(fa);
+        }
+
+        @NonNull
+        @Override
+        public Fragment createFragment(int position) {
+            switch (position) {
+                case 1:  return new WatchRecordsFragment();
+                case 2:  return new WatchRemoteFragment();
+                case 3:  return new WatchSettingsFragment();
+                default: return new WatchCameraFragment();
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return PAGE_COUNT;
+        }
+    }
+
+
+}

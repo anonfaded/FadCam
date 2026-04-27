@@ -6,7 +6,7 @@
     android:background="@android:color/transparent">
 
     <!-- Icon rain background (will use update icon, see Java for support) -->
-    <com.fadcam.ui.UpdateRainView
+    <com.servalabs.cam.ui.UpdateRainView
         android:id="@+id/updateRainView"
         android:layout_width="0dp"
         android:layout_height="0dp"

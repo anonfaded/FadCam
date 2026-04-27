@@ -322,7 +322,7 @@
         android:background="@drawable/bg_bottom_fade">
 
         <!-- Golden CTA Button with Shimmer -->
-        <com.fadcam.ui.ShimmerButton
+        <com.servalabs.cam.ui.ShimmerButton
             android:id="@+id/btnGetPro"
             android:layout_width="match_parent"
             android:layout_height="50dp"

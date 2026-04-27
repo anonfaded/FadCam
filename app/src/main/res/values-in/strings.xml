@@ -2,15 +2,15 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="auto_delete_immediate">Segera</string>
     <string name="trash_auto_delete_info_immediate">Item dihapus segera.</string>
-    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_name" translatable="false">ServaCam</string>
     <string name="app_icon_description">Pilih ikon dan nama untuk aplikasi Anda. Ini akan mengubah tampilannya di layar utama Anda.</string>
     <string name="check_for_updates">Periksa pembaruan</string>
-    <string name="fadsec_info">FadCam adalah bagian dari rangkaian FadSec Lab. Untuk informasi lebih lanjut, klik \'lihat kode sumber\' di bawah ini.</string>
+    <string name="fadsec_info">ServaCam adalah bagian dari rangkaian FadSec Lab. Untuk informasi lebih lanjut, klik \'lihat kode sumber\' di bawah ini.</string>
     <string name="app_description">
     <![CDATA[
-    FadCam adalah aplikasi perekaman video sumber terbuka bebas iklan yang mengutamakan privasi dengan tidak melacak atau mengumpulkan data apa pun. Aplikasi ini tersedia secara eksklusif di GitHub dan melalui tautan resmi yang disebutkan dalam BACA SAYA.
+    ServaCam adalah aplikasi perekaman video sumber terbuka bebas iklan yang mengutamakan privasi dengan tidak melacak atau mengumpulkan data apa pun. Aplikasi ini tersedia secara eksklusif di GitHub dan melalui tautan resmi yang disebutkan dalam BACA SAYA.
     <br/><br/>
-    FadCam telah ditampilkan di saluran YouTube populer seperti <font color="#cfbafd">HowToMen</font> dan <font color="#cfbafd">Xtream Droid</font>, serta dibahas dalam <font color="#cfbafd">GrapheneOS</font> dan 55+ tempat penting lainnya.
+    ServaCam telah ditampilkan di saluran YouTube populer seperti <font color="#cfbafd">HowToMen</font> dan <font color="#cfbafd">Xtream Droid</font>, serta dibahas dalam <font color="#cfbafd">GrapheneOS</font> dan 55+ tempat penting lainnya.
     ]]>
 </string>
     <string name="view_source_code">Lihat Kode Sumber</string>
@@ -82,7 +82,7 @@
     <string name="note_quailty">Pilih kualitas\n(Default: HD)</string>
     <string name="note_framerate">Pilih framerate\n(Default: %1$d)</string>
     <string name="setting_watermark">Watermark</string>
-    <string name="note_watermark">Pilih opsi watermark\n(Default: Waktu dengan FadCam)</string>
+    <string name="note_watermark">Pilih opsi watermark\n(Default: Waktu dengan ServaCam)</string>
     <string name="note_watermark_extra">Untuk menyimpan dengan cepat, pilih \'Tidak ada Watermark\'. Menambahkan watermark? Layak untuk ditunggu, hanya perlu waktu sedikit lebih lama untuk memprosesnya!</string>
     <string name="setting_location_title">Lokasi Data</string>
     <string name="note_location">Tambahkan lokasi data di watermark. \nMemerlukan GPS yang diaktifkan \n(Default: Dinonaktifkan)</string>
@@ -104,12 +104,12 @@
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>PENAFIAN</item>
         <item>Apakah Fadcam mengambil data pengguna?</item>
-        <item>Apakah ada iklan di FadCam?</item>
+        <item>Apakah ada iklan di ServaCam?</item>
         <item>Kenapa Fadkam meminta akses lokasi?</item>
         <item>Mengapa izin internet diperlukan?</item>
         <item>Apakah ada data yang disimpan di server eksternal?</item>
         <item>Apa yang terjadi pada video saya setelah merekam?</item>
-        <item>Apakah FadCam membagikan data saya dengan pihak ketiga?</item>
+        <item>Apakah ServaCam membagikan data saya dengan pihak ketiga?</item>
         <item> </item>
         <item> </item>
         <item>Umum</item>
@@ -123,15 +123,15 @@
         <item> </item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-        <item>FadCam tidak membenarkan atau mendukung penggunaan perangkat lunak ini secara tidak etis atau ilegal. Penyalahgunaan, seperti pengawasan yang tidak sah atau pelanggaran privasi, sangat bertentangan dengan pedoman kami. Penulis tidak bertanggung jawab atas penyalahgunaan aplikasi ini.
+        <item>ServaCam tidak membenarkan atau mendukung penggunaan perangkat lunak ini secara tidak etis atau ilegal. Penyalahgunaan, seperti pengawasan yang tidak sah atau pelanggaran privasi, sangat bertentangan dengan pedoman kami. Penulis tidak bertanggung jawab atas penyalahgunaan aplikasi ini.
         </item>
-        <item>Tidak, FadCam tidak mengumpulkan data pengguna apa pun.</item>
-        <item>Tidak, FadCam sepenuhnya bebas iklan.</item>
+        <item>Tidak, ServaCam tidak mengumpulkan data pengguna apa pun.</item>
+        <item>Tidak, ServaCam sepenuhnya bebas iklan.</item>
         <item>Untuk menambahkan info lokasi ke tanda air Anda.</item>
         <item>Untuk pemeriksaan pembaruan otomatis.</item>
         <item>Tidak, semua data disimpan di perangkat Anda.</item>
         <item>Video Anda disimpan secara lokal di perangkat Anda.</item>
-        <item>Tidak, FadCam tidak membagikan atau mengumpulkan data apa pun.</item>
+        <item>Tidak, ServaCam tidak membagikan atau mengumpulkan data apa pun.</item>
         <item> </item>
         <item> </item>
         <item> </item>
@@ -144,19 +144,19 @@
         <item>Periksa repositori resmi GitHub untuk mengetahui pembaruan.</item>
         <item> </item>
     </string-array>
-    <string name="dialog_welcome_title">Selamat datang FadCam!</string>
+    <string name="dialog_welcome_title">Selamat datang ServaCam!</string>
     <string name="note_under_dev">Penting: Aplikasi ini sedang dalam tahap pengembangan. Fitur-fitur baru akan ditambahkan secara berkala.</string>
     <string name="stay_updated_title">Tetap Terupdate:</string>
     <string name="button_readme_github">Repositori GitHub</string>
     <string name="community_title">Bergabunglah dengan Komunitas kami:</string>
     <string name="discord_title">Server Discord</string>
-    <string name="thankyou_msg">Terima kasih telah menggunakan FadCam!</string>
+    <string name="thankyou_msg">Terima kasih telah menggunakan ServaCam!</string>
     <string name="settings_title">Pengaturan</string>
     <string name="array_watermark_time_fadcam">Waktu dengan Fadcam</string>
     <string name="array_watermark_timeonly">Cap waktu</string>
     <string name="array_watermark_nomark">Tidak ada Watermark</string>
     <string name="toast_video_not_found">Error: Video tidak ditemukan</string>
-    <string name="toast_video_saved">Video disimpan ke folder FadCam di Unduhan</string>
+    <string name="toast_video_saved">Video disimpan ke folder ServaCam di Unduhan</string>
     <string name="toast_video_save_fail">Gagal menyimpan video</string>
     <string name="rename_video_title">Ganti Nama Video</string>
     <string name="rename_video_hint">Masukkan nama baru</string>
@@ -296,20 +296,20 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <!-- Debug Settings -->
     <string name="setting_debug_title">Pencatatan Debug</string>
     <string name="note_debug">Aktifkan pembuatan file log debug \n(Default: Dinonaktifkan)</string>
-    <string name="note_debug_extra">Saat diaktifkan, file log debug akan dibuat di folder Downloads/FadCam. Ini dapat membantu mendiagnosis masalah aplikasi.</string>
+    <string name="note_debug_extra">Saat diaktifkan, file log debug akan dibuat di folder Downloads/ServaCam. Ini dapat membantu mendiagnosis masalah aplikasi.</string>
     <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">Tampilkan Pengenalan pada Peluncuran Berikutnya</string>
-    <string name="note_onboarding">Aktifkan untuk melihat pengenalan aplikasi dan panduan izin saat berikutnya Anda membuka FadCam.</string>
+    <string name="note_onboarding">Aktifkan untuk melihat pengenalan aplikasi dan panduan izin saat berikutnya Anda membuka ServaCam.</string>
     <!-- Auto Update Settings -->
     <string name="setting_auto_update_check_title">Periksa Pembaruan Otomatis saat Startup</string>
-    <string name="note_auto_update_check">Jika diaktifkan, FadCam akan memeriksa pembaruan setiap kali Anda membuka aplikasi. Matikan untuk menonaktifkan pemeriksaan pembaruan otomatis saat peluncuran.\n(Default: Aktif)</string>
+    <string name="note_auto_update_check">Jika diaktifkan, ServaCam akan memeriksa pembaruan setiap kali Anda membuka aplikasi. Matikan untuk menonaktifkan pemeriksaan pembaruan otomatis saat peluncuran.\n(Default: Aktif)</string>
     <!-- Storage Location Settings -->
     <string name="storage_location_title">Lokasi Penyimpanan</string>
     <string name="storage_location_description">Pilih tempat rekaman disimpan.</string>
     <string name="storage_location_internal">Penyimpanan Aplikasi Internal (Default, Pribadi)</string>
     <string name="storage_location_custom">Lokasi Kustom (Kartu SD/Lainnya, Terlihat di Galeri)</string>
     <string name="storage_location_choose_folder">Pilih Folder</string>
-    <string name="storage_location_note">Catatan: Menggunakan lokasi kustom membuat video dapat diakses oleh aplikasi lain (misal, Galeri). Penyimpanan internal menjaga video tetap pribadi untuk FadCam.</string>
+    <string name="storage_location_note">Catatan: Menggunakan lokasi kustom membuat video dapat diakses oleh aplikasi lain (misal, Galeri). Penyimpanan internal menjaga video tetap pribadi untuk ServaCam.</string>
     <string name="storage_icon_description">Ikon Penyimpanan</string>
     <string name="location_icon_description">Ikon Lokasi</string>
     <string name="location_embedding_icon_description">Ikon Penyematan Lokasi</string>
@@ -329,16 +329,16 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="onboarding_intro_line3">dan dibuat untuk Anda—bukan untuk pengiklan.</string>
     <string name="language_change_later_note">Anda dapat mengubahnya nanti di Pengaturan.</string>
     <string name="permissions_required">Izin Diperlukan</string>
-    <string name="permissions_description">FadCam memerlukan akses ke kamera, mikrofon, dan penyimpanan Anda untuk merekam dan menyimpan video.</string>
+    <string name="permissions_description">ServaCam memerlukan akses ke kamera, mikrofon, dan penyimpanan Anda untuk merekam dan menyimpan video.</string>
     <string name="grant_permissions">Berikan Izin</string>
     <string name="permissions_note">Anda harus memberikan semua izin untuk melanjutkan.</string>
     <string name="permissions_granted">Semua izin diberikan!</string>
     <string name="open_settings">Buka Pengaturan</string>
     <string name="disable_battery_optimization">Nonaktifkan Optimisasi Baterai</string>
     <string name="onboarding_human_title">Verifikasi jika Anda manusia</string>
-    <string name="onboarding_human_desc">Hmmmm... baiklah. Aturan ini tidak bisa ditawar. Jika Anda tidak bisa menyetujui, silakan copot FadCam sekarang.</string>
-    <string name="onboarding_human_checkbox1">Saya tidak akan menggunakan FadCam untuk melanggar hukum, menginvasi privasi siapapun, atau menjadi orang mencurigakan. Pengembang tidak bertanggung jawab jika saya melakukan kesalahan. (Itu tanggung jawab saya.)</string>
-    <string name="onboarding_human_checkbox2">Saya sudah mencintai FadCam bahkan sebelum menggunakannya. (Tidak opsional)</string>
+    <string name="onboarding_human_desc">Hmmmm... baiklah. Aturan ini tidak bisa ditawar. Jika Anda tidak bisa menyetujui, silakan copot ServaCam sekarang.</string>
+    <string name="onboarding_human_checkbox1">Saya tidak akan menggunakan ServaCam untuk melanggar hukum, menginvasi privasi siapapun, atau menjadi orang mencurigakan. Pengembang tidak bertanggung jawab jika saya melakukan kesalahan. (Itu tanggung jawab saya.)</string>
+    <string name="onboarding_human_checkbox2">Saya sudah mencintai ServaCam bahkan sebelum menggunakannya. (Tidak opsional)</string>
     <string name="onboarding_human_button">Biarkan saya masuk!</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Urutkan Berdasarkan</string>
@@ -351,8 +351,8 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <!-- Remote Tab Strings -->
     <string name="remote_access_title">Akses/Kontrol Jarak Jauh</string>
     <string name="remote_toast_coming_soon">Segera hadir! In Sha Allah</string>
-    <string name="remote_coming_soon">Kontrol jarak jauh untuk FadCam akan segera hadir.</string>
-    <string name="remote_feature_description">Pasangkan klien FadCam menggunakan kode QR untuk kontrol jarak jauh yang aman melalui jaringan lokal: mulai/hentikan perekaman, pratinjau, zoom, beralih kamera, dan lainnya—semua dengan enkripsi end-to-end.</string>
+    <string name="remote_coming_soon">Kontrol jarak jauh untuk ServaCam akan segera hadir.</string>
+    <string name="remote_feature_description">Pasangkan klien ServaCam menggunakan kode QR untuk kontrol jarak jauh yang aman melalui jaringan lokal: mulai/hentikan perekaman, pratinjau, zoom, beralih kamera, dan lainnya—semua dengan enkripsi end-to-end.</string>
     <string name="app_icon_minimal" translatable="false">Minimal</string>
     <!-- Strings for TrashFragment -->
     <string name="trash_auto_deleted_toast">%1$d item lama dihapus secara otomatis.</string>
@@ -369,7 +369,7 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">Tidak ada item yang dipilih.</string>
     <string name="trash_dialog_restore_title">Kembalikan yang Dipilih?</string>
-    <string name="trash_dialog_restore_message">Kembalikan %1$d item ke folder publik Downloads/FadCam/?</string>
+    <string name="trash_dialog_restore_message">Kembalikan %1$d item ke folder publik Downloads/ServaCam/?</string>
     <string name="trash_restore_success_toast">%1$d item berhasil dikembalikan.</string>
     <string name="trash_restore_fail_toast">Kesalahan mengembalikan item. Beberapa file mungkin tidak berhasil dikembalikan atau galeri mungkin tidak diperbarui. Periksa izin penyimpanan aplikasi.</string>
     <string name="trash_restore_cancelled_toast">Pengembalian dibatalkan.</string>
@@ -408,7 +408,7 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="trash_select_all">Pilih Semua</string>
     <!-- Adding notification customization strings -->
     <string name="setting_notification_appearance">Tampilan Notifikasi</string>
-    <string name="note_notification_appearance">Sesuaikan tampilan notifikasi perekaman\n(Default: FadCam)</string>
+    <string name="note_notification_appearance">Sesuaikan tampilan notifikasi perekaman\n(Default: ServaCam)</string>
     <string name="hide_stop_button">Sembunyikan tombol berhenti</string>
     <string name="note_hide_stop_button">Sembunyikan tombol berhenti di notifikasi\n(Default: Dinonaktifkan)</string>
     <string name="notification_preview">Pratinjau notifikasi</string>
@@ -418,7 +418,7 @@ Direkomendasikan: 192000 bps, 48000 Hz untuk kebanyakan pengguna.</string>
     <string name="notification_video_recording_progress_description">Perekaman sedang berlangsung</string>
     <string name="notification_stop">HENTIKAN</string>
     <string-array name="notification_appearance_options">
-        <item>FadCam (default)</item>
+        <item>ServaCam (default)</item>
         <item>Pembaruan Sistem</item>
         <item>Mengunduh</item>
         <item>Sinkronisasi</item>

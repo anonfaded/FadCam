@@ -1,22 +1,24 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_name" translatable="false">Serva Cam</string>
     <string name="app_icon_description">Choose an icon and name for your app. This will change how it appears on your home screen.</string>
     <string name="check_for_updates">Check for Updates</string>
     <string name="accessibility_thumbnail_progress">%1$d%% watched</string>
-    <string name="fadsec_info">FadCam is part of the FadSec Lab suite. For more information, click on \'view source code\' below.</string>
+    <string name="fadsec_info">ServaCam is part of the FadSec Lab suite. For more information, click on \'view source code\' below.</string>
 
 
     <string name="app_description">
         <![CDATA[
-    FadCam is an ad-free, open-source video recording app that prioritizes privacy by not tracking or collecting any data. It is available exclusively on GitHub and through the official links mentioned in the README.
+    ServaCam is an ad-free, open-source video recording app that prioritizes privacy by not tracking or collecting any data. It is available exclusively on GitHub and through the official links mentioned in the README.
     <br/><br/>
-    FadCam has been featured in popular YouTube channels like <font color="#cfbafd">HowToMen</font> and <font color="#cfbafd">Xtream Droid</font>, as well as discussed in <font color="#cfbafd">GrapheneOS</font> and 55+ other notable spots.
+    ServaCam has been featured in popular YouTube channels like <font color="#cfbafd">HowToMen</font> and <font color="#cfbafd">Xtream Droid</font>, as well as discussed in <font color="#cfbafd">GrapheneOS</font> and 55+ other notable spots.
     ]]>
     </string>
 
 
     <string name="view_source_code">View Source Code</string>
     <string name="buy_me_a_coffee">Buy me a coffee ☕</string>
+    <string name="share_feedback">Share feedback</string>
+    <string name="button_setting_review">Write a review 🌟</string>
     <string name="contact">Contact</string>
     <string name="send_email">Send email</string>
     <string name="join_community">Join community for help, sharing ideas, and future app updates</string>
@@ -247,8 +249,7 @@
     <string name="mainpage_recording_to_sd">Recording to SD card</string>
     <string name="tips_title">Tips</string>
     <string name="tips_subtitle">Helpful usage tips</string>
-    <string name="whats_new_title">What\'s New</string>
-    <string name="whats_new_subtitle">See latest features and updates</string>
+
     <string name="home_menu">Home Menu</string>
     <string name="home_sidebar_title">Home</string>
     <string name="home_options_title">Home Options</string>
@@ -258,14 +259,14 @@
     <string name="front">Front</string>
     <string name="video_menu_del">Delete</string>
     <string name="video_menu_save">Save to Gallery</string>
-    <string name="video_menu_save_helper_downloads_fadcam">Video will be saved to Downloads/FadCam</string>
+    <string name="video_menu_save_helper_downloads_fadcam">Video will be saved to Downloads/ServaCam</string>
     <string name="video_menu_save_copy_or_move_title">Save to Gallery</string>
     <string name="video_menu_save_copy">Copy to Gallery</string>
-    <string name="video_menu_save_copy_desc">Create a copy in Downloads/FadCam (original file kept)</string>
+    <string name="video_menu_save_copy_desc">Create a copy in Downloads/ServaCam (original file kept)</string>
     <string name="video_menu_save_move">Move to Gallery</string>
-    <string name="video_menu_save_move_desc">Move file to Downloads/FadCam (saves storage space)</string>
+    <string name="video_menu_save_move_desc">Move file to Downloads/ServaCam (saves storage space)</string>
     <string name="video_menu_save_longpress_helper">Long press "Save to Gallery" to choose between copy or move</string>
-    <string name="watch_video_saved_toast">Saved to Downloads/FadCam</string>
+    <string name="watch_video_saved_toast">Saved to Downloads/ServaCam</string>
     <string name="watch_delete_confirm_title">Move to Trash?</string>
     <string name="watch_delete_confirm_msg">"%s" will be moved to trash.</string>
     <string name="watch_delete_confirm_action">Move to Trash</string>
@@ -406,7 +407,7 @@
     <string name="toast_no_drive_app">Google Drive app not found</string>
     <string name="records_title">Recordings</string>
     <string name="records_filter_all">All</string>
-    <string name="records_filter_camera">FadCam</string>
+    <string name="records_filter_camera">ServaCam</string>
     <string name="records_filter_dual">Dual</string>
     <string name="records_filter_screen">FadRec</string>
     <string name="records_filter_faditor">Faditor</string>
@@ -485,7 +486,7 @@
     <string name="nav_remote">Remote</string>
     <string name="nav_faditor_mini">Faditor</string>
     <string name="nav_lab">Lab</string>
-    <string name="button_settings_readme">Read Me</string>
+
     <string name="setting_cam_title">Camera Selection</string>
     <string name="note_cam_sele">Select camera \n(Default: Back)</string>
     <string name="button_settings_cam_back">Back</string>
@@ -566,7 +567,7 @@
     <string name="setting_codec_title">Video Codec</string>
     <string name="note_codec">Choose codec\n(Default: %1$s)\nTip: With H.265 (HEVC), you can use about half the bitrate of H.264 for the same quality. Example: For FHD, use 8 Mbps instead of 16 Mbps.</string>
     <string name="setting_watermark">Watermark</string>
-    <string name="note_watermark">Select watermark option\n(Default: Timestamp with FadCam)</string>
+    <string name="note_watermark">Select watermark option\n(Default: Timestamp with ServaCam)</string>
     <string name="note_watermark_extra">For a speedy save, pick \'No Watermark\'. Adding a watermark? It\'s worth the wait, just a little longer to process!</string>
     <string name="setting_location_title">Location Data</string>
     <string name="note_location">Include location data in watermark. \nRequires GPS enabled \n(Default: Disabled)</string>
@@ -574,7 +575,7 @@
     <string name="setting_location_embed_title">Embed Location in Videos</string>
     <string name="note_location_embed">Add GPS coordinates to video metadata (geotags). \nRequires GPS enabled \n(Default: Disabled)</string>
     <string name="note_location_embed_extra">Adds location data directly to video files, which can be used by gallery/map apps to show where videos were taken.</string>
-    <string name="button_setting_review">Write a Review 🌟</string>
+
     <string name="dialog_clock_title">Choose Clock Display</string>
     <string name="dialog_clock_timeonly">Time Only</string>
     <string name="dialog_clock_englishtime">English Date with time</string>
@@ -599,13 +600,13 @@
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>DISCLAIMER</item>
-        <item>Does FadCam collect any user data?</item>
-        <item>Are there any ads in FadCam?</item>
-        <item>Why does FadCam request location access?</item>
+        <item>Does ServaCam collect any user data?</item>
+        <item>Are there any ads in ServaCam?</item>
+        <item>Why does ServaCam request location access?</item>
         <item>Why the internet permission is required?</item>
         <item>Is any data stored on external servers?</item>
         <item>What happens to my videos after recording?</item>
-        <item>Does FadCam share my data with third parties?</item>
+        <item>Does ServaCam share my data with third parties?</item>
         <item></item>
         <item></item>
         <item>General</item>
@@ -617,15 +618,15 @@
         <item></item>
     </string-array>
     <string-array name="answers_array" tools:ignore="InconsistentArrays">
-        <item>FadCam does not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The author is not responsible for any misuse of the application.
+        <item>ServaCam does not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The author is not responsible for any misuse of the application.
         </item>
-        <item>No, FadCam does not collect any user data.</item>
-        <item>No, FadCam is completely ad-free.</item>
+        <item>No, ServaCam does not collect any user data.</item>
+        <item>No, ServaCam is completely ad-free.</item>
         <item>For adding location info to your watermarks.</item>
         <item>For auto update checking.</item>
         <item>No, all data is stored on your device.</item>
         <item>Your videos are saved locally on your device.</item>
-        <item>No, FadCam does not share or collect any data, not even crash logs.</item>
+        <item>No, ServaCam does not share or collect any data, not even crash logs.</item>
         <item></item>
         <item></item>
         <item></item>
@@ -637,16 +638,19 @@
         <item>Check the official GitHub repo for updates.</item>
         <item></item>
     </string-array>
-    <string name="dialog_welcome_title">Welcome to FadCam!</string>
+    <string name="dialog_welcome_title">Welcome to ServaCam!</string>
     <string name="note_from_developer_title">Note from Developer</string>
-    <string name="note_from_developer_subtitle">README, links &amp; updates</string>
-    <string name="note_under_dev">Important: This app is currently under development. New features are being added regularly.</string>
+    <string name="note_from_developer_subtitle">README, links and updates</string>
+    <string name="button_settings_readme">Read</string>
+    <string name="note_under_dev">Important: This app is under development. New features are added regularly.</string>
+
+
     <string name="full_changelog_info">For full changelog, head to the Home tab and open the hamburger menu, then select \"What\'s New\".</string>
     <string name="stay_updated_title">Stay Updated:</string>
     <string name="button_readme_github">GitHub Repository</string>
     <string name="community_title">Join our Community:</string>
     <string name="discord_title">Discord Server</string>
-    <string name="thankyou_msg">Thank you for using FadCam!</string>
+    <string name="thankyou_msg">Thank you for using ServaCam!</string>
     <string name="settings_title">Settings</string>
     <string name="array_watermark_time_fadcam">Time with Fadcam</string>
     <string name="array_watermark_timeonly">Timestamp</string>
@@ -661,7 +665,7 @@
     <string name="quick_speed_option_2">2x</string>
     <string name="quick_speed_option_2_5">2.5x</string>
     <string name="quick_speed_option_custom">Custom</string>
-    <string name="toast_video_saved">Video saved to FadCam folder in Downloads</string>
+    <string name="toast_video_saved">Video saved to ServaCam folder in Downloads</string>
     <string name="toast_video_save_fail">Failed to save video</string>
     <string name="rename_video_title">Rename Video</string>
     <string name="rename_video_hint">Enter new name</string>
@@ -689,6 +693,8 @@
     <string name="dialog_del_notice">Are you sure you want to delete this video?</string>
     <!-- Preferences Backup -->
     <string name="prefs_backup_title">Preferences Backup</string>
+    <string name="prefs_import_export_title">Import / Export</string>
+    <string name="prefs_import_export_subtitle">Backup, restore, reset</string>
     <string name="prefs_export_label">Export Preferences</string>
     <string name="prefs_export_subtitle">Save all settings to JSON</string>
     <string name="prefs_import_label">Import Preferences</string>
@@ -762,19 +768,19 @@
     <string name="torch_both">Both Torches</string>
     <string name="setting_debug_title">Debug Logging</string>
     <string name="note_debug">Enable debug log file generation \n(Default: Disabled)</string>
-    <string name="note_debug_detailed">When enabled, FadCam writes a debug log HTML file (FADCAM_debug.html) into the public Downloads/FadCam/ folder. Share this file when reporting issues. Turn off to stop future writes.\nNote: Debug logging may add performance overhead during recording — keep it off unless you are troubleshooting.</string>
-    <string name="note_debug_extra">When enabled, a debug log file will be created in the Downloads/FadCam folder. This can help diagnose app issues.</string>
+    <string name="note_debug_detailed">When enabled, ServaCam writes a debug log HTML file (FADCAM_debug.html) into the public Downloads/ServaCam/ folder. Share this file when reporting issues. Turn off to stop future writes.\nNote: Debug logging may add performance overhead during recording — keep it off unless you are troubleshooting.</string>
+    <string name="note_debug_extra">When enabled, a debug log file will be created in the Downloads/ServaCam folder. This can help diagnose app issues.</string>
     <!-- Watermark unified strings -->
     <string name="watermark_preview_heading">Preview</string>
     <string name="watermark_options_heading">Options</string>
     <string name="watermark_style_row_title">Watermark Style</string>
-    <string name="watermark_preview_sample_fadcam">Captured by FadCam - %1$s</string>
+    <string name="watermark_preview_sample_fadcam">Captured by ServaCam - %1$s</string>
     <string name="watermark_preview_sample_timeonly">%1$s</string>
-    <string name="watermark_style_time_fadcam_label">Time with FadCam</string>
+    <string name="watermark_style_time_fadcam_label">Time with ServaCam</string>
     <string name="watermark_style_timeonly_label">Timestamp</string>
     <string name="watermark_style_badge_label">Brand Label Only</string>
     <string name="watermark_style_none_label">No Watermark</string>
-    <string name="helper_watermark_preview">This is how the watermark will appear at the top-left of your recorded video.\nFun fact: 10/Jul/2024 04:47 PM is when FadCam v1.0 first shipped.</string>
+    <string name="helper_watermark_preview">This is how the watermark will appear at the top-left of your recorded video.\nFun fact: 10/Jul/2024 04:47 PM is when ServaCam v1.0 first shipped.</string>
     <string name="helper_location_watermark_option">Toggle adding your device location as an overlay. Requires location permission.</string>
     <string name="location_format_title">Location Format</string>
     <string name="location_format_coordinates">Coordinates Only</string>
@@ -800,7 +806,7 @@
     <string name="widgets_helper_text">Pin quick actions to your home screen for instant access.</string>
     <string name="widgets_pin_unsupported">Pinning widgets is not supported by your launcher.</string>
     <string name="widget_clock_title">Clock widget</string>
-    <string name="widgets_pin_fallback">If no prompt appears, long‑press your Home screen, open Widgets, and drag the FadCam Clock widget.</string>
+    <string name="widgets_pin_fallback">If no prompt appears, long‑press your Home screen, open Widgets, and drag the ServaCam Clock widget.</string>
 
     <!-- Widget Customization -->
     <string name="widget_customize_title">Customize Clock Widget</string>
@@ -944,9 +950,9 @@
     <string name="shortcut_purpose_start_dual">This shortcut starts dual camera recording (PiP).</string>
     <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
     <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
-    <string name="shortcut_purpose_photo">This shortcut captures a back camera photo and saves it to FadCam/FadShot location.</string>
-    <string name="shortcut_purpose_photo_front">This shortcut captures a front camera photo and saves it to FadCam/FadShot location.</string>
-    <string name="shortcut_purpose_screenshot">This shortcut captures a screen shot and saves it to FadCam/FadShot location (Enable the Accessibility permission from Settings > Privacy > Accessibility).</string>
+    <string name="shortcut_purpose_photo">This shortcut captures a back camera photo and saves it to ServaCam/FadShot location.</string>
+    <string name="shortcut_purpose_photo_front">This shortcut captures a front camera photo and saves it to ServaCam/FadShot location.</string>
+    <string name="shortcut_purpose_screenshot">This shortcut captures a screen shot and saves it to ServaCam/FadShot location (Enable the Accessibility permission from Settings > Privacy > Accessibility).</string>
     <!-- Widget sheet action labels (avoid hardcoded) -->
     <string name="widget_customize_action_label">Customize</string>
     <string name="widget_customize_action_subtitle">Time, date, theme options</string>
@@ -978,7 +984,7 @@
     <string name="screenshot_capture_failed">Could not capture screenshot</string>
     <string name="screenshot_capture_system_saved">Screenshot captured by system. Saved in system screenshots.</string>
     <string name="screenshot_accessibility_enable_needed">Enable "FadRec Screenshot" in Accessibility to use this shortcut without recording prompt.</string>
-    <string name="screenshot_accessibility_service_desc">Captures a screenshot for the FadRec shortcut and saves it in FadCam/FadShot.</string>
+    <string name="screenshot_accessibility_service_desc">Captures a screenshot for the FadRec shortcut and saves it in ServaCam/FadShot.</string>
     <string name="shortcuts_video_category">Video Recording</string>
     <string name="shortcuts_picture_category">Picture</string>
     <string name="preview_quick_actions_title">Preview quick actions</string>
@@ -1034,8 +1040,8 @@
     <string name="remote_access_title">Remote Access/Control</string>
     <string name="remote_toast_coming_soon">Coming soon! In Sha Allah</string>
     <string name="coming_soon_toast">Coming soon! In Sha Allah</string>
-    <string name="remote_coming_soon">Remote control for FadCam is coming soon.</string>
-    <string name="remote_feature_description">Pair FadCam clients using a QR code for secure, local-network remote control: start/stop recording, preview, zoom, switch camera, and more—all with end-to-end encryption.</string>
+    <string name="remote_coming_soon">Remote control for ServaCam is coming soon.</string>
+    <string name="remote_feature_description">Pair ServaCam clients using a QR code for secure, local-network remote control: start/stop recording, preview, zoom, switch camera, and more—all with end-to-end encryption.</string>
     <string name="faditor_mini_title">Faditor Mini</string>
     <string name="faditor_mini_coming_soon">Coming soon — lightweight editor</string>
     <string name="faditor_mini_subtitle">Trim and export your videos with precision</string>
@@ -1170,9 +1176,9 @@
     <string name="faditor_info_title">About Faditor Mini</string>
     <string name="faditor_info_subtitle">Everything you need to know about the built-in editor</string>
     <string name="faditor_info_how_title">How it works</string>
-    <string name="faditor_info_how_desc">Pick any video from your device or your FadCam recordings. Trim it frame-by-frame using the timeline, then export. All processing happens locally on your device — nothing is uploaded.\n\nYour editing progress is auto-saved every few seconds and whenever you leave the editor, so no work is lost if the app closes unexpectedly.</string>
+    <string name="faditor_info_how_desc">Pick any video from your device or your ServaCam recordings. Trim it frame-by-frame using the timeline, then export. All processing happens locally on your device — nothing is uploaded.\n\nYour editing progress is auto-saved every few seconds and whenever you leave the editor, so no work is lost if the app closes unexpectedly.</string>
     <string name="faditor_info_convert_title">Smart conversion</string>
-    <string name="faditor_info_convert_desc">FadCam records in a crash-safe format called fragmented MP4 (fMP4). Unlike a standard MP4 which has one finalized container, fMP4 writes video in small independent chunks. This means your footage stays intact even if the app crashes or recording stops suddenly.\n\nHowever, external video players, gallery apps, and file managers will not be able to seek, scrub, or display the correct duration of these files. This is not a bug — it is a deliberate design trade-off for reliability.\n\nIf you plan to store your videos outside FadCam — on Google Drive, a computer, or any other location — you must convert them first. Otherwise the files will be unusable for normal playback.\n\nTo convert: simply open the video here in Faditor Mini and tap Export. The converted standard MP4 will appear in your Records tab, ready to save to your gallery or share anywhere. The process is instant and lossless — no re-encoding or quality loss.</string>
+    <string name="faditor_info_convert_desc">ServaCam records in a crash-safe format called fragmented MP4 (fMP4). Unlike a standard MP4 which has one finalized container, fMP4 writes video in small independent chunks. This means your footage stays intact even if the app crashes or recording stops suddenly.\n\nHowever, external video players, gallery apps, and file managers will not be able to seek, scrub, or display the correct duration of these files. This is not a bug — it is a deliberate design trade-off for reliability.\n\nIf you plan to store your videos outside ServaCam — on Google Drive, a computer, or any other location — you must convert them first. Otherwise the files will be unusable for normal playback.\n\nTo convert: simply open the video here in Faditor Mini and tap Export. The converted standard MP4 will appear in your Records tab, ready to save to your gallery or share anywhere. The process is instant and lossless — no re-encoding or quality loss.</string>
     <string name="faditor_info_export_title">Exported files</string>
     <string name="faditor_info_export_desc">Exported videos are saved to your active storage location (the same one configured in Settings) with the prefix \"Faditor_\" followed by a timestamp. They appear in the Records tab alongside your original recordings.</string>
     <string name="faditor_info_temp_title">Temporary files and cache</string>
@@ -1181,14 +1187,14 @@
     <string name="faditor_info_projects_desc">All your editing sessions are shown for quick access. Each project is stored as a small JSON file on your device containing the video URI, trim points, and timestamps — no copies of your videos are made. Projects are auto-saved every few seconds, so your progress is never lost.\n\nYou can delete projects you no longer need using the multi-select checklist icon. Deleting a project only removes the editing session data; your original video files remain untouched.</string>
     <string name="faditor_your_recordings">Your Recordings</string>
     <string name="faditor_browse_device">Browse Device</string>
-    <string name="faditor_no_recordings">No recordings found yet. Start recording with FadCam to see your videos here.</string>
+    <string name="faditor_no_recordings">No recordings found yet. Start recording with ServaCam to see your videos here.</string>
     <string name="faditor_video_count">%1$d video(s)</string>
-    <string name="faditor_fadcam_source">FadCam</string>
+    <string name="faditor_fadcam_source">ServaCam</string>
     <string name="faditor_fadrec_source">FadRec</string>
     <string name="faditor_browse_device_desc">Select any video from your device</string>
     <string name="faditor_scanning">Scanning recordings…</string>
-    <string name="faditor_source_chooser_desc">Choose a video from your gallery or pick one from your FadCam recordings</string>
-    <string name="faditor_recordings_helper">Videos recorded with FadCam from your active storage location</string>
+    <string name="faditor_source_chooser_desc">Choose a video from your gallery or pick one from your ServaCam recordings</string>
+    <string name="faditor_recordings_helper">Videos recorded with ServaCam from your active storage location</string>
     <string name="setting_audio_title">Audio Recording</string>
     <string name="note_audio">Enable or disable audio recording for videos.\n(Default: Enabled)</string>
     <string name="button_audio_settings">Audio Settings</string>
@@ -1302,7 +1308,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- For TrashFragment - Restore Action -->
     <string name="trash_no_items_selected_toast">No items selected.</string>
     <string name="trash_dialog_restore_title">Restore Selected?</string>
-    <string name="trash_dialog_restore_message">Restore %1$d item(s) to the public Downloads/FadCam/ folder?</string>
+    <string name="trash_dialog_restore_message">Restore %1$d item(s) to the public Downloads/ServaCam/ folder?</string>
     <string name="trash_restore_success_toast">%1$d item(s) restored.</string>
     <string name="trash_restore_fail_toast">Error restoring items. Some files might not have been restored or gallery might not be updated. Check app permissions for storage.</string>
     <string name="trash_restore_cancelled_toast">Restore cancelled.</string>
@@ -1323,7 +1329,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="records_search_hint">Search recordings…</string>
     <string name="saf_permission_missing_dialog_instructions">SAF permission missing. Please grant access to the chosen folder.</string>
     <string name="saf_permission_missing_dialog_title">SAF Permission Required</string>
-    <string name="saf_permission_missing_dialog_message_for_start_recording">To save recordings to a custom location, FadCam needs permission to access the selected folder. Please grant access when prompted.</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">To save recordings to a custom location, ServaCam needs permission to access the selected folder. Please grant access when prompted.</string>
     <string name="grant_permission_button">Grant Permission</string>
 
     <!-- Strings for Trash Auto-Delete Feature -->
@@ -1383,15 +1389,15 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="audio_input_source_headphones_no_mic">Headphones detected (no mic)</string>
 
     <!-- Fix Start: Add onboarding toggle strings -->
-    <string name="setting_onboarding_title">Show Intro</string>
-    <string name="note_onboarding">Enable to see the app introduction and permissions guide the next time you open FadCam.</string>
+    <string name="setting_onboarding_title">Show introduction</string>
+    <string name="note_onboarding">Enable to see the app introduction and permissions guide the next time you open ServaCam.</string>
     <!-- Fix End: Add onboarding toggle strings -->
 
     <string name="choose_language">Choose Language</string>
     <string name="language_change_later_note">You can change this later in Settings.</string>
 
     <string name="permissions_required">Permissions Required</string>
-    <string name="permissions_description">FadCam needs access to your camera, microphone, and storage to record and save videos.</string>
+    <string name="permissions_description">ServaCam needs access to your camera, microphone, and storage to record and save videos.</string>
     <string name="grant_permissions">Grant Permissions</string>
     <string name="permissions_note">You must grant all permissions to continue.</string>
     <string name="permissions_granted">All permissions granted!</string>
@@ -1401,10 +1407,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="disable_battery_optimization">Disable Battery Optimization</string>
 
     <string name="onboarding_human_title">Verify if you are a human</string>
-    <string name="onboarding_human_desc">Hmmmm... alright. These rules are non-negotiable. If you can\'t agree, please uninstall FadCam right now.</string>
-    <string name="onboarding_human_checkbox1">I won\'t use FadCam to break any laws, invade anyone\'s privacy, or be a creep. The dev\'s out of the picture if I mess up. (That\'s on me.)</string>
-    <string name="onboarding_human_checkbox2">I already love FadCam before even using it. (Not optional)</string>
-    <string name="onboarding_human_checkbox3">I agree to the Privacy Policy</string>
+    <string name="onboarding_human_desc">Hmmmm... alright. These rules are non-negotiable. If you can\'t agree, please uninstall ServaCam right now.</string>
+    <string name="onboarding_human_checkbox1">I won\'t use ServaCam to break any laws, invade anyone\'s privacy, or be a creep. The dev\'s out of the picture if I mess up. (That\'s on me.)</string>
+    <string name="onboarding_human_checkbox2">I already love ServaCam before even using it. (Not optional)</string>
+
     <string name="onboarding_human_button">Let me in!</string>
 
 
@@ -1487,7 +1493,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Header Logo Style Strings -->
     <string name="setting_header_logo_title">Header Logo</string>
     <string name="setting_header_logo_desc">Choose the header logo style</string>
-    <string name="header_logo_default" translatable="false">FadCam</string>
+    <string name="header_logo_default" translatable="false">ServaCam</string>
     <string name="header_logo_avatar" translatable="false">Avatar</string>
 
     <string name="setting_app_icon_desc">Change the app\'s launcher icon and name</string>
@@ -1496,10 +1502,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
-    <string name="app_icon_pakistan" translatable="false">FadCam</string>
+    <string name="app_icon_pakistan" translatable="false">ServaCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
     <string name="app_icon_noor" translatable="false">Noor</string>
-    <string name="app_icon_bat" translatable="false">FadCam</string>
+    <string name="app_icon_bat" translatable="false">ServaCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>
     <string name="app_icon_calculator" translatable="false">Calculator</string>
@@ -1515,10 +1521,12 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <!-- Misc -->
     <string name="changelog_label">What\'s New</string>
+    <string name="whats_new_title">What\'s New</string>
+    <string name="whats_new_subtitle">Check out the latest features and updates</string>
 
     <!-- Fix Start: Add auto update check toggle strings -->
-    <string name="setting_auto_update_check_title">Auto Update Check</string>
-    <string name="note_auto_update_check">If enabled, FadCam will check for updates every time you open the app. Turn off to disable automatic update checks on launch.\n(Default: On)</string>
+    <string name="setting_auto_update_check_title">Automatic update check</string>
+    <string name="note_auto_update_check">If enabled, ServaCam will check for updates every time you open the app. Disable to turn off automatic update checks on startup.\n(Default: Enabled)</string>
     <!-- Fix End: Add auto update check toggle strings -->
 
     <!-- Storage Location Settings -->
@@ -1527,8 +1535,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <!-- Settings Home section headers and rows -->
     <string name="general">General</string>
-    <string name="recording_quick_access">Recording Quick Access</string>
     <string name="settings_section_app">App</string>
+    <string name="recording_quick_access">Recording Quick Access</string>
+
     <string name="settings_notifications_title">Notifications</string>
     <string name="settings_notifications_subtitle">Recording &amp; preset</string>
     <string name="settings_security_title">Security</string>
@@ -1552,7 +1561,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="digital_forensics_coming_soon_short">Coming Soon</string>
     <string name="digital_forensics_discord_coming_soon_toast">Discord alerts will be added in a future update.</string>
     <string name="digital_forensics_helper">Digital Forensics has two parts: live preview overlay and saved evidence. If you only want live visual AI labels, keep Evidence Collection off. If you need forensic history, turn Evidence Collection on and choose what to store.</string>
-    <string name="digital_forensics_enable_helper">Think of this as your smart evidence sensor. When enabled, FadCam keeps a timeline of detected activity so you can jump to important moments later.</string>
+    <string name="digital_forensics_enable_helper">Think of this as your smart evidence sensor. When enabled, ServaCam keeps a timeline of detected activity so you can jump to important moments later.</string>
     <string name="digital_forensics_evidence_enable">Enable Evidence Collection</string>
     <string name="digital_forensics_evidence_helper">When enabled, detections are written to the forensic database with saved proof frames in real time. Keep this off if you only want live preview labels without storage growth.</string>
     <string name="digital_forensics_capture_scope">Evidence Capture Scope</string>
@@ -1693,15 +1702,14 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="digital_forensics_preview_subtitle">Simulated overlay preview so users understand labels, confidence, and evidence framing.</string>
     <string name="digital_forensics_preview_default">PERSON 92%</string>
     <string name="settings_watermark_subtitle">Overlay branding mode</string>
-    <string name="prefs_import_export_title">Import / Export</string>
-    <string name="prefs_import_export_subtitle">Backup, restore, reset</string>
+
     <string name="about_version_update_licenses">Version, update, licenses</string>
-    <string name="share_feedback">Share feedback</string>
+
     <string name="shortcuts_pin_to_home">Pin Start/Stop/Torch to Home</string>
     <string name="storage_location_internal">Internal App Storage (Default, Private)</string>
     <string name="storage_location_custom">Custom Location (SD Card/Other, Gallery Visible)</string>
     <string name="storage_location_choose_folder">Choose Folder</string>
-    <string name="storage_location_note">Note: Using custom locations makes videos accessible by other apps (e.g., Gallery). Internal storage keeps them private to FadCam.</string>
+    <string name="storage_location_note">Note: Using custom locations makes videos accessible by other apps (e.g., Gallery). Internal storage keeps them private to ServaCam.</string>
     <string name="storage_sheet_title">Storage Location</string>
     <string name="storage_option_use_internal">Use Internal Storage</string>
     <string name="storage_option_switch_internal">Switch to Internal Storage</string>
@@ -1814,7 +1822,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Additional Notification Customization Strings -->
     <!-- Adding notification appearance strings -->
     <string name="setting_notification_appearance">Notification Appearance</string>
-    <string name="note_notification_appearance">Customize the appearance of the recording notification\n(Default: FadCam)</string>
+    <string name="note_notification_appearance">Customize the appearance of the recording notification\n(Default: ServaCam)</string>
     <string name="hide_stop_button">Hide stop button</string>
     <string name="note_hide_stop_button">Hide the stop button in the notification\n(Default: Disabled)</string>
     <string name="notification_preview">Notification preview</string>
@@ -1830,7 +1838,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="notification_custom_text_placeholder">Description (e.g. Update in progress)</string>
 
     <string-array name="notification_appearance_options">
-        <item>FadCam (default)</item>
+        <item>ServaCam (default)</item>
         <item>System Update</item>
         <item>Download</item>
         <item>Syncing</item>
@@ -1893,7 +1901,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Trash Restore Destination Strings -->
     <string name="restore_destination_title">Choose Restore Location</string>
     <string name="restore_destination_downloads">Downloads Folder</string>
-    <string name="restore_destination_downloads_desc">Public Downloads/FadCam/ folder</string>
+    <string name="restore_destination_downloads_desc">Public Downloads/ServaCam/ folder</string>
     <string name="restore_destination_internal">Internal Storage</string>
     <string name="restore_destination_internal_desc">App\'s private storage</string>
     <string name="restore_destination_original">Original Location</string>
@@ -1928,10 +1936,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="new_project">New Project</string>
     <string name="delete">Delete</string>
 
-    <!-- FadCam Pro Strings -->
-    <string name="fadcam_pro_title">FadCam Pro</string>
+    <!-- ServaCam Pro Strings -->
+    <string name="fadcam_pro_title">ServaCam Pro</string>
     <string name="fadcam_pro_subtitle">Premium features for complete discretion</string>
-    <string name="fadcam_pro_get_button">Get FadCam Pro</string>
+    <string name="fadcam_pro_get_button">Get ServaCam Pro</string>
     <string name="fadcam_pro_free">Free</string>
     <string name="fadcam_pro_column_label">Pro</string>
     <string name="fadcam_pro_proplus_label">Pro+</string>
@@ -1943,8 +1951,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="fadcam_pro_benefit_lifetime_updates">Lifetime updates: Always receive new features, improvements, and bug fixes</string>
     <string name="fadcam_pro_benefit_support">Instant support: Direct help through tickets via Discord</string>
     <string name="fadcam_pro_coming_soon">Pro+ and Lab features coming soon with custom icon uploads, custom app names, and FadDrive cloud sync.</string>
-    <string name="fadcam_pro_support_message">FadCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing time and work. Upgrading to Pro (currently free) helps support development, and in return I’m able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)</string>
-    <string name="fadcam_pro_separate_apk">Standalone app • Works alongside FadCam</string>
+    <string name="fadcam_pro_support_message">ServaCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing time and work. Upgrading to Pro (currently free) helps support development, and in return I’m able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)</string>
+    <string name="fadcam_pro_separate_apk">Standalone app • Works alongside ServaCam</string>
     <string name="fadcam_pro_feature_everything_icon">Everything</string>
     <string name="fadcam_pro_feature_everything">Everything</string>
     <string name="fadcam_pro_feature_custom_icon">Custom App Icon</string>
@@ -1958,7 +1966,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="player_info_title">About the Video Player</string>
     <string name="player_info_content"><![CDATA[
 <b>Fragmented MP4 Format</b><br/><br/>
-FadCam uses a fragmented MP4 format for recordings. This means videos are saved in small segments instead of one complete file. The benefit is that if something goes wrong during recording, you only lose the last few seconds instead of the entire video.<br/><br/>
+ServaCam uses a fragmented MP4 format for recordings. This means videos are saved in small segments instead of one complete file. The benefit is that if something goes wrong during recording, you only lose the last few seconds instead of the entire video.<br/><br/>
 If the last few seconds of your video appear frozen or stale, don\'t worry — it\'s not a bug! When you stop recording, the current fragment may still complete its cycle (~3 seconds), which can leave a brief stale frame at the end.<br/><br/>
 <b>Player Limitations</b><br/><br/>
 The built-in video player has some Android system limitations. You may notice the progress bar or waveform appearing slightly snappy — this is normal behavior and not a bug.<br/><br/>
@@ -2057,59 +2065,13 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="stream_notes_wifi">• Clients must be on the same WiFi network to access the stream</string>
     <string name="stream_notes_quality">• Stream quality (LOW/MEDIUM/HIGH/ULTRA) controls FPS cap and bitrate to prevent network issues</string>
     <string name="stream_notes_resolution">• Stream orientation and resolution are taken from your normal recording settings (Video Settings → Resolution &amp; Orientation). Adjust those if you want to change stream dimensions</string>
-    <string name="stream_notes_cellular">⚠️ WiFi-only limitation: Cellular networks block incoming connections. For seamless streaming from any network (WiFi, LTE, anywhere), upgrade to FadCam Pro+. Stream from anywhere globally with a private generated link—no port forwarding, no router changes, no network restrictions</string>
+    <string name="stream_notes_cellular">⚠️ WiFi-only limitation: Cellular networks block incoming connections. For seamless streaming from any network (WiFi, LTE, anywhere), upgrade to ServaCam Pro+. Stream from anywhere globally with a private generated link—no port forwarding, no router changes, no network restrictions</string>
     <string name="stream_notes_android14_screen">⚠️ Android 14+: System restriction prevents recording when screen is off. Workarounds: (1) Enable "Black Screen Mode" in Settings → Security, or (2) Disable screen lock (no PIN/password/fingerprint). Both allow seamless remote recording</string>
     
-    <!-- FadSec Cloud / Remote Streaming -->
-    <string name="cloud_account_button_desc">FadSec Cloud</string>
-    <string name="cloud_button_label">FadSec Cloud</string>
-    <string name="cloud_button_title">FadSec Cloud</string>
-    <string name="cloud_account_title">FadSec Cloud</string>
-    <string name="cloud_account_link">Link Device</string>
-    <string name="cloud_account_unlink">Unlink Device</string>
-    <string name="cloud_account_connecting">Connecting…</string>
-    <string name="cloud_account_linked">Device Linked</string>
-    <string name="cloud_account_not_linked">Not Linked</string>
-    <string name="cloud_account_device_name_hint">Enter device name (e.g., My Phone)</string>
-    <string name="cloud_account_device_name_title">Name Your Device</string>
-    <string name="cloud_account_device_name_desc">This name will appear in your FadSec Cloud dashboard</string>
-    <string name="cloud_account_device_id">Device ID</string>
-    <string name="cloud_account_link_success">Device linked successfully!</string>
-    <string name="cloud_account_link_failed">Failed to link device. Please try again.</string>
-    <string name="cloud_account_unlink_confirm">Are you sure you want to unlink this device?</string>
-    <string name="cloud_account_unlink_success">Device unlinked</string>
-    <string name="cloud_account_webview_title">FadSec Cloud</string>
-    <string name="cloud_account_login_required">Please log in to link your device</string>
-    <string name="cloud_account_helper_text">Unlink to disconnect from your account. You can link again with a different name.</string>
-    
-    <!-- Cloud Streaming -->
-    <string name="cloud_streaming_title">Cloud Streaming</string>
-    <string name="cloud_streaming_status_off">Stream locally only</string>
-    <string name="cloud_streaming_status_on">Uploading to FadSec Cloud</string>
-    <string name="cloud_streaming_not_linked">Link device first to enable</string>
 
-    <!-- E2E Stream Encryption -->
-    <string name="e2e_encryption_title">E2E Stream Encryption</string>
-    <string name="e2e_encryption_not_configured">Not configured — configure to enable cloud streaming</string>
-    <string name="e2e_encryption_configured">Configured — segments are encrypted end-to-end</string>
-    <string name="e2e_encryption_setup_title">Set E2E Encryption Password</string>
-    <string name="e2e_encryption_setup_hint">Enter your FadSec ID password</string>
-    <string name="e2e_encryption_setup_desc">Your FadSec ID password is used to derive the stream encryption key. This must match the password you use on the FadCam dashboard to view streams.</string>
-    <string name="e2e_encryption_change_title">Change E2E Encryption Password</string>
-    
-    <!-- Streaming Mode Selector -->
-    <string name="streaming_mode_title">Streaming Destination</string>
-    <string name="streaming_mode_local">Local Network</string>
-    <string name="streaming_mode_local_desc">Stream to devices on the same WiFi</string>
-    <string name="streaming_mode_cloud">FadSec Cloud</string>
-    <string name="streaming_mode_cloud_desc">Stream anywhere via internet</string>
-    <string name="streaming_mode_cloud_featured">FEATURED</string>
-    <string name="streaming_mode_link_required">Link device to enable</string>
-    <string name="streaming_mode_stream_url">Stream URL</string>
-    <string name="streaming_mode_helper">Choose how you want to stream your camera</string>
 
     <!-- Fullscreen Preview -->
-    <string name="fullscreen_preview_enter">FadCam Preview</string>
+    <string name="fullscreen_preview_enter">ServaCam Preview</string>
     <string name="fullscreen_preview_close">Close fullscreen</string>
     <string name="fullscreen_preview_not_recording">Start recording first to use fullscreen preview</string>
     <string name="fullscreen_preview_tap_hint">Tap screen to toggle controls</string>
@@ -2181,7 +2143,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="motion_lab_debug_metrics_value">Area %1$.3f, Strong %2$.3f, Mean %3$.3f, BG %4$.3f, Max %5$.3f, Global %6$s</string>
     <string name="motion_lab_info_cd">Motion Lab info</string>
     <string name="motion_lab_info_title">Auto Record on Motion</string>
-    <string name="motion_lab_info_body">This is FadCam\'s Auto Record on Motion feature.\n\nHow it works in simple words:\n- Your camera stays active and analyzes frames on-device in real time.\n- The on-device machine learning model and motion logic look for movement.\n- When valid motion is detected, recording starts/resumes.\n- Recording keeps going while motion continues.\n- After motion stops, Post-roll keeps recording for your selected extra seconds.\n- Then recording pauses and waits for the next motion event.\n\nWhen recording is paused, the app is still analyzing frames in memory, but it is not writing new video data until motion is detected again.\n\nHow to use (most users):\n- Keep all options at default values.\n- Turn ON Motion Sensor on this screen.\n- Go to Home tab and start recording normally.\n- Motion-based auto record will run automatically.\n\nEasy test from far distance:\n- Turn ON Auto Torch on this screen.\n- Start recording from Home tab.\n- Place the phone tilted on a table or shelf facing the room.\n- Leave the room, then enter and walk in.\n- Torch turning ON helps you instantly notice from far away that recording started.\n- Recording will continue for your selected Post-roll duration after motion stops.\n\nTip: This feature runs continuously, so very high advanced values can increase heat and can reduce device health over time. For long sessions, keep defaults unless you have a specific reason.</string>
+    <string name="motion_lab_info_body">This is ServaCam\'s Auto Record on Motion feature.\n\nHow it works in simple words:\n- Your camera stays active and analyzes frames on-device in real time.\n- The on-device machine learning model and motion logic look for movement.\n- When valid motion is detected, recording starts/resumes.\n- Recording keeps going while motion continues.\n- After motion stops, Post-roll keeps recording for your selected extra seconds.\n- Then recording pauses and waits for the next motion event.\n\nWhen recording is paused, the app is still analyzing frames in memory, but it is not writing new video data until motion is detected again.\n\nHow to use (most users):\n- Keep all options at default values.\n- Turn ON Motion Sensor on this screen.\n- Go to Home tab and start recording normally.\n- Motion-based auto record will run automatically.\n\nEasy test from far distance:\n- Turn ON Auto Torch on this screen.\n- Start recording from Home tab.\n- Place the phone tilted on a table or shelf facing the room.\n- Leave the room, then enter and walk in.\n- Torch turning ON helps you instantly notice from far away that recording started.\n- Recording will continue for your selected Post-roll duration after motion stops.\n\nTip: This feature runs continuously, so very high advanced values can increase heat and can reduce device health over time. For long sessions, keep defaults unless you have a specific reason.</string>
     <string name="motion_lab_percent_value">%1$d%%</string>
     <string name="motion_lab_fps_value">%1$d fps</string>
     <string name="motion_lab_ms_value">%1$d ms</string>
@@ -2200,7 +2162,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
 
     <!-- Privacy Black Mode Settings -->
     <string name="privacy_black_mode_title">Privacy Black Screen</string>
-    <string name="privacy_black_mode_helper">If your device kills the app in the background, you can use this feature to keep the app running in the foreground.\n\nA black screen overlay appears, making it look like the screen is off while recording continues.\n\nTap the FadCam icon in the top header of the Home tab to activate it.</string>
+    <string name="privacy_black_mode_helper">If your device kills the app in the background, you can use this feature to keep the app running in the foreground.\n\nA black screen overlay appears, making it look like the screen is off while recording continues.\n\nTap the ServaCam icon in the top header of the Home tab to activate it.</string>
     <string name="privacy_black_mode_enable_title">Enable Privacy Black Mode</string>
     <string name="privacy_black_mode_enabled_toast">Privacy Mode Enabled</string>
     <string name="privacy_black_mode_disabled_toast">Privacy Mode Disabled</string>

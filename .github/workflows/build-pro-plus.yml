@@ -1,4 +1,4 @@
-name: Build FadCam Pro+ APK (Custom)
+name: Build Serva Cam Pro+ APK (Custom)
 
 on:
   workflow_dispatch:
@@ -178,10 +178,10 @@ jobs:
           
       - name: Build summary
         run: |
-          echo "## ✅ FadCam Pro+ APK Built Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Serva Cam Pro+ APK Built Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Build Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Package ID: com.fadcam.proplus" >> $GITHUB_STEP_SUMMARY
+          echo "- Package ID: com.servalabs.cam.proplus" >> $GITHUB_STEP_SUMMARY
           echo "- App Name: ${{ env.FINAL_APP_NAME }}" >> $GITHUB_STEP_SUMMARY
           echo "- Build Type: Pro+ (Custom, Debuggable)" >> $GITHUB_STEP_SUMMARY
           echo "- Architecture: arm64-v8a" >> $GITHUB_STEP_SUMMARY

@@ -1,5 +1,5 @@
 /**
- * E2EKeyManager — End-to-end stream encryption key management for the FadCam dashboard.
+ * E2EKeyManager — End-to-end stream encryption key management for the ServaCam dashboard.
  *
  * Key derivation chain (must be identical to Android StreamKeyManager):
  *   password + user_uuid

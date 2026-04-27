@@ -87,7 +87,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_all"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        style="@style/Widget.ServaCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checkable="true"
@@ -96,7 +96,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_person"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        style="@style/Widget.ServaCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checkable="true"
@@ -104,7 +104,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_vehicle"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        style="@style/Widget.ServaCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checkable="true"
@@ -112,7 +112,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_pet"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        style="@style/Widget.ServaCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checkable="true"
@@ -120,7 +120,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_object"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        style="@style/Widget.ServaCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checkable="true"
@@ -128,7 +128,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_event_high_conf"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        style="@style/Widget.ServaCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/forensics_filter_high_conf" />
@@ -201,7 +201,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_subtype_all"
-                        style="@style/Widget.FadCam.RecordsFilterChip"
+                        style="@style/Widget.ServaCam.RecordsFilterChip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checkable="true"

@@ -80,7 +80,7 @@
                 android:maxLines="10"
                 android:scrollHorizontally="true"
                 android:ellipsize="none"
-                tools:text="/storage/emulated/0/Android/data/com.fadcam/files/FadCam/FADCAM_20250501_123456.mp4"/>
+                tools:text="/storage/emulated/0/Android/data/com.servalabs.cam/files/ServaCam/FADCAM_20250501_123456.mp4"/>
         </LinearLayout>
 
         <!-- Last Modified -->
