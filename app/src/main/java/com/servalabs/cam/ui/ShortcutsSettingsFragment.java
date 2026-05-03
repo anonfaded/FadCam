@@ -741,27 +741,7 @@ public class ShortcutsSettingsFragment extends Fragment {
             preview.setBackground(null);
         }
 
-        // Branding preview visibility and dynamic sizing
-        android.widget.ImageView brandingPreview = preview.findViewById(R.id.branding_logo_preview);
-        if (brandingPreview != null) {
-            brandingPreview.setVisibility(prefs.showBranding() ? android.view.View.VISIBLE : android.view.View.GONE);
-            if (prefs.showBranding()) {
-                // Use the preview container height to size the flag band
-                preview.post(() -> {
-                    int h = preview.getHeight();
-                    if (h > 0) {
-                        float desired = h * 0.70f; // 70% of container height
-                        float clampedDp = Math.max(72f, Math.min(240f, pxToDp(desired)));
-                        int px = dpToPx(clampedDp);
-                        brandingPreview.setMaxHeight(px);
-                        brandingPreview.setMinimumHeight(px);
-                        // Upward translation: 10dp
-                        brandingPreview.setTranslationY(-dpToPx(10));
-                        brandingPreview.requestLayout();
-                    }
-                });
-            }
-        }
+
 
         // Update time and AM/PM
         java.text.SimpleDateFormat timeFormat;
@@ -789,7 +769,6 @@ public class ShortcutsSettingsFragment extends Fragment {
 
         // Update date visibility and content (regular date independent of Arabic date)
         android.widget.TextView dateView = preview.findViewById(R.id.clock_date_preview);
-        android.widget.TextView arabicDateView = preview.findViewById(R.id.clock_date_arabic_preview);
         android.view.View dateContainer = preview.findViewById(R.id.date_container_preview);
 
         // Regular date
@@ -807,20 +786,7 @@ public class ShortcutsSettingsFragment extends Fragment {
             dateView.setVisibility(android.view.View.GONE);
         }
 
-        // Arabic (Hijri) date — independent of regular date
-        if (arabicDateView != null) {
-            if (prefs.showArabicDate()) {
-                String arabicDateFormat = prefs.getArabicDateFormat();
-                String arabicDate = com.servalabs.cam.widgets.ArabicDateUtils.getArabicDate(arabicDateFormat);
-                arabicDateView.setText(arabicDate);
-                arabicDateView.setVisibility(android.view.View.VISIBLE);
-                anyDateVisible = true;
-            } else {
-                arabicDateView.setVisibility(android.view.View.GONE);
-            }
-        }
-
-        // Show the date container if either date or Arabic date is visible
+        // Show the date container if regular date is visible
         if (dateContainer != null) {
             dateContainer.setVisibility(anyDateVisible ? android.view.View.VISIBLE : android.view.View.GONE);
         }

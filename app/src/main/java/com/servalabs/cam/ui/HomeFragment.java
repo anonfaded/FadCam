@@ -365,7 +365,7 @@ public class HomeFragment extends BaseFragment {
     // ── End Preview Avatar fields ──────────────────────────────────────────────
 
     private CardView cardClock;
-    private TextView tvClock, tvDateEnglish, tvDateArabic;
+    private TextView tvClock, tvDateEnglish;
     private LinearLayout layoutClockInner;
     private LinearLayout layoutClockContent;
     protected String latestElapsedDisplay = "00:00";
@@ -2102,9 +2102,7 @@ public class HomeFragment extends BaseFragment {
                 requireContext()
             );
         }
-        if (fragmentHelper != null) {
-            fragmentHelper.syncModeSwitcherToCurrentPreference();
-        }
+
         // Always clear stale "starting preview" pending state when Home becomes visible.
         // Service callback is the source of truth and will re-assert active preview state.
         clearPreviewOnlyPendingState(true);
@@ -5872,11 +5870,6 @@ public class HomeFragment extends BaseFragment {
                     if (isLightColor) {
                         tvClock.setTextColor(Color.BLACK);
                         tvDateEnglish.setTextColor(Color.BLACK);
-                        tvDateArabic.setTextColor(Color.BLACK);
-                    } else {
-                        tvClock.setTextColor(Color.WHITE);
-                        tvDateEnglish.setTextColor(Color.WHITE);
-                        tvDateArabic.setTextColor(Color.WHITE);
                     }
                     updateClock();
                 });
@@ -6058,7 +6051,6 @@ public class HomeFragment extends BaseFragment {
         
         tvClock.setTextColor(textColor);
         tvDateEnglish.setTextColor(textColor);
-        tvDateArabic.setTextColor(textColor);
 
         // Update the date in English
         SimpleDateFormat dateFormatEnglish = new SimpleDateFormat(
@@ -6067,17 +6059,12 @@ public class HomeFragment extends BaseFragment {
         );
         String currentDateEnglish = dateFormatEnglish.format(new Date());
 
-        // Update the date in Arabic (Islamic calendar) - REMOVED
-        String currentDateArabic = "";
-
         // Set text visibility based on user choice
         String displayDateEnglish = displayOption == 1 || displayOption == 2 ? currentDateEnglish : "";
-        String displayDateArabic = "";
 
         boolean showEnglish = displayOption == 1 || displayOption == 2;
         boolean showArabic = false;
         tvDateEnglish.setVisibility(showEnglish ? View.VISIBLE : View.GONE);
-        tvDateArabic.setVisibility(View.GONE);
 
         if (displayOption == 0) {
             tvClock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isLandscapeMode() ? 18f : 16f);
@@ -6118,21 +6105,6 @@ public class HomeFragment extends BaseFragment {
         tvDateEnglish.setHorizontallyScrolling(false);
         tvDateEnglish.setGravity(Gravity.START);
 
-        if (tvDateArabic instanceof com.servalabs.cam.ui.utils.AnimatedTextView) {
-            ((com.servalabs.cam.ui.utils.AnimatedTextView) tvDateArabic).animateSlot(displayDateArabic, 400);
-        } else {
-            tvDateArabic.setText(displayDateArabic);
-        }
-        tvDateArabic.setPadding(0, 0, 0, 0);
-        tvDateArabic.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-        tvDateArabic.setTextAlignment(View.TEXT_ALIGNMENT_TEXT_END);
-        tvDateArabic.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        tvDateArabic.setTextDirection(View.TEXT_DIRECTION_RTL);
-        ViewGroup.LayoutParams arabicParams = tvDateArabic.getLayoutParams();
-        if (arabicParams instanceof LinearLayout.LayoutParams) {
-            ((LinearLayout.LayoutParams) arabicParams).gravity = Gravity.END;
-            tvDateArabic.setLayoutParams(arabicParams);
-        }
     }
 
     /**
@@ -9669,21 +9641,11 @@ public class HomeFragment extends BaseFragment {
      * Safe to call repeatedly (e.g. on resume) — only mutates when the pref changes.
      */
     private void applyHeaderLogoStyle() {
-        if (ivAppTitle == null || sharedPreferencesManager == null) return;
-        String style = sharedPreferencesManager.sharedPreferences.getString(
-                Constants.PREF_HEADER_LOGO_STYLE, Constants.HEADER_LOGO_DEFAULT);
-
-        if (Constants.HEADER_LOGO_AVATAR.equals(style)) {
-            // Show the avatar idle drawable (respects eye color) and start blink loop.
-            ivAppTitle.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-            ivAppTitle.setImageResource(resolveHomeDrawable(RES_IDLE));
-            startHeaderBlinkLoop();
-        } else {
-            // Restore default ServaCam text logo.
-            stopHeaderBlinkLoop();
-            ivAppTitle.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-            ivAppTitle.setImageResource(R.drawable.menu_icon_unknown);
-        }
+        if (ivAppTitle == null) return;
+        // Restore default ServaCam text logo and stop any avatar blink loop.
+        stopHeaderBlinkLoop();
+        ivAppTitle.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        ivAppTitle.setImageResource(R.drawable.menu_icon_unknown);
     }
 
     /** Starts a random blink loop on the header logo avatar. */
@@ -9866,7 +9828,6 @@ public class HomeFragment extends BaseFragment {
         cardClock = view.findViewById(R.id.cardClock); // Corrected ID
         tvClock = view.findViewById(R.id.tvClock);
         tvDateEnglish = view.findViewById(R.id.tvDateEnglish);
-        tvDateArabic = view.findViewById(R.id.tvDateArabic);
         layoutClockInner = view.findViewById(R.id.layoutClockInner);
         layoutClockContent = view.findViewById(R.id.layoutClockContent);
 
@@ -10527,8 +10488,7 @@ public class HomeFragment extends BaseFragment {
             cardClock != null &&
             colorHex != null &&
             tvClock != null &&
-            tvDateEnglish != null &&
-            tvDateArabic != null
+            tvDateEnglish != null
         ) {
             try {
                 // Parse the color and apply background immediately
@@ -10545,7 +10505,6 @@ public class HomeFragment extends BaseFragment {
                 // Apply text colors directly without delay
                 tvClock.setTextColor(textColor);
                 tvDateEnglish.setTextColor(textColor);
-                tvDateArabic.setTextColor(textColor);
 
                 // Force redraw
                 cardClock.invalidate();
@@ -10584,8 +10543,6 @@ public class HomeFragment extends BaseFragment {
                 (tvClock != null) +
                 ", tvDateEnglish=" +
                 (tvDateEnglish != null) +
-                ", tvDateArabic=" +
-                (tvDateArabic != null) +
                 ", colorHex=" +
                 colorHex
             );
@@ -11385,9 +11342,6 @@ public class HomeFragment extends BaseFragment {
             tvDateEnglish.setTextColor(Color.BLACK);
         }
 
-        if (tvDateArabic != null) {
-            tvDateArabic.setTextColor(Color.BLACK);
-        }
 
         // Update colors for storage widget TextViews - use white for dark background
         if (tvCameraTitle != null) tvCameraTitle.setTextColor(Color.WHITE);
@@ -11629,12 +11583,6 @@ public class HomeFragment extends BaseFragment {
         }
         updateStartStopButtonForFoldedState();
         
-        // Refresh ModeSwitcherComponent indicator position after layout changes
-        // This ensures the red pill is repositioned when rail is folded/unfolded
-        if (fragmentHelper != null && fragmentHelper.getModeSwitcherComponent() != null) {
-            ModeSwitcherComponent modeSwitcher = fragmentHelper.getModeSwitcherComponent();
-            modeSwitcher.setActiveMode(modeSwitcher.getCurrentMode());
-        }
     }
 
     private void applyLandscapeFoldConstraints(boolean folded) {

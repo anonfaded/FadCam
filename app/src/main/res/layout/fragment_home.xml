@@ -109,8 +109,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/header_bar">
 
-    <!-- Mode Switcher (ServaCam, ServaRec, FadMic) -->
-    <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="10dp" android:layout_marginTop="0dp" />
 
     <LinearLayout android:id="@+id/layoutCards" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="0dp" android:orientation="horizontal">
 
@@ -359,7 +357,6 @@
 
                         <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvDateEnglish" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="11sp" android:layout_gravity="left" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
 
-                        <com.servalabs.cam.ui.utils.AnimatedTextView android:id="@+id/tvDateArabic" android:layout_width="wrap_content" android:layout_gravity="end" android:layout_height="wrap_content" android:textSize="11sp" android:textColor="?attr/homeRailTextPrimary" android:includeFontPadding="false" />
 
                     </LinearLayout>
                 </LinearLayout>

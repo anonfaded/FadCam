@@ -1878,13 +1878,8 @@ public class MainActivity extends AppCompatActivity {
         Fragment newFragment;
         switch (position) {
             case 0:
-                // Home tab - check current mode
-                String currentMode = sharedPreferencesManager.getCurrentRecordingMode();
-                if (com.servalabs.cam.Constants.MODE_FADREC.equals(currentMode)) {
-                    newFragment = com.servalabs.cam.fadrec.ui.ServaRecHomeFragment.newInstance();
-                } else {
-                    newFragment = new com.servalabs.cam.ui.HomeFragment();
-                }
+                // Home tab - always use standard HomeFragment
+                newFragment = new com.servalabs.cam.ui.HomeFragment();
                 break;
             case 1:
                 newFragment = new RecordsFragment();

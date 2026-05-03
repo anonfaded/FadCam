@@ -6,18 +6,6 @@
     android:padding="6dp"
     android:background="@android:color/transparent">
 
-    <ImageView
-        android:id="@+id/branding_logo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-    android:maxHeight="160dp"
-    android:translationY="-10dp"
-        android:src="@drawable/servalabs_flag"
-        android:layout_centerInParent="true"
-        android:scaleType="fitCenter"
-        android:adjustViewBounds="true"
-        android:visibility="gone"
-        android:contentDescription="@null"/>
 
     <LinearLayout
         android:id="@+id/time_container"
@@ -60,15 +48,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:contentDescription="@null"/>
-
-        <ImageView
-            android:id="@+id/clock_date_arabic"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:contentDescription="@null"/>
+        
     </LinearLayout>
-    
-    
-
 </RelativeLayout>

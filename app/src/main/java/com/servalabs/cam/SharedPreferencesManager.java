@@ -2209,10 +2209,7 @@ public class SharedPreferencesManager {
      * @return Current mode string (MODE_FADCAM or MODE_FADREC)
      */
     public String getCurrentRecordingMode() {
-        return sharedPreferences.getString(
-            "current_recording_mode",
-            Constants.MODE_FADCAM // Default to ServaCam
-        );
+        return Constants.MODE_FADCAM; // Locked to ServaCam
     }
 
     /**
@@ -2220,11 +2217,7 @@ public class SharedPreferencesManager {
      * @param mode Mode string (MODE_FADCAM or MODE_FADREC)
      */
     public void setCurrentRecordingMode(String mode) {
-        sharedPreferences
-            .edit()
-            .putString("current_recording_mode", mode)
-            .apply();
-        FLog.d("SharedPrefs", "Recording mode changed to: " + mode);
+        // Mode switching is disabled
     }
 
     // -------------- Motion Lab (Advanced) Preferences Start --------------

@@ -97,24 +97,6 @@ public class ClockWidgetProvider extends AppWidgetProvider {
                 views.setInt(R.id.clock_root, "setBackgroundResource", android.R.color.transparent);
             }
 
-            // Branding overlay visibility via dedicated ImageView
-            views.setViewVisibility(R.id.branding_logo, prefs.showBranding() ? android.view.View.VISIBLE : android.view.View.GONE);
-
-        // Dynamic branding flag sizing: keep it a small band, not full height
-        if (prefs.showBranding()) {
-            float widgetHeightDp = widgetSize != null ? widgetSize.getHeight() : 110f;
-            // Even stronger scaling and larger default band
-            float desiredDp = widgetHeightDp * 0.70f; // 70% of height
-            float clampedDp = Math.max(72f, Math.min(240f, desiredDp));
-            int px = dpToPx(context, clampedDp);
-            views.setInt(R.id.branding_logo, "setMaxHeight", px);
-            views.setInt(R.id.branding_logo, "setMinimumHeight", px);
-
-            // Slight upward nudge to avoid overlapping the time line visually
-            // Note: setTranslationY is not available via RemoteViews, but we can use setY relative adjustment with current position
-            // Instead, rely on layout translation set in XML; keep here in case future API allows
-        }
-
         // Prepare colors
         int timeColor = Color.WHITE;
         int ampmColor = Color.parseColor("#B0B0B0");
@@ -155,8 +137,7 @@ public class ClockWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.clock_date, android.view.View.GONE);
         }
         
-        // Arabic date - REMOVED
-        views.setViewVisibility(R.id.clock_date_arabic, android.view.View.GONE);
+        
         
         // Show date_container if regular date is enabled
         if (prefs.showDate()) {
