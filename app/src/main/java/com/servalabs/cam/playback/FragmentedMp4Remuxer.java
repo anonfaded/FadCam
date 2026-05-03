@@ -86,7 +86,7 @@ public class FragmentedMp4Remuxer {
         } catch (IOException e) {
             FLog.w(TAG, "Could not check file for fMP4 structure: " + file.getName(), e);
             // Fallback: assume ServaCam-named files are fragmented
-            return name.startsWith("fadcam_");
+            return name.startsWith("servacam_");
         }
     }
     

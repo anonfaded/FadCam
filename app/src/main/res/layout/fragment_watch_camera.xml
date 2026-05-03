@@ -245,7 +245,7 @@
             android:layout_marginBottom="22dp">
 
             <TextView
-                android:id="@+id/iv_watch_fadshot"
+                android:id="@+id/iv_watch_servashot"
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:fontFamily="@font/materialicons"
@@ -256,12 +256,12 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:focusable="true"
-                android:contentDescription="@string/watch_fadshot_desc" />
+                android:contentDescription="@string/watch_servashot_desc" />
 
             <TextView
                 android:layout_width="38dp"
                 android:layout_height="wrap_content"
-                android:text="@string/watch_fadshot_label"
+                android:text="@string/watch_servashot_label"
                 android:textColor="#888888"
                 android:textSize="7sp"
                 android:gravity="center"

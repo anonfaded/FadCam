@@ -1,9 +1,9 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name" translatable="false">Serva Cam</string>
+    <string name="app_name" translatable="false">ServaCam</string>
     <string name="app_icon_description">Choose an icon and name for your app. This will change how it appears on your home screen.</string>
     <string name="check_for_updates">Check for Updates</string>
     <string name="accessibility_thumbnail_progress">%1$d%% watched</string>
-    <string name="fadsec_info">ServaCam is part of the FadSec Lab suite. For more information, click on \'view source code\' below.</string>
+    <string name="servalabs_info">ServaCam is a privacy-focused video recording suite. For more information, click on \'view source code\' below.</string>
 
 
     <string name="app_description">
@@ -23,11 +23,11 @@
     <string name="send_email">Send email</string>
     <string name="join_community">Join community for help, sharing ideas, and future app updates</string>
     <string name="readme_github_subtitle">Source code &amp; releases</string>
-    <string name="readme_discord_subtitle">Join the community</string>
+    <string name="readme_discord_subtitle"></string>
     <string name="website_title">Website</string>
     <string name="readme_website_subtitle">Official site</string>
     <string name="privacy_information">Privacy Information</string>
-    <string name="copyright_info"> 2024-2025 https://fadcam.faded.dev\nLicensed under GPL-3.0</string>
+    <string name="copyright_info"> © 2024-2025 https://servacam.servalabs.cam\nLicensed under GPL-3.0</string>
     <string-array name="video_resolutions_keys">
         <item>7680x4320</item>        <!-- 8K -->
         <item>3840x2160</item>        <!-- 4K -->
@@ -90,18 +90,18 @@
     <string name="button_stop">Stop</string>
     <string name="button_resume">Resume</string>
 
-    <!-- FadRec Screen Recording Strings -->
-    <string name="fadrec_start_screen_recording">Start Screen Recording</string>
-    <string name="fadrec_stop_screen_recording">Stop Screen Recording</string>
-    <string name="fadrec_pause_screen_recording">Pause Screen Recording</string>
-    <string name="fadrec_resume_screen_recording">Resume Screen Recording</string>
-    <string name="fadrec_screen_recording_started">Screen recording started</string>
-    <string name="fadrec_screen_recording_stopped">Screen recording stopped</string>
-    <string name="fadrec_screen_recording_paused">Screen recording paused</string>
-    <string name="fadrec_screen_recording_resumed">Screen recording resumed</string>
-    <string name="fadrec_notification_title">Screen Recording</string>
-    <string name="fadrec_notification_recording">Recording screen…</string>
-    <string name="fadrec_notification_paused">Recording paused</string>
+    <!-- ServaRec Screen Recording Strings -->
+    <string name="servarec_start_screen_recording">Start Screen Recording</string>
+    <string name="servarec_stop_screen_recording">Stop Screen Recording</string>
+    <string name="servarec_pause_screen_recording">Pause Screen Recording</string>
+    <string name="servarec_resume_screen_recording">Resume Screen Recording</string>
+    <string name="servarec_screen_recording_started">Screen recording started</string>
+    <string name="servarec_screen_recording_stopped">Screen recording stopped</string>
+    <string name="servarec_screen_recording_paused">Screen recording paused</string>
+    <string name="servarec_screen_recording_resumed">Screen recording resumed</string>
+    <string name="servarec_notification_title">Screen Recording</string>
+    <string name="servarec_notification_recording">Recording screen…</string>
+    <string name="servarec_notification_paused">Recording paused</string>
     <string name="floating_controls_title">Menu</string>
     <string name="floating_controls_permission_needed">Overlay permission required</string>
     <string name="floating_controls_permission_title">Overlay Permission Required</string>
@@ -124,22 +124,22 @@
     <string name="snap_guides">Snap Guides</string>
     <string name="add_text">Add Text</string>
     <string name="add_shape">Add Shape</string>
-    <string name="fadrec_ready_to_record">Ready to capture screen</string>
-    <string name="fadrec_ready_to_record_subtitle">Tap to begin</string>
-    <string name="fadrec_permission_denied">Screen recording permission denied</string>
-    <string name="fadrec_mode_title">FadRec • Screen Recording</string>
-    <string name="fadrec_mute_audio">Mute recording audio</string>
-    <string name="fadrec_unmute_audio">Unmute recording audio</string>
-    <string name="fadrec_mic_permission_needed_title">Microphone Permission Needed</string>
-    <string name="fadrec_mic_permission_needed_message">FadRec can\'t access your mic. You can record muted - no audio will be saved.</string>
-    <string name="fadrec_record_muted">Record Muted</string>
+    <string name="servarec_ready_to_record">Ready to capture screen</string>
+    <string name="servarec_ready_to_record_subtitle">Tap to begin</string>
+    <string name="servarec_permission_denied">Screen recording permission denied</string>
+    <string name="servarec_mode_title">ServaRec • Screen Recording</string>
+    <string name="servarec_mute_audio">Mute recording audio</string>
+    <string name="servarec_unmute_audio">Unmute recording audio</string>
+    <string name="servarec_mic_permission_needed_title">Microphone Permission Needed</string>
+    <string name="servarec_mic_permission_needed_message">ServaRec can\'t access your mic. You can record muted - no audio will be saved.</string>
+    <string name="servarec_record_muted">Record Muted</string>
 
-    <!-- FadRec audio source picker -->
-    <string name="fadrec_audio_source_title">Audio Source</string>
-    <string name="fadrec_audio_source_choose">Choose audio source</string>
-    <string name="fadrec_audio_source_none">No Audio</string>
-    <string name="fadrec_audio_source_mic">Microphone</string>
-    <string name="fadrec_audio_source_internal">Device Audio (Internal)</string>
+    <!-- ServaRec audio source picker -->
+    <string name="servarec_audio_source_title">Audio Source</string>
+    <string name="servarec_audio_source_choose">Choose audio source</string>
+    <string name="servarec_audio_source_none">No Audio</string>
+    <string name="servarec_audio_source_mic">Microphone</string>
+    <string name="servarec_audio_source_internal">Device Audio (Internal)</string>
 
     <string name="video_recording_started">Recording started</string>
     <string name="video_recording_stopped">Recording stopped</string>
@@ -189,11 +189,11 @@
     <string name="home_elapsed_font_doto">Doto</string>
     <string name="home_elapsed_font_doto_desc">Uses the Doto font for a more distinctive digital timer look</string>
     <string name="home_elapsed_flag_option">Flag accent</string>
-    <string name="home_elapsed_flag_option_desc">Show or hide the FadSec Lab flag accent behind the timer</string>
-    <string name="home_elapsed_flag_helper">Choose whether the FadSec Lab flag accent is shown behind the elapsed timer.</string>
-    <string name="home_elapsed_flag_show">Show FadSec Lab flag (Default)</string>
-    <string name="home_elapsed_flag_show_desc">Display the branded flag accent behind the timer</string>
-    <string name="home_elapsed_flag_hide">Hide FadSec Lab flag</string>
+    <string name="home_elapsed_flag_option_desc">Show or hide the flag accent behind the timer</string>
+    <string name="home_elapsed_flag_helper">Choose whether the flag accent is shown behind the elapsed timer.</string>
+    <string name="home_elapsed_flag_show">Show flag (Default)</string>
+    <string name="home_elapsed_flag_show_desc">Display the flag accent behind the timer</string>
+    <string name="home_elapsed_flag_hide">Hide flag</string>
     <string name="home_elapsed_flag_hide_desc">Keep the elapsed timer area clean without the flag accent</string>
     <string name="home_elapsed_background_option">Background</string>
     <string name="home_elapsed_background_option_desc">Choose whether the elapsed timer sits on a black, white, or transparent card</string>
@@ -259,7 +259,7 @@
     <string name="front">Front</string>
     <string name="video_menu_del">Delete</string>
     <string name="video_menu_save">Save to Gallery</string>
-    <string name="video_menu_save_helper_downloads_fadcam">Video will be saved to Downloads/ServaCam</string>
+    <string name="video_menu_save_helper_downloads_servacam">Video will be saved to Downloads/ServaCam</string>
     <string name="video_menu_save_copy_or_move_title">Save to Gallery</string>
     <string name="video_menu_save_copy">Copy to Gallery</string>
     <string name="video_menu_save_copy_desc">Create a copy in Downloads/ServaCam (original file kept)</string>
@@ -398,53 +398,56 @@
     <string name="media_type_photo">Photo</string>
     <string name="media_type_photo_back">Back</string>
     <string name="media_type_photo_selfie">Selfie</string>
-    <string name="media_type_photo_fadrec">FadRec</string>
+    <string name="app_name_servacam">ServaCam</string>
+    <string name="app_name_servarec">ServaRec</string>
+    <string name="app_name_fadmic">ServaMic</string>
+    <string name="media_type_photo_servarec">Screen Recording (ServaRec)</string>
     <string name="photo_capture_saved">Photo saved</string>
     <string name="photo_capture_failed">Could not capture photo</string>
     <string name="photo_capture_preview_unavailable">Preview is not available</string>
-    <string name="video_menu_upload_faddrive">Upload to FadDrive</string>
+    <string name="video_menu_upload_servadrive">Upload to ServaDrive</string>
     <string name="toast_no_youtube_app">YouTube app not found</string>
     <string name="toast_no_drive_app">Google Drive app not found</string>
     <string name="records_title">Recordings</string>
     <string name="records_filter_all">All</string>
     <string name="records_filter_camera">ServaCam</string>
     <string name="records_filter_dual">Dual</string>
-    <string name="records_filter_screen">FadRec</string>
-    <string name="records_filter_faditor">Faditor</string>
+    <string name="records_filter_screen">ServaRec</string>
+    <string name="records_filter_editor_mini">Editor</string>
     <string name="records_filter_stream">Stream</string>
-    <string name="records_filter_shot">FadShot</string>
+    <string name="records_filter_shot">ServaShot</string>
     <string name="records_filter_camera_all">All</string>
     <string name="records_filter_camera_back">Back</string>
     <string name="records_filter_camera_front">Front</string>
     <string name="records_filter_camera_dual">Dual</string>
-    <string name="records_filter_faditor_all">All</string>
-    <string name="records_filter_faditor_converted">Converted</string>
-    <string name="records_filter_faditor_merge">Merge</string>
+    <string name="records_filter_editor_mini_all">All</string>
+    <string name="records_filter_editor_mini_converted">Converted</string>
+    <string name="records_filter_editor_mini_merge">Merge</string>
     <string name="records_filter_shot_all">All</string>
     <string name="records_filter_shot_back">Back</string>
     <string name="records_filter_shot_selfie">Selfie</string>
-    <string name="records_filter_shot_fadrec">FadRec</string>
+    <string name="records_filter_shot_servarec">ServaRec</string>
     <string name="records_filter_checklist_desc">Toggle selection mode</string>
     <string name="records_filter_helper_camera_all">Camera recordings (Back, Front, Dual)</string>
     <string name="records_filter_helper_camera_back">Captured with back camera</string>
     <string name="records_filter_helper_camera_front">Captured with front camera (selfie)</string>
     <string name="records_filter_helper_camera_dual">Captured with dual camera mode</string>
     <string name="records_filter_helper_dual">Dual camera recordings</string>
-    <string name="records_filter_helper_screen">Screen recordings (FadRec)</string>
-    <string name="records_filter_helper_faditor">Edited/Exported videos (Faditor)</string>
-    <string name="records_filter_helper_faditor_all">All Faditor outputs and related files.</string>
-    <string name="records_filter_helper_faditor_converted">Converted fragmented MP4 into standard seekable MP4 for external players.</string>
-    <string name="records_filter_helper_faditor_merge">Merged multiple clips into one output video.</string>
+    <string name="records_filter_helper_screen">Screen recordings (ServaRec)</string>
+    <string name="records_filter_helper_editor_mini">Edited/Exported videos (Editor Mini)</string>
+    <string name="records_filter_helper_editor_mini_all">All Editor Mini outputs and related files.</string>
+    <string name="records_filter_helper_editor_mini_converted">Converted fragmented MP4 into standard seekable MP4 for external players.</string>
+    <string name="records_filter_helper_editor_mini_merge">Merged multiple clips into one output video.</string>
     <string name="records_filter_helper_stream">Saved stream recordings</string>
     <string name="records_filter_helper_shot_all">Captured photos and screenshots</string>
     <string name="records_filter_helper_shot_back">Captured photos with back camera</string>
     <string name="records_filter_helper_shot_selfie">Captured photos with front camera (selfie)</string>
-    <string name="records_filter_helper_shot_fadrec">Captured screenshots (FadRec)</string>
+    <string name="records_filter_helper_shot_servarec">Captured screenshots (ServaRec)</string>
     <string name="records_location_format">Location: %1$s/%2$s</string>
     <string name="records_batch_select_all">Select all</string>
     <string name="records_batch_deselect_all">Deselect all</string>
     <string name="records_batch_save">Save to Gallery</string>
-    <string name="records_batch_faditor">Faditor Automations</string>
+    <string name="records_batch_editor_mini">Editor Automations</string>
     <string name="records_batch_delete">Delete</string>
     <string name="records_batch_coming_soon">This batch action will be added next.</string>
     <string name="records_batch_select_items_first">Select one or more videos first.</string>
@@ -452,10 +455,10 @@
     <string name="records_batch_fab_label">Batch</string>
     <string name="records_batch_select_all_desc">Select or clear all videos in the current filter.</string>
     <string name="records_batch_save_desc">Copy, move, or export selected videos to another folder.</string>
-    <string name="records_batch_faditor_desc">Run background automations without opening the Faditor tab.</string>
+    <string name="records_batch_editor_mini_desc">Run background automations without opening the Editor tab.</string>
     <string name="records_batch_delete_desc">Move selected videos to Trash.</string>
     <string name="records_batch_save_queued">%1$d save task(s) added to queue.</string>
-    <string name="records_batch_faditor_first_only">Opened first video. %1$d selected; multi-edit queue coming next.</string>
+    <string name="records_batch_editor_mini_first_only">Opened first video. %1$d selected; multi-edit queue coming next.</string>
     <string name="records_batch_save_copy_helper">Keeps originals; saves copies to %1$s.</string>
     <string name="records_batch_save_move_helper">Moves selected videos to %1$s and removes originals after successful save.</string>
     <string name="records_batch_save_custom_location">Export to New Location</string>
@@ -463,15 +466,15 @@
     <string name="records_batch_custom_export_started">Exporting %1$d videos to selected folder…</string>
     <string name="records_batch_custom_export_invalid_folder">Selected folder is not writable.</string>
     <string name="records_batch_custom_export_done">Export finished. Success: %1$d • Failed: %2$d</string>
-    <string name="records_batch_faditor_sheet_title">Batch Faditor Actions</string>
-    <string name="records_batch_faditor_export_standard">Export to Standard MP4</string>
-    <string name="records_batch_faditor_export_standard_desc">Converts fragmented MP4 to seekable standard MP4 for external players.</string>
-    <string name="records_batch_faditor_merge">Merge Selected Videos</string>
-    <string name="records_batch_faditor_merge_desc">Combines selected clips into one video in background.</string>
-    <string name="records_batch_faditor_queued">%1$d batch item(s) queued in background.</string>
+    <string name="records_batch_editor_mini_sheet_title">Batch Editor Actions</string>
+    <string name="records_batch_editor_mini_export_standard">Export to Standard MP4</string>
+    <string name="records_batch_editor_mini_export_standard_desc">Converts fragmented MP4 to seekable standard MP4 for external players.</string>
+    <string name="records_batch_editor_mini_merge">Merge Selected Videos</string>
+    <string name="records_batch_editor_mini_merge_desc">Combines selected clips into one video in background.</string>
+    <string name="records_batch_editor_mini_queued">%1$d batch item(s) queued in background.</string>
     <string name="records_batch_completed">Batch operation completed.</string>
     <string name="records_batch_notif_channel_name">Batch Media Actions</string>
-    <string name="records_batch_notif_channel_desc">Progress and results for Records batch save and Faditor automation tasks.</string>
+    <string name="records_batch_notif_channel_desc">Progress and results for Records batch save and Editor automation tasks.</string>
     <string name="records_batch_starting">Preparing batch operation…</string>
     <string name="records_batch_progress_item">Processing %1$d of %2$d</string>
     <string name="records_batch_progress_counts">Completed %1$d • Skipped %2$d • Failed %3$d</string>
@@ -484,7 +487,7 @@
     <string name="nav_settings">Settings</string>
     <string name="nav_about">About</string>
     <string name="nav_remote">Remote</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_editor_mini_mini">Editor</string>
     <string name="nav_lab">Lab</string>
 
     <string name="setting_cam_title">Camera Selection</string>
@@ -648,11 +651,11 @@
     <string name="full_changelog_info">For full changelog, head to the Home tab and open the hamburger menu, then select \"What\'s New\".</string>
     <string name="stay_updated_title">Stay Updated:</string>
     <string name="button_readme_github">GitHub Repository</string>
-    <string name="community_title">Join our Community:</string>
-    <string name="discord_title">Discord Server</string>
+    <string name="community_title"></string>
+    <string name="discord_title"></string>
     <string name="thankyou_msg">Thank you for using ServaCam!</string>
     <string name="settings_title">Settings</string>
-    <string name="array_watermark_time_fadcam">Time with Fadcam</string>
+    <string name="array_watermark_time_servacam">Time with ServaCam</string>
     <string name="array_watermark_timeonly">Timestamp</string>
     <string name="array_watermark_nomark">No Watermark</string>
     <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
@@ -743,7 +746,6 @@
     <string name="row_frame_rate_title">Frame Rate</string>
     <string name="row_codec_title">Codec</string>
     <string name="row_bitrate_title">Bitrate</string>
-    <string name="row_zoom_ratio_title">Zoom Ratio</string>
     <string name="row_video_splitting_title">Video Splitting</string>
     <string name="row_orientation_title">Orientation</string>
     <string name="row_record_audio_title">Record Audio</string>
@@ -774,13 +776,13 @@
     <string name="watermark_preview_heading">Preview</string>
     <string name="watermark_options_heading">Options</string>
     <string name="watermark_style_row_title">Watermark Style</string>
-    <string name="watermark_preview_sample_fadcam">Captured by ServaCam - %1$s</string>
+    <string name="watermark_preview_sample_servacam">Captured by ServaCam - %1$s</string>
     <string name="watermark_preview_sample_timeonly">%1$s</string>
-    <string name="watermark_style_time_fadcam_label">Time with ServaCam</string>
+    <string name="watermark_style_time_servacam_label">Time with ServaCam</string>
     <string name="watermark_style_timeonly_label">Timestamp</string>
     <string name="watermark_style_badge_label">Brand Label Only</string>
     <string name="watermark_style_none_label">No Watermark</string>
-    <string name="helper_watermark_preview">This is how the watermark will appear at the top-left of your recorded video.\nFun fact: 10/Jul/2024 04:47 PM is when ServaCam v1.0 first shipped.</string>
+    <string name="helper_watermark_preview">This is how the watermark will appear at the top-left of your recorded video.</string>
     <string name="helper_location_watermark_option">Toggle adding your device location as an overlay. Requires location permission.</string>
     <string name="location_format_title">Location Format</string>
     <string name="location_format_coordinates">Coordinates Only</string>
@@ -817,7 +819,7 @@
     <string name="widget_black_background_title">Black Background</string>
     <string name="widget_arabic_date_title">Arabic Date</string>
     <string name="widget_arabic_date_format_title">Arabic Date Format</string>
-    <string name="widget_branding_title">FadSecLab Branding</string>
+    <string name="widget_branding_title">ServaLabsLab Branding</string>
 
     <!-- Widget Option Descriptions -->
     <string name="widget_time_format_12h">12-hour (3:30 PM)</string>
@@ -950,9 +952,9 @@
     <string name="shortcut_purpose_start_dual">This shortcut starts dual camera recording (PiP).</string>
     <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
     <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
-    <string name="shortcut_purpose_photo">This shortcut captures a back camera photo and saves it to ServaCam/FadShot location.</string>
-    <string name="shortcut_purpose_photo_front">This shortcut captures a front camera photo and saves it to ServaCam/FadShot location.</string>
-    <string name="shortcut_purpose_screenshot">This shortcut captures a screen shot and saves it to ServaCam/FadShot location (Enable the Accessibility permission from Settings > Privacy > Accessibility).</string>
+    <string name="shortcut_purpose_photo">This shortcut captures a back camera photo and saves it to ServaCam/ServaShot location.</string>
+    <string name="shortcut_purpose_photo_front">This shortcut captures a front camera photo and saves it to ServaCam/ServaShot location.</string>
+    <string name="shortcut_purpose_screenshot">This shortcut captures a screen shot and saves it to ServaCam/ServaShot location (Enable the Accessibility permission from Settings > Privacy > Accessibility).</string>
     <!-- Widget sheet action labels (avoid hardcoded) -->
     <string name="widget_customize_action_label">Customize</string>
     <string name="widget_customize_action_subtitle">Time, date, theme options</string>
@@ -979,16 +981,16 @@
     <string name="stop_recording">Stop</string>
     <string name="shortcut_take_photo">Photo</string>
     <string name="shortcut_take_photo_front">Selfie</string>
-    <string name="shortcut_take_screenshot">FadRec</string>
+    <string name="shortcut_take_screenshot">ServaRec</string>
     <string name="screenshot_capture_saved">Screenshot saved</string>
     <string name="screenshot_capture_failed">Could not capture screenshot</string>
     <string name="screenshot_capture_system_saved">Screenshot captured by system. Saved in system screenshots.</string>
-    <string name="screenshot_accessibility_enable_needed">Enable "FadRec Screenshot" in Accessibility to use this shortcut without recording prompt.</string>
-    <string name="screenshot_accessibility_service_desc">Captures a screenshot for the FadRec shortcut and saves it in ServaCam/FadShot.</string>
+    <string name="screenshot_accessibility_enable_needed">Enable "ServaRec Screenshot" in Accessibility to use this shortcut without recording prompt.</string>
+    <string name="screenshot_accessibility_service_desc">Captures a screenshot for the ServaRec shortcut and saves it in ServaCam/ServaShot.</string>
     <string name="shortcuts_video_category">Video Recording</string>
     <string name="shortcuts_picture_category">Picture</string>
     <string name="preview_quick_actions_title">Preview quick actions</string>
-    <string name="preview_quick_actions_sub">Show FadShot and Fullscreen icons even when recording is idle.</string>
+    <string name="preview_quick_actions_sub">Show ServaShot and Fullscreen icons even when recording is idle.</string>
     <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>
     <string name="preview_quick_actions_state_recording_only">Visible only while recording</string>
     <string name="warning_temp_file_detail">
@@ -1010,7 +1012,7 @@
 
     <string-array name="theme_options" translatable="false">
         <item>Midnight Dusk</item>
-        <item>Faded Night</item>
+        <item>Serva Night</item>
         <item>Crimson Bloom</item>
         <item>Silent Forest</item>
         <item>Shadow Alloy</item>
@@ -1042,101 +1044,101 @@
     <string name="coming_soon_toast">Coming soon! In Sha Allah</string>
     <string name="remote_coming_soon">Remote control for ServaCam is coming soon.</string>
     <string name="remote_feature_description">Pair ServaCam clients using a QR code for secure, local-network remote control: start/stop recording, preview, zoom, switch camera, and more—all with end-to-end encryption.</string>
-    <string name="faditor_mini_title">Faditor Mini</string>
-    <string name="faditor_mini_coming_soon">Coming soon — lightweight editor</string>
-    <string name="faditor_mini_subtitle">Trim and export your videos with precision</string>
-    <string name="faditor_mini_toast">Faditor Mini — coming soon</string>
-    <string name="faditor_select_video">Select Video</string>
-    <string name="faditor_editor_title">Faditor Mini</string>
-    <string name="faditor_close">Close editor</string>
-    <string name="faditor_undo">Undo</string>
-    <string name="faditor_redo">Redo</string>
-    <string name="faditor_play_pause">Play or pause</string>
-    <string name="faditor_export">Export</string>
-    <string name="faditor_cancel">Cancel</string>
-    <string name="faditor_exporting">Exporting…</string>
-    <string name="faditor_exporting_percent">Exporting… %1$d%%</string>
-    <string name="faditor_export_success">Video exported successfully</string>
-    <string name="faditor_export_error">Export failed: %1$s</string>
-    <string name="faditor_export_in_progress">Export already in progress</string>
-    <string name="faditor_remuxing">Optimizing for preview…</string>
-    <string name="faditor_remuxing_percent">Optimizing… %1$ds processed</string>
-    <string name="faditor_error_no_video">No video selected</string>
-    <string name="faditor_error_picker">Could not open file picker</string>
-    <string name="faditor_tool_trim">Trim</string>
-    <string name="faditor_tool_speed">1x</string>
-    <string name="faditor_tool_muted">Muted</string>
-    <string name="faditor_tool_sound">Sound</string>
-    <string name="faditor_speed_title">Playback Speed</string>
-    <string name="faditor_speed_reset">Reset to 1x</string>
-    <string name="faditor_volume_title">Volume</string>
-    <string name="faditor_volume_warning">Above 100%% may degrade audio quality</string>
-    <string name="faditor_volume_mute">Mute Audio</string>
-    <string name="faditor_volume_unmute">Unmute Audio</string>
-    <string name="faditor_tool_volume">Volume</string>
-    <string name="faditor_tool_rotate">Rotate</string>
-    <string name="faditor_tool_flip">Flip</string>
-    <string name="faditor_tool_crop">Crop</string>
-    <string name="faditor_tool_crop_free">Free</string>
-    <string name="faditor_tool_canvas">Canvas</string>
-    <string name="faditor_canvas_title">Canvas</string>
-    <string name="faditor_canvas_applied">Canvas set to %s</string>
-    <string name="faditor_tool_audio">Extract Audio</string>
-    <string name="faditor_audio_extract_current">Extract from video</string>
-    <string name="faditor_audio_extract_current_desc">Extract the audio track from the current video</string>
-    <string name="faditor_audio_extracting">Extracting audio…</string>
-    <string name="faditor_audio_extracted">Audio extracted and added to timeline</string>
-    <string name="faditor_audio_extract_failed">Could not extract audio</string>
-    <string name="faditor_audio_added">Audio added to timeline</string>
-    <string name="faditor_audio_no_track">No audio track found in this video</string>
-    <string name="faditor_tool_split">Split</string>
-    <string name="faditor_tool_delete">Delete</string>
-    <string name="faditor_tool_duplicate">Duplicate</string>
-    <string name="faditor_tool_add">Add</string>
-    <string name="faditor_add_asset_title">Add Asset</string>
-    <string name="faditor_add_asset_image">Image (5s still)</string>
-    <string name="faditor_add_asset_video">Video clip</string>
-    <string name="faditor_asset_added">Asset added to timeline</string>
-    <string name="faditor_asset_error">Could not add asset</string>
-    <string name="faditor_split_success">Segment split into two</string>
-    <string name="faditor_split_error">Cannot split here — too close to edge</string>
-    <string name="faditor_delete_last_segment">Cannot delete the only segment</string>
-    <string name="faditor_segment_deleted">Segment deleted</string>
-    <string name="faditor_segment_duplicated">Segment duplicated</string>
-    <string name="faditor_crop_title">Crop Aspect Ratio</string>
-    <string name="faditor_crop_free">Free</string>
-    <string name="faditor_crop_applied">Crop applied</string>
-    <string name="faditor_crop_cancelled">Crop cancelled</string>
-    <string name="faditor_crop_reset">Crop reset</string>
-    <string name="faditor_close_confirm_title">Close Editor?</string>
-    <string name="faditor_close_confirm_action">Close &amp; Save</string>
-    <string name="faditor_close_confirm_subtitle">Save project and return</string>
-    <string name="faditor_close_confirm_helper">Your project will be saved automatically. You can reopen it from recent projects anytime.</string>
-    <string name="faditor_back_press_exit">Press again to exit editor</string>
-    <string name="faditor_export_back_confirm">Export in progress. Go back to editor?</string>
-    <string name="faditor_export_done">Done</string>
-    <string name="faditor_export_back">Back</string>
-    <string name="faditor_export_eta">Estimated time: %s</string>
-    <string name="faditor_export_complete_title">Export Complete</string>
-    <string name="faditor_export_complete_summary">Your video has been saved to the Records Tab.</string>
+    <string name="editor_mini_mini_title">Editor Mini</string>
+    <string name="editor_mini_mini_coming_soon">Coming soon — lightweight editor</string>
+    <string name="editor_mini_mini_subtitle">Trim and export your videos with precision</string>
+    <string name="editor_mini_mini_toast">Editor Mini — coming soon</string>
+    <string name="editor_mini_select_video">Select Video</string>
+    <string name="editor_mini_editor_title">Editor Mini</string>
+    <string name="editor_mini_close">Close editor</string>
+    <string name="editor_mini_undo">Undo</string>
+    <string name="editor_mini_redo">Redo</string>
+    <string name="editor_mini_play_pause">Play or pause</string>
+    <string name="editor_mini_export">Export</string>
+    <string name="editor_mini_cancel">Cancel</string>
+    <string name="editor_mini_exporting">Exporting…</string>
+    <string name="editor_mini_exporting_percent">Exporting… %1$d%%</string>
+    <string name="editor_mini_export_success">Video exported successfully</string>
+    <string name="editor_mini_export_error">Export failed: %1$s</string>
+    <string name="editor_mini_export_in_progress">Export already in progress</string>
+    <string name="editor_mini_remuxing">Optimizing for preview…</string>
+    <string name="editor_mini_remuxing_percent">Optimizing… %1$ds processed</string>
+    <string name="editor_mini_error_no_video">No video selected</string>
+    <string name="editor_mini_error_picker">Could not open file picker</string>
+    <string name="editor_mini_tool_trim">Trim</string>
+    <string name="editor_mini_tool_speed">1x</string>
+    <string name="editor_mini_tool_muted">Muted</string>
+    <string name="editor_mini_tool_sound">Sound</string>
+    <string name="editor_mini_speed_title">Playback Speed</string>
+    <string name="editor_mini_speed_reset">Reset to 1x</string>
+    <string name="editor_mini_volume_title">Volume</string>
+    <string name="editor_mini_volume_warning">Above 100%% may degrade audio quality</string>
+    <string name="editor_mini_volume_mute">Mute Audio</string>
+    <string name="editor_mini_volume_unmute">Unmute Audio</string>
+    <string name="editor_mini_tool_volume">Volume</string>
+    <string name="editor_mini_tool_rotate">Rotate</string>
+    <string name="editor_mini_tool_flip">Flip</string>
+    <string name="editor_mini_tool_crop">Crop</string>
+    <string name="editor_mini_tool_crop_free">Free</string>
+    <string name="editor_mini_tool_canvas">Canvas</string>
+    <string name="editor_mini_canvas_title">Canvas</string>
+    <string name="editor_mini_canvas_applied">Canvas set to %s</string>
+    <string name="editor_mini_tool_audio">Extract Audio</string>
+    <string name="editor_mini_audio_extract_current">Extract from video</string>
+    <string name="editor_mini_audio_extract_current_desc">Extract the audio track from the current video</string>
+    <string name="editor_mini_audio_extracting">Extracting audio…</string>
+    <string name="editor_mini_audio_extracted">Audio extracted and added to timeline</string>
+    <string name="editor_mini_audio_extract_failed">Could not extract audio</string>
+    <string name="editor_mini_audio_added">Audio added to timeline</string>
+    <string name="editor_mini_audio_no_track">No audio track found in this video</string>
+    <string name="editor_mini_tool_split">Split</string>
+    <string name="editor_mini_tool_delete">Delete</string>
+    <string name="editor_mini_tool_duplicate">Duplicate</string>
+    <string name="editor_mini_tool_add">Add</string>
+    <string name="editor_mini_add_asset_title">Add Asset</string>
+    <string name="editor_mini_add_asset_image">Image (5s still)</string>
+    <string name="editor_mini_add_asset_video">Video clip</string>
+    <string name="editor_mini_asset_added">Asset added to timeline</string>
+    <string name="editor_mini_asset_error">Could not add asset</string>
+    <string name="editor_mini_split_success">Segment split into two</string>
+    <string name="editor_mini_split_error">Cannot split here — too close to edge</string>
+    <string name="editor_mini_delete_last_segment">Cannot delete the only segment</string>
+    <string name="editor_mini_segment_deleted">Segment deleted</string>
+    <string name="editor_mini_segment_duplicated">Segment duplicated</string>
+    <string name="editor_mini_crop_title">Crop Aspect Ratio</string>
+    <string name="editor_mini_crop_free">Free</string>
+    <string name="editor_mini_crop_applied">Crop applied</string>
+    <string name="editor_mini_crop_cancelled">Crop cancelled</string>
+    <string name="editor_mini_crop_reset">Crop reset</string>
+    <string name="editor_mini_close_confirm_title">Close Editor?</string>
+    <string name="editor_mini_close_confirm_action">Close &amp; Save</string>
+    <string name="editor_mini_close_confirm_subtitle">Save project and return</string>
+    <string name="editor_mini_close_confirm_helper">Your project will be saved automatically. You can reopen it from recent projects anytime.</string>
+    <string name="editor_mini_back_press_exit">Press again to exit editor</string>
+    <string name="editor_mini_export_back_confirm">Export in progress. Go back to editor?</string>
+    <string name="editor_mini_export_done">Done</string>
+    <string name="editor_mini_export_back">Back</string>
+    <string name="editor_mini_export_eta">Estimated time: %s</string>
+    <string name="editor_mini_export_complete_title">Export Complete</string>
+    <string name="editor_mini_export_complete_summary">Your video has been saved to the Records Tab.</string>
 
     <!-- Export confirmation bottom sheet -->
-    <string name="faditor_export_confirm_title">Export Video</string>
-    <string name="faditor_export_confirm_action">Export Now</string>
-    <string name="faditor_export_confirm_subtitle">Export will continue in background</string>
-    <string name="faditor_export_confirm_helper">%1$s • %2$d clip(s)%3$s\nExport runs as a background service — you can close the app and it will keep exporting.</string>
+    <string name="editor_mini_export_confirm_title">Export Video</string>
+    <string name="editor_mini_export_confirm_action">Export Now</string>
+    <string name="editor_mini_export_confirm_subtitle">Export will continue in background</string>
+    <string name="editor_mini_export_confirm_helper">%1$s • %2$d clip(s)%3$s\nExport runs as a background service — you can close the app and it will keep exporting.</string>
 
     <!-- Export notification -->
-    <string name="faditor_export_notif_channel">Faditor Export</string>
-    <string name="faditor_export_notif_channel_desc">Notifications for ongoing video exports</string>
-    <string name="faditor_export_notif_title">Exporting video…</string>
-    <string name="faditor_export_notif_error_title">Export Failed</string>
+    <string name="editor_mini_export_notif_channel">Editor Export</string>
+    <string name="editor_mini_export_notif_channel_desc">Notifications for ongoing video exports</string>
+    <string name="editor_mini_export_notif_title">Exporting video…</string>
+    <string name="editor_mini_export_notif_error_title">Export Failed</string>
 
-    <!-- Export dock (Faditor Mini tab) -->
-    <string name="faditor_export_progress">Exporting…</string>
-    <string name="faditor_export_completed">Export Complete</string>
-    <string name="faditor_export_cancelled">Export Cancelled</string>
-    <string name="faditor_export_failed">Export Failed</string>
+    <!-- Export dock (Editor Mini Mini tab) -->
+    <string name="editor_mini_export_progress">Exporting…</string>
+    <string name="editor_mini_export_completed">Export Complete</string>
+    <string name="editor_mini_export_cancelled">Export Cancelled</string>
+    <string name="editor_mini_export_failed">Export Failed</string>
     <string name="export_eta_seconds">ETA %d s</string>
     <string name="export_eta_minutes">ETA %d m</string>
     <string name="export_eta_hours">ETA %d h</string>
@@ -1145,56 +1147,59 @@
     <string name="export_error_hint">Tap to dismiss</string>
     <string name="export_status">Export Status</string>
 
-    <!-- Export info on export screen -->
-    <string name="faditor_export_info">%1$s • %2$d clip(s)%3$s • H.264 + AAC</string>
-    <string name="faditor_flip_title">Flip</string>
-    <string name="faditor_home_tagline">Lightweight video editor</string>
-    <string name="faditor_new_project">New Project</string>
-    <string name="faditor_start_project">Start New Project</string>
-    <string name="faditor_recent_projects">Recent Projects</string>
-    <string name="faditor_capabilities_title">What You Can Do</string>
-    <string name="faditor_feature_trim">Precision Trim</string>
-    <string name="faditor_feature_trim_desc">Cut your videos to the exact frame you want</string>
-    <string name="faditor_feature_export">Quick Export</string>
-    <string name="faditor_feature_export_desc">Export in MP4 with hardware-accelerated encoding</string>
-    <string name="faditor_feature_preview">Live Preview</string>
-    <string name="faditor_feature_preview_desc">Instant playback of your trimmed clips</string>
-    <string name="faditor_feature_privacy">100% Offline</string>
-    <string name="faditor_feature_privacy_desc">All editing happens locally — no uploads, no cloud</string>
-    <string name="faditor_feature_convert">Smart Convert</string>
-    <string name="faditor_feature_convert_desc">Auto-converts crash-safe recordings to seekable MP4 for smooth playback everywhere</string>
-    <string name="faditor_select_items">Select items</string>
-    <string name="faditor_selected_count">%1$d selected</string>
-    <string name="faditor_delete_projects_title">Delete projects?</string>
-    <string name="faditor_delete_projects_message">Delete %1$d project(s)? This cannot be undone.</string>
-    <string name="faditor_delete_confirm">Delete</string>
-    <string name="faditor_version_info">Faditor Mini · Phase 1 · Trim + Export</string>
+    <string name="row_zoom_ratio_title">Zoom Ratio</string>
+    <string name="row_zoom_ratio_subtitle">Adjust the zoom level multiplier</string>
 
-    <!-- Faditor Info Bottom Sheet -->
-    <string name="faditor_empty_title">No projects yet</string>
-    <string name="faditor_empty_desc">Tap \"Start New Project\" to pick a video and begin editing</string>
-    <string name="faditor_info_title">About Faditor Mini</string>
-    <string name="faditor_info_subtitle">Everything you need to know about the built-in editor</string>
-    <string name="faditor_info_how_title">How it works</string>
-    <string name="faditor_info_how_desc">Pick any video from your device or your ServaCam recordings. Trim it frame-by-frame using the timeline, then export. All processing happens locally on your device — nothing is uploaded.\n\nYour editing progress is auto-saved every few seconds and whenever you leave the editor, so no work is lost if the app closes unexpectedly.</string>
-    <string name="faditor_info_convert_title">Smart conversion</string>
-    <string name="faditor_info_convert_desc">ServaCam records in a crash-safe format called fragmented MP4 (fMP4). Unlike a standard MP4 which has one finalized container, fMP4 writes video in small independent chunks. This means your footage stays intact even if the app crashes or recording stops suddenly.\n\nHowever, external video players, gallery apps, and file managers will not be able to seek, scrub, or display the correct duration of these files. This is not a bug — it is a deliberate design trade-off for reliability.\n\nIf you plan to store your videos outside ServaCam — on Google Drive, a computer, or any other location — you must convert them first. Otherwise the files will be unusable for normal playback.\n\nTo convert: simply open the video here in Faditor Mini and tap Export. The converted standard MP4 will appear in your Records tab, ready to save to your gallery or share anywhere. The process is instant and lossless — no re-encoding or quality loss.</string>
-    <string name="faditor_info_export_title">Exported files</string>
-    <string name="faditor_info_export_desc">Exported videos are saved to your active storage location (the same one configured in Settings) with the prefix \"Faditor_\" followed by a timestamp. They appear in the Records tab alongside your original recordings.</string>
-    <string name="faditor_info_temp_title">Temporary files and cache</string>
-    <string name="faditor_info_temp_desc">When you load an fMP4 video for editing, Faditor detects if the file needs \"remuxing\" — a fast conversion that adds seeking markers without re-encoding. Remuxed files are cached on your device so they can be reused if you edit the same video again, saving time and processing.\n\nYou can see the cache size for each project listed next to its modified date. If your device storage is running low, you can delete unused projects to clear their cached remuxed files.\n\nThese temporary cache files are automatically cleaned up when you delete a project from this tab.</string>
-    <string name="faditor_info_projects_title">Recent projects</string>
-    <string name="faditor_info_projects_desc">All your editing sessions are shown for quick access. Each project is stored as a small JSON file on your device containing the video URI, trim points, and timestamps — no copies of your videos are made. Projects are auto-saved every few seconds, so your progress is never lost.\n\nYou can delete projects you no longer need using the multi-select checklist icon. Deleting a project only removes the editing session data; your original video files remain untouched.</string>
-    <string name="faditor_your_recordings">Your Recordings</string>
-    <string name="faditor_browse_device">Browse Device</string>
-    <string name="faditor_no_recordings">No recordings found yet. Start recording with ServaCam to see your videos here.</string>
-    <string name="faditor_video_count">%1$d video(s)</string>
-    <string name="faditor_fadcam_source">ServaCam</string>
-    <string name="faditor_fadrec_source">FadRec</string>
-    <string name="faditor_browse_device_desc">Select any video from your device</string>
-    <string name="faditor_scanning">Scanning recordings…</string>
-    <string name="faditor_source_chooser_desc">Choose a video from your gallery or pick one from your ServaCam recordings</string>
-    <string name="faditor_recordings_helper">Videos recorded with ServaCam from your active storage location</string>
+    <!-- Export info on export screen -->
+    <string name="editor_mini_export_info">%1$s • %2$d clip(s)%3$s • H.264 + AAC</string>
+    <string name="editor_mini_flip_title">Flip</string>
+    <string name="editor_mini_home_tagline">Lightweight video editor</string>
+    <string name="editor_mini_new_project">New Project</string>
+    <string name="editor_mini_start_project">Start New Project</string>
+    <string name="editor_mini_recent_projects">Recent Projects</string>
+    <string name="editor_mini_capabilities_title">What You Can Do</string>
+    <string name="editor_mini_feature_trim">Precision Trim</string>
+    <string name="editor_mini_feature_trim_desc">Cut your videos to the exact frame you want</string>
+    <string name="editor_mini_feature_export">Quick Export</string>
+    <string name="editor_mini_feature_export_desc">Export in MP4 with hardware-accelerated encoding</string>
+    <string name="editor_mini_feature_preview">Live Preview</string>
+    <string name="editor_mini_feature_preview_desc">Instant playback of your trimmed clips</string>
+    <string name="editor_mini_feature_privacy">100% Offline</string>
+    <string name="editor_mini_feature_privacy_desc">All editing happens locally — no uploads, no cloud</string>
+    <string name="editor_mini_feature_convert">Smart Convert</string>
+    <string name="editor_mini_feature_convert_desc">Auto-converts crash-safe recordings to seekable MP4 for smooth playback everywhere</string>
+    <string name="editor_mini_select_items">Select items</string>
+    <string name="editor_mini_selected_count">%1$d selected</string>
+    <string name="editor_mini_delete_projects_title">Delete projects?</string>
+    <string name="editor_mini_delete_projects_message">Delete %1$d project(s)? This cannot be undone.</string>
+    <string name="editor_mini_delete_confirm">Delete</string>
+    <string name="editor_mini_version_info">Editor Mini · Phase 1 · Trim + Export</string>
+
+    <!-- Editor Mini Info Bottom Sheet -->
+    <string name="editor_mini_empty_title">No projects yet</string>
+    <string name="editor_mini_empty_desc">Tap \"Start New Project\" to pick a video and begin editing</string>
+    <string name="editor_mini_info_title">About Editor Mini</string>
+    <string name="editor_mini_info_subtitle">Everything you need to know about the built-in editor</string>
+    <string name="editor_mini_info_how_title">How it works</string>
+    <string name="editor_mini_info_how_desc">Pick any video from your device or your ServaCam recordings. Trim it frame-by-frame using the timeline, then export. All processing happens locally on your device — nothing is uploaded.\n\nYour editing progress is auto-saved every few seconds and whenever you leave the editor, so no work is lost if the app closes unexpectedly.</string>
+    <string name="editor_mini_info_convert_title">Smart conversion</string>
+    <string name="editor_mini_info_convert_desc">ServaCam records in a crash-safe format called fragmented MP4 (fMP4). Unlike a standard MP4 which has one finalized container, fMP4 writes video in small independent chunks. This means your footage stays intact even if the app crashes or recording stops suddenly.\n\nHowever, external video players, gallery apps, and file managers will not be able to seek, scrub, or display the correct duration of these files. This is not a bug — it is a deliberate design trade-off for reliability.\n\nIf you plan to store your videos outside ServaCam — on Google Drive, a computer, or any other location — you must convert them first. Otherwise the files will be unusable for normal playback.\n\nTo convert: simply open the video here in Editor Mini and tap Export. The converted standard MP4 will appear in your Records tab, ready to save to your gallery or share anywhere. The process is instant and lossless — no re-encoding or quality loss.</string>
+    <string name="editor_mini_info_export_title">Exported files</string>
+    <string name="editor_mini_info_export_desc">Exported videos are saved to your active storage location (the same one configured in Settings) with the prefix \"Editor_\" followed by a timestamp. They appear in the Records tab alongside your original recordings.</string>
+    <string name="editor_mini_info_temp_title">Temporary files and cache</string>
+    <string name="editor_mini_info_temp_desc">When you load an fMP4 video for editing, Editor Mini detects if the file needs \"remuxing\" — a fast conversion that adds seeking markers without re-encoding. Remuxed files are cached on your device so they can be reused if you edit the same video again, saving time and processing.\n\nYou can see the cache size for each project listed next to its modified date. If your device storage is running low, you can delete unused projects to clear their cached remuxed files.\n\nThese temporary cache files are automatically cleaned up when you delete a project from this tab.</string>
+    <string name="editor_mini_info_projects_title">Recent projects</string>
+    <string name="editor_mini_info_projects_desc">All your editing sessions are shown for quick access. Each project is stored as a small JSON file on your device containing the video URI, trim points, and timestamps — no copies of your videos are made. Projects are auto-saved every few seconds, so your progress is never lost.\n\nYou can delete projects you no longer need using the multi-select checklist icon. Deleting a project only removes the editing session data; your original video files remain untouched.</string>
+    <string name="editor_mini_your_recordings">Your Recordings</string>
+    <string name="editor_mini_browse_device">Browse Device</string>
+    <string name="editor_mini_no_recordings">No recordings found yet. Start recording with ServaCam to see your videos here.</string>
+    <string name="editor_mini_video_count">%1$d video(s)</string>
+    <string name="editor_mini_servacam_source">ServaCam</string>
+    <string name="editor_mini_servarec_source">ServaRec</string>
+    <string name="editor_mini_browse_device_desc">Select any video from your device</string>
+    <string name="editor_mini_scanning">Scanning recordings…</string>
+    <string name="editor_mini_source_chooser_desc">Choose a video from your gallery or pick one from your ServaCam recordings</string>
+    <string name="editor_mini_recordings_helper">Videos recorded with ServaCam from your active storage location</string>
     <string name="setting_audio_title">Audio Recording</string>
     <string name="note_audio">Enable or disable audio recording for videos.\n(Default: Enabled)</string>
     <string name="button_audio_settings">Audio Settings</string>
@@ -1374,7 +1379,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="support_ko_fi">Support us on Ko-fi</string>
     <string name="kofi_description">Description will be set in code.</string>
     <string name="kofi_button_text">Buy me a Ko-fi</string>
-    <string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
+    <string name="kofi_footer_text">Made with    at ServaLabs in   </string>
 
     <string name="setting_audio_input_source_title">Audio Input Source</string>
     <string name="setting_audio_input_source_status_default">Phone Microphone</string>
@@ -1460,7 +1465,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <string name="version_format">v%s</string>
 
-    <string name="edit_with_faditorx">Edit with Faditor Mini</string>
+    <string name="edit_with_editor_minix">Edit with Editor Mini</string>
     <string name="remote_coming_soon_badge">Coming Soon</string>
 
     <!-- Update Bottom Sheet Strings -->
@@ -1503,7 +1508,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
     <string name="app_icon_pakistan" translatable="false">ServaCam</string>
-    <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
+    <string name="app_icon_servalabs" translatable="false">ServaLabs</string>
     <string name="app_icon_noor" translatable="false">Noor</string>
     <string name="app_icon_bat" translatable="false">ServaCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
@@ -1930,37 +1935,37 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="manage_projects">Manage Projects</string>
     <string name="name_your_project">Name Your Project</string>
     <string name="project_naming_message">Give your project a memorable name and description to organize your recordings</string>
-    <string name="fadrec_projects">FadRec Projects</string>
+    <string name="servarec_projects">ServaRec Projects</string>
     <string name="delete_project">Delete Project</string>
     <string name="delete_all">Delete All</string>
     <string name="new_project">New Project</string>
     <string name="delete">Delete</string>
 
     <!-- ServaCam Pro Strings -->
-    <string name="fadcam_pro_title">ServaCam Pro</string>
-    <string name="fadcam_pro_subtitle">Premium features for complete discretion</string>
-    <string name="fadcam_pro_get_button">Get ServaCam Pro</string>
-    <string name="fadcam_pro_free">Free</string>
-    <string name="fadcam_pro_column_label">Pro</string>
-    <string name="fadcam_pro_proplus_label">Pro+</string>
-    <string name="fadcam_pro_lab_label">Lab</string>
-    <string name="fadcam_pro_plus_label">Pro</string>
-    <string name="fadcam_pro_early_bird">🎉 Free until December 23, 2025! After that, get lifetime access for just $15.</string>
-    <string name="fadcam_pro_paid_offer">After December 23, 2025, get Lifetime Access for $15 — one-time payment, forever updates.</string>
-    <string name="fadcam_pro_benefit_early_access">Early access: Get the latest version before public release</string>
-    <string name="fadcam_pro_benefit_lifetime_updates">Lifetime updates: Always receive new features, improvements, and bug fixes</string>
-    <string name="fadcam_pro_benefit_support">Instant support: Direct help through tickets via Discord</string>
-    <string name="fadcam_pro_coming_soon">Pro+ and Lab features coming soon with custom icon uploads, custom app names, and FadDrive cloud sync.</string>
-    <string name="fadcam_pro_support_message">ServaCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing time and work. Upgrading to Pro (currently free) helps support development, and in return I’m able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)</string>
-    <string name="fadcam_pro_separate_apk">Standalone app • Works alongside ServaCam</string>
-    <string name="fadcam_pro_feature_everything_icon">Everything</string>
-    <string name="fadcam_pro_feature_everything">Everything</string>
-    <string name="fadcam_pro_feature_custom_icon">Custom App Icon</string>
-    <string name="fadcam_pro_feature_notification_icon">Notification Discreet Icon</string>
-    <string name="fadcam_pro_feature_user_icon">User Uploaded Icon</string>
-    <string name="fadcam_pro_feature_app_name">Custom App Name</string>
-    <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="servacam_pro_title">ServaCam Pro</string>
+    <string name="servacam_pro_subtitle">Premium features for complete discretion</string>
+    <string name="servacam_pro_get_button">Get ServaCam Pro</string>
+    <string name="servacam_pro_free">Free</string>
+    <string name="servacam_pro_column_label">Pro</string>
+    <string name="servacam_pro_proplus_label">Pro+</string>
+    <string name="servacam_pro_lab_label">Lab</string>
+    <string name="servacam_pro_plus_label">Pro</string>
+    <string name="servacam_pro_early_bird">🎉 Free until December 23, 2025! After that, get lifetime access for just $15.</string>
+    <string name="servacam_pro_paid_offer">After December 23, 2025, get Lifetime Access for $15 — one-time payment, forever updates.</string>
+    <string name="servacam_pro_benefit_early_access">Early access: Get the latest version before public release</string>
+    <string name="servacam_pro_benefit_lifetime_updates">Lifetime updates: Always receive new features, improvements, and bug fixes</string>
+    <string name="servacam_pro_benefit_support">Instant support: Direct help through tickets via Discord</string>
+    <string name="servacam_pro_coming_soon">Pro+ and Lab features coming soon with custom icon uploads, custom app names, and ServaDrive cloud sync.</string>
+    <string name="servacam_pro_support_message">ServaCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing time and work. Upgrading to Pro (currently free) helps support development, and in return I’m able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)</string>
+    <string name="servacam_pro_separate_apk">Standalone app • Works alongside ServaCam</string>
+    <string name="servacam_pro_feature_everything_icon">Everything</string>
+    <string name="servacam_pro_feature_everything">Everything</string>
+    <string name="servacam_pro_feature_custom_icon">Custom App Icon</string>
+    <string name="servacam_pro_feature_notification_icon">Notification Discreet Icon</string>
+    <string name="servacam_pro_feature_user_icon">User Uploaded Icon</string>
+    <string name="servacam_pro_feature_app_name">Custom App Name</string>
+    <string name="servacam_pro_feature_servadrive">ServaDrive Cloud Sync</string>
+    <string name="servacam_pro_header_button">Pro</string>
 
     <!-- Video Player Info Bottom Sheet -->
     <string name="player_info_title">About the Video Player</string>
@@ -2092,8 +2097,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="preview_dual_not_supported">Preview-only works on front/back cameras only</string>
     <string name="preview_enable_hint">Hold to wake up the camera</string>
     <string name="preview_starting">Starting live preview...</string>
-    <string name="fadrec_preview_enable_hint">Hold to show preview</string>
-    <string name="fadrec_preview_not_available">Live screen preview is not wired into FadRec yet</string>
+    <string name="servarec_preview_enable_hint">Hold to show preview</string>
+    <string name="servarec_preview_not_available">Live screen preview is not wired into ServaRec yet</string>
     <string name="torch_unavailable">Torch unavailable for this camera</string>
 
     <!-- Motion Lab -->
@@ -2158,7 +2163,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <!-- Home sidebar branding -->
     <string name="home_sidebar_discord">Discord</string>
     <string name="home_sidebar_discord_sub">Join the community</string>
-    <string name="home_sidebar_copyright" translatable="false">© FadSec Lab 2024 – 2026</string>
+    <string name="home_sidebar_copyright" translatable="false">© ServaLabs 2024 – 2026</string>
 
     <!-- Privacy Black Mode Settings -->
     <string name="privacy_black_mode_title">Privacy Black Screen</string>
@@ -2204,8 +2209,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="watch_pause_desc">Pause or resume recording</string>
     <string name="watch_fullscreen_label">View</string>
     <string name="watch_fullscreen_desc">Fullscreen</string>
-    <string name="watch_fadshot_label">Shot</string>
-    <string name="watch_fadshot_desc">Take photo</string>
+    <string name="watch_servashot_label">Shot</string>
+    <string name="watch_servashot_desc">Take photo</string>
     <string name="watch_trash_title">Recently Deleted</string>
     <string name="watch_trash_empty">Nothing deleted</string>
     <string name="watch_trash_delete_all">Delete All</string>
@@ -2214,7 +2219,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="watch_fullscreen_hint">Camera is recording</string>
     <string name="watch_fullscreen_not_recording">Not recording</string>
 
-    <!-- Screen Recording Settings (FadRec) -->
+    <!-- Screen Recording Settings (ServaRec) -->
     <string name="screen_rec_settings_title">Screen Recording</string>
     <string name="screen_rec_settings_subtitle">Quality, audio &amp; output settings</string>
     <string name="screen_rec_resolution">Resolution</string>

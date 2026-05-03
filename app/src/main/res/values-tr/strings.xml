@@ -3,7 +3,7 @@
     <string name="auto_delete_immediate">Anında</string>
     <string name="trash_auto_delete_info_immediate">Öğeler anında silinir.</string>
     <string name="check_for_updates">Güncellemeleri Kontrol Et</string>
-    <string name="fadsec_info">ServaCam, FadSec Lab paketinin bir parçasıdır. Daha fazla bilgi için aşağıda \'kaynak kodu görüntüle\' seçeneğine tıklayın.</string>
+    <string name="servalabs_info">ServaCam, ServaLabs paketinin bir parçasıdır. Daha fazla bilgi için aşağıda \'kaynak kodu görüntüle\' seçeneğine tıklayın.</string>
     <string name="app_description">
     <![CDATA[
     ServaCam, herhangi bir veri izleme veya toplama yapmadan gizliliğe öncelik veren, reklamsız ve açık kaynaklı bir video kayıt uygulamasıdır. Yalnızca GitHub ve README\'de belirtilen resmi bağlantılar üzerinden erişilebilir.
@@ -17,7 +17,7 @@
     <string name="send_email">E-posta gönder</string>
     <string name="join_community">Yardım, fikir paylaşımı ve gelecek uygulama güncellemeleri için topluluğa katıl</string>
     <string name="privacy_information">Gizlilik Bilgileri</string>
-    <string name="copyright_info"> 2024 https://fadcam.faded.dev\nGPL-3.0 lisansı altında</string>
+    <string name="copyright_info"> 2024 https://servacam.faded.dev\nGPL-3.0 lisansı altında</string>
     <string-array name="video_resolutions_keys">
         <item>7680x4320</item>
         <!-- 8K -->
@@ -187,7 +187,7 @@
     <string name="discord_title">Discord Sunucusu</string>
     <string name="thankyou_msg">ServaCam\'i kullandığınız için teşekkür ederiz!</string>
     <string name="settings_title">Ayarlar</string>
-    <string name="array_watermark_time_fadcam">ServaCam ile Zaman</string>
+    <string name="array_watermark_time_servacam">ServaCam ile Zaman</string>
     <string name="array_watermark_timeonly">Zaman Damgası</string>
     <string name="array_watermark_nomark">Filigran Yok</string>
     <string name="toast_video_not_found">Hata: Video bulunamadı</string>

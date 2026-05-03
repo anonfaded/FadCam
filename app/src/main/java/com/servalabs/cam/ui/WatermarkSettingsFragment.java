@@ -52,11 +52,11 @@ public class WatermarkSettingsFragment extends Fragment {
     private TextView valueCustomText;
     private TextView valueLocationFormat;
     private TextView valueLocationInterval;
-    /** 0 = ServaCam page, 1 = FadRec page */
+    /** 0 = ServaCam page, 1 = ServaRec page */
     private int currentPreviewPage = 0;
     private ViewPager2 previewPager;
     private PreviewPagerAdapter previewAdapter;
-    private View dotServaCam, dotFadRec;
+    private View dotServaCam, dotServaRec;
     private LocationHelper locationHelper;
     private ActivityResultLauncher<String> permissionLauncher;
     private Runnable pendingGrantAction;
@@ -118,8 +118,8 @@ public class WatermarkSettingsFragment extends Fragment {
         
         // Setup preview pager (ViewPager2 — snappy paging)
         previewPager = view.findViewById(R.id.preview_pager);
-        dotServaCam = view.findViewById(R.id.dot_fadcam);
-        dotFadRec = view.findViewById(R.id.dot_fadrec);
+        dotServaCam = view.findViewById(R.id.dot_servacam);
+        dotServaRec = view.findViewById(R.id.dot_servarec);
         previewAdapter = new PreviewPagerAdapter();
         if (previewPager != null) {
             previewPager.setAdapter(previewAdapter);
@@ -277,8 +277,8 @@ public class WatermarkSettingsFragment extends Fragment {
             }
         });
         java.util.ArrayList<com.servalabs.cam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
-    items.add(new com.servalabs.cam.ui.picker.OptionItem("timestamp_fadcam", getString(R.string.watermark_style_time_fadcam_label), (String) null));
-    items.add(new com.servalabs.cam.ui.picker.OptionItem("badge_fadcam", getString(R.string.watermark_style_badge_label), (String) null));
+    items.add(new com.servalabs.cam.ui.picker.OptionItem("timestamp_servacam", getString(R.string.watermark_style_time_servacam_label), (String) null));
+    items.add(new com.servalabs.cam.ui.picker.OptionItem("badge_servacam", getString(R.string.watermark_style_badge_label), (String) null));
     items.add(new com.servalabs.cam.ui.picker.OptionItem("timestamp", getString(R.string.watermark_style_timeonly_label), (String) null));
     items.add(new com.servalabs.cam.ui.picker.OptionItem("no_watermark", getString(R.string.watermark_style_none_label), (String) null));
         String current = prefs.getWatermarkOption();
@@ -290,8 +290,8 @@ public class WatermarkSettingsFragment extends Fragment {
     private void refreshWatermarkStyleValue(){
         if(valueWatermarkStyle==null) return;
         String v = prefs.getWatermarkOption();
-        if("timestamp_fadcam".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_time_fadcam_label));
-        else if("badge_fadcam".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_badge_label));
+        if("timestamp_servacam".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_time_servacam_label));
+        else if("badge_servacam".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_badge_label));
         else if("timestamp".equals(v)) valueWatermarkStyle.setText(getString(R.string.watermark_style_timeonly_label));
         else valueWatermarkStyle.setText(getString(R.string.watermark_style_none_label));
     }
@@ -313,10 +313,10 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     private void updateDots(int page) {
-        if (dotServaCam != null && dotFadRec != null) {
+        if (dotServaCam != null && dotServaRec != null) {
             dotServaCam.setBackgroundResource(page == 0
                     ? R.drawable.indicator_dot_active : R.drawable.indicator_dot_inactive);
-            dotFadRec.setBackgroundResource(page == 1
+            dotServaRec.setBackgroundResource(page == 1
                     ? R.drawable.indicator_dot_active : R.drawable.indicator_dot_inactive);
         }
     }
@@ -326,28 +326,28 @@ public class WatermarkSettingsFragment extends Fragment {
         String formatted = "10/Jul/2024 04:47:00 PM"; // static sample
 
         // Build ServaCam preview text — [FADCAM_ICON] triggers ImageSpan in adapter
-        String fadcamBase = null;
-        if ("timestamp_fadcam".equals(v)) {
-            fadcamBase = "Captured by [FADCAM_ICON] - " + formatted;
-        } else if ("badge_fadcam".equals(v)) {
-            fadcamBase = "Captured by [FADCAM_ICON]";
+        String servacamBase = null;
+        if ("timestamp_servacam".equals(v)) {
+            servacamBase = "Captured by - " + formatted;
+        } else if ("badge_servacam".equals(v)) {
+            servacamBase = "Captured by";
         } else if ("timestamp".equals(v)) {
-            fadcamBase = formatted;
+            servacamBase = formatted;
         }
 
-        // Build FadRec preview text — [ICON] triggers ImageSpan in adapter
-        String fadrecBase = null;
-        if ("timestamp_fadcam".equals(v)) {
-            fadrecBase = "Recorded by [ICON] - " + formatted;
-        } else if ("badge_fadcam".equals(v)) {
-            fadrecBase = "Recorded by [ICON]";
+        // Build ServaRec preview text — [ICON] triggers ImageSpan in adapter
+        String servarecBase = null;
+        if ("timestamp_servacam".equals(v)) {
+            servarecBase = "Recorded by [ICON] - " + formatted;
+        } else if ("badge_servacam".equals(v)) {
+            servarecBase = "Recorded by [ICON]";
         } else if ("timestamp".equals(v)) {
-            fadrecBase = formatted;
+            servarecBase = formatted;
         }
 
         TextView helper = getView() != null ? getView().findViewById(R.id.text_preview_helper) : null;
 
-        if (fadcamBase == null) {
+        if (servacamBase == null) {
             if (previewAdapter != null) {
                 previewAdapter.setContent(
                         getString(R.string.watermark_preview_funny),
@@ -365,21 +365,21 @@ public class WatermarkSettingsFragment extends Fragment {
             String locationLines = "address".equals(format)
                     ? "\nLat= 48.XXX, Lon= 2.XXX\nMain Street, Sample City, Region, Country"
                     : "\nLat= 48.XXX, Lon= 2.XXX";
-            fadcamBase += locationLines;
-            fadrecBase += locationLines;
+            servacamBase += locationLines;
+            servarecBase += locationLines;
         }
 
         // Append custom text
         String customText = prefs.getWatermarkCustomText();
         if (customText != null && !customText.isEmpty()) {
-            fadcamBase += "\n" + customText;
-            fadrecBase += "\n" + customText;
+            servacamBase += "\n" + customText;
+            servarecBase += "\n" + customText;
         }
 
         if (previewAdapter != null) {
-            previewAdapter.setContent(fadcamBase, fadrecBase,
+            previewAdapter.setContent(servacamBase, servarecBase,
                     buildIconDrawable(R.drawable.menu_icon_unknown),
-                    buildIconDrawable(R.drawable.fadrec));
+                    buildIconDrawable(R.drawable.servarec));
         }
     }
 
@@ -540,20 +540,20 @@ public class WatermarkSettingsFragment extends Fragment {
     // ---- Inner adapter for the preview ViewPager2 ----
 
     /**
-     * Two-page adapter: page 0 = ServaCam preview, page 1 = FadRec preview.
+     * Two-page adapter: page 0 = ServaCam preview, page 1 = ServaRec preview.
      * Content is set via {@link #setContent} and pages update themselves via
      * {@link RecyclerView.Adapter#notifyItemChanged}.
      */
     private class PreviewPagerAdapter extends RecyclerView.Adapter<PreviewPagerAdapter.VH> {
 
-        private CharSequence fadcamContent = "";
-        private CharSequence fadrecContent = "";
+        private CharSequence servacamContent = "";
+        private CharSequence servarecContent = "";
 
-        void setContent(String fadcamText, String fadrecRaw,
-                        @Nullable Drawable fadcamIconDrawable,
-                        @Nullable Drawable fadrecIconDrawable) {
-            fadcamContent = buildSpannable(fadcamText, "[FADCAM_ICON]", fadcamIconDrawable, "ServaCam");
-            fadrecContent = buildSpannable(fadrecRaw, "[ICON]", fadrecIconDrawable, "FadRec");
+        void setContent(String servacamText, String servarecRaw,
+                        @Nullable Drawable servacamIconDrawable,
+                        @Nullable Drawable servarecIconDrawable) {
+            servacamContent = buildSpannable(servacamText, "[FADCAM_ICON]", servacamIconDrawable, "ServaCam");
+            servarecContent = buildSpannable(servarecRaw, "[ICON]", servarecIconDrawable, "ServaRec");
             notifyItemChanged(0);
             notifyItemChanged(1);
         }
@@ -584,7 +584,7 @@ public class WatermarkSettingsFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull VH holder, int position) {
-            holder.text.setText(position == 0 ? fadcamContent : fadrecContent);
+            holder.text.setText(position == 0 ? servacamContent : servarecContent);
         }
 
         @Override

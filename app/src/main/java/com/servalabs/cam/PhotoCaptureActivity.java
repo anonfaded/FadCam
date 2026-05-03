@@ -121,7 +121,7 @@ public class PhotoCaptureActivity extends ComponentActivity {
                 provider.bindToLifecycle(this, selector, imageCapture);
                 final PhotoStorageHelper.ShotSource finalShotSource = shotSource;
 
-                File temp = File.createTempFile("fadshot_", ".jpg", getCacheDir());
+                File temp = File.createTempFile("servashot_", ".jpg", getCacheDir());
                 ImageCapture.OutputFileOptions opts = new ImageCapture.OutputFileOptions.Builder(temp).build();
                 imageCapture.takePicture(opts, cameraExecutor, new ImageCapture.OnImageSavedCallback() {
                     @Override

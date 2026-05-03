@@ -343,12 +343,17 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Wear OS routing - Redirect to WatchMainActivity if on a watch
+        if (com.servalabs.cam.utils.RuntimeCompat.shouldUseWatchUi(this)) {
+            startActivity(new Intent(this, com.servalabs.cam.ui.WatchMainActivity.class));
+            finish();
+            super.onCreate(savedInstanceState);
+            return;
+        }
+
         super.onCreate(savedInstanceState);
         swipeTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
-        // Install splash screen (shows the themed windowSplashScreenAnimatedIcon)
-        SplashScreen.installSplashScreen(this);
-        // Apply user-selected theme AFTER splash so postSplashScreenTheme replaced by
-        // dynamic choice
+        // Apply user-selected theme directly (splash removed)
         applyTheme();
 
         // possible)-----------
@@ -1389,16 +1394,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Apply the appropriate theme based on name
-        if ("Faded Night".equals(themeName) ||
+        if ("Serva Night".equals(themeName) ||
                 "AMOLED".equals(themeName) ||
                 "Amoled".equals(themeName) ||
                 "amoled".equals(themeName)) {
             setTheme(R.style.Theme_ServaCam_Amoled);
 
-            // Standardize theme name to "Faded Night"
-            if (!"Faded Night".equals(themeName)) {
+            // Standardize theme name to "Serva Night"
+            if (!"Serva Night".equals(themeName)) {
                 sharedPreferencesManager.sharedPreferences.edit()
-                        .putString(Constants.PREF_APP_THEME, "Faded Night")
+                        .putString(Constants.PREF_APP_THEME, "Serva Night")
                         .apply();
             }
 
@@ -1483,7 +1488,7 @@ public class MainActivity extends AppCompatActivity {
         // Apply appropriate theme based on name
         if ("Crimson Bloom".equals(themeName)) {
             setTheme(R.style.Theme_ServaCam_Red);
-        } else if ("Faded Night".equals(themeName)) {
+        } else if ("Serva Night".equals(themeName)) {
             setTheme(R.style.Theme_ServaCam_Amoled);
         } else if ("Midnight Dusk".equals(themeName)) {
             setTheme(R.style.Theme_ServaCam_MidnightDusk); // Always use the custom always-dark theme
@@ -1720,8 +1725,8 @@ public class MainActivity extends AppCompatActivity {
     
     private int currentFragmentPosition = -1; // -1 means no fragment loaded yet
     private static final String FRAGMENT_TAG_PREFIX = "tab_fragment_";
-    private static final String HOME_FRAGMENT_TAG_FADCAM = FRAGMENT_TAG_PREFIX + "0_fadcam";
-    private static final String HOME_FRAGMENT_TAG_FADREC = FRAGMENT_TAG_PREFIX + "0_fadrec";
+    private static final String HOME_FRAGMENT_TAG_FADCAM = FRAGMENT_TAG_PREFIX + "0_servacam";
+    private static final String HOME_FRAGMENT_TAG_FADREC = FRAGMENT_TAG_PREFIX + "0_servarec";
 
     private String getHomeFragmentTagForCurrentMode() {
         String currentMode = sharedPreferencesManager.getCurrentRecordingMode();
@@ -1953,7 +1958,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Force recreate the fragment at the specified position.
-     * Used for mode switching (ServaCam <-> FadRec) where the fragment class changes
+     * Used for mode switching (ServaCam <-> ServaRec) where the fragment class changes
      * but the position stays the same.
      * @param position Tab position to recreate
      */

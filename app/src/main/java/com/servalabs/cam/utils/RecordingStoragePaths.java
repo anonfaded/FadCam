@@ -38,7 +38,7 @@ public final class RecordingStoragePaths {
         DUAL
     }
 
-    public enum FaditorOutputType {
+    public enum EditorMiniOutputType {
         CONVERTED,
         MERGE
     }
@@ -108,7 +108,7 @@ public final class RecordingStoragePaths {
     }
 
     @NonNull
-    public static String folderNameForFaditorOutput(@Nullable FaditorOutputType outputType) {
+    public static String folderNameForEditorMiniOutput(@Nullable EditorMiniOutputType outputType) {
         if (outputType == null) return Constants.RECORDING_SUBDIR_FADITOR_CONVERTED;
         switch (outputType) {
             case MERGE:
@@ -171,15 +171,15 @@ public final class RecordingStoragePaths {
     }
 
     @Nullable
-    public static File getInternalFaditorOutputDir(
+    public static File getInternalEditorMiniOutputDir(
             @NonNull Context context,
-            @Nullable FaditorOutputType outputType,
+            @Nullable EditorMiniOutputType outputType,
             boolean createIfMissing
     ) {
-        File faditorRoot = getInternalCategoryDir(context, Category.FADITOR, createIfMissing);
-        if (faditorRoot == null) return null;
-        String sourceFolder = folderNameForFaditorOutput(outputType);
-        File sourceDir = new File(faditorRoot, sourceFolder);
+        File editor_miniRoot = getInternalCategoryDir(context, Category.FADITOR, createIfMissing);
+        if (editor_miniRoot == null) return null;
+        String sourceFolder = folderNameForEditorMiniOutput(outputType);
+        File sourceDir = new File(editor_miniRoot, sourceFolder);
         if (!sourceDir.exists() && createIfMissing && !sourceDir.mkdirs()) return null;
         return sourceDir;
     }
@@ -236,15 +236,15 @@ public final class RecordingStoragePaths {
     }
 
     @Nullable
-    public static DocumentFile getSafFaditorOutputDir(
+    public static DocumentFile getSafEditorMiniOutputDir(
             @NonNull Context context,
             @Nullable String treeUriString,
-            @Nullable FaditorOutputType outputType,
+            @Nullable EditorMiniOutputType outputType,
             boolean createIfMissing
     ) {
-        DocumentFile faditorRoot = getSafCategoryDir(context, treeUriString, Category.FADITOR, createIfMissing);
-        if (faditorRoot == null) return null;
-        return findOrCreateChildDirectory(faditorRoot, folderNameForFaditorOutput(outputType), createIfMissing);
+        DocumentFile editor_miniRoot = getSafCategoryDir(context, treeUriString, Category.FADITOR, createIfMissing);
+        if (editor_miniRoot == null) return null;
+        return findOrCreateChildDirectory(editor_miniRoot, folderNameForEditorMiniOutput(outputType), createIfMissing);
     }
 
     @Nullable

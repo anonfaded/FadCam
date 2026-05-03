@@ -40,7 +40,7 @@ public class VideoItem {
         UNKNOWN
     }
 
-    public enum FaditorSubtype {
+    public enum EditorMiniSubtype {
         ALL,
         CONVERTED,
         MERGE,
@@ -56,7 +56,7 @@ public class VideoItem {
     public final MediaType mediaType; // video or image
     public final ShotSubtype shotSubtype; // Shot source (for image shot filtering/badging)
     public final CameraSubtype cameraSubtype; // Camera source (for camera sub-filtering)
-    public final FaditorSubtype faditorSubtype; // Faditor source (converted/merge/other)
+    public final EditorMiniSubtype editor_miniSubtype; // EditorMini source (converted/merge/other)
 
     public boolean isTemporary = false;
     public boolean isNew = false;
@@ -65,12 +65,12 @@ public class VideoItem {
 
     public VideoItem(Uri uri, String displayName, long size, long lastModified) {
         this(uri, displayName, size, lastModified, Category.UNKNOWN, MediaType.VIDEO, ShotSubtype.UNKNOWN,
-                CameraSubtype.UNKNOWN, FaditorSubtype.UNKNOWN);
+                CameraSubtype.UNKNOWN, EditorMiniSubtype.UNKNOWN);
     }
 
     public VideoItem(Uri uri, String displayName, long size, long lastModified, Category category) {
         this(uri, displayName, size, lastModified, category, MediaType.VIDEO, ShotSubtype.UNKNOWN,
-                CameraSubtype.UNKNOWN, FaditorSubtype.UNKNOWN);
+                CameraSubtype.UNKNOWN, EditorMiniSubtype.UNKNOWN);
     }
 
     public VideoItem(
@@ -90,7 +90,7 @@ public class VideoItem {
                 mediaType,
                 ShotSubtype.UNKNOWN,
                 CameraSubtype.UNKNOWN,
-                FaditorSubtype.UNKNOWN);
+                EditorMiniSubtype.UNKNOWN);
     }
 
     public VideoItem(
@@ -111,7 +111,7 @@ public class VideoItem {
                 mediaType,
                 shotSubtype,
                 CameraSubtype.UNKNOWN,
-                FaditorSubtype.UNKNOWN);
+                EditorMiniSubtype.UNKNOWN);
     }
 
     public VideoItem(
@@ -133,7 +133,7 @@ public class VideoItem {
                 mediaType,
                 shotSubtype,
                 cameraSubtype,
-                FaditorSubtype.UNKNOWN);
+                EditorMiniSubtype.UNKNOWN);
     }
 
     public VideoItem(
@@ -145,7 +145,7 @@ public class VideoItem {
         MediaType mediaType,
         ShotSubtype shotSubtype,
         CameraSubtype cameraSubtype,
-        FaditorSubtype faditorSubtype
+        EditorMiniSubtype editor_miniSubtype
     ) {
         this.uri = uri;
         this.displayName = displayName;
@@ -155,7 +155,7 @@ public class VideoItem {
         this.mediaType = mediaType == null ? MediaType.VIDEO : mediaType;
         this.shotSubtype = shotSubtype == null ? ShotSubtype.UNKNOWN : shotSubtype;
         this.cameraSubtype = cameraSubtype == null ? CameraSubtype.UNKNOWN : cameraSubtype;
-        this.faditorSubtype = faditorSubtype == null ? FaditorSubtype.UNKNOWN : faditorSubtype;
+        this.editor_miniSubtype = editor_miniSubtype == null ? EditorMiniSubtype.UNKNOWN : editor_miniSubtype;
     }
     
     /**
@@ -196,7 +196,7 @@ public class VideoItem {
                 ", mediaType=" + mediaType +
                 ", shotSubtype=" + shotSubtype +
                 ", cameraSubtype=" + cameraSubtype +
-                ", faditorSubtype=" + faditorSubtype +
+                ", editor_miniSubtype=" + editor_miniSubtype +
                 '}';
     }
 }

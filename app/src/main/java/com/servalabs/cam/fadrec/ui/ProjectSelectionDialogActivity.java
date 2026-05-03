@@ -30,7 +30,7 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * Dialog activity for browsing and managing all FadRec projects.
+ * Dialog activity for browsing and managing all ServaRec projects.
  * Shows list of projects with names, descriptions, and metadata.
  */
 public class ProjectSelectionDialogActivity extends Activity {
@@ -74,7 +74,7 @@ public class ProjectSelectionDialogActivity extends Activity {
         
         // Add project items
         for (File projectFile : projectFiles) {
-            String fileName = projectFile.getName().replace(".fadrec", "");
+            String fileName = projectFile.getName().replace(".servarec", "");
             View projectItem = createProjectItem(fileName, projectFile);
             container.addView(projectItem);
         }

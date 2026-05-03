@@ -253,7 +253,7 @@ public class HomeFragment extends BaseFragment {
     private MaterialCardView cardElapsedHero;
     private ConstraintLayout homeRootLayout;
     private ImageView tvElapsedStateIcon;
-    private ImageView ivElapsedAccent;
+
     private LinearLayout layoutElapsedContent;
     private LinearLayout layoutElapsedMetaRow;
     private View rowStorageAvailable;
@@ -664,7 +664,7 @@ public class HomeFragment extends BaseFragment {
             boolean isAmoledLocal =
                 "AMOLED".equalsIgnoreCase(themeName) ||
                 "Amoled".equalsIgnoreCase(themeName) ||
-                "Faded Night".equalsIgnoreCase(themeName);
+                "Serva Night".equalsIgnoreCase(themeName);
             int flashColor = isAmoledLocal
                 ? Color.parseColor("#232323")
                 : Color.parseColor("#302745");
@@ -1878,7 +1878,7 @@ public class HomeFragment extends BaseFragment {
             boolean isAmoledLocal =
                 "AMOLED".equalsIgnoreCase(themeName) ||
                 "Amoled".equalsIgnoreCase(themeName) ||
-                "Faded Night".equalsIgnoreCase(themeName);
+                "Serva Night".equalsIgnoreCase(themeName);
             if (buttonStartStop != null) {
                 applyButtonTransition(buttonStartStop, getString(R.string.button_start),
                         AppCompatResources.getDrawable(getContext(), R.drawable.play_button_rounded), () -> {
@@ -3925,7 +3925,7 @@ public class HomeFragment extends BaseFragment {
             currentTheme != null &&
             (currentTheme.equalsIgnoreCase("AMOLED") ||
                 currentTheme.equalsIgnoreCase("Amoled") ||
-                currentTheme.equalsIgnoreCase("Faded Night"));
+                currentTheme.equalsIgnoreCase("Serva Night"));
 
         // default) -----
         String lastTheme = sharedPreferencesManager.sharedPreferences.getString(
@@ -6067,27 +6067,17 @@ public class HomeFragment extends BaseFragment {
         );
         String currentDateEnglish = dateFormatEnglish.format(new Date());
 
-        // Update the date in Arabic (Islamic calendar)
-        String currentDateArabic = "N/A";
-        if (
-            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
-        ) {
-            HijrahDate hijrahDate = HijrahChronology.INSTANCE.dateNow();
-            DateTimeFormatter dateFormatterArabic = DateTimeFormatter.ofPattern(
-                "d MMMM yyyy",
-                new Locale("ar")
-            );
-            currentDateArabic = dateFormatterArabic.format(hijrahDate);
-        }
+        // Update the date in Arabic (Islamic calendar) - REMOVED
+        String currentDateArabic = "";
 
         // Set text visibility based on user choice
         String displayDateEnglish = displayOption == 1 || displayOption == 2 ? currentDateEnglish : "";
-        String displayDateArabic = displayOption == 2 ? currentDateArabic : "";
+        String displayDateArabic = "";
 
         boolean showEnglish = displayOption == 1 || displayOption == 2;
-        boolean showArabic = displayOption == 2;
+        boolean showArabic = false;
         tvDateEnglish.setVisibility(showEnglish ? View.VISIBLE : View.GONE);
-        tvDateArabic.setVisibility(showArabic ? View.VISIBLE : View.GONE);
+        tvDateArabic.setVisibility(View.GONE);
 
         if (displayOption == 0) {
             tvClock.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isLandscapeMode() ? 18f : 16f);
@@ -9616,7 +9606,7 @@ public class HomeFragment extends BaseFragment {
         if (ivAppTitle == null) return;
 
         // Only animate once per process session — skip if already played
-        // (e.g. returning after switching to FadRec/other mode).
+        // (e.g. returning after switching to ServaRec/other mode).
         if (sLogoAnimationPlayed) {
             ivAppTitle.setAlpha(1f);
             ivAppTitle.setTranslationY(0f);
@@ -9802,7 +9792,7 @@ public class HomeFragment extends BaseFragment {
         }
         cardElapsedHero = view.findViewById(R.id.cardElapsedHero);
         tvElapsedStateIcon = view.findViewById(R.id.tvElapsedStateIcon);
-        ivElapsedAccent = view.findViewById(R.id.ivElapsedAccent);
+
         layoutElapsedContent = view.findViewById(R.id.layoutElapsedContent);
         layoutElapsedMetaRow = view.findViewById(R.id.layoutElapsedMetaRow);
         rowStorageAvailable = view.findViewById(R.id.rowStorageAvailable);
@@ -9889,7 +9879,7 @@ public class HomeFragment extends BaseFragment {
         applyElapsedAlignmentPreference();
         applyElapsedSizePreference();
         applyElapsedFontPreference();
-        applyElapsedFlagPreference();
+
         applyStorageIndicatorStylePreference();
         applyStorageTotalVisibilityPreference();
         applyTimeLeftAccentPreference();
@@ -10937,7 +10927,7 @@ public class HomeFragment extends BaseFragment {
         // Check for AMOLED theme first (prioritize this check)
         if (
             "AMOLED".equals(themeName) ||
-            "Faded Night".equals(themeName) ||
+            "Serva Night".equals(themeName) ||
             "Amoled".equals(themeName) ||
             "amoled".equals(themeName)
         ) {
@@ -11183,13 +11173,13 @@ public class HomeFragment extends BaseFragment {
     }
 
     /**
-     * Apply Faded Night theme styling to recording control tiles
+     * Apply Serva Night theme styling to recording control tiles
      */
     private void applyFadedNightThemeToTiles() {
-        // Define the Faded Night surface color (same as used for cards)
+        // Define the Serva Night surface color (same as used for cards)
         int fadedNightSurface = Color.parseColor("#181A1B");
 
-        // Create a custom drawable with ripple effect for Faded Night theme
+        // Create a custom drawable with ripple effect for Serva Night theme
         android.graphics.drawable.GradientDrawable shape =
             new android.graphics.drawable.GradientDrawable();
         shape.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
@@ -11336,7 +11326,7 @@ public class HomeFragment extends BaseFragment {
     }
 
     /**
-     * Apply theme-specific colors to the mode switcher (ServaCam, FadRec, FadMic)
+     * Apply theme-specific colors to the mode switcher (ServaCam, ServaRec, ServaMic)
      */
     private void applyModeSwitcherTheming(String themeName) {
         try {
@@ -11348,13 +11338,13 @@ public class HomeFragment extends BaseFragment {
                 activeIndicator.setBackgroundResource(R.drawable.segment_active_background);
             }
 
-            View segmentServaCam = root.findViewById(R.id.segment_fadcam);
-            View segmentFadRec = root.findViewById(R.id.segment_fadrec);
-            View segmentFadMic = root.findViewById(R.id.segment_fadmic);
+            View segmentServaCam = root.findViewById(R.id.segment_servacam);
+            View segmentServaRec = root.findViewById(R.id.segment_servarec);
+            View segmentServaMic = root.findViewById(R.id.segment_servamic);
 
             if (segmentServaCam != null) segmentServaCam.setBackground(null);
-            if (segmentFadRec != null) segmentFadRec.setBackground(null);
-            if (segmentFadMic != null) segmentFadMic.setBackground(null);
+            if (segmentServaRec != null) segmentServaRec.setBackground(null);
+            if (segmentServaMic != null) segmentServaMic.setBackground(null);
         } catch (Exception e) {
             FLog.w(
                 "HomeFragment",
@@ -11703,13 +11693,7 @@ public class HomeFragment extends BaseFragment {
                 getString(R.string.home_elapsed_font_option),
                 getString(R.string.home_elapsed_font_option_desc),
                 null, null, R.drawable.ic_arrow_right, null, null, "font_download"));
-        items.add(new com.servalabs.cam.ui.picker.OptionItem(
-                "elapsed_flag",
-                getString(R.string.home_elapsed_flag_option),
-                getString(R.string.home_elapsed_flag_option_desc),
-                null, null, null, true,
-                sharedPreferencesManager != null && sharedPreferencesManager.sharedPreferences.getBoolean(Constants.PREF_HOME_ELAPSED_SHOW_FLAG, true),
-                "flag"));
+
         items.add(new com.servalabs.cam.ui.picker.OptionItem(
                 "elapsed_background",
                 getString(R.string.home_elapsed_background_option),
@@ -11732,19 +11716,7 @@ public class HomeFragment extends BaseFragment {
                         showElapsedSizeSheet();
                     } else if ("elapsed_font".equals(selected)) {
                         showElapsedFontSheet();
-                    } else if ("elapsed_flag".equals(selected)) {
-                        boolean enabled = bundle.getBoolean(
-                                com.servalabs.cam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE,
-                                true);
-                        if (sharedPreferencesManager != null) {
-                            sharedPreferencesManager.sharedPreferences.edit()
-                                    .putBoolean(Constants.PREF_HOME_ELAPSED_SHOW_FLAG, enabled)
-                                    .apply();
-                            sharedPreferencesManager.sharedPreferences.edit()
-                                    .remove(Constants.PREF_SCREEN_RECORDING_ELAPSED_TIME_LABELS)
-                                    .apply();
-                        }
-                        applyElapsedFlagPreference();
+
                     } else if ("elapsed_background".equals(selected)) {
                         showElapsedBackgroundSheet();
                     }
@@ -11988,57 +11960,7 @@ public class HomeFragment extends BaseFragment {
         sheet.show(getParentFragmentManager(), "home_elapsed_font_sheet");
     }
 
-    private void showElapsedFlagSheet() {
-        if (!isAdded() || getActivity() == null) return;
 
-        ArrayList<com.servalabs.cam.ui.picker.OptionItem> items = new ArrayList<>();
-        items.add(new com.servalabs.cam.ui.picker.OptionItem(
-                ELAPSED_FLAG_SHOW,
-                getString(R.string.home_elapsed_flag_show),
-                getString(R.string.home_elapsed_flag_show_desc),
-                null, null, null, null, null, "flag"));
-        items.add(new com.servalabs.cam.ui.picker.OptionItem(
-                ELAPSED_FLAG_HIDE,
-                getString(R.string.home_elapsed_flag_hide),
-                getString(R.string.home_elapsed_flag_hide_desc),
-                null, null, null, null, null, "hide_image"));
-
-        String selectedId = sharedPreferencesManager != null
-                ? (sharedPreferencesManager.sharedPreferences.getBoolean(
-                        Constants.PREF_HOME_ELAPSED_SHOW_FLAG, true)
-                        ? ELAPSED_FLAG_SHOW : ELAPSED_FLAG_HIDE)
-                : ELAPSED_FLAG_SHOW;
-
-        getParentFragmentManager().setFragmentResultListener(
-                ELAPSED_FLAG_RESULT_KEY,
-                getViewLifecycleOwner(),
-                (key, bundle) -> {
-                    if (bundle == null) return;
-                    String selected = bundle.getString(
-                            com.servalabs.cam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID,
-                            ELAPSED_FLAG_SHOW);
-                    if (sharedPreferencesManager != null) {
-                        sharedPreferencesManager.sharedPreferences.edit()
-                                .putBoolean(Constants.PREF_HOME_ELAPSED_SHOW_FLAG, ELAPSED_FLAG_SHOW.equals(selected))
-                                .apply();
-                    }
-                    applyElapsedFlagPreference();
-                });
-
-        com.servalabs.cam.ui.picker.PickerBottomSheetFragment sheet =
-                com.servalabs.cam.ui.picker.PickerBottomSheetFragment.newInstanceGradient(
-                        getString(R.string.home_elapsed_flag_option),
-                        items,
-                        selectedId,
-                        ELAPSED_FLAG_RESULT_KEY,
-                        getString(R.string.home_elapsed_flag_helper),
-                        true);
-        Bundle args = sheet.getArguments();
-        if (args != null) {
-            args.putBoolean(com.servalabs.cam.ui.picker.PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
-        }
-        sheet.show(getParentFragmentManager(), "home_elapsed_flag_sheet");
-    }
 
     private void showElapsedBackgroundSheet() {
         if (!isAdded() || getActivity() == null) return;
@@ -12450,18 +12372,7 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-    private void applyElapsedFlagPreference() {
-        if (sharedPreferencesManager == null || ivElapsedAccent == null) {
-            return;
-        }
-        boolean showFlag = sharedPreferencesManager.sharedPreferences.getBoolean(
-                Constants.PREF_HOME_ELAPSED_SHOW_FLAG,
-                true);
-        ivElapsedAccent.setVisibility(showFlag ? View.VISIBLE : View.GONE);
-        if (cardElapsedHero != null) {
-            cardElapsedHero.setMinimumHeight(dpToPxInt(isLandscapeMode() ? 46 : 48));
-        }
-    }
+
 
     private void applyStorageIndicatorStylePreference() {
         if (sharedPreferencesManager == null || storageProgressRing == null) {

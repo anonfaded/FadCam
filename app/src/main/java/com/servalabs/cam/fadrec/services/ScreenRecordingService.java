@@ -802,9 +802,9 @@ public class ScreenRecordingService extends Service {
             switch (watermarkOption) {
                 case "timestamp":
                     return timestamp + customLine;
-                case "badge_fadcam":
+                case "badge_servacam":
                     return "Recorded by <ICON>" + customLine;
-                case "timestamp_fadcam":
+                case "timestamp_servacam":
                 default:
                     return "Recorded by <ICON> - " + timestamp + customLine;
             }
@@ -1122,7 +1122,7 @@ public class ScreenRecordingService extends Service {
     }
 
     /**
-     * Creates output file with FadRec prefix.
+     * Creates output file with ServaRec prefix.
      * Supports both internal storage and custom storage location (SAF).
      * For custom storage, sets safRecordingPfd instead of returning a File.
      * @return File object for internal storage, or null for SAF mode (check safRecordingPfd)
@@ -1246,7 +1246,7 @@ public class ScreenRecordingService extends Service {
         
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("FadRec - Screen Recording")
+            .setContentTitle("ServaRec - Screen Recording")
             .setContentText(getNotificationText())
             .setSmallIcon(R.drawable.screen_recorder)
             .setContentIntent(pendingIntent)

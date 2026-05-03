@@ -45,7 +45,7 @@
         android:adjustViewBounds="true"
         android:layout_marginStart="64dp"
         android:layout_marginEnd="64dp"
-        android:src="@drawable/fadseclab"
+        android:src="@drawable/servalabs"
         android:layout_gravity="bottom|center_horizontal"
         android:contentDescription="@string/app_name"
         android:layout_marginBottom="8dp"

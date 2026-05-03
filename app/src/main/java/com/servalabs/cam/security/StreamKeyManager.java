@@ -32,7 +32,7 @@ import javax.crypto.spec.SecretKeySpec;
  *   password + user_uuid
  *       ↓  PBKDF2-SHA256, 600 000 iterations, 512-bit
  *   master_key (64 bytes)
- *       ↓  HKDF-SHA256  ("fadcam-stream-v1" || deviceId, 32 bytes)
+ *       ↓  HKDF-SHA256  ("servacam-stream-v1" || deviceId, 32 bytes)
  *   device_key  →  used by SegmentEncryptor for AES-256-GCM
  * </pre>
  *
@@ -44,7 +44,7 @@ public class StreamKeyManager {
 
     private static final String TAG = "StreamKeyManager";
     private static final String KEYSTORE_PROVIDER = "AndroidKeyStore";
-    private static final String KEYSTORE_ALIAS    = "fadcam_stream_e2e_wrap";
+    private static final String KEYSTORE_ALIAS    = "servacam_stream_e2e_wrap";
     private static final String PREFS_NAME        = "ServaCamE2EPrefs";
     private static final String KEY_BLOB          = "e2e_master_key_enc"; // Base64 iv||ciphertext||tag
     private static final int    GCM_IV_LEN        = 12;
@@ -76,11 +76,11 @@ public class StreamKeyManager {
      * Derive the master key from {@code password} + {@code userUuid}, verify it against
      * {@code expectedVerifyTag}, then persist it.
      *
-     * <p>The verify_tag is {@code HMAC-SHA256(master_key, "fadcam-e2e-v1")} stored in
+     * <p>The verify_tag is {@code HMAC-SHA256(master_key, "servacam-e2e-v1")} stored in
      * {@code public.users.e2e_verify_tag}. Providing it ensures the password is correct
      * before the key is ever stored — a wrong password throws {@link SecurityException}.
      *
-     * @param password          The user's FadSec ID password.
+     * @param password          The user's ServaLabs ID password.
      * @param userUuid          The user's UUID (PBKDF2 salt).
      * @param expectedVerifyTag 64-char hex tag fetched from Supabase, or {@code null} to skip
      *                          verification (not recommended; fails-open).
@@ -94,7 +94,7 @@ public class StreamKeyManager {
         byte[] masterKey = deriveMasterKey(password, userUuid);
 
         if (expectedVerifyTag != null && !expectedVerifyTag.isEmpty()) {
-            String computed = hmacHex(masterKey, "fadcam-e2e-v1");
+            String computed = hmacHex(masterKey, "servacam-e2e-v1");
             FLog.d(TAG, "Verifying E2E password against stored verify_tag…");
             if (!computed.equals(expectedVerifyTag)) {
                 FLog.e(TAG, "E2E password verification FAILED — verify_tag mismatch");
@@ -138,11 +138,11 @@ public class StreamKeyManager {
         if (masterKey == null) {
             throw new IllegalStateException("E2E master key is not initialised. Call initFromPassword() first.");
         }
-        return hkdfExpand(masterKey, "fadcam-stream-v1" + deviceId, 32);
+        return hkdfExpand(masterKey, "servacam-stream-v1" + deviceId, 32);
     }
 
     /**
-     * Compute HMAC-SHA256(master_key, "fadcam-e2e-v1") and return as lower-case hex.
+     * Compute HMAC-SHA256(master_key, "servacam-e2e-v1") and return as lower-case hex.
      * This is identical to the verify_tag stored in the Supabase {@code public.users} table.
      * Use it to verify that the user entered the correct password before storing.
      *
@@ -154,7 +154,7 @@ public class StreamKeyManager {
     @NonNull
     public String computeVerifyTag(@NonNull String password, @NonNull String userUuid) throws Exception {
         byte[] masterKey = deriveMasterKey(password, userUuid);
-        return hmacHex(masterKey, "fadcam-e2e-v1");
+        return hmacHex(masterKey, "servacam-e2e-v1");
     }
 
     /**
@@ -198,7 +198,7 @@ public class StreamKeyManager {
      * The {@code info} string provides domain separation per stream/device.
      *
      * @param prk         Pseudo-random key (the 64-byte master key used directly as PRK).
-     * @param info        Context string ("fadcam-stream-v1" + deviceId).
+     * @param info        Context string ("servacam-stream-v1" + deviceId).
      * @param outputBytes Number of bytes to output (≤ 32 for a single HMAC-SHA256 round).
      */
     @NonNull

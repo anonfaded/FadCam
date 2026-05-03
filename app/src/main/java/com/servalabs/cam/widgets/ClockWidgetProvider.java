@@ -155,19 +155,11 @@ public class ClockWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.clock_date, android.view.View.GONE);
         }
         
-        // Arabic date (independent of regular date setting)
-        if (prefs.showArabicDate()) {
-            String arabicDateFormat = prefs.getArabicDateFormat();
-            String arabicDate = ArabicDateUtils.getArabicDate(arabicDateFormat);
-            Bitmap arabicBmp = renderTextBitmap(context, arabicDate, arabicDateSizeSp, arabicColor, true, true, dateMaxWidth, ubuntu);
-            views.setImageViewBitmap(R.id.clock_date_arabic, arabicBmp);
-            views.setViewVisibility(R.id.clock_date_arabic, android.view.View.VISIBLE);
-        } else {
-            views.setViewVisibility(R.id.clock_date_arabic, android.view.View.GONE);
-        }
+        // Arabic date - REMOVED
+        views.setViewVisibility(R.id.clock_date_arabic, android.view.View.GONE);
         
-        // Show date_container if either regular date OR Arabic date is enabled
-        if (prefs.showDate() || prefs.showArabicDate()) {
+        // Show date_container if regular date is enabled
+        if (prefs.showDate()) {
             views.setViewVisibility(R.id.date_container, android.view.View.VISIBLE);
         } else {
             views.setViewVisibility(R.id.date_container, android.view.View.GONE);

@@ -92,7 +92,7 @@
     <shortcut
         android:id="@+id/capture_photo"
         android:enabled="true"
-        android:icon="@drawable/fadshot_shortcut"
+        android:icon="@drawable/servashot_shortcut"
         android:shortcutShortLabel="@string/shortcut_take_photo"
         android:shortcutLongLabel="@string/shortcut_take_photo">
         <intent
@@ -104,7 +104,7 @@
     <shortcut
         android:id="@+id/capture_photo_front"
         android:enabled="true"
-        android:icon="@drawable/fadshot_front_shortcut"
+        android:icon="@drawable/servashot_front_shortcut"
         android:shortcutShortLabel="@string/shortcut_take_photo_front"
         android:shortcutLongLabel="@string/shortcut_take_photo_front">
         <intent
@@ -120,7 +120,7 @@
     <shortcut
         android:id="@+id/capture_screenshot"
         android:enabled="true"
-        android:icon="@drawable/fadrec_screenshot_shortcut"
+        android:icon="@drawable/servarec_screenshot_shortcut"
         android:shortcutShortLabel="@string/shortcut_take_screenshot"
         android:shortcutLongLabel="@string/shortcut_take_screenshot">
         <intent

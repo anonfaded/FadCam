@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="check_for_updates">Controlla gli aggiornamenti</string>
-    <string name="fadsec_info">ServaCam fa parte della suite FadSec Lab. Per maggiori informazioni, clicca su \'Visualizza codice sorgente\' qui sotto.</string>
+    <string name="servalabs_info">ServaCam fa parte della suite ServaLabs. Per maggiori informazioni, clicca su \'Visualizza codice sorgente\' qui sotto.</string>
     <string name="app_description"><![CDATA[
 ServaCam è un\'app di registrazione video open source e senza pubblicità che dà priorità alla privacy non tracciando né raccogliendo alcun dato. È disponibile esclusivamente su GitHub e tramite i link ufficiali menzionati nel README.
 <br/><br/>
@@ -13,7 +13,7 @@ ServaCam è stato presentato in canali YouTube popolari come <font color=\"#cfba
     <string name="send_email">Invia email</string>
     <string name="join_community">Unisciti alla community per ricevere aiuto, condividere idee e futuri aggiornamenti dell\'app</string>
     <string name="privacy_information">Informativa sulla privacy</string>
-    <string name="copyright_info">© 2024 https://fadcam.faded.dev\nSotto licenza GPL-3.0</string>
+    <string name="copyright_info">© 2024 https://servacam.faded.dev\nSotto licenza GPL-3.0</string>
     <string name="mainpage_storage_indicator" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Disponibile :</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
@@ -73,7 +73,7 @@ ServaCam è stato presentato in canali YouTube popolari come <font color=\"#cfba
 (Predefinito: %1$s)
 Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 per la stessa qualità. Esempio: per FHD, usa 8 Mbps invece di 16 Mbps.</string>
     <string name="setting_watermark">Filigrana</string>
-    <string name="note_watermark">Seleziona l\'opzione filigrana (predefinita: timestamp con Fadcam)</string>
+    <string name="note_watermark">Seleziona l\'opzione filigrana (predefinita: timestamp con ServaCam)</string>
     <string name="note_watermark_extra">Per un backup rapido, seleziona \'Nessuno\'. Aggiungere una filigrana? Vale la pena aspettare, solo un po\' più a lungo per l\'elaborazione !</string>
     <string name="setting_location_title">Dati sulla posizione</string>
     <string name="note_location">Includi i dati sulla posizione nella filigrana. \nRichiede GPS abilitato\n(Predefinito: Disabilitato)</string>
@@ -143,7 +143,7 @@ Suggerimento: Con H.265 (HEVC) puoi usare circa la metà del bitrate di H.264 pe
     <string name="discord_title">Server Discord</string>
     <string name="thankyou_msg">Grazie per utilizzare ServaCam !</string>
     <string name="settings_title">Opzioni</string>
-    <string name="array_watermark_time_fadcam">Marca temporale con ServaCam</string>
+    <string name="array_watermark_time_servacam">Marca temporale con ServaCam</string>
     <string name="array_watermark_timeonly">Marca temporale</string>
     <string name="array_watermark_nomark">Nessuna</string>
     <string name="toast_video_not_found">Errore: video non trovato</string>

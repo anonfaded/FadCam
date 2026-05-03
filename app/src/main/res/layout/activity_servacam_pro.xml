@@ -6,7 +6,7 @@
     android:id="@+id/rootContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_fadcam_pro_gradient">
+    android:background="@drawable/bg_servacam_pro_gradient">
 
     <!-- Back Button -->
     <ImageView
@@ -76,7 +76,7 @@
             android:id="@+id/tvProTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/fadcam_pro_title"
+            android:text="@string/servacam_pro_title"
             android:textSize="24sp"
             android:textStyle="bold"
             android:textColor="@android:color/white"
@@ -87,7 +87,7 @@
             android:id="@+id/tvProSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/fadcam_pro_subtitle"
+            android:text="@string/servacam_pro_subtitle"
             android:textSize="13sp"
             android:textColor="#B0B0B0"
             android:gravity="center" />
@@ -132,7 +132,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/fadcam_pro_free"
+                        android:text="@string/servacam_pro_free"
                         android:textSize="9sp"
                         android:textColor="#808080"
                         android:gravity="center"
@@ -150,7 +150,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/fadcam_pro_column_label"
+                        android:text="@string/servacam_pro_column_label"
                         android:textSize="9sp"
                         android:textColor="#FFD700"
                         android:gravity="center"
@@ -168,7 +168,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/fadcam_pro_proplus_label"
+                        android:text="@string/servacam_pro_proplus_label"
                         android:textSize="8sp"
                         android:textColor="#FF6B6B"
                         android:gravity="center"
@@ -187,7 +187,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/fadcam_pro_lab_label"
+                        android:text="@string/servacam_pro_lab_label"
                         android:textSize="9sp"
                         android:textColor="#00BCD4"
                         android:gravity="center"
@@ -261,7 +261,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/fadcam_pro_early_bird"
+                        android:text="@string/servacam_pro_early_bird"
                         android:textSize="12sp"
                         android:textColor="#4CAF50"
                         android:lineSpacingExtra="2dp" />
@@ -299,7 +299,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/fadcam_pro_coming_soon"
+                        android:text="@string/servacam_pro_coming_soon"
                         android:textSize="12sp"
                         android:textColor="#FF6B6B"
                         android:lineSpacingExtra="2dp" />
@@ -327,7 +327,7 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginBottom="8dp"
-            android:text="@string/fadcam_pro_get_button"
+            android:text="@string/servacam_pro_get_button"
             android:textSize="15sp"
             android:textStyle="bold"
             android:textColor="#1A1A1A"
@@ -347,7 +347,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="@string/fadcam_pro_separate_apk"
+            android:text="@string/servacam_pro_separate_apk"
             android:textSize="11sp"
             android:textColor="#B0B0B0"
             android:gravity="center"
@@ -360,7 +360,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingHorizontal="0dp"
-            android:text="@string/fadcam_pro_support_message"
+            android:text="@string/servacam_pro_support_message"
             android:textSize="12sp"
             android:textColor="#B0B0B0"
             android:gravity="start"

@@ -21,7 +21,7 @@ import com.servalabs.cam.R;
 import com.servalabs.cam.SharedPreferencesManager;
 
 /**
- * Component for handling the mode switcher (ServaCam, FadRec, FadMic) functionality
+ * Component for handling the mode switcher (ServaCam, ServaRec, ServaMic) functionality
  * Follows modular design principles with clean separation of concerns
  * Features smooth animated transitions between modes
  */
@@ -36,8 +36,7 @@ public class ModeSwitcherComponent {
     
     // UI References
     private FrameLayout segmentServaCam;
-    private FrameLayout segmentFadRec;
-    private FrameLayout segmentFadMic;
+    private FrameLayout segmentServaRec;
     private FrameLayout switcherRoot;
     private View activeIndicator;
     private LinearLayout segmentsContainer;
@@ -71,9 +70,8 @@ public class ModeSwitcherComponent {
         try {
             isInitializing = true;
 
-            segmentServaCam = rootView.findViewById(R.id.segment_fadcam);
-            segmentFadRec = rootView.findViewById(R.id.segment_fadrec);
-            segmentFadMic = rootView.findViewById(R.id.segment_fadmic);
+            segmentServaCam = rootView.findViewById(R.id.segment_servacam);
+            segmentServaRec = rootView.findViewById(R.id.segment_servarec);
             switcherRoot = rootView.findViewById(R.id.mode_switcher_root);
             activeIndicator = rootView.findViewById(R.id.segment_active_indicator);
             segmentsContainer = rootView.findViewById(R.id.mode_switcher_segments);
@@ -89,38 +87,36 @@ public class ModeSwitcherComponent {
                     + " activeIndicator=" + (activeIndicator != null)
                     + " segmentsContainer=" + (segmentsContainer != null));
 
-            if (segmentServaCam == null || segmentFadRec == null || segmentFadMic == null) {
+            if (segmentServaCam == null || segmentServaRec == null) {
                 FLog.e(TAG, "Segment views missing");
                 return;
             }
 
-            // Show/hide FadRec NEW badge based on NewFeatureManager
-            View badgeFadRec = rootView.findViewById(R.id.badge_fadrec);
-            if (badgeFadRec != null) {
+            // Show/hide ServaRec NEW badge based on NewFeatureManager
+            View badgeServaRec = rootView.findViewById(R.id.badge_servarec);
+            if (badgeServaRec != null) {
                 try {
-                    boolean shouldShowFadRecBadge = com.servalabs.cam.ui.utils.NewFeatureManager.shouldShowBadge(context, "fadrec");
-                    badgeFadRec.setVisibility(shouldShowFadRecBadge ? View.VISIBLE : View.GONE);
-                    FLog.d(TAG, "FadRec badge visibility: " + (shouldShowFadRecBadge ? "VISIBLE" : "GONE"));
+                    boolean shouldShowServaRecBadge = com.servalabs.cam.ui.utils.NewFeatureManager.shouldShowBadge(context, "servarec");
+                    badgeServaRec.setVisibility(shouldShowServaRecBadge ? View.VISIBLE : View.GONE);
+                    FLog.d(TAG, "ServaRec badge visibility: " + (shouldShowServaRecBadge ? "VISIBLE" : "GONE"));
                 } catch (Exception e) {
-                    FLog.e(TAG, "Error managing FadRec badge visibility", e);
-                    badgeFadRec.setVisibility(View.GONE);
+                    FLog.e(TAG, "Error managing ServaRec badge visibility", e);
+                    badgeServaRec.setVisibility(View.GONE);
                 }
             }
 
             // Resolve persisted mode (fallback if invalid / coming soon)
             String persisted = sharedPreferencesManager.getCurrentRecordingMode();
-            if (Constants.MODE_FADMIC.equals(persisted) || Constants.MODE_FADREC.equals(persisted)) persisted = Constants.MODE_FADCAM;
+            if (Constants.MODE_FADREC.equals(persisted)) persisted = Constants.MODE_FADCAM;
             currentMode = persisted;
 
             segmentServaCam.setBackground(null);
-            segmentFadRec.setBackground(null);
-            segmentFadMic.setBackground(null);
+            segmentServaRec.setBackground(null);
 
             // Set text colors immediately (before view is shown) to prevent flicker
             // This must happen synchronously, not in post()
             android.widget.TextView tvServaCam = (android.widget.TextView) segmentServaCam.getChildAt(0);
-            android.widget.TextView tvFadRec = (android.widget.TextView) segmentFadRec.getChildAt(0);
-            android.widget.TextView tvFadMic = (android.widget.TextView) segmentFadMic.getChildAt(0);
+            android.widget.TextView tvServaRec = (android.widget.TextView) segmentServaRec.getChildAt(0);
             
             int whiteColor = ContextCompat.getColor(context, android.R.color.white);
             int grayColor = ContextCompat.getColor(context, R.color.amoled_text_secondary);
@@ -129,13 +125,9 @@ public class ModeSwitcherComponent {
                 tvServaCam.setTextColor(Constants.MODE_FADCAM.equals(currentMode) ? whiteColor : grayColor);
                 tvServaCam.setTypeface(null, Constants.MODE_FADCAM.equals(currentMode) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
             }
-            if (tvFadRec != null) {
-                tvFadRec.setTextColor(Constants.MODE_FADREC.equals(currentMode) ? whiteColor : grayColor);
-                tvFadRec.setTypeface(null, Constants.MODE_FADREC.equals(currentMode) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
-            }
-            if (tvFadMic != null) {
-                tvFadMic.setTextColor(Constants.MODE_FADMIC.equals(currentMode) ? whiteColor : grayColor);
-                tvFadMic.setTypeface(null, Constants.MODE_FADMIC.equals(currentMode) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+            if (tvServaRec != null) {
+                tvServaRec.setTextColor(Constants.MODE_FADREC.equals(currentMode) ? whiteColor : grayColor);
+                tvServaRec.setTypeface(null, Constants.MODE_FADREC.equals(currentMode) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
             }
 
             // Set backgrounds after text is set
@@ -180,35 +172,27 @@ public class ModeSwitcherComponent {
                 styleText(segmentServaCam, false, false);
                 FLog.d(TAG, "Deactivating ServaCam (was active)");
             } else if (Constants.MODE_FADREC.equals(previousMode) && !Constants.MODE_FADREC.equals(mode)) {
-                styleText(segmentFadRec, false, false);
-                FLog.d(TAG, "Deactivating FadRec (was active)");
-            } else if (Constants.MODE_FADMIC.equals(previousMode) && !Constants.MODE_FADMIC.equals(mode)) {
-                styleText(segmentFadMic, false, false);
-                FLog.d(TAG, "Deactivating FadMic (was active)");
+                styleText(segmentServaRec, false, false);
+                FLog.d(TAG, "Deactivating ServaRec (was active)");
             }
 
             if (Constants.MODE_FADCAM.equals(mode)) {
                 styleText(segmentServaCam, true, true);
                 FLog.d(TAG, "Activating ServaCam (animating)");
             } else if (Constants.MODE_FADREC.equals(mode)) {
-                styleText(segmentFadRec, true, true);
-                FLog.d(TAG, "Activating FadRec (animating)");
-            } else if (Constants.MODE_FADMIC.equals(mode)) {
-                styleText(segmentFadMic, true, true);
-                FLog.d(TAG, "Activating FadMic (animating)");
+                styleText(segmentServaRec, true, true);
+                FLog.d(TAG, "Activating ServaRec (animating)");
             }
         }
 
-        FLog.d(TAG, String.format("setExclusiveSelected(%s): ServaCam=%b FadRec=%b FadMic=%b",
+        FLog.d(TAG, String.format("setExclusiveSelected(%s): ServaCam=%b ServaRec=%b",
             mode, Constants.MODE_FADCAM.equals(mode),
-            Constants.MODE_FADREC.equals(mode),
-            Constants.MODE_FADMIC.equals(mode)));
+            Constants.MODE_FADREC.equals(mode)));
     }
 
     private void applyTextStatesInstant(String mode) {
         styleText(segmentServaCam, Constants.MODE_FADCAM.equals(mode), false);
-        styleText(segmentFadRec, Constants.MODE_FADREC.equals(mode), false);
-        styleText(segmentFadMic, Constants.MODE_FADMIC.equals(mode), false);
+        styleText(segmentServaRec, Constants.MODE_FADREC.equals(mode), false);
     }
     
     /**
@@ -299,8 +283,7 @@ public class ModeSwitcherComponent {
 
     private void animatePillFlow(String fromMode, String toMode, Runnable onTransitionComplete) {
         applyBackground(segmentServaCam, false, false);
-        applyBackground(segmentFadRec, false, false);
-        applyBackground(segmentFadMic, false, false);
+        applyBackground(segmentServaRec, false, false);
 
         FrameLayout fromSegment = getSegmentForMode(fromMode);
         FrameLayout toSegment = getSegmentForMode(toMode);
@@ -363,13 +346,6 @@ public class ModeSwitcherComponent {
             segmentServaCam.setOnClickListener(v -> handleModeClick(Constants.MODE_FADCAM));
         }
         
-        if (segmentFadRec != null) {
-            segmentFadRec.setOnClickListener(v -> handleModeClick(Constants.MODE_FADREC));
-        }
-        
-        if (segmentFadMic != null) {
-            segmentFadMic.setOnClickListener(v -> handleModeClick(Constants.MODE_FADMIC));
-        }
     }
     
     /**
@@ -383,12 +359,6 @@ public class ModeSwitcherComponent {
 
         if (mode.equals(currentMode)) return; // no-op
 
-        if (Constants.MODE_FADMIC.equals(mode)) { // blocked mode
-            showComingSoonToast("FadMic (Mic Recording)");
-            if (listener != null) listener.onComingSoonRequested("FadMic");
-            return;
-        }
-
         Runnable modeSelectionAction = () -> {
             if (listener == null) return;
             switch (mode) {
@@ -397,13 +367,13 @@ public class ModeSwitcherComponent {
                     break;
                 case Constants.MODE_FADREC:
                     try {
-                        com.servalabs.cam.ui.utils.NewFeatureManager.markFeatureAsSeen(context, "fadrec");
-                        View badgeFadRec = segmentFadRec.getRootView().findViewById(R.id.badge_fadrec);
-                        if (badgeFadRec != null) {
-                            badgeFadRec.setVisibility(View.GONE);
+                        com.servalabs.cam.ui.utils.NewFeatureManager.markFeatureAsSeen(context, "servarec");
+                        View badgeServaRec = segmentServaRec.getRootView().findViewById(R.id.badge_servarec);
+                        if (badgeServaRec != null) {
+                            badgeServaRec.setVisibility(View.GONE);
                         }
                     } catch (Exception e) {
-                        FLog.e(TAG, "Error marking FadRec badge as seen", e);
+                        FLog.e(TAG, "Error marking ServaRec badge as seen", e);
                     }
                     listener.onModeSelected(mode);
                     break;
@@ -475,8 +445,7 @@ public class ModeSwitcherComponent {
     private FrameLayout getSegmentForMode(String mode) {
         switch (mode) {
             case Constants.MODE_FADCAM: return segmentServaCam;
-            case Constants.MODE_FADREC: return segmentFadRec;
-            case Constants.MODE_FADMIC: return segmentFadMic;
+            case Constants.MODE_FADREC: return segmentServaRec;
             default: return null;
         }
     }
@@ -520,6 +489,6 @@ public class ModeSwitcherComponent {
      * @return true if initialized, false otherwise
      */
     public boolean isInitialized() {
-        return segmentServaCam != null && segmentFadRec != null && segmentFadMic != null;
+        return segmentServaCam != null && segmentServaRec != null;
     }
 }

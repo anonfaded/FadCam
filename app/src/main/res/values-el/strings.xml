@@ -5,7 +5,7 @@
     <string name="app_name" translatable="false">ServaCam</string>
     <string name="app_icon_description">Επιλέξτε ένα εικονίδιο και όνομα για την εφαρμογή σας. Αυτό θα αλλάξει την εμφάνισή της στην αρχική σας οθόνη.</string>
     <string name="check_for_updates">Έλεγχος για Ενημερώσεις</string>
-    <string name="fadsec_info">Το ServaCam είναι μέρος της σουίτας FadSec Lab. Για περισσότερες πληροφορίες, κάντε κλικ στην επιλογή «προβολή πηγαίου κώδικα» παρακάτω.</string>
+    <string name="servalabs_info">Το ServaCam είναι μέρος της σουίτας ServaLabs. Για περισσότερες πληροφορίες, κάντε κλικ στην επιλογή «προβολή πηγαίου κώδικα» παρακάτω.</string>
     <string name="app_description">
     <![CDATA[
     Το ServaCam είναι μια εφαρμογή εγγραφής βίντεο ανοιχτού κώδικα, χωρίς διαφημίσεις, που δίνει προτεραιότητα στην ιδιωτικότητα, καθώς δεν παρακολουθεί ούτε συλλέγει δεδομένα. Είναι διαθέσιμο αποκλειστικά στο GitHub και μέσω των επίσημων συνδέσμων που αναφέρονται στο README.
@@ -19,7 +19,7 @@
     <string name="send_email">Αποστολή email</string>
     <string name="join_community">Εγγραφείτε στην κοινότητα για βοήθεια, κοινή χρήση ιδεών και μελλοντικές ενημερώσεις εφαρμογών</string>
     <string name="privacy_information">Πληροφορίες Ιδιωτικότητας</string>
-    <string name="copyright_info"> 2024-2025 https://fadcam.faded.dev\nLicensed under GPL-3.0</string>
+    <string name="copyright_info"> 2024-2025 https://servacam.faded.dev\nLicensed under GPL-3.0</string>
     <string-array name="video_resolutions_keys">
         <item>7680x4320</item>
         <!-- 8K -->
@@ -209,7 +209,7 @@
     <string name="discord_title">Διακομιστής Discord</string>
     <string name="thankyou_msg">Ευχαριστούμε που χρησιμοποιείτε το ServaCam!</string>
     <string name="settings_title">Ρυθμίσεις</string>
-    <string name="array_watermark_time_fadcam">Ώρα με Fadcam</string>
+    <string name="array_watermark_time_servacam">Ώρα με ServaCam</string>
     <string name="array_watermark_timeonly">Σφραγίδα Ώρας</string>
     <string name="array_watermark_nomark">Χωρίς Υδατογράφημα</string>
     <string name="toast_video_not_found">Σφάλμα: Το βίντεο δεν βρέθηκε</string>
@@ -434,7 +434,7 @@
     <string name="support_ko_fi">Υποστηρίξτε μας στο Ko-fi</string>
     <string name="kofi_description">Η περιγραφή θα οριστεί στον κώδικα.</string>
     <string name="kofi_button_text">Κερασέ με ένα Ko-fi</string>
-    <string name="kofi_footer_text">Δημιουργήθηκε με ❤️ στο FadSec Lab στην 🌍</string>
+    <string name="kofi_footer_text">Δημιουργήθηκε με ❤️ στο ServaLabs στην 🌍</string>
     <string name="setting_audio_input_source_title">Πηγή Εισόδου Ήχου</string>
     <string name="setting_audio_input_source_status_default">Τρέχουσα χρήση: Μικρόφωνο Τηλεφώνου</string>
     <string name="setting_audio_input_source_status_wired">Τρέχουσα χρήση: Ενσύρματο Μικρόφωνο</string>
@@ -485,7 +485,7 @@
     <string name="applock_verify_to_remove">Επαλήθευση PIN για Αφαίρεση</string>
     <string name="applock_verification_canceled">Η επαλήθευση ακυρώθηκε</string>
     <string name="version_format" translatable="false">v%s</string>
-    <string name="edit_with_faditorx">Επεξεργασία με FaditorX</string>
+    <string name="edit_with_editor_minix">Επεξεργασία με Editor MiniX</string>
     <string name="update_sarcastic_heading">📦 Κοίτα να δεις, άλλη μια ενημέρωση...</string>
     <string name="update_visit_github">Επισκεφτείτε το GitHub</string>
     <string name="update_version_arrow" translatable="false"> → </string>
@@ -517,7 +517,7 @@
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">Sumud (صُمود)</string>
     <string name="app_icon_pakistan" translatable="false">ServaCam</string>
-    <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
+    <string name="app_icon_servalabs" translatable="false">ServaLabs</string>
     <string name="app_icon_noor" translatable="false">Noor (ServaCam ++)</string>
     <string name="app_icon_bat" translatable="false">ServaCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>

@@ -80,7 +80,6 @@ public class AppIconGridBottomSheet extends BottomSheetDialogFragment {
             getString(R.string.app_icon_alternative),      // $ sign icon
             getString(R.string.app_icon_noor),             // Noor
             getString(R.string.app_icon_redbinary),        // 0xFF0000
-            getString(R.string.app_icon_fadseclab),        // FadSecLab
             getString(R.string.app_icon_bat),              // Bat icon
             getString(R.string.app_icon_football),         // Football icon
             getString(R.string.app_icon_car),              // Car icon
@@ -102,7 +101,6 @@ public class AppIconGridBottomSheet extends BottomSheetDialogFragment {
             R.mipmap.ic_launcher_2,              // Alternative ($ sign)
             R.mipmap.ic_launcher_noor,           // Noor
             R.mipmap.ic_launcher_redbinary,      // 0xFF0000
-            R.mipmap.ic_launcher_fadseclab,      // FadSecLab
             R.mipmap.ic_launcher_bat,            // Bat
             R.mipmap.ic_launcher_football,       // Football
             R.mipmap.ic_launcher_car,            // Car
@@ -124,7 +122,6 @@ public class AppIconGridBottomSheet extends BottomSheetDialogFragment {
             Constants.APP_ICON_ALTERNATIVE,      // Alternative ($ sign)
             Constants.APP_ICON_NOOR,             // Noor
             Constants.APP_ICON_REDBINARY,        // 0xFF0000
-            Constants.APP_ICON_FADSECLAB,        // FadSecLab
             Constants.APP_ICON_BAT,              // Bat
             Constants.APP_ICON_FOOTBALL,         // Football
             Constants.APP_ICON_CAR,              // Car

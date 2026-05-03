@@ -88,7 +88,7 @@ public class AddAssetBottomSheet extends BottomSheetDialogFragment {
 
         // Title
         TextView title = new TextView(requireContext());
-        title.setText(R.string.faditor_add_asset_title);
+        title.setText(R.string.editor_mini_add_asset_title);
         title.setTextColor(0xFFFFFFFF);
         title.setTextSize(18);
         title.setTypeface(null, Typeface.BOLD);
@@ -98,19 +98,19 @@ public class AddAssetBottomSheet extends BottomSheetDialogFragment {
 
         // Image row
         root.addView(createOptionRow(
-                getString(R.string.faditor_add_asset_image),
+                getString(R.string.editor_mini_add_asset_image),
                 "image", materialIcons, dp, true));
 
         // Video row
         root.addView(createOptionRow(
-                getString(R.string.faditor_add_asset_video),
+                getString(R.string.editor_mini_add_asset_video),
                 "videocam", materialIcons, dp, false));
 
         return root;
     }
 
     /**
-     * Creates an option row matching the existing Faditor bottom sheet style.
+     * Creates an option row matching the existing EditorMini bottom sheet style.
      *
      * @param label         row label text
      * @param icon          Material Icon ligature name

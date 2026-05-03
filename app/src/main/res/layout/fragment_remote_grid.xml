@@ -59,11 +59,11 @@
                 android:layout_marginBottom="16dp">
 
                 <!-- Background Image -->
-                <ImageView
+                <!-- <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
-                    android:src="@drawable/fadcam_server_room_bg"
-                    android:scaleType="centerCrop" />
+                    android:src="@drawable/servacam_server_room_bg"
+                    android:scaleType="centerCrop" /> -->
 
                 <!-- Semi-transparent overlay -->
                 <View

@@ -2,7 +2,7 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/fadsec_info_card"
+    android:id="@+id/servalabs_info_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="24dp"
@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:text="@string/fadsec_info"
+        android:text="@string/servalabs_info"
         android:textColor="#FFFFFF" />
 
 </com.google.android.material.card.MaterialCardView>

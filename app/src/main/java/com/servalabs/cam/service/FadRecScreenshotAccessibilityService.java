@@ -29,8 +29,8 @@ import com.servalabs.cam.utils.PhotoStorageHelper;
 import java.util.concurrent.Executors;
 
 public class FadRecScreenshotAccessibilityService extends AccessibilityService {
-    private static final String TAG = "FadRecScreenshotSvc";
-    private static final String PREFS_NAME = "fadrec_screenshot_shortcut";
+    private static final String TAG = "ServaRecScreenshotSvc";
+    private static final String PREFS_NAME = "servarec_screenshot_shortcut";
     private static final String KEY_PENDING_CAPTURE = "pending_capture";
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());

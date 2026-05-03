@@ -352,7 +352,7 @@
                     android:id="@+id/icon_photo"
                     android:layout_width="56dp"
                     android:layout_height="56dp"
-                    android:src="@drawable/fadshot_shortcut" />
+                    android:src="@drawable/servashot_shortcut" />
                 <TextView
                     android:id="@+id/title_photo"
                     android:layout_width="wrap_content"
@@ -387,7 +387,7 @@
                     android:id="@+id/icon_photo_front"
                     android:layout_width="56dp"
                     android:layout_height="56dp"
-                    android:src="@drawable/fadshot_front_shortcut" />
+                    android:src="@drawable/servashot_front_shortcut" />
                 <TextView
                     android:id="@+id/title_photo_front"
                     android:layout_width="wrap_content"

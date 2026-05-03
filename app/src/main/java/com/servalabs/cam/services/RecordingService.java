@@ -1078,10 +1078,10 @@ public class RecordingService extends Service {
             
             // STREAM ENFORCEMENT GATE: Validate and gate streaming mode
             boolean streamingEnabled = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
-            String presetName = fadcamPrefs.getString("quality_preset", "HIGH");
-            int presetBitrate = fadcamPrefs.getInt("stream_bitrate", 5_000_000);
-            int presetFps = fadcamPrefs.getInt("stream_fps_cap", 30);
+            android.content.SharedPreferences servacamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
+            String presetName = servacamPrefs.getString("quality_preset", "HIGH");
+            int presetBitrate = servacamPrefs.getInt("stream_bitrate", 5_000_000);
+            int presetFps = servacamPrefs.getInt("stream_fps_cap", 30);
             
             if (streamingEnabled) {
                 FLog.i(TAG, "🔴 [STREAM MODE ENFORCED] Starting recording with streaming server ACTIVE");
@@ -2927,11 +2927,11 @@ public class RecordingService extends Service {
         String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
         String finalText;
         switch (watermarkOption) {
-            case "timestamp_fadcam":
-                finalText = "Captured by <FADCAM_ICON> - " + getCurrentTimestamp() + locationText + customTextLine;
+            case "timestamp_servacam":
+                finalText = "Captured by - " + getCurrentTimestamp() + locationText + customTextLine;
                 break;
-            case "badge_fadcam":
-                finalText = "Captured by <FADCAM_ICON>" + customTextLine;
+            case "badge_servacam":
+                finalText = "Captured by" + customTextLine;
                 break;
             case "timestamp":
                 finalText = getCurrentTimestamp() + locationText + customTextLine;
@@ -2963,11 +2963,11 @@ public class RecordingService extends Service {
                 String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
                 String finalText;
                 switch (watermarkOption) {
-                    case "timestamp_fadcam":
-                        finalText = "Captured by <FADCAM_ICON> - " + getCurrentTimestamp() + locationText + customTextLine;
+                    case "timestamp_servacam":
+                        finalText = "Captured by - " + getCurrentTimestamp() + locationText + customTextLine;
                         break;
-                    case "badge_fadcam":
-                        finalText = "Captured by <FADCAM_ICON>" + customTextLine;
+                    case "badge_servacam":
+                        finalText = "Captured by" + customTextLine;
                         break;
                     case "timestamp":
                         finalText = getCurrentTimestamp() + locationText + customTextLine;
@@ -3864,9 +3864,9 @@ public class RecordingService extends Service {
             
             // Apply streaming FPS cap only when server is actually ON
             boolean isStreamingForFps1 = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
+            android.content.SharedPreferences servacamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
             if (isStreamingForFps1) {
-                int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+                int streamFpsCap = servacamPrefs.getInt("stream_fps_cap", -1);
                 if (streamFpsCap > 0 && targetFrameRate > streamFpsCap) {
                     FLog.i(TAG, "[STREAM PRESET] Capping camera FPS: " + targetFrameRate + " → " + streamFpsCap + "fps (server ON)");
                     targetFrameRate = streamFpsCap;
@@ -3947,9 +3947,9 @@ public class RecordingService extends Service {
             
             // Apply streaming FPS cap only when server is actually ON
             boolean isStreamingForFps2 = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
+            android.content.SharedPreferences servacamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
             if (isStreamingForFps2) {
-                int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+                int streamFpsCap = servacamPrefs.getInt("stream_fps_cap", -1);
                 if (streamFpsCap > 0 && targetFrameRate > streamFpsCap) {
                     FLog.i(TAG, "[STREAM PRESET] Capping camera FPS: " + targetFrameRate + " → " + streamFpsCap + "fps (server ON)");
                     targetFrameRate = streamFpsCap;
@@ -4327,9 +4327,9 @@ public class RecordingService extends Service {
         
         if (isStreaming) {
             // Server is ON: enforce stream quality preset bitrate, ignore user settings
-            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("ServaCamPrefs", android.content.Context.MODE_PRIVATE);
-            int streamBitrate = fadcamPrefs.getInt("stream_bitrate", -1);
-            String preset = fadcamPrefs.getString("quality_preset", "HIGH");
+            android.content.SharedPreferences servacamPrefs = getSharedPreferences("ServaCamPrefs", android.content.Context.MODE_PRIVATE);
+            int streamBitrate = servacamPrefs.getInt("stream_bitrate", -1);
+            String preset = servacamPrefs.getString("quality_preset", "HIGH");
             if (streamBitrate > 0) {
                 videoBitrate = streamBitrate;
                 FLog.i(TAG, "[STREAM PRESET] Bitrate enforced: " + (videoBitrate / 1_000_000) + " Mbps (preset=" + preset + ") — user settings ignored");
@@ -6127,7 +6127,7 @@ public class RecordingService extends Service {
 
             // Re-fetch streaming state and config at actual recording start
             boolean isStreamingActive = com.servalabs.cam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-            android.content.SharedPreferences fadcamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
+            android.content.SharedPreferences servacamPrefs = getSharedPreferences("ServaCamPrefs", Context.MODE_PRIVATE);
             
             // Resolution always from Recording Settings — presets only control bitrate + FPS
             String orientation = sharedPreferencesManager.getVideoOrientation();
@@ -6138,7 +6138,7 @@ public class RecordingService extends Service {
             int recordingBitrate = getVideoBitrate();  // Reads preset bitrate if streaming
             int recordingFps = sharedPreferencesManager.getSpecificVideoFrameRate(sharedPreferencesManager.getCameraSelection());
             if (isStreamingActive && recordingFps > 0) {
-                int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+                int streamFpsCap = servacamPrefs.getInt("stream_fps_cap", -1);
                 if (streamFpsCap > 0 && recordingFps > streamFpsCap) {
                     recordingFps = streamFpsCap;  // Apply FPS cap
                 }
@@ -6167,7 +6167,7 @@ public class RecordingService extends Service {
             // Get camera's target framerate and apply streaming FPS cap if server is ON
             int videoFramerate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
             if (isStreamingActive) {
-                int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
+                int streamFpsCap = servacamPrefs.getInt("stream_fps_cap", -1);
                 if (streamFpsCap > 0 && videoFramerate > streamFpsCap) {
                     FLog.i(TAG, "[STREAM PRESET] Applying FPS cap at MediaRecorder: " + videoFramerate + " → " + streamFpsCap + "fps");
                     videoFramerate = streamFpsCap;

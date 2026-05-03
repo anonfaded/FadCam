@@ -24,7 +24,7 @@ import com.servalabs.cam.R;
  * SettingsHomeFragment
  * Lightweight entry point replacing the monolithic SettingsFragment.
  * Shows grouped navigation rows with a mode selector popup to filter
- * settings between ServaCam, FadRec (Screen Recording), FadMic, or All.
+ * settings between ServaCam, ServaRec (Screen Recording), ServaMic, or All.
  */
 public class SettingsHomeFragment extends Fragment {
 
@@ -103,7 +103,7 @@ public class SettingsHomeFragment extends Fragment {
             updateModeSelectorUI();
             applyModeFilter(currentMode);
         });
-        popupView.findViewById(R.id.mode_fadcam).setOnClickListener(v -> {
+        popupView.findViewById(R.id.mode_servacam).setOnClickListener(v -> {
             currentMode = SettingsMode.FADCAM;
             updatePopupChecks(popupView, currentMode);
             animatePopupDismiss(popup, popupView);
@@ -152,21 +152,21 @@ public class SettingsHomeFragment extends Fragment {
 
     private void updatePopupChecks(View popupView, SettingsMode mode) {
         TextView checkAll = popupView.findViewById(R.id.check_all);
-        TextView checkServaCam = popupView.findViewById(R.id.check_fadcam);
-        TextView checkFadRec = popupView.findViewById(R.id.check_fadrec);
+        TextView checkServaCam = popupView.findViewById(R.id.check_servacam);
+        TextView checkServaRec = popupView.findViewById(R.id.check_servarec);
 
         if (checkAll != null)
             checkAll.setText(mode == SettingsMode.ALL ? "check_circle" : "radio_button_unchecked");
         if (checkServaCam != null)
             checkServaCam.setText(mode == SettingsMode.FADCAM ? "check_circle" : "radio_button_unchecked");
-        if (checkFadRec != null)
-            checkFadRec.setText(mode == SettingsMode.FADREC ? "check_circle" : "radio_button_unchecked");
+        if (checkServaRec != null)
+            checkServaRec.setText(mode == SettingsMode.FADREC ? "check_circle" : "radio_button_unchecked");
 
         int green = 0xFF4CAF50;
         int grey = 0xFF666666;
         if (checkAll != null) checkAll.setTextColor(mode == SettingsMode.ALL ? green : grey);
         if (checkServaCam != null) checkServaCam.setTextColor(mode == SettingsMode.FADCAM ? green : grey);
-        if (checkFadRec != null) checkFadRec.setTextColor(mode == SettingsMode.FADREC ? green : grey);
+        if (checkServaRec != null) checkServaRec.setTextColor(mode == SettingsMode.FADREC ? green : grey);
     }
 
     /** Update the header button text/icon to reflect current mode. */
@@ -184,7 +184,7 @@ public class SettingsHomeFragment extends Fragment {
                 case FADCAM: modeText.setText("ServaCam"); break;
             }
         }
-        // Toggle between material icon text (All/ServaCam) and drawable image (FadRec)
+        // Toggle between material icon text (All/ServaCam) and drawable image (ServaRec)
         // so the header button always shows the exact same icon as the popup dropdown.
         if (modeIconText != null && modeIconImage != null) {
             if (currentMode == SettingsMode.FADREC) {

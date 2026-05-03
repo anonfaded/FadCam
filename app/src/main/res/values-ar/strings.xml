@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="check_for_updates">التحقق من التحديثات</string>
-    <string name="fadsec_info">ServaCam هو جزء من مجموعة أدوات FadSec. لمزيد من التفاصيل، يرجى النقر على زر "عرض الشيفرة المصدرية" أدناه</string>
+    <string name="servalabs_info">ServaCam هو جزء من مجموعة أدوات ServaLabs. لمزيد من التفاصيل، يرجى النقر على زر "عرض الشيفرة المصدرية" أدناه</string>
     <string name="app_description">\n    <![CDATA[
     ServaCam هو برنامج تسجيل فيديو مفتوح المصدر يركز على الخصوصية ولا يحتوي على إعلانات. يمكن الحصول على البرنامج من خلال روابط GitHub وREADME الرسمية.
     <br/><br/>
@@ -13,7 +13,7 @@
     <string name="send_email">إرسال بريد إلكتروني</string>
     <string name="join_community">انضم إلى المجتمع للحصول على المساعدة، ومشاركة الأفكار، والحصول على تحديثات البرنامج</string>
     <string name="privacy_information">معلومات الخصوصية</string>
-    <string name="copyright_info">© 2024 https://fadcam.faded.dev\nمرخص بموجب GPL-3.0</string>
+    <string name="copyright_info">© 2024 https://servacam.faded.dev\nمرخص بموجب GPL-3.0</string>
     <string name="mainpage_storage_indicator" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>المساحة المتاحة:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
@@ -63,7 +63,7 @@
     <string name="button_settings_cam_front">الكاميرا الأمامية</string>
     <string name="note_quailty">اختر جودة الفيديو\n(الافتراضي: HD)</string>
     <string name="setting_watermark">العلامة المائية</string>
-    <string name="note_watermark">تعديل العلامة المائية للفيديو\n(الافتراضي: الوقت و"Fadcam")</string>
+    <string name="note_watermark">تعديل العلامة المائية للفيديو\n(الافتراضي: الوقت و"ServaCam")</string>
     <string name="note_watermark_extra">هل تريد تسريع عملية حفظ الفيديو؟ اختر "بدون علامة مائية". هل تريد إضافة علامة مائية؟ إذًا، الانتظار لحظة يستحق العناء، فقط انتظر قليلاً!</string>
     <string name="note_location">إضافة بيانات الموقع إلى العلامة المائية.\n يتطلب تفعيل ميزة الموقع على الهاتف \n(الافتراضي: إيقاف)</string>
     <string name="note_location_extra">إضافة معلومات الموقع الجغرافية إلى العلامة المائية يتطلب تفعيل ميزة الموقع على الهاتف</string>
@@ -134,7 +134,7 @@
     <string name="discord_title">خادم Discord</string>
     <string name="thankyou_msg">شكرًا لك على استخدام ServaCam!</string>
     <string name="settings_title">الإعدادات</string>
-    <string name="array_watermark_time_fadcam">الوقت و"Fadcam"</string>
+    <string name="array_watermark_time_servacam">الوقت و"ServaCam"</string>
     <string name="array_watermark_timeonly">الوقت فقط</string>
     <string name="array_watermark_nomark">بدون علامة مائية</string>
     <string name="toast_video_not_found">خطأ: لم يتم العثور على الفيديو</string>

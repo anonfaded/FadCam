@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Background image -->
+    <!-- Background image
     <item>
         <bitmap
-            android:src="@drawable/fadcam_server_room_bg"
+            android:src="@drawable/servacam_server_room_bg"
             android:gravity="fill" />
-    </item>
+    </item> -->
     
     <!-- Semi-transparent overlay for text readability -->
     <item>

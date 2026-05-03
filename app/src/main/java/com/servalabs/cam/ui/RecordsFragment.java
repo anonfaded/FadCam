@@ -134,7 +134,7 @@ public class RecordsFragment extends BaseFragment implements
         RecordActionListener {
 
     /**
-     * Static flag set by other components (e.g. Faditor export) to signal
+     * Static flag set by other components (e.g. EditorMini export) to signal
      * that the records list should refresh on next resume.
      */
     private static volatile boolean sPendingRefresh = false;
@@ -373,7 +373,7 @@ public class RecordsFragment extends BaseFragment implements
     private com.servalabs.cam.ui.utils.AnimatedChip chipFilterAll;
     private com.servalabs.cam.ui.utils.AnimatedChip chipFilterCamera;
     private com.servalabs.cam.ui.utils.AnimatedChip chipFilterScreen;
-    private com.servalabs.cam.ui.utils.AnimatedChip chipFilterFaditor;
+    private com.servalabs.cam.ui.utils.AnimatedChip chipFilterEditorMini;
     private com.servalabs.cam.ui.utils.AnimatedChip chipFilterStream;
     private com.servalabs.cam.ui.utils.AnimatedChip chipFilterShot;
     private ChipGroup chipGroupRecordsFilter;
@@ -383,11 +383,11 @@ public class RecordsFragment extends BaseFragment implements
     private com.servalabs.cam.ui.utils.AnimatedChip chipCameraBack;
     private com.servalabs.cam.ui.utils.AnimatedChip chipCameraFront;
     private com.servalabs.cam.ui.utils.AnimatedChip chipCameraDual;
-    private View faditorFilterRow;
-    private ChipGroup chipGroupFaditorFilter;
-    private com.servalabs.cam.ui.utils.AnimatedChip chipFaditorAll;
-    private com.servalabs.cam.ui.utils.AnimatedChip chipFaditorConverted;
-    private com.servalabs.cam.ui.utils.AnimatedChip chipFaditorMerge;
+    private View editor_miniFilterRow;
+    private ChipGroup chipGroupEditorMiniFilter;
+    private com.servalabs.cam.ui.utils.AnimatedChip chipEditorMiniAll;
+    private com.servalabs.cam.ui.utils.AnimatedChip chipEditorMiniConverted;
+    private com.servalabs.cam.ui.utils.AnimatedChip chipEditorMiniMerge;
     private View shotFilterRow;
     private ChipGroup chipGroupShotFilter;
     private com.servalabs.cam.ui.utils.AnimatedChip chipShotAll;
@@ -399,11 +399,11 @@ public class RecordsFragment extends BaseFragment implements
     private View selectionActionsRow;
     private TextView btnActionSelectAll;
     private TextView btnActionBatchSave;
-    private TextView btnActionBatchFaditor;
+    private TextView btnActionBatchEditorMini;
     private TextView btnActionBatchDelete;
     private VideoItem.Category activeFilter = VideoItem.Category.ALL;
     private VideoItem.CameraSubtype activeCameraSubtype = VideoItem.CameraSubtype.ALL;
-    private VideoItem.FaditorSubtype activeFaditorSubtype = VideoItem.FaditorSubtype.ALL;
+    private VideoItem.EditorMiniSubtype activeEditorMiniSubtype = VideoItem.EditorMiniSubtype.ALL;
     private VideoItem.ShotSubtype activeShotSubtype = VideoItem.ShotSubtype.ALL;
     private ActivityResultLauncher<Uri> customExportTreePickerLauncher;
     private List<Uri> pendingCustomExportUris = new ArrayList<>();
@@ -1652,7 +1652,7 @@ public class RecordsFragment extends BaseFragment implements
         chipFilterAll = view.findViewById(R.id.chip_filter_all);
         chipFilterCamera = view.findViewById(R.id.chip_filter_camera);
         chipFilterScreen = view.findViewById(R.id.chip_filter_screen);
-        chipFilterFaditor = view.findViewById(R.id.chip_filter_faditor);
+        chipFilterEditorMini = view.findViewById(R.id.chip_filter_editor_mini);
         chipFilterStream = view.findViewById(R.id.chip_filter_stream);
         chipFilterShot = view.findViewById(R.id.chip_filter_shot);
         chipGroupRecordsFilter = view.findViewById(R.id.chip_group_records_filter);
@@ -1662,23 +1662,23 @@ public class RecordsFragment extends BaseFragment implements
         chipCameraBack = view.findViewById(R.id.chip_camera_back);
         chipCameraFront = view.findViewById(R.id.chip_camera_front);
         chipCameraDual = view.findViewById(R.id.chip_camera_dual);
-        faditorFilterRow = view.findViewById(R.id.records_faditor_filter_row);
-        chipGroupFaditorFilter = view.findViewById(R.id.chip_group_faditor_filter);
-        chipFaditorAll = view.findViewById(R.id.chip_faditor_all);
-        chipFaditorConverted = view.findViewById(R.id.chip_faditor_converted);
-        chipFaditorMerge = view.findViewById(R.id.chip_faditor_merge);
+        editor_miniFilterRow = view.findViewById(R.id.records_editor_mini_filter_row);
+        chipGroupEditorMiniFilter = view.findViewById(R.id.chip_group_editor_mini_filter);
+        chipEditorMiniAll = view.findViewById(R.id.chip_editor_mini_all);
+        chipEditorMiniConverted = view.findViewById(R.id.chip_editor_mini_converted);
+        chipEditorMiniMerge = view.findViewById(R.id.chip_editor_mini_merge);
         shotFilterRow = view.findViewById(R.id.records_shot_filter_row);
         chipGroupShotFilter = view.findViewById(R.id.chip_group_shot_filter);
         chipShotAll = view.findViewById(R.id.chip_shot_all);
         chipShotBack = view.findViewById(R.id.chip_shot_back);
         chipShotSelfie = view.findViewById(R.id.chip_shot_selfie);
-        chipShotFadrec = view.findViewById(R.id.chip_shot_fadrec);
+        chipShotFadrec = view.findViewById(R.id.chip_shot_servarec);
         filterHelperText = view.findViewById(R.id.filter_helper_text);
         filterChecklistButton = view.findViewById(R.id.btn_filter_checklist);
         selectionActionsRow = view.findViewById(R.id.selection_actions_row);
         btnActionSelectAll = view.findViewById(R.id.btn_action_select_all);
         btnActionBatchSave = view.findViewById(R.id.btn_action_batch_save);
-        btnActionBatchFaditor = view.findViewById(R.id.btn_action_batch_faditor);
+        btnActionBatchEditorMini = view.findViewById(R.id.btn_action_batch_editor_mini);
         btnActionBatchDelete = view.findViewById(R.id.btn_action_batch_delete);
 
         // Setup menu button click listener
@@ -1942,7 +1942,7 @@ public class RecordsFragment extends BaseFragment implements
         FLog.d(TAG, "lifecycle onResume: activeFilter=" + activeFilter + ", loadedItems=" + allLoadedItems.size());
         FLog.i(TAG, "LOG_LIFECYCLE: onResume called.");
 
-        // Check if an external event (e.g. Faditor export, FadShot capture) requested a refresh
+        // Check if an external event (e.g. EditorMini export, ServaShot capture) requested a refresh
         boolean needsForceReload = false;
         if (sPendingRefresh) {
             sPendingRefresh = false;
@@ -2044,7 +2044,7 @@ public class RecordsFragment extends BaseFragment implements
         if (!hidden && isResumed() && isAdded() && getContext() != null) {
             FLog.d(TAG, "onHiddenChanged: Fragment shown, checking for data refresh");
             
-            // Check pending refresh (e.g., Faditor export)
+            // Check pending refresh (e.g., EditorMini export)
             if (sPendingRefresh) {
                 sPendingRefresh = false;
                 FLog.i(TAG, "onHiddenChanged: Pending refresh flag set, invalidating index");
@@ -2466,7 +2466,7 @@ public class RecordsFragment extends BaseFragment implements
         final VideoItem.Category category;
         final VideoItem.ShotSubtype shotSubtype;
         final VideoItem.CameraSubtype cameraSubtype;
-        final VideoItem.FaditorSubtype faditorSubtype;
+        final VideoItem.EditorMiniSubtype editor_miniSubtype;
 
         SafCandidate(@NonNull DocumentFile file, @NonNull VideoItem.Category category) {
             this(
@@ -2474,7 +2474,7 @@ public class RecordsFragment extends BaseFragment implements
                     category,
                     VideoItem.ShotSubtype.UNKNOWN,
                     VideoItem.CameraSubtype.UNKNOWN,
-                    VideoItem.FaditorSubtype.UNKNOWN);
+                    VideoItem.EditorMiniSubtype.UNKNOWN);
         }
 
         SafCandidate(
@@ -2482,7 +2482,7 @@ public class RecordsFragment extends BaseFragment implements
                 @NonNull VideoItem.Category category,
                 @NonNull VideoItem.ShotSubtype shotSubtype
         ) {
-            this(file, category, shotSubtype, VideoItem.CameraSubtype.UNKNOWN, VideoItem.FaditorSubtype.UNKNOWN);
+            this(file, category, shotSubtype, VideoItem.CameraSubtype.UNKNOWN, VideoItem.EditorMiniSubtype.UNKNOWN);
         }
 
         SafCandidate(
@@ -2491,7 +2491,7 @@ public class RecordsFragment extends BaseFragment implements
                 @NonNull VideoItem.ShotSubtype shotSubtype,
                 @NonNull VideoItem.CameraSubtype cameraSubtype
         ) {
-            this(file, category, shotSubtype, cameraSubtype, VideoItem.FaditorSubtype.UNKNOWN);
+            this(file, category, shotSubtype, cameraSubtype, VideoItem.EditorMiniSubtype.UNKNOWN);
         }
 
         SafCandidate(
@@ -2499,13 +2499,13 @@ public class RecordsFragment extends BaseFragment implements
                 @NonNull VideoItem.Category category,
                 @NonNull VideoItem.ShotSubtype shotSubtype,
                 @NonNull VideoItem.CameraSubtype cameraSubtype,
-                @NonNull VideoItem.FaditorSubtype faditorSubtype
+                @NonNull VideoItem.EditorMiniSubtype editor_miniSubtype
         ) {
             this.file = file;
             this.category = category;
             this.shotSubtype = shotSubtype;
             this.cameraSubtype = cameraSubtype;
-            this.faditorSubtype = faditorSubtype;
+            this.editor_miniSubtype = editor_miniSubtype;
         }
     }
 
@@ -2577,7 +2577,7 @@ public class RecordsFragment extends BaseFragment implements
             return;
         }
         if (category == VideoItem.Category.FADITOR) {
-            scanFaditorDirectoryInternal(out, directory);
+            scanEditorMiniDirectoryInternal(out, directory);
             return;
         }
         File[] files = directory.listFiles();
@@ -2589,13 +2589,13 @@ public class RecordsFragment extends BaseFragment implements
                     category,
                     VideoItem.ShotSubtype.UNKNOWN,
                     VideoItem.CameraSubtype.UNKNOWN,
-                    VideoItem.FaditorSubtype.UNKNOWN);
+                    VideoItem.EditorMiniSubtype.UNKNOWN);
             if (item != null) out.add(item);
         }
     }
 
-    private void scanFaditorDirectoryInternal(@NonNull List<VideoItem> out, @NonNull File faditorRoot) {
-        File[] children = faditorRoot.listFiles();
+    private void scanEditorMiniDirectoryInternal(@NonNull List<VideoItem> out, @NonNull File editor_miniRoot) {
+        File[] children = editor_miniRoot.listFiles();
         if (children == null) return;
         for (File child : children) {
             if (child == null) continue;
@@ -2605,12 +2605,12 @@ public class RecordsFragment extends BaseFragment implements
                         VideoItem.Category.FADITOR,
                         VideoItem.ShotSubtype.UNKNOWN,
                         VideoItem.CameraSubtype.UNKNOWN,
-                        inferFaditorSubtypeFromName(child.getName()));
+                        inferEditorMiniSubtypeFromName(child.getName()));
                 if (item != null) out.add(item);
                 continue;
             }
             if (!child.isDirectory()) continue;
-            VideoItem.FaditorSubtype subtype = inferFaditorSubtypeFromFolder(child.getName());
+            VideoItem.EditorMiniSubtype subtype = inferEditorMiniSubtypeFromFolder(child.getName());
             File[] nested = child.listFiles();
             if (nested == null) continue;
             for (File nestedFile : nested) {
@@ -2639,7 +2639,7 @@ public class RecordsFragment extends BaseFragment implements
                         VideoItem.Category.CAMERA,
                         VideoItem.ShotSubtype.UNKNOWN,
                         inferCameraSubtypeFromName(child.getName()),
-                        VideoItem.FaditorSubtype.UNKNOWN);
+                        VideoItem.EditorMiniSubtype.UNKNOWN);
                 if (item != null) out.add(item);
                 continue;
             }
@@ -2654,7 +2654,7 @@ public class RecordsFragment extends BaseFragment implements
                             VideoItem.Category.CAMERA,
                             VideoItem.ShotSubtype.UNKNOWN,
                             subtype,
-                            VideoItem.FaditorSubtype.UNKNOWN);
+                            VideoItem.EditorMiniSubtype.UNKNOWN);
                     if (item != null) out.add(item);
                 }
             }
@@ -2673,7 +2673,7 @@ public class RecordsFragment extends BaseFragment implements
                         VideoItem.Category.SHOT,
                         inferShotSubtypeFromName(child.getName()),
                         VideoItem.CameraSubtype.UNKNOWN,
-                        VideoItem.FaditorSubtype.UNKNOWN);
+                        VideoItem.EditorMiniSubtype.UNKNOWN);
                 if (item != null) out.add(item);
                 continue;
             }
@@ -2688,7 +2688,7 @@ public class RecordsFragment extends BaseFragment implements
                             VideoItem.Category.SHOT,
                             subtype,
                             VideoItem.CameraSubtype.UNKNOWN,
-                            VideoItem.FaditorSubtype.UNKNOWN);
+                            VideoItem.EditorMiniSubtype.UNKNOWN);
                     if (item != null) out.add(item);
                 }
             }
@@ -2701,7 +2701,7 @@ public class RecordsFragment extends BaseFragment implements
             @NonNull VideoItem.Category category,
             @NonNull VideoItem.ShotSubtype explicitShotSubtype,
             @NonNull VideoItem.CameraSubtype explicitCameraSubtype,
-            @NonNull VideoItem.FaditorSubtype explicitFaditorSubtype
+            @NonNull VideoItem.EditorMiniSubtype explicitEditorMiniSubtype
     ) {
         String name = file.getName();
         VideoItem.MediaType mediaType = inferMediaTypeFromName(name);
@@ -2719,9 +2719,9 @@ public class RecordsFragment extends BaseFragment implements
         VideoItem.CameraSubtype cameraSubtype = category == VideoItem.Category.CAMERA
                 ? resolveCameraSubtype(explicitCameraSubtype, name)
                 : VideoItem.CameraSubtype.UNKNOWN;
-        VideoItem.FaditorSubtype faditorSubtype = category == VideoItem.Category.FADITOR
-                ? resolveFaditorSubtype(explicitFaditorSubtype, name)
-                : VideoItem.FaditorSubtype.UNKNOWN;
+        VideoItem.EditorMiniSubtype editor_miniSubtype = category == VideoItem.Category.FADITOR
+                ? resolveEditorMiniSubtype(explicitEditorMiniSubtype, name)
+                : VideoItem.EditorMiniSubtype.UNKNOWN;
         VideoItem newItem = new VideoItem(
                 Uri.fromFile(file),
                 name,
@@ -2731,7 +2731,7 @@ public class RecordsFragment extends BaseFragment implements
                 mediaType,
                 shotSubtype,
                 cameraSubtype,
-                faditorSubtype);
+                editor_miniSubtype);
         newItem.isNew = Utils.isVideoConsideredNew(finalTimestamp);
         return newItem;
     }
@@ -2770,8 +2770,8 @@ public class RecordsFragment extends BaseFragment implements
                             ? resolveCameraSubtype(VideoItem.CameraSubtype.UNKNOWN, name)
                             : VideoItem.CameraSubtype.UNKNOWN,
                     inferred == VideoItem.Category.FADITOR
-                            ? resolveFaditorSubtype(VideoItem.FaditorSubtype.UNKNOWN, name)
-                            : VideoItem.FaditorSubtype.UNKNOWN);
+                            ? resolveEditorMiniSubtype(VideoItem.EditorMiniSubtype.UNKNOWN, name)
+                            : VideoItem.EditorMiniSubtype.UNKNOWN);
             item.isNew = Utils.isVideoConsideredNew(finalTimestamp);
             out.add(item);
         }
@@ -2831,7 +2831,7 @@ public class RecordsFragment extends BaseFragment implements
                         candidate.category,
                         candidate.shotSubtype,
                         candidate.cameraSubtype,
-                        candidate.faditorSubtype);
+                        candidate.editor_miniSubtype);
             }
             if (callback != null && !safVideoItems.isEmpty()) {
                 int progress = totalFiles == 0 ? 100 : Math.round(((float) endIndex / totalFiles) * 100);
@@ -3262,14 +3262,14 @@ public class RecordsFragment extends BaseFragment implements
         if (chipCameraDual != null) {
             chipCameraDual.setOnClickListener(v -> setActiveCameraSubtype(VideoItem.CameraSubtype.DUAL));
         }
-        if (chipFaditorAll != null) {
-            chipFaditorAll.setOnClickListener(v -> setActiveFaditorSubtype(VideoItem.FaditorSubtype.ALL));
+        if (chipEditorMiniAll != null) {
+            chipEditorMiniAll.setOnClickListener(v -> setActiveEditorMiniSubtype(VideoItem.EditorMiniSubtype.ALL));
         }
-        if (chipFaditorConverted != null) {
-            chipFaditorConverted.setOnClickListener(v -> setActiveFaditorSubtype(VideoItem.FaditorSubtype.CONVERTED));
+        if (chipEditorMiniConverted != null) {
+            chipEditorMiniConverted.setOnClickListener(v -> setActiveEditorMiniSubtype(VideoItem.EditorMiniSubtype.CONVERTED));
         }
-        if (chipFaditorMerge != null) {
-            chipFaditorMerge.setOnClickListener(v -> setActiveFaditorSubtype(VideoItem.FaditorSubtype.MERGE));
+        if (chipEditorMiniMerge != null) {
+            chipEditorMiniMerge.setOnClickListener(v -> setActiveEditorMiniSubtype(VideoItem.EditorMiniSubtype.MERGE));
         }
         if (chipShotAll != null) {
             chipShotAll.setOnClickListener(v -> setActiveShotSubtype(VideoItem.ShotSubtype.ALL));
@@ -3297,9 +3297,9 @@ public class RecordsFragment extends BaseFragment implements
         updateCameraFilterRowVisibility();
         updateCameraFilterChipLabels();
         updateCameraFilterChipUi();
-        updateFaditorFilterRowVisibility();
-        updateFaditorFilterChipLabels();
-        updateFaditorFilterChipUi();
+        updateEditorMiniFilterRowVisibility();
+        updateEditorMiniFilterChipLabels();
+        updateEditorMiniFilterChipUi();
         updateShotFilterRowVisibility();
         updateShotFilterChipLabels();
         updateShotFilterChipUi();
@@ -3314,8 +3314,8 @@ public class RecordsFragment extends BaseFragment implements
             btnActionBatchSave.setOnClickListener(v -> Toast.makeText(requireContext(),
                     getString(R.string.records_batch_coming_soon), Toast.LENGTH_SHORT).show());
         }
-        if (btnActionBatchFaditor != null) {
-            btnActionBatchFaditor.setOnClickListener(v -> Toast.makeText(requireContext(),
+        if (btnActionBatchEditorMini != null) {
+            btnActionBatchEditorMini.setOnClickListener(v -> Toast.makeText(requireContext(),
                     getString(R.string.records_batch_coming_soon), Toast.LENGTH_SHORT).show());
         }
         if (btnActionBatchDelete != null) {
@@ -3338,7 +3338,7 @@ public class RecordsFragment extends BaseFragment implements
             activeCameraSubtype = VideoItem.CameraSubtype.ALL;
         }
         if (activeFilter != VideoItem.Category.FADITOR) {
-            activeFaditorSubtype = VideoItem.FaditorSubtype.ALL;
+            activeEditorMiniSubtype = VideoItem.EditorMiniSubtype.ALL;
         }
         if (activeFilter != VideoItem.Category.SHOT) {
             activeShotSubtype = VideoItem.ShotSubtype.ALL;
@@ -3368,9 +3368,9 @@ public class RecordsFragment extends BaseFragment implements
         applyActiveFilterToUi();
     }
 
-    private void setActiveFaditorSubtype(@NonNull VideoItem.FaditorSubtype faditorSubtype) {
-        if (activeFaditorSubtype == faditorSubtype) return;
-        activeFaditorSubtype = faditorSubtype;
+    private void setActiveEditorMiniSubtype(@NonNull VideoItem.EditorMiniSubtype editor_miniSubtype) {
+        if (activeEditorMiniSubtype == editor_miniSubtype) return;
+        activeEditorMiniSubtype = editor_miniSubtype;
         if (isInSelectionMode) {
             exitSelectionMode();
         }
@@ -3384,7 +3384,7 @@ public class RecordsFragment extends BaseFragment implements
                 if (activeFilter == VideoItem.Category.CAMERA && !matchesCameraSubtype(item, activeCameraSubtype)) {
                     continue;
                 }
-                if (activeFilter == VideoItem.Category.FADITOR && !matchesFaditorSubtype(item, activeFaditorSubtype)) {
+                if (activeFilter == VideoItem.Category.FADITOR && !matchesEditorMiniSubtype(item, activeEditorMiniSubtype)) {
                     continue;
                 }
                 if (activeFilter == VideoItem.Category.SHOT && !matchesShotSubtype(item, activeShotSubtype)) {
@@ -3403,9 +3403,9 @@ public class RecordsFragment extends BaseFragment implements
         updateCameraFilterRowVisibility();
         updateCameraFilterChipLabels();
         updateCameraFilterChipUi();
-        updateFaditorFilterRowVisibility();
-        updateFaditorFilterChipLabels();
-        updateFaditorFilterChipUi();
+        updateEditorMiniFilterRowVisibility();
+        updateEditorMiniFilterChipLabels();
+        updateEditorMiniFilterChipUi();
         updateShotFilterRowVisibility();
         updateShotFilterChipLabels();
         updateShotFilterChipUi();
@@ -3418,7 +3418,7 @@ public class RecordsFragment extends BaseFragment implements
         if (chipFilterAll != null) chipFilterAll.setChecked(activeFilter == VideoItem.Category.ALL);
         if (chipFilterCamera != null) chipFilterCamera.setChecked(activeFilter == VideoItem.Category.CAMERA);
         if (chipFilterScreen != null) chipFilterScreen.setChecked(activeFilter == VideoItem.Category.SCREEN);
-        if (chipFilterFaditor != null) chipFilterFaditor.setChecked(activeFilter == VideoItem.Category.FADITOR);
+        if (chipFilterEditorMini != null) chipFilterEditorMini.setChecked(activeFilter == VideoItem.Category.FADITOR);
         if (chipFilterStream != null) chipFilterStream.setChecked(activeFilter == VideoItem.Category.STREAM);
         if (chipFilterShot != null) chipFilterShot.setChecked(activeFilter == VideoItem.Category.SHOT);
     }
@@ -3461,20 +3461,20 @@ public class RecordsFragment extends BaseFragment implements
         }
     }
 
-    private void updateFaditorFilterRowVisibility() {
-        if (faditorFilterRow == null) return;
+    private void updateEditorMiniFilterRowVisibility() {
+        if (editor_miniFilterRow == null) return;
         
         boolean shouldShow = activeFilter == VideoItem.Category.FADITOR;
-        boolean isCurrentlyVisible = faditorFilterRow.getVisibility() == View.VISIBLE;
+        boolean isCurrentlyVisible = editor_miniFilterRow.getVisibility() == View.VISIBLE;
         
         if (shouldShow && !isCurrentlyVisible) {
             // Show with fluid amoeba-like animation
-            faditorFilterRow.setVisibility(View.VISIBLE);
-            faditorFilterRow.setAlpha(0f);
-            faditorFilterRow.setScaleY(0.3f);
-            faditorFilterRow.setTranslationY(-20f);
+            editor_miniFilterRow.setVisibility(View.VISIBLE);
+            editor_miniFilterRow.setAlpha(0f);
+            editor_miniFilterRow.setScaleY(0.3f);
+            editor_miniFilterRow.setTranslationY(-20f);
             
-            faditorFilterRow.animate()
+            editor_miniFilterRow.animate()
                 .alpha(1f)
                 .scaleY(1f)
                 .translationY(0f)
@@ -3483,17 +3483,17 @@ public class RecordsFragment extends BaseFragment implements
                 .start();
         } else if (!shouldShow && isCurrentlyVisible) {
             // Hide with smooth collapse animation - completes fully before hiding
-            faditorFilterRow.animate()
+            editor_miniFilterRow.animate()
                 .alpha(0f)
                 .scaleY(0f)
                 .translationY(-30f)
                 .setDuration(250)
                 .setInterpolator(new android.view.animation.AccelerateInterpolator())
                 .withEndAction(() -> {
-                    faditorFilterRow.setVisibility(View.GONE);
+                    editor_miniFilterRow.setVisibility(View.GONE);
                     // Reset for next animation
-                    faditorFilterRow.setScaleY(0.3f);
-                    faditorFilterRow.setTranslationY(-20f);
+                    editor_miniFilterRow.setScaleY(0.3f);
+                    editor_miniFilterRow.setTranslationY(-20f);
                 })
                 .start();
         }
@@ -3518,21 +3518,21 @@ public class RecordsFragment extends BaseFragment implements
         return itemSubtype == filterSubtype;
     }
 
-    private void updateFaditorFilterChipUi() {
-        if (chipFaditorAll != null) chipFaditorAll.setChecked(activeFaditorSubtype == VideoItem.FaditorSubtype.ALL);
-        if (chipFaditorConverted != null)
-            chipFaditorConverted.setChecked(activeFaditorSubtype == VideoItem.FaditorSubtype.CONVERTED);
-        if (chipFaditorMerge != null) chipFaditorMerge.setChecked(activeFaditorSubtype == VideoItem.FaditorSubtype.MERGE);
+    private void updateEditorMiniFilterChipUi() {
+        if (chipEditorMiniAll != null) chipEditorMiniAll.setChecked(activeEditorMiniSubtype == VideoItem.EditorMiniSubtype.ALL);
+        if (chipEditorMiniConverted != null)
+            chipEditorMiniConverted.setChecked(activeEditorMiniSubtype == VideoItem.EditorMiniSubtype.CONVERTED);
+        if (chipEditorMiniMerge != null) chipEditorMiniMerge.setChecked(activeEditorMiniSubtype == VideoItem.EditorMiniSubtype.MERGE);
     }
 
-    private boolean matchesFaditorSubtype(@NonNull VideoItem item, @NonNull VideoItem.FaditorSubtype filterSubtype) {
+    private boolean matchesEditorMiniSubtype(@NonNull VideoItem item, @NonNull VideoItem.EditorMiniSubtype filterSubtype) {
         if (item.category != VideoItem.Category.FADITOR) return false;
-        if (filterSubtype == VideoItem.FaditorSubtype.ALL) return true;
-        VideoItem.FaditorSubtype itemSubtype = item.faditorSubtype == null
-                ? VideoItem.FaditorSubtype.UNKNOWN
-                : item.faditorSubtype;
-        if (itemSubtype == VideoItem.FaditorSubtype.UNKNOWN) {
-            itemSubtype = VideoItem.FaditorSubtype.OTHER;
+        if (filterSubtype == VideoItem.EditorMiniSubtype.ALL) return true;
+        VideoItem.EditorMiniSubtype itemSubtype = item.editor_miniSubtype == null
+                ? VideoItem.EditorMiniSubtype.UNKNOWN
+                : item.editor_miniSubtype;
+        if (itemSubtype == VideoItem.EditorMiniSubtype.UNKNOWN) {
+            itemSubtype = VideoItem.EditorMiniSubtype.OTHER;
         }
         return itemSubtype == filterSubtype;
     }
@@ -3598,16 +3598,16 @@ public class RecordsFragment extends BaseFragment implements
         applyChipIcon(chipFilterAll, R.drawable.ic_list);
         applyChipIcon(chipFilterCamera, R.drawable.ic_chip_videocam);
         applyChipIcon(chipFilterScreen, R.drawable.screen_recorder);
-        applyChipIcon(chipFilterFaditor, R.drawable.ic_edit_cut);
+        applyChipIcon(chipFilterEditorMini, R.drawable.ic_edit_cut);
         applyChipIcon(chipFilterStream, R.drawable.ic_wifi);
         applyChipIcon(chipFilterShot, R.drawable.ic_chip_add_a_photo);
         applyChipIcon(chipCameraAll, R.drawable.ic_list);
         applyChipIcon(chipCameraBack, R.drawable.ic_chip_video_camera_back);
         applyChipIcon(chipCameraFront, R.drawable.ic_chip_video_camera_front);
         applyChipIcon(chipCameraDual, R.drawable.ic_chip_switch_camera);
-        applyChipIcon(chipFaditorAll, R.drawable.ic_list);
-        applyChipIcon(chipFaditorConverted, R.drawable.ic_update);
-        applyChipIcon(chipFaditorMerge, R.drawable.ic_split_file);
+        applyChipIcon(chipEditorMiniAll, R.drawable.ic_list);
+        applyChipIcon(chipEditorMiniConverted, R.drawable.ic_update);
+        applyChipIcon(chipEditorMiniMerge, R.drawable.ic_split_file);
         applyChipIcon(chipShotAll, R.drawable.ic_list);
         applyChipIcon(chipShotBack, R.drawable.ic_chip_photo_camera);
         applyChipIcon(chipShotSelfie, R.drawable.ic_chip_photo_camera_front);
@@ -3615,16 +3615,16 @@ public class RecordsFragment extends BaseFragment implements
         styleFilterChip(chipFilterAll);
         styleFilterChip(chipFilterCamera);
         styleFilterChip(chipFilterScreen);
-        styleFilterChip(chipFilterFaditor);
+        styleFilterChip(chipFilterEditorMini);
         styleFilterChip(chipFilterStream);
         styleFilterChip(chipFilterShot);
         styleFilterChip(chipCameraAll);
         styleFilterChip(chipCameraBack);
         styleFilterChip(chipCameraFront);
         styleFilterChip(chipCameraDual);
-        styleFilterChip(chipFaditorAll);
-        styleFilterChip(chipFaditorConverted);
-        styleFilterChip(chipFaditorMerge);
+        styleFilterChip(chipEditorMiniAll);
+        styleFilterChip(chipEditorMiniConverted);
+        styleFilterChip(chipEditorMiniMerge);
         styleFilterChip(chipShotAll);
         styleFilterChip(chipShotBack);
         styleFilterChip(chipShotSelfie);
@@ -3684,18 +3684,18 @@ public class RecordsFragment extends BaseFragment implements
         int all = getCategoryCount(VideoItem.Category.ALL);
         int camera = getCategoryCount(VideoItem.Category.CAMERA);
         int screen = getCategoryCount(VideoItem.Category.SCREEN);
-        int faditor = getCategoryCount(VideoItem.Category.FADITOR);
+        int editor_mini = getCategoryCount(VideoItem.Category.FADITOR);
         int stream = getCategoryCount(VideoItem.Category.STREAM);
         int shot = getCategoryCount(VideoItem.Category.SHOT);
 
         setChipLabelWithCount(chipFilterAll, R.string.records_filter_all, all);
         setChipLabelWithCount(chipFilterCamera, R.string.records_filter_camera, camera);
         setChipLabelWithCount(chipFilterScreen, R.string.records_filter_screen, screen);
-        setChipLabelWithCount(chipFilterFaditor, R.string.records_filter_faditor, faditor);
+        setChipLabelWithCount(chipFilterEditorMini, R.string.records_filter_editor_mini, editor_mini);
         setChipLabelWithCount(chipFilterStream, R.string.records_filter_stream, stream);
         setChipLabelWithCount(chipFilterShot, R.string.records_filter_shot, shot);
 
-        reorderFilterChipsByCount(camera, screen, faditor, stream, shot);
+        reorderFilterChipsByCount(camera, screen, editor_mini, stream, shot);
     }
 
     private void updateCameraFilterChipLabels() {
@@ -3714,21 +3714,21 @@ public class RecordsFragment extends BaseFragment implements
         int all = getShotSubtypeCount(VideoItem.ShotSubtype.ALL);
         int back = getShotSubtypeCount(VideoItem.ShotSubtype.BACK);
         int selfie = getShotSubtypeCount(VideoItem.ShotSubtype.SELFIE);
-        int fadrec = getShotSubtypeCount(VideoItem.ShotSubtype.FADREC);
+        int servarec = getShotSubtypeCount(VideoItem.ShotSubtype.FADREC);
 
         setChipLabelWithCount(chipShotAll, R.string.records_filter_shot_all, all);
         setChipLabelWithCount(chipShotBack, R.string.records_filter_shot_back, back);
         setChipLabelWithCount(chipShotSelfie, R.string.records_filter_shot_selfie, selfie);
-        setChipLabelWithCount(chipShotFadrec, R.string.records_filter_shot_fadrec, fadrec);
+        setChipLabelWithCount(chipShotFadrec, R.string.records_filter_shot_servarec, servarec);
     }
 
-    private void updateFaditorFilterChipLabels() {
-        int all = getFaditorSubtypeCount(VideoItem.FaditorSubtype.ALL);
-        int converted = getFaditorSubtypeCount(VideoItem.FaditorSubtype.CONVERTED);
-        int merge = getFaditorSubtypeCount(VideoItem.FaditorSubtype.MERGE);
-        setChipLabelWithCount(chipFaditorAll, R.string.records_filter_faditor_all, all);
-        setChipLabelWithCount(chipFaditorConverted, R.string.records_filter_faditor_converted, converted);
-        setChipLabelWithCount(chipFaditorMerge, R.string.records_filter_faditor_merge, merge);
+    private void updateEditorMiniFilterChipLabels() {
+        int all = getEditorMiniSubtypeCount(VideoItem.EditorMiniSubtype.ALL);
+        int converted = getEditorMiniSubtypeCount(VideoItem.EditorMiniSubtype.CONVERTED);
+        int merge = getEditorMiniSubtypeCount(VideoItem.EditorMiniSubtype.MERGE);
+        setChipLabelWithCount(chipEditorMiniAll, R.string.records_filter_editor_mini_all, all);
+        setChipLabelWithCount(chipEditorMiniConverted, R.string.records_filter_editor_mini_converted, converted);
+        setChipLabelWithCount(chipEditorMiniMerge, R.string.records_filter_editor_mini_merge, merge);
     }
 
     private void setChipLabelWithCount(@Nullable com.servalabs.cam.ui.utils.AnimatedChip chip, int baseLabelRes, int count) {
@@ -3761,18 +3761,18 @@ public class RecordsFragment extends BaseFragment implements
         return count;
     }
 
-    private int getFaditorSubtypeCount(@NonNull VideoItem.FaditorSubtype subtype) {
+    private int getEditorMiniSubtypeCount(@NonNull VideoItem.EditorMiniSubtype subtype) {
         int count = 0;
         for (VideoItem item : allLoadedItems) {
             if (item.category != VideoItem.Category.FADITOR) continue;
-            if (matchesFaditorSubtype(item, subtype)) {
+            if (matchesEditorMiniSubtype(item, subtype)) {
                 count++;
             }
         }
         return count;
     }
 
-    private void reorderFilterChipsByCount(int camera, int screen, int faditor, int stream, int shot) {
+    private void reorderFilterChipsByCount(int camera, int screen, int editor_mini, int stream, int shot) {
         if (chipGroupRecordsFilter == null || chipFilterAll == null) return;
         List<ChipOrderItem> ordered = new ArrayList<>();
         ordered.add(new ChipOrderItem(chipFilterCamera, camera));
@@ -3796,7 +3796,7 @@ public class RecordsFragment extends BaseFragment implements
             case SCREEN:
                 return R.id.chip_filter_screen;
             case FADITOR:
-                return R.id.chip_filter_faditor;
+                return R.id.chip_filter_editor_mini;
             case STREAM:
                 return R.id.chip_filter_stream;
             case SHOT:
@@ -3841,11 +3841,11 @@ public class RecordsFragment extends BaseFragment implements
             } else {
                 cameraSubtype = VideoItem.CameraSubtype.UNKNOWN;
             }
-            VideoItem.FaditorSubtype faditorSubtype = item.faditorSubtype;
+            VideoItem.EditorMiniSubtype editor_miniSubtype = item.editor_miniSubtype;
             if (category == VideoItem.Category.FADITOR) {
-                faditorSubtype = resolveFaditorSubtypeFromItem(item);
+                editor_miniSubtype = resolveEditorMiniSubtypeFromItem(item);
             } else {
-                faditorSubtype = VideoItem.FaditorSubtype.UNKNOWN;
+                editor_miniSubtype = VideoItem.EditorMiniSubtype.UNKNOWN;
             }
             VideoItem copy = new VideoItem(
                     item.uri,
@@ -3856,7 +3856,7 @@ public class RecordsFragment extends BaseFragment implements
                     resolveMediaTypeFromItem(item),
                     shotSubtype,
                     cameraSubtype,
-                    faditorSubtype);
+                    editor_miniSubtype);
             copy.isNew = item.isNew;
             copy.isProcessingUri = item.isProcessingUri;
             copy.isSkeleton = item.isSkeleton;
@@ -3934,18 +3934,18 @@ public class RecordsFragment extends BaseFragment implements
                 helper = getString(R.string.records_filter_helper_screen);
                 break;
             case FADITOR:
-                switch (activeFaditorSubtype) {
+                switch (activeEditorMiniSubtype) {
                     case CONVERTED:
-                        helper = getString(R.string.records_filter_helper_faditor_converted);
+                        helper = getString(R.string.records_filter_helper_editor_mini_converted);
                         break;
                     case MERGE:
-                        helper = getString(R.string.records_filter_helper_faditor_merge);
+                        helper = getString(R.string.records_filter_helper_editor_mini_merge);
                         break;
                     case OTHER:
                     case UNKNOWN:
                     case ALL:
                     default:
-                        helper = getString(R.string.records_filter_helper_faditor_all);
+                        helper = getString(R.string.records_filter_helper_editor_mini_all);
                         break;
                 }
                 break;
@@ -3961,7 +3961,7 @@ public class RecordsFragment extends BaseFragment implements
                         helper = getString(R.string.records_filter_helper_shot_selfie);
                         break;
                     case FADREC:
-                        helper = getString(R.string.records_filter_helper_shot_fadrec);
+                        helper = getString(R.string.records_filter_helper_shot_servarec);
                         break;
                     case UNKNOWN:
                     case ALL:
@@ -4018,10 +4018,10 @@ public class RecordsFragment extends BaseFragment implements
             case SCREEN:
                 return Constants.RECORDING_SUBDIR_SCREEN;
             case FADITOR:
-                if (activeFaditorSubtype == VideoItem.FaditorSubtype.CONVERTED) {
+                if (activeEditorMiniSubtype == VideoItem.EditorMiniSubtype.CONVERTED) {
                     return Constants.RECORDING_SUBDIR_FADITOR + "/" + Constants.RECORDING_SUBDIR_FADITOR_CONVERTED;
                 }
-                if (activeFaditorSubtype == VideoItem.FaditorSubtype.MERGE) {
+                if (activeEditorMiniSubtype == VideoItem.EditorMiniSubtype.MERGE) {
                     return Constants.RECORDING_SUBDIR_FADITOR + "/" + Constants.RECORDING_SUBDIR_FADITOR_MERGE;
                 }
                 return Constants.RECORDING_SUBDIR_FADITOR;
@@ -4087,9 +4087,9 @@ public class RecordsFragment extends BaseFragment implements
                 getString(R.string.records_batch_save_desc),
                 null, null, R.drawable.ic_arrow_right, null, null, "download"));
         items.add(new OptionItem(
-                "batch_faditor_actions",
-                getString(R.string.records_batch_faditor) + suffix,
-                getString(R.string.records_batch_faditor_desc),
+                "batch_editor_mini_actions",
+                getString(R.string.records_batch_editor_mini) + suffix,
+                getString(R.string.records_batch_editor_mini_desc),
                 null, null, R.drawable.ic_arrow_right, null, null, "auto_awesome"));
         items.add(new OptionItem(
                 "batch_delete",
@@ -4114,11 +4114,11 @@ public class RecordsFragment extends BaseFragment implements
                         showBatchSaveOptionsSheet();
                     }
                     break;
-                case "batch_faditor_actions":
+                case "batch_editor_mini_actions":
                     if (selectedUris.isEmpty()) {
                         Toast.makeText(requireContext(), getString(R.string.records_batch_select_items_first), Toast.LENGTH_SHORT).show();
                     } else {
-                        showBatchFaditorOptionsSheet();
+                        showBatchEditorMiniOptionsSheet();
                     }
                     break;
                 case "batch_delete":
@@ -4199,36 +4199,36 @@ public class RecordsFragment extends BaseFragment implements
         sheet.show(activity.getSupportFragmentManager(), "records_batch_save_sheet");
     }
 
-    private void showBatchFaditorOptionsSheet() {
+    private void showBatchEditorMiniOptionsSheet() {
         if (!isAdded() || getContext() == null || getActivity() == null) return;
         if (!(getActivity() instanceof FragmentActivity)) return;
 
         ArrayList<OptionItem> items = new ArrayList<>();
         items.add(new OptionItem(
-                "faditor_export_standard_mp4",
-                getString(R.string.records_batch_faditor_export_standard),
-                getString(R.string.records_batch_faditor_export_standard_desc),
+                "editor_mini_export_standard_mp4",
+                getString(R.string.records_batch_editor_mini_export_standard),
+                getString(R.string.records_batch_editor_mini_export_standard_desc),
                 null, null, null, null, null, "movie_edit"));
         items.add(new OptionItem(
-                "faditor_merge_selected",
-                getString(R.string.records_batch_faditor_merge),
-                getString(R.string.records_batch_faditor_merge_desc),
+                "editor_mini_merge_selected",
+                getString(R.string.records_batch_editor_mini_merge),
+                getString(R.string.records_batch_editor_mini_merge_desc),
                 null, null, null, null, null, "merge_type"));
 
         FragmentActivity activity = (FragmentActivity) getActivity();
-        String resultKey = "records_batch_faditor_options";
+        String resultKey = "records_batch_editor_mini_options";
         activity.getSupportFragmentManager().setFragmentResultListener(resultKey, activity, (requestKey, bundle) -> {
             if (bundle == null) return;
             String id = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            if ("faditor_export_standard_mp4".equals(id)) {
+            if ("editor_mini_export_standard_mp4".equals(id)) {
                 startBatchMediaAction(Constants.INTENT_ACTION_BATCH_EXPORT_STANDARD_MP4);
-            } else if ("faditor_merge_selected".equals(id)) {
+            } else if ("editor_mini_merge_selected".equals(id)) {
                 startBatchMediaAction(Constants.INTENT_ACTION_BATCH_MERGE_VIDEOS);
             }
         });
 
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceGradient(
-                getString(R.string.records_batch_faditor_sheet_title),
+                getString(R.string.records_batch_editor_mini_sheet_title),
                 items,
                 null,
                 resultKey,
@@ -4237,7 +4237,7 @@ public class RecordsFragment extends BaseFragment implements
         );
         Bundle args = sheet.getArguments();
         if (args != null) args.putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
-        sheet.show(activity.getSupportFragmentManager(), "records_batch_faditor_sheet");
+        sheet.show(activity.getSupportFragmentManager(), "records_batch_editor_mini_sheet");
     }
 
     private void startBatchMediaAction(@NonNull String action) {
@@ -4254,7 +4254,7 @@ public class RecordsFragment extends BaseFragment implements
         intent.putStringArrayListExtra(Constants.EXTRA_BATCH_INPUT_URIS, uriStrings);
         intent.putExtra(Constants.EXTRA_BATCH_OUTPUT_MODE, Constants.BATCH_OUTPUT_MODE_DEFAULT_FADITOR);
         ContextCompat.startForegroundService(requireContext(), intent);
-        Toast.makeText(requireContext(), getString(R.string.records_batch_faditor_queued, uriStrings.size()), Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), getString(R.string.records_batch_editor_mini_queued, uriStrings.size()), Toast.LENGTH_SHORT).show();
     }
 
     @NonNull
@@ -5581,7 +5581,7 @@ public class RecordsFragment extends BaseFragment implements
         if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADSHOT + "Selfie_")) {
             return VideoItem.ShotSubtype.SELFIE;
         }
-        if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADSHOT + "FadRec_")) {
+        if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADSHOT + "ServaRec_")) {
             return VideoItem.ShotSubtype.FADREC;
         }
         if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADSHOT + "Back_")) {
@@ -5713,76 +5713,76 @@ public class RecordsFragment extends BaseFragment implements
         if (fileName.startsWith(Constants.RECORDING_DIRECTORY + "_")) return VideoItem.Category.CAMERA;
         if (fileName.startsWith("DualCam_")) return VideoItem.Category.CAMERA;
         if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADREC)) return VideoItem.Category.SCREEN;
-        if (fileName.startsWith("Faditor_")) return VideoItem.Category.FADITOR;
+        if (fileName.startsWith("EditorMini_")) return VideoItem.Category.FADITOR;
         if (fileName.startsWith("Stream_")) return VideoItem.Category.STREAM;
         if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADSHOT)) return VideoItem.Category.SHOT;
         return VideoItem.Category.UNKNOWN;
     }
 
     @NonNull
-    private VideoItem.FaditorSubtype inferFaditorSubtypeFromFolder(@Nullable String folderName) {
-        if (folderName == null) return VideoItem.FaditorSubtype.UNKNOWN;
+    private VideoItem.EditorMiniSubtype inferEditorMiniSubtypeFromFolder(@Nullable String folderName) {
+        if (folderName == null) return VideoItem.EditorMiniSubtype.UNKNOWN;
         if (Constants.RECORDING_SUBDIR_FADITOR_CONVERTED.equalsIgnoreCase(folderName)) {
-            return VideoItem.FaditorSubtype.CONVERTED;
+            return VideoItem.EditorMiniSubtype.CONVERTED;
         }
         if (Constants.RECORDING_SUBDIR_FADITOR_MERGE.equalsIgnoreCase(folderName)) {
-            return VideoItem.FaditorSubtype.MERGE;
+            return VideoItem.EditorMiniSubtype.MERGE;
         }
-        return VideoItem.FaditorSubtype.UNKNOWN;
+        return VideoItem.EditorMiniSubtype.UNKNOWN;
     }
 
     @NonNull
-    private VideoItem.FaditorSubtype inferFaditorSubtypeFromName(@Nullable String fileName) {
-        if (fileName == null) return VideoItem.FaditorSubtype.UNKNOWN;
+    private VideoItem.EditorMiniSubtype inferEditorMiniSubtypeFromName(@Nullable String fileName) {
+        if (fileName == null) return VideoItem.EditorMiniSubtype.UNKNOWN;
         if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADITOR_STANDARD)) {
-            return VideoItem.FaditorSubtype.CONVERTED;
+            return VideoItem.EditorMiniSubtype.CONVERTED;
         }
         if (fileName.startsWith(Constants.RECORDING_FILE_PREFIX_FADITOR_MERGE)) {
-            return VideoItem.FaditorSubtype.MERGE;
+            return VideoItem.EditorMiniSubtype.MERGE;
         }
-        return VideoItem.FaditorSubtype.UNKNOWN;
+        return VideoItem.EditorMiniSubtype.UNKNOWN;
     }
 
     @NonNull
-    private VideoItem.FaditorSubtype resolveFaditorSubtype(
-            @NonNull VideoItem.FaditorSubtype explicitSubtype,
+    private VideoItem.EditorMiniSubtype resolveEditorMiniSubtype(
+            @NonNull VideoItem.EditorMiniSubtype explicitSubtype,
             @Nullable String fileName
     ) {
-        if (explicitSubtype != VideoItem.FaditorSubtype.UNKNOWN) {
+        if (explicitSubtype != VideoItem.EditorMiniSubtype.UNKNOWN) {
             return explicitSubtype;
         }
-        VideoItem.FaditorSubtype byName = inferFaditorSubtypeFromName(fileName);
-        if (byName != VideoItem.FaditorSubtype.UNKNOWN) {
+        VideoItem.EditorMiniSubtype byName = inferEditorMiniSubtypeFromName(fileName);
+        if (byName != VideoItem.EditorMiniSubtype.UNKNOWN) {
             return byName;
         }
-        return VideoItem.FaditorSubtype.OTHER;
+        return VideoItem.EditorMiniSubtype.OTHER;
     }
 
     @NonNull
-    private VideoItem.FaditorSubtype resolveFaditorSubtypeFromItem(@NonNull VideoItem item) {
-        if (item.faditorSubtype != null && item.faditorSubtype != VideoItem.FaditorSubtype.UNKNOWN) {
-            return item.faditorSubtype;
+    private VideoItem.EditorMiniSubtype resolveEditorMiniSubtypeFromItem(@NonNull VideoItem item) {
+        if (item.editor_miniSubtype != null && item.editor_miniSubtype != VideoItem.EditorMiniSubtype.UNKNOWN) {
+            return item.editor_miniSubtype;
         }
-        VideoItem.FaditorSubtype byUri = inferFaditorSubtypeFromUri(item.uri);
-        if (byUri != VideoItem.FaditorSubtype.UNKNOWN) {
+        VideoItem.EditorMiniSubtype byUri = inferEditorMiniSubtypeFromUri(item.uri);
+        if (byUri != VideoItem.EditorMiniSubtype.UNKNOWN) {
             return byUri;
         }
-        return resolveFaditorSubtype(VideoItem.FaditorSubtype.UNKNOWN, item.displayName);
+        return resolveEditorMiniSubtype(VideoItem.EditorMiniSubtype.UNKNOWN, item.displayName);
     }
 
     @NonNull
-    private VideoItem.FaditorSubtype inferFaditorSubtypeFromUri(@Nullable Uri uri) {
-        if (uri == null) return VideoItem.FaditorSubtype.UNKNOWN;
+    private VideoItem.EditorMiniSubtype inferEditorMiniSubtypeFromUri(@Nullable Uri uri) {
+        if (uri == null) return VideoItem.EditorMiniSubtype.UNKNOWN;
         String value = uri.toString();
         if (value.contains("/" + Constants.RECORDING_SUBDIR_FADITOR + "/" + Constants.RECORDING_SUBDIR_FADITOR_CONVERTED + "/")
                 || value.contains("%2F" + Constants.RECORDING_SUBDIR_FADITOR + "%2F" + Constants.RECORDING_SUBDIR_FADITOR_CONVERTED + "%2F")) {
-            return VideoItem.FaditorSubtype.CONVERTED;
+            return VideoItem.EditorMiniSubtype.CONVERTED;
         }
         if (value.contains("/" + Constants.RECORDING_SUBDIR_FADITOR + "/" + Constants.RECORDING_SUBDIR_FADITOR_MERGE + "/")
                 || value.contains("%2F" + Constants.RECORDING_SUBDIR_FADITOR + "%2F" + Constants.RECORDING_SUBDIR_FADITOR_MERGE + "%2F")) {
-            return VideoItem.FaditorSubtype.MERGE;
+            return VideoItem.EditorMiniSubtype.MERGE;
         }
-        return VideoItem.FaditorSubtype.UNKNOWN;
+        return VideoItem.EditorMiniSubtype.UNKNOWN;
     }
 
     private void addSafCategoryFiles(
@@ -5804,7 +5804,7 @@ public class RecordsFragment extends BaseFragment implements
             return;
         }
         if (category == VideoItem.Category.FADITOR) {
-            addSafFaditorFiles(out, childDir);
+            addSafEditorMiniFiles(out, childDir);
             return;
         }
         DocumentFile[] files = childDir.listFiles();
@@ -5868,8 +5868,8 @@ public class RecordsFragment extends BaseFragment implements
         }
     }
 
-    private void addSafFaditorFiles(@NonNull List<SafCandidate> out, @NonNull DocumentFile faditorRoot) {
-        DocumentFile[] entries = faditorRoot.listFiles();
+    private void addSafEditorMiniFiles(@NonNull List<SafCandidate> out, @NonNull DocumentFile editor_miniRoot) {
+        DocumentFile[] entries = editor_miniRoot.listFiles();
         if (entries == null) return;
         for (DocumentFile entry : entries) {
             if (entry == null) continue;
@@ -5879,11 +5879,11 @@ public class RecordsFragment extends BaseFragment implements
                         VideoItem.Category.FADITOR,
                         VideoItem.ShotSubtype.UNKNOWN,
                         VideoItem.CameraSubtype.UNKNOWN,
-                        inferFaditorSubtypeFromName(entry.getName())));
+                        inferEditorMiniSubtypeFromName(entry.getName())));
                 continue;
             }
             if (!entry.isDirectory()) continue;
-            VideoItem.FaditorSubtype subtype = inferFaditorSubtypeFromFolder(entry.getName());
+            VideoItem.EditorMiniSubtype subtype = inferEditorMiniSubtypeFromFolder(entry.getName());
             DocumentFile[] nested = entry.listFiles();
             if (nested == null) continue;
             for (DocumentFile nestedFile : nested) {
@@ -5905,7 +5905,7 @@ public class RecordsFragment extends BaseFragment implements
             @NonNull VideoItem.Category explicitCategory,
             @NonNull VideoItem.ShotSubtype explicitShotSubtype,
             @NonNull VideoItem.CameraSubtype explicitCameraSubtype,
-            @NonNull VideoItem.FaditorSubtype explicitFaditorSubtype
+            @NonNull VideoItem.EditorMiniSubtype explicitEditorMiniSubtype
     ) {
         String fileName = docFile.getName();
         VideoItem.MediaType mediaType = inferMediaTypeFromName(fileName);
@@ -5927,9 +5927,9 @@ public class RecordsFragment extends BaseFragment implements
         VideoItem.CameraSubtype cameraSubtype = category == VideoItem.Category.CAMERA
                 ? resolveCameraSubtype(explicitCameraSubtype, fileName)
                 : VideoItem.CameraSubtype.UNKNOWN;
-        VideoItem.FaditorSubtype faditorSubtype = category == VideoItem.Category.FADITOR
-                ? resolveFaditorSubtype(explicitFaditorSubtype, fileName)
-                : VideoItem.FaditorSubtype.UNKNOWN;
+        VideoItem.EditorMiniSubtype editor_miniSubtype = category == VideoItem.Category.FADITOR
+                ? resolveEditorMiniSubtype(explicitEditorMiniSubtype, fileName)
+                : VideoItem.EditorMiniSubtype.UNKNOWN;
         VideoItem item = new VideoItem(
                 docFile.getUri(),
                 fileName,
@@ -5939,7 +5939,7 @@ public class RecordsFragment extends BaseFragment implements
                 mediaType,
                 shotSubtype,
                 cameraSubtype,
-                faditorSubtype);
+                editor_miniSubtype);
         item.isNew = Utils.isVideoConsideredNew(lastModified);
         out.add(item);
     }

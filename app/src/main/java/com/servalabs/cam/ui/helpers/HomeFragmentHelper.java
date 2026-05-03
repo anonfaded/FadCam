@@ -99,21 +99,21 @@ public class HomeFragmentHelper {
                 break;
 
             case Constants.MODE_FADREC:
-                // FadRec mode - screen recording
-                FLog.d(TAG, "FadRec mode selected");
+                // ServaRec mode - screen recording
+                FLog.d(TAG, "ServaRec mode selected");
                 // Recreate fragment to show FadRecHomeFragment
                 recreateHomeFragment();
                 break;
 
             case Constants.MODE_FADMIC:
                 // Future: Handle mic recording mode
-                FLog.d(TAG, "FadMic mode will be implemented in future");
+                FLog.d(TAG, "ServaMic mode will be implemented in future");
                 break;
         }
     }
 
     /**
-     * Recreate the home fragment to switch between ServaCam and FadRec modes.
+     * Recreate the home fragment to switch between ServaCam and ServaRec modes.
      * With hide/show navigation, we must force remove and re-add the fragment
      * since switchFragment() would return early (same position).
      */

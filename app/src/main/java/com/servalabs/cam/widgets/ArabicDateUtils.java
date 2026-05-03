@@ -60,15 +60,27 @@ public class ArabicDateUtils {
                     return hijriDay + " " + ENGLISH_ISLAMIC_MONTHS[hijriMonthIndex] + " " + hijriYear;
                     
                 case "FULL_ARABIC":
-                default:
                     // All Arabic
                     String arabicDay = convertToArabicNumerals(String.valueOf(hijriDay));
                     String arabicYear = convertToArabicNumerals(String.valueOf(hijriYear));
                     String monthName = ARABIC_MONTHS[hijriMonthIndex];
                     return arabicDay + " " + monthName + " " + arabicYear;
+                default:
+                    // If no explicit format is set, adapt to the current language
+                    if (java.util.Locale.getDefault().getLanguage().equals("en")) {
+                        return hijriDay + " " + ENGLISH_ISLAMIC_MONTHS[hijriMonthIndex] + " " + hijriYear;
+                    } else {
+                        String defaultArabicDay = convertToArabicNumerals(String.valueOf(hijriDay));
+                        String defaultArabicYear = convertToArabicNumerals(String.valueOf(hijriYear));
+                        String defaultMonthName = ARABIC_MONTHS[hijriMonthIndex];
+                        return defaultArabicDay + " " + defaultMonthName + " " + defaultArabicYear;
+                    }
             }
         } catch (Exception e) {
             // Fallback in case of any issues with Hijri calendar conversion
+            if (java.util.Locale.getDefault().getLanguage().equals("en")) {
+                return "1 Muharram 1446";
+            }
             return "١ محرم ١٤٤٦"; // Default Arabic date
         }
     }

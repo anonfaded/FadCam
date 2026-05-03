@@ -241,7 +241,7 @@ public class GLWatermarkRenderer {
     }
 
     private float[] computeWatermarkRectVertices(float ndcWidth, float ndcHeight) {
-        // For screen recording (FadRec), position watermark with padding below the statusbar.
+        // For screen recording (ServaRec), position watermark with padding below the statusbar.
         // For camera recording (ServaCam), position at the very top (no padding).
         float topY = 1.0f;
         
@@ -1150,7 +1150,7 @@ public class GLWatermarkRenderer {
             if (line == null) continue;
             float lineW = watermarkPaint.measureText(line.replace("<ICON>", "").replace("<FADCAM_ICON>", ""));
             if (line.contains("<ICON>")) {
-                lineW += measureIconWidth("fadrec", iconLineH) + (padding * 0.25f);
+                lineW += measureIconWidth("servarec", iconLineH) + (padding * 0.25f);
             }
             if (line.contains("<FADCAM_ICON>")) {
                 lineW += measureIconWidth("menu_icon_unknown", iconLineH) + (padding * 0.25f);
@@ -1243,7 +1243,7 @@ public class GLWatermarkRenderer {
     }
 
     /**
-     * Draws a watermark line that may contain {@code <ICON>} (FadRec icon) and/or
+     * Draws a watermark line that may contain {@code <ICON>} (ServaRec icon) and/or
      * {@code <FADCAM_ICON>} (ServaCam icon) placeholders inline with the text.
      * Icons are scaled to the font bounding-box height so they align flush with glyphs.
      */
@@ -1297,7 +1297,7 @@ public class GLWatermarkRenderer {
                 }
             } else {
                 // Icon segment
-                String drawableName = isFadrec ? "fadrec" : "menu_icon_unknown";
+                String drawableName = isFadrec ? "servarec" : "menu_icon_unknown";
                 android.graphics.Bitmap iconBmp = getIconBitmap(drawableName);
                 if (iconBmp != null) {
                     float iconW = iconH * ((float) iconBmp.getWidth() / (float) iconBmp.getHeight());

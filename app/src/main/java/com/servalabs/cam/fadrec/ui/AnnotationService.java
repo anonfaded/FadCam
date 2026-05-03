@@ -608,7 +608,7 @@ public class AnnotationService extends Service {
 
         // Update current project name and save to preferences
         currentProjectName = projectName;
-        android.content.SharedPreferences prefs = getSharedPreferences("fadrec_prefs", MODE_PRIVATE);
+        android.content.SharedPreferences prefs = getSharedPreferences("servarec_prefs", MODE_PRIVATE);
         prefs.edit().putString("current_project", currentProjectName).apply();
         FLog.d(TAG, "Updated current project preference: " + currentProjectName);
 
@@ -670,13 +670,13 @@ public class AnnotationService extends Service {
             saveCurrentState();
         }
 
-        // Generate new project name with timestamp - using FadRec prefix
-        String newProjectName = "FadRec_"
+        // Generate new project name with timestamp - using ServaRec prefix
+        String newProjectName = "ServaRec_"
                 + new java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(new java.util.Date());
         currentProjectName = newProjectName;
 
         // Update preference
-        android.content.SharedPreferences prefs = getSharedPreferences("fadrec_prefs", MODE_PRIVATE);
+        android.content.SharedPreferences prefs = getSharedPreferences("servarec_prefs", MODE_PRIVATE);
         prefs.edit().putString("current_project", currentProjectName).apply();
 
         // Create fresh state
@@ -2630,9 +2630,9 @@ public class AnnotationService extends Service {
 
                 boolean success = projectFileManager.saveProject(state, currentProjectName);
                 if (success) {
-                    FLog.d(TAG, "✅ State saved successfully to: " + currentProjectName + ".fadrec");
+                    FLog.d(TAG, "✅ State saved successfully to: " + currentProjectName + ".servarec");
                 } else {
-                    FLog.e(TAG, "❌ Failed to save state to: " + currentProjectName + ".fadrec");
+                    FLog.e(TAG, "❌ Failed to save state to: " + currentProjectName + ".servarec");
                 }
             }
         }
@@ -3094,7 +3094,7 @@ public class AnnotationService extends Service {
                 : getString(R.string.annotation_notification_show_menu);
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("FadRec Annotation" + annotationStatus)
+                .setContentTitle("ServaRec Annotation" + annotationStatus)
                 .setContentText(
                         "Tap to open ServaCam • Project: " + (currentProjectName != null ? currentProjectName : "None"))
                 .setSmallIcon(R.drawable.ic_draw_edit)
@@ -3275,7 +3275,7 @@ public class AnnotationService extends Service {
                         FLog.i(TAG, "✅ Project renamed successfully");
 
                         // Update preferences with new name
-                        android.content.SharedPreferences prefs = getSharedPreferences("fadrec_prefs", MODE_PRIVATE);
+                        android.content.SharedPreferences prefs = getSharedPreferences("servarec_prefs", MODE_PRIVATE);
                         prefs.edit().putString("current_project", currentProjectName).apply();
 
                         // Update UI immediately

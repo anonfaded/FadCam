@@ -32,7 +32,7 @@ import com.servalabs.cam.ui.faditor.model.FaditorProject;
 public class ExportService extends Service {
 
     private static final String TAG = "ExportService";
-    private static final String CHANNEL_ID = "faditor_export_channel";
+    private static final String CHANNEL_ID = "editor_mini_export_channel";
     private static final int NOTIFICATION_ID = 3001;
 
     /** Action to start an export. */
@@ -277,9 +277,9 @@ public class ExportService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    getString(R.string.faditor_export_notif_channel),
+                    getString(R.string.editor_mini_export_notif_channel),
                     NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription(getString(R.string.faditor_export_notif_channel_desc));
+            channel.setDescription(getString(R.string.editor_mini_export_notif_channel_desc));
             channel.setShowBadge(false);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
@@ -301,10 +301,10 @@ public class ExportService extends Service {
         PendingIntent openPi = PendingIntent.getActivity(this, 0, openIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        String title = getString(R.string.faditor_export_notif_title);
+        String title = getString(R.string.editor_mini_export_notif_title);
         String text = indeterminate
-                ? getString(R.string.faditor_exporting)
-                : getString(R.string.faditor_exporting_percent, percent);
+                ? getString(R.string.editor_mini_exporting)
+                : getString(R.string.editor_mini_exporting_percent, percent);
 
         // ETA calculation
         if (!indeterminate && percent > 5) {
@@ -323,7 +323,7 @@ public class ExportService extends Service {
                 .setOngoing(true)
                 .setSilent(true)
                 .setContentIntent(openPi)
-                .addAction(0, getString(R.string.faditor_cancel), cancelPi)
+                .addAction(0, getString(R.string.editor_mini_cancel), cancelPi)
                 .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
                 .build();
     }
@@ -344,8 +344,8 @@ public class ExportService extends Service {
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_export_video)
-                .setContentTitle(getString(R.string.faditor_export_complete_title))
-                .setContentText(getString(R.string.faditor_export_complete_summary))
+                .setContentTitle(getString(R.string.editor_mini_export_complete_title))
+                .setContentText(getString(R.string.editor_mini_export_complete_summary))
                 .setOngoing(false)
                 .setAutoCancel(true)
                 .setContentIntent(openPi)
@@ -359,9 +359,9 @@ public class ExportService extends Service {
     private void showErrorNotification(@Nullable String errorMsg) {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_export_video)
-                .setContentTitle(getString(R.string.faditor_export_notif_error_title))
+                .setContentTitle(getString(R.string.editor_mini_export_notif_error_title))
                 .setContentText(errorMsg != null ? errorMsg
-                        : getString(R.string.faditor_export_error, "Unknown error"))
+                        : getString(R.string.editor_mini_export_error, "Unknown error"))
                 .setOngoing(false)
                 .setAutoCancel(true)
                 .build();

@@ -108,7 +108,7 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
         root.addView(titleRow);
 
         TextView title = new TextView(requireContext());
-        title.setText(R.string.faditor_volume_title);
+        title.setText(R.string.editor_mini_volume_title);
         title.setTextColor(0xFFFFFFFF);
         title.setTextSize(18);
         title.setTypeface(null, Typeface.BOLD);
@@ -161,7 +161,7 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
 
         // ── Warning text for >100% ───────────────────────────────────
         TextView warningText = new TextView(requireContext());
-        warningText.setText(R.string.faditor_volume_warning);
+        warningText.setText(R.string.editor_mini_volume_warning);
         warningText.setTextColor(0xFFF44336);
         warningText.setTextSize(11);
         warningText.setPadding((int) (44 * dp), (int) (2 * dp), 0, 0);
@@ -196,8 +196,8 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
 
         TextView muteLabel = new TextView(requireContext());
         muteLabel.setText(currentMuted
-                ? R.string.faditor_volume_unmute
-                : R.string.faditor_volume_mute);
+                ? R.string.editor_mini_volume_unmute
+                : R.string.editor_mini_volume_mute);
         muteLabel.setTextSize(15);
         muteLabel.setTextColor(currentMuted ? 0xFFF44336 : 0xFFCCCCCC);
         muteLabel.setTypeface(null, currentMuted ? Typeface.BOLD : Typeface.NORMAL);
@@ -236,8 +236,8 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
             warningText.setVisibility(vol > 1.0f ? View.VISIBLE : View.GONE);
             muteIcon.setTextColor(currentMuted ? 0xFFF44336 : 0xFF888888);
             muteLabel.setText(currentMuted
-                    ? R.string.faditor_volume_unmute
-                    : R.string.faditor_volume_mute);
+                    ? R.string.editor_mini_volume_unmute
+                    : R.string.editor_mini_volume_mute);
             muteLabel.setTextColor(currentMuted ? 0xFFF44336 : 0xFFCCCCCC);
             muteLabel.setTypeface(null, currentMuted ? Typeface.BOLD : Typeface.NORMAL);
             if (resetRowRef[0] != null) {
@@ -262,8 +262,8 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
                     currentVolume > 1.0f && !currentMuted ? View.VISIBLE : View.GONE);
             muteIcon.setTextColor(currentMuted ? 0xFFF44336 : 0xFF888888);
             muteLabel.setText(currentMuted
-                    ? R.string.faditor_volume_unmute
-                    : R.string.faditor_volume_mute);
+                    ? R.string.editor_mini_volume_unmute
+                    : R.string.editor_mini_volume_mute);
             muteLabel.setTextColor(currentMuted ? 0xFFF44336 : 0xFFCCCCCC);
             muteLabel.setTypeface(null, currentMuted ? Typeface.BOLD : Typeface.NORMAL);
             if (resetRowRef[0] != null) {
@@ -323,7 +323,7 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
             updateSliderColors(slider, 1.0f, false);
             warningText.setVisibility(View.GONE);
             muteIcon.setTextColor(0xFF888888);
-            muteLabel.setText(R.string.faditor_volume_mute);
+            muteLabel.setText(R.string.editor_mini_volume_mute);
             muteLabel.setTextColor(0xFFCCCCCC);
             muteLabel.setTypeface(null, Typeface.NORMAL);
             resetRow.setVisibility(View.GONE);
@@ -338,7 +338,7 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
 
     private void updatePercentText(TextView tv, float volume, boolean muted) {
         if (muted) {
-            tv.setText(R.string.faditor_tool_muted);
+            tv.setText(R.string.editor_mini_tool_muted);
             tv.setTextColor(0xFFF44336);
         } else {
             int percent = Math.round(volume * 100);

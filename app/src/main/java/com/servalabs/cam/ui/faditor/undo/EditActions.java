@@ -9,7 +9,7 @@ import com.servalabs.cam.ui.faditor.model.Timeline;
 
 /**
  * Collection of concrete {@link EditAction} implementations for all
- * Faditor editor operations.
+ * EditorMini editor operations.
  *
  * <p>Each action captures the old and new state so it can be reversed.
  * Actions operate directly on the project model.</p>

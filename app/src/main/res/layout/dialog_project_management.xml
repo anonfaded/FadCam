@@ -10,7 +10,7 @@
     <TextView 
         android:layout_width="match_parent" 
         android:layout_height="wrap_content" 
-        android:text="@string/fadrec_projects" 
+        android:text="@string/servarec_projects" 
         android:textSize="20sp" 
         android:textStyle="bold" 
         android:textColor="#FFFFFF" 

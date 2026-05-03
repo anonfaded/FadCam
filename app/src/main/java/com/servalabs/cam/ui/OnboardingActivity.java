@@ -296,33 +296,8 @@ public class OnboardingActivity extends AppIntro {
                                                 }
                                             };
                                             handler.postDelayed(blinkRef[0], 2400);
-                                            // Greeting cycle: Hi! <-> Arabic (parallel, non-blocking)
-                                            final int[] gCycleIdx = {0};
-                                            final Runnable[] greetingCycle = {null};
-                                            greetingCycle[0] = () -> {
-                                                if (tvHiGreeting == null || !tvHiGreeting.isAttachedToWindow()) return;
-                                                boolean isHi = (gCycleIdx[0] % 2 == 0);
-                                                tvHiGreeting.setText(isHi ? "Hi!"
-                                                        : "\u0627\u0644\u0633\u0644\u0627\u0645 \u0639\u0644\u064a\u0643\u0645\n\u0648\u0631\u062d\u0645\u0629 \u0627\u0644\u0644\u0647 \u0648\u0628\u0631\u0643\u0627\u062a\u0647");
-                                                tvHiGreeting.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isHi ? 32f : 11f);
-                                                tvHiGreeting.setRotation(isHi ? -10f : 4f);
-                                                tvHiGreeting.setTextDirection(isHi ? View.TEXT_DIRECTION_LTR : View.TEXT_DIRECTION_RTL);
-                                                tvHiGreeting.setAlpha(0f);
-                                                tvHiGreeting.setScaleX(isHi ? 0.4f : 0.7f);
-                                                tvHiGreeting.setScaleY(isHi ? 0.4f : 0.7f);
-                                                tvHiGreeting.animate().alpha(1f).scaleX(1f).scaleY(1f)
-                                                        .setDuration(280)
-                                                        .setInterpolator(new android.view.animation.OvershootInterpolator(isHi ? 2.2f : 1.5f))
-                                                        .withEndAction(() -> handler.postDelayed(() -> {
-                                                            tvHiGreeting.animate().alpha(0f).setDuration(220)
-                                                                    .withEndAction(() -> {
-                                                                        gCycleIdx[0]++;
-                                                                        handler.postDelayed(greetingCycle[0], 150);
-                                                                    }).start();
-                                                        }, 1200)).start();
-                                            };
-                                            tvHiGreeting.setVisibility(View.VISIBLE);
-                                            handler.post(greetingCycle[0]);
+                                            // Greeting cycle removed.
+
                                             // ===== TEXT ANIMATION (starts immediately, alongside greeting) =====
                                             descView.setTypeface(android.graphics.Typeface.MONOSPACE);
                                 descView.setGravity(android.view.Gravity.START);

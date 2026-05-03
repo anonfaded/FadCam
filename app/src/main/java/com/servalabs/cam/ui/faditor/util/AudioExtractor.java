@@ -131,7 +131,7 @@ public class AudioExtractor {
             extractor.selectTrack(audioTrackIndex);
 
             // Create output file
-            File cacheDir = new File(context.getCacheDir(), "faditor_audio");
+            File cacheDir = new File(context.getCacheDir(), "editor_mini_audio");
             if (!cacheDir.exists()) cacheDir.mkdirs();
             File outputFile = new File(cacheDir,
                     "audio_" + System.currentTimeMillis() + ".m4a");

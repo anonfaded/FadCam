@@ -50,7 +50,7 @@ public abstract class Constants {
     public static final String PREF_HOME_TIME_LEFT_COLOR = "pref_home_time_left_color";
     public static final String PREF_HOME_CLOCK_HOUR_FORMAT = "pref_home_clock_hour_format";
     public static final String PREF_HOME_CARD_RAIL_FOLDED = "pref_home_card_rail_folded";
-    public static final String PREF_FLOATING_CONTROLS_ENABLED = "floating_controls_enabled"; // Enable floating quick menu for FadRec
+    public static final String PREF_FLOATING_CONTROLS_ENABLED = "floating_controls_enabled"; // Enable floating quick menu for ServaRec
     public static final String PREF_BOTH_TORCHES_ENABLED =
         "pref_both_torches_enabled";
     public static final String PREF_SELECTED_TORCH_SOURCE =
@@ -246,10 +246,10 @@ public abstract class Constants {
     public static final String BROADCAST_EXTRA_CAMERA_TYPE_ATTEMPTED =
         "com.servalabs.cam.EXTRA_CAMERA_TYPE_ATTEMPTED";
 
-    // -------------- FadRec (Screen Recording) Constants Start --------------
+    // -------------- ServaRec (Screen Recording) Constants Start --------------
     // Directory and file naming
-    public static final String RECORDING_DIRECTORY_FADREC = "FadRec";
-    public static final String RECORDING_FILE_PREFIX_FADREC = "FadRec_";
+    public static final String RECORDING_DIRECTORY_FADREC = "ServaRec";
+    public static final String RECORDING_FILE_PREFIX_FADREC = "ServaRec_";
 
     // Screen recording intent actions
     public static final String INTENT_ACTION_START_SCREEN_RECORDING =
@@ -373,7 +373,7 @@ public abstract class Constants {
         "com.servalabs.cam.EXTRA_SCREEN_RECORDING_FORCE_NO_AUDIO";
     public static final String PREF_SCREEN_RECORDING_ELAPSED_TIME_LABELS =
         "pref_screen_recording_elapsed_time_labels"; // true to show labels (d/h/m/s), false to hide
-    // -------------- FadRec (Screen Recording) Constants End --------------
+    // -------------- ServaRec (Screen Recording) Constants End --------------
     public static final String EXTRA_FOCUS_X = "com.servalabs.cam.EXTRA_FOCUS_X"; // float (normalized 0..1)
     public static final String EXTRA_FOCUS_Y = "com.servalabs.cam.EXTRA_FOCUS_Y"; // float (normalized 0..1)
     public static final String EXTRA_ZOOM_RATIO = "com.servalabs.cam.EXTRA_ZOOM_RATIO"; // float
@@ -420,21 +420,21 @@ public abstract class Constants {
     public static final String RECORDING_SUBDIR_CAMERA_DUAL = "Dual";
     public static final String RECORDING_SUBDIR_DUAL = "Dual";
     public static final String RECORDING_SUBDIR_SCREEN = "Screen";
-    public static final String RECORDING_SUBDIR_FADITOR = "Faditor";
+    public static final String RECORDING_SUBDIR_FADITOR = "EditorMini";
     public static final String RECORDING_SUBDIR_FADITOR_CONVERTED = "Converted";
     public static final String RECORDING_SUBDIR_FADITOR_MERGE = "Merge";
     public static final String RECORDING_SUBDIR_STREAM = "Stream";
-    public static final String RECORDING_SUBDIR_SHOT = "FadShot";
+    public static final String RECORDING_SUBDIR_SHOT = "ServaShot";
     public static final String RECORDING_SUBDIR_SHOT_BACK = "Back";
     public static final String RECORDING_SUBDIR_SHOT_SELFIE = "Selfie";
-    public static final String RECORDING_SUBDIR_SHOT_FADREC = "FadRec";
+    public static final String RECORDING_SUBDIR_SHOT_FADREC = "ServaRec";
     public static final String RECORDING_FILE_EXTENSION = "mp4";
     public static final String RECORDING_IMAGE_EXTENSION = "jpg";
-    public static final String RECORDING_FILE_PREFIX_FADSHOT = "FadShot_";
+    public static final String RECORDING_FILE_PREFIX_FADSHOT = "ServaShot_";
     public static final String RECORDING_FILE_PREFIX_FADITOR_STANDARD =
-        "Faditor_Std_";
+        "EditorMini_Std_";
     public static final String RECORDING_FILE_PREFIX_FADITOR_MERGE =
-        "Faditor_Merge_";
+        "EditorMini_Merge_";
     public static final double RECORDING_COMPRESSION_FACTOR = 0.33;
 
     public static final CameraType DEFAULT_CAMERA_TYPE = CameraType.BACK;
@@ -443,7 +443,7 @@ public abstract class Constants {
     public static final float DEFAULT_ZOOM_RATIO = 1.0f; // Default zoom ratio (no zoom)
     public static final VideoCodec DEFAULT_VIDEO_CODEC = VideoCodec.HEVC;
 
-    public static final String DEFAULT_WATERMARK_OPTION = "timestamp_fadcam";
+    public static final String DEFAULT_WATERMARK_OPTION = "timestamp_servacam";
     public static final boolean DEFAULT_PREVIEW_ENABLED = true;
     public static final boolean DEFAULT_RECORD_AUDIO = true;
     public static final int DEFAULT_AUDIO_BITRATE = 192000; // 192 kbps stereo AAC
@@ -576,7 +576,6 @@ public abstract class Constants {
     public static final String APP_ICON_FADED = "faded"; // Faded icon
     public static final String APP_ICON_PALESTINE = "palestine"; // Sumud icon
     public static final String APP_ICON_PAKISTAN = "pakistan"; // MadeInPK icon
-    public static final String APP_ICON_FADSECLAB = "fadseclab"; // r00t icon
     public static final String APP_ICON_NOOR = "noor"; // Noor icon
     public static final String APP_ICON_BAT = "bat"; // FadBat icon
     public static final String APP_ICON_REDBINARY = "redbinary"; // RedBinary icon
@@ -610,7 +609,7 @@ public abstract class Constants {
     // Fullscreen preview tap-to-focus toggle (when disabled, taps only toggle controls)
     public static final String PREF_FULLSCREEN_TAP_TO_FOCUS_ENABLED =
         "pref_fullscreen_tap_to_focus_enabled";
-    // Show preview quick actions (FadShot + Fullscreen) even when recording is not active.
+    // Show preview quick actions (ServaShot + Fullscreen) even when recording is not active.
     public static final String PREF_PREVIEW_QUICK_ACTIONS_ALWAYS_VISIBLE =
         "pref_preview_quick_actions_always_visible";
     // Player controller auto-hide timeout in seconds. Controls disappear after this many seconds of inactivity.
@@ -677,7 +676,7 @@ public abstract class Constants {
         "com.servalabs.cam.ON_DUAL_CAMERA_ERROR";
     public static final String BROADCAST_ON_DUAL_CAMERAS_SWAPPED =
         "com.servalabs.cam.ON_DUAL_CAMERAS_SWAPPED";
-    // Accessibility screenshot trigger action (FadRec shortcut).
+    // Accessibility screenshot trigger action (ServaRec shortcut).
     public static final String ACTION_TRIGGER_FADREC_SCREENSHOT =
         "com.servalabs.cam.ACTION_TRIGGER_FADREC_SCREENSHOT";
     // ── End Dual Camera Constants ──────────────────────────────────────────

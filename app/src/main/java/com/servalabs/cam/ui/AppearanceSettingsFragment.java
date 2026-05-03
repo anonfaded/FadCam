@@ -163,8 +163,8 @@ public class AppearanceSettingsFragment extends Fragment {
         );
         items.add(
             new com.servalabs.cam.ui.picker.OptionItem(
-                "Faded Night",
-                "Faded Night",
+                "Serva Night",
+                "Serva Night",
                 null,
                 ContextCompat.getColor(requireContext(), R.color.amoled_surface)
             )
@@ -446,9 +446,6 @@ public class AppearanceSettingsFragment extends Fragment {
         else if (key.equals(Constants.APP_ICON_PAKISTAN)) button.setText(
             getString(R.string.app_icon_pakistan)
         );
-        else if (key.equals(Constants.APP_ICON_FADSECLAB)) button.setText(
-            getString(R.string.app_icon_fadseclab)
-        );
         else if (key.equals(Constants.APP_ICON_NOOR)) button.setText(
             getString(R.string.app_icon_noor)
         );
@@ -550,13 +547,6 @@ public class AppearanceSettingsFragment extends Fragment {
         );
         items.add(
             new com.servalabs.cam.ui.picker.OptionItem(
-                Constants.APP_ICON_FADSECLAB,
-                getString(R.string.app_icon_fadseclab),
-                R.mipmap.ic_launcher_fadseclab
-            )
-        );
-        items.add(
-            new com.servalabs.cam.ui.picker.OptionItem(
                 Constants.APP_ICON_NOOR,
                 getString(R.string.app_icon_noor),
                 R.mipmap.ic_launcher_noor
@@ -651,7 +641,7 @@ public class AppearanceSettingsFragment extends Fragment {
         PackageManager pm = requireContext().getPackageManager();
         ComponentName defaultIcon = new ComponentName(
             requireContext(),
-            "com.servalabs.cam.SplashActivity"
+            "com.servalabs.cam.MainActivity"
         );
         ComponentName alternativeIcon = new ComponentName(
             requireContext(),
@@ -668,10 +658,6 @@ public class AppearanceSettingsFragment extends Fragment {
         ComponentName pakistanIcon = new ComponentName(
             requireContext(),
             "com.servalabs.cam.MainActivity.PakistanIcon"
-        );
-        ComponentName fadseclabIcon = new ComponentName(
-            requireContext(),
-            "com.servalabs.cam.MainActivity.FadSecLabIcon"
         );
         ComponentName noorIcon = new ComponentName(
             requireContext(),
@@ -728,7 +714,6 @@ public class AppearanceSettingsFragment extends Fragment {
             fadedIcon,
             palestineIcon,
             pakistanIcon,
-            fadseclabIcon,
             noorIcon,
             batIcon,
             redbinaryIcon,
@@ -759,8 +744,6 @@ public class AppearanceSettingsFragment extends Fragment {
             palestineIcon;
         else if (Constants.APP_ICON_PAKISTAN.equals(iconKey)) enable =
             pakistanIcon;
-        else if (Constants.APP_ICON_FADSECLAB.equals(iconKey)) enable =
-            fadseclabIcon;
         else if (Constants.APP_ICON_NOOR.equals(iconKey)) enable = noorIcon;
         else if (Constants.APP_ICON_BAT.equals(iconKey)) enable = batIcon;
         else if (Constants.APP_ICON_REDBINARY.equals(iconKey)) enable =

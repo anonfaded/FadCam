@@ -3603,12 +3603,12 @@ input[type="range"].zoom-slider::-moz-range-progress {
     opacity: 1;
     z-index: 1;
     /* WebP format - modern browsers */
-    background-image: url('../assets/images/fadcam_server_room_bg_rounded.webp');
+    /* background-image: url('../assets/images/fadcam_server_room_bg_rounded.webp'); */
 }
 
 /* Fallback for browsers without WebP support */
 .server-hero-bg.no-webp {
-    background-image: url('../assets/images/fadcam_server_room_bg_rounded.png');
+    /* background-image: url('../assets/images/fadcam_server_room_bg_rounded.png'); */
 }
 
 .server-hero-content {

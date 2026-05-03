@@ -250,7 +250,7 @@ public class VideoSessionCache {
         public final String mediaType;
         public final String shotSubtype;
         public final String cameraSubtype;
-        public final String faditorSubtype;
+        public final String editor_miniSubtype;
         public final byte[] thumbnailData; // Cached thumbnail as byte array
         
         public SerializableVideoItem(VideoItem videoItem) {
@@ -263,7 +263,7 @@ public class VideoSessionCache {
             this.mediaType = videoItem.mediaType != null ? videoItem.mediaType.name() : null;
             this.shotSubtype = videoItem.shotSubtype != null ? videoItem.shotSubtype.name() : null;
             this.cameraSubtype = videoItem.cameraSubtype != null ? videoItem.cameraSubtype.name() : null;
-            this.faditorSubtype = videoItem.faditorSubtype != null ? videoItem.faditorSubtype.name() : null;
+            this.editor_miniSubtype = videoItem.editor_miniSubtype != null ? videoItem.editor_miniSubtype.name() : null;
             this.thumbnailData = null; // Will be set separately for existing items
         }
         
@@ -277,7 +277,7 @@ public class VideoSessionCache {
             this.mediaType = videoItem.mediaType != null ? videoItem.mediaType.name() : null;
             this.shotSubtype = videoItem.shotSubtype != null ? videoItem.shotSubtype.name() : null;
             this.cameraSubtype = videoItem.cameraSubtype != null ? videoItem.cameraSubtype.name() : null;
-            this.faditorSubtype = videoItem.faditorSubtype != null ? videoItem.faditorSubtype.name() : null;
+            this.editor_miniSubtype = videoItem.editor_miniSubtype != null ? videoItem.editor_miniSubtype.name() : null;
             this.thumbnailData = thumbnailData;
         }
         
@@ -291,7 +291,7 @@ public class VideoSessionCache {
                 parseMediaType(mediaType, displayName),
                 parseShotSubtype(shotSubtype),
                 parseCameraSubtype(cameraSubtype),
-                parseFaditorSubtype(faditorSubtype)
+                parseEditorMiniSubtype(editor_miniSubtype)
             );
             item.isNew = isNew;
             return item;
@@ -341,12 +341,12 @@ public class VideoSessionCache {
             }
         }
 
-        private static VideoItem.FaditorSubtype parseFaditorSubtype(String raw) {
-            if (raw == null) return VideoItem.FaditorSubtype.UNKNOWN;
+        private static VideoItem.EditorMiniSubtype parseEditorMiniSubtype(String raw) {
+            if (raw == null) return VideoItem.EditorMiniSubtype.UNKNOWN;
             try {
-                return VideoItem.FaditorSubtype.valueOf(raw);
+                return VideoItem.EditorMiniSubtype.valueOf(raw);
             } catch (Exception ignored) {
-                return VideoItem.FaditorSubtype.UNKNOWN;
+                return VideoItem.EditorMiniSubtype.UNKNOWN;
             }
         }
     }

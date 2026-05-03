@@ -3,7 +3,7 @@
     <string name="app_name" translatable="false">ServaCam</string>
     <string name="app_icon_description">Da khpal app lapara yao icon aw num entekhab ka. Da ba staso pa home screen bandi da shakaridalo tarika badla ki.</string>
     <string name="check_for_updates">Updates kho nesta?</string>
-    <string name="fadsec_info">ServaCam app da FadSec Lab suite yo hissa da. Nur maloomat da paara, laandi \'Source Code ogorai\' bandi click kai.</string>
+    <string name="servalabs_info">ServaCam app da ServaLabs suite yo hissa da. Nur maloomat da paara, laandi \'Source Code ogorai\' bandi click kai.</string>
     <string name="app_description">
     <![CDATA[
     ServaCam yao ad-free, open-source video recording app da che privacy ta tarjeeh warkawi aw sta data na track kai aw na ye jama kai. Da sirf pa GitHub aw pa README ke che kam official links di, sirf alta dastiyab de.
@@ -17,7 +17,7 @@
     <string name="send_email">Email oka</string>
     <string name="join_community">Community join kae, madad, ideas share kawalo, aw mustaqbil app updates da paara</string>
     <string name="privacy_information">Da Privacy Maloomat</string>
-    <string name="copyright_info">© 2024 https://fadcam.faded.dev\nLicensed under GPL-3.0</string>
+    <string name="copyright_info">© 2024 https://servacam.faded.dev\nLicensed under GPL-3.0</string>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
         <item name="30">30</item>
@@ -148,7 +148,7 @@
     <string name="discord_title">Da Discord Server</string>
     <string name="thankyou_msg">ServaCam istemal kolo dapara manana!</string>
     <string name="settings_title">Settings</string>
-    <string name="array_watermark_time_fadcam">Wakh, sara da Fadcam</string>
+    <string name="array_watermark_time_servacam">Wakh, sara da ServaCam</string>
     <string name="array_watermark_timeonly">Timestamp</string>
     <string name="array_watermark_nomark">No Watermark</string>
     <string name="toast_video_not_found">Error: Video milao na shwa</string>

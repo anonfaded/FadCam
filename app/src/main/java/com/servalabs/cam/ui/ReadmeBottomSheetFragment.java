@@ -63,7 +63,7 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
 
                 // Website row (requested to be first)
                 LinearLayout websiteRow = buildActionRow(R.drawable.ic_website, getString(R.string.website_title), getString(R.string.readme_website_subtitle));
-                websiteRow.setOnClickListener(v -> openUrl("https://fadcam.faded.dev"));
+                websiteRow.setOnClickListener(v -> openUrl("https://servacam.faded.dev"));
                 linksCard.addView(websiteRow);
 
                 // Divider 1
@@ -79,18 +79,6 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
                 githubRow.setOnClickListener(v -> openUrl("https://github.com/anonfaded/ServaCam"));
                 linksCard.addView(githubRow);
 
-                // Divider 2
-                View divider2 = new View(requireContext());
-                LinearLayout.LayoutParams divLp2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
-                divLp2.setMargins(0, dp(2), 0, dp(2));
-                divider2.setLayoutParams(divLp2);
-                divider2.setBackgroundColor(0x33FFFFFF);
-                linksCard.addView(divider2);
-
-                // Discord row (third)
-                LinearLayout discordRow = buildActionRow(R.drawable.ic_discord, getString(R.string.discord_title), getString(R.string.readme_discord_subtitle));
-                discordRow.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
-                linksCard.addView(discordRow);
                 // Insert after mainCard
                 int mainIndex = scrollContent.indexOfChild(mainCard);
                 scrollContent.addView(linksCard, mainIndex+1);

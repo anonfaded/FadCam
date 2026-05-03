@@ -32,7 +32,7 @@ public class ServaCamProActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_fadcam_pro);
+        setContentView(R.layout.activity_servacam_pro);
         
         // Handle edge-to-edge display
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.rootContainer), (v, insets) -> {
@@ -64,11 +64,11 @@ public class ServaCamProActivity extends AppCompatActivity {
     private void setupFeatureRows() {
         // Feature data: name, free, pro, pro+, lab
         String[][] features = {
-            {getString(R.string.fadcam_pro_feature_everything_icon), "check", "check", "check", "remove"},
-            {getString(R.string.fadcam_pro_feature_notification_icon), "remove", "check", "check", "remove"},
-            {getString(R.string.fadcam_pro_feature_user_icon), "remove", "remove", "schedule", "remove"},
-            {getString(R.string.fadcam_pro_feature_app_name), "remove", "remove", "schedule", "remove"},
-            {getString(R.string.fadcam_pro_feature_faddrive), "remove", "remove", "remove", "schedule"}
+            {getString(R.string.servacam_pro_feature_everything_icon), "check", "check", "check", "remove"},
+            {getString(R.string.servacam_pro_feature_notification_icon), "remove", "check", "check", "remove"},
+            {getString(R.string.servacam_pro_feature_user_icon), "remove", "remove", "schedule", "remove"},
+            {getString(R.string.servacam_pro_feature_app_name), "remove", "remove", "schedule", "remove"},
+            {getString(R.string.servacam_pro_feature_servadrive), "remove", "remove", "remove", "schedule"}
         };
 
         View[] featureViews = {

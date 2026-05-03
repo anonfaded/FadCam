@@ -18,15 +18,15 @@ import androidx.media3.ui.PlayerView;
 import com.servalabs.cam.ui.faditor.model.Clip;
 
 /**
- * Manages ExoPlayer lifecycle for the Faditor editor.
+ * Manages ExoPlayer lifecycle for the EditorMini editor.
  *
  * <p>Binds to an Activity lifecycle to auto-pause on background and release on destroy.
  * Handles single-clip playback with manual trim bounds (no ClippingConfiguration)
  * to support fragmented MP4 and SAF content:// URIs reliably.</p>
  */
-public class FaditorPlayerManager implements DefaultLifecycleObserver {
+public class EditorMiniPlayerManager implements DefaultLifecycleObserver {
 
-    private static final String TAG = "FaditorPlayerManager";
+    private static final String TAG = "EditorMiniPlayerManager";
 
     @Nullable
     private ExoPlayer player;
@@ -87,7 +87,7 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         }
     };
 
-    public FaditorPlayerManager(@NonNull Context context) {
+    public EditorMiniPlayerManager(@NonNull Context context) {
         this.context = context.getApplicationContext();
     }
 

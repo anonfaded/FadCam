@@ -156,7 +156,7 @@ public class RealtimeMediaInvalidationCoordinator {
     /**
      * Recursively collects all directories starting from the given root.
      * This ensures FileObservers cover nested subdirectories
-     * (e.g. ServaCam/FadShot/Back/, ServaCam/FadShot/Selfie/).
+     * (e.g. ServaCam/ServaShot/Back/, ServaCam/ServaShot/Selfie/).
      */
     private void collectAllDirectories(@NonNull File dir, @NonNull List<File> result) {
         result.add(dir);

@@ -26,12 +26,6 @@
                 android:layout_height="wrap_content"
                 android:padding="16dp">
 
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="220dp"
-            android:src="@drawable/fadcam_server_room_bg_rounded"
-            android:scaleType="centerCrop"
-            android:contentDescription="@string/stream_server_room" />
 
 
         <!-- Status Card Overlay -->

@@ -18,12 +18,12 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * Manages .fadrec project files for annotation state persistence.
+ * Manages .servarec project files for annotation state persistence.
  * Format: JSON-based project file (like .psd for Photoshop).
  * 
  * NEW Structure (v2.0): Each project is now a folder containing:
- * ~/Documents/FadRec/Projects/{ProjectName}/
- *   ├── project.fadrec (main project file)
+ * ~/Documents/ServaRec/Projects/{ProjectName}/
+ *   ├── project.servarec (main project file)
  *   ├── thumbnail.png (auto-generated preview)
  *   └── assets/ (for future: images, videos, etc)
  * 
@@ -46,10 +46,10 @@ import java.util.Locale;
  */
 public class ProjectFileManager {
     private static final String TAG = "ProjectFileManager";
-    private static final String PROJECT_FILE_NAME = "project.fadrec";
+    private static final String PROJECT_FILE_NAME = "project.servarec";
     private static final String THUMBNAIL_FILE_NAME = "thumbnail.png";
     private static final String PROJECT_VERSION = "1.0";
-    private static final String PREFS_NAME = "FadRecProjects";
+    private static final String PREFS_NAME = "ServaRecProjects";
     private static final String KEY_CURRENT_PROJECT = "current_project";
     
     private final Context context;
@@ -70,14 +70,14 @@ public class ProjectFileManager {
         this.context = context;
         this.prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         
-        // Create projects directory: ~/Documents/FadRec/Projects/
+        // Create projects directory: ~/Documents/ServaRec/Projects/
         File documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-        File fadrecDir = new File(documentsDir, "FadRec");
-        this.projectsDir = new File(fadrecDir, "Projects");
+        File servarecDir = new File(documentsDir, "ServaRec");
+        this.projectsDir = new File(servarecDir, "Projects");
         
         if (!projectsDir.exists()) {
             projectsDir.mkdirs();
-            FLog.i(TAG, "Created FadRec projects directory: " + projectsDir.getAbsolutePath());
+            FLog.i(TAG, "Created ServaRec projects directory: " + projectsDir.getAbsolutePath());
         }
     }
     
@@ -131,7 +131,7 @@ public class ProjectFileManager {
     }
     
     /**
-     * Save annotation state to .fadrec file in project folder
+     * Save annotation state to .servarec file in project folder
      */
     public boolean saveProject(AnnotationState state, String projectName) {
         FLog.i(TAG, "========== SAVING PROJECT: " + projectName + " ==========");
@@ -203,7 +203,7 @@ public class ProjectFileManager {
                 throw new IOException("Project folder is not writable. Check MANAGE_EXTERNAL_STORAGE permission.");
             }
             
-            // Write to project.fadrec file
+            // Write to project.servarec file
             File projectFile = getProjectFile(projectName);
             FileWriter writer = new FileWriter(projectFile);
             writer.write(project.toString(2)); // Pretty print with indent
@@ -226,7 +226,7 @@ public class ProjectFileManager {
     }
     
     /**
-     * Load annotation state from .fadrec file in project folder
+     * Load annotation state from .servarec file in project folder
      */
     public AnnotationState loadProject(String projectName) {
         FLog.i(TAG, "========== LOADING PROJECT FROM FILE: " + projectName + " ==========");
@@ -377,7 +377,7 @@ public class ProjectFileManager {
         FLog.d(TAG, "Found " + (existingProjects != null ? existingProjects.length : 0) + " existing projects");
         
         if (existingProjects != null && existingProjects.length > 0) {
-            // Sort by project FILE (project.fadrec) last modified date (newest first)
+            // Sort by project FILE (project.servarec) last modified date (newest first)
             // This is more reliable than folder timestamps
             java.util.Arrays.sort(existingProjects, (a, b) -> {
                 File fileA = new File(a, PROJECT_FILE_NAME);
@@ -418,7 +418,7 @@ public class ProjectFileManager {
         // No existing projects, create new one with timestamp
         String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
                 .format(new Date());
-        String projectName = "FadRec_" + timestamp;
+        String projectName = "ServaRec_" + timestamp;
         
         // Save as current project
         prefs.edit().putString(KEY_CURRENT_PROJECT, projectName).apply();
@@ -433,7 +433,7 @@ public class ProjectFileManager {
     public String createNewProject() {
         String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
                 .format(new Date());
-        String projectName = "FadRec_" + timestamp;
+        String projectName = "ServaRec_" + timestamp;
         
         // Save as current project
         prefs.edit().putString(KEY_CURRENT_PROJECT, projectName).apply();
@@ -448,7 +448,7 @@ public class ProjectFileManager {
     public boolean autoSave(AnnotationState state) {
         String timestamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
                 .format(new Date());
-        String projectName = "FadRec_" + timestamp;
+        String projectName = "ServaRec_" + timestamp;
         return saveProject(state, projectName);
     }
     

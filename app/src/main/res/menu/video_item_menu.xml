@@ -19,9 +19,9 @@
         android:title="Video Info"/>
     <group android:id="@+id/delete_group">
         <item
-            android:id="@+id/action_edit_faditorx"
+            android:id="@+id/action_edit_editor_minix"
             android:icon="@drawable/ic_edit_cut"
-            android:title="@string/edit_with_faditorx"
+            android:title="@string/edit_with_editor_minix"
         />
         <item
             android:id="@+id/action_upload_youtube"

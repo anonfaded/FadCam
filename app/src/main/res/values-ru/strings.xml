@@ -3,7 +3,7 @@
     <string name="app_icon_description">Выберите значок и название для вашего приложения. Это изменит его вид на главном экране.</string>
     <string name="check_for_updates">Проверить наличие обновлений</string>
     <string name="accessibility_thumbnail_progress">%1$d%% просмотрено</string>
-    <string name="fadsec_info">ServaCam является частью пакета FadSec Lab. Для получения дополнительной информации нажмите «Просмотреть исходный код» ниже.</string>
+    <string name="servalabs_info">ServaCam является частью пакета ServaLabs. Для получения дополнительной информации нажмите «Просмотреть исходный код» ниже.</string>
 
 
     <string name="app_description">
@@ -25,7 +25,7 @@
     <string name="website_title">Веб-сайт</string>
     <string name="readme_website_subtitle">Официальный сайт</string>
     <string name="privacy_information">Политика конфиденциальности</string>
-    <string name="copyright_info">2024-2025 https://fadcam.faded.dev\nЛицензировано по GPL-3.0</string>
+    <string name="copyright_info">2024-2025 https://servacam.faded.dev\nЛицензировано по GPL-3.0</string>
     <string-array name="video_resolutions_keys">
         <item>7680x4320</item>        <!-- 8K -->
         <item>3840x2160</item>        <!-- 4K -->
@@ -86,18 +86,18 @@
     <string name="button_stop">Стоп</string>
     <string name="button_resume">Возобновить</string>
 
-    <!-- FadRec Screen Recording Strings -->
-    <string name="fadrec_start_screen_recording">Начать запись экрана</string>
-    <string name="fadrec_stop_screen_recording">Остановить запись экрана</string>
-    <string name="fadrec_pause_screen_recording">Приостановить запись экрана</string>
-    <string name="fadrec_resume_screen_recording">Возобновить запись экрана</string>
-    <string name="fadrec_screen_recording_started">Запись экрана начата</string>
-    <string name="fadrec_screen_recording_stopped">Запись экрана остановлена</string>
-    <string name="fadrec_screen_recording_paused">Запись экрана приостановлена</string>
-    <string name="fadrec_screen_recording_resumed">Запись экрана возобновлена</string>
-    <string name="fadrec_notification_title">Запись экрана</string>
-    <string name="fadrec_notification_recording">Запись экрана…</string>
-    <string name="fadrec_notification_paused">Запись приостановлена</string>
+    <!-- ServaRec Screen Recording Strings -->
+    <string name="servarec_start_screen_recording">Начать запись экрана</string>
+    <string name="servarec_stop_screen_recording">Остановить запись экрана</string>
+    <string name="servarec_pause_screen_recording">Приостановить запись экрана</string>
+    <string name="servarec_resume_screen_recording">Возобновить запись экрана</string>
+    <string name="servarec_screen_recording_started">Запись экрана начата</string>
+    <string name="servarec_screen_recording_stopped">Запись экрана остановлена</string>
+    <string name="servarec_screen_recording_paused">Запись экрана приостановлена</string>
+    <string name="servarec_screen_recording_resumed">Запись экрана возобновлена</string>
+    <string name="servarec_notification_title">Запись экрана</string>
+    <string name="servarec_notification_recording">Запись экрана…</string>
+    <string name="servarec_notification_paused">Запись приостановлена</string>
     <string name="floating_controls_title">Меню</string>
     <string name="floating_controls_permission_needed">Требуется разрешение на наложение</string>
     <string name="floating_controls_permission_title">Требуется разрешение на наложение</string>
@@ -120,10 +120,10 @@
     <string name="snap_guides">Направляющие</string>
     <string name="add_text">Добавить текст</string>
     <string name="add_shape">Добавить фигуру</string>
-    <string name="fadrec_ready_to_record">Готов к записи экрана</string>
-    <string name="fadrec_ready_to_record_subtitle">Нажмите, чтобы начать</string>
-    <string name="fadrec_permission_denied">Разрешение на запись экрана отказано</string>
-    <string name="fadrec_mode_title">FadRec • Запись экрана</string>
+    <string name="servarec_ready_to_record">Готов к записи экрана</string>
+    <string name="servarec_ready_to_record_subtitle">Нажмите, чтобы начать</string>
+    <string name="servarec_permission_denied">Разрешение на запись экрана отказано</string>
+    <string name="servarec_mode_title">ServaRec • Запись экрана</string>
 
     <string name="video_recording_started">Запись началась</string>
     <string name="video_recording_stopped">Запись остановлена</string>
@@ -151,7 +151,7 @@
     <string name="front">Фронтальная</string>
     <string name="video_menu_del">Удалить</string>
     <string name="video_menu_save">Сохранить в галерею</string>
-    <string name="video_menu_save_helper_downloads_fadcam">Видео будет сохранено в Downloads/ServaCam</string>
+    <string name="video_menu_save_helper_downloads_servacam">Видео будет сохранено в Downloads/ServaCam</string>
     <string name="video_menu_save_copy_or_move_title">Сохранить в галерею</string>
     <string name="video_menu_save_copy">Копировать в галерею</string>
     <string name="video_menu_save_copy_desc">Создать копию в Downloads/ServaCam (оригинальный файл сохранён)</string>
@@ -194,7 +194,7 @@
     <string name="video_menu_upload_drive">Загрузить на Google Drive</string>
     <string name="video_menu_open_with">Открыть с помощью...</string>
     <string name="chooser_open_with">Открыть с помощью</string>
-    <string name="video_menu_upload_faddrive">Загрузить на FadDrive</string>
+    <string name="video_menu_upload_servadrive">Загрузить на ServaDrive</string>
     <string name="toast_no_youtube_app">Приложение YouTube не найдено</string>
     <string name="toast_no_drive_app">Приложение Google Drive не найдено</string>
     <string name="records_title">Записи</string>
@@ -204,7 +204,7 @@
     <string name="nav_settings">Настройки</string>
     <string name="nav_about">О программе</string>
     <string name="nav_remote">Удалённый</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_editor_mini_mini">Editor Mini</string>
     <string name="button_settings_readme">Прочитать</string>
     <string name="setting_cam_title">Выбор камеры</string>
     <string name="note_cam_sele">Выберите камеру \n(По умолчанию: Задняя)</string>
@@ -305,7 +305,7 @@
     <string name="discord_title">Сервер Discord</string>
     <string name="thankyou_msg">Спасибо за использование ServaCam!</string>
     <string name="settings_title">Настройки</string>
-    <string name="array_watermark_time_fadcam">Время с Fadcam</string>
+    <string name="array_watermark_time_servacam">Время с ServaCam</string>
     <string name="array_watermark_timeonly">Временная метка</string>
     <string name="array_watermark_nomark">Без водяного знака</string>
     <string name="watermark_preview_funny">По-настоящему? :( \n    ＞﹏＜</string>
@@ -424,9 +424,9 @@
     <string name="watermark_preview_heading">Предпросмотр</string>
     <string name="watermark_options_heading">Параметры</string>
     <string name="watermark_style_row_title">Стиль водяного знака</string>
-    <string name="watermark_preview_sample_fadcam">Записано ServaCam - %1$s</string>
+    <string name="watermark_preview_sample_servacam">Записано ServaCam - %1$s</string>
     <string name="watermark_preview_sample_timeonly">%1$s</string>
-    <string name="watermark_style_time_fadcam_label">Время с ServaCam</string>
+    <string name="watermark_style_time_servacam_label">Время с ServaCam</string>
     <string name="watermark_style_timeonly_label">Временная метка</string>
     <string name="watermark_style_badge_label">Только метка бренда</string>
     <string name="watermark_style_none_label">Без водяного знака</string>
@@ -461,7 +461,7 @@
     <string name="widget_black_background_title">Чёрный фон</string>
     <string name="widget_arabic_date_title">Арабская дата</string>
     <string name="widget_arabic_date_format_title">Формат арабской даты</string>
-    <string name="widget_branding_title">Брендинг FadSecLab</string>
+    <string name="widget_branding_title">Брендинг ServaLabsLab</string>
 
     <!-- Widget Option Descriptions -->
     <string name="widget_time_format_12h">12-часовой (3:30 PM)</string>
@@ -630,7 +630,7 @@
 
     <string-array name="theme_options">
         <item>Midnight Dusk</item>
-        <item>Faded Night</item>
+        <item>Serva Night</item>
         <item>Crimson Bloom</item>
         <item>Silent Forest</item>
         <item>Shadow Alloy</item>
@@ -662,9 +662,9 @@
     <string name="coming_soon_toast">Скоро! Инша Аллах</string>
     <string name="remote_coming_soon">Удалённое управление для ServaCam скоро появится.</string>
     <string name="remote_feature_description">Свяжите клиенты ServaCam с помощью QR-кода для безопасного удалённого управления в локальной сети: запуск/остановка записи, превью, зум, переключение камеры и многое другое — всё с end-to-end шифрованием.</string>
-    <string name="faditor_mini_title">Faditor Mini</string>
-    <string name="faditor_mini_coming_soon">Скоро — лёгкий редактор</string>
-    <string name="faditor_mini_toast">Faditor Mini — скоро</string>
+    <string name="editor_mini_mini_title">Editor Mini Mini</string>
+    <string name="editor_mini_mini_coming_soon">Скоро — лёгкий редактор</string>
+    <string name="editor_mini_mini_toast">Editor Mini Mini — скоро</string>
     <string name="setting_audio_title">Audio Recording</string>
     <string name="note_audio">Включить или отключить запись аудио для видео.\n(По умолчанию: Включено)</string>
     <string name="button_audio_settings">Настройки аудио</string>
@@ -844,7 +844,7 @@
     <string name="support_ko_fi">Поддержите нас на Ko-fi</string>
     <string name="kofi_description">Описание будет установлено в коде.</string>
     <string name="kofi_button_text">Купить Ko-fi</string>
-    <string name="kofi_footer_text">Сделано    в FadSec Lab в   </string>
+    <string name="kofi_footer_text">Сделано    в ServaLabs в   </string>
 
     <string name="setting_audio_input_source_title">Источник аудиовхода</string>
     <string name="setting_audio_input_source_status_default">Микрофон телефона</string>
@@ -930,7 +930,7 @@
 
     <string name="version_format">v%s</string>
 
-    <string name="edit_with_faditorx">Edit with FaditorX</string>
+    <string name="edit_with_editor_minix">Edit with Editor MiniX</string>
     <string name="remote_coming_soon_badge">NEW</string>
 
     <!-- Update Bottom Sheet Strings -->
@@ -954,7 +954,7 @@
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
     <string name="app_icon_pakistan" translatable="false">ServaCam</string>
-    <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
+    <string name="app_icon_servalabs" translatable="false">ServaLabs</string>
     <string name="app_icon_noor" translatable="false">Noor</string>
     <string name="app_icon_bat" translatable="false">ServaCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
@@ -1210,37 +1210,37 @@
     <string name="manage_projects">Управление проектами</string>
     <string name="name_your_project">Назовите свой проект</string>
     <string name="project_naming_message">Дайте своему проекту запоминающееся имя и описание, чтобы организовать свои записи</string>
-    <string name="fadrec_projects">Проекты FadRec</string>
+    <string name="servarec_projects">Проекты ServaRec</string>
     <string name="delete_project">Удалить проект</string>
     <string name="delete_all">Удалить все</string>
     <string name="new_project">Новый проект</string>
     <string name="delete">Удалить</string>
 
     <!-- ServaCam Pro Strings -->
-    <string name="fadcam_pro_title">ServaCam Pro</string>
-    <string name="fadcam_pro_subtitle">Премиум-функции для полной дискретности</string>
-    <string name="fadcam_pro_get_button">Получить ServaCam Pro</string>
-    <string name="fadcam_pro_free">Бесплатно</string>
-    <string name="fadcam_pro_column_label">Pro</string>
-    <string name="fadcam_pro_proplus_label">Pro+</string>
-    <string name="fadcam_pro_lab_label">Lab</string>
-    <string name="fadcam_pro_plus_label">Pro</string>
-    <string name="fadcam_pro_early_bird">🎉 Бесплатно до 23 декабря 2025! После этого получите пожизненный доступ всего за $15.</string>
-    <string name="fadcam_pro_paid_offer">После 23 декабря 2025, получите Пожизненный Доступ за $15 — однократная оплата, навсегда обновления.</string>
-    <string name="fadcam_pro_benefit_early_access">Ранний доступ: Получите последнюю версию перед публичным выпуском</string>
-    <string name="fadcam_pro_benefit_lifetime_updates">Пожизненные обновления: Всегда получайте новые функции, улучшения и исправления ошибок</string>
-    <string name="fadcam_pro_benefit_support">Мгновенная поддержка: Прямая помощь через тикеты в Discord</string>
-    <string name="fadcam_pro_coming_soon">Pro+ и Lab функции скоро с загрузкой пользовательских иконок, пользовательскими именами приложений и FadDrive облачным синком.</string>
-    <string name="fadcam_pro_support_message">ServaCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing time and work. Upgrading to Pro (currently free) helps support development, and in return I’m able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)</string>
-    <string name="fadcam_pro_separate_apk">Отдельное приложение • Работает рядом с ServaCam</string>
-    <string name="fadcam_pro_feature_everything_icon">Всё</string>
-    <string name="fadcam_pro_feature_everything">Всё</string>
-    <string name="fadcam_pro_feature_custom_icon">Пользовательская иконка приложения</string>
-    <string name="fadcam_pro_feature_notification_icon">Дискретная иконка уведомления</string>
-    <string name="fadcam_pro_feature_user_icon">Пользовательская загруженная иконка</string>
-    <string name="fadcam_pro_feature_app_name">Пользовательское имя приложения</string>
-    <string name="fadcam_pro_feature_faddrive">Облачный синк FadDrive</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="servacam_pro_title">ServaCam Pro</string>
+    <string name="servacam_pro_subtitle">Премиум-функции для полной дискретности</string>
+    <string name="servacam_pro_get_button">Получить ServaCam Pro</string>
+    <string name="servacam_pro_free">Бесплатно</string>
+    <string name="servacam_pro_column_label">Pro</string>
+    <string name="servacam_pro_proplus_label">Pro+</string>
+    <string name="servacam_pro_lab_label">Lab</string>
+    <string name="servacam_pro_plus_label">Pro</string>
+    <string name="servacam_pro_early_bird">🎉 Бесплатно до 23 декабря 2025! После этого получите пожизненный доступ всего за $15.</string>
+    <string name="servacam_pro_paid_offer">После 23 декабря 2025, получите Пожизненный Доступ за $15 — однократная оплата, навсегда обновления.</string>
+    <string name="servacam_pro_benefit_early_access">Ранний доступ: Получите последнюю версию перед публичным выпуском</string>
+    <string name="servacam_pro_benefit_lifetime_updates">Пожизненные обновления: Всегда получайте новые функции, улучшения и исправления ошибок</string>
+    <string name="servacam_pro_benefit_support">Мгновенная поддержка: Прямая помощь через тикеты в Discord</string>
+    <string name="servacam_pro_coming_soon">Pro+ и Lab функции скоро с загрузкой пользовательских иконок, пользовательскими именами приложений и ServaDrive облачным синком.</string>
+    <string name="servacam_pro_support_message">ServaCam will always remain free, with no ads and no tracking. I handle the entire project on my own, and it takes ongoing time and work. Upgrading to Pro (currently free) helps support development, and in return I’m able to offer additional value through the Pro features on top of the full free version. Thank you for supporting the project :)</string>
+    <string name="servacam_pro_separate_apk">Отдельное приложение • Работает рядом с ServaCam</string>
+    <string name="servacam_pro_feature_everything_icon">Всё</string>
+    <string name="servacam_pro_feature_everything">Всё</string>
+    <string name="servacam_pro_feature_custom_icon">Пользовательская иконка приложения</string>
+    <string name="servacam_pro_feature_notification_icon">Дискретная иконка уведомления</string>
+    <string name="servacam_pro_feature_user_icon">Пользовательская загруженная иконка</string>
+    <string name="servacam_pro_feature_app_name">Пользовательское имя приложения</string>
+    <string name="servacam_pro_feature_servadrive">Облачный синк ServaDrive</string>
+    <string name="servacam_pro_header_button">Pro</string>
 
     <!-- Video Player Info Bottom Sheet -->
     <string name="player_info_title">О видеоплеере</string>

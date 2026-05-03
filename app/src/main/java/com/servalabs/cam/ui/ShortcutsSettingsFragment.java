@@ -104,18 +104,18 @@ public class ShortcutsSettingsFragment extends Fragment {
                 getString(R.string.torch_shortcut_short_label),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.servalabs.cam.TorchToggleActivity"),
                 ShortcutsManager.ID_TORCH);
-        wireShortcutRow(view, R.id.cell_photo, R.id.icon_photo, R.drawable.fadshot_shortcut,
+        wireShortcutRow(view, R.id.cell_photo, R.id.icon_photo, R.drawable.servashot_shortcut,
                 getString(R.string.shortcut_take_photo),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.servalabs.cam.PhotoCaptureActivity"),
                 ShortcutsManager.ID_SHOT);
-        wireShortcutRow(view, R.id.cell_photo_front, R.id.icon_photo_front, R.drawable.fadshot_front_shortcut,
+        wireShortcutRow(view, R.id.cell_photo_front, R.id.icon_photo_front, R.drawable.servashot_front_shortcut,
                 getString(R.string.shortcut_take_photo_front),
                 new Intent(Intent.ACTION_VIEW)
                         .setClassName(requireContext(), "com.servalabs.cam.PhotoCaptureActivity")
                         .putExtra(com.servalabs.cam.PhotoCaptureActivity.EXTRA_SHORTCUT_PHOTO_CAMERA_MODE,
                                 com.servalabs.cam.PhotoCaptureActivity.PHOTO_CAMERA_MODE_FRONT),
                 ShortcutsManager.ID_SHOT_FRONT);
-        wireShortcutRow(view, R.id.cell_screenshot, R.id.icon_screenshot, R.drawable.fadrec_screenshot_shortcut,
+        wireShortcutRow(view, R.id.cell_screenshot, R.id.icon_screenshot, R.drawable.servarec_screenshot_shortcut,
                 getString(R.string.shortcut_take_screenshot),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.servalabs.cam.ScreenShotCaptureActivity"),
                 ShortcutsManager.ID_SCREENSHOT);
@@ -167,9 +167,9 @@ public class ShortcutsSettingsFragment extends Fragment {
             String badgeText = title; // localized label like Start/Stop/Torch
             // Special badge text for photo shortcuts
             if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
-                badgeText = "FadShot Back";
+                badgeText = "ServaShot Back";
             } else if (ShortcutsManager.ID_SHOT_FRONT.equals(shortcutId)) {
-                badgeText = "FadShot Front";
+                badgeText = "ServaShot Front";
             }
             subtitle.setText(badgeText);
             subtitle.setVisibility(View.VISIBLE);
@@ -477,18 +477,18 @@ public class ShortcutsSettingsFragment extends Fragment {
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.servalabs.cam.TorchToggleActivity"),
                 ShortcutsManager.ID_TORCH);
         // Photo
-        wireShortcutRow(view, R.id.cell_photo, R.id.icon_photo, R.drawable.fadshot_shortcut,
+        wireShortcutRow(view, R.id.cell_photo, R.id.icon_photo, R.drawable.servashot_shortcut,
                 getString(R.string.shortcut_take_photo),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.servalabs.cam.PhotoCaptureActivity"),
                 ShortcutsManager.ID_SHOT);
-        wireShortcutRow(view, R.id.cell_photo_front, R.id.icon_photo_front, R.drawable.fadshot_front_shortcut,
+        wireShortcutRow(view, R.id.cell_photo_front, R.id.icon_photo_front, R.drawable.servashot_front_shortcut,
                 getString(R.string.shortcut_take_photo_front),
                 new Intent(Intent.ACTION_VIEW)
                         .setClassName(requireContext(), "com.servalabs.cam.PhotoCaptureActivity")
                         .putExtra(com.servalabs.cam.PhotoCaptureActivity.EXTRA_SHORTCUT_PHOTO_CAMERA_MODE,
                                 com.servalabs.cam.PhotoCaptureActivity.PHOTO_CAMERA_MODE_FRONT),
                 ShortcutsManager.ID_SHOT_FRONT);
-        wireShortcutRow(view, R.id.cell_screenshot, R.id.icon_screenshot, R.drawable.fadrec_screenshot_shortcut,
+        wireShortcutRow(view, R.id.cell_screenshot, R.id.icon_screenshot, R.drawable.servarec_screenshot_shortcut,
                 getString(R.string.shortcut_take_screenshot),
                 new Intent(Intent.ACTION_VIEW).setClassName(requireContext(), "com.servalabs.cam.ScreenShotCaptureActivity"),
                 ShortcutsManager.ID_SCREENSHOT);
@@ -593,21 +593,7 @@ public class ShortcutsSettingsFragment extends Fragment {
                     prefs.setBlackBackground(!prefs.hasBlackBackground());
                     updateAllWidgets();
                     updatePreview();
-                } else if ("arabic_date".equals(selected)) {
-                    // Handle switch toggle for arabic_date
-                    prefs.setShowArabicDate(!prefs.showArabicDate());
-                    updateAllWidgets();
-                    updatePreview();
-                } else if ("arabic_date_format".equals(selected)) {
-                    // Only show Arabic date format if Arabic date is enabled
-                    if (prefs.showArabicDate()) {
-                        showArabicDateFormatSheet();
-                    }
-                } else if ("branding".equals(selected)) {
-                    // Handle switch toggle for branding (independent of background)
-                    prefs.setBranding(!prefs.showBranding());
-                    updateAllWidgets();
-                    updatePreview();
+
                 }
             }
         });
@@ -636,29 +622,12 @@ public class ShortcutsSettingsFragment extends Fragment {
                 null,
                 R.drawable.ic_calendar,
                 R.drawable.ic_arrow_right));
-        items.add(new com.servalabs.cam.ui.picker.OptionItem(
-                "arabic_date",
-                getString(R.string.widget_arabic_date_title),
-                R.drawable.ic_language,
-                prefs.showArabicDate()));
-        items.add(new com.servalabs.cam.ui.picker.OptionItem(
-                "arabic_date_format",
-                getString(R.string.widget_arabic_date_format_title),
-                prefs.showArabicDate() ? getArabicDateFormatDescription(prefs.getArabicDateFormat())
-                        : getString(R.string.widget_option_disabled),
-                null,
-                R.drawable.ic_language,
-                R.drawable.ic_arrow_right));
+
         items.add(new com.servalabs.cam.ui.picker.OptionItem(
                 "black_background",
                 getString(R.string.widget_black_background_title),
                 R.drawable.ic_theme,
                 prefs.hasBlackBackground()));
-        items.add(new com.servalabs.cam.ui.picker.OptionItem(
-                "branding",
-                getString(R.string.widget_branding_title),
-                R.drawable.fadseclab_flag,
-                prefs.showBranding()));
 
         com.servalabs.cam.ui.picker.PickerBottomSheetFragment sheet = com.servalabs.cam.ui.picker.PickerBottomSheetFragment
                 .newInstance(
@@ -739,32 +708,6 @@ public class ShortcutsSettingsFragment extends Fragment {
         sheet.show(getParentFragmentManager(), "date_format");
     }
 
-    private void toggleArabicDate() {
-        com.servalabs.cam.widgets.WidgetPreferences prefs = new com.servalabs.cam.widgets.WidgetPreferences(requireContext());
-        prefs.setShowArabicDate(!prefs.showArabicDate());
-        updateAllWidgets();
-        updatePreview();
-        // Show customize sheet again after toggle
-        new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
-    }
-
-    private void toggleShowDate() {
-        com.servalabs.cam.widgets.WidgetPreferences prefs = new com.servalabs.cam.widgets.WidgetPreferences(requireContext());
-        prefs.setShowDate(!prefs.showDate());
-        updateAllWidgets();
-        updatePreview();
-        // Show customize sheet again after toggle
-        new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
-    }
-
-    private void toggleBlackBackground() {
-        com.servalabs.cam.widgets.WidgetPreferences prefs = new com.servalabs.cam.widgets.WidgetPreferences(requireContext());
-        prefs.setBlackBackground(!prefs.hasBlackBackground());
-        updateAllWidgets();
-        updatePreview();
-        // Show customize sheet again after toggle
-        new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
-    }
 
     private void updateAllWidgets() {
         android.content.Context ctx = requireContext();
@@ -780,83 +723,6 @@ public class ShortcutsSettingsFragment extends Fragment {
             ctx.sendBroadcast(intent);
         }
         updatePreview();
-    }
-
-    private void showArabicDateFormatSheet() {
-        final String resultKey = "picker_result_arabic_date_format";
-        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
-            if (b.containsKey(com.servalabs.cam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)) {
-                String selected = b.getString(com.servalabs.cam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-                com.servalabs.cam.widgets.WidgetPreferences prefs = new com.servalabs.cam.widgets.WidgetPreferences(requireContext());
-                prefs.setArabicDateFormat(selected);
-                updateAllWidgets();
-                updatePreview();
-                // Show customize sheet again after selection
-                new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
-            }
-        });
-
-        java.util.ArrayList<com.servalabs.cam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
-        items.add(new com.servalabs.cam.ui.picker.OptionItem(
-                "FULL_ARABIC",
-                getString(R.string.arabic_date_full_arabic),
-                getString(R.string.arabic_date_sample_full_arabic),
-                null,
-                R.drawable.ic_language,
-                null));
-        items.add(new com.servalabs.cam.ui.picker.OptionItem(
-                "MONTH_ARABIC_NUMBERS_ENGLISH",
-                getString(R.string.arabic_date_month_arabic_numbers_english),
-                getString(R.string.arabic_date_sample_mixed),
-                null,
-                R.drawable.ic_language,
-                null));
-        items.add(new com.servalabs.cam.ui.picker.OptionItem(
-                "FULL_ENGLISH",
-                getString(R.string.arabic_date_full_english),
-                getString(R.string.arabic_date_sample_english),
-                null,
-                R.drawable.ic_language,
-                null));
-
-        com.servalabs.cam.ui.picker.PickerBottomSheetFragment sheet = com.servalabs.cam.ui.picker.PickerBottomSheetFragment
-                .newInstance(
-                        getString(R.string.arabic_date_format_title),
-                        items,
-                        null,
-                        resultKey,
-                        getString(R.string.arabic_date_format_description));
-        sheet.show(getParentFragmentManager(), "arabic_date_format");
-    }
-
-    private String getArabicDateFormatDescription(String format) {
-        switch (format) {
-            case "FULL_ARABIC":
-                return getString(R.string.arabic_date_description_full_arabic);
-            case "MONTH_ARABIC_NUMBERS_ENGLISH":
-                return getString(R.string.arabic_date_description_mixed);
-            case "FULL_ENGLISH":
-                return getString(R.string.arabic_date_description_english);
-            default:
-                return getString(R.string.arabic_date_description_default);
-        }
-    }
-
-    private void toggleBranding() {
-        com.servalabs.cam.widgets.WidgetPreferences prefs = new com.servalabs.cam.widgets.WidgetPreferences(requireContext());
-        prefs.setBranding(!prefs.showBranding());
-        updateAllWidgets();
-        updatePreview();
-        // Show customize sheet again after toggle
-        new Handler(Looper.getMainLooper()).postDelayed(() -> showCustomizeSheet(), 200);
-    }
-
-    private String getBrandingDescription(com.servalabs.cam.widgets.WidgetPreferences prefs) {
-        if (prefs.showBranding()) {
-            return getString(R.string.widget_branding_enabled);
-        } else {
-            return getString(R.string.widget_branding_disabled);
-        }
     }
 
     private void updatePreview() {

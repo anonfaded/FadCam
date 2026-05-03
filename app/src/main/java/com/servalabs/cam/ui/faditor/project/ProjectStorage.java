@@ -36,10 +36,10 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Handles JSON persistence for Faditor projects.
+ * Handles JSON persistence for EditorMini projects.
  *
  * <p>Projects are stored in app-internal storage at:
- * {@code files/faditor/projects/{projectId}/project.json}</p>
+ * {@code files/editor_mini/projects/{projectId}/project.json}</p>
  *
  * <p>Uses Gson for serialization with custom adapters for {@link Uri},
  * {@link Clip}, and {@link FaditorProject} types.</p>
@@ -47,7 +47,7 @@ import java.util.List;
 public class ProjectStorage {
 
     private static final String TAG = "ProjectStorage";
-    private static final String PROJECTS_DIR = "faditor/projects";
+    private static final String PROJECTS_DIR = "editor_mini/projects";
     private static final String PROJECT_FILE = "project.json";
 
     @NonNull

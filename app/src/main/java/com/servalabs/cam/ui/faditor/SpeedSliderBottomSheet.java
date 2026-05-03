@@ -102,7 +102,7 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
         root.addView(titleRow);
 
         TextView title = new TextView(requireContext());
-        title.setText(R.string.faditor_speed_title);
+        title.setText(R.string.editor_mini_speed_title);
         title.setTextColor(0xFFFFFFFF);
         title.setTextSize(18);
         title.setTypeface(null, Typeface.BOLD);

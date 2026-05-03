@@ -1,7 +1,7 @@
 package com.servalabs.cam.fadrec;
 
 /**
- * Represents the current state of screen recording in the FadRec feature.
+ * Represents the current state of screen recording in the ServaRec feature.
  * Follows the same pattern as RecordingState for camera recording.
  */
 public enum ScreenRecordingState {

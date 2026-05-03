@@ -373,7 +373,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
         int styleRes;
         switch (theme) {
-            case "Faded Night":   styleRes = R.style.Theme_ServaCam_Amoled;       break;
+            case "Serva Night":   styleRes = R.style.Theme_ServaCam_Amoled;       break;
             case "Midnight Dusk": styleRes = R.style.Theme_ServaCam_MidnightDusk; break;
             case "Premium Gold":  styleRes = R.style.Theme_ServaCam_Gold;         break;
             case "Silent Forest": styleRes = R.style.Theme_ServaCam_SilentForest; break;

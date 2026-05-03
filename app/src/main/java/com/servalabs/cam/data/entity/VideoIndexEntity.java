@@ -66,9 +66,9 @@ public class VideoIndexEntity {
     @ColumnInfo(name = "camera_subtype")
     public String cameraSubtype;
 
-    /** Faditor subtype: CONVERTED, MERGE, OTHER, UNKNOWN. */
-    @ColumnInfo(name = "faditor_subtype")
-    public String faditorSubtype;
+    /** EditorMini subtype: CONVERTED, MERGE, OTHER, UNKNOWN. */
+    @ColumnInfo(name = "editor_mini_subtype")
+    public String editor_miniSubtype;
 
     /** Absolute path to the cached thumbnail file on disk. Null if not yet generated. */
     @ColumnInfo(name = "thumbnail_path")

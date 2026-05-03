@@ -89,10 +89,10 @@
                 app:tabRippleColor="#7A000000"
                 android:elevation="0dp">
                 <com.google.android.material.tabs.TabItem
-                    android:id="@+id/tab_fadcam"
+                    android:id="@+id/tab_servacam"
                     android:text="ServaCam" />
                 <com.google.android.material.tabs.TabItem
-                    android:id="@+id/tab_fadrec"
+                    android:id="@+id/tab_servarec"
                     android:text="FadRec" />
             </com.google.android.material.tabs.TabLayout>
 
@@ -115,13 +115,13 @@
                 android:visibility="gone"
                 android:layout_marginBottom="12dp">
                 <View
-                    android:id="@+id/dot_fadcam"
+                    android:id="@+id/dot_servacam"
                     android:layout_width="8dp"
                     android:layout_height="8dp"
                     android:background="@drawable/indicator_dot_active"
                     android:layout_marginEnd="8dp" />
                 <View
-                    android:id="@+id/dot_fadrec"
+                    android:id="@+id/dot_servarec"
                     android:layout_width="8dp"
                     android:layout_height="8dp"
                     android:background="@drawable/indicator_dot_inactive" />

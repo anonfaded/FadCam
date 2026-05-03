@@ -182,7 +182,7 @@ public final class PhotoStorageHelper {
             case SELFIE:
                 return "Selfie";
             case FADREC:
-                return "FadRec";
+                return "ServaRec";
             case BACK:
             default:
                 return "Back";

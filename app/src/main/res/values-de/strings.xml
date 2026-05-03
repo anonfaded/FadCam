@@ -5,7 +5,7 @@
     <string name="app_name" translatable="false">ServaCam</string>
     <string name="app_icon_description">Wähle ein Symbol und einen Namen für die App. Dadurch wird die Anzeige der App auf dem Startbildschirm geändert.</string>
     <string name="check_for_updates">Auf Updates überprüfen</string>
-    <string name="fadsec_info">ServaCam ist Teil der FadSec Lab Suite. Für weitere Informationen klicke unten auf \'Quellcode anzeigen\'.</string>
+    <string name="servalabs_info">ServaCam ist Teil der ServaLabs Suite. Für weitere Informationen klicke unten auf \'Quellcode anzeigen\'.</string>
     <string name="app_description">
     <![CDATA[
     ServaCam ist eine werbefreie Open-Source-Videoaufzeichnungs-App, die den Datenschutz priorisiert, indem sie keine Daten verfolgt oder erfasst. Es ist exklusiv auf GitHub und über die im README genannten offiziellen Links erhältlich.
@@ -19,7 +19,7 @@
     <string name="send_email">E-Mail senden</string>
     <string name="join_community">Tritt der Community bei für Hilfe, Ideenaustausch und zukünftige App-Updates</string>
     <string name="privacy_information">Datenschutzinformationen</string>
-    <string name="copyright_info"> 2024-2025 https://fadcam.faded.dev\nLizenziert unter GPL-3.0</string>
+    <string name="copyright_info"> 2024-2025 https://servacam.faded.dev\nLizenziert unter GPL-3.0</string>
     <string-array name="video_resolutions_keys">
         <item>7680x4320</item>
         <!-- 8K -->
@@ -209,7 +209,7 @@
     <string name="discord_title">Discord-Server</string>
     <string name="thankyou_msg">Danke, dass du ServaCam nutzt!</string>
     <string name="settings_title">Einstellungen</string>
-    <string name="array_watermark_time_fadcam">Zeit mit Fadcam</string>
+    <string name="array_watermark_time_servacam">Zeit mit ServaCam</string>
     <string name="array_watermark_timeonly">Zeitstempel</string>
     <string name="array_watermark_nomark">Kein Wasserzeichen</string>
     <!-- recent_features and upcoming_features removed (not used in bottom sheet) -->
@@ -448,7 +448,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="support_ko_fi">Unterstütze uns auf Ko-fi</string>
     <string name="kofi_description">Beschreibung wird im Code festgelegt.</string>
     <string name="kofi_button_text">Kauf mir ein Ko-fi</string>
-    <string name="kofi_footer_text">Gemacht mit im FadSec Lab in</string>
+    <string name="kofi_footer_text">Gemacht mit im ServaLabs in</string>
     <string name="setting_audio_input_source_title">Audio-Eingangsquelle</string>
     <string name="setting_audio_input_source_status_default">Aktuell verwendet: Telefonmikrofon</string>
     <string name="setting_audio_input_source_status_wired">Aktuell verwendet: Kabelmikrofon</string>
@@ -515,7 +515,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="applock_verify_to_remove">PIN zum Entfernen bestätigen</string>
     <string name="applock_verification_canceled">Bestätigung abgebrochen</string>
     <string name="version_format">v%s</string>
-    <string name="edit_with_faditorx">Mit FaditorX bearbeiten</string>
+    <string name="edit_with_editor_minix">Mit Editor MiniX bearbeiten</string>
     <!-- Update Bottom Sheet Strings -->
     <string name="update_sarcastic_heading">📦 Oh schau, noch ein Update...</string>
     <string name="update_visit_github">GitHub besuchen</string>
@@ -534,7 +534,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">Sumud (صُمود)</string>
     <string name="app_icon_pakistan" translatable="false">ServaCam</string>
-    <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
+    <string name="app_icon_servalabs" translatable="false">ServaLabs</string>
     <string name="app_icon_noor" translatable="false">Noor (ServaCam ++)</string>
     <string name="app_icon_bat" translatable="false">ServaCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>

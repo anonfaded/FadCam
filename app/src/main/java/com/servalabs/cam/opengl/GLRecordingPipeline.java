@@ -260,7 +260,7 @@ public class GLRecordingPipeline {
             android.graphics.Bitmap bitmap = null;
             try {
                 // Capture raw camera frame from GL path (without GL watermark),
-                // then let PhotoStorageHelper apply the exact normal FadShot watermark style.
+                // then let PhotoStorageHelper apply the exact normal ServaShot watermark style.
                 glRenderer.setSuppressWatermarkForSnapshot(true);
                 for (int i = 0; i < 3; i++) {
                     glRenderer.renderToEncoderAllowStaleFrame();

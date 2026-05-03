@@ -55,7 +55,7 @@ public class WatchCameraFragment extends Fragment {
     private ImageView        ivWatchPauseResume;
     private TextView         tvWatchPauseLabel;   // "Pause" / "Resume"
     private TextView         ivWatchFullscreen;   // TextView using Material Icons font
-    private TextView         ivWatchFadShot;      // TextView using Material Icons font
+    private TextView         ivWatchServaShot;      // TextView using Material Icons font
 
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -140,7 +140,7 @@ public class WatchCameraFragment extends Fragment {
         ivWatchPauseResume = view.findViewById(R.id.iv_watch_pause_resume);
         tvWatchPauseLabel  = view.findViewById(R.id.tv_watch_pause_label);
         ivWatchFullscreen  = view.findViewById(R.id.iv_watch_fullscreen);
-        ivWatchFadShot     = view.findViewById(R.id.iv_watch_fadshot);
+        ivWatchServaShot     = view.findViewById(R.id.iv_watch_servashot);
 
         // Hamburger opens HomeSidebarFragment (sidebar with preview controls, tips, etc.)
         View hamburger = view.findViewById(R.id.btn_watch_hamburger);
@@ -191,7 +191,7 @@ public class WatchCameraFragment extends Fragment {
         ivWatchAudioToggle.setOnClickListener(v -> toggleAudio());
         if (ivWatchPauseResume != null) ivWatchPauseResume.setOnClickListener(v -> pauseResumeRecording());
         if (ivWatchFullscreen  != null) ivWatchFullscreen.setOnClickListener(v -> toggleFullscreen());
-        if (ivWatchFadShot     != null) ivWatchFadShot.setOnClickListener(v -> takeFadShot());
+        if (ivWatchServaShot     != null) ivWatchServaShot.setOnClickListener(v -> takeServaShot());
 
         // Initial UI state
         updateAudioIcon();
@@ -297,7 +297,7 @@ public class WatchCameraFragment extends Fragment {
      * - During recording: sends INTENT_ACTION_CAPTURE_PHOTO to RecordingService.
      * - While idle: launches PhotoCaptureActivity.
      */
-    private void takeFadShot() {
+    private void takeServaShot() {
         try {
             if (isRecording) {
                 final Intent intent = new Intent(requireContext(), RecordingService.class);
@@ -309,9 +309,9 @@ public class WatchCameraFragment extends Fragment {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
                 startActivity(intent);
             }
-            FLog.d(TAG, "takeFadShot: recording=" + isRecording);
+            FLog.d(TAG, "takeServaShot: recording=" + isRecording);
         } catch (Exception e) {
-            FLog.e(TAG, "takeFadShot error", e);
+            FLog.e(TAG, "takeServaShot error", e);
         }
     }
 

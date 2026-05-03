@@ -4,7 +4,7 @@
     <string name="trash_auto_delete_info_immediate">项目将立即删除。</string>
     <string name="app_icon_description">为您的应用选择图标和名称。这将更改其在主屏幕上的显示方式。</string>
     <string name="check_for_updates">检查更新</string>
-    <string name="fadsec_info">ServaCam是FadSec实验室套件的一部分。欲了解更多详情，请点击下方查看源码按钮。</string>
+    <string name="servalabs_info">ServaCam是ServaLabs实验室套件的一部分。欲了解更多详情，请点击下方查看源码按钮。</string>
     <string name="app_description"><![CDATA[
     ServaCam是一个以隐私为首要重心的开源无广告的视频录制软件. 此软件能通过Github和README中的官方链接获取.
     <br/><br/>
@@ -16,7 +16,7 @@
     <string name="send_email">发送邮件</string>
     <string name="join_community">加入社区获得帮助，分享点子以及获得软件更新</string>
     <string name="privacy_information">隐私须知</string>
-    <string name="copyright_info">© 2024 https://fadcam.faded.dev\n特许 根据 GPL-3.0</string>
+    <string name="copyright_info">© 2024 https://servacam.faded.dev\n特许 根据 GPL-3.0</string>
     <string name="mainpage_storage_indicator" formatted="false">\n    <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>可用空间:</b></font><br>
     <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
@@ -66,7 +66,7 @@
     <string name="button_settings_cam_front">前摄</string>
     <string name="note_quailty">选择视频分辨率\n(默认: HD)</string>
     <string name="setting_watermark">水印</string>
-    <string name="note_watermark">调整视频水印\n(默认: 时间与\"Fadcam\"字样)</string>
+    <string name="note_watermark">调整视频水印\n(默认: 时间与\"ServaCam\"字样)</string>
     <string name="note_watermark_extra">想让视频保存速度更快？选择\"无水印\". 想加水印？那么片刻的等待是值得的, 就只需要多等一小会!</string>
     <string name="note_location">向水印添加位置信息. \n需要打开手机的位置信息功能 \n(默认: 关闭)</string>
     <string name="note_location_extra">添加经纬度信息至视频水印需要打开手机的位置信息功能。</string>
@@ -137,7 +137,7 @@
     <string name="discord_title">Discord服务器</string>
     <string name="thankyou_msg">感谢你使用ServaCam!</string>
     <string name="settings_title">设置</string>
-    <string name="array_watermark_time_fadcam">时间与\"Fadcam\"字样</string>
+    <string name="array_watermark_time_servacam">时间与\"ServaCam\"字样</string>
     <string name="array_watermark_timeonly">仅时间</string>
     <string name="array_watermark_nomark">无水印</string>
     <string name="toast_video_not_found">出错：视频未找到</string>
@@ -482,7 +482,7 @@
     <string name="shortcut_purpose_start">此快捷方式使用后置摄像头开始录制。</string>
     <string name="video_menu_save_copy_or_move_title">保存至图库</string>
     <string name="video_menu_save_copy">复制至图库</string>
-    <string name="video_menu_save_helper_downloads_fadcam">将视频保存至 Downloads/ServaCam</string>
+    <string name="video_menu_save_helper_downloads_servacam">将视频保存至 Downloads/ServaCam</string>
     <string name="video_menu_save_move">移动到图库</string>
     <string name="video_menu_save_move_desc">将文件移动到 Downloads/ServaCam（节省存储空间）</string>
     <string name="video_menu_save_longpress_helper">长按保存到图库以选择复制或移动</string>
@@ -501,7 +501,7 @@
     <string name="video_info_no_location">无位置数据</string>
     <string name="video_menu_mark_viewed">标记为已查看</string>
     <string name="video_menu_mark_unviewed">标记为未查看</string>
-    <string name="video_menu_upload_faddrive">上传到 FadDrive</string>
+    <string name="video_menu_upload_servadrive">上传到 ServaDrive</string>
     <string name="records_hide_thumbnails_row_title">隐藏</string>
     <string name="setting_zoom_ratio_title">变焦倍数</string>
     <string name="zoom_not_available_toast">变焦不可用</string>
@@ -570,7 +570,7 @@
     <string name="watermark_preview_heading">预览</string>
     <string name="watermark_options_heading">选项</string>
     <string name="watermark_style_row_title">水印样式</string>
-    <string name="watermark_style_time_fadcam_label">ServaCam 时间</string>
+    <string name="watermark_style_time_servacam_label">ServaCam 时间</string>
     <string name="watermark_style_timeonly_label">时间戳</string>
     <string name="watermark_style_badge_label">仅品牌标签</string>
     <string name="watermark_style_none_label">无水印</string>
@@ -596,7 +596,7 @@
     <string name="widget_black_background_title">黑色背景</string>
     <string name="widget_arabic_date_title">阿拉伯历日期</string>
     <string name="widget_arabic_date_format_title">阿拉伯历日期格式</string>
-    <string name="widget_branding_title">FadSecLab 品牌标识</string>
+    <string name="widget_branding_title">ServaLabsLab 品牌标识</string>
     <string name="widget_time_format_12h">12小时制 (3:30 PM)</string>
     <string name="widget_time_format_24h">24小时制 (15:30)</string>
     <string name="widget_option_enabled">已启用</string>
@@ -715,8 +715,8 @@
         若继续录制而未保存，当应用缓存意外清除时可能导致此文件丢失。
         ]]></string>
     <string name="recording_already_active">录制已在进行中或已暂停。</string>
-    <string name="faditor_mini_coming_soon">即将推出——轻量级编辑器</string>
-    <string name="faditor_mini_toast">Faditor Mini—— 即将到来</string>
+    <string name="editor_mini_mini_coming_soon">即将推出——轻量级编辑器</string>
+    <string name="editor_mini_mini_toast">Editor Mini Mini—— 即将到来</string>
     <string name="helper_record_audio">切换视频中是否录制麦克风音频。</string>
     <string name="helper_audio_input_source">选择要使用的已连接麦克风/输入源。</string>
     <string name="helper_noise_suppression">实验性滤镜，用于降低背景噪音。</string>
@@ -763,14 +763,14 @@
     <string name="support_ko_fi">在 Ko-fi 上支持我们</string>
     <string name="kofi_description">描述信息将由代码设置。</string>
     <string name="kofi_button_text">请我喝杯咖啡 (Ko-fi)</string>
-    <string name="kofi_footer_text">匠心打造于 FadSecLab</string>
+    <string name="kofi_footer_text">匠心打造于 ServaLabsLab</string>
     <string name="choose_language">选择语言</string>
 
     <string name="applock_set_pin_enable">设置PIN码并启用</string>
     <string name="applock_helper_create">使用4位数字PIN码、密码或指纹为“录制”标签页创建保护。当应用进入后台时，该标签页将自动锁定。</string>
     <string name="applock_helper_manage_disabled">标签页锁定PIN码已设置。开启切换开关，即可在返回应用时要求输入PIN码。</string>
     <string name="applock_helper_enabled">标签页锁定已激活。离开应用后，当再次打开“录制”标签页时将需要输入PIN码。</string>
-    <string name="edit_with_faditorx">使用 Faditor X 编辑</string>
+    <string name="edit_with_editor_minix">使用 Editor Mini X 编辑</string>
     <string name="remote_coming_soon_badge">即将推出</string>
     <string name="changelog_label">更新日志</string>
     <string name="general">通用设置</string>
@@ -910,7 +910,7 @@
     <string name="quick_speed_option_1_75">1.75x</string>
     <string name="quick_speed_option_2">2x</string>
     <string name="quick_speed_option_2_5">2.5x</string>
-    <string name="watermark_preview_sample_fadcam">由 ServaCam 拍摄 - %1$s</string>
+    <string name="watermark_preview_sample_servacam">由 ServaCam 拍摄 - %1$s</string>
     <string name="watermark_preview_sample_timeonly">%1$s</string>
     <string name="controls_hide_delay_subtitle">%1$ds</string>
     <string name="seek_amount_subtitle">%1$ds</string>
@@ -920,7 +920,7 @@
     <string name="settings_section_app">App</string>
     <string name="storage_helper_current_custom_uri_prefix">URI:</string>
     <string name="icon_zoom_in_ligature">zoom_in</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_editor_mini_mini">Editor Mini</string>
     <string name="arabic_date_sample_full_arabic">٧ صفر ١٤٤٧</string>
     <string name="arabic_date_sample_mixed">7 صفر 1447</string>
     <string name="arabic_date_sample_english">7 Safar 1447</string>
@@ -931,19 +931,19 @@
     <string name="theme_pookiepink">软糯粉甜</string>
     <string name="theme_snowveil">雪色薄纱</string>
     <string name="coming_soon_toast">即将到来！因沙安拉。</string>
-    <string name="faditor_mini_title">Faditor Mini</string>
+    <string name="editor_mini_mini_title">Editor Mini Mini</string>
     <string name="full_changelog_info">完整的更新日志请前往首页：打开汉堡菜单，然后选择「更新内容」。</string>
-    <string name="fadrec_start_screen_recording">开始屏幕录制</string>
-    <string name="fadrec_stop_screen_recording">停止屏幕录制</string>
-    <string name="fadrec_pause_screen_recording">暂停屏幕录制</string>
-    <string name="fadrec_resume_screen_recording">继续屏幕录制</string>
-    <string name="fadrec_screen_recording_started">屏幕录制已开始</string>
-    <string name="fadrec_screen_recording_stopped">屏幕录制已停止</string>
-    <string name="fadrec_screen_recording_paused">屏幕录制已暂停</string>
-    <string name="fadrec_screen_recording_resumed">屏幕录制已继续</string>
-    <string name="fadrec_notification_title">屏幕录制</string>
-    <string name="fadrec_notification_recording">正在录制屏幕…</string>
-    <string name="fadrec_notification_paused">录制已暂停</string>
+    <string name="servarec_start_screen_recording">开始屏幕录制</string>
+    <string name="servarec_stop_screen_recording">停止屏幕录制</string>
+    <string name="servarec_pause_screen_recording">暂停屏幕录制</string>
+    <string name="servarec_resume_screen_recording">继续屏幕录制</string>
+    <string name="servarec_screen_recording_started">屏幕录制已开始</string>
+    <string name="servarec_screen_recording_stopped">屏幕录制已停止</string>
+    <string name="servarec_screen_recording_paused">屏幕录制已暂停</string>
+    <string name="servarec_screen_recording_resumed">屏幕录制已继续</string>
+    <string name="servarec_notification_title">屏幕录制</string>
+    <string name="servarec_notification_recording">正在录制屏幕…</string>
+    <string name="servarec_notification_paused">录制已暂停</string>
     <string name="floating_controls_title">菜单</string>
     <string name="floating_controls_permission_needed">需要覆盖权限</string>
     <string name="floating_controls_permission_title">需要覆盖权限</string>
@@ -966,10 +966,10 @@
     <string name="snap_guides">对齐参考线</string>
     <string name="add_text">添加文本</string>
     <string name="add_shape">添加形状</string>
-    <string name="fadrec_ready_to_record">准备就绪，可以录制屏幕</string>
-    <string name="fadrec_ready_to_record_subtitle">点击开始</string>
-    <string name="fadrec_permission_denied">屏幕录制权限被拒绝</string>
-    <string name="fadrec_mode_title">FadRec • 屏幕录制</string>
+    <string name="servarec_ready_to_record">准备就绪，可以录制屏幕</string>
+    <string name="servarec_ready_to_record_subtitle">点击开始</string>
+    <string name="servarec_permission_denied">屏幕录制权限被拒绝</string>
+    <string name="servarec_mode_title">ServaRec • 屏幕录制</string>
     <string name="whats_new_title">新功能</string>
     <string name="whats_new_subtitle">查看最新功能和更新</string>
     <string name="rename_layer_title">重命名图层</string>
@@ -1001,31 +1001,31 @@
     <string name="manage_projects">管理项目</string>
     <string name="name_your_project">为您的项目命名</string>
     <string name="project_naming_message">为您的项目起一个容易记住的名字和描述，以便整理您的录制内容</string>
-    <string name="fadrec_projects">FadRec 项目</string>
+    <string name="servarec_projects">ServaRec 项目</string>
     <string name="delete_project">删除项目</string>
     <string name="delete_all">删除全部</string>
     <string name="new_project">新建项目</string>
     <string name="delete">删除</string>
-    <string name="fadcam_pro_title">ServaCam Pro</string>
-    <string name="fadcam_pro_subtitle">完全私密的高级功能</string>
-    <string name="fadcam_pro_get_button">获取 ServaCam Pro</string>
-    <string name="fadcam_pro_free">免费</string>
-    <string name="fadcam_pro_lab_label">实验室 (Lab)</string>
-    <string name="fadcam_pro_early_bird">🎉 在 2025 年 12 月 23 日之前免费！之后，只需 $15 即可获取终身访问权限。</string>
-    <string name="fadcam_pro_paid_offer">在 2025 年 12 月 23 日之后，以 $15 获取终身访问权限 — 一次性付款，永久更新。</string>
-    <string name="fadcam_pro_benefit_early_access">抢先体验：在公开发布前获取最新版本</string>
-    <string name="fadcam_pro_benefit_lifetime_updates">终身更新：持续获取新功能、性能改进和错误修复</string>
-    <string name="fadcam_pro_benefit_support">即时支持：通过 Discord 提供直接的工单帮助</string>
-    <string name="fadcam_pro_coming_soon">Pro+ 和 Lab 功能即将到来，包括自定义图标上传、自定义应用名称和 FadDrive 云同步。</string>
-    <string name="fadcam_pro_support_message">ServaCam 将永远保持免费，无广告、无追踪。这个项目完全由我一个人独立维护，需要持续的时间和精力。升级到 Pro（目前免费）有助于支持开发，作为回报，我能够在完整的免费版本之外，通过 Pro 功能提供额外价值。感谢您支持这个项目 :)</string>
-    <string name="fadcam_pro_separate_apk">独立应用 • 与 ServaCam 配合使用</string>
-    <string name="fadcam_pro_feature_everything_icon">全部</string>
-    <string name="fadcam_pro_feature_everything">全部</string>
-    <string name="fadcam_pro_feature_custom_icon">自定义应用图标</string>
-    <string name="fadcam_pro_feature_notification_icon">通知私密图标</string>
-    <string name="fadcam_pro_feature_user_icon">用户上传图标</string>
-    <string name="fadcam_pro_feature_app_name">自定义应用名称</string>
-    <string name="fadcam_pro_feature_faddrive">FadDrive 云同步</string>
+    <string name="servacam_pro_title">ServaCam Pro</string>
+    <string name="servacam_pro_subtitle">完全私密的高级功能</string>
+    <string name="servacam_pro_get_button">获取 ServaCam Pro</string>
+    <string name="servacam_pro_free">免费</string>
+    <string name="servacam_pro_lab_label">实验室 (Lab)</string>
+    <string name="servacam_pro_early_bird">🎉 在 2025 年 12 月 23 日之前免费！之后，只需 $15 即可获取终身访问权限。</string>
+    <string name="servacam_pro_paid_offer">在 2025 年 12 月 23 日之后，以 $15 获取终身访问权限 — 一次性付款，永久更新。</string>
+    <string name="servacam_pro_benefit_early_access">抢先体验：在公开发布前获取最新版本</string>
+    <string name="servacam_pro_benefit_lifetime_updates">终身更新：持续获取新功能、性能改进和错误修复</string>
+    <string name="servacam_pro_benefit_support">即时支持：通过 Discord 提供直接的工单帮助</string>
+    <string name="servacam_pro_coming_soon">Pro+ 和 Lab 功能即将到来，包括自定义图标上传、自定义应用名称和 ServaDrive 云同步。</string>
+    <string name="servacam_pro_support_message">ServaCam 将永远保持免费，无广告、无追踪。这个项目完全由我一个人独立维护，需要持续的时间和精力。升级到 Pro（目前免费）有助于支持开发，作为回报，我能够在完整的免费版本之外，通过 Pro 功能提供额外价值。感谢您支持这个项目 :)</string>
+    <string name="servacam_pro_separate_apk">独立应用 • 与 ServaCam 配合使用</string>
+    <string name="servacam_pro_feature_everything_icon">全部</string>
+    <string name="servacam_pro_feature_everything">全部</string>
+    <string name="servacam_pro_feature_custom_icon">自定义应用图标</string>
+    <string name="servacam_pro_feature_notification_icon">通知私密图标</string>
+    <string name="servacam_pro_feature_user_icon">用户上传图标</string>
+    <string name="servacam_pro_feature_app_name">自定义应用名称</string>
+    <string name="servacam_pro_feature_servadrive">ServaDrive 云同步</string>
     <string name="player_info_title">关于视频播放器</string>
     <string name="player_info_content"><![CDATA[
 <b>分段式 MP4 格式</b><br/><br/>

@@ -96,7 +96,7 @@ public class FlipPickerBottomSheet extends BottomSheetDialogFragment {
 
         // Title
         TextView title = new TextView(requireContext());
-        title.setText(R.string.faditor_flip_title);
+        title.setText(R.string.editor_mini_flip_title);
         title.setTextColor(0xFFFFFFFF);
         title.setTextSize(18);
         title.setTypeface(null, Typeface.BOLD);

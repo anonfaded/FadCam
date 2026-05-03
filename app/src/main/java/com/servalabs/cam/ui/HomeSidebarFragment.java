@@ -198,19 +198,6 @@ public class HomeSidebarFragment extends DialogFragment {
             );
         }
 
-        // Discord branding row
-        View discordRow = view.findViewById(R.id.row_discord_branding);
-        if (discordRow != null) {
-            discordRow.setOnClickListener(v -> {
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW,
-                        Uri.parse("https://discord.gg/kvAZvdkuuN"));
-                    startActivity(intent);
-                } catch (Exception e) {
-                    FLog.w("HomeSidebar", "Failed to open Discord link", e);
-                }
-            });
-        }
     }
 
     @Override

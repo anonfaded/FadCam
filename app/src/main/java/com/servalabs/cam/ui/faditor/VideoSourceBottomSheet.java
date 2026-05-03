@@ -44,7 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Bottom sheet that presents video source options for Faditor Mini:
+ * Bottom sheet that presents video source options for EditorMini Mini:
  * <ul>
  *   <li>"Browse Device" — opens system file picker for any video</li>
  *   <li>"ServaCam Recordings" — lists recordings from the active storage location</li>
@@ -119,7 +119,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
 
         // ── Title ───────────────────────────────────────────────
         TextView title = new TextView(requireContext());
-        title.setText(R.string.faditor_start_project);
+        title.setText(R.string.editor_mini_start_project);
         title.setTextColor(0xFFFFFFFF);
         title.setTextSize(18);
         title.setTypeface(null, Typeface.BOLD);
@@ -129,7 +129,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
 
         // Subtitle / helper text
         TextView subtitle = new TextView(requireContext());
-        subtitle.setText(R.string.faditor_source_chooser_desc);
+        subtitle.setText(R.string.editor_mini_source_chooser_desc);
         subtitle.setTextColor(0xFF888888);
         subtitle.setTextSize(13);
         subtitle.setPadding((int) (20 * dp), 0, (int) (20 * dp), (int) (16 * dp));
@@ -156,7 +156,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
 
         // ── Section: ServaCam Recordings ──────────────────────────
         TextView recordingsHeader = new TextView(requireContext());
-        recordingsHeader.setText(R.string.faditor_your_recordings);
+        recordingsHeader.setText(R.string.editor_mini_your_recordings);
         recordingsHeader.setTextColor(0xFFBBBBBB);
         recordingsHeader.setTextSize(12);
         recordingsHeader.setTypeface(null, Typeface.BOLD);
@@ -168,7 +168,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
 
         // Helper subtitle for recordings
         TextView recordingsHelp = new TextView(requireContext());
-        recordingsHelp.setText(R.string.faditor_recordings_helper);
+        recordingsHelp.setText(R.string.editor_mini_recordings_helper);
         recordingsHelp.setTextColor(0xFF666666);
         recordingsHelp.setTextSize(12);
         recordingsHelp.setPadding((int) (20 * dp), 0, (int) (20 * dp), (int) (10 * dp));
@@ -236,14 +236,14 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         TextView label = new TextView(requireContext());
-        label.setText(R.string.faditor_browse_device);
+        label.setText(R.string.editor_mini_browse_device);
         label.setTextColor(0xFFFFFFFF);
         label.setTextSize(15);
         label.setTypeface(null, Typeface.BOLD);
         textSection.addView(label);
 
         TextView desc = new TextView(requireContext());
-        desc.setText(R.string.faditor_browse_device_desc);
+        desc.setText(R.string.editor_mini_browse_device_desc);
         desc.setTextColor(0xFF888888);
         desc.setTextSize(12);
         textSection.addView(desc);
@@ -275,7 +275,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
      * Scan <b>only</b> the currently active storage location.
      *
      * <p>If the user has "custom" storage mode selected, scans the SAF tree.
-     * Otherwise, scans the internal ServaCam/FadRec directories.</p>
+     * Otherwise, scans the internal ServaCam/ServaRec directories.</p>
      */
     @NonNull
     private List<RecordingItem> scanActiveStorage() {
@@ -314,20 +314,20 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
                     File base = new File(externalDir, Constants.RECORDING_DIRECTORY);
                     items.addAll(scanCameraDir(
                             new File(base, Constants.RECORDING_SUBDIR_CAMERA),
-                            getString(R.string.faditor_fadcam_source)));
+                            getString(R.string.editor_mini_servacam_source)));
                     // Legacy dual root folder compatibility
                     items.addAll(scanFileDir(
                             new File(base, Constants.RECORDING_SUBDIR_DUAL),
-                            getString(R.string.faditor_fadcam_source)));
+                            getString(R.string.editor_mini_servacam_source)));
                     items.addAll(scanFileDir(
                             new File(base, Constants.RECORDING_SUBDIR_SCREEN),
-                            getString(R.string.faditor_fadrec_source)));
+                            getString(R.string.editor_mini_servarec_source)));
                     items.addAll(scanNestedVideoDir(
                             new File(base, Constants.RECORDING_SUBDIR_FADITOR),
-                            getString(R.string.faditor_fadcam_source)));
+                            getString(R.string.editor_mini_servacam_source)));
                     items.addAll(scanFileDir(
                             new File(base, Constants.RECORDING_SUBDIR_STREAM),
-                            getString(R.string.faditor_fadrec_source)));
+                            getString(R.string.editor_mini_servarec_source)));
                     FLog.d(TAG, "Scanned internal storage: " + items.size() + " videos");
                 }
             } catch (Exception e) {
@@ -410,11 +410,11 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         try {
             DocumentFile dir = DocumentFile.fromTreeUri(ctx, treeUri);
             if (dir == null || !dir.isDirectory() || !dir.canRead()) return items;
-            addSafCameraDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_CAMERA, getString(R.string.faditor_fadcam_source));
-            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_DUAL, getString(R.string.faditor_fadcam_source));
-            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_SCREEN, getString(R.string.faditor_fadrec_source));
-            addSafNestedDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_FADITOR, getString(R.string.faditor_fadcam_source));
-            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_STREAM, getString(R.string.faditor_fadrec_source));
+            addSafCameraDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_CAMERA, getString(R.string.editor_mini_servacam_source));
+            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_DUAL, getString(R.string.editor_mini_servacam_source));
+            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_SCREEN, getString(R.string.editor_mini_servarec_source));
+            addSafNestedDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_FADITOR, getString(R.string.editor_mini_servacam_source));
+            addSafDirectoryItems(items, dir, Constants.RECORDING_SUBDIR_STREAM, getString(R.string.editor_mini_servarec_source));
         } catch (Exception e) {
             FLog.e(TAG, "Error listing SAF files", e);
         }
@@ -669,7 +669,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
     @NonNull
     private View createLoadingView(float dp) {
         TextView tv = new TextView(requireContext());
-        tv.setText(R.string.faditor_scanning);
+        tv.setText(R.string.editor_mini_scanning);
         tv.setTextColor(0xFF777777);
         tv.setTextSize(13);
         tv.setGravity(Gravity.CENTER);
@@ -694,7 +694,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         layout.addView(icon);
 
         TextView msg = new TextView(requireContext());
-        msg.setText(R.string.faditor_no_recordings);
+        msg.setText(R.string.editor_mini_no_recordings);
         msg.setTextColor(0xFF777777);
         msg.setTextSize(13);
         msg.setGravity(Gravity.CENTER);

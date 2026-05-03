@@ -61,7 +61,7 @@
                 android:layout_height="26dp"
                 android:paddingHorizontal="8dp"
                 android:background="@drawable/bg_golden_header_button"
-                android:text="@string/fadcam_pro_header_button"
+                android:text="@string/servacam_pro_header_button"
                 android:textColor="#1A1A1A"
                 android:textSize="11sp"
                 android:textStyle="bold"
@@ -74,7 +74,7 @@
                 android:clickable="true"
                 android:foreground="?attr/selectableItemBackgroundBorderless"
                 android:nextFocusUp="@+id/ivAppTitle"
-                android:nextFocusDown="@+id/segment_fadcam" />
+                android:nextFocusDown="@+id/segment_servacam" />
 
             <!-- Pro Badge Dot -->
             <View
@@ -109,7 +109,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/header_bar">
 
-    <!-- Mode Switcher (ServaCam, FadRec, FadMic) -->
+    <!-- Mode Switcher (ServaCam, ServaRec, FadMic) -->
     <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_marginEnd="10dp" android:layout_marginTop="0dp" />
 
     <LinearLayout android:id="@+id/layoutCards" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="0dp" android:orientation="horizontal">
@@ -260,17 +260,7 @@
                 android:paddingEnd="3dp"
                 android:paddingBottom="0dp">
 
-                <ImageView
-                    android:id="@+id/ivElapsedAccent"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="bottom|end"
-                    android:alpha="0.72"
-                    android:scaleType="fitCenter"
-                    android:contentDescription="@null"
-                    android:src="@drawable/fadseclab_flag"
-                    android:translationX="0dp"
-                    android:translationY="6dp" />
+
 
                 <LinearLayout
                     android:id="@+id/layoutElapsedContent"
@@ -601,7 +591,7 @@
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:layout_gravity="top|start"
-                        android:background="@drawable/fadcam_zoom_viewport_indicator" />
+                        android:background="@drawable/servacam_zoom_viewport_indicator" />
                 </FrameLayout>
 
                 <com.google.android.material.button.MaterialButton
@@ -684,7 +674,7 @@
             android:nextFocusUp="@+id/cardElapsedHero"
             android:nextFocusDown="@+id/buttonCamSwitch" />
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonFadRecMute" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/ic_volume_up_24" app:iconSize="24dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:backgroundTint="@color/button_pause" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonServaRecMute" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/ic_volume_up_24" app:iconSize="24dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:backgroundTint="@color/button_pause" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/cam_switch" app:iconSize="24dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:cornerRadius="15dp"
             android:nextFocusUp="@+id/cardElapsedHero"

@@ -58,6 +58,7 @@ public class AboutFragment extends BaseFragment {
     private ExecutorService executorService;
     private AlertDialog loadingDialog;
     private MaterialAlertDialogBuilder alertDialogBuilder;
+    private MaterialCardView privacyInfoCard;
 
 
     @Override
@@ -90,18 +91,13 @@ public class AboutFragment extends BaseFragment {
         TextView appName = view.findViewById(R.id.app_name);
         TextView appVersion = view.findViewById(R.id.app_version);
         TextView appDescription = view.findViewById(R.id.app_description);
-        MaterialCardView fadSecInfoCard = view.findViewById(R.id.fadsec_info_card);
         MaterialButton sourceCodeButton = view.findViewById(R.id.source_code_button);
         MaterialButton donateButton = view.findViewById(R.id.donate_button);
         MaterialButton checkUpdatesButton = view.findViewById(R.id.check_updates_button);
         TextView emailText = view.findViewById(R.id.email_text);
-        TextView discordText = view.findViewById(R.id.discord_text);
-        MaterialCardView privacyInfoCard = view.findViewById(R.id.privacy_info_card);
-        ScrollView scrollView = view.findViewById(R.id.scroll_view);
 
-        // Initialize footer elements
-        ImageView ivFadSecLabLogo = view.findViewById(R.id.ivFadSecLabLogo);
-        TextView tvAboutFooter = view.findViewById(R.id.tvAboutFooter);
+        privacyInfoCard = view.findViewById(R.id.privacy_info_card);
+        ScrollView scrollView = view.findViewById(R.id.scroll_view);
 
         int colorHeading = resolveThemeColor(R.attr.colorHeading);
         int colorButton = resolveThemeColor(R.attr.colorButton);
@@ -128,8 +124,8 @@ public class AboutFragment extends BaseFragment {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.pookiepink_theme_primary); // Pink
         } else if ("Snow Veil".equals(currentTheme)) {
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_primary); // Black
-        } else if ("Faded Night".equals(currentTheme)) {
-            themeTextColor = Color.WHITE; // Default for Faded Night
+        } else if ("Serva Night".equals(currentTheme)) {
+            themeTextColor = Color.WHITE; // Default for Serva Night
         } else {
             // Default to Crimson Bloom if no matches
             themeTextColor = ContextCompat.getColor(requireContext(), R.color.red_theme_primary);
@@ -176,8 +172,8 @@ public class AboutFragment extends BaseFragment {
         } else if ("Snow Veil".equals(currentTheme)) {
             highlightColorHex = String.format("#%06X", (0xFFFFFF & ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_primary)));
         } else {
-            // Faded Night or default
-            highlightColorHex = "#FFFFFF"; // White for Faded Night
+            // Serva Night or default
+            highlightColorHex = "#FFFFFF"; // White for Serva Night
         }
         
         // Replace any hardcoded color with the theme-specific one
@@ -188,10 +184,7 @@ public class AboutFragment extends BaseFragment {
         checkUpdatesButton.setTextColor(Color.WHITE);
         checkUpdatesButton.setIconTint(ColorStateList.valueOf(Color.WHITE));
         checkUpdatesButton.setStrokeColor(ColorStateList.valueOf(colorButton));
-        fadSecInfoCard.setCardBackgroundColor(colorDialog);
-        fadSecInfoCard.setStrokeColor(colorButton);
-        TextView fadSecInfoText = fadSecInfoCard.findViewById(R.id.fadsec_info_text);
-        if (fadSecInfoText != null) fadSecInfoText.setTextColor(Color.WHITE);
+        checkUpdatesButton.setTextColor(Color.WHITE);
         sourceCodeButton.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray_button_filled)));
         sourceCodeButton.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.gray)));
         sourceCodeButton.setTextColor(Color.WHITE);
@@ -202,7 +195,6 @@ public class AboutFragment extends BaseFragment {
         donateButton.setTextColor(black);
         donateButton.setIconTint(ColorStateList.valueOf(black));
         emailText.setTextColor(Color.WHITE);
-        discordText.setTextColor(Color.WHITE);
         privacyInfoCard.setCardBackgroundColor(colorDialog);
         privacyInfoCard.setStrokeColor(colorButton);
         LinearLayout privacyHeader = privacyInfoCard.findViewById(R.id.privacy_info_header);
@@ -217,59 +209,6 @@ public class AboutFragment extends BaseFragment {
         String[] questions = getResources().getStringArray(R.array.questions_array);
         String[] answers = getResources().getStringArray(R.array.answers_array);
         
-        // Setup footer text with Palestine and Pakistan flags
-        if (tvAboutFooter != null) {
-            String footer = "Made with Palestine at FadSec Lab in Pakistan";
-            android.text.SpannableString spannable = new android.text.SpannableString(footer);
-            
-            // Palestine flag image
-            Drawable palestine = androidx.core.content.res.ResourcesCompat.getDrawable(getResources(), R.drawable.palestine, null);
-            if (palestine != null) {
-                int size = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 18, getResources().getDisplayMetrics());
-                palestine.setBounds(0, 0, size, size);
-                android.text.style.ImageSpan palestineSpan = new android.text.style.ImageSpan(palestine, android.text.style.ImageSpan.ALIGN_BOTTOM);
-                int palestineIndex = footer.indexOf("Palestine");
-                if (palestineIndex != -1) {
-                    spannable.setSpan(palestineSpan, palestineIndex, palestineIndex + "Palestine".length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
-            }
-            
-            // Pakistan flag image
-            Drawable pakistan = androidx.core.content.res.ResourcesCompat.getDrawable(getResources(), R.drawable.pakistan, null);
-            if (pakistan != null) {
-                int size = (int) android.util.TypedValue.applyDimension(android.util.TypedValue.COMPLEX_UNIT_DIP, 18, getResources().getDisplayMetrics());
-                pakistan.setBounds(0, 0, size, size);
-                android.text.style.ImageSpan pakistanSpan = new android.text.style.ImageSpan(pakistan, android.text.style.ImageSpan.ALIGN_BOTTOM);
-                int pakistanIndex = footer.indexOf("Pakistan");
-                if (pakistanIndex != -1) {
-                    spannable.setSpan(pakistanSpan, pakistanIndex, pakistanIndex + "Pakistan".length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
-            }
-            
-            // FadSec Lab clickable, bold, and red
-            int fadSecLabStart = footer.indexOf("FadSec Lab");
-            int fadSecLabEnd = fadSecLabStart + "FadSec Lab".length();
-            if (fadSecLabStart >= 0) {
-                spannable.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), fadSecLabStart, fadSecLabEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                spannable.setSpan(new android.text.style.ClickableSpan() {
-                    @Override
-                    public void onClick(@NonNull View widget) {
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/fadsec-lab"));
-                        widget.getContext().startActivity(browserIntent);
-                    }
-                    @Override
-                    public void updateDrawState(android.text.TextPaint ds) {
-                        super.updateDrawState(ds);
-                        ds.setColor(Color.parseColor("#E43C3C")); // Red color
-                        ds.setUnderlineText(false); // No underline
-                    }
-                }, fadSecLabStart, fadSecLabEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-            
-            tvAboutFooter.setText(spannable);
-            tvAboutFooter.setTextColor(isSnowVeilTheme() ? Color.BLACK : Color.WHITE);
-            tvAboutFooter.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
-        }
         
         // Check current theme to determine answers color
         String currentThemeAnswers = com.servalabs.cam.SharedPreferencesManager.getInstance(requireContext()).sharedPreferences.getString(com.servalabs.cam.Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME);
@@ -291,7 +230,7 @@ public class AboutFragment extends BaseFragment {
         } else if ("Snow Veil".equals(currentThemeAnswers)) {
             answerColorHex = String.format("#%06X", (0xFFFFFF & ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_primary)));
         } else {
-            answerColorHex = "#FFFFFF"; // White for Faded Night
+            answerColorHex = "#FFFFFF"; // White for Serva Night
         }
         
         StringBuilder qnaContent = new StringBuilder();
@@ -300,16 +239,15 @@ public class AboutFragment extends BaseFragment {
                     .append("<font color='" + answerColorHex + "'>").append(answers[i]).append("</font><br><br>");
         }
         privacyInfoContent.setText(Html.fromHtml(qnaContent.toString(), Html.FROM_HTML_MODE_LEGACY));
-        sourceCodeButton.setOnClickListener(v -> openUrl("https://github.com/fadsec-lab/"));
+        sourceCodeButton.setOnClickListener(v -> openUrl("https://github.com/servalabs-cam/"));
         donateButton.setOnClickListener(v -> {
             KoFiSupportBottomSheet bottomSheet = new KoFiSupportBottomSheet();
             bottomSheet.show(getParentFragmentManager(), "KoFiSupportBottomSheet");
         });
         checkUpdatesButton.setOnClickListener(v -> checkForUpdates());
         emailText.setOnClickListener(v -> sendEmail());
-        discordText.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
         setupPrivacyInfo(privacyInfoCard, scrollView);
-        view.findViewById(R.id.check_updates_button).setOnClickListener(v -> checkForUpdates());
+
 
         // Find text elements with specific content and set their colors
         ScrollView scrollViewObj = view.findViewById(R.id.scroll_view);
@@ -361,7 +299,7 @@ public class AboutFragment extends BaseFragment {
         } else if ("Snow Veil".equals(currentTheme)) {
             answerColorHex = String.format("#%06X", (0xFFFFFF & ContextCompat.getColor(requireContext(), R.color.snowveil_theme_text_primary)));
         } else {
-            answerColorHex = "#FFFFFF"; // White for Faded Night
+            answerColorHex = "#FFFFFF"; // White for Serva Night
         }
         
         // Determine question text color based on theme
@@ -458,7 +396,7 @@ public class AboutFragment extends BaseFragment {
 
     private void sendEmail() {
         Intent intent = new Intent(Intent.ACTION_SENDTO);
-        intent.setData(Uri.parse("mailto:fadedhood@proton.me"));
+        intent.setData(Uri.parse("mailto:support@servalabs.cam"));
         intent.putExtra(Intent.EXTRA_SUBJECT, "ServaCam Feedback");
         startActivity(intent);
     }
@@ -472,7 +410,7 @@ public class AboutFragment extends BaseFragment {
         ExecutorService updateExecutor = Executors.newSingleThreadExecutor();
         updateExecutor.execute(() -> {
             try {
-                java.net.URL url = new java.net.URL("https://github.com/anonfaded/ServaCam/releases/latest");
+                java.net.URL url = new java.net.URL("https://github.com/servalabs-cam/ServaCam/releases/latest");
                 java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setInstanceFollowRedirects(false); // Do not follow redirects
@@ -480,7 +418,7 @@ public class AboutFragment extends BaseFragment {
                 String location = connection.getHeaderField("Location");
                 connection.disconnect();
                 String latestVersion = null;
-                String tagUrl = "https://github.com/anonfaded/ServaCam/releases/latest";
+                String tagUrl = "https://github.com/servalabs-cam/ServaCam/releases/latest";
                 if (location != null && location.contains("/tag/")) {
                     int tagIndex = location.lastIndexOf("/tag/");
                     tagUrl = location;
@@ -628,7 +566,7 @@ public class AboutFragment extends BaseFragment {
         int dialogTheme;
         if ("Crimson Bloom".equals(currentTheme)) {
             dialogTheme = R.style.ThemeOverlay_ServaCam_Red_Dialog;
-        } else if ("Faded Night".equals(currentTheme)) {
+        } else if ("Serva Night".equals(currentTheme)) {
             dialogTheme = R.style.ThemeOverlay_ServaCam_Amoled_MaterialAlertDialog;
         } else if ("Snow Veil".equals(currentTheme)) {
             dialogTheme = R.style.ThemeOverlay_ServaCam_SnowVeil_Dialog;
@@ -669,21 +607,7 @@ public class AboutFragment extends BaseFragment {
     
     private void applySnowVeilToCards(View rootView) {
         try {
-            // Find MaterialCardViews in the fragment
-            MaterialCardView fadsecInfoCard = rootView.findViewById(R.id.fadsec_info_card);
-            MaterialCardView privacyInfoCard = rootView.findViewById(R.id.privacy_info_card);
-            
-            // Apply Snow Veil theme styles to cards
-            if (fadsecInfoCard != null) {
-                fadsecInfoCard.setCardBackgroundColor(Color.WHITE);
-                fadsecInfoCard.setStrokeColor(Color.LTGRAY);
-                
-                // Find text views inside the card and set color
-                TextView fadsecInfoText = fadsecInfoCard.findViewById(R.id.fadsec_info_text);
-                if (fadsecInfoText != null) {
-                    fadsecInfoText.setTextColor(Color.BLACK);
-                }
-            }
+            // select specific card stylings if they existed
             
             if (privacyInfoCard != null) {
                 privacyInfoCard.setCardBackgroundColor(Color.WHITE);

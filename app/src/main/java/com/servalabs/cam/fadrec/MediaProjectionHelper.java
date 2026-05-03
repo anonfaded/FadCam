@@ -16,7 +16,7 @@ import com.servalabs.cam.fadrec.services.ScreenRecordingService;
 
 /**
  * Helper class for handling MediaProjection permission requests.
- * Manages screen capture permission flow for FadRec screen recording.
+ * Manages screen capture permission flow for ServaRec screen recording.
  * 
  * Usage:
  * 1. Create instance in Fragment/Activity
@@ -193,7 +193,7 @@ public class MediaProjectionHelper {
     }
 
     /**
-     * Toggle live mute state for FadRec while recording.
+     * Toggle live mute state for ServaRec while recording.
      */
     public void setScreenRecordingMuted(boolean muted) {
         try {

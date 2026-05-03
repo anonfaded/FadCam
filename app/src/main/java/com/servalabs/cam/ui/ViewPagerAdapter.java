@@ -12,7 +12,7 @@ import com.servalabs.cam.forensics.ui.ForensicIntelligenceFragment;
 
 /**
  * ViewPagerAdapter manages fragments for the main ViewPager.
- * Creates appropriate HomeFragment based on current recording mode (ServaCam/FadRec).
+ * Creates appropriate HomeFragment based on current recording mode (ServaCam/ServaRec).
  */
 public class ViewPagerAdapter extends FragmentStateAdapter {
 
@@ -57,7 +57,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
         String currentMode = prefsManager.getCurrentRecordingMode();
         
         if (Constants.MODE_FADREC.equals(currentMode)) {
-            // FadRec mode - create screen recording fragment
+            // ServaRec mode - create screen recording fragment
             return FadRecHomeFragment.newInstance();
         } else {
             // ServaCam mode (default) - create camera recording fragment
@@ -67,6 +67,6 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
     @Override
     public int getItemCount() {
-        return 6; // Home, Records, Remote, Faditor Mini, Settings, Lab
+        return 6; // Home, Records, Remote, EditorMini Mini, Settings, Lab
     }
 }

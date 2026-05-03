@@ -32,7 +32,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/nav_faditor_mini"
+                android:text="@string/nav_editor_mini_mini"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/white"
@@ -52,7 +52,7 @@
 
         <!-- Export dock (hidden by default) -->
         <LinearLayout
-            android:id="@+id/faditor_export_dock"
+            android:id="@+id/editor_mini_export_dock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
@@ -69,7 +69,7 @@
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:id="@+id/faditor_export_dock_icon"
+                    android:id="@+id/editor_mini_export_dock_icon"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:src="@drawable/ic_check_circle"
@@ -77,18 +77,18 @@
                     android:contentDescription="@string/export_status" />
 
                 <com.servalabs.cam.ui.utils.AnimatedTextView
-                    android:id="@+id/faditor_export_dock_title"
+                    android:id="@+id/editor_mini_export_dock_title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:text="@string/faditor_export_progress"
+                    android:text="@string/editor_mini_export_progress"
                     android:textColor="@android:color/white"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
                 <com.servalabs.cam.ui.utils.AnimatedTextView
-                    android:id="@+id/faditor_export_dock_ok"
+                    android:id="@+id/editor_mini_export_dock_ok"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_records_delete_ok_button"
@@ -111,7 +111,7 @@
 
             <!-- Progress bar -->
             <com.google.android.material.progressindicator.LinearProgressIndicator
-                android:id="@+id/faditor_export_dock_progress"
+                android:id="@+id/editor_mini_export_dock_progress"
                 style="@style/Widget.Material3.LinearProgressIndicator"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -132,7 +132,7 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/faditor_export_dock_current"
+                    android:id="@+id/editor_mini_export_dock_current"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -143,7 +143,7 @@
                     tools:text="Exporting project..." />
 
                 <TextView
-                    android:id="@+id/faditor_export_dock_eta"
+                    android:id="@+id/editor_mini_export_dock_eta"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
@@ -154,7 +154,7 @@
 
             <!-- Summary line (optional) -->
             <TextView
-                android:id="@+id/faditor_export_dock_summary"
+                android:id="@+id/editor_mini_export_dock_summary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -225,7 +225,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/faditor_mini_title"
+                            android:text="@string/editor_mini_mini_title"
                             android:textSize="18sp"
                             android:textStyle="bold"
                             android:textColor="@android:color/white" />
@@ -233,7 +233,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/faditor_home_tagline"
+                            android:text="@string/editor_mini_home_tagline"
                             android:textSize="12sp"
                             android:textColor="#888888"
                             android:layout_marginTop="2dp" />
@@ -247,7 +247,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginTop="16dp"
-                    android:text="@string/faditor_start_project"
+                    android:text="@string/editor_mini_start_project"
                     android:textSize="14sp"
                     android:textAllCaps="false"
                     app:backgroundTint="#4CAF50"
@@ -269,7 +269,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_recent_projects"
+                    android:text="@string/editor_mini_recent_projects"
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:textColor="?attr/colorHeading"
@@ -301,7 +301,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/faditor_empty_title"
+                        android:text="@string/editor_mini_empty_title"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="#888888"
@@ -311,7 +311,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/faditor_empty_desc"
+                        android:text="@string/editor_mini_empty_desc"
                         android:textSize="13sp"
                         android:textColor="#555555"
                         android:textAlignment="center"
@@ -341,7 +341,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/faditor_recent_projects"
+                        android:text="@string/editor_mini_recent_projects"
                         android:textSize="13sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading"
@@ -402,7 +402,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/faditor_select_items"
+                        android:text="@string/editor_mini_select_items"
                         android:textColor="#CCCCCC"
                         android:textSize="13sp"
                         android:layout_marginStart="4dp" />

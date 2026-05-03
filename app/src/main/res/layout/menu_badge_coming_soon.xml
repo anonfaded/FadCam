@@ -14,7 +14,7 @@
         android:layout_height="20dp"
         android:src="@drawable/ic_edit_cut"
         android:layout_marginEnd="8dp"
-        android:contentDescription="@string/edit_with_faditorx"
+        android:contentDescription="@string/edit_with_editor_minix"
         app:tint="#888888" />
 
     <TextView

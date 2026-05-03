@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="#FF0D0D0D"
     android:fitsSystemWindows="true"
-    tools:context="com.servalabs.cam.ui.faditor.FaditorEditorActivity">
+    tools:context="com.servalabs.cam.ui.editor_mini.FaditorEditorActivity">
 
 <LinearLayout
     android:id="@+id/editor_root"
@@ -38,7 +38,7 @@
             android:textColor="#FFFFFF"
             android:textSize="24sp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/faditor_close" />
+            android:contentDescription="@string/editor_mini_close" />
 
         <!-- Title -->
         <TextView
@@ -46,7 +46,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/faditor_editor_title"
+            android:text="@string/editor_mini_editor_title"
             android:textColor="#FFFFFF"
             android:textSize="17sp"
             android:textStyle="bold"
@@ -65,7 +65,7 @@
             android:textColor="#FF4CAF50"
             android:textSize="24sp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/faditor_export" />
+            android:contentDescription="@string/editor_mini_export" />
     </LinearLayout>
 
     <!-- ─── Player section (fills available space) ───────────────── -->
@@ -97,10 +97,10 @@
             android:scaleType="fitCenter"
             android:background="#FF0D0D0D"
             android:visibility="gone"
-            android:contentDescription="@string/faditor_add_asset_image" />
+            android:contentDescription="@string/editor_mini_add_asset_image" />
 
         <!-- Crop overlay (on top of player, hidden by default) -->
-        <com.servalabs.cam.ui.faditor.crop.CropOverlayView
+        <com.servalabs.cam.ui.editor_mini.crop.CropOverlayView
             android:id="@+id/crop_overlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -162,7 +162,7 @@
                     android:textSize="18sp"
                     android:alpha="0.3"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/faditor_undo" />
+                    android:contentDescription="@string/editor_mini_undo" />
 
                 <TextView
                     android:id="@+id/undo_count"
@@ -187,7 +187,7 @@
                 android:textColor="#FFFFFF"
                 android:textSize="28sp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/faditor_play_pause" />
+                android:contentDescription="@string/editor_mini_play_pause" />
 
             <!-- Redo: icon + count stacked vertically -->
             <LinearLayout
@@ -208,7 +208,7 @@
                     android:textSize="18sp"
                     android:alpha="0.3"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/faditor_redo" />
+                    android:contentDescription="@string/editor_mini_redo" />
 
                 <TextView
                     android:id="@+id/redo_count"
@@ -250,7 +250,7 @@
             android:overScrollMode="always"
             android:fadingEdge="none">
 
-            <com.servalabs.cam.ui.faditor.timeline.EditorTimelineView
+            <com.servalabs.cam.ui.editor_mini.timeline.EditorTimelineView
                 android:id="@+id/editor_timeline_view"
                 android:layout_width="wrap_content"
                 android:layout_height="140dp"
@@ -299,7 +299,7 @@
                     android:id="@+id/tool_trim_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_trim"
+                    android:text="@string/editor_mini_tool_trim"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -329,7 +329,7 @@
                     android:id="@+id/tool_speed_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_speed"
+                    android:text="@string/editor_mini_tool_speed"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -359,7 +359,7 @@
                     android:id="@+id/tool_mute_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_sound"
+                    android:text="@string/editor_mini_tool_sound"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -389,7 +389,7 @@
                     android:id="@+id/tool_rotate_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_rotate"
+                    android:text="@string/editor_mini_tool_rotate"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -419,7 +419,7 @@
                     android:id="@+id/tool_flip_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_flip"
+                    android:text="@string/editor_mini_tool_flip"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -449,7 +449,7 @@
                     android:id="@+id/tool_crop_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_crop"
+                    android:text="@string/editor_mini_tool_crop"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -479,7 +479,7 @@
                     android:id="@+id/tool_canvas_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_canvas"
+                    android:text="@string/editor_mini_tool_canvas"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -509,7 +509,7 @@
                     android:id="@+id/tool_audio_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_audio"
+                    android:text="@string/editor_mini_tool_audio"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -539,7 +539,7 @@
                     android:id="@+id/tool_split_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_split"
+                    android:text="@string/editor_mini_tool_split"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -569,7 +569,7 @@
                     android:id="@+id/tool_delete_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_delete"
+                    android:text="@string/editor_mini_tool_delete"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -599,7 +599,7 @@
                     android:id="@+id/tool_duplicate_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_duplicate"
+                    android:text="@string/editor_mini_tool_duplicate"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -629,7 +629,7 @@
                     android:id="@+id/tool_add_asset_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/faditor_tool_add"
+                    android:text="@string/editor_mini_tool_add"
                     android:textColor="#888888"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp" />
@@ -682,7 +682,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
                 android:gravity="center"
-                android:text="@string/faditor_cancel"
+                android:text="@string/editor_mini_cancel"
                 android:textColor="#FFCCCCCC"
                 android:textSize="14sp"
                 android:paddingStart="16dp"
@@ -772,7 +772,7 @@
                 android:id="@+id/remux_progress_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/faditor_remuxing"
+                android:text="@string/editor_mini_remuxing"
                 android:textColor="#FFFFFF"
                 android:textSize="15sp"
                 android:textStyle="bold"
@@ -816,14 +816,14 @@
                 android:textColor="#FFFFFF"
                 android:textSize="24sp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/faditor_export_back" />
+                android:contentDescription="@string/editor_mini_export_back" />
 
             <TextView
                 android:id="@+id/export_title"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/faditor_exporting"
+                android:text="@string/editor_mini_exporting"
                 android:textColor="#FFFFFF"
                 android:textSize="17sp"
                 android:textStyle="bold"
@@ -842,7 +842,7 @@
                 android:textSize="24sp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:visibility="invisible"
-                android:contentDescription="@string/faditor_export_done" />
+                android:contentDescription="@string/editor_mini_export_done" />
         </LinearLayout>
 
         <!-- Centered content area -->
@@ -895,7 +895,7 @@
                 android:id="@+id/export_progress_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/faditor_exporting"
+                android:text="@string/editor_mini_exporting"
                 android:textColor="#AAAAAA"
                 android:textSize="14sp"
                 android:layout_marginTop="16dp" />
@@ -927,7 +927,7 @@
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
-                android:text="@string/faditor_cancel"
+                android:text="@string/editor_mini_cancel"
                 android:textSize="13sp"
                 android:layout_marginTop="32dp"
                 app:cornerRadius="20dp"

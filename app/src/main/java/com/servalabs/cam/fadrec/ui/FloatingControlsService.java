@@ -28,7 +28,7 @@ import com.servalabs.cam.ui.AvatarToggleView;
 import com.servalabs.cam.fadrec.ScreenRecordingState;
 
 /**
- * Floating assistive touch overlay for FadRec screen recording controls.
+ * Floating assistive touch overlay for ServaRec screen recording controls.
  * Provides a draggable button that expands to show recording controls.
  */
 public class FloatingControlsService extends Service {

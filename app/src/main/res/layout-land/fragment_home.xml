@@ -60,7 +60,7 @@
                 android:layout_height="26dp"
                 android:paddingHorizontal="8dp"
                 android:background="@drawable/bg_golden_header_button"
-                android:text="@string/fadcam_pro_header_button"
+                android:text="@string/servacam_pro_header_button"
                 android:textColor="#1A1A1A"
                 android:textSize="11sp"
                 android:textStyle="bold"
@@ -258,17 +258,7 @@
                         android:paddingEnd="3dp"
                         android:paddingBottom="0dp">
 
-                        <ImageView
-                            android:id="@+id/ivElapsedAccent"
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:layout_gravity="bottom|end"
-                            android:alpha="0.72"
-                            android:scaleType="fitCenter"
-                            android:contentDescription="@null"
-                            android:src="@drawable/fadseclab_flag"
-                            android:translationX="0dp"
-                            android:translationY="6dp" />
+
 
                         <LinearLayout
                             android:id="@+id/layoutElapsedContent"
@@ -617,7 +607,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:layout_gravity="top|start"
-                            android:background="@drawable/fadcam_zoom_viewport_indicator" />
+                            android:background="@drawable/servacam_zoom_viewport_indicator" />
                     </FrameLayout>
 
                     <com.google.android.material.button.MaterialButton

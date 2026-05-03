@@ -89,14 +89,12 @@
         <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.provider" android:exported="false" android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
-        <activity android:name=".SplashActivity" android:exported="true" android:theme="@style/Theme.ServaCam.Splash">
+        <activity android:name=".MainActivity" android:launchMode="singleTop" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".MainActivity" android:launchMode="singleTop" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" android:exported="false" />
 
         <!-- Watch-optimized activity for Wear OS round-screen devices -->
         <activity
@@ -144,13 +142,6 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- $ ~/r00t App Icon (Activity Alias) -->
-        <activity-alias android:name=".MainActivity.FadSecLabIcon" android:enabled="false" android:label="FadSec Lab" android:icon="@mipmap/ic_launcher_fadseclab" android:roundIcon="@mipmap/ic_launcher_fadseclab_round" android:targetActivity=".MainActivity" android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
 
         <!-- Noor App Icon (Activity Alias) -->
         <activity-alias android:name=".MainActivity.NoorIcon" android:enabled="false" android:label="ServaCam ++" android:icon="@mipmap/ic_launcher_noor" android:roundIcon="@mipmap/ic_launcher_noor_round" android:targetActivity=".MainActivity" android:exported="true">

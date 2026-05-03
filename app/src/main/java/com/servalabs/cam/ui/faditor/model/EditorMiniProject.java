@@ -5,13 +5,13 @@ import androidx.annotation.NonNull;
 import java.util.UUID;
 
 /**
- * Top-level project wrapper for the Faditor editor.
+ * Top-level project wrapper for the EditorMini editor.
  * Contains a {@link Timeline} and metadata.
  *
  * <p>For Phase 1 (MVP) a project is created on-the-fly from a video pick.
  * Phase 4 adds persistence via JSON serialization.</p>
  */
-public class FaditorProject {
+public class EditorMiniProject {
 
     @NonNull
     private final String id;
@@ -38,7 +38,7 @@ public class FaditorProject {
      *
      * @param name display name for the project
      */
-    public FaditorProject(@NonNull String name) {
+    public EditorMiniProject(@NonNull String name) {
         this.id = UUID.randomUUID().toString();
         this.name = name;
         this.createdAt = System.currentTimeMillis();
@@ -56,7 +56,7 @@ public class FaditorProject {
      * @param createdAt    original creation timestamp
      * @param lastModified last modification timestamp
      */
-    public FaditorProject(@NonNull String id, @NonNull String name,
+    public EditorMiniProject(@NonNull String id, @NonNull String name,
                           long createdAt, long lastModified) {
         this.id = id;
         this.name = name;
@@ -123,7 +123,7 @@ public class FaditorProject {
     @NonNull
     @Override
     public String toString() {
-        return "FaditorProject{id=" + id
+        return "EditorMiniProject{id=" + id
                 + ", name=" + name
                 + ", clips=" + timeline.getClipCount()
                 + "}";

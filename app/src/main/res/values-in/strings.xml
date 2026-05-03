@@ -5,7 +5,7 @@
     <string name="app_name" translatable="false">ServaCam</string>
     <string name="app_icon_description">Pilih ikon dan nama untuk aplikasi Anda. Ini akan mengubah tampilannya di layar utama Anda.</string>
     <string name="check_for_updates">Periksa pembaruan</string>
-    <string name="fadsec_info">ServaCam adalah bagian dari rangkaian FadSec Lab. Untuk informasi lebih lanjut, klik \'lihat kode sumber\' di bawah ini.</string>
+    <string name="servalabs_info">ServaCam adalah bagian dari rangkaian ServaLabs. Untuk informasi lebih lanjut, klik \'lihat kode sumber\' di bawah ini.</string>
     <string name="app_description">
     <![CDATA[
     ServaCam adalah aplikasi perekaman video sumber terbuka bebas iklan yang mengutamakan privasi dengan tidak melacak atau mengumpulkan data apa pun. Aplikasi ini tersedia secara eksklusif di GitHub dan melalui tautan resmi yang disebutkan dalam BACA SAYA.
@@ -19,7 +19,7 @@
     <string name="send_email">Kirim email</string>
     <string name="join_community">Bergabunglah dengan komunitas untuk mendapatkan bantuan, berbagi ide, dan pembaruan aplikasi di masa mendatang</string>
     <string name="privacy_information">Informasi Privasi</string>
-    <string name="copyright_info">© 2024 https://fadcam.faded.dev\nLicensed under GPL-3.0</string>
+    <string name="copyright_info">© 2024 https://servacam.faded.dev\nLicensed under GPL-3.0</string>
     <integer-array name="video_framerate_array">
         <item name="24">24</item>
         <item name="30">30</item>
@@ -103,9 +103,9 @@
     </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>PENAFIAN</item>
-        <item>Apakah Fadcam mengambil data pengguna?</item>
+        <item>Apakah ServaCam mengambil data pengguna?</item>
         <item>Apakah ada iklan di ServaCam?</item>
-        <item>Kenapa Fadkam meminta akses lokasi?</item>
+        <item>Kenapa ServaCam meminta akses lokasi?</item>
         <item>Mengapa izin internet diperlukan?</item>
         <item>Apakah ada data yang disimpan di server eksternal?</item>
         <item>Apa yang terjadi pada video saya setelah merekam?</item>
@@ -152,7 +152,7 @@
     <string name="discord_title">Server Discord</string>
     <string name="thankyou_msg">Terima kasih telah menggunakan ServaCam!</string>
     <string name="settings_title">Pengaturan</string>
-    <string name="array_watermark_time_fadcam">Waktu dengan Fadcam</string>
+    <string name="array_watermark_time_servacam">Waktu dengan ServaCam</string>
     <string name="array_watermark_timeonly">Cap waktu</string>
     <string name="array_watermark_nomark">Tidak ada Watermark</string>
     <string name="toast_video_not_found">Error: Video tidak ditemukan</string>

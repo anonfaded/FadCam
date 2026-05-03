@@ -114,7 +114,7 @@ public class SharedPreferencesManager {
             currentTheme != null &&
             (currentTheme.equalsIgnoreCase("AMOLED") ||
                 currentTheme.equalsIgnoreCase("Amoled") ||
-                currentTheme.equalsIgnoreCase("Faded Night"))
+                currentTheme.equalsIgnoreCase("Serva Night"))
         ) {
             return "#424242"; // Dark Grey for AMOLED
         } else if (currentTheme.equals("Crimson Bloom")) {
@@ -154,7 +154,7 @@ public class SharedPreferencesManager {
             if (
                 currentTheme.equalsIgnoreCase("AMOLED") ||
                 currentTheme.equalsIgnoreCase("Amoled") ||
-                currentTheme.equalsIgnoreCase("Faded Night")
+                currentTheme.equalsIgnoreCase("Serva Night")
             ) {
                 setClockCardColor("#424242"); // Dark Grey for AMOLED
             } else if (currentTheme.equals("Crimson Bloom")) {
@@ -1878,9 +1878,6 @@ public class SharedPreferencesManager {
             Constants.APP_ICON_PAKISTAN.equals(iconKey)
         ) return com.servalabs.cam.R.mipmap.ic_launcher_pakistan;
         if (
-            Constants.APP_ICON_FADSECLAB.equals(iconKey)
-        ) return com.servalabs.cam.R.mipmap.ic_launcher_fadseclab;
-        if (
             Constants.APP_ICON_NOOR.equals(iconKey)
         ) return com.servalabs.cam.R.mipmap.ic_launcher_noor;
         if (
@@ -1939,9 +1936,6 @@ public class SharedPreferencesManager {
             if (
                 Constants.APP_ICON_PAKISTAN.equals(key)
             ) return context.getString(R.string.app_icon_pakistan);
-            if (
-                Constants.APP_ICON_FADSECLAB.equals(key)
-            ) return context.getString(R.string.app_icon_fadseclab);
             if (Constants.APP_ICON_NOOR.equals(key)) return context.getString(
                 R.string.app_icon_noor
             );
@@ -1991,7 +1985,7 @@ public class SharedPreferencesManager {
         return prefs.getBoolean(PREF_AUTO_UPDATE_CHECK, true);
     }
 
-    // -------------- FadRec (Screen Recording) Preferences Start --------------
+    // -------------- ServaRec (Screen Recording) Preferences Start --------------
 
     /**
      * Gets the current screen recording audio source preference.
@@ -2191,7 +2185,7 @@ public class SharedPreferencesManager {
     }
 
     /**
-     * Returns whether FadRec recording is currently muted.
+     * Returns whether ServaRec recording is currently muted.
      */
     public boolean isScreenRecordingMuted() {
         return sharedPreferences.getBoolean(
@@ -2201,7 +2195,7 @@ public class SharedPreferencesManager {
     }
 
     /**
-     * Persists FadRec recording muted state.
+     * Persists ServaRec recording muted state.
      */
     public void setScreenRecordingMuted(boolean muted) {
         sharedPreferences
@@ -2211,7 +2205,7 @@ public class SharedPreferencesManager {
     }
 
     /**
-     * Gets the current recording mode (ServaCam or FadRec).
+     * Gets the current recording mode (ServaCam or ServaRec).
      * @return Current mode string (MODE_FADCAM or MODE_FADREC)
      */
     public String getCurrentRecordingMode() {
@@ -2409,7 +2403,7 @@ public class SharedPreferencesManager {
     // -------------- Digital Forensics (Advanced) Preferences End --------------
 
     /**
-     * Gets whether floating controls (assistive touch) is enabled for FadRec.
+     * Gets whether floating controls (assistive touch) is enabled for ServaRec.
      * @return true if floating controls enabled, false otherwise
      */
     public boolean isFloatingControlsEnabled() {
@@ -2420,7 +2414,7 @@ public class SharedPreferencesManager {
     }
 
     /**
-     * Sets whether floating controls (assistive touch) is enabled for FadRec.
+     * Sets whether floating controls (assistive touch) is enabled for ServaRec.
      * @param enabled true to enable, false to disable
      */
     public void setFloatingControlsEnabled(boolean enabled) {
@@ -2431,9 +2425,9 @@ public class SharedPreferencesManager {
         FLog.d("SharedPrefs", "Floating controls enabled: " + enabled);
     }
 
-    // -------------- FadRec (Screen Recording) Preferences End --------------
+    // -------------- ServaRec (Screen Recording) Preferences End --------------
 
-    // -------------- Fadex Notification Preferences Start --------------
+    // -------------- Serva Notification Preferences Start --------------
     private static final String PREF_NOTIFICATION_HISTORY = "fadex_notification_history";
     private static final long NOTIFICATION_CACHE_DURATION_MS = 30 * 24 * 60 * 60 * 1000L; // 30 days
 
@@ -2506,7 +2500,7 @@ public class SharedPreferencesManager {
             .apply();
     }
 
-    // -------------- Fadex Notification Preferences End --------------
+    // -------------- Serva Notification Preferences End --------------
 
     // -------------- Generic Boolean Preferences (for new features badges) ------
 

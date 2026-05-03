@@ -42,7 +42,7 @@ public class ServaCamApplication extends Application implements LifecycleObserve
                     // Only send ACTION_APP_FOREGROUND for MainActivity (camera) or FadRecHomeFragment
                     // Skip for transparent activities like TextEditorActivity, TransparentPermissionActivity
                     boolean isRecordingRelated = activityClassName.contains("MainActivity") || 
-                                               activityClassName.contains("FadRecHomeActivity") ||
+                                               activityClassName.contains("ServaRecHomeActivity") ||
                                                activityClassName.contains("RecordingActivity");
                     
                     if (isRecordingRelated) {

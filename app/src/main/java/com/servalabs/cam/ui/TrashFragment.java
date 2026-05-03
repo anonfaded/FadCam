@@ -330,13 +330,13 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     }
 
     private void setupButtonListeners() {
-        // Set the restore button to blue color for Faded Night theme
+        // Set the restore button to blue color for Serva Night theme
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.servalabs.cam.Constants.PREF_APP_THEME,
                 com.servalabs.cam.Constants.DEFAULT_APP_THEME);
-        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        boolean isFadedNightTheme = "Serva Night".equals(currentTheme);
 
         if (isFadedNightTheme && buttonRestoreSelected != null) {
-            // Use a blue color for restore button in Faded Night theme
+            // Use a blue color for restore button in Serva Night theme
             int blueColor = Color.parseColor("#4285F4"); // Google blue
             buttonRestoreSelected.setTextColor(blueColor);
         }
@@ -585,10 +585,10 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             // Set proper color based on theme
             String currentTheme = sharedPreferencesManager.sharedPreferences
                     .getString(com.servalabs.cam.Constants.PREF_APP_THEME, com.servalabs.cam.Constants.DEFAULT_APP_THEME);
-            boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+            boolean isFadedNightTheme = "Serva Night".equals(currentTheme);
 
             if (isFadedNightTheme) {
-                // For Faded Night theme, use blue color
+                // For Serva Night theme, use blue color
                 buttonRestoreSelected.setTextColor(Color.parseColor("#4285F4")); // Google blue
             } else {
                 // For other themes, use theme's primary/accent color
@@ -602,10 +602,10 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             // Check current theme to apply appropriate styling
             String currentTheme = sharedPreferencesManager.sharedPreferences
                     .getString(com.servalabs.cam.Constants.PREF_APP_THEME, com.servalabs.cam.Constants.DEFAULT_APP_THEME);
-            boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+            boolean isFadedNightTheme = "Serva Night".equals(currentTheme);
 
             if (isFadedNightTheme) {
-                // For Faded Night theme, use darker blue for disabled state
+                // For Serva Night theme, use darker blue for disabled state
                 buttonRestoreSelected.setTextColor(Color.parseColor("#2A4374")); // Darker blue
             }
         }
@@ -989,7 +989,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.servalabs.cam.Constants.PREF_APP_THEME,
                 com.servalabs.cam.Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        boolean isFadedNightTheme = "Serva Night".equals(currentTheme);
 
         int textColor = ContextCompat.getColor(requireContext(),
                 isSnowVeilTheme ? android.R.color.black : android.R.color.white);
@@ -1041,7 +1041,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
 
         dialog.show();
 
-        // After dialog is shown, tint the radio buttons for Faded Night theme
+        // After dialog is shown, tint the radio buttons for Serva Night theme
         if (isFadedNightTheme && dialog.getListView() != null) {
             try {
                 // Force a small delay to ensure the ListView has been populated
@@ -1116,7 +1116,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         // Apply theme-specific button colors
         setDialogButtonColors(dialog);
 
-        // Highlight the Save button with blue for better visibility in Faded Night
+        // Highlight the Save button with blue for better visibility in Serva Night
         // theme
         if (isFadedNightTheme && dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.parseColor("#4285F4"));
@@ -1290,7 +1290,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             dialogTheme = R.style.ThemeOverlay_ServaCam_SnowVeil_Dialog;
         } else if ("Crimson Bloom".equals(currentTheme)) {
             dialogTheme = R.style.ThemeOverlay_ServaCam_Red_Dialog;
-        } else if ("Faded Night".equals(currentTheme)) {
+        } else if ("Serva Night".equals(currentTheme)) {
             dialogTheme = R.style.ThemeOverlay_ServaCam_Amoled_MaterialAlertDialog;
         }
 
@@ -1310,7 +1310,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.servalabs.cam.Constants.PREF_APP_THEME,
                 com.servalabs.cam.Constants.DEFAULT_APP_THEME);
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
-        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        boolean isFadedNightTheme = "Serva Night".equals(currentTheme);
 
         if (isSnowVeilTheme) {
             // Set black text color for buttons in Snow Veil theme
@@ -1324,7 +1324,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
                 dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setTextColor(Color.BLACK);
             }
         } else if (isFadedNightTheme) {
-            // Set white text color for Faded Night theme buttons
+            // Set white text color for Serva Night theme buttons
             if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE);
             }
@@ -1444,9 +1444,9 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         dialog.show();
         setDialogButtonColors(dialog);
 
-        // Color the restore button specially for Faded Night theme
+        // Color the restore button specially for Serva Night theme
         String currentTheme = sharedPreferencesManager.sharedPreferences.getString(com.servalabs.cam.Constants.PREF_APP_THEME, com.servalabs.cam.Constants.DEFAULT_APP_THEME);
-        boolean isFadedNightTheme = "Faded Night".equals(currentTheme);
+        boolean isFadedNightTheme = "Serva Night".equals(currentTheme);
         if (isFadedNightTheme && dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.parseColor("#4285F4"));
         }

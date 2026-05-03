@@ -20,20 +20,20 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 /**
- * Bottom sheet that explains Faditor Mini's features and behaviour.
+ * Bottom sheet that explains EditorMini Mini's features and behaviour.
  *
  * <p>Sections cover: how it works, smart fMP4→MP4 conversion, export naming,
  * temporary files, and recent projects management. Uses the same dark gradient
  * styling as other ServaCam bottom sheets.</p>
  */
-public class FaditorInfoBottomSheet extends BottomSheetDialogFragment {
+public class EditorMiniInfoBottomSheet extends BottomSheetDialogFragment {
 
-    private static final String TAG = "FaditorInfoBottomSheet";
+    private static final String TAG = "EditorMiniInfoBottomSheet";
 
     /** Factory method. */
     @NonNull
-    public static FaditorInfoBottomSheet newInstance() {
-        return new FaditorInfoBottomSheet();
+    public static EditorMiniInfoBottomSheet newInstance() {
+        return new EditorMiniInfoBottomSheet();
     }
 
     // ── Theme & dark styling ─────────────────────────────────────────
@@ -81,7 +81,7 @@ public class FaditorInfoBottomSheet extends BottomSheetDialogFragment {
         root.addView(headerRow);
 
         TextView title = new TextView(requireContext());
-        title.setText(R.string.faditor_info_title);
+        title.setText(R.string.editor_mini_info_title);
         title.setTextColor(0xFFFFFFFF);
         title.setTextSize(18);
         title.setTypeface(null, Typeface.BOLD);
@@ -103,7 +103,7 @@ public class FaditorInfoBottomSheet extends BottomSheetDialogFragment {
 
         // Subtitle
         TextView subtitle = new TextView(requireContext());
-        subtitle.setText(R.string.faditor_info_subtitle);
+        subtitle.setText(R.string.editor_mini_info_subtitle);
         subtitle.setTextColor(0xFF888888);
         subtitle.setTextSize(13);
         subtitle.setPadding((int) (20 * dp), 0, (int) (20 * dp), (int) (16 * dp));
@@ -124,28 +124,28 @@ public class FaditorInfoBottomSheet extends BottomSheetDialogFragment {
         // ── Info sections ───────────────────────────────────────
         addInfoSection(content, materialIcons, dp,
                 "movie_edit", 0xFF4CAF50,
-                R.string.faditor_info_how_title,
-                R.string.faditor_info_how_desc);
+                R.string.editor_mini_info_how_title,
+                R.string.editor_mini_info_how_desc);
 
         addInfoSection(content, materialIcons, dp,
                 "sync", 0xFF42A5F5,
-                R.string.faditor_info_convert_title,
-                R.string.faditor_info_convert_desc);
+                R.string.editor_mini_info_convert_title,
+                R.string.editor_mini_info_convert_desc);
 
         addInfoSection(content, materialIcons, dp,
                 "save", 0xFFFF9800,
-                R.string.faditor_info_export_title,
-                R.string.faditor_info_export_desc);
+                R.string.editor_mini_info_export_title,
+                R.string.editor_mini_info_export_desc);
 
         addInfoSection(content, materialIcons, dp,
                 "cached", 0xFF9E9E9E,
-                R.string.faditor_info_temp_title,
-                R.string.faditor_info_temp_desc);
+                R.string.editor_mini_info_temp_title,
+                R.string.editor_mini_info_temp_desc);
 
         addInfoSection(content, materialIcons, dp,
                 "history", 0xFFAB47BC,
-                R.string.faditor_info_projects_title,
-                R.string.faditor_info_projects_desc);
+                R.string.editor_mini_info_projects_title,
+                R.string.editor_mini_info_projects_desc);
 
         return root;
     }

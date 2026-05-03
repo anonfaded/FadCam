@@ -48,7 +48,7 @@ import com.google.android.material.button.MaterialButton;
 import android.os.Parcelable;
 
 /**
- * FadRec Home Fragment - Extends HomeFragment for screen recording functionality.
+ * ServaRec Home Fragment - Extends HomeFragment for screen recording functionality.
  * Uses inheritance to reuse camera recording UI while adapting for screen recording.
  * 
  * Key differences from parent HomeFragment:
@@ -99,7 +99,7 @@ public class FadRecHomeFragment extends HomeFragment {
     // Timer handler for live updates of elapsed/remaining time
     private android.os.Handler timerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private Runnable timerUpdateRunnable;
-    private MaterialButton buttonFadRecMute;
+    private MaterialButton buttonServaRecMute;
     private boolean screenCardInfoInitialized = false;
     private final Runnable pendingStopStateReconcileRunnable = this::queryScreenRecordingState;
     
@@ -180,7 +180,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     pendingPreviewOnlyPermission = false;
                     // FLog.w(TAG, "Screen capture permission denied: resultCode=" + resultCode);
                     Toast.makeText(requireContext(), 
-                        com.servalabs.cam.R.string.fadrec_permission_denied, 
+                        com.servalabs.cam.R.string.servarec_permission_denied, 
                         Toast.LENGTH_SHORT).show();
                 }
             }
@@ -224,7 +224,7 @@ public class FadRecHomeFragment extends HomeFragment {
         super.onViewCreated(view, savedInstanceState);
         // FLog.d(TAG, "super.onViewCreated completed");
         
-        // Apply FadRec-specific UI customizations
+        // Apply ServaRec-specific UI customizations
         // FLog.d(TAG, "Customizing UI for screen recording...");
         customizeUIForScreenRecording(view);
         view.post(this::updateScreenRecordingCardInfo);
@@ -368,12 +368,12 @@ public class FadRecHomeFragment extends HomeFragment {
     }
         /**
      * Override parent's method to handle button reset for screen recording mode.
-     * In FadRec mode, we don't have camera switch or torch, and pause is always enabled.
+     * In ServaRec mode, we don't have camera switch or torch, and pause is always enabled.
      * IMPORTANT: Only reset to idle if truly idle - preserve recording state.
      */
     @Override
     protected void resetUIButtonsToIdleState() {
-        FLog.d(TAG, "FadRec: Reset UI to idle state");
+        FLog.d(TAG, "ServaRec: Reset UI to idle state");
         if (!isAdded() || getContext() == null || getView() == null) {
             FLog.w(TAG, "resetUIButtonsToIdleState: Fragment/context unavailable");
             return;
@@ -387,7 +387,7 @@ public class FadRecHomeFragment extends HomeFragment {
             if (currentState == ScreenRecordingState.NONE) {
                 // Reset Start/Stop button to green "Start Screen Recording" state
                 if (buttonStartStop != null) {
-                    buttonStartStop.setText(com.servalabs.cam.R.string.fadrec_start_screen_recording);  // ALWAYS use full text
+                    buttonStartStop.setText(com.servalabs.cam.R.string.servarec_start_screen_recording);  // ALWAYS use full text
                     buttonStartStop.setIcon(
                         AppCompatResources.getDrawable(getContext(), com.servalabs.cam.R.drawable.play_button_rounded)
                     );
@@ -399,7 +399,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     buttonStartStop.setEnabled(true);
                     buttonStartStop.setAlpha(1.0f);
                 }
-                FLog.d(TAG, "FadRec: Start button reset to idle (Start Screen Recording)");
+                FLog.d(TAG, "ServaRec: Start button reset to idle (Start Screen Recording)");
             } else {
                 // Recording in progress or paused - keep stop button state
                 if (buttonStartStop != null) {
@@ -415,7 +415,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     buttonStartStop.setEnabled(true);
                     buttonStartStop.setAlpha(1.0f);
                 }
-                FLog.d(TAG, "FadRec: Start button kept as Stop (recording active: " + currentState + ")");
+                FLog.d(TAG, "ServaRec: Start button kept as Stop (recording active: " + currentState + ")");
             }
             
             // Keep pause button ENABLED (different from parent which disables it)
@@ -453,7 +453,7 @@ public class FadRecHomeFragment extends HomeFragment {
                 buttonTorchSwitch.setVisibility(View.GONE);
             }
             
-            FLog.d(TAG, "FadRec: UI elements reset complete (screen recording mode, state: " + currentState + ")");
+            FLog.d(TAG, "ServaRec: UI elements reset complete (screen recording mode, state: " + currentState + ")");
         } catch (Exception e) {
             FLog.e(TAG, "Error in resetUIButtonsToIdleState", e);
         }
@@ -461,7 +461,7 @@ public class FadRecHomeFragment extends HomeFragment {
 
     /**
      * Override parent's method to prevent camera-specific button state updates.
-     * In FadRec mode, start button is always available (no camera dependency).
+     * In ServaRec mode, start button is always available (no camera dependency).
      */
     @Override
     protected void updateStartButtonAvailability() {
@@ -562,7 +562,7 @@ public class FadRecHomeFragment extends HomeFragment {
     private void configurePreviewCardForScreenRecording(View rootView) {
         TextView tvPreviewHint = rootView.findViewById(com.servalabs.cam.R.id.tvPreviewHint);
         if (tvPreviewHint != null) {
-            tvPreviewHint.setText(com.servalabs.cam.R.string.fadrec_preview_enable_hint);
+            tvPreviewHint.setText(com.servalabs.cam.R.string.servarec_preview_enable_hint);
         }
     }
     
@@ -927,7 +927,7 @@ public class FadRecHomeFragment extends HomeFragment {
         // This ensures we override the parent's camera click listener with screen recording logic
         buttonStartStop = rootView.findViewById(com.servalabs.cam.R.id.buttonStartStop);
         buttonPauseResume = rootView.findViewById(com.servalabs.cam.R.id.buttonPauseResume);
-        buttonFadRecMute = rootView.findViewById(com.servalabs.cam.R.id.buttonFadRecMute);
+        buttonServaRecMute = rootView.findViewById(com.servalabs.cam.R.id.buttonServaRecMute);
         
         FLog.d(TAG, "buttonStartStop found: " + (buttonStartStop != null));
         FLog.d(TAG, "buttonPauseResume found: " + (buttonPauseResume != null));
@@ -1001,9 +1001,9 @@ public class FadRecHomeFragment extends HomeFragment {
             FLog.e(TAG, "buttonStartStop is NULL - cannot setup click listener!");
         }
 
-        if (buttonFadRecMute != null) {
-            buttonFadRecMute.setVisibility(View.VISIBLE);
-            buttonFadRecMute.setOnClickListener(v -> {
+        if (buttonServaRecMute != null) {
+            buttonServaRecMute.setVisibility(View.VISIBLE);
+            buttonServaRecMute.setOnClickListener(v -> {
                 boolean isRecordingActive = screenRecordingState == ScreenRecordingState.IN_PROGRESS
                     || screenRecordingState == ScreenRecordingState.PAUSED;
                 
@@ -1021,7 +1021,7 @@ public class FadRecHomeFragment extends HomeFragment {
         FLog.d(TAG, "========== SETUP BUTTON HANDLERS COMPLETE ==========");
 
         // Safety: HomeFragment can disable this button based on camera resources.
-        // FadRec must keep it enabled at all times.
+        // ServaRec must keep it enabled at all times.
         try {
             if (buttonStartStop != null) {
                 buttonStartStop.setEnabled(true);
@@ -1117,9 +1117,9 @@ public class FadRecHomeFragment extends HomeFragment {
     private void showMicPermissionDeniedDialog() {
         if (!isAdded()) return;
         new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-            .setTitle(com.servalabs.cam.R.string.fadrec_mic_permission_needed_title)
-            .setMessage(com.servalabs.cam.R.string.fadrec_mic_permission_needed_message)
-            .setPositiveButton(com.servalabs.cam.R.string.fadrec_record_muted, (dialog, which) -> {
+            .setTitle(com.servalabs.cam.R.string.servarec_mic_permission_needed_title)
+            .setMessage(com.servalabs.cam.R.string.servarec_mic_permission_needed_message)
+            .setPositiveButton(com.servalabs.cam.R.string.servarec_record_muted, (dialog, which) -> {
                 forceMutedNoAudioThisStart = true;
                 if (sharedPreferencesManager != null) {
                     sharedPreferencesManager.setScreenRecordingMuted(true);
@@ -1177,7 +1177,7 @@ public class FadRecHomeFragment extends HomeFragment {
             buttonStartStop,
             recordingActive
                 ? getString(com.servalabs.cam.R.string.button_stop)
-                : getString(com.servalabs.cam.R.string.fadrec_start_screen_recording),
+                : getString(com.servalabs.cam.R.string.servarec_start_screen_recording),
             AppCompatResources.getDrawable(
                 requireContext(),
                 recordingActive
@@ -1236,7 +1236,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
                             syncMuteUiState();
-                            // Toast.makeText(context, com.servalabs.cam.R.string.fadrec_screen_recording_started, 
+                            // Toast.makeText(context, com.servalabs.cam.R.string.servarec_screen_recording_started, 
                             //     Toast.LENGTH_SHORT).show();
                             break;
                             
@@ -1252,7 +1252,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             isRecordingForcedMuted = false;
                             updateUIForRecordingState();
                             syncMuteUiState();
-                            // Toast.makeText(context, com.servalabs.cam.R.string.fadrec_screen_recording_stopped, 
+                            // Toast.makeText(context, com.servalabs.cam.R.string.servarec_screen_recording_stopped, 
                             //     Toast.LENGTH_SHORT).show();
                             break;
                             
@@ -1264,7 +1264,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
                             syncMuteUiState();
-                            // Toast.makeText(context, com.servalabs.cam.R.string.fadrec_screen_recording_paused, 
+                            // Toast.makeText(context, com.servalabs.cam.R.string.servarec_screen_recording_paused, 
                             //     Toast.LENGTH_SHORT).show();
                             break;
                             
@@ -1276,7 +1276,7 @@ public class FadRecHomeFragment extends HomeFragment {
                             persistRecordingState(screenRecordingState);
                             updateUIForRecordingState();
                             syncMuteUiState();
-                            // Toast.makeText(context, com.servalabs.cam.R.string.fadrec_screen_recording_resumed, 
+                            // Toast.makeText(context, com.servalabs.cam.R.string.servarec_screen_recording_resumed, 
                             //     Toast.LENGTH_SHORT).show();
                             break;
 
@@ -1429,14 +1429,14 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // Update Start/Stop button with animation
         if (buttonStartStop != null) {
-            // Never allow this button to be disabled in FadRec.
+            // Never allow this button to be disabled in ServaRec.
             buttonStartStop.setEnabled(true);
             buttonStartStop.setClickable(true);
             buttonStartStop.setAlpha(1.0f);
             applyButtonTransition(
                 buttonStartStop,
                 screenRecordingState == ScreenRecordingState.NONE
-                    ? getString(com.servalabs.cam.R.string.fadrec_start_screen_recording)
+                    ? getString(com.servalabs.cam.R.string.servarec_start_screen_recording)
                     : getString(com.servalabs.cam.R.string.button_stop),
                 AppCompatResources.getDrawable(
                     requireContext(),
@@ -1481,8 +1481,8 @@ public class FadRecHomeFragment extends HomeFragment {
             }
         }
 
-        if (buttonFadRecMute != null) {
-            buttonFadRecMute.setVisibility(View.VISIBLE);
+        if (buttonServaRecMute != null) {
+            buttonServaRecMute.setVisibility(View.VISIBLE);
             syncMuteUiState();
         }
 
@@ -1510,7 +1510,7 @@ public class FadRecHomeFragment extends HomeFragment {
     }
     
     private void updateMuteButtonUi() {
-        if (buttonFadRecMute == null || !isAdded()) return;
+        if (buttonServaRecMute == null || !isAdded()) return;
         String audioSource = sharedPreferencesManager != null
             ? sharedPreferencesManager.getScreenRecordingAudioSource()
             : Constants.AUDIO_SOURCE_MIC;
@@ -1531,29 +1531,29 @@ public class FadRecHomeFragment extends HomeFragment {
             iconRes = com.servalabs.cam.R.drawable.ic_mic;
         }
         
-        buttonFadRecMute.setIcon(
+        buttonServaRecMute.setIcon(
             AppCompatResources.getDrawable(requireContext(), iconRes)
         );
         
         // Button always enabled - behavior changes based on recording state
-        buttonFadRecMute.setEnabled(true);
-        buttonFadRecMute.setAlpha(1.0f);
+        buttonServaRecMute.setEnabled(true);
+        buttonServaRecMute.setAlpha(1.0f);
         if (isRecordingActive) {
-            buttonFadRecMute.setContentDescription("Toggle mute (during recording)");
+            buttonServaRecMute.setContentDescription("Toggle mute (during recording)");
         } else {
-            buttonFadRecMute.setContentDescription(
-                getString(com.servalabs.cam.R.string.fadrec_audio_source_choose)
+            buttonServaRecMute.setContentDescription(
+                getString(com.servalabs.cam.R.string.servarec_audio_source_choose)
             );
         }
         
         // Tint: red when off, default when active
         boolean isOff = Constants.AUDIO_SOURCE_NONE.equals(audioSource);
-        buttonFadRecMute.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+        buttonServaRecMute.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
             isOff
                 ? androidx.core.content.ContextCompat.getColor(requireContext(), com.servalabs.cam.R.color.button_stop)
                 : 0xFF3A3A3A
         ));
-        buttonFadRecMute.setIconTint(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+        buttonServaRecMute.setIconTint(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
     }
 
     /**
@@ -1571,7 +1571,7 @@ public class FadRecHomeFragment extends HomeFragment {
         // Add audio source options with icons
         items.add(new OptionItem(
             Constants.AUDIO_SOURCE_NONE,
-            getString(R.string.fadrec_audio_source_none),
+            getString(R.string.servarec_audio_source_none),
             null,
             null,
             null,
@@ -1582,7 +1582,7 @@ public class FadRecHomeFragment extends HomeFragment {
         ));
         items.add(new OptionItem(
             Constants.AUDIO_SOURCE_MIC,
-            getString(R.string.fadrec_audio_source_mic),
+            getString(R.string.servarec_audio_source_mic),
             null,
             null,
             null,
@@ -1593,7 +1593,7 @@ public class FadRecHomeFragment extends HomeFragment {
         ));
         items.add(new OptionItem(
             Constants.AUDIO_SOURCE_INTERNAL,
-            getString(R.string.fadrec_audio_source_internal),
+            getString(R.string.servarec_audio_source_internal),
             null,
             null,
             null,
@@ -1616,11 +1616,11 @@ public class FadRecHomeFragment extends HomeFragment {
         });
         
         PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstance(
-            getString(R.string.fadrec_audio_source_title),
+            getString(R.string.servarec_audio_source_title),
             items,
             currentSource,
             resultKey,
-            getString(R.string.fadrec_audio_source_choose)
+            getString(R.string.servarec_audio_source_choose)
         );
         picker.show(getParentFragmentManager(), "audio_source_picker");
     }
@@ -1686,7 +1686,7 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     private void syncMuteUiState() {
-        if (buttonFadRecMute == null || !isAdded()) return;
+        if (buttonServaRecMute == null || !isAdded()) return;
         boolean isRecordingActive = screenRecordingState == ScreenRecordingState.IN_PROGRESS
             || screenRecordingState == ScreenRecordingState.PAUSED;
         boolean audioAvailable = isAudioEffectivelyAvailable();
@@ -1698,11 +1698,11 @@ public class FadRecHomeFragment extends HomeFragment {
                     mediaProjectionHelper.setScreenRecordingMuted(true);
                 }
             }
-            buttonFadRecMute.setEnabled(false);
-            buttonFadRecMute.setAlpha(0.5f);
+            buttonServaRecMute.setEnabled(false);
+            buttonServaRecMute.setAlpha(0.5f);
         } else {
-            buttonFadRecMute.setEnabled(true);
-            buttonFadRecMute.setAlpha(1.0f);
+            buttonServaRecMute.setEnabled(true);
+            buttonServaRecMute.setAlpha(1.0f);
         }
         updateMuteButtonUi();
     }
@@ -1774,7 +1774,7 @@ public class FadRecHomeFragment extends HomeFragment {
     }
 
     /**
-     * Unified storage/timer UI update for FadRec (screen recording).
+     * Unified storage/timer UI update for ServaRec (screen recording).
      *
      * <p>Both STREAM_ONLY and STREAM_AND_SAVE share the same view bindings; only the
      * deduction logic and the remaining-time label differ:
@@ -1975,7 +1975,7 @@ public class FadRecHomeFragment extends HomeFragment {
 
     @Override
     protected int getPreviewEnableHintResId() {
-        return com.servalabs.cam.R.string.fadrec_preview_enable_hint;
+        return com.servalabs.cam.R.string.servarec_preview_enable_hint;
     }
 
     @Override
@@ -2377,7 +2377,7 @@ public class FadRecHomeFragment extends HomeFragment {
                         ? com.servalabs.cam.R.drawable.play_button_rounded
                         : com.servalabs.cam.R.drawable.stop_rounded));
         buttonStartStop.setText(screenRecordingState == ScreenRecordingState.NONE
-                ? getString(com.servalabs.cam.R.string.fadrec_start_screen_recording)
+                ? getString(com.servalabs.cam.R.string.servarec_start_screen_recording)
                 : getString(com.servalabs.cam.R.string.button_stop));
     }
 
@@ -2435,7 +2435,7 @@ public class FadRecHomeFragment extends HomeFragment {
         
         super.onResume(); // MUST call super - Android requirement
         // NOTE: Parent's onResume() calls fetchRecordingState() which starts RecordingService (camera recording)
-        // This is WRONG for FadRec. We use ScreenRecordingService which broadcasts state via LocalBroadcastManager
+        // This is WRONG for ServaRec. We use ScreenRecordingService which broadcasts state via LocalBroadcastManager
         // Workaround: We create shadow methods below that do nothing to prevent parent from affecting us
         
         FLog.d(TAG, "FadRecHomeFragment resumed");
@@ -2591,25 +2591,25 @@ public class FadRecHomeFragment extends HomeFragment {
 
     /**
      * Override fetchRecordingState to prevent parent from starting RecordingService (camera recording).
-     * FadRec uses ScreenRecordingService (screen recording) which broadcasts state via LocalBroadcastManager.
+     * ServaRec uses ScreenRecordingService (screen recording) which broadcasts state via LocalBroadcastManager.
      * State is received automatically by screenRecordingStateReceiver registered in onCreate().
      */
     @Override
     protected void fetchRecordingState() {
         // DO NOT call super.fetchRecordingState() - it starts RecordingService (camera recording)
-        // FadRec uses ScreenRecordingService (screen recording) which broadcasts state automatically
+        // ServaRec uses ScreenRecordingService (screen recording) which broadcasts state automatically
         // The broadcast is received by screenRecordingStateReceiver when it arrives
-        FLog.d(TAG, "fetchRecordingState: Overridden (skipped) - FadRec uses screen recording service");
+        FLog.d(TAG, "fetchRecordingState: Overridden (skipped) - ServaRec uses screen recording service");
     }
 
     /**
      * Override registerBroadcastReceivers to prevent parent from registering camera recording receivers.
-     * FadRec uses screen recording receivers which are already registered in onCreate().
+     * ServaRec uses screen recording receivers which are already registered in onCreate().
      */
     @Override
     protected void registerBroadcastReceivers() {
         // DO NOT call super.registerBroadcastReceivers() - it registers RecordingService (camera recording) receivers
-        // FadRec screen recording receivers are already registered in onCreate() via registerScreenRecordingStateReceiver()
-        FLog.d(TAG, "registerBroadcastReceivers: Overridden (skipped) - FadRec receivers already registered");
+        // ServaRec screen recording receivers are already registered in onCreate() via registerScreenRecordingStateReceiver()
+        FLog.d(TAG, "registerBroadcastReceivers: Overridden (skipped) - ServaRec receivers already registered");
     }
 }

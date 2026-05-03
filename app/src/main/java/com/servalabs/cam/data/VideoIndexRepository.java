@@ -531,8 +531,8 @@ public class VideoIndexRepository {
                     entity.shotSubtype, VideoItem.ShotSubtype.UNKNOWN);
             VideoItem.CameraSubtype cameraSubtype = safeParseEnum(VideoItem.CameraSubtype.class,
                     entity.cameraSubtype, VideoItem.CameraSubtype.UNKNOWN);
-            VideoItem.FaditorSubtype faditorSubtype = safeParseEnum(VideoItem.FaditorSubtype.class,
-                    entity.faditorSubtype, VideoItem.FaditorSubtype.UNKNOWN);
+            VideoItem.EditorMiniSubtype editor_miniSubtype = safeParseEnum(VideoItem.EditorMiniSubtype.class,
+                    entity.editor_miniSubtype, VideoItem.EditorMiniSubtype.UNKNOWN);
 
             VideoItem item = new VideoItem(
                     uri,
@@ -543,7 +543,7 @@ public class VideoIndexRepository {
                     mediaType,
                     shotSubtype,
                     cameraSubtype,
-                    faditorSubtype
+                    editor_miniSubtype
             );
             item.isNew = Utils.isVideoConsideredNew(entity.lastModified);
             return item;

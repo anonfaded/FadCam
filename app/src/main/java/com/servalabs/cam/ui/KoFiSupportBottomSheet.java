@@ -85,7 +85,7 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
         View layoutKoFiButtonRow = view.findViewById(R.id.layoutKoFiButtonRow);
         if (layoutKoFiButtonRow != null) {
             layoutKoFiButtonRow.setOnClickListener(v -> {
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/fadedx"));
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/servacam"));
                 startActivity(browserIntent);
             });
         }
@@ -93,7 +93,7 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
         // Styled description (left-aligned, only keywords bold, project names red/clickable)
         TextView tvKoFiDescription = view.findViewById(R.id.tvKoFiDescription);
         if (tvKoFiDescription != null) {
-            String desc = "Built and maintained by the developer behind ServaCam, FadCrypt, and other projects at FadSec Lab — a community-driven initiative focused on privacy-first, ad-free, tracker-free, and fully open-source tools, crafted over hundreds of hours of effort.\n\nIf you find value in this work and want to support the vision, you're welcome to buy the maintainer a coffee. ☕";
+            String desc = "Built and maintained by the developer behind ServaCam, ServaCrypt, and other projects at ServaLabs — a community-driven initiative focused on privacy-first, ad-free, tracker-free, and fully open-source tools, crafted over hundreds of hours of effort.\n\nIf you find value in this work and want to support the vision, you're welcome to buy the maintainer a coffee. ☕";
             android.text.SpannableString spannable = new android.text.SpannableString(desc);
             // Make ServaCam red and clickable
             int fadCamStart = desc.indexOf("ServaCam");
@@ -103,7 +103,7 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
                 spannable.setSpan(new android.text.style.ClickableSpan() {
                     @Override
                     public void onClick(@NonNull View widget) {
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/anonfaded/ServaCam"));
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/servalabs-cam/ServaCam"));
                         widget.getContext().startActivity(browserIntent);
                     }
                     @Override
@@ -115,14 +115,14 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
                 }, fadCamStart, fadCamEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             // Make FadCrypt red and clickable
-            int fadCryptStart = desc.indexOf("FadCrypt");
-            int fadCryptEnd = fadCryptStart + "FadCrypt".length();
+            int fadCryptStart = desc.indexOf("ServaCrypt");
+            int fadCryptEnd = fadCryptStart + "ServaCrypt".length();
             if (fadCryptStart >= 0) {
                 spannable.setSpan(new android.text.style.ForegroundColorSpan(Color.parseColor("#E43C3C")), fadCryptStart, fadCryptEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 spannable.setSpan(new android.text.style.ClickableSpan() {
                     @Override
                     public void onClick(@NonNull View widget) {
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/anonfaded/FadCrypt"));
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/servalabs-cam/ServaCrypt"));
                         widget.getContext().startActivity(browserIntent);
                     }
                     @Override
@@ -134,14 +134,14 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
                 }, fadCryptStart, fadCryptEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             // Make FadSec Lab red and clickable
-            int fadSecLabStart = desc.indexOf("FadSec Lab");
-            int fadSecLabEnd = fadSecLabStart + "FadSec Lab".length();
+            int fadSecLabStart = desc.indexOf("ServaLabs");
+            int fadSecLabEnd = fadSecLabStart + "ServaLabs".length();
             if (fadSecLabStart >= 0) {
                 spannable.setSpan(new android.text.style.ForegroundColorSpan(Color.parseColor("#E43C3C")), fadSecLabStart, fadSecLabEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 spannable.setSpan(new android.text.style.ClickableSpan() {
                     @Override
                     public void onClick(@NonNull View widget) {
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/fadsec-lab"));
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/servalabs-cam"));
                         widget.getContext().startActivity(browserIntent);
                     }
                     @Override
@@ -169,7 +169,7 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
         // Footer: Made with Palestine at FadSec Lab in Pakistan here
         TextView tvKoFiFooterFull = view.findViewById(R.id.tvKoFiFooterFull);
         if (tvKoFiFooterFull != null) {
-            String footer = "Made with Palestine at FadSec Lab in Pakistan";
+            String footer = "Made with Palestine at ServaLabs in Pakistan";
             SpannableString spannable = new SpannableString(footer);
             // Palestine flag image
             Drawable palestine = AppCompatResources.getDrawable(requireContext(), R.drawable.palestine);
@@ -194,14 +194,14 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
                 }
             }
             // FadSec Lab clickable, bold, and red
-            int fadSecLabStart = footer.indexOf("FadSec Lab");
-            int fadSecLabEnd = fadSecLabStart + "FadSec Lab".length();
+            int fadSecLabStart = footer.indexOf("ServaLabs");
+            int fadSecLabEnd = fadSecLabStart + "ServaLabs".length();
             if (fadSecLabStart >= 0) {
                 spannable.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), fadSecLabStart, fadSecLabEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 spannable.setSpan(new android.text.style.ClickableSpan() {
                     @Override
                     public void onClick(@NonNull View widget) {
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/fadsec-lab"));
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/servalabs-cam"));
                         widget.getContext().startActivity(browserIntent);
                     }
                     @Override

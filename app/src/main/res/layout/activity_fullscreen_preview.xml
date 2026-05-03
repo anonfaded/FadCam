@@ -184,7 +184,7 @@
                 android:layout_width="18dp"
                 android:layout_height="18dp"
                 android:layout_gravity="center"
-                android:background="@drawable/fadcam_zoom_viewport_indicator" />
+                android:background="@drawable/servacam_zoom_viewport_indicator" />
         </FrameLayout>
 
         <com.google.android.material.button.MaterialButton

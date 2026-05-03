@@ -204,7 +204,7 @@ public class ExportManager {
                     // Clean up temp file on error
                     File tempFile = new File(outputPath);
                     if (tempFile.getParentFile() != null
-                            && tempFile.getParentFile().getName().equals("faditor_export")) {
+                            && tempFile.getParentFile().getName().equals("editor_mini_export")) {
                         tempFile.delete();
                     }
                     FLog.e(TAG, "Export failed", exception);
@@ -545,7 +545,7 @@ public class ExportManager {
      */
     @Nullable
     private File getOrCreateSilenceFile() {
-        File cacheDir = new File(context.getCacheDir(), "faditor_export");
+        File cacheDir = new File(context.getCacheDir(), "editor_mini_export");
         if (!cacheDir.exists()) cacheDir.mkdirs();
 
         File silenceFile = new File(cacheDir, "silence.wav");
@@ -684,14 +684,14 @@ public class ExportManager {
     private String generateOutputPath(@NonNull FaditorProject project) {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
                 .format(new Date());
-        String fileName = "Faditor_" + timestamp + "." + Constants.RECORDING_FILE_EXTENSION;
+        String fileName = "EditorMini_" + timestamp + "." + Constants.RECORDING_FILE_EXTENSION;
 
         String storageMode = prefsManager.getStorageMode();
 
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
             // SAF/Custom mode — Transformer only accepts file paths, so write to
             // a temp location first; onCompleted will copy to SAF.
-            File tempDir = new File(context.getCacheDir(), "faditor_export");
+            File tempDir = new File(context.getCacheDir(), "editor_mini_export");
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
             }
@@ -749,7 +749,7 @@ public class ExportManager {
                     true
             );
             if (pickedDir == null || !pickedDir.canWrite()) {
-                FLog.e(TAG, "SAF copy: cannot write to Faditor subdirectory");
+                FLog.e(TAG, "SAF copy: cannot write to EditorMini subdirectory");
                 return null;
             }
 

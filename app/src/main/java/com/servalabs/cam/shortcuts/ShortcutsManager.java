@@ -267,7 +267,7 @@ public class ShortcutsManager {
                     ctx,
                     "com.servalabs.cam.PhotoCaptureActivity"
                 ),
-                com.servalabs.cam.R.drawable.fadshot_shortcut,
+                com.servalabs.cam.R.drawable.servashot_shortcut,
                 ctx.getString(com.servalabs.cam.R.string.shortcut_take_photo)
             )
         );
@@ -282,7 +282,7 @@ public class ShortcutsManager {
                     com.servalabs.cam.PhotoCaptureActivity.EXTRA_SHORTCUT_PHOTO_CAMERA_MODE,
                     com.servalabs.cam.PhotoCaptureActivity.PHOTO_CAMERA_MODE_FRONT
                 ),
-                com.servalabs.cam.R.drawable.fadshot_front_shortcut,
+                com.servalabs.cam.R.drawable.servashot_front_shortcut,
                 ctx.getString(com.servalabs.cam.R.string.shortcut_take_photo_front)
             )
         );
@@ -370,7 +370,7 @@ public class ShortcutsManager {
                             ctx,
                             "com.servalabs.cam.PhotoCaptureActivity"
                         ),
-                        com.servalabs.cam.R.drawable.fadshot_shortcut,
+                        com.servalabs.cam.R.drawable.servashot_shortcut,
                         ctx.getString(com.servalabs.cam.R.string.shortcut_take_photo)
                     )
                 );
@@ -426,7 +426,7 @@ public class ShortcutsManager {
                             com.servalabs.cam.PhotoCaptureActivity.EXTRA_SHORTCUT_PHOTO_CAMERA_MODE,
                             com.servalabs.cam.PhotoCaptureActivity.PHOTO_CAMERA_MODE_FRONT
                         ),
-                        com.servalabs.cam.R.drawable.fadshot_front_shortcut,
+                        com.servalabs.cam.R.drawable.servashot_front_shortcut,
                         ctx.getString(com.servalabs.cam.R.string.shortcut_take_photo_front)
                     )
                 );

@@ -22,31 +22,31 @@
         android:orientation="horizontal">
 
         <!-- ServaCam Segment -->
-        <FrameLayout android:id="@+id/segment_fadcam" android:layout_width="0dp" android:layout_height="28dp" android:layout_weight="1" android:clickable="true" android:focusable="true"
+        <FrameLayout android:id="@+id/segment_servacam" android:layout_width="0dp" android:layout_height="28dp" android:layout_weight="1" android:clickable="true" android:focusable="true"
             android:nextFocusUp="@+id/btnGetPro"
             android:nextFocusDown="@+id/rowCamera">
 
-            <TextView android:id="@+id/text_fadcam" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="ServaCam" android:textSize="11sp" />
+            <TextView android:id="@+id/text_servacam" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="ServaCam" android:textSize="11sp" />
         </FrameLayout>
 
-        <!-- FadRec Segment -->
-        <FrameLayout android:id="@+id/segment_fadrec" android:layout_width="0dp" android:layout_height="28dp" android:layout_weight="1" android:clickable="true" android:focusable="true"
+        <!-- ServaRec Segment -->
+        <FrameLayout android:id="@+id/segment_servarec" android:layout_width="0dp" android:layout_height="28dp" android:layout_weight="1" android:clickable="true" android:focusable="true"
             android:nextFocusUp="@+id/btnGetPro"
             android:nextFocusDown="@+id/rowCamera"
             android:visibility="gone">
 
-            <TextView android:id="@+id/text_fadrec" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="FadRec" android:textSize="11sp" />
+            <TextView android:id="@+id/text_servarec" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="ServaRec" android:textSize="11sp" />
 
-            <!-- NEW Badge for FadRec -->
-            <TextView android:id="@+id/badge_fadrec" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/new_badge_background" android:text="NEW" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="7sp" android:paddingStart="3dp" android:paddingEnd="3dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:minWidth="10dp" android:gravity="center" android:layout_gravity="top|end" android:layout_marginTop="1dp" android:layout_marginEnd="1dp" android:visibility="gone" />
+            <!-- NEW Badge for ServaRec -->
+            <TextView android:id="@+id/badge_servarec" android:layout_width="wrap_content" android:layout_height="wrap_content" android:background="@drawable/new_badge_background" android:text="NEW" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="7sp" android:paddingStart="3dp" android:paddingEnd="3dp" android:paddingTop="1dp" android:paddingBottom="1dp" android:minWidth="10dp" android:gravity="center" android:layout_gravity="top|end" android:layout_marginTop="1dp" android:layout_marginEnd="1dp" android:visibility="gone" />
         </FrameLayout>
 
-        <!-- FadMic Segment -->
-        <FrameLayout android:id="@+id/segment_fadmic" android:layout_width="0dp" android:layout_height="28dp" android:layout_weight="1" android:clickable="true" android:focusable="true"
+        <!-- ServaMic Segment -->
+        <FrameLayout android:id="@+id/segment_servamic" android:layout_width="0dp" android:layout_height="28dp" android:layout_weight="1" android:clickable="true" android:focusable="true"
             android:nextFocusUp="@+id/btnGetPro"
             android:nextFocusDown="@+id/rowCamera">
 
-            <TextView android:id="@+id/text_fadmic" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="FadMic" android:textSize="11sp" />
+            <TextView android:id="@+id/text_servamic" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="ServaMic" android:textSize="11sp" />
         </FrameLayout>
 
     </LinearLayout>

@@ -63,7 +63,7 @@
 
         <!-- ServaCam -->
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/mode_fadcam"
+            android:id="@+id/mode_servacam"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:clickable="true"
@@ -96,7 +96,7 @@
                     android:textColor="@android:color/white"
                     android:textSize="13sp"/>
                 <TextView
-                    android:id="@+id/check_fadcam"
+                    android:id="@+id/check_servacam"
                     android:layout_width="18dp"
                     android:layout_height="18dp"
                     android:fontFamily="@font/materialicons"
@@ -109,7 +109,7 @@
 
         <!-- FadRec (Hidden) -->
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/mode_fadrec"
+            android:id="@+id/mode_servarec"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:clickable="true"
@@ -142,7 +142,7 @@
                     android:textColor="@android:color/white"
                     android:textSize="13sp"/>
                 <TextView
-                    android:id="@+id/check_fadrec"
+                    android:id="@+id/check_servarec"
                     android:layout_width="18dp"
                     android:layout_height="18dp"
                     android:fontFamily="@font/materialicons"
