@@ -9,7 +9,7 @@ import android.widget.Toast;
 
 import androidx.activity.ComponentActivity;
 
-import com.servalabs.cam.service.FadRecScreenshotAccessibilityService;
+import com.servalabs.cam.service.ServaRecScreenshotAccessibilityService;
 
 public class ScreenShotCaptureActivity extends ComponentActivity {
     private static final String TAG = "ScreenShotCaptureAct";
@@ -30,7 +30,7 @@ public class ScreenShotCaptureActivity extends ComponentActivity {
         } catch (Exception ignored) {
         }
 
-        if (!FadRecScreenshotAccessibilityService.isServiceEnabled(this)) {
+        if (!ServaRecScreenshotAccessibilityService.isServiceEnabled(this)) {
             FLog.w(TAG, "Accessibility service disabled. Redirecting to settings.");
             Toast.makeText(this, R.string.screenshot_accessibility_enable_needed, Toast.LENGTH_LONG).show();
             Intent settingsIntent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
@@ -40,7 +40,7 @@ public class ScreenShotCaptureActivity extends ComponentActivity {
             return;
         }
 
-        FadRecScreenshotAccessibilityService.markPendingCapture(this);
+        ServaRecScreenshotAccessibilityService.markPendingCapture(this);
         FLog.d(TAG, "Marked pending screenshot capture. Dispatching trigger broadcast.");
         dispatchScreenshotTrigger();
         finishNow();

@@ -101,7 +101,7 @@ public class HomeFragmentHelper {
             case Constants.MODE_FADREC:
                 // ServaRec mode - screen recording
                 FLog.d(TAG, "ServaRec mode selected");
-                // Recreate fragment to show FadRecHomeFragment
+                // Recreate fragment to show ServaRecHomeFragment
                 recreateHomeFragment();
                 break;
 

@@ -248,7 +248,7 @@
             LabPass
           </label>
           <p style="margin:0 0 8px;font-size:11px;color:#71717a;line-height:1.4;">
-            Your <strong style="color:#a1a1aa;font-weight:600;">FadSec ID</strong> password — the one you use to sign in at <span style="color:#dc2626;">id.fadseclab.com</span>
+            Your <strong style="color:#a1a1aa;font-weight:600;">Serva ID</strong> password — the one you use to sign in at <span style="color:#dc2626;">id.fadseclab.com</span>
           </p>
           <input
             id="e2e-unlock-input"
@@ -413,7 +413,7 @@
     console.log('[ServaCamRemote] Initializing stream for device:', deviceId);
     
     // Show connecting overlay
-    showStreamOverlay('Connecting...', 'Authenticating with FadSec Cloud');
+    showStreamOverlay('Connecting...', 'Authenticating with Serva Cloud');
     
     try {
       // Check for handoff token first (coming from Lab)

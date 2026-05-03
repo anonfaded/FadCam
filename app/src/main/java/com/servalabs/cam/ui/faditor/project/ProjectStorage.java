@@ -10,7 +10,7 @@ import androidx.annotation.Nullable;
 import com.servalabs.cam.ui.faditor.model.AudioClip;
 import com.servalabs.cam.ui.faditor.model.Clip;
 import com.servalabs.cam.ui.faditor.model.ExportSettings;
-import com.servalabs.cam.ui.faditor.model.FaditorProject;
+import com.servalabs.cam.ui.faditor.model.EditorMiniProject;
 import com.servalabs.cam.ui.faditor.model.Timeline;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -42,7 +42,7 @@ import java.util.List;
  * {@code files/editor_mini/projects/{projectId}/project.json}</p>
  *
  * <p>Uses Gson for serialization with custom adapters for {@link Uri},
- * {@link Clip}, and {@link FaditorProject} types.</p>
+ * {@link Clip}, and {@link EditorMiniProject} types.</p>
  */
 public class ProjectStorage {
 
@@ -81,7 +81,7 @@ public class ProjectStorage {
      * @param project the project to save
      * @return true if successful, false otherwise
      */
-    public boolean save(@NonNull FaditorProject project) {
+    public boolean save(@NonNull EditorMiniProject project) {
         File projectDir = getProjectDir(project.getId());
         if (!projectDir.exists() && !projectDir.mkdirs()) {
             FLog.e(TAG, "Failed to create project directory: " + projectDir);
@@ -105,7 +105,7 @@ public class ProjectStorage {
      * @return the loaded project, or null if not found or corrupt
      */
     @Nullable
-    public FaditorProject load(@NonNull String projectId) {
+    public EditorMiniProject load(@NonNull String projectId) {
         File file = new File(getProjectDir(projectId), PROJECT_FILE);
         if (!file.exists()) {
             FLog.d(TAG, "No saved project found: " + projectId);
@@ -113,7 +113,7 @@ public class ProjectStorage {
         }
 
         try (FileReader reader = new FileReader(file)) {
-            return gson.fromJson(reader, FaditorProject.class);
+            return gson.fromJson(reader, EditorMiniProject.class);
         } catch (Exception e) {
             FLog.e(TAG, "Failed to load project: " + projectId, e);
             return null;
@@ -184,7 +184,7 @@ public class ProjectStorage {
      */
     public boolean delete(@NonNull String projectId) {
         // First, try to load the project to get clip info for cache cleanup
-        FaditorProject project = null;
+        EditorMiniProject project = null;
         try {
             project = load(projectId);
         } catch (Exception e) {
@@ -302,7 +302,7 @@ public class ProjectStorage {
      * @return JSON string representation
      */
     @NonNull
-    public String toJson(@NonNull FaditorProject project) {
+    public String toJson(@NonNull EditorMiniProject project) {
         return gson.toJson(project);
     }
 
@@ -314,9 +314,9 @@ public class ProjectStorage {
      * @return the deserialized project, or null if parsing fails
      */
     @Nullable
-    public FaditorProject fromJson(@NonNull String json) {
+    public EditorMiniProject fromJson(@NonNull String json) {
         try {
-            return gson.fromJson(json, FaditorProject.class);
+            return gson.fromJson(json, EditorMiniProject.class);
         } catch (Exception e) {
             FLog.e(TAG, "Failed to deserialize project from JSON snapshot", e);
             return null;
@@ -416,8 +416,8 @@ public class ProjectStorage {
     private Gson createGson() {
         return new GsonBuilder()
                 .registerTypeAdapter(Uri.class, new UriAdapter())
-                .registerTypeAdapter(FaditorProject.class, new ProjectSerializer())
-                .registerTypeAdapter(FaditorProject.class, new ProjectDeserializer())
+                .registerTypeAdapter(EditorMiniProject.class, new ProjectSerializer())
+                .registerTypeAdapter(EditorMiniProject.class, new ProjectDeserializer())
                 .setPrettyPrinting()
                 .create();
     }
@@ -444,11 +444,11 @@ public class ProjectStorage {
     }
 
     /**
-     * Custom serializer for FaditorProject (flattens nested objects).
+     * Custom serializer for EditorMiniProject (flattens nested objects).
      */
-    private static class ProjectSerializer implements JsonSerializer<FaditorProject> {
+    private static class ProjectSerializer implements JsonSerializer<EditorMiniProject> {
         @Override
-        public JsonElement serialize(FaditorProject src, Type typeOfSrc,
+        public JsonElement serialize(EditorMiniProject src, Type typeOfSrc,
                                      JsonSerializationContext context) {
             JsonObject json = new JsonObject();
             json.addProperty("id", src.getId());
@@ -523,11 +523,11 @@ public class ProjectStorage {
     }
 
     /**
-     * Custom deserializer for FaditorProject (rebuilds from flat JSON).
+     * Custom deserializer for EditorMiniProject (rebuilds from flat JSON).
      */
-    private static class ProjectDeserializer implements JsonDeserializer<FaditorProject> {
+    private static class ProjectDeserializer implements JsonDeserializer<EditorMiniProject> {
         @Override
-        public FaditorProject deserialize(JsonElement json, Type typeOfT,
+        public EditorMiniProject deserialize(JsonElement json, Type typeOfT,
                                           JsonDeserializationContext context)
                 throws JsonParseException {
             JsonObject obj = json.getAsJsonObject();
@@ -535,15 +535,15 @@ public class ProjectStorage {
             String name = obj.has("name") ? obj.get("name").getAsString() : "Untitled";
 
             // Restore project with original ID and timestamps
-            FaditorProject project;
+            EditorMiniProject project;
             if (obj.has("id") && obj.has("createdAt")) {
                 String id = obj.get("id").getAsString();
                 long createdAt = obj.get("createdAt").getAsLong();
                 long lastModified = obj.has("lastModified")
                         ? obj.get("lastModified").getAsLong() : createdAt;
-                project = new FaditorProject(id, name, createdAt, lastModified);
+                project = new EditorMiniProject(id, name, createdAt, lastModified);
             } else {
-                project = new FaditorProject(name);
+                project = new EditorMiniProject(name);
             }
 
             // Restore timeline clips

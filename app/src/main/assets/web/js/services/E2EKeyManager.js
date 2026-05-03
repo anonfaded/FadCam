@@ -129,7 +129,7 @@
    * Derive master key from password + userUuid, compute verify_tag,
    * optionally PUT it to Supabase, then persist master key bytes in IndexedDB.
    *
-   * @param {string} password            User's FadSec ID password.
+   * @param {string} password            User's Serva ID password.
    * @param {string} userUuid            User's UUID (PBKDF2 salt).
    * @param {string} supabaseAccessToken Supabase JWT for the authenticated user.
    * @param {string} supabaseUrl         Supabase project URL.

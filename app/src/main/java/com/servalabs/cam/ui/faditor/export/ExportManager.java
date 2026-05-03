@@ -35,7 +35,7 @@ import com.servalabs.cam.ui.faditor.CanvasPickerBottomSheet;
 import com.servalabs.cam.ui.faditor.model.AudioClip;
 import com.servalabs.cam.ui.faditor.model.Clip;
 import com.servalabs.cam.ui.faditor.model.ExportSettings;
-import com.servalabs.cam.ui.faditor.model.FaditorProject;
+import com.servalabs.cam.ui.faditor.model.EditorMiniProject;
 import com.servalabs.cam.ui.faditor.model.Timeline;
 import com.servalabs.cam.utils.RecordingStoragePaths;
 
@@ -123,7 +123,7 @@ public class ExportManager {
      *
      * @param project the project to export
      */
-    public void export(@NonNull FaditorProject project) {
+    public void export(@NonNull EditorMiniProject project) {
         if (isExporting) {
             FLog.w(TAG, "Export already in progress");
             return;
@@ -291,7 +291,7 @@ public class ExportManager {
     // ── Internal ─────────────────────────────────────────────────────
 
     @NonNull
-    private Composition buildComposition(@NonNull FaditorProject project) {
+    private Composition buildComposition(@NonNull EditorMiniProject project) {
         List<EditedMediaItem> items = new ArrayList<>();
 
         // Resolve canvas dimensions if a canvas preset is active
@@ -681,7 +681,7 @@ public class ExportManager {
      * completion the file is copied to the SAF directory.</p>
      */
     @NonNull
-    private String generateOutputPath(@NonNull FaditorProject project) {
+    private String generateOutputPath(@NonNull EditorMiniProject project) {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
                 .format(new Date());
         String fileName = "EditorMini_" + timestamp + "." + Constants.RECORDING_FILE_EXTENSION;

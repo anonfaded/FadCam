@@ -68,7 +68,7 @@
                 android:textColor="?attr/colorHeading"
                 android:textStyle="bold" />
 
-            <!-- Preview Mode Tabs (ServaCam / FadRec) — transparent bg, dark ripple -->
+            <!-- Preview Mode Tabs (ServaCam / ServaRec) — transparent bg, dark ripple -->
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/preview_mode_tabs"
                 android:layout_width="match_parent"
@@ -93,7 +93,7 @@
                     android:text="ServaCam" />
                 <com.google.android.material.tabs.TabItem
                     android:id="@+id/tab_servarec"
-                    android:text="FadRec" />
+                    android:text="ServaRec" />
             </com.google.android.material.tabs.TabLayout>
 
             <!-- Preview Cards (ViewPager2 — snappy paging) -->

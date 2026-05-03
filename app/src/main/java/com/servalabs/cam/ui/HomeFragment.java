@@ -242,7 +242,7 @@ public class HomeFragment extends BaseFragment {
     // inline total will be rendered in tvSpaceTitle using spans
     
     /**
-     * Changed from private to protected to allow FadRecHomeFragment to update timer displays.
+     * Changed from private to protected to allow ServaRecHomeFragment to update timer displays.
      */
     protected TextView tvElapsedTitle;
     protected TextView tvElapsedSubtitle;
@@ -276,7 +276,7 @@ public class HomeFragment extends BaseFragment {
     private TextView tvPreviewHint; // Hint text for long press to enable preview
     
     /**
-     * Changed from private to protected to allow FadRecHomeFragment to access in overridden methods.
+     * Changed from private to protected to allow ServaRecHomeFragment to access in overridden methods.
      */
     protected MaterialButton buttonStartStop;
     protected MaterialButton buttonPauseResume;
@@ -1857,7 +1857,7 @@ public class HomeFragment extends BaseFragment {
      * This means recording is stopped and the user can initiate a new one.
      * Should only be called when the fragment is attached and view is available.
      * 
-     * Note: Changed from private to protected to allow FadRecHomeFragment to override
+     * Note: Changed from private to protected to allow ServaRecHomeFragment to override
      * with screen recording-specific behavior.
      */
     protected void resetUIButtonsToIdleState() {
@@ -1927,7 +1927,7 @@ public class HomeFragment extends BaseFragment {
     /**
      * Updates the start button state based on camera resource availability.
      * 
-     * Note: Changed from private to protected to allow FadRecHomeFragment to override
+     * Note: Changed from private to protected to allow ServaRecHomeFragment to override
      * with screen recording-specific behavior.
      */
     protected void updateStartButtonAvailability() {
@@ -5247,7 +5247,7 @@ public class HomeFragment extends BaseFragment {
         boolean shouldShow =
             selectedCamera == CameraType.FRONT &&
             !selectedCamera.isDual() &&
-            !getClass().getName().contains("FadRecHomeFragment");
+            !getClass().getName().contains("ServaRecHomeFragment");
 
         buttonMirrorSwitch.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
         if (!shouldShow) {
@@ -6137,7 +6137,7 @@ public class HomeFragment extends BaseFragment {
 
     /**
      * Update storage info and timer displays.
-     * Changed from private to protected to allow FadRecHomeFragment to override with screen recording logic.
+     * Changed from private to protected to allow ServaRecHomeFragment to override with screen recording logic.
      */
     protected void updateStorageInfo() {
         // NOTE: Logging here is minimized to reduce spam during 1s update loop in startUpdatingInfo()

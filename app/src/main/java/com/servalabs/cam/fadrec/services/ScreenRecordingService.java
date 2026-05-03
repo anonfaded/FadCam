@@ -727,7 +727,7 @@ public class ScreenRecordingService extends Service {
                 // Start notification updates
                 startNotificationUpdates();
                 
-                // Broadcast recording started (FadRecHomeFragment will show toast)
+                // Broadcast recording started (ServaRecHomeFragment will show toast)
                 broadcastRecordingStarted();
                 
                 // Save state to preferences

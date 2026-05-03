@@ -107,7 +107,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- FadRec (Hidden) -->
+        <!-- ServaRec (Hidden) -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/mode_servarec"
             android:layout_width="match_parent"
@@ -138,7 +138,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="FadRec"
+                    android:text="ServaRec"
                     android:textColor="@android:color/white"
                     android:textSize="13sp"/>
                 <TextView

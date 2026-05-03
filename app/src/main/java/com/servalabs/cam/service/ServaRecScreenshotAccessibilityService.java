@@ -28,7 +28,7 @@ import com.servalabs.cam.utils.PhotoStorageHelper;
 
 import java.util.concurrent.Executors;
 
-public class FadRecScreenshotAccessibilityService extends AccessibilityService {
+public class ServaRecScreenshotAccessibilityService extends AccessibilityService {
     private static final String TAG = "ServaRecScreenshotSvc";
     private static final String PREFS_NAME = "servarec_screenshot_shortcut";
     private static final String KEY_PENDING_CAPTURE = "pending_capture";
@@ -207,7 +207,7 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
             if (enabledServices == null) {
                 return false;
             }
-            ComponentName componentName = new ComponentName(context, FadRecScreenshotAccessibilityService.class);
+            ComponentName componentName = new ComponentName(context, ServaRecScreenshotAccessibilityService.class);
             boolean enabledForApp = enabledServices.contains(componentName.flattenToString());
             FLog.d(TAG, "isServiceEnabled=" + enabledForApp + ", enabledServices=" + enabledServices);
             return enabledForApp;

@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import com.servalabs.cam.ui.faditor.model.AudioClip;
 import com.servalabs.cam.ui.faditor.model.Clip;
-import com.servalabs.cam.ui.faditor.model.FaditorProject;
+import com.servalabs.cam.ui.faditor.model.EditorMiniProject;
 import com.servalabs.cam.ui.faditor.model.Timeline;
 
 /**
@@ -206,10 +206,10 @@ public final class EditActions {
 
     /** Canvas preset change (project-level). */
     public static final class CanvasPresetAction implements EditAction {
-        private final FaditorProject project;
+        private final EditorMiniProject project;
         private final String oldPreset, newPreset;
 
-        public CanvasPresetAction(@NonNull FaditorProject project,
+        public CanvasPresetAction(@NonNull EditorMiniProject project,
                                   @NonNull String oldPreset,
                                   @NonNull String newPreset) {
             this.project = project;

@@ -33,7 +33,7 @@ import androidx.fragment.app.Fragment;
 import com.servalabs.cam.ui.RecordsFragment;
 import com.servalabs.cam.ui.RemoteFragment;
 import com.servalabs.cam.ui.HomeFragment;
-import com.servalabs.cam.ui.FaditorMiniFragment;
+import com.servalabs.cam.ui.EditorMiniMiniFragment;
 import com.servalabs.cam.ui.SettingsHomeFragment;
 import com.servalabs.cam.forensics.ui.ForensicIntelligenceFragment;
 import com.servalabs.cam.ui.utils.NewFeatureManager;
@@ -1881,7 +1881,7 @@ public class MainActivity extends AppCompatActivity {
                 // Home tab - check current mode
                 String currentMode = sharedPreferencesManager.getCurrentRecordingMode();
                 if (com.servalabs.cam.Constants.MODE_FADREC.equals(currentMode)) {
-                    newFragment = com.servalabs.cam.fadrec.ui.FadRecHomeFragment.newInstance();
+                    newFragment = com.servalabs.cam.fadrec.ui.ServaRecHomeFragment.newInstance();
                 } else {
                     newFragment = new com.servalabs.cam.ui.HomeFragment();
                 }

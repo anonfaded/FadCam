@@ -130,7 +130,7 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
-            android:id="@+id/ivFadSecLabLogo"
+            android:id="@+id/ivServaLabLogo"
             android:layout_width="80dp"
             android:layout_height="wrap_content"
             android:src="@drawable/servalabs"

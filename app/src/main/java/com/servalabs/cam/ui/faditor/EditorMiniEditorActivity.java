@@ -44,8 +44,8 @@ import com.servalabs.cam.ui.faditor.export.ExportManager;
 import com.servalabs.cam.ui.faditor.export.ExportService;
 import com.servalabs.cam.ui.faditor.model.AudioClip;
 import com.servalabs.cam.ui.faditor.model.Clip;
-import com.servalabs.cam.ui.faditor.model.FaditorProject;
-import com.servalabs.cam.ui.faditor.player.FaditorPlayerManager;
+import com.servalabs.cam.ui.faditor.model.EditorMiniProject;
+import com.servalabs.cam.ui.faditor.player.EditorMiniPlayerManager;
 import com.servalabs.cam.ui.faditor.project.ProjectStorage;
 import com.servalabs.cam.ui.faditor.timeline.EditorTimelineView;
 import com.servalabs.cam.ui.faditor.model.Timeline;
@@ -87,8 +87,8 @@ public class EditorMiniEditorActivity extends AppCompatActivity {
     private static final long IMAGE_CLIP_DURATION_MS = 5000;
 
     // ── Core components ──────────────────────────────────────────────
-    private FaditorProject project;
-    private FaditorPlayerManager playerManager;
+    private EditorMiniProject project;
+    private EditorMiniPlayerManager playerManager;
     private ExportManager exportManager;
     private SharedPreferencesManager prefsManager;
     private FragmentedMp4Remuxer remuxer;
@@ -416,7 +416,7 @@ public class EditorMiniEditorActivity extends AppCompatActivity {
         // Check if opening a saved project by ID
         String projectId = getIntent().getStringExtra(EXTRA_PROJECT_ID);
         if (projectId != null) {
-            FaditorProject loaded = projectStorage.load(projectId);
+            EditorMiniProject loaded = projectStorage.load(projectId);
             if (loaded != null && !loaded.getTimeline().isEmpty()) {
                 initViews();
                 project = loaded;
@@ -1017,7 +1017,7 @@ public class EditorMiniEditorActivity extends AppCompatActivity {
         }
 
         // Create project with single clip
-        project = new FaditorProject("Untitled");
+        project = new EditorMiniProject("Untitled");
         Clip clip = new Clip(videoUri, durationMs);
         project.getTimeline().addClip(clip);
 
@@ -1028,7 +1028,7 @@ public class EditorMiniEditorActivity extends AppCompatActivity {
     }
 
     private void initPlayer() {
-        playerManager = new FaditorPlayerManager(this);
+        playerManager = new EditorMiniPlayerManager(this);
         getLifecycle().addObserver(playerManager);
         playerManager.setPlayerView(playerView);
 
@@ -3150,7 +3150,7 @@ public class EditorMiniEditorActivity extends AppCompatActivity {
      * @param projectJson the serialized project JSON to restore from
      */
     private void restoreProjectFromSnapshot(@NonNull String projectJson) {
-        FaditorProject restored = projectStorage.fromJson(projectJson);
+        EditorMiniProject restored = projectStorage.fromJson(projectJson);
         if (restored == null) {
             FLog.e(TAG, "Failed to restore project from snapshot");
             return;

@@ -57,9 +57,9 @@ import android.os.Parcelable;
  * - Shows screen resolution instead of camera info
  * - Uses ScreenRecordingService instead of RecordingService
  */
-public class FadRecHomeFragment extends HomeFragment {
+public class ServaRecHomeFragment extends HomeFragment {
     
-    private static final String TAG = "FadRecHomeFragment";
+    private static final String TAG = "ServaRecHomeFragment";
 
     // MediaProjection permission handling
     private MediaProjectionHelper mediaProjectionHelper;
@@ -109,17 +109,17 @@ public class FadRecHomeFragment extends HomeFragment {
     private boolean isRecordingForcedMuted = false;
 
     /**
-     * Create a new instance of FadRecHomeFragment.
+     * Create a new instance of ServaRecHomeFragment.
      */
-    public static FadRecHomeFragment newInstance() {
-        return new FadRecHomeFragment();
+    public static ServaRecHomeFragment newInstance() {
+        return new ServaRecHomeFragment();
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // FLog.e(TAG, "============================================");
-        // FLog.e(TAG, "FadRecHomeFragment.onCreate() - FRAGMENT CLASS: " + this.getClass().getName());
+        // FLog.e(TAG, "ServaRecHomeFragment.onCreate() - FRAGMENT CLASS: " + this.getClass().getName());
         // FLog.e(TAG, "============================================");
         
         // Initialize SharedPreferences
@@ -270,7 +270,7 @@ public class FadRecHomeFragment extends HomeFragment {
     public void onStart() {
         super.onStart();
         // FLog.e(TAG, "============================================");
-        // FLog.e(TAG, "FadRecHomeFragment.onStart()");
+        // FLog.e(TAG, "ServaRecHomeFragment.onStart()");
         // FLog.e(TAG, "buttonStartStop: " + buttonStartStop);
         // FLog.e(TAG, "buttonStartStop enabled: " + (buttonStartStop != null ? buttonStartStop.isEnabled() : "NULL"));
         // FLog.e(TAG, "buttonStartStop hasOnClickListeners: " + (buttonStartStop != null ? buttonStartStop.hasOnClickListeners() : "NULL"));
@@ -466,7 +466,7 @@ public class FadRecHomeFragment extends HomeFragment {
     @Override
     protected void updateStartButtonAvailability() {
         FLog.e(TAG, "============================================");
-        FLog.e(TAG, "FadRecHomeFragment.updateStartButtonAvailability() CALLED");
+        FLog.e(TAG, "ServaRecHomeFragment.updateStartButtonAvailability() CALLED");
         FLog.e(TAG, "screenRecordingState: " + screenRecordingState);
         FLog.e(TAG, "============================================");
         
@@ -2438,7 +2438,7 @@ public class FadRecHomeFragment extends HomeFragment {
         // This is WRONG for ServaRec. We use ScreenRecordingService which broadcasts state via LocalBroadcastManager
         // Workaround: We create shadow methods below that do nothing to prevent parent from affecting us
         
-        FLog.d(TAG, "FadRecHomeFragment resumed");
+        FLog.d(TAG, "ServaRecHomeFragment resumed");
         
         // CRITICAL FIX: Re-setup button handlers after parent's onResume() to ensure
         // screen recording click listeners override any camera recording listeners
@@ -2568,7 +2568,7 @@ public class FadRecHomeFragment extends HomeFragment {
     @Override
     public void onPause() {
         super.onPause();
-        FLog.d(TAG, "FadRecHomeFragment paused");
+        FLog.d(TAG, "ServaRecHomeFragment paused");
         
         // Stop timer updates when fragment is paused
         stopTimerUpdates();
@@ -2584,7 +2584,7 @@ public class FadRecHomeFragment extends HomeFragment {
     @Override
     public void onStop() {
         super.onStop();
-        FLog.d(TAG, "FadRecHomeFragment onStop");
+        FLog.d(TAG, "ServaRecHomeFragment onStop");
         // Note: Broadcast receivers remain registered to continue receiving state updates
         // even when fragment is stopped but still in the backstack
     }

@@ -18,8 +18,8 @@ import androidx.core.app.NotificationCompat;
 
 import com.servalabs.cam.R;
 import com.servalabs.cam.SharedPreferencesManager;
-import com.servalabs.cam.ui.faditor.FaditorEditorActivity;
-import com.servalabs.cam.ui.faditor.model.FaditorProject;
+import com.servalabs.cam.ui.faditor.EditorMiniEditorActivity;
+import com.servalabs.cam.ui.faditor.model.EditorMiniProject;
 
 /**
  * Foreground service that runs video export in the background so it survives
@@ -53,12 +53,12 @@ public class ExportService extends Service {
 
     // ── Static bridge for passing project data ───────────────────────
     @Nullable
-    private static FaditorProject pendingProject;
+    private static EditorMiniProject pendingProject;
 
     /**
      * Set the project to export. Must be called before starting the service.
      */
-    public static void setPendingProject(@Nullable FaditorProject project) {
+    public static void setPendingProject(@Nullable EditorMiniProject project) {
         pendingProject = project;
     }
 
@@ -152,7 +152,7 @@ public class ExportService extends Service {
     // ── Export execution ─────────────────────────────────────────────
 
     private void startExportInternal() {
-        FaditorProject project = pendingProject;
+        EditorMiniProject project = pendingProject;
         pendingProject = null; // consume
 
         if (project == null) {
@@ -182,7 +182,7 @@ public class ExportService extends Service {
                 if (serviceListener != null) {
                     serviceListener.onExportStarted(outputPath);
                 }
-                // Broadcast to UI (FaditorMiniFragment listens via LocalBroadcastManager)
+                // Broadcast to UI (EditorMiniMiniFragment listens via LocalBroadcastManager)
                 Intent broadcast = new Intent(ACTION_EXPORT_STARTED);
                 broadcast.putExtra(EXTRA_OUTPUT_PATH, outputPath);
                 FLog.d(TAG, "Broadcasting ACTION_EXPORT_STARTED");
@@ -296,7 +296,7 @@ public class ExportService extends Service {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         // Tap to open editor
-        Intent openIntent = new Intent(this, FaditorEditorActivity.class);
+        Intent openIntent = new Intent(this, EditorMiniEditorActivity.class);
         openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent openPi = PendingIntent.getActivity(this, 0, openIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -337,7 +337,7 @@ public class ExportService extends Service {
 
     private void showCompletionNotification() {
         // Tap to open editor
-        Intent openIntent = new Intent(this, FaditorEditorActivity.class);
+        Intent openIntent = new Intent(this, EditorMiniEditorActivity.class);
         openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent openPi = PendingIntent.getActivity(this, 0, openIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);

@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="#FF0D0D0D"
     android:fitsSystemWindows="true"
-    tools:context="com.servalabs.cam.ui.editor_mini.FaditorEditorActivity">
+    tools:context="com.servalabs.cam.ui.editor_mini.EditorMiniEditorActivity">
 
 <LinearLayout
     android:id="@+id/editor_root"
@@ -830,7 +830,7 @@
                 android:gravity="center"
                 android:singleLine="true" />
 
-            <!-- Done (navigate to Faditor Mini) — hidden during export -->
+            <!-- Done (navigate to EditorMini Mini) — hidden during export -->
             <TextView
                 android:id="@+id/export_btn_done"
                 android:layout_width="48dp"

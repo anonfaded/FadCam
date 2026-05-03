@@ -95,7 +95,7 @@
     <!-- Left Panel: Stats and Info (Half Screen) -->
     <LinearLayout android:id="@+id/leftPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="6dp" android:layout_marginTop="4dp" android:layout_marginEnd="0dp" android:layout_marginBottom="0dp" android:background="@drawable/bg_home_card_rail_section" android:orientation="vertical" android:paddingStart="4dp" android:paddingTop="4dp" android:paddingEnd="4dp" android:paddingBottom="4dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@+id/cardRailToggleLandscape" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
-        <!-- Mode Switcher (ServaCam, FadRec, FadMic) - Compact for landscape -->
+        <!-- Mode Switcher (ServaCam, ServaRec, FadMic) - Compact for landscape -->
         <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginBottom="0dp" />
 
         <!-- Scrollable content area (landscape-only):

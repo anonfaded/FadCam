@@ -259,7 +259,7 @@ public class AnnotationService extends Service {
     private void terminateService() {
         FLog.d(TAG, "Terminate service requested from notification");
         
-        // Broadcast to FadRecHomeFragment to turn off toggle
+        // Broadcast to ServaRecHomeFragment to turn off toggle
         Intent broadcast = new Intent("com.servalabs.cam.fadrec.ACTION_SERVICE_TERMINATED");
         sendBroadcast(broadcast);
         

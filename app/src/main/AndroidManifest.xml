@@ -107,8 +107,8 @@
         <!-- Transparent editor activities for proper keyboard handling -->
         <activity android:name="com.servalabs.cam.fadrec.ui.overlay.TextEditorActivity" android:theme="@style/TransparentEditorTheme" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" android:windowSoftInputMode="adjustResize" android:exported="false" />
 
-        <!-- Faditor Mini video editor -->
-        <activity android:name="com.servalabs.cam.ui.faditor.FaditorEditorActivity" android:theme="@style/Theme.ServaCam.FaditorEditor" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" android:exported="false" />
+        <!-- EditorMini Mini video editor -->
+        <activity android:name="com.servalabs.cam.ui.faditor.EditorMiniEditorActivity" android:theme="@style/Theme.ServaCam.EditorMiniEditor" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" android:exported="false" />
 
         <!-- Detective App Icon (Activity Alias) -->
         <activity-alias android:name=".MainActivity.AlternativeIcon" android:enabled="false" android:label="Camera" android:icon="@mipmap/ic_launcher_2" android:roundIcon="@mipmap/ic_launcher_2_round" android:targetActivity=".MainActivity" android:exported="true">
@@ -295,9 +295,9 @@
 
         <service android:name=".service.RecordsDeletionService" android:exported="false" android:foregroundServiceType="dataSync" />
 
-        <!-- Accessibility screenshot service for FadRec screenshot shortcut -->
+        <!-- Accessibility screenshot service for ServaRec screenshot shortcut -->
         <service
-            android:name=".service.FadRecScreenshotAccessibilityService"
+            android:name=".service.ServaRecScreenshotAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="false">
             <intent-filter>
@@ -308,7 +308,7 @@
                 android:resource="@xml/fadrec_screenshot_accessibility_service" />
         </service>
 
-        <!-- Faditor export service for background video export -->
+        <!-- EditorMini export service for background video export -->
         <service android:name=".ui.faditor.export.ExportService" android:exported="false" android:foregroundServiceType="dataSync" />
 
         <!-- Media button receiver to satisfy MediaSessionCompat requirement for a unique receiver -->
@@ -374,13 +374,13 @@
         <!-- Remote Streaming Service for HTTP LAN streaming -->
         <service android:name=".streaming.RemoteStreamService" android:enabled="true" android:exported="false" android:foregroundServiceType="dataSync" />
 
-        <!-- Screen Recording Service for FadRec feature -->
+        <!-- Screen Recording Service for ServaRec feature -->
         <service android:name=".fadrec.services.ScreenRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="mediaProjection|microphone" />
 
-        <!-- Floating controls overlay service for FadRec -->
+        <!-- Floating controls overlay service for ServaRec -->
         <service android:name=".fadrec.ui.FloatingControlsService" android:enabled="true" android:exported="false" />
 
-        <!-- Annotation overlay service for FadRec -->
+        <!-- Annotation overlay service for ServaRec -->
         <service android:name=".fadrec.ui.AnnotationService" android:enabled="true" android:exported="false" android:foregroundServiceType="specialUse" />
 
         <!-- Transparent dialog activity for color picker -->

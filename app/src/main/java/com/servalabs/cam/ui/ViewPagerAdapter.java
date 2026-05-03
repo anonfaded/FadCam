@@ -7,7 +7,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.servalabs.cam.Constants;
 import com.servalabs.cam.SharedPreferencesManager;
-import com.servalabs.cam.fadrec.ui.FadRecHomeFragment;
+import com.servalabs.cam.fadrec.ui.ServaRecHomeFragment;
 import com.servalabs.cam.forensics.ui.ForensicIntelligenceFragment;
 
 /**
@@ -35,7 +35,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
             case 2:
                 return new RemoteFragment();
             case 3:
-                return new FaditorMiniFragment();
+                return new EditorMiniMiniFragment();
             case 4:
                 // Phase 1: Use new SettingsHomeFragment (legacy fragment accessible from inside)
                 return new SettingsHomeFragment();
@@ -48,7 +48,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
 
     /**
      * Creates the appropriate HomeFragment based on current recording mode.
-     * @return HomeFragment or FadRecHomeFragment depending on mode
+     * @return HomeFragment or ServaRecHomeFragment depending on mode
      */
     private Fragment createHomeFragment() {
         SharedPreferencesManager prefsManager = 
@@ -58,7 +58,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
         
         if (Constants.MODE_FADREC.equals(currentMode)) {
             // ServaRec mode - create screen recording fragment
-            return FadRecHomeFragment.newInstance();
+            return ServaRecHomeFragment.newInstance();
         } else {
             // ServaCam mode (default) - create camera recording fragment
             return new HomeFragment();

@@ -2204,7 +2204,7 @@ public class EditorTimelineView extends View {
                     + " posInSegmentMs=" + posInSegmentMs + " sourceFrac=" + sourceFrac);
             
             // Pass isDragging=true to prevent loading new clips during active drag
-            // The FaditorEditorActivity will only seek within current clip, then load new one on drag end
+            // The EditorMiniEditorActivity will only seek within current clip, then load new one on drag end
             listener.onPlayheadSeeked(targetSegment, sourceFrac, true);
         }
         

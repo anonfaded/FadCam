@@ -133,7 +133,7 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
                     }
                 }, fadCryptStart, fadCryptEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
-            // Make FadSec Lab red and clickable
+            // Make ServaLabs red and clickable
             int fadSecLabStart = desc.indexOf("ServaLabs");
             int fadSecLabEnd = fadSecLabStart + "ServaLabs".length();
             if (fadSecLabStart >= 0) {
@@ -166,7 +166,7 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
             tvKoFiDescription.setGravity(android.view.Gravity.START);
         }
 
-        // Footer: Made with Palestine at FadSec Lab in Pakistan here
+        // Footer: Made with Palestine at ServaLabs in Pakistan here
         TextView tvKoFiFooterFull = view.findViewById(R.id.tvKoFiFooterFull);
         if (tvKoFiFooterFull != null) {
             String footer = "Made with Palestine at ServaLabs in Pakistan";
@@ -193,7 +193,7 @@ public class KoFiSupportBottomSheet extends BottomSheetDialogFragment {
                     spannable.setSpan(pakistanSpan, pakistanIndex, pakistanIndex + "Pakistan".length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 }
             }
-            // FadSec Lab clickable, bold, and red
+            // ServaLabs clickable, bold, and red
             int fadSecLabStart = footer.indexOf("ServaLabs");
             int fadSecLabEnd = fadSecLabStart + "ServaLabs".length();
             if (fadSecLabStart >= 0) {

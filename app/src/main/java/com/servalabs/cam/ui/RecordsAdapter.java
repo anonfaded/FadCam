@@ -2013,7 +2013,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private void launchEditorMiniMini(@NonNull Context ctx, @NonNull VideoItem videoItem) {
         if (videoItem.uri == null) return;
         try {
-            Intent intent = new Intent(ctx, com.servalabs.cam.ui.faditor.FaditorEditorActivity.class);
+            Intent intent = new Intent(ctx, com.servalabs.cam.ui.faditor.EditorMiniEditorActivity.class);
             intent.setData(videoItem.uri);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             ctx.startActivity(intent);
