@@ -7,6 +7,8 @@ import android.view.KeyEvent;
 import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
+import com.fadcam.R;
+import com.guardanis.applock.views.UnlockViewController;
 
 public class UnlockActivity extends AppCompatActivity implements UnlockViewController.Delegate {
 
@@ -25,18 +27,6 @@ public class UnlockActivity extends AppCompatActivity implements UnlockViewContr
         this.viewController.setDelegate(this);
         this.viewController.setupRootFlow();
         this.viewController.setAutoAuthorizationEnabled(true);
-    }
-
-    @Override
-    public void onUnlockSuccessful() {
-        setResult(Activity.RESULT_OK);
-        finish();
-    }
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.applock__activity_unlock);
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -44,6 +34,12 @@ public class UnlockActivity extends AppCompatActivity implements UnlockViewContr
                 handleBackPressed();
             }
         });
+    }
+
+    @Override
+    public void onUnlockSuccessful() {
+        setResult(Activity.RESULT_OK);
+        finish();
     }
 
     @Override
