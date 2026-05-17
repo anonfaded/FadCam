@@ -1,5 +1,4 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name" translatable="false">FadCam</string>
     <string name="app_icon_description">Выберите значок и название для вашего приложения. Это изменит его вид на главном экране.</string>
     <string name="check_for_updates">Проверить наличие обновлений</string>
     <string name="accessibility_thumbnail_progress">%1$d%% просмотрено</string>
@@ -627,16 +626,6 @@
     <string name="setting_back_lens_note">Выберите конкретный объектив, если доступен, например, Широкоугольный объектив\n(По умолчанию: Основной (0))</string>
     <string name="setting_back_lens_info_single">Только основной объектив</string>
     <string name="setting_back_lens_info_single_v2">Обнаружена только основная задняя камера</string>
-
-    <string-array name="theme_options">
-        <item>Midnight Dusk</item>
-        <item>Faded Night</item>
-        <item>Crimson Bloom</item>
-        <item>Silent Forest</item>
-        <item>Shadow Alloy</item>
-        <item>Pookie Pink</item>
-        <item>Snow Veil</item>
-    </string-array>
     <string name="theme_red">Crimson Bloom</string>
     <string name="theme_gold">Premium Gold</string>
     <string name="theme_silentforest">Silent Forest</string>

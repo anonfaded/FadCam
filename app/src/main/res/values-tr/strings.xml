@@ -266,10 +266,6 @@
         ]]>
     </string>
     <string name="recording_already_active">Kayıt zaten devam ediyor veya duraklatılmış.</string>
-    <string-array name="theme_options">
-        <item>Koyu Mod</item>
-        <item>AMOLED Siyah</item>
-    </string-array>
     <string name="button_audio_settings">Ses Ayarları</string>
     <string name="dialog_audio_settings_title">Ses Ayarları</string>
     <string name="dialog_audio_bitrate_label">Ses Bit Hızı (bps)</string>

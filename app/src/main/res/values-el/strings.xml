@@ -2,7 +2,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="auto_delete_immediate">Άμεση</string>
     <string name="trash_auto_delete_info_immediate">Τα στοιχεία διαγράφονται άμεσα.</string>
-    <string name="app_name" translatable="false">FadCam</string>
     <string name="app_icon_description">Επιλέξτε ένα εικονίδιο και όνομα για την εφαρμογή σας. Αυτό θα αλλάξει την εμφάνισή της στην αρχική σας οθόνη.</string>
     <string name="check_for_updates">Έλεγχος για Ενημερώσεις</string>
     <string name="fadsec_info">Το FadCam είναι μέρος της σουίτας FadSec Lab. Για περισσότερες πληροφορίες, κάντε κλικ στην επιλογή «προβολή πηγαίου κώδικα» παρακάτω.</string>
@@ -294,15 +293,6 @@
     <string name="setting_back_lens_note">Επιλέξτε συγκεκριμένο φακό εάν διατίθεται, π.χ. Φακός Ευρείας Γωνίας\n(Προεπιλογή: Κύριος (0))</string>
     <string name="setting_back_lens_info_single">Μόνο κύριος φακός</string>
     <string name="setting_back_lens_info_single_v2">Εντοπίστηκε μόνο κύρια πίσω κάμερα</string>
-    <string-array name="theme_options">
-        <item>Μεσοχώρι του Μεσονυχτίου</item>
-        <item>Αχνή Νύχτα</item>
-        <item>Βαθυκόκκινο Άνθος</item>
-        <item>Σιωπηλό Δάσος</item>
-        <item>Κράμα Σκιάς</item>
-        <item>Ροζουλί Πουκάμισο</item>
-        <item>Πέπλο Χιονιού</item>
-    </string-array>
     <string name="theme_red">Βαθυκόκκινο Άνθος</string>
     <string name="theme_gold">Premium Χρυσό</string>
     <string name="theme_silentforest">Σιωπηλό Δάσος</string>
