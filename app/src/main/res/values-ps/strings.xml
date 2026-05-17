@@ -46,7 +46,7 @@
         <item>10/11 | Da app preferences save kigi aw agha pakhpala apply kigi.</item>
         <item>11/11 | Madad pakar de? About ki Discord link shte alta na join kae.</item>
     </string-array>
-    <string name="mainpage_video_info" formatted="false">\n    <![CDATA[
+    <string name="mainpage_video_info" formatted="false">\n <![CDATA[
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videos: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Zay:</font>
