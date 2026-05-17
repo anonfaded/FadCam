@@ -10,7 +10,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowManager;
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -31,7 +33,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
  * - Activity lifecycle management
  * - Easy result passing with Intent extras
  */
-public abstract class BaseTransparentEditorActivity extends Activity {
+public abstract class BaseTransparentEditorActivity extends AppCompatActivity {
     
     // Broadcast actions
     public static final String ACTION_EDITOR_RESULT = "com.fadcam.fadrec.ACTION_EDITOR_RESULT";
@@ -56,32 +58,18 @@ public abstract class BaseTransparentEditorActivity extends Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        FLog.d("BaseTransparentEditor", "onCreate() started");
-        
-        // Setup edge-to-edge layout with proper system insets
-        setupEdgeToEdge();
-        
-        // Setup transparent window
-        setupTransparentWindow();
-        
-        // Notify that editor started (disable annotation canvas)
-        Intent startBroadcast = new Intent(ACTION_EDITOR_STARTED);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(startBroadcast);
-        FLog.d("BaseTransparentEditor", "Sent ACTION_EDITOR_STARTED broadcast");
-        
-        // Set content view from subclass
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(0);
+        getWindow().setNavigationBarColor(0);
+        getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         setContentView(getLayoutResourceId());
-        FLog.d("BaseTransparentEditor", "Content view set");
-        
-        // Let subclass initialize views
-        View rootView = findViewById(android.R.id.content);
-        FLog.d("BaseTransparentEditor", "Root view: " + rootView);
-        
-        // Apply safe area insets properly
-        applySafeAreaInsets(rootView);
-        
-        onEditorViewCreated(rootView);
-        FLog.d("BaseTransparentEditor", "onCreate() completed");
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finishWithCancel();
+            }
+        });
     }
     
     /**
@@ -213,11 +201,5 @@ public abstract class BaseTransparentEditorActivity extends Activity {
         setResult(RESULT_OK, getIntent().putExtras(resultData));
         finish();
         overridePendingTransition(0, 0); // No animation
-    }
-    
-    @Override
-    public void onBackPressed() {
-        // Back button cancels editing
-        finishWithCancel();
     }
 }

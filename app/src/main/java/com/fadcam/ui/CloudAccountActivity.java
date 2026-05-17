@@ -15,6 +15,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 
@@ -74,6 +75,8 @@ public class CloudAccountActivity extends AppCompatActivity {
         // Initialize views
         webView = findViewById(R.id.cloud_webview);
         progressBar = findViewById(R.id.cloud_progress_bar);
+        
+        setupBackPressedHandler();
         statusText = findViewById(R.id.cloud_status_text);
         
         // Back button
@@ -300,13 +303,18 @@ public class CloudAccountActivity extends AppCompatActivity {
         }
     }
     
-    @Override
-    public void onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
+    private void setupBackPressedHandler() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (webView != null && webView.canGoBack()) {
+                    webView.goBack();
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
     }
     
     @Override

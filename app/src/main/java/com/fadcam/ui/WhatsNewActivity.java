@@ -17,6 +17,7 @@ import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
 import android.webkit.JavascriptInterface;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 
@@ -118,15 +119,15 @@ public class WhatsNewActivity extends AppCompatActivity {
         
         // Start shimmer pulse animation
         startShimmerAnimation();
-    }
 
-    /**
-     * Handle back button press
-     */
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        navigateToHome();
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                navigateToHome();
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+            }
+        });
     }
 
     /**

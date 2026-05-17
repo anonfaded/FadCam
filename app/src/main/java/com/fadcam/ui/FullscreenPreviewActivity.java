@@ -38,6 +38,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -319,6 +320,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         setupCaptureShotButton();
         setupZoomHud();
         setupSystemInsets();
+        setupBackPressedHandler();
         updatePreviewHintVisibility();
         // Initialize avatar to sleeping state (shows zzz badge by default)
         applyFullscreenAvatarState(false, false);
@@ -371,14 +373,19 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onBackPressed() {
-        if (!controlsVisible) {
-            showControls();
-            scheduleAutoHide();
-        } else {
-            super.onBackPressed();
-        }
+    private void setupBackPressedHandler() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (!controlsVisible) {
+                    showControls();
+                    scheduleAutoHide();
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -5,7 +5,7 @@ package com.fadcam.ui;
 import android.os.Bundle;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.fadcam.R;
@@ -31,15 +31,17 @@ public class WebViewActivity extends AppCompatActivity {
         if (url != null) {
             webView.loadUrl(url);
         }
-    }
 
-    @Override
-    public void onBackPressed() {
-        WebView webView = findViewById(R.id.webview);
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (webView.canGoBack()) {
+                    webView.goBack();
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
     }
 }
