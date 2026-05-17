@@ -1424,24 +1424,8 @@ public class MainActivity extends AppCompatActivity {
         Fragment top = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
         if (top == null)
             return false;
-        // Animate fade out then pop
-        // method(handleOverlayBack_raceGuard)-----------
-        final Fragment beforeTop = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
-        overlayContainer.animate().alpha(0f).setDuration(160).withEndAction(() -> {
-            Fragment currentTop = getSupportFragmentManager().findFragmentById(R.id.overlay_fragment_container);
-            boolean sameInstance = currentTop == beforeTop;
-            if (sameInstance) {
-                overlayContainer.setVisibility(View.GONE);
-                overlayContainer.setAlpha(1f);
-                if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-                    getSupportFragmentManager().popBackStack();
-                }
-            } else {
-                // A different overlay appeared; don't hide or pop.
-                overlayContainer.setAlpha(1f);
-            }
-        }).start();
-        // method(handleOverlayBack_raceGuard)-----------
+        // Use popLevel: pops one sub-fragment if stacked, dismisses overlay if only one
+        OverlayNavUtil.popLevel(this);
         return true;
     }
 

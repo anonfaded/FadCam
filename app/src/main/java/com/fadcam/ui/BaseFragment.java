@@ -40,10 +40,17 @@ public abstract class BaseFragment extends Fragment {
                 FLog.d("OverlayDebug","BaseFragment handleOnBackPressed fragment="+getClass().getSimpleName());
                 // First give the fragment a chance to handle the back press
                 if (!onBackPressed()) {
-                    // If fragment doesn't handle it, navigate to home tab if not already there
+                    // Check if overlay (settings/trash) is visible — let MainActivity handle it
                     try {
                         if (requireActivity() instanceof com.fadcam.MainActivity) {
                             com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) requireActivity();
+                            android.view.View overlay = mainActivity.findViewById(R.id.overlay_fragment_container);
+                            if (overlay != null && overlay.getVisibility() == android.view.View.VISIBLE) {
+                                // Overlay is visible — disable this callback and let MainActivity's handler take over
+                                setEnabled(false);
+                                requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                                return;
+                            }
                             if (mainActivity.getCurrentFragmentPosition() != 0) {
                                 mainActivity.switchFragment(0, true);
                             } else {
