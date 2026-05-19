@@ -130,7 +130,7 @@ public class QRScannerActivity extends AppCompatActivity {
     @Override public void onRequestPermissionsResult(int r, @NonNull String[] p, @NonNull int[] g) {
         super.onRequestPermissionsResult(r, p, g);
         if (r == RC_CAMERA && g.length > 0 && g[0] == PackageManager.PERMISSION_GRANTED) startCamera();
-        else { Toast.makeText(this, "Camera permission required", Toast.LENGTH_SHORT).show(); finish(); }
+        else { Toast.makeText(this, getString(R.string.qr_scanner_camera_permission_required), Toast.LENGTH_SHORT).show(); finish(); }
     }
 
     private void startCamera() {
@@ -333,7 +333,7 @@ public class QRScannerActivity extends AppCompatActivity {
             btnCopy.setOnClickListener(v -> {
                 ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
                 cm.setPrimaryClip(android.content.ClipData.newPlainText("Scanned", text));
-                Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.qr_scanner_copied), Toast.LENGTH_SHORT).show();
             });
         }
         
@@ -358,7 +358,7 @@ public class QRScannerActivity extends AppCompatActivity {
         try {
             Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(uri));
             if (bitmap == null) {
-                Toast.makeText(this, "Could not load image", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.qr_scanner_could_not_load), Toast.LENGTH_SHORT).show();
                 return;
             }
             Result result = decodeBitmap(bitmap);
@@ -377,11 +377,11 @@ public class QRScannerActivity extends AppCompatActivity {
                     cameraExecutor.execute(() -> saveScan(t, f, bmp));
                 }
             } else {
-                Toast.makeText(this, "No barcode found in image", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.qr_scanner_no_barcode), Toast.LENGTH_SHORT).show();
             }
         } catch (Exception e) {
             FLog.e("QRScanner", "Gallery decode error", e);
-            Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.qr_scanner_failed_process), Toast.LENGTH_SHORT).show();
         }
     }
 

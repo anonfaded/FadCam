@@ -469,10 +469,10 @@ public class TorchToolFragment extends BaseFragment {
     private void updateScreenLightStatus() {
         if (screenLightStatus != null) {
             if (isScreenLightOn) {
-                screenLightStatus.setText("ON");
+                screenLightStatus.setText(getString(R.string.torch_status_on));
                 screenLightStatus.setTextColor(0xFFFFA726);
             } else {
-                screenLightStatus.setText("OFF");
+                screenLightStatus.setText(getString(R.string.torch_status_off));
                 screenLightStatus.setTextColor(0x66FFFFFF);
             }
         }
@@ -557,7 +557,7 @@ public class TorchToolFragment extends BaseFragment {
         // Custom option
         items.add(com.fadcam.ui.picker.OptionItem.withLigature(
                 "custom",
-                "Custom Duration",
+                getString(R.string.torch_timer_custom_duration),
                 "edit"
         ));
 
@@ -593,9 +593,9 @@ public class TorchToolFragment extends BaseFragment {
     private void showCustomTimerInput() {
         // Show a picker with unit options: seconds, minutes, hours
         ArrayList<com.fadcam.ui.picker.OptionItem> unitItems = new ArrayList<>();
-        unitItems.add(com.fadcam.ui.picker.OptionItem.withLigature("seconds", "Seconds", "hourglass_bottom"));
-        unitItems.add(com.fadcam.ui.picker.OptionItem.withLigature("minutes", "Minutes", "schedule"));
-        unitItems.add(com.fadcam.ui.picker.OptionItem.withLigature("hours", "Hours", "schedule"));
+        unitItems.add(com.fadcam.ui.picker.OptionItem.withLigature("seconds", getString(R.string.torch_custom_unit_seconds), "hourglass_bottom"));
+        unitItems.add(com.fadcam.ui.picker.OptionItem.withLigature("minutes", getString(R.string.torch_custom_unit_minutes), "schedule"));
+        unitItems.add(com.fadcam.ui.picker.OptionItem.withLigature("hours", getString(R.string.torch_custom_unit_hours), "schedule"));
 
         getParentFragmentManager().setFragmentResultListener(
                 "torch_timer_unit", getViewLifecycleOwner(), (key, result) -> {
@@ -751,10 +751,10 @@ public class TorchToolFragment extends BaseFragment {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     TORCH_NOTIFICATION_CHANNEL_ID,
-                    "Torch Active",
+                    getString(R.string.torch_notification_channel_name),
                     NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("Notification shown when torch is on");
+            channel.setDescription(getString(R.string.torch_notification_channel_desc));
             channel.enableVibration(false);
             channel.setSound(null, null);
             if (notificationManager != null) {
@@ -781,8 +781,8 @@ public class TorchToolFragment extends BaseFragment {
                             requireContext(),
                             TORCH_NOTIFICATION_CHANNEL_ID
                     )
-                            .setContentTitle("Torch is On")
-                            .setContentText("Tap to turn off")
+                            .setContentTitle(getString(R.string.torch_notification_title))
+                            .setContentText(getString(R.string.torch_notification_text))
                             .setSmallIcon(R.drawable.ic_flashlight_on)
                             .setContentIntent(pendingIntent)
                             .setOngoing(true)

@@ -3350,7 +3350,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
 
 <string name="torch_unavailable">Torch unavailable for this camera</string>
 
-<string name="motion_lab_title">Motion Lab</string>
+<string name="motion_lab_title">Laboratoire de mouvement</string>
 
 <string name="motion_lab_row_subtitle">Smart event recording for CCTV-style use</string>
 
@@ -3821,6 +3821,21 @@ For the smoothest playback experience, you can use an external player like VLC. 
 <string name="torch_timer_custom_error_positive">La durée doit être supérieure à 0</string>
 
 <string name="torch_timer_custom_error_invalid">Nombre invalide</string>
+<string name="torch_timer_custom_duration">Durée personnalisée</string>
+<string name="torch_custom_unit_seconds">Secondes</string>
+<string name="torch_custom_unit_minutes">Minutes</string>
+<string name="torch_custom_unit_hours">Heures</string>
+<string name="torch_notification_channel_name">Lampe torche active</string>
+<string name="torch_notification_channel_desc">Notification lorsque la lampe torche est allumée</string>
+<string name="torch_notification_title">La lampe torche est allumée</string>
+<string name="torch_notification_text">Appuyez pour éteindre</string>
+<string name="qr_scanner_format_badge">CODE QR</string>
+<string name="qr_scanner_hint">Placez l\'appareil devant un QR code ou un code-barres</string>
+<string name="qr_scanner_camera_permission_required">Autorisation de la caméra requise</string>
+<string name="qr_scanner_copied">Copié dans le presse-papier</string>
+<string name="qr_scanner_could_not_load">Impossible de charger l\'image</string>
+<string name="qr_scanner_no_barcode">Aucun code-barres trouvé dans l\'image</string>
+<string name="qr_scanner_failed_process">Échec du traitement de l\'image</string>
 
 <string name="watermark_utm_title">Coordonnées UTM</string>
 

@@ -3414,7 +3414,7 @@
 
     <string name="torch_unavailable">الفلاش غير متاح لهذه الكاميرا</string>
 
-    <string name="motion_lab_title">Motion Lab</string>
+    <string name="motion_lab_title">مختبر الحركة</string>
 
     <string name="motion_lab_row_subtitle">تسجيل الأحداث الذكي لاستخدام CCTV</string>
 
@@ -3885,6 +3885,21 @@
     <string name="torchtimer_custom_error_positive">يجب أن تكون المدة أكبر من 0</string>
 
     <string name="torchtimer_custom_error_invalid">رقم غير صالح</string>
+    <string name="torch_timer_custom_duration">مدة مخصصة</string>
+    <string name="torch_custom_unit_seconds">ثوانٍ</string>
+    <string name="torch_custom_unit_minutes">دقائق</string>
+    <string name="torch_custom_unit_hours">ساعات</string>
+    <string name="torch_notification_channel_name">المصباح نشط</string>
+    <string name="torch_notification_channel_desc">إشعار عند تشغيل المصباح</string>
+    <string name="torch_notification_title">المصباح قيد التشغيل</string>
+    <string name="torch_notification_text">اضغط لإيقاف التشغيل</string>
+    <string name="qr_scanner_format_badge">رمز QR</string>
+    <string name="qr_scanner_hint">وجّه الكاميرا نحو رمز QR أو الباركود</string>
+    <string name="qr_scanner_camera_permission_required">إذن الكاميرا مطلوب</string>
+    <string name="qr_scanner_copied">تم النسخ إلى الحافظة</string>
+    <string name="qr_scanner_could_not_load">تعذر تحميل الصورة</string>
+    <string name="qr_scanner_no_barcode">لم يتم العثور على باركود في الصورة</string>
+    <string name="qr_scanner_failed_process">فشل معالجة الصورة</string>
 
     <string name="watermark_utm_title">إحداثيات UTM</string>
 

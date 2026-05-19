@@ -246,6 +246,7 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.video)
     implementation(libs.constraintlayout)
+    implementation(libs.gridlayout)
     implementation(libs.core.ktx)
     // Media3 ExoPlayer for playback (replacing deprecated exoplayer2)
     implementation(libs.media3.exoplayer)

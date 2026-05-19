@@ -2149,7 +2149,7 @@ Apakah Anda ingin beralih ke H.264 dan mulai merekam?</string>
     <string name="torch_unavailable">Senter tidak tersedia untuk kamera ini</string>
 
     <!-- Motion Lab -->
-    <string name="motion_lab_title">Motion Lab</string>
+    <string name="motion_lab_title">Lab Gerakan</string>
     <string name="motion_lab_row_subtitle">Perekaman peristiwa cerdas untuk penggunaan gaya CCTV</string>
     <string name="motion_lab_enable">Aktifkan Perekaman Motion</string>
     <string name="motion_lab_enable_sensor">Aktifkan Sensor Motion</string>
@@ -2448,6 +2448,21 @@ Catatan: Setidaknya satu metode keluar harus tetap diaktifkan untuk mencegah ter
     <string name="torch_timer_custom_apply">Terapkan</string>
     <string name="torch_timer_custom_error_positive">Durasi harus lebih dari 0</string>
     <string name="torch_timer_custom_error_invalid">Angka tidak valid</string>
+    <string name="torch_timer_custom_duration">Durasi Kustom</string>
+    <string name="torch_custom_unit_seconds">Detik</string>
+    <string name="torch_custom_unit_minutes">Menit</string>
+    <string name="torch_custom_unit_hours">Jam</string>
+    <string name="torch_notification_channel_name">Senter Aktif</string>
+    <string name="torch_notification_channel_desc">Notifikasi saat senter menyala</string>
+    <string name="torch_notification_title">Senter menyala</string>
+    <string name="torch_notification_text">Ketuk untuk mematikan</string>
+    <string name="qr_scanner_format_badge">KODE QR</string>
+    <string name="qr_scanner_hint">Arahkan kamera ke QR atau barcode</string>
+    <string name="qr_scanner_camera_permission_required">Izin kamera diperlukan</string>
+    <string name="qr_scanner_copied">Disalin ke clipboard</string>
+    <string name="qr_scanner_could_not_load">Tidak dapat memuat gambar</string>
+    <string name="qr_scanner_no_barcode">Tidak ada barcode yang ditemukan di gambar</string>
+    <string name="qr_scanner_failed_process">Gagal memproses gambar</string>
 
     <string name="watermark_utm_title">Koordinat UTM</string>
     <string name="watermark_utm_off">Mati</string>

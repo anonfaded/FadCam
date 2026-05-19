@@ -278,7 +278,7 @@
                     android:paddingEnd="10dp"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
-                    android:text="QR CODE"
+                    android:text="@string/qr_scanner_format_badge"
                     android:textColor="#4CAF50"
                     android:textSize="10sp"
                     android:textAllCaps="true"
@@ -319,7 +319,7 @@
                 android:id="@+id/qr_hint_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Point camera at QR or barcode"
+                android:text="@string/qr_scanner_hint"
                 android:textColor="#80FFFFFF"
                 android:textSize="13sp"
                 android:visibility="gone" />

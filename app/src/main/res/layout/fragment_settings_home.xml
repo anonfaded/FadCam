@@ -728,16 +728,15 @@
             android:textColor="?attr/sectionHeaderColor"
             android:textStyle="bold" />
 
-        <!-- Mini Apps Grid (3 columns) -->
+        <!-- Mini Apps Grid (3 columns, wrap_content height) -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="160dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:baselineAligned="false"
             android:paddingStart="2dp"
             android:paddingEnd="2dp"
             android:layout_marginTop="4dp"
-            android:layout_marginBottom="0dp">
+            android:layout_marginBottom="3dp">
 
             <include android:id="@+id/group_mini_torch" layout="@layout/item_mini_app_card" />
             <include android:id="@+id/group_mini_qr_scanner" layout="@layout/item_mini_app_card" />
@@ -746,13 +745,12 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="160dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:baselineAligned="false"
             android:paddingStart="2dp"
             android:paddingEnd="2dp"
             android:layout_marginTop="0dp"
-            android:layout_marginBottom="0dp">
+            android:layout_marginBottom="3dp">
 
             <include android:id="@+id/group_mini_sensor" layout="@layout/item_mini_app_card" />
             <include android:id="@+id/group_mini_speedometer" layout="@layout/item_mini_app_card" />
@@ -761,25 +759,23 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="160dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:baselineAligned="false"
             android:paddingStart="2dp"
             android:paddingEnd="2dp"
             android:layout_marginTop="0dp"
-            android:layout_marginBottom="0dp">
+            android:layout_marginBottom="3dp">
 
             <include android:id="@+id/group_mini_compass" layout="@layout/item_mini_app_card" />
             <include android:id="@+id/group_mini_pedometer" layout="@layout/item_mini_app_card" />
             <include android:id="@+id/group_mini_metal_detector" layout="@layout/item_mini_app_card" />
         </LinearLayout>
 
-        <!-- Row 4: 2 cards centered in 3-column grid -->
+        <!-- Row 4: 2 cards centered -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="160dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:baselineAligned="false"
             android:paddingStart="2dp"
             android:paddingEnd="2dp"
             android:layout_marginTop="0dp"

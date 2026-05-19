@@ -2404,6 +2404,16 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="torch_timer_custom_apply">Apply</string>
     <string name="torch_timer_custom_error_positive">Duration must be greater than 0</string>
     <string name="torch_timer_custom_error_invalid">Invalid number</string>
+    <string name="torch_timer_custom_duration">Custom Duration</string>
+    <string name="torch_custom_unit_seconds">Seconds</string>
+    <string name="torch_custom_unit_minutes">Minutes</string>
+    <string name="torch_custom_unit_hours">Hours</string>
+
+    <!-- Torch Notification -->
+    <string name="torch_notification_channel_name">Torch Active</string>
+    <string name="torch_notification_channel_desc">Notification shown when torch is on</string>
+    <string name="torch_notification_title">Torch is On</string>
+    <string name="torch_notification_text">Tap to turn off</string>
 
     <!-- Torch Timer (alternate key, used by some Mini App screens) -->
     <string name="torchtimer_label">Auto-off Timer</string>
@@ -2438,6 +2448,13 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="mini_app_clinometer_desc">Measure angles and slopes using gyroscope</string>
     <string name="mini_app_qr_scanner_title">QR Scanner</string>
     <string name="mini_app_qr_scanner_desc">Scan QR codes and barcodes instantly</string>
+    <string name="qr_scanner_format_badge">QR CODE</string>
+    <string name="qr_scanner_hint">Point camera at QR or barcode</string>
+    <string name="qr_scanner_camera_permission_required">Camera permission required</string>
+    <string name="qr_scanner_copied">Copied to clipboard</string>
+    <string name="qr_scanner_could_not_load">Could not load image</string>
+    <string name="qr_scanner_no_barcode">No barcode found in image</string>
+    <string name="qr_scanner_failed_process">Failed to process image</string>
     <string name="mini_app_pedometer_title">Pedometer</string>
     <string name="mini_app_pedometer_desc">Step counter using built-in step sensor</string>
     <string name="mini_app_metal_detector_title">Metal Detector</string>

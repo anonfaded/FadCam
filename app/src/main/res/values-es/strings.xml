@@ -2092,7 +2092,7 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <string name="fadrec_preview_not_available">La vista previa de pantalla en vivo aún no está conectada a FadRec</string>
     <string name="torch_unavailable">Linterna no disponible para esta cámara</string>
     <!-- Motion Lab -->
-    <string name="motion_lab_title">Motion Lab</string>
+    <string name="motion_lab_title">Laboratorio de Movimiento</string>
     <string name="motion_lab_row_subtitle">Grabación inteligente de eventos para uso estilo CCTV</string>
     <string name="motion_lab_enable">Habilitar grabación por motion</string>
     <string name="motion_lab_enable_sensor">Habilitar sensor de motion</string>
@@ -2358,6 +2358,21 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <string name="torch_timer_custom_apply">Aplicar</string>
     <string name="torch_timer_custom_error_positive">La duración debe ser mayor a 0</string>
     <string name="torch_timer_custom_error_invalid">Número inválido</string>
+    <string name="torch_timer_custom_duration">Duración personalizada</string>
+    <string name="torch_custom_unit_seconds">Segundos</string>
+    <string name="torch_custom_unit_minutes">Minutos</string>
+    <string name="torch_custom_unit_hours">Horas</string>
+    <string name="torch_notification_channel_name">Linterna activa</string>
+    <string name="torch_notification_channel_desc">Notificación cuando la linterna está encendida</string>
+    <string name="torch_notification_title">La linterna está encendida</string>
+    <string name="torch_notification_text">Toca para apagar</string>
+    <string name="qr_scanner_format_badge">CÓDIGO QR</string>
+    <string name="qr_scanner_hint">Apunta la cámara a un código QR o código de barras</string>
+    <string name="qr_scanner_camera_permission_required">Permiso de cámara requerido</string>
+    <string name="qr_scanner_copied">Copiado al portapapeles</string>
+    <string name="qr_scanner_could_not_load">No se pudo cargar la imagen</string>
+    <string name="qr_scanner_no_barcode">No se encontró código de barras en la imagen</string>
+    <string name="qr_scanner_failed_process">Error al procesar la imagen</string>
 
     <string name="watermark_utm_title">Coordenadas UTM</string>
     <string name="watermark_utm_off">Desactivado</string>

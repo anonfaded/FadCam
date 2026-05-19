@@ -2904,6 +2904,21 @@ FadCam использует фрагментированный формат MP4 
     <string name="torch_timer_custom_apply">Применить</string>
     <string name="torch_timer_custom_error_positive">Длительность должна быть больше 0</string>
     <string name="torch_timer_custom_error_invalid">Неверное число</string>
+    <string name="torch_timer_custom_duration">Пользовательская длительность</string>
+    <string name="torch_custom_unit_seconds">Секунды</string>
+    <string name="torch_custom_unit_minutes">Минуты</string>
+    <string name="torch_custom_unit_hours">Часы</string>
+    <string name="torch_notification_channel_name">Фонарик активен</string>
+    <string name="torch_notification_channel_desc">Уведомление при включенном фонарике</string>
+    <string name="torch_notification_title">Фонарик включен</string>
+    <string name="torch_notification_text">Нажмите для выключения</string>
+    <string name="qr_scanner_format_badge">QR-КОД</string>
+    <string name="qr_scanner_hint">Наведите камеру на QR-код или штрихкод</string>
+    <string name="qr_scanner_camera_permission_required">Требуется разрешение камеры</string>
+    <string name="qr_scanner_copied">Скопировано в буфер обмена</string>
+    <string name="qr_scanner_could_not_load">Не удалось загрузить изображение</string>
+    <string name="qr_scanner_no_barcode">Штрихкод не найден в изображении</string>
+    <string name="qr_scanner_failed_process">Не удалось обработать изображение</string>
     <string name="torch_unavailable">Фонарик недоступен для этой камеры</string>
 
     <!-- Trash -->

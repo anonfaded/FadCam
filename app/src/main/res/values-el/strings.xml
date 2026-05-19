@@ -2027,7 +2027,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="fadrec_preview_not_available">Η ζωντανή προεπισκόπηση οθόνης δεν είναι ακόμα διαθέσιμη στο FadRec</string>
     <string name="torch_unavailable">Ο φακός δεν είναι διαθέσιμος για αυτήν την κάμερα</string>
     <!-- Motion Lab -->
-    <string name="motion_lab_title">Motion Lab</string>
+    <string name="motion_lab_title">Εργαστήριο Κίνησης</string>
     <string name="motion_lab_row_subtitle">Έξυπνη εγγραφή συμβάντων για χρήση CCTV</string>
     <string name="motion_lab_enable">Ενεργοποίηση Εγγραφής Κίνησης</string>
     <string name="motion_lab_enable_sensor">Ενεργοποίηση Αισθητήρα Κίνησης</string>
@@ -2289,6 +2289,21 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="torch_timer_custom_apply">Εφαρμογή</string>
     <string name="torch_timer_custom_error_positive">Η διάρκεια πρέπει να είναι μεγαλύτερη από 0</string>
     <string name="torch_timer_custom_error_invalid">Μη έγκυρος αριθμός</string>
+    <string name="torch_timer_custom_duration">Προσαρμοσμένη διάρκεια</string>
+    <string name="torch_custom_unit_seconds">Δευτερόλεπτα</string>
+    <string name="torch_custom_unit_minutes">Λεπτά</string>
+    <string name="torch_custom_unit_hours">Ώρες</string>
+    <string name="torch_notification_channel_name">Φακός Ενεργός</string>
+    <string name="torch_notification_channel_desc">Ειδοποίηση όταν ο φακός είναι αναμμένος</string>
+    <string name="torch_notification_title">Ο φακός είναι αναμμένος</string>
+    <string name="torch_notification_text">Πατήστε για απενεργοποίηση</string>
+    <string name="qr_scanner_format_badge">QR CODE</string>
+    <string name="qr_scanner_hint">Στρέψτε την κάμερα σε QR ή barcode</string>
+    <string name="qr_scanner_camera_permission_required">Απαιτείται άδεια κάμερας</string>
+    <string name="qr_scanner_copied">Αντιγράφηκε στο πρόχειρο</string>
+    <string name="qr_scanner_could_not_load">Δεν ήταν δυνατή η φόρτωση της εικόνας</string>
+    <string name="qr_scanner_no_barcode">Δεν βρέθηκε barcode στην εικόνα</string>
+    <string name="qr_scanner_failed_process">Απέτυχε η επεξεργασία της εικόνας</string>
     <string name="watermark_utm_title">Συντεταγμένες UTM</string>
     <string name="watermark_utm_off">Απενεργοποιημένο</string>
     <string name="watermark_utm_on">Ενεργοποιημένο — Συντεταγμένες UTM</string>
