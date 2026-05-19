@@ -16,7 +16,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Battery Information"
+        android:text="@string/remote_battery_info"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -40,7 +40,7 @@
             android:id="@+id/lowBatteryWarningText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="⚠️ Low Battery - Plug charger ASAP"
+            android:text="@string/remote_battery_low_warning"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="@android:color/white"
@@ -59,7 +59,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Current Level"
+            android:text="@string/remote_current_level"
             android:textSize="13sp"
             android:textStyle="bold"
             android:textColor="?attr/colorHeading" />
@@ -88,7 +88,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Battery Consumed (Streaming)"
+            android:text="@string/remote_battery_consumed"
             android:textSize="13sp"
             android:textStyle="bold"
             android:textColor="?attr/colorHeading" />
@@ -164,7 +164,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Charging Status"
+            android:text="@string/remote_charging_status"
             android:textSize="13sp"
             android:textStyle="bold"
             android:textColor="?attr/colorHeading" />
@@ -173,7 +173,7 @@
             android:id="@+id/chargingStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Not Charging"
+            android:text="@string/remote_not_charging"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="?attr/colorHeading"
@@ -193,7 +193,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Low Battery Warning Threshold"
+            android:text="@string/remote_low_battery_threshold"
             android:textSize="13sp"
             android:textStyle="bold"
             android:textColor="?attr/colorHeading"
@@ -210,7 +210,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:hint="Enter percentage"
+                android:hint="@string/remote_enter_percentage_hint"
                 app:hintTextColor="#8b949e"
                 app:boxStrokeColor="#30363d"
                 app:boxStrokeErrorColor="#da3633"
@@ -232,7 +232,7 @@
                 android:id="@+id/setBatteryWarningBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Set"
+                android:text="@string/remote_set"
                 android:textSize="12sp"
                 android:textColor="#000000"
                 android:backgroundTint="#58a6ff"
@@ -271,7 +271,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Device Battery Capacity"
+            android:text="@string/remote_device_battery_capacity"
             android:textSize="13sp"
             android:textStyle="bold"
             android:textColor="?attr/colorHeading"
@@ -288,7 +288,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                android:hint="Enter mAh (1000-10000)"
+                android:hint="@string/remote_enter_mah_hint"
                 app:hintTextColor="#8b949e"
                 app:boxStrokeColor="#30363d"
                 app:boxStrokeErrorColor="#da3633"
@@ -310,7 +310,7 @@
                 android:id="@+id/setBatteryCapacityBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Save"
+                android:text="@string/remote_save"
                 android:textSize="12sp"
                 android:textColor="#000000"
                 android:backgroundTint="#58a6ff"
@@ -351,7 +351,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Estimates for your device:"
+                android:text="@string/remote_estimates_for_device"
                 android:textSize="11sp"
                 android:textStyle="bold"
                 android:textColor="#b0bec5"

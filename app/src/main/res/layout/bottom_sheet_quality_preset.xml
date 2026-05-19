@@ -52,7 +52,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Low"
+                android:text="@string/remote_quality_low"
                 android:textSize="15sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorHeading" />
@@ -101,7 +101,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Medium"
+                android:text="@string/remote_quality_medium"
                 android:textSize="15sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorHeading" />
@@ -149,7 +149,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="High"
+                android:text="@string/remote_quality_high"
                 android:textSize="15sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorHeading" />
@@ -197,7 +197,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Ultra"
+                android:text="@string/remote_quality_ultra"
                 android:textSize="15sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorHeading" />

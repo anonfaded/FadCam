@@ -1334,5 +1334,1758 @@ FadCam использует фрагментированный формат MP4 
     <string name="stream_notes_resolution">• Ориентация и разрешение стрима берутся из ваших обычных настроек записи (Настройки видео → Разрешение и ориентация). Измените их, если хотите изменить размеры стрима</string>
     <string name="stream_notes_cellular">⚠️ Только WiFi: мобильные сети блокируют входящие соединения. Для бесперебойной потоковой передачи из любой сети (WiFi, LTE, везде), обновитесь до FadCam Pro+. Транслируйте отовсюду по всему миру с приватной сгенерированной ссылкой—без переадресации портов, без изменений маршрутизатора, без сетевых ограничений</string>
     <string name="stream_notes_android14_screen">⚠️ Android 14+: Системное ограничение блокирует запись при выключенном экране. Решения: (1) Включите «Черный экран» в Настройки → Безопасность, или (2) Отключите блокировку экрана (без PIN/пароля/отпечатка). Оба способа позволяют беспроблемной удаленной записи</string>
-    
+
+    <string name="app_name" translatable="false">FadCam</string>
+
+    <string name="stats_label_videos">Видео:</string>
+
+    <string name="stats_label_used">Использовано:</string>
+
+    <string name="fadrec_mute_audio">Отключить звук записи</string>
+
+    <string name="fadrec_unmute_audio">Включить звук записи</string>
+
+    <string name="fadrec_mic_permission_needed_title">Требуется разрешение на микрофон</string>
+
+    <string name="fadrec_mic_permission_needed_message">FadRec не может получить доступ к микрофону. Вы можете записывать без звука — аудио не будет сохранено.</string>
+
+    <string name="fadrec_record_muted">Запись без звука</string>
+
+    <string name="fadrec_audio_source_title">Источник аудио</string>
+
+    <string name="fadrec_audio_source_choose">Выберите источник аудио</string>
+
+    <string name="fadrec_audio_source_none">Без аудио</string>
+
+    <string name="fadrec_audio_source_mic">Микрофон</string>
+
+    <string name="fadrec_audio_source_internal">Аудио устройства (Внутренний)</string>
+
+    <string name="recording_time_left">Осталось времени</string>
+
+    <string name="home_elapsed_customize_title">Прошедшее время</string>
+
+    <string name="home_elapsed_customize_helper">Настройте отображение таймера прошедшего времени, выравнивание, размер, шрифт, флаг акцента и фон.</string>
+
+    <string name="home_elapsed_display_option">Формат отображения</string>
+
+    <string name="home_elapsed_display_option_desc">Переключение между компактным встроенным временем и форматом цифровых часов</string>
+
+    <string name="home_elapsed_display_helper">Выберите, как отображать таймер прошедшего времени на карточке.</string>
+
+    <string name="home_elapsed_display_compact">Компактный встроенный (По умолчанию)</string>
+
+    <string name="home_elapsed_display_compact_desc">Показывает прошедшее время как 5ч 16м 23с с компактным встроенным форматом</string>
+
+    <string name="home_elapsed_display_digital">Цифровые часы</string>
+
+    <string name="home_elapsed_display_digital_desc">Показывает прошедшее время как 00:00 или 01:05:23 без встроенных меток</string>
+
+    <string name="home_elapsed_alignment_option">Выравнивание</string>
+
+    <string name="home_elapsed_alignment_option_desc">Выберите, как содержимое таймера расположено внутри карточки</string>
+
+    <string name="home_elapsed_alignment_helper">Выберите выравнивание для таймера прошедшего времени.</string>
+
+    <string name="home_elapsed_align_center">По центру (По умолчанию)</string>
+
+    <string name="home_elapsed_align_center_desc">Таймер прошедшего времени по центру</string>
+
+    <string name="home_elapsed_align_left">По левому краю</string>
+
+    <string name="home_elapsed_align_left_desc">Таймер прошедшего времени прикреплён к левому краю</string>
+
+    <string name="home_elapsed_size_option">Размер</string>
+
+    <string name="home_elapsed_size_option_desc">Переключение между компактным и увеличенным размером таймера</string>
+
+    <string name="home_elapsed_size_helper">Выберите, насколько заметным должен быть таймер прошедшего времени.</string>
+
+    <string name="home_elapsed_size_small">Маленький</string>
+
+    <string name="home_elapsed_size_small_desc">Самый компактный размер для уменьшенной карточки</string>
+
+    <string name="home_elapsed_size_medium">Средний (По умолчанию)</string>
+
+    <string name="home_elapsed_size_medium_desc">Сбалансированный размер по умолчанию для таймера</string>
+
+    <string name="home_elapsed_size_large">Большой</string>
+
+    <string name="home_elapsed_size_large_desc">Самый крупный размер для максимального акцента</string>
+
+    <string name="home_elapsed_font_option">Шрифт</string>
+
+    <string name="home_elapsed_font_option_desc">Выберите шрифт для значения таймера прошедшего времени</string>
+
+    <string name="home_elapsed_font_helper">Выберите шрифт для цифр таймера прошедшего времени.</string>
+
+    <string name="home_elapsed_font_ubuntu">Ubuntu (По умолчанию)</string>
+
+    <string name="home_elapsed_font_ubuntu_desc">Использует шрифт Ubuntu по умолчанию для таймера</string>
+
+    <string name="home_elapsed_font_monospace">Моноширинный</string>
+
+    <string name="home_elapsed_font_monospace_desc">Использует встроенный моноширинный шрифт Android для чётких цифр фиксированной ширины</string>
+
+    <string name="home_elapsed_font_doto">Doto</string>
+
+    <string name="home_elapsed_font_doto_desc">Использует шрифт Doto для более выразительного цифрового вида таймера</string>
+
+    <string name="home_elapsed_flag_option">Флаг акцента</string>
+
+    <string name="home_elapsed_flag_option_desc">Показать или скрыть флаг акцента FadSec Lab за таймером</string>
+
+    <string name="home_elapsed_flag_helper">Выберите, показывать ли флаг акцента FadSec Lab за таймером прошедшего времени.</string>
+
+    <string name="home_elapsed_flag_show">Показать флаг FadSec Lab (По умолчанию)</string>
+
+    <string name="home_elapsed_flag_show_desc">Отображать фирменный флаг акцента за таймером</string>
+
+    <string name="home_elapsed_flag_hide">Скрыть флаг FadSec Lab</string>
+
+    <string name="home_elapsed_flag_hide_desc">Оставить область таймера без флага акцента</string>
+
+    <string name="home_elapsed_background_option">Фон</string>
+
+    <string name="home_elapsed_background_option_desc">Выберите, размещать таймер на чёрной, белой или прозрачной карточке</string>
+
+    <string name="home_elapsed_background_helper">Выберите фон для карточки таймера прошедшего времени.</string>
+
+    <string name="home_elapsed_background_black">Чёрная карточка (По умолчанию)</string>
+
+    <string name="home_elapsed_background_black_desc">Сплошной чёрный фон для более выразительного контейнера</string>
+
+    <string name="home_elapsed_background_white">Белая карточка</string>
+
+    <string name="home_elapsed_background_white_desc">Чистый белый фон с тёмным текстом для таймера</string>
+
+    <string name="home_elapsed_background_transparent">Прозрачный</string>
+
+    <string name="home_elapsed_background_transparent_desc">Визуально лёгкая и открытая карточка таймера</string>
+
+    <string name="home_storage_customize_title">Отображение хранилища</string>
+
+    <string name="home_storage_customize_helper">Настройте стиль индикатора хранилища и видимость общего объёма.</string>
+
+    <string name="home_storage_indicator_option">Стиль индикатора</string>
+
+    <string name="home_storage_indicator_option_desc">Выберите, как визуализировать доступное место в слоте иконки</string>
+
+    <string name="home_storage_indicator_helper">Выберите стиль для визуализации доступного хранилища.</string>
+
+    <string name="home_storage_indicator_title">Индикатор хранилища</string>
+
+    <string name="home_storage_indicator_ring">Кольцо (По умолчанию)</string>
+
+    <string name="home_storage_indicator_ring_desc">Показать доступное место в виде компактного кругового кольца</string>
+
+    <string name="home_storage_indicator_bar">Мини-полоса</string>
+
+    <string name="home_storage_indicator_bar_desc">Показать доступное место в виде крошечной горизонтальной полосы</string>
+
+    <string name="home_storage_indicator_vertical">Вертикальная полоса</string>
+
+    <string name="home_storage_indicator_vertical_desc">Показать доступное место в виде компактной вертикальной полосы</string>
+
+    <string name="home_storage_total_option">Общий объём хранилища</string>
+
+    <string name="home_storage_total_option_desc">Показать или скрыть косую черту и значение общей ёмкости</string>
+
+    <string name="home_storage_total_helper">Выберите, показывать ли общий объём хранилища рядом с доступным местом.</string>
+
+    <string name="home_storage_total_show">Показать общий объём (По умолчанию)</string>
+
+    <string name="home_storage_total_show_desc">Отображать косую черту и значение общей ёмкости</string>
+
+    <string name="home_storage_total_hide">Скрыть общий объём</string>
+
+    <string name="home_storage_total_hide_desc">Показывать только значение доступного места</string>
+
+    <string name="home_time_left_color_title">Цвет оставшегося времени</string>
+
+    <string name="home_time_left_color_helper">Выберите цвет акцента для строки оставшегося времени. Красный — по умолчанию.</string>
+
+    <string name="home_time_left_color_choice_desc">Цвет акцента %1$s</string>
+
+    <string name="home_clock_customize_title">Внешний вид часов</string>
+
+    <string name="home_clock_customize_helper">Измените отображение часов, цвет и формат времени.</string>
+
+    <string name="home_clock_display_option">Отображение часов</string>
+
+    <string name="home_clock_display_option_desc">Выберите, какие строки даты и времени отображаются в карточке часов</string>
+
+    <string name="home_clock_display_helper">Выберите макет карточки часов.</string>
+
+    <string name="home_clock_display_timeonly_desc">Показывать только строку времени</string>
+
+    <string name="home_clock_display_english_desc">Показывать время со строкой английской даты</string>
+
+    <string name="home_clock_display_islamic_desc">Показывать время со строками английского и исламского календаря</string>
+
+    <string name="home_clock_color_option">Цвет часов</string>
+
+    <string name="home_clock_color_option_desc">Выберите цвет акцента/фона для карточки часов</string>
+
+    <string name="home_clock_color_helper">Выберите цвет карточки часов из палитры главной страницы.</string>
+
+    <string name="home_clock_color_choice_desc">Цвет часов %1$s</string>
+
+    <string name="home_clock_hour_format_option">Формат часов</string>
+
+    <string name="home_clock_hour_format_option_desc">Выберите, показывать часы в 12- или 24-часовом формате</string>
+
+    <string name="home_clock_hour_format_helper">Выберите формат времени для часов на главной.</string>
+
+    <string name="home_clock_hour_format_12">12-часовой (По умолчанию)</string>
+
+    <string name="home_clock_hour_format_12_desc">Показывать время с AM и PM</string>
+
+    <string name="home_clock_hour_format_24">24-часовой</string>
+
+    <string name="home_clock_hour_format_24_desc">Показывать время в 24-часовом формате без AM/PM</string>
+
+    <string name="home_cards_fold_toggle">Свернуть/развернуть карточки главной</string>
+
+    <string name="watch_video_saved_toast">Сохранено в Downloads/FadCam</string>
+
+    <string name="watch_delete_confirm_title">Переместить в корзину?</string>
+
+    <string name="watch_delete_confirm_msg">«%s» будет перемещён в корзину.</string>
+
+    <string name="watch_delete_confirm_action">Переместить в корзину</string>
+
+    <string name="watch_perm_delete_title">Удалить навсегда?</string>
+
+    <string name="watch_perm_delete_msg">«%s» будет удалён навсегда и не может быть восстановлен.</string>
+
+    <string name="watch_perm_delete_action">Удалить навсегда</string>
+
+    <string name="watch_perm_delete_all_title">Удалить всё?</string>
+
+    <string name="watch_perm_delete_all_msg">Все %d элемент(ов) в корзине будут удалены навсегда и не могут быть восстановлены.</string>
+
+    <string name="records_delete_notification_channel_name">Прогресс удаления</string>
+
+    <string name="records_delete_notification_channel_desc">Прогресс и результаты фонового удаления в Записях.</string>
+
+    <string name="records_delete_notification_title">Удаление записей</string>
+
+    <string name="records_delete_notification_progress_text">%1$d из %2$d завершено • %3$s</string>
+
+    <string name="records_delete_notification_summary_text">Удалено %1$d • Ошибки %2$d</string>
+
+    <string name="records_save_notification_summary_text_copy">Сохранено %1$d • Ошибки %2$d</string>
+
+    <string name="records_save_notification_summary_text_move">Перемещено %1$d • Ошибки %2$d</string>
+
+    <string name="records_save_notification_summary_text_export">Экспортировано %1$d • Ошибки %2$d</string>
+
+    <string name="records_delete_notification_complete_success">Удаление завершено</string>
+
+    <string name="records_delete_notification_complete_partial">Удаление завершено с проблемами</string>
+
+    <string name="records_delete_notification_complete_failed">Удаление не удалось</string>
+
+    <string name="records_delete_notification_cancelled">Удаление отменено</string>
+
+    <string name="records_delete_notification_cancel">Отмена</string>
+
+    <string name="records_save_notification_title_copy">Сохранение в галерею</string>
+
+    <string name="records_save_notification_title_move">Перемещение в галерею</string>
+
+    <string name="records_save_notification_title_export">Экспорт</string>
+
+    <string name="records_save_notification_complete_success_copy">Сохранение завершено</string>
+
+    <string name="records_save_notification_complete_success_move">Перемещение завершено</string>
+
+    <string name="records_save_notification_complete_success_export">Экспорт завершён</string>
+
+    <string name="records_save_notification_complete_partial">Сохранение завершено с проблемами</string>
+
+    <string name="records_save_notification_complete_failed">Сохранение не удалось</string>
+
+    <string name="records_save_notification_cancelled">Сохранение отменено</string>
+
+    <string name="records_delete_error_invalid_item">Не удалось удалить один из выбранных элементов.</string>
+
+    <string name="records_delete_error_failed_item">Не удалось удалить %1$s.</string>
+
+    <string name="records_save_error_failed_item">Не удалось сохранить %1$s.</string>
+
+    <string name="records_save_error_create_destination">Не удалось создать папку назначения.</string>
+
+    <string name="records_save_error_open_source">Не удалось прочитать исходный файл.</string>
+
+    <string name="records_save_error_delete_original">Скопировано, но не удалось удалить исходный файл.</string>
+
+    <string name="records_delete_header_default_title">Удаление записей</string>
+
+    <string name="records_delete_header_action_ok">OK</string>
+
+    <string name="records_delete_header_action_cancel">Отмена</string>
+
+    <string name="records_delete_header_done_success">Удаление завершено</string>
+
+    <string name="records_delete_header_done_partial">Удаление завершено с проблемами</string>
+
+    <string name="records_delete_header_done_failed">Удаление не удалось</string>
+
+    <string name="records_delete_header_done_body_success">%1$d элемент(ов) удалено.</string>
+
+    <string name="records_delete_header_done_body_partial">%1$d удалено • %2$d ошибки.</string>
+
+    <string name="records_delete_header_done_body_failed">%1$d элемент(ов) с ошибкой.</string>
+
+    <string name="records_delete_header_preparing">Подготовка удаления…</string>
+
+    <string name="records_save_header_preparing_copy">Подготовка сохранения…</string>
+
+    <string name="records_save_header_preparing_move">Подготовка перемещения…</string>
+
+    <string name="records_save_header_preparing_export">Подготовка экспорта…</string>
+
+    <string name="records_delete_header_working">Выполняется…</string>
+
+    <string name="records_delete_header_finishing">Завершение…</string>
+
+    <string name="records_delete_header_dismiss_hint">Нажмите OK для закрытия</string>
+
+    <string name="records_delete_header_eta_seconds">ETA %1$dс</string>
+
+    <string name="records_delete_header_eta_minutes">ETA %1$dм %2$02dс</string>
+
+    <string name="records_delete_header_summary">%1$d из %2$d завершено • %3$d ошибки</string>
+
+    <string name="records_delete_header_running_summary">%1$d выполнено • %2$d ошибки</string>
+
+    <string name="records_delete_header_issue_prefix">Проблема: %1$s</string>
+
+    <string name="records_save_header_done_success_copy">Сохранение завершено</string>
+
+    <string name="records_save_header_done_success_move">Перемещение завершено</string>
+
+    <string name="records_save_header_done_success_export">Экспорт завершён</string>
+
+    <string name="records_save_header_done_partial">Сохранение завершено с проблемами</string>
+
+    <string name="records_save_header_done_failed">Сохранение не удалось</string>
+
+    <string name="records_save_header_done_body_success_copy">%1$d элемент(ов) сохранено в галерею.</string>
+
+    <string name="records_save_header_done_body_success_move">%1$d элемент(ов) перемещено в галерею.</string>
+
+    <string name="records_save_header_done_body_success_export">%1$d элемент(ов) экспортировано.</string>
+
+    <string name="records_save_header_done_body_partial">%1$d выполнено • %2$d ошибки.</string>
+
+    <string name="records_save_header_done_body_failed">%1$d элемент(ов) с ошибкой.</string>
+
+    <plurals name="records_delete_header_running_title">
+        <item quantity="one">Удаление %d элемента</item>
+        <item quantity="few">Удаление %d элементов</item>
+        <item quantity="many">Удаление %d элементов</item>
+    </plurals>
+
+    <plurals name="records_delete_header_progress_title">
+        <item quantity="one">Удаление %1$d из %2$d элемента</item>
+        <item quantity="few">Удаление %1$d из %2$d элементов</item>
+        <item quantity="many">Удаление %1$d из %2$d элементов</item>
+    </plurals>
+
+    <plurals name="records_save_copy_header_progress_title">
+        <item quantity="one">Сохранение %1$d из %2$d элемента</item>
+        <item quantity="few">Сохранение %1$d из %2$d элементов</item>
+        <item quantity="many">Сохранение %1$d из %2$d элементов</item>
+    </plurals>
+
+    <plurals name="records_save_move_header_progress_title">
+        <item quantity="one">Перемещение %1$d из %2$d элемента</item>
+        <item quantity="few">Перемещение %1$d из %2$d элементов</item>
+        <item quantity="many">Перемещение %1$d из %2$d элементов</item>
+    </plurals>
+
+    <plurals name="records_save_export_header_progress_title">
+        <item quantity="one">Экспорт %1$d из %2$d элемента</item>
+        <item quantity="few">Экспорт %1$d из %2$d элементов</item>
+        <item quantity="many">Экспорт %1$d из %2$d элементов</item>
+    </plurals>
+
+    <plurals name="records_delete_queued_toast">
+        <item quantity="one">Удаление 1 элемента в фоне.</item>
+        <item quantity="few">Удаление %d элементов в фоне.</item>
+        <item quantity="many">Удаление %d элементов в фоне.</item>
+    </plurals>
+
+    <string name="image_viewer_title">Просмотр фото</string>
+
+    <string name="media_type_photo">Фото</string>
+
+    <string name="media_type_photo_back">Задняя</string>
+
+    <string name="media_type_photo_selfie">Селфи</string>
+
+    <string name="media_type_photo_fadrec">FadRec</string>
+
+    <string name="photo_capture_saved">Фото сохранено</string>
+
+    <string name="photo_capture_failed">Не удалось сделать фото</string>
+
+    <string name="photo_capture_preview_unavailable">Предпросмотр недоступен</string>
+
+    <string name="records_filter_all">Все</string>
+
+    <string name="records_filter_camera">FadCam</string>
+
+    <string name="records_filter_dual">Двойная</string>
+
+    <string name="records_filter_screen">FadRec</string>
+
+    <string name="records_filter_faditor">Faditor</string>
+
+    <string name="records_filter_stream">Поток</string>
+
+    <string name="records_filter_shot">FadShot</string>
+
+    <string name="records_filter_camera_all">Все</string>
+
+    <string name="records_filter_camera_back">Задняя</string>
+
+    <string name="records_filter_camera_front">Фронтальная</string>
+
+    <string name="records_filter_camera_dual">Двойная</string>
+
+    <string name="records_filter_faditor_all">Все</string>
+
+    <string name="records_filter_faditor_converted">Конвертированные</string>
+
+    <string name="records_filter_faditor_merge">Объединение</string>
+
+    <string name="records_filter_shot_all">Все</string>
+
+    <string name="records_filter_miniapps_all">Все</string>
+
+    <string name="records_filter_shot_back">Задняя</string>
+
+    <string name="records_filter_shot_selfie">Селфи</string>
+
+    <string name="records_filter_shot_fadrec">FadRec</string>
+
+    <string name="records_filter_checklist_desc">Режим выбора</string>
+
+    <string name="records_filter_helper_camera_all">Записи камеры (Задняя, Фронтальная, Двойная)</string>
+
+    <string name="records_filter_helper_camera_back">Снято задней камерой</string>
+
+    <string name="records_filter_helper_camera_front">Снято фронтальной камерой (селфи)</string>
+
+    <string name="records_filter_helper_camera_dual">Снято в режиме двойной камеры</string>
+
+    <string name="records_filter_helper_dual">Записи двойной камеры</string>
+
+    <string name="records_filter_helper_screen">Записи экрана (FadRec)</string>
+
+    <string name="records_filter_helper_faditor">Отредактированные/экспортированные видео (Faditor)</string>
+
+    <string name="records_filter_helper_faditor_all">Все выходные файлы Faditor и связанные файлы.</string>
+
+    <string name="records_filter_helper_faditor_converted">Конвертация фрагментированного MP4 в стандартный MP4 с поиском для внешних плееров.</string>
+
+    <string name="records_filter_helper_faditor_merge">Объединение нескольких клипов в одно выходное видео.</string>
+
+    <string name="records_filter_helper_stream">Сохранённые записи потока</string>
+
+    <string name="records_filter_helper_shot_all">Снятые фото и скриншоты</string>
+
+    <string name="records_filter_helper_shot_back">Снятые фото задней камерой</string>
+
+    <string name="records_filter_helper_shot_selfie">Снятые фото фронтальной камерой (селфи)</string>
+
+    <string name="records_filter_helper_shot_fadrec">Скриншоты (FadRec)</string>
+
+    <string name="records_location_format">Местоположение: %1$s/%2$s</string>
+
+    <string name="records_batch_select_all">Выбрать все</string>
+
+    <string name="records_batch_deselect_all">Снять все</string>
+
+    <string name="records_batch_save">Сохранить в галерею</string>
+
+    <string name="records_batch_faditor">Автоматизация Faditor</string>
+
+    <string name="records_batch_delete">Удалить</string>
+
+    <string name="records_batch_coming_soon">Это групповое действие будет добавлено следующим.</string>
+
+    <string name="records_batch_select_items_first">Сначала выберите одно или несколько видео.</string>
+
+    <string name="records_batch_actions_title">Групповые действия</string>
+
+    <string name="records_batch_fab_label">Группа</string>
+
+    <string name="records_batch_select_all_desc">Выбрать или снять все видео в текущем фильтре.</string>
+
+    <string name="records_batch_save_desc">Копировать, переместить или экспортировать выбранные видео в другую папку.</string>
+
+    <string name="records_batch_faditor_desc">Запуск фоновой автоматизации без открытия вкладки Faditor.</string>
+
+    <string name="records_batch_delete_desc">Переместить выбранные видео в корзину.</string>
+
+    <string name="records_batch_save_queued">%1$d задача(ч) сохранения добавлена(ы) в очередь.</string>
+
+    <string name="records_batch_faditor_first_only">Открыто первое видео. Выбрано %1$d; очередь мульти-редактирования скоро.</string>
+
+    <string name="records_batch_save_copy_helper">Сохраняет оригиналы; сохраняет копии в %1$s.</string>
+
+    <string name="records_batch_save_move_helper">Перемещает выбранные видео в %1$s и удаляет оригиналы после успешного сохранения.</string>
+
+    <string name="records_batch_save_custom_location">Экспорт в новое место</string>
+
+    <string name="records_batch_save_custom_location_desc">Выберите одну папку для всех выбранных видео в этом запуске.</string>
+
+    <string name="records_batch_custom_export_started">Экспорт %1$d видео в выбранную папку…</string>
+
+    <string name="records_batch_custom_export_invalid_folder">Выбранная папка недоступна для записи.</string>
+
+    <string name="records_batch_custom_export_done">Экспорт завершён. Успешно: %1$d • Ошибки: %2$d</string>
+
+    <string name="records_batch_faditor_sheet_title">Групповые действия Faditor</string>
+
+    <string name="records_batch_faditor_export_standard">Экспорт в стандартный MP4</string>
+
+    <string name="records_batch_faditor_export_standard_desc">Конвертация фрагментированного MP4 в стандартный MP4 с поиском для внешних плееров.</string>
+
+    <string name="records_batch_faditor_merge">Объединить выбранные видео</string>
+
+    <string name="records_batch_faditor_merge_desc">Объединяет выбранные клипы в одно видео в фоне.</string>
+
+    <string name="records_batch_faditor_queued">%1$d групповой элемент(ов) добавлен(ы) в очередь в фоне.</string>
+
+    <string name="records_batch_completed">Групповая операция завершена.</string>
+
+    <string name="records_batch_notif_channel_name">Групповые действия с медиа</string>
+
+    <string name="records_batch_notif_channel_desc">Прогресс и результаты группового сохранения в Записях и задач автоматизации Faditor.</string>
+
+    <string name="records_batch_starting">Подготовка групповой операции…</string>
+
+    <string name="records_batch_progress_item">Обработка %1$d из %2$d</string>
+
+    <string name="records_batch_progress_counts">Завершено %1$d • Пропущено %2$d • Ошибки %3$d</string>
+
+    <string name="records_batch_summary">Групповая операция завершена. Готово: %1$d • Пропущено: %2$d • Ошибки: %3$d</string>
+
+    <string name="records_batch_export_done_title">Экспорт в стандартный MP4 завершён</string>
+
+    <string name="records_batch_merge_done_title">Групповое объединение завершено</string>
+
+    <string name="nav_lab">Лаборатория</string>
+
+    <string name="button_settings_cam_dual">Двойная (PiP)</string>
+
+    <string name="note_cam_dual_unsupported">Ваше устройство не поддерживает одновременную запись с двойной камеры.</string>
+
+    <string name="dual_recording_started">Запись с двойной камеры начата</string>
+
+    <string name="dual_recording_stopped">Запись с двойной камеры остановлена</string>
+
+    <string name="dual_cameras_swapped">Камеры переключены</string>
+
+    <string name="dual_camera_error">Ошибка двойной камеры: %s</string>
+
+    <string name="dual_camera_not_supported_toast">Двойная камера не поддерживается на этом устройстве</string>
+
+    <string name="watch_recording_hardware_not_supported">Это устройство не имеет необходимого оборудования камеры/микрофона для записи видео.</string>
+
+    <string name="dual_camera_pip_settings">Настройки двойной камеры PiP</string>
+
+    <string name="dual_cam_section_layout">Макет</string>
+
+    <string name="dual_cam_section_appearance">Внешний вид</string>
+
+    <string name="dual_cam_pip_position_title">Позиция PiP</string>
+
+    <string name="dual_cam_pip_position_helper">Выберите угол для наложения вторичной камеры (PiP).</string>
+
+    <string name="dual_cam_pip_size_title">Размер PiP</string>
+
+    <string name="dual_cam_pip_size_helper">Управляет размером наложения PiP относительно полной ширины вывода.</string>
+
+    <string name="dual_cam_primary_camera_title">Основная камера</string>
+
+    <string name="dual_cam_primary_camera_helper">Выберите камеру для полного кадра. Другая камера появится как наложение PiP.</string>
+
+    <string name="dual_cam_show_border_title">Граница PiP</string>
+
+    <string name="dual_cam_show_border_helper">Показать тонкую границу вокруг наложения PiP для визуального отделения от фона.</string>
+
+    <string name="dual_cam_round_corners_title">Скруглённые углы</string>
+
+    <string name="dual_cam_round_corners_helper">Применить скруглённые углы к наложению PiP для современного вида.</string>
+
+    <string name="dual_cam_pip_margin_title">Отступ PiP</string>
+
+    <string name="dual_cam_pip_margin_hint">0 – 48 dp</string>
+
+    <string name="dual_cam_layout_helper">Настройте позицию, размер и основную камеру для наложения Picture-in-Picture при записи с двойной камеры.</string>
+
+    <string name="dual_cam_appearance_helper">Настройте внешний вид наложения PiP, включая границу, углы и отступы.</string>
+
+    <string name="dual_cam_section_preview">Предпросмотр</string>
+
+    <string name="dual_cam_preview_primary">Основная камера</string>
+
+    <string name="dual_cam_preview_pip">PiP</string>
+
+    <string name="dual_cam_preview_helper">Так будет выглядеть режим PiP, например, в альбомной ориентации.</string>
+
+    <string name="dual_cam_banner_checking">Проверка совместимости устройства…</string>
+
+    <string name="dual_cam_banner_supported">Обе камеры обнаружены, но одновременная поддержка не подтверждена. Нажмите для деталей.</string>
+
+    <string name="dual_cam_banner_supported_confirmed">Двойная камера полностью поддерживается и подтверждена вашим устройством.</string>
+
+    <string name="dual_cam_banner_unsupported">Двойная камера не поддерживается на этом устройстве.</string>
+
+    <string name="dual_cam_banner_tap_details">Детали</string>
+
+    <string name="dual_cam_info_title">Совместимость устройства</string>
+
+    <string name="dual_cam_info_device_label">Устройство</string>
+
+    <string name="dual_cam_info_processor_label">Процессор</string>
+
+    <string name="dual_cam_info_android_label">Версия Android</string>
+
+    <string name="dual_cam_info_api_label">Уровень API</string>
+
+    <string name="dual_cam_info_concurrent_label">API одновременной камеры</string>
+
+    <string name="dual_cam_info_concurrent_yes">Подтверждено ✓</string>
+
+    <string name="dual_cam_info_concurrent_no">Не подтверждено</string>
+
+    <string name="dual_cam_info_status_label">Статус</string>
+
+    <string name="dual_cam_info_supported_status">✓ Ваше устройство поддерживает запись с двойной камеры.</string>
+
+    <string name="dual_cam_info_supported_unconfirmed">⚠ Ваше устройство имеет обе камеры, но одновременная поддержка не подтверждена. Может работать, а может и нет.</string>
+
+    <string name="dual_cam_info_unsupported_status">✗ Ваше устройство не поддерживает запись с двойной камеры.</string>
+
+    <string name="dual_cam_info_why_unsupported">Почему двойная камера не поддерживается?</string>
+
+    <string name="dual_cam_info_unsupported_explanation">Запись с двойной камеры требует одновременной работы фронтальной и задней камер. Это аппаратная возможность, зависящая от процессора и оборудования камеры вашего устройства. Большинство флагманских телефонов с 2020 года поддерживают эту функцию. Устройства среднего класса и старше обычно не поддерживают.\n\nЭто НЕ баг — это аппаратное ограничение вашего устройства.</string>
+
+    <string name="dual_cam_info_which_devices">Какие устройства поддерживают?</string>
+
+    <string name="dual_cam_info_devices_explanation">Устройства с Qualcomm Snapdragon 855 или новее, Google Tensor, Samsung Exynos 990 или новее, и MediaTek Dimensity 1000 или новее обычно поддерживают одновременный доступ к камерам.</string>
+
+    <string name="dual_cam_settings_row_title">Настройки двойной камеры</string>
+
+    <string name="dual_cam_settings_row_subtitle">Настройте макет и внешний вид PiP</string>
+
+    <string name="camera_permission_denied">Разрешение камеры отклонено.</string>
+
+    <string name="location_format_title">Формат местоположения</string>
+
+    <string name="location_format_coordinates">Только координаты</string>
+
+    <string name="location_format_address">Полный адрес</string>
+
+    <string name="location_update_interval_title">Частота обновления местоположения</string>
+
+    <string name="location_update_interval_helper">Как часто обновлять данные о местоположении в водяном знаке. Большие интервалы используют меньше батареи.</string>
+
+    <string name="helper_location_format">Выберите, как местоположение отображается в водяном знаке: точные координаты или полный адрес через обратное геокодирование (zoom=18, точность до здания).</string>
+
+    <string name="shortcut_purpose_start_front">Этот ярлык начинает запись с фронтальной камеры.</string>
+
+    <string name="shortcut_purpose_start_current">Этот ярлык начинает запись с текущего режима камеры.</string>
+
+    <string name="shortcut_purpose_start_dual">Этот ярлык начинает запись с двойной камеры (PiP).</string>
+
+    <string name="shortcut_purpose_photo">Этот ярлык делает фото задней камерой и сохраняет в FadCam/FadShot.</string>
+
+    <string name="shortcut_purpose_photo_front">Этот ярлык делает фото фронтальной камерой и сохраняет в FadCam/FadShot.</string>
+
+    <string name="shortcut_purpose_screenshot">Этот ярлык делает скриншот и сохраняет в FadCam/FadShot (включите разрешение специальных возможностей в Настройки > Конфиденциальность > Специальные возможности).</string>
+
+    <string name="shortcut_start_back">Старт задняя</string>
+
+    <string name="shortcut_start_front">Старт фронтальная</string>
+
+    <string name="shortcut_start_current">Старт текущая</string>
+
+    <string name="shortcut_start_dual">Старт двойная</string>
+
+    <string name="shortcut_take_photo">Фото</string>
+
+    <string name="shortcut_take_photo_front">Селфи</string>
+
+    <string name="shortcut_take_screenshot">FadRec</string>
+
+    <string name="screenshot_capture_saved">Скриншот сохранён</string>
+
+    <string name="screenshot_capture_failed">Не удалось сделать скриншот</string>
+
+    <string name="screenshot_capture_system_saved">Скриншот сделан системой. Сохранён в системных скриншотах.</string>
+
+    <string name="screenshot_accessibility_enable_needed">Включите «FadRec Screenshot» в специальных возможностях для использования этого ярлыка без запроса записи.</string>
+
+    <string name="screenshot_accessibility_service_desc">Делает скриншот для ярлыка FadRec и сохраняет в FadCam/FadShot.</string>
+
+    <string name="shortcuts_video_category">Запись видео</string>
+
+    <string name="shortcuts_picture_category">Изображение</string>
+
+    <string name="preview_quick_actions_title">Быстрые действия предпросмотра</string>
+
+    <string name="preview_quick_actions_sub">Показывать иконки FadShot и полноэкранного режима даже в режиме ожидания записи.</string>
+
+    <string name="preview_quick_actions_state_always">Всегда видимы (ожидание + запись)</string>
+
+    <string name="preview_quick_actions_state_recording_only">Видимы только во время записи</string>
+
+    <string-array name="theme_options" translatable="false">
+        <item>Midnight Dusk</item>
+        <item>Faded Night</item>
+        <item>Crimson Bloom</item>
+        <item>Silent Forest</item>
+        <item>Shadow Alloy</item>
+        <item>Pookie Pink</item>
+        <item>Snow Veil</item>
+    </string-array>
+
+    <string name="faditor_mini_subtitle">Обрезка и экспорт видео с точностью</string>
+
+    <string name="faditor_select_video">Выбрать видео</string>
+
+    <string name="faditor_editor_title">Faditor Mini</string>
+
+    <string name="faditor_close">Закрыть редактор</string>
+
+    <string name="faditor_undo">Отменить</string>
+
+    <string name="faditor_redo">Повторить</string>
+
+    <string name="faditor_play_pause">Воспроизведение или пауза</string>
+
+    <string name="faditor_export">Экспорт</string>
+
+    <string name="faditor_cancel">Отмена</string>
+
+    <string name="faditor_exporting">Экспорт…</string>
+
+    <string name="faditor_exporting_percent">Экспорт… %1$d%%</string>
+
+    <string name="faditor_export_success">Видео успешно экспортировано</string>
+
+    <string name="faditor_export_error">Ошибка экспорта: %1$s</string>
+
+    <string name="faditor_export_in_progress">Экспорт уже выполняется</string>
+
+    <string name="faditor_remuxing">Оптимизация для предпросмотра…</string>
+
+    <string name="faditor_remuxing_percent">Оптимизация… обработано %1$dс</string>
+
+    <string name="faditor_error_no_video">Видео не выбрано</string>
+
+    <string name="faditor_error_picker">Не удалось открыть выбор файлов</string>
+
+    <string name="faditor_tool_trim">Обрезка</string>
+
+    <string name="faditor_tool_speed">1x</string>
+
+    <string name="faditor_tool_muted">Без звука</string>
+
+    <string name="faditor_tool_sound">Звук</string>
+
+    <string name="faditor_speed_title">Скорость воспроизведения</string>
+
+    <string name="faditor_speed_reset">Сбросить на 1x</string>
+
+    <string name="faditor_volume_title">Громкость</string>
+
+    <string name="faditor_volume_warning">Выше 100%% может ухудшить качество аудио</string>
+
+    <string name="faditor_volume_mute">Отключить звук</string>
+
+    <string name="faditor_volume_unmute">Включить звук</string>
+
+    <string name="faditor_tool_volume">Громкость</string>
+
+    <string name="faditor_tool_rotate">Поворот</string>
+
+    <string name="faditor_tool_flip">Отражение</string>
+
+    <string name="faditor_tool_crop">Кадрирование</string>
+
+    <string name="faditor_tool_crop_free">Свободное</string>
+
+    <string name="faditor_tool_canvas">Холст</string>
+
+    <string name="faditor_canvas_title">Холст</string>
+
+    <string name="faditor_canvas_applied">Холст установлен на %s</string>
+
+    <string name="faditor_tool_audio">Извлечь аудио</string>
+
+    <string name="faditor_audio_extract_current">Извлечь из видео</string>
+
+    <string name="faditor_audio_extract_current_desc">Извлечь аудиодорожку из текущего видео</string>
+
+    <string name="faditor_audio_extracting">Извлечение аудио…</string>
+
+    <string name="faditor_audio_extracted">Аудио извлечено и добавлено на таймлайн</string>
+
+    <string name="faditor_audio_extract_failed">Не удалось извлечь аудио</string>
+
+    <string name="faditor_audio_added">Аудио добавлено на таймлайн</string>
+
+    <string name="faditor_audio_no_track">Аудиодорожка не найдена в этом видео</string>
+
+    <string name="faditor_tool_split">Разделить</string>
+
+    <string name="faditor_tool_delete">Удалить</string>
+
+    <string name="faditor_tool_duplicate">Дублировать</string>
+
+    <string name="faditor_tool_add">Добавить</string>
+
+    <string name="faditor_add_asset_title">Добавить ресурс</string>
+
+    <string name="faditor_add_asset_image">Изображение (5с статичное)</string>
+
+    <string name="faditor_add_asset_video">Видеоклип</string>
+
+    <string name="faditor_asset_added">Ресурс добавлен на таймлайн</string>
+
+    <string name="faditor_asset_error">Не удалось добавить ресурс</string>
+
+    <string name="faditor_split_success">Сегмент разделён на два</string>
+
+    <string name="faditor_split_error">Невозможно разделить — слишком близко к краю</string>
+
+    <string name="faditor_delete_last_segment">Невозможно удалить единственный сегмент</string>
+
+    <string name="faditor_segment_deleted">Сегмент удалён</string>
+
+    <string name="faditor_segment_duplicated">Сегмент дублирован</string>
+
+    <string name="faditor_crop_title">Соотношение сторон кадрирования</string>
+
+    <string name="faditor_crop_free">Свободное</string>
+
+    <string name="faditor_crop_applied">Кадрирование применено</string>
+
+    <string name="faditor_crop_cancelled">Кадрирование отменено</string>
+
+    <string name="faditor_crop_reset">Кадрирование сброшено</string>
+
+    <string name="faditor_close_confirm_title">Закрыть редактор?</string>
+
+    <string name="faditor_close_confirm_action">Закрыть и сохранить</string>
+
+    <string name="faditor_close_confirm_subtitle">Сохранить проект и вернуться</string>
+
+    <string name="faditor_close_confirm_helper">Ваш проект будет сохранён автоматически. Вы можете reopening его из недавних проектов в любое время.</string>
+
+    <string name="faditor_back_press_exit">Нажмите ещё раз для выхода из редактора</string>
+
+    <string name="faditor_export_back_confirm">Экспорт выполняется. Вернуться в редактор?</string>
+
+    <string name="faditor_export_done">Готово</string>
+
+    <string name="faditor_export_back">Назад</string>
+
+    <string name="faditor_export_eta">Примерное время: %s</string>
+
+    <string name="faditor_export_complete_title">Экспорт завершён</string>
+
+    <string name="faditor_export_complete_summary">Ваше видео сохранено во вкладке Записи.</string>
+
+    <string name="faditor_export_confirm_title">Экспорт видео</string>
+
+    <string name="faditor_export_confirm_action">Экспортировать</string>
+
+    <string name="faditor_export_confirm_subtitle">Экспорт продолжится в фоне</string>
+
+    <string name="faditor_export_confirm_helper">%1$s • %2$d клип(ов)%3$s\nЭкспорт выполняется как фоновая служба — вы можете закрыть приложение, и он продолжит экспорт.</string>
+
+    <string name="faditor_export_notif_channel">Экспорт Faditor</string>
+
+    <string name="faditor_export_notif_channel_desc">Уведомления о текущем экспорте видео</string>
+
+    <string name="faditor_export_notif_title">Экспорт видео…</string>
+
+    <string name="faditor_export_notif_error_title">Ошибка экспорта</string>
+
+    <string name="faditor_export_progress">Экспорт…</string>
+
+    <string name="faditor_export_completed">Экспорт завершён</string>
+
+    <string name="faditor_export_cancelled">Экспорт отменён</string>
+
+    <string name="faditor_export_failed">Экспорт не удался</string>
+
+    <string name="export_eta_seconds">ETA %d с</string>
+
+    <string name="export_eta_minutes">ETA %d м</string>
+
+    <string name="export_eta_hours">ETA %d ч</string>
+
+    <string name="export_complete">Завершено</string>
+
+    <string name="export_file_size">%s</string>
+
+    <string name="export_error_hint">Нажмите для закрытия</string>
+
+    <string name="export_status">Статус экспорта</string>
+
+    <string name="faditor_export_info">%1$s • %2$d клип(ов)%3$s • H.264 + AAC</string>
+
+    <string name="faditor_flip_title">Отражение</string>
+
+    <string name="faditor_home_tagline">Лёгкий видеоредактор</string>
+
+    <string name="faditor_new_project">Новый проект</string>
+
+    <string name="faditor_start_project">Начать новый проект</string>
+
+    <string name="faditor_recent_projects">Недавние проекты</string>
+
+    <string name="faditor_capabilities_title">Что вы можете делать</string>
+
+    <string name="faditor_feature_trim">Точная обрезка</string>
+
+    <string name="faditor_feature_trim_desc">Обрежьте видео до точного кадра</string>
+
+    <string name="faditor_feature_export">Быстрый экспорт</string>
+
+    <string name="faditor_feature_export_desc">Экспорт в MP4 с аппаратным кодированием</string>
+
+    <string name="faditor_feature_preview">Живой предпросмотр</string>
+
+    <string name="faditor_feature_preview_desc">Мгновенное воспроизведение обрезанных клипов</string>
+
+    <string name="faditor_feature_privacy">100% Оффлайн</string>
+
+    <string name="faditor_feature_privacy_desc">Всё редактирование происходит локально — без загрузок, без облака</string>
+
+    <string name="faditor_feature_convert">Умная конвертация</string>
+
+    <string name="faditor_feature_convert_desc">Авто-конвертация записей с защитой от сбоев в MP4 с поиском для плавного воспроизведения везде</string>
+
+    <string name="faditor_select_items">Выбрать элементы</string>
+
+    <string name="faditor_selected_count">Выбрано %1$d</string>
+
+    <string name="faditor_delete_projects_title">Удалить проекты?</string>
+
+    <string name="faditor_delete_projects_message">Удалить %1$d проект(ов)? Это действие нельзя отменить.</string>
+
+    <string name="faditor_delete_confirm">Удалить</string>
+
+    <string name="faditor_version_info">Faditor Mini · Фаза 1 · Обрезка + Экспорт</string>
+
+    <string name="faditor_empty_title">Проектов пока нет</string>
+
+    <string name="faditor_empty_desc">Нажмите «Начать новый проект» для выбора видео и начала редактирования</string>
+
+    <string name="faditor_info_title">О Faditor Mini</string>
+
+    <string name="faditor_info_subtitle">Всё, что нужно знать о встроенном редакторе</string>
+
+    <string name="faditor_info_how_title">Как это работает</string>
+
+    <string name="faditor_info_how_desc">Выберите любое видео с устройства или записей FadCam. Обрежьте покадрово с помощью таймлайна, затем экспортируйте. Вся обработка происходит локально на вашем устройстве — ничего не загружается.\n\nВаш прогресс редактирования сохраняется автоматически каждые несколько секунд и при выходе из редактора, поэтому работа не будет потеряна при неожиданном закрытии приложения.</string>
+
+    <string name="faditor_info_convert_title">Умная конвертация</string>
+
+    <string name="faditor_info_convert_desc">FadCam записывает в формате фрагментированного MP4 (fMP4) с защитой от сбоев. В отличие от стандартного MP4 с одним финализированным контейнером, fMP4 записывает видео небольшими независимыми фрагментами. Это означает, что ваши записи остаются целыми даже при сбое приложения или внезапной остановке записи.\n\nОднако внешние видеоплееры, приложения галереи и файловые менеджеры не смогут выполнять поиск, перемотку или отображать правильную длительность этих файлов. Это не баг — это преднамеренная жертва надёжности.\n\nЕсли вы планируете хранить видео за пределами FadCam — на Google Drive, компьютере или в другом месте — вы должны сначала конвертировать их. Иначе файлы будут непригодны для обычного воспроизведения.\n\nДля конвертации: просто откройте видео здесь в Faditor Mini и нажмите Экспорт. Конвертированный стандартный MP4 появится во вкладке Записи, готовый к сохранению в галерею или отправке куда угодно. Процесс мгновенный и без потерь — без перекодирования или потери качества.</string>
+
+    <string name="faditor_info_export_title">Экспортированные файлы</string>
+
+    <string name="faditor_info_export_desc">Экспортированные видео сохраняются в активное место хранения (то же, что настроено в Настройках) с префиксом «Faditor_» и меткой времени. Они появляются во вкладке Записи рядом с оригинальными записями.</string>
+
+    <string name="faditor_info_temp_title">Временные файлы и кэш</string>
+
+    <string name="faditor_info_temp_desc">При загрузке видео fMP4 для редактирования Faditor определяет, нужен ли файлу «ремультиплексинг» — быстрая конвертация, добавляющая маркеры поиска без перекодирования. Ремультиплексированные файлы кэшируются на устройстве, чтобы их можно было повторно использовать при редактировании того же видео, экономя время и обработку.\n\nВы можете увидеть размер кэша для каждого проекта рядом с датой изменения. Если место на устройстве заканчивается, вы можете удалить неиспользуемые проекты для очистки их кэшированных ремультиплексированных файлов.\n\nЭти временные файлы кэша автоматически очищаются при удалении проекта из этой вкладки.</string>
+
+    <string name="faditor_info_projects_title">Недавние проекты</string>
+
+    <string name="faditor_info_projects_desc">Все ваши сессии редактирования отображаются для быстрого доступа. Каждый проект хранится как небольшой файл JSON на вашем устройстве, содержащий URI видео, точки обрезки и метки времени — копии ваших видео не создаются. Проекты сохраняются автоматически каждые несколько секунд, поэтому прогресс никогда не теряется.\n\nВы можете удалить ненужные проекты с помощью иконки мульти-выбора. Удаление проекта удаляет только данные сессии редактирования; ваши оригинальные видеофайлы остаются нетронутыми.</string>
+
+    <string name="faditor_your_recordings">Ваши записи</string>
+
+    <string name="faditor_browse_device">Обзор устройства</string>
+
+    <string name="faditor_no_recordings">Записей пока не найдено. Начните запись с FadCam, чтобы увидеть ваши видео здесь.</string>
+
+    <string name="faditor_video_count">%1$d видео</string>
+
+    <string name="faditor_fadcam_source">FadCam</string>
+
+    <string name="faditor_fadrec_source">FadRec</string>
+
+    <string name="faditor_browse_device_desc">Выберите любое видео с устройства</string>
+
+    <string name="faditor_scanning">Сканирование записей…</string>
+
+    <string name="faditor_source_chooser_desc">Выберите видео из галереи или из записей FadCam</string>
+
+    <string name="faditor_recordings_helper">Видео, записанные FadCam из активного места хранения</string>
+
+    <string name="setting_eye_color_title">Цвет глаз</string>
+
+    <string name="setting_eye_color_desc">Выберите цвет свечения глаз аватара</string>
+
+    <string name="eye_color_white" translatable="false">White</string>
+
+    <string name="eye_color_ruby" translatable="false">Ruby</string>
+
+    <string name="eye_color_teal" translatable="false">Cyan</string>
+
+    <string name="eye_color_violet" translatable="false">Violet</string>
+
+    <string name="eye_color_cobalt" translatable="false">Cobalt</string>
+
+    <string name="eye_color_amber" translatable="false">Amber</string>
+
+    <string name="eye_color_jade" translatable="false">Lime</string>
+
+    <string name="eye_color_magenta" translatable="false">Magenta</string>
+
+    <string name="setting_header_logo_title">Логотип заголовка</string>
+
+    <string name="setting_header_logo_desc">Выберите стиль логотипа заголовка</string>
+
+    <string name="header_logo_default" translatable="false">FadCam</string>
+
+    <string name="header_logo_avatar" translatable="false">Avatar</string>
+
+    <string name="settings_advanced_subtitle">Лаборатория движения и расширенные настройки</string>
+
+    <string name="digital_forensics_title">Цифровая форензика</string>
+
+    <string name="forensic_intelligence_title">Форензика-аналитика</string>
+
+    <string name="digital_forensics_row_subtitle">Хронология улик, перепривязка личности и умные выводы</string>
+
+    <string name="digital_forensics_enable">Включить цифровую форензику</string>
+
+    <string name="digital_forensics_status_enabled">Включено (сбор метаданных форензика-событий)</string>
+
+    <string name="digital_forensics_status_enabled_short">Включено</string>
+
+    <string name="digital_forensics_status_disabled">Отключено</string>
+
+    <string name="digital_forensics_event_person">События: люди</string>
+
+    <string name="digital_forensics_event_vehicle">События: транспорт</string>
+
+    <string name="digital_forensics_event_pet">События: питомцы</string>
+
+    <string name="digital_forensics_event_dangerous_object">Метки опасных объектов</string>
+
+    <string name="digital_forensics_overlay">Показать ИИ-наложение в живом предпросмотре</string>
+
+    <string name="digital_forensics_daily_summary">Ежедневная сводка</string>
+
+    <string name="digital_forensics_heatmap">Тепловая карта</string>
+
+    <string name="digital_forensics_discord_alerts">Оповещения Discord</string>
+
+    <string name="digital_forensics_coming_soon">Запланировано для будущего обновления.</string>
+
+    <string name="digital_forensics_coming_soon_short">Скоро</string>
+
+    <string name="digital_forensics_discord_coming_soon_toast">Оповещения Discord будут добавлены в будущем обновлении.</string>
+
+    <string name="digital_forensics_helper">Цифровая форензика состоит из двух частей: наложение живого предпросмотра и сохранённые улики. Если вам нужны только визуальные ИИ-метки в реальном времени, оставьте сбор улик выключенным. Если нужна форензика-история, включите сбор улик и выберите, что хранить.</string>
+
+    <string name="digital_forensics_enable_helper">Думайте об этом как об умном датчике улик. При включении FadCam сохраняет хронологию обнаруженной активности, чтобы вы могли позже перейти к важным моментам.</string>
+
+    <string name="digital_forensics_evidence_enable">Включить сбор улик</string>
+
+    <string name="digital_forensics_evidence_helper">При включении обнаружения записываются в форензика-базу с сохранёнными кадрами доказательств в реальном времени. Отключите, если нужны только метки живого предпросмотра без роста хранилища.</string>
+
+    <string name="digital_forensics_capture_scope">Область захвата улик</string>
+
+    <string name="digital_forensics_scope_both">Люди и объекты</string>
+
+    <string name="digital_forensics_scope_people">Только люди</string>
+
+    <string name="digital_forensics_scope_objects">Только объекты</string>
+
+    <string name="digital_forensics_scope_both_helper">Лучший вариант для полных улик безопасности: люди плюс непрсональные объекты.</string>
+
+    <string name="digital_forensics_scope_people_helper">Хранить только обнаружения людей для уменьшения хранилища и фокуса на человеческой активности.</string>
+
+    <string name="digital_forensics_scope_objects_helper">Хранить только непрсональные обнаружения (транспорт, питомцы, объекты).</string>
+
+    <string name="digital_forensics_scope_picker_helper">Выберите, что должно сохраняться как улика. Это влияет на строки базы и сохранённые кадры.</string>
+
+    <string name="digital_forensics_motion_lab_dependency">Лаборатория движения сейчас отключена. Запись форензики зависит от анализа Лаборатории движения. Сначала включите Лабораторию движения для захвата форензика-событий.</string>
+
+    <string name="digital_forensics_person_helper">Записывает события при обнаружении человека в сессиях движения. Лучший вариант для мониторинга комнат и журналов точек входа.</string>
+
+    <string name="digital_forensics_vehicle_helper">Метка транспорта требует отдельной модели и всё ещё расширяется. Можете оставить выключенным до появления поддержки модели.</string>
+
+    <string name="digital_forensics_pet_helper">Метка питомцев требует отдельной модели и всё ещё расширяется. Включайте только для тестирования ранней поддержки.</string>
+
+    <string name="digital_forensics_dangerous_helper">Расширенная маркировка безопасности опциональна и строга. Оставьте выключенным, если вам не нужны высокочувствительные метки безопасности.</string>
+
+    <string name="digital_forensics_overlay_helper">При наличии рисует простые метки в живом предпросмотре, чтобы вы видели, что ИИ замечает в реальном времени. Отключите для чистого предпросмотра.</string>
+
+    <string name="digital_forensics_daily_helper">Показывает простой ежедневный отчёт: всего событий и типы событий, чтобы быстро просмотреть активность без открытия каждого видео.</string>
+
+    <string name="digital_forensics_heatmap_helper">Строит карту перемещений из обнаруженных позиций. Яркие зоны означают повторяющуюся активность в этой области вида камеры.</string>
+
+    <string name="digital_forensics_picker_enabled_desc">Включить эту опцию.</string>
+
+    <string name="digital_forensics_picker_disabled_desc">Отключить эту опцию.</string>
+
+    <string name="digital_forensics_picker_switch_label">Включить эту опцию</string>
+
+    <string name="universal_enabled">Включено</string>
+
+    <string name="universal_disabled">Отключено</string>
+
+    <string name="forensics_events_title">Хронология событий</string>
+
+    <string name="forensics_events_subtitle">Фильтрация обнаружений и переход к точным моментам.</string>
+
+    <string name="forensics_events_empty">События не найдены для выбранных фильтров.</string>
+
+    <string name="forensics_filter_all">Все</string>
+
+    <string name="forensics_filter_person">Человек</string>
+
+    <string name="forensics_filter_vehicle">Транспорт</string>
+
+    <string name="forensics_filter_pet">Питомец</string>
+
+    <string name="forensics_filter_object">Объект</string>
+
+    <string name="forensics_filter_high_conf">Только высокая уверенность</string>
+
+    <string name="forensics_filter_all_subtypes">Все подтипы</string>
+
+    <string name="forensics_insights_title">Аналитическая сводка</string>
+
+    <string name="forensics_insights_subtitle">24-часовой анализ угроз и ситуационный отчёт.</string>
+
+    <string name="forensics_heatmap_cd">Тепловая карта активности</string>
+
+    <string name="forensics_heatmap_legend">Яркие точки означают повторяющееся движение. Тусклые точки — меньше активности.</string>
+
+    <string name="intel_total_detections">ВСЕГО ОБНАРУЖЕНИЙ</string>
+
+    <string name="intel_threat_assessment">ОЦЕНКА УГРОЗ</string>
+
+    <string name="intel_detection_breakdown">РАЗБИВКА ОБНАРУЖЕНИЙ</string>
+
+    <string name="intel_activity_timeline">ХРОНОЛОГИЯ АКТИВНОСТИ</string>
+
+    <string name="intel_zone_analysis">АНАЛИЗ ЗОН</string>
+
+    <string name="intel_zone_desc">Распределение активности по секторам кадра камеры</string>
+
+    <string name="intel_key_observations">КЛЮЧЕВЫЕ НАБЛЮДЕНИЯ</string>
+
+    <string name="intel_personnel">ПЕРСОНАЛ</string>
+
+    <string name="intel_vehicles">ТРАНСПОРТ</string>
+
+    <string name="intel_animals">ЖИВОТНЫЕ</string>
+
+    <string name="intel_objects">ОБЪЕКТЫ</string>
+
+    <string name="intel_no_data">Данные аналитики отсутствуют.\nМониторинг активов активен.</string>
+
+    <string name="intel_time_window">24-часовое окно мониторинга</string>
+
+    <string name="intel_range_24h">24 Ч</string>
+
+    <string name="intel_range_7d">7 ДНЕЙ</string>
+
+    <string name="intel_range_30d">30 ДНЕЙ</string>
+
+    <string name="intel_range_all">ВСЁ ВРЕМЯ</string>
+
+    <string name="intel_range_summary_24h">Последние 24 часа</string>
+
+<!-- Audio Device Types -->
+    <string name="audio_device_type_wired_headset">Проводная гарнитура</string>
+    <string name="audio_device_type_usb">USB</string>
+    <string name="audio_device_type_usb_headset">USB-гарнитура</string>
+    <string name="audio_device_type_bt_sco">Bluetooth (SCO)</string>
+    <string name="audio_device_type_bt_a2dp">Bluetooth (A2DP)</string>
+    <string name="audio_device_type_ble_headset">BLE-гарнитура</string>
+    <string name="audio_device_type_external">Внешний микрофон</string>
+
+    <!-- Battery Estimate -->
+    <string name="battery_estimate_title">Расчётное время трансляции</string>
+    <string name="battery_estimate_disclaimer" formatted="false">Основано на реальном тесте: 8 часов непрерывной трансляции с разрядом батареи 61% на устройстве 5000 мАч. Обновите ёмкость устройства ниже для персонализированных оценок.</string>
+
+    <!-- Buttons -->
+    <string name="button_close">Закрыть</string>
+    <string name="button_copy">Копировать</string>
+    <string name="button_gallery">Обзор галереи</string>
+    <string name="button_info">Информация</string>
+    <string name="button_scan_again">Сканировать снова</string>
+    <string name="button_share">Поделиться</string>
+    <string name="button_torch">Фонарик</string>
+
+    <!-- Cloud Account -->
+    <string name="cloud_account_button_desc">FadSec Cloud</string>
+    <string name="cloud_account_connecting">Подключение…</string>
+    <string name="cloud_account_device_id">ID устройства</string>
+    <string name="cloud_account_device_name_desc">Это имя будет отображаться в панели FadSec Cloud</string>
+    <string name="cloud_account_device_name_hint">Введите имя устройства (например, Мой телефон)</string>
+    <string name="cloud_account_device_name_title">Назовите устройство</string>
+    <string name="cloud_account_helper_text">Отвяжите устройство для отключения от учётной записи. Вы можете привязать его снова с другим именем.</string>
+    <string name="cloud_account_link">Привязать устройство</string>
+    <string name="cloud_account_link_failed">Не удалось привязать устройство. Попробуйте ещё раз.</string>
+    <string name="cloud_account_link_success">Устройство успешно привязано!</string>
+    <string name="cloud_account_linked">Устройство привязано</string>
+    <string name="cloud_account_login_required">Пожалуйста, войдите, чтобы привязать устройство</string>
+    <string name="cloud_account_not_linked">Не привязано</string>
+    <string name="cloud_account_title">FadSec Cloud</string>
+    <string name="cloud_account_unlink">Отвязать устройство</string>
+    <string name="cloud_account_unlink_confirm">Вы уверены, что хотите отвязать это устройство?</string>
+    <string name="cloud_account_unlink_success">Устройство отвязано</string>
+    <string name="cloud_account_webview_title">FadSec Cloud</string>
+    <string name="cloud_button_label">FadSec Cloud</string>
+    <string name="cloud_button_title">FadSec Cloud</string>
+    <string name="cloud_streaming_not_linked">Сначала привяжите устройство</string>
+    <string name="cloud_streaming_status_off">Только локальная трансляция</string>
+    <string name="cloud_streaming_status_on">Загрузка в FadSec Cloud</string>
+    <string name="cloud_streaming_title">Облачная трансляция</string>
+
+    <!-- Digital Forensics Preview -->
+    <string name="digital_forensics_preview_default">ЧЕЛОВЕК 92%</string>
+    <string name="digital_forensics_preview_subtitle">Симуляция наложения предпросмотра, чтобы пользователи понимали метки, уверенность и кадрирование улик.</string>
+    <string name="digital_forensics_preview_title">Живой предпросмотр обнаружений</string>
+
+    <!-- E2E Encryption -->
+    <string name="e2e_encryption_change_title">Изменить пароль E2E-шифрования</string>
+    <string name="e2e_encryption_configured">Настроено — сегменты зашифрованы сквозным шифрованием</string>
+    <string name="e2e_encryption_not_configured">Не настроено — настройте для включения облачной трансляции</string>
+    <string name="e2e_encryption_setup_desc">Ваш пароль FadSec ID используется для создания ключа шифрования трансляции. Он должен совпадать с паролем, используемым на панели FadCam для просмотра трансляций.</string>
+    <string name="e2e_encryption_setup_hint">Введите ваш пароль FadSec ID</string>
+    <string name="e2e_encryption_setup_title">Установить пароль E2E-шифрования</string>
+    <string name="e2e_encryption_title">E2E-шифрование трансляции</string>
+
+    <!-- FadRec Preview -->
+    <string name="fadrec_preview_enable_hint">Удерживайте для показа предпросмотра</string>
+    <string name="fadrec_preview_not_available">Живой предпросмотр экрана ещё не подключён к FadRec</string>
+
+    <!-- Forensics Appearance -->
+    <string name="forensics_clip_black">Чёрная скрепка</string>
+    <string name="forensics_clip_red">Красная скрепка</string>
+    <string name="forensics_clip_style_helper">Выберите цвет скрепки для карточек галереи.</string>
+    <string name="forensics_clip_style_title">Стиль скрепки</string>
+    <string name="forensics_copy_done">Детали улик скопированы</string>
+    <string name="forensics_delete_selected_helper">Выбранные улики будут перемещены в Корзину и могут быть восстановлены из недавно удалённых.</string>
+    <string name="forensics_delete_selected_title">Удалить %1$d выбранных улик?</string>
+    <string name="forensics_detected_label">Обнаружено: %1$s</string>
+    <string name="forensics_event_proof_frame">Кадр доказательства события</string>
+    <string name="forensics_evidence_details">Детали улик</string>
+    <string name="forensics_export_action">Экспортировать пакет улик</string>
+    <string name="forensics_export_done">Экспорт улик сохранён в: %1$s</string>
+    <string name="forensics_export_no_path">Место экспорта ещё не выбрано.</string>
+    <string name="forensics_export_pick_path">Выберите место экспорта</string>
+    <string name="forensics_export_pick_path_first">Сначала выберите место экспорта.</string>
+    <string name="forensics_export_running">Сборка экспорта улик…</string>
+    <string name="forensics_export_selected_path">Назначение: %1$s</string>
+    <string name="forensics_export_source_warning">Ссылки на исходное видео включены для отслеживаемости. Если медиафайл перемещён или удалён из исходного расположения, ссылки воспроизведения могут не работать, а снимки остаются основными уликами.</string>
+    <string name="forensics_export_stats">Готово к экспорту: %1$d снимков • %2$s</string>
+    <string name="forensics_export_subtitle">Создаёт пакет JSON метаданных + снимков из сохранённых форензика-улик.</string>
+    <string name="forensics_export_title">Центр экспорта</string>
+    <string name="forensics_filter_with_count">%1$s (%2$d)</string>
+    <string name="forensics_frames_hint">Листайте кадры для предпросмотра моментов</string>
+    <string name="forensics_frames_hint_fallback">Резервный предпросмотр (точные ключевые кадры могут отличаться)</string>
+    <string name="forensics_gallery_deleted_toast">%1$d перемещено в корзину • %2$d удалено</string>
+    <string name="forensics_gallery_empty">Нет снимков улик для текущих фильтров.</string>
+    <string name="forensics_gallery_empty_subtitle_filtered">Нет улик, соответствующих этому фильтру</string>
+    <string name="forensics_gallery_empty_subtitle_no_data">ИИ-обнаруженные кадры из ваших записей появятся здесь</string>
+    <string name="forensics_gallery_empty_title">Доска улик пуста</string>
+    <string name="forensics_gallery_selected_count">%1$d выбрано</string>
+    <plurals name="forensics_gallery_selected_count_plural">
+        <item quantity="one">%1$d выбрано</item>
+        <item quantity="few">%1$d выбрано</item>
+        <item quantity="many">%1$d выбрано</item>
+    </plurals>
+    <string name="forensics_gallery_sort_event_type">Тип события</string>
+    <string name="forensics_gallery_source_missing">Видео отсутствует: доступны только снимки-улики.</string>
+    <string name="forensics_gallery_stats">Элементов: %1$d • Хранилище снимков: %2$s</string>
+    <string name="forensics_gallery_title">Галерея улик</string>
+    <string name="forensics_grid_1">1 колонка</string>
+    <string name="forensics_grid_2">2 колонки</string>
+    <string name="forensics_grid_3">3 колонки</string>
+    <string name="forensics_grid_4">4 колонки</string>
+    <string name="forensics_grid_5">5 колонок</string>
+    <string name="forensics_grid_helper">Выберите количество колонок в галерее.</string>
+    <string name="forensics_grid_option">Сетка</string>
+    <string name="forensics_info_body">Галерея улик хранит снимки, сделанные во время активных сессий записи.\n\nСнимки являются самостоятельными файлами улик и остаются просматриваемыми, даже если исходное видео перемещено или удалено.\n\nДля элементов, связанных с видео, используйте детали улик в просмотрщике фото, чтобы перейти к исходному видео, когда доступно.</string>
+    <string name="forensics_info_helper">Улики появляются здесь сразу после захвата снимков во время записи.</string>
+    <string name="forensics_info_line_1">Действия с исходным видео доступны только пока существует ссылка на оригинал.</string>
+    <string name="forensics_info_line_2">Если видео изменено или удалено, снимки остаются доступными как самостоятельные улики.</string>
+    <string name="forensics_info_line_3">Используйте Центр экспорта для упаковки снимков и метаданных в архив.</string>
+    <string name="forensics_info_title">Информация об уликах</string>
+    <string name="forensics_media_all">Все источники</string>
+    <string name="forensics_media_available">Видео доступно</string>
+    <string name="forensics_media_missing">Оригинальное видео недоступно. Используются только сохранённые улики.</string>
+    <string name="forensics_media_missing_only">Видео отсутствует</string>
+    <string name="forensics_not_available">Недоступно</string>
+    <string name="forensics_open_source_video">Открыть исходное видео</string>
+    <string name="forensics_section_actions">Действия</string>
+    <string name="forensics_section_appearance">Внешний вид</string>
+    <string name="forensics_serial_strip">улики</string>
+    <string name="forensics_snapshot_only">Только снимок</string>
+    <string name="forensics_sort_confidence">Наивысшая уверенность</string>
+    <string name="forensics_sort_evidence_rich">Богатые уликами</string>
+    <string name="forensics_sort_label">Сортировка: %1$s</string>
+    <string name="forensics_source_label">Источник: %1$s</string>
+    <string name="forensics_sort_newest">Сначала новые</string>
+    <string name="forensics_tape_classic">Классическая лента</string>
+    <string name="forensics_tape_style_helper">Выберите дизайн ленты для меток индекса улик.</string>
+    <string name="forensics_tape_style_title">Стиль ленты</string>
+    <string name="forensics_tape_torn">Рваная лента</string>
+    <string name="forensics_timeline_label">Позиция на хронологии</string>
+    <string name="forensics_unknown_source">Неизвестный источник</string>
+    <string name="forensics_unknown_time">Неизвестное время</string>
+    <string name="forensics_video_linked">Видео связано</string>
+
+    <!-- Front Video Mirror -->
+    <string name="front_video_mirror_disable">Отключить отражение фронтального видео</string>
+    <string name="front_video_mirror_enable">Включить отражение фронтального видео</string>
+
+    <!-- Fullscreen Preview -->
+    <string name="fullscreen_camera_switch">Переключить камеру</string>
+    <string name="fullscreen_focus_off">Фокус: ВЫКЛ</string>
+    <string name="fullscreen_focus_on">Фокус: ВКЛ</string>
+    <string name="fullscreen_focus_toggle">Переключение фокуса</string>
+    <string name="fullscreen_label_af">АФ</string>
+    <string name="fullscreen_label_exposure">ЭВ</string>
+    <string name="fullscreen_label_mirror">Отразить видео</string>
+    <string name="fullscreen_label_shot">Кадр</string>
+    <string name="fullscreen_label_switch">Переключить</string>
+    <string name="fullscreen_label_torch">Фонарик</string>
+    <string name="fullscreen_label_zoom">Зум</string>
+    <string name="fullscreen_preview_close">Закрыть полноэкранный режим</string>
+    <string name="fullscreen_preview_enter">Превью FadCam</string>
+    <string name="fullscreen_preview_not_recording">Сначала начните запись для использования полноэкранного предпросмотра</string>
+    <string name="fullscreen_preview_tap_hint">Нажмите на экран для переключения элементов управления</string>
+    <string name="fullscreen_torch">Фонарик</string>
+
+    <!-- Home Sidebar -->
+    <string name="home_sidebar_copyright" translatable="false">© FadSec Lab 2024 – 2026</string>
+    <string name="home_sidebar_discord">Discord</string>
+    <string name="home_sidebar_discord_sub">Присоединяйтесь к сообществу</string>
+
+    <!-- Intel Summaries -->
+    <string name="intel_range_summary_7d">Последние 7 дней</string>
+    <string name="intel_range_summary_30d">Последние 30 дней</string>
+    <string name="intel_range_summary_all">Все записанные данные</string>
+    <string name="intel_tap_bar_hint">Нажмите на столбец для почасовой разбивки</string>
+    <string name="intel_zone_desc_v2">Ваш вид камеры разделён на 9 зон. Ярче = больше активности обнаружено в этой области.</string>
+
+    <!-- Lab -->
+    <string name="lab_hide_thumbnails_title">Режим секретности</string>
+    <string name="lab_hide_thumbnails_redacted">ЗАРЕДАКТИРОВАНО</string>
+    <string name="lab_section_about">О программе</string>
+
+    <!-- Mini Apps -->
+    <string name="mini_apps_title">Мини-приложения</string>
+    <string name="mini_apps_subtitle">Быстрые утилиты и инструменты</string>
+    <string name="mini_app_coming_soon">Скоро</string>
+    <string name="mini_app_coming_soon_desc">Эта функция будет доступна в будущем</string>
+    <string name="mini_app_torch_title">Фонарик</string>
+    <string name="mini_app_torch_desc">Светодиодный фонарик с режимами</string>
+    <string name="mini_app_torch_feature_led">Использует светодиодный фонарик устройства</string>
+    <string name="mini_app_torch_feature_screen">Яркость экрана как источник света</string>
+    <string name="mini_app_torch_feature_patterns">Режимы SOS и стробоскоп</string>
+    <string name="mini_app_torch_led_title">LED-фонарик</string>
+    <string name="mini_app_torch_led_desc">Управление светодиодным фонариком устройства</string>
+    <string name="mini_app_torch_screen_title">Экранный свет</string>
+    <string name="mini_app_torch_screen_desc">Использование полной яркости экрана как источника света</string>
+    <string name="mini_app_torch_patterns_title">Режимы вспышки</string>
+    <string name="mini_app_compass_title">Компас</string>
+    <string name="mini_app_compass_desc">Цифровой компас с отображением азимута и навигацией</string>
+    <string name="mini_app_compass_feature_bearing">Азимут в реальном времени (0–360°)</string>
+    <string name="mini_app_compass_feature_cardinal">Стороны света (С, Ю, В, З)</string>
+    <string name="mini_app_compass_feature_mag_true">Магнитный vs Истинный север</string>
+    <string name="mini_app_sound_meter_title">Шумомер</string>
+    <string name="mini_app_sound_meter_desc">Детектор уровня шума в децибелах (дБ)</string>
+    <string name="mini_app_sound_meter_feature_realtime">Измерение дБ в реальном времени</string>
+    <string name="mini_app_sound_meter_feature_peak">Обнаружение пикового шума</string>
+    <string name="mini_app_sound_meter_feature_avg">Средние уровни шума</string>
+    <string name="mini_app_sensor_dashboard_title">Панель датчиков</string>
+    <string name="mini_app_sensor_dashboard_desc">Просмотр данных акселерометра, гироскопа и датчиков</string>
+    <string name="mini_app_sensor_dashboard_feature_accel">Акселерометр (X, Y, Z)</string>
+    <string name="mini_app_sensor_dashboard_feature_gyro">Гироскоп (X, Y, Z)</string>
+    <string name="mini_app_sensor_dashboard_feature_mag">Показания магнитометра</string>
+    <string name="mini_app_speedometer_title">Спидометр</string>
+    <string name="mini_app_speedometer_desc">Автомобильный спидометр в реальном времени с GPS</string>
+    <string name="mini_app_clinometer_title">Клинометр</string>
+    <string name="mini_app_clinometer_desc">Измерение углов и наклонов с помощью гироскопа</string>
+    <string name="mini_app_qr_scanner_title">Сканер QR</string>
+    <string name="mini_app_qr_scanner_desc">Мгновенное сканирование QR-кодов и штрихкодов</string>
+    <string name="mini_app_pedometer_title">Шагомер</string>
+    <string name="mini_app_pedometer_desc">Шагомер с использованием встроенного датчика шагов</string>
+    <string name="mini_app_metal_detector_title">Металлоискатель</string>
+    <string name="mini_app_metal_detector_desc">Обнаружение металлических объектов с помощью магнитометра</string>
+    <string name="mini_app_parking_marker_title">Парковка</string>
+    <string name="mini_app_parking_marker_desc">Сохранение парковочного места и навигация назад со стрелкой GPS</string>
+    <string name="mini_app_qr_generator_title">Генератор QR</string>
+    <string name="mini_app_qr_generator_desc">Создание QR-кодов из текста, URL и контактов</string>
+    <string name="mini_apps_planned_shortcuts_title">Планируется: Ярлыки и автоматизация</string>
+    <string name="mini_apps_planned_shortcuts_desc">Ярлыки главного экрана для мгновенного доступа к любому мини-приложению без открытия FadCam.\n\nПоддержка автоматизации на основе Intent (Tasker, MacroDroid и т.д.) для программного запуска мини-приложений — используйте QR-сканирование, фонарик и другое из ваших автоматических рабочих процессов.</string>
+
+    <!-- Motion Lab -->
+    <string name="motion_lab_title">Лаборатория движения</string>
+    <string name="motion_lab_row_subtitle">Умная запись событий для использования как CCTV</string>
+    <string name="motion_lab_enable">Включить запись по движению</string>
+    <string name="motion_lab_enable_sensor">Включить датчик движения</string>
+    <string name="motion_lab_status_enabled">Активно (запись только при необходимости)</string>
+    <string name="motion_lab_status_disabled">Отключено</string>
+    <string name="motion_lab_trigger_mode">Режим триггера</string>
+    <string name="motion_lab_trigger_mode_helper">Выберите, что должно запускать запись. Если не уверены, оставьте Любое движение.</string>
+    <string name="motion_lab_trigger_any_motion">Любое движение</string>
+    <string name="motion_lab_trigger_any_motion_desc">Запускается при обнаружении движения, как обычная CCTV-камера.</string>
+    <string name="motion_lab_trigger_person_confirmed">Человек подтверждён</string>
+    <string name="motion_lab_trigger_person_confirmed_desc">Запускается только когда движение похоже на человека. Помогает уменьшить ложные срабатывания от вентилятора/теней.</string>
+    <string name="motion_lab_sensitivity">Чувствительность</string>
+    <string name="motion_lab_sensitivity_hint">Думайте об этом как о «слуховой» ручке движения. Выше — реагирует на меньшее движение (например, рука у края). Ниже — игнорирует крошечные движения. Держите 80 по умолчанию для большинства комнат.</string>
+    <string name="motion_lab_analysis_fps">FPS анализа</string>
+    <string name="motion_lab_analysis_helper">Как часто ИИ проверяет сцену каждую секунду. Больше проверок — быстрее реакция, но также больше расход батареи и нагрев телефона. Для EfficientDet многоклассового обнаружения держите около 6 FPS для повседневного использования (5–8 — надёжная зона).</string>
+    <string name="motion_lab_analysis_2_desc">Энергосбережение, медленный отклик.</string>
+    <string name="motion_lab_analysis_3_desc">Сбалансированный по умолчанию.</string>
+    <string name="motion_lab_analysis_5_desc">Быстрый отклик, больше CPU.</string>
+    <string name="motion_lab_debounce">Антидребезг</string>
+    <string name="motion_lab_debounce_hint">Короткая задержка подтверждения перед началом записи. Думайте об этом как о крошечном ожидании для подтверждения реальности движения. Меньше — быстрее старт, больше — избегает ложных запусков. Держите около 220 мс для большинства комнат.</string>
+    <string name="motion_lab_post_roll">Пост-запись</string>
+    <string name="motion_lab_post_roll_hint">Как долго запись продолжается после остановки движения. Пример: если кто-то покидает комнату, это позволяет не обрезать конец. Держите около 10 с для большинства комнат.</string>
+    <string name="motion_lab_pre_roll">Пред-запись</string>
+    <string name="motion_lab_pre_roll_hint">Сколько секунд до триггера мы пытаемся включить. Пример: если кто-то появляется внезапно, пред-запись помогает захватить момент перед входом. Держите около 2 с для большинства комнат.</string>
+    <string name="motion_lab_set_value_row_title">Установить значение</string>
+    <string name="motion_lab_set_value_row_subtitle">Текущее значение: %1$d</string>
+    <string name="motion_lab_auto_torch">Автофонарик при движении</string>
+    <string name="motion_lab_auto_torch_helper">Включает фонарик при запуске записи от движения и выключает при паузе. Полезно для тёмных комнат.</string>
+    <string name="motion_lab_debug_title">Живой монитор движения</string>
+    <string name="motion_lab_debug_state_placeholder">Состояние: -</string>
+    <string name="motion_lab_debug_score_placeholder">Счёт сырой/сглаженный: -</string>
+    <string name="motion_lab_debug_threshold_placeholder">Порог старт/стоп: -</string>
+    <string name="motion_lab_debug_action_placeholder">Последнее действие: -</string>
+    <string name="motion_lab_debug_person_placeholder">Человек: -</string>
+    <string name="motion_lab_debug_metrics_placeholder">Область/Сильная/Сред/Фон/Макс/Глобал: -</string>
+    <string name="motion_lab_debug_frame">Превью кадра анализатора в реальном времени</string>
+    <string name="motion_lab_debug_copy_snapshot">Копировать снимок монитора</string>
+    <string name="motion_lab_debug_copy_done">Снимок движения скопирован</string>
+    <string name="motion_lab_debug_no_snapshot">Снимок движения пока недоступен.</string>
+    <string name="motion_lab_debug_score_value">Счёт сырой/сглаженный: %1$.3f / %2$.3f</string>
+    <string name="motion_lab_debug_threshold_value">Порог старт/стоп: %1$.3f / %2$.3f</string>
+    <string name="motion_lab_debug_person_value">Обнаружено: %1$s (%2$.3f) • Человек: %3$s (%4$.3f)</string>
+    <string name="motion_lab_debug_metrics_value">Область %1$.3f, Сильная %2$.3f, Сред %3$.3f, Фон %4$.3f, Макс %5$.3f, Глобал %6$s</string>
+    <string name="motion_lab_info_cd">Информация о Motion Lab</string>
+    <string name="motion_lab_info_title">Автозапись по движению</string>
+    <string name="motion_lab_info_body">Это функция автоматической записи по движению FadCam.\n\nКак это работает простыми словами:\n- Ваша камера остаётся активной и анализирует кадры на устройстве в реальном времени.\n- Встроенная модель машинного обучения и логика движения ищут движение.\n- Когда обнаружено допустимое движение, запись начинается/возобновляется.\n- Запись продолжается, пока движение активно.\n- После остановки движения пост-запись продолжает запись на выбранные дополнительные секунды.\n- Затем запись приостанавливается и ждёт следующего события движения.\n\nКогда запись приостановлена, приложение всё ещё анализирует кадры в памяти, но не записывает новые видеоданные до повторного обнаружения движения.\n\nКак использовать (большинство пользователей):\n- Оставьте все опции по умолчанию.\n- Включите Датчик движения на этом экране.\n- Перейдите на вкладку Главная и начните запись как обычно.\n- Автоматическая запись по движению будет работать автоматически.\n\nПростой тест с расстояния:\n- Включите Автофонарик на этом экране.\n- Начните запись с вкладки Главная.\n- Разместите телефон наклонённым на столе или полке лицом в комнату.\n- Выйдите из комнаты, затем войдите и пройдите.\n- Включение фонарика поможет мгновенно заметить издалека, что запись началась.\n- Запись продолжится на выбранную длительность пост-записи после остановки движения.\n\nСовет: Эта функция работает непрерывно, поэтому очень высокие продвинутые значения могут увеличить нагрев и снизить ресурс устройства со временем. Для длительных сессий держите настройки по умолчанию, если нет особой причины.</string>
+    <string name="motion_lab_percent_value">%1$d%%</string>
+    <string name="motion_lab_fps_value">%1$d FPS</string>
+    <string name="motion_lab_ms_value">%1$d мс</string>
+    <string name="motion_lab_seconds_value">%1$d с</string>
+    <string name="motion_lab_footer">Настройте элементы управления выше, только если вам нужно особое поведение. Для большинства конфигураций настройки по умолчанию — самый безопасный и надёжный выбор.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_intro_line4">с открытым исходным кодом. без рекламы. ваш.</string>
+
+    <!-- Patterns -->
+    <string name="pattern_steady_desc">Постоянный ровный свет для обычного использования фонарика</string>
+    <string name="pattern_strobe_desc">Быстрое включение-выключение для аварийной сигнализации</string>
+    <string name="pattern_sos_desc">SOS: 3 коротких + 3 длинных + 3 коротких вспышки</string>
+    <string name="pattern_morse_desc">Шаблон азбуки Морзе для расширенной сигнализации</string>
+
+    <!-- Preview -->
+    <string name="preview_dual_not_supported">Предпросмотр работает только с фронтальной/задней камерами</string>
+    <string name="preview_enable_hint">Удерживайте для включения камеры</string>
+    <string name="preview_starting">Запуск живого предпросмотра…</string>
+
+    <!-- Privacy Black Mode -->
+    <string name="privacy_black_mode_title">Чёрный экран конфиденциальности</string>
+    <string name="privacy_black_mode_helper">Если ваше устройство убивает приложение в фоне, вы можете использовать эту функцию, чтобы держать приложение работающим на переднем плане.\n\nПоявляется чёрный оверлей, создавая видимость выключенного экрана, пока запись продолжается.\n\nНажмите на иконку FadCam в верхнем заголовке вкладки Главная для активации.</string>
+    <string name="privacy_black_mode_enable_title">Включить чёрный экран конфиденциальности</string>
+    <string name="privacy_black_mode_enabled_toast">Режим конфиденциальности включён</string>
+    <string name="privacy_black_mode_disabled_toast">Режим конфиденциальности отключён</string>
+    <string name="privacy_black_gestures_title">Способы выхода</string>
+    <string name="privacy_black_gestures_helper">Выберите, какие жесты можно использовать для выхода из Чёрного экрана конфиденциальности.\n\nПримечание: как минимум один способ выхода должен оставаться включённым во избежание блокировки!</string>
+    <string name="privacy_black_gesture_swipe">Смахивание вверх для выхода</string>
+    <string name="privacy_black_gesture_triple">Тройное нажатие для выхода</string>
+    <string name="privacy_black_gesture_long">Длительное нажатие для выхода</string>
+    <string name="privacy_black_min_one_method">Как минимум один способ выхода должен оставаться включённым.</string>
+    <string name="privacy_black_enable_needed_hint">Сначала включите Чёрный экран конфиденциальности в настройках безопасности</string>
+
+    <!-- QR -->
+    <string name="qr_result_scanned_label">Отсканировано</string>
+    <string name="qr_info_banner_text">Отсканированные коды автоматически сохраняются во вкладку Записи</string>
+
+    <!-- Records Grid -->
+    <string name="records_grid_1">1 колонка</string>
+    <string name="records_grid_2">2 колонки</string>
+    <string name="records_grid_3">3 колонки</string>
+    <string name="records_grid_4">4 колонки</string>
+    <string name="records_grid_5">5 колонок</string>
+    <string name="records_grid_helper">Выберите количество колонок в галерее.</string>
+    <string name="records_grid_option">Сетка</string>
+
+    <!-- Screen Recording -->
+    <string name="screen_rec_settings_title">Запись экрана</string>
+    <string name="screen_rec_settings_subtitle">Качество, аудио и настройки вывода</string>
+    <string name="screen_rec_resolution">Разрешение</string>
+    <string name="screen_rec_framerate">Частота кадров</string>
+    <string name="screen_rec_bitrate">Битрейт</string>
+    <string name="screen_rec_orientation">Ориентация</string>
+    <string name="screen_rec_bitrate_mode_auto">Авто (VBR)</string>
+    <string name="screen_rec_bitrate_mode_manual">Вручную (CBR)</string>
+    <string name="screen_rec_bitrate_helper">VBR адаптируется к сложности контента. CBR использует фиксированный целевой битрейт.</string>
+    <string name="screen_rec_bitrate_range">1 – 50 Мбит/с</string>
+    <string name="screen_rec_bitrate_low_hint">Более низкие значения экономят место</string>
+    <string name="screen_rec_bitrate_high_hint">Более высокие значения улучшают качество</string>
+    <string name="screen_rec_orientation_portrait">Портретная</string>
+    <string name="screen_rec_orientation_landscape">Альбомная</string>
+
+    <!-- Streaming Mode -->
+    <string name="streaming_mode_title">Назначение трансляции</string>
+    <string name="streaming_mode_local">Локальная сеть</string>
+    <string name="streaming_mode_local_desc">Трансляция на устройства в той же WiFi-сети</string>
+    <string name="streaming_mode_cloud">FadSec Cloud</string>
+    <string name="streaming_mode_cloud_desc">Трансляция куда угодно через интернет</string>
+    <string name="streaming_mode_cloud_featured">РЕКОМЕНДУЕТСЯ</string>
+    <string name="streaming_mode_link_required">Привяжите устройство для включения</string>
+    <string name="streaming_mode_stream_url">URL трансляции</string>
+    <string name="streaming_mode_helper">Выберите, как транслировать вашу камеру</string>
+
+    <!-- Torch -->
+    <string name="torch_brightness">Яркость</string>
+    <string name="torch_color">Цвет</string>
+    <string name="torch_patterns">Режимы</string>
+    <string name="torch_pattern_steady">Постоянный</string>
+    <string name="torch_pattern_strobe">Стробоскоп</string>
+    <string name="torch_pattern_sos">SOS</string>
+    <string name="torch_pattern_morse">Азбука Морзе</string>
+    <string name="torch_status_on">ВКЛ</string>
+    <string name="torch_status_off">Выкл</string>
+    <string name="torch_tap_to_enable">Нажмите для включения</string>
+    <string name="torch_screen_light_label">Экранный свет</string>
+    <string name="torch_screen_light_desc">Полноэкранный белый оверлей</string>
+    <string name="torch_timer_label">Таймер автовыключения</string>
+    <string name="torch_timer_desc">Фонарик выключается автоматически через заданное время</string>
+    <string name="torch_timer_off">Выкл</string>
+    <string name="torch_timer_picker_helper">Таймер запускается только когда фонарик включён</string>
+    <string name="torch_timer_cancel">Отменить таймер</string>
+    <string name="torch_timer_30s">30 секунд</string>
+    <string name="torch_timer_1m">1 минута</string>
+    <string name="torch_timer_2m">2 минуты</string>
+    <string name="torch_timer_5m">5 минут</string>
+    <string name="torch_timer_10m">10 минут</string>
+    <string name="torch_timer_15m">15 минут</string>
+    <string name="torch_timer_30m">30 минут</string>
+    <string name="torch_timer_1h">1 час</string>
+    <string name="torch_timer_custom_title">Установить пользовательский таймер</string>
+    <string name="torch_timer_custom_unit_helper">Выберите единицу времени</string>
+    <string name="torch_timer_custom_hint">Введите длительность</string>
+    <string name="torch_timer_custom_minutes_example">например, 5 для 5 минут</string>
+    <string name="torch_timer_custom_hours_example">например, 2 для 2 часов</string>
+    <string name="torch_timer_custom_apply">Применить</string>
+    <string name="torch_timer_custom_error_positive">Длительность должна быть больше 0</string>
+    <string name="torch_timer_custom_error_invalid">Неверное число</string>
+    <string name="torch_unavailable">Фонарик недоступен для этой камеры</string>
+
+    <!-- Trash -->
+    <string name="trash_item_thumbnail_desc">Миниатюра удалённого элемента</string>
+
+    <!-- Video -->
+    <string name="video_moved_to_trash">Видео перемещено в корзину</string>
+
+    <!-- Watch (Wear OS) -->
+    <string name="watch_status_recording">● ЗАПИСЬ</string>
+    <string name="watch_status_paused">⏸ ПАУЗА</string>
+    <string name="watch_audio_toggle_desc">Переключить запись аудио</string>
+    <string name="watch_cam_flip_desc">Переключить камеру</string>
+    <string name="watch_hamburger_desc">Открыть меню</string>
+    <string name="watch_video_menu_desc">Параметры видео</string>
+    <string name="watch_storage_desc">Хранилище</string>
+    <string name="watch_back_desc">Назад</string>
+    <string name="watch_audio_label">Аудио</string>
+    <string name="watch_cam_label">Камера</string>
+    <string name="watch_cam_front">Фронтальная</string>
+    <string name="watch_cam_back">Задняя</string>
+    <string name="watch_remote_title">Удалённый</string>
+    <string name="watch_remote_stream_on">Трансляция ВКЛ</string>
+    <string name="watch_remote_stream_off">Нажмите для трансляции</string>
+    <string name="watch_settings_title">Настройки</string>
+    <string name="watch_settings_camera">Камера</string>
+    <string name="watch_settings_audio">Аудио</string>
+    <string name="watch_settings_video">Видео</string>
+    <string name="watch_settings_security">Безопасность</string>
+    <string name="watch_records_title">Записи</string>
+    <string name="watch_records_empty">Записей пока нет</string>
+    <string name="watch_audio_on">Микр. вкл</string>
+    <string name="watch_audio_muted">Без звука</string>
+    <string name="watch_pause_label">Пауза</string>
+    <string name="watch_resume_label">Возобновить</string>
+    <string name="watch_pause_desc">Пауза или возобновление записи</string>
+    <string name="watch_fullscreen_label">Вид</string>
+    <string name="watch_fullscreen_desc">Полноэкранный</string>
+    <string name="watch_fadshot_label">Кадр</string>
+    <string name="watch_fadshot_desc">Сделать фото</string>
+    <string name="watch_trash_title">Недавно удалённые</string>
+    <string name="watch_trash_empty">Ничего не удалено</string>
+    <string name="watch_trash_delete_all">Удалить все</string>
+    <string name="watch_trash_delete_one">Удалить навсегда</string>
+    <string name="watch_fullscreen_hint">Камера записывает</string>
+    <string name="watch_fullscreen_not_recording">Не записывает</string>
+
+    <!-- Watermark Extensions -->
+    <string name="watermark_speed_title">Скорость (км/ч)</string>
+    <string name="watermark_speed_off">Выкл</string>
+    <string name="watermark_speed_on">Вкл — скорость с данных GPS</string>
+    <string name="watermark_altitude_title">Высота (м)</string>
+    <string name="watermark_altitude_off">Выкл</string>
+    <string name="watermark_altitude_on">Вкл — высота со спутников GPS</string>
+    <string name="watermark_accuracy_title">Точность GPS (м)</string>
+    <string name="watermark_accuracy_off">Выкл</string>
+    <string name="watermark_accuracy_on">Вкл — горизонтальная точность со спутников GPS</string>
+    <string name="watermark_compass_title">Направление компаса</string>
+    <string name="watermark_compass_off">Выкл</string>
+    <string name="watermark_compass_on_sensor">Вкл — направление с датчика компаса устройства</string>
+    <string name="watermark_compass_no_sensor">Нет датчика компаса — направление только от GPS (работает в движении)</string>
+    <string name="watermark_noise_title">Уровень шума (дБ)</string>
+    <string name="watermark_noise_off">Выкл</string>
+    <string name="watermark_noise_on">Вкл — уровень окружающего шума с микрофона</string>
+    <string name="watermark_weather_title">Погода</string>
+    <string name="watermark_weather_off">Выкл</string>
+    <string name="watermark_weather_on">Вкл — погода с Open-Meteo API (требуется интернет)</string>
+    <string name="watermark_network_warning_title">Сетевое предупреждение</string>
+    <string name="watermark_network_warning_message">Эта функция требует сетевых запросов, которые потенциально могут быть отслежены. Отключите, если нужна полная анонимность. Продолжить?</string>
+    <string name="watermark_network_warning_enable">Включить</string>
+    <string name="watermark_audio_permission_required">Требуется разрешение на микрофон для мониторинга шума</string>
+    <string name="watermark_gps_disabled_warning">⚠ GPS выключен — включите геолокацию устройства для работы этой функции</string>
+    <string name="watermark_gps_disabled_home_toast">Функции водяного знака с местоположением включены, но GPS выключен. Включите геолокацию устройства для их работы.</string>
+    <string name="watermark_gps_disabled_banner_message">Функции водяного знака, зависящие от местоположения, не будут отображаться, пока не включена геолокация устройства</string>
+    <string name="watermark_timezone_title">Часовой пояс</string>
+    <string name="watermark_timezone_off">Выкл</string>
+    <string name="watermark_timezone_on_gmt">Вкл — GMT смещение в водяном знаке</string>
+    <string name="watermark_timezone_format_title">Формат часового пояса</string>
+    <string name="watermark_timezone_format_gmt_only">Только GMT смещение</string>
+    <string name="watermark_timezone_format_gmt_name">GMT смещение + название</string>
+    <string name="watermark_utm_title">UTM-координаты</string>
+    <string name="watermark_utm_off">Выкл</string>
+    <string name="watermark_utm_on">Вкл — координаты универсальной поперечной проекции Меркатора</string>
+    <string name="watermark_utm_helper">UTM делит Землю на 60 зон и конвертирует широту/долготу в восточное и северное смещение в метрах. Используется военными, геодезистами и топографическими картами для точного позиционирования.\n\nКак читать: «Зона 42N — 372 684 м E, 3 512 334 м N» = Зона 42 в Северном полушарии, 372 684 метра восточного смещения, 3 512 334 метра северного смещения.</string>
+    <string name="export_center">Центр экспорта</string>
+    <string name="remote_server_status">Статус сервера</string>
+    <string name="remote_server_endpoints">Конечные точки сервера</string>
+    <string name="remote_get_requests">GET-запросы</string>
+    <string name="remote_post_requests">POST-запросы</string>
+    <string name="remote_server_root">Корень сервера</string>
+    <string name="remote_live_stream">Прямой эфир</string>
+    <string name="remote_status_api">API статуса</string>
+    <string name="remote_init_segment">Начальный сегмент</string>
+    <string name="remote_torch_toggle">Переключение фонарика</string>
+    <string name="remote_post_requests_remote_control">POST-запросы (удалённое управление)</string>
+    <string name="remote_network_health">Состояние сети</string>
+    <string name="remote_status">Статус</string>
+    <string name="remote_excellent">Отлично</string>
+    <string name="remote_test_now">Проверить сейчас</string>
+    <string name="remote_speed_metrics">Метрики скорости</string>
+    <string name="remote_download">Скачать</string>
+    <string name="remote_upload">Загрузить</string>
+    <string name="remote_signal_strength">Сила сигнала</string>
+    <string name="remote_latency_ping">Задержка (Ping)</string>
+    <string name="remote_last_tested">Последняя проверка: %s</string>
+    <string name="remote_connected_clients">Подключённые клиенты</string>
+    <string name="remote_client_data_usage">Использование данных клиентами</string>
+    <string name="remote_total_served">Всего обслужено</string>
+    <string name="remote_active_clients">Активные клиенты</string>
+    <string name="remote_per_client_breakdown">Разбивка по клиентам</string>
+    <string name="remote_no_clients">Нет подключённых клиентов</string>
+    <string name="remote_battery_info">Информация о батарее</string>
+    <string name="remote_current_level">Текущий уровень</string>
+    <string name="remote_battery_consumed">Расход батареи (трансляция)</string>
+    <string name="remote_charging_status">Статус зарядки</string>
+    <string name="remote_not_charging">Не заряжается</string>
+    <string name="remote_low_battery_threshold">Порог предупреждения о низком заряде</string>
+    <string name="remote_set">Установить</string>
+    <string name="remote_device_battery_capacity">Ёмкость батареи устройства</string>
+    <string name="remote_save">Сохранить</string>
+    <string name="remote_estimates_for_device">Оценки для вашего устройства:</string>
+    <string name="remote_uptime_details">Детали времени работы</string>
+    <string name="remote_server_uptime">Время работы сервера</string>
+    <string name="remote_session_started_at">Сессия начата в</string>
+    <string name="remote_video_segments">Видеосегменты (фрагменты)</string>
+    <string name="remote_buffered">Буферизировано</string>
+    <string name="remote_buffer_size">Размер буфера</string>
+    <string name="remote_sequence_range">Диапазон последовательности</string>
+    <string name="remote_oldest">Старейший</string>
+    <string name="remote_latest">Новейший</string>
+    <string name="remote_what_are_segments">Что такое сегменты?</string>
+    <string name="remote_stream_orientation">Ориентация трансляции</string>
+    <string name="remote_choose_orientation">Выберите ориентацию только для трансляции</string>
+    <string name="remote_portrait">Портретная</string>
+    <string name="remote_vertical_orientation">Вертикальная ориентация (9:16)</string>
+    <string name="remote_landscape">Ландшафтная</string>
+    <string name="remote_horizontal_orientation">Горизонтальная ориентация (16:9)</string>
+    <string name="remote_auto_default">Авто (По умолчанию)</string>
+    <string name="remote_follow_recording_orientation">Следовать ориентации записи приложения</string>
+    <string name="remote_quality_low">Низкое</string>
+    <string name="remote_quality_medium">Среднее</string>
+    <string name="remote_quality_high">Высокое</string>
+    <string name="remote_quality_ultra">Ультра</string>
+    <string name="remote_event_logs">Журналы событий</string>
+    <string name="remote_client_events">События клиентов</string>
+    <string name="remote_pages">Страницы</string>
+    <string name="remote_layers">Слои</string>
+    <string name="remote_access_endpoints_desc">Получите доступ к вашему серверу трансляции через эти HTTP-конечные точки</string>
+    <string name="remote_control_via_api_desc">Управляйте FadCam удалённо через API-вызовы</string>
+    <string name="remote_buffered_segments_desc">Буферизированные сегменты, готовые к трансляции</string>
+    <string name="remote_battery_low_warning">⚠️ Низкий заряд батареи - подключите зарядное устройство</string>
+    <string name="remote_enter_percentage_hint">Введите процент</string>
+    <string name="remote_enter_mah_hint">Введите мАч (1000-10000)</string>
+    <string name="sidebar_profiles">Профили</string>
+    <string name="sidebar_profiles_desc">Мгновенно сохраняйте и загружайте пресеты записи</string>
+    <string name="sidebar_update_available">Доступно обновление</string>
+    <string name="sidebar_stable_release">Стабильный релиз</string>
+    <string name="sidebar_beta_release">Бета-релиз</string>
+    <string name="sidebar_fadcam_pro">FadCam Pro</string>
+    <string name="badge_new">НОВОЕ</string>
+    <string name="update_pro_title">Обновление FadCam Pro</string>
+    <string name="update_get_pro">Получить FadCam Pro</string>
+    <string name="update_maybe_later">Может быть позже</string>
+    <string name="update_beta_title">Доступно бета-обновление</string>
+    <string name="update_get_beta">Получить бета-версию</string>
+    <string name="mini_apps_about_title">О мини-приложениях</string>
+    <string name="mini_apps_current_tools">Текущие инструменты</string>
+    <string name="mini_apps_qr_scanner_reference">Справочник QR-сканера</string>
+    <string name="screen_recording_title">Запись экрана</string>
+    <string name="screen_recording_notif_title">FadRec - Запись экрана</string>
+    <string name="screen_recording_saved">Запись экрана сохранена</string>
+    <string name="screen_recording_tap_to_view">Нажмите, чтобы просмотреть запись</string>
+    <string name="notification_action_stop">Стоп</string>
+    <string name="fadmic_coming_soon">FadMic (Запись с микрофона) скоро!</string>
+    <string name="toast_stream_server_starting">Запуск сервера трансляции...</string>
+    <string name="toast_stream_server_stopped">Сервер трансляции остановлен</string>
+    <string name="toast_no_cloud_viewers">Нет подключённых облачных зрителей</string>
+    <string name="toast_no_clients">Нет подключённых клиентов</string>
+    <string name="toast_device_id_copied">ID устройства скопирован</string>
+    <string name="toast_endpoint_copied">Скопировано: %s</string>
+    <string name="toast_battery_set_threshold">Порог предупреждения о батарее установлен на %s</string>
+    <string name="toast_battery_set_capacity">Ёмкость батареи установлена на %s</string>
+    <string name="toast_orientation_set">Ориентация уже установлена на %s</string>
+    <string name="toast_quality_set">Качество уже установлено на %s</string>
 </resources>

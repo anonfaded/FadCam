@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Network Health"
+        android:text="@string/remote_network_health"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -35,7 +35,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Status"
+                android:text="@string/remote_status"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray" />
 
@@ -43,7 +43,7 @@
                 android:id="@+id/network_status_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Excellent"
+                android:text="@string/remote_excellent"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginTop="4dp"
@@ -54,7 +54,7 @@
             android:id="@+id/test_now_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Test Now"
+            android:text="@string/remote_test_now"
             android:textSize="13sp"
             android:textStyle="bold"
             android:textColor="?attr/colorHeading"
@@ -68,7 +68,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Speed Metrics"
+        android:text="@string/remote_speed_metrics"
         android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -93,7 +93,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="↓ Download"
+                android:text="@string/remote_download"
                 android:textSize="11sp"
                 android:textColor="@android:color/darker_gray" />
 
@@ -120,7 +120,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="↑ Upload"
+                android:text="@string/remote_upload"
                 android:textSize="11sp"
                 android:textColor="@android:color/darker_gray" />
 
@@ -153,7 +153,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Signal Strength"
+                android:text="@string/remote_signal_strength"
                 android:textSize="11sp"
                 android:textColor="@android:color/darker_gray" />
 
@@ -201,7 +201,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Latency (Ping)"
+                android:text="@string/remote_latency_ping"
                 android:textSize="11sp"
                 android:textColor="@android:color/darker_gray" />
 

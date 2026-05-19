@@ -855,11 +855,11 @@ public class FadRecHomeFragment extends HomeFragment {
 
                 // Update title to show screen recording info
                 if (tvCameraTitle instanceof AnimatedTextView) {
-                    ((AnimatedTextView) tvCameraTitle).animateSlotFull("Screen Recording", 400);
+                    ((AnimatedTextView) tvCameraTitle).animateSlotFull(getString(R.string.screen_recording_title), 400);
                 } else {
-                    tvCameraTitle.setText("Screen Recording");
+                    tvCameraTitle.setText(getString(R.string.screen_recording_title));
                 }
-                FLog.d(TAG, "Card title updated to Screen Recording");
+                FLog.d(TAG, "Card title updated to " + getString(R.string.screen_recording_title));
 
                 // Update subtitle with configured resolution and fps
                 if (tvCameraSubtitle != null) {
@@ -892,9 +892,9 @@ public class FadRecHomeFragment extends HomeFragment {
             
             if (tvCameraTitle != null) {
                 if (animate && tvCameraTitle instanceof AnimatedTextView) {
-                    ((AnimatedTextView) tvCameraTitle).animateSlotFull("Screen Recording", 400);
+                    ((AnimatedTextView) tvCameraTitle).animateSlotFull(getString(R.string.screen_recording_title), 400);
                 } else {
-                    tvCameraTitle.setText("Screen Recording");
+                    tvCameraTitle.setText(getString(R.string.screen_recording_title));
                 }
             }
             

@@ -1,7 +1,2416 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name" translatable="false">FadCam</string>
+    <string name="app_icon_description">Vali ikoon ja nimi oma rakendusele. See muudab seda, kuidas see kuvatakse avalehel.</string>
+    <string name="check_for_updates">Kontrolli uuendusi</string>
+    <string name="accessibility_thumbnail_progress">%1$d%% vaadatud</string>
+    <string name="fadsec_info">FadCam on osa FadSec Labi rakenduste seeriast. Lisateabe saamiseks klõpsa allpool \'lähtekoodi vaatamist\'.</string>
+
+
+    <string name="app_description">
+        <![CDATA[
+    FadCam on reklaamivaba, avatud lähtekoodiga videorakendus, mis seab esikohale privaatsuse, jälgimata ega kogumata mingeid andmeid. See on saadaval ainult GitHubis ja README-s mainitud ametlike linkide kaudu.
+    <br/><br/>
+    FadCam on olnud esindatud populaarsetes YouTube\'i kanalites nagu <font color="#cfbafd">HowToMen</font> ja <font color="#cfbafd">Xtream Droid</font>, samuti arutatud <font color="#cfbafd">GrapheneOS</font> ja 55+ muus märkimisväärses kohas.
+    ]]>
+    </string>
+
+
+    <string name="view_source_code">Vaata lähtekoodi</string>
+    <string name="buy_me_a_coffee">Osta mulle kohvi ☕</string>
+    <string name="contact">Kontakt</string>
+    <string name="send_email">Saada e-kiri</string>
+    <string name="join_community">Liitu kogukonnaga abi saamiseks, ideede jagamiseks ja tulevaste rakenduse uuenduste jaoks</string>
+    <string name="readme_github_subtitle">Lähtekood ja väljalasked</string>
     <string name="readme_discord_subtitle">Liitu kogukonnaga</string>
     <string name="website_title">Veebisait</string>
     <string name="readme_website_subtitle">Ametlik sait</string>
-    <string name="full_changelog_info">Täieliku muudatuste logi jaoks minge Avalehele, avage hamburger-menüü ja valige „Mis uut“.</string>
+    <string name="privacy_information">Privaatsusteave</string>
+    <string name="copyright_info"> 2024-2025 https://fadcam.faded.dev\nLitsentseeritud GPL-3.0 alusel</string>
+    <string-array name="video_resolutions_keys">
+        <item>7680x4320</item>        <!-- 8K -->
+        <item>3840x2160</item>        <!-- 4K -->
+        <item>2560x1440</item>        <!-- 2K -->
+        <item>1920x1080</item>        <!-- FHD -->
+        <item>1280x720</item>        <!-- HD -->
+        <item>640x480</item>        <!-- SD -->
+        <item>720x480</item>        <!-- SD -->
+        <item>480x360</item>        <!-- SD -->
+    </string-array>
+    <string-array name="video_resolutions_values">
+        <item>8K</item>        <!-- 8K -->
+        <item>4K</item>        <!-- 4K -->
+        <item>2K</item>        <!-- 2K -->
+        <item>FHD</item>        <!-- Full HD -->
+        <item>HD</item>        <!-- High Definition -->
+        <item>SD</item>        <!-- Standard Definition -->
+        <item>SD</item>        <!-- Standard Definition -->
+        <item>SD</item>        <!-- Standard Definition -->
+    </string-array>
+    <integer-array name="video_framerate_array">
+        <item name="24">24</item>
+        <item name="30">30</item>
+        <item name="60">60</item>
+        <item name="90">90</item>
+    </integer-array>
+    <string name="mainpage_storage_indicator" formatted="false">\n                                            <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Saadaval:</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>%.2f GB / %.2f GB</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Salvestusaeg (hinnang):</b></font><br>
+    <font color=\'#CCCCCC\' style=\'font-size:14sp;\'>FHD: %s<br>HD: %s<br>SD: %s</font><br><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Kulunud aeg:</b></font><br>
+    <font color=\'#77DD77\' style=\'font-size:14sp;\'>%02d:%02d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:16sp;\'><b>Järelejäänud aeg:</b></font><br>
+    <font color=\'#E43C3C\' style=\'font-size:14sp;\'>%s</font>
+    ]]>\n</string>
+    <string-array name="tips_widget">
+        <item>1/11 | Vajuta pikalt eelvaatel selle keelamiseks.</item>
+        <item>2/11 | Vajuta pikalt kuupäeva vidinal kella kuva valimiseks.</item>
+        <item>3/11 | Mäluruumi vidin uuendab salvestusruumi reaalajas.</item>
+        <item>4/11 | Statistika vidin kuvab videote koguarvu ja kasutatud ruumi.</item>
+        <item>5/11 | Muuda video kvaliteeti seadetes (HD, SD, FHD).</item>
+        <item>6/11 | Ruumi vähe? Kohanda video kvaliteeti pikema salvestusaja saamiseks.</item>
+        <item>7/11 | Lisa videotele vesimärk seadetes.</item>
+        <item>8/11 | Lisa vesimärgile täpne asukoht seadete kaudu.</item>
+        <item>9/11 | Salvesta esikaameraga? Vali seadetes.</item>
+        <item>10/11 | Sinu eelistused on salvestatud ja neid rakendatakse sujuvalt.</item>
+        <item>11/11 | Vajad abi? Liitu meie Discordiga jaotisest Teave.</item>
+    </string-array>
+    <string name="mainpage_video_info" formatted="false">\n                                            <![CDATA[
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Videod: </b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>
+    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Kasutatud: </b></font>
+    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
+    ]]>\n</string>
+    <string name="stats_label_videos">Videod:</string>
+    <string name="stats_label_used">Kasutatud:</string>
+    <string name="button_start">Alusta</string>
+    <string name="button_pause">Paus</string>
+    <string name="button_stop">Peata</string>
+    <string name="button_resume">Jätka</string>
+
+    <!-- FadRec Screen Recording Strings -->
+    <string name="fadrec_start_screen_recording">Alusta ekraani salvestamist</string>
+    <string name="fadrec_stop_screen_recording">Peata ekraani salvestamine</string>
+    <string name="fadrec_pause_screen_recording">Ekraani salvestamise paus</string>
+    <string name="fadrec_resume_screen_recording">Jätka ekraani salvestamist</string>
+    <string name="fadrec_screen_recording_started">Ekraani salvestamine alustatud</string>
+    <string name="fadrec_screen_recording_stopped">Ekraani salvestamine peatatud</string>
+    <string name="fadrec_screen_recording_paused">Ekraani salvestamine peatatud</string>
+    <string name="fadrec_screen_recording_resumed">Ekraani salvestamine jätkatud</string>
+    <string name="fadrec_notification_title">Ekraani salvestamine</string>
+    <string name="fadrec_notification_recording">Ekraani salvestamine…</string>
+    <string name="fadrec_notification_paused">Salvestamine peatatud</string>
+    <string name="floating_controls_title">Menüü</string>
+    <string name="floating_controls_permission_needed">Ülekatte luba on vajalik</string>
+    <string name="floating_controls_permission_title">Ülekatte luba on vajalik</string>
+    <string name="floating_controls_permission_message">Ujuv kiirmenüü kuvatakse ülekattena teiste rakenduste peal, pakkudes kiiret juurdepääsu salvestusjuhtnuppudele kõikjalt.\n\nSelle funktsiooni lubamiseks peate andma \"Kuva teiste rakenduste peal\" loa järgmisel ekraanil.</string>
+    <string name="floating_controls_permission_grant">Anna luba</string>
+    <string name="floating_menu_title">Kiirmenüü</string>
+    <string name="floating_menu_start">Alusta salvestamist</string>
+    <string name="floating_menu_start_short">Alusta</string>
+    <string name="floating_menu_pause">Paus</string>
+    <string name="floating_menu_resume">Jätka</string>
+    <string name="floating_menu_stop">Peata salvestamine</string>
+    <string name="floating_menu_stop_short">Peata</string>
+    <string name="annotation_notification_hide_menu">Peida menüü</string>
+    <string name="annotation_notification_show_menu">Kuva menüü</string>
+    <string name="floating_menu_annotations">Annotatsioonid</string>
+    <string name="recording_controls">Salvestusjuhtnupud</string>
+    <string name="annotations">Annotatsioonid</string>
+    <string name="annotation_tools">Annotatsioonitööriistad</string>
+    <string name="enable_annotations">Luba annotatsioonid</string>
+    <string name="snap_guides">Kinnita juhendid</string>
+    <string name="add_text">Lisa tekst</string>
+    <string name="add_shape">Lisa kuju</string>
+    <string name="fadrec_ready_to_record">Valmis ekraani jäädvustamiseks</string>
+    <string name="fadrec_ready_to_record_subtitle">Puuduta alustamiseks</string>
+    <string name="fadrec_permission_denied">Ekraani salvestamise luba keelatud</string>
+    <string name="fadrec_mode_title">FadRec • Ekraani salvestamine</string>
+    <string name="fadrec_mute_audio">Vaigista salvestuse heli</string>
+    <string name="fadrec_unmute_audio">Heli salvestamine sisse</string>
+    <string name="fadrec_mic_permission_needed_title">Mikrofoni luba on vajalik</string>
+    <string name="fadrec_mic_permission_needed_message">FadRec ei pääse mikrofonile ligi. Saad salvestada vaigistatult – heli ei salvestata.</string>
+    <string name="fadrec_record_muted">Salvesta vaigistatult</string>
+
+    <!-- FadRec audio source picker -->
+    <string name="fadrec_audio_source_title">Heliallikas</string>
+    <string name="fadrec_audio_source_choose">Vali heliallikas</string>
+    <string name="fadrec_audio_source_none">Helita</string>
+    <string name="fadrec_audio_source_mic">Mikrofon</string>
+    <string name="fadrec_audio_source_internal">Seadme heli (sisemine)</string>
+
+    <string name="video_recording_started">Salvestamine alustatud</string>
+    <string name="video_recording_stopped">Salvestamine peatatud</string>
+    <string name="video_recording_paused">Salvestamine peatatud</string>
+    <string name="video_recording_resumed">Salvestamine jätkatud</string>
+    <string name="current_camera">Praegune kaamera</string>
+    <string name="recording_controls_title">AF · Säri · Suum</string>
+    <string name="mainpage_camera_front">Esikaamera</string>
+    <string name="mainpage_camera_back">Tagakaamera</string>
+    <string name="storage_available_space">Saadaval ruum</string>
+    <string name="recording_estimated_time">Hinnanguline aeg</string>
+    <string name="recording_time_left">Aega jäänud</string>
+    <string name="recording_elapsed_time">Kulunud aeg</string>
+    <string name="recording_remaining_time">Järelejäänud aeg</string>
+    <string name="home_elapsed_customize_title">Kulunud aeg</string>
+    <string name="home_elapsed_customize_helper">Kohanda kulunud aja kuva vormingut, joondust, suurust, fonti, aktsentlippu ja tausta.</string>
+    <string name="home_elapsed_display_option">Kuva vorming</string>
+    <string name="home_elapsed_display_option_desc">Vaheta kompaktse reasisese kulunud aja ja digitaalkella vormingu vahel</string>
+    <string name="home_elapsed_display_helper">Vali, kuidas kulunud aeg kaardil kuvatakse.</string>
+    <string name="home_elapsed_display_compact">Kompaktne reasisene (vaikimisi)</string>
+    <string name="home_elapsed_display_compact_desc">Kuvab kulunud aja kujul 5t 16m 23s kompaktsete reasiseste ühikutega</string>
+    <string name="home_elapsed_display_digital">Digitaalkell</string>
+    <string name="home_elapsed_display_digital_desc">Kuvab kulunud aja kujul 00:00 või 01:05:23 ilma reasiseste siltideta</string>
+    <string name="home_elapsed_alignment_option">Joondus</string>
+    <string name="home_elapsed_alignment_option_desc">Vali, kuidas kulunud aja sisu kaardil paikneb</string>
+    <string name="home_elapsed_alignment_helper">Vali kulunud aja joondus.</string>
+    <string name="home_elapsed_align_center">Keskel (vaikimisi)</string>
+    <string name="home_elapsed_align_center_desc">Hoia kulunud aeg keskel</string>
+    <string name="home_elapsed_align_left">Vasakule joondatud</string>
+    <string name="home_elapsed_align_left_desc">Kinnita kulunud aeg algusesse</string>
+    <string name="home_elapsed_size_option">Suurus</string>
+    <string name="home_elapsed_size_option_desc">Vaheta kompaktse ja suurema kulunud aja eelseadistuse vahel</string>
+    <string name="home_elapsed_size_helper">Vali, kui silmatorkav kulunud aeg peaks olema.</string>
+    <string name="home_elapsed_size_small">Väike</string>
+    <string name="home_elapsed_size_small_desc">Kõige kompaktsem taimeri suurus tihedama kaardi jaoks</string>
+    <string name="home_elapsed_size_medium">Keskmine (vaikimisi)</string>
+    <string name="home_elapsed_size_medium_desc">Tasakaalustatud vaikimisi suurus kulunud ajale</string>
+    <string name="home_elapsed_size_large">Suur</string>
+    <string name="home_elapsed_size_large_desc">Suurim taimeri suurus maksimaalse rõhuasetusega</string>
+    <string name="home_elapsed_font_option">Font</string>
+    <string name="home_elapsed_font_option_desc">Vali kulunud aja väärtuse font</string>
+    <string name="home_elapsed_font_helper">Vali font, mida kulunud aja numbrid kasutavad.</string>
+    <string name="home_elapsed_font_ubuntu">Ubuntu (vaikimisi)</string>
+    <string name="home_elapsed_font_ubuntu_desc">Kasutab rakenduse vaikimisi Ubuntu fonti taimerile</string>
+    <string name="home_elapsed_font_monospace">Monospace</string>
+    <string name="home_elapsed_font_monospace_desc">Kasutab Androidi sisseehitatud monospace fonti selgemate fikseeritud laiusega numbrite jaoks</string>
+    <string name="home_elapsed_font_doto">Doto</string>
+    <string name="home_elapsed_font_doto_desc">Kasutab Doto fonti digitaalse taimeri eristuvama välimuse jaoks</string>
+    <string name="home_elapsed_flag_option">Lipu aktsent</string>
+    <string name="home_elapsed_flag_option_desc">Kuva või peida FadSec Labi lipu aktsent taimeri taga</string>
+    <string name="home_elapsed_flag_helper">Vali, kas FadSec Labi lipu aktsent kuvatakse kulunud taimeri taga.</string>
+    <string name="home_elapsed_flag_show">Kuva FadSec Labi lipp (vaikimisi)</string>
+    <string name="home_elapsed_flag_show_desc">Kuva bränditud lipu aktsent taimeri taga</string>
+    <string name="home_elapsed_flag_hide">Peida FadSec Labi lipp</string>
+    <string name="home_elapsed_flag_hide_desc">Hoia kulunud taimeri ala puhtana ilma lipu aktsendita</string>
+    <string name="home_elapsed_background_option">Taust</string>
+    <string name="home_elapsed_background_option_desc">Vali, kas kulunud aeg asub mustal, valgel või läbipaistval kaardil</string>
+    <string name="home_elapsed_background_helper">Vali taust, mida kulunud taimeri kaart kasutab.</string>
+    <string name="home_elapsed_background_black">Must kaart (vaikimisi)</string>
+    <string name="home_elapsed_background_black_desc">Anna kulunud taimerile tahke must kaardi taust tugevama konteineri jaoks</string>
+    <string name="home_elapsed_background_white">Valge kaart</string>
+    <string name="home_elapsed_background_white_desc">Kasuta puhast valget kaardi tausta tumeda tekstiga taimerile</string>
+    <string name="home_elapsed_background_transparent">Läbipaistev</string>
+    <string name="home_elapsed_background_transparent_desc">Hoia kulunud taimeri kaart visuaalselt kerge ja avatuna</string>
+    <string name="home_storage_customize_title">Mälu kuva</string>
+    <string name="home_storage_customize_helper">Kohanda mälunäidiku stiili ja kogumahu nähtavust.</string>
+    <string name="home_storage_indicator_option">Näidiku stiil</string>
+    <string name="home_storage_indicator_option_desc">Vali, kuidas saadaval mälu ikoonipildis visualiseeritakse</string>
+    <string name="home_storage_indicator_helper">Vali stiil, millega saadaval mälu visualiseeritakse.</string>
+    <string name="home_storage_indicator_title">Mälu näidik</string>
+    <string name="home_storage_indicator_ring">Rõngas (vaikimisi)</string>
+    <string name="home_storage_indicator_ring_desc">Kuva saadaval ruum kompaktse ümmarguse rõngana</string>
+    <string name="home_storage_indicator_bar">Väike pilliroo riba</string>
+    <string name="home_storage_indicator_bar_desc">Kuva saadaval ruum väikese horisontaalse ribana</string>
+    <string name="home_storage_indicator_vertical">Vertikaalne riba</string>
+    <string name="home_storage_indicator_vertical_desc">Kuva saadaval ruum kompaktse vertikaalse täiteribana</string>
+    <string name="home_storage_total_option">Kogumaht</string>
+    <string name="home_storage_total_option_desc">Kuva või peida kaldkriips ja kogumahuväärtus</string>
+    <string name="home_storage_total_helper">Vali, kas kogumahu väärtus kuvatakse saadaval ruumi kõrval.</string>
+    <string name="home_storage_total_show">Kuva kogumaht (vaikimisi)</string>
+    <string name="home_storage_total_show_desc">Kuva kaldkriips ja kogumahuväärtus reasiseselt</string>
+    <string name="home_storage_total_hide">Peida kogumaht</string>
+    <string name="home_storage_total_hide_desc">Hoia ainult saadaval ruumi väärtus nähtavana</string>
+    <string name="home_time_left_color_title">Aega jäänud värv</string>
+    <string name="home_time_left_color_helper">Vali aktsentvärv aja-jäänud reale. Punane on vaikimisi.</string>
+    <string name="home_time_left_color_choice_desc">Aktsentvärv %1$s</string>
+    <string name="home_clock_customize_title">Kella välimus</string>
+    <string name="home_clock_customize_helper">Muuda kella kuva, värvi ja tunnivormingut.</string>
+    <string name="home_clock_display_option">Kella kuva</string>
+    <string name="home_clock_display_option_desc">Vali, millised kuupäeva ja kella read kellakaardil kuvatakse</string>
+    <string name="home_clock_display_helper">Vali kellakaardi paigutus.</string>
+    <string name="home_clock_display_timeonly_desc">Kuva ainult põhiline kellarida</string>
+    <string name="home_clock_display_english_desc">Kuva aeg ingliskeelse kuupäeva reaga</string>
+    <string name="home_clock_display_islamic_desc">Kuva aeg ingliskeelse ja islamikuupäeva reaga</string>
+    <string name="home_clock_color_option">Kella värv</string>
+    <string name="home_clock_color_option_desc">Vali kellakaardi aktsent-/taustavärv</string>
+    <string name="home_clock_color_helper">Vali kellakaardi värv avalehe paletist.</string>
+    <string name="home_clock_color_choice_desc">Kella värv %1$s</string>
+    <string name="home_clock_hour_format_option">Tunnivorming</string>
+    <string name="home_clock_hour_format_option_desc">Vali, kas kell kuvab 12-tunnist või 24-tunnist aega</string>
+    <string name="home_clock_hour_format_helper">Vali tunnivorming, mida avalehe kell kasutab.</string>
+    <string name="home_clock_hour_format_12">12-tunnine (vaikimisi)</string>
+    <string name="home_clock_hour_format_12_desc">Kuva aeg AM ja PM-ga</string>
+    <string name="home_clock_hour_format_24">24-tunnine</string>
+    <string name="home_clock_hour_format_24_desc">Kuva aeg 24-tunnises vormingus ilma AM või PM-ta</string>
+    <string name="home_cards_fold_toggle">Lülita avalehe kaardid</string>
+    <string name="mainpage_recording_to_sd">Salvestamine SD-kaardile</string>
+    <string name="tips_title">Näpunäited</string>
+    <string name="tips_subtitle">Kasulikud kasutusnõuanded</string>
+    <string name="whats_new_title">Mis on uut</string>
+    <string name="whats_new_subtitle">Vaata viimaseid funktsioone ja uuendusi</string>
+    <string name="home_menu">Avalehe menüü</string>
+    <string name="home_sidebar_title">Avaleht</string>
+    <string name="home_options_title">Avalehe valikud</string>
+    <string name="help_section">Abi</string>
+    <string name="display_settings_title">Kuva</string>
+    <string name="back">Taga</string>
+    <string name="front">Ees</string>
+    <string name="video_menu_del">Kustuta</string>
+    <string name="video_menu_save">Salvesta galeriisse</string>
+    <string name="video_menu_save_helper_downloads_fadcam">Video salvestatakse aadressile Downloads/FadCam</string>
+    <string name="video_menu_save_copy_or_move_title">Salvesta galeriisse</string>
+    <string name="video_menu_save_copy">Kopeeri galeriisse</string>
+    <string name="video_menu_save_copy_desc">Loo koopia aadressile Downloads/FadCam (algne fail säilitatakse)</string>
+    <string name="video_menu_save_move">Teisalda galeriisse</string>
+    <string name="video_menu_save_move_desc">Teisalda fail aadressile Downloads/FadCam (säästab salvestusruumi)</string>
+    <string name="video_menu_save_longpress_helper">Vajuta pikalt \"Salvesta galeriisse\", et valida kopeerimise ja teisaldamise vahel</string>
+    <string name="watch_video_saved_toast">Salvestatud aadressile Downloads/FadCam</string>
+    <string name="watch_delete_confirm_title">Teisalda prügikasti?</string>
+    <string name="watch_delete_confirm_msg">\"%s\" teisaldatakse prügikasti.</string>
+    <string name="watch_delete_confirm_action">Teisalda prügikasti</string>
+    <string name="watch_perm_delete_title">Kustuta jäädavalt?</string>
+    <string name="watch_perm_delete_msg">\"%s\" kustutatakse jäädavalt ja seda ei saa taastada.</string>
+    <string name="watch_perm_delete_action">Kustuta igaveseks</string>
+    <string name="watch_perm_delete_all_title">Kustuta kõik?</string>
+    <string name="watch_perm_delete_all_msg">Kõik %d elementi prügikastis kustutatakse jäädavalt ja neid ei saa taastada.</string>
+
+    <!-- File Operation Completion Messages -->
+    <string name="file_operation_copied_to_gallery">%1$s kopeeritud galeriisse</string>
+    <string name="file_operation_moved_to_gallery">%1$s teisaldatud galeriisse</string>
+    <string name="file_operation_deleted">%1$s kustutatud</string>
+    <string name="file_operation_restored">%1$s taastatud</string>
+    <string name="file_operation_processed">%1$s töödeldud</string>
+
+    <!-- Background Operation Progress Messages -->
+    <string name="background_delete_progress">Kustutamine %1$s taustal…</string>
+    <string name="background_restore_progress">Taastamine %1$s taustal…</string>
+    <string name="records_delete_notification_channel_name">Kustutamise edenemine</string>
+    <string name="records_delete_notification_channel_desc">Edenemine ja tulemused taustal kustutamiseks jaotises Salvestised.</string>
+    <string name="records_delete_notification_title">Salvestiste kustutamine</string>
+    <string name="records_delete_notification_progress_text">%1$d / %2$d valmis • %3$s</string>
+    <string name="records_delete_notification_summary_text">Kustutatud %1$d • Nurjus %2$d</string>
+    <string name="records_save_notification_summary_text_copy">Salvestatud %1$d • Nurjus %2$d</string>
+    <string name="records_save_notification_summary_text_move">Teisaldatud %1$d • Nurjus %2$d</string>
+    <string name="records_save_notification_summary_text_export">Eksporditud %1$d • Nurjus %2$d</string>
+    <string name="records_delete_notification_complete_success">Kustutamine lõpetatud</string>
+    <string name="records_delete_notification_complete_partial">Kustutamine lõpetatud probleemidega</string>
+    <string name="records_delete_notification_complete_failed">Kustutamine nurjus</string>
+    <string name="records_delete_notification_cancelled">Kustutamine tühistatud</string>
+    <string name="records_delete_notification_cancel">Tühista</string>
+    <string name="records_save_notification_title_copy">Galeriisse salvestamine</string>
+    <string name="records_save_notification_title_move">Galeriisse teisaldamine</string>
+    <string name="records_save_notification_title_export">Eksportimine</string>
+    <string name="records_save_notification_complete_success_copy">Salvestamine lõpetatud</string>
+    <string name="records_save_notification_complete_success_move">Teisaldamine lõpetatud</string>
+    <string name="records_save_notification_complete_success_export">Eksportimine lõpetatud</string>
+    <string name="records_save_notification_complete_partial">Salvestamine lõpetatud probleemidega</string>
+    <string name="records_save_notification_complete_failed">Salvestamine nurjus</string>
+    <string name="records_save_notification_cancelled">Salvestamine tühistatud</string>
+    <string name="records_delete_error_invalid_item">Üht valikutest ei saanud kustutada.</string>
+    <string name="records_delete_error_failed_item">%1$s kustutamine nurjus.</string>
+    <string name="records_save_error_failed_item">%1$s salvestamine nurjus.</string>
+    <string name="records_save_error_create_destination">Sihtkausta loomine nurjus.</string>
+    <string name="records_save_error_open_source">Lähtefaili lugemine nurjus.</string>
+    <string name="records_save_error_delete_original">Kopeeritud, kuid algset faili ei saanud eemaldada.</string>
+    <string name="records_delete_header_default_title">Salvestiste kustutamine</string>
+    <string name="records_delete_header_action_ok">OK</string>
+    <string name="records_delete_header_action_cancel">Tühista</string>
+    <string name="records_delete_header_done_success">Kustutamine lõpetatud</string>
+    <string name="records_delete_header_done_partial">Kustutamine lõpetatud probleemidega</string>
+    <string name="records_delete_header_done_failed">Kustutamine nurjus</string>
+    <string name="records_delete_header_done_body_success">%1$d elementi eemaldatud.</string>
+    <string name="records_delete_header_done_body_partial">%1$d eemaldatud • %2$d nurjus.</string>
+    <string name="records_delete_header_done_body_failed">%1$d elementi nurjus.</string>
+    <string name="records_delete_header_preparing">Kustutamise ettevalmistamine…</string>
+    <string name="records_save_header_preparing_copy">Salvestamise ettevalmistamine…</string>
+    <string name="records_save_header_preparing_move">Teisaldamise ettevalmistamine…</string>
+    <string name="records_save_header_preparing_export">Ekspordi ettevalmistamine…</string>
+    <string name="records_delete_header_working">Töötan…</string>
+    <string name="records_delete_header_finishing">Lõpetan…</string>
+    <string name="records_delete_header_dismiss_hint">Puuduta OK sulgemiseks</string>
+    <string name="records_delete_header_eta_seconds">ETA %1$d s</string>
+    <string name="records_delete_header_eta_minutes">ETA %1$d m %2$02d s</string>
+    <string name="records_delete_header_summary">%1$d / %2$d valmis • %3$d nurjus</string>
+    <string name="records_delete_header_running_summary">%1$d valmis • %2$d nurjus</string>
+    <string name="records_delete_header_issue_prefix">Probleem: %1$s</string>
+    <string name="records_save_header_done_success_copy">Salvestamine lõpetatud</string>
+    <string name="records_save_header_done_success_move">Teisaldamine lõpetatud</string>
+    <string name="records_save_header_done_success_export">Eksportimine lõpetatud</string>
+    <string name="records_save_header_done_partial">Salvestamine lõpetatud probleemidega</string>
+    <string name="records_save_header_done_failed">Salvestamine nurjus</string>
+    <string name="records_save_header_done_body_success_copy">%1$d elementi galeriisse salvestatud.</string>
+    <string name="records_save_header_done_body_success_move">%1$d elementi galeriisse teisaldatud.</string>
+    <string name="records_save_header_done_body_success_export">%1$d elementi eksporditud.</string>
+    <string name="records_save_header_done_body_partial">%1$d valmis • %2$d nurjus.</string>
+    <string name="records_save_header_done_body_failed">%1$d elementi nurjus.</string>
+    <plurals name="records_delete_header_running_title">
+        <item quantity="one">Kustutan %d elementi</item>
+        <item quantity="other">Kustutan %d elementi</item>
+    </plurals>
+    <plurals name="records_delete_header_progress_title">
+        <item quantity="one">Kustutan %1$d / %2$d elementi</item>
+        <item quantity="other">Kustutan %1$d / %2$d elementi</item>
+    </plurals>
+    <plurals name="records_save_copy_header_progress_title">
+        <item quantity="one">Salvestan %1$d / %2$d elementi</item>
+        <item quantity="other">Salvestan %1$d / %2$d elementi</item>
+    </plurals>
+    <plurals name="records_save_move_header_progress_title">
+        <item quantity="one">Teisaldan %1$d / %2$d elementi</item>
+        <item quantity="other">Teisaldan %1$d / %2$d elementi</item>
+    </plurals>
+    <plurals name="records_save_export_header_progress_title">
+        <item quantity="one">Ekspordin %1$d / %2$d elementi</item>
+        <item quantity="other">Ekspordin %1$d / %2$d elementi</item>
+    </plurals>
+    <plurals name="records_delete_queued_toast">
+        <item quantity="one">Kustutan 1 elementi taustal.</item>
+        <item quantity="other">Kustutan %d elementi taustal.</item>
+    </plurals>
+    <string name="video_menu_rename">Nimeta ümber</string>
+    <string name="video_menu_info">Teave</string>
+    <string name="video_menu_copy_filename">Kopeeri failinimi</string>
+
+    <!-- Video Info Strings -->
+    <string name="video_info_file_name">Failinimi</string>
+    <string name="video_info_file_size">Faili suurus</string>
+    <string name="video_info_file_path">Faili asukoht</string>
+    <string name="video_info_last_modified">Viimati muudetud</string>
+    <string name="video_info_duration">Kestus</string>
+    <string name="video_info_resolution">Eraldusvõime</string>
+    <string name="video_info_fps">Kaadrisagedus</string>
+    <string name="video_info_codec">Koodek</string>
+    <string name="video_info_bitrate">Bitikiirus</string>
+    <string name="video_info_geotag">Asukoht</string>
+    <string name="video_info_copy_clipboard">Kopeeri lõikelauale</string>
+    <string name="video_info_copy_subtitle">Kopeeri video teave</string>
+    <string name="video_info_unknown">Tundmatu</string>
+    <string name="video_info_no_location">Asukohaandmed puuduvad</string>
+    <string name="video_menu_mark_viewed">Märgi vaadatuks</string>
+    <string name="video_menu_mark_unviewed">Märgi vaatamatuks</string>
+    <string name="video_menu_upload_youtube">Laadi üles YouTube\'i</string>
+    <string name="video_menu_upload_drive">Laadi üles Google Drive\'i</string>
+    <string name="video_menu_open_with">Ava rakendusega...</string>
+    <string name="chooser_open_with">Ava rakendusega</string>
+    <string name="image_viewer_title">Pildivaatur</string>
+    <string name="media_type_photo">Foto</string>
+    <string name="media_type_photo_back">Taga</string>
+    <string name="media_type_photo_selfie">Selfie</string>
+    <string name="media_type_photo_fadrec">FadRec</string>
+    <string name="photo_capture_saved">Foto salvestatud</string>
+    <string name="photo_capture_failed">Foto jäädvustamine nurjus</string>
+    <string name="photo_capture_preview_unavailable">Eelvaade ei ole saadaval</string>
+    <string name="video_menu_upload_faddrive">Laadi üles FadDrive\'i</string>
+    <string name="toast_no_youtube_app">YouTube\'i rakendust ei leitud</string>
+    <string name="toast_no_drive_app">Google Drive\'i rakendust ei leitud</string>
+    <string name="records_title">Salvestised</string>
+    <string name="records_filter_all">Kõik</string>
+    <string name="records_filter_camera">FadCam</string>
+    <string name="records_filter_dual">Duaal</string>
+    <string name="records_filter_screen">FadRec</string>
+    <string name="records_filter_faditor">Faditor</string>
+    <string name="records_filter_stream">Voogedastus</string>
+    <string name="records_filter_shot">FadShot</string>
+    <string name="records_filter_camera_all">Kõik</string>
+    <string name="records_filter_camera_back">Taga</string>
+    <string name="records_filter_camera_front">Ees</string>
+    <string name="records_filter_camera_dual">Duaal</string>
+    <string name="records_filter_faditor_all">Kõik</string>
+    <string name="records_filter_faditor_converted">Teisendatud</string>
+    <string name="records_filter_faditor_merge">Ühendamine</string>
+    <string name="records_filter_shot_all">Kõik</string>
+    <string name="records_filter_miniapps_all">Kõik</string>
+    <string name="records_filter_shot_back">Taga</string>
+    <string name="records_filter_shot_selfie">Selfie</string>
+    <string name="records_filter_shot_fadrec">FadRec</string>
+    <string name="records_filter_checklist_desc">Lülita valikurežiimi</string>
+    <string name="records_filter_helper_camera_all">Kaamerasalvestised (Taga, Ees, Duaal)</string>
+    <string name="records_filter_helper_camera_back">Jäädvustatud tagakaameraga</string>
+    <string name="records_filter_helper_camera_front">Jäädvustatud esikaameraga (selfie)</string>
+    <string name="records_filter_helper_camera_dual">Jäädvustatud duaalkaamera režiimis</string>
+    <string name="records_filter_helper_dual">Duaalkaamera salvestised</string>
+    <string name="records_filter_helper_screen">Ekraani salvestised (FadRec)</string>
+    <string name="records_filter_helper_faditor">Muudetud/eksporditud videod (Faditor)</string>
+    <string name="records_filter_helper_faditor_all">Kõik Faditori väljundid ja seotud failid.</string>
+    <string name="records_filter_helper_faditor_converted">Teisendatud killustatud MP4 standardseks otsitavaks MP4-ks välistele mängijatele.</string>
+    <string name="records_filter_helper_faditor_merge">Ühendatud mitu klippi üheks väljundvideoks.</string>
+    <string name="records_filter_helper_stream">Salvestatud voogedastuse salvestised</string>
+    <string name="records_filter_helper_shot_all">Jäädvustatud fotod ja ekraanipildid</string>
+    <string name="records_filter_helper_shot_back">Jäädvustatud fotod tagakaameraga</string>
+    <string name="records_filter_helper_shot_selfie">Jäädvustatud fotod esikaameraga (selfie)</string>
+    <string name="records_filter_helper_shot_fadrec">Jäädvustatud ekraanipildid (FadRec)</string>
+    <string name="records_location_format">Asukoht: %1$s/%2$s</string>
+    <string name="records_batch_select_all">Vali kõik</string>
+    <string name="records_batch_deselect_all">Tühista kõik valikud</string>
+    <string name="records_batch_save">Salvesta galeriisse</string>
+    <string name="records_batch_faditor">Faditori automatiseerimised</string>
+    <string name="records_batch_delete">Kustuta</string>
+    <string name="records_batch_coming_soon">See hulgi tegevus lisatakse järgmisena.</string>
+    <string name="records_batch_select_items_first">Vali esmalt üks või enam videot.</string>
+    <string name="records_batch_actions_title">Hulgitegevused</string>
+    <string name="records_batch_fab_label">Hulk</string>
+    <string name="records_batch_select_all_desc">Vali või tühista kõik videod praeguses filtris.</string>
+    <string name="records_batch_save_desc">Kopeeri, teisalda või ekspordi valitud videod teise kausta.</string>
+    <string name="records_batch_faditor_desc">Käivita tausta automatiseerimised ilma Faditori vahekaarti avamata.</string>
+    <string name="records_batch_delete_desc">Teisalda valitud videod prügikasti.</string>
+    <string name="records_batch_save_queued">%1$d salvestustöö(d) lisatud järjekorda.</string>
+    <string name="records_batch_faditor_first_only">Avatud esimene video. %1$d valitud; mitme redigeerimise järjekord tuleb järgmisena.</string>
+    <string name="records_batch_save_copy_helper">Säilitab originaalid; salvestab koopiad kausta %1$s.</string>
+    <string name="records_batch_save_move_helper">Teisaldab valitud videod kausta %1$s ja eemaldab originaalid pärast edukat salvestamist.</string>
+    <string name="records_batch_save_custom_location">Ekspordi uude asukohta</string>
+    <string name="records_batch_save_custom_location_desc">Vali üks kaust kõigile sellel korral valitud videotele.</string>
+    <string name="records_batch_custom_export_started">Ekspordin %1$d videot valitud kausta…</string>
+    <string name="records_batch_custom_export_invalid_folder">Valitud kausta ei saa kirjutada.</string>
+    <string name="records_batch_custom_export_done">Eksport lõpetatud. Õnnestus: %1$d • Nurjus: %2$d</string>
+    <string name="records_batch_faditor_sheet_title">Hulgi Faditori tegevused</string>
+    <string name="records_batch_faditor_export_standard">Ekspordi standardseks MP4-ks</string>
+    <string name="records_batch_faditor_export_standard_desc">Teisendab killustatud MP4 otsitavaks standardseks MP4-ks välistele mängijatele.</string>
+    <string name="records_batch_faditor_merge">Ühenda valitud videod</string>
+    <string name="records_batch_faditor_merge_desc">Ühendab valitud klipid üheks videoks taustal.</string>
+    <string name="records_batch_faditor_queued">%1$d hulgi elementi järjekorda pandud taustal.</string>
+    <string name="records_batch_completed">Hulgitegevus lõpetatud.</string>
+    <string name="records_batch_notif_channel_name">Hulgi meedia tegevused</string>
+    <string name="records_batch_notif_channel_desc">Edenemine ja tulemused salvestiste hulgi salvestamise ja Faditori automatiseerimise tööde jaoks.</string>
+    <string name="records_batch_starting">Hulgitegevuse ettevalmistamine…</string>
+    <string name="records_batch_progress_item">Töötlen %1$d / %2$d</string>
+    <string name="records_batch_progress_counts">Valmis %1$d • Vahele jäetud %2$d • Nurjus %3$d</string>
+    <string name="records_batch_summary">Hulk lõpetatud. Valmis: %1$d • Vahele jäetud: %2$d • Nurjus: %3$d</string>
+    <string name="records_batch_export_done_title">Standardne MP4 eksport lõpetatud</string>
+    <string name="records_batch_merge_done_title">Hulgi ühendamine lõpetatud</string>
+    <string name="records_hide_thumbnails_row_title">Peida</string>
+    <string name="nav_home">Avaleht</string>
+    <string name="nav_records">Salvestised</string>
+    <string name="nav_settings">Seaded</string>
+    <string name="nav_about">Teave</string>
+    <string name="nav_remote">Kaugjuhtimine</string>
+    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_lab">Labor</string>
+    <string name="button_settings_readme">Loe mind</string>
+    <string name="setting_cam_title">Kaamera valik</string>
+    <string name="note_cam_sele">Vali kaamera \n(vaikimisi: Taga)</string>
+    <string name="button_settings_cam_back">Taga</string>
+    <string name="button_settings_cam_front">Ees</string>
+    <string name="button_settings_cam_dual">Duaal (PiP)</string>
+    <string name="note_cam_dual_unsupported">Sinu seade ei toeta samaaegset duaalkaamera salvestamist.</string>
+    <string name="dual_recording_started">Duaalkaamera salvestamine alustatud</string>
+    <string name="dual_recording_stopped">Duaalkaamera salvestamine peatatud</string>
+    <string name="dual_cameras_swapped">Kaamerad vahetatud</string>
+    <string name="dual_camera_error">Duaalkaamera viga: %s</string>
+    <string name="dual_camera_not_supported_toast">Duaalkaamera ei ole sellel seadmel toetatud</string>
+    <string name="watch_recording_hardware_not_supported">Sellel seadmel puuduvad vajalikud kaamera/mikrofoni riistvara videote salvestamiseks.</string>
+    <string name="dual_camera_pip_settings">Duaalkaamera PiP seaded</string>
+
+    <!-- Dual Camera Settings Fragment -->
+    <string name="dual_cam_section_layout">Paigutus</string>
+    <string name="dual_cam_section_appearance">Välimus</string>
+    <string name="dual_cam_pip_position_title">PiP asukoht</string>
+    <string name="dual_cam_pip_position_helper">Vali, millisesse nurka teisene kaamera (PiP) ülekate asetatakse.</string>
+    <string name="dual_cam_pip_size_title">PiP suurus</string>
+    <string name="dual_cam_pip_size_helper">Kontrollib, kui suur on PiP ülekate võrreldes täisväljundi laiusega.</string>
+    <string name="dual_cam_primary_camera_title">Põhikaamera</string>
+    <string name="dual_cam_primary_camera_helper">Vali, milline kaamera täidab täiskaadri. Teine kaamera kuvatakse PiP ülekattena.</string>
+    <string name="dual_cam_show_border_title">PiP ääris</string>
+    <string name="dual_cam_show_border_helper">Kuva õhuke ääris ümber PiP ülekatte, et eristada seda visuaalselt taustast.</string>
+    <string name="dual_cam_round_corners_title">Ümarad nurgad</string>
+    <string name="dual_cam_round_corners_helper">Lisa PiP ülekattelle ümarad nurgad kaasaegse välimuse jaoks.</string>
+    <string name="dual_cam_pip_margin_title">PiP marginaal</string>
+    <string name="dual_cam_pip_margin_hint">0 – 48 dp</string>
+    <string name="dual_cam_layout_helper">Seadista Picture-in-Picture ülekatte asukoht, suurus ja põhikaamera duaalkaamera salvestamisel.</string>
+    <string name="dual_cam_appearance_helper">Kohanda PiP ülekatte visuaalset välimust, sealhulgas äärist, nurki ja vahet.</string>
+
+    <!-- Dual Camera – Preview section -->
+    <string name="dual_cam_section_preview">Eelvaade</string>
+    <string name="dual_cam_preview_primary">Põhikaamera</string>
+    <string name="dual_cam_preview_pip">PiP</string>
+    <string name="dual_cam_preview_helper">Nii näeb PiP režiim välja näiteks maastikurežiimis.</string>
+
+    <!-- Dual Camera – Compatibility banner -->
+    <string name="dual_cam_banner_checking">Seadme ühilduvuse kontrollimine…</string>
+    <string name="dual_cam_banner_supported">Mõlemad kaamerad tuvastatud, kuid samaaegne tugi ei ole kinnitatud. Puuduta üksikasjade jaoks.</string>
+    <string name="dual_cam_banner_supported_confirmed">Duaalkaamera on täielikult toetatud ja sinu seadme poolt kinnitatud.</string>
+    <string name="dual_cam_banner_unsupported">Duaalkaamera ei ole sellel seadmel toetatud.</string>
+    <string name="dual_cam_banner_tap_details">Üksikasjad</string>
+
+    <!-- Dual Camera – Info bottom sheet content -->
+    <string name="dual_cam_info_title">Seadme ühilduvus</string>
+    <string name="dual_cam_info_device_label">Seade</string>
+    <string name="dual_cam_info_processor_label">Protsessor</string>
+    <string name="dual_cam_info_android_label">Androidi versioon</string>
+    <string name="dual_cam_info_api_label">API tase</string>
+    <string name="dual_cam_info_concurrent_label">Samaaegne kaamera API</string>
+    <string name="dual_cam_info_concurrent_yes">Kinnitatud ✓</string>
+    <string name="dual_cam_info_concurrent_no">Ei ole kinnitatud</string>
+    <string name="dual_cam_info_status_label">Olek</string>
+    <string name="dual_cam_info_supported_status">✓ Sinu seade toetab duaalkaamera salvestamist.</string>
+    <string name="dual_cam_info_supported_unconfirmed">⚠ Sinu seadmel on mõlemad kaamerad, kuid samaaegne tugi ei ole kinnitatud. See võib töötada või mitte.</string>
+    <string name="dual_cam_info_unsupported_status">✗ Sinu seade ei toeta duaalkaamera salvestamist.</string>
+    <string name="dual_cam_info_why_unsupported">Miks duaalkaamera ei ole toetatud?</string>
+    <string name="dual_cam_info_unsupported_explanation">Duaalkaamera salvestamine nõuab, et sinu seade kasutaks samaaegselt nii esi- kui tagakaamerat. See on riistvara võimekus, mis sõltub sinu seadme protsessorist ja kaamera riistvarast. Enamik lipulaevu alates 2020. aastast toetab seda funktsiooni. Keskklassi ja vanemad seadmed tavaliselt ei toeta.\n\nSee EI OLE viga — see on sinu seadme riistvara piirang.</string>
+    <string name="dual_cam_info_which_devices">Millised seadmed seda toetavad?</string>
+    <string name="dual_cam_info_devices_explanation">Seadmed, millel on Qualcomm Snapdragon 855 või uuem, Google Tensor, Samsung Exynos 990 või uuem ning MediaTek Dimensity 1000 või uuem, toetavad tavaliselt samaaegset kaamera juurdepääsu.</string>
+
+    <!-- Dual Camera row in Video Settings -->
+    <string name="dual_cam_settings_row_title">Duaalkaamera seaded</string>
+    <string name="dual_cam_settings_row_subtitle">Seadista PiP paigutust ja välimust</string>
+
+    <string name="setting_quailty_title">Video kvaliteet</string>
+    <string name="setting_framerate_title">Video kaadrisagedus</string>
+    <string name="setting_zoom_ratio_title">Suumitase</string>
+    <string name="zoom_not_available_toast">Suum ei ole saadaval</string>
+    <string name="zoom_slider_title">Suumitase</string>
+    <string name="zoom_slider_helper">Reguleeri suumitaset salvestamiseks. Ülilainurkobjektiivi salvestuste jaoks kasuta 0.5x valikut ülilainurkvaate salvestamiseks.</string>
+    <string name="icon_zoom_in_ligature">zoom_in</string>
+    <string name="note_quailty">Vali kvaliteet\n(vaikimisi: HD)</string>
+    <string name="note_framerate">Vali kaadrisagedus\n(vaikimisi: %1$d)</string>
+    <string name="note_zoom_ratio">Vali suumitase\n(vaikimisi: %1$.1fx - ilma suumita)</string>
+    <string name="setting_codec_title">Videokoodek</string>
+    <string name="note_codec">Vali koodek\n(vaikimisi: %1$s)\nVihje: H.265 (HEVC) puhul saad kasutada umbes poole väiksemat bitikiirust sama kvaliteedi saavutamiseks kui H.264 puhul. Näide: FHD puhul kasuta 8 Mbps asemel 16 Mbps.</string>
+    <string name="setting_watermark">Vesimärk</string>
+    <string name="note_watermark">Vali vesimärgi valik\n(vaikimisi: Ajatempel FadCamiga)</string>
+    <string name="note_watermark_extra">Kiireks salvestamiseks vali \'Vesimärk puudub\'. Soovid vesimärki lisada? See on ootamist väärt, veidi pikem töötlemisaeg!</string>
+    <string name="setting_location_title">Asukohaandmed</string>
+    <string name="note_location">Lisa asukohaandmed vesimärgile. \nNõuab GPS-i lubamist \n(vaikimisi: Keelatud)</string>
+    <string name="note_location_extra">Luba telefoni GPS laius- ja pikkuskraadiandmete lisamiseks vesimärgile.</string>
+    <string name="setting_location_embed_title">Lisa asukoht videotesse</string>
+    <string name="note_location_embed">Lisa GPS-koordinaadid video metaandmetesse (geosildid). \nNõuab GPS-i lubamist \n(vaikimisi: Keelatud)</string>
+    <string name="note_location_embed_extra">Lisab asukohaandmed otse videofailidele, mida galerii/kaardirakendused saavad kasutada videote pildistamiskoha kuvamiseks.</string>
+    <string name="button_setting_review">Kirjuta arvustus 🌟</string>
+    <string name="dialog_clock_title">Vali kella kuva</string>
+    <string name="dialog_clock_timeonly">Ainult aeg</string>
+    <string name="dialog_clock_englishtime">Inglise kuupäev ajaga</string>
+    <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
+    <string name="ui_preview_area">Eelvaate ala</string>
+    <string name="preview_area_title">Eelvaate ala</string>
+    <string name="preview_state_enable">Luba</string>
+    <string name="preview_state_disable">Keela</string>
+    <string name="preview_enabled">Eelvaade lubatud</string>
+    <string name="preview_disabled">Eelvaade keelatud</string>
+    <string name="ae_lock_title">AE lukustus</string>
+    <string name="ae_lock_helper">Kui lubatud, hoitakse automaatsäri praegusel heledustasemel, nii et kaamera ei kohanda säri salvestamise ajal uuesti. Kasuta säri paani käsitsi säri kohandamiseks.</string>
+    <string name="ae_lock_switch_label">Lukusta AE</string>
+    <string name="exposure_title">Särikompensatsioon (EV)</string>
+    <string-array name="easter_eggs_array">
+        <item>Hoiatus! See on piiratud ala. Alusta salvestamist ligipääsu saamiseks.</item>
+        <item>Oled leidnud salajase nupu! See ei tee midagi lol</item>
+        <item>Kiiresti! Süsteem on plahvatamas… või võib-olla vajab lihtsalt salvestamist rahunemiseks.</item>
+        <item>Noh, see on nüüd piinlik…</item>
+        <item>Mis värvi on sinu Bugatti?</item>
+        <item>Mind ei programmeeritud tegema seda, mida sa teed. Oota, kas sa üritad mind häkkida?</item>
+    </string-array>
+    <string-array name="questions_array" tools:ignore="InconsistentArrays">
+        <item>TÄHELEPANU</item>
+        <item>Kas FadCam kogub kasutajaandmeid?</item>
+        <item>Kas FadCamis on reklaame?</item>
+        <item>Miks FadCam küsib asukoha juurdepääsu?</item>
+        <item>Miks on interneti luba vajalik?</item>
+        <item>Kas andmeid salvestatakse välistesse serveritesse?</item>
+        <item>Mis juhtub minu videote pärast salvestamist?</item>
+        <item>Kas FadCam jagab mu andmeid kolmandate osapooltega?</item>
+        <item></item>
+        <item></item>
+        <item>Üldine</item>
+        <item>Kas saan eelvaate keelata?</item>
+        <item>Kuidas lisada asukohta vesimärgile?</item>
+        <item>Kas mu eelistused on salvestatud?</item>
+        <item>Kas saan salvestusi ajastada?</item>
+        <item>Kuidas rakendust uuendada?</item>
+        <item></item>
+    </string-array>
+    <string-array name="answers_array" tools:ignore="InconsistentArrays">
+        <item>FadCam ei mõista heaks ega toeta selle tarkvara ebaeetilist või ebaseaduslikku kasutamist. Väärkasutus, nagu loata jälgimine või privaatsuse riivamine, on rangelt vastu meie juhistele. Autor ei vastuta rakenduse võimaliku väärkasutuse eest.
+        </item>
+        <item>Ei, FadCam ei kogu ühtegi kasutajaandmeid.</item>
+        <item>Ei, FadCam on täiesti reklaamivaba.</item>
+        <item>Asukoha info lisamiseks vesimärkidele.</item>
+        <item>Automaatse uuenduste kontrollimise jaoks.</item>
+        <item>Ei, kõik andmed salvestatakse sinu seadmesse.</item>
+        <item>Sinu videod salvestatakse kohalikult sinu seadmesse.</item>
+        <item>Ei, FadCam ei jaga ega kogu ühtegi andmeid, isegi mitte kokkujooksmise logisid.</item>
+        <item></item>
+        <item></item>
+        <item></item>
+
+        <item>Vajuta pikalt eelvaate alale selle keelamiseks.</item>
+        <item>Luba asukoht seadetes vesimärgi asukohaandmete jaoks. See lisab täpse pikkus- ja laiuskraadi.</item>
+        <item>Jah, eelistused ja kõik seaded on salvestatud ja neid rakendatakse sujuvalt.</item>
+        <item>See funktsioon lisatakse peagi.</item>
+        <item>Kontrolli ametlikku GitHubi hoidlat uuenduste jaoks.</item>
+        <item></item>
+    </string-array>
+    <string name="dialog_welcome_title">Tere tulemast FadCam!</string>
+    <string name="note_from_developer_title">Märge arendajalt</string>
+    <string name="note_from_developer_subtitle">README, lingid ja uuendused</string>
+    <string name="note_under_dev">Tähtis: See rakendus on hetkel arendamisel. Uusi funktsioone lisatakse regulaarselt.</string>
+    <string name="full_changelog_info">Täieliku muudatuste logi jaoks ava avalehe vahekaart ja ava hamburgerimenüü, seejärel vali \"Mis on uut\".</string>
+    <string name="stay_updated_title">Püsi kursis:</string>
+    <string name="button_readme_github">GitHubi hoidla</string>
+    <string name="community_title">Liitu meie kogukonnaga:</string>
+    <string name="discord_title">Discordi server</string>
+    <string name="thankyou_msg">Täname FadCam\'i kasutamast!</string>
+    <string name="settings_title">Seaded</string>
+    <string name="array_watermark_time_fadcam">Aeg FadCamiga</string>
+    <string name="array_watermark_timeonly">Ajatempel</string>
+    <string name="array_watermark_nomark">Vesimärk puudub</string>
+    <string name="watermark_preview_funny">Tõsiselt? :( \n    ＞﹏＜</string>
+    <string name="toast_video_not_found">Viga: Videot ei leitud</string>
+    <string name="quick_speed_title">Kiirkiirus</string>
+    <string name="quick_speed_option_default">2x (vaikimisi)</string>
+    <string name="quick_speed_option_1_25">1.25x</string>
+    <string name="quick_speed_option_1_5">1.5x</string>
+    <string name="quick_speed_option_1_75">1.75x</string>
+    <string name="quick_speed_option_2">2x</string>
+    <string name="quick_speed_option_2_5">2.5x</string>
+    <string name="quick_speed_option_custom">Kohandatud</string>
+    <string name="toast_video_saved">Video salvestatud FadCam kausta Allalaadimistes</string>
+    <string name="toast_video_save_fail">Video salvestamine nurjus</string>
+    <string name="rename_video_title">Nimeta video ümber</string>
+    <string name="rename_video_hint">Sisesta uus nimi</string>
+    <string name="toast_rename_name_empty">Nimi ei saa olla tühi</string>
+    <string name="toast_rename_failed">Video ümbernimetamine nurjus</string>
+    <string name="toast_rename_success">Video edukalt ümber nimetatud</string>
+    <string name="toast_rename_bad_video">Vigane asukoht või videoloend on tühi</string>
+    <string name="toast_rename_with_copy">Ümber nimetatud: %1$s (duplikaatnimi)</string>
+    <string name="rename_layer_title">Nimeta kiht ümber</string>
+    <string name="rename_layer_message">Sisesta kihile uus nimi</string>
+    <string name="rename_page_title">Nimeta leht ümber</string>
+    <string name="rename_page_message">Sisesta lehele uus nimi</string>
+    <string name="rename_dialog_hint">Uus nimi</string>
+    <string name="rename_dialog_positive">Nimeta ümber</string>
+    <string name="rename_dialog_negative">Tühista</string>
+    <string name="rename_dialog_error_empty">Nimi ei saa olla tühi</string>
+    <string name="rename_dialog_toast_success">✏️ Ümber nimetatud: %1$s</string>
+    <string name="project_meta_format">%1$s • %2$s</string>
+    <string name="project_meta_unknown_size">Suurus tundmatu</string>
+    <string name="project_meta_unknown_date">Kuupäev tundmatu</string>
+    <string name="project_description_placeholder">Kirjeldus puudub</string>
+    <string name="project_list_empty_title">(Salvestatud projekte pole veel)</string>
+    <string name="project_list_empty_description">Alustamiseks loo uus projekt</string>
+    <string name="dialog_del_title">Kustuta jäädavalt?</string>
+    <string name="dialog_del_notice">Kas oled kindel, et soovid selle video kustutada?</string>
+    <string name="prefs_backup_title">Eelistuste varundamine</string>
+    <string name="prefs_export_label">Ekspordi eelistused</string>
+    <string name="prefs_export_subtitle">Salvesta kõik seaded JSON-faili</string>
+    <string name="prefs_import_label">Impordi eelistused</string>
+    <string name="prefs_import_subtitle">Laadi seaded JSON-failist</string>
+    <string name="prefs_reset_label">Lähtesta kõik eelistused</string>
+    <string name="prefs_reset_subtitle">Tehase vaikimisi seaded (sisesta DELETE)</string>
+    <string name="prefs_export_success">Eksportimine lõpetatud</string>
+    <string name="prefs_export_failed">Eksportimine nurjus</string>
+    <string name="prefs_import_success">Importimine lõpetatud</string>
+    <string name="prefs_import_failed">Importimine nurjus</string>
+    <string name="prefs_reset_done">Kõik eelistused lähtestatud</string>
+    <string name="prefs_reset_failed">Lähtestamine nurjus</string>
+    <string name="prefs_reset_type_delete">Sisesta DELETE (suurtähtedega) lähtestamise kinnitamiseks</string>
+    <string name="prefs_reset_not_matched">Sisend ei vastanud DELETE-le</string>
+    <string name="prefs_preview_label">Eelvaade JSON</string>
+    <string name="prefs_preview_subtitle">Ava ja vaata eelistuste faili</string>
+    <string name="prefs_preview_none">JSON-i pole veel laaditud</string>
+    <string name="universal_confirm">Kinnita</string>
+    <string name="universal_close">Sulge</string>
+    <string name="dialog_del_confirm">Kustuta</string>
+    <string name="dialog_multi_video_del_title">Kustutada valitud videod?</string>
+    <string name="dialog_multi_video_del_note">Kas oled absoluutselt kindel, et soovid need video(d) olemasolust kustutada? </string>
+    <string name="dialog_multi_video_del_yes">Kustuta</string>
+    <string name="dialog_multi_video_del_no">Eemalda valitud salvestis(ed)</string>
+    <string name="setting_language_title">Rakenduse keel</string>
+    <string name="note_language">Vali rippmenüüst.\n(vaikimisi: inglise)</string>
+    <string name="location_permission_title">Asukoha luba</string>
+    <string name="location_permission_description">See rakendus vajab asukoha luba, et lisada videotele asukohaandmeid. Palun anna luba.</string>
+    <string name="location_permission_denied">Asukoha luba keelatud. Asukoha funktsioonid on keelatud.</string>
+    <string name="camera_permission_denied">Kaamera luba keelatud.</string>
+    <string name="up_to_date">Ajakohane</string>
+    <string name="up_to_date_description">Kasutad juba uusimat versiooni.</string>
+    <string name="up_to_date_loading">Uuenduste kontrollimine…</string>
+    <string name="update_available_title">Uus versioon saadaval</string>
+    <string name="update_available_message">Värske uuendus on valmis! Sul on v%1$s, uusim on v%2$s. Naudi uusi funktsioone ja parendusi.</string>
+    <string name="visit_fdroid">Külasta F-Droidi</string>
+    <string name="visit_github">Külasta GitHubi</string>
+    <string name="settings_video_title">Video salvestamine</string>
+    <string name="settings_audio_title">Heliseaded</string>
+    <string name="settings_watermark_title">Vesimärk</string>
+    <string name="settings_advanced_title">Täpsemad</string>
+    <string name="row_camera_title">Kaamera</string>
+    <string name="row_lens_title">Objektiiv</string>
+    <string name="row_resolution_title">Eraldusvõime</string>
+    <string name="row_frame_rate_title">Kaadrisagedus</string>
+    <string name="row_codec_title">Koodek</string>
+    <string name="row_bitrate_title">Bitikiirus</string>
+    <string name="row_zoom_ratio_title">Suumitase</string>
+    <string name="row_video_splitting_title">Video tükeldamine</string>
+    <string name="row_orientation_title">Suund</string>
+    <string name="row_record_audio_title">Salvesta heli</string>
+    <string name="row_input_source_title">Sisendallikas</string>
+    <string name="row_noise_suppression_title">Mürasummutus</string>
+    <string name="settings_location_watermark_title">Asukoha vesimärk</string>
+    <string name="delete_all_videos_title">Kustuta kõik videod</string>
+    <string name="delete_all_videos_description">Kas oled kindel, et soovid kõik videod kustutada?</string>
+    <string name="delete_single_video_subtitle">Eemalda see salvestis</string>
+    <string name="switched_front_camera">Lülitatud esikaamerale</string>
+    <string name="switched_rear_camera">Lülitatud tagakaamerale</string>
+    <string name="notification_video_recording">Video salvestamine</string>
+    <string name="notification_video_recording_progress_description">Salvestamine on pooleli</string>
+    <string name="notification_video_recording_paused_description">Salvestamine on peatatud</string>
+    <string name="torch_options_title">Taskulambi valikud</string>
+    <string name="torch_select_source">Vali taskulambi allikas:</string>
+    <string name="torch_back">Taga taskulamp</string>
+    <string name="torch_front">Esi taskulamp</string>
+    <string name="torch_apply">Rakenda</string>
+    <string name="torch_cancel">Tühista</string>
+    <string name="torch_recording_note">Salvestamise ajal ei saa taskulampi muuta</string>
+    <string name="torch_both">Mõlemad taskulambid</string>
+    <string name="setting_debug_title">Silumislogi</string>
+    <string name="note_debug">Luba silumislogifailide genereerimine \n(vaikimisi: keelatud)</string>
+    <string name="note_debug_detailed">Kui lubatud, kirjutab FadCam silumislogi HTML-faili (FADCAM_debug.html) avalikku Allalaadimised/FadCam/ kausta. Jaga seda faili probleemidest teatamisel. Lülita välja, et lõpetada tulevased kirjutamised.\nMärkus: Silumislogi võib salvestamise ajal lisada jõudluskulu — hoia see välja, kui sa ei tõrkeotsi.</string>
+    <string name="note_debug_extra">Kui lubatud, luuakse silumislogifail Allalaadimised/FadCam kausta. See aitab diagnoosida rakenduse probleeme.</string>
+    <string name="watermark_preview_heading">Eelvaade</string>
+    <string name="watermark_options_heading">Valikud</string>
+    <string name="watermark_style_row_title">Vesimärgi stiil</string>
+    <string name="watermark_preview_sample_fadcam">Jäädvustatud FadCamiga - %1$s</string>
+    <string name="watermark_preview_sample_timeonly">%1$s</string>
+    <string name="watermark_style_time_fadcam_label">Aeg FadCamiga</string>
+    <string name="watermark_style_timeonly_label">Ajatempel</string>
+    <string name="watermark_style_badge_label">Ainult brändisilt</string>
+    <string name="watermark_style_none_label">Vesimärk puudub</string>
+    <string name="helper_watermark_preview">Nii kuvatakse vesimärk salvestatud video vasakus ülanurgas.\nLõbus fakt: 10/juuli/2024 16:47 on aeg, mil FadCam v1.0 esmakordselt välja anti.</string>
+    <string name="helper_location_watermark_option">Lülita seadme asukoha lisamine ülekattena. Vajab asukoha luba.</string>
+    <string name="location_format_title">Asukoha vorming</string>
+    <string name="location_format_coordinates">Ainult koordinaadid</string>
+    <string name="location_format_address">Täielik aadress</string>
+    <string name="location_update_interval_title">Asukoha uuendamise sagedus</string>
+    <string name="location_update_interval_helper">Kui tihti uuendada vesimärgi asukohaandmeid. Pikemad intervallid kasutavad vähem akut.</string>
+    <string name="helper_location_format">Vali, kuidas asukoht vesimärgil kuvatakse: täpsed koordinaadid või täielik aadress pöördgeokodeerimise kaudu (zoom=18, hoonetaseme täpsus).</string>
+    <string name="location_watermark_sheet_title">Asukoha ülekate</string>
+    <string name="location_watermark_switch_label">Asukoha ülekate</string>
+    <string name="helper_location_overlay_short">Lisab ligikaudsed koordinaadid vesimärgi alla.</string>
+    <string name="helper_theme_option">Vali teema. Rakendub koheselt.</string>
+    <string name="helper_language_option">Vali rakenduse keel.</string>
+    <string name="watermark_disabled_message" translatable="false">Watermark disabled (no watermark will appear in recordings).</string>
+    <string name="watermark_custom_text_title">Kohandatud vesimärgi tekst</string>
+    <string name="watermark_custom_text_hint">Sisesta kohandatud tekst</string>
+    <string name="watermark_custom_text_empty">Pole määratud</string>
+    <string name="helper_watermark_custom_text">Lisa kohandatud tekstirida, mis kuvatakse ajatempli ja asukoha all (kui lubatud) sinu vesimärgil.\n\nNäited: ABC-1234 (armatuurlauakaamera), Kaamera nr 3, Konverentsisaal A</string>
+    <string name="helper_app_icon_option" translatable="false">Select an alternative launcher icon.</string>
+    <string name="torch_shortcut_short_label">Taskulamp</string>
+    <string name="torch_shortcut_long_label">Lülita taskulamp</string>
+    <string name="torch_shortcut_disabled">Taskulambi lüliti ei ole hetkel saadaval</string>
+    <string name="widgets_helper_text">Kinnita kiirtoimingud avalehele koheseks juurdepääsuks.</string>
+    <string name="widgets_pin_unsupported">Vidinate kinnitamine ei ole sinu käivitaja poolt toetatud.</string>
+    <string name="widget_clock_title">Kella vidin</string>
+    <string name="widgets_pin_fallback">Kui viipa ei ilmu, vajuta pikalt avalehte, ava Vidinad ja lohista FadCam\'i kella vidin.</string>
+    <string name="widget_customize_title">Kohanda kella vidinat</string>
+    <string name="widget_customize_description">Kohanda, kuidas sinu kella vidin aega ja kuupäeva kuvab</string>
+    <string name="widget_time_format_title">Aja vorming</string>
+    <string name="widget_show_date_title">Kuva kuupäev</string>
+    <string name="widget_date_format_title">Kuupäeva vorming</string>
+    <string name="widget_black_background_title">Must taust</string>
+    <string name="widget_arabic_date_title">Araabia kuupäev</string>
+    <string name="widget_arabic_date_format_title">Araabia kuupäeva vorming</string>
+    <string name="widget_branding_title">FadSecLab bränding</string>
+    <string name="widget_time_format_12h">12-tunnine (15:30)</string>
+    <string name="widget_time_format_24h">24-tunnine (15:30)</string>
+    <string name="widget_option_enabled">Lubatud</string>
+    <string name="widget_option_disabled">Keelatud</string>
+    <string name="widget_background_transparent">Keelatud (läbipaistev)</string>
+    <string name="widget_date_format_sample">13. aug 2025</string>
+    <string name="widget_branding_enabled">Lubatud (musta taustaga)</string>
+    <string name="widget_branding_disabled">Keelatud</string>
+    <string name="widget_branding_requires_background">Nõuab musta tausta</string>
+    <string name="arabic_date_format_title">Araabia kuupäeva vorming</string>
+    <string name="arabic_date_format_description">Vali, kuidas islamikuupäeva kuvada</string>
+    <string name="arabic_date_full_arabic">Täielik araabia</string>
+    <string name="arabic_date_month_arabic_numbers_english">Araabia kuu, inglise numbrid</string>
+    <string name="arabic_date_full_english">Täielik inglise</string>
+    <string name="arabic_date_sample_full_arabic">٧ صفر ١٤٤٧</string>
+    <string name="arabic_date_sample_mixed">7 صفر 1447</string>
+    <string name="arabic_date_sample_english">7 Safar 1447</string>
+    <string name="arabic_date_description_full_arabic">Täielik araabia (٧ صفر ١٤٤٧)</string>
+    <string name="arabic_date_description_mixed">Araabia kuu, inglise numbrid</string>
+    <string name="arabic_date_description_english">Täielik inglise</string>
+    <string name="arabic_date_description_default">Täielik araabia (vaikimisi)</string>
+    <string name="shortcuts_helper_text">Lisa otseteed ülalt. Need töötavad ka automatiseerimise rakendustega (nt MacroDroid), et määrata helitugevusnuppe.</string>
+    <string name="shortcuts_add_to_home">Lisa avalehele</string>
+    <string name="shortcuts_sheet_helper">Sinu käivitaja küsib paigutust.</string>
+    <string name="shortcuts_and_widgets">Otseteed ja vidinad</string>
+    <string name="video_player_settings_title">Videoesitaja seaded</string>
+    <string name="video_player_settings_helper">Esituskiirus muudab video esitamise normaalset kiirust. Kiirkiirus on ajutine tõuge, mida rakendatakse ainult siis, kui vajutad videol pikalt. Saad muuta neid seadeid siin või otse videoesitaja ekraanilt.</string>
+    <string name="video_player_settings_subtitle">Esitus ja kiirkiirus</string>
+    <string name="playback_speed_label">Esituskiirus</string>
+    <string name="playback_speed_title">Esituskiirus</string>
+    <string name="playback_speed_subtitle">Muuda selle video esituskiirust</string>
+    <string name="toast_default_playback_speed_set">Vaikimisi esituskiiruseks määratud %1$s</string>
+    <string name="mute_playback_title">Vaigista esitus</string>
+    <string name="mute_playback_subtitle">Esita videod helita</string>
+    <string name="mute_playback_helper">Kui lubatud, esitatakse videod vaikimisi vaigistatult. Saad seda lülitada siin või videoesitaja ekraanilt.</string>
+    <string name="mute_playback_helper_picker">Kui lubatud, esitatakse videod vaikimisi vaigistatult.</string>
+    <string name="audio_waveform_title">Helilaine kuju</string>
+    <string name="audio_waveform_subtitle">Kuva heli visualiseerimine edenemisribal</string>
+    <string name="waveform_helper_text">Juhib, kas helilaine visualiseerimine kuvatakse video esitamise ajal edenemisribal.</string>
+    <string name="waveform_switch_label">Luba helilaine kuju</string>
+    <string name="mute_on_toast">Esitus vaigistatud</string>
+    <string name="mute_off_toast">Esituse vaigistus tühistatud</string>
+    <string name="records_hide_thumbnails_title">Peida pisipildid</string>
+    <string name="records_hide_thumbnails_subtitle">Kuva minimaalne loend ilma pisipiltideta</string>
+    <string name="video_player_settings_helper_player">Saad muuta neid valikuid siin või seadete vahekaardilt.</string>
+    <string name="playback_controls_heading">Esitusjuhtnupud</string>
+    <string name="playback_controls_helper">Kohanda esituskiirust või määra kiirkiirus pikalt vajutamiseks. Saad muuta neid seadeid siin või videoesitaja ekraanilt.</string>
+    <string name="controls_hide_delay_title">Juhtnuppude peitmise viivitus</string>
+    <string name="controls_hide_delay_subtitle">%1$d s</string>
+    <string name="controls_hide_delay_helper">Vali, mitu sekundit playeri juhtnupud nähtavana püsivad enne automaatset peitmist. Määra Väljas, et hoida juhtnupud nähtavana.</string>
+    <string name="sound_heading">Heli esitamise ajal</string>
+    <string name="seek_amount_title">Kerimise summa</string>
+    <string name="seek_amount_subtitle">%1$d s</string>
+    <string name="seek_amount_helper">Vali, mitu sekundit tagasi/edasi nupud ja topeltpuudutus peaksid kerima.</string>
+    <string name="seek_amount_custom">Kohandatud</string>
+    <string name="seek_amount_custom_title">Kohandatud kerimise sekundid</string>
+    <string name="seek_amount_custom_low_hint">Sisesta väärtus vahemikus 1 kuni 300 sekundit</string>
+    <string name="seek_amount_custom_high_hint">Suured kerimisväärtused võivad liiga kaugele hüpata</string>
+    <string name="playback_speed_helper_settings">Vaikimisi kiirus video esitamiseks.</string>
+    <string name="playback_speed_helper_player">Mõjutab ainult praegust esitust. Vaikimisi kiiruse muutmiseks tulevaste videote jaoks kasuta seadeid.</string>
+    <string name="quick_speed_helper">Kiirkiirus rakendub ainult esitamise ajal pikalt vajutamisel.</string>
+    <string name="af_mode_title">Automaatteravustamise režiim</string>
+    <string name="af_continuous_title">Pidev automaatteravustamine</string>
+    <string name="af_continuous_description">Kaamera kohandab teravust pidevalt automaatselt. Puuduta teravustamiseks eelvaadet.</string>
+    <string name="af_manual_title">Lukustatud teravus</string>
+    <string name="af_manual_description">Teravus on lukustatud. Puuduta eelvaadet käsitsi teravustamiseks.</string>
+    <string name="tap_to_focus_help">Puuduta kaamera eelvaates suvalist kohta teravustamiseks</string>
+    <string name="tap_to_focus_instruction">Puuduta eelvaadet teravustamiseks</string>
+    <string name="af_picker_helper">Vaikimisi valik on pidev automaatteravustamine.</string>
+    <string name="keep_screen_on_title">Hoia ekraan ärkvel</string>
+    <string name="keep_screen_on_helper_picker">Kui lubatud, ei lähe ekraan uneolekusse video esitamise ajal.</string>
+    <string name="background_playback_title">Esita taustal</string>
+    <string name="background_playback_helper_picker">Kui lubatud, jätkub heli esitamine ka siis, kui lahkud rakendusest või lülitad ekraani välja.</string>
+    <string name="background_playback_timer_title">Taustal esitamise taimer</string>
+    <string name="background_playback_timer_title_short">Esitamise taimer</string>
+    <string name="background_playback_timer_helper">Vali, kui kaua esitamine taustal peaks jätkuma enne automaatset peatumist. Vali Väljas keelamiseks.</string>
+    <string name="timer_off">Väljas</string>
+    <string name="timer_off_short">Väljas</string>
+    <string name="timer_30_seconds">30 sekundit</string>
+    <string name="timer_1_minute">1 minut</string>
+    <string name="timer_5_minutes">5 minutit</string>
+    <string name="timer_15_minutes">15 minutit</string>
+    <string name="timer_30_minutes">30 minutit</string>
+    <string name="timer_1_hour">1 tund</string>
+    <string name="timer_seconds_short">%1$d s</string>
+    <string name="timer_minutes_short">%1$d m</string>
+    <string name="timer_hours_short">%1$d t</string>
+    <string name="timer_custom_label">Kohandatud...</string>
+    <string name="timer_custom_title">Kohandatud taustal taimer</string>
+    <string name="number_input_default_helper">Sisesta number ja vajuta OK salvestamiseks.</string>
+    <string name="number_input_ok_helper">Tundub hea — vajuta OK salvestamiseks.</string>
+    <string name="timer_custom_low_hint">Väga lühikesed taimerid võivad esitamise oodatust kiiremini peatada.</string>
+    <string name="timer_custom_high_hint">Väga pikad taimerid võivad pikka aega aktiivsena püsida. Maksimaalselt 24 tundi.</string>
+    <string name="timer_custom_description">Sisesta minutite arv. Näited: 5 = 5 minutit (300 sekundit). Taimer peatab esitamise pärast seda palju minuteid.</string>
+    <string name="timer_custom_placeholder">nt 5 (minutit)</string>
+    <string name="timer_custom_helper_static">Sisesta minutid (täisarv). Kasuta allolevat kalkulaatorit tundide/minutite nägemiseks.</string>
+    <string name="timer_custom_calc_format">Peatab esitamise pärast %1$s (%2$.2f tundi)</string>
+    <string name="timer_disabled_hint">Taustal esitamine on keelatud — luba \"Esita taustal\", et kasutada taimerit.</string>
+    <string name="shortcuts_customize_title">Kohanda</string>
+    <string name="shortcuts_customize_subtitle">Nimi ja ikoon</string>
+    <string name="shortcuts_customize_dialog_title">Nimeta otsetee ümber</string>
+    <string name="shortcuts_customize_dialog_save">Salvesta</string>
+    <string name="shortcuts_customize_action_rename">Nimeta ümber</string>
+    <string name="shortcuts_customize_action_change_icon">Muuda ikooni</string>
+    <string name="shortcuts_choose_icon_title">Muuda otsetee ikooni</string>
+    <string name="shortcuts_choose_icon_desc">Vali sellele otseteele ikoon. Saad valida rakenduse ikoonide hulgast või valida pildi galeriist.</string>
+    <string name="shortcuts_choose_from_app_icons">Vali rakenduse ikoonide hulgast</string>
+    <string name="shortcuts_choose_from_gallery">Vali galeriist</string>
+    <string name="shortcuts_customize_action_reset">Lähtesta vaikimisi</string>
+    <string name="shortcuts_customize_sheet_desc">Määra sellele otseteele kohandatud nimi ja ikoon.</string>
+    <string name="shortcuts_rename_helper">Vihje: Jäta tühjaks vaikimisi nime kasutamiseks.</string>
+    <string name="shortcuts_rename_action_title">Nimeta ümber</string>
+    <string name="shortcuts_rename_action_subtitle">Klõpsa ümbernimetamiseks</string>
+    <string name="shortcut_purpose_start">See otsetee alustab tagakaameraga salvestamist.</string>
+    <string name="shortcut_purpose_start_front">See otsetee alustab esikaameraga salvestamist.</string>
+    <string name="shortcut_purpose_start_current">See otsetee alustab hetkel valitud kaamerarežiimiga salvestamist.</string>
+    <string name="shortcut_purpose_start_dual">See otsetee alustab duaalkaamera salvestamist (PiP).</string>
+    <string name="shortcut_purpose_stop">See otsetee peatab praeguse salvestamise.</string>
+    <string name="shortcut_purpose_torch">See otsetee lülitab taskulampi.</string>
+    <string name="shortcut_purpose_photo">See otsetee jäädvustab tagakaamera foto ja salvestab selle FadCam/FadShot asukohta.</string>
+    <string name="shortcut_purpose_photo_front">See otsetee jäädvustab esikaamera foto ja salvestab selle FadCam/FadShot asukohta.</string>
+    <string name="shortcut_purpose_screenshot">See otsetee jäädvustab ekraanipildi ja salvestab selle FadCam/FadShot asukohta (luba juurdepääsetavuse luba seadetes > Privaatsus > Juurdepääsetavus).</string>
+    <string name="widget_customize_action_label">Kohanda</string>
+    <string name="widget_customize_action_subtitle">Aeg, kuupäev, teema valikud</string>
+    <string-array name="torch_error_messages">
+        <item>Taskulamp kompileerib... palun ära oota 🖥️</item>
+        <item>Kaamera ütleb: Täna välku ei ole 🚦</item>
+        <item>Torch.exe ei vasta 🔦</item>
+        <item>Parandus hiljem... Arendaja tabas vaimse murdepunkti lol 🧠</item>
+        <item>Parandus tulemas™... Arendaja silub elu 🐛</item>
+    </string-array>
+    <string name="more_options">Rohkem valikuid</string>
+    <string name="records_options_title">Salvestiste valikud</string>
+    <string name="setting_theme_title">Rakenduse teema</string>
+    <string name="settings_option_theme">Vali teema</string>
+    <string name="settings_theme_changed">Teema muudetud. Muudatuste rakendamine...</string>
+    <string name="note_theme">Vali eelistatud rakenduse teema</string>
+    <string name="start_recording">Alusta</string>
+    <string name="shortcut_start_back">Alusta taga</string>
+    <string name="shortcut_start_front">Alusta ees</string>
+    <string name="shortcut_start_current">Alusta praegune</string>
+    <string name="shortcut_start_dual">Alusta duaalselt</string>
+    <string name="stop_recording">Peata</string>
+    <string name="shortcut_take_photo">Foto</string>
+    <string name="shortcut_take_photo_front">Selfie</string>
+    <string name="shortcut_take_screenshot">FadRec</string>
+    <string name="screenshot_capture_saved">Ekraanipilt salvestatud</string>
+    <string name="screenshot_capture_failed">Ekraanipildi jäädvustamine nurjus</string>
+    <string name="screenshot_capture_system_saved">Süsteem jäädvustas ekraanipildi. Salvestatud süsteemi ekraanipiltidesse.</string>
+    <string name="screenshot_accessibility_enable_needed">Luba \"FadRec ekraanipilt\" juurdepääsetavuses, et kasutada seda otseteed ilma salvestusviipata.</string>
+    <string name="screenshot_accessibility_service_desc">Jäädvustab ekraanipildi FadRec otsetee jaoks ja salvestab selle FadCam/FadShot kausta.</string>
+    <string name="shortcuts_video_category">Video salvestamine</string>
+    <string name="shortcuts_picture_category">Pilt</string>
+    <string name="preview_quick_actions_title">Eelvaate kiirtoimingud</string>
+    <string name="preview_quick_actions_sub">Kuva FadShot ja täisekraani ikoonid isegi siis, kui salvestamine on ootel.</string>
+    <string name="preview_quick_actions_state_always">Alati nähtav (ootel + salvestamisel)</string>
+    <string name="preview_quick_actions_state_recording_only">Nähtav ainult salvestamise ajal</string>
+    <string name="warning_temp_file_detail">
+        <![CDATA[
+        <b>TÄHTIS MÄRKUS:</b><br/>
+        See on <b>töötlemata ajutine fail</b>. Video töötlemine (näiteks vesimärgi lisamine) võib olla nurjunud või katkenud.<br/><br/>
+        <b>Soovitatav tegevus:</b><br/>
+        <b>1. Nimeta</b> see fail nüüd ümber (kasutades menüüd).<br/>
+        <b>2. Salvesta</b> see galeriisse (kasutades menüüd).<br/><br/>
+        See kindlustab sinu salvestise. Pärast galeriirakenduses õigesti salvestamise kinnitamist saad selle ajutise faili sellest salvestiste loendist turvaliselt <b>kustutada</b>.<br/><br/>
+        Salvestamise jätkamine ilma salvestamiseta võib kaotada selle faili, kui rakenduse vahemälu ootamatult tühjendatakse.
+        ]]>
+    </string>
+    <string name="recording_already_active">Salvestamine on juba pooleli või peatatud.</string>
+    <string name="setting_back_lens_title">Tagakaamera objektiiv</string>
+    <string name="setting_back_lens_note">Vali konkreetne objektiiv, kui saadaval, nt lainurkobjektiiv\n(vaikimisi: Põhi (0))</string>
+    <string name="setting_back_lens_info_single">Ainult põhiline objektiiv</string>
+    <string name="setting_back_lens_info_single_v2">Tuvastatud ainult tagakaamera põhiline objektiiv</string>
+    <string-array name="theme_options" translatable="false">
+        <item>Midnight Dusk</item>
+        <item>Faded Night</item>
+        <item>Crimson Bloom</item>
+        <item>Silent Forest</item>
+        <item>Shadow Alloy</item>
+        <item>Pookie Pink</item>
+        <item>Snow Veil</item>
+    </string-array>
+    <string name="theme_red" translatable="false">Crimson Bloom</string>
+    <string name="theme_gold" translatable="false">Premium Gold</string>
+    <string name="theme_silentforest" translatable="false">Silent Forest</string>
+    <string name="theme_shadowalloy" translatable="false">Shadow Alloy</string>
+    <string name="theme_pookiepink" translatable="false">Pookie Pink</string>
+    <string name="theme_snowveil" translatable="false">Snow Veil</string>
+    <string name="stream_view_all_endpoints_desc">Vaata kõiki API lõpp-punkte (GET/POST)</string>
+    <string name="stream_uptime_label">Tööaeg</string>
+    <string name="stream_clients_label">Kliendid</string>
+    <string name="stream_battery_label">Aku</string>
+    <string name="stream_segments_label">Segmendid</string>
+    <string name="stream_network_label">Võrk</string>
+    <string name="stream_storage_label">Mälu</string>
+    <string name="stream_memory_label">Mälu (RAM)</string>
+    <string name="stream_data_sent_label">Saadetud andmed</string>
+    <string name="stream_server_url_label">Serveri URL</string>
+    <string name="stream_server_room_label">Serveriruum</string>
+    <string name="stream_stream_quality_label">Voo kvaliteet</string>
+    <string name="stream_notes_title">Märkused</string>
+    <string name="remote_access_title">Kaugjuhtimine</string>
+    <string name="remote_toast_coming_soon">Tulekul! In Sha Allah</string>
+    <string name="coming_soon_toast">Tulekul! In Sha Allah</string>
+    <string name="remote_coming_soon">FadCam\'i kaugjuhtimine on tulekul.</string>
+    <string name="remote_feature_description">Paari FadCam kliendid QR-koodi abil turvaliseks kohaliku võrgu kaugjuhtimiseks: alusta/peata salvestamist, eelvaade, suum, vaheta kaamerat ja palju muud — kõik otspunktkrüpteerimisega.</string>
+    <string name="faditor_mini_title">Faditor Mini</string>
+    <string name="faditor_mini_coming_soon">Tulekul — kergekaaluline redaktor</string>
+    <string name="faditor_mini_subtitle">Lõika ja ekspordi videoid täpsusega</string>
+    <string name="faditor_mini_toast">Faditor Mini — tulekul</string>
+    <string name="faditor_select_video">Vali video</string>
+    <string name="faditor_editor_title">Faditor Mini</string>
+    <string name="faditor_close">Sulge redaktor</string>
+    <string name="faditor_undo">Võta tagasi</string>
+    <string name="faditor_redo">Tee uuesti</string>
+    <string name="faditor_play_pause">Esita või peata</string>
+    <string name="faditor_export">Ekspordi</string>
+    <string name="faditor_cancel">Tühista</string>
+    <string name="faditor_exporting">Eksportimine…</string>
+    <string name="faditor_exporting_percent">Eksportimine… %1$d%%</string>
+    <string name="faditor_export_success">Video edukalt eksporditud</string>
+    <string name="faditor_export_error">Eksportimine nurjus: %1$s</string>
+    <string name="faditor_export_in_progress">Eksportimine juba pooleli</string>
+    <string name="faditor_remuxing">Eelvaate optimeerimine…</string>
+    <string name="faditor_remuxing_percent">Optimeerimine… %1$d s töödeldud</string>
+    <string name="faditor_error_no_video">Videot pole valitud</string>
+    <string name="faditor_error_picker">Failivalija avamine nurjus</string>
+    <string name="faditor_tool_trim">Lõika</string>
+    <string name="faditor_tool_speed">1x</string>
+    <string name="faditor_tool_muted">Vaigistatud</string>
+    <string name="faditor_tool_sound">Heli</string>
+    <string name="faditor_speed_title">Esituskiirus</string>
+    <string name="faditor_speed_reset">Lähtesta 1x-le</string>
+    <string name="faditor_volume_title">Helitugevus</string>
+    <string name="faditor_volume_warning">Üle 100%% võib halvendada heli kvaliteeti</string>
+    <string name="faditor_volume_mute">Vaigista heli</string>
+    <string name="faditor_volume_unmute">Heli vaigistus välja</string>
+    <string name="faditor_tool_volume">Helitugevus</string>
+    <string name="faditor_tool_rotate">Pööra</string>
+    <string name="faditor_tool_flip">Pööra ümber</string>
+    <string name="faditor_tool_crop">Lõika välja</string>
+    <string name="faditor_tool_crop_free">Vaba</string>
+    <string name="faditor_tool_canvas">Lõuend</string>
+    <string name="faditor_canvas_title">Lõuend</string>
+    <string name="faditor_canvas_applied">Lõuend määratud: %s</string>
+    <string name="faditor_tool_audio">Ekstrakti heli</string>
+    <string name="faditor_audio_extract_current">Ekstrakti videost</string>
+    <string name="faditor_audio_extract_current_desc">Ekstrakti heliriba praegusest videost</string>
+    <string name="faditor_audio_extracting">Heli ekstraktimine…</string>
+    <string name="faditor_audio_extracted">Heli ekstraktitud ja ajajoonelisale lisatud</string>
+    <string name="faditor_audio_extract_failed">Heli ekstraktimine nurjus</string>
+    <string name="faditor_audio_added">Heli ajajoonelisale lisatud</string>
+    <string name="faditor_audio_no_track">Sellest videost heliriba ei leitud</string>
+    <string name="faditor_tool_split">Jaga</string>
+    <string name="faditor_tool_delete">Kustuta</string>
+    <string name="faditor_tool_duplicate">Duplikaat</string>
+    <string name="faditor_tool_add">Lisa</string>
+    <string name="faditor_add_asset_title">Lisa ressurss</string>
+    <string name="faditor_add_asset_image">Pilt (5s staatiline)</string>
+    <string name="faditor_add_asset_video">Videoklipp</string>
+    <string name="faditor_asset_added">Ressurss ajajoonelisale lisatud</string>
+    <string name="faditor_asset_error">Ressursi lisamine nurjus</string>
+    <string name="faditor_split_success">Segment jagatud kaheks</string>
+    <string name="faditor_split_error">Siin ei saa jagada — liiga serva lähedal</string>
+    <string name="faditor_delete_last_segments">Ainsat segmenti ei saa kustutada</string>
+    <string name="faditor_segment_deleted">Segment kustutatud</string>
+    <string name="faditor_segment_duplicated">Segment duplitseeritud</string>
+    <string name="faditor_crop_title">Lõika külgede suhe</string>
+    <string name="faditor_crop_free">Vaba</string>
+    <string name="faditor_crop_applied">Lõikamine rakendatud</string>
+    <string name="faditor_crop_cancelled">Lõikamine tühistatud</string>
+    <string name="faditor_crop_reset">Lõikamine lähtestatud</string>
+    <string name="faditor_close_confirm_title">Sulge redaktor?</string>
+    <string name="faditor_close_confirm_action">Sulge ja salvesta</string>
+    <string name="faditor_close_confirm_subtitle">Salvesta projekt ja naase</string>
+    <string name="faditor_close_confirm_helper">Sinu projekt salvestatakse automaatselt. Saad selle igal ajal hiljutistest projektidest uuesti avada.</string>
+    <string name="faditor_back_press_exit">Vajuta uuesti redaktorist väljumiseks</string>
+    <string name="faditor_export_back_confirm">Eksportimine pooleli. Naasta redaktorisse?</string>
+    <string name="faditor_export_done">Valmis</string>
+    <string name="faditor_export_back">Tagasi</string>
+    <string name="faditor_export_eta">Hinnanguline aeg: %s</string>
+    <string name="faditor_export_complete_title">Eksportimine lõpetatud</string>
+    <string name="faditor_export_complete_summary">Sinu video on salvestatud Salvestiste vahekaarti.</string>
+    <string name="faditor_export_confirm_title">Ekspordi video</string>
+    <string name="faditor_export_confirm_action">Ekspordi nüüd</string>
+    <string name="faditor_export_confirm_subtitle">Eksportimine jätkub taustal</string>
+    <string name="faditor_export_confirm_helper">%1$s • %2$d klippi%3$s\nEksportimine töötab taustateenusena — saad rakenduse sulgeda ja see jätkab eksportimist.</string>
+    <string name="faditor_export_notif_channel">Faditori eksport</string>
+    <string name="faditor_export_notif_channel_desc">Teavitused käimasolevate video eksportimiste kohta</string>
+    <string name="faditor_export_notif_title">Video eksportimine…</string>
+    <string name="faditor_export_notif_error_title">Eksportimine nurjus</string>
+    <string name="faditor_export_progress">Eksportimine…</string>
+    <string name="faditor_export_completed">Eksportimine lõpetatud</string>
+    <string name="faditor_export_cancelled">Eksportimine tühistatud</string>
+    <string name="faditor_export_failed">Eksportimine nurjus</string>
+    <string name="export_eta_seconds">ETA %d s</string>
+    <string name="export_eta_minutes">ETA %d m</string>
+    <string name="export_eta_hours">ETA %d t</string>
+    <string name="export_complete">Valmis</string>
+    <string name="export_file_size">%s</string>
+    <string name="export_error_hint">Puuduta sulgemiseks</string>
+    <string name="export_status">Ekspordi olek</string>
+    <string name="faditor_export_info">%1$s • %2$d klippi%3$s • H.264 + AAC</string>
+    <string name="faditor_flip_title">Pööra ümber</string>
+    <string name="faditor_home_tagline">Kergekaaluline videoredaktor</string>
+    <string name="faditor_new_project">Uus projekt</string>
+    <string name="faditor_start_project">Alusta uut projekti</string>
+    <string name="faditor_recent_projects">Hiljutised projektid</string>
+    <string name="faditor_capabilities_title">Mida saad teha</string>
+    <string name="faditor_feature_trim">Täpne lõikamine</string>
+    <string name="faditor_feature_trim_desc">Lõika videod täpselt soovitud kaadrini</string>
+    <string name="faditor_feature_export">Kiire eksport</string>
+    <string name="faditor_feature_export_desc">Ekspordi MP4-vormingus riistvaralise kodeerimisega</string>
+    <string name="faditor_feature_preview">Otse-eelvaade</string>
+    <string name="faditor_feature_preview_desc">Lõigatud klippide kohene esitus</string>
+    <string name="faditor_feature_privacy">100% offline</string>
+    <string name="faditor_feature_privacy_desc">Kogu redigeerimine toimub kohapeal — üleslaadimisi, pilve pole</string>
+    <string name="faditor_feature_convert">Tark teisendamine</string>
+    <string name="faditor_feature_convert_desc">Teisendab automaatselt kokkujooksmiskindlad salvestised otsitavaks MP4-ks sujuvaks esitamiseks kõikjal</string>
+    <string name="faditor_select_items">Vali elemendid</string>
+    <string name="faditor_selected_count">%1$d valitud</string>
+    <string name="faditor_delete_projects_title">Kustutada projektid?</string>
+    <string name="faditor_delete_projects_message">Kustutada %1$d projekti(d)? Seda ei saa tagasi pöörata.</string>
+    <string name="faditor_delete_confirm">Kustuta</string>
+    <string name="faditor_version_info">Faditor Mini · 1. etapp · Lõikamine + eksport</string>
+    <string name="faditor_empty_title">Projekte pole veel</string>
+    <string name="faditor_empty_desc">Puuduta \"Alusta uut projekti\", et valida video ja alustada redigeerimist</string>
+    <string name="faditor_info_title">Faditor Mini teave</string>
+    <string name="faditor_info_subtitle">Kõik, mida pead teadma sisseehitatud redaktori kohta</string>
+    <string name="faditor_info_how_title">Kuidas see töötab</string>
+    <string name="faditor_info_how_desc">Vali mis tahes video oma seadmest või FadCam\'i salvestistest. Lõika seda kaadrihaaval ajajoonelise abil, seejärel ekspordi. Kogu töötlemine toimub kohapeal sinu seadmes — midagi ei laadata üles.\n\nSinu redigeerimise edenemine salvestatakse automaatselt iga paari sekundi tagant ja iga kord, kui redaktorist lahkud, nii et töö ei kaoks, kui rakendus ootamatult sulgub.</string>
+    <string name="faditor_info_convert_title">Tark teisendamine</string>
+    <string name="faditor_info_convert_desc">FadCam salvestab kokkujooksmiskindlas vormingus, mida kutsutakse killustatud MP4-ks (fMP4). Erinevalt standardsest MP4-st, millel on üks lõplik konteiner, kirjutab fMP4 video väikestesse sõltumatutesse tükkidesse. See tähendab, et sinu salvestised jäävad puutumata ka siis, kui rakendus jookseb kokku või salvestamine järsult peatub.\n\nKuid välised videomängijad, galeriirakendused ja failihaldurid ei saa neid faile kerida, liikuda ega kuvada õiget kestust. See ei ole viga — see on tahtlik disainikompromiss töökindluse nimel.\n\nKui plaanid salvestada oma videoid väljapoole FadCam\'i — Google Drive\'i, arvutisse või mujale — pead need esmalt teisendama. Vastasel juhul on failid tavapäraseks esitamiseks kasutamatud.\n\nTeisendamiseks: ava video siin Faditor Mini-s ja puuduta Ekspordi. Teisendatud standardne MP4 ilmub sinu Salvestiste vahekaarti, valmis galeriisse salvestamiseks või jagamiseks. Protsess on kohene ja kadudeta — ümberkodeerimist ega kvaliteedikadu pole.</string>
+    <string name="faditor_info_export_title">Eksporditud failid</string>
+    <string name="faditor_info_export_desc">Eksporditud videod salvestatakse sinu aktiivsesse salvestusasukohta (sama, mis seadetes konfigureeritud) eesliitega \"Faditor_\" ja ajatempliga. Need ilmuvad Salvestiste vahekaarti koos algsete salvestistega.</string>
+    <string name="faditor_info_temp_title">Ajutised failid ja vahemälu</string>
+    <string name="faditor_info_temp_desc">Kui laadid fMP4 video redigeerimiseks, tuvastab Faditor, kas fail vajab \"remuximist\" — kiiret teisendamist, mis lisab kerimismarkerid ilma ümberkodeerimata. Remuxitud failid vahemälusse salvestatakse sinu seadmesse, et neid saaks uuesti kasutada, kui redigeerid sama videot, säästes aega ja töötlemist.\n\nSaad näha iga projekti vahemälu suurust, mis on loetletud muutmiskuupäeva kõrval. Kui sinu seadme mäluruum on otsas, saad kustutada kasutamata projekte, et tühjendada nende vahemälusse salvestatud remuxitud failid.\n\nNeed ajutised vahemälu failid puhastatakse automaatselt, kui kustutad projekti sellelt vahekaardilt.</string>
+    <string name="faditor_info_projects_title">Hiljutised projektid</string>
+    <string name="faditor_info_projects_desc">Kõik sinu redigeerimissessioonid on kuvatud kiireks juurdepääsuks. Iga projekt salvestatakse väikese JSON-failina sinu seadmesse, mis sisaldab video URI-d, lõikepunkte ja ajatempleid — videote koopiaid ei tehta. Projektid salvestatakse automaatselt iga paari sekundi tagant, nii et sinu edenemine ei kaotu kunagi.\n\nSaad kustutada projekte, mida enam ei vaja, kasutades mitmevaliku märkeruutu. Projekti kustutamine eemaldab ainult redigeerimissessiooni andmed; sinu originaalsed videofailid jäävad puutumata.</string>
+    <string name="faditor_your_recordings">Sinu salvestised</string>
+    <string name="faditor_browse_device">Sirvi seadet</string>
+    <string name="faditor_no_recordings">Salvestisi ei leitud. Alusta FadCam\'iga salvestamist, et oma videoid siin näha.</string>
+    <string name="faditor_video_count">%1$d videot</string>
+    <string name="faditor_fadcam_source">FadCam</string>
+    <string name="faditor_fadrec_source">FadRec</string>
+    <string name="faditor_browse_device_desc">Vali mis tahes video oma seadmest</string>
+    <string name="faditor_scanning">Salvestiste skannimine…</string>
+    <string name="faditor_source_chooser_desc">Vali video galeriist või vali FadCam\'i salvestistest</string>
+    <string name="faditor_recordings_helper">FadCam\'iga salvestatud videod sinu aktiivsest salvestusasukohast</string>
+    <string name="setting_audio_title">Heli salvestamine</string>
+    <string name="note_audio">Luba või keela video heli salvestamine.\n(vaikimisi: lubatud)</string>
+    <string name="button_audio_settings">Heliseaded</string>
+    <string name="dialog_audio_settings_title">Heliseaded</string>
+    <string name="dialog_audio_bitrate_label">Heli bitikiirus (bps)</string>
+    <string name="dialog_audio_sampling_rate_label">Diskreetimissagedus (Hz)</string>
+    <string name="dialog_audio_reset">Lähtesta vaikimisi</string>
+    <string name="dialog_audio_save">Salvesta</string>
+    <string name="dialog_audio_cancel">Tühista</string>
+    <string name="dialog_audio_invalid_bitrate">Vigane bitikiirus. Sisesta väärtus vahemikus 64000 kuni 384000.</string>
+    <string name="dialog_audio_invalid_sampling_rate">Vigane diskreetimissagedus. Sisesta 44100 või 48000.</string>
+    <string name="dialog_audio_settings_summary">Seadista heli bitikiirus ja diskreetimissagedus parima kvaliteedi jaoks. Vaikimisi: 192000 bps, 48000 Hz, stereo.</string>
+    <string name="dialog_audio_info_text">• Bitikiirus (bps) kontrollib heli kvaliteeti ja faili suurust. Kõrgemad väärtused tähendavad paremat kvaliteeti, kuid suuremaid faile. 192000 on hea vaikimisi enamiku kasutuste jaoks.
+• Diskreetimissagedus (Hz) on see, mitu korda sekundis heli jäädvustatakse. 48000 Hz on video jaoks standardne, 44100 Hz on levinud heli jaoks.
+
+Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
+    <string name="helper_record_audio">Lülita mikrofoni heli salvestamine videotesse.</string>
+    <string name="helper_audio_input_source">Vali, millist ühendatud mikrofoni/sisendit kasutada.</string>
+    <string name="helper_noise_suppression">Eksperimentaalne filter taustamüra vähendamiseks.</string>
+    <string name="helper_audio_advanced">Kohanda bitikiirust ja diskreetimissagedust kvaliteedi/suuruse tasakaalu jaoks.</string>
+    <string name="helper_audio_bitrate_detail">Soovitatav: 192000 bps kõrgekvaliteedilise stereo jaoks. Madalamad väärtused vähendavad faili suurust, kuid võivad vähendada selgust. Vahemik 64000–384000 bps.</string>
+    <string name="helper_audio_sampling_detail">Vali 48000 Hz video jaoks (soovitatav) või 44100 Hz üldise heli ühilduvuse jaoks.</string>
+    <string name="helper_audio_sampling_recommended">Soovitatav: 48000 Hz</string>
+    <string name="universal_reset">Lähtesta</string>
+    <string name="label_recommended">(Soovitatav)</string>
+    <string name="universal_back">Tagasi</string>
+    <string name="helper_audio_bitrate_low_hint">Alla 128k: selgus võib langeda</string>
+    <string name="helper_audio_bitrate_high_hint">Üle 320k: suuremad failid, väike kasu</string>
+    <string name="audio_bitrate_recommended_line">Soovitatav: 192000 bps</string>
+    <string name="helper_location_watermark">Lisab reaalajas asukoha teksti ülekatte salvestamise ajal.</string>
+    <string name="helper_location_embed">Lisab GPS-koordinaadid video metaandmetesse (geosilt).</string>
+    <string name="video_setting_location_embed_title">Lisa asukoha metaandmed</string>
+    <string name="video_setting_location_embed_enabled">Lubatud</string>
+    <string name="video_setting_location_embed_disabled">Keelatud</string>
+    <string name="helper_watermark_option">Vali ülekatte sisu: ajatempel + bränd, ainult ajatempel või puudub.</string>
+    <string name="setting_video_orientation_title">Video suund</string>
+    <string name="setting_video_orientation_summary">Vali oma videote suund. Portree on parim sotsiaalmeedia jaoks; maastik on parim YouTube\'i, esitluste jne jaoks.</string>
+    <string name="video_orientation_portrait">Portree (vaikimisi)</string>
+    <string name="video_orientation_landscape">Maastik</string>
+    <string name="setting_video_bitrate_title">Salvestuse kvaliteet ja jõudlus</string>
+    <string name="button_video_bitrate_settings">Määra bitikiirus</string>
+    <string name="bitrate_mode_default">Vaikimisi</string>
+    <string name="bitrate_mode_custom">Kohandatud</string>
+    <string name="bitrate_custom_label">Kohandatud bitikiirus:</string>
+    <string name="bitrate_custom_hint">nt 16 000</string>
+    <string name="bitrate_reset_button">Lähtesta</string>
+    <string name="bitrate_helper_text">Bitikiirus kontrollib video kvaliteeti ja faili suurust. Kõrgem = parem kvaliteet, kuid suuremad failid. Liiga kõrge või madal võib põhjustada salvestusvigu või halba kvaliteeti. Soovitatav vahemik sõltub sinu seadmest ja valitud eraldusvõimest. Vaikimisi väärtus põhineb sinu praegustel seadistel.</string>
+    <string name="bitrate_info_default">Vaikimisi: %d Mbps</string>
+    <string name="bitrate_info_custom">Kohandatud: %d Mbps</string>
+    <string name="bitrate_info_warning_low">Hoiatus: Bitikiirus on väga madal. Video kvaliteet võib olla halb.</string>
+    <string name="bitrate_info_warning_high">Hoiatus: Bitikiirus on väga kõrge. Salvestamine võib nurjuda või seade üle kuumeneda.</string>
+    <string name="bitrate_info_ok">Bitikiirus on soovitatud vahemikus.</string>
+    <string name="bitrate_invalid">Vigane bitikiirus. Sisesta väärtus vahemikus %1$d kuni %2$d Mbps.</string>
+    <string name="bitrate_save_success">Bitikiirus edukalt salvestatud.</string>
+    <string name="bitrate_reset_success">Bitikiirus vaikimisi väärtusele lähtestatud.</string>
+    <string name="bitrate_current">Praegune: %1$s Mbps</string>
+    <string name="bitrate_unit">Mbps</string>
+    <string name="bitrate_explanation">Mis on bitikiirus?</string>
+    <string name="bitrate_explanation_text">Bitikiirus on andmehulk, mida kasutatakse video iga sekundi jaoks. Kõrgem bitikiirus tähendab paremat kvaliteeti, kuid suuremaid faile. Liiga kõrge või madal võib põhjustada probleeme. Vaikimisi väärtused põhinevad professionaalsete kaamerate standarditel.</string>
+    <string name="universal_enter_number">Sisesta number</string>
+    <string name="universal_min_value">Min %1$d</string>
+    <string name="universal_max_value">Maks %1$d</string>
+    <string name="universal_ok">OK</string>
+    <string name="universal_enable">Luba</string>
+    <string name="universal_disable">Keela</string>
+    <string name="delete_video_dialog_title">Kustutada video?</string>
+    <string name="delete_video_dialog_message">Kas oled kindel, et soovid kustutada %1$s?</string>
+    <string name="delete_video_progress">Kustutamine %1$s...</string>
+    <string name="delete_video_success_toast">\'%1$s\' kustutatud.</string>
+    <string name="delete_video_fail_toast">\'%1$s\' kustutamine nurjus.</string>
+    <string name="delete_video_cancelled_toast">Kustutamine tühistatud.</string>
+    <string name="delete_video_error_null_toast">Viga: Null-elemendi kustutamine ei ole võimalik.</string>
+    <string name="delete_videos_success_toast">Kõik %1$d videot kustutatud.</string>
+    <string name="delete_videos_partial_success_toast">%1$d videot kustutatud. %2$d kustutamine nurjus.</string>
+    <string name="delete_videos_log">Kustutan %1$d valitud videot…</string>
+    <string name="trash_auto_deleted_toast">%1$d vana elementi automaatselt kustutatud.</string>
+    <string name="trash_empty_toast_message">Pole elemente kustutamiseks.</string>
+    <string name="trash_emptied_toast">Kõik elemendid kustutatud.</string>
+    <string name="trash_items_deleted_toast">%1$d elementi jäädavalt kustutatud.</string>
+    <string name="auto_delete_immediate">Kohene</string>
+    <string name="trash_auto_delete_info_immediate">Elemendid kustutatakse koheselt.</string>
+    <string name="trash_error_deleting_items_toast">Viga elementide kustutamisel.</string>
+    <string name="trash_dialog_empty_all_title">Kustutada kõik elemendid?</string>
+    <string name="trash_button_empty_all_action">Kustuta kõik</string>
+    <string name="universal_deleted">Kustutatud</string>
+    <string name="universal_delete_failed">Kustutamine nurjus</string>
+    <string name="dialog_permanently_delete_title">Kustutada jäädavalt?</string>
+    <string name="dialog_permanently_delete_message">Kas oled kindel, et soovid jäädavalt kustutada %1$d valitud elementi? Seda tegevust ei saa tagasi pöörata.</string>
+    <string name="dialog_empty_all_trash_message">Kas oled kindel, et soovid jäädavalt kustutada kõik elemendid? Seda tegevust ei saa tagasi pöörata.</string>
+    <string name="universal_cancel">Tühista</string>
+    <string name="universal_delete">Kustuta</string>
+    <string name="trash_no_items_selected_toast">Ühtegi elementi pole valitud.</string>
+    <string name="trash_dialog_restore_title">Taastada valitud?</string>
+    <string name="trash_dialog_restore_message">Taastada %1$d elementi avalikku Allalaadimised/FadCam/ kausta?</string>
+    <string name="trash_restore_success_toast">%1$d elementi taastatud.</string>
+    <string name="trash_restore_fail_toast">Viga elementide taastamisel. Mõnda faili ei pruugitud taastada või galerii ei pruugi olla uuendatud. Kontrolli rakenduse mälulubasid.</string>
+    <string name="trash_restore_cancelled_toast">Taastamine tühistatud.</string>
+    <string name="trash_fragment_title_text">Hiljuti kustutatud</string>
+    <string name="setting_cloak_recents_title">Blokeeri ekraanipildid ja peida hiljutistes</string>
+    <string name="setting_cloak_recents_switch">Peida eelvaade</string>
+    <string name="setting_cloak_recents_helper">Peidab rakenduse eelvaate hiljutistes rakendustes ja blokeerib ekraanipildid rakenduses. See takistab tundliku sisu jäädvustamist või nähtavust rakenduste vahetajas.\n(vaikimisi: keelatud)</string>
+    <string name="setting_enabled_msg">Lubatud</string>
+    <string name="setting_disabled_msg">Keelatud</string>
+    <string name="universal_restore">Taasta</string>
+    <string name="deleted_item_thumbnail_description">Kustutatud elemendi pisipilt</string>
+    <string name="trash_empty_icon_description">Prügikast on tühi ikoon</string>
+    <string name="trash_empty_text">Prügikast on tühi.</string>
+    <string name="essential_permissions_missing">Olulised load puuduvad. Jätkamiseks anna need.</string>
+    <string name="records_search_hint">Otsi salvestisi…</string>
+    <string name="saf_permission_missing_dialog_instructions">SAF luba puudub. Palun anna juurdepääs valitud kaustale.</string>
+    <string name="saf_permission_missing_dialog_title">SAF luba on vajalik</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">Salvestiste salvestamiseks kohandatud asukohta vajab FadCam luba valitud kaustale juurdepääsuks. Palun anna luba, kui seda küsitakse.</string>
+    <string name="grant_permission_button">Anna luba</string>
+    <plurals name="trash_auto_delete_info_days">
+        <item quantity="one">Elemendid kustutatakse automaatselt pärast %1$d päeva.</item>
+        <item quantity="other">Elemendid kustutatakse automaatselt pärast %1$d päeva.</item>
+    </plurals>
+    <plurals name="trash_auto_delete_info_hours">
+        <item quantity="one">Elemendid kustutatakse automaatselt pärast %1$d tund.</item>
+        <item quantity="other">Elemendid kustutatakse automaatselt pärast %1$d tundi.</item>
+    </plurals>
+    <string name="trash_auto_delete_info_manual">Prügikastis olevaid elemente ei kustutata kunagi, kustuta
+    videod käsitsi.</string>
+    <plurals name="trash_item_remaining_days">
+        <item quantity="one">%1$d päev jäänud</item>
+        <item quantity="other">%1$d päeva jäänud</item>
+    </plurals>
+    <plurals name="trash_item_remaining_hours">
+        <item quantity="one">%1$d tund jäänud</item>
+        <item quantity="other">%1$d tundi jäänud</item>
+    </plurals>
+    <string name="trash_item_remaining_soon">Kustutatakse peagi</string>
+    <string name="trash_menu_auto_delete_settings">Automaatkustutamise seaded</string>
+    <string name="auto_delete_dialog_title">Määra automaatkustutamise kestus</string>
+    <string name="auto_delete_1_hour">Pärast 1 tund</string>
+    <string name="auto_delete_5_hours">Pärast 5 tundi</string>
+    <string name="auto_delete_10_hours">Pärast 10 tundi</string>
+    <string name="auto_delete_1_day">Pärast 1 päev</string>
+    <string name="auto_delete_7_days">Pärast 7 päeva</string>
+    <string name="auto_delete_30_days">Pärast 30 päeva (vaikimisi)</string>
+    <string name="auto_delete_60_days">Pärast 60 päeva</string>
+    <string name="auto_delete_90_days">Pärast 90 päeva</string>
+    <string name="auto_delete_never">Mitte kunagi (käsitsi kustutamine)</string>
+    <string name="auto_delete_save_setting">Salvesta</string>
+    <string name="trash_auto_delete_picker_helper">Vali, millal prügikastis olevad elemendid automaatselt kustutatakse.</string>
+    <string name="video_split_size_summary_mb">Praegune: %1$d MB</string>
+    <string name="video_split_size_summary_gb">Praegune: %1$s GB</string>
+    <string name="video_splitting_title">Luba video tükeldamine</string>
+    <string name="video_splitting_description">Jagab salvestised automaatselt väiksemateks failideks (vaikimisi keelatud). Soovitatav: 2 GB tasakaalu jaoks. Eelseadistused kuni 4 GB ja kohandatud suurused on saadaval. See aitab hallata suuri salvestisi ja väldib seadme failisuuruse piiranguid.</string>
+    <string name="support_ko_fi">Toeta meid Ko-fi-s</string>
+    <string name="kofi_description">Kirjeldus määratakse koodis.</string>
+    <string name="kofi_button_text">Osta mulle Ko-fi</string>
+    <string name="kofi_footer_text">Tehtud armastusega    FadSec Labis    </string>
+    <string name="setting_audio_input_source_title">Heli sisendallikas</string>
+    <string name="setting_audio_input_source_status_default">Telefoni mikrofon</string>
+    <string name="setting_audio_input_source_status_wired">Juhtmega mikrofon</string>
+    <string name="setting_audio_input_source_status_nowired">Juhtmega mikrofoni ei tuvastatud</string>
+    <string name="audio_input_source_phone">Telefoni mikrofon (vaikimisi)</string>
+    <string name="audio_input_source_wired">Juhtmega mikrofon (kui ühendatud)</string>
+    <string name="audio_input_source_wired_not_available">Juhtmega mikrofon (ei tuvastatud)</string>
+    <string name="audio_input_source_note">Vali, millist mikrofoni heli salvestamiseks kasutada. Kui juhtmega mikrofoni pole ühendatud, kasutatakse automaatselt telefoni mikrofoni.</string>
+    <string name="audio_input_source_wired_not_connected">Juhtmega mikrofoni ei tuvastatud. Kasutan telefoni mikrofoni.</string>
+    <string name="choose">Vali</string>
+    <string name="audio_input_source_headphones_no_mic">Kõrvaklapid tuvastatud (ilma mikrofonita)</string>
+    <string name="setting_onboarding_title">Kuva sissejuhatus</string>
+    <string name="note_onboarding">Luba, et näha rakenduse sissejuhatust ja lubade juhendit järgmisel korral, kui avad FadCam\'i.</string>
+    <string name="choose_language">Vali keel</string>
+    <string name="language_change_later_note">Saad seda hiljem seadetes muuta.</string>
+    <string name="permissions_required">Load on vajalikud</string>
+    <string name="permissions_description">FadCam vajab juurdepääsu kaamerale, mikrofonile ja mälule, et salvestada ja salvestada videoid.</string>
+    <string name="grant_permissions">Anna load</string>
+    <string name="permissions_note">Jätkamiseks pead andma kõik load.</string>
+    <string name="permissions_granted">Kõik load antud!</string>
+    <string name="open_settings">Ava seaded</string>
+    <string name="disable_battery_optimization">Keela aku optimeerimine</string>
+    <string name="onboarding_human_title">Kinnita, et oled inimene</string>
+    <string name="onboarding_human_desc">Hmmmm... olgu. Need reeglid pole läbiräägitavad. Kui sa nendega nõustuda ei saa, palun eemalda FadCam kohe.</string>
+    <string name="onboarding_human_checkbox1">Ma ei kasuta FadCam\'i seaduste rikkumiseks, kellegi privaatsuse riivamiseks ega käitu imelikult. Arendaja ei vastuta, kui ma midagi valesti teen. (See on minu vastutus.)</string>
+    <string name="onboarding_human_checkbox2">Ma juba armastan FadCam\'i enne selle kasutamist. (Pole valikuline)</string>
+    <string name="onboarding_human_checkbox3">Nõustun privaatsuspoliitikaga</string>
+    <string name="onboarding_human_button">Lase mind sisse!</string>
+    <string name="trash_select_all">Vali kõik</string>
+    <string name="location_permission_granted_manual_toggle">Luba antud! Saad nüüd asukoha funktsioonid seadetes lubada.</string>
+    <string name="location_embedding_enabled">Asukoha lisamine lubatud</string>
+    <string name="allow_location_access">Anna luba</string>
+    <string name="location_permission_message">Asukoha luba on vajalik GPS-koordinaatide lisamiseks videotele. Palun anna luba selle funktsiooni kasutamiseks.</string>
+    <string name="setting_applock_title">Vahekaardi lukustus</string>
+    <string name="setting_applock_desc">Turva oma videod PIN-lukuga Salvestiste vahekaardi jaoks. \nSinu turvalisuse huvides lukustub Salvestiste vahekaart automaatselt, kui rakendus läheb taustale või suletakse. Pead uuesti avama, kui naased.</string>
+    <string name="setting_applock_configure">Seadista</string>
+    <string name="applock_dialog_title">Vahekaardi lukustuse valikud</string>
+    <string name="applock_enable">Luba vahekaardi lukustus</string>
+    <string name="applock_disable">Keela vahekaardi lukustus</string>
+    <string name="applock_set_pin">Määra PIN</string>
+    <string name="applock_change_pin">Muuda PIN-i</string>
+    <string name="applock_remove_pin">Eemalda PIN</string>
+    <string name="applock_pin_created">PIN edukalt loodud</string>
+    <string name="applock_pin_removed">PIN edukalt eemaldatud</string>
+    <string name="applock_set_pin_enable">Määra PIN ja luba</string>
+    <string name="applock_helper_create">Loo Salvestiste vahekaardi kaitse 4-kohalise PIN-i, parooli või sõrmejäljega. See lukustub automaatselt, kui rakendus läheb taustale.</string>
+    <string name="applock_helper_manage_disabled">Vahekaardi lukustuse PIN on määratud. Lülita sisse, et nõuda PIN-i rakendusse naasmisel.</string>
+    <string name="applock_helper_enabled">Vahekaardi lukustus on aktiivne. Vajad PIN-i Salvestiste vahekaardi avamisel pärast rakendusest lahkumist.</string>
+    <string name="applock_verify_to_enable">Kinnita PIN vahekaardi lukustuse lubamiseks</string>
+    <string name="applock_verify_to_disable">Kinnita PIN vahekaardi lukustuse keelamiseks</string>
+    <string name="applock_verify_to_change">Kinnita praegune PIN</string>
+    <string name="applock_verify_to_remove">Kinnita PIN eemaldamiseks</string>
+    <string name="applock_verification_canceled">Kinnitamine tühistatud</string>
+    <string name="version_format">v%s</string>
+    <string name="edit_with_faditorx">Redigeeri Faditor Mini-ga</string>
+    <string name="remote_coming_soon_badge">Tulekul</string>
+    <string name="update_sarcastic_heading">📦 Oh vaata, järjekordne uuendus...</string>
+    <string name="update_visit_github">Külasta GitHubi</string>
+    <string name="update_version_arrow">  >>  </string>
+    <string name="update_variation_1">Ikka veel &lt;font color=\'#E43C3C\'>v%1$s&lt;/font> peal? See on... nostalgiline.&lt;br>Vahepeal on &lt;font color=\'#77DD77\'>v%2$s&lt;/font> väljas ja laineid löömas. Aeg järele jõuda!</string>
+    <string name="update_variation_2">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> on nii eelmisel hooajal.&lt;br>Vahepeal on &lt;font color=\'#77DD77\'>v%2$s&lt;/font> valmis muljet avaldama uute funktsioonide ja veaparandustega. Uuenda parema kogemuse jaoks!</string>
+    <string name="update_variation_3">Sinu rakendus elab minevikus &lt;font color=\'#E43C3C\'>v%1$s&lt;/font>-ga.&lt;br>Vahepeal on &lt;font color=\'#77DD77\'>v%2$s&lt;/font> tulevik — kiirem, targem ja läikivam. Miks mitte liituda?</string>
+    <string name="update_variation_4">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font> on sind hästi teeninud, kuid &lt;font color=\'#77DD77\'>v%2$s&lt;/font> kutsub!&lt;br>Naudi viimaseid parendusi ja sujuvamat kogemust — vaid puudutuse kaugusel.</string>
+    <string name="setting_app_icon_title">Rakenduse ikoon</string>
+    <string name="setting_eye_color_title">Silmavärv</string>
+    <string name="setting_eye_color_desc">Vali avatar silmade helenduse värv</string>
+    <string name="eye_color_white" translatable="false">White</string>
+    <string name="eye_color_ruby" translatable="false">Ruby</string>
+    <string name="eye_color_teal" translatable="false">Cyan</string>
+    <string name="eye_color_violet" translatable="false">Violet</string>
+    <string name="eye_color_cobalt" translatable="false">Cobalt</string>
+    <string name="eye_color_amber" translatable="false">Amber</string>
+    <string name="eye_color_jade" translatable="false">Lime</string>
+    <string name="eye_color_magenta" translatable="false">Magenta</string>
+    <string name="setting_header_logo_title">Päise logo</string>
+    <string name="setting_header_logo_desc">Vali päise logo stiil</string>
+    <string name="header_logo_default" translatable="false">FadCam</string>
+    <string name="header_logo_avatar" translatable="false">Avatar</string>
+    <string name="setting_app_icon_desc">Muuda rakenduse käivitaja ikooni ja nime</string>
+    <string name="app_icon_dialog_title">Vali rakenduse ikoon</string>
+    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_alternative" translatable="false">Camera</string>
+    <string name="app_icon_faded" translatable="false">0xFF0000</string>
+    <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
+    <string name="app_icon_pakistan" translatable="false">FadCam</string>
+    <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
+    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_bat" translatable="false">FadCam</string>
+    <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
+    <string name="app_icon_notes" translatable="false">Notes</string>
+    <string name="app_icon_calculator" translatable="false">Calculator</string>
+    <string name="app_icon_clock" translatable="false">Clock</string>
+    <string name="app_icon_weather" translatable="false">Weather</string>
+    <string name="app_icon_football" translatable="false">FootballX 2024</string>
+    <string name="app_icon_car" translatable="false">ClutchX</string>
+    <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
+    <string name="app_icon_changed">Rakenduse ikoon muudetud</string>
+    <string name="app_icon_preview">Rakenduse ikooni eelvaade</string>
+    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
+    <string name="changelog_label">Mis on uut</string>
+    <string name="setting_auto_update_check_title">Automaatne uuenduste kontroll</string>
+    <string name="note_auto_update_check">Kui lubatud, kontrollib FadCam uuendusi iga kord, kui rakenduse avad. Lülita välja, et keelata automaatne uuenduste kontrollimisel käivitamisel.\n(vaikimisi: sees)</string>
+    <string name="storage_location_title">Salvestusasukoht</string>
+    <string name="storage_location_description">Vali, kuhu salvestised salvestatakse.</string>
+    <string name="general">Üldine</string>
+    <string name="recording_quick_access">Salvestuse kiirjuurdepääs</string>
+    <string name="settings_section_app">Rakendus</string>
+    <string name="settings_notifications_title">Teavitused</string>
+    <string name="settings_notifications_subtitle">Salvestamine ja eelseadistus</string>
+    <string name="settings_security_title">Turvalisus</string>
+    <string name="settings_advanced_subtitle">Motion Lab ja jõukasutaja juhtnupud</string>
+    <string name="digital_forensics_title">Digitaalne kohtuekspertiis</string>
+    <string name="forensic_intelligence_title">Kohtuekspertiisi analüüs</string>
+    <string name="digital_forensics_row_subtitle">Tõendite ajajoon, identiteedi taaslinkimine ja targad ülevaated</string>
+    <string name="digital_forensics_enable">Luba digitaalne kohtuekspertiis</string>
+    <string name="digital_forensics_status_enabled">Lubatud (kogub kohtuekspertiisi sündmuste metaandmeid)</string>
+    <string name="digital_forensics_status_enabled_short">Lubatud</string>
+    <string name="digital_forensics_status_disabled">Keelatud</string>
+    <string name="digital_forensics_event_person">Isiku sündmused</string>
+    <string name="digital_forensics_event_vehicle">Sõiduki sündmused</string>
+    <string name="digital_forensics_event_pet">Lemmiklooma sündmused</string>
+    <string name="digital_forensics_event_dangerous_object">Ohtlike objektide sildid</string>
+    <string name="digital_forensics_overlay">Kuva AI ülekate otse-eelvaates</string>
+    <string name="digital_forensics_daily_summary">Päevakokkuvõte</string>
+    <string name="digital_forensics_heatmap">Soojuskaardi ülevaated</string>
+    <string name="digital_forensics_discord_alerts">Discordi teavitused</string>
+    <string name="digital_forensics_coming_soon">Planeeritud tulevase uuenduse jaoks.</string>
+    <string name="digital_forensics_coming_soon_short">Tulekul</string>
+    <string name="digital_forensics_discord_coming_soon_toast">Discordi teavitused lisatakse tulevases uuenduses.</string>
+    <string name="digital_forensics_helper">Digitaalsel kohtuekspertiisil on kaks osa: otse-eelvaate ülekate ja salvestatud tõendid. Kui soovid ainult live visuaalseid AI silte, hoia tõendite kogumine väljas. Kui vajad kohtuekspertiisi ajalugu, lülita tõendite kogumine sisse ja vali, mida salvestada.</string>
+    <string name="digital_forensics_enable_helper">Mõtle sellest kui oma targast tõendisensorist. Kui lubatud, hoiab FadCam tuvastatud tegevuste ajajoont, et saad hiljem olulistele hetkedele hüpata.</string>
+    <string name="digital_forensics_evidence_enable">Luba tõendite kogumine</string>
+    <string name="digital_forensics_evidence_helper">Kui lubatud, kirjutatakse tuvastused reaalajas kohtuekspertiisi andmebaasi salvestatud tõendikaadritega. Hoia see väljas, kui soovid ainult otse-eelvaate silte ilma mahu kasvuta.</string>
+    <string name="digital_forensics_capture_scope">Tõendite kogumise ulatus</string>
+    <string name="digital_forensics_scope_both">Inimesed ja objektid</string>
+    <string name="digital_forensics_scope_people">Ainult inimesed</string>
+    <string name="digital_forensics_scope_objects">Ainult objektid</string>
+    <string name="digital_forensics_scope_both_helper">Parim täieliku turvatõendi jaoks: inimesed pluss mitte-isiklikud objektid.</string>
+    <string name="digital_forensics_scope_people_helper">Salvesta ainult isikutuvastused, et vähendada mahtu ja keskenduda inimtegevusele.</string>
+    <string name="digital_forensics_scope_objects_helper">Salvesta ainult mitte-isikutuvastused (sõidukid, lemmikloomad, objektid).</string>
+    <string name="digital_forensics_scope_picker_helper">Vali, mida peaks tõenditena salvestama. See mõjutab andmebaasi ridu ja salvestatud tõendikaadreid.</string>
+    <string name="digital_forensics_motion_lab_dependency">Motion Lab on hetkel keelatud. Kohtuekspertiisi salvestamine sõltub Motion Lab analüüsist. Luba esmalt Motion Lab, et jäädvustada kohtuekspertiisi sündmusi.</string>
+    <string name="digital_forensics_person_helper">Salvestab sündmused, kui isik tuvastatakse liikumissessioonides. Parim valik koduruumi jälgimiseks ja sisenemispunktide logide jaoks.</string>
+    <string name="digital_forensics_vehicle_helper">Sõiduki sildistamine vajab spetsiaalset mudelit ja on veel laiendamisel. Saad hoida selle väljas, kuni mudeli tugi saabub.</string>
+    <string name="digital_forensics_pet_helper">Lemmiklooma sildistamine vajab spetsiaalset mudelit ja on veel laiendamisel. Lülita sisse ainult, kui testid varajast tuge.</string>
+    <string name="digital_forensics_dangerous_helper">Täpsem turvasildistamine on valikuline ja range. Hoia see väljas, kui ei soovi spetsiaalselt kõrge tundlikkusega turvasilte.</string>
+    <string name="digital_forensics_overlay_helper">Kui saadaval, joonistab see lihtsaid silte otse-eelvaates, et näha reaalajas, mida AI märkab. Lülita välja puhta eelvaate jaoks.</string>
+    <string name="digital_forensics_daily_helper">Kuvab lihtsa päevakokkuvõtte nagu sündmuste koguarv ja sündmuste tüübid, et saad kiiresti tegevust üle vaadata ilma iga videot avamata.</string>
+    <string name="digital_forensics_heatmap_helper">Ehitab liikumiskaardi tuvastatud asukohtadest. Heledamad tsoonid tähendavad korduvat tegevust selles kaameravaate piirkonnas.</string>
+    <string name="digital_forensics_picker_enabled_desc">Lülita see valik sisse.</string>
+    <string name="digital_forensics_picker_disabled_desc">Lülita see valik välja.</string>
+    <string name="digital_forensics_picker_switch_label">Luba see valik</string>
+    <string name="universal_enabled">Lubatud</string>
+    <string name="universal_disabled">Keelatud</string>
+    <string name="forensics_events_title">Sündmuste ajajoon</string>
+    <string name="forensics_events_subtitle">Filtreeri tuvastusi ja hüppa täpsetele hetkedele.</string>
+    <string name="forensics_events_empty">Valitud filtrite jaoks sündmusi ei leitud.</string>
+    <string name="forensics_filter_all">Kõik</string>
+    <string name="forensics_filter_person">Isik</string>
+    <string name="forensics_filter_vehicle">Sõiduk</string>
+    <string name="forensics_filter_pet">Lemmikloom</string>
+    <string name="forensics_filter_object">Objekt</string>
+    <string name="forensics_filter_high_conf">Ainult kõrge usaldusväärsus</string>
+    <string name="forensics_filter_all_subtypes">Kõik alamtüübid</string>
+    <string name="forensics_insights_title">Luure kokkuvõte</string>
+    <string name="forensics_insights_subtitle">24-tunnine ohuanalüüs ja olukorra aruanne.</string>
+    <string name="forensics_heatmap_cd">Tegevuse soojuskaart</string>
+    <string name="forensics_heatmap_legend">Heledamad kohad tähendavad korduvat liikumist. Hämarad kohad tähendavad vähem tegevust.</string>
+    <string name="intel_total_detections">TUVASTUSI KOKKU</string>
+    <string name="intel_threat_assessment">OHU HINNANG</string>
+    <string name="intel_detection_breakdown">TUVASTUSTE JAOTUS</string>
+    <string name="intel_activity_timeline">TEGEVUSE AJAJOON</string>
+    <string name="intel_zone_analysis">TSOONI ANALÜÜS</string>
+    <string name="intel_zone_desc">Kaamera raami sektori tegevuse jaotus</string>
+    <string name="intel_key_observations">PÕHITÄHELEPANEKUD</string>
+    <string name="intel_personnel">PERSONAL</string>
+    <string name="intel_vehicles">SÕIDUKID</string>
+    <string name="intel_animals">LOOMAD</string>
+    <string name="intel_objects">OBJEKTID</string>
+    <string name="intel_no_data">Luureandmed pole saadaval.\nVara jälgimine on aktiivne.</string>
+    <string name="intel_time_window">24-tunnine jälgimise aken</string>
+    <string name="intel_range_24h">24 T</string>
+    <string name="intel_range_7d">7 PÄEVA</string>
+    <string name="intel_range_30d">30 PÄEVA</string>
+    <string name="intel_range_all">KOGU AEG</string>
+    <string name="intel_range_summary_24h">Viimased 24 tundi</string>
+    <string name="intel_range_summary_7d">Viimased 7 päeva</string>
+    <string name="intel_range_summary_30d">Viimased 30 päeva</string>
+    <string name="intel_range_summary_all">Kõik salvestatud andmed</string>
+    <string name="intel_tap_bar_hint">Puuduta riba tunnijaotuse jaoks</string>
+    <string name="intel_zone_desc_v2">Sinu kaameravaade jagatud 9 tsooniks. Heledam = rohkem tegevust selles piirkonnas tuvastatud.</string>
+    <string name="forensics_event_proof_frame">Sündmuse tõendikaader</string>
+    <string name="forensics_frames_hint">Pühenda hetkede eelvaatamiseks</string>
+    <string name="forensics_frames_hint_fallback">Tagavaraline eelvaade (täpsed võtmekaadrid võivad erineda)</string>
+    <string name="forensics_media_missing">Algne meedia pole saadaval. Kasutan ainult salvestatud tõendeid.</string>
+    <string name="forensics_sort_newest">Uuemad esimesena</string>
+    <string name="forensics_sort_confidence">Kõrgeim usaldusväärsus</string>
+    <string name="forensics_sort_evidence_rich">Tõenditerohke</string>
+    <string name="forensics_media_all">Kõik allikad</string>
+    <string name="forensics_media_available">Video saadaval</string>
+    <string name="forensics_media_missing_only">Video puudub</string>
+    <string name="forensics_sort_label">Sorteeri: %1$s</string>
+    <string name="forensics_source_label">Allikas: %1$s</string>
+    <string name="forensics_gallery_title">Tõendite galerii</string>
+    <string name="forensics_gallery_selected_count">%1$d valitud</string>
+    <string name="forensics_gallery_deleted_toast">%1$d teisaldatud prügikasti • %2$d eemaldatud</string>
+    <plurals name="forensics_gallery_selected_count_plural">
+        <item quantity="one">%1$d valitud</item>
+        <item quantity="other">%1$d valitud</item>
+    </plurals>
+    <string name="forensics_delete_selected_title">Kustutada %1$d valitud tõendit?</string>
+    <string name="forensics_delete_selected_helper">Valitud tõendid teisaldatakse prügikasti ja neid saab taastada hiljuti kustutatutest.</string>
+    <string name="forensics_filter_with_count">%1$s (%2$d)</string>
+    <string name="forensics_grid_option">Ruudustiku paigutus</string>
+    <string name="forensics_grid_helper">Vali, mitu veergu galeriis kuvada.</string>
+    <string name="forensics_grid_2">2 veergu</string>
+    <string name="forensics_grid_3">3 veergu</string>
+    <string name="forensics_grid_4">4 veergu</string>
+    <string name="forensics_grid_1">1 veerg</string>
+    <string name="forensics_grid_5">5 veergu</string>
+    <string name="forensics_serial_strip">tõend</string>
+    <string name="forensics_info_title">Tõendi teave</string>
+    <string name="forensics_info_body">Tõendite galerii salvestab hetktõmmiseid, mis on jäädvustatud aktiivsete salvestussessioonide ajal.\n\nHetktõmmised on iseseisvad tõendifailid ja jäävad vaadatavaks ka siis, kui lähtevideo on teisaldatud või kustutatud.\n\nVideo-linkidega elementide jaoks kasuta tõendi üksikasju pildivaaturis, et hüpata lähtematerjalile, kui see on saadaval.</string>
+    <string name="forensics_info_helper">Tõendid ilmuvad siia niipea, kui hetktõmmised salvestamise ajal jäädvustatakse.</string>
+    <string name="forensics_info_line_1">Lähtevideo tegevused on saadaval ainult seni, kuni algne videolink on olemas.</string>
+    <string name="forensics_info_line_2">Kui video on muudetud või eemaldatud, jäävad hetktõmmised iseseisvate tõenditena alles.</string>
+    <string name="forensics_info_line_3">Kasuta ekspordikeskust, et pakkida hetktõmmised ja metaandmed arhiivi.</string>
+    <string name="forensics_gallery_sort_event_type">Sündmuse tüüp</string>
+    <string name="forensics_export_title">Ekspordikeskus</string>
+    <string name="forensics_gallery_empty">Praeguste filtrite jaoks tõendite hetktõmmiseid pole.</string>
+    <string name="forensics_gallery_empty_title">Tõendite tahvel on tühi</string>
+    <string name="forensics_gallery_empty_subtitle_no_data">AI tuvastatud kaadrid sinu salvestistest ilmuvad siia</string>
+    <string name="forensics_gallery_empty_subtitle_filtered">Selle filtriga tõendeid ei leitud</string>
+    <string name="forensics_export_action">Ekspordi tõendite pakett</string>
+    <string name="forensics_export_subtitle">Loob JSON metaandmete + hetktõmmiste paketi salvestatud kohtuekspertiisi tõenditest.</string>
+    <string name="forensics_export_source_warning">Lähtevideote lingid on lisatud jälgitavuse tagamiseks. Kui meediat teisaldatakse või kustutatakse algsest asukohast, võivad esituslingid nurjuda ja hetktõmmised jäävad esmasteks tõenditeks.</string>
+    <string name="forensics_export_done">Tõendite eksport salvestatud: %1$s</string>
+    <string name="forensics_export_running">Tõendite ekspordi koostamine…</string>
+    <string name="forensics_gallery_source_missing">Video puudub: ainult hetktõmmise tõend on saadaval.</string>
+    <string name="forensics_gallery_stats">Elemente: %1$d • Hetktõmmiste maht: %2$s</string>
+    <string name="forensics_export_stats">Valmis eksportimiseks: %1$d hetktõmmist • %2$s</string>
+    <string name="forensics_export_pick_path">Vali ekspordi sihtkoht</string>
+    <string name="forensics_export_pick_path_first">Vali esmalt ekspordi sihtkoht.</string>
+    <string name="forensics_export_no_path">Ekspordi sihtkohta pole veel valitud.</string>
+    <string name="forensics_export_selected_path">Sihtkoht: %1$s</string>
+    <string name="forensics_open_source_video">Ava lähtevideo</string>
+    <string name="forensics_evidence_details">Tõendi üksikasjad</string>
+    <string name="forensics_detected_label">Tuvastatud: %1$s</string>
+    <string name="forensics_section_actions">Tegevused</string>
+    <string name="forensics_section_appearance">Välimus</string>
+    <string name="forensics_clip_style_title">Klambri stiil</string>
+    <string name="forensics_clip_style_helper">Vali klambri värv galerii kaartide jaoks.</string>
+    <string name="forensics_clip_black">Must klamber</string>
+    <string name="forensics_clip_red">Punane klamber</string>
+    <string name="forensics_tape_style_title">Teibi stiil</string>
+    <string name="forensics_tape_style_helper">Vali teibi disain tõendite indeksisiltide jaoks.</string>
+    <string name="forensics_tape_torn">Rebitud teip</string>
+    <string name="forensics_tape_classic">Klassikaline teip</string>
+    <string name="forensics_unknown_time">Tundmatu aeg</string>
+    <string name="forensics_not_available">Pole saadaval</string>
+    <string name="forensics_video_linked">Video lingitud</string>
+    <string name="forensics_snapshot_only">Ainult hetktõmmis</string>
+    <string name="forensics_unknown_source">Tundmatu allikas</string>
+    <string name="forensics_timeline_label">Ajajooneline positsioon</string>
+    <string name="forensics_copy_done">Tõendi üksikasjad kopeeritud</string>
+    <string name="digital_forensics_preview_title">Otsetuvastuse eelvaade</string>
+    <string name="digital_forensics_preview_subtitle">Simuleeritud ülekatte eelvaade, et kasutajad mõistaksid silte, usaldusväärsust ja tõendite raamimist.</string>
+    <string name="digital_forensics_preview_default">ISIK 92%</string>
+    <string name="settings_watermark_subtitle">Brändi ülekatte režiim</string>
+    <string name="prefs_import_export_title">Import / Eksport</string>
+    <string name="prefs_import_export_subtitle">Varunda, taasta, lähtesta</string>
+    <string name="about_version_update_licenses">Versioon, uuendus, litsentsid</string>
+    <string name="share_feedback">Jaga tagasisidet</string>
+    <string name="shortcuts_pin_to_home">Kinnita Alusta/Peata/Taskulamp avalehele</string>
+    <string name="storage_location_internal">Sisemine rakenduse mälu (vaikimisi, privaatne)</string>
+    <string name="storage_location_custom">Kohandatud asukoht (SD-kaart/muu, galeriis nähtav)</string>
+    <string name="storage_location_choose_folder">Vali kaust</string>
+    <string name="storage_location_note">Märkus: Kohandatud asukohtade kasutamine muudab videod teistele rakendustele kättesaadavaks (nt galerii). Sisemälu hoiab need FadCam\'ile privaatsetena.</string>
+    <string name="storage_sheet_title">Salvestusasukoht</string>
+    <string name="storage_option_use_internal">Kasuta sisemälu</string>
+    <string name="storage_option_switch_internal">Lülitu sisemälule</string>
+    <string name="storage_option_select_custom">Vali kohandatud asukoht</string>
+    <string name="storage_option_change_custom">Muuda kohandatud kausta</string>
+    <string name="storage_option_clear_custom">Tühjenda kohandatud kaust</string>
+    <string name="storage_helper_primary">Vali, kuhu uued salvestised salvestatakse. Sisemälu hoiab videod rakendusele privaatsetena; kohandatud kaust (SD-kaart või jagatud mälu) muudab need teistele rakendustele nagu galerii nähtavaks.</string>
+    <string name="storage_helper_security">Vihje: Kasuta sisemälu privaatsuse/kiiruse jaoks. Kasuta kohandatud lihtsama juurdepääsu ja jagamise jaoks.</string>
+    <string name="storage_value_internal">Sisemine rakenduse mälu</string>
+    <string name="storage_value_custom_prefix">Kohandatud:</string>
+    <string name="storage_value_none">(Puudub)</string>
+    <string name="storage_value_selected_folder">Valitud kaust</string>
+    <string name="storage_helper_current_custom_prefix">Praegune kohandatud kaust:</string>
+    <string name="storage_helper_current_custom_uri_prefix">URI:</string>
+    <string name="storage_icon_description">Mälu ikoon</string>
+    <string name="location_icon_description">Asukoha ikoon</string>
+    <string name="location_embedding_icon_description">Asukoha lisamise ikoon</string>
+    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="onboarding_swipe_instruction">Pühkida paremale jätkamiseks</string>
+    <string name="onboarding_select_language">Vali eelistatud rakenduse keel.</string>
+    <string name="onboarding_camera">Kaamera</string>
+    <string name="onboarding_microphone">Mikrofon</string>
+    <string name="onboarding_storage">Mälu</string>
+    <string name="onboarding_or">VÕI</string>
+    <string name="onboarding_and">JA</string>
+    <string name="onboarding_open_settings">Ava seaded</string>
+    <string name="onboarding_intro_line1">multimeedia salvestaja—</string>
+    <string name="onboarding_intro_line2">taustavideo, ekraan ja otsevoog,</string>
+    <string name="onboarding_intro_line3">kaugkaamera juhtimine,</string>
+    <string name="onboarding_intro_line4">avatud lähtekood. reklaamivaba. sinu oma.</string>
+    <string name="sort_by">Sorteeri</string>
+    <string name="records_sort_helper">Vali, kuidas salvestised loendis järjestatakse.</string>
+    <string name="records_sort_order_title">Sorteerimise järjekord</string>
+    <string name="records_view_mode_title">Vaateržiim</string>
+    <string name="view_mode_grid">Ruudustik</string>
+    <string name="view_mode_list">Loend</string>
+    <string name="records_grid_1">1 veerg</string>
+    <string name="records_grid_2">2 veergu</string>
+    <string name="records_grid_3">3 veergu</string>
+    <string name="records_grid_4">4 veergu</string>
+    <string name="records_grid_5">5 veergu</string>
+    <string name="records_grid_option">Ruudustiku paigutus</string>
+    <string name="records_grid_helper">Vali, mitu veergu galeriis kuvada.</string>
+    <string name="trash_item_thumbnail_desc">Prügikasti pandud elemendi pisipilt</string>
+    <string name="delete_all_videos_subtitle_short">Eemalda kõik salvestised</string>
+    <string name="sort_latest_first">Uuemad esimesena</string>
+    <string name="sort_oldest_first">Vanimad esimesena</string>
+    <string name="sort_smallest_first">Väikseimad failid esimesena</string>
+    <string name="sort_largest_first">Suurimad failid esimesena</string>
+    <string name="no_videos_found">Videoid ei leitud</string>
+    <string name="no_recordings_yet">Salvestisi pole veel</string>
+    <string name="enabled">Lubatud</string>
+    <string name="disabled">Keelatud</string>
+    <string name="setting_notification_customization_title">Teavituse kohandamine</string>
+    <string name="setting_notification_customization_description">Kohanda salvestusteavituse välimust</string>
+    <string name="notification_preset_title">Teavituse eelseadistus</string>
+    <string name="notification_preset_description">Vali, kuidas teavitus kuvatakse</string>
+    <string name="notification_preset_default">Vaikimisi (salvestamine)</string>
+    <string name="notification_preset_system_update">Süsteemi uuendus</string>
+    <string name="notification_preset_downloading">Allalaadimine</string>
+    <string name="notification_preset_syncing">Andmete sünkroonimine</string>
+    <string name="notification_preset_custom">Kohandatud tekst</string>
+    <string name="notification_hide_stop_button">Peida peatamisnupp</string>
+    <string name="notification_hide_stop_button_description">Eemalda peatamisnupp teavitusest</string>
+    <string name="notification_stop_button_row_title">Peatamisnupp</string>
+    <string name="notification_stop_button_visible">Nähtav</string>
+    <string name="notification_stop_button_hidden">Peidetud</string>
+    <string name="notification_custom_title">Kohandatud pealkiri</string>
+    <string name="notification_custom_text">Kohandatud tekst</string>
+    <string name="notification_preview_title">Eelvaade</string>
+    <string name="notification_setup_title">Teavituse seadistamine</string>
+    <string name="notification_setup_description">Kohanda, kuidas salvestusteavitus kuvatakse</string>
+    <string name="notification_setup_save">Salvesta</string>
+    <string name="notification_setup_cancel">Tühista</string>
+    <string name="notification_setup_ok">OK</string>
+    <string name="notification_channel_recording">%s salvestamine</string>
+    <string name="notification_channel_system_updates">Süsteemi uuendused</string>
+    <string name="notification_channel_downloads">Allalaadimised</string>
+    <string name="notification_channel_data_sync">Andmete sünkroonimine</string>
+    <string name="notification_channel_generic">Teavitusteenus</string>
+    <string name="notification_channel_description">Teavitusteenuse teavitused</string>
+    <string name="notification_text_system_update_progress">Uuendus pooleli</string>
+    <string name="notification_text_system_update_paused">Uuendus peatatud</string>
+    <string name="notification_text_downloading_progress">Allalaadimine pooleli</string>
+    <string name="notification_text_downloading_paused">Allalaadimine peatatud</string>
+    <string name="notification_text_syncing_progress">Sünkroonimine pooleli</string>
+    <string name="notification_text_syncing_paused">Sünkroonimine peatatud</string>
+    <string name="notification_text_custom_default">Protsess töötab</string>
+    <string name="notification_title_system_update">Süsteemi uuendus</string>
+    <string name="notification_title_downloading">Allalaadimine</string>
+    <string name="notification_title_syncing">Andmete sünkroonimine</string>
+    <string name="notification_title_custom_default">Teavitus</string>
+    <string name="universal_play">Esita</string>
+    <string name="universal_pause">Paus</string>
+    <string name="universal_playing">Esitamine</string>
+    <string name="universal_paused">Peatatud</string>
+    <string name="universal_stop">Peata</string>
+    <string name="notification_settings_saved">Teavituse seaded salvestatud</string>
+    <string name="setting_notification_appearance">Teavituse välimus</string>
+    <string name="note_notification_appearance">Kohanda salvestusteavituse välimust\n(vaikimisi: FadCam)</string>
+    <string name="hide_stop_button">Peida peatamisnupp</string>
+    <string name="note_hide_stop_button">Peida peatamisnupp teavituses\n(vaikimisi: keelatud)</string>
+    <string name="notification_preview">Teavituse eelvaade</string>
+    <string name="notification_stop">PEATA</string>
+    <string name="notification_style_row_title">Teavituse stiil</string>
+    <string name="notification_preset_helper">Vali eelseadistatud stiil või vali Kohandatud, et sisestada oma pealkiri ja kirjeldus.</string>
+    <string name="notification_custom_editor_title">Kohandatud teavitus</string>
+    <string name="notification_preview_helper">Nii see salvestamise ajal kuvatakse. Vali stiil või loo kohandatud pealkiri ja kirjeldus. Peatamisnupu nähtavus peegeldab sinu seadet.</string>
+    <string name="notification_options_heading">Valikud</string>
+    <string name="notification_custom_editor_helper">Määra allpool pealkiri ja kirjeldus. Muudatused salvestatakse automaatselt.</string>
+    <string name="notification_custom_title_placeholder">Pealkiri (nt Süsteemi uuendus)</string>
+    <string name="notification_custom_text_placeholder">Kirjeldus (nt Uuendus pooleli)</string>
+    <string-array name="notification_appearance_options">
+        <item>FadCam (vaikimisi)</item>
+        <item>Süsteemi uuendus</item>
+        <item>Allalaadimine</item>
+        <item>Sünkroonimine</item>
+        <item>Varundamine</item>
+        <item>Kohandatud</item>
+    </string-array>
+    <string name="camera_resource_cooldown">Kaamera ressursid vabastatakse</string>
+    <string name="camera_interrupted_title">Salvestamine peatatud (kaamera kasutusel)</string>
+    <string name="camera_interrupted_description">Teine rakendus kasutab kaamerat. Salvestamine jätkub automaatselt, kui kaamera on saadaval.</string>
+    <string name="camera_reconnected_title">Kaamera taasühendatud</string>
+    <string name="camera_reconnected_description">Salvestamine jätkus automaatselt</string>
+    <string name="camera_reconnection_attempts">Kaamera taasühendamise katse...</string>
+    <string name="camera_reconnection_success">Kaamera taasühendatud, salvestamine jätkub</string>
+    <string name="camera_reconnection_failed">Kaamera taasühendamine nurjus, jätkan mustade kaadritega</string>
+    <string name="camera_error_in_use">Kaamera on teise rakenduse poolt kasutusel</string>
+    <string name="camera_error_max_cameras">Maksimaalne kaamerate arv kasutusel</string>
+    <string name="camera_error_disabled">Kaamera on keelatud</string>
+    <string name="camera_error_device">Kaamera seadme viga</string>
+    <string name="camera_error_service">Kaamera teenuse viga</string>
+    <string name="camera_error_unknown">Tundmatu kaamera viga</string>
+    <string name="camera_resources_cooldown">Palun oota hetk enne uue salvestamise alustamist</string>
+    <string name="dialog_audio_noise_suppression_label">Mürasummutus</string>
+    <string name="fix_video_menu_title">Paranda video (taasta esitus)</string>
+    <string name="fix_video_repairing">Parandan… See võib võtta mõne sekundi.</string>
+    <string name="fix_video_success">Video parandatud! Salvestatud kui: %1$s</string>
+    <string name="fix_video_fail">Parandamine nurjus. Vaata logisid üksikasjade jaoks.</string>
+    <string name="fix_video_invalid">Vigane videofail.</string>
+    <string name="fix_video_file_not_exist">Faili ei eksisteeri.</string>
+    <string name="fix_video_fixed_exists">FIXED_ fail on juba olemas.</string>
+    <string name="fix_video_internal_only">Parandamine toetatud ainult sisemiste või ligipääsetavate failide jaoks.</string>
+    <string name="fix_video_saf_copy_fail">SAF video kopeerimine parandamiseks nurjus.</string>
+    <string name="fix_video_saf_write_fail">Parandatud faili kirjutamine SAF kausta nurjus. Salvestatud rakenduse mälusse.</string>
+    <string name="fix_video_saf_success">Video parandatud! Salvestatud kui: %1$s.</string>
+    <string name="fix_video_saf_export">Ekspordi või jaga parandatud faili rakenduse mälust, kui vaja.</string>
+    <string name="debug_log_tools_title">Silumislogi</string>
+    <string name="debug_log_tools_subtitle">Eelvaade, otsing, jagamine või kustutamine FADCAM_debug.html</string>
+    <string name="debug_log_tools_helper">Kuvab silumislogifaili (FADCAM_debug.html). Silumislogi lubamine võib lisada jõudluskulu — ära luba seda, kui ei kohta viga ja vaja logi jagada. Kasuta otsingukasti filtreerimiseks.</string>
+    <string name="debug_log_share_title">Jaga silumislogi</string>
+    <string name="debug_log_share_subtitle">Ava süsteemi jagamisleht</string>
+    <string name="debug_log_delete_title">Kustuta silumislogi</string>
+    <string name="debug_log_delete_subtitle">Eemalda logifail mälust</string>
+    <string name="debug_log_open_title">Ava väliselt</string>
+    <string name="debug_log_open_subtitle">Vaata brauseris või HTML-vaaturis</string>
+    <string name="debug_log_search_hint">Otsi logist…</string>
+    <string name="debug_log_empty">Silumislogi pole veel</string>
+    <string name="debug_log_share_fail">Jagamine nurjus</string>
+    <string name="debug_log_open_fail">Avamine nurjus</string>
+    <string name="scroll_to_top">Keri üles</string>
+    <string name="scroll_to_bottom">Keri alla</string>
+    <string name="restore_destination_title">Vali taastamise asukoht</string>
+    <string name="restore_destination_downloads">Allalaadimiste kaust</string>
+    <string name="restore_destination_downloads_desc">Avalik Allalaadimised/FadCam/ kaust</string>
+    <string name="restore_destination_internal">Sisemälu</string>
+    <string name="restore_destination_internal_desc">Rakenduse privaatne mälu</string>
+    <string name="restore_destination_original">Algne asukoht</string>
+    <string name="restore_destination_original_desc">Taasta algsesse SAF asukohta</string>
+    <string name="restore_confirm_title">Kinnita taastamine</string>
+    <string name="restore_confirm_message">Taastada %1$d elementi asukohta %2$s?</string>
+    <string name="restore_progress_title">Failide taastamine</string>
+    <string name="restore_success_message">%1$d elementi edukalt taastatud asukohta %2$s</string>
+    <string name="restore_error_message">Mõne elemendi taastamine nurjus</string>
+    <string name="restore_cancelled">Taastamine tühistatud</string>
+    <string name="restore_confirm_button">Taasta</string>
+    <string name="close">Sulge</string>
+    <string name="previous">Eelmine</string>
+    <string name="next">Järgmine</string>
+    <string name="done">Valmis</string>
+    <string name="project_name_label">Projekti nimi</string>
+    <string name="project_name_hint">nt Õppevideo, Mängu salvestis</string>
+    <string name="project_desc_label">Kirjeldus (valikuline)</string>
+    <string name="project_desc_hint">Millest see projekt räägib?</string>
+    <string name="untitled_project">Nimetu projekt</string>
+    <string name="tap_to_add_description">Puuduta kirjelduse lisamiseks</string>
+    <string name="manage_projects">Halda projekte</string>
+    <string name="name_your_project">Nimeta oma projekt</string>
+    <string name="project_naming_message">Anna oma projektile meeldejääv nimi ja kirjeldus, et salvestisi korraldada</string>
+    <string name="fadrec_projects">FadRec projektid</string>
+    <string name="delete_project">Kustuta projekt</string>
+    <string name="delete_all">Kustuta kõik</string>
+    <string name="new_project">Uus projekt</string>
+    <string name="delete">Kustuta</string>
+    <string name="fadcam_pro_title">FadCam Pro</string>
+    <string name="fadcam_pro_subtitle">Premium funktsioonid täielikuks diskreetsuseks</string>
+    <string name="fadcam_pro_get_button">Hangi FadCam Pro</string>
+    <string name="fadcam_pro_free">Tasuta</string>
+    <string name="fadcam_pro_column_label">Pro</string>
+    <string name="fadcam_pro_proplus_label">Pro+</string>
+    <string name="fadcam_pro_lab_label">Lab</string>
+    <string name="fadcam_pro_plus_label">Pro</string>
+    <string name="fadcam_pro_early_bird">🎉 Tasuta kuni 23. detsembrini 2025! Pärast seda saa eluaegne ligipääs vaid 15 dollari eest.</string>
+    <string name="fadcam_pro_paid_offer">Pärast 23. detsembrit 2025 saa eluaegne ligipääs 15 dollari eest — ühekordne makse, igavesed uuendused.</string>
+    <string name="fadcam_pro_benefit_early_access">Varajane ligipääs: saa uusim versioon enne avalikku väljalaset</string>
+    <string name="fadcam_pro_benefit_lifetime_updates">Eluaegsed uuendused: saa alati uusi funktsioone, parendusi ja veaparandusi</string>
+    <string name="fadcam_pro_benefit_support">Kiire tugi: otsene abi piletite kaudu Discordi kaudu</string>
+    <string name="fadcam_pro_coming_soon">Pro+ ja Lab funktsioonid tulekul koos kohandatud ikoonide üleslaadimise, kohandatud rakendusenimede ja FadDrive pilve sünkroonimisega.</string>
+    <string name="fadcam_pro_support_message">FadCam jääb alati tasuta, ilma reklaamide ja jälgimiseta. Ma haldan kogu projekti üksi ja see nõuab pidevat aega ja tööd. Pro versioonile üleminek (hetkel tasuta) aitab arendust toetada ja vastutasuks saan pakkuda lisaväärtust Pro funktsioonide kaudu lisaks täielikule tasuta versioonile. Täname projekti toetamise eest :)</string>
+    <string name="fadcam_pro_separate_apk">Iseseisev rakendus • töötab koos FadCam\'iga</string>
+    <string name="fadcam_pro_feature_everything_icon">Kõik</string>
+    <string name="fadcam_pro_feature_everything">Kõik</string>
+    <string name="fadcam_pro_feature_custom_icon">Kohandatud rakenduse ikoon</string>
+    <string name="fadcam_pro_feature_notification_icon">Diskreetne teavituse ikoon</string>
+    <string name="fadcam_pro_feature_user_icon">Kasutaja üleslaaditud ikoon</string>
+    <string name="fadcam_pro_feature_app_name">Kohandatud rakenduse nimi</string>
+    <string name="fadcam_pro_feature_faddrive">FadDrive pilve sünkroonimine</string>
+    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="player_info_title">Videoesitaja teave</string>
+    <string name="player_info_content"><![CDATA[
+<b>Killustatud MP4 vorming</b><br/><br/>
+FadCam kasutab salvestiste jaoks killustatud MP4 vormingut. See tähendab, et videod salvestatakse väikestesse segmentidesse ühe tervikliku faili asemel. Kasu on selles, et kui salvestamise ajal midagi läheb valesti, kaotad ainult viimased paar sekundit, mitte kogu video.<br/><br/>
+Kui video viimased paar sekundit tunduvad külmunud või vananenud, ära muretse — see ei ole viga! Salvestamise peatamisel võib praegune fragment veel oma tsükli lõpule viia (~3 sekundit), mis võib jätta lühikese vananenud kaadri lõppu.<br/><br/>
+<b>Esitaja piirangud</b><br/><br/>
+Sisseehitatud videoesitajal on mõned Androidi süsteemi piirangud. Võid märgata, et edenemisriba või helilaine kuju tundub veidi hüplik — see on normaalne käitumine ega ole viga.<br/><br/>
+Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siiski, integreeritud esitaja töötab igapäevaseks kasutamiseks hästi!
+    ]]></string>
+    <string name="codec_hevc_incompatible_title">H.265 koodek ei ole otsevoogedastuse jaoks toetatud</string>
+    <string name="codec_hevc_incompatible_message">📡 Otsevoogedastus HLS-i kaudu nõuab H.264 koodekit.\n\nH.265 ei ühildu brauseri mängijatega.\n\nKas soovid üle lülituda H.264-le ja alustada salvestamist?</string>
+    <string name="codec_switch_and_record">Lülitu H.264-le ja salvesta</string>
+    <string name="codec_switch_cancelled">Koodeki vahetamine tühistatud</string>
+    <string name="codec_switched_to_h264">✓ Koodek vahetatud H.264-le. Salvestamise alustamine...</string>
+    <string name="codec_go_to_settings">Ava seaded</string>
+    <string name="stream_title">Kaugjuhtimine</string>
+    <string name="stream_server_room">Serveriruum</string>
+    <string name="stream_server_status">Serveri olek</string>
+    <string name="stream_active">Aktiivne</string>
+    <string name="stream_inactive">Server mitteaktiivne :(</string>
+    <string name="stream_idle">Ootel — alusta voogedastuseks salvestamist</string>
+    <string name="stream_start_server">Voogedastuse server</string>
+    <string name="stream_url_label">Voogedastuse URL</string>
+    <string name="stream_copy_url">Kopeeri URL</string>
+    <string name="stream_url_copied">Voogedastuse URL lõikelauale kopeeritud</string>
+    <string name="stream_recording_mode">Salvestusrežiim</string>
+    <string name="stream_select_mode">Vali režiim</string>
+    <string name="stream_and_save">Voogedasta ja salvesta</string>
+    <string name="stream_only">Ainult voogedastus</string>
+    <string name="stream_only_desc">Voogedasta ilma mälusse salvestamata</string>
+    <string name="stream_and_save_desc">Voogedasta ja salvesta mälusse</string>
+    <string name="stream_save_videos">Salvestatud seadme mälusse eesliitega Stream_</string>
+    <string name="stream_no_save">Segmendid kustutatakse pärast voogedastust automaatselt</string>
+    <string name="stream_server_health">Serveri tervis</string>
+    <string name="stream_uptime">Tööaeg: %1$s</string>
+    <string name="stream_connections">Kliente: %1$d</string>
+    <string name="stream_client_ips">Klientide IP-d:</string>
+    <string name="stream_no_clients">Ühtegi klienti pole ühendatud</string>
+    <string name="stream_fragments">Puhverdatud: %1$d segmenti</string>
+    <string name="stream_battery">Aku: %1$d%%</string>
+    <string name="stream_recording_mode_label">Režiim: %1$s</string>
+    <string name="stream_endpoints">Serveri lõpp-punktid</string>
+    <string name="stream_server_url">Serveri URL</string>
+    <string name="stream_view_all_endpoints">Vaata kõiki lõpp-punkte</string>
+    <string name="stream_endpoint_root">Serveri juur (veebimängija)</string>
+    <string name="stream_endpoint_hls">HLS voogedastuse URL</string>
+    <string name="stream_endpoint_live">Otsevoogedastus (M3U8)</string>
+    <string name="stream_endpoint_status">Oleku API (JSON)</string>
+    <string name="stream_endpoint_init">Algsegment (MP4)</string>
+    <string name="stream_endpoint_torch">Taskulambi lüliti (POST)</string>
+    <string name="stream_specs">Voogedastuse spetsifikatsioonid</string>
+    <string name="stream_quality_preset">Voogedastuse kvaliteedi eelseadistus</string>
+    <string name="stream_fps_resolution">FPS: %1$d • Eraldusvõime: %2$dx%3$d</string>
+    <string name="stream_bitrate">Bitikiirus: %1$s</string>
+    <string name="stream_codec">Koodek: H.264</string>
+    <string name="stream_instructions">Kuidas kasutada</string>
+    <string name="stream_instr_1">1. Lülita serveri käivitamine sisse</string>
+    <string name="stream_instr_2">2. Kopeeri HLS voogedastuse URL serveri lõpp-punktidest</string>
+    <string name="stream_instr_3">3. Ava VLC või mõni muu HLS mängija samas WiFi-s</string>
+    <string name="stream_instr_4">4. Kleebi URL meediamängijasse otseülekande vaatamiseks</string>
+    <string name="stream_network_info">Voogedastuseks on vajalik sama WiFi võrk</string>
+    <string name="battery_estimate_title">Hinnanguline voogedastuse aeg jäänud</string>
+    <string name="battery_estimate_disclaimer" formatted="false">Põhineb reaalse maailma testil: 8 tundi pidevat voogedastust 61% aku langusega 5000mAh seadmel. Uuenda oma seadme mahutavust allpool isikupärastatud hinnangute jaoks.</string>
+    <string name="remote_security_title">Kaugturvalisus</string>
+    <string name="remote_security_enable">Luba autentimine</string>
+    <string name="remote_security_enable_desc">Nõua parooli kaugi veebiliidesele juurdepääsuks</string>
+    <string name="remote_security_password">Määra parool</string>
+    <string name="remote_security_password_desc">Muuda kaugjuurdepääsu parooli</string>
+    <string name="remote_security_password_hint">Sisesta uus parool</string>
+    <string name="remote_security_auto_lock">Automaatse lukustuse aegumine</string>
+    <string name="remote_security_auto_lock_desc">Lukusta automaatselt pärast tegevusetust</string>
+    <string name="remote_security_logout_all">Logi välja kõik seansid</string>
+    <string name="remote_security_logout_all_desc">Tühista kõik aktiivsed kaugseansid</string>
+    <string name="remote_security_password_required">Parool peab olema 4-32 märki</string>
+    <string name="remote_security_password_set">Parool edukalt uuendatud</string>
+    <string name="remote_security_password_empty">Palun sisesta parool</string>
+    <string name="remote_security_sessions_cleared">Kõik seansid välja logitud</string>
+    <string name="remote_security_no_active_sessions">Aktiivseid seansse pole</string>
+    <string name="remote_security_enable_first">Luba esmalt autentimine</string>
+    <string name="remote_security_auto_lock_never">Mitte kunagi</string>
+    <string name="stream_notes_wifi">• Kliendid peavad olema samas WiFi võrgus, et voogu pääseda</string>
+    <string name="stream_notes_quality">• Voo kvaliteet (MADAL/KESKMINE/KÕRGE/ULTRA) kontrollib FPS piiri ja bitikiirust võrguprobleemide vältimiseks</string>
+    <string name="stream_notes_resolution">• Voo suund ja eraldusvõime võetakse sinu tavalistest salvestusseadetest (Video seaded → Eraldusvõime ja suund). Kohanda neid, kui soovid muuta voo mõõtmeid</string>
+    <string name="stream_notes_cellular">⚠️ Ainult WiFi piirang: Mobiilivõrgud blokeerivad sissetulevad ühendused. Sujuvaks voogedastuseks mis tahes võrgust (WiFi, LTE, kõikjal), uuenda FadCam Pro+-le. Voogedasta üle maailma privaadse genereeritud lingiga — ilma pordi suunamiseta, ilma ruuteri muudatusteta, ilma võrgupiiranguteta</string>
+    <string name="stream_notes_android14_screen">⚠️ Android 14+: Süsteemi piirang takistab salvestamist, kui ekraan on välja lülitatud. Töölahendused: (1) Luba \"Musta ekraani režiim\" seadetes → Turvalisus, või (2) Keela ekraani lukustus (ilma PIN/parool/sõrmejäljeta). Mõlemad võimaldavad sujuvat kaugsalvestamist</string>
+    <string name="cloud_account_button_desc">FadSec Cloud</string>
+    <string name="cloud_button_label">FadSec Cloud</string>
+    <string name="cloud_button_title">FadSec Cloud</string>
+    <string name="cloud_account_title">FadSec Cloud</string>
+    <string name="cloud_account_link">Linki seade</string>
+    <string name="cloud_account_unlink">Eemalda linkimine</string>
+    <string name="cloud_account_connecting">Ühendamine…</string>
+    <string name="cloud_account_linked">Seade lingitud</string>
+    <string name="cloud_account_not_linked">Pole lingitud</string>
+    <string name="cloud_account_device_name_hint">Sisesta seadme nimi (nt Minu telefon)</string>
+    <string name="cloud_account_device_name_title">Nimeta oma seade</string>
+    <string name="cloud_account_device_name_desc">See nimi kuvatakse sinu FadSec Cloudi töölaual</string>
+    <string name="cloud_account_device_id">Seadme ID</string>
+    <string name="cloud_account_link_success">Seade edukalt lingitud!</string>
+    <string name="cloud_account_link_failed">Seadme linkimine nurjus. Palun proovi uuesti.</string>
+    <string name="cloud_account_unlink_confirm">Kas oled kindel, et soovid selle seadme linkimise eemaldada?</string>
+    <string name="cloud_account_unlink_success">Seadme linkimine eemaldatud</string>
+    <string name="cloud_account_webview_title">FadSec Cloud</string>
+    <string name="cloud_account_login_required">Palun logi sisse, et linkida oma seade</string>
+    <string name="cloud_account_helper_text">Eemalda linkimine, et katkestada ühendus oma kontoga. Saad linkida uuesti teise nimega.</string>
+    <string name="cloud_streaming_title">Pilve voogedastus</string>
+    <string name="cloud_streaming_status_off">Ainult kohalik voogedastus</string>
+    <string name="cloud_streaming_status_on">Üleslaadimine FadSec Cloudi</string>
+    <string name="cloud_streaming_not_linked">Linki esmalt seade, et lubada</string>
+    <string name="e2e_encryption_title">Otspunktkrüpteerimine</string>
+    <string name="e2e_encryption_not_configured">Pole seadistatud — seadista pilve voogedastuse lubamiseks</string>
+    <string name="e2e_encryption_configured">Seadistatud — segmendid on otspunktkrüpteeritud</string>
+    <string name="e2e_encryption_setup_title">Määra otspunktkrüpteerimise parool</string>
+    <string name="e2e_encryption_setup_hint">Sisesta oma FadSec ID parool</string>
+    <string name="e2e_encryption_setup_desc">Sinu FadSec ID parooli kasutatakse voo krüpteerimisvõtme tuletamiseks. See peab vastama paroolile, mida kasutad FadCami töölaual voogude vaatamiseks.</string>
+    <string name="e2e_encryption_change_title">Muuda otspunktkrüpteerimise parooli</string>
+    <string name="streaming_mode_title">Voogedastuse sihtkoht</string>
+    <string name="streaming_mode_local">Kohalik võrk</string>
+    <string name="streaming_mode_local_desc">Voogedasta samas WiFi-s olevatesse seadmetesse</string>
+    <string name="streaming_mode_cloud">FadSec Cloud</string>
+    <string name="streaming_mode_cloud_desc">Voogedasta kõikjal interneti kaudu</string>
+    <string name="streaming_mode_cloud_featured">ESILE TÕSTETUD</string>
+    <string name="streaming_mode_link_required">Linki seade, et lubada</string>
+    <string name="streaming_mode_stream_url">Voogedastuse URL</string>
+    <string name="streaming_mode_helper">Vali, kuidas soovid oma kaamerat voogedastada</string>
+    <string name="fullscreen_preview_enter">FadCam eelvaade</string>
+    <string name="fullscreen_preview_close">Sulge täisekraan</string>
+    <string name="fullscreen_preview_not_recording">Alusta esmalt salvestamist, et kasutada täisekraani eelvaadet</string>
+    <string name="fullscreen_preview_tap_hint">Puuduta ekraani juhtnuppude vahetamiseks</string>
+    <string name="fullscreen_focus_on">Teravus: SEES</string>
+    <string name="fullscreen_focus_off">Teravus: VÄLJAS</string>
+    <string name="fullscreen_camera_switch">Vaheta kaamerat</string>
+    <string name="fullscreen_torch">Taskulamp</string>
+    <string name="fullscreen_focus_toggle">Puuduta teravustuse lüliti</string>
+    <string name="fullscreen_label_switch">Vaheta</string>
+    <string name="fullscreen_label_mirror">Pööra video</string>
+    <string name="fullscreen_label_torch">Taskulamp</string>
+    <string name="fullscreen_label_shot">Pilt</string>
+    <string name="fullscreen_label_af">AF</string>
+    <string name="fullscreen_label_exposure">EV</string>
+    <string name="fullscreen_label_zoom">Suum</string>
+    <string name="front_video_mirror_enable">Luba esikaamera video peegeldamine</string>
+    <string name="front_video_mirror_disable">Keela esikaamera video peegeldamine</string>
+    <string name="preview_dual_not_supported">Ainult eelvaade töötab ainult esi/taga kaameratega</string>
+    <string name="preview_enable_hint">Hoia all kaamera ärkamiseks</string>
+    <string name="preview_starting">Otse-eelvaate käivitamine...</string>
+    <string name="fadrec_preview_enable_hint">Hoia all eelvaate kuvamiseks</string>
+    <string name="fadrec_preview_not_available">Otse ekraani eelvaade ei ole veel FadRec-i ühendatud</string>
+    <string name="torch_unavailable">Taskulamp ei ole selle kaamera jaoks saadaval</string>
+    <string name="motion_lab_title">Motion Lab</string>
+    <string name="motion_lab_row_subtitle">Tark sündmuse salvestamine CCTV-stiilis kasutamiseks</string>
+    <string name="motion_lab_enable">Luba liikumissalvestus</string>
+    <string name="motion_lab_enable_sensor">Luba liikumisandur</string>
+    <string name="motion_lab_status_enabled">Aktiivne (salvestab ainult vajadusel)</string>
+    <string name="motion_lab_status_disabled">Keelatud</string>
+    <string name="motion_lab_trigger_mode">Päästiku režiim</string>
+    <string name="motion_lab_trigger_mode_helper">Vali, mis peaks salvestamise käivitama. Kui pole kindel, hoia Igasugune liikumine.</string>
+    <string name="motion_lab_trigger_any_motion">Igasugune liikumine</string>
+    <string name="motion_lab_trigger_any_motion_desc">Käivitub, kui liikumine tuvastatakse, nagu tavaline CCTV liikumiskaamera.</string>
+    <string name="motion_lab_trigger_person_confirmed">Isik kinnitatud</string>
+    <string name="motion_lab_trigger_person_confirmed_desc">Käivitub ainult siis, kui liikumine näeb välja nagu inimene. Aitab vähendada valehäireid ventilaatori/varjude tõttu.</string>
+    <string name="motion_lab_sensitivity">Tundlikkus</string>
+    <string name="motion_lab_sensitivity_hint">Mõtle sellest kui liikumise \"kuulmise\" nupule. Kõrgem reageerib väiksemale liikumisele (nagu käsi serva lähedal). Madalam ignoreerib väikest liikumist. Hoia vaikimisi 80 enamiku ruumide jaoks.</string>
+    <string name="motion_lab_analysis_fps">Analüüsi FPS</string>
+    <string name="motion_lab_analysis_helper">Kui tihti AI stseeni iga sekund kontrollib. Rohkem kontrolle reageerib kiiremini, kuid kasutab ka rohkem akut ja võib telefoni kuumutada. EfficientDet multi-class tuvastuse jaoks hoia umbes 6 fps igapäevaseks kasutamiseks (5-8 on usaldusväärne tsoon).</string>
+    <string name="motion_lab_analysis_2_desc">Energiasäästlik, aeglasem reaktsioon.</string>
+    <string name="motion_lab_analysis_3_desc">Tasakaalustatud vaikimisi.</string>
+    <string name="motion_lab_analysis_5_desc">Kiirem reaktsioon, rohkem CPU.</string>
+    <string name="motion_lab_debounce">Debounce</string>
+    <string name="motion_lab_debounce_hint">Lühike kinnitusviivitus enne salvestamise alustamist. Mõtle sellest kui väikese hetke ootamisest, et kinnitada liikumise reaalsust. Madalam alustab kiiremini, kõrgem väldib valestareid. Hoia umbes 220 ms enamiku ruumide jaoks.</string>
+    <string name="motion_lab_post_roll">Järelsalvestus</string>
+    <string name="motion_lab_post_roll_hint">Kui kaua salvestamine pärast liikumise lõppemist jätkub. Näide: kui keegi ruumist lahkub, see hoiab salvestamist, et lõpp ei oleks ära lõigatud. Hoia umbes 10 s enamiku ruumide jaoks.</string>
+    <string name="motion_lab_pre_roll">Eelsalvestus</string>
+    <string name="motion_lab_pre_roll_hint">Mitu sekundit enne päästikut püüame kaasata. Näide: kui keegi ilmub äkki, eelsalvestus aitab kaasata hetke vahetult enne sisenemist. Hoia umbes 2 s enamiku ruumide jaoks.</string>
+    <string name="motion_lab_set_value_row_title">Määra väärtus</string>
+    <string name="motion_lab_set_value_row_subtitle">Praegune väärtus: %1$d</string>
+    <string name="motion_lab_auto_torch">Automaatne taskulamp liikumisel</string>
+    <string name="motion_lab_auto_torch_helper">Lülitab taskulambi SISSE, kui salvestamine liikumisest algab, ja VÄLJA, kui salvestamine peatub. Kasulik pimedate ruumide jaoks.</string>
+    <string name="motion_lab_debug_title">Otse liikumise monitor</string>
+    <string name="motion_lab_debug_state_placeholder">Olek: -</string>
+    <string name="motion_lab_debug_score_placeholder">Skoor toore/silutud: -</string>
+    <string name="motion_lab_debug_threshold_placeholder">Lävi algus/lõpp: -</string>
+    <string name="motion_lab_debug_action_placeholder">Viimane tegevus: -</string>
+    <string name="motion_lab_debug_person_placeholder">Isik: -</string>
+    <string name="motion_lab_debug_metrics_placeholder">Pindala/Tugev/Keskmine/Taust/Max/Globaalne: -</string>
+    <string name="motion_lab_debug_frame">Otse analüsaatori kaadri eelvaade</string>
+    <string name="motion_lab_debug_copy_snapshot">Kopeeri monitori hetktõmmis</string>
+    <string name="motion_lab_debug_copy_done">Liikumise hetktõmmis kopeeritud</string>
+    <string name="motion_lab_debug_no_snapshot">Liikumise hetktõmmist pole veel saadaval.</string>
+    <string name="motion_lab_debug_score_value">Skoor toore/silutud: %1$.3f / %2$.3f</string>
+    <string name="motion_lab_debug_threshold_value">Lävi algus/lõpp: %1$.3f / %2$.3f</string>
+    <string name="motion_lab_debug_person_value">Tuvastatud: %1$s (%2$.3f) • Isik: %3$s (%4$.3f)</string>
+    <string name="motion_lab_debug_metrics_value">Pindala %1$.3f, Tugev %2$.3f, Keskmine %3$.3f, Taust %4$.3f, Max %5$.3f, Globaalne %6$s</string>
+    <string name="motion_lab_info_cd">Motion Lab teave</string>
+    <string name="motion_lab_info_title">Automaatne salvestus liikumisel</string>
+    <string name="motion_lab_info_body">See on FadCam\'i automaatse liikumissalvestuse funktsioon.\n\nKuidas see lihtsalt töötab:\n- Sinu kaamera jääb aktiivseks ja analüüsib kaadreid seadmes reaalajas.\n- Seadmesisene masinõppe mudel ja liikumisloogika otsivad liikumist.\n- Kui kehtiv liikumine tuvastatakse, salvestamine alustub/jätkub.\n- Salvestamine jätkub seni, kuni liikumine jätkub.\n- Pärast liikumise lõppemist hoiab järelsalvestus veel sinu valitud lisasekundid salvestamist.\n- Seejärel salvestamine peatub ja ootab järgmist liikumissündmust.\n\nKui salvestamine on peatatud, analüüsib rakendus endiselt kaadreid mälus, kuid ei kirjuta uusi videoid enne, kui liikumine uuesti tuvastatakse.\n\nKuidas kasutada (enamik kasutajaid):\n- Hoia kõik valikud vaikimisi väärtustel.\n- Lülita SELLEL ekraanil liikumisandur SISSE.\n- Mine Avalehe vahekaardile ja alusta tavalist salvestamist.\n- Liikumispõhine automaatne salvestus käivitub automaatselt.\n\nLihtne test kaugelt:\n- Lülita SELLEL ekraanil Automaatne taskulamp SISSE.\n- Alusta salvestamist Avalehe vahekaardilt.\n- Aseta telefon lauale või riiulile toa poole kallutatult.\n- Lahku ruumist, seejärel sisene ja kõnni sisse.\n- Taskulambi sisselülitamine aitab sul kaugelt koheselt märgata, et salvestamine algas.\n- Salvestamine jätkub sinu valitud järelsalvestuse kestuse pärast liikumise lõppemist.\n\nVihje: See funktsioon töötab pidevalt, seega väga kõrged täpsemad väärtused võivad suurendada kuumust ja vähendada seadme tervist ajas. Pikkade sessioonide jaoks hoia vaikimisi, kui sul pole konkreetset põhjust.</string>
+    <string name="motion_lab_percent_value">%1$d%%</string>
+    <string name="motion_lab_fps_value">%1$d fps</string>
+    <string name="motion_lab_ms_value">%1$d ms</string>
+    <string name="motion_lab_seconds_value">%1$d s</string>
+    <string name="motion_lab_footer">Kohanda ülaltoodud juhtnuppe ainult siis, kui vajad erilist käitumist. Enamike seadistuste jaoks on vaikimisi kõige turvalisem ja usaldusväärsem valik.</string>
+    <string name="lab_hide_thumbnails_title">Klassifitseeritud režiim</string>
+    <string name="lab_hide_thumbnails_redacted">TSENSEERITUD</string>
+    <string name="lab_section_about">Teave</string>
+    <string name="home_sidebar_discord">Discord</string>
+    <string name="home_sidebar_discord_sub">Liitu kogukonnaga</string>
+    <string name="home_sidebar_copyright" translatable="false">© FadSec Lab 2024 – 2026</string>
+    <string name="privacy_black_mode_title">Privaatsuse must ekraan</string>
+    <string name="privacy_black_mode_helper">Kui sinu seade tapab rakenduse taustal, saad kasutada seda funktsiooni, et hoida rakendust esiplaanil töötamas.\n\nMusta ekraani ülekate ilmub, tehes sellest, nagu ekraan oleks välja lülitatud, samal ajal kui salvestamine jätkub.\n\nPuuduta FadCam ikooni avalehe vahekaardi ülemises päises, et seda aktiveerida.</string>
+    <string name="privacy_black_mode_enable_title">Luba privaatsuse must režiim</string>
+    <string name="privacy_black_mode_enabled_toast">Privaatsusrežiim lubatud</string>
+    <string name="privacy_black_mode_disabled_toast">Privaatsusrežiim keelatud</string>
+    <string name="privacy_black_gestures_title">Väljumismeetodid</string>
+    <string name="privacy_black_gestures_helper">Vali, milliseid žeste saab kasutada privaatsuse mustast režiimist väljumiseks.\n\nMärkus: Vähemalt üks väljumismeetod peaks lubatuks jääma, et vältida kinnijäämist!</string>
+    <string name="privacy_black_gesture_swipe">Pühkida üles väljumiseks</string>
+    <string name="privacy_black_gesture_triple">Kolmekordne puudutus väljumiseks</string>
+    <string name="privacy_black_gesture_long">Pikk vajutus väljumiseks</string>
+    <string name="privacy_black_min_one_method">Vähemalt üks väljumismeetod peab lubatuks jääma.</string>
+    <string name="privacy_black_enable_needed_hint">Luba esmalt privaatsuse must ekraan turvaseadetes</string>
+    <string name="watch_status_recording">● SALVESTAMINE</string>
+    <string name="watch_status_paused">⏸ PAUS</string>
+    <string name="watch_audio_toggle_desc">Lülita heli salvestamine</string>
+    <string name="watch_cam_flip_desc">Pööra kaamerat</string>
+    <string name="watch_hamburger_desc">Ava menüü</string>
+    <string name="watch_video_menu_desc">Video valikud</string>
+    <string name="watch_storage_desc">Mälu</string>
+    <string name="watch_back_desc">Tagasi</string>
+    <string name="watch_audio_label">Heli</string>
+    <string name="watch_cam_label">Kaamera</string>
+    <string name="watch_cam_front">Ees</string>
+    <string name="watch_cam_back">Taga</string>
+    <string name="watch_remote_title">Kaugjuhtimine</string>
+    <string name="watch_remote_stream_on">Voogedastus SEES</string>
+    <string name="watch_remote_stream_off">Puuduta voogedastuseks</string>
+    <string name="watch_settings_title">Seaded</string>
+    <string name="watch_settings_camera">Kaamera</string>
+    <string name="watch_settings_audio">Heli</string>
+    <string name="watch_settings_video">Video</string>
+    <string name="watch_settings_security">Turvalisus</string>
+    <string name="watch_records_title">Salvestised</string>
+    <string name="watch_records_empty">Salvestisi pole veel</string>
+    <string name="watch_audio_on">Mikrofon sees</string>
+    <string name="watch_audio_muted">Vaigistatud</string>
+    <string name="watch_pause_label">Paus</string>
+    <string name="watch_resume_label">Jätka</string>
+    <string name="watch_pause_desc">Peata või jätka salvestamist</string>
+    <string name="watch_fullscreen_label">Vaata</string>
+    <string name="watch_fullscreen_desc">Täisekraan</string>
+    <string name="watch_fadshot_label">Pilt</string>
+    <string name="watch_fadshot_desc">Tee foto</string>
+    <string name="watch_trash_title">Hiljuti kustutatud</string>
+    <string name="watch_trash_empty">Midagi pole kustutatud</string>
+    <string name="watch_trash_delete_all">Kustuta kõik</string>
+    <string name="watch_trash_delete_one">Kustuta jäädavalt</string>
+    <string name="video_moved_to_trash">Video teisaldatud prügikasti</string>
+    <string name="watch_fullscreen_hint">Kaamera salvestab</string>
+    <string name="watch_fullscreen_not_recording">Ei salvesta</string>
+    <string name="screen_rec_settings_title">Ekraani salvestamine</string>
+    <string name="screen_rec_settings_subtitle">Kvaliteet, heli ja väljundi seaded</string>
+    <string name="screen_rec_resolution">Eraldusvõime</string>
+    <string name="screen_rec_framerate">Kaadrisagedus</string>
+    <string name="screen_rec_bitrate">Bitikiirus</string>
+    <string name="screen_rec_orientation">Suund</string>
+    <string name="screen_rec_bitrate_mode_auto">Automaatne (VBR)</string>
+    <string name="screen_rec_bitrate_mode_manual">Manuaalne (CBR)</string>
+    <string name="screen_rec_bitrate_helper">VBR kohandub sisu keerukusega. CBR kasutab fikseeritud sihtbitikiirust.</string>
+    <string name="screen_rec_bitrate_range">1 \u2013 50 Mbps</string>
+    <string name="screen_rec_bitrate_low_hint">Madalamad väärtused säästavad mälu</string>
+    <string name="screen_rec_bitrate_high_hint">Kõrgemad väärtused parandavad kvaliteeti</string>
+    <string name="screen_rec_orientation_portrait">Portree</string>
+    <string name="screen_rec_orientation_landscape">Maastik</string>
+    <string name="watermark_speed_title">Kiirus (km/h)</string>
+    <string name="watermark_speed_off">Väljas</string>
+    <string name="watermark_speed_on">Sees — Kiirus GPS satelliidiandmetest</string>
+    <string name="watermark_altitude_title">Kõrgus (m)</string>
+    <string name="watermark_altitude_off">Väljas</string>
+    <string name="watermark_altitude_on">Sees — Kõrgus GPS satelliitidest</string>
+    <string name="watermark_accuracy_title">GPS täpsus (m)</string>
+    <string name="watermark_accuracy_off">Väljas</string>
+    <string name="watermark_accuracy_on">Sees — Horisontaalne täpsus GPS satelliitidest</string>
+    <string name="watermark_compass_title">Kompassi suund</string>
+    <string name="watermark_compass_off">Väljas</string>
+    <string name="watermark_compass_on_sensor">Sees — Suund seadme kompassiandurist</string>
+    <string name="watermark_compass_no_sensor">Kompassiandurit pole — Suund GPS liikumisest ainult (töötab liikumise ajal)</string>
+    <string name="watermark_noise_title">Müratase (dB)</string>
+    <string name="watermark_noise_off">Väljas</string>
+    <string name="watermark_noise_on">Sees — Ümbritsev helitase mikrofonist</string>
+    <string name="watermark_weather_title">Ilm</string>
+    <string name="watermark_weather_off">Väljas</string>
+    <string name="watermark_weather_on">Sees — Ilm Open-Meteo API-st (nõuab internetti)</string>
+    <string name="watermark_network_warning_title">Võrgu hoiatus</string>
+    <string name="watermark_network_warning_message">See funktsioon nõuab võrgupäringuid, mida võidaksepotentsiaalselt jälgida. Keela, kui vajad täielikku anonüümsust. Jätkata?</string>
+    <string name="watermark_network_warning_enable">Luba</string>
+    <string name="watermark_audio_permission_required">Mikrofoni luba on vajalik müraseire jaoks</string>
+    <string name="watermark_gps_disabled_warning">⚠ GPS on väljas — luba seadme asukoht, et see funktsioon töötaks</string>
+    <string name="watermark_gps_disabled_home_toast">Asukohast sõltuvad vesimärgi funktsioonid lubatud, kuid GPS on väljas. Luba seadme asukoht, et need töötaksid.</string>
+    <string name="watermark_gps_disabled_banner_message">Asukohast sõltuvad vesimärgi funktsioonid ei ilmu, kuni seadme asukoht on lubatud</string>
+    <string name="watermark_timezone_title">Ajavöönd</string>
+    <string name="watermark_timezone_off">Väljas</string>
+    <string name="watermark_timezone_on_gmt">Sees — GMT nihe vesimärgis</string>
+    <string name="watermark_timezone_format_title">Ajavööndi vorming</string>
+    <string name="watermark_timezone_format_gmt_only">Ainult GMT nihe</string>
+    <string name="watermark_timezone_format_gmt_name">GMT nihe + Nimi</string>
+    <string name="audio_device_type_wired_headset">Juhtmega peakomplekt</string>
+    <string name="audio_device_type_usb">USB</string>
+    <string name="audio_device_type_usb_headset">USB peakomplekt</string>
+    <string name="audio_device_type_bt_sco">Bluetooth (SCO)</string>
+    <string name="audio_device_type_bt_a2dp">Bluetooth (A2DP)</string>
+    <string name="audio_device_type_ble_headset">BLE peakomplekt</string>
+    <string name="audio_device_type_external">Väline mikrofon</string>
+    <string name="mini_apps_title">Mini-rakendused</string>
+    <string name="mini_apps_subtitle">Kiirutiliidid ja tööriistad</string>
+    <string name="mini_app_coming_soon">Peagi</string>
+    <string name="mini_app_coming_soon_desc">See funktsioon on saadaval tulevikus</string>
+    <string name="mini_app_torch_title">Taskulamp</string>
+    <string name="mini_app_torch_desc">LED-taskulamp mustritega</string>
+    <string name="mini_app_torch_feature_led">Kasutab seadme LED-taskulampi</string>
+    <string name="mini_app_torch_feature_screen">Ekraani heledus valgusallikana</string>
+    <string name="mini_app_torch_feature_patterns">SOS ja strobo mustrid</string>
+    <string name="mini_app_torch_led_title">LED-taskulamp</string>
+    <string name="mini_app_torch_led_desc">Juhi oma seadme LED-taskulampi</string>
+    <string name="mini_app_torch_screen_title">Ekraani valgus</string>
+    <string name="mini_app_torch_screen_desc">Kasuta täisekraani heledust valgusallikana</string>
+    <string name="mini_app_torch_patterns_title">Välgumustrid</string>
+    <string name="torch_brightness">Heledus</string>
+    <string name="torch_color">Värv</string>
+    <string name="torch_patterns">Mustrid</string>
+    <string name="torch_pattern_steady">Püsiv</string>
+    <string name="torch_pattern_strobe">Strobo</string>
+    <string name="torch_pattern_sos">SOS</string>
+    <string name="torch_pattern_morse">Morse kood</string>
+    <string name="torch_status_on">SEES</string>
+    <string name="torch_status_off">Väljas</string>
+    <string name="torch_tap_to_enable">Puuduta sisselülitamiseks</string>
+    <string name="torch_screen_light_label">Ekraani valgus</string>
+    <string name="torch_screen_light_desc">Täisekraani valge ülekate</string>
+    <string name="mini_app_compass_title">Kompass</string>
+    <string name="mini_app_compass_desc">Digitaalne kompass suuna kuvamise ja navigeerimisfunktsioonidega</string>
+    <string name="mini_app_compass_feature_bearing">Reaalajas suund (0-360°)</string>
+    <string name="mini_app_compass_feature_cardinal">Põhisuunad (N, S, E, W)</string>
+    <string name="mini_app_compass_feature_mag_true">Magnetiline vs tõeline põhi</string>
+    <string name="mini_app_sound_meter_title">Helimõõtur</string>
+    <string name="mini_app_sound_meter_desc">Ümbritseva mürataseme tuvastaja detsibellides (dB)</string>
+    <string name="mini_app_sound_meter_feature_realtime">Reaalajas dB mõõtmine</string>
+    <string name="mini_app_sound_meter_feature_peak">Tipptaseme müra tuvastus</string>
+    <string name="mini_app_sound_meter_feature_avg">Keskmised müratasemed</string>
+    <string name="mini_app_sensor_dashboard_title">Andurite töölaud</string>
+    <string name="mini_app_sensor_dashboard_desc">Vaata kiirendusmõõturit, güroskoopi ja anduriandmeid</string>
+    <string name="mini_app_sensor_dashboard_feature_accel">Kiirendusmõõtur (X, Y, Z)</string>
+    <string name="mini_app_sensor_dashboard_feature_gyro">Güroskoop (X, Y, Z)</string>
+    <string name="mini_app_sensor_dashboard_feature_mag">Magnetomeetri näidud</string>
+    <string name="button_close">Sulge</string>
+    <string name="button_info">Teave</string>
+    <string name="button_copy">Kopeeri</string>
+    <string name="button_scan_again">Skanni uuesti</string>
+    <string name="button_torch">Taskulamp</string>
+    <string name="button_gallery">Sirvi galeriid</string>
+    <string name="button_share">Jaga</string>
+    <string name="qr_result_scanned_label">Skannitud</string>
+    <string name="qr_info_banner_text">Skannitud koodid salvestatakse automaatselt Salvestiste vahekaarti</string>
+    <string name="pattern_steady_desc">Pidev püsiv valgus normaalse taskulambi kasutamise jaoks</string>
+    <string name="pattern_strobe_desc">Kiire sisse-välja vilkumise muster hädaolukorra signaalimiseks</string>
+    <string name="pattern_sos_desc">SOS Morse koodi muster: 3 lühikest + 3 pikka + 3 lühikest välku</string>
+    <string name="pattern_morse_desc">Morse koodi muster täpsemaks signaalimiseks</string>
+    <string name="torch_timer_label">Automaatse väljalülituse taimer</string>
+    <string name="torch_timer_desc">Taskulamp lülitub automaatselt välja pärast määratud aega</string>
+    <string name="torch_timer_off">Väljas</string>
+    <string name="torch_timer_picker_helper">Taimer käivitub ainult siis, kui taskulamp on sees</string>
+    <string name="torch_timer_cancel">Tühista taimer</string>
+    <string name="torch_timer_30s">30 sekundit</string>
+    <string name="torch_timer_1m">1 minut</string>
+    <string name="torch_timer_2m">2 minutit</string>
+    <string name="torch_timer_5m">5 minutit</string>
+    <string name="torch_timer_10m">10 minutit</string>
+    <string name="torch_timer_15m">15 minutit</string>
+    <string name="torch_timer_30m">30 minutit</string>
+    <string name="torch_timer_1h">1 tund</string>
+    <string name="torch_timer_custom_title">Määra kohandatud taimer</string>
+    <string name="torch_timer_custom_unit_helper">Vali ajaühik</string>
+    <string name="torch_timer_custom_hint">Sisesta kestus</string>
+    <string name="torch_timer_custom_minutes_example">nt 5, 5 minuti jaoks</string>
+    <string name="torch_timer_custom_hours_example">nt 2, 2 tunni jaoks</string>
+    <string name="torch_timer_custom_apply">Rakenda</string>
+    <string name="torch_timer_custom_error_positive">Kestus peab olema suurem kui 0</string>
+    <string name="torch_timer_custom_error_invalid">Vigane number</string>
+    <string name="watermark_utm_title">UTM koordinaadid</string>
+    <string name="watermark_utm_off">Väljas</string>
+    <string name="watermark_utm_on">Sees — Universaalse ristküliku Mercatori võrgu koordinaadid</string>
+    <string name="watermark_utm_helper">UTM jagab Maa 60 tsooni ja teisendab lai/pikkuskraadid ida- ja põhjasuundadeks meetrites. Kasutatakse militaar-, maamõõtjate ja topograafiliste kaartide poolt täpseks võrgupositsioneerimiseks.\n\nKuidas lugeda: \"Tsoon 42N — 372 684m E, 3 512 334m N\" = Tsoon 42 põhjapoolkeral, 372 684 meetrit idasuunas (ida-lääs), 3 512 334 meetrit põhjasuunas (põhi-lõuna).</string>
+    <string name="mini_app_speedometer_title">Spidomeeter</string>
+    <string name="mini_app_speedometer_desc">Reaalajas auto spidomeeter GPS kiiruse jälgimisega</string>
+    <string name="mini_app_clinometer_title">Klinomeeter</string>
+    <string name="mini_app_clinometer_desc">Mõõda nurki ja kalleid güroskoobi abil</string>
+    <string name="mini_app_qr_scanner_title">QR-skanner</string>
+    <string name="mini_app_qr_scanner_desc">Skanni QR-koode ja triipkoode koheselt</string>
+    <string name="mini_app_pedometer_title">Sammulugeja</string>
+    <string name="mini_app_pedometer_desc">Sammulugeja sisseehitatud sammuanduri abil</string>
+    <string name="mini_app_metal_detector_title">Metallidetektor</string>
+    <string name="mini_app_metal_detector_desc">Tuvasta metallesemeid magnetomeetri abil</string>
+    <string name="mini_app_parking_marker_title">Parkimismarker</string>
+    <string name="mini_app_parking_marker_desc">Salvesta oma parkimiskoht ja navigeeri tagasi GPS noolega</string>
+    <string name="mini_app_qr_generator_title">QR-generaator</string>
+    <string name="mini_app_qr_generator_desc">Loo QR-koode tekstist, URL-dest ja kontaktidest</string>
+    <string name="mini_apps_planned_shortcuts_title">Planeeritud: Otseteed ja automatiseerimine</string>
+    <string name="mini_apps_planned_shortcuts_desc">Avalehe otseteed koheseks juurdepääsuks mis tahes mini-rakendusele ilma FadCam\'i esmalt avamata.\n\nIntent-põhine automatiseerimistugi (Tasker, MacroDroid jne) mini-rakenduste programmeeritavaks käivitamiseks — kasuta QR-skannimist, taskulampi ja muud oma automatiseeritud töövoogudest.</string>
+
+    <string name="export_center">Ekspordikeskus</string>
+
+    <string name="remote_server_status">Serveri olek</string>
+
+    <string name="remote_server_endpoints">Serveri lõpp-punktid</string>
+
+    <string name="remote_get_requests">GET-päringud</string>
+
+    <string name="remote_post_requests">POST-päringud</string>
+
+    <string name="remote_server_root">Serveri juur</string>
+
+    <string name="remote_live_stream">Otsevoog</string>
+
+    <string name="remote_status_api">Oleku API</string>
+
+    <string name="remote_init_segment">Algsegment</string>
+
+    <string name="remote_torch_toggle">Taskulambi lüliti</string>
+
+    <string name="remote_post_requests_remote_control">POST-päringud (Kaugjuhtimine)</string>
+
+    <string name="remote_network_health">Võrgu tervis</string>
+
+    <string name="remote_status">Olek</string>
+
+    <string name="remote_excellent">Suurepärane</string>
+
+    <string name="remote_test_now">Testi kohe</string>
+
+    <string name="remote_speed_metrics">Kiirusmõõdikud</string>
+
+    <string name="remote_download">Allalaadimine</string>
+
+    <string name="remote_upload">Üleslaadimine</string>
+
+    <string name="remote_signal_strength">Signaali tugevus</string>
+
+    <string name="remote_latency_ping">Latentsus (Ping)</string>
+
+    <string name="remote_last_tested">Viimati testitud: %s</string>
+
+    <string name="remote_connected_clients">Ühendatud kliendid</string>
+
+    <string name="remote_client_data_usage">Kliendi andmekasutus</string>
+
+    <string name="remote_total_served">Kokku teenindatud</string>
+
+    <string name="remote_active_clients">Aktiivsed kliendid</string>
+
+    <string name="remote_per_client_breakdown">Jaotus kliendi kaupa</string>
+
+    <string name="remote_no_clients">Ühtki klienti pole ühendatud</string>
+
+    <string name="remote_battery_info">Aku teave</string>
+
+    <string name="remote_current_level">Praegune tase</string>
+
+    <string name="remote_battery_consumed">Aku tarbimine (Voogedastus)</string>
+
+    <string name="remote_charging_status">Laadimise olek</string>
+
+    <string name="remote_not_charging">Ei lae</string>
+
+    <string name="remote_low_battery_threshold">Aku tühjuse hoiatuslävi</string>
+
+    <string name="remote_set">Määra</string>
+
+    <string name="remote_device_battery_capacity">Seadme aku mahutavus</string>
+
+    <string name="remote_save">Salvesta</string>
+
+    <string name="remote_estimates_for_device">Hinnangud teie seadmele:</string>
+
+    <string name="remote_uptime_details">Tööaja üksikasjad</string>
+
+    <string name="remote_server_uptime">Serveri tööaeg</string>
+
+    <string name="remote_session_started_at">Seanss algas kell</string>
+
+    <string name="remote_video_segments">Videosegmendid (Fragmendid)</string>
+
+    <string name="remote_buffered">Puhverdatud</string>
+
+    <string name="remote_buffer_size">Puhvri suurus</string>
+
+    <string name="remote_sequence_range">Järjestuse vahemik</string>
+
+    <string name="remote_oldest">Vanim</string>
+
+    <string name="remote_latest">Uusim</string>
+
+    <string name="remote_what_are_segments">Mis on segmendid?</string>
+
+    <string name="remote_stream_orientation">Voo orientatsioon</string>
+
+    <string name="remote_choose_orientation">Vali orientatsioon ainult voogedastuseks</string>
+
+    <string name="remote_portrait">Portree</string>
+
+    <string name="remote_vertical_orientation">Vertikaalne orientatsioon (9:16)</string>
+
+    <string name="remote_landscape">Maastik</string>
+
+    <string name="remote_horizontal_orientation">Horisontaalne orientatsioon (16:9)</string>
+
+    <string name="remote_auto_default">Auto (Vaikeväärtus)</string>
+
+    <string name="remote_follow_recording_orientation">Järgi rakenduse salvestuse orientatsiooni</string>
+
+    <string name="remote_quality_low">Madal</string>
+
+    <string name="remote_quality_medium">Keskmine</string>
+
+    <string name="remote_quality_high">Kõrge</string>
+
+    <string name="remote_quality_ultra">Ultra</string>
+
+    <string name="remote_event_logs">Sündmuste logid</string>
+
+    <string name="remote_client_events">Kliendi sündmused</string>
+
+    <string name="remote_pages">Lehed</string>
+
+    <string name="remote_layers">Kihid</string>
+
+    <string name="remote_access_endpoints_desc">Juurdepääs oma voogedastusserverile nende HTTP lõpp-punktide kaudu</string>
+
+    <string name="remote_control_via_api_desc">Juhtige FadCam\'i eemalt API päringute kaudu</string>
+
+    <string name="remote_buffered_segments_desc">Puhverdatud segmendid voogedastuseks valmis</string>
+
+    <string name="remote_battery_low_warning">⚠️ Aku tühi - Ühendage laadija niipea kui võimalik</string>
+
+    <string name="remote_enter_percentage_hint">Sisesta protsent</string>
+
+    <string name="remote_enter_mah_hint">Sisesta mAh (1000-10000)</string>
+
+    <string name="sidebar_profiles">Profiilid</string>
+
+    <string name="sidebar_profiles_desc">Salvesta ja laadi salvestuse eelseaded koheselt</string>
+
+    <string name="sidebar_update_available">Uuendus saadaval</string>
+
+    <string name="sidebar_stable_release">Stabiilne versioon</string>
+
+    <string name="sidebar_beta_release">Beetaversioon</string>
+
+    <string name="sidebar_fadcam_pro">FadCam Pro</string>
+
+    <string name="badge_new">UUS</string>
+
+    <string name="update_pro_title">FadCam Pro uuendus</string>
+
+    <string name="update_get_pro">Hangi FadCam Pro</string>
+
+    <string name="update_maybe_later">Võib-olla hiljem</string>
+
+    <string name="update_beta_title">Beetauuendus saadaval</string>
+
+    <string name="update_get_beta">Hangi beetaversioon</string>
+
+    <string name="mini_apps_about_title">Teave minirakenduste kohta</string>
+
+    <string name="mini_apps_current_tools">Praegused tööriistad</string>
+
+    <string name="mini_apps_qr_scanner_reference">QR-skanneri viide</string>
+
+    <string name="screen_recording_title">Ekraanisalvestus</string>
+
+    <string name="screen_recording_notif_title">FadRec - Ekraanisalvestus</string>
+
+    <string name="screen_recording_saved">Ekraanisalvestus salvestatud</string>
+
+    <string name="screen_recording_tap_to_view">Puudutage salvestise vaatamiseks</string>
+
+    <string name="notification_action_stop">Peata</string>
+
+    <string name="fadmic_coming_soon">FadMic (Mikrofoni salvestus) on peagi tulemas!</string>
+
+    <string name="toast_stream_server_starting">Voo server käivitub...</string>
+
+    <string name="toast_stream_server_stopped">Voo server peatas</string>
+
+    <string name="toast_no_cloud_viewers">Pilvevaatajaid pole ühendatud</string>
+
+    <string name="toast_no_clients">Kliente pole ühendatud</string>
+
+    <string name="toast_device_id_copied">Seadme ID kopeeritud</string>
+
+    <string name="toast_endpoint_copied">Kopeeritud: %s</string>
+
+    <string name="toast_battery_set_threshold">Aku hoiatuslävi määratud väärtusele %s</string>
+
+    <string name="toast_battery_set_capacity">Aku mahutavus määratud väärtusele %s</string>
+
+    <string name="toast_orientation_set">Orienteerimine on juba määratud väärtusele %s</string>
+
+    <string name="toast_quality_set">Kvaliteet on juba määratud väärtusele %s</string>
+
 </resources>

@@ -31,7 +31,7 @@
             android:id="@+id/header_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Screen Recording"
+            android:text="@string/screen_recording_title"
             android:textStyle="bold"
             android:textSize="20sp"
             android:textColor="@android:color/white"

@@ -75,10 +75,10 @@
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
                 android:layout_weight="1" android:orientation="vertical">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="Profiles" android:textColor="?attr/colorHeading"
+                    android:text="@string/sidebar_profiles" android:textColor="?attr/colorHeading"
                     android:textSize="15sp" android:textStyle="bold"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="Save and load recording presets instantly"
+                    android:text="@string/sidebar_profiles_desc"
                     android:textColor="?attr/pickerTextSecondary" android:textSize="12sp"
                     android:layout_marginTop="2dp"/>
             </LinearLayout>
@@ -114,7 +114,7 @@
                 android:id="@+id/update_group_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Update Available"
+                android:text="@string/sidebar_update_available"
                 android:textColor="?attr/colorAccent"
                 android:textSize="13sp"
                 android:textStyle="bold"
@@ -160,11 +160,11 @@
                             android:orientation="horizontal" android:gravity="center_vertical">
                             <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Stable Release" android:textColor="#FFFFFF"
+                                android:text="@string/sidebar_stable_release" android:textColor="#FFFFFF"
                                 android:textStyle="bold" android:textSize="12sp"/>
                             <TextView android:layout_width="wrap_content" android:layout_height="16dp"
                                 android:layout_marginStart="6dp" android:paddingHorizontal="6dp"
-                                android:text="NEW" android:textColor="#FFFFFF"
+                                android:text="@string/badge_new" android:textColor="#FFFFFF"
                                 android:textSize="8sp" android:textStyle="bold"
                                 android:gravity="center"
                                 android:background="@drawable/bg_badge_stable"/>
@@ -218,11 +218,11 @@
                             android:orientation="horizontal" android:gravity="center_vertical">
                             <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Beta Release" android:textColor="#FFFFFF"
+                                android:text="@string/sidebar_beta_release" android:textColor="#FFFFFF"
                                 android:textStyle="bold" android:textSize="12sp"/>
                             <TextView android:layout_width="wrap_content" android:layout_height="16dp"
                                 android:layout_marginStart="6dp" android:paddingHorizontal="6dp"
-                                android:text="NEW" android:textColor="#FFFFFF"
+                                android:text="@string/badge_new" android:textColor="#FFFFFF"
                                 android:textSize="8sp" android:textStyle="bold"
                                 android:gravity="center"
                                 android:background="@drawable/bg_badge_beta"/>
@@ -276,11 +276,11 @@
                             android:orientation="horizontal" android:gravity="center_vertical">
                             <TextView android:layout_width="0dp" android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="FadCam Pro" android:textColor="#FFFFFF"
+                                android:text="@string/sidebar_fadcam_pro" android:textColor="#FFFFFF"
                                 android:textStyle="bold" android:textSize="12sp"/>
                              <TextView android:layout_width="wrap_content" android:layout_height="16dp"
                                 android:layout_marginStart="6dp" android:paddingHorizontal="6dp"
-                                android:text="NEW" android:textColor="#1A1A1A"
+                                android:text="@string/badge_new" android:textColor="#1A1A1A"
                                 android:textSize="8sp" android:textStyle="bold"
                                 android:gravity="center"
                                 android:background="@drawable/bg_badge_pro"/>
@@ -1275,7 +1275,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="16dp"
                             android:paddingHorizontal="6dp"
-                            android:text="NEW"
+                            android:text="@string/badge_new"
                             android:textColor="@android:color/white"
                             android:textSize="9sp"
                             android:textStyle="bold"

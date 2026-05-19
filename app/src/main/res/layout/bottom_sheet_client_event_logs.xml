@@ -11,7 +11,7 @@
         android:id="@+id/client_ip_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Event Logs"
+        android:text="@string/remote_event_logs"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -20,7 +20,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Client events"
+        android:text="@string/remote_client_events"
         android:textSize="12sp"
         android:textColor="@android:color/darker_gray"
         android:layout_marginBottom="16dp" />

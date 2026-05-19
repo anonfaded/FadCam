@@ -1211,10 +1211,10 @@ public class ScreenRecordingService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
-                "Screen Recording",
+                getString(R.string.screen_recording_title),
                 NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("Shows screen recording status");
+            channel.setDescription(getString(R.string.screen_recording_title));
             channel.setShowBadge(false);
             
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
@@ -1246,13 +1246,13 @@ public class ScreenRecordingService extends Service {
         
         // Build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("FadRec - Screen Recording")
+            .setContentTitle(getString(R.string.screen_recording_notif_title))
             .setContentText(getNotificationText())
             .setSmallIcon(R.drawable.screen_recorder)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .addAction(R.drawable.ic_notification_stop, "Stop", stopPendingIntent);
+            .addAction(R.drawable.ic_notification_stop, getString(R.string.notification_action_stop), stopPendingIntent);
         
         // Add pause/resume action if supported
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -1308,8 +1308,8 @@ public class ScreenRecordingService extends Service {
         
         // Build completion notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Screen Recording Saved")
-            .setContentText("Tap to view your recording")
+            .setContentTitle(getString(R.string.screen_recording_saved))
+            .setContentText(getString(R.string.screen_recording_tap_to_view))
             .setSmallIcon(R.drawable.screen_recorder)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)  // Dismiss when clicked

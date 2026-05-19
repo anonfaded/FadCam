@@ -121,7 +121,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Export Center"
+                    android:text="@string/export_center"
                     android:textColor="?attr/colorHeading"
                     android:textSize="15sp"
                     android:textStyle="bold" />

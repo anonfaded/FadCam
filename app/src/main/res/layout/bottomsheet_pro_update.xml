@@ -16,7 +16,7 @@
 
     <TextView
         android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="FadCam Pro Update" android:textColor="@android:color/white"
+        android:text="@string/update_pro_title" android:textColor="@android:color/white"
         android:textSize="18sp" android:textStyle="bold" android:gravity="center"
         android:layout_marginBottom="6dp"/>
 
@@ -35,13 +35,13 @@
 
      <Button
          android:id="@+id/btn_pro_get" android:layout_width="match_parent"
-         android:layout_height="48dp" android:text="Get FadCam Pro"
+         android:layout_height="48dp" android:text="@string/update_get_pro"
          android:textColor="#1A1A1A" android:backgroundTint="#FFD700"
          android:layout_marginBottom="8dp"/>
 
     <Button
         android:id="@+id/btn_pro_dismiss" style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="match_parent" android:layout_height="40dp"
-        android:text="Maybe Later" android:textColor="#999"/>
+        android:text="@string/update_maybe_later" android:textColor="#999"/>
 
 </LinearLayout>

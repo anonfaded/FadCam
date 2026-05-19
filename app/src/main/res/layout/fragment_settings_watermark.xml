@@ -368,7 +368,7 @@
                         android:paddingEnd="6dp"
                         android:paddingTop="2dp"
                         android:paddingBottom="2dp"
-                        android:text="NEW"
+                        android:text="@string/badge_new"
                         android:textColor="#FFFFFF"
                         android:textSize="9sp"
                         android:textStyle="bold"

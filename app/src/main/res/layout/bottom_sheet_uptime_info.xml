@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Uptime Details"
+        android:text="@string/remote_uptime_details"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -28,7 +28,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Server Uptime"
+            android:text="@string/remote_server_uptime"
             android:textSize="13sp"
             android:textStyle="bold"
             android:textColor="?attr/colorHeading" />
@@ -65,7 +65,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Session Started At"
+            android:text="@string/remote_session_started_at"
             android:textSize="13sp"
             android:textStyle="bold"
             android:textColor="?attr/colorHeading" />

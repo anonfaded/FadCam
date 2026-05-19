@@ -480,4 +480,3649 @@
     <string name="fix_video_saf_success">تم إصلاح الفيديو! تم الحفظ باسم: %1$s.</string>
     <string name="fix_video_saf_export">يمكنك تصدير أو مشاركة الملف المُصلح من تخزين التطبيق إذا لزم الأمر.</string>
     <string name="full_changelog_info">لعرض سجل التغييرات الكامل، انتقل إلى تبويب الرئيسية، افتح قائمة الهامبورغر، ثم اختر «ما الجديد».</string>
+
+    <!-- ===== NEW TRANSLATED ENTRIES ===== -->
+
+    <string name="app_name" translatable="false">FadCam</string>
+
+    <string name="accessibility_thumbnail_progress">تمت مشاهدة %1$d%%</string>
+
+    <string name="readme_github_subtitle">الشيفرة المصدرية والإصدارات</string>
+
+    <string name="readme_discord_subtitle">انضم إلى المجتمع</string>
+
+    <string name="website_title">الموقع الإلكتروني</string>
+
+    <string name="readme_website_subtitle">الموقع الرسمي</string>
+
+    <string-array name="video_resolutions_keys">
+        <item>7680x4320</item>
+        <item>3840x2160</item>
+        <item>2560x1440</item>
+        <item>1920x1080</item>
+        <item>1280x720</item>
+        <item>640x480</item>
+        <item>720x480</item>
+        <item>480x360</item>
+    </string-array>
+
+    <string-array name="video_resolutions_values">
+        <item>8K</item>
+        <item>4K</item>
+        <item>2K</item>
+        <item>FHD</item>
+        <item>HD</item>
+        <item>SD</item>
+        <item>SD</item>
+        <item>SD</item>
+    </string-array>
+
+    <integer-array name="video_framerate_array">
+        <item name="24">24</item>
+        <item name="30">30</item>
+        <item name="60">60</item>
+        <item name="90">90</item>
+    </integer-array>
+
+    <string name="stats_label_videos">مقاطع الفيديو:</string>
+
+    <string name="stats_label_used">مستخدم:</string>
+
+    <string name="button_resume">استئناف</string>
+
+    <string name="fadrec_start_screen_recording">بدء تسجيل الشاشة</string>
+
+    <string name="fadrec_stop_screen_recording">إيقاف تسجيل الشاشة</string>
+
+    <string name="fadrec_pause_screen_recording">إيقاف تسجيل الشاشة مؤقتًا</string>
+
+    <string name="fadrec_resume_screen_recording">استئناف تسجيل الشاشة</string>
+
+    <string name="fadrec_screen_recording_started">بدأ تسجيل الشاشة</string>
+
+    <string name="fadrec_screen_recording_stopped">تم إيقاف تسجيل الشاشة</string>
+
+    <string name="fadrec_screen_recording_paused">تم إيقاف تسجيل الشاشة مؤقتًا</string>
+
+    <string name="fadrec_screen_recording_resumed">تم استئناف تسجيل الشاشة</string>
+
+    <string name="fadrec_notification_title">تسجيل الشاشة</string>
+
+    <string name="fadrec_notification_recording">جارٍ تسجيل الشاشة…</string>
+
+    <string name="fadrec_notification_paused">تم إيقاف التسجيل مؤقتًا</string>
+
+    <string name="floating_controls_title">القائمة</string>
+
+    <string name="floating_controls_permission_needed">مطلوب إذن العرض فوق التطبيقات</string>
+
+    <string name="floating_controls_permission_title">مطلوب إذن العرض</string>
+
+    <string name="floating_controls_permission_message">تظهر القائمة العائمة السريعة كطبقة فوق التطبيقات الأخرى، مما يوفر وصولاً فوريًا إلى عناصر التحكم في التسجيل من أي مكان.\n\nلتمكين هذه الميزة، تحتاج إلى منح إذن \"العرض فوق التطبيقات الأخرى\" في الشاشة التالية.</string>
+
+    <string name="floating_controls_permission_grant">منح الإذن</string>
+
+    <string name="floating_menu_title">القائمة السريعة</string>
+
+    <string name="floating_menu_start">بدء التسجيل</string>
+
+    <string name="floating_menu_start_short">بدء</string>
+
+    <string name="floating_menu_pause">إيقاف مؤقت</string>
+
+    <string name="floating_menu_resume">استئناف</string>
+
+    <string name="floating_menu_stop">إيقاف التسجيل</string>
+
+    <string name="floating_menu_stop_short">إيقاف</string>
+
+    <string name="annotation_notification_hide_menu">إخفاء القائمة</string>
+
+    <string name="annotation_notification_show_menu">إظهار القائمة</string>
+
+    <string name="floating_menu_annotations">التعليقات التوضيحية</string>
+
+    <string name="recording_controls">عناصر التحكم في التسجيل</string>
+
+    <string name="annotations">التعليقات التوضيحية</string>
+
+    <string name="annotation_tools">أدوات التعليقات التوضيحية</string>
+
+    <string name="enable_annotations">تمكين التعليقات التوضيحية</string>
+
+    <string name="snap_guides">أدلة المحاذاة</string>
+
+    <string name="add_text">إضافة نص</string>
+
+    <string name="add_shape">إضافة شكل</string>
+
+    <string name="fadrec_ready_to_record">جاهز لالتقاط الشاشة</string>
+
+    <string name="fadrec_ready_to_record_subtitle">اضغط للبدء</string>
+
+    <string name="fadrec_permission_denied">تم رفض إذن تسجيل الشاشة</string>
+
+    <string name="fadrec_mode_title">FadRec • تسجيل الشاشة</string>
+
+    <string name="fadrec_mute_audio">كتم صوت التسجيل</string>
+
+    <string name="fadrec_unmute_audio">إلغاء كتم صوت التسجيل</string>
+
+    <string name="fadrec_mic_permission_needed_title">مطلوب إذن الميكروفون</string>
+
+    <string name="fadrec_mic_permission_needed_message">لا يمكن لـ FadRec الوصول إلى الميكروفون. يمكنك التسجيل بدون صوت - لن يتم حفظ الصوت.</string>
+
+    <string name="fadrec_record_muted">تسجيل بدون صوت</string>
+
+    <string name="fadrec_audio_source_title">مصدر الصوت</string>
+
+    <string name="fadrec_audio_source_choose">اختر مصدر الصوت</string>
+
+    <string name="fadrec_audio_source_none">بدون صوت</string>
+
+    <string name="fadrec_audio_source_mic">الميكروفون</string>
+
+    <string name="fadrec_audio_source_internal">صوت الجهاز (داخلي)</string>
+
+    <string name="video_recording_started">بدأ التسجيل</string>
+
+    <string name="video_recording_stopped">تم إيقاف التسجيل</string>
+
+    <string name="video_recording_paused">تم إيقاف التسجيل مؤقتًا</string>
+
+    <string name="video_recording_resumed">تم استئناف التسجيل</string>
+
+    <string name="current_camera">الكاميرا الحالية</string>
+
+    <string name="recording_controls_title">التركيز التلقائي · التعريض · التكبير</string>
+
+    <string name="mainpage_camera_front">الكاميرا الأمامية</string>
+
+    <string name="mainpage_camera_back">الكاميرا الخلفية</string>
+
+    <string name="storage_available_space">المساحة المتاحة</string>
+
+    <string name="recording_estimated_time">الوقت المقدر</string>
+
+    <string name="recording_time_left">الوقت المتبقي</string>
+
+    <string name="recording_elapsed_time">الوقت المنقضي</string>
+
+    <string name="recording_remaining_time">الوقت المتبقي</string>
+
+    <string name="home_elapsed_customize_title">الوقت المنقضي</string>
+
+    <string name="home_elapsed_customize_helper">تخصيص عرض مؤقت الوقت المنقضي والمحاذاة والحجم والخط وعلامة اللون والخلفية.</string>
+
+    <string name="home_elapsed_display_option">تنسيق العرض</string>
+
+    <string name="home_elapsed_display_option_desc">التبديل بين تنسيق الوقت المنقضي المضمن المدمج وتنسيق الساعة الرقمية</string>
+
+    <string name="home_elapsed_display_helper">اختر كيفية عرض مؤقت الوقت المنقضي على البطاقة.</string>
+
+    <string name="home_elapsed_display_compact">مضمن مدمج (افتراضي)</string>
+
+    <string name="home_elapsed_display_compact_desc">يعرض الوقت المنقضي كـ 5س 16د 23ث بوحدات مضمنة مدمجة</string>
+
+    <string name="home_elapsed_display_digital">ساعة رقمية</string>
+
+    <string name="home_elapsed_display_digital_desc">يعرض الوقت المنقضي كـ 00:00 أو 01:05:23 بدون تسميات مضمنة</string>
+
+    <string name="home_elapsed_alignment_option">المحاذاة</string>
+
+    <string name="home_elapsed_alignment_option_desc">اختر كيفية تموضع محتوى الوقت المنقضي داخل بطاقته</string>
+
+    <string name="home_elapsed_alignment_helper">اختر محاذاة مؤقت الوقت المنقضي.</string>
+
+    <string name="home_elapsed_align_center">متوسط (افتراضي)</string>
+
+    <string name="home_elapsed_align_center_desc">إبقاء مؤقت الوقت المنقضي في المنتصف</string>
+
+    <string name="home_elapsed_align_left">محاذاة لليسار</string>
+
+    <string name="home_elapsed_align_left_desc">تثبيت مؤقت الوقت المنقضي في البداية</string>
+
+    <string name="home_elapsed_size_option">الحجم</string>
+
+    <string name="home_elapsed_size_option_desc">التبديل بين إعدادات مؤقت الوقت المنقضي المدمج والأكبر</string>
+
+    <string name="home_elapsed_size_helper">اختر مدى بروز مؤقت الوقت المنقضي.</string>
+
+    <string name="home_elapsed_size_small">صغير</string>
+
+    <string name="home_elapsed_size_small_desc">أصغر حجم للمؤقت لبطاقة أكثر إحكامًا</string>
+
+    <string name="home_elapsed_size_medium">متوسط (افتراضي)</string>
+
+    <string name="home_elapsed_size_medium_desc">حجم افتراضي متوازن لمؤقت الوقت المنقضي</string>
+
+    <string name="home_elapsed_size_large">كبير</string>
+
+    <string name="home_elapsed_size_large_desc">أكبر حجم للمؤقت لأقصى تركيز</string>
+
+    <string name="home_elapsed_font_option">الخط</string>
+
+    <string name="home_elapsed_font_option_desc">اختر الخط المستخدم لقيمة مؤقت الوقت المنقضي</string>
+
+    <string name="home_elapsed_font_helper">اختر الخط المستخدم لأرقام مؤقت الوقت المنقضي.</string>
+
+    <string name="home_elapsed_font_ubuntu">Ubuntu (افتراضي)</string>
+
+    <string name="home_elapsed_font_ubuntu_desc">يستخدم خط Ubuntu الافتراضي للتطبيق للمؤقت</string>
+
+    <string name="home_elapsed_font_monospace">Monospace</string>
+
+    <string name="home_elapsed_font_monospace_desc">يستخدم خط Android المدمج monospace لأرقام ثابتة العرض أوضح</string>
+
+    <string name="home_elapsed_font_doto">Doto</string>
+
+    <string name="home_elapsed_font_doto_desc">يستخدم خط Doto لمظهر مؤقت رقمي مميز</string>
+
+    <string name="home_elapsed_flag_option">علامة اللون</string>
+
+    <string name="home_elapsed_flag_option_desc">إظهار أو إخفاء علامة FadSec Lab خلف المؤقت</string>
+
+    <string name="home_elapsed_flag_helper">اختر ما إذا كانت علامة FadSec Lab تظهر خلف مؤقت الوقت المنقضي.</string>
+
+    <string name="home_elapsed_flag_show">إظهار علامة FadSec Lab (افتراضي)</string>
+
+    <string name="home_elapsed_flag_show_desc">عرض العلامة المميزة خلف المؤقت</string>
+
+    <string name="home_elapsed_flag_hide">إخفاء علامة FadSec Lab</string>
+
+    <string name="home_elapsed_flag_hide_desc">إبقاء منطقة مؤقت الوقت المنقضي نظيفة بدون العلامة</string>
+
+    <string name="home_elapsed_background_option">الخلفية</string>
+
+    <string name="home_elapsed_background_option_desc">اختر ما إذا كان مؤقت الوقت المنقضي على بطاقة سوداء أو بيضاء أو شفافة</string>
+
+    <string name="home_elapsed_background_helper">اختر معالجة الخلفية المستخدمة لبطاقة مؤقت الوقت المنقضي.</string>
+
+    <string name="home_elapsed_background_black">بطاقة سوداء (افتراضي)</string>
+
+    <string name="home_elapsed_background_black_desc">إعطاء مؤقت الوقت المنقضي خلفية بطاقة سوداء صلبة لحاوية أقوى</string>
+
+    <string name="home_elapsed_background_white">بطاقة بيضاء</string>
+
+    <string name="home_elapsed_background_white_desc">استخدام خلفية بطاقة بيضاء نظيفة مع نص داكن للمؤقت</string>
+
+    <string name="home_elapsed_background_transparent">شفاف</string>
+
+    <string name="home_elapsed_background_transparent_desc">إبقاء بطاقة مؤقت الوقت المنقضي خفيفة ومفتوحة بصريًا</string>
+
+    <string name="home_storage_customize_title">عرض التخزين</string>
+
+    <string name="home_storage_customize_helper">تخصيص نمط مؤشر التخزين وإظهار إجمالي التخزين.</string>
+
+    <string name="home_storage_indicator_option">نمط المؤشر</string>
+
+    <string name="home_storage_indicator_option_desc">اختر كيفية تصور التخزين المتاح في فتحة الأيقونة</string>
+
+    <string name="home_storage_indicator_helper">اختر النمط المستخدم لتصور التخزين المتاح.</string>
+
+    <string name="home_storage_indicator_title">مؤشر التخزين</string>
+
+    <string name="home_storage_indicator_ring">حلقة (افتراضي)</string>
+
+    <string name="home_storage_indicator_ring_desc">إظهار المساحة المتاحة كحلقة دائرية مدمجة</string>
+
+    <string name="home_storage_indicator_bar">شريط حبة صغير</string>
+
+    <string name="home_storage_indicator_bar_desc">إظهار المساحة المتاحة كشريط حبة أفقي صغير</string>
+
+    <string name="home_storage_indicator_vertical">شريط عمودي</string>
+
+    <string name="home_storage_indicator_vertical_desc">إظهار المساحة المتاحة كشريط تعبئة عمودي مدمج</string>
+
+    <string name="home_storage_total_option">إجمالي التخزين</string>
+
+    <string name="home_storage_total_option_desc">إظهار أو إخفاء الشرطة وقيمة السعة الإجمالية</string>
+
+    <string name="home_storage_total_helper">اختر ما إذا كانت قيمة إجمالي التخزين تظهر بجانب المساحة المتاحة.</string>
+
+    <string name="home_storage_total_show">إظهار إجمالي التخزين (افتراضي)</string>
+
+    <string name="home_storage_total_show_desc">عرض الشرطة وقيمة السعة الإجمالية مضمنة</string>
+
+    <string name="home_storage_total_hide">إخفاء إجمالي التخزين</string>
+
+    <string name="home_storage_total_hide_desc">إبقاء قيمة المساحة المتاحة فقط مرئية</string>
+
+    <string name="home_time_left_color_title">لون الوقت المتبقي</string>
+
+    <string name="home_time_left_color_helper">اختر لون التمييز لصف الوقت المتبقي. الأحمر هو الافتراضي.</string>
+
+    <string name="home_time_left_color_choice_desc">لون التمييز %1$s</string>
+
+    <string name="home_clock_customize_title">مظهر الساعة</string>
+
+    <string name="home_clock_customize_helper">تغيير عرض الساعة واللون وتنسيق الساعة.</string>
+
+    <string name="home_clock_display_option">عرض الساعة</string>
+
+    <string name="home_clock_display_option_desc">اختر أي أسطر للتاريخ والوقت تظهر في بطاقة الساعة</string>
+
+    <string name="home_clock_display_helper">اختر التخطيط المستخدم لبطاقة الساعة.</string>
+
+    <string name="home_clock_display_timeonly_desc">إظهار سطر الوقت الرئيسي فقط</string>
+
+    <string name="home_clock_display_english_desc">إظهار الوقت مع سطر التاريخ الإنجليزي</string>
+
+    <string name="home_clock_display_islamic_desc">إظهار الوقت مع أسطر التقويم الإنجليزي والإسلامي</string>
+
+    <string name="home_clock_color_option">لون الساعة</string>
+
+    <string name="home_clock_color_option_desc">اختر لون التمييز/الخلفية المستخدم لبطاقة الساعة</string>
+
+    <string name="home_clock_color_helper">اختر لون بطاقة الساعة من لوحة الصفحة الرئيسية.</string>
+
+    <string name="home_clock_color_choice_desc">لون الساعة %1$s</string>
+
+    <string name="home_clock_hour_format_option">تنسيق الساعة</string>
+
+    <string name="home_clock_hour_format_option_desc">اختر ما إذا كانت الساعة تعرض نظام 12 ساعة أو 24 ساعة</string>
+
+    <string name="home_clock_hour_format_helper">اختر تنسيق الساعة المستخدم في ساعة الصفحة الرئيسية.</string>
+
+    <string name="home_clock_hour_format_12">12 ساعة (افتراضي)</string>
+
+    <string name="home_clock_hour_format_12_desc">إظهار الوقت مع ص/م</string>
+
+    <string name="home_clock_hour_format_24">24 ساعة</string>
+
+    <string name="home_clock_hour_format_24_desc">إظهار الوقت بتنسيق 24 ساعة بدون ص/م</string>
+
+    <string name="home_cards_fold_toggle">تبديل بطاقات الصفحة الرئيسية</string>
+
+    <string name="mainpage_recording_to_sd">التسجيل على بطاقة SD</string>
+
+    <string name="tips_title">نصائح</string>
+
+    <string name="tips_subtitle">نصائح استخدام مفيدة</string>
+
+    <string name="whats_new_title">ما الجديد</string>
+
+    <string name="whats_new_subtitle">اطلع على أحدث الميزات والتحديثات</string>
+
+    <string name="home_menu">قائمة الصفحة الرئيسية</string>
+
+    <string name="home_sidebar_title">الصفحة الرئيسية</string>
+
+    <string name="home_options_title">خيارات الصفحة الرئيسية</string>
+
+    <string name="help_section">المساعدة</string>
+
+    <string name="display_settings_title">العرض</string>
+
+    <string name="back">خلفي</string>
+
+    <string name="front">أمامي</string>
+
+    <string name="video_menu_save_helper_downloads_fadcam">سيتم حفظ الفيديو في Downloads/FadCam</string>
+
+    <string name="video_menu_save_copy_or_move_title">حفظ في المعرض</string>
+
+    <string name="video_menu_save_copy">نسخ إلى المعرض</string>
+
+    <string name="video_menu_save_copy_desc">إنشاء نسخة في Downloads/FadCam (يحتفظ بالملف الأصلي)</string>
+
+    <string name="video_menu_save_move">نقل إلى المعرض</string>
+
+    <string name="video_menu_save_move_desc">نقل الملف إلى Downloads/FadCam (يوفر مساحة التخزين)</string>
+
+    <string name="video_menu_save_longpress_helper">اضغط مطولاً على \"حفظ في المعرض\" للاختيار بين النسخ أو النقل</string>
+
+    <string name="watch_video_saved_toast">تم الحفظ في Downloads/FadCam</string>
+
+    <string name="watch_delete_confirm_title">نقل إلى سلة المهملات؟</string>
+
+    <string name="watch_delete_confirm_msg">سيتم نقل \"%s\" إلى سلة المهملات.</string>
+
+    <string name="watch_delete_confirm_action">نقل إلى سلة المهملات</string>
+
+    <string name="watch_perm_delete_title">حذف نهائي؟</string>
+
+    <string name="watch_perm_delete_msg">سيتم حذف \"%s\" نهائيًا ولا يمكن استعادته.</string>
+
+    <string name="watch_perm_delete_action">حذف نهائيًا</string>
+
+    <string name="watch_perm_delete_all_title">حذف الكل؟</string>
+
+    <string name="watch_perm_delete_all_msg">سيتم حذف جميع العناصر (%d) في سلة المهملات نهائيًا ولا يمكن استعادتها.</string>
+
+    <string name="file_operation_copied_to_gallery">تم نسخ %1$s إلى المعرض</string>
+
+    <string name="file_operation_moved_to_gallery">تم نقل %1$s إلى المعرض</string>
+
+    <string name="file_operation_deleted">تم حذف %1$s</string>
+
+    <string name="file_operation_restored">تم استعادة %1$s</string>
+
+    <string name="file_operation_processed">تمت معالجة %1$s</string>
+
+    <string name="background_delete_progress">جارٍ حذف %1$s في الخلفية…</string>
+
+    <string name="background_restore_progress">جارٍ استعادة %1$s في الخلفية…</string>
+
+    <string name="records_delete_notification_channel_name">تقدم الحذف</string>
+
+    <string name="records_delete_notification_channel_desc">التقدم والنتائج للحذف في الخلفية في التسجيلات.</string>
+
+    <string name="records_delete_notification_title">جارٍ حذف التسجيلات</string>
+
+    <string name="records_delete_notification_progress_text">%1$d من %2$d مكتمل • %3$s</string>
+
+    <string name="records_delete_notification_summary_text">تم حذف %1$d • فشل %2$d</string>
+
+    <string name="records_save_notification_summary_text_copy">تم حفظ %1$d • فشل %2$d</string>
+
+    <string name="records_save_notification_summary_text_move">تم نقل %1$d • فشل %2$d</string>
+
+    <string name="records_save_notification_summary_text_export">تم تصدير %1$d • فشل %2$d</string>
+
+    <string name="records_delete_notification_complete_success">اكتمل الحذف</string>
+
+    <string name="records_delete_notification_complete_partial">انتهى الحذف مع مشاكل</string>
+
+    <string name="records_delete_notification_complete_failed">فشل الحذف</string>
+
+    <string name="records_delete_notification_cancelled">تم إلغاء الحذف</string>
+
+    <string name="records_delete_notification_cancel">إلغاء</string>
+
+    <string name="records_save_notification_title_copy">جارٍ الحفظ في المعرض</string>
+
+    <string name="records_save_notification_title_move">جارٍ النقل إلى المعرض</string>
+
+    <string name="records_save_notification_title_export">جارٍ التصدير</string>
+
+    <string name="records_save_notification_complete_success_copy">اكتمل الحفظ</string>
+
+    <string name="records_save_notification_complete_success_move">اكتمل النقل</string>
+
+    <string name="records_save_notification_complete_success_export">اكتمل التصدير</string>
+
+    <string name="records_save_notification_complete_partial">انتهى الحفظ مع مشاكل</string>
+
+    <string name="records_save_notification_complete_failed">فشل الحفظ</string>
+
+    <string name="records_save_notification_cancelled">تم إلغاء الحفظ</string>
+
+    <string name="records_delete_error_invalid_item">تعذر حذف أحد العناصر المحددة.</string>
+
+    <string name="records_delete_error_failed_item">تعذر حذف %1$s.</string>
+
+    <string name="records_save_error_failed_item">تعذر حفظ %1$s.</string>
+
+    <string name="records_save_error_create_destination">تعذر إنشاء مجلد الوجهة.</string>
+
+    <string name="records_save_error_open_source">تعذر قراءة الملف المصدر.</string>
+
+    <string name="records_save_error_delete_original">تم النسخ، لكن تعذر إزالة الملف الأصلي.</string>
+
+    <string name="records_delete_header_default_title">جارٍ حذف التسجيلات</string>
+
+    <string name="records_delete_header_action_ok">حسنًا</string>
+
+    <string name="records_delete_header_action_cancel">إلغاء</string>
+
+    <string name="records_delete_header_done_success">اكتمل الحذف</string>
+
+    <string name="records_delete_header_done_partial">انتهى الحذف مع مشاكل</string>
+
+    <string name="records_delete_header_done_failed">فشل الحذف</string>
+
+    <string name="records_delete_header_done_body_success">تم إزالة %1$d عنصر.</string>
+
+    <string name="records_delete_header_done_body_partial">تم إزالة %1$d • فشل %2$d.</string>
+
+    <string name="records_delete_header_done_body_failed">فشل %1$d عنصر.</string>
+
+    <string name="records_delete_header_preparing">جارٍ التحضير للحذف…</string>
+
+    <string name="records_save_header_preparing_copy">جارٍ التحضير للحفظ…</string>
+
+    <string name="records_save_header_preparing_move">جارٍ التحضير للنقل…</string>
+
+    <string name="records_save_header_preparing_export">جارٍ التحضير للتصدير…</string>
+
+    <string name="records_delete_header_working">جارٍ العمل…</string>
+
+    <string name="records_delete_header_finishing">جارٍ الإنهاء…</string>
+
+    <string name="records_delete_header_dismiss_hint">اضغط حسنًا للإغلاق</string>
+
+    <string name="records_delete_header_eta_seconds">الوقت المتبقي %1$dث</string>
+
+    <string name="records_delete_header_eta_minutes">الوقت المتبقي %1$dد %2$02dث</string>
+
+    <string name="records_delete_header_summary">%1$d من %2$d مكتمل • فشل %3$d</string>
+
+    <string name="records_delete_header_running_summary">تم %1$d • فشل %2$d</string>
+
+    <string name="records_delete_header_issue_prefix">مشكلة: %1$s</string>
+
+    <string name="records_save_header_done_success_copy">اكتمل الحفظ</string>
+
+    <string name="records_save_header_done_success_move">اكتمل النقل</string>
+
+    <string name="records_save_header_done_success_export">اكتمل التصدير</string>
+
+    <string name="records_save_header_done_partial">انتهى الحفظ مع مشاكل</string>
+
+    <string name="records_save_header_done_failed">فشل الحفظ</string>
+
+    <string name="records_save_header_done_body_success_copy">تم حفظ %1$d عنصر في المعرض.</string>
+
+    <string name="records_save_header_done_body_success_move">تم نقل %1$d عنصر إلى المعرض.</string>
+
+    <string name="records_save_header_done_body_success_export">تم تصدير %1$d عنصر.</string>
+
+    <string name="records_save_header_done_body_partial">تم %1$d • فشل %2$d.</string>
+
+    <string name="records_save_header_done_body_failed">فشل %1$d عنصر.</string>
+
+    <plurals name="records_delete_header_running_title">
+        <item quantity="one">جارٍ حذف عنصر واحد</item>
+        <item quantity="two">جارٍ حذف عنصرين</item>
+        <item quantity="few">جارٍ حذف %d عناصر</item>
+        <item quantity="many">جارٍ حذف %d عنصرًا</item>
+        <item quantity="other">جارٍ حذف %d عنصر</item>
+    </plurals>
+
+    <plurals name="records_delete_header_progress_title">
+        <item quantity="one">جارٍ حذف %1$d من %2$d عنصر</item>
+        <item quantity="two">جارٍ حذف %1$d من %2$d عنصرين</item>
+        <item quantity="few">جارٍ حذف %1$d من %2$d عناصر</item>
+        <item quantity="many">جارٍ حذف %1$d من %2$d عنصرًا</item>
+        <item quantity="other">جارٍ حذف %1$d من %2$d عنصر</item>
+    </plurals>
+
+    <plurals name="records_save_copy_header_progress_title">
+        <item quantity="one">جارٍ حفظ %1$d من %2$d عنصر</item>
+        <item quantity="two">جارٍ حفظ %1$d من %2$d عنصرين</item>
+        <item quantity="few">جارٍ حفظ %1$d من %2$d عناصر</item>
+        <item quantity="many">جارٍ حفظ %1$d من %2$d عنصرًا</item>
+        <item quantity="other">جارٍ حفظ %1$d من %2$d عنصر</item>
+    </plurals>
+
+    <plurals name="records_save_move_header_progress_title">
+        <item quantity="one">جارٍ نقل %1$d من %2$d عنصر</item>
+        <item quantity="two">جارٍ نقل %1$d من %2$d عنصرين</item>
+        <item quantity="few">جارٍ نقل %1$d من %2$d عناصر</item>
+        <item quantity="many">جارٍ نقل %1$d من %2$d عنصرًا</item>
+        <item quantity="other">جارٍ نقل %1$d من %2$d عنصر</item>
+    </plurals>
+
+    <plurals name="records_save_export_header_progress_title">
+        <item quantity="one">جارٍ تصدير %1$d من %2$d عنصر</item>
+        <item quantity="two">جارٍ تصدير %1$d من %2$d عنصرين</item>
+        <item quantity="few">جارٍ تصدير %1$d من %2$d عناصر</item>
+        <item quantity="many">جارٍ تصدير %1$d من %2$d عنصرًا</item>
+        <item quantity="other">جارٍ تصدير %1$d من %2$d عنصر</item>
+    </plurals>
+
+    <plurals name="records_delete_queued_toast">
+        <item quantity="one">جارٍ حذف عنصر واحد في الخلفية.</item>
+        <item quantity="two">جارٍ حذف عنصرين في الخلفية.</item>
+        <item quantity="few">جارٍ حذف %d عناصر في الخلفية.</item>
+        <item quantity="many">جارٍ حذف %d عنصرًا في الخلفية.</item>
+        <item quantity="other">جارٍ حذف %d عنصر في الخلفية.</item>
+    </plurals>
+
+    <string name="video_menu_info">معلومات</string>
+
+    <string name="video_menu_copy_filename">نسخ اسم الملف</string>
+
+    <string name="video_info_file_name">اسم الملف</string>
+
+    <string name="video_info_file_size">حجم الملف</string>
+
+    <string name="video_info_file_path">مسار الملف</string>
+
+    <string name="video_info_last_modified">آخر تعديل</string>
+
+    <string name="video_info_duration">المدة</string>
+
+    <string name="video_info_resolution">الدقة</string>
+
+    <string name="video_info_fps">معدل الإطارات</string>
+
+    <string name="video_info_codec">الترميز</string>
+
+    <string name="video_info_bitrate">معدل البت</string>
+
+    <string name="video_info_geotag">الموقع</string>
+
+    <string name="video_info_copy_clipboard">نسخ إلى الحافظة</string>
+
+    <string name="video_info_copy_subtitle">نسخ معلومات الفيديو</string>
+
+    <string name="video_info_unknown">غير معروف</string>
+
+    <string name="video_info_no_location">لا توجد بيانات موقع</string>
+
+    <string name="video_menu_mark_viewed">تحديد كمُشاهَد</string>
+
+    <string name="video_menu_mark_unviewed">تحديد كغير مُشاهَد</string>
+
+    <string name="video_menu_open_with">فتح باستخدام...</string>
+
+    <string name="chooser_open_with">فتح باستخدام</string>
+
+    <string name="image_viewer_title">عارض الصور</string>
+
+    <string name="media_type_photo">صورة</string>
+
+    <string name="media_type_photo_back">خلفية</string>
+
+    <string name="media_type_photo_selfie">سيلفي</string>
+
+    <string name="media_type_photo_fadrec">FadRec</string>
+
+    <string name="photo_capture_saved">تم حفظ الصورة</string>
+
+    <string name="photo_capture_failed">تعذر التقاط الصورة</string>
+
+    <string name="photo_capture_preview_unavailable">المعاينة غير متاحة</string>
+
+    <string name="video_menu_upload_faddrive">تحميل إلى FadDrive</string>
+
+    <string name="records_filter_all">الكل</string>
+
+    <string name="records_filter_camera">FadCam</string>
+
+    <string name="records_filter_dual">مزدوج</string>
+
+    <string name="records_filter_screen">FadRec</string>
+
+    <string name="records_filter_faditor">Faditor</string>
+
+    <string name="records_filter_stream">بث</string>
+
+    <string name="records_filter_shot">FadShot</string>
+
+    <string name="records_filter_camera_all">الكل</string>
+
+    <string name="records_filter_camera_back">خلفي</string>
+
+    <string name="records_filter_camera_front">أمامي</string>
+
+    <string name="records_filter_camera_dual">مزدوج</string>
+
+    <string name="records_filter_faditor_all">الكل</string>
+
+    <string name="records_filter_faditor_converted">محول</string>
+
+    <string name="records_filter_faditor_merge">دمج</string>
+
+    <string name="records_filter_shot_all">الكل</string>
+
+    <string name="records_filter_miniapps_all">الكل</string>
+
+    <string name="records_filter_shot_back">خلفي</string>
+
+    <string name="records_filter_shot_selfie">سيلفي</string>
+
+    <string name="records_filter_shot_fadrec">FadRec</string>
+
+    <string name="records_filter_checklist_desc">تبديل وضع التحديد</string>
+
+    <string name="records_filter_helper_camera_all">تسجيلات الكاميرا (خلفي، أمامي، مزدوج)</string>
+
+    <string name="records_filter_helper_camera_back">التقطت بالكاميرا الخلفية</string>
+
+    <string name="records_filter_helper_camera_front">التقطت بالكاميرا الأمامية (سيلفي)</string>
+
+    <string name="records_filter_helper_camera_dual">التقطت بوضع الكاميرا المزدوجة</string>
+
+    <string name="records_filter_helper_dual">تسجيلات الكاميرا المزدوجة</string>
+
+    <string name="records_filter_helper_screen">تسجيلات الشاشة (FadRec)</string>
+
+    <string name="records_filter_helper_faditor">فيديوهات محررة/مصدرة (Faditor)</string>
+
+    <string name="records_filter_helper_faditor_all">جميع مخرجات Faditor والملفات ذات الصلة.</string>
+
+    <string name="records_filter_helper_faditor_converted">تحويل MP4 المجزأ إلى MP4 قياسي قابل للبحث لمشغلات خارجية.</string>
+
+    <string name="records_filter_helper_faditor_merge">دمج مقاطع متعددة في فيديو واحد.</string>
+
+    <string name="records_filter_helper_stream">تسجيلات البث المحفوظة</string>
+
+    <string name="records_filter_helper_shot_all">الصور ولقطات الشاشة الملتقطة</string>
+
+    <string name="records_filter_helper_shot_back">صور ملتقطة بالكاميرا الخلفية</string>
+
+    <string name="records_filter_helper_shot_selfie">صور ملتقطة بالكاميرا الأمامية (سيلفي)</string>
+
+    <string name="records_filter_helper_shot_fadrec">لقطات شاشة ملتقطة (FadRec)</string>
+
+    <string name="records_location_format">الموقع: %1$s/%2$s</string>
+
+    <string name="records_batch_select_all">تحديد الكل</string>
+
+    <string name="records_batch_deselect_all">إلغاء تحديد الكل</string>
+
+    <string name="records_batch_save">حفظ في المعرض</string>
+
+    <string name="records_batch_faditor">أتمتة Faditor</string>
+
+    <string name="records_batch_delete">حذف</string>
+
+    <string name="records_batch_coming_soon">سيتم إضافة إجراء الدفعة هذا لاحقًا.</string>
+
+    <string name="records_batch_select_items_first">حدد فيديو واحدًا أو أكثر أولاً.</string>
+
+    <string name="records_batch_actions_title">إجراءات الدفعة</string>
+
+    <string name="records_batch_fab_label">دفعة</string>
+
+    <string name="records_batch_select_all_desc">تحديد أو إلغاء تحديد جميع الفيديوهات في الفلتر الحالي.</string>
+
+    <string name="records_batch_save_desc">نسخ أو نقل أو تصدير الفيديوهات المحددة إلى مجلد آخر.</string>
+
+    <string name="records_batch_faditor_desc">تشغيل أتمتة الخلفية بدون فتح تبويب Faditor.</string>
+
+    <string name="records_batch_delete_desc">نقل الفيديوهات المحددة إلى سلة المهملات.</string>
+
+    <string name="records_batch_save_queued">تمت إضافة %1$d مهمة حفظ إلى القائمة.</string>
+
+    <string name="records_batch_faditor_first_only">تم فتح الفيديو الأول. %1$d محدد؛ قائمة التحرير المتعدد قادمة لاحقًا.</string>
+
+    <string name="records_batch_save_copy_helper">يحتفظ بالأصول؛ يحفظ نسخًا في %1$s.</string>
+
+    <string name="records_batch_save_move_helper">ينقل الفيديوهات المحددة إلى %1$s ويزيل originals بعد الحفظ الناجح.</string>
+
+    <string name="records_batch_save_custom_location">تصدير إلى موقع جديد</string>
+
+    <string name="records_batch_save_custom_location_desc">اختر مجلدًا واحدًا لجميع الفيديوهات المحددة في هذه الجلسة.</string>
+
+    <string name="records_batch_custom_export_started">جارٍ تصدير %1$d فيديو إلى المجلد المحدد…</string>
+
+    <string name="records_batch_custom_export_invalid_folder">المجلد المحدد غير قابل للكتابة.</string>
+
+    <string name="records_batch_custom_export_done">انتهى التصدير. نجح: %1$d • فشل: %2$d</string>
+
+    <string name="records_batch_faditor_sheet_title">إجراءات Faditor للدفعة</string>
+
+    <string name="records_batch_faditor_export_standard">تصدير إلى MP4 قياسي</string>
+
+    <string name="records_batch_faditor_export_standard_desc">تحويل MP4 المجزأ إلى MP4 قياسي قابل للبحث لمشغلات خارجية.</string>
+
+    <string name="records_batch_faditor_merge">دمج الفيديوهات المحددة</string>
+
+    <string name="records_batch_faditor_merge_desc">دمج المقاطع المحددة في فيديو واحد في الخلفية.</string>
+
+    <string name="records_batch_faditor_queued">تم وضع %1$d عنصر دفعة في القائمة في الخلفية.</string>
+
+    <string name="records_batch_completed">اكتملت عملية الدفعة.</string>
+
+    <string name="records_batch_notif_channel_name">إجراءات وسائط الدفعة</string>
+
+    <string name="records_batch_notif_channel_desc">التقدم والنتائج لمهام حفظ الدفعة وأتمتة Faditor.</string>
+
+    <string name="records_batch_starting">جارٍ تحضير عملية الدفعة…</string>
+
+    <string name="records_batch_progress_item">معالجة %1$d من %2$d</string>
+
+    <string name="records_batch_progress_counts">مكتمل %1$d • تم تخطي %2$d • فشل %3$d</string>
+
+    <string name="records_batch_summary">اكتملت الدفعة. تم: %1$d • تم تخطي: %2$d • فشل: %3$d</string>
+
+    <string name="records_batch_export_done_title">انتهى تصدير MP4 القياسي</string>
+
+    <string name="records_batch_merge_done_title">انتهى دمج الدفعة</string>
+
+    <string name="records_hide_thumbnails_row_title">إخفاء</string>
+
+    <string name="nav_remote">عن بعد</string>
+
+    <string name="nav_faditor_mini">Faditor</string>
+
+    <string name="nav_lab">المختبر</string>
+
+    <string name="button_settings_cam_dual">مزدوج (PiP)</string>
+
+    <string name="note_cam_dual_unsupported">جهازك لا يدعم تسجيل الكاميرا المزدوجة المتزامن.</string>
+
+    <string name="dual_recording_started">بدأ تسجيل الكاميرا المزدوجة</string>
+
+    <string name="dual_recording_stopped">تم إيقاف تسجيل الكاميرا المزدوجة</string>
+
+    <string name="dual_cameras_swapped">تم تبديل الكاميرات</string>
+
+    <string name="dual_camera_error">خطأ في الكاميرا المزدوجة: %s</string>
+
+    <string name="dual_camera_not_supported_toast">الكاميرا المزدوجة غير مدعومة على هذا الجهاز</string>
+
+    <string name="watch_recording_hardware_not_supported">هذا الجهاز لا يحتوي على كاميرا/ميكروفون مطلوب لتسجيل الفيديو.</string>
+
+    <string name="dual_camera_pip_settings">إعدادات الكاميرا المزدوجة PiP</string>
+
+    <string name="dual_cam_section_layout">التخطيط</string>
+
+    <string name="dual_cam_section_appearance">المظهر</string>
+
+    <string name="dual_cam_pip_position_title">موضع PiP</string>
+
+    <string name="dual_cam_pip_position_helper">اختر الزاوية التي توضع فيها طبقة الكاميرا الثانوية (PiP).</string>
+
+    <string name="dual_cam_pip_size_title">حجم PiP</string>
+
+    <string name="dual_cam_pip_size_helper">يتحكم في حجم طبقة PiP بالنسبة لعرض الإخراج الكامل.</string>
+
+    <string name="dual_cam_primary_camera_title">الكاميرا الأساسية</string>
+
+    <string name="dual_cam_primary_camera_helper">اختر الكاميرا التي تملأ الإطار الكامل. الكاميرا الأخرى ستظهر كطبقة PiP.</string>
+
+    <string name="dual_cam_show_border_title">حد PiP</string>
+
+    <string name="dual_cam_show_border_helper">إظهار حد رفيع حول طبقة PiP لفصلها بصريًا عن الخلفية.</string>
+
+    <string name="dual_cam_round_corners_title">زوايا مستديرة</string>
+
+    <string name="dual_cam_round_corners_helper">تطبيق زوايا مستديرة على طبقة PiP لمظهر عصري.</string>
+
+    <string name="dual_cam_pip_margin_title">هامش PiP</string>
+
+    <string name="dual_cam_pip_margin_hint">0 – 48 dp</string>
+
+    <string name="dual_cam_layout_helper">تكوين الموضع والحجم والكاميرا الأساسية لتراكب Picture-in-Picture أثناء تسجيل الكاميرا المزدوجة.</string>
+
+    <string name="dual_cam_appearance_helper">تخصيص المظهر البصري لطبقة PiP بما في ذلك الحد والزوايا والتباعد.</string>
+
+    <string name="dual_cam_section_preview">معاينة</string>
+
+    <string name="dual_cam_preview_primary">الكاميرا الرئيسية</string>
+
+    <string name="dual_cam_preview_pip">PiP</string>
+
+    <string name="dual_cam_preview_helper">هكذا سيبدو وضع PiP في الوضع الأفقي على سبيل المثال.</string>
+
+    <string name="dual_cam_banner_checking">جارٍ التحقق من توافق الجهاز…</string>
+
+    <string name="dual_cam_banner_supported">تم اكتشاف كلتا الكاميرتين، لكن الدعم المتزامن غير مؤكد. اضغط للتفاصيل.</string>
+
+    <string name="dual_cam_banner_supported_confirmed">الكاميرا المزدوجة مدعومة بالكامل ومؤكدة من جهازك.</string>
+
+    <string name="dual_cam_banner_unsupported">الكاميرا المزدوجة غير مدعومة على هذا الجهاز.</string>
+
+    <string name="dual_cam_banner_tap_details">التفاصيل</string>
+
+    <string name="dual_cam_info_title">توافق الجهاز</string>
+
+    <string name="dual_cam_info_device_label">الجهاز</string>
+
+    <string name="dual_cam_info_processor_label">المعالج</string>
+
+    <string name="dual_cam_info_android_label">إصدار Android</string>
+
+    <string name="dual_cam_info_api_label">مستوى API</string>
+
+    <string name="dual_cam_info_concurrent_label">واجهة Camera المتزامنة</string>
+
+    <string name="dual_cam_info_concurrent_yes">مؤكد ✓</string>
+
+    <string name="dual_cam_info_concurrent_no">غير مؤكد</string>
+
+    <string name="dual_cam_info_status_label">الحالة</string>
+
+    <string name="dual_cam_info_supported_status">✓ جهازك يدعم تسجيل الكاميرا المزدوجة.</string>
+
+    <string name="dual_cam_info_supported_unconfirmed">⚠ جهازك يحتوي على كلتا الكاميرتين، لكن الدعم المتزامن غير مؤكد. قد يعمل أو لا يعمل.</string>
+
+    <string name="dual_cam_info_unsupported_status">✗ جهازك لا يدعم تسجيل الكاميرا المزدوجة.</string>
+
+    <string name="dual_cam_info_why_unsupported">لماذا الكاميرا المزدوجة غير مدعومة؟</string>
+
+    <string name="dual_cam_info_unsupported_explanation">يتطلب تسجيل الكاميرا المزدوجة تشغيل كل من الكاميرا الأمامية والخلفية في وقت واحد. هذه قدرة أجهزة تعتمد على معالج جهازك ومعدات الكاميرا. معظم الهواتف الرائدة من 2020 فصاعدًا تدعم هذه الميزة. الأجهزة متوسطة المدى أو الأقدم عادة لا تدعمها.\n\nهذا ليس خطأ — إنه قيد أجهزة جهازك.</string>
+
+    <string name="dual_cam_info_which_devices">أي الأجهزة تدعمها؟</string>
+
+    <string name="dual_cam_info_devices_explanation">الأجهزة بمعالج Qualcomm Snapdragon 855 أو أحدث، Google Tensor، Samsung Exynos 990 أو أحدث، وMediaTek Dimensity 1000 أو أحدث تدعم عادة الوصول المتزامن للكاميرا.</string>
+
+    <string name="dual_cam_settings_row_title">إعدادات الكاميرا المزدوجة</string>
+
+    <string name="dual_cam_settings_row_subtitle">تكوين تخطيط PiP والمظهر</string>
+
+    <string name="setting_zoom_ratio_title">نسبة التكبير</string>
+
+    <string name="zoom_not_available_toast">التكبير غير متاح</string>
+
+    <string name="zoom_slider_title">نسبة التكبير</string>
+
+    <string name="zoom_slider_helper">ضبط مستوى التكبير للتسجيل. لتسجيلات العدسة فائقة الاتساع، استخدم خيار 0.5x للتسجيل بمجال رؤية فائق الاتساع.</string>
+
+    <string name="icon_zoom_in_ligature">zoom_in</string>
+
+    <string name="note_zoom_ratio">اختر نسبة التكبير\n(الافتراضي: %1$.1fx - بدون تكبير)</string>
+
+    <string name="preview_area_title">منطقة المعاينة</string>
+
+    <string name="preview_state_enable">تمكين</string>
+
+    <string name="preview_state_disable">تعطيل</string>
+
+    <string name="preview_enabled">تم تمكين المعاينة</string>
+
+    <string name="preview_disabled">تم تعطيل المعاينة</string>
+
+    <string name="ae_lock_title">قفل AE</string>
+
+    <string name="ae_lock_helper">عند التمكين، يتم تثبيت التعريض التلقائي على السطوع الحالي حتى لا تعيد الكاميرا ضبط التعريض أثناء التسجيل. استخدم مربع التعريض لإجراء تعديلات يدوية.</string>
+
+    <string name="ae_lock_switch_label">قفل AE</string>
+
+    <string name="exposure_title">تعويض التعريض (EV)</string>
+
+    <string name="note_from_developer_title">ملاحظة من المطور</string>
+
+    <string name="note_from_developer_subtitle">README، الروابط &amp; التحديثات</string>
+
+    <string name="watermark_preview_funny">حقًا؟ :( \n    ＞﹏＜</string>
+
+    <string name="quick_speed_title">السرعة السريعة</string>
+
+    <string name="quick_speed_option_default">2x (افتراضي)</string>
+
+    <string name="quick_speed_option_1_25">1.25x</string>
+
+    <string name="quick_speed_option_1_5">1.5x</string>
+
+    <string name="quick_speed_option_1_75">1.75x</string>
+
+    <string name="quick_speed_option_2">2x</string>
+
+    <string name="quick_speed_option_2_5">2.5x</string>
+
+    <string name="quick_speed_option_custom">مخصص</string>
+
+    <string name="rename_video_hint">أدخل اسمًا جديدًا</string>
+
+    <string name="toast_rename_with_copy">تمت إعادة التسمية إلى %1$s (اسم مكرر)</string>
+
+    <string name="rename_layer_title">إعادة تسمية الطبقة</string>
+
+    <string name="rename_layer_message">أدخل اسمًا جديدًا للطبقة</string>
+
+    <string name="rename_page_title">إعادة تسمية الصفحة</string>
+
+    <string name="rename_page_message">أدخل اسمًا جديدًا للصفحة</string>
+
+    <string name="rename_dialog_hint">اسم جديد</string>
+
+    <string name="rename_dialog_positive">إعادة تسمية</string>
+
+    <string name="rename_dialog_negative">إلغاء</string>
+
+    <string name="rename_dialog_error_empty">لا يمكن أن يكون الاسم فارغًا</string>
+
+    <string name="rename_dialog_toast_success">✏️ تمت إعادة التسمية إلى: %1$s</string>
+
+    <string name="project_meta_format">%1$s • %2$s</string>
+
+    <string name="project_meta_unknown_size">الحجم غير معروف</string>
+
+    <string name="project_meta_unknown_date">التاريخ غير معروف</string>
+
+    <string name="project_description_placeholder">لم تتم إضافة وصف</string>
+
+    <string name="project_list_empty_title">(لا توجد مشاريع محفوظة بعد)</string>
+
+    <string name="project_list_empty_description">أنشئ مشروعًا جديدًا للبدء</string>
+
+    <string name="prefs_backup_title">نسخ التفضيلات احتياطيًا</string>
+
+    <string name="prefs_export_label">تصدير التفضيلات</string>
+
+    <string name="prefs_export_subtitle">حفظ جميع الإعدادات إلى JSON</string>
+
+    <string name="prefs_import_label">استيراد التفضيلات</string>
+
+    <string name="prefs_import_subtitle">تحميل الإعدادات من JSON</string>
+
+    <string name="prefs_reset_label">إعادة تعيين جميع التفضيلات</string>
+
+    <string name="prefs_reset_subtitle">إعدادات المصنع (اكتب DELETE)</string>
+
+    <string name="prefs_export_success">اكتمل التصدير</string>
+
+    <string name="prefs_export_failed">فشل التصدير</string>
+
+    <string name="prefs_import_success">اكتمل الاستيراد</string>
+
+    <string name="prefs_import_failed">فشل الاستيراد</string>
+
+    <string name="prefs_reset_done">تم إعادة تعيين جميع التفضيلات</string>
+
+    <string name="prefs_reset_failed">فشل إعادة التعيين</string>
+
+    <string name="prefs_reset_type_delete">اكتب DELETE (أحرف كبيرة) لتأكيد إعادة التعيين</string>
+
+    <string name="prefs_reset_not_matched">لم يتطابق الإدخال مع DELETE</string>
+
+    <string name="prefs_preview_label">معاينة JSON</string>
+
+    <string name="prefs_preview_subtitle">فتح &amp; عرض ملف التفضيلات</string>
+
+    <string name="prefs_preview_none">لم يتم تحميل JSON بعد</string>
+
+    <string name="universal_confirm">تأكيد</string>
+
+    <string name="universal_close">إغلاق</string>
+
+    <string name="location_permission_denied">تم رفض إذن الموقع. سيتم تعطيل ميزات الموقع.</string>
+
+    <string name="camera_permission_denied">تم رفض إذن الكاميرا.</string>
+
+    <string name="settings_video_title">تسجيل الفيديو</string>
+
+    <string name="settings_audio_title">إعدادات الصوت</string>
+
+    <string name="settings_watermark_title">العلامة المائية</string>
+
+    <string name="settings_advanced_title">متقدم</string>
+
+    <string name="row_camera_title">الكاميرا</string>
+
+    <string name="row_lens_title">العدسة</string>
+
+    <string name="row_resolution_title">الدقة</string>
+
+    <string name="row_frame_rate_title">معدل الإطارات</string>
+
+    <string name="row_codec_title">الترميز</string>
+
+    <string name="row_bitrate_title">معدل البت</string>
+
+    <string name="row_zoom_ratio_title">نسبة التكبير</string>
+
+    <string name="row_video_splitting_title">تقسيم الفيديو</string>
+
+    <string name="row_orientation_title">الاتجاه</string>
+
+    <string name="row_record_audio_title">تسجيل الصوت</string>
+
+    <string name="row_input_source_title">مصدر الإدخال</string>
+
+    <string name="row_noise_suppression_title">تثبيط الضوضاء</string>
+
+    <string name="settings_location_watermark_title">علامة الموقع المائية</string>
+
+    <string name="delete_single_video_subtitle">إزالة هذا التسجيل</string>
+
+    <string name="switched_front_camera">تم التبديل إلى الكاميرا الأمامية</string>
+
+    <string name="switched_rear_camera">تم التبديل إلى الكاميرا الخلفية</string>
+
+    <string name="torch_select_source">اختر مصدر الفلاش:</string>
+
+    <string name="torch_back">فلاش خلفي</string>
+
+    <string name="torch_front">فلاش أمامي</string>
+
+    <string name="torch_apply">تطبيق</string>
+
+    <string name="torch_cancel">إلغاء</string>
+
+    <string name="torch_recording_note">لا يمكن تغيير الفلاش أثناء التسجيل</string>
+
+    <string name="torch_both">كلا الفلاشين</string>
+
+    <string name="note_debug_detailed">عند التمكين، يكتب FadCam ملف سجل تصحيح HTML (FADCAM_debug.html) في مجلد التنزيلات العام/FadCam/. شارك هذا الملف عند الإبلاغ عن مشاكل. أوقف لإيقاف الكتابات المستقبلية.\nملاحظة: قد يضيف تسجيل التصحيح عبئًا على الأداء أثناء التسجيل — أبقه معطلًا إلا إذا كنت تستكشف مشكلة.</string>
+
+    <string name="watermark_preview_heading">معاينة</string>
+
+    <string name="watermark_options_heading">خيارات</string>
+
+    <string name="watermark_style_row_title">نمط العلامة المائية</string>
+
+    <string name="watermark_preview_sample_fadcam">التقط بواسطة FadCam - %1$s</string>
+
+    <string name="watermark_preview_sample_timeonly">%1$s</string>
+
+    <string name="watermark_style_time_fadcam_label">الوقت مع FadCam</string>
+
+    <string name="watermark_style_timeonly_label">الطابع الزمني</string>
+
+    <string name="watermark_style_badge_label">علامة العلامة التجارية فقط</string>
+
+    <string name="watermark_style_none_label">بدون علامة مائية</string>
+
+    <string name="helper_watermark_preview">هكذا ستظهر العلامة المائية في أعلى يسار الفيديو المسجل.\nحقيقة ممتعة: 10/يوليو/2024 04:47 م هو تاريخ إطلاق FadCam v1.0 لأول مرة.</string>
+
+    <string name="helper_location_watermark_option">تبديل إضافة موقع جهازك كطبقة. يتطلب إذن الموقع.</string>
+
+    <string name="location_format_title">تنسيق الموقع</string>
+
+    <string name="location_format_coordinates">الإحداثيات فقط</string>
+
+    <string name="location_format_address">العنوان الكامل</string>
+
+    <string name="location_update_interval_title">تكرار تحديث الموقع</string>
+
+    <string name="location_update_interval_helper">كم مرة يتم تحديث بيانات الموقع في العلامة المائية. الفترات الأطول تستخدم بطارية أقل.</string>
+
+    <string name="helper_location_format">اختر كيفية ظهور الموقع في العلامة المائية: إحداثيات دقيقة، أو عنوان كامل عبر الترميز الجغرافي العكسي (دقة مستوى المبنى).</string>
+
+    <string name="location_watermark_sheet_title">طبقة الموقع</string>
+
+    <string name="location_watermark_switch_label">طبقة الموقع</string>
+
+    <string name="helper_location_overlay_short">يضيف إحداثيات تقريبية تحت العلامة المائية.</string>
+
+    <string name="helper_theme_option">اختر سمة. يتم التطبيق فورًا.</string>
+
+    <string name="helper_language_option">اختر لغة التطبيق.</string>
+
+    <string name="watermark_disabled_message" translatable="false">Watermark disabled (no watermark will appear in recordings).</string>
+
+    <string name="watermark_custom_text_title">نص العلامة المائية المخصص</string>
+
+    <string name="watermark_custom_text_hint">أدخل نصًا مخصصًا</string>
+
+    <string name="watermark_custom_text_empty">غير مضبوط</string>
+
+    <string name="helper_watermark_custom_text">أضف سطر نص مخصص سيظهر أسفل الطابع الزمني والموقع (إذا مفعّل) في علامتك المائية.\n\nأمثلة: ABC-1234 (كاميرا سيارة)، كاميرا #3، قاعة المؤتمرات A</string>
+
+    <string name="helper_app_icon_option" translatable="false">Select an alternative launcher icon.</string>
+
+    <string name="torch_shortcut_short_label">الفلاش</string>
+
+    <string name="torch_shortcut_long_label">تبديل الفلاش</string>
+
+    <string name="torch_shortcut_disabled">تبديل الفلاش غير متاح حاليًا</string>
+
+    <string name="widgets_helper_text">ثبت الإجراءات السريعة على شاشتك الرئيسية للوصول الفوري.</string>
+
+    <string name="widgets_pin_unsupported">تثبيت الأدوات غير مدعوم من مشغل التطبيقات.</string>
+
+    <string name="widget_clock_title">أداة الساعة</string>
+
+    <string name="widgets_pin_fallback">إذا لم يظهر مربع حوار، اضغط مطولاً على شاشتك الرئيسية، افتح الأدوات، واسحب أداة ساعة FadCam.</string>
+
+    <string name="widget_customize_title">تخصيص أداة الساعة</string>
+
+    <string name="widget_customize_description">تخصيص كيفية عرض أداة الساعة للوقت والتاريخ</string>
+
+    <string name="widget_time_format_title">تنسيق الوقت</string>
+
+    <string name="widget_show_date_title">إظهار التاريخ</string>
+
+    <string name="widget_date_format_title">تنسيق التاريخ</string>
+
+    <string name="widget_black_background_title">خلفية سوداء</string>
+
+    <string name="widget_arabic_date_title">التاريخ العربي</string>
+
+    <string name="widget_arabic_date_format_title">تنسيق التاريخ العربي</string>
+
+    <string name="widget_branding_title">علامة FadSecLab التجارية</string>
+
+    <string name="widget_time_format_12h">12 ساعة (3:30 م)</string>
+
+    <string name="widget_time_format_24h">24 ساعة (15:30)</string>
+
+    <string name="widget_option_enabled">مفعّل</string>
+
+    <string name="widget_option_disabled">معطّل</string>
+
+    <string name="widget_background_transparent">معطّل (شفاف)</string>
+
+    <string name="widget_date_format_sample">13 أغسطس 2025</string>
+
+    <string name="widget_branding_enabled">مفعّل (مع خلفية سوداء)</string>
+
+    <string name="widget_branding_disabled">معطّل</string>
+
+    <string name="widget_branding_requires_background">يتطلب خلفية سوداء</string>
+
+    <string name="arabic_date_format_title">تنسيق التاريخ العربي</string>
+
+    <string name="arabic_date_format_description">اختر كيفية عرض التاريخ الإسلامي</string>
+
+    <string name="arabic_date_full_arabic">عربي كامل</string>
+
+    <string name="arabic_date_month_arabic_numbers_english">شهر عربي، أرقام إنجليزية</string>
+
+    <string name="arabic_date_full_english">إنجليزي كامل</string>
+
+    <string name="arabic_date_sample_full_arabic">٧ صفر ١٤٤٧</string>
+
+    <string name="arabic_date_sample_mixed">7 صفر 1447</string>
+
+    <string name="arabic_date_sample_english">7 Safar 1447</string>
+
+    <string name="arabic_date_description_full_arabic">عربي كامل (٧ صفر ١٤٤٧)</string>
+
+    <string name="arabic_date_description_mixed">شهر عربي، أرقام إنجليزية</string>
+
+    <string name="arabic_date_description_english">إنجليزي كامل</string>
+
+    <string name="arabic_date_description_default">عربي كامل (افتراضي)</string>
+
+    <string name="shortcuts_helper_text">أضف اختصارات من الأعلى. تعمل أيضًا مع تطبيقات الأتمتة (مثل MacroDroid) لتشغيل إجراءات مثل ربط أزرار الصوت.</string>
+
+    <string name="shortcuts_add_to_home">إضافة إلى الشاشة الرئيسية</string>
+
+    <string name="shortcuts_sheet_helper">سيطلب مشغل التطبيقات تحديد الموقع.</string>
+
+    <string name="shortcuts_and_widgets">الاختصارات &amp; الأدوات</string>
+
+    <string name="video_player_settings_title">إعدادات مشغل الفيديو</string>
+
+    <string name="video_player_settings_helper">تغيير سرعة التشغيل يغير السرعة العادية لتشغيل الفيديو. السرعة السريعة هي تعزيز مؤقت يُطبق فقط أثناء الضغط المطول على الفيديو. يمكنك تغيير هذه الإعدادات هنا أو مباشرة من شاشة مشغل الفيديو.</string>
+
+    <string name="video_player_settings_subtitle">سرعة التشغيل &amp; السرعة السريعة</string>
+
+    <string name="playback_speed_label">سرعة التشغيل</string>
+
+    <string name="playback_speed_title">سرعة التشغيل</string>
+
+    <string name="playback_speed_subtitle">تغيير سرعة التشغيل لهذا الفيديو</string>
+
+    <string name="toast_default_playback_speed_set">تم ضبط سرعة التشغيل الافتراضية على %1$s</string>
+
+    <string name="mute_playback_title">كتم التشغيل</string>
+
+    <string name="mute_playback_subtitle">تشغيل الفيديوهات بدون صوت</string>
+
+    <string name="mute_playback_helper">عند التمكين، ستعمل الفيديوهات مكتومة افتراضيًا. يمكنك التبديل هنا أو من شاشة مشغل الفيديو.</string>
+
+    <string name="mute_playback_helper_picker">عند التمكين، ستعمل الفيديوهات مكتومة افتراضيًا.</string>
+
+    <string name="audio_waveform_title">موجة الصوت</string>
+
+    <string name="audio_waveform_subtitle">إظهار تصور الصوت على شريط التقدم</string>
+
+    <string name="waveform_helper_text">يتحكم في ظهور تصور الموجة الصوتية على شريط التقدم أثناء تشغيل الفيديو.</string>
+
+    <string name="waveform_switch_label">تمكين موجة الصوت</string>
+
+    <string name="mute_on_toast">تم كتم التشغيل</string>
+
+    <string name="mute_off_toast">تم إلغاء كتم التشغيل</string>
+
+    <string name="records_hide_thumbnails_title">إخفاء الصور المصغرة</string>
+
+    <string name="records_hide_thumbnails_subtitle">إظهار قائمة بسيطة بدون صور مصغرة</string>
+
+    <string name="video_player_settings_helper_player">يمكنك تغيير هذه الخيارات هنا أو من تبويب الإعدادات أيضًا.</string>
+
+    <string name="playback_controls_heading">عناصر التحكم في التشغيل</string>
+
+    <string name="playback_controls_helper">ضبط سرعة التشغيل أو تعيين سرعة سريعة للضغط المطول. يمكنك تغيير هذه الإعدادات هنا أو من شاشة مشغل الفيديو.</string>
+
+    <string name="controls_hide_delay_title">تأخير إخفاء عناصر التحكم</string>
+
+    <string name="controls_hide_delay_subtitle">%1$dث</string>
+
+    <string name="controls_hide_delay_helper">اختر كم ثانية تبقى عناصر تحكم المشغل مرئية قبل الإخفاء التلقائي. اضبط على إيقاف لإبقاء عناصر التحكم مرئية.</string>
+
+    <string name="sound_heading">الصوت أثناء التشغيل</string>
+
+    <string name="seek_amount_title">مقدار التقديم</string>
+
+    <string name="seek_amount_subtitle">%1$dث</string>
+
+    <string name="seek_amount_helper">اختر كم ثانية يجب أن يتقدم/يرجع زر التقديم/الترجيع والنقر المزدوج.</string>
+
+    <string name="seek_amount_custom">مخصص</string>
+
+    <string name="seek_amount_custom_title">ثواني التقديم المخصصة</string>
+
+    <string name="seek_amount_custom_low_hint">أدخل قيمة بين 1 و 300 ثانية</string>
+
+    <string name="seek_amount_custom_high_hint">قيم التقديم الكبيرة قد تتخطى بعيدًا</string>
+
+    <string name="playback_speed_helper_settings">السرعة الافتراضية لتشغيل الفيديو.</string>
+
+    <string name="playback_speed_helper_player">يؤثر على التشغيل الحالي فقط. لتغيير الافتراضي للفيديوهات المستقبلية، استخدم الإعدادات.</string>
+
+    <string name="quick_speed_helper">السرعة السريعة تُطبق فقط أثناء الضغط المطول أثناء التشغيل.</string>
+
+    <string name="af_mode_title">وضع التركيز التلقائي</string>
+
+    <string name="af_continuous_title">التركيز التلقائي المستمر</string>
+
+    <string name="af_continuous_description">تضبط الكاميرا التركيز تلقائيًا بشكل مستمر. اضغط على المعاينة للتركيز اليدوي.</string>
+
+    <string name="af_manual_title">التركيز مقفل</string>
+
+    <string name="af_manual_description">التركيز مقفل. اضغط على المعاينة للتركيز يدويًا.</string>
+
+    <string name="tap_to_focus_help">اضغط في أي مكان على معاينة الكاميرا للتركيز</string>
+
+    <string name="tap_to_focus_instruction">اضغط على المعاينة للتركيز</string>
+
+    <string name="af_picker_helper">الخيار الافتراضي هو التركيز التلقائي المستمر.</string>
+
+    <string name="keep_screen_on_title">إبقاء الشاشة مستيقظة</string>
+
+    <string name="keep_screen_on_helper_picker">عند التمكين، لن تنام الشاشة أثناء تشغيل الفيديو.</string>
+
+    <string name="background_playback_title">التشغيل في الخلفية</string>
+
+    <string name="background_playback_helper_picker">عند التمكين، يستمر الصوت في التشغيل حتى لو غادرت التطبيق أو أطفأت الشاشة.</string>
+
+    <string name="background_playback_timer_title">مؤقت التشغيل في الخلفية</string>
+
+    <string name="background_playback_timer_title_short">مؤقت التشغيل</string>
+
+    <string name="background_playback_timer_helper">اختر المدة التي يجب أن يستمر فيها التشغيل في الخلفية قبل التوقف التلقائي. اختر إيقاف للتعطيل.</string>
+
+    <string name="timer_off">إيقاف</string>
+
+    <string name="timer_off_short">إيقاف</string>
+
+    <string name="timer_30_seconds">30 ثانية</string>
+
+    <string name="timer_1_minute">دقيقة واحدة</string>
+
+    <string name="timer_5_minutes">5 دقائق</string>
+
+    <string name="timer_15_minutes">15 دقيقة</string>
+
+    <string name="timer_30_minutes">30 دقيقة</string>
+
+    <string name="timer_1_hour">ساعة واحدة</string>
+
+    <string name="timer_seconds_short">%1$dث</string>
+
+    <string name="timer_minutes_short">%1$dد</string>
+
+    <string name="timer_hours_short">%1$dس</string>
+
+    <string name="timer_custom_label">مخصص...</string>
+
+    <string name="timer_custom_title">مؤقت الخلفية المخصص</string>
+
+    <string name="number_input_default_helper">أدخل رقمًا واضغط حسنًا للحفظ.</string>
+
+    <string name="number_input_ok_helper">يبدو جيدًا — اضغط حسنًا للحفظ.</string>
+
+    <string name="timer_custom_low_hint">المؤقتات القصيرة جدًا قد توقف التشغيل أسرع من المتوقع.</string>
+
+    <string name="timer_custom_high_hint">المؤقتات الطويلة جدًا قد تبقى نشطة لفترة طويلة. الحد الأقصى 24 ساعة.</string>
+
+    <string name="timer_custom_description">أدخل عدد الدقائق. أمثلة: 5 = 5 دقائق (300 ثانية). سيوقف المؤقت التشغيل بعد هذا العدد من الدقائق.</string>
+
+    <string name="timer_custom_placeholder">مثال: 5 (دقائق)</string>
+
+    <string name="timer_custom_helper_static">أدخل الدقائق (رقم صحيح). استخدم الآلة الحاسبة أدناه لرؤية الساعات/الدقائق.</string>
+
+    <string name="timer_custom_calc_format">سيوقف التشغيل بعد %1$s (%2$.2f ساعات)</string>
+
+    <string name="timer_disabled_hint">التشغيل في الخلفية معطّل — فعّل \"التشغيل في الخلفية\" لاستخدام المؤقت.</string>
+
+    <string name="shortcuts_customize_title">تخصيص</string>
+
+    <string name="shortcuts_customize_subtitle">الاسم والأيقونة</string>
+
+    <string name="shortcuts_customize_dialog_title">إعادة تسمية الاختصار</string>
+
+    <string name="shortcuts_customize_dialog_save">حفظ</string>
+
+    <string name="shortcuts_customize_action_rename">إعادة تسمية</string>
+
+    <string name="shortcuts_customize_action_change_icon">تغيير الأيقونة</string>
+
+    <string name="shortcuts_choose_icon_title">تغيير أيقونة الاختصار</string>
+
+    <string name="shortcuts_choose_icon_desc">اختر أيقونة لهذا الاختصار. يمكنك الاختيار من مجموعة أيقونات التطبيق أو اختيار صورة من معرضك.</string>
+
+    <string name="shortcuts_choose_from_app_icons">اختيار من أيقونات التطبيق</string>
+
+    <string name="shortcuts_choose_from_gallery">اختيار من المعرض</string>
+
+    <string name="shortcuts_customize_action_reset">إعادة تعيين للافتراضي</string>
+
+    <string name="shortcuts_customize_sheet_desc">تعيين اسم وأيقونة مخصصة لهذا الاختصار.</string>
+
+    <string name="shortcuts_rename_helper">نصيحة: اتركه فارغًا لاستخدام الاسم الافتراضي.</string>
+
+    <string name="shortcuts_rename_action_title">إعادة تسمية</string>
+
+    <string name="shortcuts_rename_action_subtitle">انقر لإعادة التسمية</string>
+
+    <string name="shortcut_purpose_start">يبدأ هذا الاختصار التسجيل بالكاميرا الخلفية.</string>
+
+    <string name="shortcut_purpose_start_front">يبدأ هذا الاختصار التسجيل بالكاميرا الأمامية.</string>
+
+    <string name="shortcut_purpose_start_current">يبدأ هذا الاختصار التسجيل بوضع الكاميرا المحدد حاليًا.</string>
+
+    <string name="shortcut_purpose_start_dual">يبدأ هذا الاختصار تسجيل الكاميرا المزدوجة (PiP).</string>
+
+    <string name="shortcut_purpose_stop">يوقف هذا الاختصار التسجيل الحالي.</string>
+
+    <string name="shortcut_purpose_torch">يبدّل هذا الاختصار الفلاش.</string>
+
+    <string name="shortcut_purpose_photo">يلتقط هذا الاختصار صورة بالكاميرا الخلفية ويحفظها في موقع FadCam/FadShot.</string>
+
+    <string name="shortcut_purpose_photo_front">يلتقط هذا الاختصار صورة بالكاميرا الأمامية ويحفظها في موقع FadCam/FadShot.</string>
+
+    <string name="shortcut_purpose_screenshot">يلتقط هذا الاختصار لقطة شاشة ويحفظها في موقع FadCam/FadShot (فعّل إذن إمكانية الوصول من الإعدادات &gt; الخصوصية &gt; إمكانية الوصول).</string>
+
+    <string name="widget_customize_action_label">تخصيص</string>
+
+    <string name="widget_customize_action_subtitle">خيارات الوقت والتاريخ والسمة</string>
+
+    <string-array name="torch_error_messages">
+        <item>الفلاش قيد التجميع... يرجى عدم الانتظار 🖥️</item>
+        <item>الكاميرا تقول: لا فلاش اليوم 🚦</item>
+        <item>Torch.exe لا يستجيب 🔦</item>
+        <item>تأخير الإصلاح... المطور وصل إلى نقطة توقف عقلية lol 🧠</item>
+        <item>رقعة قادمة قريبًا™... المطور يصحح الحياة 🐛</item>
+    </string-array>
+
+    <string name="start_recording">بدء</string>
+
+    <string name="shortcut_start_back">بدء خلفي</string>
+
+    <string name="shortcut_start_front">بدء أمامي</string>
+
+    <string name="shortcut_start_current">بدء الحالي</string>
+
+    <string name="shortcut_start_dual">بدء مزدوج</string>
+
+    <string name="stop_recording">إيقاف</string>
+
+    <string name="shortcut_take_photo">صورة</string>
+
+    <string name="shortcut_take_photo_front">سيلفي</string>
+
+    <string name="shortcut_take_screenshot">FadRec</string>
+
+    <string name="screenshot_capture_saved">تم حفظ لقطة الشاشة</string>
+
+    <string name="screenshot_capture_failed">تعذر التقاط لقطة الشاشة</string>
+
+    <string name="screenshot_capture_system_saved">تم التقاط لقطة الشاشة بواسطة النظام. محفوظة في لقطات النظام.</string>
+
+    <string name="screenshot_accessibility_enable_needed">فعّل \"لقطة شاشة FadRec\" في إمكانية الوصول لاستخدام هذا الاختصار بدون مطالبة التسجيل.</string>
+
+    <string name="screenshot_accessibility_service_desc">يلتقط لقطة شاشة لاختصار FadRec ويحفظها في FadCam/FadShot.</string>
+
+    <string name="shortcuts_video_category">تسجيل الفيديو</string>
+
+    <string name="shortcuts_picture_category">صورة</string>
+
+    <string name="preview_quick_actions_title">إجراءات المعاينة السريعة</string>
+
+    <string name="preview_quick_actions_sub">إظهار أيقونات FadShot والشاشة الكاملة حتى عندما يكون التسجيل خاملاً.</string>
+
+    <string name="preview_quick_actions_state_always">مرئية دائمًا (خامل + تسجيل)</string>
+
+    <string name="preview_quick_actions_state_recording_only">مرئية فقط أثناء التسجيل</string>
+
+    <string name="warning_temp_file_detail">
+        <![CDATA[
+        <b>ملاحظة مهمة:</b><br/>
+        هذا <b>ملف مؤقت غير معالج</b>. قد تكون معالجة الفيديو (مثل إضافة علامة مائية) قد فشلت أو قوطعت.<br/><br/>
+        <b>الإجراء الموصى به:</b><br/>
+        <b>1. أعد تسمية</b> هذا الملف الآن (باستخدام القائمة).<br/>
+        <b>2. احفظه</b> في معرضك (باستخدام القائمة).<br/><br/>
+        هذا يؤمن تسجيلك. بعد التأكد من حفظه بشكل صحيح في تطبيق المعرض، يمكنك بأمان <b>حذف هذا الملف المؤقت</b> من قائمة التسجيلات إذا رغبت.<br/><br/>
+        الاستمرار في التسجيل بدون حفظ قد يعرض هذا الملف للخطر إذا تم مسح ذاكرة التخزين المؤقت للتطبيق بشكل غير متوقع.
+        ]]>
+    </string>
+
+    <string name="recording_already_active">التسجيل قيد التقدم أو متوقف مؤقتًا بالفعل.</string>
+
+    <string-array name="theme_options" translatable="false">
+        <item>Midnight Dusk</item>
+        <item>Faded Night</item>
+        <item>Crimson Bloom</item>
+        <item>Silent Forest</item>
+        <item>Shadow Alloy</item>
+        <item>Pookie Pink</item>
+        <item>Snow Veil</item>
+    </string-array>
+
+    <string name="theme_red" translatable="false">Crimson Bloom</string>
+
+    <string name="theme_gold" translatable="false">Premium Gold</string>
+
+    <string name="theme_silentforest" translatable="false">Silent Forest</string>
+
+    <string name="theme_shadowalloy" translatable="false">Shadow Alloy</string>
+
+    <string name="theme_pookiepink" translatable="false">Pookie Pink</string>
+
+    <string name="theme_snowveil" translatable="false">Snow Veil</string>
+
+    <string name="stream_view_all_endpoints_desc">عرض جميع نقاط نهاية API (GET/POST)</string>
+
+    <string name="stream_uptime_label">وقت التشغيل</string>
+
+    <string name="stream_clients_label">العملاء</string>
+
+    <string name="stream_battery_label">البطارية</string>
+
+    <string name="stream_segments_label">المقاطع</string>
+
+    <string name="stream_network_label">الشبكة</string>
+
+    <string name="stream_storage_label">التخزين</string>
+
+    <string name="stream_memory_label">الذاكرة</string>
+
+    <string name="stream_data_sent_label">البيانات المرسلة</string>
+
+    <string name="stream_server_url_label">عنوان URL للخادم</string>
+
+    <string name="stream_server_room_label">غرفة الخادم</string>
+
+    <string name="stream_stream_quality_label">جودة البث</string>
+
+    <string name="stream_notes_title">ملاحظات</string>
+
+    <string name="coming_soon_toast">قريباً! إن شاء الله</string>
+
+    <string name="faditor_mini_title">Faditor Mini</string>
+
+    <string name="faditor_mini_coming_soon">قريباً — محرر خفيف</string>
+
+    <string name="faditor_mini_subtitle">قص وتصدير فيديوهاتك بدقة</string>
+
+    <string name="faditor_mini_toast">Faditor Mini — قريباً</string>
+
+    <string name="faditor_select_video">اختر فيديو</string>
+
+    <string name="faditor_editor_title">Faditor Mini</string>
+
+    <string name="faditor_close">إغلاق المحرر</string>
+
+    <string name="faditor_undo">تراجع</string>
+
+    <string name="faditor_redo">إعادة</string>
+
+    <string name="faditor_play_pause">تشغيل أو إيقاف مؤقت</string>
+
+    <string name="faditor_export">تصدير</string>
+
+    <string name="faditor_cancel">إلغاء</string>
+
+    <string name="faditor_exporting">جارٍ التصدير…</string>
+
+    <string name="faditor_exporting_percent">جارٍ التصدير… %1$d%%</string>
+
+    <string name="faditor_export_success">تم تصدير الفيديو بنجاح</string>
+
+    <string name="faditor_export_error">فشل التصدير: %1$s</string>
+
+    <string name="faditor_export_in_progress">التصدير قيد التقدم بالفعل</string>
+
+    <string name="faditor_remuxing">جارٍ التحسين للمعاينة…</string>
+
+    <string name="faditor_remuxing_percent">جارٍ التحسين… %1$dث معالج</string>
+
+    <string name="faditor_error_no_video">لم يتم اختيار فيديو</string>
+
+    <string name="faditor_error_picker">تعذر فتح منتقي الملفات</string>
+
+    <string name="faditor_tool_trim">قص</string>
+
+    <string name="faditor_tool_speed">1x</string>
+
+    <string name="faditor_tool_muted">مكتوم</string>
+
+    <string name="faditor_tool_sound">الصوت</string>
+
+    <string name="faditor_speed_title">سرعة التشغيل</string>
+
+    <string name="faditor_speed_reset">إعادة تعيين إلى 1x</string>
+
+    <string name="faditor_volume_title">مستوى الصوت</string>
+
+    <string name="faditor_volume_warning">فوق 100%% قد يقلل جودة الصوت</string>
+
+    <string name="faditor_volume_mute">كتم الصوت</string>
+
+    <string name="faditor_volume_unmute">إلغاء كتم الصوت</string>
+
+    <string name="faditor_tool_volume">الصوت</string>
+
+    <string name="faditor_tool_rotate">تدوير</string>
+
+    <string name="faditor_tool_flip">قلب</string>
+
+    <string name="faditor_tool_crop">قص الإطار</string>
+
+    <string name="faditor_tool_crop_free">حر</string>
+
+    <string name="faditor_tool_canvas">لوحة الرسم</string>
+
+    <string name="faditor_canvas_title">لوحة الرسم</string>
+
+    <string name="faditor_canvas_applied">تم تعيين لوحة الرسم إلى %s</string>
+
+    <string name="faditor_tool_audio">استخراج الصوت</string>
+
+    <string name="faditor_audio_extract_current">استخراج من الفيديو</string>
+
+    <string name="faditor_audio_extract_current_desc">استخراج مسار الصوت من الفيديو الحالي</string>
+
+    <string name="faditor_audio_extracting">جارٍ استخراج الصوت…</string>
+
+    <string name="faditor_audio_extracted">تم استخراج الصوت وإضافته إلى الجدول الزمني</string>
+
+    <string name="faditor_audio_extract_failed">تعذر استخراج الصوت</string>
+
+    <string name="faditor_audio_added">تمت إضافة الصوت إلى الجدول الزمني</string>
+
+    <string name="faditor_audio_no_track">لم يتم العثور على مسار صوتي في هذا الفيديو</string>
+
+    <string name="faditor_tool_split">تقسيم</string>
+
+    <string name="faditor_tool_delete">حذف</string>
+
+    <string name="faditor_tool_duplicate">تكرار</string>
+
+    <string name="faditor_tool_add">إضافة</string>
+
+    <string name="faditor_add_asset_title">إضافة عنصر</string>
+
+    <string name="faditor_add_asset_image">صورة (5 ثوانٍ ثابتة)</string>
+
+    <string name="faditor_add_asset_video">مقطع فيديو</string>
+
+    <string name="faditor_asset_added">تمت إضافة العنصر إلى الجدول الزمني</string>
+
+    <string name="faditor_asset_error">تعذر إضافة العنصر</string>
+
+    <string name="faditor_split_success">تم تقسيم المقطع إلى اثنين</string>
+
+    <string name="faditor_split_error">لا يمكن التقسيم هنا — قريب جدًا من الحافة</string>
+
+    <string name="faditor_delete_last_segment">لا يمكن حذف المقطع الوحيد</string>
+
+    <string name="faditor_segment_deleted">تم حذف المقطع</string>
+
+    <string name="faditor_segment_duplicated">تم تكرار المقطع</string>
+
+    <string name="faditor_crop_title">نسبة_aspect القص</string>
+
+    <string name="faditor_crop_free">حر</string>
+
+    <string name="faditor_crop_applied">تم تطبيق القص</string>
+
+    <string name="faditor_crop_cancelled">تم إلغاء القص</string>
+
+    <string name="faditor_crop_reset">تم إعادة تعيين القص</string>
+
+    <string name="faditor_close_confirm_title">إغلاق المحرر؟</string>
+
+    <string name="faditor_close_confirm_action">إغلاق &amp; حفظ</string>
+
+    <string name="faditor_close_confirm_subtitle">حفظ المشروع والعودة</string>
+
+    <string name="faditor_close_confirm_helper">سيتم حفظ مشروعك تلقائيًا. يمكنك إعادة فتحه من المشاريع الحديثة في أي وقت.</string>
+
+    <string name="faditor_back_press_exit">اضغط مرة أخرى للخروج من المحرر</string>
+
+    <string name="faditor_export_back_confirm">التصدير قيد التقدم. العودة إلى المحرر؟</string>
+
+    <string name="faditor_export_done">تم</string>
+
+    <string name="faditor_export_back">رجوع</string>
+
+    <string name="faditor_export_eta">الوقت المقدر: %s</string>
+
+    <string name="faditor_export_complete_title">اكتمل التصدير</string>
+
+    <string name="faditor_export_complete_summary">تم حفظ الفيديو في تبويب التسجيلات.</string>
+
+    <string name="faditor_export_confirm_title">تصدير الفيديو</string>
+
+    <string name="faditor_export_confirm_action">تصدير الآن</string>
+
+    <string name="faditor_export_confirm_subtitle">سيستمر التصدير في الخلفية</string>
+
+    <string name="faditor_export_confirm_helper">%1$s • %2$d مقطع%3$s\nيعمل التصدير كخدمة خلفية — يمكنك إغلاق التطبيق وسيستمر التصدير.</string>
+
+    <string name="faditor_export_notif_channel">تصدير Faditor</string>
+
+    <string name="faditor_export_notif_channel_desc">إشعارات لتصديرات الفيديو الجارية</string>
+
+    <string name="faditor_export_notif_title">جارٍ تصدير الفيديو…</string>
+
+    <string name="faditor_export_notif_error_title">فشل التصدير</string>
+
+    <string name="faditor_export_progress">جارٍ التصدير…</string>
+
+    <string name="faditor_export_completed">اكتمل التصدير</string>
+
+    <string name="faditor_export_cancelled">تم إلغاء التصدير</string>
+
+    <string name="faditor_export_failed">فشل التصدير</string>
+
+    <string name="export_eta_seconds">الوقت المتبقي %d ث</string>
+
+    <string name="export_eta_minutes">الوقت المتبقي %d د</string>
+
+    <string name="export_eta_hours">الوقت المتبقي %d س</string>
+
+    <string name="export_complete">مكتمل</string>
+
+    <string name="export_file_size">%s</string>
+
+    <string name="export_error_hint">اضغط للإغلاق</string>
+
+    <string name="export_status">حالة التصدير</string>
+
+    <string name="faditor_export_info">%1$s • %2$d مقطع%3$s • H.264 + AAC</string>
+
+    <string name="faditor_flip_title">قلب</string>
+
+    <string name="faditor_home_tagline">محرر فيديو خفيف</string>
+
+    <string name="faditor_new_project">مشروع جديد</string>
+
+    <string name="faditor_start_project">بدء مشروع جديد</string>
+
+    <string name="faditor_recent_projects">المشاريع الحديثة</string>
+
+    <string name="faditor_capabilities_title">ما يمكنك فعله</string>
+
+    <string name="faditor_feature_trim">قص دقيق</string>
+
+    <string name="faditor_feature_trim_desc">قص فيديوهاتك للإطار الدقيق الذي تريده</string>
+
+    <string name="faditor_feature_export">تصدير سريع</string>
+
+    <string name="faditor_feature_export_desc">تصدير بصيغة MP4 مع ترميز مسرع بالأجهزة</string>
+
+    <string name="faditor_feature_preview">معاينة مباشرة</string>
+
+    <string name="faditor_feature_preview_desc">تشغيل فوري لمقاطعك المقصوصة</string>
+
+    <string name="faditor_feature_privacy">100% بدون اتصال</string>
+
+    <string name="faditor_feature_privacy_desc">يحدث كل التحرير محليًا — بدون رفع، بدون سحابة</string>
+
+    <string name="faditor_feature_convert">تحويل ذكي</string>
+
+    <string name="faditor_feature_convert_desc">يحول تلقائيًا التسجيلات الآمنة من الأعطال إلى MP4 قابل للبحث لتشغيل سلس في كل مكان</string>
+
+    <string name="faditor_select_items">تحديد العناصر</string>
+
+    <string name="faditor_selected_count">تم تحديد %1$d</string>
+
+    <string name="faditor_delete_projects_title">حذف المشاريع؟</string>
+
+    <string name="faditor_delete_projects_message">حذف %1$d مشروع؟ لا يمكن التراجع عن هذا.</string>
+
+    <string name="faditor_delete_confirm">حذف</string>
+
+    <string name="faditor_version_info">Faditor Mini · المرحلة 1 · قص + تصدير</string>
+
+    <string name="faditor_empty_title">لا توجد مشاريع بعد</string>
+
+    <string name="faditor_empty_desc">اضغط \"بدء مشروع جديد\" لاختيار فيديو وبدء التحرير</string>
+
+    <string name="faditor_info_title">حول Faditor Mini</string>
+
+    <string name="faditor_info_subtitle">كل ما تحتاج معرفته حول المحرر المدمج</string>
+
+    <string name="faditor_info_how_title">كيف يعمل</string>
+
+    <string name="faditor_info_how_desc">اختر أي فيديو من جهازك أو تسجيلات FadCam. قصه إطارًا بإطار باستخدام الجدول الزمني، ثم صدر. تحدث كل المعالجة محليًا على جهازك — لا يتم رفع أي شيء.\n\nيتم حفظ تقدم التحرير تلقائيًا كل بضع ثوانٍ وعند مغادرة المحرر، لذا لا يضيع أي عمل إذا أغلق التطبيق بشكل غير متوقع.</string>
+
+    <string name="faditor_info_convert_title">التحويل الذكي</string>
+
+    <string name="faditor_info_convert_desc">يسجل FadCam بتنسيق آمن من الأعطال يسمى MP4 المجزأ (fMP4). على عكس MP4 القياسي الذي يحتوي على حاوية واحدة نهائية، يكتب fMP4 الفيديو في قطع صغيرة مستقلة. هذا يعني أن لقطاتك تبقى سليمة حتى لو تعطل التطبيق أو توقف التسجيل فجأة.\n\nومع ذلك، لن تتمكن مشغلات الفيديو الخارجية وتطبيقات المعرض ومديري الملفات من البحث أو التقديم أو عرض المدة الصحيحة لهذه الملفات. هذا ليس خطأ — إنه مقايضة تصميم متعمدة للموثوقية.\n\nإذا كنت تخطط لتخزين فيديوهاتك خارج FadCam — على Google Drive أو جهاز كمبيوتر أو أي موقع آخر — يجب تحويلها أولاً. وإلا ستكون الملفات غير قابلة للاستخدام للتشغيل العادي.\n\nللتحويل: افتح الفيديو هنا في Faditor Mini واضغط تصدير ببساطة. سيظهر MP4 القياسي المحول في تبويب التسجيلات، جاهزًا للحفظ في المعرض أو المشاركة في أي مكان. العملية فورية وبدون فقدان — بدون إعادة ترميز أو فقدان جودة.</string>
+
+    <string name="faditor_info_export_title">الملفات المصدرة</string>
+
+    <string name="faditor_info_export_desc">يتم حفظ الفيديوهات المصدرة في موقع التخزين النشط (نفس الموقع المُعد في الإعدادات) بالبادئة \"Faditor_\" متبوعة بطابع زمني. تظهر في تبويب التسجيلات بجانب تسجيلاتك الأصلية.</string>
+
+    <string name="faditor_info_temp_title">الملفات المؤقتة وذاكرة التخزين المؤقت</string>
+
+    <string name="faditor_info_temp_desc">عند تحميل فيديو fMP4 للتحرير، يكتشف Faditor إذا كان الملف يحتاج \"إعادة تحويل\" — تحويل سريع يضيف علامات بحث بدون إعادة ترميز. يتم تخزين الملفات المحولة مؤقتًا على جهازك لإعادة استخدامها إذا حررت نفس الفيديو مرة أخرى، مما يوفر الوقت والمعالجة.\n\nيمكنك رؤية حجم ذاكرة التخزين المؤقت لكل مشروع مدرج بجانب تاريخ التعديل. إذا كانت مساحة تخزين جهازك منخفضة، يمكنك حذف المشاريع غير المستخدمة لمسح ملفات إعادة التحويل المخزنة مؤقتًا.\n\nيتم تنظيف هذه الملفات المؤقتة تلقائيًا عند حذف مشروع من هذا التبويب.</string>
+
+    <string name="faditor_info_projects_title">المشاريع الحديثة</string>
+
+    <string name="faditor_info_projects_desc">يتم عرض جميع جلسات التحرير للوصول السريع. كل مشروع مخزن كملف JSON صغير على جهازك يحتوي على URI الفيديو ونقاط القص والطوابع الزمنية — لا يتم نسخ فيديوهاتك. يتم حفظ المشاريع تلقائيًا كل بضع ثوانٍ، لذا لا يضيع تقدمك أبدًا.\n\nيمكنك حذف المشاريع التي لم تعد تحتاجها باستخدام أيقونة قائمة المراجعة المتعددة. حذف المشروع يزيل فقط بيانات جلسة التحرير؛ ملفات الفيديو الأصلية تبقى سليمة.</string>
+
+    <string name="faditor_your_recordings">تسجيلاتك</string>
+
+    <string name="faditor_browse_device">تصفح الجهاز</string>
+
+    <string name="faditor_no_recordings">لم يتم العثور على تسجيلات بعد. ابدأ التسجيل مع FadCam لرؤية فيديوهاتك هنا.</string>
+
+    <string name="faditor_video_count">%1$d فيديو</string>
+
+    <string name="faditor_fadcam_source">FadCam</string>
+
+    <string name="faditor_fadrec_source">FadRec</string>
+
+    <string name="faditor_browse_device_desc">اختر أي فيديو من جهازك</string>
+
+    <string name="faditor_scanning">جارٍ مسح التسجيلات…</string>
+
+    <string name="faditor_source_chooser_desc">اختر فيديو من معرضك أو اختر واحدًا من تسجيلات FadCam</string>
+
+    <string name="faditor_recordings_helper">فيديوهات مسجلة بـ FadCam من موقع التخزين النشط</string>
+
+    <string name="helper_record_audio">تبديل التقاط صوت الميكروفون في الفيديوهات.</string>
+
+    <string name="helper_audio_input_source">اختر أي ميكروفون/مدخل متصل لاستخدامه.</string>
+
+    <string name="helper_noise_suppression">فلتر تجريبي لتقليل الضوضاء الخلفية.</string>
+
+    <string name="helper_audio_advanced">تخصيص معدل البت ومعدل أخذ العينات لتوازن الجودة/الحجم.</string>
+
+    <string name="helper_audio_bitrate_detail">موصى به: 192000 بت/ثانية للصوت الاستريو عالي الجودة. القيم الأقل تقلل حجم الملف لكن قد تقلل الوضوح. النطاق 64000–384000 بت/ثانية.</string>
+
+    <string name="helper_audio_sampling_detail">اختر 48000 هرتز للفيديو (موصى به) أو 44100 هرتز لتوافق الصوت العام.</string>
+
+    <string name="helper_audio_sampling_recommended">موصى به: 48000 هرتز</string>
+
+    <string name="universal_reset">إعادة تعيين</string>
+
+    <string name="label_recommended">(موصى به)</string>
+
+    <string name="universal_back">رجوع</string>
+
+    <string name="helper_audio_bitrate_low_hint">أقل من 128k: قد ينخفض الوضوح</string>
+
+    <string name="helper_audio_bitrate_high_hint">أعلى من 320k: ملفات أكبر،_gain طفيف</string>
+
+    <string name="audio_bitrate_recommended_line">موصى به: 192000 بت/ثانية</string>
+
+    <string name="helper_location_watermark">يضيف طبقة نص الموقع المباشر أثناء التسجيل.</string>
+
+    <string name="helper_location_embed">يضمّن إحداثيات GPS في بيانات الفيديو الوصفية (geotag).</string>
+
+    <string name="video_setting_location_embed_title">تضمين بيانات الموقع الوصفية</string>
+
+    <string name="video_setting_location_embed_enabled">مفعّل</string>
+
+    <string name="video_setting_location_embed_disabled">معطّل</string>
+
+    <string name="helper_watermark_option">اختر محتوى التراكب: الطابع الزمني + العلامة التجارية، الطابع الزمني فقط، أو لا شيء.</string>
+
+    <string name="universal_enter_number">أدخل رقمًا</string>
+
+    <string name="universal_min_value">الحد الأدنى %1$d</string>
+
+    <string name="universal_max_value">الحد الأقصى %1$d</string>
+
+    <string name="universal_ok">حسنًا</string>
+
+    <string name="universal_enable">تمكين</string>
+
+    <string name="universal_disable">تعطيل</string>
+
+    <string name="delete_video_dialog_title">حذف الفيديو؟</string>
+
+    <string name="delete_video_dialog_message">هل أنت متأكد من رغبتك في حذف %1$s؟</string>
+
+    <string name="delete_video_progress">جارٍ حذف %1$s...</string>
+
+    <string name="delete_video_success_toast">تم حذف \'%1$s\'.</string>
+
+    <string name="delete_video_fail_toast">فشل حذف \'%1$s\'.</string>
+
+    <string name="delete_video_cancelled_toast">تم إلغاء الحذف.</string>
+
+    <string name="delete_video_error_null_toast">خطأ: لا يمكن حذف عنصر فارغ.</string>
+
+    <string name="delete_videos_success_toast">تم حذف جميع فيديوهات %1$d.</string>
+
+    <string name="delete_videos_partial_success_toast">تم حذف %1$d فيديو. فشل حذف %2$d.</string>
+
+    <string name="delete_videos_log">جارٍ حذف %1$d فيديو محدد…</string>
+
+    <string name="auto_delete_immediate">فوري</string>
+
+    <string name="trash_auto_delete_info_immediate">يتم حذف العناصر فورًا.</string>
+
+    <string name="universal_deleted">تم الحذف</string>
+
+    <string name="universal_delete_failed">فشل الحذف</string>
+
+    <string name="setting_cloak_recents_title">حظر لقطات الشاشة وإخفاء في الأخيرة</string>
+
+    <string name="setting_cloak_recents_switch">إخفاء المعاينة</string>
+
+    <string name="setting_cloak_recents_helper">يخفي معاينة التطبيق في التطبيقات الأخيرة ويحظر لقطات الشاشة داخل التطبيق. هذا يمنع التقاط المحتوى الحساس أو ظهوره في مبدل التطبيقات.\n(الافتراضي: معطل)</string>
+
+    <string name="setting_enabled_msg">مفعّل</string>
+
+    <string name="setting_disabled_msg">معطّل</string>
+
+    <string name="essential_permissions_missing">أذونات أساسية مفقودة. يرجى منحها للمتابعة.</string>
+
+    <string name="records_search_hint">البحث في التسجيلات…</string>
+
+    <string name="saf_permission_missing_dialog_instructions">إذن SAF مفقود. يرجى منح الوصول إلى المجلد المختار.</string>
+
+    <string name="saf_permission_missing_dialog_title">مطلوب إذن SAF</string>
+
+    <string name="saf_permission_missing_dialog_message_for_start_recording">لحفظ التسجيلات في موقع مخصص، يحتاج FadCam إلى إذن للوصول إلى المجلد المحدد. يرجى منح الوصول عند المطالبة.</string>
+
+    <string name="grant_permission_button">منح الإذن</string>
+
+    <string name="trash_auto_delete_picker_helper">اختر متى يتم حذف العناصر في سلة المهملات تلقائيًا.</string>
+
+    <string name="support_ko_fi">ادعمنا على Ko-fi</string>
+
+    <string name="kofi_description">سيتم تعيين الوصف في الكود.</string>
+
+    <string name="kofi_button_text">اشترِ لي Ko-fi</string>
+
+    <string name="kofi_footer_text">صُنع بـ    في FadSec Lab في   </string>
+
+    <string name="choose_language">اختر اللغة</string>
+
+    <string name="onboarding_human_checkbox3">أوافق على سياسة الخصوصية</string>
+
+    <string name="applock_set_pin_enable">تعيين رمز PIN &amp; تمكين</string>
+
+    <string name="applock_helper_create">أنشئ حماية لتبويب التسجيلات باستخدام رمز PIN من 4 أرقام أو كلمة مرور أو بصمة. سيتم القفل تلقائيًا عند انتقال التطبيق للخلفية.</string>
+
+    <string name="applock_helper_manage_disabled">رمز PIN لقفل التبويب مضبوط. بدّله لتطلب رمز PIN عند العودة للتطبيق.</string>
+
+    <string name="applock_helper_enabled">قفل التبويب نشط. ستحتاج رمز PIN عند فتح تبويب التسجيلات بعد مغادرة التطبيق.</string>
+
+    <string name="version_format">v%s</string>
+
+    <string name="edit_with_faditorx">تحرير بـ Faditor Mini</string>
+
+    <string name="remote_coming_soon_badge">قريباً</string>
+
+    <string name="setting_eye_color_title">لون العين</string>
+
+    <string name="setting_eye_color_desc">اختر لون توهج عين الصورة الرمزية</string>
+
+    <string name="eye_color_white" translatable="false">White</string>
+
+    <string name="eye_color_ruby" translatable="false">Ruby</string>
+
+    <string name="eye_color_teal" translatable="false">Cyan</string>
+
+    <string name="eye_color_violet" translatable="false">Violet</string>
+
+    <string name="eye_color_cobalt" translatable="false">Cobalt</string>
+
+    <string name="eye_color_amber" translatable="false">Amber</string>
+
+    <string name="eye_color_jade" translatable="false">Lime</string>
+
+    <string name="eye_color_magenta" translatable="false">Magenta</string>
+
+    <string name="setting_header_logo_title">شعار الرأس</string>
+
+    <string name="setting_header_logo_desc">اختر نمط شعار الرأس</string>
+
+    <string name="header_logo_default" translatable="false">FadCam</string>
+
+    <string name="header_logo_avatar" translatable="false">Avatar</string>
+
+    <string name="app_icon_default" translatable="false">Legacy</string>
+
+    <string name="app_icon_alternative" translatable="false">Camera</string>
+
+    <string name="app_icon_faded" translatable="false">0xFF0000</string>
+
+    <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
+
+    <string name="app_icon_pakistan" translatable="false">FadCam</string>
+
+    <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
+
+    <string name="app_icon_noor" translatable="false">Noor</string>
+
+    <string name="app_icon_bat" translatable="false">FadCam</string>
+
+    <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
+
+    <string name="app_icon_notes" translatable="false">Notes</string>
+
+    <string name="app_icon_calculator" translatable="false">Calculator</string>
+
+    <string name="app_icon_clock" translatable="false">Clock</string>
+
+    <string name="app_icon_weather" translatable="false">Weather</string>
+
+    <string name="app_icon_football" translatable="false">FootballX 2024</string>
+
+    <string name="app_icon_car" translatable="false">ClutchX</string>
+
+    <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
+
+    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
+
+    <string name="changelog_label">ما الجديد</string>
+
+    <string name="general">عام</string>
+
+    <string name="recording_quick_access">الوصول السريع للتسجيل</string>
+
+    <string name="settings_section_app">التطبيق</string>
+
+    <string name="settings_notifications_title">الإشعارات</string>
+
+    <string name="settings_notifications_subtitle">التسجيل &amp; الإعداد المسبق</string>
+
+    <string name="settings_security_title">الأمان</string>
+
+    <string name="settings_advanced_subtitle">Motion Lab وعناصر التحكم للمستخدم المتقدم</string>
+
+    <string name="digital_forensics_title">التحليل الجنائي الرقمي</string>
+
+    <string name="forensic_intelligence_title">الاستخبارات الجنائية</string>
+
+    <string name="digital_forensics_row_subtitle">الجدول الزمني للأدلة وإعادة ربط الهوية والرؤى الذكية</string>
+
+    <string name="digital_forensics_enable">تمكين التحليل الجنائي الرقمي</string>
+
+    <string name="digital_forensics_status_enabled">مفعّل (جمع البيانات الوصفية للأحداث الجنائية)</string>
+
+    <string name="digital_forensics_status_enabled_short">مفعّل</string>
+
+    <string name="digital_forensics_status_disabled">معطّل</string>
+
+    <string name="digital_forensics_event_person">أحداث الأشخاص</string>
+
+    <string name="digital_forensics_event_vehicle">أحداث المركبات</string>
+
+    <string name="digital_forensics_event_pet">أحداث الحيوانات الأليفة</string>
+
+    <string name="digital_forensics_event_dangerous_object">وسوم الأجسام الخطرة</string>
+
+    <string name="digital_forensics_overlay">إظهار تراكب AI في المعاينة المباشرة</string>
+
+    <string name="digital_forensics_daily_summary">الملخص اليومي</string>
+
+    <string name="digital_forensics_heatmap">رؤى الخريطة الحرارية</string>
+
+    <string name="digital_forensics_discord_alerts">تنبيهات Discord</string>
+
+    <string name="digital_forensics_coming_soon">مخطط لتحديث مستقبلي.</string>
+
+    <string name="digital_forensics_coming_soon_short">قريباً</string>
+
+    <string name="digital_forensics_discord_coming_soon_toast">ستتم إضافة تنبيهات Discord في تحديث مستقبلي.</string>
+
+    <string name="digital_forensics_helper">التحليل الجنائي الرقمي له جزأين: تراكب المعاينة المباشرة والأدلة المحفوظة. إذا كنت تريد فقط تسميات AI بصرية مباشرة، أبقِ جمع الأدلة معطلاً. إذا كنت تحتاج تاريخ جنائي، فعّل جمع الأدلة واختر ما يجب تخزينه.</string>
+
+    <string name="digital_forensics_enable_helper">فكر فيه كمستشعر أدلة ذكي. عند التمكين، يحتفظ FadCam بجدول زمني للنشاط المكتشف حتى تتمكن من القفز إلى اللحظات المهمة لاحقًا.</string>
+
+    <string name="digital_forensics_evidence_enable">تمكين جمع الأدلة</string>
+
+    <string name="digital_forensics_evidence_helper">عند التمكين، تُكتب الاكتشافات إلى قاعدة البيانات الجنائية مع إطارات إثبات محفوظة في الوقت الفعلي. أبقِ هذا معطلاً إذا كنت تريد فقط تسميات المعاينة المباشرة بدون نمو التخزين.</string>
+
+    <string name="digital_forensics_capture_scope">نطاق التقاط الأدلة</string>
+
+    <string name="digital_forensics_scope_both">الأشخاص والأجسام</string>
+
+    <string name="digital_forensics_scope_people">الأشخاص فقط</string>
+
+    <string name="digital_forensics_scope_objects">الأجسام فقط</string>
+
+    <string name="digital_forensics_scope_both_helper">الأفضل لأدلة الأمان الكاملة: الأشخاص بالإضافة إلى الأجسام غير الشخصية.</string>
+
+    <string name="digital_forensics_scope_people_helper">تخزين اكتشافات الأشخاص فقط لتقليل التخزين والتركيز على النشاط البشري.</string>
+
+    <string name="digital_forensics_scope_objects_helper">تخزين اكتشافات غير الأشخاص فقط (المركبات، الحيوانات الأليفة، الأجسام).</string>
+
+    <string name="digital_forensics_scope_picker_helper">اختر ما يجب حفظه كأدلة. هذا يؤثر على صفوف قاعدة البيانات وإطارات الإثبات المحفوظة.</string>
+
+    <string name="digital_forensics_motion_lab_dependency">Motion Lab معطل حاليًا. يعتمد التسجيل الجنائي على تحليل Motion Lab. فعّل Motion Lab أولاً لالتقاط الأحداث الجنائية.</string>
+
+    <string name="digital_forensics_person_helper">يسجل الأحداث عند اكتشاف شخص في جلسات Motion. الخيار الأفضل لمراقبة الغرف المنزلية وسجلات نقاط الدخول.</string>
+
+    <string name="digital_forensics_vehicle_helper">وسم المركبات يحتاج نموذج مخصص ولا يزال قيد التوسيع. يمكنك إبقاء هذا معطلاً حتى يصل دعم النموذج.</string>
+
+    <string name="digital_forensics_pet_helper">وسم الحيوانات الأليفة يحتاج نموذج مخصص ولا يزال قيد التوسيع. فعّله فقط إذا كنت تختبر الدعم المبكر.</string>
+
+    <string name="digital_forensics_dangerous_helper">الوسم المتقدم للسلامة اختياري وصارم. أبقِ هذا معطلاً إلا إذا كنت تريد تحديدًا وسوم أمان عالية الحساسية.</string>
+
+    <string name="digital_forensics_overlay_helper">عند التوفر، يرسم تسميات بسيطة في المعاينة المباشرة حتى تتمكن من رؤية ما يلاحظه AI في الوقت الفعلي. أوقف لمعاينة نظيفة.</string>
+
+    <string name="digital_forensics_daily_helper">يعرض تقريرًا يوميًا بسيطًا مثل إجمالي الأحداث وأنواع الأحداث، حتى تتمكن من مراجعة النشاط بسرعة بدون فتح كل فيديو.</string>
+
+    <string name="digital_forensics_heatmap_helper">يبني خريطة حركة من المواقع المكتشفة. المناطق الأكثر إشراقًا تعني نشاطًا متكررًا في تلك المنطقة من عرض الكاميرا.</string>
+
+    <string name="digital_forensics_picker_enabled_desc">فعّل هذا الخيار.</string>
+
+    <string name="digital_forensics_picker_disabled_desc">عطّل هذا الخيار.</string>
+
+    <string name="digital_forensics_picker_switch_label">تمكين هذا الخيار</string>
+
+    <string name="universal_enabled">مفعّل</string>
+
+    <string name="universal_disabled">معطّل</string>
+
+    <string name="forensics_events_title">الجدول الزمني للأحداث</string>
+
+    <string name="forensics_events_subtitle">تصفية الاكتشافات والانتقال إلى اللحظات الدقيقة.</string>
+
+    <string name="forensics_events_empty">لم يتم العثور على أحداث للفلاتر المحددة.</string>
+
+    <string name="forensics_filter_all">الكل</string>
+
+    <string name="forensics_filter_person">شخص</string>
+
+    <string name="forensics_filter_vehicle">مركبة</string>
+
+    <string name="forensics_filter_pet">حيوان أليف</string>
+
+    <string name="forensics_filter_object">جسم</string>
+
+    <string name="forensics_filter_high_conf">الثقة العالية فقط</string>
+
+    <string name="forensics_filter_all_subtypes">جميع الأنواع الفرعية</string>
+
+    <string name="forensics_insights_title">الإحاطة الاستخباراتية</string>
+
+    <string name="forensics_insights_subtitle">تحليل التهديدات وتقرير الموقف لمدة 24 ساعة.</string>
+
+    <string name="forensics_heatmap_cd">خريطة النشاط الحرارية</string>
+
+    <string name="forensics_heatmap_legend">البقع الأكثر إشراقًا تعني حركة متكررة. البقع الخافتة تعني نشاط أقل.</string>
+
+    <string name="intel_total_detections">إجمالي الاكتشافات</string>
+
+    <string name="intel_threat_assessment">تقييم التهديدات</string>
+
+    <string name="intel_detection_breakdown">تفصيل الاكتشافات</string>
+
+    <string name="intel_activity_timeline">الجدول الزمني للنشاط</string>
+
+    <string name="intel_zone_analysis">تحليل المناطق</string>
+
+    <string name="intel_zone_desc">توزيع نشاط قطاع إطار الكاميرا</string>
+
+    <string name="intel_key_observations">الملاحظات الرئيسية</string>
+
+    <string name="intel_personnel">الأفراد</string>
+
+    <string name="intel_vehicles">المركبات</string>
+
+    <string name="intel_animals">الحيوانات</string>
+
+    <string name="intel_objects">الأجسام</string>
+
+    <string name="intel_no_data">لا تتوفر بيانات استخباراتية.\nمراقبة الأصول نشطة.</string>
+
+    <string name="intel_time_window">نافذة مراقبة 24 ساعة</string>
+
+    <string name="intel_range_24h">24 ساعة</string>
+
+    <string name="intel_range_7d">7 أيام</string>
+
+    <string name="intel_range_30d">30 يومًا</string>
+
+    <string name="intel_range_all">كل الوقت</string>
+
+    <string name="intel_range_summary_24h">آخر 24 ساعة</string>
+
+    <string name="intel_range_summary_7d">آخر 7 أيام</string>
+
+    <string name="intel_range_summary_30d">آخر 30 يومًا</string>
+
+    <string name="intel_range_summary_all">جميع البيانات المسجلة</string>
+
+    <string name="intel_tap_bar_hint">اضغط أي شريط للتفصيل بالساعة</string>
+
+    <string name="intel_zone_desc_v2">عرض الكاميرا مقسم إلى 9 مناطق. الأكثر إشراقًا = نشاط أكثر اكتشافًا في تلك المنطقة.</string>
+
+    <string name="forensics_event_proof_frame">إطار إثبات الحدث</string>
+
+    <string name="forensics_frames_hint">اسحب الإطارات لمعاينة اللحظات</string>
+
+    <string name="forensics_frames_hint_fallback">معاينة بديلة (قد تختلف الإطارات الرئيسية الدقيقة)</string>
+
+    <string name="forensics_media_missing">الوسيط الأصلي غير متاح. يتم استخدام الأدلة المحفوظة فقط.</string>
+
+    <string name="forensics_sort_newest">الأحدث أولاً</string>
+
+    <string name="forensics_sort_confidence">أعلى ثقة</string>
+
+    <string name="forensics_sort_evidence_rich">غني بالأدلة</string>
+
+    <string name="forensics_media_all">جميع المصادر</string>
+
+    <string name="forensics_media_available">الفيديو متاح</string>
+
+    <string name="forensics_media_missing_only">الفيديو مفقود</string>
+
+    <string name="forensics_sort_label">الترتيب: %1$s</string>
+
+    <string name="forensics_source_label">المصدر: %1$s</string>
+
+    <string name="forensics_gallery_title">معرض الأدلة</string>
+
+    <string name="forensics_gallery_selected_count">تم تحديد %1$d</string>
+
+    <string name="forensics_gallery_deleted_toast">تم نقل %1$d إلى سلة المهملات • تم إزالة %2$d</string>
+
+    <plurals name="forensics_gallery_selected_count_plural">
+        <item quantity="one">تم تحديد %1$d</item>
+        <item quantity="two">تم تحديد %1$d</item>
+        <item quantity="few">تم تحديد %1$d</item>
+        <item quantity="many">تم تحديد %1$d</item>
+        <item quantity="other">تم تحديد %1$d</item>
+    </plurals>
+
+    <string name="forensics_delete_selected_title">حذف %1$d عنصر أدلة محدد؟</string>
+
+    <string name="forensics_delete_selected_helper">سيتم نقل الأدلة المحددة إلى سلة المهملات ويمكن استعادتها من المحذوفة مؤخرًا.</string>
+
+    <string name="forensics_filter_with_count">%1$s (%2$d)</string>
+
+    <string name="forensics_grid_option">تخطيط الشبكة</string>
+
+    <string name="forensics_grid_helper">اختر عدد الأعمدة للعرض في المعرض.</string>
+
+    <string name="forensics_grid_2">عمودان</string>
+
+    <string name="forensics_grid_3">3 أعمدة</string>
+
+    <string name="forensics_grid_4">4 أعمدة</string>
+
+    <string name="forensics_grid_1">عمود واحد</string>
+
+    <string name="forensics_grid_5">5 أعمدة</string>
+
+    <string name="forensics_serial_strip">أدلة</string>
+
+    <string name="forensics_info_title">معلومات الأدلة</string>
+
+    <string name="forensics_info_body">يخزن معرض الأدلة لقطات ملتقطة أثناء جلسات التسجيل النشطة.\n\nلقطات الأدلة هي ملفات مستقلة وتبقى قابلة للعرض حتى لو تم نقل الفيديو المصدر أو حذفه.\n\nللعناصر المرتبطة بالفيديو، استخدم تفاصيل الأدلة داخل عارض الصور للانتقال إلى اللقطات المصدر عند التوفر.</string>
+
+    <string name="forensics_info_helper">تظهر الأدلة هنا بمجرد التقاط اللقطات أثناء التسجيل.</string>
+
+    <string name="forensics_info_line_1">إجراءات الفيديو المصدر متاحة فقط بينما يوجد رابط الفيديو الأصلي.</string>
+
+    <string name="forensics_info_line_2">إذا تم تغيير الفيديو أو إزالته، تبقى اللقطات متاحة كأدلة مستقلة.</string>
+
+    <string name="forensics_info_line_3">استخدم مركز التصدير لتجميع اللقطات والبيانات الوصفية في أرشيف.</string>
+
+    <string name="forensics_gallery_sort_event_type">نوع الحدث</string>
+
+    <string name="forensics_export_title">مركز التصدير</string>
+
+    <string name="forensics_gallery_empty">لا توجد لقطات أدلة للفلاتر الحالية.</string>
+
+    <string name="forensics_gallery_empty_title">لوحة الأدلة فارغة</string>
+
+    <string name="forensics_gallery_empty_subtitle_no_data">ستظهر الإطارات المكتشفة بالذكاء الاصطناعي من تسجيلاتك هنا</string>
+
+    <string name="forensics_gallery_empty_subtitle_filtered">لا توجد أدلة مطابقة لهذا الفلتر</string>
+
+    <string name="forensics_export_action">تصدير حزمة الأدلة</string>
+
+    <string name="forensics_export_subtitle">ينشئ حزمة بيانات وصفية JSON + لقطات من الأدلة الجنائية المحفوظة.</string>
+
+    <string name="forensics_export_source_warning">يتم تضمين روابط الفيديو المصدر للتتبع. إذا تم نقل الوسائط أو حذفها من الموقع الأصلي، قد تفشل روابط التشغيل وتبقى اللقطات كأدلة أساسية.</string>
+
+    <string name="forensics_export_done">تم حفظ تصدير الأدلة في: %1$s</string>
+
+    <string name="forensics_export_running">جارٍ بناء تصدير الأدلة…</string>
+
+    <string name="forensics_gallery_source_missing">الفيديو مفقود: أدلة اللقطات فقط متاحة.</string>
+
+    <string name="forensics_gallery_stats">العناصر: %1$d • تخزين اللقطات: %2$s</string>
+
+    <string name="forensics_export_stats">جاهز للتصدير: %1$d لقطة • %2$s</string>
+
+    <string name="forensics_export_pick_path">اختر وجهة التصدير</string>
+
+    <string name="forensics_export_pick_path_first">اختر وجهة التصدير أولاً.</string>
+
+    <string name="forensics_export_no_path">لم يتم تحديد وجهة تصدير بعد.</string>
+
+    <string name="forensics_export_selected_path">الوجهة: %1$s</string>
+
+    <string name="forensics_open_source_video">فتح الفيديو المصدر</string>
+
+    <string name="forensics_evidence_details">تفاصيل الأدلة</string>
+
+    <string name="forensics_detected_label">تم اكتشاف: %1$s</string>
+
+    <string name="forensics_section_actions">الإجراءات</string>
+
+    <string name="forensics_section_appearance">المظهر</string>
+
+    <string name="forensics_clip_style_title">نمط مشبك الورق</string>
+
+    <string name="forensics_clip_style_helper">اختر لون المشبك لبطاقات المعرض.</string>
+
+    <string name="forensics_clip_black">مشبك أسود</string>
+
+    <string name="forensics_clip_red">مشبك أحمر</string>
+
+    <string name="forensics_tape_style_title">نمط الشريط</string>
+
+    <string name="forensics_tape_style_helper">اختر تصميم الشريط لوسوم فهرس الأدلة.</string>
+
+    <string name="forensics_tape_torn">شريط ممزق</string>
+
+    <string name="forensics_tape_classic">شريط كلاسيكي</string>
+
+    <string name="forensics_unknown_time">وقت غير معروف</string>
+
+    <string name="forensics_not_available">غير متاح</string>
+
+    <string name="forensics_video_linked">الفيديو مرتبط</string>
+
+    <string name="forensics_snapshot_only">لقطة فقط</string>
+
+    <string name="forensics_unknown_source">مصدر غير معروف</string>
+
+    <string name="forensics_timeline_label">موضع الجدول الزمني</string>
+
+    <string name="forensics_copy_done">تم نسخ تفاصيل الأدلة</string>
+
+    <string name="digital_forensics_preview_title">معاينة الاكتشاف المباشر</string>
+
+    <string name="digital_forensics_preview_subtitle">معاينة تراكب محاكاة حتى يفهم المستخدمون التسميات والثقة وتأطير الأدلة.</string>
+
+    <string name="digital_forensics_preview_default">شخص 92%</string>
+
+    <string name="settings_watermark_subtitle">وضع العلامة التجارية للتراكب</string>
+
+    <string name="prefs_import_export_title">استيراد / تصدير</string>
+
+    <string name="prefs_import_export_subtitle">نسخ احتياطي، استعادة، إعادة تعيين</string>
+
+    <string name="about_version_update_licenses">الإصدار، التحديث، التراخيص</string>
+
+    <string name="share_feedback">مشاركة الملاحظات</string>
+
+    <string name="shortcuts_pin_to_home">تثبيت البدء/الإيقاف/الفلاش على الرئيسية</string>
+
+    <string name="storage_sheet_title">موقع التخزين</string>
+
+    <string name="storage_option_use_internal">استخدام التخزين الداخلي</string>
+
+    <string name="storage_option_switch_internal">التبديل إلى التخزين الداخلي</string>
+
+    <string name="storage_option_select_custom">تحديد موقع مخصص</string>
+
+    <string name="storage_option_change_custom">تغيير المجلد المخصص</string>
+
+    <string name="storage_option_clear_custom">مسح المجلد المخصص</string>
+
+    <string name="storage_helper_primary">اختر أين يتم حفظ التسجيلات الجديدة. التخزين الداخلي يحافظ على الفيديوهات خاصة للتطبيق؛ المجلد المخصص (بطاقة SD أو تخزين مشترك) يجعلها مرئية للتطبيقات الأخرى مثل المعرض.</string>
+
+    <string name="storage_helper_security">نصيحة: استخدم الداخلي للخصوصية/السرعة. استخدم المخصص للوصول الأسهل &amp; المشاركة.</string>
+
+    <string name="storage_value_internal">تخزين التطبيق الداخلي</string>
+
+    <string name="storage_value_custom_prefix">مخصص:</string>
+
+    <string name="storage_value_none">(لا شيء)</string>
+
+    <string name="storage_value_selected_folder">المجلد المحدد</string>
+
+    <string name="storage_helper_current_custom_prefix">المجلد المخصص الحالي:</string>
+
+    <string name="storage_helper_current_custom_uri_prefix">URI:</string>
+
+    <string name="app_icon_minimal" translatable="false">Minimal</string>
+
+    <string name="onboarding_intro_line4">مفتوح المصدر. بدون إعلانات. لك.</string>
+
+    <string name="records_sort_helper">اختر كيفية ترتيب التسجيلات في القائمة.</string>
+
+    <string name="records_sort_order_title">ترتيب الفرز</string>
+
+    <string name="records_view_mode_title">وضع العرض</string>
+
+    <string name="view_mode_grid">شبكة</string>
+
+    <string name="view_mode_list">قائمة</string>
+
+    <string name="records_grid_1">عمود واحد</string>
+
+    <string name="records_grid_2">عمودان</string>
+
+    <string name="records_grid_3">3 أعمدة</string>
+
+    <string name="records_grid_4">4 أعمدة</string>
+
+    <string name="records_grid_5">5 أعمدة</string>
+
+    <string name="records_grid_option">تخطيط الشبكة</string>
+
+    <string name="records_grid_helper">اختر عدد الأعمدة للعرض في المعرض.</string>
+
+    <string name="trash_item_thumbnail_desc">صورة مصغرة لعنصر محذوف</string>
+
+    <string name="delete_all_videos_subtitle_short">إزالة جميع التسجيلات</string>
+
+    <string name="enabled">مفعّل</string>
+
+    <string name="disabled">معطّل</string>
+
+    <string name="notification_stop_button_row_title">زر الإيقاف</string>
+
+    <string name="notification_stop_button_visible">مرئي</string>
+
+    <string name="notification_stop_button_hidden">مخفي</string>
+
+    <string name="notification_setup_ok">حسنًا</string>
+
+    <string name="universal_play">تشغيل</string>
+
+    <string name="universal_pause">إيقاف مؤقت</string>
+
+    <string name="universal_playing">قيد التشغيل</string>
+
+    <string name="universal_paused">متوقف مؤقتًا</string>
+
+    <string name="universal_stop">إيقاف</string>
+
+    <string name="setting_notification_appearance">مظهر الإشعار</string>
+
+    <string name="note_notification_appearance">تخصيص مظهر إشعار التسجيل\n(الافتراضي: FadCam)</string>
+
+    <string name="hide_stop_button">إخفاء زر الإيقاف</string>
+
+    <string name="note_hide_stop_button">إخفاء زر الإيقاف في الإشعار\n(الافتراضي: معطل)</string>
+
+    <string name="notification_style_row_title">نمط الإشعار</string>
+
+    <string name="notification_preset_helper">اختر نمطًا محددًا مسبقًا أو اختر مخصص لإدخال عنوان ووصف خاصين بك.</string>
+
+    <string name="notification_custom_editor_title">إشعار مخصص</string>
+
+    <string name="notification_preview_helper">هكذا يظهر أثناء التسجيل. اختر نمطًا أو أنشئ عنوانًا &amp; وصفًا مخصصًا. يعكس إعداد رؤية زر الإيقاف إعدادك.</string>
+
+    <string name="notification_options_heading">خيارات</string>
+
+    <string name="notification_custom_editor_helper">عيّن عنوانًا ووصفًا أدناه. يتم الحفظ تلقائيًا.</string>
+
+    <string name="notification_custom_title_placeholder">العنوان (مثال: تحديث النظام)</string>
+
+    <string name="notification_custom_text_placeholder">الوصف (مثال: التحديث قيد التقدم)</string>
+
+    <string-array name="notification_appearance_options">
+        <item>FadCam (افتراضي)</item>
+        <item>تحديث النظام</item>
+        <item>تنزيل</item>
+        <item>مزامنة</item>
+        <item>نسخ احتياطي</item>
+        <item>مخصص</item>
+    </string-array>
+
+    <string name="camera_resource_cooldown">يتم تحرير موارد الكاميرا</string>
+
+    <string name="camera_interrupted_title">تم إيقاف التسجيل مؤقتًا (الكاميرا قيد الاستخدام)</string>
+
+    <string name="camera_interrupted_description">تطبيق آخر يستخدم الكاميرا. سيتم استئناف التسجيل تلقائيًا عندما تكون الكاميرا متاحة.</string>
+
+    <string name="camera_reconnected_title">تمت إعادة اتصال الكاميرا</string>
+
+    <string name="camera_reconnected_description">تم استئناف التسجيل تلقائيًا</string>
+
+    <string name="camera_reconnection_attempts">محاولة إعادة الاتصال بالكاميرا...</string>
+
+    <string name="camera_reconnection_success">تمت إعادة اتصال الكاميرا، استئناف التسجيل</string>
+
+    <string name="camera_reconnection_failed">فشل إعادة الاتصال بالكاميرا، الاستمرار بإطارات سوداء</string>
+
+    <string name="camera_error_in_use">الكاميرا قيد الاستخدام بواسطة تطبيق آخر</string>
+
+    <string name="camera_error_max_cameras">الحد الأقصى للكاميرات قيد الاستخدام</string>
+
+    <string name="camera_error_disabled">الكاميرا معطلة</string>
+
+    <string name="camera_error_device">خطأ في جهاز الكاميرا</string>
+
+    <string name="camera_error_service">خطأ في خدمة الكاميرا</string>
+
+    <string name="camera_error_unknown">خطأ غير معروف في الكاميرا</string>
+
+    <string name="debug_log_tools_title">سجل التصحيح</string>
+
+    <string name="debug_log_tools_subtitle">معاينة، بحث، مشاركة أو حذف FADCAM_debug.html</string>
+
+    <string name="debug_log_tools_helper">يعرض ملف سجل التصحيح (FADCAM_debug.html). تمكين تسجيل التصحيح قد يضيف عبئًا على الأداء — لا تمكّنه إلا إذا كنت تواجه خطأ وتحتاج لمشاركة السجل. استخدم مربع البحث للتصفية.</string>
+
+    <string name="debug_log_share_title">مشاركة سجل التصحيح</string>
+
+    <string name="debug_log_share_subtitle">فتح ورقة مشاركة النظام</string>
+
+    <string name="debug_log_delete_title">حذف سجل التصحيح</string>
+
+    <string name="debug_log_delete_subtitle">إزالة ملف السجل من التخزين</string>
+
+    <string name="debug_log_open_title">فتح خارجيًا</string>
+
+    <string name="debug_log_open_subtitle">عرض في متصفح أو عارض HTML</string>
+
+    <string name="debug_log_search_hint">البحث في السجل…</string>
+
+    <string name="debug_log_empty">لا يوجد سجل تصحيح بعد</string>
+
+    <string name="debug_log_share_fail">فشلت المشاركة</string>
+
+    <string name="debug_log_open_fail">فشل الفتح</string>
+
+    <string name="scroll_to_top">التمرير للأعلى</string>
+
+    <string name="scroll_to_bottom">التمرير للأسفل</string>
+
+    <string name="restore_destination_title">اختر موقع الاستعادة</string>
+
+    <string name="restore_destination_downloads">مجلد التنزيلات</string>
+
+    <string name="restore_destination_downloads_desc">مجلد Downloads/FadCam/ العام</string>
+
+    <string name="restore_destination_internal">التخزين الداخلي</string>
+
+    <string name="restore_destination_internal_desc">تخزين التطبيق الخاص</string>
+
+    <string name="restore_destination_original">الموقع الأصلي</string>
+
+    <string name="restore_destination_original_desc">الاستعادة إلى موقع SAF الأصلي</string>
+
+    <string name="restore_confirm_title">تأكيد الاستعادة</string>
+
+    <string name="restore_confirm_message">استعادة %1$d عنصر إلى %2$s؟</string>
+
+    <string name="restore_progress_title">استعادة الملفات</string>
+
+    <string name="restore_success_message">تمت استعادة %1$d عنصر بنجاح إلى %2$s</string>
+
+    <string name="restore_error_message">فشل استعادة بعض العناصر</string>
+
+    <string name="restore_cancelled">تم إلغاء الاستعادة</string>
+
+    <string name="restore_confirm_button">استعادة</string>
+
+    <string name="close">إغلاق</string>
+
+    <string name="previous">السابق</string>
+
+    <string name="next">التالي</string>
+
+    <string name="done">تم</string>
+
+    <string name="project_name_label">اسم المشروع</string>
+
+    <string name="project_name_hint">مثال: فيديو تعليمي، تسجيل لعبة</string>
+
+    <string name="project_desc_label">الوصف (اختياري)</string>
+
+    <string name="project_desc_hint">عن ماذا هذا المشروع؟</string>
+
+    <string name="untitled_project">مشروع بدون عنوان</string>
+
+    <string name="tap_to_add_description">اضغط لإضافة وصف</string>
+
+    <string name="manage_projects">إدارة المشاريع</string>
+
+    <string name="name_your_project">سمِّ مشروعك</string>
+
+    <string name="project_naming_message">أعطِ مشروعك اسمًا ووصفًا لا يُنسى لتنظيم تسجيلاتك</string>
+
+    <string name="fadrec_projects">مشاريع FadRec</string>
+
+    <string name="delete_project">حذف المشروع</string>
+
+    <string name="delete_all">حذف الكل</string>
+
+    <string name="new_project">مشروع جديد</string>
+
+    <string name="delete">حذف</string>
+
+    <string name="fadcam_pro_title">FadCam Pro</string>
+
+    <string name="fadcam_pro_subtitle">ميزات مميزة للتقدير الكامل</string>
+
+    <string name="fadcam_pro_get_button">احصل على FadCam Pro</string>
+
+    <string name="fadcam_pro_free">مجاني</string>
+
+    <string name="fadcam_pro_column_label">Pro</string>
+
+    <string name="fadcam_pro_proplus_label">Pro+</string>
+
+    <string name="fadcam_pro_lab_label">Lab</string>
+
+    <string name="fadcam_pro_plus_label">Pro</string>
+
+    <string name="fadcam_pro_early_bird">🎉 مجاني حتى 23 ديسمبر 2025! بعد ذلك، احصل على وصول مدى الحياة مقابل 15$ فقط.</string>
+
+    <string name="fadcam_pro_paid_offer">بعد 23 ديسمبر 2025، احصل على وصول مدى الحياة مقابل 15$ — دفعة واحدة، تحديثات للأبد.</string>
+
+    <string name="fadcam_pro_benefit_early_access">الوصول المبكر: احصل على أحدث إصدار قبل الإصدار العام</string>
+
+    <string name="fadcam_pro_benefit_lifetime_updates">تحديثات مدى الحياة: استلم دائمًا الميزات الجديدة والتحسينات وإصلاحات الأخطاء</string>
+
+    <string name="fadcam_pro_benefit_support">دعم فوري: مساعدة مباشرة عبر التذاكر عبر Discord</string>
+
+    <string name="fadcam_pro_coming_soon">ميزات Pro+ و Lab قادمة قريبًا مع تحميلات أيقونات مخصصة وأسماء تطبيقات مخصصة ومزامنة سحابة FadDrive.</string>
+
+    <string name="fadcam_pro_support_message">سيظل FadCam مجانيًا دائمًا، بدون إعلانات وبدون تتبع. أدير المشروع بنفسي بالكامل، ويستغرق وقتًا وجهدًا مستمرًا. الترقية إلى Pro (مجاني حاليًا) تساعد في دعم التطوير، وفي المقابل أقدم قيمة إضافية من خلال ميزات Pro بالإضافة إلى النسخة المجانية الكاملة. شكرًا لدعمك للمشروع :)</string>
+
+    <string name="fadcam_pro_separate_apk">تطبيق مستقل • يعمل جنبًا إلى جنب مع FadCam</string>
+
+    <string name="fadcam_pro_feature_everything_icon">كل شيء</string>
+
+    <string name="fadcam_pro_feature_everything">كل شيء</string>
+
+    <string name="fadcam_pro_feature_custom_icon">أيقونة تطبيق مخصصة</string>
+
+    <string name="fadcam_pro_feature_notification_icon">أيقونة إشعار متحفظة</string>
+
+    <string name="fadcam_pro_feature_user_icon">أيقونة حمّلها المستخدم</string>
+
+    <string name="fadcam_pro_feature_app_name">اسم تطبيق مخصص</string>
+
+    <string name="fadcam_pro_feature_faddrive">مزامنة سحابة FadDrive</string>
+
+    <string name="fadcam_pro_header_button">Pro</string>
+
+    <string name="player_info_title">حول مشغل الفيديو</string>
+
+    <string name="player_info_content"><![CDATA[
+<b>تنسيق MP4 المجزأ</b><br/><br/>
+يستخدم FadCam تنسيق MP4 مجزأ للتسجيلات. هذا يعني أن الفيديوهات تُحفظ في أجزاء صغيرة بدلاً من ملف واحد كامل. الفائدة هي أنه إذا حدث خطأ أثناء التسجيل، تفقد آخر بضع ثوانٍ فقط بدلاً من الفيديو بأكمله.<br/><br/>
+إذا كانت آخر بضع ثوانٍ من الفيديو تبدو مجمدة أو قديمة، لا تقلق — ليس خطأ! عند إيقاف التسجيل، قد يكمل الجزء الحالي دورته (~3 ثوانٍ)، مما يترك إطارًا قديمًاBrief في النهاية.<br/><br/>
+<b>قيود المشغل</b><br/><br/>
+يحتوي مشغل الفيديو المدمج على بعض قيود نظام Android. قد تلاحظ أن شريط التقدم أو الموجة يبدو متقطعًا قليلاً — هذا سلوك طبيعي وليس خطأ.<br/><br/>
+لتجربة تشغيل أكثر سلاسة، يمكنك استخدام مشغل خارجي مثل VLC. مع ذلك، المشغل المدمج يعمل جيدًا للاستخدام اليومي!
+    ]]></string>
+
+    <string name="codec_hevc_incompatible_title">ترميز H.265 غير مدعوم للبث المباشر</string>
+
+    <string name="codec_hevc_incompatible_message">📡 البث المباشر عبر HLS يتطلب ترميز H.264.\n\nH.265 غير متوافق مع مشغلات المتصفح.\n\nهل تريد التبديل إلى H.264 وبدء التسجيل؟</string>
+
+    <string name="codec_switch_and_record">التبديل إلى H.264 &amp; تسجيل</string>
+
+    <string name="codec_switch_cancelled">تم إلغاء تبديل الترميز</string>
+
+    <string name="codec_switched_to_h264">✓ تم التبديل إلى H.264. بدء التسجيل...</string>
+
+    <string name="codec_go_to_settings">الانتقال إلى الإعدادات</string>
+
+    <string name="stream_title">عن بعد</string>
+
+    <string name="stream_server_room">غرفة الخادم</string>
+
+    <string name="stream_server_status">حالة الخادم</string>
+
+    <string name="stream_active">نشط</string>
+
+    <string name="stream_inactive">الخادم غير نشط :(</string>
+
+    <string name="stream_idle">خامل - ابدأ التسجيل للبث</string>
+
+    <string name="stream_start_server">خادم البث</string>
+
+    <string name="stream_url_label">عنوان URL للبث</string>
+
+    <string name="stream_copy_url">نسخ URL</string>
+
+    <string name="stream_url_copied">تم نسخ عنوان URL للبث إلى الحافظة</string>
+
+    <string name="stream_recording_mode">وضع التسجيل</string>
+
+    <string name="stream_select_mode">اختر الوضع</string>
+
+    <string name="stream_and_save">بث &amp; حفظ</string>
+
+    <string name="stream_only">بث فقط</string>
+
+    <string name="stream_only_desc">بث بدون حفظ في التخزين</string>
+
+    <string name="stream_and_save_desc">بث وحفظ التسجيل في التخزين</string>
+
+    <string name="stream_save_videos">محفوظ في تخزين الجهاز بالبادئة Stream_</string>
+
+    <string name="stream_no_save">يتم حذف المقاطع تلقائيًا بعد البث</string>
+
+    <string name="stream_server_health">صحة الخادم</string>
+
+    <string name="stream_uptime">وقت التشغيل: %1$s</string>
+
+    <string name="stream_connections">العملاء: %1$d</string>
+
+    <string name="stream_client_ips">عناوين IP للعملاء:</string>
+
+    <string name="stream_no_clients">لا يوجد عملاء متصلون</string>
+
+    <string name="stream_fragments">مخزن مؤقت: %1$d مقطع</string>
+
+    <string name="stream_battery">البطارية: %1$d%%</string>
+
+    <string name="stream_recording_mode_label">الوضع: %1$s</string>
+
+    <string name="stream_endpoints">نقاط نهاية الخادم</string>
+
+    <string name="stream_server_url">عنوان URL للخادم</string>
+
+    <string name="stream_view_all_endpoints">عرض جميع نقاط النهاية</string>
+
+    <string name="stream_endpoint_root">جذر الخادم (مشغل الويب)</string>
+
+    <string name="stream_endpoint_hls">عنوان URL لبث HLS</string>
+
+    <string name="stream_endpoint_live">البث المباشر (M3U8)</string>
+
+    <string name="stream_endpoint_status">واجهة الحالة (JSON)</string>
+
+    <string name="stream_endpoint_init">مقطع التهيئة (MP4)</string>
+
+    <string name="stream_endpoint_torch">تبديل الفلاش (POST)</string>
+
+    <string name="stream_specs">مواصفات البث</string>
+
+    <string name="stream_quality_preset">إعداد مسبق لجودة البث</string>
+
+    <string name="stream_fps_resolution">إطارات: %1$d • الدقة: %2$dx%3$d</string>
+
+    <string name="stream_bitrate">معدل البت: %1$s</string>
+
+    <string name="stream_codec">الترميز: H.264</string>
+
+    <string name="stream_instructions">كيفية الاستخدام</string>
+
+    <string name="stream_instr_1">1. فعّل تبديل بدء الخادم</string>
+
+    <string name="stream_instr_2">2. انسخ عنوان URL لبث HLS من نقاط نهاية الخادم</string>
+
+    <string name="stream_instr_3">3. افتح VLC أو أي مشغل HLS على نفس WiFi</string>
+
+    <string name="stream_instr_4">4. الصق URL في مشغل الوسائط للمشاهدة المباشرة</string>
+
+    <string name="stream_network_info">مطلوب شبكة WiFi نفسها للبث</string>
+
+    <string name="battery_estimate_title">وقت البث المتبقي المقدر</string>
+
+    <string name="battery_estimate_disclaimer" formatted="false">بناءً على اختبار واقعي: 8 ساعات بث مستمر مع استنزاف 61% من البطارية على جهاز 5000mAh. حدّث سعة جهازك أدناه لتقديرات مخصصة.</string>
+
+    <string name="remote_security_title">أمان عن بعد</string>
+
+    <string name="remote_security_enable">تمكين المصادقة</string>
+
+    <string name="remote_security_enable_desc">تطلب كلمة مرور للوصول إلى واجهة الويب عن بعد</string>
+
+    <string name="remote_security_password">تعيين كلمة المرور</string>
+
+    <string name="remote_security_password_desc">تغيير كلمة مرور الوصول عن بعد</string>
+
+    <string name="remote_security_password_hint">أدخل كلمة مرور جديدة</string>
+
+    <string name="remote_security_auto_lock">مهلة القفل التلقائي</string>
+
+    <string name="remote_security_auto_lock_desc">القفل تلقائيًا بعد عدم النشاط</string>
+
+    <string name="remote_security_logout_all">تسجيل خروج جميع الجلسات</string>
+
+    <string name="remote_security_logout_all_desc">إلغاء جميع الجلسات عن بعد النشطة</string>
+
+    <string name="remote_security_password_required">يجب أن تكون كلمة المرور 4-32 حرفًا</string>
+
+    <string name="remote_security_password_set">تم تحديث كلمة المرور بنجاح</string>
+
+    <string name="remote_security_password_empty">يرجى إدخال كلمة مرور</string>
+
+    <string name="remote_security_sessions_cleared">تم تسجيل خروج جميع الجلسات</string>
+
+    <string name="remote_security_no_active_sessions">لا توجد جلسات نشطة</string>
+
+    <string name="remote_security_enable_first">فعّل المصادقة أولاً</string>
+
+    <string name="remote_security_auto_lock_never">أبدًا</string>
+
+    <string name="stream_notes_wifi">• يجب أن يكون العملاء على نفس شبكة WiFi للوصول إلى البث</string>
+
+    <string name="stream_notes_quality">• جودة البث (LOW/MEDIUM/HIGH/ULTRA) تتحكم في سقف الإطارات ومعدل البت لمنع مشاكل الشبكة</string>
+
+    <string name="stream_notes_resolution">• اتجاه البث ودقته مأخوذان من إعدادات التسجيل العادية (إعدادات الفيديو &gt; الدقة &amp; الاتجاه). عدّلها إذا أردت تغيير أبعاد البث</string>
+
+    <string name="stream_notes_cellular">⚠️ قيد WiFi فقط: شبكات الهاتف تمنع الاتصالات الواردة. للبث السلس من أي شبكة (WiFi، LTE، في أي مكان)، قم بالترقية إلى FadCam Pro+. بث من أي مكان عالميًا برابط خاص مولّد — بدون إعادة توجيه المنافذ، بدون تغييرات الراوتر، بدون قيود الشبكة</string>
+
+    <string name="stream_notes_android14_screen">⚠️ Android 14+: قيد النظام يمنع التسجيل عند إطفاء الشاشة. الحلول: (1) فعّل \"وضع الشاشة السوداء\" في الإعدادات &gt; الأمان، أو (2) عطّل قفل الشاشة (بدون PIN/كلمة مرور/بصمة). كلاهما يسمح بالتسجيل عن بعد بسلاسة</string>
+
+    <string name="cloud_account_button_desc">سحابة FadSec</string>
+
+    <string name="cloud_button_label">سحابة FadSec</string>
+
+    <string name="cloud_button_title">سحابة FadSec</string>
+
+    <string name="cloud_account_title">سحابة FadSec</string>
+
+    <string name="cloud_account_link">ربط الجهاز</string>
+
+    <string name="cloud_account_unlink">إلغاء ربط الجهاز</string>
+
+    <string name="cloud_account_connecting">جارٍ الاتصال…</string>
+
+    <string name="cloud_account_linked">الجهاز مرتبط</string>
+
+    <string name="cloud_account_not_linked">غير مرتبط</string>
+
+    <string name="cloud_account_device_name_hint">أدخل اسم الجهاز (مثال: هاتفي)</string>
+
+    <string name="cloud_account_device_name_title">سمِّ جهازك</string>
+
+    <string name="cloud_account_device_name_desc">سيظهر هذا الاسم في لوحة تحكم سحابة FadSec</string>
+
+    <string name="cloud_account_device_id">معرف الجهاز</string>
+
+    <string name="cloud_account_link_success">تم ربط الجهاز بنجاح!</string>
+
+    <string name="cloud_account_link_failed">فشل ربط الجهاز. يرجى المحاولة مرة أخرى.</string>
+
+    <string name="cloud_account_unlink_confirm">هل أنت متأكد من رغبتك في إلغاء ربط هذا الجهاز؟</string>
+
+    <string name="cloud_account_unlink_success">تم إلغاء ربط الجهاز</string>
+
+    <string name="cloud_account_webview_title">سحابة FadSec</string>
+
+    <string name="cloud_account_login_required">يرجى تسجيل الدخول لربط جهازك</string>
+
+    <string name="cloud_account_helper_text">ألغِ الربط لفصل الاتصال بحسابك. يمكنك الربط مرة أخرى باسم مختلف.</string>
+
+    <string name="cloud_streaming_title">البث السحابي</string>
+
+    <string name="cloud_streaming_status_off">البث محليًا فقط</string>
+
+    <string name="cloud_streaming_status_on">جارٍ الرفع إلى سحابة FadSec</string>
+
+    <string name="cloud_streaming_not_linked">اربط الجهاز أولاً للتمكين</string>
+
+    <string name="e2e_encryption_title">تشفير البث E2E</string>
+
+    <string name="e2e_encryption_not_configured">غير مُعد — قم بالإعداد لتمكين البث السحابي</string>
+
+    <string name="e2e_encryption_configured">مُعد — المقاطع مشفرة من طرف إلى طرف</string>
+
+    <string name="e2e_encryption_setup_title">تعيين كلمة مرور تشفير E2E</string>
+
+    <string name="e2e_encryption_setup_hint">أدخل كلمة مرور FadSec ID</string>
+
+    <string name="e2e_encryption_setup_desc">تُستخدم كلمة مرور FadSec ID لاشتقاق مفتاح تشفير البث. يجب أن تطابق كلمة المرور التي تستخدمها في لوحة تحكم FadCam لعرض البث.</string>
+
+    <string name="e2e_encryption_change_title">تغيير كلمة مرور تشفير E2E</string>
+
+    <string name="streaming_mode_title">وجهة البث</string>
+
+    <string name="streaming_mode_local">الشبكة المحلية</string>
+
+    <string name="streaming_mode_local_desc">البث للأجهزة على نفس WiFi</string>
+
+    <string name="streaming_mode_cloud">سحابة FadSec</string>
+
+    <string name="streaming_mode_cloud_desc">البث من أي مكان عبر الإنترنت</string>
+
+    <string name="streaming_mode_cloud_featured">مميز</string>
+
+    <string name="streaming_mode_link_required">اربط الجهاز للتمكين</string>
+
+    <string name="streaming_mode_stream_url">عنوان URL للبث</string>
+
+    <string name="streaming_mode_helper">اختر كيفية بث الكاميرا</string>
+
+    <string name="fullscreen_preview_enter">معاينة FadCam</string>
+
+    <string name="fullscreen_preview_close">إغلاق الشاشة الكاملة</string>
+
+    <string name="fullscreen_preview_not_recording">ابدأ التسجيل أولاً لاستخدام المعاينة بالشاشة الكاملة</string>
+
+    <string name="fullscreen_preview_tap_hint">اضغط على الشاشة لتبديل عناصر التحكم</string>
+
+    <string name="fullscreen_focus_on">التركيز: مفعّل</string>
+
+    <string name="fullscreen_focus_off">التركيز: معطّل</string>
+
+    <string name="fullscreen_camera_switch">تبديل الكاميرا</string>
+
+    <string name="fullscreen_torch">الفلاش</string>
+
+    <string name="fullscreen_focus_toggle">تبديل التركيز بالنقر</string>
+
+    <string name="fullscreen_label_switch">تبديل</string>
+
+    <string name="fullscreen_label_mirror">قلب الفيديو</string>
+
+    <string name="fullscreen_label_torch">الفلاش</string>
+
+    <string name="fullscreen_label_shot">لقطة</string>
+
+    <string name="fullscreen_label_af">AF</string>
+
+    <string name="fullscreen_label_exposure">EV</string>
+
+    <string name="fullscreen_label_zoom">التكبير</string>
+
+    <string name="front_video_mirror_enable">تمكين قلب الفيديو الأمامي</string>
+
+    <string name="front_video_mirror_disable">تعطيل قلب الفيديو الأمامي</string>
+
+    <string name="preview_dual_not_supported">المعاينة فقط تعمل على الكاميرات الأمامية/الخلفية فقط</string>
+
+    <string name="preview_enable_hint">اضغط مطولاً لإيقاظ الكاميرا</string>
+
+    <string name="preview_starting">جارٍ بدء المعاينة المباشرة...</string>
+
+    <string name="fadrec_preview_enable_hint">اضغط مطولاً لإظهار المعاينة</string>
+
+    <string name="fadrec_preview_not_available">معاينة الشاشة المباشرة غير مربوطة بـ FadRec بعد</string>
+
+    <string name="torch_unavailable">الفلاش غير متاح لهذه الكاميرا</string>
+
+    <string name="motion_lab_title">Motion Lab</string>
+
+    <string name="motion_lab_row_subtitle">تسجيل الأحداث الذكي لاستخدام CCTV</string>
+
+    <string name="motion_lab_enable">تمكين تسجيل الحركة</string>
+
+    <string name="motion_lab_enable_sensor">تمكين مستشعر الحركة</string>
+
+    <string name="motion_lab_status_enabled">نشط (يسجل فقط عند الحاجة)</string>
+
+    <string name="motion_lab_status_disabled">معطّل</string>
+
+    <string name="motion_lab_trigger_mode">وضع التشغيل</string>
+
+    <string name="motion_lab_trigger_mode_helper">اختر ما يجب أن يبدأ التسجيل. إذا لم تكن متأكدًا، أبقِ أي حركة.</string>
+
+    <string name="motion_lab_trigger_any_motion">أي حركة</string>
+
+    <string name="motion_lab_trigger_any_motion_desc">يبدأ عند اكتشاف الحركة، مثل كاميرا CCTV عادية.</string>
+
+    <string name="motion_lab_trigger_person_confirmed">تأكيد شخص</string>
+
+    <string name="motion_lab_trigger_person_confirmed_desc">يبدأ فقط عندما تبدو الحركة كشخص. يساعد في تقليل التنبيهات الخاطئة من المراوح/الظلال.</string>
+
+    <string name="motion_lab_sensitivity">الحساسية</string>
+
+    <string name="motion_lab_sensitivity_hint">فكر فيه كـ \"مستوى سمع\" الحركة. الأعلى يتفاعل مع حركة أصغر (مثل يد قرب الحافة). الأقل يتجاهل الحركة الصغيرة. أبقِ الافتراضي 80 لمعظم الغرف.</string>
+
+    <string name="motion_lab_analysis_fps">تحليل FPS</string>
+
+    <string name="motion_lab_analysis_helper">كم مرة يتحقق AI من المشهد كل ثانية. فحوص أكثر تتفاعل أسرع، لكن تستخدم بطارية أكثر وقد تسخن الهاتف. لكشف EfficientDet متعدد الفئات، أبقِ حوالي 6 fps للاستخدام اليومي (5-8 هو النطاق الموثوق).</string>
+
+    <string name="motion_lab_analysis_2_desc">توفير الطاقة، استجابة أبطأ.</string>
+
+    <string name="motion_lab_analysis_3_desc">الافتراضي المتوازن.</string>
+
+    <string name="motion_lab_analysis_5_desc">استجابة أسرع، CPU أكثر.</string>
+
+    <string name="motion_lab_debounce">Debounce</string>
+
+    <string name="motion_lab_debounce_hint">تأخير تأكيد قصير قبل بدء التسجيل. فكر فيه كانتظار لحظة صغيرة لتأكيد أن الحركة حقيقية. الأقل يبدأ أسرع، الأعلى يتجنب البدايات الخاطئة. أبقِ حوالي 220 مللي ثانية لمعظم الغرف.</string>
+
+    <string name="motion_lab_post_roll">Post-roll</string>
+
+    <string name="motion_lab_post_roll_hint">كم مدة استمرار التسجيل بعد توقف الحركة. مثال: إذا غادر شخص الغرفة، يستمر التسجيل حتى لا يُقطع النهاية. أبقِ حوالي 10 ثوانٍ لمعظم الغرف.</string>
+
+    <string name="motion_lab_pre_roll">Pre-roll</string>
+
+    <string name="motion_lab_pre_roll_hint">كم ثانية قبل التشغيل نحاول تضمينها. مثال: إذا ظهر شخص فجأة، يساعد pre-roll في تضمين اللحظة قبل الدخول مباشرة. أبقِ حوالي 2 ثانية لمعظم الغرف.</string>
+
+    <string name="motion_lab_set_value_row_title">تعيين القيمة</string>
+
+    <string name="motion_lab_set_value_row_subtitle">القيمة الحالية: %1$d</string>
+
+    <string name="motion_lab_auto_torch">فلاش تلقائي عند الحركة</string>
+
+    <string name="motion_lab_auto_torch_helper">يشغل الفلاش عند بدء التسجيل من الحركة، ويطفئه عند إيقاف التسجيل مؤقتًا. مفيد للغرف المظلمة.</string>
+
+    <string name="motion_lab_debug_title">مراقب الحركة المباشر</string>
+
+    <string name="motion_lab_debug_state_placeholder">الحالة: -</string>
+
+    <string name="motion_lab_debug_score_placeholder">النتيجة الخام/الملساء: -</string>
+
+    <string name="motion_lab_debug_threshold_placeholder">العتبة بدء/إيقاف: -</string>
+
+    <string name="motion_lab_debug_action_placeholder">آخر إجراء: -</string>
+
+    <string name="motion_lab_debug_person_placeholder">شخص: -</string>
+
+    <string name="motion_lab_debug_metrics_placeholder">المساحة/القوي/المتوسط/الخلفية/الأقصى/العالمي: -</string>
+
+    <string name="motion_lab_debug_frame">معاينة إطار المحلل المباشر</string>
+
+    <string name="motion_lab_debug_copy_snapshot">نسخ لقطة المراقب</string>
+
+    <string name="motion_lab_debug_copy_done">تم نسخ لقطة الحركة</string>
+
+    <string name="motion_lab_debug_no_snapshot">لا توجد لقطة حركة متاحة بعد.</string>
+
+    <string name="motion_lab_debug_score_value">النتيجة الخام/الملساء: %1$.3f / %2$.3f</string>
+
+    <string name="motion_lab_debug_threshold_value">العتبة بدء/إيقاف: %1$.3f / %2$.3f</string>
+
+    <string name="motion_lab_debug_person_value">تم اكتشاف: %1$s (%2$.3f) • شخص: %3$s (%4$.3f)</string>
+
+    <string name="motion_lab_debug_metrics_value">المساحة %1$.3f، القوي %2$.3f، المتوسط %3$.3f، الخلفية %4$.3f، الأقصى %5$.3f، العالمي %6$s</string>
+
+    <string name="motion_lab_info_cd">معلومات Motion Lab</string>
+
+    <string name="motion_lab_info_title">تسجيل تلقائي عند الحركة</string>
+
+    <string name="motion_lab_info_body">هذه ميزة التسجيل التلقائي عند الحركة في FadCam.\n\nكيف تعمل بكلمات بسيطة:\n- تبقى كاميرتك نشطة وتحلل الإطارات على الجهاز في الوقت الفعلي.\n- نموذج التعلم الآلي على الجهاز ومنطق الحركة يبحثان عن الحركة.\n- عند اكتشاف حركة صالحة، يبدأ/يستأنف التسجيل.\n- يستمر التسجيل بينما تستمر الحركة.\n- بعد توقف الحركة، يستمر Post-roll في التسجيل للثواني الإضافية المحددة.\n- ثم يتوقف التسجيل مؤقتًا وينتظر حدث الحركة التالي.\n\nعندما يكون التسجيل متوقفًا مؤقتًا، لا يزال التطبيق يحلل الإطارات في الذاكرة، لكنه لا يكتب بيانات فيديو جديدة حتى يتم اكتشاف الحركة مرة أخرى.\n\nكيفية الاستخدام (معظم المستخدمين):\n- أبقِ جميع الخيارات على القيم الافتراضية.\n- فعّل مستشعر الحركة في هذه الشاشة.\n- انتقل إلى تبويب الصفحة الرئيسية وابدأ التسجيل عادةً.\n- سيعمل التسجيل التلقائي بالحركة تلقائيًا.\n\nاختبار سهل من مسافة بعيدة:\n- فعّل الفلاش التلقائي في هذه الشاشة.\n- ابدأ التسجيل من تبويب الصفحة الرئيسية.\n- ضع الهاتف مائلًا على طاولة أو رف مواجهًا للغرفة.\n- غادر الغرفة، ثم ادخل وامشِ.\n- تشغيل الفلاش يساعدك في ملاحظة ذلك فورًا من بعيد أن التسجيل بدأ.\n- سيستمر التسجيل لمدة Post-roll المحددة بعد توقف الحركة.\n\nنصيحة: هذه الميزة تعمل باستمرار، لذا القيم المتقدمة العالية جدًا قد تزيد الحرارة وتقلل من صحة الجهاز بمرور الوقت. للجلسات الطويلة، أبقِ الافتراضيات إلا إذا كان لديك سبب محدد.</string>
+
+    <string name="motion_lab_percent_value">%1$d%%</string>
+
+    <string name="motion_lab_fps_value">%1$d fps</string>
+
+    <string name="motion_lab_ms_value">%1$d مللي ثانية</string>
+
+    <string name="motion_lab_seconds_value">%1$d ث</string>
+
+    <string name="motion_lab_footer">خصّص عناصر التحكم أعلاه فقط إذا كنت تحتاج سلوكًا خاصًا. لمعظم الإعدادات، الافتراضيات هي الخيار الأكثر أمانًا وموثوقية.</string>
+
+    <string name="lab_hide_thumbnails_title">الوضع المصنف</string>
+
+    <string name="lab_hide_thumbnails_redacted">محذوف</string>
+
+    <string name="lab_section_about">حول</string>
+
+    <string name="home_sidebar_discord">Discord</string>
+
+    <string name="home_sidebar_discord_sub">انضم إلى المجتمع</string>
+
+    <string name="home_sidebar_copyright" translatable="false">© FadSec Lab 2024 – 2026</string>
+
+    <string name="privacy_black_mode_title">شاشة الخصوصية السوداء</string>
+
+    <string name="privacy_black_mode_helper">إذا كان جهازك يقتل التطبيق في الخلفية، يمكنك استخدام هذه الميزة لإبقاء التطبيق يعمل في المقدمة.\n\nيظهر تراكب شاشة سوداء، مما يجعله يبدو وكأن الشاشة مطفأة بينما يستمر التسجيل.\n\nاضغط على أيقونة FadCam في أعلى رأس تبويب الصفحة الرئيسية لتنشيطه.</string>
+
+    <string name="privacy_black_mode_enable_title">تمكين وضع الخصوصية الأسود</string>
+
+    <string name="privacy_black_mode_enabled_toast">تم تمكين وضع الخصوصية</string>
+
+    <string name="privacy_black_mode_disabled_toast">تم تعطيل وضع الخصوصية</string>
+
+    <string name="privacy_black_gestures_title">طرق الخروج</string>
+
+    <string name="privacy_black_gestures_helper">اختر أي إيماءات يمكن استخدامها للخروج من وضع الخصوصية الأسود.\n\nملاحظة: يجب أن يبقى طريقة خروج واحدة على الأقل مفعّلة لمنع التعليق!</string>
+
+    <string name="privacy_black_gesture_swipe">اسحب للأعلى للخروج</string>
+
+    <string name="privacy_black_gesture_triple">نقر ثلاثي للخروج</string>
+
+    <string name="privacy_black_gesture_long">ضغط مطول للخروج</string>
+
+    <string name="privacy_black_min_one_method">يجب أن تبقى طريقة خروج واحدة على الأقل مفعّلة.</string>
+
+    <string name="privacy_black_enable_needed_hint">فعّل شاشة الخصوصية السوداء أولاً في إعدادات الأمان</string>
+
+    <string name="watch_status_recording">● تسجيل</string>
+
+    <string name="watch_status_paused">⏸ متوقف مؤقتًا</string>
+
+    <string name="watch_audio_toggle_desc">تبديل تسجيل الصوت</string>
+
+    <string name="watch_cam_flip_desc">قلب الكاميرا</string>
+
+    <string name="watch_hamburger_desc">فتح القائمة</string>
+
+    <string name="watch_video_menu_desc">خيارات الفيديو</string>
+
+    <string name="watch_storage_desc">التخزين</string>
+
+    <string name="watch_back_desc">رجوع</string>
+
+    <string name="watch_audio_label">الصوت</string>
+
+    <string name="watch_cam_label">الكاميرا</string>
+
+    <string name="watch_cam_front">أمامي</string>
+
+    <string name="watch_cam_back">خلفي</string>
+
+    <string name="watch_remote_title">عن بعد</string>
+
+    <string name="watch_remote_stream_on">البث مفعّل</string>
+
+    <string name="watch_remote_stream_off">اضغط للبث</string>
+
+    <string name="watch_settings_title">الإعدادات</string>
+
+    <string name="watch_settings_camera">الكاميرا</string>
+
+    <string name="watch_settings_audio">الصوت</string>
+
+    <string name="watch_settings_video">الفيديو</string>
+
+    <string name="watch_settings_security">الأمان</string>
+
+    <string name="watch_records_title">التسجيلات</string>
+
+    <string name="watch_records_empty">لا توجد تسجيلات بعد</string>
+
+    <string name="watch_audio_on">الميكروفون مفعّل</string>
+
+    <string name="watch_audio_muted">مكتوم</string>
+
+    <string name="watch_pause_label">إيقاف مؤقت</string>
+
+    <string name="watch_resume_label">استئناف</string>
+
+    <string name="watch_pause_desc">إيقاف مؤقت أو استئناف التسجيل</string>
+
+    <string name="watch_fullscreen_label">عرض</string>
+
+    <string name="watch_fullscreen_desc">شاشة كاملة</string>
+
+    <string name="watch_fadshot_label">لقطة</string>
+
+    <string name="watch_fadshot_desc">التقاط صورة</string>
+
+    <string name="watch_trash_title">المحذوفة مؤخرًا</string>
+
+    <string name="watch_trash_empty">لا شيء محذوف</string>
+
+    <string name="watch_trash_delete_all">حذف الكل</string>
+
+    <string name="watch_trash_delete_one">حذف نهائي</string>
+
+    <string name="video_moved_to_trash">تم نقل الفيديو إلى سلة المهملات</string>
+
+    <string name="watch_fullscreen_hint">الكاميرا تسجل</string>
+
+    <string name="watch_fullscreen_not_recording">لا يسجل</string>
+
+    <string name="screen_rec_settings_title">تسجيل الشاشة</string>
+
+    <string name="screen_rec_settings_subtitle">الجودة والصوت &amp; إعدادات الإخراج</string>
+
+    <string name="screen_rec_resolution">الدقة</string>
+
+    <string name="screen_rec_framerate">معدل الإطارات</string>
+
+    <string name="screen_rec_bitrate">معدل البت</string>
+
+    <string name="screen_rec_orientation">الاتجاه</string>
+
+    <string name="screen_rec_bitrate_mode_auto">تلقائي (VBR)</string>
+
+    <string name="screen_rec_bitrate_mode_manual">يدوي (CBR)</string>
+
+    <string name="screen_rec_bitrate_helper">VBR يتكيف مع تعقيد المحتوى. CBR يستخدم معدل بت ثابت مستهدف.</string>
+
+    <string name="screen_rec_bitrate_range">1 \u2013 50 Mbps</string>
+
+    <string name="screen_rec_bitrate_low_hint">القيم الأقل توفر التخزين</string>
+
+    <string name="screen_rec_bitrate_high_hint">القيم الأعلى تحسن الجودة</string>
+
+    <string name="screen_rec_orientation_portrait">عمودي</string>
+
+    <string name="screen_rec_orientation_landscape">أفقي</string>
+
+    <string name="watermark_speed_title">السرعة (كم/ساعة)</string>
+
+    <string name="watermark_speed_off">إيقاف</string>
+
+    <string name="watermark_speed_on">مفعّل — السرعة من بيانات GPS</string>
+
+    <string name="watermark_altitude_title">الارتفاع (م)</string>
+
+    <string name="watermark_altitude_off">إيقاف</string>
+
+    <string name="watermark_altitude_on">مفعّل — الارتفاع من أقمار GPS</string>
+
+    <string name="watermark_accuracy_title">دقة GPS (م)</string>
+
+    <string name="watermark_accuracy_off">إيقاف</string>
+
+    <string name="watermark_accuracy_on">مفعّل — الدقة الأفقية من أقمار GPS</string>
+
+    <string name="watermark_compass_title">اتجاه البوصلة</string>
+
+    <string name="watermark_compass_off">إيقاف</string>
+
+    <string name="watermark_compass_on_sensor">مفعّل — الاتجاه من مستشعر البوصلة</string>
+
+    <string name="watermark_compass_no_sensor">لا يوجد مستشعر بوصلة — الاتجاه من حركة GPS فقط (يعمل أثناء الحركة)</string>
+
+    <string name="watermark_noise_title">مستوى الضوضاء (dB)</string>
+
+    <string name="watermark_noise_off">إيقاف</string>
+
+    <string name="watermark_noise_on">مفعّل — مستوى الصوت المحيطي من الميكروفون</string>
+
+    <string name="watermark_weather_title">الطقس</string>
+
+    <string name="watermark_weather_off">إيقاف</string>
+
+    <string name="watermark_weather_on">مفعّل — الطقس من Open-Meteo API (يتطلب إنترنت)</string>
+
+    <string name="watermark_network_warning_title">تحذير الشبكة</string>
+
+    <string name="watermark_network_warning_message">هذه الميزة تتطلب طلبات شبكة قد تُتبع. عطّل إذا كنت تحتاج إخفاء كامل. متابعة؟</string>
+
+    <string name="watermark_network_warning_enable">تمكين</string>
+
+    <string name="watermark_audio_permission_required">مطلوب إذن الميكروفون لمراقبة الضوضاء</string>
+
+    <string name="watermark_gps_disabled_warning">⚠ GPS معطّل — فعّل موقع الجهاز لهذه الميزة للعمل</string>
+
+    <string name="watermark_gps_disabled_home_toast">ميزات العلامة المائية المعتمدة على الموقع مفعّلة لكن GPS معطّل. فعّل موقع الجهاز لتعمل.</string>
+
+    <string name="watermark_gps_disabled_banner_message">ميزات العلامة المائية المعتمدة على الموقع لن تظهر حتى يتم تمكين موقع الجهاز</string>
+
+    <string name="watermark_timezone_title">المنطقة الزمنية</string>
+
+    <string name="watermark_timezone_off">إيقاف</string>
+
+    <string name="watermark_timezone_on_gmt">مفعّل — إزاحة GMT في العلامة المائية</string>
+
+    <string name="watermark_timezone_format_title">تنسيق المنطقة الزمنية</string>
+
+    <string name="watermark_timezone_format_gmt_only">إزاحة GMT فقط</string>
+
+    <string name="watermark_timezone_format_gmt_name">إزاحة GMT + الاسم</string>
+
+    <string name="audio_device_type_wired_headset">سماعة سلكية</string>
+
+    <string name="audio_device_type_usb">USB</string>
+
+    <string name="audio_device_type_usb_headset">سماعة USB</string>
+
+    <string name="audio_device_type_bt_sco">Bluetooth (SCO)</string>
+
+    <string name="audio_device_type_bt_a2dp">Bluetooth (A2DP)</string>
+
+    <string name="audio_device_type_ble_headset">سماعة BLE</string>
+
+    <string name="audio_device_type_external">ميكروفون خارجي</string>
+
+    <string name="mini_apps_title">التطبيقات المصغرة</string>
+
+    <string name="mini_apps_subtitle">أدوات وأدوات مساعدة سريعة</string>
+
+    <string name="mini_app_coming_soon">قريبًا</string>
+
+    <string name="mini_app_coming_soon_desc">ستتوفر هذه الميزة في المستقبل</string>
+
+    <string name="mini_app_torch_title">الفلاش</string>
+
+    <string name="mini_app_torch_desc">مصباح LED مع أنماط</string>
+
+    <string name="mini_app_torch_feature_led">يستخدم LED الجهاز</string>
+
+    <string name="mini_app_torch_feature_screen">سطوع الشاشة كمصدر ضوء</string>
+
+    <string name="mini_app_torch_feature_patterns">أنماط SOS والومض</string>
+
+    <string name="mini_app_torch_led_title">فلاش LED</string>
+
+    <string name="mini_app_torch_led_desc">تحكم فلاش LED لجهازك</string>
+
+    <string name="mini_app_torch_screen_title">ضوء الشاشة</string>
+
+    <string name="mini_app_torch_screen_desc">استخدام سطوع الشاشة الكاملة كمصدر ضوء</string>
+
+    <string name="mini_app_torch_patterns_title">أنماط الومض</string>
+
+    <string name="torch_brightness">السطوع</string>
+
+    <string name="torch_color">اللون</string>
+
+    <string name="torch_patterns">الأنماط</string>
+
+    <string name="torch_pattern_steady">ثابت</string>
+
+    <string name="torch_pattern_strobe">ومض</string>
+
+    <string name="torch_pattern_sos">SOS</string>
+
+    <string name="torch_pattern_morse">شفرة مورس</string>
+
+    <string name="torch_status_on">مفعّل</string>
+
+    <string name="torch_status_off">إيقاف</string>
+
+    <string name="torch_tap_to_enable">اضغط للتشغيل</string>
+
+    <string name="torch_screen_light_label">ضوء الشاشة</string>
+
+    <string name="torch_screen_light_desc">تراكب أبيض بملء الشاشة</string>
+
+    <string name="mini_app_compass_title">البوصلة</string>
+
+    <string name="mini_app_compass_desc">بوصلة رقمية مع عرض الاتجاه وميزات الملاحة</string>
+
+    <string name="mini_app_compass_feature_bearing">اتجاه حقيقي (0-360°)</string>
+
+    <string name="mini_app_compass_feature_cardinal">الاتجاهات الأساسية (N، S، E، W)</string>
+
+    <string name="mini_app_compass_feature_mag_true">المغناطيسي مقابل الشمال الحقيقي</string>
+
+    <string name="mini_app_sound_meter_title">مقياس الصوت</string>
+
+    <string name="mini_app_sound_meter_desc">كاشف مستوى الضوضاء المحيطية بالديسيبل (dB)</string>
+
+    <string name="mini_app_sound_meter_feature_realtime">قياس dB في الوقت الفعلي</string>
+
+    <string name="mini_app_sound_meter_feature_peak">كشف الضوضاء القصوى</string>
+
+    <string name="mini_app_sound_meter_feature_avg">مستويات الضوضاء المتوسطة</string>
+
+    <string name="mini_app_sensor_dashboard_title">لوحة المستشعرات</string>
+
+    <string name="mini_app_sensor_dashboard_desc">عرض بيانات التسارع والجيروسكوب والمستشعرات</string>
+
+    <string name="mini_app_sensor_dashboard_feature_accel">التسارع (X، Y، Z)</string>
+
+    <string name="mini_app_sensor_dashboard_feature_gyro">الجيروسكوب (X، Y، Z)</string>
+
+    <string name="mini_app_sensor_dashboard_feature_mag">قراءات المغناطيسية</string>
+
+    <string name="button_close">إغلاق</string>
+
+    <string name="button_info">معلومات</string>
+
+    <string name="button_copy">نسخ</string>
+
+    <string name="button_scan_again">مسح مرة أخرى</string>
+
+    <string name="button_torch">الفلاش</string>
+
+    <string name="button_gallery">تصفح المعرض</string>
+
+    <string name="button_share">مشاركة</string>
+
+    <string name="qr_result_scanned_label">تم المسح</string>
+
+    <string name="qr_info_banner_text">يتم حفظ الرموز الممسوحة تلقائيًا في تبويب التسجيلات</string>
+
+    <string name="pattern_steady_desc">ضوء ثابت مستمر لاستخدام المصباح العادي</string>
+
+    <string name="pattern_strobe_desc">نمط ومض سريع للإشارة الطارئة</string>
+
+    <string name="pattern_sos_desc">نمط SOS شفرة مورس: 3 قصير + 3 طويل + 3 ومضات قصيرة</string>
+
+    <string name="pattern_morse_desc">نمط شفرة مورس للإشارة المتقدمة</string>
+
+    <string name="torchtimer_label">مؤقت الإيقاف التلقائي</string>
+
+    <string name="torchtimer_desc">ينطفئ الفلاش تلقائيًا بعد الوقت المحدد</string>
+
+    <string name="torchtimer_off">إيقاف</string>
+
+    <string name="torchtimer_picker_helper">المؤقت يبدأ فقط عندما يكون الفلاش مفعّلاً</string>
+
+    <string name="torchtimer_cancel">إلغاء المؤقت</string>
+
+    <string name="torchtimer_30s">30 ثانية</string>
+
+    <string name="torchtimer_1m">دقيقة واحدة</string>
+
+    <string name="torchtimer_2m">دقيقتان</string>
+
+    <string name="torchtimer_5m">5 دقائق</string>
+
+    <string name="torchtimer_10m">10 دقائق</string>
+
+    <string name="torchtimer_15m">15 دقيقة</string>
+
+    <string name="torchtimer_30m">30 دقيقة</string>
+
+    <string name="torchtimer_1h">ساعة واحدة</string>
+
+    <string name="torchtimer_custom_title">تعيين مؤقت مخصص</string>
+
+    <string name="torchtimer_custom_unit_helper">اختر وحدة الوقت</string>
+
+    <string name="torchtimer_custom_hint">أدخل المدة</string>
+
+    <string name="torchtimer_custom_minutes_example">مثال: 5 لـ 5 دقائق</string>
+
+    <string name="torchtimer_custom_hours_example">مثال: 2 لـ ساعتين</string>
+
+    <string name="torchtimer_custom_apply">تطبيق</string>
+
+    <string name="torchtimer_custom_error_positive">يجب أن تكون المدة أكبر من 0</string>
+
+    <string name="torchtimer_custom_error_invalid">رقم غير صالح</string>
+
+    <string name="watermark_utm_title">إحداثيات UTM</string>
+
+    <string name="watermark_utm_off">إيقاف</string>
+
+    <string name="watermark_utm_on">مفعّل — إحداثيات شبكة Universal Transverse Mercator</string>
+
+    <string name="watermark_utm_helper">UTM يقسم الأرض إلى 60 منطقة ويحول خطوط العرض/الطول إلى شرقية &amp; شمالية بالمتر. يستخدمه العسكريون والمساحون والخرائط الطبوغرافية لتحديد المواقع الشبكية الدقيقة.\n\nكيفية القراءة: \"منطقة 42N — 372,684م شرق، 3,512,334م شمال\" = منطقة 42 في نصف الكرة الشمالي، 372,684 متر شرقية (شرق-غرب)، 3,512,334 متر شمالية (شمال-جنوب).</string>
+
+    <string name="mini_app_speedometer_title">عداد السرعة</string>
+
+    <string name="mini_app_speedometer_desc">عداد سرعة السيارة في الوقت الفعلي مع تتبع سرعة GPS</string>
+
+    <string name="mini_app_clinometer_title">مقياس الميل</string>
+
+    <string name="mini_app_clinometer_desc">قياس الزوايا والمنحدرات باستخدام الجيروسكوب</string>
+
+    <string name="mini_app_qr_scanner_title">ماسح QR</string>
+
+    <string name="mini_app_qr_scanner_desc">مسح رموز QR والباركود فورًا</string>
+
+    <string name="mini_app_pedometer_title">عداد الخطى</string>
+
+    <string name="mini_app_pedometer_desc">عداد الخطوات باستخدام مستشعر الخطوات المدمج</string>
+
+    <string name="mini_app_metal_detector_title">كاشف المعادن</string>
+
+    <string name="mini_app_metal_detector_desc">كشف الأجسام المعدنية باستخدام المغناطيسية</string>
+
+    <string name="mini_app_parking_marker_title">علامة الموقف</string>
+
+    <string name="mini_app_parking_marker_desc">احفظ موقف سيارتك وتنقل إليه بسهم GPS</string>
+
+    <string name="mini_app_qr_generator_title">مولد QR</string>
+
+    <string name="mini_app_qr_generator_desc">إنشاء رموز QR من النصوص وURLs وجهات الاتصال</string>
+
+    <string name="mini_apps_planned_shortcuts_title">مخطط: الاختصارات &amp; الأتمتة</string>
+
+    <string name="mini_apps_planned_shortcuts_desc">اختصارات الشاشة الرئيسية للوصول الفوري إلى أي تطبيق مصغر بدون فتح FadCam أولاً.\n\nدعم الأتمتة القائمة على Intent (Tasker، MacroDroid، إلخ) لتشغيل التطبيقات المصغرة برمجيًا — استخدم مسح QR والفلاش والمزيد من سير العمل الآلي الخاص بك.</string>
+    <string name="export_center">مركز التصدير</string>
+
+    <string name="remote_server_status">حالة الخادم</string>
+
+    <string name="remote_server_endpoints">نقاط نهاية الخادم</string>
+
+    <string name="remote_get_requests">طلبات GET</string>
+
+    <string name="remote_post_requests">طلبات POST</string>
+
+    <string name="remote_server_root">جذر الخادم</string>
+
+    <string name="remote_live_stream">البث المباشر</string>
+
+    <string name="remote_status_api">واجهة الحالة</string>
+
+    <string name="remote_init_segment">تهيئة المقطع</string>
+
+    <string name="remote_torch_toggle">تشغيل/إطفاء الكشاف</string>
+
+    <string name="remote_post_requests_remote_control">طلبات POST (التحكم عن بُعد)</string>
+
+    <string name="remote_network_health">صحة الشبكة</string>
+
+    <string name="remote_status">الحالة</string>
+
+    <string name="remote_excellent">ممتاز</string>
+
+    <string name="remote_test_now">اختبار الآن</string>
+
+    <string name="remote_speed_metrics">مقاييس السرعة</string>
+
+    <string name="remote_download">التحميل</string>
+
+    <string name="remote_upload">الرفع</string>
+
+    <string name="remote_signal_strength">قوة الإشارة</string>
+
+    <string name="remote_latency_ping">زمن الاستجابة (Ping)</string>
+
+    <string name="remote_last_tested">آخر اختبار: %s</string>
+
+    <string name="remote_connected_clients">العملاء المتصلون</string>
+
+    <string name="remote_client_data_usage">استهلاك بيانات العميل</string>
+
+    <string name="remote_total_served">الإجمالي المُرسَل</string>
+
+    <string name="remote_active_clients">العملاء النشطون</string>
+
+    <string name="remote_per_client_breakdown">تفصيل كل عميل</string>
+
+    <string name="remote_no_clients">لا يوجد عملاء متصلون</string>
+
+    <string name="remote_battery_info">معلومات البطارية</string>
+
+    <string name="remote_current_level">المستوى الحالي</string>
+
+    <string name="remote_battery_consumed">استهلاك البطارية (أثناء البث)</string>
+
+    <string name="remote_charging_status">حالة الشحن</string>
+
+    <string name="remote_not_charging">غير قيد الشحن</string>
+
+    <string name="remote_low_battery_threshold">حد تحذير انخفاض البطارية</string>
+
+    <string name="remote_set">تعيين</string>
+
+    <string name="remote_device_battery_capacity">سعة بطارية الجهاز</string>
+
+    <string name="remote_save">حفظ</string>
+
+    <string name="remote_estimates_for_device">تقديرات لجهازك:</string>
+
+    <string name="remote_uptime_details">تفاصيل زمن التشغيل</string>
+
+    <string name="remote_server_uptime">زمن تشغيل الخادم</string>
+
+    <string name="remote_session_started_at">وقت بدء الجلسة</string>
+
+    <string name="remote_video_segments">مقاطع الفيديو (أجزاء)</string>
+
+    <string name="remote_buffered">مخزَّن مؤقتًا</string>
+
+    <string name="remote_buffer_size">حجم المخزن المؤقت</string>
+
+    <string name="remote_sequence_range">نطاق التسلسل</string>
+
+    <string name="remote_oldest">الأقدم</string>
+
+    <string name="remote_latest">الأحدث</string>
+
+    <string name="remote_what_are_segments">ما هي المقاطع؟</string>
+
+    <string name="remote_stream_orientation">اتجاه البث</string>
+
+    <string name="remote_choose_orientation">اختر الاتجاه للبث فقط</string>
+
+    <string name="remote_portrait">عمودي</string>
+
+    <string name="remote_vertical_orientation">اتجاه عمودي (9:16)</string>
+
+    <string name="remote_landscape">أفقي</string>
+
+    <string name="remote_horizontal_orientation">اتجاه أفقي (16:9)</string>
+
+    <string name="remote_auto_default">تلقائي (افتراضي)</string>
+
+    <string name="remote_follow_recording_orientation">اتبع اتجاه تسجيل التطبيق</string>
+
+    <string name="remote_quality_low">منخفض</string>
+
+    <string name="remote_quality_medium">متوسط</string>
+
+    <string name="remote_quality_high">عالي</string>
+
+    <string name="remote_quality_ultra">فائق</string>
+
+    <string name="remote_event_logs">سجلات الأحداث</string>
+
+    <string name="remote_client_events">أحداث العميل</string>
+
+    <string name="remote_pages">الصفحات</string>
+
+    <string name="remote_layers">الطبقات</string>
+
+    <string name="remote_access_endpoints_desc">الوصول إلى خادم البث عبر نقاط HTTP هذه</string>
+
+    <string name="remote_control_via_api_desc">التحكم في FadCam عن بُعد عبر استدعاءات API</string>
+
+    <string name="remote_buffered_segments_desc">مقاطع مخزنة مؤقتًا جاهزة للبث</string>
+
+    <string name="remote_battery_low_warning">⚠️ البطارية منخفضة - اشحن الجهاز فورًا</string>
+
+    <string name="remote_enter_percentage_hint">أدخل النسبة المئوية</string>
+
+    <string name="remote_enter_mah_hint">أدخل mAh (1000-10000)</string>
+
+    <string name="sidebar_profiles">الملفات التعريفية</string>
+
+    <string name="sidebar_profiles_desc">حفظ وتحميل إعدادات التسجيل فورًا</string>
+
+    <string name="sidebar_update_available">تحديث متاح</string>
+
+    <string name="sidebar_stable_release">الإصدار المستقر</string>
+
+    <string name="sidebar_beta_release">إصدار تجريبي</string>
+
+    <string name="sidebar_fadcam_pro">FadCam Pro</string>
+
+    <string name="badge_new">جديد</string>
+
+    <string name="update_pro_title">تحديث FadCam Pro</string>
+
+    <string name="update_get_pro">احصل على FadCam Pro</string>
+
+    <string name="update_maybe_later">ربما لاحقًا</string>
+
+    <string name="update_beta_title">تحديث تجريبي متاح</string>
+
+    <string name="update_get_beta">احصل على الإصدار التجريبي</string>
+
+    <string name="mini_apps_about_title">حول التطبيقات المصغرة</string>
+
+    <string name="mini_apps_current_tools">الأدوات الحالية</string>
+
+    <string name="mini_apps_qr_scanner_reference">مرجع ماسح QR</string>
+
+    <string name="screen_recording_title">تسجيل الشاشة</string>
+
+    <string name="screen_recording_notif_title">FadRec - تسجيل الشاشة</string>
+
+    <string name="screen_recording_saved">تم حفظ تسجيل الشاشة</string>
+
+    <string name="screen_recording_tap_to_view">اضغط لعرض التسجيل</string>
+
+    <string name="notification_action_stop">إيقاف</string>
+
+    <string name="fadmic_coming_soon">FadMic (تسجيل الميكروفون) قريبًا!</string>
+
+    <string name="toast_stream_server_starting">جارٍ تشغيل خادم البث...</string>
+
+    <string name="toast_stream_server_stopped">تم إيقاف خادم البث</string>
+
+    <string name="toast_no_cloud_viewers">لا يوجد مشاهدون سحابيون متصلون</string>
+
+    <string name="toast_no_clients">لا يوجد عملاء متصلون</string>
+
+    <string name="toast_device_id_copied">تم نسخ معرف الجهاز</string>
+
+    <string name="toast_endpoint_copied">تم النسخ: %s</string>
+
+    <string name="toast_battery_set_threshold">تم تعيين حد تحذير البطارية إلى %s</string>
+
+    <string name="toast_battery_set_capacity">تم تعيين سعة البطارية إلى %s</string>
+
+    <string name="toast_orientation_set">تم تعيين الاتجاه إلى %s مسبقًا</string>
+
+    <string name="toast_quality_set">تم تعيين الجودة إلى %s مسبقًا</string>
+
 </resources>

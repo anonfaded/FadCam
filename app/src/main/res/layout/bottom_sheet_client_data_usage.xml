@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Client Data Usage"
+        android:text="@string/remote_client_data_usage"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -34,7 +34,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Total Served"
+                android:text="@string/remote_total_served"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray" />
 
@@ -59,7 +59,7 @@
                 android:id="@+id/active_clients_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Active Clients"
+                android:text="@string/remote_active_clients"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray" />
 
@@ -79,7 +79,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Per-Client Breakdown"
+        android:text="@string/remote_per_client_breakdown"
         android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -97,7 +97,7 @@
         android:id="@+id/empty_state_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No clients connected"
+        android:text="@string/remote_no_clients"
         android:textSize="14sp"
         android:textColor="@android:color/darker_gray"
         android:layout_gravity="center"

@@ -384,7 +384,7 @@ public class ModeSwitcherComponent {
         if (mode.equals(currentMode)) return; // no-op
 
         if (Constants.MODE_FADMIC.equals(mode)) { // blocked mode
-            showComingSoonToast("FadMic (Mic Recording)");
+            showComingSoonToast(context.getString(R.string.fadmic_coming_soon));
             if (listener != null) listener.onComingSoonRequested("FadMic");
             return;
         }

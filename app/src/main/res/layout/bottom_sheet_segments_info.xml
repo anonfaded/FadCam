@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Video Segments (Fragments)"
+        android:text="@string/remote_video_segments"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -19,7 +19,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Buffered segments ready for streaming"
+        android:text="@string/remote_buffered_segments_desc"
         android:textSize="13sp"
         android:textColor="@android:color/darker_gray"
         android:layout_marginBottom="16dp" />
@@ -44,7 +44,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Buffered"
+                android:text="@string/remote_buffered"
                 android:textSize="11sp"
                 android:textColor="@android:color/darker_gray" />
 
@@ -71,7 +71,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Buffer Size"
+                android:text="@string/remote_buffer_size"
                 android:textSize="11sp"
                 android:textColor="@android:color/darker_gray" />
 
@@ -99,7 +99,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sequence Range"
+            android:text="@string/remote_sequence_range"
             android:textSize="11sp"
             android:textColor="@android:color/darker_gray"
             android:layout_marginBottom="8dp" />
@@ -119,7 +119,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Oldest"
+                    android:text="@string/remote_oldest"
                     android:textSize="10sp"
                     android:textColor="@android:color/darker_gray" />
 
@@ -143,7 +143,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Latest"
+                    android:text="@string/remote_latest"
                     android:textSize="10sp"
                     android:textColor="@android:color/darker_gray" />
 
@@ -164,7 +164,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="What are segments?"
+        android:text="@string/remote_what_are_segments"
         android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"

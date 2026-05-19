@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Stream Orientation"
+        android:text="@string/remote_stream_orientation"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -19,7 +19,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Choose orientation for streaming only"
+        android:text="@string/remote_choose_orientation"
         android:textSize="12sp"
         android:textColor="@android:color/darker_gray"
         android:layout_marginBottom="16dp" />
@@ -49,7 +49,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Portrait"
+                android:text="@string/remote_portrait"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorHeading" />
@@ -57,7 +57,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Vertical orientation (9:16)"
+                android:text="@string/remote_vertical_orientation"
                 android:textSize="11sp"
                 android:textColor="@android:color/darker_gray"
                 android:layout_marginTop="2dp" />
@@ -97,7 +97,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Landscape"
+                android:text="@string/remote_landscape"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorHeading" />
@@ -105,7 +105,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Horizontal orientation (16:9)"
+                android:text="@string/remote_horizontal_orientation"
                 android:textSize="11sp"
                 android:textColor="@android:color/darker_gray"
                 android:layout_marginTop="2dp" />
@@ -144,7 +144,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Auto (Default)"
+                android:text="@string/remote_auto_default"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorHeading" />
@@ -152,7 +152,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Follow app recording orientation"
+                android:text="@string/remote_follow_recording_orientation"
                 android:textSize="11sp"
                 android:textColor="@android:color/darker_gray"
                 android:layout_marginTop="2dp" />

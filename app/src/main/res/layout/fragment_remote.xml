@@ -173,7 +173,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Server Status"
+                        android:text="@string/remote_server_status"
                         android:textSize="11sp"
                         android:layout_marginTop="2dp"
                         android:textColor="#DDDDDD"

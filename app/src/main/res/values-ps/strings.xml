@@ -482,4 +482,1958 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="fix_video_saf_success">Video repair sho! Save sho da num sara: %1$s.</string>
     <string name="fix_video_saf_export">Repaired file da app storage na export ya share kawalai shay.</string>
     <string name="full_changelog_info">For full changelog, head to the Home tab and open the hamburger menu, then select "What's New".</string>
+<!-- ================================================ -->
+    <!-- Auto-generated Roman Pashto translations         -->
+    <!-- Total entries: 1663                        -->
+    <!-- ================================================ -->
+
+    <string name="about_version_update_licenses">Version, update, licenses</string>
+    <string name="accessibility_thumbnail_progress">%1$d%% watched</string>
+    <string name="add_shape">Shape Zaat Ka</string>
+    <string name="add_text">Text Zaat Ka</string>
+    <string name="ae_lock_helper">Kala che faal wi, auto-exposure pa osany roshnaai bandi saati de che camera ba recording wakht ke exposure bya adjust na kawi. Pa Exposure tile sara manual exposure adjustments ka.</string>
+    <string name="ae_lock_switch_label">Lock AE</string>
+    <string name="ae_lock_title">AE Lock</string>
+    <string name="af_continuous_description">Camera pa khpala focus continuously adjust kawi. Manual focus dapara preview bandi tap ka.</string>
+    <string name="af_continuous_title">Continuous Auto Focus</string>
+    <string name="af_manual_description">Focus band de. Manual focus kolo dapara preview bandi tap ka.</string>
+    <string name="af_manual_title">Locked Focus</string>
+    <string name="af_mode_title">Auto Focus Mode</string>
+    <string name="af_picker_helper">Default option is Continuous Auto Focus.</string>
+    <string name="annotation_notification_hide_menu">Menu pat ka</string>
+    <string name="annotation_notification_show_menu">Menu woyai</string>
+    <string name="annotation_tools">Annotashun Tools</string>
+    <string name="annotations">Annotashun</string>
+    <string name="app_icon_alternative" translatable="false">Camera</string>
+    <string name="app_icon_bat" translatable="false">FadCam</string>
+    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
+    <string name="app_icon_calculator" translatable="false">Calculator</string>
+    <string name="app_icon_car" translatable="false">ClutchX</string>
+    <string name="app_icon_clock" translatable="false">Clock</string>
+    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_faded" translatable="false">0xFF0000</string>
+    <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
+    <string name="app_icon_football" translatable="false">FootballX 2024</string>
+    <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
+    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_notes" translatable="false">Notes</string>
+    <string name="app_icon_pakistan" translatable="false">FadCam</string>
+    <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
+    <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
+    <string name="app_icon_weather" translatable="false">Weather</string>
+    <string name="app_name" translatable="false">FadCam</string>
+    <string name="applock_helper_create">Da Records tab dapara mahfuziat jor ka: 4-digit PIN, password, ya fingerprint sara. Kala che app pasmanzar ta shi, ba khpala lock shi.</string>
+    <string name="applock_helper_enabled">Tab Lock chalu de. Kala che app na wrusta razy, Records tab kholo dapara PIN ba darkar wi.</string>
+    <string name="applock_helper_manage_disabled">Tab Lock PIN tanzim sho. Kala che app ta wapas razy PIN darkar walo dapara de toggle on ka.</string>
+    <string name="applock_set_pin_enable">PIN Tanzim Ka &amp; Faal Ka</string>
+    <string name="arabic_date_description_default">Full Arabic (Default)</string>
+    <string name="arabic_date_description_english">Full English</string>
+    <string name="arabic_date_description_full_arabic">Full Arabic (٧ صفر ١٤٤٧)</string>
+    <string name="arabic_date_description_mixed">Arabic Month, English Numbers</string>
+    <string name="arabic_date_format_description">Intikhab Ka how to display the Islamic date</string>
+    <string name="arabic_date_format_title">Arabic Tarikh Format</string>
+    <string name="arabic_date_full_arabic">Full Arabic</string>
+    <string name="arabic_date_full_english">Full English</string>
+    <string name="arabic_date_month_arabic_numbers_english">Arabic Month, English Numbers</string>
+    <string name="arabic_date_sample_english">7 Safar 1447</string>
+    <string name="arabic_date_sample_full_arabic">٧ صفر ١٤٤٧</string>
+    <string name="arabic_date_sample_mixed">7 صفر 1447</string>
+    <string name="audio_bitrate_recommended_line">Recommended: 192000 bps</string>
+    <string name="audio_device_type_ble_headset">BLE Headset</string>
+    <string name="audio_device_type_bt_a2dp">Bluetooth (A2DP)</string>
+    <string name="audio_device_type_bt_sco">Bluetooth (SCO)</string>
+    <string name="audio_device_type_external">External Microphone</string>
+    <string name="audio_device_type_usb">USB</string>
+    <string name="audio_device_type_usb_headset">USB Headset</string>
+    <string name="audio_device_type_wired_headset">Wired Headset</string>
+    <string name="audio_waveform_subtitle">Da progress bar bandi da ghag visualization woyai</string>
+    <string name="audio_waveform_title">Da Ghag Waveform</string>
+    <string name="auto_delete_immediate">Immediate</string>
+    <string name="back">Shata</string>
+    <string name="background_delete_progress">Da %1$s pasmanzar ki delete kegi…</string>
+    <string name="background_playback_helper_picker">Kala che faal wi, audio ba jari wi hatta che app na watan shi ya screen band kae.</string>
+    <string name="background_playback_timer_helper">Intikhab Ka how long playback should continue in background before automatically stopping. Intikhab Ka Off to disable.</string>
+    <string name="background_playback_timer_title">Pasmanzar playback timer</string>
+    <string name="background_playback_timer_title_short">Playback timer</string>
+    <string name="background_playback_title">Pasmanzar ke chalao</string>
+    <string name="background_restore_progress">Da %1$s pasmanzar ki restore kegi…</string>
+    <string name="battery_estimate_disclaimer" formatted="false">Based on real-world test: 8 hours continuous streaming with 61% battery drain on a 5000mAh device. Update sta / khpal device capacity below for personalized estimates.</string>
+    <string name="battery_estimate_title">Estimated Streaming Wakh Remaining</string>
+    <string name="button_close">Band Ka</string>
+    <string name="button_copy">Copy Ka</string>
+    <string name="button_gallery">Browse Gallery</string>
+    <string name="button_info">Maloomat</string>
+    <string name="button_scan_again">Scan Again</string>
+    <string name="button_settings_cam_dual">Dual (PiP)</string>
+    <string name="button_share">Share Ka</string>
+    <string name="button_torch">Torch</string>
+    <string name="camera_error_device">Da camera device ghalati</string>
+    <string name="camera_error_disabled">Camera ghair faal de</string>
+    <string name="camera_error_in_use">Camera da bel app istemal kegi</string>
+    <string name="camera_error_max_cameras">Da cameras shumaar pore sho</string>
+    <string name="camera_error_service">Da camera service ghalati</string>
+    <string name="camera_error_unknown">Na maloom da camera ghalati</string>
+    <string name="camera_interrupted_description">Bela app camera istemal kawi. Kala che camera mojood shi, recording ba khpala bya shuru shi.</string>
+    <string name="camera_interrupted_title">Recording lag waqfa shu (camera in use)</string>
+    <string name="camera_permission_denied">Da camera ejazat mana shwi.</string>
+    <string name="camera_reconnected_description">Recording bya chalu shu automatically</string>
+    <string name="camera_reconnected_title">Camera bya wasal sho</string>
+    <string name="camera_reconnection_attempts">Camera sara bya wasal kolo kushish kigi...</string>
+    <string name="camera_reconnection_failed">Camera sara bya wasal na shwa, tiyar frames sara jari de</string>
+    <string name="camera_reconnection_success">Camera bya wasal sho, recording bya shuru shi</string>
+    <string name="camera_resource_cooldown">Da camera sources lere kegi</string>
+    <string name="changelog_label">What\'s New</string>
+    <string name="choose_language">Intikhab Ka Jaba</string>
+    <string name="chooser_open_with">Sara khola</string>
+    <string name="close">Band Ka</string>
+    <string name="cloud_account_button_desc">FadSec Cloud</string>
+    <string name="cloud_account_connecting">Wasal kigi…</string>
+    <string name="cloud_account_device_id">Device ID</string>
+    <string name="cloud_account_device_name_desc">Da num ba sta FadSec Cloud dashboard ke zaher shi</string>
+    <string name="cloud_account_device_name_hint">Enter device name (e.g., My Phone)</string>
+    <string name="cloud_account_device_name_title">Num Your Device</string>
+    <string name="cloud_account_helper_text">Unlink ka che sta account na jude shi. Ta ba bela num sara bya link kol shaye.</string>
+    <string name="cloud_account_link">Device Link Ka</string>
+    <string name="cloud_account_link_failed">Device link kolo ke fail sho. Mehrbani oka bya kushish ka.</string>
+    <string name="cloud_account_link_success">Device pa bryalitob sara link sho!</string>
+    <string name="cloud_account_linked">Device Linked</string>
+    <string name="cloud_account_login_required">Mehrbani oka login ka che khpal device link kae</string>
+    <string name="cloud_account_not_linked">Not Linked</string>
+    <string name="cloud_account_title">FadSec Cloud</string>
+    <string name="cloud_account_unlink">Device Unlink Ka</string>
+    <string name="cloud_account_unlink_confirm">Aya yaqin lari che ta da device unlink kol gware?</string>
+    <string name="cloud_account_unlink_success">Device unlink sho</string>
+    <string name="cloud_account_webview_title">FadSec Cloud</string>
+    <string name="cloud_button_label">FadSec Cloud</string>
+    <string name="cloud_button_title">FadSec Cloud</string>
+    <string name="cloud_streaming_not_linked">Link device first to enable</string>
+    <string name="cloud_streaming_status_off">Sirf mahali stream</string>
+    <string name="cloud_streaming_status_on">FadSec Cloud ta porta kegi</string>
+    <string name="cloud_streaming_title">Cloud Streaming</string>
+    <string name="codec_go_to_settings">Go to Tanzimaat</string>
+    <string name="codec_hevc_incompatible_message">📡 Live streaming via HLS requires H.264 codec.
+
+H.265 is not compatible with browser players.
+
+Would you like to switch to H.264 and start recording?</string>
+    <string name="codec_hevc_incompatible_title">H.265 Codec Not Supported for Live Streaming</string>
+    <string name="codec_switch_and_record">Switch to H.264 &amp; Record</string>
+    <string name="codec_switch_cancelled">Codec switch cancelled</string>
+    <string name="codec_switched_to_h264">✓ Codec switched to H.264. Starting recording...</string>
+    <string name="coming_soon_toast">Zur razee! In Sha Allah</string>
+    <string name="controls_hide_delay_helper">Intikhab ka che player controls pa tso seconds zaher pati wi auto-hiding na pesh. Controls zaher sawalo dapara Off tanzim ka.</string>
+    <string name="controls_hide_delay_subtitle">%1$ds</string>
+    <string name="controls_hide_delay_title">Controls pat kawalo dair</string>
+    <string name="debug_log_delete_subtitle">Lere Ka the log file from storage</string>
+    <string name="debug_log_delete_title">Debug Log Delete Ka</string>
+    <string name="debug_log_empty">Tarto debug log nadi</string>
+    <string name="debug_log_open_fail">Khola failed</string>
+    <string name="debug_log_open_subtitle">Ogora in a browser or HTML viewer</string>
+    <string name="debug_log_open_title">Beheran Khola</string>
+    <string name="debug_log_search_hint">Log model kae…</string>
+    <string name="debug_log_share_fail">Share Ka failed</string>
+    <string name="debug_log_share_subtitle">Khola the system share sheet</string>
+    <string name="debug_log_share_title">Debug Log Share Ka</string>
+    <string name="debug_log_tools_helper">Da debug log file woyai (FADCAM_debug.html). Debug logging faal kol performance bandi asar achi shi - faal ya kri kala che ta da bug sara makh wi aw log share kol gware. Search box istemal ka che filter kae.</string>
+    <string name="debug_log_tools_subtitle">Preview, search, share or delete FADCAM_debug.html</string>
+    <string name="debug_log_tools_title">Debug Log</string>
+    <string name="delete">Delete Ka</string>
+    <string name="delete_all">Tol Delete Ka</string>
+    <string name="delete_all_videos_subtitle_short">Tol recordings lere ka</string>
+    <string name="delete_project">Delete Ka Ka Project</string>
+    <string name="delete_single_video_subtitle">Lere Ka da recording</string>
+    <string name="delete_video_cancelled_toast">Deletion cancelled.</string>
+    <string name="delete_video_dialog_message">Aya yaqin lari che ta %1$s delete kol gware?</string>
+    <string name="delete_video_dialog_title">Video delete ka?</string>
+    <string name="delete_video_error_null_toast">Ghalati: Cannot delete null item.</string>
+    <string name="delete_video_fail_toast">Fail Sho to delete \'%1$s\'.</string>
+    <string name="delete_video_progress">Deleting %1$s...</string>
+    <string name="delete_video_success_toast">\'%1$s\' deleted.</string>
+    <string name="delete_videos_log">Deleting %1$d selected videos…</string>
+    <string name="delete_videos_partial_success_toast">%1$d video(s) deleted. Fail Sho to delete %2$d.</string>
+    <string name="delete_videos_success_toast">All %1$d videos deleted.</string>
+    <string name="digital_forensics_capture_scope">Evidence Capture Scope</string>
+    <string name="digital_forensics_coming_soon">Planned for a future update.</string>
+    <string name="digital_forensics_coming_soon_short">Zur Razee</string>
+    <string name="digital_forensics_daily_helper">Yo saada roznama report woyai da jumla events aw event qismuna, che ta osani tor har video khola na activity review kol shaye.</string>
+    <string name="digital_forensics_daily_summary">Daily Khulasa</string>
+    <string name="digital_forensics_dangerous_helper">Aala safety labeling ikhtiari aw sakht de. Da pat sawa ka magar che ta khas tor high-sensitivity security labels gware.</string>
+    <string name="digital_forensics_discord_alerts">Discord Alerts</string>
+    <string name="digital_forensics_discord_coming_soon_toast">Discord alerts ba mustaqbil update ki zayda shi.</string>
+    <string name="digital_forensics_enable">Digital Forensics Faal Ka</string>
+    <string name="digital_forensics_enable_helper">Think of da as sta / khpal smart evidence sensor. When enabled, FadCam keeps a timeline of detected activity so you can jump to important moments later.</string>
+    <string name="digital_forensics_event_dangerous_object">Dangerous Object Tags</string>
+    <string name="digital_forensics_event_person">Person Events</string>
+    <string name="digital_forensics_event_pet">Pet Events</string>
+    <string name="digital_forensics_event_vehicle">Vehicle Events</string>
+    <string name="digital_forensics_evidence_enable">Saboot Jama Kolo Faal Ka</string>
+    <string name="digital_forensics_evidence_helper">Kala che faal wi, detections forensic database ke real time ki proof frames sara likhel kegi. Da pat sawa ka che ta sirf live preview labels gware bela storage growth.</string>
+    <string name="digital_forensics_heatmap">Heatmap Insights</string>
+    <string name="digital_forensics_heatmap_helper">Da muntashira mawqeyo na yo movement map jor kai. Zeati roghan zono da camera view pa agha hissa ke tayar activity woyai.</string>
+    <string name="digital_forensics_helper">Digital Forensics dwa hissa lari: live preview overlay aw saved evidence. Che ta sirf live visual AI labels gware, nu Evidence Collection band sawa ka. Che ta forensic history pakar de, nu Evidence Collection faal ka aw intikhab ka che store kawalai gware.</string>
+    <string name="digital_forensics_motion_lab_dependency">Motion Lab os waqt ghair faal de. Forensics recording da Motion Lab analysis bandi madakur de. Pehla Motion Lab faal ka che forensic events capture kae.</string>
+    <string name="digital_forensics_overlay">Show AI Overlay in Live Preview</string>
+    <string name="digital_forensics_overlay_helper">Kala che mojood wi, da live preview ke saada labels draw kai che ta wuwiny che AI real time ke sa noticing kai. Clean preview dapara band ka.</string>
+    <string name="digital_forensics_person_helper">Events record kai kala che person motion sessions ke detect shi. Da kor monitoring aw entry-point logs dapara behtar option.</string>
+    <string name="digital_forensics_pet_helper">Pet tagging dapara yao khas model darkar de aw enham tarseedi kegi. Faal ya kri che ta early support test kai.</string>
+    <string name="digital_forensics_picker_disabled_desc">Turn da option off.</string>
+    <string name="digital_forensics_picker_enabled_desc">Turn da option on.</string>
+    <string name="digital_forensics_picker_switch_label">Faal Ka da option</string>
+    <string name="digital_forensics_preview_default">PERSON 92%</string>
+    <string name="digital_forensics_preview_subtitle">Simulated overlay preview che users labels, confidence, aw evidence framing pohe shi.</string>
+    <string name="digital_forensics_preview_title">Live Detection Preview</string>
+    <string name="digital_forensics_row_subtitle">Evidence timeline, identity relink, and smart insights</string>
+    <string name="digital_forensics_scope_both">People and Objects</string>
+    <string name="digital_forensics_scope_both_helper">Da mukammal amniyat shahadat dapara behtar: khalk ao non-person objects.</string>
+    <string name="digital_forensics_scope_objects">Objects only</string>
+    <string name="digital_forensics_scope_objects_helper">Store only non-person detections (vehicles, pets, objects).</string>
+    <string name="digital_forensics_scope_people">People only</string>
+    <string name="digital_forensics_scope_people_helper">Sirf person detections store ka che storage kam kai aw pa human activity focus ka.</string>
+    <string name="digital_forensics_scope_picker_helper">Intikhab ka che evidence ke sabt shi. Da database rows aw proof frames bandi asar achi kai.</string>
+    <string name="digital_forensics_status_disabled">Ghair faal de</string>
+    <string name="digital_forensics_status_enabled">Faal de (collecting forensic event metadata)</string>
+    <string name="digital_forensics_status_enabled_short">Faal de</string>
+    <string name="digital_forensics_title">Digital Forensics</string>
+    <string name="digital_forensics_vehicle_helper">Vehicle tagging dapara yao khas model darkar de aw enham tarseedi kegi. Ta da pat sawa kol shaye hatta che model support na razy.</string>
+    <string name="disabled">Ghair faal de</string>
+    <string name="display_settings_title">Rayaz</string>
+    <string name="done">Mukammal</string>
+    <string name="dual_cam_appearance_helper">Da PiP overlay visual appearance khoso ka, border, koshuna, aw spacing shamil de.</string>
+    <string name="dual_cam_banner_checking">Checking device compatibility…</string>
+    <string name="dual_cam_banner_supported">Dawa cameras detect shwal, kho concurrent support tasdiq na shwi. Tafseelaat dapara tap ka.</string>
+    <string name="dual_cam_banner_supported_confirmed">Dual camera pa mukammal tor da sta device lado confirmed aw support kai.</string>
+    <string name="dual_cam_banner_tap_details">Tafseelaat</string>
+    <string name="dual_cam_banner_unsupported">Dual camera is not supported on da device.</string>
+    <string name="dual_cam_info_android_label">Android Version</string>
+    <string name="dual_cam_info_api_label">API Level</string>
+    <string name="dual_cam_info_concurrent_label">Concurrent Camera API</string>
+    <string name="dual_cam_info_concurrent_no">Tasdiq na shwi</string>
+    <string name="dual_cam_info_concurrent_yes">Tasdiq sho ✓</string>
+    <string name="dual_cam_info_device_label">Device</string>
+    <string name="dual_cam_info_devices_explanation">Devices with Qualcomm Snapdragon 855 or newer, Google Tensor, Samsung Exynos 990 or newer, aw MediaTek Dimensity 1000 or newer typically concurrent camera access support kai.</string>
+    <string name="dual_cam_info_processor_label">Processor</string>
+    <string name="dual_cam_info_status_label">Haisiyat</string>
+    <string name="dual_cam_info_supported_status">✓ Sta device dual camera recording support kai.</string>
+    <string name="dual_cam_info_supported_unconfirmed">⚠ Your device has both cameras, kho concurrent support tasdiq na shwi. Shaied kar kawi ya na kawi.</string>
+    <string name="dual_cam_info_title">Da Device Munasibat</string>
+    <string name="dual_cam_info_unsupported_explanation">Dual camera recording requires sta / khpal device to operate both front and back cameras simultaneously. This is a hardware capability agha depends on sta / khpal device\'s processor and camera hardware. Most flagship phones from 2020 onwards support da feature. Mid-range and older devices typically do not.\n\nThis is NOT a bug — it\'s a hardware limitation of sta / khpal device.</string>
+    <string name="dual_cam_info_unsupported_status">✗ Sta device dual camera recording support nadi kai.</string>
+    <string name="dual_cam_info_which_devices">Kom devices support kai?</string>
+    <string name="dual_cam_info_why_unsupported">Dual camera wali support nadi kai?</string>
+    <string name="dual_cam_layout_helper">Dual camera recording wakht ke PiP overlay dapara position, size aw primary camera tanzim ka.</string>
+    <string name="dual_cam_pip_margin_hint">0 – 48 dp</string>
+    <string name="dual_cam_pip_margin_title">PiP Margin</string>
+    <string name="dual_cam_pip_position_helper">Intikhab ka che kom kosh ke secondary camera (PiP) overlay kigdi shi.</string>
+    <string name="dual_cam_pip_position_title">PiP Mawqey</string>
+    <string name="dual_cam_pip_size_helper">Control kai che PiP overlay da full output width pa nisbat der loy de.</string>
+    <string name="dual_cam_pip_size_title">PiP Qadd</string>
+    <string name="dual_cam_preview_helper">Da agha shan de che PiP mode pa landscape mode ke tsanga zaher shi masalan.</string>
+    <string name="dual_cam_preview_pip">PiP</string>
+    <string name="dual_cam_preview_primary">Main Camera</string>
+    <string name="dual_cam_primary_camera_helper">Intikhab ka che koma camera full frame pur kai. Bela camera ba PiP overlay ke zaher shi.</string>
+    <string name="dual_cam_primary_camera_title">Asli Camera</string>
+    <string name="dual_cam_round_corners_helper">Modern rayaz dapara PiP overlay ke gole koshuna tatbiq ka.</string>
+    <string name="dual_cam_round_corners_title">Gole Kosh</string>
+    <string name="dual_cam_section_appearance">Appearance</string>
+    <string name="dual_cam_section_layout">Layout</string>
+    <string name="dual_cam_section_preview">Preview</string>
+    <string name="dual_cam_settings_row_subtitle">Tanzim Ka PiP layout and appearance</string>
+    <string name="dual_cam_settings_row_title">Dual Camera Settings</string>
+    <string name="dual_cam_show_border_helper">PiP overlay chardey yao patli border woyai che visually da pasmanzar na separation ka.</string>
+    <string name="dual_cam_show_border_title">PiP Border</string>
+    <string name="dual_camera_error">Dual camera error: %s</string>
+    <string name="dual_camera_not_supported_toast">Dual camera not supported on da device</string>
+    <string name="dual_camera_pip_settings">Dual Camera PiP Settings</string>
+    <string name="dual_cameras_swapped">Cameras swapped</string>
+    <string name="dual_recording_started">Dual camera recording started</string>
+    <string name="dual_recording_stopped">Dual camera recording stopped</string>
+    <string name="e2e_encryption_change_title">Change E2E Encryption Password</string>
+    <string name="e2e_encryption_configured">Configured — segments are encrypted end-to-end</string>
+    <string name="e2e_encryption_not_configured">Tanzim na shwi — cloud streaming faalolo dapara tanzim ka</string>
+    <string name="e2e_encryption_setup_desc">Sta FadSec ID password na stream encryption key hasil kegi. Da ba da password sara match kawalai shi che ta FadCam dashboard ke streams ogorlo dapara istemal kai.</string>
+    <string name="e2e_encryption_setup_hint">Enter sta / khpal FadSec ID password</string>
+    <string name="e2e_encryption_setup_title">Set E2E Encryption Password</string>
+    <string name="e2e_encryption_title">E2E Stream Encryption</string>
+    <string name="edit_with_faditorx">Tabdeel Ka with Faditor Mini</string>
+    <string name="enable_annotations">Annotashun Faal Ka</string>
+    <string name="enabled">Faal de</string>
+    <string name="essential_permissions_missing">Zaruri ejazato mojood nadi. Mehrbani oka agha werka che jari shi.</string>
+    <string name="export_complete">Mukammal</string>
+    <string name="export_error_hint">Tap to dismiss</string>
+    <string name="export_eta_hours">ETA %d h</string>
+    <string name="export_eta_minutes">ETA %d m</string>
+    <string name="export_eta_seconds">ETA %d s</string>
+    <string name="export_file_size">%s</string>
+    <string name="export_status">Export Haisiyat</string>
+    <string name="exposure_title">Exposure Compensation (EV)</string>
+    <string name="eye_color_amber" translatable="false">Amber</string>
+    <string name="eye_color_cobalt" translatable="false">Cobalt</string>
+    <string name="eye_color_jade" translatable="false">Lime</string>
+    <string name="eye_color_magenta" translatable="false">Magenta</string>
+    <string name="eye_color_ruby" translatable="false">Ruby</string>
+    <string name="eye_color_teal" translatable="false">Cyan</string>
+    <string name="eye_color_violet" translatable="false">Violet</string>
+    <string name="eye_color_white" translatable="false">White</string>
+    <string name="fadcam_pro_benefit_early_access">Peshdasti rasai: Public release na pesh enha version hasil ka</string>
+    <string name="fadcam_pro_benefit_lifetime_updates">Da umar updates: Har wakht nawi features, behtari, aw bug fixes akhesta ka</string>
+    <string name="fadcam_pro_benefit_support">Instant support: Direct help through tickets via Discord</string>
+    <string name="fadcam_pro_column_label">Pro</string>
+    <string name="fadcam_pro_coming_soon">Pro+ aw Lab features zur razee custom icon uploads, custom app names, aw FadDrive cloud sync sara.</string>
+    <string name="fadcam_pro_early_bird">🎉 Free until December 23, 2025! Pas na, sirf $15 ki lifetime access hasil ka.</string>
+    <string name="fadcam_pro_feature_app_name">Custom App Num</string>
+    <string name="fadcam_pro_feature_custom_icon">Custom App Icon</string>
+    <string name="fadcam_pro_feature_everything">Everything</string>
+    <string name="fadcam_pro_feature_everything_icon">Everything</string>
+    <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
+    <string name="fadcam_pro_feature_notification_icon">Notification Discreet Icon</string>
+    <string name="fadcam_pro_feature_user_icon">User Uploaded Icon</string>
+    <string name="fadcam_pro_free">Free</string>
+    <string name="fadcam_pro_get_button">Get FadCam Pro</string>
+    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_lab_label">Lab</string>
+    <string name="fadcam_pro_paid_offer">December 23, 2025 na pas, $15 ki Lifetime Access hasil ka — yo wari payment, hamesha updates.</string>
+    <string name="fadcam_pro_plus_label">Pro</string>
+    <string name="fadcam_pro_proplus_label">Pro+</string>
+    <string name="fadcam_pro_separate_apk">Standalone app • Works alongside FadCam</string>
+    <string name="fadcam_pro_subtitle">Premium features for complete discretion</string>
+    <string name="fadcam_pro_support_message">FadCam ba hamesha free pati de, ishtehar na aw tracking na. Za pura project pa khpala handel kawam. Pro ta upgrade kol (os waqt free) development ke madad kai. Da project da mali mard dapara manana :)</string>
+    <string name="fadcam_pro_title">FadCam Pro</string>
+    <string name="faditor_add_asset_image">Image (5s still)</string>
+    <string name="faditor_add_asset_title">Asset Zaat Ka</string>
+    <string name="faditor_add_asset_video">Video clip</string>
+    <string name="faditor_asset_added">Asset added to timeline</string>
+    <string name="faditor_asset_error">Could not add asset</string>
+    <string name="faditor_audio_added">Ghag added to timeline</string>
+    <string name="faditor_audio_extract_current">Extract from video</string>
+    <string name="faditor_audio_extract_current_desc">Extract the audio track from the current video</string>
+    <string name="faditor_audio_extract_failed">Could not extract audio</string>
+    <string name="faditor_audio_extracted">Ghag extracted and added to timeline</string>
+    <string name="faditor_audio_extracting">Extracting audio…</string>
+    <string name="faditor_audio_no_track">No audio track found in da video</string>
+    <string name="faditor_back_press_exit">Press again to exit editor</string>
+    <string name="faditor_browse_device">Browse Device</string>
+    <string name="faditor_browse_device_desc">Intikhab Ka any video from sta / khpal device</string>
+    <string name="faditor_cancel">Laghwa Ka</string>
+    <string name="faditor_canvas_applied">Canvas set to %s</string>
+    <string name="faditor_canvas_title">Canvas</string>
+    <string name="faditor_capabilities_title">What You Can Do</string>
+    <string name="faditor_close">Editor band ka</string>
+    <string name="faditor_close_confirm_action">Band Ka &amp; Sabt Ka Ka Ka</string>
+    <string name="faditor_close_confirm_helper">Sta project ba khpala save shi. Ta ba da naray projects na har waqt bya kholay shi.</string>
+    <string name="faditor_close_confirm_subtitle">Sabt Ka Ka Ka project and return</string>
+    <string name="faditor_close_confirm_title">Editor band ka?</string>
+    <string name="faditor_crop_applied">Crop Ka applied</string>
+    <string name="faditor_crop_cancelled">Crop Ka cancelled</string>
+    <string name="faditor_crop_free">Free</string>
+    <string name="faditor_crop_reset">Crop Ka reset</string>
+    <string name="faditor_crop_title">Crop Ka Aspect Ratio</string>
+    <string name="faditor_delete_confirm">Delete Ka</string>
+    <string name="faditor_delete_last_segment">Cannot delete the only segment</string>
+    <string name="faditor_delete_projects_message">Delete Ka Ka %1$d project(s)? This cannot be undone.</string>
+    <string name="faditor_delete_projects_title">Projects delete ka?</string>
+    <string name="faditor_editor_title">Faditor Mini</string>
+    <string name="faditor_empty_desc">Tap "New Project" to pick a video and begin editing</string>
+    <string name="faditor_empty_title">Tarto project nedi</string>
+    <string name="faditor_error_no_video">Kho video intikhab na shwa</string>
+    <string name="faditor_error_picker">Could not open file picker</string>
+    <string name="faditor_export">Export ka</string>
+    <string name="faditor_export_back">Shata</string>
+    <string name="faditor_export_back_confirm">Export ka in progress. Go back to editor?</string>
+    <string name="faditor_export_cancelled">Export Laghwa Sho</string>
+    <string name="faditor_export_complete_summary">Sta video Records Tab ki save shwa de.</string>
+    <string name="faditor_export_complete_title">Export Mukammal</string>
+    <string name="faditor_export_completed">Export Mukammal</string>
+    <string name="faditor_export_confirm_action">Os Export ka</string>
+    <string name="faditor_export_confirm_helper">%1$s • %2$d clip(s)%3$s
+Export runs as a background service — you can close the app and it will keep exporting.</string>
+    <string name="faditor_export_confirm_subtitle">Export ka will continue in background</string>
+    <string name="faditor_export_confirm_title">Export ka Video</string>
+    <string name="faditor_export_done">Mukammal</string>
+    <string name="faditor_export_error">Export ka fail sho: %1$s</string>
+    <string name="faditor_export_eta">Estimated time: %s</string>
+    <string name="faditor_export_failed">Export Fail Sho</string>
+    <string name="faditor_export_in_progress">Export ka already in progress</string>
+    <string name="faditor_export_info">%1$s • %2$d clip(s)%3$s • H.264 + AAC</string>
+    <string name="faditor_export_notif_channel">Faditor Export ka</string>
+    <string name="faditor_export_notif_channel_desc">Notifications for ongoing video exports</string>
+    <string name="faditor_export_notif_error_title">Export Fail Sho</string>
+    <string name="faditor_export_notif_title">Video export kigi…</string>
+    <string name="faditor_export_progress">Export kigi…</string>
+    <string name="faditor_export_success">Video exported successfully</string>
+    <string name="faditor_exporting">Export kigi…</string>
+    <string name="faditor_exporting_percent">Exporting… %1$d%%</string>
+    <string name="faditor_fadcam_source">FadCam</string>
+    <string name="faditor_fadrec_source">FadRec</string>
+    <string name="faditor_feature_convert">Smart Convert</string>
+    <string name="faditor_feature_convert_desc">Crash-safe recordings khpala seekable standard MP4 ke badal kai che smooth playback everywhere</string>
+    <string name="faditor_feature_export">Quick Export ka</string>
+    <string name="faditor_feature_export_desc">Export ka in MP4 with hardware-accelerated encoding</string>
+    <string name="faditor_feature_preview">Live Preview</string>
+    <string name="faditor_feature_preview_desc">Instant playback of sta / khpal trimmed clips</string>
+    <string name="faditor_feature_privacy">100% Offline</string>
+    <string name="faditor_feature_privacy_desc">Tol editing mahali tor kegi — na uploads, na cloud</string>
+    <string name="faditor_feature_trim">Precision Trim</string>
+    <string name="faditor_feature_trim_desc">Khpal videos exact frame ta cut ka che ta gware</string>
+    <string name="faditor_flip_title">Aina Ka</string>
+    <string name="faditor_home_tagline">Lightweight video editor</string>
+    <string name="faditor_info_convert_desc">FadCam records in a crash-safe format called fragmented MP4 (fMP4). Unlike a standard MP4 which has one finalized container, fMP4 writes video in small independent chunks. This means sta / khpal footage stays intact even if the app crashes or recording stops suddenly.\n\nHowever, external video players, gallery apps, and file managers will not be able to seek, scrub, or display the correct duration of these files. This is not a bug — it is a deliberate design trade-off for reliability.\n\nIf you plan to store sta / khpal videos outside FadCam — on Google Drive, a computer, or any other location — you must convert them first. Otherwise the files will be unusable for normal playback.\n\nTo convert: simply open the video here in Faditor Mini and tap Export ka. The converted standard MP4 will appear in sta / khpal Records tab, ready to save to sta / khpal gallery or share anywhere. The process is instant and lossless — no re-encoding or quality loss.</string>
+    <string name="faditor_info_convert_title">Smart conversion</string>
+    <string name="faditor_info_export_desc">Exported videos are saved to sta / khpal active storage location (the same one configured in Tanzimaat) with the prefix \"Faditor_\" followed by a timestamp. They appear in the Records tab alongside sta / khpal original recordings.</string>
+    <string name="faditor_info_export_title">Exported files</string>
+    <string name="faditor_info_how_desc">Intikhab Ka any video from sta / khpal device or sta / khpal FadCam recordings. Trim it frame-by-frame using the timeline, then export. All processing happens locally on sta / khpal device — nothing is uploaded.\n\nYour editing progress is auto-saved every few seconds and whenever you leave the editor, so no work is lost if the app closes unexpectedly.</string>
+    <string name="faditor_info_how_title">How it works</string>
+    <string name="faditor_info_projects_desc">All sta / khpal editing sessions are shown for quick access. Each project is stored as a small JSON file on sta / khpal device containing the video URI, trim points, and timestamps — no copies of sta / khpal videos are made. Projects are auto-saved every few seconds, so sta / khpal progress is never lost.\n\nYou can delete projects you no longer need using the multi-select checklist icon. Deleting a project only removes the editing session data; sta / khpal original video files remain untouched.</string>
+    <string name="faditor_info_projects_title">Recent projects</string>
+    <string name="faditor_info_subtitle">Har shay che ta da built-in editor dapara poho lari gware</string>
+    <string name="faditor_info_temp_desc">When you load an fMP4 video for editing, Faditor detects if the file needs \"remuxing\" — a fast conversion agha adds seeking markers without re-encoding. Remuxed files are cached on sta / khpal device so they can be reused if you edit the same video again, saving time and processing.\n\nYou can see the cache size for each project listed next to its modified date. If sta / khpal device storage is running low, you can delete unused projects to clear their cached remuxed files.\n\nThese temporary cache files are automatically cleaned up when you delete a project from da tab.</string>
+    <string name="faditor_info_temp_title">Temporary files and cache</string>
+    <string name="faditor_info_title">Maloomat Faditor Mini</string>
+    <string name="faditor_mini_coming_soon">Zur razee — lightweight editor</string>
+    <string name="faditor_mini_subtitle">Khpal videos precision sara trim aw export ka</string>
+    <string name="faditor_mini_title">Faditor Mini</string>
+    <string name="faditor_mini_toast">Faditor Mini — coming soon</string>
+    <string name="faditor_new_project">Nawai Project</string>
+    <string name="faditor_no_recordings">No recordings found yet. Recording shuru ka with FadCam to see sta / khpal videos here.</string>
+    <string name="faditor_play_pause">Play or pause</string>
+    <string name="faditor_recent_projects">Recent Projects</string>
+    <string name="faditor_recordings_helper">FadCam sara record shwi videos sta chalu storage location na</string>
+    <string name="faditor_redo">Bela</string>
+    <string name="faditor_remuxing">Optimizing for preview…</string>
+    <string name="faditor_remuxing_percent">Optimizing… %1$ds processed</string>
+    <string name="faditor_scanning">Scanning recordings…</string>
+    <string name="faditor_segment_deleted">Segment deleted</string>
+    <string name="faditor_segment_duplicated">Segment duplicated</string>
+    <string name="faditor_select_items">Intikhab Ka items</string>
+    <string name="faditor_select_video">Video Intikhab Ka</string>
+    <string name="faditor_selected_count">%1$d selected</string>
+    <string name="faditor_source_chooser_desc">Intikhab Ka a video from sta / khpal gallery or pick one from sta / khpal FadCam recordings</string>
+    <string name="faditor_speed_reset">Reset to 1x</string>
+    <string name="faditor_speed_title">Playback Suraat</string>
+    <string name="faditor_split_error">Cannot split here — too close to edge</string>
+    <string name="faditor_split_success">Segment split into two</string>
+    <string name="faditor_start_project">Shuru Nawai Project</string>
+    <string name="faditor_tool_add">Zaat Ka</string>
+    <string name="faditor_tool_audio">Extract Ghag</string>
+    <string name="faditor_tool_canvas">Canvas</string>
+    <string name="faditor_tool_crop">Crop Ka</string>
+    <string name="faditor_tool_crop_free">Free</string>
+    <string name="faditor_tool_delete">Delete Ka</string>
+    <string name="faditor_tool_duplicate">Duplicate</string>
+    <string name="faditor_tool_flip">Aina Ka</string>
+    <string name="faditor_tool_muted">Khamosh</string>
+    <string name="faditor_tool_rotate">Gharkole Ka</string>
+    <string name="faditor_tool_sound">Aawaz</string>
+    <string name="faditor_tool_speed">1x</string>
+    <string name="faditor_tool_split">Bel Ka</string>
+    <string name="faditor_tool_trim">Trim</string>
+    <string name="faditor_tool_volume">Aawaz</string>
+    <string name="faditor_undo">Wrusta</string>
+    <string name="faditor_version_info">Faditor Mini · Phase 1 · Trim + Export</string>
+    <string name="faditor_video_count">%1$d video(s)</string>
+    <string name="faditor_volume_mute">Khamosh Ghag</string>
+    <string name="faditor_volume_title">Aawaz</string>
+    <string name="faditor_volume_unmute">Unmute Ghag</string>
+    <string name="faditor_volume_warning">Above 100%% may degrade audio quality</string>
+    <string name="faditor_your_recordings">Your Recordings</string>
+    <string name="fadrec_audio_source_choose">Da ghag manba intikhab ka</string>
+    <string name="fadrec_audio_source_internal">Da Device Ghag (Dakhili)</string>
+    <string name="fadrec_audio_source_mic">Microphone</string>
+    <string name="fadrec_audio_source_none">Ghag Nadi</string>
+    <string name="fadrec_audio_source_title">Da Ghag Manba</string>
+    <string name="fadrec_mic_permission_needed_message">FadRec sta mic ta rasai na lari. Ta record muted kol shaye — hes audio ba save na shi.</string>
+    <string name="fadrec_mic_permission_needed_title">Microphone Ejazat Pakar De</string>
+    <string name="fadrec_mode_title">FadRec • Screen Recording</string>
+    <string name="fadrec_mute_audio">Recording ghag khamosh ka</string>
+    <string name="fadrec_notification_paused">Recording lag waqfa shu</string>
+    <string name="fadrec_notification_recording">Recording screen…</string>
+    <string name="fadrec_notification_title">Screen Recording</string>
+    <string name="fadrec_pause_screen_recording">Screen Recording Lag Odrawa</string>
+    <string name="fadrec_permission_denied">Screen recording permission denied</string>
+    <string name="fadrec_preview_enable_hint">Hold to show preview</string>
+    <string name="fadrec_preview_not_available">Live screen preview enham FadRec ke wired na shwi</string>
+    <string name="fadrec_projects">FadRec Projects</string>
+    <string name="fadrec_ready_to_record">Screen capture kolo lapara tayar</string>
+    <string name="fadrec_ready_to_record_subtitle">Tap to begin</string>
+    <string name="fadrec_record_muted">Khamosh Record Ka</string>
+    <string name="fadrec_resume_screen_recording">Screen Recording Bya Shuru</string>
+    <string name="fadrec_screen_recording_paused">Screen recording lag waqfa shu</string>
+    <string name="fadrec_screen_recording_resumed">Screen recording bya shuru shu</string>
+    <string name="fadrec_screen_recording_started">Screen recording shuru shu</string>
+    <string name="fadrec_screen_recording_stopped">Screen recording band shu</string>
+    <string name="fadrec_start_screen_recording">Screen Recording Shuru Ka</string>
+    <string name="fadrec_stop_screen_recording">Screen Recording Band Ka</string>
+    <string name="fadrec_unmute_audio">Recording ghag bya chalu ka</string>
+    <string name="file_operation_copied_to_gallery">%1$s Gallery ta copy sho</string>
+    <string name="file_operation_deleted">%1$s delete sho</string>
+    <string name="file_operation_moved_to_gallery">%1$s Gallery ta move sho</string>
+    <string name="file_operation_processed">%1$s process sho</string>
+    <string name="file_operation_restored">%1$s restore sho</string>
+    <string name="floating_controls_permission_grant">Ejazat Werka</string>
+    <string name="floating_controls_permission_message">Floating quick menu da noro appo pa sar overlay ke zaher kai, cherta na recording controls ta osani rasai warkawi. Da feature faalolo dapara, "Display over other apps" ejazat darkar de.</string>
+    <string name="floating_controls_permission_needed">Overlay ejazat pakar de</string>
+    <string name="floating_controls_permission_title">Overlay Ejazat Pakar De</string>
+    <string name="floating_controls_title">Menu</string>
+    <string name="floating_menu_annotations">Annotashun</string>
+    <string name="floating_menu_pause">Lag Odrawa</string>
+    <string name="floating_menu_resume">Bya Shuru</string>
+    <string name="floating_menu_start">Recording Shuru Ka</string>
+    <string name="floating_menu_start_short">Shuru</string>
+    <string name="floating_menu_stop">Recording Band Ka</string>
+    <string name="floating_menu_stop_short">Band</string>
+    <string name="floating_menu_title">Quick Menu</string>
+    <string name="forensic_intelligence_title">Forensic Intelligence</string>
+    <string name="forensics_clip_black">Black clip</string>
+    <string name="forensics_clip_red">Red clip</string>
+    <string name="forensics_clip_style_helper">Intikhab Ka clip color for gallery cards.</string>
+    <string name="forensics_clip_style_title">Binder Clip Style</string>
+    <string name="forensics_copy_done">Evidence details copied</string>
+    <string name="forensics_delete_selected_helper">Intikhab shwi evidence ba Nezdai Waht ta move shi aw Recently Deleted na berta restore kol shaye.</string>
+    <string name="forensics_delete_selected_title">Delete Ka Ka %1$d selected evidence item(s)?</string>
+    <string name="forensics_detected_label">Detected: %1$s</string>
+    <string name="forensics_event_proof_frame">Event proof frame</string>
+    <string name="forensics_events_empty">No events found for the selected filters.</string>
+    <string name="forensics_events_subtitle">Filter detections and jump to exact moments.</string>
+    <string name="forensics_events_title">Peshama Patti</string>
+    <string name="forensics_evidence_details">Evidence details</string>
+    <string name="forensics_export_action">Export ka evidence package</string>
+    <string name="forensics_export_done">Evidence export saved to: %1$s</string>
+    <string name="forensics_export_no_path">No export destination selected yet.</string>
+    <string name="forensics_export_pick_path">Intikhab Ka export destination</string>
+    <string name="forensics_export_pick_path_first">Intikhab Ka export destination first.</string>
+    <string name="forensics_export_running">Building evidence export…</string>
+    <string name="forensics_export_selected_path">Destination: %1$s</string>
+    <string name="forensics_export_source_warning">Source video links traceability dapara shamil di. Che media original location na move ya delete shi, playback links fail shi shi aw snapshots ba primary evidence ke pati shi.</string>
+    <string name="forensics_export_stats">Ready to export: %1$d snapshots • %2$s</string>
+    <string name="forensics_export_subtitle">Da save shwi forensic evidence na JSON metadata + snapshots package jor kai.</string>
+    <string name="forensics_export_title">Export Center</string>
+    <string name="forensics_filter_all">Tol</string>
+    <string name="forensics_filter_all_subtypes">All subtypes</string>
+    <string name="forensics_filter_high_conf">High confidence only</string>
+    <string name="forensics_filter_object">Object</string>
+    <string name="forensics_filter_person">Person</string>
+    <string name="forensics_filter_pet">Pet</string>
+    <string name="forensics_filter_vehicle">Vehicle</string>
+    <string name="forensics_filter_with_count">%1$s (%2$d)</string>
+    <string name="forensics_frames_hint">Swipe frames to preview moments</string>
+    <string name="forensics_frames_hint_fallback">Fallback preview (exact keyframes may vary)</string>
+    <string name="forensics_gallery_deleted_toast">%1$d moved to trash • %2$d removed</string>
+    <string name="forensics_gallery_empty">Da osany filter da para kho evidence snapshots nadi.</string>
+    <string name="forensics_gallery_empty_subtitle_filtered">No evidence matches da filter</string>
+    <string name="forensics_gallery_empty_subtitle_no_data">Sta recordings na AI-detected frames ba dalta zaher shi</string>
+    <string name="forensics_gallery_empty_title">Evidence Board Is Saaf Ka</string>
+    <string name="forensics_gallery_selected_count">%1$d selected</string>
+    <plurals name="forensics_gallery_selected_count_plural">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="forensics_gallery_sort_event_type">Event type</string>
+    <string name="forensics_gallery_source_missing">Video missing: snapshot-only evidence is available.</string>
+    <string name="forensics_gallery_stats">Items: %1$d • Snapshot storage: %2$s</string>
+    <string name="forensics_gallery_title">Saboot Gallery</string>
+    <string name="forensics_grid_1">1 column</string>
+    <string name="forensics_grid_2">2 columns</string>
+    <string name="forensics_grid_3">3 columns</string>
+    <string name="forensics_grid_4">4 columns</string>
+    <string name="forensics_grid_5">5 columns</string>
+    <string name="forensics_grid_helper">Intikhab ka che pa gallery ke kom columns woyai.</string>
+    <string name="forensics_grid_option">Grid Layout</string>
+    <string name="forensics_heatmap_cd">Activity heatmap</string>
+    <string name="forensics_heatmap_legend">Roghan dage da tayar harkat meaning lari. Dim dage da kam activity meaning lari.</string>
+    <string name="forensics_info_body">Evidence Gallery pa chalu recording sessions ke akhestali shwi snapshots store kai.
+
+Snapshots khpali evidence files di aw wuwiny keda shi hatta che source video move ya delete shi.
+
+Da video-linked items dapara, photo viewer ke evidence details istemal ka che source footage ta wruzi kala che mojood wi.</string>
+    <string name="forensics_info_helper">Evidence dalta zaher kai os kala che recording wakht ke snapshots akhestali shi.</string>
+    <string name="forensics_info_line_1">Source video actions sirf os wakht mojood di kala che original video link mojood wi.</string>
+    <string name="forensics_info_line_2">Che video badla ya lere shi, snapshots ba khpali evidence ke mojood pati shi.</string>
+    <string name="forensics_info_line_3">Snapshots aw metadata archive ke bundle kolo dapara Export Center istemal ka.</string>
+    <string name="forensics_info_title">Evidence Maloomat</string>
+    <string name="forensics_insights_subtitle">24-hour threat analysis and situation report.</string>
+    <string name="forensics_insights_title">Intelligence Briefing</string>
+    <string name="forensics_media_all">All sources</string>
+    <string name="forensics_media_available">Video available</string>
+    <string name="forensics_media_missing">Original media is unavailable. Using saved evidence only.</string>
+    <string name="forensics_media_missing_only">Video missing</string>
+    <string name="forensics_not_available">Mojood nadi</string>
+    <string name="forensics_open_source_video">Khola source video</string>
+    <string name="forensics_section_actions">Actions</string>
+    <string name="forensics_section_appearance">Appearance</string>
+    <string name="forensics_serial_strip">evidence</string>
+    <string name="forensics_snapshot_only">Snapshot only</string>
+    <string name="forensics_sort_confidence">Highest confidence</string>
+    <string name="forensics_sort_evidence_rich">Evidence-rich</string>
+    <string name="forensics_sort_label">Sort: %1$s</string>
+    <string name="forensics_sort_newest">Newest first</string>
+    <string name="forensics_source_label">Source: %1$s</string>
+    <string name="forensics_tape_classic">Classic tape</string>
+    <string name="forensics_tape_style_helper">Intikhab Ka tape design for evidence index tags.</string>
+    <string name="forensics_tape_style_title">Tape Style</string>
+    <string name="forensics_tape_torn">Torn tape</string>
+    <string name="forensics_timeline_label">Timeline position</string>
+    <string name="forensics_unknown_source">Na Maloom source</string>
+    <string name="forensics_unknown_time">Na Maloom time</string>
+    <string name="forensics_video_linked">Video linked</string>
+    <string name="front">Makhki</string>
+    <string name="front_video_mirror_disable">Ghair Faal Ka front video flip</string>
+    <string name="front_video_mirror_enable">Faal Ka front video flip</string>
+    <string name="fullscreen_camera_switch">Camera badal ka</string>
+    <string name="fullscreen_focus_off">Focus: Band</string>
+    <string name="fullscreen_focus_on">Focus: Faal</string>
+    <string name="fullscreen_focus_toggle">Tap focus toggle</string>
+    <string name="fullscreen_label_af">AF</string>
+    <string name="fullscreen_label_exposure">EV</string>
+    <string name="fullscreen_label_mirror">Aina Ka Video</string>
+    <string name="fullscreen_label_shot">Shot</string>
+    <string name="fullscreen_label_switch">Switch</string>
+    <string name="fullscreen_label_torch">Torch</string>
+    <string name="fullscreen_label_zoom">Zoom</string>
+    <string name="fullscreen_preview_close">Fullscreen band ka</string>
+    <string name="fullscreen_preview_enter">FadCam Preview</string>
+    <string name="fullscreen_preview_not_recording">Recording shuru ka first to use fullscreen preview</string>
+    <string name="fullscreen_preview_tap_hint">Tap screen to toggle controls</string>
+    <string name="fullscreen_torch">Torch</string>
+    <string name="general">Aam</string>
+    <string name="grant_permission_button">Ejazat Werka</string>
+    <string name="header_logo_avatar" translatable="false">Avatar</string>
+    <string name="header_logo_default" translatable="false">FadCam</string>
+    <string name="help_section">Madad</string>
+    <string name="helper_app_icon_option" translatable="false">Select an alternative launcher icon.</string>
+    <string name="helper_audio_advanced">Quality/size balance dapara bitrate aw sampling rate khoso ka.</string>
+    <string name="helper_audio_bitrate_detail">Tawsia shwi: 192000 bps da high-quality stereo dapara. Kam qimato file size kam kai kho clarity kamulai shi. Range 64000-384000 bps.</string>
+    <string name="helper_audio_bitrate_high_hint">Above 320k: larger files, minor gain</string>
+    <string name="helper_audio_bitrate_low_hint">Below 128k: clarity may drop</string>
+    <string name="helper_audio_input_source">Intikhab Ka which connected microphone/input to use.</string>
+    <string name="helper_audio_sampling_detail">Video dapara 48000 Hz (recommended) ya general audio compatibility dapara 44100 Hz intikhab ka.</string>
+    <string name="helper_audio_sampling_recommended">Recommended: 48000 Hz</string>
+    <string name="helper_language_option">Intikhab Ka the app language.</string>
+    <string name="helper_location_embed">GPS coordinates pa video metadata ke shamil kai (geotag).</string>
+    <string name="helper_location_format">Intikhab ka che location watermark ke tsanga zaher kai: exact coordinates, ya da reverse geocoding pa mreshta full address (zoom=18, building-level precision).</string>
+    <string name="helper_location_overlay_short">Watermark landi taqriban coordinates zaheer kawi.</string>
+    <string name="helper_location_watermark">Pa recording wakht ke live location text overlay zaher kawi.</string>
+    <string name="helper_location_watermark_option">Overlay ke sta device location zyadawalo badal ka. Da location ejazat darkar de.</string>
+    <string name="helper_noise_suppression">Experimental filter to reduce background noise.</string>
+    <string name="helper_record_audio">Toggle capturing microphone audio in videos.</string>
+    <string name="helper_theme_option">Intikhab Ka a theme. Applies instantly.</string>
+    <string name="helper_watermark_custom_text">Custom text line zaat ka che timestamp aw location landi (ke faal wi) sta watermark ki zaher shi.
+
+Misaluna: ABC-1234 (dashcam), Camera #3, Conference Hall A</string>
+    <string name="helper_watermark_option">Overlay content intikhab ka: timestamp + brand, sirf timestamp, ya hes na.</string>
+    <string name="helper_watermark_preview">Da agha shan de che watermark sta recorded video pa pas-kuch ki zaher shi.
+Fun fact: 10/Jul/2024 04:47 PM wakht ke FadCam v1.0 first shipped.</string>
+    <string name="home_cards_fold_toggle">Toggle Kor cards</string>
+    <string name="home_clock_color_choice_desc">Clock color %1$s</string>
+    <string name="home_clock_color_helper">Da Kor palette na yao clock card rang intikhab ka.</string>
+    <string name="home_clock_color_option">Clock color</string>
+    <string name="home_clock_color_option_desc">Da clock card istemal shwi accent/background rang intikhab ka</string>
+    <string name="home_clock_customize_helper">Change the clock display, color, and hour format.</string>
+    <string name="home_clock_customize_title">Clock Appearance</string>
+    <string name="home_clock_display_english_desc">Show time with the English date line</string>
+    <string name="home_clock_display_helper">Da clock card istemal shwi layout intikhab ka.</string>
+    <string name="home_clock_display_islamic_desc">Show time with English and Islamic calendar lines</string>
+    <string name="home_clock_display_option">Clock display</string>
+    <string name="home_clock_display_option_desc">Intikhab ka che kom date aw wakh lines da clock card ke zaher shi</string>
+    <string name="home_clock_display_timeonly_desc">Show only the main time line</string>
+    <string name="home_clock_hour_format_12">12-hour (Default)</string>
+    <string name="home_clock_hour_format_12_desc">Show time with AM and PM</string>
+    <string name="home_clock_hour_format_24">24-hour</string>
+    <string name="home_clock_hour_format_24_desc">24-hour format ke AM aw PM bela wakh woyai</string>
+    <string name="home_clock_hour_format_helper">Da Kor clock istemal shwi hour format intikhab ka.</string>
+    <string name="home_clock_hour_format_option">Hour format</string>
+    <string name="home_clock_hour_format_option_desc">Intikhab ka che clock 12-hour ya 24-hour wakh woyai</string>
+    <string name="home_elapsed_align_center">Centered (Default)</string>
+    <string name="home_elapsed_align_center_desc">Keep the elapsed timer centered</string>
+    <string name="home_elapsed_align_left">Left aligned</string>
+    <string name="home_elapsed_align_left_desc">Anchor the elapsed timer to the start</string>
+    <string name="home_elapsed_alignment_helper">Intikhab Ka the alignment for the elapsed timer.</string>
+    <string name="home_elapsed_alignment_option">Alignment</string>
+    <string name="home_elapsed_alignment_option_desc">Intikhab ka che elapsed content pa card ke tsanga positioned shi</string>
+    <string name="home_elapsed_background_black">Black card (Default)</string>
+    <string name="home_elapsed_background_black_desc">Elapsed timer dapara yao qawi tiyar card background warka che qawi container de</string>
+    <string name="home_elapsed_background_helper">Da elapsed timer card istemal shwi background treatment intikhab ka.</string>
+    <string name="home_elapsed_background_option">Background</string>
+    <string name="home_elapsed_background_option_desc">Intikhab ka che elapsed timer pa tiyar, spin, ya transparent card bandi shi</string>
+    <string name="home_elapsed_background_transparent">Transparent</string>
+    <string name="home_elapsed_background_transparent_desc">Elapsed timer card visually halka aw khol sawa ka</string>
+    <string name="home_elapsed_background_white">White card</string>
+    <string name="home_elapsed_background_white_desc">Timer dapara yao saaf spin card background tiyar text sara istemal ka</string>
+    <string name="home_elapsed_customize_helper">Elapsed timer display, alignment, size, font, accent flag, aw background khoso ka.</string>
+    <string name="home_elapsed_customize_title">Elapsed Wakh</string>
+    <string name="home_elapsed_display_compact">Compact inline (Default)</string>
+    <string name="home_elapsed_display_compact_desc">Elapsed wakh 5h 16m 23s compact inline units sara woyai</string>
+    <string name="home_elapsed_display_digital">Digital clock</string>
+    <string name="home_elapsed_display_digital_desc">Elapsed wakh 00:00 ya 01:05:23 inline labels bela woyai</string>
+    <string name="home_elapsed_display_helper">Intikhab ka che elapsed timer pa card ke tsanga zaher kai.</string>
+    <string name="home_elapsed_display_option">Rayaz format</string>
+    <string name="home_elapsed_display_option_desc">Compact inline elapsed time aw digital clock format ka maniz ke badal ka</string>
+    <string name="home_elapsed_flag_helper">Intikhab ka che FadSec Lab flag accent da elapsed timer shata zaher shi ke na.</string>
+    <string name="home_elapsed_flag_hide">Pat Ka FadSec Lab flag</string>
+    <string name="home_elapsed_flag_hide_desc">Elapsed timer area flag accent bela saaf sawa ka</string>
+    <string name="home_elapsed_flag_option">Flag accent</string>
+    <string name="home_elapsed_flag_option_desc">Da timer shata da FadSec Lab flag accent woyai ya pat ka</string>
+    <string name="home_elapsed_flag_show">Show FadSec Lab flag (Default)</string>
+    <string name="home_elapsed_flag_show_desc">Rayaz the branded flag accent behind the timer</string>
+    <string name="home_elapsed_font_doto">Doto</string>
+    <string name="home_elapsed_font_doto_desc">Doto font istemal kai da zeati khas digital timer look dapara</string>
+    <string name="home_elapsed_font_helper">Da elapsed timer numbers istemal shwi font intikhab ka.</string>
+    <string name="home_elapsed_font_monospace">Monospace</string>
+    <string name="home_elapsed_font_monospace_desc">Android monospace font istemal kai da clearer fixed-width digits dapara</string>
+    <string name="home_elapsed_font_option">Font</string>
+    <string name="home_elapsed_font_option_desc">Da elapsed timer value istemal shwi font intikhab ka</string>
+    <string name="home_elapsed_font_ubuntu">Ubuntu (Default)</string>
+    <string name="home_elapsed_font_ubuntu_desc">Da timer dapara da app default Ubuntu font istemal kai</string>
+    <string name="home_elapsed_size_helper">Intikhab ka che elapsed timer tsanga prominent zaher shi.</string>
+    <string name="home_elapsed_size_large">Large</string>
+    <string name="home_elapsed_size_large_desc">Largest timer size for maximum emphasis</string>
+    <string name="home_elapsed_size_medium">Medium (Default)</string>
+    <string name="home_elapsed_size_medium_desc">Balanced default size for the elapsed timer</string>
+    <string name="home_elapsed_size_option">Qadd</string>
+    <string name="home_elapsed_size_option_desc">Switch between compact and larger elapsed timer presets</string>
+    <string name="home_elapsed_size_small">Small</string>
+    <string name="home_elapsed_size_small_desc">Most compact timer size for a tighter card</string>
+    <string name="home_menu">Kor Menu</string>
+    <string name="home_options_title">Kor Intikhabuna</string>
+    <string name="home_sidebar_copyright" translatable="false">© FadSec Lab 2024 – 2026</string>
+    <string name="home_sidebar_discord">Discord</string>
+    <string name="home_sidebar_discord_sub">Community ki shamil sha</string>
+    <string name="home_sidebar_title">Kor</string>
+    <string name="home_storage_customize_helper">Storage indicator style aw total-storage visibility khoso ka.</string>
+    <string name="home_storage_customize_title">Zakhira Rayaz</string>
+    <string name="home_storage_indicator_bar">Micro pill bar</string>
+    <string name="home_storage_indicator_bar_desc">Mojood jaai yao warak ufqi pill bar ke woyai</string>
+    <string name="home_storage_indicator_helper">Da mojood zakhira woyalo dapara style intikhab ka.</string>
+    <string name="home_storage_indicator_option">Indicator style</string>
+    <string name="home_storage_indicator_option_desc">Intikhab ka che mojood zakhira pa icon slot ke tsanga visualize shi</string>
+    <string name="home_storage_indicator_ring">Ring (Default)</string>
+    <string name="home_storage_indicator_ring_desc">Show available space as a compact circular ring</string>
+    <string name="home_storage_indicator_title">Zakhira Indicator</string>
+    <string name="home_storage_indicator_vertical">Vertical bar</string>
+    <string name="home_storage_indicator_vertical_desc">Mojood jaai yao compact vertical fill bar ke woyai</string>
+    <string name="home_storage_total_helper">Intikhab ka che jumla zakhira qimat da mojood jaai krang woyai shi ke na.</string>
+    <string name="home_storage_total_hide">Pat Ka total storage</string>
+    <string name="home_storage_total_hide_desc">Keep only the available-space value visible</string>
+    <string name="home_storage_total_option">Total storage</string>
+    <string name="home_storage_total_option_desc">Show or hide the slash and total-capacity value</string>
+    <string name="home_storage_total_show">Show total storage (Default)</string>
+    <string name="home_storage_total_show_desc">Rayaz the slash and total-capacity value inline</string>
+    <string name="home_time_left_color_choice_desc">Accent color %1$s</string>
+    <string name="home_time_left_color_helper">Da time-left row dapara accent rang intikhab ka. Sur default de.</string>
+    <string name="home_time_left_color_title">Wakh Left Color</string>
+    <string name="icon_zoom_in_ligature">zoom_in</string>
+    <string name="image_viewer_title">Tasweer Ogorunki</string>
+    <string name="intel_activity_timeline">ACTIVITY TIMELINE</string>
+    <string name="intel_animals">ANIMALS</string>
+    <string name="intel_detection_breakdown">DETECTION BREAKDOWN</string>
+    <string name="intel_key_observations">KEY OBSERVATIONS</string>
+    <string name="intel_no_data">No intelligence data available.\nAsset monitoring is active.</string>
+    <string name="intel_objects">OBJECTS</string>
+    <string name="intel_personnel">PERSONNEL</string>
+    <string name="intel_range_24h">24H</string>
+    <string name="intel_range_30d">30 DAYS</string>
+    <string name="intel_range_7d">7 DAYS</string>
+    <string name="intel_range_all">ALL TIME</string>
+    <string name="intel_range_summary_24h">Last 24 hours</string>
+    <string name="intel_range_summary_30d">Last 30 days</string>
+    <string name="intel_range_summary_7d">Last 7 days</string>
+    <string name="intel_range_summary_all">All recorded data</string>
+    <string name="intel_tap_bar_hint">Tap any bar for hourly breakdown</string>
+    <string name="intel_threat_assessment">THREAT ASSESSMENT</string>
+    <string name="intel_time_window">24-hour monitoring window</string>
+    <string name="intel_total_detections">TOTAL DETECTIONS</string>
+    <string name="intel_vehicles">VEHICLES</string>
+    <string name="intel_zone_analysis">ZONE ANALYSIS</string>
+    <string name="intel_zone_desc">Camera frame sector activity distribution</string>
+    <string name="intel_zone_desc_v2">Sta camera view 9 zones ke taksim shwi. Zeati roghan = pa agha hissa ke zeati activity detect shwi.</string>
+    <string name="keep_screen_on_helper_picker">Kala che faal wi, screen ba video chalao wakht ke na wridegi.</string>
+    <string name="keep_screen_on_title">Screen chalu sawa ka</string>
+    <string name="kofi_button_text">Yao Ko-fi ra wakhla</string>
+    <string name="kofi_description">Tafseel will be set in code.</string>
+    <string name="kofi_footer_text">Made with    at FadSec Lab in</string>
+    <string name="lab_hide_thumbnails_redacted">REDACTED</string>
+    <string name="lab_hide_thumbnails_title">Classified Mode</string>
+    <string name="lab_section_about">Maloomat</string>
+    <string name="label_recommended">(Recommended)</string>
+    <string name="location_format_address">Full Address</string>
+    <string name="location_format_coordinates">Coordinates Only</string>
+    <string name="location_format_title">Mawqeiyat Format</string>
+    <string name="location_permission_denied">Da mawqeiyat ejazat mana shwi. Location features ba ghair faal shi.</string>
+    <string name="location_update_interval_helper">Watermark ke location data update kolo frekvensi. Zeati wakhuna kam battery istemal kai.</string>
+    <string name="location_update_interval_title">Da Location Update Frekvensi</string>
+    <string name="location_watermark_sheet_title">Mawqeiyat Overlay</string>
+    <string name="location_watermark_switch_label">Mawqeiyat Overlay</string>
+    <string name="mainpage_camera_back">Shata Camera</string>
+    <string name="mainpage_camera_front">Makhki Camera</string>
+    <string name="mainpage_recording_to_sd">Recording to SD card</string>
+    <string name="manage_projects">Manage Projects</string>
+    <string name="media_type_photo">Tasweer</string>
+    <string name="media_type_photo_back">Shata</string>
+    <string name="media_type_photo_fadrec">FadRec</string>
+    <string name="media_type_photo_selfie">Selfie</string>
+    <string name="mini_app_clinometer_desc">Measure angles and slopes using gyroscope</string>
+    <string name="mini_app_clinometer_title">Clinometer</string>
+    <string name="mini_app_coming_soon">Soon</string>
+    <string name="mini_app_coming_soon_desc">This feature will be available in the future</string>
+    <string name="mini_app_compass_desc">Digital compass with bearing display and navigation features</string>
+    <string name="mini_app_compass_feature_bearing">Real-time bearing (0-360°)</string>
+    <string name="mini_app_compass_feature_cardinal">Cardinal directions (N, S, E, W)</string>
+    <string name="mini_app_compass_feature_mag_true">Magnetic vs True North</string>
+    <string name="mini_app_compass_title">Compass</string>
+    <string name="mini_app_metal_detector_desc">Detect metal objects using magnetometer</string>
+    <string name="mini_app_metal_detector_title">Flu Meshtun</string>
+    <string name="mini_app_parking_marker_desc">Sabt Ka Ka Ka sta / khpal parking spot and navigate back with GPS arrow</string>
+    <string name="mini_app_parking_marker_title">Parking Nishan</string>
+    <string name="mini_app_pedometer_desc">Step counter using built-in step sensor</string>
+    <string name="mini_app_pedometer_title">Pedometer</string>
+    <string name="mini_app_qr_generator_desc">QR codes text, URLs, aw contacts na jor ka</string>
+    <string name="mini_app_qr_generator_title">QR Generator</string>
+    <string name="mini_app_qr_scanner_desc">Scan QR codes and barcodes instantly</string>
+    <string name="mini_app_qr_scanner_title">QR Scanner</string>
+    <string name="mini_app_sensor_dashboard_desc">Ogora accelerometer, gyroscope, and sensor data</string>
+    <string name="mini_app_sensor_dashboard_feature_accel">Accelerometer (X, Y, Z)</string>
+    <string name="mini_app_sensor_dashboard_feature_gyro">Gyroscope (X, Y, Z)</string>
+    <string name="mini_app_sensor_dashboard_feature_mag">Magnetometer readings</string>
+    <string name="mini_app_sensor_dashboard_title">Sensor Dashboard</string>
+    <string name="mini_app_sound_meter_desc">Ambient noise level detector in decibels (dB)</string>
+    <string name="mini_app_sound_meter_feature_avg">Average noise levels</string>
+    <string name="mini_app_sound_meter_feature_peak">Peak noise detection</string>
+    <string name="mini_app_sound_meter_feature_realtime">Real-time dB measurement</string>
+    <string name="mini_app_sound_meter_title">Da Shor Meter</string>
+    <string name="mini_app_speedometer_desc">Real-time car speedometer with GPS speed tracking</string>
+    <string name="mini_app_speedometer_title">Speedometer</string>
+    <string name="mini_app_torch_desc">LED flashlight with patterns</string>
+    <string name="mini_app_torch_feature_led">Uses device LED torch</string>
+    <string name="mini_app_torch_feature_patterns">SOS and strobe patterns</string>
+    <string name="mini_app_torch_feature_screen">Screen brightness as light source</string>
+    <string name="mini_app_torch_led_desc">Control sta / khpal device\'s LED flashlight</string>
+    <string name="mini_app_torch_led_title">LED Torch</string>
+    <string name="mini_app_torch_patterns_title">Flash Pattern</string>
+    <string name="mini_app_torch_screen_desc">Use full screen brightness as a light source</string>
+    <string name="mini_app_torch_screen_title">Screen Light</string>
+    <string name="mini_app_torch_title">Torch</string>
+    <string name="mini_apps_planned_shortcuts_desc">Da Kor screen shortcuts da har Mini App ta osani rasai dapara FadCam pehla khola na.
+
+Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programmatically trigger kolo dapara — QR scanning, torch, aw nor automated workflows ke istemal ka.</string>
+    <string name="mini_apps_planned_shortcuts_title">Planned: Shortcuts &amp; Automation</string>
+    <string name="mini_apps_subtitle">Quick utilities and tools</string>
+    <string name="mini_apps_title">Mini Apps</string>
+    <string name="motion_lab_analysis_2_desc">Power saving, slower response.</string>
+    <string name="motion_lab_analysis_3_desc">Balanced default.</string>
+    <string name="motion_lab_analysis_5_desc">Faster response, more CPU.</string>
+    <string name="motion_lab_analysis_fps">Analysis FPS</string>
+    <string name="motion_lab_analysis_helper">AI har second ke scene tso wari check kai. Zeati checks zarz react kai, kho zeati battery aw phone garm kawalai shi. Da EfficientDet multi-class detection dapara, 6 fps daily use dapara sawa ka (5-8 reliable zone de).</string>
+    <string name="motion_lab_auto_torch">Motion pa khabar ke Auto Torch</string>
+    <string name="motion_lab_auto_torch_helper">Flashlight ON kai kala che recording da motion na shuru shi, aw OFF kai kala che recording waqfa kai. Da tiyar kayo dapara mufeed de.</string>
+    <string name="motion_lab_debounce">Debounce</string>
+    <string name="motion_lab_debounce_hint">Recording shuru kolo na pesh yao lag tasdiq dair. Da agha shan de che yao lag lamza intizar kae che movement asli de. Kam qimat zarz shuru kai, zeati qimat false starts na kai. 220 ms aksar kayo dapara sawa ka.</string>
+    <string name="motion_lab_debug_action_placeholder">Last action: -</string>
+    <string name="motion_lab_debug_copy_done">Motion snapshot copied</string>
+    <string name="motion_lab_debug_copy_snapshot">Copy Ka monitor snapshot</string>
+    <string name="motion_lab_debug_frame">Live analyzer frame preview</string>
+    <string name="motion_lab_debug_metrics_placeholder">Area/Strong/Mean/BG/Max/Global: -</string>
+    <string name="motion_lab_debug_metrics_value">Area %1$.3f, Strong %2$.3f, Mean %3$.3f, BG %4$.3f, Max %5$.3f, Global %6$s</string>
+    <string name="motion_lab_debug_no_snapshot">No motion snapshot is available yet.</string>
+    <string name="motion_lab_debug_person_placeholder">Person: -</string>
+    <string name="motion_lab_debug_person_value">Detected: %1$s (%2$.3f) • Person: %3$s (%4$.3f)</string>
+    <string name="motion_lab_debug_score_placeholder">Score raw/smoothed: -</string>
+    <string name="motion_lab_debug_score_value">Score raw/smoothed: %1$.3f / %2$.3f</string>
+    <string name="motion_lab_debug_state_placeholder">Halat: -</string>
+    <string name="motion_lab_debug_threshold_placeholder">Threshold start/stop: -</string>
+    <string name="motion_lab_debug_threshold_value">Threshold start/stop: %1$.3f / %2$.3f</string>
+    <string name="motion_lab_debug_title">Live Motion Monitor</string>
+    <string name="motion_lab_enable">Motion Recording Faal Ka</string>
+    <string name="motion_lab_enable_sensor">Motion Sensor Faal Ka</string>
+    <string name="motion_lab_footer">Pas ki controls khoso ya kri che ta khas rawai darkar wi. Da aksar setups dapara, defaults enha barkari aw mohtam intikhab de.</string>
+    <string name="motion_lab_fps_value">%1$d fps</string>
+    <string name="motion_lab_info_body">This is FadCam\'s Auto Record on Motion feature.\n\nHow it works in simple words:\n- Your camera stays active and analyzes frames on-device in real time.\n- The on-device machine learning model and motion logic look for movement.\n- When valid motion is detected, recording starts/resumes.\n- Recording keeps going while motion continues.\n- After motion stops, Post-roll keeps recording for sta / khpal selected extra seconds.\n- Then recording pauses and waits for the next motion event.\n\nWhen recording is paused, the app is still analyzing frames in memory, but it is not writing new video data until motion is detected again.\n\nHow to use (most users):\n- Keep all options at default values.\n- Turn ON Motion Sensor on da screen.\n- Go to Kor tab and start recording normally.\n- Motion-based auto record will run automatically.\n\nEasy test from far distance:\n- Turn ON Auto Torch on da screen.\n- Recording shuru ka from Kor tab.\n- Place the phone tilted on a table or shelf facing the room.\n- Leave the room, then enter and walk in.\n- Torch turning ON helps you instantly notice from far away agha recording started.\n- Recording will continue for sta / khpal selected Post-roll duration after motion stops.\n\nTip: This feature runs continuously, so very high advanced values can increase heat and can reduce device health over time. For long sessions, keep defaults unless you have a specific reason.</string>
+    <string name="motion_lab_info_cd">Motion Lab info</string>
+    <string name="motion_lab_info_title">Auto Record on Motion</string>
+    <string name="motion_lab_ms_value">%1$d ms</string>
+    <string name="motion_lab_percent_value">%1$d%%</string>
+    <string name="motion_lab_post_roll">Post-roll</string>
+    <string name="motion_lab_post_roll_hint">Movement band sho na pas recording der wakh jari pati shi. Misal: che chok kor na watan shi, da recording jari sawi che akhar kat na shi. 10 seconds aksar kayo dapara sawa ka.</string>
+    <string name="motion_lab_pre_roll">Pre-roll</string>
+    <string name="motion_lab_pre_roll_hint">Trigger na pesh tso seconds shamil kolo kushish kigi. Misal: che chok yak nagha zaher shi, pre-roll da madad kai che saat da dakhel kolo pesh shamil kae. 2 seconds aksar kayo dapara sawa ka.</string>
+    <string name="motion_lab_row_subtitle">Smart event recording for CCTV-style use</string>
+    <string name="motion_lab_seconds_value">%1$d s</string>
+    <string name="motion_lab_sensitivity">Hassasiyat</string>
+    <string name="motion_lab_sensitivity_hint">Da agha shan de che yao motion "hearing" knob. Zeati qimat pa lag movement bandi zaher kai (da lass khwakh da kenar shan). Kam qimat lag movement ignore kai. 80 aksar kayo dapara sawa ka.</string>
+    <string name="motion_lab_set_value_row_subtitle">Current value: %1$d</string>
+    <string name="motion_lab_set_value_row_title">Set value</string>
+    <string name="motion_lab_status_disabled">Ghair faal de</string>
+    <string name="motion_lab_status_enabled">Active (records only when needed)</string>
+    <string name="motion_lab_title">Motion Lab</string>
+    <string name="motion_lab_trigger_any_motion">Any Motion</string>
+    <string name="motion_lab_trigger_any_motion_desc">Kala che movement detect shi, da aam CCTV motion camera shan shuru kai.</string>
+    <string name="motion_lab_trigger_mode">Trigger Mode</string>
+    <string name="motion_lab_trigger_mode_helper">Intikhab ka che kom shay recording shuru kawi. Che ta yaqin nadi, Any Motion sawa ka.</string>
+    <string name="motion_lab_trigger_person_confirmed">Person Confirmed</string>
+    <string name="motion_lab_trigger_person_confirmed_desc">Sirf kala shuru kai che movement da person shan lari. Da fan/shadows na false alerts kam kolo ke madad kai.</string>
+    <string name="mute_off_toast">Playback be\'az khamosh sho</string>
+    <string name="mute_on_toast">Playback khamosh sho</string>
+    <string name="mute_playback_helper">Kala che faal wi, videos ba muted shan default tor chalu shi. Ta da dalta ya Video Player screen na badal kol shaye.</string>
+    <string name="mute_playback_helper_picker">When enabled, videos will play muted by default.</string>
+    <string name="mute_playback_subtitle">Video awaz band sara chalao</string>
+    <string name="mute_playback_title">Playback khamosh ka</string>
+    <string name="name_your_project">Num Your Project</string>
+    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_lab">Lab</string>
+    <string name="nav_remote">Lirai</string>
+    <string name="new_project">Nawai Project</string>
+    <string name="next">Bela</string>
+    <string name="note_cam_dual_unsupported">Sta device dual camera recording support nadi kai.</string>
+    <string name="note_debug_detailed">When enabled, FadCam writes a debug log HTML file (FADCAM_debug.html) into the public Downloads/FadCam/ folder. Share Ka da file when reporting issues. Turn off to stop future writes.\nNote: Debug logging may add performance overhead during recording — keep it off unless you are troubleshooting.</string>
+    <string name="note_from_developer_subtitle">README, links &amp; updates</string>
+    <string name="note_from_developer_title">Da Developer Note</string>
+    <string name="note_zoom_ratio">Intikhab Ka zoom ratio\n(Default: %1$.1fx - no zoom)</string>
+    <string name="notification_custom_editor_helper">Sarlaik aw tafseel landi dakhil ka. Tabdilat khpala save kegi.</string>
+    <string name="notification_custom_editor_title">Custom Notification</string>
+    <string name="notification_custom_text_placeholder">Tafseel (masalan: Update rawan de)</string>
+    <string name="notification_custom_title_placeholder">Sarlaik (masalan: System Update)</string>
+    <string name="notification_options_heading">Intikhabuna</string>
+    <string name="notification_preset_helper">Preset style intikhab ka ya Custom intikhab ka che khpal sarlaik aw tafseel dakhil kae.</string>
+    <string name="notification_preview_helper">Kala che recording rawan wi, da agha shan zaher kegi. Intikhab Ka a style or create a custom title &amp; description. The Da bandawalo button zaher reflects sta / khpal setting.</string>
+    <string name="notification_setup_ok">OK</string>
+    <string name="notification_stop_button_hidden">Pat</string>
+    <string name="notification_stop_button_row_title">Bandawalo Button</string>
+    <string name="notification_stop_button_visible">Zaher</string>
+    <string name="notification_style_row_title">Da Notification Style</string>
+    <string name="number_input_default_helper">Yo numra dakhil ka aw save kolo dapara OK dab ka.</string>
+    <string name="number_input_ok_helper">Sa day — OK dab ka to save.</string>
+    <string name="onboarding_human_checkbox3">Za da Privacy Policy sara mutafiq yam</string>
+    <string name="onboarding_intro_line4">open-source. ad-free. yours.</string>
+    <string name="pattern_morse_desc">Morse code pattern for advanced signaling</string>
+    <string name="pattern_sos_desc">SOS Morse code pattern: 3 lag + 3 loong + 3 lag flashes</string>
+    <string name="pattern_steady_desc">Continuous steady light for normal flashlight use</string>
+    <string name="pattern_strobe_desc">Rapid on-off flashing pattern for emergency signaling</string>
+    <string name="photo_capture_failed">Tasweer akhestel na shwa</string>
+    <string name="photo_capture_preview_unavailable">Preview is not available</string>
+    <string name="photo_capture_saved">Tasweer save shwa</string>
+    <string name="playback_controls_heading">Playback controls</string>
+    <string name="playback_controls_helper">Playback suraat adjust ka ya press-and-hold dapara Quick Speed tanzim ka. Ta da tanzimaat dalta ya Video Player screen na badal kol shaye.</string>
+    <string name="playback_speed_helper_player">Sirf osany playback bandi asar achi kai. Mustaqbil videos dapara default badalolo dapara Settings istemal ka.</string>
+    <string name="playback_speed_helper_settings">Default speed for video playback.</string>
+    <string name="playback_speed_label">Playback Suraat</string>
+    <string name="playback_speed_subtitle">Change playback speed for da video</string>
+    <string name="playback_speed_title">Playback Suraat</string>
+    <string name="player_info_content"><![CDATA[
+<b>Fragmented MP4 Format</b><br/><br/>
+FadCam uses a fragmented MP4 format for recordings. This means videos are saved in small segments instead of one complete file. The benefit is that if something goes wrong during recording, you only lose the last few seconds instead of the entire video.<br/><br/>
+If the last few seconds of your video appear frozen or stale, don\'t worry — it\'s not a bug! When you stop recording, the current fragment may still complete its cycle (~3 seconds), which can leave a brief stale frame at the end.<br/><br/>
+<b>Player Limitations</b><br/><br/>
+The built-in video player has some Android system limitations. You may notice the progress bar or waveform appearing slightly snappy — this is normal behavior and not a bug.<br/><br/>
+For the smoothest playback experience, you can use an external player like VLC. That said, the integrated player works well for everyday use!
+    ]]></string>
+    <string name="player_info_title">Maloomat the Video Player</string>
+    <string name="prefs_backup_title">Da Preferences Backup</string>
+    <string name="prefs_export_failed">Export fail sho</string>
+    <string name="prefs_export_label">Preferences Export Ka</string>
+    <string name="prefs_export_subtitle">Sabt Ka Ka Ka all settings to JSON</string>
+    <string name="prefs_export_success">Export mukammal sho</string>
+    <string name="prefs_import_export_subtitle">Backup, restore, reset</string>
+    <string name="prefs_import_export_title">Import ka / Export ka</string>
+    <string name="prefs_import_failed">Import fail sho</string>
+    <string name="prefs_import_label">Preferences Import Ka</string>
+    <string name="prefs_import_subtitle">Load ka settings from JSON</string>
+    <string name="prefs_import_success">Import mukammal sho</string>
+    <string name="prefs_preview_label">JSON Ogora</string>
+    <string name="prefs_preview_none">Tarto JSON load na shwa</string>
+    <string name="prefs_preview_subtitle">Khola &amp; view a preferences file</string>
+    <string name="prefs_reset_done">All preferences reset</string>
+    <string name="prefs_reset_failed">Reset failed</string>
+    <string name="prefs_reset_label">Tol Preferences Reset Ka</string>
+    <string name="prefs_reset_not_matched">Dakhil kari shay DELETE sara yaw na shwa</string>
+    <string name="prefs_reset_subtitle">Factory defaults (type DELETE)</string>
+    <string name="prefs_reset_type_delete">DELETE (tol capital) tayp ka che reset tasdiq kae</string>
+    <string name="preview_area_title">Preview Area</string>
+    <string name="preview_disabled">Preview disabled</string>
+    <string name="preview_dual_not_supported">Preview-only works on front/back cameras only</string>
+    <string name="preview_enable_hint">Hold to wake up the camera</string>
+    <string name="preview_enabled">Preview enabled</string>
+    <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>
+    <string name="preview_quick_actions_state_recording_only">Zaher only while recording</string>
+    <string name="preview_quick_actions_sub">FadShot aw Fullscreen icons woyai hatta kala che recording idle wi.</string>
+    <string name="preview_quick_actions_title">Preview quick actions</string>
+    <string name="preview_starting">Starting live preview...</string>
+    <string name="preview_state_disable">Ghair Faal Ka</string>
+    <string name="preview_state_enable">Faal Ka</string>
+    <string name="previous">Pesh</string>
+    <string name="privacy_black_enable_needed_hint">Pehla Security Settings ke Privacy Black Screen faal ka</string>
+    <string name="privacy_black_gesture_long">Long Press to Exit</string>
+    <string name="privacy_black_gesture_swipe">Swipe Up to Exit</string>
+    <string name="privacy_black_gesture_triple">Triple Tap to Exit</string>
+    <string name="privacy_black_gestures_helper">Intikhab ka che kom gestures Privacy Black Mode na watan kolo dapara istemal shi.
+
+Yadona: La na yao exit method faal pati shi che bended na shi!</string>
+    <string name="privacy_black_gestures_title">Exit Methods</string>
+    <string name="privacy_black_min_one_method">At least one exit method must remain enabled.</string>
+    <string name="privacy_black_mode_disabled_toast">Privasy Mode Ghair faal de</string>
+    <string name="privacy_black_mode_enable_title">Privacy Black Mode Faal Ka</string>
+    <string name="privacy_black_mode_enabled_toast">Privasy Mode Faal de</string>
+    <string name="privacy_black_mode_helper">If sta / khpal device kills the app in the background, you can use da feature to keep the app running in the foreground.\n\nA black screen overlay appears, making it look like the screen is off while recording continues.\n\nTap the FadCam icon in the top header of the Kor tab to activate it.</string>
+    <string name="privacy_black_mode_title">Privacy Tiyar Screen</string>
+    <string name="project_desc_hint">What is da project about?</string>
+    <string name="project_desc_label">Tafseel (Optional)</string>
+    <string name="project_description_placeholder">Kho tafseel na shwi zayda</string>
+    <string name="project_list_empty_description">Shuru kolo dapara nawai project jor ka</string>
+    <string name="project_list_empty_title">(Tarto project saved na shwi)</string>
+    <string name="project_meta_format">%1$s • %2$s</string>
+    <string name="project_meta_unknown_date">Tarikh unknown</string>
+    <string name="project_meta_unknown_size">Qadd unknown</string>
+    <string name="project_name_hint">e.g., Tutorial Video, Game Recording</string>
+    <string name="project_name_label">Project Num</string>
+    <string name="project_naming_message">Give sta / khpal project a memorable name and description to organize sta / khpal recordings</string>
+    <string name="qr_info_banner_text">Scanned codes are saved to Records tab automatically</string>
+    <string name="qr_result_scanned_label">Scanned</string>
+    <string name="quick_speed_helper">Quick Speed sirf os wakht istemal kai kala ta playback wakht ke dab aw ogad kai.</string>
+    <string name="quick_speed_option_1_25">1.25x</string>
+    <string name="quick_speed_option_1_5">1.5x</string>
+    <string name="quick_speed_option_1_75">1.75x</string>
+    <string name="quick_speed_option_2">2x</string>
+    <string name="quick_speed_option_2_5">2.5x</string>
+    <string name="quick_speed_option_custom">Custom</string>
+    <string name="quick_speed_option_default">2x (Default)</string>
+    <string name="quick_speed_title">Quick Suraat</string>
+    <string name="readme_discord_subtitle">Community ki shamil sha</string>
+    <string name="readme_github_subtitle">Source code &amp; releases</string>
+    <string name="readme_website_subtitle">Official site</string>
+    <string name="recording_already_active">Recording is already in progress or paused.</string>
+    <string name="recording_controls">Recording Controls</string>
+    <string name="recording_controls_title">AF · Exposure · Zoom</string>
+    <string name="recording_elapsed_time">Elapsed time</string>
+    <string name="recording_estimated_time">Estimated time</string>
+    <string name="recording_quick_access">Recording Quick Access</string>
+    <string name="recording_remaining_time">Remaining time</string>
+    <string name="recording_time_left">Wakh left</string>
+    <string name="records_batch_actions_title">Batch Actions</string>
+    <string name="records_batch_coming_soon">Da batch action ba bela ratlole shi.</string>
+    <string name="records_batch_completed">Batch operation mukammal sho.</string>
+    <string name="records_batch_custom_export_done">Export mukammal sho. Kamyab: %1$d • Fail: %2$d</string>
+    <string name="records_batch_custom_export_invalid_folder">Selected folder is not writable.</string>
+    <string name="records_batch_custom_export_started">Exporting %1$d videos to selected folder…</string>
+    <string name="records_batch_delete">Delete Ka</string>
+    <string name="records_batch_delete_desc">Move selected videos to Trash.</string>
+    <string name="records_batch_deselect_all">Tol intikhab pat ka</string>
+    <string name="records_batch_export_done_title">Standard MP4 Export ka Finished</string>
+    <string name="records_batch_fab_label">Batch</string>
+    <string name="records_batch_faditor">Faditor Automations</string>
+    <string name="records_batch_faditor_desc">Run background automations without opening the Faditor tab.</string>
+    <string name="records_batch_faditor_export_standard">Standard MP4 ta Export</string>
+    <string name="records_batch_faditor_export_standard_desc">Da bahrani players dapara fragmented MP4 seekable standard MP4 ke badal kai.</string>
+    <string name="records_batch_faditor_first_only">Pehla video kho sho. %1$d intikhab shwal; multi-edit queue ba bela razy.</string>
+    <string name="records_batch_faditor_merge">Merge Selected Videos</string>
+    <string name="records_batch_faditor_merge_desc">Combines selected clips into one video in background.</string>
+    <string name="records_batch_faditor_queued">%1$d batch item(s) pasmanzar ki queue shwal.</string>
+    <string name="records_batch_faditor_sheet_title">Batch Faditor Actions</string>
+    <string name="records_batch_merge_done_title">Batch Merge Finished</string>
+    <string name="records_batch_notif_channel_desc">Da Records batch save aw Faditor automation tasks dapara progress aw natija.</string>
+    <string name="records_batch_notif_channel_name">Batch Media Actions</string>
+    <string name="records_batch_progress_counts">Mukammal Sho %1$d • Skipped %2$d • Fail Sho %3$d</string>
+    <string name="records_batch_progress_item">Processing %1$d of %2$d</string>
+    <string name="records_batch_save">Gallery ta Save ka</string>
+    <string name="records_batch_save_copy_helper">Asli files sawi; copies %1$s ta save kai.</string>
+    <string name="records_batch_save_custom_location">Export ka to New Mawqeiyat</string>
+    <string name="records_batch_save_custom_location_desc">Intikhab Ka one folder for all selected videos in da run.</string>
+    <string name="records_batch_save_desc">Intikhab shwi videos bela folder ta copy, move, ya export ka.</string>
+    <string name="records_batch_save_move_helper">Intikhab shwi videos %1$s ta move kai aw asli files save shwo na pas lere kai.</string>
+    <string name="records_batch_save_queued">%1$d save task(s) queue ki zaat shwal.</string>
+    <string name="records_batch_select_all">Tol intikhab ka</string>
+    <string name="records_batch_select_all_desc">Pa osany filter ke tol videos intikhab ka ya saaf ka.</string>
+    <string name="records_batch_select_items_first">Pehla yao ya thousand videos intikhab ka.</string>
+    <string name="records_batch_starting">Batch operation tayar kigi…</string>
+    <string name="records_batch_summary">Batch mukammal. Mukammal: %1$d • Skipped: %2$d • Fail: %3$d</string>
+    <string name="records_delete_error_failed_item">Could not delete %1$s.</string>
+    <string name="records_delete_error_invalid_item">Could not delete one of the selected items.</string>
+    <string name="records_delete_header_action_cancel">Laghwa Ka</string>
+    <string name="records_delete_header_action_ok">OK</string>
+    <string name="records_delete_header_default_title">Recordings delete kegi</string>
+    <string name="records_delete_header_dismiss_hint">Tap OK to dismiss</string>
+    <string name="records_delete_header_done_body_failed">%1$d item(s) fail shwal.</string>
+    <string name="records_delete_header_done_body_partial">%1$d lere shwal • %2$d fail shwal.</string>
+    <string name="records_delete_header_done_body_success">%1$d item(s) lere shwal.</string>
+    <string name="records_delete_header_done_failed">Deletion failed</string>
+    <string name="records_delete_header_done_partial">Deletion finished with issues</string>
+    <string name="records_delete_header_done_success">Deletion complete</string>
+    <string name="records_delete_header_eta_minutes">ETA %1$dm %2$02ds</string>
+    <string name="records_delete_header_eta_seconds">ETA %1$ds</string>
+    <string name="records_delete_header_finishing">Finishing…</string>
+    <string name="records_delete_header_issue_prefix">Issue: %1$s</string>
+    <string name="records_delete_header_preparing">Preparing deletion…</string>
+    <plurals name="records_delete_header_progress_title">
+        <item quantity="one">Deleting %1$d of %2$d item</item>
+        <item quantity="other">Deleting %1$d of %2$d items</item>
+    </plurals>
+    <string name="records_delete_header_running_summary">%1$d done • %2$d failed</string>
+    <plurals name="records_delete_header_running_title">
+        <item quantity="one">Deleting %d item</item>
+        <item quantity="other">Deleting %d items</item>
+    </plurals>
+    <string name="records_delete_header_summary">%1$d of %2$d complete • %3$d failed</string>
+    <string name="records_delete_header_working">Working…</string>
+    <string name="records_delete_notification_cancel">Laghwa Ka</string>
+    <string name="records_delete_notification_cancelled">Deletion cancelled</string>
+    <string name="records_delete_notification_channel_desc">Progress and results for background deletion in Records.</string>
+    <string name="records_delete_notification_channel_name">Deletion Progress</string>
+    <string name="records_delete_notification_complete_failed">Deletion failed</string>
+    <string name="records_delete_notification_complete_partial">Deletion finished with issues</string>
+    <string name="records_delete_notification_complete_success">Deletion complete</string>
+    <string name="records_delete_notification_progress_text">%1$d pa %2$d na mukammal • %3$s</string>
+    <string name="records_delete_notification_summary_text">Delete shwal %1$d • Fail shwal %2$d</string>
+    <string name="records_delete_notification_title">Recordings delete kegi</string>
+    <plurals name="records_delete_queued_toast">
+        <item quantity="one">1 item pasmanzar ki delete kegi.</item>
+        <item quantity="other">Deleting %d items in background.</item>
+    </plurals>
+    <string name="records_filter_all">Tol</string>
+    <string name="records_filter_camera">FadCam</string>
+    <string name="records_filter_camera_all">Tol</string>
+    <string name="records_filter_camera_back">Shata</string>
+    <string name="records_filter_camera_dual">Dual</string>
+    <string name="records_filter_camera_front">Makhki</string>
+    <string name="records_filter_checklist_desc">Toggle selection mode</string>
+    <string name="records_filter_dual">Dual</string>
+    <string name="records_filter_faditor">Faditor</string>
+    <string name="records_filter_faditor_all">Tol</string>
+    <string name="records_filter_faditor_converted">Badal Sho</string>
+    <string name="records_filter_faditor_merge">Merge</string>
+    <string name="records_filter_helper_camera_all">Camera recordings (Shata, Makhki, Dual)</string>
+    <string name="records_filter_helper_camera_back">Captured with back camera</string>
+    <string name="records_filter_helper_camera_dual">Captured with dual camera mode</string>
+    <string name="records_filter_helper_camera_front">Captured with front camera (selfie)</string>
+    <string name="records_filter_helper_dual">Dual camera recordings</string>
+    <string name="records_filter_helper_faditor">Edited/Exported videos (Faditor)</string>
+    <string name="records_filter_helper_faditor_all">All Faditor outputs and related files.</string>
+    <string name="records_filter_helper_faditor_converted">Da bahrani players dapara fragmented MP4 standard seekable MP4 ke badal sho.</string>
+    <string name="records_filter_helper_faditor_merge">Merged multiple clips into one output video.</string>
+    <string name="records_filter_helper_screen">Screen recordings (FadRec)</string>
+    <string name="records_filter_helper_shot_all">Captured photos and screenshots</string>
+    <string name="records_filter_helper_shot_back">Captured photos with back camera</string>
+    <string name="records_filter_helper_shot_fadrec">Captured screenshots (FadRec)</string>
+    <string name="records_filter_helper_shot_selfie">Captured photos with front camera (selfie)</string>
+    <string name="records_filter_helper_stream">Saved stream recordings</string>
+    <string name="records_filter_miniapps_all">Tol</string>
+    <string name="records_filter_screen">FadRec</string>
+    <string name="records_filter_shot">FadShot</string>
+    <string name="records_filter_shot_all">Tol</string>
+    <string name="records_filter_shot_back">Shata</string>
+    <string name="records_filter_shot_fadrec">FadRec</string>
+    <string name="records_filter_shot_selfie">Selfie</string>
+    <string name="records_filter_stream">Stream</string>
+    <string name="records_grid_1">1 column</string>
+    <string name="records_grid_2">2 columns</string>
+    <string name="records_grid_3">3 columns</string>
+    <string name="records_grid_4">4 columns</string>
+    <string name="records_grid_5">5 columns</string>
+    <string name="records_grid_helper">Intikhab ka che pa gallery ke kom columns woyai.</string>
+    <string name="records_grid_option">Grid Layout</string>
+    <string name="records_hide_thumbnails_row_title">Pat Ka</string>
+    <string name="records_hide_thumbnails_subtitle">Show a minimal list without thumbnails</string>
+    <string name="records_hide_thumbnails_title">Thumbnails Pat Ka</string>
+    <string name="records_location_format">Mawqey: %1$s/%2$s</string>
+    <plurals name="records_save_copy_header_progress_title">
+        <item quantity="one">Saving %1$d of %2$d item</item>
+        <item quantity="other">Saving %1$d of %2$d items</item>
+    </plurals>
+    <string name="records_save_error_create_destination">Couldn\'t create destination folder.</string>
+    <string name="records_save_error_delete_original">Copied, but couldn\'t remove original file.</string>
+    <string name="records_save_error_failed_item">Couldn\'t save %1$s.</string>
+    <string name="records_save_error_open_source">Couldn\'t read source file.</string>
+    <plurals name="records_save_export_header_progress_title">
+        <item quantity="one">Exporting %1$d of %2$d item</item>
+        <item quantity="other">Exporting %1$d of %2$d items</item>
+    </plurals>
+    <string name="records_save_header_done_body_failed">%1$d item(s) fail shwal.</string>
+    <string name="records_save_header_done_body_partial">%1$d mukammal • %2$d fail.</string>
+    <string name="records_save_header_done_body_success_copy">%1$d item(s) gallery ta save shwal.</string>
+    <string name="records_save_header_done_body_success_export">%1$d item(s) export shwal.</string>
+    <string name="records_save_header_done_body_success_move">%1$d item(s) gallery ta move shwal.</string>
+    <string name="records_save_header_done_failed">Sabt Ka Ka Ka failed</string>
+    <string name="records_save_header_done_partial">Sabt Ka Ka Ka finished with issues</string>
+    <string name="records_save_header_done_success_copy">Sabt Ka Ka Ka complete</string>
+    <string name="records_save_header_done_success_export">Export mukammal</string>
+    <string name="records_save_header_done_success_move">Move complete</string>
+    <string name="records_save_header_preparing_copy">Preparing save…</string>
+    <string name="records_save_header_preparing_export">Preparing export…</string>
+    <string name="records_save_header_preparing_move">Preparing move…</string>
+    <plurals name="records_save_move_header_progress_title">
+        <item quantity="one">Moving %1$d of %2$d item</item>
+        <item quantity="other">Moving %1$d of %2$d items</item>
+    </plurals>
+    <string name="records_save_notification_cancelled">Sabt Ka Ka Ka cancelled</string>
+    <string name="records_save_notification_complete_failed">Sabt Ka Ka Ka failed</string>
+    <string name="records_save_notification_complete_partial">Sabt Ka Ka Ka finished with issues</string>
+    <string name="records_save_notification_complete_success_copy">Sabt Ka Ka Ka complete</string>
+    <string name="records_save_notification_complete_success_export">Export mukammal</string>
+    <string name="records_save_notification_complete_success_move">Move complete</string>
+    <string name="records_save_notification_summary_text_copy">Save shwal %1$d • Fail shwal %2$d</string>
+    <string name="records_save_notification_summary_text_export">Export shwal %1$d • Fail shwal %2$d</string>
+    <string name="records_save_notification_summary_text_move">Move shwal %1$d • Fail shwal %2$d</string>
+    <string name="records_save_notification_title_copy">Saving to gallery</string>
+    <string name="records_save_notification_title_export">Exporting</string>
+    <string name="records_save_notification_title_move">Moving to gallery</string>
+    <string name="records_search_hint">Recordings model kae…</string>
+    <string name="records_sort_helper">Intikhab ka che recordings pa fehrist ke tsanga tartib shi.</string>
+    <string name="records_sort_order_title">Sorting order</string>
+    <string name="records_view_mode_title">Zaherwali mode</string>
+    <string name="remote_coming_soon_badge">Zur Razee</string>
+    <string name="remote_security_auto_lock">Auto-Lock Timeout</string>
+    <string name="remote_security_auto_lock_desc">Automatically lock after inactivity</string>
+    <string name="remote_security_auto_lock_never">Never</string>
+    <string name="remote_security_enable">Faal Ka Authentication</string>
+    <string name="remote_security_enable_desc">Require password to access remote web interface</string>
+    <string name="remote_security_enable_first">Faal Ka authentication first</string>
+    <string name="remote_security_logout_all">Logout All Sessions</string>
+    <string name="remote_security_logout_all_desc">Revoke all active remote sessions</string>
+    <string name="remote_security_no_active_sessions">No active sessions</string>
+    <string name="remote_security_password">Set Password</string>
+    <string name="remote_security_password_desc">Change sta / khpal remote access password</string>
+    <string name="remote_security_password_empty">Please enter a password</string>
+    <string name="remote_security_password_hint">Enter new password</string>
+    <string name="remote_security_password_required">Password must be 4-32 characters</string>
+    <string name="remote_security_password_set">Password updated successfully</string>
+    <string name="remote_security_sessions_cleared">All sessions logged out</string>
+    <string name="remote_security_title">Lirai Amniyat</string>
+    <string name="rename_dialog_error_empty">Num khali nashi kedali</string>
+    <string name="rename_dialog_hint">Nawai num</string>
+    <string name="rename_dialog_negative">Laghwa Ka</string>
+    <string name="rename_dialog_positive">Num Badal Ka</string>
+    <string name="rename_dialog_toast_success">✏️ Renamed to: %1$s</string>
+    <string name="rename_layer_message">Da layer dapara nawai num olekai</string>
+    <string name="rename_layer_title">Layer Num Badal Ka</string>
+    <string name="rename_page_message">Da safha dapara nawai num olekai</string>
+    <string name="rename_page_title">Safha Num Badal Ka</string>
+    <string name="restore_cancelled">Berta Restore Ka cancelled</string>
+    <string name="restore_confirm_button">Berta Restore Ka</string>
+    <string name="restore_confirm_message">%1$d item(s) %2$s ta restore ka?</string>
+    <string name="restore_confirm_title">Restore Tasdiq Ka</string>
+    <string name="restore_destination_downloads">Downloads Folder</string>
+    <string name="restore_destination_downloads_desc">Public Downloads/FadCam/ folder</string>
+    <string name="restore_destination_internal">Dakhili Zakhira</string>
+    <string name="restore_destination_internal_desc">App\'s private storage</string>
+    <string name="restore_destination_original">Original Mawqeiyat</string>
+    <string name="restore_destination_original_desc">Berta Restore Ka to original SAF location</string>
+    <string name="restore_destination_title">Intikhab Ka Berta Restore Ka Mawqeiyat</string>
+    <string name="restore_error_message">Fail Sho to restore some items</string>
+    <string name="restore_progress_title">Restoring Files</string>
+    <string name="restore_success_message">Successfully restored %1$d item(s) to %2$s</string>
+    <string name="row_bitrate_title">Bitrate</string>
+    <string name="row_camera_title">Camera</string>
+    <string name="row_codec_title">Codec</string>
+    <string name="row_frame_rate_title">Frame Rate</string>
+    <string name="row_input_source_title">Dakhelegi Manba</string>
+    <string name="row_lens_title">Lens</string>
+    <string name="row_noise_suppression_title">Shor Kamawalo</string>
+    <string name="row_orientation_title">Samt</string>
+    <string name="row_record_audio_title">Ghag Record Ka</string>
+    <string name="row_resolution_title">Resolution</string>
+    <string name="row_video_splitting_title">Video Taqsimolo</string>
+    <string name="row_zoom_ratio_title">Zoom Ratio</string>
+    <string name="saf_permission_missing_dialog_instructions">SAF ejazat mojood nadi. Mehrbani oka intikhab shwi folder ta rasai werka.</string>
+    <string name="saf_permission_missing_dialog_message_for_start_recording">Da recordings khoso zai ke save kolo dapara, FadCam ta intikhab shwi folder ta rasai dapara ejazat pakar de. Kala che prompt kai, mehrbani oka ejazat werka.</string>
+    <string name="saf_permission_missing_dialog_title">SAF Ejazat Pakar De</string>
+    <string name="screen_rec_bitrate">Bitrate</string>
+    <string name="screen_rec_bitrate_helper">VBR da content complexity bandi fit kai. CBR yao fixed target bitrate istemal kai.</string>
+    <string name="screen_rec_bitrate_high_hint">Higher values improve quality</string>
+    <string name="screen_rec_bitrate_low_hint">Lower values save storage</string>
+    <string name="screen_rec_bitrate_mode_auto">Auto (VBR)</string>
+    <string name="screen_rec_bitrate_mode_manual">Manual (CBR)</string>
+    <string name="screen_rec_bitrate_range">1 \u2013 50 Mbps</string>
+    <string name="screen_rec_framerate">Frame Rate</string>
+    <string name="screen_rec_orientation">Samt</string>
+    <string name="screen_rec_orientation_landscape">Landscape</string>
+    <string name="screen_rec_orientation_portrait">Portrait</string>
+    <string name="screen_rec_resolution">Resolution</string>
+    <string name="screen_rec_settings_subtitle">Kaifiyat, audio &amp; output settings</string>
+    <string name="screen_rec_settings_title">Screen Recording</string>
+    <string name="screenshot_accessibility_enable_needed">Faal Ka "FadRec Screenshot" in Accessibility to use da shortcut without recording prompt.</string>
+    <string name="screenshot_accessibility_service_desc">Da FadRec shortcut dapara screenshot akhesti kai aw FadCam/FadShot ki save kai.</string>
+    <string name="screenshot_capture_failed">Screenshot akhestel na shwa</string>
+    <string name="screenshot_capture_saved">Screenshot save sho</string>
+    <string name="screenshot_capture_system_saved">Screenshot captured by system. Saved in system screenshots.</string>
+    <string name="scroll_to_bottom">Scroll to bottom</string>
+    <string name="scroll_to_top">Scroll to top</string>
+    <string name="seek_amount_custom">Custom</string>
+    <string name="seek_amount_custom_high_hint">Large seek values may skip too far</string>
+    <string name="seek_amount_custom_low_hint">Enter a value between 1 and 300 seconds</string>
+    <string name="seek_amount_custom_title">Custom seek seconds</string>
+    <string name="seek_amount_helper">Intikhab ka che rewind/forward buttons aw double-tap tso seconds seek kai.</string>
+    <string name="seek_amount_subtitle">%1$ds</string>
+    <string name="seek_amount_title">Seek Andaza</string>
+    <string name="setting_cloak_recents_helper">Da app preview pa recent apps ke pat kai aw pa app ke screenshots block kai. Da hassas content da app switcher ke akhestelo ya zaher kolo na sari kai.</string>
+    <string name="setting_cloak_recents_switch">Pat Ka preview</string>
+    <string name="setting_cloak_recents_title">Block Screenshots &amp; Pat Ka in Recents</string>
+    <string name="setting_disabled_msg">Ghair faal de</string>
+    <string name="setting_enabled_msg">Faal de</string>
+    <string name="setting_eye_color_desc">Intikhab Ka the avatar eye glow color</string>
+    <string name="setting_eye_color_title">Eye Color</string>
+    <string name="setting_header_logo_desc">Intikhab Ka the header logo style</string>
+    <string name="setting_header_logo_title">Header Logo</string>
+    <string name="setting_zoom_ratio_title">Zoom Ratio</string>
+    <string name="settings_advanced_subtitle">Motion Lab and power-user controls</string>
+    <string name="settings_advanced_title">Aala</string>
+    <string name="settings_audio_title">Da Ghag Tanzimaat</string>
+    <string name="settings_location_watermark_title">Mawqeiyat Watermark</string>
+    <string name="settings_notifications_subtitle">Recording &amp; preset</string>
+    <string name="settings_notifications_title">Notifications</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_security_title">Amniyat</string>
+    <string name="settings_video_title">Video Recording</string>
+    <string name="settings_watermark_subtitle">Overlay branding mode</string>
+    <string name="settings_watermark_title">Watermark</string>
+    <string name="share_feedback">Share Ka feedback</string>
+    <string name="shortcut_purpose_photo">Da shortcut yao shata camera tasweer akhesti kai aw FadCam/FadShot location ta save kai.</string>
+    <string name="shortcut_purpose_photo_front">Da shortcut yao makhki camera tasweer akhesti kai aw FadCam/FadShot location ta save kai.</string>
+    <string name="shortcut_purpose_screenshot">Da shortcut yao screenshot akhesti kai aw FadCam/FadShot location ta save kai (Settings > Privacy > Accessibility na Accessibility permission faal ka).</string>
+    <string name="shortcut_purpose_start">This shortcut starts recording with the back camera.</string>
+    <string name="shortcut_purpose_start_current">Da shortcut os waqt intikhab shwi camera mode sara recording shuru kai.</string>
+    <string name="shortcut_purpose_start_dual">This shortcut starts dual camera recording (PiP).</string>
+    <string name="shortcut_purpose_start_front">This shortcut starts recording with the front camera.</string>
+    <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
+    <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
+    <string name="shortcut_start_back">Shuru Shata</string>
+    <string name="shortcut_start_current">Shuru Current</string>
+    <string name="shortcut_start_dual">Shuru Dual</string>
+    <string name="shortcut_start_front">Shuru Makhki</string>
+    <string name="shortcut_take_photo">Tasweer</string>
+    <string name="shortcut_take_photo_front">Selfie</string>
+    <string name="shortcut_take_screenshot">FadRec</string>
+    <string name="shortcuts_add_to_home">Kor screen ta Zaat ka</string>
+    <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_choose_from_app_icons">App icons na intikhab ka</string>
+    <string name="shortcuts_choose_from_gallery">Gallery na intikhab ka</string>
+    <string name="shortcuts_choose_icon_desc">Intikhab Ka an icon for da shortcut. You can choose from the app\'s icon set or select an image from sta / khpal gallery.</string>
+    <string name="shortcuts_choose_icon_title">Change shortcut icon</string>
+    <string name="shortcuts_customize_action_change_icon">Icon badal ka</string>
+    <string name="shortcuts_customize_action_rename">Num Badal Ka</string>
+    <string name="shortcuts_customize_action_reset">Default ta Reset ka</string>
+    <string name="shortcuts_customize_dialog_save">Save Ka</string>
+    <string name="shortcuts_customize_dialog_title">Shortcut num badal ka</string>
+    <string name="shortcuts_customize_sheet_desc">Da de shortcut dapara custom num aw icon tanzim ka.</string>
+    <string name="shortcuts_customize_subtitle">Num aw icon</string>
+    <string name="shortcuts_customize_title">Khoso Ka</string>
+    <string name="shortcuts_helper_text">Pasa na shortcuts zaat ka. Agha da automation apps (masalan MacroDroid) sara ham kar kai che actions trigger kai da volume buttons mapping shan.</string>
+    <string name="shortcuts_picture_category">Picture</string>
+    <string name="shortcuts_pin_to_home">Pin Shuru/Band/Torch to Kor</string>
+    <string name="shortcuts_rename_action_subtitle">Click to rename</string>
+    <string name="shortcuts_rename_action_title">Num Badal Ka</string>
+    <string name="shortcuts_rename_helper">Tip: Leave empty to use the default name.</string>
+    <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
+    <string name="shortcuts_video_category">Video Recording</string>
+    <string name="snap_guides">Snap Guides</string>
+    <string name="sound_heading">Ghag during playback</string>
+    <string name="start_recording">Shuru</string>
+    <string name="stats_label_used">Used:</string>
+    <string name="stats_label_videos">Videos:</string>
+    <string name="stop_recording">Band</string>
+    <string name="storage_available_space">Available space</string>
+    <string name="storage_helper_current_custom_prefix">Current custom folder:</string>
+    <string name="storage_helper_current_custom_uri_prefix">URI:</string>
+    <string name="storage_helper_primary">Intikhab ka che nawi recordings cherta save shi. Dakhili zakhira videos app ta private sawi; custom folder (SD card ya shared storage) no apps (masalan Gallery) ta zaher kai.</string>
+    <string name="storage_helper_security">Nasihat: Privacy/speed dapara Dakhili istemal ka. Asan rasai aw sharing dapara Custom istemal ka.</string>
+    <string name="storage_option_change_custom">Custom Folder Badal Ka</string>
+    <string name="storage_option_clear_custom">Custom Folder Saaf Ka</string>
+    <string name="storage_option_select_custom">Khoso Zai Intikhab Ka</string>
+    <string name="storage_option_switch_internal">Dakhili Zakhira ta Badal Ka</string>
+    <string name="storage_option_use_internal">Dakhili Zakhira Istemal Ka</string>
+    <string name="storage_sheet_title">Da Zakhira Zai</string>
+    <string name="storage_value_custom_prefix">Custom:</string>
+    <string name="storage_value_internal">Da App Dakhili Zakhira</string>
+    <string name="storage_value_none">(Hes na)</string>
+    <string name="storage_value_selected_folder">Selected Folder</string>
+    <string name="stream_active">Active</string>
+    <string name="stream_and_save">Stream &amp; Sabt Ka Ka Ka</string>
+    <string name="stream_and_save_desc">Stream and save recording to storage</string>
+    <string name="stream_battery">Battery: %1$d%%</string>
+    <string name="stream_battery_label">Battery</string>
+    <string name="stream_bitrate">Bitrate: %1$s</string>
+    <string name="stream_client_ips">Client IPs:</string>
+    <string name="stream_clients_label">Clients</string>
+    <string name="stream_codec">Codec: H.264</string>
+    <string name="stream_connections">Clients: %1$d</string>
+    <string name="stream_copy_url">Copy Ka URL</string>
+    <string name="stream_data_sent_label">Data Sent</string>
+    <string name="stream_endpoint_hls">HLS Stream URL</string>
+    <string name="stream_endpoint_init">Init Segment (MP4)</string>
+    <string name="stream_endpoint_live">Live Stream (M3U8)</string>
+    <string name="stream_endpoint_root">Server Root (Web Player)</string>
+    <string name="stream_endpoint_status">Haisiyat API (JSON)</string>
+    <string name="stream_endpoint_torch">Torch Toggle (POST)</string>
+    <string name="stream_endpoints">Server Endpoints</string>
+    <string name="stream_fps_resolution">FPS: %1$d • Resolution: %2$dx%3$d</string>
+    <string name="stream_fragments">Buffered: %1$d segments</string>
+    <string name="stream_idle">Idle - Recording shuru ka to stream</string>
+    <string name="stream_inactive">Server inactive :(</string>
+    <string name="stream_instr_1">1. Turn on Shuru Server toggle</string>
+    <string name="stream_instr_2">2. HLS Stream URL Server Endpoints na copy ka</string>
+    <string name="stream_instr_3">3. VLC ya kom ham HLS player pa same WiFi ke khola</string>
+    <string name="stream_instr_4">4. Live ogorlo dapara URL media player ke paste ka</string>
+    <string name="stream_instructions">How to Use</string>
+    <string name="stream_memory_label">Memory</string>
+    <string name="stream_network_info">Same WiFi network required for streaming</string>
+    <string name="stream_network_label">Network</string>
+    <string name="stream_no_clients">No clients connected</string>
+    <string name="stream_no_save">Segments auto-deleted after streaming</string>
+    <string name="stream_notes_android14_screen">⚠️ Android 14+: System restriction prevents recording when screen is off. Workarounds: (1) Faal Ka "Black Screen Mode" in Tanzimaat → Amniyat, or (2) Ghair Faal Ka screen lock (no PIN/password/fingerprint). Both allow seamless remote recording</string>
+    <string name="stream_notes_cellular">⚠️ Sirf WiFi: Cellular networks nari wasaluna block kai. Da har network na seamless streaming dapara (WiFi, LTE, cherta), FadCam Pro+ ta upgrade ka. Da har network na private link sara stream ka — no port forwarding, no router changes, no network restrictions.</string>
+    <string name="stream_notes_quality">• Stream quality (LOW/MEDIUM/HIGH/ULTRA) FPS cap aw bitrate control kai che network problems na shi</string>
+    <string name="stream_notes_resolution">• Stream orientation aw resolution sta normal recording settings na akhestali shi (Video Settings → Resolution &amp; Orientation). Che ta stream dimensions badal kol gware nu adjust ka</string>
+    <string name="stream_notes_title">Notes</string>
+    <string name="stream_notes_wifi">• Clients ba pa yao WiFi network ke de che stream ta rasai wa lag shi</string>
+    <string name="stream_only">Stream Only</string>
+    <string name="stream_only_desc">Stream without saving to storage</string>
+    <string name="stream_quality_preset">Stream Quality Preset</string>
+    <string name="stream_recording_mode">Recording Mode</string>
+    <string name="stream_recording_mode_label">Mode: %1$s</string>
+    <string name="stream_save_videos">Saved to device storage with Stream_ prefix</string>
+    <string name="stream_segments_label">Segments</string>
+    <string name="stream_select_mode">Intikhab Ka Mode</string>
+    <string name="stream_server_health">Server Health</string>
+    <string name="stream_server_room">Server Room</string>
+    <string name="stream_server_room_label">Server Room</string>
+    <string name="stream_server_status">Server Haisiyat</string>
+    <string name="stream_server_url">Server URL</string>
+    <string name="stream_server_url_label">Server URL</string>
+    <string name="stream_specs">Stream Specs</string>
+    <string name="stream_start_server">Stream Server</string>
+    <string name="stream_storage_label">Zakhira</string>
+    <string name="stream_stream_quality_label">Stream Kaifiyat</string>
+    <string name="stream_title">Lirai</string>
+    <string name="stream_uptime">Uptime: %1$s</string>
+    <string name="stream_uptime_label">Uptime</string>
+    <string name="stream_url_copied">Stream URL copied to clipboard</string>
+    <string name="stream_url_label">Stream URL</string>
+    <string name="stream_view_all_endpoints">Ogora All Endpoints</string>
+    <string name="stream_view_all_endpoints_desc">Ogora all API endpoints (GET/POST)</string>
+    <string name="streaming_mode_cloud">FadSec Cloud</string>
+    <string name="streaming_mode_cloud_desc">Stream anywhere via internet</string>
+    <string name="streaming_mode_cloud_featured">FEATURED</string>
+    <string name="streaming_mode_helper">Intikhab Ka how you want to stream sta / khpal camera</string>
+    <string name="streaming_mode_link_required">Link device to enable</string>
+    <string name="streaming_mode_local">Mahali Network</string>
+    <string name="streaming_mode_local_desc">Stream to devices on the same WiFi</string>
+    <string name="streaming_mode_stream_url">Stream URL</string>
+    <string name="streaming_mode_title">Streaming Destination</string>
+    <string name="support_ko_fi">Ko-fi ta zamong mali mard ka</string>
+    <string name="tap_to_add_description">Tap to add description</string>
+    <string name="tap_to_focus_help">Tap anywhere on the camera preview to focus</string>
+    <string name="tap_to_focus_instruction">Tap on preview to focus</string>
+    <string name="theme_gold" translatable="false">Premium Gold</string>
+    <string-array name="theme_options" translatable="false">
+        <item>Midnight Dusk</item>
+        <item>Faded Night</item>
+        <item>Crimson Bloom</item>
+        <item>Silent Forest</item>
+        <item>Shadow Alloy</item>
+        <item>Pookie Pink</item>
+        <item>Snow Veil</item>
+    </string-array>
+    <string name="theme_pookiepink" translatable="false">Pookie Pink</string>
+    <string name="theme_red" translatable="false">Crimson Bloom</string>
+    <string name="theme_shadowalloy" translatable="false">Shadow Alloy</string>
+    <string name="theme_silentforest" translatable="false">Silent Forest</string>
+    <string name="theme_snowveil" translatable="false">Snow Veil</string>
+    <string name="timer_15_minutes">15 minutes</string>
+    <string name="timer_1_hour">1 hour</string>
+    <string name="timer_1_minute">1 minute</string>
+    <string name="timer_30_minutes">30 minutes</string>
+    <string name="timer_30_seconds">30 seconds</string>
+    <string name="timer_5_minutes">5 minutes</string>
+    <string name="timer_custom_calc_format">Will stop playback after %1$s (%2$.2f hours)</string>
+    <string name="timer_custom_description">Da minute shumaar dakhil ka. Misaluna: 5 = 5 minutes (300 seconds). Timer ba da tso minutes pas playback band kai.</string>
+    <string name="timer_custom_helper_static">Minute dakhil ka (pura shumaar). Landi calculator istemal ka che hours/minutes wuwiny.</string>
+    <string name="timer_custom_high_hint">Der loong timers ba der wakht chalu pati shi. Hadd 24 hours.</string>
+    <string name="timer_custom_label">Custom...</string>
+    <string name="timer_custom_low_hint">Der lag timers ba expected na pesh playback band kai shi.</string>
+    <string name="timer_custom_placeholder">e.g. 5 (minutes)</string>
+    <string name="timer_custom_title">Custom background timer</string>
+    <string name="timer_disabled_hint">Pasmanzar playback ghair faal de — timer istemal kolo dapara "Play in background" faal ka.</string>
+    <string name="timer_hours_short">%1$dh</string>
+    <string name="timer_minutes_short">%1$dm</string>
+    <string name="timer_off">Band</string>
+    <string name="timer_off_short">Band</string>
+    <string name="timer_seconds_short">%1$ds</string>
+    <string name="tips_subtitle">Da madadgar istemal nasihatuna</string>
+    <string name="tips_title">Nasihatuna</string>
+    <string name="toast_default_playback_speed_set">Default playback suraat %1$s ta tanzim sho</string>
+    <string name="toast_rename_with_copy">%1$s ta rename sho (duplicate num)</string>
+    <string name="torch_apply">Tatbiq Ka</string>
+    <string name="torch_back">Shaata Torch</string>
+    <string name="torch_both">Torchana dawa</string>
+    <string name="torch_brightness">Brightness</string>
+    <string name="torch_cancel">Laghwa Ka</string>
+    <string name="torch_color">Color</string>
+    <string-array name="torch_error_messages">
+        <item>Torch is compiling... please don\'t wait 🖥️</item>
+        <item>Camera says: No flash today 🚦</item>
+        <item>Torch.exe not responding 🔦</item>
+        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
+        <item>Patch coming soon™... Developer is debugging life 🐛</item>
+    </string-array>
+    <string name="torch_front">Makhki Torch</string>
+    <string name="torch_options_title">Torch Intikhabuna</string>
+    <string name="torch_pattern_morse">Morse Code</string>
+    <string name="torch_pattern_sos">SOS</string>
+    <string name="torch_pattern_steady">Sawab</string>
+    <string name="torch_pattern_strobe">Strobe</string>
+    <string name="torch_patterns">Patterns</string>
+    <string name="torch_recording_note">Pa recording wakht ke torch badlolai na shi</string>
+    <string name="torch_screen_light_desc">Fullscreen white overlay</string>
+    <string name="torch_screen_light_label">Screen Light</string>
+    <string name="torch_select_source">Intikhab Ka Torch Manba:</string>
+    <string name="torch_shortcut_disabled">Torch toggle os waqt mojood nadi</string>
+    <string name="torch_shortcut_long_label">Toggle Torch</string>
+    <string name="torch_shortcut_short_label">Torch</string>
+    <string name="torch_status_off">Band</string>
+    <string name="torch_status_on">Faal</string>
+    <string name="torch_tap_to_enable">Tap to turn on</string>
+    <string name="torch_timer_10m">10 minutes</string>
+    <string name="torch_timer_15m">15 minutes</string>
+    <string name="torch_timer_1h">1 hour</string>
+    <string name="torch_timer_1m">1 minute</string>
+    <string name="torch_timer_2m">2 minutes</string>
+    <string name="torch_timer_30m">30 minutes</string>
+    <string name="torch_timer_30s">30 seconds</string>
+    <string name="torch_timer_5m">5 minutes</string>
+    <string name="torch_timer_cancel">Laghwa Ka Timer</string>
+    <string name="torch_timer_custom_apply">Tatbiq Ka</string>
+    <string name="torch_timer_custom_error_invalid">Invalid number</string>
+    <string name="torch_timer_custom_error_positive">Wakh must be greater than 0</string>
+    <string name="torch_timer_custom_hint">Enter duration</string>
+    <string name="torch_timer_custom_hours_example">e.g., 2 for 2 hours</string>
+    <string name="torch_timer_custom_minutes_example">e.g., 5 for 5 minutes</string>
+    <string name="torch_timer_custom_title">Set Custom Timer</string>
+    <string name="torch_timer_custom_unit_helper">Intikhab Ka the time unit</string>
+    <string name="torch_timer_desc">Torch turns off automatically after the set time</string>
+    <string name="torch_timer_label">Khpala Band Kawalo Timer</string>
+    <string name="torch_timer_off">Band</string>
+    <string name="torch_timer_picker_helper">Timer only starts when the torch is on</string>
+    <string name="torch_unavailable">Torch da de camera lapara mojood nadi</string>
+    <string name="trash_auto_delete_info_immediate">Items are deleted immediately.</string>
+    <string name="trash_auto_delete_picker_helper">Intikhab ka che Trash ke items pa khpala delete kegi.</string>
+    <string name="trash_item_thumbnail_desc">Trashed item thumbnail</string>
+    <string name="universal_back">Shata</string>
+    <string name="universal_close">Band Ka</string>
+    <string name="universal_confirm">Tasdiq Ka</string>
+    <string name="universal_delete_failed">Delete Ka Ka failed</string>
+    <string name="universal_deleted">Deleted</string>
+    <string name="universal_disable">Ghair Faal Ka</string>
+    <string name="universal_disabled">Ghair faal de</string>
+    <string name="universal_enable">Faal Ka</string>
+    <string name="universal_enabled">Faal de</string>
+    <string name="universal_enter_number">Yo numra dakhil ka</string>
+    <string name="universal_max_value">Max %1$d</string>
+    <string name="universal_min_value">Min %1$d</string>
+    <string name="universal_ok">OK</string>
+    <string name="universal_pause">Lag Odrawa</string>
+    <string name="universal_paused">Paused</string>
+    <string name="universal_play">Play</string>
+    <string name="universal_playing">Playing</string>
+    <string name="universal_reset">Reset</string>
+    <string name="universal_stop">Band</string>
+    <string name="untitled_project">Untitled Project</string>
+    <string name="update_sarcastic_heading">📦 Oh look, another update...</string>
+    <string name="update_variation_1">Still on &lt;font color=\'#E43C3C\'>v%1$s&lt;/font&gt;? Nostalgic da.&lt;br&gt;Meanwhile, &lt;font color=\'#77DD77\'>v%2$s&lt;/font&gt; is out there making waves. Time to catch up!</string>
+    <string name="update_variation_2">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font&gt; is so last season.&lt;br&gt;Meanwhile, &lt;font color=\'#77DD77\'>v%2$s&lt;/font&gt; is ready to impress with new features and bug fixes. Upgrade for a better ride!</string>
+    <string name="update_variation_3">Sta app da ter shwi wakht ke &lt;font color=\'#E43C3C\'>v%1$s&lt;/font&gt; sara de.&lt;br&gt;Meanwhile, &lt;font color=\'#77DD77\'>v%2$s&lt;/font&gt; is the future — faster, smarter, and shinier. Why not join in?</string>
+    <string name="update_variation_4">&lt;font color=\'#E43C3C\'>v%1$s&lt;/font&gt; has served you well, but &lt;font color=\'#77DD77\'>v%2$s&lt;/font&gt; is calling!&lt;br&gt;Enjoy the latest improvements and a smoother experience — just a tap away.</string>
+    <string name="update_version_arrow">>></string>
+    <string name="update_visit_github">GitHub Kolao Ka</string>
+    <string name="version_format">v%s</string>
+    <string name="video_info_bitrate">Bitrate</string>
+    <string name="video_info_codec">Codec</string>
+    <string name="video_info_copy_clipboard">Clipboard ta Copy ka</string>
+    <string name="video_info_copy_subtitle">Copy Ka video information</string>
+    <string name="video_info_duration">Wakh</string>
+    <string name="video_info_file_name">Da File Num</string>
+    <string name="video_info_file_path">Da File Patta</string>
+    <string name="video_info_file_size">Da File Qadd</string>
+    <string name="video_info_fps">Frame Rate</string>
+    <string name="video_info_geotag">Mawqeiyat</string>
+    <string name="video_info_last_modified">Akhar Tabdeel</string>
+    <string name="video_info_no_location">Kho mawqeiyat data nadi</string>
+    <string name="video_info_resolution">Resolution</string>
+    <string name="video_info_unknown">Na Maloom</string>
+    <string name="video_menu_copy_filename">Copy Ka Filename</string>
+    <string name="video_menu_info">Maloomat</string>
+    <string name="video_menu_mark_unviewed">Mark as Unviewed</string>
+    <string name="video_menu_mark_viewed">Mark as Viewed</string>
+    <string name="video_menu_open_with">Sara khola…</string>
+    <string name="video_menu_save_copy">Gallery ta Copy ka</string>
+    <string name="video_menu_save_copy_desc">Downloads/FadCam ki yo copy jor ka (original file pati de)</string>
+    <string name="video_menu_save_copy_or_move_title">Gallery ta Save ka</string>
+    <string name="video_menu_save_helper_downloads_fadcam">Video will be saved to Downloads/FadCam</string>
+    <string name="video_menu_save_longpress_helper">Long press "Gallery ta Sabt Ka Ka Ka ka" to choose between copy or move</string>
+    <string name="video_menu_save_move">Gallery ta Move ka</string>
+    <string name="video_menu_save_move_desc">Move file to Downloads/FadCam (saves storage space)</string>
+    <string name="video_menu_upload_faddrive">FadDrive ta porta krra</string>
+    <string name="video_moved_to_trash">Video nezdai waht ta move sho</string>
+    <string name="video_player_settings_helper">Playback Speed da video playback normal speed badlai. Quick Speed yao temporary boost de che sirf os wakht apply kai kala ta video bandi dab aw ogad kai. Ta da tanzimaat dalta ya Video Player screen na badal kol shaye.</string>
+    <string name="video_player_settings_helper_player">Ta da intikhabuna dalta ya Settings tab na ham badal kol shaye.</string>
+    <string name="video_player_settings_subtitle">Playback &amp; Quick Suraat</string>
+    <string name="video_player_settings_title">Da Video Player Tanzimaat</string>
+    <string-array name="video_resolutions_keys">
+        <item>7680x4320</item>
+        <item>3840x2160</item>
+        <item>2560x1440</item>
+        <item>1920x1080</item>
+        <item>1280x720</item>
+        <item>640x480</item>
+        <item>720x480</item>
+        <item>480x360</item>
+    </string-array>
+    <string-array name="video_resolutions_values">
+        <item>8K</item>
+        <item>4K</item>
+        <item>2K</item>
+        <item>FHD</item>
+        <item>HD</item>
+        <item>SD</item>
+        <item>SD</item>
+        <item>SD</item>
+    </string-array>
+    <string name="video_setting_location_embed_disabled">Ghair faal de</string>
+    <string name="video_setting_location_embed_enabled">Faal de</string>
+    <string name="video_setting_location_embed_title">Embed Mawqeiyat Metadata</string>
+    <string name="view_mode_grid">Grid</string>
+    <string name="view_mode_list">Fehrist</string>
+    <string name="warning_temp_file_detail"><![CDATA[
+        <b>IMPORTANT NOTE:</b><br/>
+        This is an <b>unprocessed temporary file</b>. Video processing (like adding a watermark) may have failed or been interrupted.<br/><br/>
+        <b>Recommended Action:</b><br/>
+        <b>1. Rename</b> this file now (using the menu).<br/>
+        <b>2. Save</b> it to your Gallery (using the menu).<br/><br/>
+        This secures your recording. After confirming it saved correctly in your gallery app, you can safely <b>delete this temporary file</b> from this Records list if you wish.<br/><br/>
+        Continuing to record without saving may risk losing da file if the app cache is cleared unexpectedly.
+        ]]></string>
+    <string name="watch_audio_label">Ghag</string>
+    <string name="watch_audio_muted">Khamosh</string>
+    <string name="watch_audio_on">Mic On</string>
+    <string name="watch_audio_toggle_desc">Ghag recording badal ka</string>
+    <string name="watch_back_desc">Shata</string>
+    <string name="watch_cam_back">Shata</string>
+    <string name="watch_cam_flip_desc">Camera aina ka</string>
+    <string name="watch_cam_front">Makhki</string>
+    <string name="watch_cam_label">Camera</string>
+    <string name="watch_delete_confirm_action">Nezdai Waht Ta Move Ka</string>
+    <string name="watch_delete_confirm_msg">"%s" will be moved to trash.</string>
+    <string name="watch_delete_confirm_title">Nezdai waht ta move ka?</string>
+    <string name="watch_fadshot_desc">Tasweer akhestel</string>
+    <string name="watch_fadshot_label">Shot</string>
+    <string name="watch_fullscreen_desc">Fullscreen</string>
+    <string name="watch_fullscreen_hint">Camera is recording</string>
+    <string name="watch_fullscreen_label">Ogora</string>
+    <string name="watch_fullscreen_not_recording">Not recording</string>
+    <string name="watch_hamburger_desc">Menu khola</string>
+    <string name="watch_pause_desc">Lag Odrawa or resume recording</string>
+    <string name="watch_pause_label">Lag Odrawa</string>
+    <string name="watch_perm_delete_action">Pa daimi delete ka</string>
+    <string name="watch_perm_delete_all_msg">All %d item(s) in trash will be permanently deleted and cannot be recovered.</string>
+    <string name="watch_perm_delete_all_title">Tol delete sho?</string>
+    <string name="watch_perm_delete_msg">"%s" will be permanently deleted and cannot be recovered.</string>
+    <string name="watch_perm_delete_title">Pa daimi tawga delete ka?</string>
+    <string name="watch_recording_hardware_not_supported">Da device ke video recording dapara zaruri camera aw microphone hardware nadi.</string>
+    <string name="watch_records_empty">Tarto recording nedi</string>
+    <string name="watch_records_title">Recordings</string>
+    <string name="watch_remote_stream_off">Tap to stream</string>
+    <string name="watch_remote_stream_on">Streaming ON</string>
+    <string name="watch_remote_title">Lirai</string>
+    <string name="watch_resume_label">Bya Shuru</string>
+    <string name="watch_settings_audio">Ghag</string>
+    <string name="watch_settings_camera">Camera</string>
+    <string name="watch_settings_security">Amniyat</string>
+    <string name="watch_settings_title">Tanzimaat</string>
+    <string name="watch_settings_video">Video</string>
+    <string name="watch_status_paused">⏸ PAUSED</string>
+    <string name="watch_status_recording">● REC</string>
+    <string name="watch_storage_desc">Zakhira</string>
+    <string name="watch_trash_delete_all">Tol Delete Ka</string>
+    <string name="watch_trash_delete_one">Pa daimi tawga delete ka</string>
+    <string name="watch_trash_empty">Nothing deleted</string>
+    <string name="watch_trash_title">Nezdai Waht</string>
+    <string name="watch_video_menu_desc">Video options</string>
+    <string name="watch_video_saved_toast">Downloads/FadCam ta save sho</string>
+    <string name="watermark_accuracy_off">Band</string>
+    <string name="watermark_accuracy_on">On — Horizontal accuracy from GPS satellites</string>
+    <string name="watermark_accuracy_title">GPS Durusti (m)</string>
+    <string name="watermark_altitude_off">Band</string>
+    <string name="watermark_altitude_on">On — Altitude from GPS satellites</string>
+    <string name="watermark_altitude_title">Bulandi (m)</string>
+    <string name="watermark_audio_permission_required">Microphone permission required for noise monitoring</string>
+    <string name="watermark_compass_no_sensor">Compass sensor nadi — Direction from GPS movement only (works while moving)</string>
+    <string name="watermark_compass_off">Band</string>
+    <string name="watermark_compass_on_sensor">On — Direction from device compass sensor</string>
+    <string name="watermark_compass_title">Compass Samt</string>
+    <string name="watermark_custom_text_empty">Tanzim na shwi</string>
+    <string name="watermark_custom_text_hint">Custom text dakhil ka</string>
+    <string name="watermark_custom_text_title">Custom Watermark Text</string>
+    <string name="watermark_disabled_message" translatable="false">Watermark disabled (no watermark will appear in recordings).</string>
+    <string name="watermark_gps_disabled_banner_message">Location-dependent watermark features ba zaher na shi hatta che device location enable na shi</string>
+    <string name="watermark_gps_disabled_home_toast">Location-dependent watermark features enabled de kho GPS band de. Device location faal ka che agha kar kawi.</string>
+    <string name="watermark_gps_disabled_warning">⚠ GPS band de — da feature dapara device location enable ka</string>
+    <string name="watermark_network_warning_enable">Faal Ka</string>
+    <string name="watermark_network_warning_message">Da feature network requests gware che potentially trace keda shi. Che ta full anonymity gware nu disable ka. Jaari shi?</string>
+    <string name="watermark_network_warning_title">Network Khabardar</string>
+    <string name="watermark_noise_off">Band</string>
+    <string name="watermark_noise_on">On — Ambient sound level from microphone</string>
+    <string name="watermark_noise_title">Da Shor Kappan (dB)</string>
+    <string name="watermark_options_heading">Intikhabuna</string>
+    <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
+    <string name="watermark_preview_heading">Preview</string>
+    <string name="watermark_preview_sample_fadcam">Captured by FadCam - %1$s</string>
+    <string name="watermark_preview_sample_timeonly">%1$s</string>
+    <string name="watermark_speed_off">Band</string>
+    <string name="watermark_speed_on">On — Suraat from GPS satellite data</string>
+    <string name="watermark_speed_title">Suraat (km/h)</string>
+    <string name="watermark_style_badge_label">Sirf Brand Label</string>
+    <string name="watermark_style_none_label">Watermark Nadi</string>
+    <string name="watermark_style_row_title">Watermark Style</string>
+    <string name="watermark_style_time_fadcam_label">Wakh sara da FadCam</string>
+    <string name="watermark_style_timeonly_label">Wakh (Timestamp)</string>
+    <string name="watermark_timezone_format_gmt_name">GMT Offset + Num</string>
+    <string name="watermark_timezone_format_gmt_only">GMT Offset Only</string>
+    <string name="watermark_timezone_format_title">Gaz Bande Format</string>
+    <string name="watermark_timezone_off">Band</string>
+    <string name="watermark_timezone_on_gmt">On — GMT offset in watermark</string>
+    <string name="watermark_timezone_title">Gaz Bande</string>
+    <string name="watermark_utm_helper">UTM Earth 60 zones ke wehai aw lat/lon easting &amp; northing meters ke badlai. Military, surveyors, aw topographic maps pa mreshta precise grid positioning dapara istemal kegi.
+
+How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemisphere ke, 372,684 meters Easting (sherq-gharb), 3,512,334 meters Northing (shamal-junub).</string>
+    <string name="watermark_utm_off">Band</string>
+    <string name="watermark_utm_on">On — Universal Transverse Mercator grid coordinates</string>
+    <string name="watermark_utm_title">UTM Muqar</string>
+    <string name="watermark_weather_off">Band</string>
+    <string name="watermark_weather_on">On — Mausam from Khola-Meteo API (requires internet)</string>
+    <string name="watermark_weather_title">Mausam</string>
+    <string name="waveform_helper_text">Control kai che audio waveform visualization pa progress bar ke video playback wakht ke zaher shi ke na.</string>
+    <string name="waveform_switch_label">Audio Waveform Faal Ka</string>
+    <string name="website_title">Website</string>
+    <string name="whats_new_subtitle">See latest features and updates</string>
+    <string name="whats_new_title">What\'s New</string>
+    <string name="widget_arabic_date_format_title">Arabic Tarikh Format</string>
+    <string name="widget_arabic_date_title">Islami Tarikh</string>
+    <string name="widget_background_transparent">Ghair faal de (Transparent)</string>
+    <string name="widget_black_background_title">Tiyar Pasmanzar</string>
+    <string name="widget_branding_disabled">Ghair faal de</string>
+    <string name="widget_branding_enabled">Faal de (with Tiyar Pasmanzar)</string>
+    <string name="widget_branding_requires_background">Requires Tiyar Pasmanzar</string>
+    <string name="widget_branding_title">FadSecLab Branding</string>
+    <string name="widget_clock_title">Clock widget</string>
+    <string name="widget_customize_action_label">Khoso Ka</string>
+    <string name="widget_customize_action_subtitle">Wakh, tarikh, aw theme intikhabuna</string>
+    <string name="widget_customize_description">Khoso Ka how sta / khpal clock widget displays time and date</string>
+    <string name="widget_customize_title">Clock Widget Khoso Ka</string>
+    <string name="widget_date_format_sample">Aug 13, 2025</string>
+    <string name="widget_date_format_title">Tarikh Format</string>
+    <string name="widget_option_disabled">Ghair faal de</string>
+    <string name="widget_option_enabled">Faal de</string>
+    <string name="widget_show_date_title">Tarikh Woyai</string>
+    <string name="widget_time_format_12h">12-hour (3:30 PM)</string>
+    <string name="widget_time_format_24h">24-hour (15:30)</string>
+    <string name="widget_time_format_title">Wakh Format</string>
+    <string name="widgets_helper_text">Quick actions kor screen ta pin ka che osani rasai da para.</string>
+    <string name="widgets_pin_fallback">Che prompt na zaher shi, kor screen ogad dab ka, Widgets khola, aw FadCam Clock widget drag ka.</string>
+    <string name="widgets_pin_unsupported">Pinning widgets sta launcher lado support na shi.</string>
+    <string name="zoom_not_available_toast">Zoom mojood nadi</string>
+    <string name="zoom_slider_helper">Recording dapara zoom level adjust ka. Ultra-wide lens recordings dapara, 0.5x option istemal ka che ultra-wide field of view sara record kae.</string>
+    <string name="zoom_slider_title">Zoom Ratio</string>
+    <string name="export_center">Export Center</string>
+
+    <string name="remote_server_status">Server Status</string>
+
+    <string name="remote_server_endpoints">Server Endpoints</string>
+
+    <string name="remote_get_requests">GET Requests</string>
+
+    <string name="remote_post_requests">POST Requests</string>
+
+    <string name="remote_server_root">Server Root</string>
+
+    <string name="remote_live_stream">Live Stream</string>
+
+    <string name="remote_status_api">Status API</string>
+
+    <string name="remote_init_segment">Init Segment</string>
+
+    <string name="remote_torch_toggle">Torch Toggle</string>
+
+    <string name="remote_post_requests_remote_control">POST Requests (Remote Control)</string>
+
+    <string name="remote_network_health">Network Health</string>
+
+    <string name="remote_status">Status</string>
+
+    <string name="remote_excellent">Excellent</string>
+
+    <string name="remote_test_now">Test Now</string>
+
+    <string name="remote_speed_metrics">Speed Metrics</string>
+
+    <string name="remote_download">Download</string>
+
+    <string name="remote_upload">Upload</string>
+
+    <string name="remote_signal_strength">Signal Strength</string>
+
+    <string name="remote_latency_ping">Latency (Ping)</string>
+
+    <string name="remote_last_tested">Akheri wakht test shwe: %s</string>
+
+    <string name="remote_connected_clients">Wasal Shwi Clients</string>
+
+    <string name="remote_client_data_usage">Client Data Istemal</string>
+
+    <string name="remote_total_served">Total Peshkash Shwi</string>
+
+    <string name="remote_active_clients">Faal Clients</string>
+
+    <string name="remote_per_client_breakdown">Per-Client Tafseel</string>
+
+    <string name="remote_no_clients">Sara hes client wasal nadi</string>
+
+    <string name="remote_battery_info">Battery Maloomat</string>
+
+    <string name="remote_current_level">Osany Level</string>
+
+    <string name="remote_battery_consumed">Battery istemal shwa (Streaming)</string>
+
+    <string name="remote_charging_status">Charge Kholo Haalat</string>
+
+    <string name="remote_not_charging">Charge nashu</string>
+
+    <string name="remote_low_battery_threshold">Kam Battery Khabardar Hadd</string>
+
+    <string name="remote_set">Tanzim Ka</string>
+
+    <string name="remote_device_battery_capacity">Device Battery Capacity</string>
+
+    <string name="remote_save">Sakl Ka</string>
+
+    <string name="remote_estimates_for_device">Sta device lapara andazay:</string>
+
+    <string name="remote_uptime_details">Uptime Tafseel</string>
+
+    <string name="remote_server_uptime">Server Uptime</string>
+
+    <string name="remote_session_started_at">Session Start Shwe</string>
+
+    <string name="remote_video_segments">Video Segments (Fragments)</string>
+
+    <string name="remote_buffered">Buffer Shwi</string>
+
+    <string name="remote_buffer_size">Buffer Size</string>
+
+    <string name="remote_sequence_range">Sequence Range</string>
+
+    <string name="remote_oldest">Tar Topo Zor</string>
+
+    <string name="remote_latest">Tar Topo Nawi</string>
+
+    <string name="remote_what_are_segments">Segment tsashee dai?</string>
+
+    <string name="remote_stream_orientation">Stream Samt</string>
+
+    <string name="remote_choose_orientation">Yawazi streaming lapara samt entekhab ka</string>
+
+    <string name="remote_portrait">Portrait</string>
+
+    <string name="remote_vertical_orientation">Wali samt (9:16)</string>
+
+    <string name="remote_landscape">Landscape</string>
+
+    <string name="remote_horizontal_orientation">Chalghali samt (16:9)</string>
+
+    <string name="remote_auto_default">Auto (Default)</string>
+
+    <string name="remote_follow_recording_orientation">Samt da app recording perawano entekhab ka</string>
+
+    <string name="remote_quality_low">Low</string>
+
+    <string name="remote_quality_medium">Medium</string>
+
+    <string name="remote_quality_high">High</string>
+
+    <string name="remote_quality_ultra">Ultra</string>
+
+    <string name="remote_event_logs">Event Logs</string>
+
+    <string name="remote_client_events">Client events</string>
+
+    <string name="remote_pages">Pages</string>
+
+    <string name="remote_layers">Layers</string>
+
+    <string name="remote_access_endpoints_desc">Da HTTP endpoints da lari sara streaming server ta rasai wala ka</string>
+
+    <string name="remote_control_via_api_desc">API calls da lari sara FadCam remote control ka</string>
+
+    <string name="remote_buffered_segments_desc">Buffer shwi segments streaming da para tiyar shwal</string>
+
+    <string name="remote_battery_low_warning">⚠️ Kam Battery - Charger zar wajafa ka</string>
+
+    <string name="remote_enter_percentage_hint">Fi sad dakhel ka</string>
+
+    <string name="remote_enter_mah_hint">mAh dakhel ka (1000-10000)</string>
+
+    <string name="sidebar_profiles">Profiles</string>
+
+    <string name="sidebar_profiles_desc">Recording presets save aw load ka pa yaw sal wakht</string>
+
+    <string name="sidebar_update_available">Update Mojood</string>
+
+    <string name="sidebar_stable_release">Stable Release</string>
+
+    <string name="sidebar_beta_release">Beta Release</string>
+
+    <string name="sidebar_fadcam_pro">FadCam Pro</string>
+
+    <string name="badge_new">NEW</string>
+
+    <string name="update_pro_title">FadCam Pro Update</string>
+
+    <string name="update_get_pro">FadCam Pro wala ka</string>
+
+    <string name="update_maybe_later">Shaied wrasta</string>
+
+    <string name="update_beta_title">Beta Update Mojood</string>
+
+    <string name="update_get_beta">Beta wala ka</string>
+
+    <string name="mini_apps_about_title">Mini Apps pa Haga</string>
+
+    <string name="mini_apps_current_tools">Osany Tools</string>
+
+    <string name="mini_apps_qr_scanner_reference">QR Scanner hawalay</string>
+
+    <string name="screen_recording_title">Screen Recording</string>
+
+    <string name="screen_recording_notif_title">FadRec - Screen Recording</string>
+
+    <string name="screen_recording_saved">Screen Recording Save Shwe</string>
+
+    <string name="screen_recording_tap_to_view">Khpal recording sethaf kolo dapara tap ka</string>
+
+    <string name="notification_action_stop">Band Ka</string>
+
+    <string name="fadmic_coming_soon">FadMic (Mic Recording) zur razai!</string>
+
+    <string name="toast_stream_server_starting">Stream server shuru kegi…</string>
+
+    <string name="toast_stream_server_stopped">Stream server band shwe</string>
+
+    <string name="toast_no_cloud_viewers">Sara cloud viewers wasal nadi</string>
+
+    <string name="toast_no_clients">Sara hes client wasal nadi</string>
+
+    <string name="toast_device_id_copied">Device ID copy shwe</string>
+
+    <string name="toast_endpoint_copied">Copy shwe: %s</string>
+
+    <string name="toast_battery_set_threshold">Battery khabardar hadd %s tanzim shwe</string>
+
+    <string name="toast_battery_set_capacity">Battery capacity %s tanzim shwe</string>
+
+    <string name="toast_orientation_set">Samt pehla na %s tanzim shwi</string>
+
+    <string name="toast_quality_set">Quality pehla na %s tanzim shwi</string>
+
 </resources>

@@ -17,7 +17,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Server Endpoints"
+        android:text="@string/remote_server_endpoints"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -26,7 +26,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Access your streaming server via these HTTP endpoints"
+        android:text="@string/remote_access_endpoints_desc"
         android:textSize="12sp"
         android:textColor="@android:color/darker_gray"
         android:layout_marginBottom="16dp" />
@@ -35,7 +35,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="GET Requests"
+        android:text="@string/remote_get_requests"
         android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="#4CAF50"
@@ -55,7 +55,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="POST Requests (Remote Control)"
+        android:text="@string/remote_post_requests_remote_control"
         android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="#FF9800"
@@ -64,7 +64,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Control FadCam remotely via API calls"
+        android:text="@string/remote_control_via_api_desc"
         android:textSize="11sp"
         android:textColor="@android:color/darker_gray"
         android:layout_marginBottom="8dp" />

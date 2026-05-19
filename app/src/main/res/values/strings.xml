@@ -2426,4 +2426,122 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <!-- Mini Apps Info Sheet -->
     <string name="mini_apps_planned_shortcuts_title">Planned: Shortcuts &amp; Automation</string>
     <string name="mini_apps_planned_shortcuts_desc">Home screen shortcuts for instant access to any Mini App without opening FadCam first.\n\nIntent-based automation support (Tasker, MacroDroid, etc.) for triggering Mini Apps programmatically — use QR scanning, torch, and more from your automated workflows.</string>
+
+    <!-- Lab Tab -->
+    <string name="export_center">Export Center</string>
+
+    <!-- Remote Tab -->
+    <string name="remote_server_status">Server Status</string>
+
+    <!-- Remote Bottom Sheets -->
+    <string name="remote_server_endpoints">Server Endpoints</string>
+    <string name="remote_get_requests">GET Requests</string>
+    <string name="remote_post_requests">POST Requests</string>
+    <string name="remote_server_root">Server Root</string>
+    <string name="remote_live_stream">Live Stream</string>
+    <string name="remote_status_api">Status API</string>
+    <string name="remote_init_segment">Init Segment</string>
+    <string name="remote_torch_toggle">Torch Toggle</string>
+    <string name="remote_post_requests_remote_control">POST Requests (Remote Control)</string>
+    <string name="remote_network_health">Network Health</string>
+    <string name="remote_status">Status</string>
+    <string name="remote_excellent">Excellent</string>
+    <string name="remote_test_now">Test Now</string>
+    <string name="remote_speed_metrics">Speed Metrics</string>
+    <string name="remote_download">Download</string>
+    <string name="remote_upload">Upload</string>
+    <string name="remote_signal_strength">Signal Strength</string>
+    <string name="remote_latency_ping">Latency (Ping)</string>
+    <string name="remote_last_tested">Last tested: %s</string>
+    <string name="remote_connected_clients">Connected Clients</string>
+    <string name="remote_client_data_usage">Client Data Usage</string>
+    <string name="remote_total_served">Total Served</string>
+    <string name="remote_active_clients">Active Clients</string>
+    <string name="remote_per_client_breakdown">Per-Client Breakdown</string>
+    <string name="remote_no_clients">No clients connected</string>
+    <string name="remote_battery_info">Battery Information</string>
+    <string name="remote_current_level">Current Level</string>
+    <string name="remote_battery_consumed">Battery Consumed (Streaming)</string>
+    <string name="remote_charging_status">Charging Status</string>
+    <string name="remote_not_charging">Not Charging</string>
+    <string name="remote_low_battery_threshold">Low Battery Warning Threshold</string>
+    <string name="remote_set">Set</string>
+    <string name="remote_device_battery_capacity">Device Battery Capacity</string>
+    <string name="remote_save">Save</string>
+    <string name="remote_estimates_for_device">Estimates for your device:</string>
+    <string name="remote_uptime_details">Uptime Details</string>
+    <string name="remote_server_uptime">Server Uptime</string>
+    <string name="remote_session_started_at">Session Started At</string>
+    <string name="remote_video_segments">Video Segments (Fragments)</string>
+    <string name="remote_buffered">Buffered</string>
+    <string name="remote_buffer_size">Buffer Size</string>
+    <string name="remote_sequence_range">Sequence Range</string>
+    <string name="remote_oldest">Oldest</string>
+    <string name="remote_latest">Latest</string>
+    <string name="remote_what_are_segments">What are segments?</string>
+    <string name="remote_stream_orientation">Stream Orientation</string>
+    <string name="remote_choose_orientation">Choose orientation for streaming only</string>
+    <string name="remote_portrait">Portrait</string>
+    <string name="remote_vertical_orientation">Vertical orientation (9:16)</string>
+    <string name="remote_landscape">Landscape</string>
+    <string name="remote_horizontal_orientation">Horizontal orientation (16:9)</string>
+    <string name="remote_auto_default">Auto (Default)</string>
+    <string name="remote_follow_recording_orientation">Follow app recording orientation</string>
+    <string name="remote_quality_low">Low</string>
+    <string name="remote_quality_medium">Medium</string>
+    <string name="remote_quality_high">High</string>
+    <string name="remote_quality_ultra">Ultra</string>
+    <string name="remote_event_logs">Event Logs</string>
+    <string name="remote_client_events">Client events</string>
+    <string name="remote_pages">Pages</string>
+    <string name="remote_layers">Layers</string>
+    <string name="remote_access_endpoints_desc">Access your streaming server via these HTTP endpoints</string>
+    <string name="remote_control_via_api_desc">Control FadCam remotely via API calls</string>
+    <string name="remote_buffered_segments_desc">Buffered segments ready for streaming</string>
+    <string name="remote_battery_low_warning">⚠️ Low Battery - Plug charger ASAP</string>
+    <string name="remote_enter_percentage_hint">Enter percentage</string>
+    <string name="remote_enter_mah_hint">Enter mAh (1000-10000)</string>
+
+    <!-- Sidebar Home -->
+    <string name="sidebar_profiles">Profiles</string>
+    <string name="sidebar_profiles_desc">Save and load recording presets instantly</string>
+    <string name="sidebar_update_available">Update Available</string>
+    <string name="sidebar_stable_release">Stable Release</string>
+    <string name="sidebar_beta_release">Beta Release</string>
+    <string name="sidebar_fadcam_pro">FadCam Pro</string>
+    <string name="badge_new">NEW</string>
+
+    <!-- Update Bottom Sheets -->
+    <string name="update_pro_title">FadCam Pro Update</string>
+    <string name="update_get_pro">Get FadCam Pro</string>
+    <string name="update_maybe_later">Maybe Later</string>
+    <string name="update_beta_title">Beta Update Available</string>
+    <string name="update_get_beta">Get Beta</string>
+
+    <!-- Mini Apps Info Sheet -->
+    <string name="mini_apps_about_title">About Mini Apps</string>
+    <string name="mini_apps_current_tools">Current Tools</string>
+    <string name="mini_apps_qr_scanner_reference">QR Scanner reference</string>
+
+    <!-- Screen Recording -->
+    <string name="screen_recording_title">Screen Recording</string>
+    <string name="screen_recording_notif_title">FadRec - Screen Recording</string>
+    <string name="screen_recording_saved">Screen Recording Saved</string>
+    <string name="screen_recording_tap_to_view">Tap to view your recording</string>
+    <string name="notification_action_stop">Stop</string>
+
+    <!-- FadMic -->
+    <string name="fadmic_coming_soon">FadMic (Mic Recording) coming soon!</string>
+
+    <!-- Toast messages -->
+    <string name="toast_stream_server_starting">Stream server starting...</string>
+    <string name="toast_stream_server_stopped">Stream server stopped</string>
+    <string name="toast_no_cloud_viewers">No cloud viewers connected</string>
+    <string name="toast_no_clients">No clients connected</string>
+    <string name="toast_device_id_copied">Device ID copied</string>
+    <string name="toast_endpoint_copied">Copied: %s</string>
+    <string name="toast_battery_set_threshold">Battery warning threshold set to %s</string>
+    <string name="toast_battery_set_capacity">Battery capacity set to %s</string>
+    <string name="toast_orientation_set">Orientation already set to %s</string>
+    <string name="toast_quality_set">Quality already set to %s</string>
 </resources>

@@ -9,7 +9,7 @@
         android:id="@+id/sheet_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Server Endpoints"
+        android:text="@string/remote_server_endpoints"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="?attr/colorHeading"
@@ -19,7 +19,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="GET Requests"
+        android:text="@string/remote_get_requests"
         android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="#4CAF50"
@@ -72,7 +72,7 @@
                         android:id="@+id/endpoint_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Server Root"
+                        android:text="@string/remote_server_root"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
@@ -138,7 +138,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Live Stream"
+                        android:text="@string/remote_live_stream"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
@@ -200,7 +200,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Status API"
+                        android:text="@string/remote_status_api"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
@@ -262,7 +262,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Init Segment"
+                        android:text="@string/remote_init_segment"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
@@ -294,7 +294,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="POST Requests"
+        android:text="@string/remote_post_requests"
         android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="#FF9800"
@@ -344,7 +344,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Torch Toggle"
+                        android:text="@string/remote_torch_toggle"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorHeading" />
