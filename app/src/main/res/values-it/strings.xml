@@ -2353,12 +2353,14 @@
     <string name="badge_new">NUOVO</string>
 
     <string name="update_pro_title">Aggiornamento FadCam Pro</string>
+    <string name="update_pro_desc">Una nuova versione di FadCam Pro è disponibile.\n\nPer gli utenti gratuiti, la versione stabile arriverà dopo circa 60 giorni. Gli utenti Pro ricevono gli aggiornamenti immediatamente.</string>
 
     <string name="update_get_pro">Ottieni FadCam Pro</string>
 
     <string name="update_maybe_later">Forse più tardi</string>
 
     <string name="update_beta_title">Aggiornamento beta disponibile</string>
+    <string name="update_beta_desc">La beta di FadCam è un\'app standalone che può essere installata insieme alla versione stabile. Non interferirà con la tua app stabile o i suoi dati.\n\nInstalla la beta per testare le nuove funzionalità prima che raggiungano la versione stabile.</string>
 
     <string name="update_get_beta">Ottieni beta</string>
 

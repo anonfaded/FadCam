@@ -2367,11 +2367,15 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
 
     <string name="update_pro_title">FadCam Pro uuendus</string>
 
+    <string name="update_pro_desc">Saadaval on uus FadCam Pro versioon.\n\nTasuta kasutajatele jõuab stabiilne versioon ligikaudu 60 päeva pärast. Pro kasutajad saavad uuendusi kohe.</string>
+
     <string name="update_get_pro">Hangi FadCam Pro</string>
 
     <string name="update_maybe_later">Võib-olla hiljem</string>
 
     <string name="update_beta_title">Beetauuendus saadaval</string>
+
+    <string name="update_beta_desc">FadCam beeta on eraldiseisev rakendus, mida saab installida koos stabiilse versiooniga. See ei sega sinu stabiilset rakendust ega selle andmeid.\n\nInstalli beeta, et testida uusi funktsioone enne nende jõudmist stabiilsesse versiooni.</string>
 
     <string name="update_get_beta">Hangi beetaversioon</string>
 

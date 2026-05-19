@@ -4016,12 +4016,14 @@ For the smoothest playback experience, you can use an external player like VLC. 
 <string name="badge_new">NOUVEAU</string>
 
 <string name="update_pro_title">Mise à jour FadCam Pro</string>
+<string name="update_pro_desc">Une nouvelle version de FadCam Pro est disponible.\n\nPour les utilisateurs gratuits, la version stable arrivera dans environ 60 jours. Les utilisateurs Pro reçoivent les mises à jour immédiatement.</string>
 
 <string name="update_get_pro">Obtenir FadCam Pro</string>
 
 <string name="update_maybe_later">Peut-être plus tard</string>
 
 <string name="update_beta_title">Mise à jour bêta disponible</string>
+<string name="update_beta_desc">La version bêta de FadCam est une application indépendante qui peut être installée en parallèle de la version stable. Elle n\'interférera pas avec votre application stable ni ses données.\n\nInstallez la bêta pour tester les nouvelles fonctionnalités avant leur sortie dans la version stable.</string>
 
 <string name="update_get_beta">Obtenir la bêta</string>
 

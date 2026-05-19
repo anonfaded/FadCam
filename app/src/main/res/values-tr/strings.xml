@@ -2295,9 +2295,11 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="sidebar_fadcam_pro">FadCam Pro</string>
     <string name="badge_new">YENİ</string>
     <string name="update_pro_title">FadCam Pro Güncellemesi</string>
+    <string name="update_pro_desc">Yeni bir FadCam Pro sürümü mevcut.\n\nÜcretsiz kullanıcılar için kararlı sürüm yaklaşık 60 gün sonra gelecek. Pro kullanıcıları güncellemeleri hemen alır.</string>
     <string name="update_get_pro">FadCam Pro\'yu Al</string>
     <string name="update_maybe_later">Belki Sonra</string>
     <string name="update_beta_title">Beta Güncellemesi Mevcut</string>
+    <string name="update_beta_desc">FadCam beta, kararlı sürümün yanına kurulabilen bağımsız bir uygulamadır. Kararlı uygulamanızı veya verilerini etkilemez.\n\nYeni özellikleri kararlı sürüme çıkmadan önce test etmek için beta sürümünü yükleyin.</string>
     <string name="update_get_beta">Beta\'yı Al</string>
     <string name="mini_apps_about_title">Mini Uygulamalar Hakkında</string>
     <string name="mini_apps_current_tools">Mevcut Araçlar</string>

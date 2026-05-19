@@ -4079,11 +4079,15 @@
 
     <string name="update_pro_title">تحديث FadCam Pro</string>
 
+    <string name="update_pro_desc">يتوفر إصدار جديد من FadCam Pro.\n\nللمستخدمين المجانيين، سيصل الإصدار المستقر بعد حوالي 60 يومًا. يتلقى مستخدمو Pro التحديثات فورًا.</string>
+
     <string name="update_get_pro">احصل على FadCam Pro</string>
 
     <string name="update_maybe_later">ربما لاحقًا</string>
 
     <string name="update_beta_title">تحديث تجريبي متاح</string>
+
+    <string name="update_beta_desc">الإصدار التجريبي من FadCam هو تطبيق مستقل يمكن تثبيته بجانب الإصدار المستقر. لن يتعارض مع تطبيقك المستقر أو بياناته.\n\nقم بتثبيت الإصدار التجريبي لاختبار الميزات الجديدة قبل وصولها إلى الإصدار المستقر.</string>
 
     <string name="update_get_beta">احصل على الإصدار التجريبي</string>
 

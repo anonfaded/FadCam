@@ -2628,12 +2628,14 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="badge_new">BARU</string>
 
     <string name="update_pro_title">Pembaruan FadCam Pro</string>
+    <string name="update_pro_desc">Versi baru FadCam Pro tersedia.\n\nUntuk pengguna gratis, rilis stabil akan tiba setelah sekitar 60 hari. Pengguna Pro menerima pembaruan segera.</string>
 
     <string name="update_get_pro">Dapatkan FadCam Pro</string>
 
     <string name="update_maybe_later">Nanti Saja</string>
 
     <string name="update_beta_title">Pembaruan Beta Tersedia</string>
+    <string name="update_beta_desc">Beta FadCam adalah aplikasi mandiri yang dapat diinstal berdampingan dengan versi stabil. Ini tidak akan mengganggu aplikasi stabil Anda atau datanya.\n\nInstal beta untuk menguji fitur baru sebelum mencapai rilis stabil.</string>
 
     <string name="update_get_beta">Dapatkan Beta</string>
 

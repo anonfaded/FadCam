@@ -2465,11 +2465,15 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
 
     <string name="update_pro_title">Ενημέρωση FadCam Pro</string>
 
+    <string name="update_pro_desc">Μια νέα έκδοση του FadCam Pro είναι διαθέσιμη.\n\nΓια τους δωρεάν χρήστες, η σταθερή έκδοση θα κυκλοφορήσει σε περίπου 60 ημέρες. Οι χρήστες Pro λαμβάνουν ενημερώσεις άμεσα.</string>
+
     <string name="update_get_pro">Αποκτήστε το FadCam Pro</string>
 
     <string name="update_maybe_later">Ίσως Αργότερα</string>
 
     <string name="update_beta_title">Διαθέσιμη Beta Ενημέρωση</string>
+
+    <string name="update_beta_desc">Η beta του FadCam είναι μια αυτόνομη εφαρμογή που μπορεί να εγκατασταθεί μαζί με τη σταθερή έκδοση. Δεν θα επηρεάσει τη σταθερή εφαρμογή ή τα δεδομένα σας.\n\nΕγκαταστήστε τη beta για να δοκιμάσετε νέες λειτουργίες πριν φτάσουν στη σταθερή έκδοση.</string>
 
     <string name="update_get_beta">Αποκτήστε τη Beta</string>
 

@@ -2389,12 +2389,14 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="badge_new">NEW</string>
 
     <string name="update_pro_title">FadCam Pro Update</string>
+    <string name="update_pro_desc">Da FadCam Pro yo nawai version mojood sho.\n\nDa free karkono dapara, stable release ba taqriban 60 wruro ke kigi. Pro karkono updates fauren wala kige.</string>
 
     <string name="update_get_pro">FadCam Pro wala ka</string>
 
     <string name="update_maybe_later">Shaied wrasta</string>
 
     <string name="update_beta_title">Beta Update Mojood</string>
+    <string name="update_beta_desc">Da FadCam beta yao separata app de che da stable version pa neben instala kedale shi. Da ba sta stable app ya da data se nalara kai.\n\nBeta install ka da nawi khasiatono test kolo dapara che stable release ta ra sawlao.</string>
 
     <string name="update_get_beta">Beta wala ka</string>
 

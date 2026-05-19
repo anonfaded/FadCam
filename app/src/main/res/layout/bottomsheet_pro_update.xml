@@ -29,7 +29,7 @@
 
     <TextView
         android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="A new version of FadCam Pro is available.\n\nFor free users, the stable release will arrive after approximately 60 days. Pro users receive updates immediately."
+        android:text="@string/update_pro_desc"
         android:textColor="#D0D0D0" android:textSize="13sp" android:gravity="center"
         android:lineSpacingExtra="3dp" android:layout_marginBottom="18dp"/>
 

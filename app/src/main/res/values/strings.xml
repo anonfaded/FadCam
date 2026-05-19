@@ -2537,9 +2537,11 @@ For the smoothest playback experience, you can use an external player like VLC. 
 
     <!-- Update Bottom Sheets -->
     <string name="update_pro_title">FadCam Pro Update</string>
+    <string name="update_pro_desc">A new version of FadCam Pro is available.\n\nFor free users, the stable release will arrive after approximately 60 days. Pro users receive updates immediately.</string>
     <string name="update_get_pro">Get FadCam Pro</string>
     <string name="update_maybe_later">Maybe Later</string>
     <string name="update_beta_title">Beta Update Available</string>
+    <string name="update_beta_desc">The FadCam beta is a standalone app that can be installed alongside the stable version. It will not interfere with your stable app or its data.\n\nInstall the beta to test new features before they reach the stable release.</string>
     <string name="update_get_beta">Get Beta</string>
 
     <!-- Mini Apps Info Sheet -->

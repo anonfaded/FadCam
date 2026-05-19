@@ -3065,9 +3065,11 @@ FadCam использует фрагментированный формат MP4 
     <string name="sidebar_fadcam_pro">FadCam Pro</string>
     <string name="badge_new">НОВОЕ</string>
     <string name="update_pro_title">Обновление FadCam Pro</string>
+    <string name="update_pro_desc">Доступна новая версия FadCam Pro.\n\nДля бесплатных пользователей стабильный релиз появится примерно через 60 дней. Пользователи Pro получают обновления сразу.</string>
     <string name="update_get_pro">Получить FadCam Pro</string>
     <string name="update_maybe_later">Может быть позже</string>
     <string name="update_beta_title">Доступно бета-обновление</string>
+    <string name="update_beta_desc">Бета-версия FadCam — это отдельное приложение, которое можно установить вместе со стабильной версией. Она не повлияет на ваше стабильное приложение или его данные.\n\nУстановите бета-версию, чтобы тестировать новые функции до их выхода в стабильном релизе.</string>
     <string name="update_get_beta">Получить бета-версию</string>
     <string name="mini_apps_about_title">О мини-приложениях</string>
     <string name="mini_apps_current_tools">Текущие инструменты</string>

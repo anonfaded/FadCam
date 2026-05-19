@@ -2334,9 +2334,11 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="sidebar_fadcam_pro">FadCam Pro</string>
     <string name="badge_new">NEU</string>
     <string name="update_pro_title">FadCam Pro-Update</string>
+    <string name="update_pro_desc">Eine neue Version von FadCam Pro ist verfügbar.\n\nFür kostenlose Benutzer wird die stabile Version nach etwa 60 Tagen veröffentlicht. Pro-Benutzer erhalten Updates sofort.</string>
     <string name="update_get_pro">FadCam Pro holen</string>
     <string name="update_maybe_later">Vielleicht später</string>
     <string name="update_beta_title">Beta-Update verfügbar</string>
+    <string name="update_beta_desc">Die FadCam Beta ist eine eigenständige App, die neben der stabilen Version installiert werden kann. Sie wird deine stabile App oder deren Daten nicht beeinträchtigen.\n\nInstalliere die Beta, um neue Funktionen zu testen, bevor sie in der stabilen Version erscheinen.</string>
     <string name="update_get_beta">Beta holen</string>
     <string name="mini_apps_about_title">Über Mini-Apps</string>
     <string name="mini_apps_current_tools">Aktuelle Werkzeuge</string>

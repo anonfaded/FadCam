@@ -2488,9 +2488,11 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
 
     <!-- Update Dialogs -->
     <string name="update_pro_title">Actualización de FadCam Pro</string>
+    <string name="update_pro_desc">Una nueva versión de FadCam Pro está disponible.\n\nPara los usuarios gratuitos, la versión estable llegará después de aproximadamente 60 días. Los usuarios Pro reciben actualizaciones de inmediato.</string>
     <string name="update_get_pro">Obtener FadCam Pro</string>
     <string name="update_maybe_later">Quizás después</string>
     <string name="update_beta_title">Actualización beta disponible</string>
+    <string name="update_beta_desc">La beta de FadCam es una aplicación independiente que se puede instalar junto con la versión estable. No interferirá con tu aplicación estable ni con sus datos.\n\nInstala la beta para probar nuevas funciones antes de que lleguen a la versión estable.</string>
     <string name="update_get_beta">Obtener beta</string>
 
     <!-- Mini Apps -->

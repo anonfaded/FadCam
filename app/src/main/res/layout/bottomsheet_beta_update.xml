@@ -32,7 +32,7 @@
 
     <TextView
         android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="The FadCam beta is a standalone app that can be installed alongside the stable version. It will not interfere with your stable app or its data.\n\nInstall the beta to test new features before they reach the stable release."
+        android:text="@string/update_beta_desc"
         android:textColor="#D0D0D0" android:textSize="13sp" android:gravity="center"
         android:lineSpacingExtra="3dp" android:layout_marginBottom="20dp"/>
 
