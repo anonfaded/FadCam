@@ -1096,6 +1096,7 @@
     <string name="faditor_split_success">Segment split into two</string>
     <string name="faditor_split_error">Cannot split here — too close to edge</string>
     <string name="faditor_delete_last_segment">Cannot delete the only segment</string>
+    <string name="faditor_delete_last_segments">Cannot delete the only segment</string>
     <string name="faditor_segment_deleted">Segment deleted</string>
     <string name="faditor_segment_duplicated">Segment duplicated</string>
     <string name="faditor_crop_title">Crop Aspect Ratio</string>
@@ -2403,6 +2404,29 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="torch_timer_custom_apply">Apply</string>
     <string name="torch_timer_custom_error_positive">Duration must be greater than 0</string>
     <string name="torch_timer_custom_error_invalid">Invalid number</string>
+
+    <!-- Torch Timer (alternate key, used by some Mini App screens) -->
+    <string name="torchtimer_label">Auto-off Timer</string>
+    <string name="torchtimer_desc">Flash turns off automatically after the set time</string>
+    <string name="torchtimer_off">Off</string>
+    <string name="torchtimer_picker_helper">Timer starts only when flash is active</string>
+    <string name="torchtimer_cancel">Cancel Timer</string>
+    <string name="torchtimer_30s">30 seconds</string>
+    <string name="torchtimer_1m">1 minute</string>
+    <string name="torchtimer_2m">2 minutes</string>
+    <string name="torchtimer_5m">5 minutes</string>
+    <string name="torchtimer_10m">10 minutes</string>
+    <string name="torchtimer_15m">15 minutes</string>
+    <string name="torchtimer_30m">30 minutes</string>
+    <string name="torchtimer_1h">1 hour</string>
+    <string name="torchtimer_custom_title">Set Custom Timer</string>
+    <string name="torchtimer_custom_unit_helper">Choose time unit</string>
+    <string name="torchtimer_custom_hint">Enter duration</string>
+    <string name="torchtimer_custom_minutes_example">Example: 5 for 5 minutes</string>
+    <string name="torchtimer_custom_hours_example">Example: 2 for 2 hours</string>
+    <string name="torchtimer_custom_apply">Apply</string>
+    <string name="torchtimer_custom_error_positive">Duration must be greater than 0</string>
+    <string name="torchtimer_custom_error_invalid">Invalid number</string>
 
     <string name="watermark_utm_title">UTM Coordinates</string>
     <string name="watermark_utm_off">Off</string>
