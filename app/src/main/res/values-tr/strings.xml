@@ -2335,4 +2335,44 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="toast_battery_set_capacity">Pil kapasitesi %s olarak ayarlandı</string>
     <string name="toast_orientation_set">Yön zaten %s olarak ayarlanmış</string>
     <string name="toast_quality_set">Kalite zaten %s olarak ayarlanmış</string>
+
+    <!-- Remote Recording Mode -->
+    <string name="remote_recording_mode">Kayıt Modu</string>
+    <string name="remote_mode_stream_only">Yalnızca Yayın</string>
+    <string name="remote_mode_stream_only_desc">Depolamaya kaydetmeden yayınla</string>
+    <string name="remote_mode_stream_save">Yayınla &amp; Kaydet</string>
+    <string name="remote_mode_stream_save_desc">Yayınla ve kaydı depolamaya kaydet</string>
+    <string name="remote_not_started">Başlatılmadı</string>
+    <string name="remote_uptime_seconds_label">saniye</string>
+    <string name="remote_uptime_unix_prefix">Unix:</string>
+
+    <!-- Battery Info Sheet -->
+    <string name="battery_threshold_desc">Pil bu yüzdeye veya altına düştüğünde bir uyarı görüntülenir</string>
+    <string name="battery_capacity_desc">Kesin kapasite için cihaz kılavuzunuzu veya ayarlarınızı kontrol edin. Bu, pil tahmin hesaplamalarınızı ayarlar.</string>
+    <string name="battery_charging">Şarj Oluyor</string>
+    <string name="battery_discharging">Deşarj Oluyor</string>
+    <string name="battery_rate_per_hour">Oran: ~%.1f%%/saat</string>
+    <string name="battery_hours_remaining">~%.1f saat kaldı</string>
+    <string name="battery_hours_plus_remaining">~%dsa+ kaldı</string>
+    <string name="battery_unable_to_calculate">Hesaplanamıyor</string>
+    <string name="battery_unable_to_parse">Pil bilgisi ayrıştırılamıyor</string>
+    <string name="battery_enter_percentage">Lütfen bir yüzde girin</string>
+    <string name="battery_percentage_range">Yüzde 5 ile 100 arasında olmalıdır</string>
+    <string name="battery_invalid_number">Geçersiz sayı</string>
+    <string name="battery_enter_mah">Lütfen pil kapasitesini mAh cinsinden girin</string>
+    <string name="battery_mah_range">Kapasite 1000 ile 10000 mAh arasında olmalıdır</string>
+    <string name="battery_threshold_set">Pil uyarı eşiği %d%% olarak ayarlandı</string>
+    <string name="battery_failed_threshold">Eşik ayarlanamadı: %s</string>
+    <string name="battery_capacity_set">Pil kapasitesi %d mAh olarak ayarlandı</string>
+    <string name="battery_failed_capacity">Kapasite ayarlanamadı: %s</string>
+    <string name="battery_current_threshold">Mevcut eşik: %d%%</string>
+    <string name="battery_current_capacity">Mevcut kapasite: %d mAh</string>
+    <string name="battery_estimate_per_hour">\u2022 Saatlik tüketim: ~%.1f%%</string>
+    <string name="battery_estimate_at_100">\u2022 %%100 pilde: ~%.1f saat</string>
+
+    <!-- Home screen camera info -->
+    <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_portrait">Dikey</string>
+    <string name="home_orientation_landscape">Yatay</string>
+    <string name="home_storage_format">%.2f GB</string>
 </resources>

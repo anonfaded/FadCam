@@ -64,12 +64,12 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
         // Load current battery warning threshold and set it in the input
         int currentThreshold = manager.getBatteryWarningThreshold();
         batteryWarningInput.setText(String.valueOf(currentThreshold));
-        warningThresholdStatus.setText("Current threshold: " + currentThreshold + "%");
+        warningThresholdStatus.setText(getString(R.string.battery_current_threshold, currentThreshold));
         
         // Load current battery capacity (mAh) and set it in the input
         int currentCapacityMah = manager.getBatteryCapacityMah();
         batteryCapacityInput.setText(String.valueOf(currentCapacityMah));
-        batteryCapacityStatus.setText("Current capacity: " + currentCapacityMah + " mAh");
+        batteryCapacityStatus.setText(getString(R.string.battery_current_capacity, currentCapacityMah));
         
         // Update battery estimate examples based on current mAh
         updateBatteryEstimateExamples(currentCapacityMah, batteryEstimateExample1, batteryEstimateExample2);
@@ -87,7 +87,7 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
             currentBatteryLevel.setText(batteryPercent + "%");
             
             // Show charging status
-            chargingStatus.setText(status.equals("Charging") ? "🔌 Charging" : "🔋 Discharging");
+            chargingStatus.setText(status.equals("Charging") ? "🔌 " + getString(R.string.battery_charging) : "🔋 " + getString(R.string.battery_discharging));
             chargingStatusCard.setVisibility(View.VISIBLE);
             
             // Show consumption data if available (streaming active and battery consumed)
@@ -101,7 +101,7 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
                 if (uptimeSeconds > 3600) { // At least 1 hour
                     double hours = uptimeSeconds / 3600.0;
                     double ratePerHour = consumed / hours;
-                    consumptionRate.setText(String.format("Rate: ~%.1f%% per hour", ratePerHour));
+                    consumptionRate.setText(getString(R.string.battery_rate_per_hour, ratePerHour));
                 } else {
                     consumptionRate.setVisibility(View.GONE);
                 }
@@ -114,13 +114,13 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
             timeRemainingCard.setVisibility(View.VISIBLE);
             if (remainingHours > 0) {
                 if (remainingHours < 500) {
-                    timeRemaining.setText(String.format("~%.1f hours remaining", remainingHours));
+                    timeRemaining.setText(getString(R.string.battery_hours_remaining, remainingHours));
                 } else {
-                    timeRemaining.setText("~" + (int)remainingHours + "h+ remaining");
+                    timeRemaining.setText(getString(R.string.battery_hours_plus_remaining, (int)remainingHours));
                 }
             } else {
                 // Fallback if calculation failed
-                timeRemaining.setText("Unable to calculate");
+                timeRemaining.setText(getString(R.string.battery_unable_to_calculate));
             }
             
             // Show low battery warning if needed
@@ -135,7 +135,7 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
             
         } catch (JSONException e) {
             // Fallback to simple display if parsing fails
-            currentBatteryLevel.setText("Unable to parse battery info");
+            currentBatteryLevel.setText(getString(R.string.battery_unable_to_parse));
             consumptionCard.setVisibility(View.GONE);
             timeRemainingCard.setVisibility(View.GONE);
             chargingStatusCard.setVisibility(View.GONE);
@@ -146,21 +146,21 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
         setBatteryWarningBtn.setOnClickListener(v -> {
             String thresholdStr = batteryWarningInput.getText().toString().trim();
             if (thresholdStr.isEmpty()) {
-                Toast.makeText(requireContext(), "Please enter a percentage", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), getString(R.string.battery_enter_percentage), Toast.LENGTH_SHORT).show();
                 return;
             }
             
             try {
                 int threshold = Integer.parseInt(thresholdStr);
                 if (threshold < 5 || threshold > 100) {
-                    Toast.makeText(requireContext(), "Percentage must be between 5 and 100", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), getString(R.string.battery_percentage_range), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 
                 // Make API call to set battery warning threshold
                 setBatteryWarningThreshold(threshold, warningThresholdStatus);
             } catch (NumberFormatException e) {
-                Toast.makeText(requireContext(), "Invalid number", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), getString(R.string.battery_invalid_number), Toast.LENGTH_SHORT).show();
             }
         });
         
@@ -168,26 +168,26 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
         setBatteryCapacityBtn.setOnClickListener(v -> {
             String capacityStr = batteryCapacityInput.getText().toString().trim();
             if (capacityStr.isEmpty()) {
-                Toast.makeText(requireContext(), "Please enter battery capacity in mAh", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), getString(R.string.battery_enter_mah), Toast.LENGTH_SHORT).show();
                 return;
             }
             
             try {
                 int capacity = Integer.parseInt(capacityStr);
                 if (capacity < 1000 || capacity > 10000) {
-                    Toast.makeText(requireContext(), "Capacity must be between 1000 and 10000 mAh", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), getString(R.string.battery_mah_range), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 
                 // Save battery capacity
                 setBatteryCapacity(capacity, batteryCapacityStatus, batteryEstimateExample1, batteryEstimateExample2);
             } catch (NumberFormatException e) {
-                Toast.makeText(requireContext(), "Invalid number", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), getString(R.string.battery_invalid_number), Toast.LENGTH_SHORT).show();
             }
         });
         
         // Update status text with current threshold if available
-        warningThresholdStatus.setText("Current threshold: " + currentThreshold + "%");
+        warningThresholdStatus.setText(getString(R.string.battery_current_threshold, currentThreshold));
     }
     
     /**
@@ -201,12 +201,12 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
                 
                 // Update UI on main thread
                 requireActivity().runOnUiThread(() -> {
-                    Toast.makeText(requireContext(), "Battery warning threshold set to " + threshold + "%", Toast.LENGTH_SHORT).show();
-                    statusText.setText("Current threshold: " + threshold + "%");
+                    Toast.makeText(requireContext(), getString(R.string.battery_threshold_set, threshold), Toast.LENGTH_SHORT).show();
+                    statusText.setText(getString(R.string.battery_current_threshold, threshold));
                 });
             } catch (Exception e) {
                 requireActivity().runOnUiThread(() -> {
-                    Toast.makeText(requireContext(), "Failed to set threshold: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), getString(R.string.battery_failed_threshold, e.getMessage()), Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -227,8 +227,8 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
                 
                 // Update UI on main thread
                 requireActivity().runOnUiThread(() -> {
-                    Toast.makeText(requireContext(), "Battery capacity set to " + capacityMah + " mAh", Toast.LENGTH_SHORT).show();
-                    statusText.setText("Current capacity: " + capacityMah + " mAh");
+                    Toast.makeText(requireContext(), getString(R.string.battery_capacity_set, capacityMah), Toast.LENGTH_SHORT).show();
+                    statusText.setText(getString(R.string.battery_current_capacity, capacityMah));
                     updateBatteryEstimateExamples(capacityMah, example1, example2);
                     
                     // Refresh the remaining hours estimate with new mAh calculation
@@ -239,9 +239,9 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
                         if (timeRemaining != null) {
                             if (remainingHours > 0) {
                                 if (remainingHours < 500) {
-                                    timeRemaining.setText(String.format("~%.1f hours remaining", remainingHours));
+                                    timeRemaining.setText(getString(R.string.battery_hours_remaining, remainingHours));
                                 } else {
-                                    timeRemaining.setText("~" + (int)remainingHours + "h+ remaining");
+                                    timeRemaining.setText(getString(R.string.battery_hours_plus_remaining, (int)remainingHours));
                                 }
                             }
                         }
@@ -251,7 +251,7 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
                 });
             } catch (Exception e) {
                 requireActivity().runOnUiThread(() -> {
-                    Toast.makeText(requireContext(), "Failed to set capacity: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), getString(R.string.battery_failed_capacity, e.getMessage()), Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -272,8 +272,8 @@ public class BatteryInfoBottomSheet extends BottomSheetDialogFragment {
         double hoursAt100Percent = 100.0 / adjustedRate;
         
         // Update example texts
-        example1.setText(String.format("• Per-hour consumption: ~%.1f%%", adjustedRate));
-        example2.setText(String.format("• At 100%% battery: ~%.1f hours", hoursAt100Percent));
+        example1.setText(getString(R.string.battery_estimate_per_hour, adjustedRate));
+        example2.setText(getString(R.string.battery_estimate_at_100, hoursAt100Percent));
     }
 
     @Override

@@ -3105,4 +3105,44 @@ FadCam использует фрагментированный формат MP4 
     <string name="toast_battery_set_capacity">Ёмкость батареи установлена на %s</string>
     <string name="toast_orientation_set">Ориентация уже установлена на %s</string>
     <string name="toast_quality_set">Качество уже установлено на %s</string>
+
+    <!-- Remote Recording Mode -->
+    <string name="remote_recording_mode">Режим записи</string>
+    <string name="remote_mode_stream_only">Только трансляция</string>
+    <string name="remote_mode_stream_only_desc">Трансляция без сохранения в память</string>
+    <string name="remote_mode_stream_save">Трансляция и сохранение</string>
+    <string name="remote_mode_stream_save_desc">Трансляция и сохранение записи в память</string>
+    <string name="remote_not_started">Не запущено</string>
+    <string name="remote_uptime_seconds_label">секунд</string>
+    <string name="remote_uptime_unix_prefix">Unix:</string>
+
+    <!-- Battery Info Sheet -->
+    <string name="battery_threshold_desc">Когда заряд батареи падает до этого процента или ниже, отображается предупреждение</string>
+    <string name="battery_capacity_desc">Проверьте руководство устройства или настройки для точной ёмкости. Это корректирует ваши расчёты оценки батареи.</string>
+    <string name="battery_charging">Зарядка</string>
+    <string name="battery_discharging">Разрядка</string>
+    <string name="battery_rate_per_hour">Скорость: ~%.1f%% в час</string>
+    <string name="battery_hours_remaining">~%.1f ч осталось</string>
+    <string name="battery_hours_plus_remaining">~%d ч+ осталось</string>
+    <string name="battery_unable_to_calculate">Невозможно рассчитать</string>
+    <string name="battery_unable_to_parse">Не удалось проанализировать информацию о батарее</string>
+    <string name="battery_enter_percentage">Пожалуйста, введите процент</string>
+    <string name="battery_percentage_range">Процент должен быть от 5 до 100</string>
+    <string name="battery_invalid_number">Неверное число</string>
+    <string name="battery_enter_mah">Пожалуйста, введите ёмкость батареи в мАч</string>
+    <string name="battery_mah_range">Ёмкость должна быть от 1000 до 10000 мАч</string>
+    <string name="battery_threshold_set">Порог предупреждения о батарее установлен на %d%%</string>
+    <string name="battery_failed_threshold">Не удалось установить порог: %s</string>
+    <string name="battery_capacity_set">Ёмкость батареи установлена на %d мАч</string>
+    <string name="battery_failed_capacity">Не удалось установить ёмкость: %s</string>
+    <string name="battery_current_threshold">Текущий порог: %d%%</string>
+    <string name="battery_current_capacity">Текущая ёмкость: %d мАч</string>
+    <string name="battery_estimate_per_hour">\u2022 Потребление в час: ~%.1f%%</string>
+    <string name="battery_estimate_at_100">\u2022 При 100%% батареи: ~%.1f ч</string>
+
+    <!-- Home screen camera info -->
+    <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_portrait">Портрет</string>
+    <string name="home_orientation_landscape">Ландшафт</string>
+    <string name="home_storage_format">%.2f ГБ</string>
 </resources>

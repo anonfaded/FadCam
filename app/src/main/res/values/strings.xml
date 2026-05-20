@@ -2587,4 +2587,48 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="toast_battery_set_capacity">Battery capacity set to %s</string>
     <string name="toast_orientation_set">Orientation already set to %s</string>
     <string name="toast_quality_set">Quality already set to %s</string>
+
+    <!-- Remote Recording Mode -->
+    <string name="remote_recording_mode">Recording Mode</string>
+    <string name="remote_mode_stream_only">Stream Only</string>
+    <string name="remote_mode_stream_only_desc">Stream without saving to storage</string>
+    <string name="remote_mode_stream_save">Stream &amp; Save</string>
+    <string name="remote_mode_stream_save_desc">Stream and save recording to storage</string>
+    <string name="remote_not_started">Not started</string>
+    <string name="remote_uptime_seconds_label">seconds</string>
+    <string name="remote_uptime_unix_prefix">Unix:</string>
+
+    <!-- Battery Info Sheet -->
+    <string name="battery_threshold_desc">When battery drops to or below this percentage, a warning will be displayed</string>
+    <string name="battery_capacity_desc">Check your device manual or settings for exact capacity. This adjusts your battery estimate calculations.</string>
+    <string name="battery_charging">Charging</string>
+    <string name="battery_discharging">Discharging</string>
+    <string name="battery_rate_per_hour">Rate: ~%.1f%% per hour</string>
+    <string name="battery_hours_remaining">~%.1f hours remaining</string>
+    <string name="battery_hours_plus_remaining">~%dh+ remaining</string>
+    <string name="battery_unable_to_calculate">Unable to calculate</string>
+    <string name="battery_unable_to_parse">Unable to parse battery info</string>
+    <string name="battery_enter_percentage">Please enter a percentage</string>
+    <string name="battery_percentage_range">Percentage must be between 5 and 100</string>
+    <string name="battery_invalid_number">Invalid number</string>
+    <string name="battery_enter_mah">Please enter battery capacity in mAh</string>
+    <string name="battery_mah_range">Capacity must be between 1000 and 10000 mAh</string>
+    <string name="battery_threshold_set">Battery warning threshold set to %d%%</string>
+    <string name="battery_failed_threshold">Failed to set threshold: %s</string>
+    <string name="battery_capacity_set">Battery capacity set to %d mAh</string>
+    <string name="battery_failed_capacity">Failed to set capacity: %s</string>
+    <string name="battery_current_threshold">Current threshold: %d%%</string>
+    <string name="battery_current_capacity">Current capacity: %d mAh</string>
+    <string name="battery_estimate_per_hour">\u2022 Per-hour consumption: ~%.1f%%</string>
+    <string name="battery_estimate_at_100">\u2022 At 100%% battery: ~%.1f hours</string>
+
+    <!-- Home screen camera info -->
+    <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_portrait">Portrait</string>
+    <string name="home_orientation_landscape">Landscape</string>
+    <string name="home_storage_format">%.2f GB</string>
+
+    <!-- HTTP methods -->
+    <string name="http_get" translatable="false">GET</string>
+    <string name="http_post" translatable="false">POST</string>
 </resources>

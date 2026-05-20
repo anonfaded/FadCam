@@ -2417,4 +2417,43 @@
 
     <string name="toast_quality_set">Qualità già impostata a %s</string>
 
+    <!-- Remote Recording Mode -->
+    <string name="remote_recording_mode">Modalità registrazione</string>
+    <string name="remote_mode_stream_only">Solo streaming</string>
+    <string name="remote_mode_stream_only_desc">Streaming senza salvare nella memoria</string>
+    <string name="remote_mode_stream_save">Streaming e salvataggio</string>
+    <string name="remote_mode_stream_save_desc">Streaming e salvataggio della registrazione nella memoria</string>
+    <string name="remote_not_started">Non avviato</string>
+    <string name="remote_uptime_seconds_label">secondi</string>
+    <string name="remote_uptime_unix_prefix">Unix:</string>
+
+    <!-- Battery Info Sheet -->
+    <string name="battery_threshold_desc">Quando la batteria scende a questa percentuale o inferiore, verrà mostrato un avviso</string>
+    <string name="battery_capacity_desc">Controlla il manuale del dispositivo o le impostazioni per la capacità esatta. Questo regola i tuoi calcoli di stima della batteria.</string>
+    <string name="battery_charging">In carica</string>
+    <string name="battery_discharging">In scarica</string>
+    <string name="battery_rate_per_hour">Tasso: ~%.1f%% all\'ora</string>
+    <string name="battery_hours_remaining">~%.1f ore rimanenti</string>
+    <string name="battery_hours_plus_remaining">~%do+ rimanenti</string>
+    <string name="battery_unable_to_calculate">Impossibile calcolare</string>
+    <string name="battery_unable_to_parse">Impossibile analizzare le info batteria</string>
+    <string name="battery_enter_percentage">Inserisci una percentuale</string>
+    <string name="battery_percentage_range">La percentuale deve essere tra 5 e 100</string>
+    <string name="battery_invalid_number">Numero non valido</string>
+    <string name="battery_enter_mah">Inserisci la capacità della batteria in mAh</string>
+    <string name="battery_mah_range">La capacità deve essere tra 1000 e 10000 mAh</string>
+    <string name="battery_threshold_set">Soglia avviso batteria impostata a %d%%</string>
+    <string name="battery_failed_threshold">Impossibile impostare la soglia: %s</string>
+    <string name="battery_capacity_set">Capacità batteria impostata a %d mAh</string>
+    <string name="battery_failed_capacity">Impossibile impostare la capacità: %s</string>
+    <string name="battery_current_threshold">Soglia attuale: %d%%</string>
+    <string name="battery_current_capacity">Capacità attuale: %d mAh</string>
+    <string name="battery_estimate_per_hour">\u2022 Consumo orario: ~%.1f%%</string>
+    <string name="battery_estimate_at_100">\u2022 Al 100%% di batteria: ~%.1f ore</string>
+
+    <!-- Home screen camera info -->
+    <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_portrait">Ritratto</string>
+    <string name="home_orientation_landscape">Paesaggio</string>
+    <string name="home_storage_format">%.2f GB</string>
 </resources>

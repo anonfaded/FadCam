@@ -2692,4 +2692,43 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
 
     <string name="toast_quality_set">Kualitas sudah diatur ke %s</string>
 
+    <!-- Remote Recording Mode -->
+    <string name="remote_recording_mode">Mode Rekaman</string>
+    <string name="remote_mode_stream_only">Stream Saja</string>
+    <string name="remote_mode_stream_only_desc">Stream tanpa menyimpan ke penyimpanan</string>
+    <string name="remote_mode_stream_save">Stream &amp; Simpan</string>
+    <string name="remote_mode_stream_save_desc">Stream dan simpan rekaman ke penyimpanan</string>
+    <string name="remote_not_started">Belum dimulai</string>
+    <string name="remote_uptime_seconds_label">detik</string>
+    <string name="remote_uptime_unix_prefix">Unix:</string>
+
+    <!-- Battery Info Sheet -->
+    <string name="battery_threshold_desc">Ketika baterai turun ke atau di bawah persentase ini, peringatan akan ditampilkan</string>
+    <string name="battery_capacity_desc">Periksa manual perangkat atau pengaturan untuk kapasitas yang tepat. Ini menyesuaikan perhitungan estimasi baterai Anda.</string>
+    <string name="battery_charging">Mengisi daya</string>
+    <string name="battery_discharging">Mengosongkan daya</string>
+    <string name="battery_rate_per_hour">Laju: ~%.1f%% per jam</string>
+    <string name="battery_hours_remaining">~%.1f jam tersisa</string>
+    <string name="battery_hours_plus_remaining">~%dj+ tersisa</string>
+    <string name="battery_unable_to_calculate">Tidak dapat menghitung</string>
+    <string name="battery_unable_to_parse">Tidak dapat mem-parsing info baterai</string>
+    <string name="battery_enter_percentage">Silakan masukkan persentase</string>
+    <string name="battery_percentage_range">Persentase harus antara 5 dan 100</string>
+    <string name="battery_invalid_number">Angka tidak valid</string>
+    <string name="battery_enter_mah">Silakan masukkan kapasitas baterai dalam mAh</string>
+    <string name="battery_mah_range">Kapasitas harus antara 1000 dan 10000 mAh</string>
+    <string name="battery_threshold_set">Batas peringatan baterai diatur ke %d%%</string>
+    <string name="battery_failed_threshold">Gagal mengatur batas: %s</string>
+    <string name="battery_capacity_set">Kapasitas baterai diatur ke %d mAh</string>
+    <string name="battery_failed_capacity">Gagal mengatur kapasitas: %s</string>
+    <string name="battery_current_threshold">Batas saat ini: %d%%</string>
+    <string name="battery_current_capacity">Kapasitas saat ini: %d mAh</string>
+    <string name="battery_estimate_per_hour">\u2022 Konsumsi per jam: ~%.1f%%</string>
+    <string name="battery_estimate_at_100">\u2022 Pada baterai 100%%: ~%.1f jam</string>
+
+    <!-- Home screen camera info -->
+    <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_portrait">Potret</string>
+    <string name="home_orientation_landscape">Lanskap</string>
+    <string name="home_storage_format">%.2f GB</string>
 </resources>

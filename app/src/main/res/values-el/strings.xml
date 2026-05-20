@@ -2530,4 +2530,43 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
 
     <string name="toast_quality_set">Η ποιότητα έχει ήδη οριστεί σε %s</string>
 
+    <!-- Remote Recording Mode -->
+    <string name="remote_recording_mode">Λειτουργία εγγραφής</string>
+    <string name="remote_mode_stream_only">Μόνο ροή</string>
+    <string name="remote_mode_stream_only_desc">Ροή χωρίς αποθήκευση στον χώρο αποθήκευσης</string>
+    <string name="remote_mode_stream_save">Ροή &amp; Αποθήκευση</string>
+    <string name="remote_mode_stream_save_desc">Ροή και αποθήκευση εγγραφής στον χώρο αποθήκευσης</string>
+    <string name="remote_not_started">Δεν ξεκίνησε</string>
+    <string name="remote_uptime_seconds_label">δευτερόλεπτα</string>
+    <string name="remote_uptime_unix_prefix">Unix:</string>
+
+    <!-- Battery Info Sheet -->
+    <string name="battery_threshold_desc">Όταν η μπαταρία πέσει σε ή κάτω από αυτό το ποσοστό, θα εμφανιστεί προειδοποίηση</string>
+    <string name="battery_capacity_desc">Ελέγξτε το εγχειρίδιο της συσκευής σας ή τις ρυθμίσεις για ακριβή χωρητικότητα. Αυτό προσαρμόζει τους υπολογισμούς εκτίμησης μπαταρίας.</string>
+    <string name="battery_charging">Φόρτιση</string>
+    <string name="battery_discharging">Αποφόρτιση</string>
+    <string name="battery_rate_per_hour">Ρυθμός: ~%.1f%% ανά ώρα</string>
+    <string name="battery_hours_remaining">~%.1f ώρες απομένουν</string>
+    <string name="battery_hours_plus_remaining">~%dω+ απομένουν</string>
+    <string name="battery_unable_to_calculate">Αδυναμία υπολογισμού</string>
+    <string name="battery_unable_to_parse">Αδυναμία ανάλυσης πληροφοριών μπαταρίας</string>
+    <string name="battery_enter_percentage">Παρακαλώ εισάγετε ποσοστό</string>
+    <string name="battery_percentage_range">Το ποσοστό πρέπει να είναι μεταξύ 5 και 100</string>
+    <string name="battery_invalid_number">Μη έγκυρος αριθμός</string>
+    <string name="battery_enter_mah">Παρακαλώ εισάγετε χωρητικότητα μπαταρίας σε mAh</string>
+    <string name="battery_mah_range">Η χωρητικότητα πρέπει να είναι μεταξύ 1000 και 10000 mAh</string>
+    <string name="battery_threshold_set">Το όριο προειδοποίησης μπαταρίας ορίστηκε στο %d%%</string>
+    <string name="battery_failed_threshold">Αποτυχία ορισμού ορίου: %s</string>
+    <string name="battery_capacity_set">Η χωρητικότητα μπαταρίας ορίστηκε στο %d mAh</string>
+    <string name="battery_failed_capacity">Αποτυχία ορισμού χωρητικότητας: %s</string>
+    <string name="battery_current_threshold">Τρέχον όριο: %d%%</string>
+    <string name="battery_current_capacity">Τρέχουσα χωρητικότητα: %d mAh</string>
+    <string name="battery_estimate_per_hour">\u2022 Κατανάλωση ανά ώρα: ~%.1f%%</string>
+    <string name="battery_estimate_at_100">\u2022 Σε 100%% μπαταρία: ~%.1f ώρες</string>
+
+    <!-- Home screen camera info -->
+    <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_portrait">Κατακόρυφο</string>
+    <string name="home_orientation_landscape">Οριζόντιο</string>
+    <string name="home_storage_format">%.2f GB</string>
 </resources>

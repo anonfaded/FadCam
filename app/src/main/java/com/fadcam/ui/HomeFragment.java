@@ -6531,7 +6531,7 @@ public class HomeFragment extends BaseFragment {
         final String qualityText = getResolutionDisplayName(selectedRes);
         final String fpsText = String.format(
             Locale.getDefault(),
-            "%dfps",
+            getString(R.string.home_fps_format),
             selectedFps
         );
 
@@ -6544,12 +6544,12 @@ public class HomeFragment extends BaseFragment {
                     orientation
                 )
             ) {
-                orientationText = "Landscape";
+                orientationText = getString(R.string.home_orientation_landscape);
             } else {
-                orientationText = "Portrait";
+                orientationText = getString(R.string.home_orientation_portrait);
             }
         } catch (Exception ignored) {
-            orientationText = "Portrait"; // Default fallback
+            orientationText = getString(R.string.home_orientation_portrait); // Default fallback
         }
 
         final String cameraSubtitle =
@@ -6561,7 +6561,7 @@ public class HomeFragment extends BaseFragment {
             : Locale.getDefault();
         final String availableSpace = String.format(
             numberFormatLocale,
-            "%.2f GB",
+            getString(R.string.home_storage_format),
             gbAvailable
         );
         final float availableFraction = gbTotal > 0d

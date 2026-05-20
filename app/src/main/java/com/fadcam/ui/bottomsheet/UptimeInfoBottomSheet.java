@@ -50,16 +50,26 @@ public class UptimeInfoBottomSheet extends BottomSheetDialogFragment {
         String startTimeStr = (String) details.get("startTime");
         Object timestampObj = details.get("startTimestamp");
         long timestamp = (timestampObj instanceof Long) ? (Long) timestampObj : ((Number) timestampObj).longValue();
-        
-        formattedUptime.setText(formatted);
-        
-        // Format seconds with comma separator
-        NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
-        uptimeSeconds.setText(numberFormat.format(seconds) + " seconds");
-        
-        startDate.setText(startDateStr);
-        startTime.setText(startTimeStr);
-        startTimestamp.setText("Unix: " + timestamp);
+
+        if (seconds == 0) {
+            formattedUptime.setText(R.string.remote_not_started);
+            startDate.setText(R.string.remote_not_started);
+            startTime.setText(R.string.remote_not_started);
+
+            NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
+            uptimeSeconds.setText("0 " + getString(R.string.remote_uptime_seconds_label));
+            startTimestamp.setText(getString(R.string.remote_uptime_unix_prefix) + " 0");
+        } else {
+            formattedUptime.setText(formatted);
+
+            // Format seconds with comma separator
+            NumberFormat numberFormat = NumberFormat.getInstance(Locale.US);
+            uptimeSeconds.setText(numberFormat.format(seconds) + " " + getString(R.string.remote_uptime_seconds_label));
+
+            startDate.setText(startDateStr);
+            startTime.setText(startTimeStr);
+            startTimestamp.setText(getString(R.string.remote_uptime_unix_prefix) + " " + timestamp);
+        }
     }
 
     @Override

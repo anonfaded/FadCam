@@ -4144,4 +4144,44 @@
 
     <string name="toast_quality_set">تم تعيين الجودة إلى %s مسبقًا</string>
 
+    <!-- Remote Recording Mode -->
+    <string name="remote_recording_mode">وضع التسجيل</string>
+    <string name="remote_mode_stream_only">بث فقط</string>
+    <string name="remote_mode_stream_only_desc">بث بدون حفظ في التخزين</string>
+    <string name="remote_mode_stream_save">بث وحفظ</string>
+    <string name="remote_mode_stream_save_desc">بث وحفظ التسجيل في التخزين</string>
+    <string name="remote_not_started">لم يبدأ</string>
+    <string name="remote_uptime_seconds_label">ثانية</string>
+    <string name="remote_uptime_unix_prefix">Unix:</string>
+
+    <!-- Battery Info Sheet -->
+    <string name="battery_threshold_desc">عندما تنخفض البطارية إلى هذه النسبة أو أقل، سيتم عرض تحذير</string>
+    <string name="battery_capacity_desc">تحقق من دليل جهازك أو الإعدادات للسعة الدقيقة. هذا يضبط حسابات تقدير البطارية.</string>
+    <string name="battery_charging">شحن</string>
+    <string name="battery_discharging">تفريغ</string>
+    <string name="battery_rate_per_hour">المعدل: ~%.1f%% في الساعة</string>
+    <string name="battery_hours_remaining">~%.1f ساعة متبقية</string>
+    <string name="battery_hours_plus_remaining">~%d ساعة+ متبقية</string>
+    <string name="battery_unable_to_calculate">غير قادر على الحساب</string>
+    <string name="battery_unable_to_parse">غير قادر على تحليل معلومات البطارية</string>
+    <string name="battery_enter_percentage">الرجاء إدخال نسبة مئوية</string>
+    <string name="battery_percentage_range">يجب أن تكون النسبة بين 5 و 100</string>
+    <string name="battery_invalid_number">رقم غير صالح</string>
+    <string name="battery_enter_mah">الرجاء إدخال سعة البطارية بالملي أمبير</string>
+    <string name="battery_mah_range">يجب أن تكون السعة بين 1000 و 10000 ملي أمبير</string>
+    <string name="battery_threshold_set">تم تعيين حد تحذير البطارية إلى %d%%</string>
+    <string name="battery_failed_threshold">فشل تعيين الحد: %s</string>
+    <string name="battery_capacity_set">تم تعيين سعة البطارية إلى %d ملي أمبير</string>
+    <string name="battery_failed_capacity">فشل تعيين السعة: %s</string>
+    <string name="battery_current_threshold">الحد الحالي: %d%%</string>
+    <string name="battery_current_capacity">السعة الحالية: %d ملي أمبير</string>
+    <string name="battery_estimate_per_hour">\u2022 الاستهلاك في الساعة: ~%.1f%%</string>
+    <string name="battery_estimate_at_100">\u2022 عند 100%% بطارية: ~%.1f ساعة</string>
+
+    <!-- Home screen camera info -->
+    <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_portrait">عمودي</string>
+    <string name="home_orientation_landscape">أفقي</string>
+    <string name="home_storage_format">%.2f غيغابايت</string>
+
 </resources>

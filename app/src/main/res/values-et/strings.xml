@@ -2432,4 +2432,43 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
 
     <string name="toast_quality_set">Kvaliteet on juba määratud väärtusele %s</string>
 
+    <!-- Remote Recording Mode -->
+    <string name="remote_recording_mode">Salvestusrežiim</string>
+    <string name="remote_mode_stream_only">Ainult voogedastus</string>
+    <string name="remote_mode_stream_only_desc">Voogedastus ilma salvestamata</string>
+    <string name="remote_mode_stream_save">Voogedasta &amp; Salvesta</string>
+    <string name="remote_mode_stream_save_desc">Voogedasta ja salvesta salvestus mällu</string>
+    <string name="remote_not_started">Pole käivitatud</string>
+    <string name="remote_uptime_seconds_label">sekundit</string>
+    <string name="remote_uptime_unix_prefix">Unix:</string>
+
+    <!-- Battery Info Sheet -->
+    <string name="battery_threshold_desc">Kui aku langeb selle protsendini või alla selle, kuvatakse hoiatus</string>
+    <string name="battery_capacity_desc">Täpse võimsuse saamiseks vaadake oma seadme käsiraamatut või sätteid. See kohandab teie aku hinnangu arvutusi.</string>
+    <string name="battery_charging">Laeb</string>
+    <string name="battery_discharging">Tühjeneb</string>
+    <string name="battery_rate_per_hour">Määr: ~%.1f%% tunnis</string>
+    <string name="battery_hours_remaining">~%.1f tundi jäänud</string>
+    <string name="battery_hours_plus_remaining">~%dt+ jäänud</string>
+    <string name="battery_unable_to_calculate">Arvutamine pole võimalik</string>
+    <string name="battery_unable_to_parse">Aku teabe analüüs ebaõnnestus</string>
+    <string name="battery_enter_percentage">Palun sisesta protsent</string>
+    <string name="battery_percentage_range">Protsent peab olema 5 ja 100 vahel</string>
+    <string name="battery_invalid_number">Vigane number</string>
+    <string name="battery_enter_mah">Palun sisesta aku võimsus mAh</string>
+    <string name="battery_mah_range">Võimsus peab olema 1000 ja 10000 mAh vahel</string>
+    <string name="battery_threshold_set">Aku hoiatuslävi määratud: %d%%</string>
+    <string name="battery_failed_threshold">Läve määramine ebaõnnestus: %s</string>
+    <string name="battery_capacity_set">Aku võimsus määratud: %d mAh</string>
+    <string name="battery_failed_capacity">Võimsuse määramine ebaõnnestus: %s</string>
+    <string name="battery_current_threshold">Praegune lävi: %d%%</string>
+    <string name="battery_current_capacity">Praegune võimsus: %d mAh</string>
+    <string name="battery_estimate_per_hour">\u2022 Tarbimine tunnis: ~%.1f%%</string>
+    <string name="battery_estimate_at_100">\u2022 100%% aku juures: ~%.1f tundi</string>
+
+    <!-- Home screen camera info -->
+    <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_portrait">Portree</string>
+    <string name="home_orientation_landscape">Maastik</string>
+    <string name="home_storage_format">%.2f GB</string>
 </resources>

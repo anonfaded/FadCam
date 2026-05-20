@@ -2374,4 +2374,43 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="toast_battery_set_capacity">Akkukapazität auf %s gesetzt</string>
     <string name="toast_orientation_set">Ausrichtung bereits auf %s gesetzt</string>
     <string name="toast_quality_set">Qualität bereits auf %s gesetzt</string>
+    <!-- Remote Recording Mode -->
+    <string name="remote_recording_mode">Aufnahmemodus</string>
+    <string name="remote_mode_stream_only">Nur Streamen</string>
+    <string name="remote_mode_stream_only_desc">Streamen ohne Speicherung</string>
+    <string name="remote_mode_stream_save">Streamen &amp; Speichern</string>
+    <string name="remote_mode_stream_save_desc">Streamen und Aufnahme speichern</string>
+    <string name="remote_not_started">Nicht gestartet</string>
+    <string name="remote_uptime_seconds_label">Sekunden</string>
+    <string name="remote_uptime_unix_prefix">Unix:</string>
+
+    <!-- Battery Info Sheet -->
+    <string name="battery_threshold_desc">Wenn der Akku diesen Prozentsatz oder weniger erreicht, wird eine Warnung angezeigt</string>
+    <string name="battery_capacity_desc">Überprüfe die genaue Kapazität in deinem Gerätehandbuch oder den Einstellungen. Dies passt deine Akku-Berechnungen an.</string>
+    <string name="battery_charging">Lädt</string>
+    <string name="battery_discharging">Entlädt</string>
+    <string name="battery_rate_per_hour">Rate: ~%.1f%% pro Stunde</string>
+    <string name="battery_hours_remaining">~%.1f Stunden übrig</string>
+    <string name="battery_hours_plus_remaining">~%d Std.+ übrig</string>
+    <string name="battery_unable_to_calculate">Berechnung nicht möglich</string>
+    <string name="battery_unable_to_parse">Akku-Info nicht lesbar</string>
+    <string name="battery_enter_percentage">Bitte Prozentsatz eingeben</string>
+    <string name="battery_percentage_range">Prozentsatz muss zwischen 5 und 100 liegen</string>
+    <string name="battery_invalid_number">Ungültige Zahl</string>
+    <string name="battery_enter_mah">Bitte Akkukapazität in mAh eingeben</string>
+    <string name="battery_mah_range">Kapazität muss zwischen 1000 und 10000 mAh liegen</string>
+    <string name="battery_threshold_set">Akku-Warnschwelle auf %d%% gesetzt</string>
+    <string name="battery_failed_threshold">Schwelle konnte nicht gesetzt werden: %s</string>
+    <string name="battery_capacity_set">Akkukapazität auf %d mAh gesetzt</string>
+    <string name="battery_failed_capacity">Kapazität konnte nicht gesetzt werden: %s</string>
+    <string name="battery_current_threshold">Aktuelle Schwelle: %d%%</string>
+    <string name="battery_current_capacity">Aktuelle Kapazität: %d mAh</string>
+    <string name="battery_estimate_per_hour">\u2022 Verbrauch pro Stunde: ~%.1f%%</string>
+    <string name="battery_estimate_at_100">\u2022 Bei 100%% Akku: ~%.1f Stunden</string>
+
+    <!-- Home screen camera info -->
+    <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_portrait">Hochformat</string>
+    <string name="home_orientation_landscape">Querformat</string>
+    <string name="home_storage_format">%.2f GB</string>
 </resources>

@@ -913,9 +913,9 @@ public class RemoteFragment extends BaseFragment {
     private void showRecordingModePicker() {
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         items.add(new com.fadcam.ui.picker.OptionItem(
-            "stream_only", "Stream Only", "Stream without saving to storage", null));
+            "stream_only", getString(R.string.remote_mode_stream_only), getString(R.string.remote_mode_stream_only_desc), null));
         items.add(new com.fadcam.ui.picker.OptionItem(
-            "stream_and_save", "Stream & Save", "Stream and save recording to storage", null));
+            "stream_and_save", getString(R.string.remote_mode_stream_save), getString(R.string.remote_mode_stream_save_desc), null));
         
         RemoteStreamManager.StreamingMode currentMode = prefsManager.getStreamingMode();
         String selectedId = currentMode == RemoteStreamManager.StreamingMode.STREAM_ONLY ? 
@@ -923,7 +923,7 @@ public class RemoteFragment extends BaseFragment {
         
         com.fadcam.ui.picker.PickerBottomSheetFragment picker = 
             com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
-                "Recording Mode", items, selectedId, "recording_mode_picker");
+                getString(R.string.remote_recording_mode), items, selectedId, "recording_mode_picker");
         
         getParentFragmentManager().setFragmentResultListener("recording_mode_picker", 
             getViewLifecycleOwner(), (requestKey, result) -> {

@@ -2453,4 +2453,44 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
 
     <string name="toast_quality_set">Quality pehla na %s tanzim shwi</string>
 
+    <!-- Remote Recording Mode -->
+    <string name="remote_recording_mode">Recording Mod</string>
+    <string name="remote_mode_stream_only">Stream Wasta</string>
+    <string name="remote_mode_stream_only_desc">Stream pe zakhira kawalo pare na</string>
+    <string name="remote_mode_stream_save">Stream aw Save</string>
+    <string name="remote_mode_stream_save_desc">Stream kawal aw zakhira kawal</string>
+    <string name="remote_not_started">Shuru na shwe</string>
+    <string name="remote_uptime_seconds_label">saniyah</string>
+    <string name="remote_uptime_unix_prefix">Unix:</string>
+
+    <!-- Battery Info Sheet -->
+    <string name="battery_threshold_desc">Ke battery da percentage na lar aw kam shwe, khabardar darshega</string>
+    <string name="battery_capacity_desc">Khpal device manual ya settings pukhta capacity dapara wakha. Da staso battery andaze hesab tanzimawi.</string>
+    <string name="battery_charging">Charge kegi</string>
+    <string name="battery_discharging">Discharge kegi</string>
+    <string name="battery_rate_per_hour">Shar: ~%.1f%% fi sa-at</string>
+    <string name="battery_hours_remaining">~%.1f sa-ate paate</string>
+    <string name="battery_hours_plus_remaining">~%ds+ paate</string>
+    <string name="battery_unable_to_calculate">Hesab kawalo na shwe</string>
+    <string name="battery_unable_to_parse">Battery malomat parse kawalo na shwe</string>
+    <string name="battery_enter_percentage">Lotfan fi-sadi darej kala</string>
+    <string name="battery_percentage_range">Fi-sadi darej la 5 ta 100 pohe</string>
+    <string name="battery_invalid_number">Na-sahih shumara</string>
+    <string name="battery_enter_mah">Lotfan battery capacity mAh ke kala</string>
+    <string name="battery_mah_range">Capacity 1000 aw 10000 mAh tsakhe we</string>
+    <string name="battery_threshold_set">Battery khabardar hadd %d%% tanzim shwe</string>
+    <string name="battery_failed_threshold">Hadd tanzim kawalo na shwe: %s</string>
+    <string name="battery_capacity_set">Battery capacity %d mAh tanzim shwe</string>
+    <string name="battery_failed_capacity">Capacity tanzim kawalo na shwe: %s</string>
+    <string name="battery_current_threshold">Aml hadd: %d%%</string>
+    <string name="battery_current_capacity">Aml capacity: %d mAh</string>
+    <string name="battery_estimate_per_hour">\u2022 Fi sa-at kharchat: ~%.1f%%</string>
+    <string name="battery_estimate_at_100">\u2022 100%% battery ke: ~%.1f sa-ate</string>
+
+    <!-- Home screen camera info -->
+    <string name="home_fps_format">%dfps</string>
+    <string name="home_orientation_portrait">Portrait</string>
+    <string name="home_orientation_landscape">Landscape</string>
+    <string name="home_storage_format">%.2f GB</string>
+
 </resources>

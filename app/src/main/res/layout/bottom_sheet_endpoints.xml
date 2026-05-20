@@ -57,7 +57,7 @@
                         android:id="@+id/endpoint_method"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="GET"
+                        android:text="@string/http_get"
                         android:textSize="9sp"
                         android:textStyle="bold"
                         android:textColor="@android:color/white"
@@ -124,7 +124,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="GET"
+                        android:text="@string/http_get"
                         android:textSize="9sp"
                         android:textStyle="bold"
                         android:textColor="@android:color/white"
@@ -186,7 +186,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="GET"
+                        android:text="@string/http_get"
                         android:textSize="9sp"
                         android:textStyle="bold"
                         android:textColor="@android:color/white"
@@ -248,7 +248,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="GET"
+                        android:text="@string/http_get"
                         android:textSize="9sp"
                         android:textStyle="bold"
                         android:textColor="@android:color/white"
@@ -330,7 +330,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="POST"
+                        android:text="@string/http_post"
                         android:textSize="9sp"
                         android:textStyle="bold"
                         android:textColor="@android:color/white"

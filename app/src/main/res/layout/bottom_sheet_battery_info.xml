@@ -107,7 +107,7 @@
             android:id="@+id/consumptionRate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Consumption rate: ~5% per hour"
+            android:text="@string/battery_unable_to_calculate"
             android:textSize="12sp"
             android:textColor="@android:color/darker_gray"
             android:layout_marginTop="4dp" />
@@ -126,7 +126,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Estimated Streaming Time Remaining"
+            android:text="@string/battery_estimate_title"
             android:textSize="13sp"
             android:textStyle="bold"
             android:textColor="?attr/colorHeading" />
@@ -251,7 +251,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="When battery drops to or below this percentage, a warning will be displayed"
+            android:text="@string/battery_threshold_desc"
             android:textSize="10sp"
             android:textColor="#8b949e"
             android:layout_marginTop="8dp"
@@ -329,7 +329,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Check your device manual or settings for exact capacity. This adjusts your battery estimate calculations."
+            android:text="@string/battery_capacity_desc"
             android:textSize="10sp"
             android:textColor="#8b949e"
             android:layout_marginTop="8dp"
