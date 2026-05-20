@@ -24,7 +24,7 @@
             android:id="@+id/back_button"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:contentDescription="Back"
+            android:contentDescription="@string/watch_back_desc"
             android:padding="2dp"
             android:src="@drawable/ic_close"
             android:tint="@android:color/white" />

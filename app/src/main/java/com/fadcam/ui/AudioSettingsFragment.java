@@ -92,19 +92,19 @@ public class AudioSettingsFragment extends Fragment {
 
     private void refreshAllValues(){
         boolean rec = prefs.isRecordAudioEnabled();
-    valueRecordAudio.setText(rec? "Enabled" : "Disabled");
+    valueRecordAudio.setText(rec? getString(R.string.setting_enabled) : getString(R.string.setting_disabled));
 
         updateAudioInputSourceStatusUI();
 
         boolean ns = prefs.isNoiseSuppressionEnabled();
         if(valueNoiseSuppression!=null){
-            valueNoiseSuppression.setText(ns? "Enabled" : "Disabled");
+            valueNoiseSuppression.setText(ns? getString(R.string.setting_enabled) : getString(R.string.setting_disabled));
         }
 
         // Advanced summary (bitrate + sampling)
         int br = prefs.getAudioBitrate();
         int sr = prefs.getAudioSamplingRate();
-        valueAdvancedSummary.setText(String.format(Locale.getDefault(), "%d kbps @ %d Hz", br, sr));
+        valueAdvancedSummary.setText(String.format(Locale.getDefault(), getString(R.string.setting_audio_advanced_summary), br, sr));
     // Enable/disable dependent rows (mic & advanced) when recording disabled
     updateDependentRowStates(rec);
     }
@@ -204,18 +204,18 @@ public class AudioSettingsFragment extends Fragment {
 
     private String getAudioDeviceTypeString(int type){
         switch(type){
-            case AudioDeviceInfo.TYPE_WIRED_HEADSET: return "Wired Headset";
-            case AudioDeviceInfo.TYPE_WIRED_HEADPHONES: return "Wired Headphones";
-            case AudioDeviceInfo.TYPE_USB_DEVICE: return "USB";
-            case AudioDeviceInfo.TYPE_USB_HEADSET: return "USB Headset";
-            case AudioDeviceInfo.TYPE_BLUETOOTH_SCO: return "BT (SCO)";
-            case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP: return "BT (A2DP)";
-            case AudioDeviceInfo.TYPE_BLE_HEADSET: return "BLE Headset";
-            case AudioDeviceInfo.TYPE_BLE_BROADCAST: return "BLE Broadcast";
-            case AudioDeviceInfo.TYPE_BLE_SPEAKER: return "BLE Speaker";
-            case AudioDeviceInfo.TYPE_BUILTIN_MIC: return "Built-in Mic";
+            case AudioDeviceInfo.TYPE_WIRED_HEADSET: return getString(R.string.audio_device_type_wired_headset);
+            case AudioDeviceInfo.TYPE_WIRED_HEADPHONES: return getString(R.string.audio_device_type_wired_headphones);
+            case AudioDeviceInfo.TYPE_USB_DEVICE: return getString(R.string.audio_device_type_usb);
+            case AudioDeviceInfo.TYPE_USB_HEADSET: return getString(R.string.audio_device_type_usb_headset);
+            case AudioDeviceInfo.TYPE_BLUETOOTH_SCO: return getString(R.string.audio_device_type_bt_sco);
+            case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP: return getString(R.string.audio_device_type_bt_a2dp);
+            case AudioDeviceInfo.TYPE_BLE_HEADSET: return getString(R.string.audio_device_type_ble_headset);
+            case AudioDeviceInfo.TYPE_BLE_BROADCAST: return getString(R.string.audio_device_type_ble_broadcast);
+            case AudioDeviceInfo.TYPE_BLE_SPEAKER: return getString(R.string.audio_device_type_ble_speaker);
+            case AudioDeviceInfo.TYPE_BUILTIN_MIC: return getString(R.string.audio_device_type_builtin_mic);
         }
-        return "Device";
+        return getString(R.string.audio_device_type_external);
     }
 
     private void showMicSelectionBottomSheet(){
@@ -279,7 +279,7 @@ public class AudioSettingsFragment extends Fragment {
             }
         } else {
             if(headphonesNoMicDetected){
-                status = getString(R.string.setting_audio_input_source_status_default)+" (No-mic headphones)";
+                status = getString(R.string.setting_audio_input_source_status_default) + " " + getString(R.string.setting_no_mic_headphones);
             } else {
                 status = getString(R.string.setting_audio_input_source_status_default);
             }

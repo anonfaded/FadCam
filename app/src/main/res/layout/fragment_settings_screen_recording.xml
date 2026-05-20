@@ -79,7 +79,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Resolution"
+                        android:text="@string/screen_rec_resolution"
                         android:textStyle="bold"
                         android:textSize="15sp"
                         android:textColor="?attr/colorHeading"/>
@@ -113,7 +113,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Frame Rate"
+                        android:text="@string/screen_rec_framerate"
                         android:textStyle="bold"
                         android:textSize="15sp"
                         android:textColor="?attr/colorHeading"/>
@@ -147,7 +147,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Bitrate"
+                        android:text="@string/screen_rec_bitrate"
                         android:textStyle="bold"
                         android:textSize="15sp"
                         android:textColor="?attr/colorHeading"/>

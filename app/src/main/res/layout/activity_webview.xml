@@ -27,7 +27,7 @@
             android:layout_height="24dp"
             android:padding="2dp"
             android:src="@drawable/ic_close"
-            android:contentDescription="Back"
+            android:contentDescription="@string/watch_back_desc"
             android:tint="@android:color/white" />
         <TextView
             android:id="@+id/title_text"

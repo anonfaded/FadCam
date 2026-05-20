@@ -4120,4 +4120,20 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="home_orientation_landscape">Paysage</string>
     <string name="home_storage_format">%.2f Go</string>
 
+    <!-- Appearance Settings -->
+    <string name="settings_appearance_title">Apparence</string>
+    <string name="setting_theme">Thème</string>
+    <string name="setting_language">Langue</string>
+    <string name="setting_app_icon">Icône de l\'appli</string>
+
+    <!-- Audio Settings -->
+    <string name="setting_enabled">Activé</string>
+    <string name="setting_disabled">Désactivé</string>
+    <string name="setting_no_mic_headphones">(Casque sans micro)</string>
+    <string name="setting_audio_advanced_summary">%d kbps @ %d Hz</string>
+    <string name="audio_device_type_wired_headphones">Wired Headphones</string>
+    <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
+    <string name="audio_device_type_ble_speaker">BLE Speaker</string>
+    <string name="audio_device_type_builtin_mic">Built-in Mic</string>
+
 </resources>

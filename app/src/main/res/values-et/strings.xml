@@ -2471,4 +2471,20 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="home_orientation_portrait">Portree</string>
     <string name="home_orientation_landscape">Maastik</string>
     <string name="home_storage_format">%.2f GB</string>
+
+    <!-- Appearance Settings -->
+    <string name="settings_appearance_title">Välimus</string>
+    <string name="setting_theme">Teema</string>
+    <string name="setting_language">Keel</string>
+    <string name="setting_app_icon">Rakenduse ikoon</string>
+
+    <!-- Audio Settings -->
+    <string name="setting_enabled">Lubatud</string>
+    <string name="setting_disabled">Keelatud</string>
+    <string name="setting_no_mic_headphones">(Kõrvaklapid ilma mikrofonita)</string>
+    <string name="setting_audio_advanced_summary">%d kbps @ %d Hz</string>
+    <string name="audio_device_type_wired_headphones">Wired Headphones</string>
+    <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
+    <string name="audio_device_type_ble_speaker">BLE Speaker</string>
+    <string name="audio_device_type_builtin_mic">Built-in Mic</string>
 </resources>

@@ -2310,6 +2310,10 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="audio_device_type_bt_sco">Bluetooth (SCO)</string>
     <string name="audio_device_type_bt_a2dp">Bluetooth (A2DP)</string>
     <string name="audio_device_type_ble_headset">BLE Headset</string>
+    <string name="audio_device_type_wired_headphones">Wired Headphones</string>
+    <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
+    <string name="audio_device_type_ble_speaker">BLE Speaker</string>
+    <string name="audio_device_type_builtin_mic">Built-in Mic</string>
     <string name="audio_device_type_external">External Microphone</string>
 
     <!-- Mini Apps Section -->
@@ -2631,4 +2635,16 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <!-- HTTP methods -->
     <string name="http_get" translatable="false">GET</string>
     <string name="http_post" translatable="false">POST</string>
+
+    <!-- Appearance Settings -->
+    <string name="settings_appearance_title">Appearance</string>
+    <string name="setting_theme">Theme</string>
+    <string name="setting_language">Language</string>
+    <string name="setting_app_icon">App Icon</string>
+
+    <!-- Audio Settings -->
+    <string name="setting_enabled">Enabled</string>
+    <string name="setting_disabled">Disabled</string>
+    <string name="setting_no_mic_headphones">(No-mic headphones)</string>
+    <string name="setting_audio_advanced_summary">%d kbps @ %d Hz</string>
 </resources>

@@ -2569,4 +2569,20 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="home_orientation_portrait">Κατακόρυφο</string>
     <string name="home_orientation_landscape">Οριζόντιο</string>
     <string name="home_storage_format">%.2f GB</string>
+
+    <!-- Appearance Settings -->
+    <string name="settings_appearance_title">Εμφάνιση</string>
+    <string name="setting_theme">Θέμα</string>
+    <string name="setting_language">Γλώσσα</string>
+    <string name="setting_app_icon">Εικονίδιο εφαρμογής</string>
+
+    <!-- Audio Settings -->
+    <string name="setting_enabled">Ενεργοποιημένο</string>
+    <string name="setting_disabled">Απενεργοποιημένο</string>
+    <string name="setting_no_mic_headphones">(Ακουστικά χωρίς μικρόφωνο)</string>
+    <string name="setting_audio_advanced_summary">%d kbps @ %d Hz</string>
+    <string name="audio_device_type_wired_headphones">Wired Headphones</string>
+    <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
+    <string name="audio_device_type_ble_speaker">BLE Speaker</string>
+    <string name="audio_device_type_builtin_mic">Built-in Mic</string>
 </resources>

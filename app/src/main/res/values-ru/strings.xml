@@ -3145,4 +3145,20 @@ FadCam использует фрагментированный формат MP4 
     <string name="home_orientation_portrait">Портрет</string>
     <string name="home_orientation_landscape">Ландшафт</string>
     <string name="home_storage_format">%.2f ГБ</string>
+
+    <!-- Appearance Settings -->
+    <string name="settings_appearance_title">Внешний вид</string>
+    <string name="setting_theme">Тема</string>
+    <string name="setting_language">Язык</string>
+    <string name="setting_app_icon">Иконка приложения</string>
+
+    <!-- Audio Settings -->
+    <string name="setting_enabled">Включено</string>
+    <string name="setting_disabled">Отключено</string>
+    <string name="setting_no_mic_headphones">(Наушники без микрофона)</string>
+    <string name="setting_audio_advanced_summary">%d kbps @ %d Hz</string>
+    <string name="audio_device_type_wired_headphones">Wired Headphones</string>
+    <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
+    <string name="audio_device_type_ble_speaker">BLE Speaker</string>
+    <string name="audio_device_type_builtin_mic">Built-in Mic</string>
 </resources>

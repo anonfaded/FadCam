@@ -26,13 +26,13 @@
             android:layout_height="24dp"
             android:padding="2dp"
             android:src="@drawable/ic_close"
-            android:contentDescription="Back"
+            android:contentDescription="@string/watch_back_desc"
             android:tint="@android:color/white"/>
         <TextView
             android:id="@+id/title_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Appearance"
+            android:text="@string/settings_appearance_title"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginStart="12dp"
@@ -82,7 +82,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Theme"
+                    android:text="@string/setting_theme"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -118,7 +118,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Language"
+                    android:text="@string/setting_language"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
@@ -154,7 +154,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="App Icon"
+                    android:text="@string/setting_app_icon"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>
