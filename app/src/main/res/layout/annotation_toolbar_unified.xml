@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Unified Toolbar: Arrow OUTSIDE, Menu appears beside it -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="304dp" android:layout_height="wrap_content">
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="304dp" android:layout_height="wrap_content">
 
     <LinearLayout
         android:id="@+id/menuContainer"
@@ -284,119 +286,122 @@
                 android:visibility="visible">
 
             <!-- Quick Access Options in Single Row -->
-            <LinearLayout 
-                android:layout_width="match_parent" 
-                android:layout_height="wrap_content" 
-                android:orientation="horizontal" 
-                android:gravity="center" 
-                android:paddingHorizontal="8dp" 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:baselineAligned="false"
+                android:paddingHorizontal="8dp"
                 android:paddingBottom="8dp">
 
                 <!-- Enable/Disable Annotation -->
-                <LinearLayout 
-                    android:id="@+id/btnToggleAnnotation" 
-                    android:layout_width="0dp" 
-                    android:layout_height="wrap_content"
-                    android:minHeight="56dp"
+                <LinearLayout
+                    android:id="@+id/btnToggleAnnotation"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:orientation="horizontal" 
+                    android:minHeight="56dp"
+                    android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:paddingHorizontal="8dp"
-                    android:background="@drawable/quick_access_button_bg" 
-                    android:clickable="true" 
-                    android:focusable="true" 
+                    android:paddingVertical="8dp"
+                    android:background="@drawable/quick_access_button_bg"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:layout_marginEnd="4dp">
 
-                    <TextView 
-                        android:id="@+id/iconToggleAnnotation" 
-                        android:layout_width="28dp" 
-                        android:layout_height="28dp" 
-                        android:text="edit_off" 
-                        android:textSize="20sp" 
-                        android:textColor="#9E9E9E" 
-                        android:fontFamily="@font/materialicons" 
-                        android:gravity="center" />
+                    <TextView
+                        android:id="@+id/iconToggleAnnotation"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:text="edit_off"
+                        android:textSize="20sp"
+                        android:textColor="#9E9E9E"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:layout_marginEnd="8dp" />
 
-                    <LinearLayout 
-                        android:layout_width="0dp" 
-                        android:layout_weight="1" 
-                        android:layout_height="wrap_content" 
-                        android:orientation="vertical"
-                        android:paddingStart="8dp">
-                        <TextView 
-                            android:id="@+id/labelToggleAnnotation" 
-                            android:layout_width="wrap_content" 
-                            android:layout_height="wrap_content" 
-                            android:text="@string/annotation_annotate" 
-                            android:textSize="12sp" 
-                            android:textColor="#FFFFFF" 
-                            android:textStyle="bold" 
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/labelToggleAnnotation"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/annotation_annotate"
+                            android:textSize="12sp"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold"
                             android:fontFamily="@font/ubuntu_regular" />
 
-                        <TextView 
-                            android:id="@+id/descToggleAnnotation" 
-                            android:layout_width="wrap_content" 
-                            android:layout_height="wrap_content" 
-                            android:text="@string/annotation_enable_tools" 
-                            android:textSize="9sp" 
-                            android:textColor="#80FFFFFF" 
-                            android:fontFamily="@font/ubuntu_regular" 
-                            android:layout_marginTop="1dp" />
+                        <TextView
+                            android:id="@+id/descToggleAnnotation"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/annotation_enable_tools"
+                            android:textSize="9sp"
+                            android:textColor="#80FFFFFF"
+                            android:fontFamily="@font/ubuntu_regular"
+                            android:layout_marginTop="2dp" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <!-- Hide/Show Canvas -->
-                <LinearLayout 
-                    android:id="@+id/btnToggleCanvasVisibility" 
-                    android:layout_width="0dp" 
-                    android:layout_height="wrap_content"
-                    android:minHeight="56dp"
+                <LinearLayout
+                    android:id="@+id/btnToggleCanvasVisibility"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:orientation="horizontal" 
+                    android:minHeight="56dp"
+                    android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:paddingHorizontal="8dp"
-                    android:background="@drawable/quick_access_button_bg" 
-                    android:clickable="true" 
+                    android:paddingVertical="8dp"
+                    android:background="@drawable/quick_access_button_bg"
+                    android:clickable="true"
                     android:focusable="true"
                     android:layout_marginStart="4dp">
 
-                    <TextView 
-                        android:id="@+id/iconToggleCanvasVisibility" 
-                        android:layout_width="28dp" 
-                        android:layout_height="28dp" 
-                        android:text="visibility" 
-                        android:textSize="20sp" 
-                        android:textColor="#2196F3" 
-                        android:fontFamily="@font/materialicons" 
-                        android:gravity="center" />
+                    <TextView
+                        android:id="@+id/iconToggleCanvasVisibility"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:text="visibility"
+                        android:textSize="20sp"
+                        android:textColor="#2196F3"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:layout_marginEnd="8dp" />
 
-                    <LinearLayout 
-                        android:layout_width="0dp" 
-                        android:layout_weight="1" 
-                        android:layout_height="wrap_content" 
-                        android:orientation="vertical"
-                        android:paddingStart="8dp">
-                        <TextView 
-                            android:id="@+id/labelToggleCanvasVisibility" 
-                            android:layout_width="wrap_content" 
-                            android:layout_height="wrap_content" 
-                            android:text="@string/annotation_canvas" 
-                            android:textSize="12sp" 
-                            android:textColor="#FFFFFF" 
-                            android:textStyle="bold" 
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/labelToggleCanvasVisibility"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/annotation_canvas"
+                            android:textSize="12sp"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold"
                             android:fontFamily="@font/ubuntu_regular" />
 
-                        <TextView 
-                            android:id="@+id/descToggleCanvasVisibility" 
-                            android:layout_width="wrap_content" 
-                            android:layout_height="wrap_content" 
-                            android:text="@string/annotation_toggle_visibility" 
-                            android:textSize="9sp" 
-                            android:textColor="#80FFFFFF" 
-                            android:fontFamily="@font/ubuntu_regular" 
-                            android:layout_marginTop="1dp" />
+                        <TextView
+                            android:id="@+id/descToggleCanvasVisibility"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/annotation_toggle_visibility"
+                            android:textSize="9sp"
+                            android:textColor="#80FFFFFF"
+                            android:fontFamily="@font/ubuntu_regular"
+                            android:layout_marginTop="2dp" />
                     </LinearLayout>
                 </LinearLayout>
+
             </LinearLayout>
             </LinearLayout> <!-- Close quickAccessContent -->
 
