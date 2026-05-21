@@ -43,14 +43,14 @@
                         android:src="@drawable/fadrec"
                         android:adjustViewBounds="true"
                         android:scaleType="fitCenter"
-                        android:contentDescription="FadRec Logo"
+                        android:contentDescription="@string/desc_fadrec_logo"
                         android:padding="0dp"
                         android:layout_marginEnd="4dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="by FadSec Lab"
+                        android:text="@string/annotation_by_fadsec_lab"
                         android:textSize="11sp"
                         android:textColor="#B0B0B0"
                         android:fontFamily="@font/ubuntu_regular"
@@ -258,7 +258,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Quick Access"
+                    android:text="@string/annotation_quick_access"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:textColor="@color/annotation_heading_accent"
@@ -326,7 +326,7 @@
                             android:id="@+id/labelToggleAnnotation" 
                             android:layout_width="wrap_content" 
                             android:layout_height="wrap_content" 
-                            android:text="Annotate" 
+                            android:text="@string/annotation_annotate" 
                             android:textSize="12sp" 
                             android:textColor="#FFFFFF" 
                             android:textStyle="bold" 
@@ -336,7 +336,7 @@
                             android:id="@+id/descToggleAnnotation" 
                             android:layout_width="wrap_content" 
                             android:layout_height="wrap_content" 
-                            android:text="Enable tools" 
+                            android:text="@string/annotation_enable_tools" 
                             android:textSize="9sp" 
                             android:textColor="#80FFFFFF" 
                             android:fontFamily="@font/ubuntu_regular" 
@@ -378,7 +378,7 @@
                             android:id="@+id/labelToggleCanvasVisibility" 
                             android:layout_width="wrap_content" 
                             android:layout_height="wrap_content" 
-                            android:text="Canvas" 
+                            android:text="@string/annotation_canvas" 
                             android:textSize="12sp" 
                             android:textColor="#FFFFFF" 
                             android:textStyle="bold" 
@@ -388,7 +388,7 @@
                             android:id="@+id/descToggleCanvasVisibility" 
                             android:layout_width="wrap_content" 
                             android:layout_height="wrap_content" 
-                            android:text="Toggle visibility" 
+                            android:text="@string/annotation_toggle_visibility" 
                             android:textSize="9sp" 
                             android:textColor="#80FFFFFF" 
                             android:fontFamily="@font/ubuntu_regular" 
@@ -427,7 +427,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Project"
+                    android:text="@string/annotation_project"
                     android:textSize="12sp"
                     android:textStyle="bold"
                     android:textColor="@color/annotation_heading_accent"
@@ -494,7 +494,7 @@
                                 android:id="@+id/txtCurrentProjectName" 
                                 android:layout_width="wrap_content" 
                                 android:layout_height="wrap_content" 
-                                android:text="Untitled Project" 
+                                 android:text="@string/annotation_untitled_project" 
                                 android:textSize="13sp" 
                                 android:textColor="#FFFFFF" 
                                 android:textStyle="bold" 
@@ -506,7 +506,7 @@
                                 android:id="@+id/txtCurrentProjectDesc" 
                                 android:layout_width="wrap_content" 
                                 android:layout_height="wrap_content" 
-                                android:text="Tap to add description" 
+                                 android:text="@string/annotation_tap_to_add_desc" 
                                 android:textSize="10sp" 
                                 android:textColor="#80FFFFFF" 
                                 android:fontFamily="@font/ubuntu_regular"
@@ -553,7 +553,7 @@
                         android:layout_width="0dp" 
                         android:layout_height="wrap_content" 
                         android:layout_weight="1"
-                        android:text="Manage Projects" 
+                        android:text="@string/annotation_manage_projects" 
                         android:textSize="13sp" 
                         android:textColor="#FFFFFF" 
                         android:textStyle="bold" 
@@ -637,12 +637,12 @@
 
                         <TextView android:id="@+id/btnClearAll" android:layout_width="32dp" android:layout_height="32dp" android:gravity="center" android:text="delete_sweep" android:textSize="18sp" android:textColor="#FF5252" android:fontFamily="@font/materialicons" android:background="@drawable/floating_button_item_bg" android:clickable="true" android:focusable="true" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Delete All" android:textSize="8sp" android:textColor="#9E9E9E" android:fontFamily="@font/ubuntu_regular" android:gravity="center" android:layout_marginTop="1dp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                         android:text="@string/annotation_delete_all"  android:textSize="8sp" android:textColor="#9E9E9E" android:fontFamily="@font/ubuntu_regular" android:gravity="center" android:layout_marginTop="1dp" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <!-- Tools Heading -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tools" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="8dp" android:paddingBottom="2dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                 android:text="@string/annotation_tools_label"  android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="8dp" android:paddingBottom="2dp" />
 
                 <!-- Tools Row -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp">
@@ -652,7 +652,7 @@
 
                         <TextView android:id="@+id/iconSelectTool" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="pan_tool" android:textSize="18sp" android:textColor="#4CAF50" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Select" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                         android:text="@string/annotation_select" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
                     </LinearLayout>
 
                     <!-- Pen Tool -->
@@ -660,7 +660,7 @@
 
                         <TextView android:id="@+id/iconPenTool" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="edit" android:textSize="18sp" android:textColor="#4CAF50" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Pen" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                         android:text="@string/annotation_pen" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
                     </LinearLayout>
 
                     <!-- Eraser Tool -->
@@ -668,7 +668,7 @@
 
                         <TextView android:id="@+id/iconEraserTool" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="cleaning_services" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Erase" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                         android:text="@string/annotation_erase" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
                     </LinearLayout>
 
                     <!-- Text Tool -->
@@ -676,7 +676,7 @@
 
                         <TextView android:id="@+id/iconTextTool" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="text_fields" android:textSize="18sp" android:textColor="#FFEB3B" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Text" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                         android:text="@string/annotation_text" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
                     </LinearLayout>
 
                     <!-- Shape Tool -->
@@ -684,12 +684,12 @@
 
                         <TextView android:id="@+id/iconShapeTool" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="category" android:textSize="18sp" android:textColor="#FF5722" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Shape" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                         android:text="@string/annotation_shape" android:textSize="7sp" android:textColor="#FFFFFF" android:fontFamily="@font/ubuntu_regular" android:layout_marginTop="1dp" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <!-- Colors Heading -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Colors" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                 android:text="@string/annotation_colors" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
 
                 <!-- Colors Row -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp">
@@ -711,7 +711,7 @@
                 </LinearLayout>
 
                 <!-- Stroke Size Heading -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Stroke Size" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                 android:text="@string/annotation_stroke_size" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:fontFamily="@font/ubuntu_regular" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
 
                 <!-- Stroke Widths Row -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp" android:paddingBottom="6dp">
@@ -726,7 +726,7 @@
                 </LinearLayout>
 
                 <!-- Board Heading -->
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Board" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                 android:text="@string/annotation_board" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/annotation_heading_accent" android:paddingStart="8dp" android:paddingTop="6dp" android:paddingBottom="2dp" />
 
                 <!-- Background Tools Row -->
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:paddingTop="2dp" android:paddingBottom="6dp">
@@ -736,7 +736,7 @@
 
                         <TextView android:id="@+id/iconBoardNone" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="block" android:textSize="18sp" android:textColor="#9E9E9E" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="None" android:textSize="7sp" android:textColor="#FFFFFF" android:layout_marginTop="1dp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                         android:text="@string/annotation_board_none" android:textSize="7sp" android:textColor="#FFFFFF" android:layout_marginTop="1dp" />
                     </LinearLayout>
 
                     <!-- Black Board -->
@@ -744,7 +744,7 @@
 
                         <TextView android:id="@+id/iconBoardBlack" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="square" android:textSize="18sp" android:textColor="#000000" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Black" android:textSize="7sp" android:textColor="#FFFFFF" android:layout_marginTop="1dp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                         android:text="@string/annotation_board_black" android:textSize="7sp" android:textColor="#FFFFFF" android:layout_marginTop="1dp" />
                     </LinearLayout>
 
                     <!-- White Board -->
@@ -752,7 +752,7 @@
 
                         <TextView android:id="@+id/iconBoardWhite" android:layout_width="28dp" android:layout_height="28dp" android:gravity="center" android:text="square" android:textSize="18sp" android:textColor="#FFFFFF" android:fontFamily="@font/materialicons" android:background="@drawable/annotation_tool_bg" />
 
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="White" android:textSize="7sp" android:textColor="#FFFFFF" android:layout_marginTop="1dp" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"                         android:text="@string/annotation_board_white" android:textSize="7sp" android:textColor="#FFFFFF" android:layout_marginTop="1dp" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

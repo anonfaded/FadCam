@@ -167,7 +167,7 @@ public class ForensicsExportCenterFragment extends Fragment {
                         pathButton.setEnabled(true);
                     }
                     if (status != null) {
-                        status.setText(e.getMessage() == null ? "Export failed" : e.getMessage());
+                        status.setText(e.getMessage() == null ? getString(R.string.forensics_export_failed) : e.getMessage());
                     }
                 });
             }

@@ -708,13 +708,13 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     @Override
     public void onPlayVideoRequested(TrashItem item) {
         if (getContext() == null || item == null || item.getTrashFileName() == null) {
-            Toast.makeText(getContext(), "Cannot open file. Invalid item data.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.trash_cannot_open), Toast.LENGTH_SHORT).show();
             return;
         }
 
         File trashDirectory = TrashManager.getTrashDirectory(getContext());
         if (trashDirectory == null) {
-            Toast.makeText(getContext(), "Cannot access trash directory.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.trash_cannot_access_dir), Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -722,7 +722,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
 
         if (!trashedFile.exists()) {
             FLog.e(TAG, "Trashed file does not exist: " + trashedFile.getAbsolutePath());
-            Toast.makeText(getContext(), "File not found in trash.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.trash_file_not_found), Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -735,7 +735,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
             startActivity(intent);
         } catch (Exception e) {
             FLog.e(TAG, "Error opening trash item: " + trashedFile.getAbsolutePath(), e);
-            Toast.makeText(getContext(), "Error opening file.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.trash_error_opening), Toast.LENGTH_SHORT).show();
         }
     }
 

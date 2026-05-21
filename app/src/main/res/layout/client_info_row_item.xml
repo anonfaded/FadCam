@@ -71,7 +71,7 @@
                 android:layout_height="20dp"
                 android:src="@drawable/ic_copy"
                 android:tint="@android:color/darker_gray"
-                android:contentDescription="Copy IP"
+                android:contentDescription="@string/desc_copy_ip"
                 android:layout_marginStart="8dp" />
         </LinearLayout>
 

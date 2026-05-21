@@ -56,7 +56,7 @@ public class NetworkHealthBottomSheet extends BottomSheetDialogFragment {
         
         // Test Now button
         testNowButton.setOnClickListener(v -> {
-            testNowButton.setText("Testing...");
+            testNowButton.setText(getString(R.string.network_testing));
             testNowButton.setEnabled(false);
             
             NetworkMonitor.getInstance().testNow();
@@ -64,7 +64,7 @@ public class NetworkHealthBottomSheet extends BottomSheetDialogFragment {
             // Re-enable after 3 seconds
             view.postDelayed(() -> {
                 if (testNowButton != null) {
-                    testNowButton.setText("Test Now");
+                    testNowButton.setText(getString(R.string.network_test_now));
                     testNowButton.setEnabled(true);
                     loadNetworkData();
                 }
@@ -87,21 +87,21 @@ public class NetworkHealthBottomSheet extends BottomSheetDialogFragment {
         if (health.getDownloadSpeedMbps() > 0) {
             downloadSpeedText.setText(String.format(Locale.US, "%.2f Mbps", health.getDownloadSpeedMbps()));
         } else {
-            downloadSpeedText.setText("Not tested");
+            downloadSpeedText.setText(getString(R.string.network_not_tested));
         }
         
         // Upload speed
         if (health.getUploadSpeedMbps() > 0) {
             uploadSpeedText.setText(String.format(Locale.US, "%.2f Mbps", health.getUploadSpeedMbps()));
         } else {
-            uploadSpeedText.setText("Not tested");
+            uploadSpeedText.setText(getString(R.string.network_not_tested));
         }
         
         // Latency
         if (health.getLatencyMs() >= 0) {
             latencyText.setText(health.getLatencyMs() + " ms");
         } else {
-            latencyText.setText("Unknown");
+            latencyText.setText(getString(R.string.network_unknown));
         }
         
         // Last tested
@@ -127,7 +127,7 @@ public class NetworkHealthBottomSheet extends BottomSheetDialogFragment {
             signalStrengthText.setText(signalLevel + "/4 Bars");
             updateSignalBars(signalLevel);
         } else {
-            signalStrengthText.setText("Unknown");
+            signalStrengthText.setText(getString(R.string.network_unknown));
             updateSignalBars(-1);
         }
     }

@@ -313,7 +313,7 @@ public class WatermarkSettingsFragment extends Fragment {
 
     private void refreshLocationValue() {
         if (valueLocationWatermark != null) {
-            valueLocationWatermark.setText(prefs.isLocalisationEnabled() ? "Enabled" : "Disabled");
+            valueLocationWatermark.setText(prefs.isLocalisationEnabled() ? getString(R.string.setting_enabled) : getString(R.string.setting_disabled));
         }
     }
 

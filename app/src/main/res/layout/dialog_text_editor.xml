@@ -2,15 +2,15 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp" android:background="@drawable/settings_group_card_bg">
 
     <!-- Header with emoji -->
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="✏️ Add Text" android:textSize="20sp" android:textStyle="bold" android:textColor="#FFFFFF" android:gravity="center" android:layout_marginBottom="16dp" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/text_editor_title" android:textSize="20sp" android:textStyle="bold" android:textColor="#FFFFFF" android:gravity="center" android:layout_marginBottom="16dp" />
 
     <!-- Text input -->
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Text Content" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="4dp" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/text_editor_content_label" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="4dp" />
 
-    <EditText android:id="@+id/editTextContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="100dp" android:hint="Type your text here..." android:gravity="top|start" android:padding="12dp" android:background="@drawable/settings_home_row_bg" android:textSize="16sp" android:textColor="#FFFFFF" android:textColorHint="#757575" android:inputType="textMultiLine|textCapSentences" android:layout_marginBottom="16dp" />
+    <EditText android:id="@+id/editTextContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="100dp" android:hint="@string/text_editor_hint" android:gravity="top|start" android:padding="12dp" android:background="@drawable/settings_home_row_bg" android:textSize="16sp" android:textColor="#FFFFFF" android:textColorHint="#757575" android:inputType="textMultiLine|textCapSentences" android:layout_marginBottom="16dp" />
 
     <!-- Font size slider -->
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📏 Font Size" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="4dp" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/text_editor_font_size" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="4dp" />
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="16dp">
 
@@ -20,7 +20,7 @@
     </LinearLayout>
 
     <!-- Text style toggles -->
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎨 Text Style" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="8dp" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/text_editor_style" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="8dp" />
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:layout_marginBottom="16dp">
 
@@ -32,7 +32,7 @@
     </LinearLayout>
 
     <!-- Color picker -->
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎨 Text Color" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="8dp" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/text_editor_color" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="8dp" />
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:layout_marginBottom="24dp">
 
@@ -52,9 +52,9 @@
     <!-- Action buttons -->
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="end">
 
-        <TextView android:id="@+id/btnCancel" android:layout_width="wrap_content" android:layout_height="48dp" android:text="Cancel" android:textSize="16sp" android:textColor="#9E9E9E" android:gravity="center" android:paddingHorizontal="24dp" android:background="@drawable/settings_home_row_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="8dp" />
+        <TextView android:id="@+id/btnCancel" android:layout_width="wrap_content" android:layout_height="48dp" android:text="@string/text_editor_cancel" android:textSize="16sp" android:textColor="#9E9E9E" android:gravity="center" android:paddingHorizontal="24dp" android:background="@drawable/settings_home_row_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="8dp" />
 
-        <TextView android:id="@+id/btnConfirm" android:layout_width="wrap_content" android:layout_height="48dp" android:text="✓ Add Text" android:textSize="16sp" android:textStyle="bold" android:textColor="#4CAF50" android:gravity="center" android:paddingHorizontal="24dp" android:background="@drawable/settings_home_row_bg" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/btnConfirm" android:layout_width="wrap_content" android:layout_height="48dp" android:text="@string/text_editor_add_text" android:textSize="16sp" android:textStyle="bold" android:textColor="#4CAF50" android:gravity="center" android:paddingHorizontal="24dp" android:background="@drawable/settings_home_row_bg" android:clickable="true" android:focusable="true" />
     </LinearLayout>
 
 </LinearLayout>

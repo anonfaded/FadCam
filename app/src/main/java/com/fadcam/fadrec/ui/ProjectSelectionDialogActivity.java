@@ -83,7 +83,7 @@ public class ProjectSelectionDialogActivity extends Activity {
         
         // Create dialog
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
-        builder.setTitle("My Projects");
+        builder.setTitle(getString(R.string.annotation_my_projects));
         builder.setView(scrollView);
         builder.setNegativeButton("Close", (dialog, which) -> finish());
         builder.setOnCancelListener(dialog -> finish());

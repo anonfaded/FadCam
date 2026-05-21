@@ -438,15 +438,15 @@ public class AnnotationService extends Service {
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(themedContext);
 
         androidx.appcompat.app.AlertDialog deleteAllDialog = builder
-                .setTitle("Delete All Projects?")
+                .setTitle(getString(R.string.annotation_delete_all_title))
                 .setMessage("This will permanently delete ALL projects. This action cannot be undone!")
-                .setPositiveButton("Delete All", (dialog, which) -> {
+                .setPositiveButton(getString(R.string.annotation_delete_all_btn), (dialog, which) -> {
                     File[] projects = projectFileManager.listProjects();
                     if (projects != null) {
                         for (File project : projects) {
                             projectFileManager.deleteProject(project.getName());
                         }
-                        Toast.makeText(this, "All projects deleted", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.annotation_all_deleted), Toast.LENGTH_SHORT).show();
                         parentDialog.dismiss();
                         // Create a new project
                         createNewProject();
@@ -789,7 +789,7 @@ public class AnnotationService extends Service {
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(themedContext);
 
         androidx.appcompat.app.AlertDialog startupDialog = builder
-                .setTitle("Welcome Back!")
+                .setTitle(getString(R.string.annotation_welcome_back))
                 .setMessage("Continue with your last saved project \"" + sanitizedName + "\" or start a new one?")
                 .setPositiveButton("Continue", (dialog, which) -> {
                     dialog.dismiss();
@@ -3581,7 +3581,7 @@ public class AnnotationService extends Service {
                     FLog.d(TAG, "Auto-collapsed menu after text creation");
                 }
             } else {
-                Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.annotation_layer_locked), Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -4007,14 +4007,14 @@ public class AnnotationService extends Service {
             // Annotation ENABLED - ready to draw
             iconAnnotation.setText("edit");
             iconAnnotation.setTextColor(getResources().getColor(android.R.color.holo_green_light));
-            labelAnnotation.setText("Disable Annotation");
-            descAnnotation.setText("Disable to use screen normally");
+            labelAnnotation.setText(getString(R.string.annotation_disable));
+            descAnnotation.setText(getString(R.string.annotation_disable_desc));
             Toast.makeText(this, "✏️ Annotation Enabled - Draw freely", Toast.LENGTH_SHORT).show();
         } else {
             // Annotation DISABLED - can use phone normally
             iconAnnotation.setText("edit_off");
             iconAnnotation.setTextColor(getResources().getColor(android.R.color.darker_gray));
-            labelAnnotation.setText("Enable Annotation");
+            labelAnnotation.setText(getString(R.string.annotation_enable));
             descAnnotation.setText("Enable to use annotation tools");
             Toast.makeText(this, "📱 Annotation Disabled - Use phone normally", Toast.LENGTH_SHORT).show();
         }
@@ -4055,8 +4055,8 @@ public class AnnotationService extends Service {
             // Canvas VISIBLE - all layers shown
             iconCanvas.setText("visibility");
             iconCanvas.setTextColor(getResources().getColor(android.R.color.holo_blue_light));
-            labelCanvas.setText("Hide Canvas");
-            descCanvas.setText("Hide all drawings (pinned layers stay)");
+            labelCanvas.setText(getString(R.string.annotation_hide_canvas));
+            descCanvas.setText(getString(R.string.annotation_hide_canvas_desc));
             Toast.makeText(this, "👁️ Canvas Visible", Toast.LENGTH_SHORT).show();
         } else {
             // Canvas HIDDEN - only pinned layers shown
@@ -4517,9 +4517,9 @@ public class AnnotationService extends Service {
                     activeLayer.addObject(shapeObject);
                     annotationView.invalidate();
                     saveCurrentState();
-                    Toast.makeText(this, "📐 Shape added!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.annotation_shape_added), Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, "Layer is locked", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.annotation_layer_locked), Toast.LENGTH_SHORT).show();
                 }
             }
         });

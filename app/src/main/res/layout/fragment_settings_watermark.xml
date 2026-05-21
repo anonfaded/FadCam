@@ -89,10 +89,10 @@
                 android:elevation="0dp">
                 <com.google.android.material.tabs.TabItem
                     android:id="@+id/tab_fadcam"
-                    android:text="FadCam" />
+                    android:text="@string/watermark_preview_fadcam" />
                 <com.google.android.material.tabs.TabItem
                     android:id="@+id/tab_fadrec"
-                    android:text="FadRec" />
+                    android:text="@string/watermark_preview_fadrec" />
             </com.google.android.material.tabs.TabLayout>
 
             <!-- Preview Cards (ViewPager2 — snappy paging) -->
@@ -261,7 +261,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="12dp"
-                            android:text="Coordinates Only"
+                            android:text="@string/setting_coordinates_only"
                             android:textColor="@android:color/darker_gray"
                             android:textSize="12sp"/>
                     </LinearLayout>
@@ -300,7 +300,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="12dp"
-                            android:text="5.0 seconds"
+                            android:text="@string/settings_location_update_interval_5s"
                             android:textColor="@android:color/darker_gray"
                             android:textSize="12sp"/>
                     </LinearLayout>

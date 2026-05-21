@@ -129,7 +129,7 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
         TextView tvNewVersion = view.findViewById(R.id.tvNewVersion);
         String currentVersion = getCurrentAppVersion();
         if (tvCurrentVersion != null) {
-            tvCurrentVersion.setText("v" + currentVersion);
+            tvCurrentVersion.setText(getString(R.string.update_version_prefix) + currentVersion);
             tvCurrentVersion.setTextColor(Color.parseColor("#E43C3C"));
         }
         if (tvArrow != null) {
@@ -137,7 +137,7 @@ public class UpdateAvailableBottomSheet extends BottomSheetDialogFragment {
             tvArrow.setTextColor(Color.WHITE);
         }
         if (tvNewVersion != null) {
-            tvNewVersion.setText("v" + version);
+            tvNewVersion.setText(getString(R.string.update_version_prefix) + version);
             tvNewVersion.setTextColor(Color.parseColor("#77DD77"));
         }
 

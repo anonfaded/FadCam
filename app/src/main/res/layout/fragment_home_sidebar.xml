@@ -471,7 +471,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:focusable="true"
-                android:contentDescription="Mini Apps Info" />
+                android:contentDescription="@string/desc_mini_apps_info" />
 
         </LinearLayout>
 

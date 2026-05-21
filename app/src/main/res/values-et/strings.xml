@@ -2487,4 +2487,269 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>
     <string name="audio_device_type_builtin_mic">Built-in Mic</string>
+
+    <!-- Settings titles -->
+    <string name="settings_behavior_title">Käitumine</string>
+    <string name="settings_onboarding_title">Sissejuhatus</string>
+    <string name="settings_auto_update_check">Automaatne uuenduste kontroll</string>
+    <string name="settings_location_privacy_title">Asukoht ja privaatsus</string>
+    <string name="settings_embed_location_metadata">Lisa asukoha metaandmed</string>
+
+    <!-- Settings values -->
+    <string name="setting_off">Väljas</string>
+    <string name="setting_portrait">Portree</string>
+    <string name="setting_microphone">Mikrofon</string>
+    <string name="setting_coordinates_only">Ainult koordinaadid</string>
+
+    <!-- About fragment -->
+    <string name="about_update_failed">Uuenduste kontrollimine ebaõnnestus. Palun proovi hiljem uuesti.</string>
+    <string name="about_beta_available">\n\nBeeta v%s saadaval</string>
+    <string name="about_dialog_error">Viga</string>
+    <string name="about_dialog_ok">OK</string>
+    <string name="about_get_beta">Hangi beeta</string>
+    <string name="about_fadcam_feedback">FadCam tagasiside</string>
+
+    <!-- Video split sizes -->
+    <string name="video_split_enabled_format">Lubatud (%s)</string>
+    <string name="video_split_size_500mb">500 MB</string>
+    <string name="video_split_size_1gb">1 GB</string>
+    <string name="video_split_size_2gb">2 GB</string>
+    <string name="video_split_size_4gb">4 GB</string>
+    <string name="video_split_size_custom_format">Kohandatud (%d MB)</string>
+    <string name="video_split_change_format">Muuda tükeldamise suurust (Praegune: %s)</string>
+    <string name="video_split_custom_title">Kohandatud tükeldamise suurus (MB)</string>
+
+    <!-- Screen recording values -->
+    <string name="screen_rec_resolution_value" translatable="false">1920×1080</string>
+    <string name="screen_rec_framerate_value" translatable="false">30 fps</string>
+    <string name="screen_rec_bitrate_value" translatable="false">8 Mbps</string>
+    <string name="screen_rec_splitting_value_format">%s (FadCam + FadRec)</string>
+
+    <!-- Settings home tabs -->
+    <string name="settings_tab_all">Kõik</string>
+    <string name="settings_tab_fadcam" translatable="false">FadCam</string>
+    <string name="settings_tab_fadrec" translatable="false">FadRec</string>
+
+    <!-- Watermark preview labels -->
+    <string name="watermark_preview_fadcam" translatable="false">FadCam</string>
+    <string name="watermark_preview_fadrec" translatable="false">FadRec</string>
+    <string name="settings_location_update_interval_5s">5.0 sekundit</string>
+
+    <!-- Annotation toolbar -->
+    <string name="annotation_by_fadsec_lab">FadSec Labi poolt</string>
+    <string name="annotation_quick_access">Kiirjuurdepääs</string>
+    <string name="annotation_annotate">Annoteeri</string>
+    <string name="annotation_enable_tools">Luba tööriistad</string>
+    <string name="annotation_canvas">Lõuend</string>
+    <string name="annotation_toggle_visibility">Lülita nähtavust</string>
+    <string name="annotation_project">Projekt</string>
+    <string name="annotation_untitled_project">Nimetu projekt</string>
+    <string name="annotation_tap_to_add_desc">Puuduta kirjelduse lisamiseks</string>
+    <string name="annotation_manage_projects">Halda projekte</string>
+    <string name="annotation_delete_all">Kustuta kõik</string>
+    <string name="annotation_tools_label">Tööriistad</string>
+    <string name="annotation_select">Vali</string>
+    <string name="annotation_pen">Pliiats</string>
+    <string name="annotation_erase">Kustuta</string>
+    <string name="annotation_text">Tekst</string>
+    <string name="annotation_shape">Kuju</string>
+    <string name="annotation_colors">Värvid</string>
+    <string name="annotation_stroke_size">Joone paksus</string>
+    <string name="annotation_board">Tahvel</string>
+    <string name="annotation_board_none">Puudub</string>
+    <string name="annotation_board_black">Must</string>
+    <string name="annotation_board_white">Valge</string>
+
+    <!-- Shape picker dialog -->
+    <string name="shape_picker_title">📐 Lisa kuju</string>
+    <string name="shape_picker_choose_shape">Vali kuju</string>
+    <string name="shape_picker_rectangle">Ristkülik</string>
+    <string name="shape_picker_circle">Ring</string>
+    <string name="shape_picker_arrow">Nool</string>
+    <string name="shape_picker_triangle">Kolmnurk</string>
+    <string name="shape_picker_star">Täht</string>
+    <string name="shape_picker_line">Joon</string>
+    <string name="shape_picker_fill_shape">Täida kuju</string>
+    <string name="shape_picker_color">🎨 Kuju värv</string>
+    <string name="shape_picker_tip">💡 Nip: Pärast valimist lohista lõuendil kuju loomiseks</string>
+    <string name="shape_picker_got_it">Sain aru!</string>
+
+    <!-- Text editor dialog -->
+    <string name="text_editor_title">✏️ Lisa tekst</string>
+    <string name="text_editor_content_label">Teksti sisu</string>
+    <string name="text_editor_hint">Kirjuta oma tekst siia...</string>
+    <string name="text_editor_font_size">📏 Fondi suurus</string>
+    <string name="text_editor_style">🎨 Teksti stiil</string>
+    <string name="text_editor_color">🎨 Teksti värv</string>
+    <string name="text_editor_cancel">Tühista</string>
+    <string name="text_editor_add_text">✓ Lisa tekst</string>
+
+    <!-- Annotation Service -->
+    <string name="annotation_disable">Keela annotatsioon</string>
+    <string name="annotation_disable_desc">Keela ekraani tavapäraseks kasutamiseks</string>
+    <string name="annotation_enable">Luba annotatsioon</string>
+    <string name="annotation_hide_canvas">Peida lõuend</string>
+    <string name="annotation_hide_canvas_desc">Peida kõik joonistused (kinnitatud kihid jäävad)</string>
+    <string name="annotation_delete_all_title">Kustuta kõik projektid?</string>
+    <string name="annotation_delete_all_btn">Kustuta kõik</string>
+    <string name="annotation_all_deleted">Kõik projektid kustutatud</string>
+    <string name="annotation_layer_locked">Kiht on lukustatud</string>
+    <string name="annotation_welcome_back">Tere tulemast tagasi!</string>
+    <string name="annotation_my_projects">Minu projektid</string>
+    <string name="annotation_pick_color">Vali värv</string>
+    <string name="annotation_shape_added">📐 Kuju lisatud!</string>
+
+    <!-- Content descriptions -->
+    <string name="desc_align_center">Joonda keskele</string>
+    <string name="desc_align_left">Joonda vasakule</string>
+    <string name="desc_align_right">Joonda paremale</string>
+    <string name="desc_autofocus_toggle">Automaatteravustuse lüliti</string>
+    <string name="desc_available_space">Saadaval ruumi edenemine</string>
+    <string name="desc_battery_used">Aku kasutuse edenemine</string>
+    <string name="desc_bold">Rasvane</string>
+    <string name="desc_close">Sulge</string>
+    <string name="desc_copy_ip">Kopeeri IP</string>
+    <string name="desc_copy_url">Kopeeri URL</string>
+    <string name="desc_decrease">Vähenda</string>
+    <string name="desc_delete_text">Kustuta tekst</string>
+    <string name="desc_done">Valmis</string>
+    <string name="desc_exposure_compensation">Särikompensatsioon</string>
+    <string name="desc_fadrec_logo">FadRec logo</string>
+    <string name="desc_fast_forward">Kiire edasi 5 sekundit</string>
+    <string name="desc_increase">Suurenda</string>
+    <string name="desc_italic">Kaldkiri</string>
+    <string name="desc_memory_used">Mälu kasutuse edenemine</string>
+    <string name="desc_mini_apps_info">Minirakenduste teave</string>
+    <string name="desc_open_settings">Ava seaded</string>
+    <string name="desc_open_video_stats">Ava video statistika</string>
+    <string name="desc_reset">Lähtesta</string>
+    <string name="desc_reset_zoom">Lähtesta suum</string>
+    <string name="desc_rewind">Tagasi keri 5 sekundit</string>
+    <string name="desc_storage_used">Mälu kasutuse edenemine</string>
+    <string name="desc_text_background">Teksti taust</string>
+    <string name="desc_time_left_icon">Aega jäänud ikoon</string>
+    <string name="desc_video_options">Video valikud</string>
+    <string name="desc_video_thumbnail">Video pisipilt</string>
+    <string name="desc_zoom_ratio">Suumi suhe</string>
+
+    <!-- Notification channel names -->
+    <string name="channel_torch_service">Taskulambi teenus</string>
+    <string name="channel_security_alarm">Turvahäire</string>
+    <string name="channel_remote_streaming">Kaugvoogedastus</string>
+    <string name="channel_annotation_service">Annotatsiooni teenus</string>
+    <string name="channel_fadcam_file_ops">FadCam failitoimingud</string>
+
+    <!-- ScreenRecordingService -->
+    <string name="screen_rec_failed">Salvestamine nurjus: %s</string>
+    <string name="screen_rec_permission_required">Ekraanisalvestuse luba on vajalik</string>
+    <string name="screen_rec_file_error">Viga ekraanisalvestuse faili loomisel</string>
+    <string name="screen_rec_dir_error">Viga ekraanisalvestuse kataloogi loomisel</string>
+    <string name="screen_rec_output_error">Viga ekraanisalvestuse väljundi seadistamisel</string>
+    <string name="screen_rec_start_error">Ekraanisalvestuse käivitamine nurjus</string>
+    <string name="screen_rec_codec_error">MediaCodec viga ekraanisalvestuse ajal</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_share_error">Seda faili ei saa jagada</string>
+    <string name="records_open_error">Seda faili ei saa avada</string>
+    <string name="records_trash_error">Faili ei saa prügikasti teisaldada</string>
+    <string name="records_saf_warning">Valisite SAF kohandatud kataloogi — välised failihaldurid ei pruugi salvestisi näha. Et need nähtavaks muuta, lülitage salvestusrežiim tagasi valikule \'Sisemine\'.</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_processing">Töötlemine...</string>
+    <string name="records_processing_complete">Töötlemine lõpetatud</string>
+    <string name="records_processing_failed">Töötlemine nurjus</string>
+    <string name="records_delete_error">Salvestise kustutamine nurjus</string>
+    <string name="records_export_success">Edukalt eksporditud</string>
+    <string name="records_export_failed">Eksport nurjus</string>
+    <string name="records_no_files">Salvestisi ei leitud</string>
+    <string name="records_confirm_delete">Kustuta see salvestis?</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_open">Faili ei saa avada</string>
+    <string name="trash_file_not_found">Faili ei leitud prügikastist</string>
+    <string name="trash_restored">Fail prügikastist taastatud</string>
+    <string name="trash_deleted">Fail jäädavalt kustutatud</string>
+    <string name="trash_empty">Prügikast on tühi</string>
+
+    <!-- MainActivity -->
+    <string name="press_back_again_exit">Väljumiseks vajuta uuesti tagasi</string>
+
+    <!-- NetworkHealthBottomSheet -->
+    <string name="network_testing">Testimine...</string>
+    <string name="network_test_now">Testi kohe</string>
+    <string name="network_not_tested">Testimata</string>
+    <string name="network_unknown">Tundmatu</string>
+
+    <!-- ClientDataBottomSheet -->
+    <string name="client_cloud_viewers">Pilvevaatajad</string>
+    <string name="client_active_clients">Aktiivsed kliendid</string>
+    <string name="client_no_clients">Kliente pole ühendatud</string>
+
+    <!-- ScanInfoBottomSheet -->
+    <string name="scan_info_title">Skanni teave</string>
+    <string name="scan_copied_clipboard">Lõikelauale kopeeritud</string>
+    <string name="scan_copy_metadata">Kopeeri skanni metaandmed lõikelauale</string>
+    <string name="scan_value_copied">Väärtus kopeeritud</string>
+
+    <!-- UpdateAvailableBottomSheet -->
+    <string name="update_version_prefix">v</string>
+
+    <!-- ClientEventLogsBottomSheet -->
+    <string name="events_title">Sündmused: %s</string>
+    <string name="events_no_events">Sündmusi pole salvestatud</string>
+
+    <!-- Additional ScreenRecordingService strings -->
+    <string name="screen_rec_permission_error">Loa viga: %s</string>
+    <string name="screen_rec_mediaprojection_error">MediaProjection viga: %s</string>
+    <string name="screen_rec_cannot_write_custom">Kohandatud kataloogi ei saa kirjutada</string>
+    <string name="screen_rec_failed_create_custom">Faili loomine kohandatud asukohas nurjus</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_error_video_info">Viga video teabe kuvamisel.</string>
+    <string name="records_cannot_open_editor">Redaktorit ei saa avada</string>
+    <string name="records_cannot_share">Video jagamine nurjus: %s</string>
+    <string name="records_cannot_open_video">Video avamine nurjus: %s</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_export_label">Ekspordi</string>
+    <string name="records_export_custom_label">Ekspordi kohandatult</string>
+    <string name="records_merge_label">Ühenda</string>
+    <string name="records_batch_operation">Hulgitoiming</string>
+    <string name="records_error_opening_media">Viga meedia avamisel</string>
+    <string name="records_no_videos_delete">Pole videoid kustutamiseks.</string>
+    <string name="records_no_videos_trash">Pole videoid prügikasti teisaldamiseks.</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_access_dir">Prügikasti kataloogile ei pääse ligi.</string>
+    <string name="trash_error_opening">Viga faili avamisel.</string>
+
+    <!-- ForensicsExportCenterFragment / RecordsDeletionService -->
+    <string name="export_destination_none">Ekspordi sihtkohta pole määratud</string>
+    <string name="generic_delete_failed">Kustutamine nurjus</string>
+    <string name="generic_save_failed">Salvestamine nurjus</string>
+
+    <!-- Forensics -->
+    <string name="forensics_export_failed">Eksport nurjus</string>
+
+    <!-- RecordingService error toasts -->
+    <string name="toast_preview_only_front_back">Otse-eelvaade on saadaval ainult esi-/tagakaamera jaoks</string>
+    <string name="toast_camera_permission_denied">Kaamera luba keelatud teenuse jaoks</string>
+    <string name="toast_camera_not_responding">Kaamera teenus ei vasta. Proovi uuesti.</string>
+    <string name="toast_camera_not_found">Valitud kaamera leidmine nurjus</string>
+    <string name="toast_camera_unavailable">Kaamera korduvalt kättesaamatu (Põhjus: %s). Peatan.</string>
+    <string name="toast_camera_access_error">Kaamera juurdepääsu viga: %s</string>
+    <string name="toast_invalid_camera_config">Vigane kaamera seadistus.</string>
+    <string name="toast_unexpected_camera_error">Ootamatu kaamera viga.</string>
+    <string name="toast_failed_camera_details">Kaamera üksikasjadele juurdepääs nurjus.</string>
+    <string name="toast_invalid_camera_setup">Vigane kaamera seadistus.</string>
+    <string name="toast_critical_camera_error">Kriitiline kaamera süsteemi viga.</string>
+    <string name="toast_processing_error">Viga videosalvestuse töötlemisel</string>
+    <string name="toast_notification_permission">Teavituse luba on vajalik</string>
+    <string name="toast_create_recording_dir_error">Viga salvestuskataloogi loomisel</string>
+    <string name="toast_create_storage_dir_error">Viga sisemälu kataloogi loomisel</string>
+    <string name="toast_permissions_required">Salvestamiseks on vajalikud load</string>
+    <string name="toast_failed_open_file">Faili avamine kirjutamiseks nurjus</string>
+    <string name="toast_cannot_write_custom_dir">Valitud kohandatud kataloogi ei saa kirjutada</string>
+    <string name="toast_failed_create_file">Faili loomine kirjutamiseks nurjus</string>
+
 </resources>

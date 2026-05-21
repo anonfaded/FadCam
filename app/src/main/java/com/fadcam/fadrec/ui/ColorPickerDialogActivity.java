@@ -84,7 +84,7 @@ public class ColorPickerDialogActivity extends Activity {
         
         // Create Material dialog
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this);
-        builder.setTitle("Pick a Color");
+        builder.setTitle(getString(R.string.annotation_pick_color));
         builder.setView(scrollView);
         builder.setNegativeButton("Cancel", (dialog, which) -> finish());
         builder.setOnCancelListener(dialog -> finish());

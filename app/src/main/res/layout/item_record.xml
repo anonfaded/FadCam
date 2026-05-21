@@ -37,7 +37,7 @@
                 android:id="@+id/image_view_thumbnail"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:contentDescription="Video thumbnail"
+                android:contentDescription="@string/desc_video_thumbnail"
                 android:scaleType="centerCrop"
                 tools:srcCompat="@tools:sample/backgrounds/scenic" />
 
@@ -210,7 +210,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:background="?android:attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="Video options"
+                        android:contentDescription="@string/desc_video_options"
                         android:padding="8dp"
                         android:src="@drawable/ic_more_vert" />
 

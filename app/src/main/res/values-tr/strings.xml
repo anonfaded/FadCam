@@ -2391,4 +2391,261 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>
     <string name="audio_device_type_builtin_mic">Built-in Mic</string>
+
+    <!-- Settings values -->
+    <string name="setting_off">Kapalı</string>
+    <string name="setting_portrait">Portre</string>
+    <string name="setting_microphone">Mikrofon</string>
+    <string name="setting_coordinates_only">Yalnızca Koordinatlar</string>
+
+    <!-- Settings titles -->
+    <string name="settings_behavior_title">Davranış</string>
+    <string name="settings_onboarding_title">Karşılama</string>
+    <string name="settings_auto_update_check">Otomatik Güncelleme Kontrolü</string>
+    <string name="settings_location_privacy_title">Konum ve Gizlilik</string>
+    <string name="settings_embed_location_metadata">Konum Meta Verilerini Göm</string>
+
+    <!-- About fragment -->
+    <string name="about_update_failed">Güncelleme kontrolü başarısız. Lütfen daha sonra tekrar deneyin.</string>
+    <string name="about_beta_available">\n\nBeta v%s kullanılabilir</string>
+    <string name="about_dialog_error">Hata</string>
+    <string name="about_dialog_ok">Tamam</string>
+    <string name="about_get_beta">Beta Al</string>
+    <string name="about_fadcam_feedback">FadCam Geri Bildirimi</string>
+
+    <!-- Video split sizes -->
+    <string name="video_split_enabled_format">Etkin (%s)</string>
+    <string name="video_split_size_500mb">500 MB</string>
+    <string name="video_split_size_1gb">1 GB</string>
+    <string name="video_split_size_2gb">2 GB</string>
+    <string name="video_split_size_4gb">4 GB</string>
+    <string name="video_split_size_custom_format">Özel (%d MB)</string>
+    <string name="video_split_change_format">Bölme Boyutunu Değiştir (Geçerli: %s)</string>
+    <string name="video_split_custom_title">Özel Bölme Boyutu (MB)</string>
+
+    <!-- Screen recording values -->
+    <string name="screen_rec_splitting_value_format">%s (FadCam + FadRec)</string>
+
+    <!-- Settings home tabs -->
+    <string name="settings_tab_all">Tümü</string>
+
+    <!-- Location update interval -->
+    <string name="settings_location_update_interval_5s">5.0 saniye</string>
+
+    <!-- Annotation toolbar -->
+    <string name="annotation_by_fadsec_lab">FadSec Lab tarafından</string>
+    <string name="annotation_quick_access">Hızlı Erişim</string>
+    <string name="annotation_annotate">Not Ekle</string>
+    <string name="annotation_enable_tools">Araçları etkinleştir</string>
+    <string name="annotation_canvas">Tuval</string>
+    <string name="annotation_toggle_visibility">Görünürlüğü değiştir</string>
+    <string name="annotation_project">Proje</string>
+    <string name="annotation_untitled_project">İsimsiz Proje</string>
+    <string name="annotation_tap_to_add_desc">Açıklama eklemek için dokunun</string>
+    <string name="annotation_manage_projects">Projeleri Yönet</string>
+    <string name="annotation_delete_all">Tümünü Sil</string>
+    <string name="annotation_tools_label">Araçlar</string>
+    <string name="annotation_select">Seç</string>
+    <string name="annotation_pen">Kalem</string>
+    <string name="annotation_erase">Sil</string>
+    <string name="annotation_text">Metin</string>
+    <string name="annotation_shape">Şekil</string>
+    <string name="annotation_colors">Renkler</string>
+    <string name="annotation_stroke_size">Çizgi Kalınlığı</string>
+    <string name="annotation_board">Pano</string>
+    <string name="annotation_board_none">Yok</string>
+    <string name="annotation_board_black">Siyah</string>
+    <string name="annotation_board_white">Beyaz</string>
+
+    <!-- Shape picker dialog -->
+    <string name="shape_picker_title">📐 Şekil Ekle</string>
+    <string name="shape_picker_choose_shape">Şekil Seç</string>
+    <string name="shape_picker_rectangle">Dikdörtgen</string>
+    <string name="shape_picker_circle">Daire</string>
+    <string name="shape_picker_arrow">Ok</string>
+    <string name="shape_picker_triangle">Üçgen</string>
+    <string name="shape_picker_star">Yıldız</string>
+    <string name="shape_picker_line">Çizgi</string>
+    <string name="shape_picker_fill_shape">Şekli Doldur</string>
+    <string name="shape_picker_color">🎨 Şekil Rengi</string>
+    <string name="shape_picker_tip">💡 İpucu: Seçtikten sonra, şekli oluşturmak için tuvalde sürükleyin</string>
+    <string name="shape_picker_got_it">Anladım!</string>
+
+    <!-- Text editor dialog -->
+    <string name="text_editor_title">✏️ Metin Ekle</string>
+    <string name="text_editor_content_label">Metin İçeriği</string>
+    <string name="text_editor_hint">Metninizi buraya yazın...</string>
+    <string name="text_editor_font_size">📏 Yazı Boyutu</string>
+    <string name="text_editor_style">🎨 Metin Stili</string>
+    <string name="text_editor_color">🎨 Metin Rengi</string>
+    <string name="text_editor_cancel">İptal</string>
+    <string name="text_editor_add_text">✓ Metin Ekle</string>
+
+    <!-- Annotation Service -->
+    <string name="annotation_disable">Notları Devre Dışı Bırak</string>
+    <string name="annotation_disable_desc">Ekranı normal kullanmak için devre dışı bırakın</string>
+    <string name="annotation_enable">Notları Etkinleştir</string>
+    <string name="annotation_hide_canvas">Tuvalleri Gizle</string>
+    <string name="annotation_hide_canvas_desc">Tüm çizimleri gizle (sabitlenmiş katmanlar kalır)</string>
+    <string name="annotation_delete_all_title">Tüm Projeler Silinsin mi?</string>
+    <string name="annotation_delete_all_btn">Tümünü Sil</string>
+    <string name="annotation_all_deleted">Tüm projeler silindi</string>
+    <string name="annotation_layer_locked">Katman kilitli</string>
+    <string name="annotation_welcome_back">Tekrar Hoş Geldiniz!</string>
+    <string name="annotation_my_projects">Projelerim</string>
+    <string name="annotation_pick_color">Renk Seç</string>
+    <string name="annotation_shape_added">📐 Şekil eklendi!</string>
+
+    <!-- Content descriptions -->
+    <string name="desc_align_center">Ortaya hizala</string>
+    <string name="desc_align_left">Sola hizala</string>
+    <string name="desc_align_right">Sağa hizala</string>
+    <string name="desc_autofocus_toggle">Otomatik odaklama değiştir</string>
+    <string name="desc_available_space">Kullanılabilir alan ilerlemesi</string>
+    <string name="desc_battery_used">Kullanılan pil ilerlemesi</string>
+    <string name="desc_bold">Kalın</string>
+    <string name="desc_close">Kapat</string>
+    <string name="desc_copy_ip">IP\'yi Kopyala</string>
+    <string name="desc_copy_url">URL\'yi Kopyala</string>
+    <string name="desc_decrease">Azalt</string>
+    <string name="desc_delete_text">Metni sil</string>
+    <string name="desc_done">Tamam</string>
+    <string name="desc_exposure_compensation">Poz telafisi</string>
+    <string name="desc_fadrec_logo">FadRec Logosu</string>
+    <string name="desc_fast_forward">5 saniye ileri sar</string>
+    <string name="desc_increase">Artır</string>
+    <string name="desc_italic">İtalik</string>
+    <string name="desc_memory_used">Kullanılan bellek ilerlemesi</string>
+    <string name="desc_mini_apps_info">Mini Uygulama Bilgisi</string>
+    <string name="desc_open_settings">Ayarları aç</string>
+    <string name="desc_open_video_stats">Video istatistiklerini aç</string>
+    <string name="desc_reset">Sıfırla</string>
+    <string name="desc_reset_zoom">Yakınlaştırmayı sıfırla</string>
+    <string name="desc_rewind">5 saniye geri sar</string>
+    <string name="desc_storage_used">Kullanılan depolama ilerlemesi</string>
+    <string name="desc_text_background">Metin arka planı</string>
+    <string name="desc_time_left_icon">Kalan süre simgesi</string>
+    <string name="desc_video_options">Video seçenekleri</string>
+    <string name="desc_video_thumbnail">Video küçük resmi</string>
+    <string name="desc_zoom_ratio">Yakınlaştırma oranı</string>
+
+    <!-- Notification channel names -->
+    <string name="channel_torch_service">Fener Servisi</string>
+    <string name="channel_security_alarm">Güvenlik Alarmı</string>
+    <string name="channel_remote_streaming">Uzaktan Yayın</string>
+    <string name="channel_annotation_service">Not Servisi</string>
+    <string name="channel_fadcam_file_ops">FadCam Dosya İşlemleri</string>
+
+    <!-- ScreenRecordingService -->
+    <string name="screen_rec_failed">Kayıt başarısız: %s</string>
+    <string name="screen_rec_permission_required">Ekran kaydı izni gerekli</string>
+    <string name="screen_rec_file_error">Ekran kaydı dosyası oluşturulurken hata</string>
+    <string name="screen_rec_dir_error">Ekran kaydı dizini oluşturulurken hata</string>
+    <string name="screen_rec_output_error">Ekran kaydı çıktısı ayarlanırken hata</string>
+    <string name="screen_rec_start_error">Ekran kaydı başlatılamadı</string>
+    <string name="screen_rec_codec_error">Ekran kaydı sırasında MediaCodec hatası</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_share_error">Bu dosya paylaşılamıyor</string>
+    <string name="records_open_error">Bu dosya açılamıyor</string>
+    <string name="records_trash_error">Dosya çöp kutusuna taşınamıyor</string>
+    <string name="records_saf_warning">Bir SAF özel dizini seçtiniz — harici dosya yöneticileri kayıtları görmeyebilir. Görünür hale getirmek için depolama modunu \'Dahili\' olarak değiştirin.</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_processing">İşleniyor...</string>
+    <string name="records_processing_complete">İşlem tamamlandı</string>
+    <string name="records_processing_failed">İşlem başarısız</string>
+    <string name="records_delete_error">Kayıt silinemedi</string>
+    <string name="records_export_success">Başarıyla dışa aktarıldı</string>
+    <string name="records_export_failed">Dışa aktarma başarısız</string>
+    <string name="records_no_files">Kayıt bulunamadı</string>
+    <string name="records_confirm_delete">Bu kayıt silinsin mi?</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_open">Dosya açılamıyor</string>
+    <string name="trash_file_not_found">Çöp kutusunda dosya bulunamadı</string>
+    <string name="trash_restored">Dosya çöp kutusundan geri yüklendi</string>
+    <string name="trash_deleted">Dosya kalıcı olarak silindi</string>
+    <string name="trash_empty">Çöp kutusu boş</string>
+
+    <!-- MainActivity -->
+    <string name="press_back_again_exit">Çıkmak için tekrar geri tuşuna basın</string>
+
+    <!-- NetworkHealthBottomSheet -->
+    <string name="network_testing">Test ediliyor...</string>
+    <string name="network_test_now">Şimdi Test Et</string>
+    <string name="network_not_tested">Test edilmedi</string>
+    <string name="network_unknown">Bilinmiyor</string>
+
+    <!-- ClientDataBottomSheet -->
+    <string name="client_cloud_viewers">Bulut İzleyiciler</string>
+    <string name="client_active_clients">Aktif İstemciler</string>
+    <string name="client_no_clients">Bağlı istemci yok</string>
+
+    <!-- ScanInfoBottomSheet -->
+    <string name="scan_info_title">Tarama Bilgisi</string>
+    <string name="scan_copied_clipboard">Panoya kopyalandı</string>
+    <string name="scan_copy_metadata">Tarama meta verilerini panoya kopyala</string>
+    <string name="scan_value_copied">Değer kopyalandı</string>
+
+    <!-- UpdateAvailableBottomSheet -->
+    <string name="update_version_prefix">v</string>
+
+    <!-- ClientEventLogsBottomSheet -->
+    <string name="events_title">%s için Etkinlikler</string>
+    <string name="events_no_events">Kaydedilmiş etkinlik yok</string>
+
+    <!-- Additional ScreenRecordingService strings -->
+    <string name="screen_rec_permission_error">İzin hatası: %s</string>
+    <string name="screen_rec_mediaprojection_error">MediaProjection hatası: %s</string>
+    <string name="screen_rec_cannot_write_custom">Özel dizine yazılamıyor</string>
+    <string name="screen_rec_failed_create_custom">Özel konumda dosya oluşturulamadı</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_error_video_info">Video bilgisi görüntülenirken hata.</string>
+    <string name="records_cannot_open_editor">Düzenleyici açılamadı</string>
+    <string name="records_cannot_share">Video paylaşılamadı: %s</string>
+    <string name="records_cannot_open_video">Video açılamadı: %s</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_export_label">Dışa Aktar</string>
+    <string name="records_export_custom_label">Özel Dışa Aktar</string>
+    <string name="records_merge_label">Birleştir</string>
+    <string name="records_batch_operation">Toplu İşlem</string>
+    <string name="records_error_opening_media">Medya açılırken hata</string>
+    <string name="records_no_videos_delete">Silinecek video yok.</string>
+    <string name="records_no_videos_trash">Çöp kutusuna taşınacak video yok.</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_access_dir">Çöp kutusu dizinine erişilemiyor.</string>
+    <string name="trash_error_opening">Dosya açılırken hata.</string>
+
+    <!-- ForensicsExportCenterFragment / RecordsDeletionService -->
+    <string name="export_destination_none">Dışa aktarma hedefi belirtilmedi</string>
+    <string name="generic_delete_failed">Silme başarısız</string>
+    <string name="generic_save_failed">Kaydetme başarısız</string>
+
+    <!-- Forensics -->
+    <string name="forensics_export_failed">Dışa aktarma başarısız</string>
+
+    <!-- RecordingService error toasts -->
+    <string name="toast_preview_only_front_back">Canlı önizleme yalnızca Ön/Arka kamera için kullanılabilir</string>
+    <string name="toast_camera_permission_denied">Kamera izni reddedildi</string>
+    <string name="toast_camera_not_responding">Kamera servisi yanıt vermiyor. Tekrar deneyin.</string>
+    <string name="toast_camera_not_found">Seçilen kamera bulunamadı</string>
+    <string name="toast_camera_unavailable">Kamera sürekli kullanılamıyor (Sebep: %s). Durduruluyor.</string>
+    <string name="toast_camera_access_error">Kamera erişim hatası: %s</string>
+    <string name="toast_invalid_camera_config">Geçersiz kamera yapılandırması.</string>
+    <string name="toast_unexpected_camera_error">Beklenmeyen kamera hatası.</string>
+    <string name="toast_failed_camera_details">Kamera detaylarına erişilemedi.</string>
+    <string name="toast_invalid_camera_setup">Geçersiz kamera kurulumu.</string>
+    <string name="toast_critical_camera_error">Kritik kamera sistemi hatası.</string>
+    <string name="toast_processing_error">Video kaydı işlenirken hata</string>
+    <string name="toast_notification_permission">Bildirim izni gerekli</string>
+    <string name="toast_create_recording_dir_error">Kayıt dizini oluşturulurken hata</string>
+    <string name="toast_create_storage_dir_error">Dahili depolama dizini oluşturulurken hata</string>
+    <string name="toast_permissions_required">Kayıt için izinler gerekli</string>
+    <string name="toast_failed_open_file">Yazmak için dosya açılamadı</string>
+    <string name="toast_cannot_write_custom_dir">Seçilen özel dizine yazılamıyor</string>
+    <string name="toast_failed_create_file">Yazmak için dosya oluşturulamadı</string>
 </resources>

@@ -3161,4 +3161,261 @@ FadCam использует фрагментированный формат MP4 
     <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>
     <string name="audio_device_type_builtin_mic">Built-in Mic</string>
+
+    <!-- Settings titles -->
+    <string name="settings_behavior_title">Поведение</string>
+    <string name="settings_onboarding_title">Обучение</string>
+    <string name="settings_auto_update_check">Автоматическая проверка обновлений</string>
+    <string name="settings_location_privacy_title">Местоположение и конфиденциальность</string>
+    <string name="settings_embed_location_metadata">Встраивать метаданные местоположения</string>
+
+    <!-- Settings values -->
+    <string name="setting_off">Выкл</string>
+    <string name="setting_portrait">Портретная</string>
+    <string name="setting_microphone">Микрофон</string>
+    <string name="setting_coordinates_only">Только координаты</string>
+
+    <!-- About fragment -->
+    <string name="about_update_failed">Не удалось проверить обновления. Пожалуйста, повторите позже.</string>
+    <string name="about_beta_available">\n\nБета-версия v%s доступна</string>
+    <string name="about_dialog_error">Ошибка</string>
+    <string name="about_dialog_ok">ОК</string>
+    <string name="about_get_beta">Получить бета-версию</string>
+    <string name="about_fadcam_feedback">Обратная связь FadCam</string>
+
+    <!-- Video split sizes -->
+    <string name="video_split_enabled_format">Включено (%s)</string>
+    <string name="video_split_size_500mb">500 МБ</string>
+    <string name="video_split_size_1gb">1 ГБ</string>
+    <string name="video_split_size_2gb">2 ГБ</string>
+    <string name="video_split_size_4gb">4 ГБ</string>
+    <string name="video_split_size_custom_format">Пользовательский (%d МБ)</string>
+    <string name="video_split_change_format">Изменить размер разделения (Текущий: %s)</string>
+    <string name="video_split_custom_title">Пользовательский размер разделения (МБ)</string>
+
+    <!-- Screen recording values -->
+    <string name="screen_rec_splitting_value_format">%s (FadCam + FadRec)</string>
+
+    <!-- Settings home tabs -->
+    <string name="settings_tab_all">Все</string>
+
+    <!-- Watermark preview labels -->
+    <string name="settings_location_update_interval_5s">5.0 секунд</string>
+
+    <!-- Annotation toolbar -->
+    <string name="annotation_by_fadsec_lab">от FadSec Lab</string>
+    <string name="annotation_quick_access">Быстрый доступ</string>
+    <string name="annotation_annotate">Аннотировать</string>
+    <string name="annotation_enable_tools">Включить инструменты</string>
+    <string name="annotation_canvas">Холст</string>
+    <string name="annotation_toggle_visibility">Переключить видимость</string>
+    <string name="annotation_project">Проект</string>
+    <string name="annotation_untitled_project">Безымянный проект</string>
+    <string name="annotation_tap_to_add_desc">Нажмите, чтобы добавить описание</string>
+    <string name="annotation_manage_projects">Управление проектами</string>
+    <string name="annotation_delete_all">Удалить все</string>
+    <string name="annotation_tools_label">Инструменты</string>
+    <string name="annotation_select">Выбрать</string>
+    <string name="annotation_pen">Перо</string>
+    <string name="annotation_erase">Стереть</string>
+    <string name="annotation_text">Текст</string>
+    <string name="annotation_shape">Фигура</string>
+    <string name="annotation_colors">Цвета</string>
+    <string name="annotation_stroke_size">Толщина линии</string>
+    <string name="annotation_board">Доска</string>
+    <string name="annotation_board_none">Нет</string>
+    <string name="annotation_board_black">Чёрная</string>
+    <string name="annotation_board_white">Белая</string>
+
+    <!-- Shape picker dialog -->
+    <string name="shape_picker_title">📐 Добавить фигуру</string>
+    <string name="shape_picker_choose_shape">Выберите фигуру</string>
+    <string name="shape_picker_rectangle">Прямоугольник</string>
+    <string name="shape_picker_circle">Круг</string>
+    <string name="shape_picker_arrow">Стрелка</string>
+    <string name="shape_picker_triangle">Треугольник</string>
+    <string name="shape_picker_star">Звезда</string>
+    <string name="shape_picker_line">Линия</string>
+    <string name="shape_picker_fill_shape">Заполнить фигуру</string>
+    <string name="shape_picker_color">🎨 Цвет фигуры</string>
+    <string name="shape_picker_tip">💡 Подсказка: После выбора перетащите на холст, чтобы создать фигуру</string>
+    <string name="shape_picker_got_it">Понятно!</string>
+
+    <!-- Text editor dialog -->
+    <string name="text_editor_title">✏️ Добавить текст</string>
+    <string name="text_editor_content_label">Содержимое текста</string>
+    <string name="text_editor_hint">Введите текст здесь...</string>
+    <string name="text_editor_font_size">📏 Размер шрифта</string>
+    <string name="text_editor_style">🎨 Стиль текста</string>
+    <string name="text_editor_color">🎨 Цвет текста</string>
+    <string name="text_editor_cancel">Отмена</string>
+    <string name="text_editor_add_text">✓ Добавить текст</string>
+
+    <!-- Annotation Service -->
+    <string name="annotation_disable">Отключить аннотацию</string>
+    <string name="annotation_disable_desc">Отключить для обычного использования экрана</string>
+    <string name="annotation_enable">Включить аннотацию</string>
+    <string name="annotation_hide_canvas">Скрыть холст</string>
+    <string name="annotation_hide_canvas_desc">Скрыть все рисунки (закреплённые слои остаются)</string>
+    <string name="annotation_delete_all_title">Удалить все проекты?</string>
+    <string name="annotation_delete_all_btn">Удалить все</string>
+    <string name="annotation_all_deleted">Все проекты удалены</string>
+    <string name="annotation_layer_locked">Слой заблокирован</string>
+    <string name="annotation_welcome_back">С возвращением!</string>
+    <string name="annotation_my_projects">Мои проекты</string>
+    <string name="annotation_pick_color">Выберите цвет</string>
+    <string name="annotation_shape_added">📐 Фигура добавлена!</string>
+
+    <!-- Content descriptions -->
+    <string name="desc_align_center">По центру</string>
+    <string name="desc_align_left">По левому краю</string>
+    <string name="desc_align_right">По правому краю</string>
+    <string name="desc_autofocus_toggle">Переключить автофокус</string>
+    <string name="desc_available_space">Прогресс доступного места</string>
+    <string name="desc_battery_used">Прогресс использования батареи</string>
+    <string name="desc_bold">Жирный</string>
+    <string name="desc_close">Закрыть</string>
+    <string name="desc_copy_ip">Копировать IP</string>
+    <string name="desc_copy_url">Копировать URL</string>
+    <string name="desc_decrease">Уменьшить</string>
+    <string name="desc_delete_text">Удалить текст</string>
+    <string name="desc_done">Готово</string>
+    <string name="desc_exposure_compensation">Компенсация экспозиции</string>
+    <string name="desc_fadrec_logo">Логотип FadRec</string>
+    <string name="desc_fast_forward">Перемотка вперёд на 5 секунд</string>
+    <string name="desc_increase">Увеличить</string>
+    <string name="desc_italic">Курсив</string>
+    <string name="desc_memory_used">Прогресс использования памяти</string>
+    <string name="desc_mini_apps_info">Информация о мини-приложениях</string>
+    <string name="desc_open_settings">Открыть настройки</string>
+    <string name="desc_open_video_stats">Открыть статистику видео</string>
+    <string name="desc_reset">Сбросить</string>
+    <string name="desc_reset_zoom">Сбросить зум</string>
+    <string name="desc_rewind">Перемотка назад на 5 секунд</string>
+    <string name="desc_storage_used">Прогресс использования хранилища</string>
+    <string name="desc_text_background">Фон текста</string>
+    <string name="desc_time_left_icon">Иконка оставшегося времени</string>
+    <string name="desc_video_options">Параметры видео</string>
+    <string name="desc_video_thumbnail">Миниатюра видео</string>
+    <string name="desc_zoom_ratio">Коэффициент зума</string>
+
+    <!-- Notification channel names -->
+    <string name="channel_torch_service">Служба фонарика</string>
+    <string name="channel_security_alarm">Охранная сигнализация</string>
+    <string name="channel_remote_streaming">Удалённая трансляция</string>
+    <string name="channel_annotation_service">Служба аннотаций</string>
+    <string name="channel_fadcam_file_ops">Файловые операции FadCam</string>
+
+    <!-- ScreenRecordingService -->
+    <string name="screen_rec_failed">Запись не удалась: %s</string>
+    <string name="screen_rec_permission_required">Требуется разрешение на запись экрана</string>
+    <string name="screen_rec_file_error">Ошибка создания файла записи экрана</string>
+    <string name="screen_rec_dir_error">Ошибка создания каталога записи экрана</string>
+    <string name="screen_rec_output_error">Ошибка настройки вывода записи экрана</string>
+    <string name="screen_rec_start_error">Не удалось начать запись экрана</string>
+    <string name="screen_rec_codec_error">Ошибка MediaCodec во время записи экрана</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_share_error">Не удалось поделиться этим файлом</string>
+    <string name="records_open_error">Не удалось открыть этот файл</string>
+    <string name="records_trash_error">Не удалось переместить файл в корзину</string>
+    <string name="records_saf_warning">Вы выбрали пользовательский каталог SAF — внешние файловые менеджеры могут не видеть записи. Чтобы сделать их видимыми, переключите режим хранения обратно на \'Внутренний\'.</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_processing">Обработка...</string>
+    <string name="records_processing_complete">Обработка завершена</string>
+    <string name="records_processing_failed">Обработка не удалась</string>
+    <string name="records_delete_error">Не удалось удалить запись</string>
+    <string name="records_export_success">Экспортировано успешно</string>
+    <string name="records_export_failed">Экспорт не удался</string>
+    <string name="records_no_files">Записей не найдено</string>
+    <string name="records_confirm_delete">Удалить эту запись?</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_open">Не удалось открыть файл</string>
+    <string name="trash_file_not_found">Файл не найден в корзине</string>
+    <string name="trash_restored">Файл восстановлен из корзины</string>
+    <string name="trash_deleted">Файл окончательно удалён</string>
+    <string name="trash_empty">Корзина пуста</string>
+
+    <!-- MainActivity -->
+    <string name="press_back_again_exit">Нажмите ещё раз для выхода</string>
+
+    <!-- NetworkHealthBottomSheet -->
+    <string name="network_testing">Тестирование...</string>
+    <string name="network_test_now">Тестировать сейчас</string>
+    <string name="network_not_tested">Не тестировано</string>
+    <string name="network_unknown">Неизвестно</string>
+
+    <!-- ClientDataBottomSheet -->
+    <string name="client_cloud_viewers">Облачные зрители</string>
+    <string name="client_active_clients">Активные клиенты</string>
+    <string name="client_no_clients">Клиенты не подключены</string>
+
+    <!-- ScanInfoBottomSheet -->
+    <string name="scan_info_title">Информация сканирования</string>
+    <string name="scan_copied_clipboard">Скопировано в буфер обмена</string>
+    <string name="scan_copy_metadata">Копировать метаданные сканирования в буфер обмена</string>
+    <string name="scan_value_copied">Значение скопировано</string>
+
+    <!-- UpdateAvailableBottomSheet -->
+    <string name="update_version_prefix">v</string>
+
+    <!-- ClientEventLogsBottomSheet -->
+    <string name="events_title">События для %s</string>
+    <string name="events_no_events">Событий не записано</string>
+
+    <!-- Additional ScreenRecordingService strings -->
+    <string name="screen_rec_permission_error">Ошибка разрешения: %s</string>
+    <string name="screen_rec_mediaprojection_error">Ошибка MediaProjection: %s</string>
+    <string name="screen_rec_cannot_write_custom">Не удалось записать в пользовательский каталог</string>
+    <string name="screen_rec_failed_create_custom">Не удалось создать файл в пользовательском расположении</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_error_video_info">Ошибка отображения информации о видео.</string>
+    <string name="records_cannot_open_editor">Не удалось открыть редактор</string>
+    <string name="records_cannot_share">Не удалось поделиться видео: %s</string>
+    <string name="records_cannot_open_video">Не удалось открыть видео: %s</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_export_label">Экспорт</string>
+    <string name="records_export_custom_label">Пользовательский экспорт</string>
+    <string name="records_merge_label">Объединить</string>
+    <string name="records_batch_operation">Групповая операция</string>
+    <string name="records_error_opening_media">Ошибка открытия медиа</string>
+    <string name="records_no_videos_delete">Нет видео для удаления.</string>
+    <string name="records_no_videos_trash">Нет видео для перемещения в корзину.</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_access_dir">Не удалось получить доступ к каталогу корзины.</string>
+    <string name="trash_error_opening">Ошибка открытия файла.</string>
+
+    <!-- ForensicsExportCenterFragment / RecordsDeletionService -->
+    <string name="export_destination_none">Не указано место экспорта</string>
+    <string name="generic_delete_failed">Удаление не удалось</string>
+    <string name="generic_save_failed">Сохранение не удалось</string>
+
+    <!-- Forensics -->
+    <string name="forensics_export_failed">Экспорт не удался</string>
+
+    <!-- RecordingService error toasts -->
+    <string name="toast_preview_only_front_back">Живой предпросмотр доступен только для фронтальной/задней камеры</string>
+    <string name="toast_camera_permission_denied">Разрешение камеры отклонено для службы</string>
+    <string name="toast_camera_not_responding">Служба камеры не отвечает. Попробуйте снова.</string>
+    <string name="toast_camera_not_found">Не удалось найти выбранную камеру</string>
+    <string name="toast_camera_unavailable">Камера повторно недоступна (Причина: %s). Остановка.</string>
+    <string name="toast_camera_access_error">Ошибка доступа к камере: %s</string>
+    <string name="toast_invalid_camera_config">Неверная конфигурация камеры.</string>
+    <string name="toast_unexpected_camera_error">Неожиданная ошибка камеры.</string>
+    <string name="toast_failed_camera_details">Не удалось получить детали камеры.</string>
+    <string name="toast_invalid_camera_setup">Неверная настройка камеры.</string>
+    <string name="toast_critical_camera_error">Критическая ошибка системы камеры.</string>
+    <string name="toast_processing_error">Ошибка обработки видеозаписи</string>
+    <string name="toast_notification_permission">Требуется разрешение на уведомления</string>
+    <string name="toast_create_recording_dir_error">Ошибка создания каталога записи</string>
+    <string name="toast_create_storage_dir_error">Ошибка создания каталога внутреннего хранилища</string>
+    <string name="toast_permissions_required">Требуются разрешения для записи</string>
+    <string name="toast_failed_open_file">Не удалось открыть файл для записи</string>
+    <string name="toast_cannot_write_custom_dir">Не удалось записать в выбранный пользовательский каталог</string>
+    <string name="toast_failed_create_file">Не удалось создать файл для записи</string>
 </resources>

@@ -31,7 +31,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Location &amp; Privacy"
+            android:text="@string/settings_location_privacy_title"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginStart="12dp"
@@ -79,7 +79,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Embed Location Metadata"
+                    android:text="@string/settings_embed_location_metadata"
                     android:textStyle="bold"
                     android:textSize="15sp"
                     android:textColor="?attr/colorHeading"/>

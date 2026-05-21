@@ -635,7 +635,7 @@
                                 android:layout_width="22dp"
                                 android:layout_height="22dp"
                                 android:layout_gravity="center"
-                                android:contentDescription="Battery used progress" />
+                                android:contentDescription="@string/desc_battery_used" />
                         </FrameLayout>
 
                         <ImageView
@@ -865,7 +865,7 @@
                                 android:layout_width="22dp"
                                 android:layout_height="22dp"
                                 android:layout_gravity="center"
-                                android:contentDescription="Storage used progress" />
+                                android:contentDescription="@string/desc_storage_used" />
                         </FrameLayout>
                     </LinearLayout>
                 </LinearLayout>
@@ -921,7 +921,7 @@
                                 android:layout_width="22dp"
                                 android:layout_height="22dp"
                                 android:layout_gravity="center"
-                                android:contentDescription="Memory used progress" />
+                                android:contentDescription="@string/desc_memory_used" />
                         </FrameLayout>
                     </LinearLayout>
 

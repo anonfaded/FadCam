@@ -233,7 +233,7 @@
                                     android:textSize="16sp"
                                     android:textColor="?attr/pickerButtonText"
                                     android:background="@drawable/picker_circle_btn_tinted"
-                                    android:contentDescription="Decrease"
+                                    android:contentDescription="@string/desc_decrease"
                                     android:clickable="true"
                                     android:focusable="true"
                                     android:padding="3dp" />
@@ -260,7 +260,7 @@
                                     android:textSize="16sp"
                                     android:textColor="?attr/pickerButtonText"
                                     android:background="@drawable/picker_circle_btn_tinted"
-                                    android:contentDescription="Increase"
+                                    android:contentDescription="@string/desc_increase"
                                     android:clickable="true"
                                     android:focusable="true"
                                     android:padding="3dp" />
@@ -279,7 +279,7 @@
                                     android:id="@+id/picker_slider_reset_icon"
                                     android:layout_width="28dp"
                                     android:layout_height="28dp"
-                                    android:contentDescription="Reset"
+                                    android:contentDescription="@string/desc_reset"
                                     android:src="@drawable/undo_24px"
                                     android:background="?attr/selectableItemBackgroundBorderless"
                                     android:clickable="true"

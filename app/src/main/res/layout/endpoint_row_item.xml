@@ -68,7 +68,7 @@
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:src="@drawable/ic_content_copy"
-        android:contentDescription="Copy URL"
+        android:contentDescription="@string/desc_copy_url"
         android:scaleType="centerInside"
         android:tint="@android:color/darker_gray"
         android:layout_marginStart="12dp"

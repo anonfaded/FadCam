@@ -408,17 +408,17 @@ public class RecordsDeletionService extends Service {
         try {
             if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.DELETE) {
                 boolean success = processDeleteItemAsync(snapshot, item);
-                return new ProcessResult(item, success, success ? null : "Delete failed");
+                return new ProcessResult(item, success, success ? null : getString(R.string.generic_delete_failed));
             } else if (snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_EXPORT_TO_CUSTOM_TREE) {
                 if (snapshot.customTreeUri == null) {
-                    return new ProcessResult(item, false, "No export destination specified");
+                    return new ProcessResult(item, false, getString(R.string.export_destination_none));
                 }
                 boolean success = processExportItemAsync(snapshot, item, snapshot.customTreeUri);
-                return new ProcessResult(item, success, success ? null : "Export failed");
+                return new ProcessResult(item, success, success ? null : getString(R.string.records_export_failed));
             } else {
                 boolean success = processSaveItemAsync(snapshot, item,
                         snapshot.operationKind == RecordsDeletionSessionSnapshot.OperationKind.SAVE_MOVE_TO_GALLERY);
-                return new ProcessResult(item, success, success ? null : "Save failed");
+                return new ProcessResult(item, success, success ? null : getString(R.string.generic_save_failed));
             }
         } catch (Exception e) {
             return new ProcessResult(item, false, e.getMessage());

@@ -52,7 +52,7 @@
         android:layout_margin="16dp"
         android:layout_gravity="top|end"
         android:visibility="gone"
-        android:contentDescription="Reset zoom"
+        android:contentDescription="@string/desc_reset_zoom"
         app:tint="@android:color/white" />
 
     <!-- Overlay indicator for quick 2x playback (appears while long-press is active) -->

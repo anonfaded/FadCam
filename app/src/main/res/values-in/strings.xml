@@ -2747,4 +2747,268 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>
     <string name="audio_device_type_builtin_mic">Built-in Mic</string>
+
+    <!-- Settings titles -->
+    <string name="settings_behavior_title">Perilaku</string>
+    <string name="settings_onboarding_title">Pengenalan</string>
+    <string name="settings_auto_update_check">Periksa Pembaruan Otomatis</string>
+    <string name="settings_location_privacy_title">Lokasi &amp; Privasi</string>
+    <string name="settings_embed_location_metadata">Sematkan Metadata Lokasi</string>
+
+    <!-- Settings values -->
+    <string name="setting_off">Mati</string>
+    <string name="setting_portrait">Potret</string>
+    <string name="setting_microphone">Mikrofon</string>
+    <string name="setting_coordinates_only">Hanya Koordinat</string>
+
+    <!-- About fragment -->
+    <string name="about_update_failed">Gagal memeriksa pembaruan. Silakan coba lagi nanti.</string>
+    <string name="about_beta_available">\n\nBeta v%s tersedia</string>
+    <string name="about_dialog_error">Kesalahan</string>
+    <string name="about_dialog_ok">OK</string>
+    <string name="about_get_beta">Dapatkan Beta</string>
+    <string name="about_fadcam_feedback">Masukan FadCam</string>
+
+    <!-- Video split sizes -->
+    <string name="video_split_enabled_format">Diaktifkan (%s)</string>
+    <string name="video_split_size_500mb">500 MB</string>
+    <string name="video_split_size_1gb">1 GB</string>
+    <string name="video_split_size_2gb">2 GB</string>
+    <string name="video_split_size_4gb">4 GB</string>
+    <string name="video_split_size_custom_format">Kustom (%d MB)</string>
+    <string name="video_split_change_format">Ubah Ukuran Pemisahan (Saat ini: %s)</string>
+    <string name="video_split_custom_title">Ukuran Pemisahan Kustom (MB)</string>
+
+    <!-- Screen recording values -->
+    <string name="screen_rec_resolution_value" translatable="false">1920×1080</string>
+    <string name="screen_rec_framerate_value" translatable="false">30 fps</string>
+    <string name="screen_rec_bitrate_value" translatable="false">8 Mbps</string>
+    <string name="screen_rec_splitting_value_format">%s (FadCam + FadRec)</string>
+
+    <!-- Settings home tabs -->
+    <string name="settings_tab_all">Semua</string>
+    <string name="settings_tab_fadcam" translatable="false">FadCam</string>
+    <string name="settings_tab_fadrec" translatable="false">FadRec</string>
+
+    <!-- Watermark preview labels -->
+    <string name="watermark_preview_fadcam" translatable="false">FadCam</string>
+    <string name="watermark_preview_fadrec" translatable="false">FadRec</string>
+    <string name="settings_location_update_interval_5s">5,0 detik</string>
+
+    <!-- Annotation toolbar -->
+    <string name="annotation_by_fadsec_lab">oleh FadSec Lab</string>
+    <string name="annotation_quick_access">Akses Cepat</string>
+    <string name="annotation_annotate">Anotasi</string>
+    <string name="annotation_enable_tools">Aktifkan alat</string>
+    <string name="annotation_canvas">Kanvas</string>
+    <string name="annotation_toggle_visibility">Alihkan visibilitas</string>
+    <string name="annotation_project">Proyek</string>
+    <string name="annotation_untitled_project">Proyek Tanpa Judul</string>
+    <string name="annotation_tap_to_add_desc">Ketuk untuk menambahkan deskripsi</string>
+    <string name="annotation_manage_projects">Kelola Proyek</string>
+    <string name="annotation_delete_all">Hapus Semua</string>
+    <string name="annotation_tools_label">Alat</string>
+    <string name="annotation_select">Pilih</string>
+    <string name="annotation_pen">Pena</string>
+    <string name="annotation_erase">Hapus</string>
+    <string name="annotation_text">Teks</string>
+    <string name="annotation_shape">Bentuk</string>
+    <string name="annotation_colors">Warna</string>
+    <string name="annotation_stroke_size">Ukuran Goresan</string>
+    <string name="annotation_board">Papan</string>
+    <string name="annotation_board_none">Tidak Ada</string>
+    <string name="annotation_board_black">Hitam</string>
+    <string name="annotation_board_white">Putih</string>
+
+    <!-- Shape picker dialog -->
+    <string name="shape_picker_title">📐 Tambah Bentuk</string>
+    <string name="shape_picker_choose_shape">Pilih Bentuk</string>
+    <string name="shape_picker_rectangle">Persegi Panjang</string>
+    <string name="shape_picker_circle">Lingkaran</string>
+    <string name="shape_picker_arrow">Panah</string>
+    <string name="shape_picker_triangle">Segitiga</string>
+    <string name="shape_picker_star">Bintang</string>
+    <string name="shape_picker_line">Garis</string>
+    <string name="shape_picker_fill_shape">Isi Bentuk</string>
+    <string name="shape_picker_color">🎨 Warna Bentuk</string>
+    <string name="shape_picker_tip">💡 Tips: Setelah memilih, seret di kanvas untuk membuat bentuk</string>
+    <string name="shape_picker_got_it">Mengerti!</string>
+
+    <!-- Text editor dialog -->
+    <string name="text_editor_title">✏️ Tambah Teks</string>
+    <string name="text_editor_content_label">Konten Teks</string>
+    <string name="text_editor_hint">Ketik teks Anda di sini...</string>
+    <string name="text_editor_font_size">📏 Ukuran Font</string>
+    <string name="text_editor_style">🎨 Gaya Teks</string>
+    <string name="text_editor_color">🎨 Warna Teks</string>
+    <string name="text_editor_cancel">Batal</string>
+    <string name="text_editor_add_text">✓ Tambah Teks</string>
+
+    <!-- Annotation Service -->
+    <string name="annotation_disable">Nonaktifkan Anotasi</string>
+    <string name="annotation_disable_desc">Nonaktifkan untuk menggunakan layar secara normal</string>
+    <string name="annotation_enable">Aktifkan Anotasi</string>
+    <string name="annotation_hide_canvas">Sembunyikan Kanvas</string>
+    <string name="annotation_hide_canvas_desc">Sembunyikan semua gambar (lapisan yang disematkan tetap ada)</string>
+    <string name="annotation_delete_all_title">Hapus Semua Proyek?</string>
+    <string name="annotation_delete_all_btn">Hapus Semua</string>
+    <string name="annotation_all_deleted">Semua proyek dihapus</string>
+    <string name="annotation_layer_locked">Lapisan terkunci</string>
+    <string name="annotation_welcome_back">Selamat Datang Kembali!</string>
+    <string name="annotation_my_projects">Proyek Saya</string>
+    <string name="annotation_pick_color">Pilih Warna</string>
+    <string name="annotation_shape_added">📐 Bentuk ditambahkan!</string>
+
+    <!-- Content descriptions -->
+    <string name="desc_align_center">Rata tengah</string>
+    <string name="desc_align_left">Rata kiri</string>
+    <string name="desc_align_right">Rata kanan</string>
+    <string name="desc_autofocus_toggle">Alihkan fokus otomatis</string>
+    <string name="desc_available_space">Progres ruang tersedia</string>
+    <string name="desc_battery_used">Progres baterai terpakai</string>
+    <string name="desc_bold">Tebal</string>
+    <string name="desc_close">Tutup</string>
+    <string name="desc_copy_ip">Salin IP</string>
+    <string name="desc_copy_url">Salin URL</string>
+    <string name="desc_decrease">Kurangi</string>
+    <string name="desc_delete_text">Hapus teks</string>
+    <string name="desc_done">Selesai</string>
+    <string name="desc_exposure_compensation">Kompensasi eksposur</string>
+    <string name="desc_fadrec_logo">Logo FadRec</string>
+    <string name="desc_fast_forward">Maju cepat 5 detik</string>
+    <string name="desc_increase">Tambah</string>
+    <string name="desc_italic">Miring</string>
+    <string name="desc_memory_used">Progres memori terpakai</string>
+    <string name="desc_mini_apps_info">Info Aplikasi Mini</string>
+    <string name="desc_open_settings">Buka pengaturan</string>
+    <string name="desc_open_video_stats">Buka statistik video</string>
+    <string name="desc_reset">Atur ulang</string>
+    <string name="desc_reset_zoom">Atur ulang zoom</string>
+    <string name="desc_rewind">Mundur 5 detik</string>
+    <string name="desc_storage_used">Progres penyimpanan terpakai</string>
+    <string name="desc_text_background">Latar belakang teks</string>
+    <string name="desc_time_left_icon">Ikon sisa waktu</string>
+    <string name="desc_video_options">Opsi video</string>
+    <string name="desc_video_thumbnail">Thumbnail video</string>
+    <string name="desc_zoom_ratio">Rasio zoom</string>
+
+    <!-- Notification channel names -->
+    <string name="channel_torch_service">Layanan Senter</string>
+    <string name="channel_security_alarm">Alarm Keamanan</string>
+    <string name="channel_remote_streaming">Streaming Jarak Jauh</string>
+    <string name="channel_annotation_service">Layanan Anotasi</string>
+    <string name="channel_fadcam_file_ops">Operasi File FadCam</string>
+
+    <!-- ScreenRecordingService -->
+    <string name="screen_rec_failed">Perekaman gagal: %s</string>
+    <string name="screen_rec_permission_required">Izin perekaman layar diperlukan</string>
+    <string name="screen_rec_file_error">Kesalahan membuat file rekaman layar</string>
+    <string name="screen_rec_dir_error">Kesalahan membuat direktori rekaman layar</string>
+    <string name="screen_rec_output_error">Kesalahan menyiapkan output rekaman layar</string>
+    <string name="screen_rec_start_error">Gagal memulai rekaman layar</string>
+    <string name="screen_rec_codec_error">Kesalahan MediaCodec selama rekaman layar</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_share_error">Tidak dapat membagikan file ini</string>
+    <string name="records_open_error">Tidak dapat membuka file ini</string>
+    <string name="records_trash_error">Tidak dapat memindahkan file ke sampah</string>
+    <string name="records_saf_warning">Anda memilih direktori kustom SAF — pengelola file eksternal mungkin tidak melihat rekaman. Untuk membuatnya terlihat, alihkan mode penyimpanan kembali ke \'Internal\'.</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_processing">Memproses...</string>
+    <string name="records_processing_complete">Pemrosesan selesai</string>
+    <string name="records_processing_failed">Pemrosesan gagal</string>
+    <string name="records_delete_error">Gagal menghapus rekaman</string>
+    <string name="records_export_success">Berhasil diekspor</string>
+    <string name="records_export_failed">Ekspor gagal</string>
+    <string name="records_no_files">Tidak ada rekaman ditemukan</string>
+    <string name="records_confirm_delete">Hapus rekaman ini?</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_open">Tidak dapat membuka file</string>
+    <string name="trash_file_not_found">File tidak ditemukan di sampah</string>
+    <string name="trash_restored">File dipulihkan dari sampah</string>
+    <string name="trash_deleted">File dihapus secara permanen</string>
+    <string name="trash_empty">Sampah kosong</string>
+
+    <!-- MainActivity -->
+    <string name="press_back_again_exit">Tekan kembali lagi untuk keluar</string>
+
+    <!-- NetworkHealthBottomSheet -->
+    <string name="network_testing">Menguji...</string>
+    <string name="network_test_now">Uji Sekarang</string>
+    <string name="network_not_tested">Belum diuji</string>
+    <string name="network_unknown">Tidak Diketahui</string>
+
+    <!-- ClientDataBottomSheet -->
+    <string name="client_cloud_viewers">Penonton Cloud</string>
+    <string name="client_active_clients">Klien Aktif</string>
+    <string name="client_no_clients">Tidak ada klien terhubung</string>
+
+    <!-- ScanInfoBottomSheet -->
+    <string name="scan_info_title">Info Pindai</string>
+    <string name="scan_copied_clipboard">Disalin ke papan klip</string>
+    <string name="scan_copy_metadata">Salin metadata pindaian ke papan klip</string>
+    <string name="scan_value_copied">Nilai disalin</string>
+
+    <!-- UpdateAvailableBottomSheet -->
+    <string name="update_version_prefix">v</string>
+
+    <!-- ClientEventLogsBottomSheet -->
+    <string name="events_title">Peristiwa untuk %s</string>
+    <string name="events_no_events">Tidak ada peristiwa tercatat</string>
+
+    <!-- Additional ScreenRecordingService strings -->
+    <string name="screen_rec_permission_error">Kesalahan izin: %s</string>
+    <string name="screen_rec_mediaprojection_error">Kesalahan MediaProjection: %s</string>
+    <string name="screen_rec_cannot_write_custom">Tidak dapat menulis ke direktori kustom</string>
+    <string name="screen_rec_failed_create_custom">Gagal membuat file di lokasi kustom</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_error_video_info">Kesalahan menampilkan info video.</string>
+    <string name="records_cannot_open_editor">Tidak dapat membuka editor</string>
+    <string name="records_cannot_share">Tidak dapat membagikan video: %s</string>
+    <string name="records_cannot_open_video">Tidak dapat membuka video: %s</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_export_label">Ekspor</string>
+    <string name="records_export_custom_label">Ekspor Kustom</string>
+    <string name="records_merge_label">Gabung</string>
+    <string name="records_batch_operation">Operasi Batch</string>
+    <string name="records_error_opening_media">Kesalahan membuka media</string>
+    <string name="records_no_videos_delete">Tidak ada video untuk dihapus.</string>
+    <string name="records_no_videos_trash">Tidak ada video untuk dipindahkan ke sampah.</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_access_dir">Tidak dapat mengakses direktori sampah.</string>
+    <string name="trash_error_opening">Kesalahan membuka file.</string>
+
+    <!-- ForensicsExportCenterFragment / RecordsDeletionService -->
+    <string name="export_destination_none">Tidak ada tujuan ekspor ditentukan</string>
+    <string name="generic_delete_failed">Penghapusan gagal</string>
+    <string name="generic_save_failed">Penyimpanan gagal</string>
+
+    <!-- Forensics -->
+    <string name="forensics_export_failed">Ekspor gagal</string>
+
+    <!-- RecordingService error toasts -->
+    <string name="toast_preview_only_front_back">Pratinjau langsung hanya tersedia untuk kamera Depan/Belakang</string>
+    <string name="toast_camera_permission_denied">Izin kamera ditolak untuk layanan</string>
+    <string name="toast_camera_not_responding">Layanan kamera tidak merespons. Coba lagi.</string>
+    <string name="toast_camera_not_found">Gagal menemukan kamera yang dipilih</string>
+    <string name="toast_camera_unavailable">Kamera berulang kali tidak tersedia (Alasan: %s). Menghentikan.</string>
+    <string name="toast_camera_access_error">Kesalahan akses kamera: %s</string>
+    <string name="toast_invalid_camera_config">Konfigurasi kamera tidak valid.</string>
+    <string name="toast_unexpected_camera_error">Kesalahan kamera tak terduga.</string>
+    <string name="toast_failed_camera_details">Gagal mengakses detail kamera.</string>
+    <string name="toast_invalid_camera_setup">Pengaturan kamera tidak valid.</string>
+    <string name="toast_critical_camera_error">Kesalahan sistem kamera kritis.</string>
+    <string name="toast_processing_error">Kesalahan memproses rekaman video</string>
+    <string name="toast_notification_permission">Izin notifikasi diperlukan</string>
+    <string name="toast_create_recording_dir_error">Kesalahan membuat direktori rekaman</string>
+    <string name="toast_create_storage_dir_error">Kesalahan membuat direktori penyimpanan internal</string>
+    <string name="toast_permissions_required">Izin diperlukan untuk merekam</string>
+    <string name="toast_failed_open_file">Gagal membuka file untuk ditulis</string>
+    <string name="toast_cannot_write_custom_dir">Tidak dapat menulis ke direktori kustom yang dipilih</string>
+    <string name="toast_failed_create_file">Gagal membuat file untuk ditulis</string>
 </resources>

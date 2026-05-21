@@ -2585,4 +2585,268 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>
     <string name="audio_device_type_builtin_mic">Built-in Mic</string>
+
+    <!-- Settings titles -->
+    <string name="settings_behavior_title">Συμπεριφορά</string>
+    <string name="settings_onboarding_title">Εισαγωγή</string>
+    <string name="settings_auto_update_check">Αυτόματος Έλεγχος Ενημερώσεων</string>
+    <string name="settings_location_privacy_title">Τοποθεσία &amp; Απόρρητο</string>
+    <string name="settings_embed_location_metadata">Ενσωμάτωση Μεταδεδομένων Τοποθεσίας</string>
+
+    <!-- Settings values -->
+    <string name="setting_off">Απενεργοποιημένο</string>
+    <string name="setting_portrait">Κατακόρυφο</string>
+    <string name="setting_microphone">Μικρόφωνο</string>
+    <string name="setting_coordinates_only">Μόνο Συντεταγμένες</string>
+
+    <!-- About fragment -->
+    <string name="about_update_failed">Αποτυχία ελέγχου για ενημερώσεις. Παρακαλώ δοκιμάστε ξανά αργότερα.</string>
+    <string name="about_beta_available">\n\nBeta v%s διαθέσιμη</string>
+    <string name="about_dialog_error">Σφάλμα</string>
+    <string name="about_dialog_ok">OK</string>
+    <string name="about_get_beta">Λήψη Beta</string>
+    <string name="about_fadcam_feedback">Σχόλια FadCam</string>
+
+    <!-- Video split sizes -->
+    <string name="video_split_enabled_format">Ενεργοποιημένο (%s)</string>
+    <string name="video_split_size_500mb">500 MB</string>
+    <string name="video_split_size_1gb">1 GB</string>
+    <string name="video_split_size_2gb">2 GB</string>
+    <string name="video_split_size_4gb">4 GB</string>
+    <string name="video_split_size_custom_format">Προσαρμοσμένο (%d MB)</string>
+    <string name="video_split_change_format">Αλλαγή Μεγέθους Διαχωρισμού (Τρέχον: %s)</string>
+    <string name="video_split_custom_title">Προσαρμοσμένο Μέγεθος Διαχωρισμού (MB)</string>
+
+    <!-- Screen recording values -->
+    <string name="screen_rec_resolution_value" translatable="false">1920×1080</string>
+    <string name="screen_rec_framerate_value" translatable="false">30 fps</string>
+    <string name="screen_rec_bitrate_value" translatable="false">8 Mbps</string>
+    <string name="screen_rec_splitting_value_format">%s (FadCam + FadRec)</string>
+
+    <!-- Settings home tabs -->
+    <string name="settings_tab_all">Όλα</string>
+    <string name="settings_tab_fadcam" translatable="false">FadCam</string>
+    <string name="settings_tab_fadrec" translatable="false">FadRec</string>
+
+    <!-- Watermark preview labels -->
+    <string name="watermark_preview_fadcam" translatable="false">FadCam</string>
+    <string name="watermark_preview_fadrec" translatable="false">FadRec</string>
+    <string name="settings_location_update_interval_5s">5.0 δευτερόλεπτα</string>
+
+    <!-- Annotation toolbar -->
+    <string name="annotation_by_fadsec_lab">από FadSec Lab</string>
+    <string name="annotation_quick_access">Γρήγορη Πρόσβαση</string>
+    <string name="annotation_annotate">Σχολιασμός</string>
+    <string name="annotation_enable_tools">Ενεργοποίηση εργαλείων</string>
+    <string name="annotation_canvas">Καμβάς</string>
+    <string name="annotation_toggle_visibility">Εναλλαγή ορατότητας</string>
+    <string name="annotation_project">Έργο</string>
+    <string name="annotation_untitled_project">Έργο Χωρίς Τίτλο</string>
+    <string name="annotation_tap_to_add_desc">Πατήστε για προσθήκη περιγραφής</string>
+    <string name="annotation_manage_projects">Διαχείριση Έργων</string>
+    <string name="annotation_delete_all">Διαγραφή Όλων</string>
+    <string name="annotation_tools_label">Εργαλεία</string>
+    <string name="annotation_select">Επιλογή</string>
+    <string name="annotation_pen">Πένα</string>
+    <string name="annotation_erase">Σβήσιμο</string>
+    <string name="annotation_text">Κείμενο</string>
+    <string name="annotation_shape">Σχήμα</string>
+    <string name="annotation_colors">Χρώματα</string>
+    <string name="annotation_stroke_size">Μέγεθος Γραμμής</string>
+    <string name="annotation_board">Πίνακας</string>
+    <string name="annotation_board_none">Κανένα</string>
+    <string name="annotation_board_black">Μαύρο</string>
+    <string name="annotation_board_white">Λευκό</string>
+
+    <!-- Shape picker dialog -->
+    <string name="shape_picker_title">📐 Προσθήκη Σχήματος</string>
+    <string name="shape_picker_choose_shape">Επιλογή Σχήματος</string>
+    <string name="shape_picker_rectangle">Ορθογώνιο</string>
+    <string name="shape_picker_circle">Κύκλος</string>
+    <string name="shape_picker_arrow">Βέλος</string>
+    <string name="shape_picker_triangle">Τρίγωνο</string>
+    <string name="shape_picker_star">Αστέρι</string>
+    <string name="shape_picker_line">Γραμμή</string>
+    <string name="shape_picker_fill_shape">Γέμισμα Σχήματος</string>
+    <string name="shape_picker_color">🎨 Χρώμα Σχήματος</string>
+    <string name="shape_picker_tip">💡 Υπόδειξη: Αφού επιλέξετε, σύρετε στον καμβά για να δημιουργήσετε το σχήμα</string>
+    <string name="shape_picker_got_it">Το κατάλαβα!</string>
+
+    <!-- Text editor dialog -->
+    <string name="text_editor_title">✏️ Προσθήκη Κειμένου</string>
+    <string name="text_editor_content_label">Περιεχόμενο Κειμένου</string>
+    <string name="text_editor_hint">Πληκτρολογήστε το κείμενό σας εδώ...</string>
+    <string name="text_editor_font_size">📏 Μέγεθος Γραμματοσειράς</string>
+    <string name="text_editor_style">🎨 Στυλ Κειμένου</string>
+    <string name="text_editor_color">🎨 Χρώμα Κειμένου</string>
+    <string name="text_editor_cancel">Ακύρωση</string>
+    <string name="text_editor_add_text">✓ Προσθήκη Κειμένου</string>
+
+    <!-- Annotation Service -->
+    <string name="annotation_disable">Απενεργοποίηση Σχολιασμών</string>
+    <string name="annotation_disable_desc">Απενεργοποιήστε για κανονική χρήση οθόνης</string>
+    <string name="annotation_enable">Ενεργοποίηση Σχολιασμών</string>
+    <string name="annotation_hide_canvas">Απόκρυψη Καμβά</string>
+    <string name="annotation_hide_canvas_desc">Απόκρυψη όλων των σχεδίων (τα καρφιτσωμένα επίπεδα παραμένουν)</string>
+    <string name="annotation_delete_all_title">Διαγραφή Όλων των Έργων;</string>
+    <string name="annotation_delete_all_btn">Διαγραφή Όλων</string>
+    <string name="annotation_all_deleted">Όλα τα έργα διαγράφηκαν</string>
+    <string name="annotation_layer_locked">Το επίπεδο είναι κλειδωμένο</string>
+    <string name="annotation_welcome_back">Καλώς ήρθατε πίσω!</string>
+    <string name="annotation_my_projects">Τα Έργα Μου</string>
+    <string name="annotation_pick_color">Επιλέξτε Χρώμα</string>
+    <string name="annotation_shape_added">📐 Το σχήμα προστέθηκε!</string>
+
+    <!-- Content descriptions -->
+    <string name="desc_align_center">Στοίχιση στο κέντρο</string>
+    <string name="desc_align_left">Στοίχιση αριστερά</string>
+    <string name="desc_align_right">Στοίχιση δεξιά</string>
+    <string name="desc_autofocus_toggle">Εναλλαγή αυτόματης εστίασης</string>
+    <string name="desc_available_space">Πρόοδος διαθέσιμου χώρου</string>
+    <string name="desc_battery_used">Πρόοδος χρήσης μπαταρίας</string>
+    <string name="desc_bold">Έντονη</string>
+    <string name="desc_close">Κλείσιμο</string>
+    <string name="desc_copy_ip">Αντιγραφή IP</string>
+    <string name="desc_copy_url">Αντιγραφή URL</string>
+    <string name="desc_decrease">Μείωση</string>
+    <string name="desc_delete_text">Διαγραφή κειμένου</string>
+    <string name="desc_done">Ολοκληρώθηκε</string>
+    <string name="desc_exposure_compensation">Αντιστάθμιση έκθεσης</string>
+    <string name="desc_fadrec_logo">Λογότυπο FadRec</string>
+    <string name="desc_fast_forward">Γρήγορη προώθηση 5 δευτερολέπτων</string>
+    <string name="desc_increase">Αύξηση</string>
+    <string name="desc_italic">Πλάγια</string>
+    <string name="desc_memory_used">Πρόοδος χρήσης μνήμης</string>
+    <string name="desc_mini_apps_info">Πληροφορίες Mini Apps</string>
+    <string name="desc_open_settings">Άνοιγμα ρυθμίσεων</string>
+    <string name="desc_open_video_stats">Άνοιγμα στατιστικών βίντεο</string>
+    <string name="desc_reset">Επαναφορά</string>
+    <string name="desc_reset_zoom">Επαναφορά ζουμ</string>
+    <string name="desc_rewind">Επιστροφή 5 δευτερολέπτων</string>
+    <string name="desc_storage_used">Πρόοδος χρήσης αποθήκευσης</string>
+    <string name="desc_text_background">Φόντο κειμένου</string>
+    <string name="desc_time_left_icon">Εικονίδιο χρόνου που απομένει</string>
+    <string name="desc_video_options">Επιλογές βίντεο</string>
+    <string name="desc_video_thumbnail">Μικρογραφία βίντεο</string>
+    <string name="desc_zoom_ratio">Λόγος ζουμ</string>
+
+    <!-- Notification channel names -->
+    <string name="channel_torch_service">Υπηρεσία Φακού</string>
+    <string name="channel_security_alarm">Συναγερμός Ασφαλείας</string>
+    <string name="channel_remote_streaming">Απομακρυσμένη Ροή</string>
+    <string name="channel_annotation_service">Υπηρεσία Σχολιασμών</string>
+    <string name="channel_fadcam_file_ops">Λειτουργίες Αρχείων FadCam</string>
+
+    <!-- ScreenRecordingService -->
+    <string name="screen_rec_failed">Η εγγραφή απέτυχε: %s</string>
+    <string name="screen_rec_permission_required">Απαιτείται άδεια εγγραφής οθόνης</string>
+    <string name="screen_rec_file_error">Σφάλμα δημιουργίας αρχείου εγγραφής οθόνης</string>
+    <string name="screen_rec_dir_error">Σφάλμα δημιουργίας καταλόγου εγγραφής οθόνης</string>
+    <string name="screen_rec_output_error">Σφάλμα ρύθμισης εξόδου εγγραφής οθόνης</string>
+    <string name="screen_rec_start_error">Αποτυχία έναρξης εγγραφής οθόνης</string>
+    <string name="screen_rec_codec_error">Σφάλμα MediaCodec κατά την εγγραφή οθόνης</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_share_error">Δεν είναι δυνατή η κοινή χρήση αυτού του αρχείου</string>
+    <string name="records_open_error">Δεν είναι δυνατό το άνοιγμα αυτού του αρχείου</string>
+    <string name="records_trash_error">Δεν είναι δυνατή η μετακίνηση του αρχείου στον κάδο</string>
+    <string name="records_saf_warning">Επιλέξατε έναν προσαρμοσμένο κατάλογο SAF — οι εξωτερικοί διαχειριστές αρχείων μπορεί να μην βλέπουν τις εγγραφές. Για να γίνουν ορατές, αλλάξτε τη λειτουργία αποθήκευσης ξανά σε «Εσωτερική».</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_processing">Επεξεργασία...</string>
+    <string name="records_processing_complete">Η επεξεργασία ολοκληρώθηκε</string>
+    <string name="records_processing_failed">Η επεξεργασία απέτυχε</string>
+    <string name="records_delete_error">Αποτυχία διαγραφής εγγραφής</string>
+    <string name="records_export_success">Εξήχθη επιτυχώς</string>
+    <string name="records_export_failed">Η εξαγωγή απέτυχε</string>
+    <string name="records_no_files">Δεν βρέθηκαν εγγραφές</string>
+    <string name="records_confirm_delete">Διαγραφή αυτής της εγγραφής;</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_open">Δεν είναι δυνατό το άνοιγμα αρχείου</string>
+    <string name="trash_file_not_found">Το αρχείο δεν βρέθηκε στον κάδο</string>
+    <string name="trash_restored">Το αρχείο επαναφέρθηκε από τον κάδο</string>
+    <string name="trash_deleted">Το αρχείο διαγράφηκε οριστικά</string>
+    <string name="trash_empty">Ο κάδος είναι άδειος</string>
+
+    <!-- MainActivity -->
+    <string name="press_back_again_exit">Πατήστε ξανά πίσω για έξοδο</string>
+
+    <!-- NetworkHealthBottomSheet -->
+    <string name="network_testing">Δοκιμή...</string>
+    <string name="network_test_now">Δοκιμή Τώρα</string>
+    <string name="network_not_tested">Δεν δοκιμάστηκε</string>
+    <string name="network_unknown">Άγνωστο</string>
+
+    <!-- ClientDataBottomSheet -->
+    <string name="client_cloud_viewers">Θεατές Cloud</string>
+    <string name="client_active_clients">Ενεργοί Πελάτες</string>
+    <string name="client_no_clients">Δεν υπάρχουν συνδεδεμένοι πελάτες</string>
+
+    <!-- ScanInfoBottomSheet -->
+    <string name="scan_info_title">Πληροφορίες Σάρωσης</string>
+    <string name="scan_copied_clipboard">Αντιγράφηκε στο πρόχειρο</string>
+    <string name="scan_copy_metadata">Αντιγραφή μεταδεδομένων σάρωσης στο πρόχειρο</string>
+    <string name="scan_value_copied">Η τιμή αντιγράφηκε</string>
+
+    <!-- UpdateAvailableBottomSheet -->
+    <string name="update_version_prefix">v</string>
+
+    <!-- ClientEventLogsBottomSheet -->
+    <string name="events_title">Συμβάντα για %s</string>
+    <string name="events_no_events">Δεν καταγράφηκαν συμβάντα</string>
+
+    <!-- Additional ScreenRecordingService strings -->
+    <string name="screen_rec_permission_error">Σφάλμα άδειας: %s</string>
+    <string name="screen_rec_mediaprojection_error">Σφάλμα MediaProjection: %s</string>
+    <string name="screen_rec_cannot_write_custom">Δεν είναι δυνατή η εγγραφή στον προσαρμοσμένο κατάλογο</string>
+    <string name="screen_rec_failed_create_custom">Αποτυχία δημιουργίας αρχείου στην προσαρμοσμένη τοποθεσία</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_error_video_info">Σφάλμα εμφάνισης πληροφοριών βίντεο.</string>
+    <string name="records_cannot_open_editor">Δεν ήταν δυνατό το άνοιγμα του επεξεργαστή</string>
+    <string name="records_cannot_share">Δεν ήταν δυνατή η κοινή χρήση βίντεο: %s</string>
+    <string name="records_cannot_open_video">Δεν ήταν δυνατό το άνοιγμα βίντεο: %s</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_export_label">Εξαγωγή</string>
+    <string name="records_export_custom_label">Προσαρμοσμένη Εξαγωγή</string>
+    <string name="records_merge_label">Συγχώνευση</string>
+    <string name="records_batch_operation">Λειτουργία Δέσμης</string>
+    <string name="records_error_opening_media">Σφάλμα ανοίγματος μέσου</string>
+    <string name="records_no_videos_delete">Δεν υπάρχουν βίντεο προς διαγραφή.</string>
+    <string name="records_no_videos_trash">Δεν υπάρχουν βίντεο προς μετακίνηση στον κάδο.</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_access_dir">Δεν είναι δυνατή η πρόσβαση στον κατάλογο του κάδου.</string>
+    <string name="trash_error_opening">Σφάλμα ανοίγματος αρχείου.</string>
+
+    <!-- ForensicsExportCenterFragment / RecordsDeletionService -->
+    <string name="export_destination_none">Δεν καθορίστηκε προορισμός εξαγωγής</string>
+    <string name="generic_delete_failed">Η διαγραφή απέτυχε</string>
+    <string name="generic_save_failed">Η αποθήκευση απέτυχε</string>
+
+    <!-- Forensics -->
+    <string name="forensics_export_failed">Η εξαγωγή απέτυχε</string>
+
+    <!-- RecordingService error toasts -->
+    <string name="toast_preview_only_front_back">Η ζωντανή προεπισκόπηση είναι διαθέσιμη μόνο για Μπροστινή/Πίσω κάμερα</string>
+    <string name="toast_camera_permission_denied">Η άδεια κάμερας απορρίφθηκε για την υπηρεσία</string>
+    <string name="toast_camera_not_responding">Η υπηρεσία κάμερας δεν ανταποκρίνεται. Δοκιμάστε ξανά.</string>
+    <string name="toast_camera_not_found">Αποτυχία εύρεσης επιλεγμένης κάμερας</string>
+    <string name="toast_camera_unavailable">Η κάμερα δεν είναι διαθέσιμη επανειλημμένα (Αιτία: %s). Διακοπή.</string>
+    <string name="toast_camera_access_error">Σφάλμα πρόσβασης κάμερας: %s</string>
+    <string name="toast_invalid_camera_config">Μη έγκυρη διαμόρφωση κάμερας.</string>
+    <string name="toast_unexpected_camera_error">Απροσδόκητο σφάλμα κάμερας.</string>
+    <string name="toast_failed_camera_details">Αποτυχία πρόσβασης στις λεπτομέρειες κάμερας.</string>
+    <string name="toast_invalid_camera_setup">Μη έγκυρη ρύθμιση κάμερας.</string>
+    <string name="toast_critical_camera_error">Κρίσιμο σφάλμα συστήματος κάμερας.</string>
+    <string name="toast_processing_error">Σφάλμα επεξεργασίας εγγραφής βίντεο</string>
+    <string name="toast_notification_permission">Απαιτείται άδεια ειδοποίησης</string>
+    <string name="toast_create_recording_dir_error">Σφάλμα δημιουργίας καταλόγου εγγραφής</string>
+    <string name="toast_create_storage_dir_error">Σφάλμα δημιουργίας καταλόγου εσωτερικής αποθήκευσης</string>
+    <string name="toast_permissions_required">Απαιτούνται άδειες για εγγραφή</string>
+    <string name="toast_failed_open_file">Αποτυχία ανοίγματος αρχείου για εγγραφή</string>
+    <string name="toast_cannot_write_custom_dir">Δεν είναι δυνατή η εγγραφή στον επιλεγμένο προσαρμοσμένο κατάλογο</string>
+    <string name="toast_failed_create_file">Αποτυχία δημιουργίας αρχείου για εγγραφή</string>
 </resources>

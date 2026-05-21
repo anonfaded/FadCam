@@ -149,15 +149,15 @@ public class ScreenRecordingSettingsFragment extends Fragment {
             boolean enabled = prefs.isVideoSplittingEnabled();
             int mb = prefs.getVideoSplitSizeMb();
             if (!enabled) {
-                valueSplitting.setText("Disabled");
+                valueSplitting.setText(getString(R.string.setting_disabled));
             } else {
                 String sizeLabel;
-                if (mb == 500) sizeLabel = "500 MB";
-                else if (mb == 1024) sizeLabel = "1 GB";
-                else if (mb == 2048) sizeLabel = "2 GB";
-                else if (mb == 4096) sizeLabel = "4 GB";
-                else sizeLabel = "Custom (" + mb + " MB)";
-                valueSplitting.setText(sizeLabel + " (FadCam + FadRec)");
+                if (mb == 500) sizeLabel = getString(R.string.video_split_size_500mb);
+                else if (mb == 1024) sizeLabel = getString(R.string.video_split_size_1gb);
+                else if (mb == 2048) sizeLabel = getString(R.string.video_split_size_2gb);
+                else if (mb == 4096) sizeLabel = getString(R.string.video_split_size_4gb);
+                else sizeLabel = getString(R.string.video_split_size_custom_format, mb);
+                valueSplitting.setText(getString(R.string.screen_rec_splitting_value_format, sizeLabel));
             }
         }
     }

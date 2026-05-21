@@ -81,11 +81,11 @@ public class BehaviorSettingsFragment extends BaseFragment {
 
     private void refreshValues() {
         if (valueOnboardingState != null) {
-            valueOnboardingState.setText(prefs.isShowOnboarding() ? "Enabled" : "Disabled");
+            valueOnboardingState.setText(prefs.isShowOnboarding() ? getString(R.string.setting_enabled) : getString(R.string.setting_disabled));
         }
         if (valueAutoUpdateState != null) {
             boolean enabled = prefs.sharedPreferences.getBoolean("auto_update_check_enabled", true);
-            valueAutoUpdateState.setText(enabled ? "Enabled" : "Disabled");
+            valueAutoUpdateState.setText(enabled ? getString(R.string.setting_enabled) : getString(R.string.setting_disabled));
         }
     }
 

@@ -96,7 +96,7 @@ public class ScanInfoBottomSheet extends BottomSheetDialogFragment {
 
         // Title
         TextView title = view.findViewById(R.id.picker_title);
-        if (title != null) title.setText("Scan Info");
+        if (title != null) title.setText(getString(R.string.scan_info_title));
 
         // Close
         View close = view.findViewById(R.id.picker_close_btn);
@@ -123,12 +123,12 @@ public class ScanInfoBottomSheet extends BottomSheetDialogFragment {
                 String text = "Format: " + format + "\nValue: " + rawValue + "\nSaved: " + getFormattedDate() + "\nFile: " + displayName;
                 ClipboardManager cm = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
                 cm.setPrimaryClip(ClipData.newPlainText("Scan Info", text));
-                Toast.makeText(getContext(), "Copied to clipboard", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.scan_copied_clipboard), Toast.LENGTH_SHORT).show();
             });
         }
         // Update copy subtitle
         TextView copySub = view.findViewById(R.id.copy_subtitle);
-        if (copySub != null) copySub.setText("Copy scan metadata to clipboard");
+        if (copySub != null) copySub.setText(getString(R.string.scan_copy_metadata));
     }
 
     private void readMetadata() {
@@ -280,7 +280,7 @@ public class ScanInfoBottomSheet extends BottomSheetDialogFragment {
             valueRow.setOnClickListener(v -> {
                 ClipboardManager cm = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
                 cm.setPrimaryClip(ClipData.newPlainText("Scanned Value", value));
-                Toast.makeText(getContext(), "Value copied", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.scan_value_copied), Toast.LENGTH_SHORT).show();
             });
 
             rowLayout.addView(valueRow, idx);

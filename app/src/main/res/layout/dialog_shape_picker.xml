@@ -2,10 +2,10 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp" android:background="@drawable/settings_group_card_bg">
 
     <!-- Header -->
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="📐 Add Shape" android:textSize="20sp" android:textStyle="bold" android:textColor="#FFFFFF" android:gravity="center" android:layout_marginBottom="16dp" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/shape_picker_title" android:textSize="20sp" android:textStyle="bold" android:textColor="#FFFFFF" android:gravity="center" android:layout_marginBottom="16dp" />
 
     <!-- Shape picker grid -->
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Choose Shape" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="8dp" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/shape_picker_choose_shape" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="8dp" />
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:layout_marginBottom="12dp">
 
@@ -13,21 +13,21 @@
 
             <TextView android:layout_width="40dp" android:layout_height="30dp" android:background="#80FF5722" android:layout_marginBottom="4dp" />
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Rectangle" android:textSize="10sp" android:textColor="#9E9E9E" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/shape_picker_rectangle" android:textSize="10sp" android:textColor="#9E9E9E" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/btnShapeCircle" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="@drawable/settings_home_row_bg" android:layout_marginEnd="8dp" android:clickable="true" android:focusable="true">
 
             <TextView android:layout_width="35dp" android:layout_height="35dp" android:background="@drawable/annotation_color_circle" android:backgroundTint="#80FF5722" android:layout_marginBottom="4dp" />
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Circle" android:textSize="10sp" android:textColor="#9E9E9E" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/shape_picker_circle" android:textSize="10sp" android:textColor="#9E9E9E" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/btnShapeArrow" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="@drawable/settings_home_row_bg" android:clickable="true" android:focusable="true">
 
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="➜" android:textSize="32sp" android:textColor="#FF5722" android:layout_marginBottom="4dp" />
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Arrow" android:textSize="10sp" android:textColor="#9E9E9E" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/shape_picker_arrow" android:textSize="10sp" android:textColor="#9E9E9E" />
         </LinearLayout>
     </LinearLayout>
 
@@ -37,34 +37,34 @@
 
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="▲" android:textSize="32sp" android:textColor="#FF5722" android:layout_marginBottom="4dp" />
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Triangle" android:textSize="10sp" android:textColor="#9E9E9E" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/shape_picker_triangle" android:textSize="10sp" android:textColor="#9E9E9E" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/btnShapeStar" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="@drawable/settings_home_row_bg" android:layout_marginEnd="8dp" android:clickable="true" android:focusable="true">
 
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⭐" android:textSize="32sp" android:layout_marginBottom="4dp" />
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Star" android:textSize="10sp" android:textColor="#9E9E9E" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/shape_picker_star" android:textSize="10sp" android:textColor="#9E9E9E" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/btnShapeLine" android:layout_width="0dp" android:layout_height="80dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center" android:background="@drawable/settings_home_row_bg" android:clickable="true" android:focusable="true">
 
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="─" android:textSize="32sp" android:textColor="#FF5722" android:layout_marginBottom="4dp" />
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Line" android:textSize="10sp" android:textColor="#9E9E9E" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/shape_picker_line" android:textSize="10sp" android:textColor="#9E9E9E" />
         </LinearLayout>
     </LinearLayout>
 
     <!-- Fill toggle -->
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="16dp">
 
-        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Fill Shape" android:textSize="14sp" android:textColor="#FFFFFF" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/shape_picker_fill_shape" android:textSize="14sp" android:textColor="#FFFFFF" />
 
         <com.fadcam.ui.AvatarToggleView android:id="@+id/switchFillShape" android:layout_width="52dp" android:layout_height="52dp" android:layout_gravity="center_vertical" />
     </LinearLayout>
 
     <!-- Color picker -->
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎨 Shape Color" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="8dp" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/shape_picker_color" android:textSize="12sp" android:textColor="#9E9E9E" android:layout_marginBottom="8dp" />
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center" android:layout_marginBottom="24dp">
 
@@ -82,9 +82,9 @@
     </LinearLayout>
 
     <!-- Info text -->
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="💡 Tip: After selecting, drag on canvas to create the shape" android:textSize="11sp" android:textColor="#9E9E9E" android:textStyle="italic" android:gravity="center" android:layout_marginBottom="16dp" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/shape_picker_tip" android:textSize="11sp" android:textColor="#9E9E9E" android:textStyle="italic" android:gravity="center" android:layout_marginBottom="16dp" />
 
     <!-- Action button -->
-    <TextView android:id="@+id/btnDismiss" android:layout_width="match_parent" android:layout_height="48dp" android:text="Got it!" android:textSize="16sp" android:textStyle="bold" android:textColor="#4CAF50" android:gravity="center" android:background="@drawable/settings_home_row_bg" android:clickable="true" android:focusable="true" />
+    <TextView android:id="@+id/btnDismiss" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/shape_picker_got_it" android:textSize="16sp" android:textStyle="bold" android:textColor="#4CAF50" android:gravity="center" android:background="@drawable/settings_home_row_bg" android:clickable="true" android:focusable="true" />
 
 </LinearLayout>

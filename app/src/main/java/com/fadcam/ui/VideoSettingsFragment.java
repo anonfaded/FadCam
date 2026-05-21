@@ -225,18 +225,18 @@ public class VideoSettingsFragment extends Fragment {
                 int mb = prefs.getVideoSplitSizeMb();
                 String label;
                 if (mb == 500)
-                    label = "Enabled (500 MB)";
+                    label = getString(R.string.video_split_enabled_format, getString(R.string.video_split_size_500mb));
                 else if (mb == 1024)
-                    label = "Enabled (1 GB)";
+                    label = getString(R.string.video_split_enabled_format, getString(R.string.video_split_size_1gb));
                 else if (mb == 2048)
-                    label = "Enabled (2 GB)";
+                    label = getString(R.string.video_split_enabled_format, getString(R.string.video_split_size_2gb));
                 else if (mb == 4096)
-                    label = "Enabled (4 GB)";
+                    label = getString(R.string.video_split_enabled_format, getString(R.string.video_split_size_4gb));
                 else
-                    label = "Enabled (Custom " + mb + " MB)";
+                    label = getString(R.string.video_split_enabled_format, getString(R.string.video_split_size_custom_format, mb));
                 valueVideoSplitEnabled.setText(label);
             } else {
-                valueVideoSplitEnabled.setText("Disabled");
+                valueVideoSplitEnabled.setText(getString(R.string.setting_disabled));
             }
         }
 
@@ -1271,17 +1271,17 @@ public class VideoSettingsFragment extends Fragment {
         int mb = prefs.getVideoSplitSizeMb();
         String sizeLabel;
         if (mb == 500)
-            sizeLabel = "500 MB";
+            sizeLabel = getString(R.string.video_split_size_500mb);
         else if (mb == 1024)
-            sizeLabel = "1 GB";
+            sizeLabel = getString(R.string.video_split_size_1gb);
         else if (mb == 2048)
-            sizeLabel = "2 GB";
+            sizeLabel = getString(R.string.video_split_size_2gb);
         else if (mb == 4096)
-            sizeLabel = "4 GB";
+            sizeLabel = getString(R.string.video_split_size_4gb);
         else
-            sizeLabel = "Custom (" + mb + " MB)";
+            sizeLabel = getString(R.string.video_split_size_custom_format, mb);
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
-        items.add(new com.fadcam.ui.picker.OptionItem("size", "Change Split Size (Current: " + sizeLabel + ")"));
+        items.add(new com.fadcam.ui.picker.OptionItem("size", getString(R.string.video_split_change_format, sizeLabel)));
         final String resultKey = "picker_result_video_split";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
             if (b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)) {
@@ -1385,7 +1385,7 @@ public class VideoSettingsFragment extends Fragment {
         });
         com.fadcam.ui.picker.NumberInputBottomSheetFragment sheet = com.fadcam.ui.picker.NumberInputBottomSheetFragment
                 .newInstance(
-                        "Custom Split Size (MB)", 10, 102400, current, "10 - 102400", 0, 0,
+                        getString(R.string.video_split_custom_title), 10, 102400, current, "10 - 102400", 0, 0,
                         null, null, resultKey);
         sheet.show(getParentFragmentManager(), "video_split_custom_input");
         // method(showCustomSplitSizeBottomSheet)-----------

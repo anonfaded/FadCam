@@ -1047,7 +1047,7 @@ public class RecordingService extends Service {
             CameraType selectedType = sharedPreferencesManager.getCameraSelection();
             if (selectedType != null && selectedType.isDual()) {
                 FLog.w(TAG, "Preview-only mode is not supported for Dual PiP");
-                Toast.makeText(this, "Live preview is available only for Front/Back camera", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.toast_preview_only_front_back), Toast.LENGTH_SHORT).show();
                 return START_STICKY;
             }
             if (isWorkingInProgress()) {
@@ -3363,7 +3363,7 @@ public class RecordingService extends Service {
             FLog.e(TAG, "openCamera: Camera permission denied.");
             if (recordingState == RecordingState.STARTING)
                 recordingState = RecordingState.NONE;
-            Toast.makeText(this, "Camera permission denied for service", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.toast_camera_permission_denied), Toast.LENGTH_LONG).show();
             stopSelf();
             return;
         }
@@ -3392,7 +3392,7 @@ public class RecordingService extends Service {
                 basicCameraIds = cameraManager.getCameraIdList();
                 if (basicCameraIds.length == 0) {
                     FLog.e(TAG, "Still no cameras after retry. CameraServer may be crashed or unavailable.");
-                    Toast.makeText(this, "Camera service not responding. Try again.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.toast_camera_not_responding), Toast.LENGTH_LONG).show();
                     if (recordingState == RecordingState.STARTING)
                         recordingState = RecordingState.NONE;
                     stopSelf();
@@ -3515,7 +3515,7 @@ public class RecordingService extends Service {
 
             if (cameraToOpenId == null) {
                 FLog.e(TAG, "Could not determine a valid camera ID to open for selected type: " + selectedType);
-                Toast.makeText(this, "Failed to find selected camera", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.toast_camera_not_found), Toast.LENGTH_LONG).show();
                 if (recordingState == RecordingState.STARTING)
                     recordingState = RecordingState.NONE;
                 stopSelf();
@@ -3567,7 +3567,7 @@ public class RecordingService extends Service {
                                     + reason);
                             if (recordingState == RecordingState.STARTING)
                                 recordingState = RecordingState.NONE;
-                            Toast.makeText(this, "Camera repeatedly unavailable (Reason: " + reason + "). Stopping.",
+                            Toast.makeText(this, getString(R.string.toast_camera_unavailable, reason),
                                     Toast.LENGTH_LONG).show();
                             stopSelf();
                             return;
@@ -3576,7 +3576,7 @@ public class RecordingService extends Service {
                         FLog.e(TAG, "Unrecoverable CameraAccessException (Reason: " + reason + "). Not retrying.", e);
                         if (recordingState == RecordingState.STARTING)
                             recordingState = RecordingState.NONE;
-                        Toast.makeText(this, "Camera access error: " + reason, Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, getString(R.string.toast_camera_access_error, reason), Toast.LENGTH_LONG).show();
                         stopSelf();
                         return;
                     }
@@ -3585,7 +3585,7 @@ public class RecordingService extends Service {
                             + finalCameraToOpenId + "'). Attempt: " + (attempt + 1), e);
                     if (recordingState == RecordingState.STARTING)
                         recordingState = RecordingState.NONE;
-                    Toast.makeText(this, "Invalid camera configuration.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.toast_invalid_camera_config), Toast.LENGTH_LONG).show();
                     stopSelf();
                     return;
                 } catch (Exception e) {
@@ -3593,7 +3593,7 @@ public class RecordingService extends Service {
                             + finalCameraToOpenId, e);
                     if (recordingState == RecordingState.STARTING)
                         recordingState = RecordingState.NONE;
-                    Toast.makeText(this, "Unexpected camera error.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.toast_unexpected_camera_error), Toast.LENGTH_LONG).show();
                     stopSelf();
                     return;
                 }
@@ -3602,20 +3602,20 @@ public class RecordingService extends Service {
             FLog.e(TAG, "openCamera: Initial Camera Access Exception (listing/characteristics)", e);
             if (recordingState == RecordingState.STARTING)
                 recordingState = RecordingState.NONE;
-            Toast.makeText(this, "Failed to access camera details.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.toast_failed_camera_details), Toast.LENGTH_LONG).show();
             stopSelf();
         } catch (IllegalArgumentException e) {
             FLog.e(TAG, "openCamera: Outer Illegal Argument Exception (likely invalid camera ID '" + cameraToOpenId
                     + "' for characteristics)", e);
             if (recordingState == RecordingState.STARTING)
                 recordingState = RecordingState.NONE;
-            Toast.makeText(this, "Invalid camera setup.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.toast_invalid_camera_setup), Toast.LENGTH_LONG).show();
             stopSelf();
         } catch (Exception e) {
             FLog.e(TAG, "openCamera: Unexpected outer error", e);
             if (recordingState == RecordingState.STARTING)
                 recordingState = RecordingState.NONE;
-            Toast.makeText(this, "Critical camera system error.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.toast_critical_camera_error), Toast.LENGTH_LONG).show();
             stopSelf();
         }
     }
@@ -4362,7 +4362,7 @@ public class RecordingService extends Service {
     // Helper to handle storage setup errors consistently
     private void handleProcessingError(String errorMessage, @Nullable String internalTempInputPath) {
         FLog.e(TAG, "Processing Error: " + errorMessage);
-        Toast.makeText(this, "Error processing video recording", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, getString(R.string.toast_processing_error), Toast.LENGTH_LONG).show();
 
         // If an input path/URI was provided, log attempt to clean it
         if (internalTempInputPath != null) {
@@ -4923,7 +4923,7 @@ public class RecordingService extends Service {
                     stopSelf();
                 }
             } else {
-                Toast.makeText(this, "Notification permission needed", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.toast_notification_permission), Toast.LENGTH_LONG).show();
                 stopSelf();
             }
             return;
@@ -5402,7 +5402,7 @@ public class RecordingService extends Service {
             File videoDir = resolveInternalRecordingVideoDir(isStreamAndSave);
             if (videoDir == null) {
                 FLog.e(TAG, "Cannot create recording directory for split segment");
-                Toast.makeText(this, "Error creating recording directory", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.toast_create_recording_dir_error), Toast.LENGTH_LONG).show();
                 return null;
             }
 
@@ -6249,7 +6249,7 @@ public class RecordingService extends Service {
         File videoDir = resolveInternalRecordingVideoDir(isStreamAndSave);
         if (videoDir == null) {
             FLog.e(TAG, "Cannot create internal recording directory for active session");
-            Toast.makeText(this, "Error creating internal storage directory", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.toast_create_storage_dir_error), Toast.LENGTH_LONG).show();
             return null;
         }
         return new File(videoDir, baseFilename);
@@ -6446,7 +6446,7 @@ public class RecordingService extends Service {
                     ActivityCompat.checkSelfPermission(this,
                             Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 FLog.e(TAG, "Permissions missing, cannot start recording.");
-                Toast.makeText(this, "Permissions required for recording", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.toast_permissions_required), Toast.LENGTH_LONG).show();
                 recordingState = RecordingState.NONE;
                 sharedPreferencesManager.setRecordingInProgress(false);
                 stopSelf();
@@ -6521,7 +6521,7 @@ public class RecordingService extends Service {
                 String customUriString = sharedPreferencesManager.getCustomStorageUri();
                 if (customUriString == null) {
                     FLog.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
-                    Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.toast_failed_open_file), Toast.LENGTH_LONG).show();
                     stopSelf();
                     return;
                 }
@@ -6534,7 +6534,7 @@ public class RecordingService extends Service {
                         customUriString, isStreamAndSave);
                 if (pickedDir == null || !pickedDir.canWrite()) {
                     FLog.e(TAG, "Cannot write to selected custom directory");
-                    Toast.makeText(this, "Cannot write to selected custom directory", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.toast_cannot_write_custom_dir), Toast.LENGTH_LONG).show();
                     stopSelf();
                     return;
                 }
@@ -6544,7 +6544,7 @@ public class RecordingService extends Service {
                 androidx.documentfile.provider.DocumentFile videoFile = pickedDir.createFile("video/mp4", baseFilename);
                 if (videoFile == null) {
                     FLog.e(TAG, "Failed to create SAF file");
-                    Toast.makeText(this, "Failed to create file for writing", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.toast_failed_create_file), Toast.LENGTH_LONG).show();
                     stopSelf();
                     return;
                 }
@@ -6564,7 +6564,7 @@ public class RecordingService extends Service {
                 safRecordingPfd = getContentResolver().openFileDescriptor(safUri, "w");
                 if (safRecordingPfd == null) {
                     FLog.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
-                    Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.toast_failed_open_file), Toast.LENGTH_LONG).show();
                     stopSelf();
                     return;
                 }

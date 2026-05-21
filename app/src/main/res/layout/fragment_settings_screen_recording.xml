@@ -87,7 +87,7 @@
                         android:id="@+id/value_resolution"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="1920×1080"
+                        android:text="@string/screen_rec_resolution_value"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="13sp"/>
                     <ImageView
@@ -121,7 +121,7 @@
                         android:id="@+id/value_framerate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="30 fps"
+                        android:text="@string/screen_rec_framerate_value"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="13sp"/>
                     <ImageView
@@ -155,7 +155,7 @@
                         android:id="@+id/value_bitrate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="8 Mbps"
+                        android:text="@string/screen_rec_bitrate_value"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="13sp"/>
                     <ImageView
@@ -189,7 +189,7 @@
                         android:id="@+id/value_orientation"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Portrait"
+                        android:text="@string/setting_portrait"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="13sp"/>
                     <ImageView
@@ -223,7 +223,7 @@
                         android:id="@+id/value_audio_source"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Microphone"
+                        android:text="@string/setting_microphone"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="13sp"/>
                     <ImageView
@@ -261,7 +261,7 @@
                             android:id="@+id/value_splitting"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Off"
+                            android:text="@string/setting_off"
                             android:textColor="@android:color/darker_gray"
                             android:textSize="13sp"/>
                     </LinearLayout>

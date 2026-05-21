@@ -4200,4 +4200,261 @@
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>
     <string name="audio_device_type_builtin_mic">Built-in Mic</string>
 
+    <!-- Settings titles -->
+    <string name="settings_behavior_title">السلوك</string>
+    <string name="settings_onboarding_title">التوجيه</string>
+    <string name="settings_auto_update_check">التحقق التلقائي من التحديثات</string>
+    <string name="settings_location_privacy_title">الموقع والخصوصية</string>
+    <string name="settings_embed_location_metadata">تضمين بيانات الموقع الوصفية</string>
+
+    <!-- Settings values -->
+    <string name="setting_off">إيقاف</string>
+    <string name="setting_portrait">عمودي</string>
+    <string name="setting_microphone">ميكروفون</string>
+    <string name="setting_coordinates_only">الإحداثيات فقط</string>
+
+    <!-- About fragment -->
+    <string name="about_update_failed">فشل التحقق من التحديثات. يرجى المحاولة مرة أخرى لاحقاً.</string>
+    <string name="about_beta_available">\n\nالإصدار التجريبي v%s متاح</string>
+    <string name="about_dialog_error">خطأ</string>
+    <string name="about_dialog_ok">موافق</string>
+    <string name="about_get_beta">الحصول على الإصدار التجريبي</string>
+    <string name="about_fadcam_feedback">ملاحظات FadCam</string>
+
+    <!-- Video split sizes -->
+    <string name="video_split_enabled_format">مفعل (%s)</string>
+    <string name="video_split_size_500mb">500 ميجابايت</string>
+    <string name="video_split_size_1gb">1 جيجابايت</string>
+    <string name="video_split_size_2gb">2 جيجابايت</string>
+    <string name="video_split_size_4gb">4 جيجابايت</string>
+    <string name="video_split_size_custom_format">مخصص (%d ميجابايت)</string>
+    <string name="video_split_change_format">تغيير حجم التقسيم (الحالي: %s)</string>
+    <string name="video_split_custom_title">حجم التقسيم المخصص (ميجابايت)</string>
+
+    <!-- Screen recording values -->
+    <string name="screen_rec_splitting_value_format">%s (FadCam + FadRec)</string>
+
+    <!-- Settings home tabs -->
+    <string name="settings_tab_all">الكل</string>
+
+    <!-- Watermark preview labels -->
+    <string name="settings_location_update_interval_5s">5.0 ثوانٍ</string>
+
+    <!-- Annotation toolbar -->
+    <string name="annotation_by_fadsec_lab">بواسطة FadSec Lab</string>
+    <string name="annotation_quick_access">الوصول السريع</string>
+    <string name="annotation_annotate">تعليق توضيحي</string>
+    <string name="annotation_enable_tools">تمكين الأدوات</string>
+    <string name="annotation_canvas">لوحة الرسم</string>
+    <string name="annotation_toggle_visibility">تبديل الرؤية</string>
+    <string name="annotation_project">مشروع</string>
+    <string name="annotation_untitled_project">مشروع بدون عنوان</string>
+    <string name="annotation_tap_to_add_desc">اضغط لإضافة وصف</string>
+    <string name="annotation_manage_projects">إدارة المشاريع</string>
+    <string name="annotation_delete_all">حذف الكل</string>
+    <string name="annotation_tools_label">أدوات</string>
+    <string name="annotation_select">تحديد</string>
+    <string name="annotation_pen">قلم</string>
+    <string name="annotation_erase">مسح</string>
+    <string name="annotation_text">نص</string>
+    <string name="annotation_shape">شكل</string>
+    <string name="annotation_colors">ألوان</string>
+    <string name="annotation_stroke_size">حجم الضربة</string>
+    <string name="annotation_board">لوحة</string>
+    <string name="annotation_board_none">بلا</string>
+    <string name="annotation_board_black">أسود</string>
+    <string name="annotation_board_white">أبيض</string>
+
+    <!-- Shape picker dialog -->
+    <string name="shape_picker_title">📐 إضافة شكل</string>
+    <string name="shape_picker_choose_shape">اختر شكلاً</string>
+    <string name="shape_picker_rectangle">مستطيل</string>
+    <string name="shape_picker_circle">دائرة</string>
+    <string name="shape_picker_arrow">سهم</string>
+    <string name="shape_picker_triangle">مثلث</string>
+    <string name="shape_picker_star">نجمة</string>
+    <string name="shape_picker_line">خط</string>
+    <string name="shape_picker_fill_shape">تعبئة الشكل</string>
+    <string name="shape_picker_color">🎨 لون الشكل</string>
+    <string name="shape_picker_tip">💡 تلميح: بعد التحديد، اسحب على اللوحة لإنشاء الشكل</string>
+    <string name="shape_picker_got_it">فهمت!</string>
+
+    <!-- Text editor dialog -->
+    <string name="text_editor_title">✏️ إضافة نص</string>
+    <string name="text_editor_content_label">محتوى النص</string>
+    <string name="text_editor_hint">اكتب نصك هنا…</string>
+    <string name="text_editor_font_size">📏 حجم الخط</string>
+    <string name="text_editor_style">🎨 نمط النص</string>
+    <string name="text_editor_color">🎨 لون النص</string>
+    <string name="text_editor_cancel">إلغاء</string>
+    <string name="text_editor_add_text">✓ إضافة نص</string>
+
+    <!-- Annotation Service -->
+    <string name="annotation_disable">تعطيل التعليق التوضيحي</string>
+    <string name="annotation_disable_desc">عطّل لاستخدام الشاشة بشكل طبيعي</string>
+    <string name="annotation_enable">تمكين التعليق التوضيحي</string>
+    <string name="annotation_hide_canvas">إخفاء اللوحة</string>
+    <string name="annotation_hide_canvas_desc">إخفاء جميع الرسومات (الطبقات المثبتة تبقى)</string>
+    <string name="annotation_delete_all_title">حذف جميع المشاريع؟</string>
+    <string name="annotation_delete_all_btn">حذف الكل</string>
+    <string name="annotation_all_deleted">تم حذف جميع المشاريع</string>
+    <string name="annotation_layer_locked">الطبقة مقفلة</string>
+    <string name="annotation_welcome_back">مرحباً بعودتك!</string>
+    <string name="annotation_my_projects">مشاريعي</string>
+    <string name="annotation_pick_color">اختر لوناً</string>
+    <string name="annotation_shape_added">📐 تمت إضافة الشكل!</string>
+
+    <!-- Content descriptions -->
+    <string name="desc_align_center">محاذاة للوسط</string>
+    <string name="desc_align_left">محاذاة لليسار</string>
+    <string name="desc_align_right">محاذاة لليمين</string>
+    <string name="desc_autofocus_toggle">تبديل التركيز التلقائي</string>
+    <string name="desc_available_space">تقدم المساحة المتاحة</string>
+    <string name="desc_battery_used">تقدم استخدام البطارية</string>
+    <string name="desc_bold">عريض</string>
+    <string name="desc_close">إغلاق</string>
+    <string name="desc_copy_ip">نسخ IP</string>
+    <string name="desc_copy_url">نسخ URL</string>
+    <string name="desc_decrease">تقليل</string>
+    <string name="desc_delete_text">حذف النص</string>
+    <string name="desc_done">تم</string>
+    <string name="desc_exposure_compensation">تعويض التعريض</string>
+    <string name="desc_fadrec_logo">شعار FadRec</string>
+    <string name="desc_fast_forward">تقديم 5 ثوانٍ</string>
+    <string name="desc_increase">زيادة</string>
+    <string name="desc_italic">مائل</string>
+    <string name="desc_memory_used">تقدم استخدام الذاكرة</string>
+    <string name="desc_mini_apps_info">معلومات التطبيقات المصغرة</string>
+    <string name="desc_open_settings">فتح الإعدادات</string>
+    <string name="desc_open_video_stats">فتح إحصائيات الفيديو</string>
+    <string name="desc_reset">إعادة تعيين</string>
+    <string name="desc_reset_zoom">إعادة تعيين التكبير</string>
+    <string name="desc_rewind">ترجيع 5 ثوانٍ</string>
+    <string name="desc_storage_used">تقدم استخدام التخزين</string>
+    <string name="desc_text_background">خلفية النص</string>
+    <string name="desc_time_left_icon">أيقونة الوقت المتبقي</string>
+    <string name="desc_video_options">خيارات الفيديو</string>
+    <string name="desc_video_thumbnail">صورة الفيديو المصغرة</string>
+    <string name="desc_zoom_ratio">نسبة التكبير</string>
+
+    <!-- Notification channel names -->
+    <string name="channel_torch_service">خدمة الفلاش</string>
+    <string name="channel_security_alarm">إنذار الأمان</string>
+    <string name="channel_remote_streaming">البث عن بعد</string>
+    <string name="channel_annotation_service">خدمة التعليقات التوضيحية</string>
+    <string name="channel_fadcam_file_ops">عمليات ملفات FadCam</string>
+
+    <!-- ScreenRecordingService -->
+    <string name="screen_rec_failed">فشل التسجيل: %s</string>
+    <string name="screen_rec_permission_required">مطلوب إذن تسجيل الشاشة</string>
+    <string name="screen_rec_file_error">خطأ في إنشاء ملف تسجيل الشاشة</string>
+    <string name="screen_rec_dir_error">خطأ في إنشاء مجلد تسجيل الشاشة</string>
+    <string name="screen_rec_output_error">خطأ في إعداد مخرج تسجيل الشاشة</string>
+    <string name="screen_rec_start_error">فشل بدء تسجيل الشاشة</string>
+    <string name="screen_rec_codec_error">خطأ MediaCodec أثناء تسجيل الشاشة</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_share_error">تعذر مشاركة هذا الملف</string>
+    <string name="records_open_error">تعذر فتح هذا الملف</string>
+    <string name="records_trash_error">تعذر نقل الملف إلى سلة المهملات</string>
+    <string name="records_saf_warning">لقد حددت مجلداً مخصصاً SAF — قد لا ترى مديري الملفات الخارجيين التسجيلات. لجعلها مرئية، بدّل وضع التخزين إلى \'داخلي\'.</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_processing">جارٍ المعالجة…</string>
+    <string name="records_processing_complete">اكتملت المعالجة</string>
+    <string name="records_processing_failed">فشلت المعالجة</string>
+    <string name="records_delete_error">فشل حذف التسجيل</string>
+    <string name="records_export_success">تم التصدير بنجاح</string>
+    <string name="records_export_failed">فشل التصدير</string>
+    <string name="records_no_files">لم يتم العثور على تسجيلات</string>
+    <string name="records_confirm_delete">حذف هذا التسجيل؟</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_open">لا يمكن فتح الملف</string>
+    <string name="trash_file_not_found">الملف غير موجود في سلة المهملات</string>
+    <string name="trash_restored">تمت استعادة الملف من سلة المهملات</string>
+    <string name="trash_deleted">تم حذف الملف بشكل دائم</string>
+    <string name="trash_empty">سلة المهملات فارغة</string>
+
+    <!-- MainActivity -->
+    <string name="press_back_again_exit">اضغط رجوع مرة أخرى للخروج</string>
+
+    <!-- NetworkHealthBottomSheet -->
+    <string name="network_testing">جارٍ الاختبار…</string>
+    <string name="network_test_now">اختبار الآن</string>
+    <string name="network_not_tested">لم يتم اختباره</string>
+    <string name="network_unknown">غير معروف</string>
+
+    <!-- ClientDataBottomSheet -->
+    <string name="client_cloud_viewers">المشاهدون السحابيون</string>
+    <string name="client_active_clients">العملاء النشطون</string>
+    <string name="client_no_clients">لا يوجد عملاء متصلون</string>
+
+    <!-- ScanInfoBottomSheet -->
+    <string name="scan_info_title">معلومات المسح</string>
+    <string name="scan_copied_clipboard">تم النسخ إلى الحافظة</string>
+    <string name="scan_copy_metadata">نسخ بيانات المسح الوصفية إلى الحافظة</string>
+    <string name="scan_value_copied">تم نسخ القيمة</string>
+
+    <!-- UpdateAvailableBottomSheet -->
+    <string name="update_version_prefix">v</string>
+
+    <!-- ClientEventLogsBottomSheet -->
+    <string name="events_title">أحداث %s</string>
+    <string name="events_no_events">لم يتم تسجيل أحداث</string>
+
+    <!-- Additional ScreenRecordingService strings -->
+    <string name="screen_rec_permission_error">خطأ في الإذن: %s</string>
+    <string name="screen_rec_mediaprojection_error">خطأ MediaProjection: %s</string>
+    <string name="screen_rec_cannot_write_custom">لا يمكن الكتابة إلى المجلد المخصص</string>
+    <string name="screen_rec_failed_create_custom">فشل إنشاء الملف في الموقع المخصص</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_error_video_info">خطأ في عرض معلومات الفيديو.</string>
+    <string name="records_cannot_open_editor">تعذر فتح المحرر</string>
+    <string name="records_cannot_share">تعذر مشاركة الفيديو: %s</string>
+    <string name="records_cannot_open_video">تعذر فتح الفيديو: %s</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_export_label">تصدير</string>
+    <string name="records_export_custom_label">تصدير مخصص</string>
+    <string name="records_merge_label">دمج</string>
+    <string name="records_batch_operation">عملية دفعة</string>
+    <string name="records_error_opening_media">خطأ في فتح الوسائط</string>
+    <string name="records_no_videos_delete">لا توجد فيديوهات للحذف.</string>
+    <string name="records_no_videos_trash">لا توجد فيديوهات لنقلها إلى سلة المهملات.</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_access_dir">لا يمكن الوصول إلى مجلد سلة المهملات.</string>
+    <string name="trash_error_opening">خطأ في فتح الملف.</string>
+
+    <!-- ForensicsExportCenterFragment / RecordsDeletionService -->
+    <string name="export_destination_none">لم يتم تحديد وجهة التصدير</string>
+    <string name="generic_delete_failed">فشل الحذف</string>
+    <string name="generic_save_failed">فشل الحفظ</string>
+
+    <!-- Forensics -->
+    <string name="forensics_export_failed">فشل التصدير</string>
+
+    <!-- RecordingService error toasts -->
+    <string name="toast_preview_only_front_back">المعاينة المباشرة متاحة فقط للكاميرا الأمامية/الخلفية</string>
+    <string name="toast_camera_permission_denied">تم رفض إذن الكاميرا للخدمة</string>
+    <string name="toast_camera_not_responding">خدمة الكاميرا لا تستجيب. حاول مرة أخرى.</string>
+    <string name="toast_camera_not_found">فشل العثور على الكاميرا المحددة</string>
+    <string name="toast_camera_unavailable">الكاميرا غير متاحة بشكل متكرر (السبب: %s). جارٍ الإيقاف.</string>
+    <string name="toast_camera_access_error">خطأ في الوصول إلى الكاميرا: %s</string>
+    <string name="toast_invalid_camera_config">تكوين كاميرا غير صالح.</string>
+    <string name="toast_unexpected_camera_error">خطأ غير متوقع في الكاميرا.</string>
+    <string name="toast_failed_camera_details">فشل الوصول إلى تفاصيل الكاميرا.</string>
+    <string name="toast_invalid_camera_setup">إعداد كاميرا غير صالح.</string>
+    <string name="toast_critical_camera_error">خطأ نظام كاميرا حرج.</string>
+    <string name="toast_processing_error">خطأ في معالجة تسجيل الفيديو</string>
+    <string name="toast_notification_permission">مطلوب إذن الإشعارات</string>
+    <string name="toast_create_recording_dir_error">خطأ في إنشاء مجلد التسجيل</string>
+    <string name="toast_create_storage_dir_error">خطأ في إنشاء مجلد التخزين الداخلي</string>
+    <string name="toast_permissions_required">أذونات مطلوبة للتسجيل</string>
+    <string name="toast_failed_open_file">فشل فتح الملف للكتابة</string>
+    <string name="toast_cannot_write_custom_dir">لا يمكن الكتابة إلى المجلد المخصص المحدد</string>
+    <string name="toast_failed_create_file">فشل إنشاء الملف للكتابة</string>
+
 </resources>

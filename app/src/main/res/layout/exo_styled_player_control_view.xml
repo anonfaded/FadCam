@@ -155,7 +155,7 @@
             android:scaleType="fitXY"
             android:src="@drawable/ic_rewind_15s_24"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Rewind 5 seconds"
+            android:contentDescription="@string/desc_rewind"
             tools:ignore="ContentDescription" />
 
         <!-- Play/Pause Button with animated icon -->
@@ -182,7 +182,7 @@
             android:scaleType="fitXY"
             android:src="@drawable/ic_fast_forward_24"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Fast forward 5 seconds"
+            android:contentDescription="@string/desc_fast_forward"
             tools:ignore="ContentDescription" />
 
     </LinearLayout>

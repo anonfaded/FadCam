@@ -58,7 +58,7 @@ public class ClientEventLogsBottomSheet extends BottomSheetDialogFragment {
         TextView clientIPTitle = view.findViewById(R.id.client_ip_title);
         LinearLayout eventsContainer = view.findViewById(R.id.events_container);
 
-        clientIPTitle.setText("Events for " + clientIP);
+        clientIPTitle.setText(getString(R.string.events_title, clientIP));
 
         // Get all events and filter by client IP
         RemoteStreamManager manager = RemoteStreamManager.getInstance();
@@ -73,7 +73,7 @@ public class ClientEventLogsBottomSheet extends BottomSheetDialogFragment {
 
         if (clientEvents.isEmpty()) {
             TextView noEvents = new TextView(requireContext());
-            noEvents.setText("No events recorded for this client");
+            noEvents.setText(getString(R.string.events_no_events));
             noEvents.setTextSize(14);
             noEvents.setPadding(16, 16, 16, 16);
             noEvents.setTextColor(requireContext().getColor(android.R.color.darker_gray));

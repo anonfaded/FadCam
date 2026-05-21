@@ -2509,4 +2509,268 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>
     <string name="audio_device_type_builtin_mic">Built-in Mic</string>
 
+    <!-- Settings titles -->
+    <string name="settings_behavior_title">Chalan</string>
+    <string name="settings_onboarding_title">Pel Eda Kawl</string>
+    <string name="settings_auto_update_check">Automati Update Khabar</string>
+    <string name="settings_location_privacy_title">Mawqey aw Pardah</string>
+    <string name="settings_embed_location_metadata">Mawqeiyat Metadata Shamil Kawl</string>
+
+    <!-- Settings values -->
+    <string name="setting_off">Band</string>
+    <string name="setting_portrait">Portrait</string>
+    <string name="setting_microphone">Maekrophon</string>
+    <string name="setting_coordinates_only">Sirf Muqar</string>
+
+    <!-- About fragment -->
+    <string name="about_update_failed">Update check nakam sho. Lotfan bya kushish ka.</string>
+    <string name="about_beta_available">\n\nBeta v%s mojood de</string>
+    <string name="about_dialog_error">Ghalati</string>
+    <string name="about_dialog_ok">Sho</string>
+    <string name="about_get_beta">Beta Wala Ka</string>
+    <string name="about_fadcam_feedback">FadCam Feedback</string>
+
+    <!-- Video split sizes -->
+    <string name="video_split_enabled_format">Faal De (%s)</string>
+    <string name="video_split_size_500mb">500 MB</string>
+    <string name="video_split_size_1gb">1 GB</string>
+    <string name="video_split_size_2gb">2 GB</string>
+    <string name="video_split_size_4gb">4 GB</string>
+    <string name="video_split_size_custom_format">Khas (%d MB)</string>
+    <string name="video_split_change_format">Taqsim Qadd Badal Ka (Osany: %s)</string>
+    <string name="video_split_custom_title">Khas Taqsim Qadd (MB)</string>
+
+    <!-- Screen recording values -->
+    <string name="screen_rec_resolution_value" translatable="false">1920×1080</string>
+    <string name="screen_rec_framerate_value" translatable="false">30 fps</string>
+    <string name="screen_rec_bitrate_value" translatable="false">8 Mbps</string>
+    <string name="screen_rec_splitting_value_format">%s (FadCam + FadRec)</string>
+
+    <!-- Settings home tabs -->
+    <string name="settings_tab_all">Tol</string>
+    <string name="settings_tab_fadcam" translatable="false">FadCam</string>
+    <string name="settings_tab_fadrec" translatable="false">FadRec</string>
+
+    <!-- Watermark preview labels -->
+    <string name="watermark_preview_fadcam" translatable="false">FadCam</string>
+    <string name="watermark_preview_fadrec" translatable="false">FadRec</string>
+    <string name="settings_location_update_interval_5s">5.0 saniyah</string>
+
+    <!-- Annotation toolbar -->
+    <string name="annotation_by_fadsec_lab">da FadSec Lab</string>
+    <string name="annotation_quick_access">Zarur Rasai</string>
+    <string name="annotation_annotate">Tashrih Kawl</string>
+    <string name="annotation_enable_tools">Alate Faal Kawl</string>
+    <string name="annotation_canvas">Canvas</string>
+    <string name="annotation_toggle_visibility">Lidwak aw Pat Kawl</string>
+    <string name="annotation_project">Project</string>
+    <string name="annotation_untitled_project">Na Num Project</string>
+    <string name="annotation_tap_to_add_desc">Tafseel zaydo kawlo dapara tap ka</string>
+    <string name="annotation_manage_projects">Projects Mudir Kawl</string>
+    <string name="annotation_delete_all">Tol Delete Ka</string>
+    <string name="annotation_tools_label">Alate</string>
+    <string name="annotation_select">Intekhab</string>
+    <string name="annotation_pen">Qalam</string>
+    <string name="annotation_erase">Pak Kawl</string>
+    <string name="annotation_text">Matn</string>
+    <string name="annotation_shape">Shakl</string>
+    <string name="annotation_colors">Ranguna</string>
+    <string name="annotation_stroke_size">Khat Qadd</string>
+    <string name="annotation_board">Takhta</string>
+    <string name="annotation_board_none">Haych</string>
+    <string name="annotation_board_black">Tor</string>
+    <string name="annotation_board_white">Spin</string>
+
+    <!-- Shape picker dialog -->
+    <string name="shape_picker_title">📐 Shakl Zaat Ka</string>
+    <string name="shape_picker_choose_shape">Shakl Intekhab Ka</string>
+    <string name="shape_picker_rectangle">Mustateel</string>
+    <string name="shape_picker_circle">Dayra</string>
+    <string name="shape_picker_arrow">Tir</string>
+    <string name="shape_picker_triangle">Sulas</string>
+    <string name="shape_picker_star">Setoray</string>
+    <string name="shape_picker_line">Khat</string>
+    <string name="shape_picker_fill_shape">Shakl Pur Ka</string>
+    <string name="shape_picker_color">🎨 Shakl Rang</string>
+    <string name="shape_picker_tip">💡 Nasihat: Intekhab na pas, canvas bandi drag ka che shakl jor kae</string>
+    <string name="shape_picker_got_it">Po M Shwam!</string>
+
+    <!-- Text editor dialog -->
+    <string name="text_editor_title">✏️ Matn Zaat Ka</string>
+    <string name="text_editor_content_label">Matn Mezmun</string>
+    <string name="text_editor_hint">Khpal matn dalta tayp ka...</string>
+    <string name="text_editor_font_size">📏 Font Qadd</string>
+    <string name="text_editor_style">🎨 Matn Style</string>
+    <string name="text_editor_color">🎨 Matn Rang</string>
+    <string name="text_editor_cancel">Laghwa Ka</string>
+    <string name="text_editor_add_text">✓ Matn Zaat Ka</string>
+
+    <!-- Annotation Service -->
+    <string name="annotation_disable">Tashrih Ghair Faal Ka</string>
+    <string name="annotation_disable_desc">Screen normal istemalo dapara ghair faal ka</string>
+    <string name="annotation_enable">Tashrih Faal Ka</string>
+    <string name="annotation_hide_canvas">Canvas Pat Ka</string>
+    <string name="annotation_hide_canvas_desc">Tol naqoosha pat ka (pinned layers pati de)</string>
+    <string name="annotation_delete_all_title">Tol Projects Delete Sho?</string>
+    <string name="annotation_delete_all_btn">Tol Delete Ka</string>
+    <string name="annotation_all_deleted">Tol projects delete shwal</string>
+    <string name="annotation_layer_locked">Layer qulf shwe de</string>
+    <string name="annotation_welcome_back">Khush Amdeed!</string>
+    <string name="annotation_my_projects">Zama Projects</string>
+    <string name="annotation_pick_color">Yaw Rang Intekhab Ka</string>
+    <string name="annotation_shape_added">📐 Shakl zayd sho!</string>
+
+    <!-- Content descriptions -->
+    <string name="desc_align_center">Wast ki tartib ka</string>
+    <string name="desc_align_left">Kisi tartib ka</string>
+    <string name="desc_align_right">Sami tartib ka</string>
+    <string name="desc_autofocus_toggle">Khpal-focus badal ka</string>
+    <string name="desc_available_space">Mojood zaya pishraft</string>
+    <string name="desc_battery_used">Battery istemal shwe pishraft</string>
+    <string name="desc_bold">Bold</string>
+    <string name="desc_close">Band Ka</string>
+    <string name="desc_copy_ip">IP Copy Ka</string>
+    <string name="desc_copy_url">URL Copy Ka</string>
+    <string name="desc_decrease">Kam Ka</string>
+    <string name="desc_delete_text">Matn delete ka</string>
+    <string name="desc_done">Mukammal</string>
+    <string name="desc_exposure_compensation">Exposure tadil</string>
+    <string name="desc_fadrec_logo">FadRec Logo</string>
+    <string name="desc_fast_forward">5 saniyah bela</string>
+    <string name="desc_increase">Zyat Ka</string>
+    <string name="desc_italic">Italic</string>
+    <string name="desc_memory_used">Memory istemal shwe pishraft</string>
+    <string name="desc_mini_apps_info">Mini Apps Maloomat</string>
+    <string name="desc_open_settings">Tanzimat khola</string>
+    <string name="desc_open_video_stats">Video shumara khola</string>
+    <string name="desc_reset">Reset</string>
+    <string name="desc_reset_zoom">Zoom reset ka</string>
+    <string name="desc_rewind">5 saniyah wrusta</string>
+    <string name="desc_storage_used">Zakhira istemal shwe pishraft</string>
+    <string name="desc_text_background">Matn pasmanzar</string>
+    <string name="desc_time_left_icon">Paty wakh icon</string>
+    <string name="desc_video_options">Video intekhabuna</string>
+    <string name="desc_video_thumbnail">Video thumbnail</string>
+    <string name="desc_zoom_ratio">Zoom tanasub</string>
+
+    <!-- Notification channel names -->
+    <string name="channel_torch_service">Torch Khidmat</string>
+    <string name="channel_security_alarm">Amniyat Khatar</string>
+    <string name="channel_remote_streaming">Liri Streaming</string>
+    <string name="channel_annotation_service">Tashrih Khidmat</string>
+    <string name="channel_fadcam_file_ops">FadCam File Amaliyat</string>
+
+    <!-- ScreenRecordingService -->
+    <string name="screen_rec_failed">Recording nakam sho: %s</string>
+    <string name="screen_rec_permission_required">Screen recording ejazat darkar de</string>
+    <string name="screen_rec_file_error">Screen recording file jorolo ke ghalati</string>
+    <string name="screen_rec_dir_error">Screen recording directory jorolo ke ghalati</string>
+    <string name="screen_rec_output_error">Screen recording output tanzimolo ke ghalati</string>
+    <string name="screen_rec_start_error">Screen recording shuru nakam sho</string>
+    <string name="screen_rec_codec_error">MediaCodec ghalati pa screen recording wakht ke</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_share_error">Da file share kolo na shi</string>
+    <string name="records_open_error">Da file kholo na shi</string>
+    <string name="records_trash_error">File trash ta move kolo na shi</string>
+    <string name="records_saf_warning">Ta yao SAF khas directory intekhab kri de \' bahrani file managers shaied recordings na wini. Che agha zaher kawalo gware, nu storage mod bya \'Internal\' ta badal ka.</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_processing">Process kegi...</string>
+    <string name="records_processing_complete">Process mukammal sho</string>
+    <string name="records_processing_failed">Process nakam sho</string>
+    <string name="records_delete_error">Recording delete kolo nakam sho</string>
+    <string name="records_export_success">Bar-kamyabi sara export sho</string>
+    <string name="records_export_failed">Export nakam sho</string>
+    <string name="records_no_files">Kho recording na munda shwa</string>
+    <string name="records_confirm_delete">Da recording delete ka?</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_open">File kholo na shi</string>
+    <string name="trash_file_not_found">File trash ke na munda shu</string>
+    <string name="trash_restored">File trash na restaure sho</string>
+    <string name="trash_deleted">File pa daimi delete sho</string>
+    <string name="trash_empty">Trash khali de</string>
+
+    <!-- MainActivity -->
+    <string name="press_back_again_exit">Watan kawalo dapara bya wrusta dab ka</string>
+
+    <!-- NetworkHealthBottomSheet -->
+    <string name="network_testing">Test kegi...</string>
+    <string name="network_test_now">Os Test Ka</string>
+    <string name="network_not_tested">Test na shu</string>
+    <string name="network_unknown">Na Maloom</string>
+
+    <!-- ClientDataBottomSheet -->
+    <string name="client_cloud_viewers">Abri Nandaru</string>
+    <string name="client_active_clients">Faal Client</string>
+    <string name="client_no_clients">Sara client wasal nadi</string>
+
+    <!-- ScanInfoBottomSheet -->
+    <string name="scan_info_title">Scan Maloomat</string>
+    <string name="scan_copied_clipboard">Clipboard ta copy sho</string>
+    <string name="scan_copy_metadata">Scan metadata clipboard ta copy ka</string>
+    <string name="scan_value_copied">Qimat copy shwe</string>
+
+    <!-- UpdateAvailableBottomSheet -->
+    <string name="update_version_prefix">v</string>
+
+    <!-- ClientEventLogsBottomSheet -->
+    <string name="events_title">Peshamad %s da para</string>
+    <string name="events_no_events">Kho peshamad record na shwi</string>
+
+    <!-- Additional ScreenRecordingService strings -->
+    <string name="screen_rec_permission_error">Ejazat ghalati: %s</string>
+    <string name="screen_rec_mediaprojection_error">MediaProjection ghalati: %s</string>
+    <string name="screen_rec_cannot_write_custom">Khas directory ta likho na shi</string>
+    <string name="screen_rec_failed_create_custom">Khas mawqey ke file jorolo nakam sho</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_error_video_info">Video maloomat khabarawlo ke ghalati.</string>
+    <string name="records_cannot_open_editor">Editor kholo na shwi</string>
+    <string name="records_cannot_share">Video share kolo na shwi: %s</string>
+    <string name="records_cannot_open_video">Video kholo na shwi: %s</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_export_label">Export</string>
+    <string name="records_export_custom_label">Khas Export</string>
+    <string name="records_merge_label">Merge</string>
+    <string name="records_batch_operation">Dasta Amaliyat</string>
+    <string name="records_error_opening_media">Media khololo ke ghalati</string>
+    <string name="records_no_videos_delete">Delete kawalo dapara kho video nadi.</string>
+    <string name="records_no_videos_trash">Trash ta move kawalo dapara kho video nadi.</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_access_dir">Trash directory ta rasai nadi.</string>
+    <string name="trash_error_opening">File khololo ke ghalati.</string>
+
+    <!-- ForensicsExportCenterFragment / RecordsDeletionService -->
+    <string name="export_destination_none">Kho export mawqey na shwi khabar shwi</string>
+    <string name="generic_delete_failed">Delete nakam sho</string>
+    <string name="generic_save_failed">Save nakam sho</string>
+
+    <!-- Forensics -->
+    <string name="forensics_export_failed">Export nakam sho</string>
+
+    <!-- RecordingService error toasts -->
+    <string name="toast_preview_only_front_back">Zinda preview sirf Shata/Makhki camera dapara mojood de</string>
+    <string name="toast_camera_permission_denied">Camera ejazat service dapara mana shwe</string>
+    <string name="toast_camera_not_responding">Camera khidmat jawab na wi. Bya kushish ka.</string>
+    <string name="toast_camera_not_found">Intekhab shwi camera na munda shwe</string>
+    <string name="toast_camera_unavailable">Camera pa barsar ghair dastiyab sho (Sabab: %s). Band kegi.</string>
+    <string name="toast_camera_access_error">Camera rasai ghalati: %s</string>
+    <string name="toast_invalid_camera_config">Naghalai camera tanzim.</string>
+    <string name="toast_unexpected_camera_error">Na mutawaqea camera ghalati.</string>
+    <string name="toast_failed_camera_details">Camera tafseelat ta rasai nakam.</string>
+    <string name="toast_invalid_camera_setup">Naghalai camera tanzim.</string>
+    <string name="toast_critical_camera_error">Shadeed camera nizam ghalati.</string>
+    <string name="toast_processing_error">Video recording process kawlo ke ghalati</string>
+    <string name="toast_notification_permission">Notification ejazat darkar de</string>
+    <string name="toast_create_recording_dir_error">Recording directory jorolo ke ghalati</string>
+    <string name="toast_create_storage_dir_error">Dakhili zakhira directory jorolo ke ghalati</string>
+    <string name="toast_permissions_required">Recording dapara ejazat darkar de</string>
+    <string name="toast_failed_open_file">Lekhlo dapara file kholo na shwe</string>
+    <string name="toast_cannot_write_custom_dir">Intekhab shwi khas directory ta likho na shi</string>
+    <string name="toast_failed_create_file">Lekhlo dapara file jorolo na shwe</string>
+
 </resources>

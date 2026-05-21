@@ -191,9 +191,9 @@ public class SettingsHomeFragment extends Fragment {
 
         if (modeText != null) {
             switch (currentMode) {
-                case ALL: modeText.setText("All"); break;
-                case FADCAM: modeText.setText("FadCam"); break;
-                case FADREC: modeText.setText("FadRec"); break;
+                case ALL: modeText.setText(getString(R.string.settings_tab_all)); break;
+                case FADCAM: modeText.setText(getString(R.string.settings_tab_fadcam)); break;
+                case FADREC: modeText.setText(getString(R.string.settings_tab_fadrec)); break;
             }
         }
         // Toggle between material icon text (All/FadCam) and drawable image (FadRec)
@@ -208,6 +208,7 @@ public class SettingsHomeFragment extends Fragment {
                 switch (currentMode) {
                     case ALL: modeIconText.setText("apps"); break;
                     case FADCAM: modeIconText.setText("videocam"); break;
+
                 }
             }
         }

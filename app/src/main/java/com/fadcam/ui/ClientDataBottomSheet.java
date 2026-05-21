@@ -77,7 +77,7 @@ public class ClientDataBottomSheet extends BottomSheetDialogFragment {
             
             // Update label for cloud mode
             if (activeClientsLabel != null) {
-                activeClientsLabel.setText("Cloud Viewers");
+                activeClientsLabel.setText(getString(R.string.client_cloud_viewers));
             }
             activeClientsText.setText(String.valueOf(cloudViewers));
             
@@ -88,7 +88,7 @@ public class ClientDataBottomSheet extends BottomSheetDialogFragment {
         } else {
             // LOCAL MODE: Show per-client breakdown
             if (activeClientsLabel != null) {
-                activeClientsLabel.setText("Active Clients");
+                activeClientsLabel.setText(getString(R.string.client_active_clients));
             }
             
             List<ClientMetrics> clientMetrics = manager.getAllClientMetrics();
@@ -97,7 +97,7 @@ public class ClientDataBottomSheet extends BottomSheetDialogFragment {
             if (clientMetrics.isEmpty()) {
                 recyclerView.setVisibility(View.GONE);
                 emptyStateText.setVisibility(View.VISIBLE);
-                emptyStateText.setText("No clients connected");
+                emptyStateText.setText(getString(R.string.client_no_clients));
             } else {
                 recyclerView.setVisibility(View.VISIBLE);
                 emptyStateText.setVisibility(View.GONE);

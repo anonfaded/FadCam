@@ -1111,7 +1111,7 @@ public class RecordsFragment extends BaseFragment implements
         deletionDockIcon.setImageResource(getOperationTypeIcon(snapshot.getOperationType()));
         deletionDockProgress.setProgress(snapshot.getProgressPercent());
         deletionDockCurrentItem.setText(snapshot.getCurrentItemName() == null || snapshot.getCurrentItemName().trim().isEmpty()
-                ? "Preparing..."
+                ? getString(R.string.records_processing)
                 : snapshot.getCurrentItemName());
         String eta = buildBatchOperationEta(snapshot);
         deletionDockEta.setText(eta == null ? getString(R.string.records_delete_header_working) : eta);
@@ -1124,13 +1124,13 @@ public class RecordsFragment extends BaseFragment implements
     private String getOperationTypeName(@NonNull BatchOperationSessionSnapshot.OperationType type) {
         switch (type) {
             case MERGE_VIDEOS:
-                return "Merge";
+                return getString(R.string.records_merge_label);
             case EXPORT_STANDARD_MP4:
-                return "Export";
+                return getString(R.string.records_export_label);
             case EXPORT_CUSTOM:
-                return "Export Custom";
+                return getString(R.string.records_export_custom_label);
             default:
-                return "Batch Operation";
+                return getString(R.string.records_batch_operation);
         }
     }
 
@@ -2942,7 +2942,7 @@ public class RecordsFragment extends BaseFragment implements
                 startActivity(intent);
             } catch (Exception e) {
                 FLog.e(TAG, "Failed to start player", e);
-                Toast.makeText(getContext(), "Error opening media", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.records_error_opening_media), Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -4515,7 +4515,7 @@ public class RecordsFragment extends BaseFragment implements
         vibrate();
         int totalVideoCount = videoItems.size();
         if (totalVideoCount == 0) {
-            Toast.makeText(requireContext(), "No videos to delete.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), getString(R.string.records_no_videos_delete), Toast.LENGTH_SHORT).show();
             return;
         }
         // Use the typed-confirmation bottom sheet (same as Reset All Preferences)
@@ -4544,7 +4544,7 @@ public class RecordsFragment extends BaseFragment implements
         // Check if videoItems has content, if not show toast
         if (videoItems.isEmpty()) {
             if (getContext() != null)
-                Toast.makeText(requireContext(), "No videos to move to trash.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), getString(R.string.records_no_videos_trash), Toast.LENGTH_SHORT).show();
             return;
         }
 

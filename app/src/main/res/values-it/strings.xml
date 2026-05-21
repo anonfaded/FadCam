@@ -2472,4 +2472,269 @@
     <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>
     <string name="audio_device_type_builtin_mic">Built-in Mic</string>
+
+    <!-- Settings titles -->
+    <string name="settings_behavior_title">Comportamento</string>
+    <string name="settings_onboarding_title">Configurazione</string>
+    <string name="settings_auto_update_check">Controllo automatico aggiornamenti</string>
+    <string name="settings_location_privacy_title">Posizione e Privacy</string>
+    <string name="settings_embed_location_metadata">Incorpora metadati posizione</string>
+
+    <!-- Settings values -->
+    <string name="setting_off">Disattivato</string>
+    <string name="setting_portrait">Ritratto</string>
+    <string name="setting_microphone">Microfono</string>
+    <string name="setting_coordinates_only">Solo coordinate</string>
+
+    <!-- About fragment -->
+    <string name="about_update_failed">Controllo aggiornamenti fallito. Riprova più tardi.</string>
+    <string name="about_beta_available">\n\nBeta v%s disponibile</string>
+    <string name="about_dialog_error">Errore</string>
+    <string name="about_dialog_ok">OK</string>
+    <string name="about_get_beta">Ottieni Beta</string>
+    <string name="about_fadcam_feedback">Feedback FadCam</string>
+
+    <!-- Video split sizes -->
+    <string name="video_split_enabled_format">Abilitato (%s)</string>
+    <string name="video_split_size_500mb">500 MB</string>
+    <string name="video_split_size_1gb">1 GB</string>
+    <string name="video_split_size_2gb">2 GB</string>
+    <string name="video_split_size_4gb">4 GB</string>
+    <string name="video_split_size_custom_format">Personalizzato (%d MB)</string>
+    <string name="video_split_change_format">Cambia dimensione divisione (Attuale: %s)</string>
+    <string name="video_split_custom_title">Dimensione divisione personalizzata (MB)</string>
+
+    <!-- Screen recording values -->
+    <string name="screen_rec_resolution_value" translatable="false">1920×1080</string>
+    <string name="screen_rec_framerate_value" translatable="false">30 fps</string>
+    <string name="screen_rec_bitrate_value" translatable="false">8 Mbps</string>
+    <string name="screen_rec_splitting_value_format">%s (FadCam + FadRec)</string>
+
+    <!-- Settings home tabs -->
+    <string name="settings_tab_all">Tutti</string>
+    <string name="settings_tab_fadcam" translatable="false">FadCam</string>
+    <string name="settings_tab_fadrec" translatable="false">FadRec</string>
+
+    <!-- Watermark preview labels -->
+    <string name="watermark_preview_fadcam" translatable="false">FadCam</string>
+    <string name="watermark_preview_fadrec" translatable="false">FadRec</string>
+    <string name="settings_location_update_interval_5s">5,0 secondi</string>
+
+    <!-- Annotation toolbar -->
+    <string name="annotation_by_fadsec_lab">di FadSec Lab</string>
+    <string name="annotation_quick_access">Accesso rapido</string>
+    <string name="annotation_annotate">Annota</string>
+    <string name="annotation_enable_tools">Abilita strumenti</string>
+    <string name="annotation_canvas">Tela</string>
+    <string name="annotation_toggle_visibility">Mostra/nascondi</string>
+    <string name="annotation_project">Progetto</string>
+    <string name="annotation_untitled_project">Progetto senza titolo</string>
+    <string name="annotation_tap_to_add_desc">Tocca per aggiungere descrizione</string>
+    <string name="annotation_manage_projects">Gestisci progetti</string>
+    <string name="annotation_delete_all">Elimina tutto</string>
+    <string name="annotation_tools_label">Strumenti</string>
+    <string name="annotation_select">Seleziona</string>
+    <string name="annotation_pen">Penna</string>
+    <string name="annotation_erase">Cancella</string>
+    <string name="annotation_text">Testo</string>
+    <string name="annotation_shape">Forma</string>
+    <string name="annotation_colors">Colori</string>
+    <string name="annotation_stroke_size">Spessore tratto</string>
+    <string name="annotation_board">Sfondo</string>
+    <string name="annotation_board_none">Nessuno</string>
+    <string name="annotation_board_black">Nero</string>
+    <string name="annotation_board_white">Bianco</string>
+
+    <!-- Shape picker dialog -->
+    <string name="shape_picker_title">📐 Aggiungi forma</string>
+    <string name="shape_picker_choose_shape">Scegli forma</string>
+    <string name="shape_picker_rectangle">Rettangolo</string>
+    <string name="shape_picker_circle">Cerchio</string>
+    <string name="shape_picker_arrow">Freccia</string>
+    <string name="shape_picker_triangle">Triangolo</string>
+    <string name="shape_picker_star">Stella</string>
+    <string name="shape_picker_line">Linea</string>
+    <string name="shape_picker_fill_shape">Riempi forma</string>
+    <string name="shape_picker_color">🎨 Colore forma</string>
+    <string name="shape_picker_tip">💡 Suggerimento: dopo aver selezionato, trascina sulla tela per creare la forma</string>
+    <string name="shape_picker_got_it">Ho capito!</string>
+
+    <!-- Text editor dialog -->
+    <string name="text_editor_title">✏️ Aggiungi testo</string>
+    <string name="text_editor_content_label">Contenuto testo</string>
+    <string name="text_editor_hint">Scrivi il tuo testo qui...</string>
+    <string name="text_editor_font_size">📏 Dimensione carattere</string>
+    <string name="text_editor_style">🎨 Stile testo</string>
+    <string name="text_editor_color">🎨 Colore testo</string>
+    <string name="text_editor_cancel">Annulla</string>
+    <string name="text_editor_add_text">✓ Aggiungi testo</string>
+
+    <!-- Annotation Service -->
+    <string name="annotation_disable">Disabilita annotazione</string>
+    <string name="annotation_disable_desc">Disabilita per usare lo schermo normalmente</string>
+    <string name="annotation_enable">Abilita annotazione</string>
+    <string name="annotation_hide_canvas">Nascondi tela</string>
+    <string name="annotation_hide_canvas_desc">Nascondi tutti i disegni (i livelli fissi rimangono)</string>
+    <string name="annotation_delete_all_title">Eliminare tutti i progetti?</string>
+    <string name="annotation_delete_all_btn">Elimina tutto</string>
+    <string name="annotation_all_deleted">Tutti i progetti eliminati</string>
+    <string name="annotation_layer_locked">Il livello è bloccato</string>
+    <string name="annotation_welcome_back">Bentornato!</string>
+    <string name="annotation_my_projects">I miei progetti</string>
+    <string name="annotation_pick_color">Scegli un colore</string>
+    <string name="annotation_shape_added">📐 Forma aggiunta!</string>
+
+    <!-- Content descriptions -->
+    <string name="desc_align_center">Allinea al centro</string>
+    <string name="desc_align_left">Allinea a sinistra</string>
+    <string name="desc_align_right">Allinea a destra</string>
+    <string name="desc_autofocus_toggle">Attiva/disattiva autofocus</string>
+    <string name="desc_available_space">Spazio disponibile progresso</string>
+    <string name="desc_battery_used">Batteria usata progresso</string>
+    <string name="desc_bold">Grassetto</string>
+    <string name="desc_close">Chiudi</string>
+    <string name="desc_copy_ip">Copia IP</string>
+    <string name="desc_copy_url">Copia URL</string>
+    <string name="desc_decrease">Diminuisci</string>
+    <string name="desc_delete_text">Elimina testo</string>
+    <string name="desc_done">Fatto</string>
+    <string name="desc_exposure_compensation">Compensazione esposizione</string>
+    <string name="desc_fadrec_logo">Logo FadRec</string>
+    <string name="desc_fast_forward">Avanti veloce 5 secondi</string>
+    <string name="desc_increase">Aumenta</string>
+    <string name="desc_italic">Corsivo</string>
+    <string name="desc_memory_used">Memoria usata progresso</string>
+    <string name="desc_mini_apps_info">Info Mini App</string>
+    <string name="desc_open_settings">Apri impostazioni</string>
+    <string name="desc_open_video_stats">Apri statistiche video</string>
+    <string name="desc_reset">Reimposta</string>
+    <string name="desc_reset_zoom">Reimposta zoom</string>
+    <string name="desc_rewind">Riavvolgi 5 secondi</string>
+    <string name="desc_storage_used">Archiviazione usata progresso</string>
+    <string name="desc_text_background">Sfondo testo</string>
+    <string name="desc_time_left_icon">Icona tempo rimanente</string>
+    <string name="desc_video_options">Opzioni video</string>
+    <string name="desc_video_thumbnail">Miniatura video</string>
+    <string name="desc_zoom_ratio">Rapporto zoom</string>
+
+    <!-- Notification channel names -->
+    <string name="channel_torch_service">Servizio torcia</string>
+    <string name="channel_security_alarm">Allarme sicurezza</string>
+    <string name="channel_remote_streaming">Streaming remoto</string>
+    <string name="channel_annotation_service">Servizio annotazione</string>
+    <string name="channel_fadcam_file_ops">Operazioni file FadCam</string>
+
+    <!-- ScreenRecordingService -->
+    <string name="screen_rec_failed">Registrazione fallita: %s</string>
+    <string name="screen_rec_permission_required">Permesso registrazione schermo richiesto</string>
+    <string name="screen_rec_file_error">Errore creazione file registrazione schermo</string>
+    <string name="screen_rec_dir_error">Errore creazione directory registrazione schermo</string>
+    <string name="screen_rec_output_error">Errore configurazione output registrazione schermo</string>
+    <string name="screen_rec_start_error">Avvio registrazione schermo fallito</string>
+    <string name="screen_rec_codec_error">Errore MediaCodec durante registrazione schermo</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_share_error">Impossibile condividere questo file</string>
+    <string name="records_open_error">Impossibile aprire questo file</string>
+    <string name="records_trash_error">Impossibile spostare il file nel cestino</string>
+    <string name="records_saf_warning">Hai selezionato una directory SAF personalizzata — i file manager esterni potrebbero non vedere le registrazioni. Per renderle visibili, riporta la modalità di archiviazione su \'Interna\'.</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_processing">Elaborazione...</string>
+    <string name="records_processing_complete">Elaborazione completata</string>
+    <string name="records_processing_failed">Elaborazione fallita</string>
+    <string name="records_delete_error">Eliminazione registrazione fallita</string>
+    <string name="records_export_success">Esportato con successo</string>
+    <string name="records_export_failed">Esportazione fallita</string>
+    <string name="records_no_files">Nessuna registrazione trovata</string>
+    <string name="records_confirm_delete">Eliminare questa registrazione?</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_open">Impossibile aprire il file</string>
+    <string name="trash_file_not_found">File non trovato nel cestino</string>
+    <string name="trash_restored">File ripristinato dal cestino</string>
+    <string name="trash_deleted">File eliminato definitivamente</string>
+    <string name="trash_empty">Il cestino è vuoto</string>
+
+    <!-- MainActivity -->
+    <string name="press_back_again_exit">Premi di nuovo indietro per uscire</string>
+
+    <!-- NetworkHealthBottomSheet -->
+    <string name="network_testing">Test in corso...</string>
+    <string name="network_test_now">Testa ora</string>
+    <string name="network_not_tested">Non testato</string>
+    <string name="network_unknown">Sconosciuto</string>
+
+    <!-- ClientDataBottomSheet -->
+    <string name="client_cloud_viewers">Spettatori cloud</string>
+    <string name="client_active_clients">Client attivi</string>
+    <string name="client_no_clients">Nessun client connesso</string>
+
+    <!-- ScanInfoBottomSheet -->
+    <string name="scan_info_title">Info scansione</string>
+    <string name="scan_copied_clipboard">Copiato negli appunti</string>
+    <string name="scan_copy_metadata">Copia metadati scansione negli appunti</string>
+    <string name="scan_value_copied">Valore copiato</string>
+
+    <!-- UpdateAvailableBottomSheet -->
+    <string name="update_version_prefix">v</string>
+
+    <!-- ClientEventLogsBottomSheet -->
+    <string name="events_title">Eventi per %s</string>
+    <string name="events_no_events">Nessun evento registrato</string>
+
+    <!-- Additional ScreenRecordingService strings -->
+    <string name="screen_rec_permission_error">Errore permesso: %s</string>
+    <string name="screen_rec_mediaprojection_error">Errore MediaProjection: %s</string>
+    <string name="screen_rec_cannot_write_custom">Impossibile scrivere nella directory personalizzata</string>
+    <string name="screen_rec_failed_create_custom">Creazione file nella posizione personalizzata fallita</string>
+
+    <!-- RecordsAdapter -->
+    <string name="records_error_video_info">Errore visualizzazione info video.</string>
+    <string name="records_cannot_open_editor">Impossibile aprire l\'editor</string>
+    <string name="records_cannot_share">Impossibile condividere video: %s</string>
+    <string name="records_cannot_open_video">Impossibile aprire video: %s</string>
+
+    <!-- RecordsFragment -->
+    <string name="records_export_label">Esporta</string>
+    <string name="records_export_custom_label">Esporta personalizzato</string>
+    <string name="records_merge_label">Unisci</string>
+    <string name="records_batch_operation">Operazione batch</string>
+    <string name="records_error_opening_media">Errore apertura media</string>
+    <string name="records_no_videos_delete">Nessun video da eliminare.</string>
+    <string name="records_no_videos_trash">Nessun video da spostare nel cestino.</string>
+
+    <!-- TrashFragment -->
+    <string name="trash_cannot_access_dir">Impossibile accedere alla directory cestino.</string>
+    <string name="trash_error_opening">Errore apertura file.</string>
+
+    <!-- ForensicsExportCenterFragment / RecordsDeletionService -->
+    <string name="export_destination_none">Nessuna destinazione esportazione specificata</string>
+    <string name="generic_delete_failed">Eliminazione fallita</string>
+    <string name="generic_save_failed">Salvataggio fallito</string>
+
+    <!-- Forensics -->
+    <string name="forensics_export_failed">Esportazione fallita</string>
+
+    <!-- RecordingService error toasts -->
+    <string name="toast_preview_only_front_back">L\'anteprima live è disponibile solo per la fotocamera anteriore/posteriore</string>
+    <string name="toast_camera_permission_denied">Permesso fotocamera negato per il servizio</string>
+    <string name="toast_camera_not_responding">Servizio fotocamera non risponde. Riprova.</string>
+    <string name="toast_camera_not_found">Fotocamera selezionata non trovata</string>
+    <string name="toast_camera_unavailable">Fotocamera non disponibile ripetutamente (Motivo: %s). Arresto.</string>
+    <string name="toast_camera_access_error">Errore accesso fotocamera: %s</string>
+    <string name="toast_invalid_camera_config">Configurazione fotocamera non valida.</string>
+    <string name="toast_unexpected_camera_error">Errore fotocamera imprevisto.</string>
+    <string name="toast_failed_camera_details">Impossibile accedere ai dettagli fotocamera.</string>
+    <string name="toast_invalid_camera_setup">Configurazione fotocamera non valida.</string>
+    <string name="toast_critical_camera_error">Errore critico sistema fotocamera.</string>
+    <string name="toast_processing_error">Errore elaborazione registrazione video</string>
+    <string name="toast_notification_permission">Permesso notifica necessario</string>
+    <string name="toast_create_recording_dir_error">Errore creazione directory registrazione</string>
+    <string name="toast_create_storage_dir_error">Errore creazione directory archiviazione interna</string>
+    <string name="toast_permissions_required">Permessi necessari per registrare</string>
+    <string name="toast_failed_open_file">Impossibile aprire il file per la scrittura</string>
+    <string name="toast_cannot_write_custom_dir">Impossibile scrivere nella directory personalizzata selezionata</string>
+    <string name="toast_failed_create_file">Creazione file per scrittura fallita</string>
+
 </resources>

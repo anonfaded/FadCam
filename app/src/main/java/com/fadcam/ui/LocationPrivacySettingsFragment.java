@@ -60,7 +60,7 @@ public class LocationPrivacySettingsFragment extends Fragment {
     // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshValues(){
-        valueEmbed.setText(prefs.isLocationEmbeddingEnabled()? "Enabled" : "Disabled");
+        valueEmbed.setText(prefs.isLocationEmbeddingEnabled() ? getString(R.string.setting_enabled) : getString(R.string.setting_disabled));
     }
 
     private void toggleLocationEmbed(){

@@ -336,14 +336,14 @@ public class ScreenRecordingService extends Service {
                 String errorMsg = e.getMessage() != null ? e.getMessage() : "I/O error";
                 FLog.e(TAG, "IOException starting screen recording: " + errorMsg, e);
                 mainHandler.post(() -> {
-                    Toast.makeText(this, "Recording failed: " + errorMsg, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.screen_rec_failed, errorMsg), Toast.LENGTH_SHORT).show();
                     stopSelf();
                 });
             } catch (Exception e) {
                 String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
                 FLog.e(TAG, "Error starting screen recording: " + errorMsg, e);
                 mainHandler.post(() -> {
-                    Toast.makeText(this, "Recording failed: " + errorMsg, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.screen_rec_failed, errorMsg), Toast.LENGTH_SHORT).show();
                     stopSelf();
                 });
             }
@@ -358,7 +358,7 @@ public class ScreenRecordingService extends Service {
         int resultCode = intent.getIntExtra("resultCode", Activity.RESULT_CANCELED);
         if (resultCode != Activity.RESULT_OK) {
             FLog.e(TAG, "MediaProjection permission denied - resultCode: " + resultCode);
-            Toast.makeText(this, "Screen recording permission required", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.screen_rec_permission_required), Toast.LENGTH_SHORT).show();
             stopSelf();
             return false;
         }
@@ -395,11 +395,11 @@ public class ScreenRecordingService extends Service {
             return true;
         } catch (SecurityException e) {
             FLog.e(TAG, "SecurityException creating MediaProjection - permission may have been revoked", e);
-            Toast.makeText(this, "Permission error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.screen_rec_permission_error, e.getMessage()), Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             FLog.e(TAG, "Error creating MediaProjection: " + errorMsg, e);
-            Toast.makeText(this, "MediaProjection error: " + errorMsg, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.screen_rec_mediaprojection_error, errorMsg), Toast.LENGTH_SHORT).show();
         }
 
         stopSelf();
@@ -1153,7 +1153,7 @@ public class ScreenRecordingService extends Service {
                     
                     if (pickedDir == null || !pickedDir.canWrite()) {
                         FLog.e(TAG, "Cannot write to custom directory, falling back to internal");
-                        Toast.makeText(this, "Cannot write to custom directory", Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, getString(R.string.screen_rec_cannot_write_custom), Toast.LENGTH_LONG).show();
                         // Fall through to internal storage
                     } else {
                         // Create file in custom location using SAF
@@ -1162,14 +1162,14 @@ public class ScreenRecordingService extends Service {
                         
                         if (videoFile == null) {
                             FLog.e(TAG, "Failed to create SAF file");
-                            Toast.makeText(this, "Failed to create file in custom location", Toast.LENGTH_LONG).show();
+                            Toast.makeText(this, getString(R.string.screen_rec_failed_create_custom), Toast.LENGTH_LONG).show();
                             // Fall through to internal storage
                         } else {
                             // Open ParcelFileDescriptor for the SAF file
                             safRecordingPfd = getContentResolver().openFileDescriptor(videoFile.getUri(), "w");
                             if (safRecordingPfd == null) {
                                 FLog.e(TAG, "Failed to open ParcelFileDescriptor for SAF URI");
-                                Toast.makeText(this, "Failed to open file for writing", Toast.LENGTH_LONG).show();
+                                Toast.makeText(this, getString(R.string.toast_failed_open_file), Toast.LENGTH_LONG).show();
                                 // Fall through to internal storage
                             } else {
                                 // Store SAF URI for completion notification/broadcasting
@@ -1191,7 +1191,7 @@ public class ScreenRecordingService extends Service {
             );
             if (videoDir == null) {
                 FLog.e(TAG, "Cannot create Screen directory in recording root");
-                Toast.makeText(this, "Error creating recording directory", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.screen_rec_dir_error), Toast.LENGTH_LONG).show();
                 return null;
             }
             

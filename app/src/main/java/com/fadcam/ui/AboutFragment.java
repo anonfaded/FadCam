@@ -459,7 +459,7 @@ public class AboutFragment extends BaseFragment {
     private void sendEmail() {
         Intent intent = new Intent(Intent.ACTION_SENDTO);
         intent.setData(Uri.parse("mailto:fadedhood@proton.me"));
-        intent.putExtra(Intent.EXTRA_SUBJECT, "FadCam Feedback");
+        intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.about_fadcam_feedback));
         startActivity(intent);
     }
 
@@ -479,14 +479,14 @@ public class AboutFragment extends BaseFragment {
                 requireActivity().runOnUiThread(() -> {
                     dismissLoadingDialog();
                     if (result.errorOccurred) {
-                        showErrorDialog("Failed to check for updates. Please try again later.");
+                        showErrorDialog(getString(R.string.about_update_failed));
                     } else if (result.hasStable) {
                         UpdateAvailableBottomSheet.newInstance(
                             result.stableVersion, "", result.stableUrl)
                             .show(getParentFragmentManager(), "UpdateAvailableBottomSheet");
                     } else {
                         if (result.hasBeta) {
-                            showUpToDateDialog("\n\nBeta v" + result.betaVersion + " available",
+                            showUpToDateDialog(getString(R.string.about_beta_available, result.betaVersion),
                                     result.betaUrl);
                         } else {
                             showUpToDateDialog("", null);
@@ -497,7 +497,7 @@ public class AboutFragment extends BaseFragment {
                 e.printStackTrace();
                 requireActivity().runOnUiThread(() -> {
                     dismissLoadingDialog();
-                    showErrorDialog("Failed to check for updates. Please try again later.");
+                    showErrorDialog(getString(R.string.about_update_failed));
                 });
             }
         });
@@ -560,10 +560,10 @@ public class AboutFragment extends BaseFragment {
         MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext())
                 .setTitle(getString(R.string.up_to_date))
                 .setView(messageView)
-                .setPositiveButton("OK", null);
+                .setPositiveButton(getString(R.string.about_dialog_ok), null);
 
         if (betaUrl != null && !betaUrl.isEmpty()) {
-            builder.setNeutralButton("Get Beta", (dialog, which) -> openUrl(betaUrl));
+            builder.setNeutralButton(getString(R.string.about_get_beta), (dialog, which) -> openUrl(betaUrl));
         }
         
         AlertDialog dialog = builder.create();
@@ -577,9 +577,9 @@ public class AboutFragment extends BaseFragment {
         boolean isSnowVeilTheme = "Snow Veil".equals(currentTheme);
         
         MaterialAlertDialogBuilder builder = themedDialogBuilder(requireContext())
-                .setTitle("Error")
+                .setTitle(getString(R.string.about_dialog_error))
                 .setMessage(message)
-                .setPositiveButton("OK", null);
+                .setPositiveButton(getString(R.string.about_dialog_ok), null);
         
         AlertDialog dialog = builder.create();
         dialog.setOnShowListener(dialogInterface -> setDialogButtonColors(dialog));

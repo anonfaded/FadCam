@@ -21,7 +21,7 @@
         android:layout_height="32dp"
         android:scaleType="centerCrop"
         android:background="@null"
-        android:contentDescription="thumbnail" />
+        android:contentDescription="@string/desc_video_thumbnail" />
 
     <!-- Name + date -->
     <LinearLayout

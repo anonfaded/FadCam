@@ -685,7 +685,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             } else if (showNewBadge) {
                 // Show NEW badge
-                holder.textViewStatusBadge.setText("NEW");
+                holder.textViewStatusBadge.setText(context.getString(R.string.badge_new));
                 holder.textViewStatusBadge
                         .setBackground(ContextCompat.getDrawable(context, R.drawable.new_badge_background));
                 holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white));
@@ -2020,7 +2020,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             bottomSheet.show(activity.getSupportFragmentManager(), "video_info_bottom_sheet");
         } catch (Exception e) {
             FLog.e(TAG, "Error showing video info bottom sheet", e);
-            Toast.makeText(context, "Error displaying video info.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, context.getString(R.string.records_error_video_info), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -2039,7 +2039,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             ctx.startActivity(intent);
         } catch (Exception e) {
             FLog.e(TAG, "Failed to launch Faditor Mini", e);
-            Toast.makeText(ctx, "Could not open editor", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ctx, ctx.getString(R.string.records_cannot_open_editor), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -2103,7 +2103,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 context.startActivity(chooserIntent);
             } catch (Exception ex) {
                 FLog.e(TAG, "Error with fallback share: " + ex.getMessage(), ex);
-                Toast.makeText(context, "Could not share video: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(context, context.getString(R.string.records_cannot_share, ex.getMessage()), Toast.LENGTH_LONG).show();
             }
         }
 
@@ -2171,7 +2171,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 context.startActivity(chooserIntent);
             } catch (Exception ex) {
                 FLog.e(TAG, "Error with fallback share: " + ex.getMessage(), ex);
-                Toast.makeText(context, "Could not share video: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(context, context.getString(R.string.records_cannot_share, ex.getMessage()), Toast.LENGTH_LONG).show();
             }
         }
 
@@ -2243,7 +2243,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 context.startActivity(chooserIntent);
             } catch (Exception ex) {
                 FLog.e(TAG, "Fallback share failed", ex);
-                Toast.makeText(context, "Could not open video: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(context, context.getString(R.string.records_cannot_open_video, ex.getMessage()), Toast.LENGTH_LONG).show();
             }
         }
     }

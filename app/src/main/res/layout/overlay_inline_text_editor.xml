@@ -18,35 +18,35 @@
             <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:background="@drawable/bg_dark_rounded" android:padding="6dp">
 
                 <!-- Alignment buttons (compact) -->
-                <ImageView android:id="@+id/btnAlignLeft" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_left" android:contentDescription="Align left" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
+                <ImageView android:id="@+id/btnAlignLeft" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_left" android:contentDescription="@string/desc_align_left" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
 
-                <ImageView android:id="@+id/btnAlignCenter" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_center" android:contentDescription="Align center" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
+                <ImageView android:id="@+id/btnAlignCenter" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_center" android:contentDescription="@string/desc_align_center" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
 
-                <ImageView android:id="@+id/btnAlignRight" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_right" android:contentDescription="Align right" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
+                <ImageView android:id="@+id/btnAlignRight" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_align_right" android:contentDescription="@string/desc_align_right" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
 
                 <!-- Divider -->
                 <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#40FFFFFF" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" />
 
                 <!-- Style buttons -->
-                <ImageView android:id="@+id/btnBold" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_bold" android:contentDescription="Bold" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
+                <ImageView android:id="@+id/btnBold" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_bold" android:contentDescription="@string/desc_bold" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
 
-                <ImageView android:id="@+id/btnItalic" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_italic" android:contentDescription="Italic" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
+                <ImageView android:id="@+id/btnItalic" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_italic" android:contentDescription="@string/desc_italic" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" android:layout_marginStart="4dp" />
 
                 <!-- Divider -->
                 <View android:layout_width="1dp" android:layout_height="match_parent" android:background="#40FFFFFF" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" />
 
                 <!-- Background color button -->
-                <ImageView android:id="@+id/btnBackground" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_background" android:contentDescription="Text background" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
+                <ImageView android:id="@+id/btnBackground" android:layout_width="28dp" android:layout_height="28dp" android:padding="5dp" android:src="@drawable/ic_format_background" android:contentDescription="@string/desc_text_background" android:background="@drawable/bg_option_button" android:tint="#FFFFFF" />
 
             </LinearLayout>
 
             <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
 
             <!-- Delete button (visible only when editing existing text) -->
-            <ImageView android:id="@+id/btnDelete" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_delete" android:contentDescription="Delete text" android:background="@drawable/bg_dark_rounded" android:tint="#FF3B30" android:visibility="gone" android:layout_marginEnd="8dp" />
+            <ImageView android:id="@+id/btnDelete" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_delete" android:contentDescription="@string/desc_delete_text" android:background="@drawable/bg_dark_rounded" android:tint="#FF3B30" android:visibility="gone" android:layout_marginEnd="8dp" />
 
             <!-- Done button -->
-            <ImageView android:id="@+id/btnDone" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_check" android:contentDescription="Done" android:background="@drawable/bg_dark_rounded" android:tint="#34C759" />
+            <ImageView android:id="@+id/btnDone" android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp" android:src="@drawable/ic_check" android:contentDescription="@string/desc_done" android:background="@drawable/bg_dark_rounded" android:tint="#34C759" />
 
         </LinearLayout>
 
