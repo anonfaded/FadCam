@@ -2958,6 +2958,7 @@ public class AnnotationService extends Service {
      * 
      * @deprecated Use showPageTabBar() for professional UI
      */
+    @Deprecated
     private void cycleToNextPage() {
         if (annotationView != null) {
             AnnotationState state = annotationView.getState();
