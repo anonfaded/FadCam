@@ -467,15 +467,20 @@ public class ProjectFileManager {
      * Delete project folder and all its contents
      */
     public boolean deleteProject(String projectName) {
+        FLog.d(TAG, "deleteProject() called for: " + projectName);
         File projectFolder = getProjectFolder(projectName);
         if (projectFolder.exists() && projectFolder.isDirectory()) {
             boolean deleted = deleteRecursive(projectFolder);
             if (deleted) {
                 FLog.i(TAG, "✅ Project deleted: " + projectFolder.getAbsolutePath());
+            } else {
+                FLog.e(TAG, "❌ Failed to delete project folder: " + projectFolder.getAbsolutePath());
             }
             return deleted;
+        } else {
+            FLog.w(TAG, "⚠️ Project folder not found or not a directory: " + projectFolder.getAbsolutePath());
+            return false;
         }
-        return false;
     }
     
     /**

@@ -948,13 +948,19 @@ public class ScreenRecordingService extends Service {
                 // Release WakeLock
                 releaseWakeLock();
                 
-                // Broadcast recording stopped
+                // Broadcast recording stopped (sends STOPPING state)
                 broadcastRecordingStopped();
-                
+
                 // Save state
                 sharedPreferencesManager.setScreenRecordingInProgress(false);
                 recordingState = ScreenRecordingState.NONE;
                 sharedPreferencesManager.setScreenRecordingState(ScreenRecordingState.NONE.name());
+
+                // CRITICAL: Broadcast the NONE state so AnnotationService can update
+                // its in-memory recordingState from STOPPING to NONE.
+                // Without this, the overlay recording button stays stuck on STOPPING
+                // and never allows a new recording to start.
+                handleQueryRecordingState();
                 
                 // Clear recording start time
                 sharedPreferencesManager.sharedPreferences.edit()

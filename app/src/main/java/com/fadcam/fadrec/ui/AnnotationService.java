@@ -242,7 +242,18 @@ public class AnnotationService extends Service {
                 case "ACTION_TERMINATE_SERVICE":
                     terminateService();
                     break;
+                default:
+                    // Unknown action - treat as implicit start and send ready broadcast
+                    sendReadyBroadcast();
+                    break;
             }
+        } else {
+            // Implicit service start (startForegroundService without action, or system restart)
+            // Send ready broadcast to dismiss any loading dialog.
+            // This is critical for the case where service is already running and
+            // onCreate() won't fire again - the broadcast must be re-sent so that
+            // newly registered receivers in the fragment can dismiss the loading dialog.
+            sendReadyBroadcast();
         }
         return START_STICKY;
     }
@@ -443,11 +454,14 @@ public class AnnotationService extends Service {
                 .setPositiveButton(getString(R.string.annotation_delete_all_btn), (dialog, which) -> {
                     File[] projects = projectFileManager.listProjects();
                     if (projects != null) {
+                        FLog.w(TAG, "🗑️ DELETE ALL: Deleting " + projects.length + " projects");
                         for (File project : projects) {
                             projectFileManager.deleteProject(project.getName());
                         }
                         Toast.makeText(this, getString(R.string.annotation_all_deleted), Toast.LENGTH_SHORT).show();
                         parentDialog.dismiss();
+                        // Reset current project to prevent re-saving the just-deleted state
+                        currentProjectName = null;
                         // Create a new project
                         createNewProject();
                     }
@@ -665,9 +679,12 @@ public class AnnotationService extends Service {
 
     private void createNewProject() {
         // Save current project before creating new one (if exists)
+        // Note: currentProjectName is null after "Delete All" to prevent re-saving deleted state
         if (currentProjectName != null) {
             FLog.d(TAG, "Saving current project before creating new: " + currentProjectName);
             saveCurrentState();
+        } else {
+            FLog.d(TAG, "No current project to save — starting fresh");
         }
 
         // Generate new project name with timestamp - using FadRec prefix
@@ -726,26 +743,31 @@ public class AnnotationService extends Service {
 
             // Switch back to main thread for UI operations
             new Handler(Looper.getMainLooper()).post(() -> {
-                setupAnnotationCanvas();
-                setupToolbar();
-                // Removed: setupInlineTextEditor(); - Now using TextEditorActivity
+                try {
+                    setupAnnotationCanvas();
+                    setupToolbar();
+                    // Removed: setupInlineTextEditor(); - Now using TextEditorActivity
 
-                // Load last saved project automatically
-                loadLastProject();
+                    // Load last saved project automatically
+                    loadLastProject();
 
-                startAutoSave();
-                registerMenuActionReceiver();
-                registerRecordingStateReceiver();
-                registerColorPickerReceiver();
-                registerProjectNamingReceiver();
-                registerProjectSelectionReceiver();
-                registerTextEditorResultReceiver(); // Handle results from TextEditorActivity
+                    startAutoSave();
+                    registerMenuActionReceiver();
+                    registerRecordingStateReceiver();
+                    registerColorPickerReceiver();
+                    registerProjectNamingReceiver();
+                    registerProjectSelectionReceiver();
+                    registerTextEditorResultReceiver(); // Handle results from TextEditorActivity
+                } catch (Exception e) {
+                    FLog.e(TAG, "❌ Error during AnnotationService onCreate initialization", e);
+                } finally {
+                    // Broadcast that service is ready (dismiss loading dialog)
+                    // In finally block to ensure loading dialog is ALWAYS dismissed
+                    // even if initialization throws an exception
+                    sendReadyBroadcast();
 
-                // Broadcast that service is ready (dismiss loading dialog)
-                Intent readyIntent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
-                sendBroadcast(readyIntent);
-
-                FLog.d(TAG, "============ AnnotationService onCreate COMPLETE ============");
+                    FLog.d(TAG, "============ AnnotationService onCreate COMPLETE ============");
+                }
             });
         }).start();
     }
@@ -891,6 +913,16 @@ public class AnnotationService extends Service {
         updateUndoRedoButtons();
         updatePageLayerInfo();
         updateProjectNameDisplay();
+    }
+
+    /**
+     * Send ANNOTATION_SERVICE_READY broadcast to dismiss loading dialog in FadRecHomeFragment.
+     * Called from onCreate (in finally block) and onStartCommand (for implicit starts).
+     */
+    private void sendReadyBroadcast() {
+        Intent readyIntent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
+        sendBroadcast(readyIntent);
+        FLog.d(TAG, "ANNOTATION_SERVICE_READY broadcast sent");
     }
 
     private void setupAnnotationCanvas() {
