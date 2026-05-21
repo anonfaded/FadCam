@@ -2424,7 +2424,7 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="setting_enabled">Aktiviert</string>
     <string name="setting_disabled">Deaktiviert</string>
     <string name="setting_no_mic_headphones">(Kopfhörer ohne Mikrofon)</string>
-    <string name="setting_audio_advanced_summary">%d kbps @ %d Hz</string>
+    <string name="setting_audio_advanced_summary">%1$d kbps @ %2$d Hz</string>
     <string name="audio_device_type_wired_headphones">Wired Headphones</string>
     <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>

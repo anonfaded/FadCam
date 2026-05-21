@@ -2646,7 +2646,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="setting_enabled">Enabled</string>
     <string name="setting_disabled">Disabled</string>
     <string name="setting_no_mic_headphones">(No-mic headphones)</string>
-    <string name="setting_audio_advanced_summary">%d kbps @ %d Hz</string>
+    <string name="setting_audio_advanced_summary">%1$d kbps @ %2$d Hz</string>
 
     <!-- Settings titles -->
     <string name="settings_behavior_title">Behavior</string>

@@ -2587,7 +2587,7 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <string name="setting_enabled">Activado</string>
     <string name="setting_disabled">Desactivado</string>
     <string name="setting_no_mic_headphones">(Auriculares sin micrófono)</string>
-    <string name="setting_audio_advanced_summary">%d kbps @ %d Hz</string>
+    <string name="setting_audio_advanced_summary">%1$d kbps @ %2$d Hz</string>
     <string name="audio_device_type_wired_headphones">Wired Headphones</string>
     <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>

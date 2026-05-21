@@ -2482,7 +2482,7 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="setting_enabled">Lubatud</string>
     <string name="setting_disabled">Keelatud</string>
     <string name="setting_no_mic_headphones">(Kõrvaklapid ilma mikrofonita)</string>
-    <string name="setting_audio_advanced_summary">%d kbps @ %d Hz</string>
+    <string name="setting_audio_advanced_summary">%1$d kbps @ %2$d Hz</string>
     <string name="audio_device_type_wired_headphones">Wired Headphones</string>
     <string name="audio_device_type_ble_broadcast">BLE Broadcast</string>
     <string name="audio_device_type_ble_speaker">BLE Speaker</string>
