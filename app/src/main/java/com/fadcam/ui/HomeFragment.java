@@ -1395,10 +1395,8 @@ public class HomeFragment extends BaseFragment {
                             });
                         }
 
-                        // Update hamburger badge if any update available
-                        if (result.hasAnyUpdate()) {
-                            requireActivity().runOnUiThread(() -> updateUpdateBadge(true));
-                        }
+                        // Update hamburger badge — show when update available, hide when not
+                        requireActivity().runOnUiThread(() -> updateUpdateBadge(result.hasAnyUpdate()));
 
                     } catch (Exception e) {
                         FLog.e(TAG, "Update check failed", e);
@@ -1410,6 +1408,10 @@ public class HomeFragment extends BaseFragment {
                 TAG,
                 "Auto update check is disabled or no internet available, not showing update bottom sheet"
             );
+            // Hide badge in case it was previously shown
+            if (hamburgerBadgeDot != null) {
+                hamburgerBadgeDot.setVisibility(View.GONE);
+            }
         }
         // ----- Update Check Bottom Sheet End -----
     }
@@ -9910,8 +9912,9 @@ public class HomeFragment extends BaseFragment {
             });
         }
 
-        // Update hamburger badge visibility
-        updateHamburgerBadgeVisibility();
+        // Hamburger badge only shows "Update" when an update is available.
+        // (The "What's New" badge is handled by the sidebar fragment itself.)
+        // It starts GONE from XML — the update check in onStart() will show it.
 
         // Set up hamburger menu click handler
         if (btnHamburgerMenu != null) {
@@ -12804,21 +12807,6 @@ public class HomeFragment extends BaseFragment {
      */
     public interface ProgressCallback {
         void onProgress(int current, int total);
-    }
-
-    /**
-     * Updates hamburger menu badge visibility based on "What's New" feature status.
-     * Shows green badge dot if the user hasn't seen the What's New feature yet.
-     */
-    private void updateHamburgerBadgeVisibility() {
-        if (hamburgerBadgeDot != null) {
-            try {
-                boolean showBadge = com.fadcam.ui.utils.NewFeatureManager.shouldShowBadge(requireContext(), "whats_new");
-                hamburgerBadgeDot.setVisibility(showBadge ? View.VISIBLE : View.GONE);
-            } catch (Exception e) {
-                FLog.e(TAG, "Error updating hamburger badge visibility", e);
-            }
-        }
     }
 
     /**
