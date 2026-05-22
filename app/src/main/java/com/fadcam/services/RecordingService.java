@@ -2070,7 +2070,16 @@ public class RecordingService extends Service {
         sharedPreferencesManager.setRecordingInProgress(false);
         // Notify RemoteStreamManager so status JSON reflects paused state
         com.fadcam.streaming.RemoteStreamManager.getInstance().pauseRecording();
-        
+
+        // Battery saving: release camera while paused (unless motion detection needs it).
+        // The GL pipeline stays alive (paused) so recording can resume instantly.
+        if (!motionLabEnabledForSession && !isSwitchingCamera) {
+            FLog.d(TAG, "Releasing camera during pause (motion detection disabled)");
+            releaseDummyBackgroundSurface();
+            releaseMotionAnalysisReader();
+            closeCameraResourcesForSwitch();
+        }
+
         // Pause noise monitor and sensors — no audio recorded, no watermark data needed
         if (noiseMonitor != null && noiseMonitor.isRunning()) {
             noiseMonitor.stop();
@@ -2090,6 +2099,14 @@ public class RecordingService extends Service {
     private void resumeRecording() {
         if (recordingState != RecordingState.PAUSED)
             return;
+
+        // Reopen camera if it was released during pause (motion detection disabled).
+        // openCamera() is async — the pipeline handles frames arriving after resume.
+        if (!motionLabEnabledForSession && cameraDevice == null && !isSwitchingCamera) {
+            FLog.d(TAG, "Reopening camera for resume (was released during pause)");
+            openCamera();
+        }
+
         if (glRecordingPipeline != null)
             glRecordingPipeline.resumeRecording(); // if supported
         if (pauseStartedAt > 0L) {
@@ -2921,7 +2938,11 @@ public class RecordingService extends Service {
             }
             if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.START_RECORDING) {
                 reportForensicsMotionTransition(action);
-                if (recordingState == RecordingState.PAUSED && motionAutoPaused) {
+                // Auto-resume on ANY pause (manual or auto) in motion recording mode.
+                // The motionAutoPaused flag was removed from this guard because it
+                // caused a permanent deadlock: if the user manually paused, motionAutoPaused
+                // stayed false and motion detection could NEVER auto-resume again.
+                if (recordingState == RecordingState.PAUSED) {
                     FLog.i(TAG, "MotionLab action START_RECORDING -> resuming recording");
                     motionTriggerActionCount++;
                     motionAutoPaused = false;

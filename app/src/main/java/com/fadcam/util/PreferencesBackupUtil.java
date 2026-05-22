@@ -43,6 +43,10 @@ public final class PreferencesBackupUtil {
         java.util.HashSet<String> set = new java.util.HashSet<>();
         set.add(com.fadcam.Constants.PREF_IS_RECORDING_IN_PROGRESS); // runtime
         set.add("applock_session_unlocked"); // session cache
+        // Recording session state — not persistent config
+        set.add(com.fadcam.Constants.PREF_RECORDING_START_TIME);
+        set.add(com.fadcam.Constants.PREF_RECORDING_PAUSE_STARTED_AT);
+        set.add(com.fadcam.Constants.PREF_RECORDING_ACCUMULATED_PAUSED_DURATION);
         // Add more runtime/transient keys here if discovered later
         EXCLUDED_KEYS = java.util.Collections.unmodifiableSet(set);
     }
@@ -53,6 +57,10 @@ public final class PreferencesBackupUtil {
 
     /**
      * Builds a JSONObject representing all app SharedPreferences values.
+     * Uses a type-annotated format to preserve Long vs Integer distinction:
+     *   {"key": {"t": "long", "v": 5000}}
+     * This prevents ClassCastException when restoring values that were originally
+     * stored as Long but happen to fit in int range (e.g. watermark_update_interval).
      */
     @NonNull
     public static JSONObject buildBackupJson(Context context) throws JSONException {
@@ -62,18 +70,34 @@ public final class PreferencesBackupUtil {
         for(Map.Entry<String, ?> e : all.entrySet()){
             if(isTransientKey(e.getKey())){ continue; }
             Object v = e.getValue();
-            if(v instanceof Boolean || v instanceof Integer || v instanceof Long || v instanceof Double || v instanceof String){
-                root.put(e.getKey(), v);
+            JSONObject entry = new JSONObject();
+            if(v instanceof Boolean){
+                entry.put("t", "bool");
+                entry.put("v", (Boolean)v);
+            } else if(v instanceof Integer){
+                entry.put("t", "int");
+                entry.put("v", (Integer)v);
+            } else if(v instanceof Long){
+                entry.put("t", "long");
+                entry.put("v", (Long)v);
+            } else if(v instanceof Float){
+                entry.put("t", "float");
+                entry.put("v", (Float)v);
+            } else if(v instanceof String){
+                entry.put("t", "string");
+                entry.put("v", (String)v);
             } else if(v instanceof Set){
-                // Assume set of strings
+                entry.put("t", "string_set");
                 JSONArray arr = new JSONArray();
                 for(Object o : (Set<?>) v){
                     arr.put(String.valueOf(o));
                 }
-                root.put(e.getKey(), arr);
+                entry.put("v", arr);
             } else {
                 FLog.w(TAG, "Skipping unsupported pref type for key: " + e.getKey());
+                continue;
             }
+            root.put(e.getKey(), entry);
         }
         return root;
     }
@@ -111,30 +135,87 @@ public final class PreferencesBackupUtil {
 
     /**
      * Applies preferences from JSON. Existing prefs overwritten.
+     *
+     * Supports two import formats:
+     * 1. NEW typed format:  {"key": {"t": "long", "v": 5000}}
+     *    Produced by buildBackupJson(). Preserves exact SharedPreferences types
+     *    (Long vs Integer vs Float) so getLong() never throws ClassCastException.
+     *
+     * 2. LEGACY flat format: {"key": 5000}
+     *    Old export format. For legacy numbers, ALL are stored as Long because
+     *    JSON parsers lose type info (org.json represents small numbers as Integer).
+     *    This may affect getInt() callers, but it's safer than crashing getLong().
      */
     public static void applyFromJson(Context context, JSONObject root) throws JSONException {
         if(root == null) throw new JSONException("Root JSON null");
         SharedPreferences sp = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
-        editor.clear(); // wipe first so removed keys disappear
+
+        // Remove keys that exist in current prefs but not in the import
+        // (safer than editor.clear() which would wipe keys the import doesn't know about)
+        Map<String, ?> existing = sp.getAll();
+        for(String existingKey : existing.keySet()) {
+            if(!root.has(existingKey) && !isTransientKey(existingKey)) {
+                editor.remove(existingKey);
+            }
+        }
+
         java.util.Iterator<String> it = root.keys();
         while(it.hasNext()){
             String key = it.next();
             if(isTransientKey(key)) { continue; }
             Object v = root.get(key);
+
+            // --- NEW typed format: {"t": "type", "v": value} ---
+            if(v instanceof JSONObject) {
+                JSONObject entry = (JSONObject) v;
+                String type = entry.optString("t", "");
+                switch(type) {
+                    case "bool":
+                        editor.putBoolean(key, entry.getBoolean("v"));
+                        break;
+                    case "int":
+                        editor.putInt(key, entry.getInt("v"));
+                        break;
+                    case "long":
+                        editor.putLong(key, entry.getLong("v"));
+                        break;
+                    case "float":
+                        editor.putFloat(key, (float) entry.getDouble("v"));
+                        break;
+                    case "string":
+                        editor.putString(key, entry.getString("v"));
+                        break;
+                    case "string_set": {
+                        JSONArray arr = entry.getJSONArray("v");
+                        java.util.HashSet<String> set = new java.util.HashSet<>();
+                        for(int i = 0; i < arr.length(); i++) {
+                            set.add(arr.optString(i));
+                        }
+                        editor.putStringSet(key, set);
+                        break;
+                    }
+                    default:
+                        FLog.w(TAG, "Unsupported typed import type '" + type + "' for key: " + key);
+                }
+                continue;
+            }
+
+            // --- LEGACY flat format (backward compat) ---
             if(v instanceof Boolean){
                 editor.putBoolean(key, (Boolean)v);
             } else if(v instanceof Integer){
-                editor.putInt(key, (Integer)v);
+                // JSON numbers in int range are parsed as Integer.
+                // We can't know if this was originally Long, so store as Long
+                // to prevent ClassCastException on getLong() callers.
+                editor.putLong(key, ((Integer)v).longValue());
             } else if(v instanceof Long){
                 editor.putLong(key, (Long)v);
             } else if(v instanceof Double){
-                // SharedPreferences has no double - store as String to not lose precision
                 editor.putString(key, String.valueOf(v));
             } else if(v instanceof String){
                 editor.putString(key, (String)v);
             } else if(v instanceof JSONArray){
-                // Convert to Set<String>
                 JSONArray arr = (JSONArray) v;
                 java.util.HashSet<String> set = new java.util.HashSet<>();
                 for(int i=0;i<arr.length();i++){
@@ -175,9 +256,21 @@ public final class PreferencesBackupUtil {
             String key = it.next();
             Object v = json.opt(key);
             sb.append("<font color='#8ab4f8'>\"").append(escape(key)).append("\"</font><font color='#ffffff'>: </font>");
-            if(v instanceof JSONArray){
+
+            // Extract type and display value from either typed or legacy format
+            Object displayValue = v;
+            String displayType = typeName(v);
+            if(v instanceof JSONObject) {
+                String t = ((JSONObject)v).optString("t", "");
+                if(!t.isEmpty()) {
+                    displayValue = ((JSONObject)v).opt("v");
+                    displayType = typeNameForTag(t);
+                }
+            }
+
+            if(displayValue instanceof JSONArray){
                 sb.append("<font color='#c792ea'>[");
-                JSONArray arr = (JSONArray)v;
+                JSONArray arr = (JSONArray)displayValue;
                 for(int i=0;i<arr.length();i++){
                     if(i>0) sb.append(", ");
                     sb.append(colorizeValue(arr.opt(i)));
@@ -185,8 +278,8 @@ public final class PreferencesBackupUtil {
                 sb.append("]</font>");
                 sb.append(typeSuffix("Set<String>"));
             } else {
-                sb.append(colorizeValue(v));
-                sb.append(typeSuffix(typeName(v)));
+                sb.append(colorizeValue(displayValue));
+                sb.append(typeSuffix(displayType));
             }
             if(it.hasNext()) sb.append(",");
             sb.append("\n");
@@ -218,6 +311,18 @@ public final class PreferencesBackupUtil {
         if(v instanceof Double || v instanceof Float) return "Number";
         if(v instanceof JSONArray) return "Array";
         return "String";
+    }
+
+    private static String typeNameForTag(String t){
+        switch(t) {
+            case "bool": return "Boolean";
+            case "int": return "Int";
+            case "long": return "Long";
+            case "float": return "Float";
+            case "string": return "String";
+            case "string_set": return "Set<String>";
+            default: return t;
+        }
     }
 
     private static String typeSuffix(String type){
