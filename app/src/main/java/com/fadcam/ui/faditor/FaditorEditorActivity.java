@@ -31,6 +31,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.media3.common.Player;
 import androidx.media3.transformer.ExportResult;
 import androidx.media3.ui.PlayerView;
@@ -338,6 +342,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 effectiveMs = (long)(effectiveMs / clip.getSpeedMultiplier());
             }
             long localMs = Math.max(0, Math.min(currentPlayheadMs - segStartMs, effectiveMs));
+            // Nudge 1ms before trim end to prevent boundary ambiguity
+            // with getSegmentAtPlayhead() after split/delete operations.
+            if (localMs == effectiveMs && effectiveMs > 1) {
+                localMs = effectiveMs - 1;
+            }
             // Convert local (effective) ms to source position
             long sourcePositionMs = clip.getInPointMs() + (long)(localMs * clip.getSpeedMultiplier());
             sourcePositionMs = Math.max(clip.getInPointMs(), Math.min(sourcePositionMs, clip.getOutPointMs()));
@@ -392,7 +401,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Keep screen on while editing
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        // ── True fullscreen: hide status bar and nav bar ────────────
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN |
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+
         setContentView(R.layout.activity_faditor_editor);
+
+        // fitsSystemWindows handles safe area automatically on topBar
 
         // Initialize preferences and remuxer
         prefsManager = SharedPreferencesManager.getInstance(this);
@@ -459,6 +477,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        
+        // Reapply immersive fullscreen (in case it was cleared by edge swipes)
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN |
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        
         playheadHandler.post(playheadUpdater);
     }
 
@@ -485,6 +510,18 @@ public class FaditorEditorActivity extends AppCompatActivity {
             }
             unbindService(exportServiceConnection);
             exportServiceBound = false;
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            // Reapply immersive fullscreen when window regains focus
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         }
     }
 
@@ -3666,4 +3703,5 @@ public class FaditorEditorActivity extends AppCompatActivity {
             FLog.e(TAG, "duplicateSelectedSegment failed", e);
         }
     }
+
 }

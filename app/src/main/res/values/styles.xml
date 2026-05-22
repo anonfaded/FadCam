@@ -158,7 +158,6 @@
 
     <!-- Faditor Editor dark immersive theme -->
     <style name="Theme.FadCam.FaditorEditor" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="android:colorBackground">#FF0D0D0D</item>
         <item name="colorSurface">#FF1A1A1A</item>
         <item name="colorSurfaceVariant">#FF252525</item>
         <item name="colorOnSurface">#FFFFFFFF</item>

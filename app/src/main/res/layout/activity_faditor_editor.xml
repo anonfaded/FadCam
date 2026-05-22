@@ -5,8 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FF0D0D0D"
-    android:fitsSystemWindows="true"
+    android:background="@android:color/black"
     tools:context="com.fadcam.ui.faditor.FaditorEditorActivity">
 
 <LinearLayout
@@ -19,13 +18,15 @@
     <LinearLayout
         android:id="@+id/editor_top_bar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingStart="4dp"
         android:paddingEnd="12dp"
-        android:background="#FF1A1A1A"
-        android:elevation="2dp">
+        android:background="@drawable/editor_top_bar_bg"
+        android:elevation="2dp"
+        android:fitsSystemWindows="true">
 
         <!-- Close button (Material Icon) -->
         <TextView
@@ -76,7 +77,7 @@
         android:layout_weight="1"
         android:clipChildren="false"
         android:clipToPadding="false"
-        android:background="#FF0D0D0D">
+        android:background="@android:color/black">
 
         <androidx.media3.ui.PlayerView
             android:id="@+id/player_view"
@@ -95,7 +96,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:scaleType="fitCenter"
-            android:background="#FF0D0D0D"
+            android:background="@android:color/black"
             android:visibility="gone"
             android:contentDescription="@string/faditor_add_asset_image" />
 
@@ -113,9 +114,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#FF1A1A1A"
+        android:background="@drawable/controls_section_bg"
         android:elevation="4dp">
-
         <!-- Time display + play/pause -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -787,7 +787,7 @@
         android:id="@+id/export_progress_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#FF0D0D0D"
+        android:background="@android:color/black"
         android:clickable="true"
         android:focusable="true"
         android:visibility="gone"

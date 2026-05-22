@@ -558,7 +558,7 @@ public class EditorTimelineView extends View {
         long cumulMs = 0;
         for (int i = 0; i < segments.size(); i++) {
             SegmentData sd = segments.get(i);
-            if (playheadPositionMs >= cumulMs && playheadPositionMs < cumulMs + sd.effectiveMs) {
+            if (playheadPositionMs >= cumulMs && playheadPositionMs <= cumulMs + sd.effectiveMs) {
                 return i;
             }
             cumulMs += sd.effectiveMs;
