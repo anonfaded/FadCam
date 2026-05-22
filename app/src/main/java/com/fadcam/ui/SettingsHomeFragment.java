@@ -367,6 +367,10 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_digital_forensics, () -> openSubFragment(new DigitalForensicsSettingsFragment()));
         bindRow(root, R.id.group_widgets, () -> openSubFragment(new ShortcutsSettingsFragment()));
         bindRow(root, R.id.group_notifications, () -> openSubFragment(new NotificationSettingsFragment()));
+        bindRow(root, R.id.group_prefs_backup, () -> {
+            new PrefsBackupBottomSheetFragment().show(
+                getParentFragmentManager(), "prefs_backup");
+        });
         // App section rows (onboarding/auto-update/debug) are wired in wireAppInlineRows()
         setupMiniAppCards(root);
         equalizeMiniCardRows(root);
