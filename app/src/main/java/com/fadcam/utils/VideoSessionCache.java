@@ -5,6 +5,8 @@ import com.fadcam.FLog;
 import android.content.Context;
 import com.fadcam.ui.VideoItem;
 
+import androidx.annotation.NonNull;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -30,8 +32,21 @@ public class VideoSessionCache {
     private static final String CACHE_FILE_NAME = "video_cache.dat";
     private static final String THUMBNAIL_CACHE_DIR = "video_thumbnails";
     
-    // In-memory thumbnail cache
-    private static final java.util.Map<String, byte[]> sThumbnailCache = new java.util.concurrent.ConcurrentHashMap<>();
+    // In-memory thumbnail cache (bounded LRU to prevent OOM)
+    private static final int MAX_THUMBNAIL_CACHE_BYTES = 20 * 1024 * 1024; // 20MB
+    private static android.util.LruCache<String, byte[]> sThumbnailCache;
+
+    private static synchronized android.util.LruCache<String, byte[]> getThumbnailCache() {
+        if (sThumbnailCache == null) {
+            sThumbnailCache = new android.util.LruCache<String, byte[]>(MAX_THUMBNAIL_CACHE_BYTES) {
+                @Override
+                protected int sizeOf(@NonNull String key, @NonNull byte[] thumbnailData) {
+                    return thumbnailData.length;
+                }
+            };
+        }
+        return sThumbnailCache;
+    }
     
     // Session-level cache shared across all fragments
     private static List<VideoItem> sSessionCachedVideos = null;
@@ -358,6 +373,7 @@ public class VideoSessionCache {
         sSessionCachedVideos = null;
         sSessionCacheTimestamp = 0;
         sForceRefreshOnNextAccess = false;
+        clearThumbnailCache();
         FLog.d(TAG, "Session cache cleared");
     }
     
@@ -452,7 +468,7 @@ public class VideoSessionCache {
     public static void cacheThumbnail(String uriString, byte[] thumbnailData) {
         if (uriString == null || thumbnailData == null) return;
         
-        sThumbnailCache.put(uriString, thumbnailData);
+        getThumbnailCache().put(uriString, thumbnailData);
         FLog.v(TAG, "Cached thumbnail for: " + uriString + " (" + thumbnailData.length + " bytes)");
     }
     
@@ -462,11 +478,19 @@ public class VideoSessionCache {
     public static byte[] getCachedThumbnail(String uriString) {
         if (uriString == null) return null;
         
-        byte[] thumbnail = sThumbnailCache.get(uriString);
+        byte[] thumbnail = getThumbnailCache().get(uriString);
         if (thumbnail != null) {
             FLog.v(TAG, "Thumbnail cache hit for: " + uriString);
         }
         return thumbnail;
+    }
+    
+    /**
+     * Clears the in-memory thumbnail cache.
+     */
+    public static void clearThumbnailCache() {
+        getThumbnailCache().evictAll();
+        FLog.d(TAG, "Thumbnail cache cleared");
     }
     
     /**

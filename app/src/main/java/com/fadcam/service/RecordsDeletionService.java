@@ -472,12 +472,23 @@ public class RecordsDeletionService extends Service {
 
                 byte[] buffer = new byte[16 * 1024];
                 int read;
+                long totalCopied = 0L;
+                long lastGcBytes = 0L;
+                // Trigger GC once per GiB to prevent heap exhaustion during large copies
+                long gcInterval = 1024L * 1024L * 1024L;
 
                 while ((read = in.read(buffer)) != -1) {
                     if (cancelRequested.get()) {
                         throw new CancellationSignalException();
                     }
                     out.write(buffer, 0, read);
+                    totalCopied += read;
+                    if (totalCopied - lastGcBytes >= gcInterval) {
+                        lastGcBytes = totalCopied;
+                        // Hint GC to free transient memory during long I/O,
+                        // preventing heap exhaustion from background display events
+                        System.gc();
+                    }
                 }
                 out.flush();
             }
