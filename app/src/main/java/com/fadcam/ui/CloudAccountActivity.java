@@ -111,9 +111,13 @@ public class CloudAccountActivity extends AppCompatActivity {
             return insets;
         });
         
-        // Load device link URL
+        // Load device link URL.
+        // Clear WebView cache first so cached JS/CSS/HTML never goes stale.
+        // Combined with the cache-busting _t parameter in the URL, this ensures
+        // the WebView always fetches fresh frontend code from the server.
         String url = cloudAuthManager.buildDeviceLinkUrl(deviceName);
         FLog.d(TAG, "Loading URL: " + url);
+        webView.clearCache(true);
         webView.loadUrl(url);
     }
     
