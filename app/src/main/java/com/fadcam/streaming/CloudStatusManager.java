@@ -516,37 +516,13 @@ public class CloudStatusManager {
                 if (responseCode >= 200 && responseCode < 300) {
                     // Success - track recovery
                     onPushSuccess();
-                } else if (responseCode == 401) {
-                    // Unauthorized - may be JWT issue, but device auth fallback should have handled it
-                    // If we're still getting 401, it might be a stream token issue or device linking problem
-                    String errorDetail = "";
-                    try {
-                        java.io.InputStream errorStream = conn.getErrorStream();
-                        if (errorStream != null) {
-                            java.io.BufferedReader reader = new java.io.BufferedReader(
-                                new java.io.InputStreamReader(errorStream));
-                            StringBuilder sb = new StringBuilder();
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                sb.append(line);
-                            }
-                            reader.close();
-                            errorDetail = " | Response: " + sb.toString();
-                        }
-                    } catch (Exception e) {
-                        // Ignore
-                    }
-                    
-                    // Log details for debugging but don't show scary error to user
-                    FLog.e(TAG, "☁️ 📤 Stream push got HTTP 401" + errorDetail);
-                    FLog.d(TAG, "☁️ 📤 DEBUG: Stream token: " + (token != null && !token.isEmpty()) +
-                            " | User UUID: " + (userUuid != null) +
-                            " | Device ID: " + (deviceId != null));
-                    
+                } else if (responseCode == 401 || responseCode == 403) {
+                    // Token may be invalid (e.g., server secret rotated).
+                    // Clear the cached stream token so the next pushStatus() cycle
+                    // fetches a fresh one signed with the current server key.
+                    FLog.w(TAG, "☁️ 📤 Got HTTP " + responseCode + " — clearing cached stream token for refresh");
+                    authManager.clearStreamToken();
                     onPushFailure("HTTP " + responseCode);
-                    // Don't show scary "device not linked" error to user
-                    // The system will automatically retry with device auth fallback
-                    // notifyAuthError(...) is intentionally omitted here
                 } else {
                     onPushFailure("HTTP " + responseCode);
                 }

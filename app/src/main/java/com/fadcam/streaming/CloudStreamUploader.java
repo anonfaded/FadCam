@@ -415,7 +415,7 @@ public class CloudStreamUploader {
                     
                     consecutive401Count = 0;
                     if (callback != null) callback.onSuccess();
-                } else if (responseCode == 401) {
+                } else if (responseCode == 401 || responseCode == 403) {
                     failedUploads++;
                     consecutive401Count++;
                     FLog.w(TAG, "Stream token 401 error (attempt " + consecutive401Count + "/" + MAX_401_RETRIES + ")");

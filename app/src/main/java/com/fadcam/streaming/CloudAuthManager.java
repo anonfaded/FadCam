@@ -716,7 +716,7 @@ public class CloudAuthManager {
         }
         
         String deviceId = getDeviceId();
-        String url = "https://vfhehknmxxedvesdvpew.supabase.co/functions/v1/get-device-info?device_id=" + deviceId;
+        String url = SUPABASE_URL + "/functions/v1/get-device-info?device_id=" + deviceId;
         
         // Use a background thread for network call
         new Thread(() -> {
