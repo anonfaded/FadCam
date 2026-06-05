@@ -45,10 +45,10 @@ public class CloudStatusManager {
     
     // ❌ REMOVED: UsageReportingErrorListener (moved to relay server)
     
-    // Push interval: 2 seconds for status, 1.5 seconds for commands (Realtime disabled), 30 seconds for viewers
+    // Push interval: 2 seconds for status, 1.5 seconds for commands (Realtime disabled)
     private static final long STATUS_PUSH_INTERVAL_MS = 2000;
     private static final long COMMAND_POLL_INTERVAL_MS = 1500; // Reduced from 3000 since Realtime is disabled
-    private static final long VIEWERS_POLL_INTERVAL_MS = 30000; // Poll cloud viewers every 30s
+    private static final long VIEWERS_POLL_INTERVAL_MS = 30000;
     private static final long USAGE_REPORT_INTERVAL_MS = 5000;  // Report usage every 5 seconds (dev mode)
     
     // Usage tracking
@@ -252,30 +252,19 @@ public class CloudStatusManager {
             }
         };
         handler.postDelayed(commandRunnable, 500); // Start 500ms after status push
-        
-        // Start cloud viewers poll loop (every 30 seconds)
+
         viewersRunnable = new Runnable() {
             @Override
             public void run() {
-                if (!isRunning) {
-                    FLog.w(TAG, "☁️ Viewers poll loop stopped (isRunning=false)");
-                    return;
-                }
-                
-                try {
-                    pollCloudViewers();
-                } catch (Exception e) {
-                    FLog.e(TAG, "☁️ Exception in pollCloudViewers (will retry): " + e.getMessage());
-                }
-                
-                // Reschedule regardless of errors
+                if (!isRunning) return;
+                pollCloudViewers();
                 handler.postDelayed(this, VIEWERS_POLL_INTERVAL_MS);
             }
         };
-        handler.postDelayed(viewersRunnable, 2000); // Start 2s after server starts
+        handler.postDelayed(viewersRunnable, 2000);
         
         FLog.i(TAG, "☁️ Cloud status manager started (status: " + STATUS_PUSH_INTERVAL_MS + 
-              "ms, commands: " + COMMAND_POLL_INTERVAL_MS + "ms, viewers: " + VIEWERS_POLL_INTERVAL_MS + "ms)");
+              "ms, commands: " + COMMAND_POLL_INTERVAL_MS + "ms)");
     }
     
 
@@ -307,16 +296,55 @@ public class CloudStatusManager {
             handler.removeCallbacks(commandRunnable);
             commandRunnable = null;
         }
-        
+
         if (viewersRunnable != null) {
             handler.removeCallbacks(viewersRunnable);
             viewersRunnable = null;
         }
         
-        // Reset cloud viewer count when stopping
-        RemoteStreamManager.getInstance().setCloudViewerCount(0);
-        
         FLog.i(TAG, "☁️ Cloud status manager stopped (pushed " + statusPushCount + " status updates)");
+    }
+
+    private void pollCloudViewers() {
+        String streamToken = authManager.getStreamToken();
+        if (streamToken == null) return;
+
+        executor.execute(() -> {
+            HttpURLConnection conn = null;
+            try {
+                conn = (HttpURLConnection) java.net.URI.create(
+                    CloudStreamUploader.RELAY_BASE_URL + "/api/viewer-stats"
+                ).toURL().openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Authorization", "Bearer " + streamToken);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+
+                if (conn.getResponseCode() != 200) {
+                    RemoteStreamManager.getInstance().markCloudViewerTelemetryUnavailable();
+                    return;
+                }
+
+                java.io.InputStream input = conn.getInputStream();
+                java.util.Scanner scanner = new java.util.Scanner(input).useDelimiter("\\A");
+                if (!scanner.hasNext()) throw new IllegalStateException("Empty viewer stats response");
+                JSONObject json = new JSONObject(scanner.next());
+                input.close();
+
+                if (!json.has("device_viewers") || !json.has("bytes_served")) {
+                    throw new IllegalStateException("Viewer stats response missing fields");
+                }
+                RemoteStreamManager.getInstance().setCloudViewerCount(
+                    json.getInt("device_viewers"),
+                    json.getLong("bytes_served")
+                );
+            } catch (Exception e) {
+                RemoteStreamManager.getInstance().markCloudViewerTelemetryUnavailable();
+                FLog.w(TAG, "Cloud viewer stats unavailable: " + e.getMessage());
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        });
     }
     
     /**
@@ -1086,102 +1114,6 @@ public class CloudStatusManager {
                 }
             } catch (Exception e) {
                 FLog.w(TAG, "Failed to delete command: " + e.getMessage());
-            } finally {
-                if (conn != null) {
-                    conn.disconnect();
-                }
-            }
-        });
-    }
-    
-    // =========================================================================
-    // Cloud Viewers Polling
-    // =========================================================================
-    
-    /**
-     * Poll cloud viewer count from relay server.
-     * Relay server parses nginx logs and provides unique viewer count.
-     * Updates RemoteStreamManager.cloudViewerCount for inclusion in status push.
-     */
-    private void pollCloudViewers() {
-        String userUuid = authManager.getUserId();
-        String deviceId = getDeviceId();
-        // Use stream_access_token for auth (same as uploads)
-        String streamToken = authManager.getStreamToken();
-        
-        if (userUuid == null || deviceId == null || streamToken == null) {
-            // No auth yet - skip
-            FLog.d(TAG, "☁️ 👥 Skipping viewers poll: missing auth (userUuid=" + (userUuid != null) + ", deviceId=" + (deviceId != null) + ", streamToken=" + (streamToken != null) + ")");
-            return;
-        }
-        
-        String urlStr = CloudStreamUploader.RELAY_BASE_URL + "/api/viewers/" + userUuid + "/" + deviceId;
-        FLog.i(TAG, "☁️ 👥 ====== POLLING CLOUD VIEWERS ======");
-        FLog.i(TAG, "☁️ 👥 URL: " + urlStr);
-        FLog.i(TAG, "☁️ 👥 Token: " + streamToken.substring(0, Math.min(20, streamToken.length())) + "...");
-        
-        long startTime = System.currentTimeMillis();
-        
-        executor.execute(() -> {
-            HttpURLConnection conn = null;
-            try {
-                conn = (HttpURLConnection) java.net.URI.create(urlStr).toURL().openConnection();
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("Authorization", "Bearer " + streamToken);
-                conn.setConnectTimeout(10000);  // 10s connect timeout
-                conn.setReadTimeout(10000);     // 10s read timeout
-                
-                FLog.i(TAG, "☁️ 👥 Connecting to relay server...");
-                
-                int responseCode = conn.getResponseCode();
-                long elapsed = System.currentTimeMillis() - startTime;
-                FLog.i(TAG, "☁️ 👥 Response received in " + elapsed + "ms: HTTP " + responseCode);
-                
-                if (responseCode == 200) {
-                    java.io.InputStream is = conn.getInputStream();
-                    java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
-                    String body = s.hasNext() ? s.next() : "{}";
-                    is.close();
-                    
-                    FLog.i(TAG, "☁️ 👥 Response body: " + body);
-                    
-                    // Parse JSON: {"count":N,"bytesServed":M,"updated":timestamp}
-                    // PRIVACY: No IP addresses are included in the response
-                    JSONObject json = new JSONObject(body);
-                    int viewerCount = json.optInt("count", 0);
-                    long bytesServed = json.optLong("bytesServed", 0);
-                    long updated = json.optLong("updated", 0);
-                    
-                    // Update RemoteStreamManager with count and bytes (no IPs for privacy)
-                    int oldCount = RemoteStreamManager.getInstance().getCloudViewerCount();
-                    RemoteStreamManager.getInstance().setCloudViewerCount(viewerCount, bytesServed);
-                    
-                    FLog.i(TAG, "☁️ 👥 ✅ Cloud viewers: " + viewerCount + " (was: " + oldCount + ", bytes: " + bytesServed + ", updated: " + updated + ")");
-                } else if (responseCode == 404) {
-                    // No viewers file yet - means no viewers, which is valid
-                    RemoteStreamManager.getInstance().setCloudViewerCount(0);
-                    FLog.i(TAG, "☁️ 👥 No viewers data available (404 - normal if no viewers yet)");
-                } else {
-                    // Read error response body for debugging
-                    String errorBody = "";
-                    try {
-                        java.io.InputStream errorStream = conn.getErrorStream();
-                        if (errorStream != null) {
-                            java.util.Scanner s = new java.util.Scanner(errorStream).useDelimiter("\\A");
-                            errorBody = s.hasNext() ? s.next() : "";
-                            errorStream.close();
-                        }
-                    } catch (Exception ignored) {}
-                    FLog.e(TAG, "☁️ 👥 ❌ Viewers poll failed: HTTP " + responseCode + " - " + errorBody);
-                }
-            } catch (java.net.SocketTimeoutException e) {
-                long elapsed = System.currentTimeMillis() - startTime;
-                FLog.e(TAG, "☁️ 👥 ❌ TIMEOUT after " + elapsed + "ms: " + e.getMessage());
-                // Don't reset count on timeout - keep last known value
-            } catch (Exception e) {
-                long elapsed = System.currentTimeMillis() - startTime;
-                FLog.e(TAG, "☁️ 👥 ❌ ERROR after " + elapsed + "ms: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-                // Don't reset count on error - keep last known value
             } finally {
                 if (conn != null) {
                     conn.disconnect();

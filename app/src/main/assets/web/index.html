@@ -1696,14 +1696,14 @@
             if (!currentStatus) return;
             
             // Check if we're in cloud mode (cloudViewers > 0 means relay is being used)
-            const isCloudMode = currentStatus.cloudViewers > 0;
+            const isCloudMode = currentStatus.cloudMode;
             
             let clientsHtml = `
                 <div class="modal-section">
                     <div class="modal-rows-group">
                         <div class="modal-row-container">
                             <div class="modal-row-label">${isCloudMode ? 'Cloud Viewers' : 'Connected Clients'}</div>
-                            <div class="modal-row-value">${currentStatus.activeConnections || 0}</div>
+                            <div class="modal-row-value">${isCloudMode && !currentStatus.cloudViewerTelemetryAvailable ? 'Unavailable' : (currentStatus.activeConnections || 0)}</div>
                         </div>
                     </div>
                 </div>
@@ -1716,12 +1716,12 @@
                         <div class="modal-section-title">Cloud Streaming</div>
                         <div class="modal-rows-group">
                             <div class="modal-row-container">
-                                <div class="modal-row-label">Total Data Served</div>
-                                <div class="modal-row-value">${currentStatus.dataTransferredMb?.toFixed(1) || '0'} MB</div>
+                                <div class="modal-row-label">Relay Total Served</div>
+                                <div class="modal-row-value">${currentStatus.cloudViewerTelemetryAvailable ? `${currentStatus.dataTransferredMb?.toFixed(1) || '0'} MB` : 'Unavailable'}</div>
                             </div>
                         </div>
                         <div class="modal-info-note" style="margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.4;">
-                            <span style="color: rgba(255,255,255,0.7);">🔒 Zero-Log Policy:</span> Per-viewer metrics are not available in cloud mode to protect viewer privacy. Only aggregate data is shown.
+                            <span style="color: rgba(255,255,255,0.7);">Zero-Log Policy:</span> Viewer count uses anonymous relay leases. Only aggregate data is shown; viewer IP addresses are never processed.
                         </div>
                     </div>
                 `;
@@ -2036,10 +2036,11 @@
         function showDataTransferModal() {
             if (!currentStatus) return;
             const dataTransferred = currentStatus.dataTransferredMb || 0;
-            const displayValue = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
-            
             // Check if we're in cloud mode
-            const isCloudMode = currentStatus.cloudViewers > 0;
+            const isCloudMode = currentStatus.cloudMode;
+            const displayValue = isCloudMode && !currentStatus.cloudViewerTelemetryAvailable
+                ? 'Unavailable'
+                : dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
             
             let content = '';
             
@@ -2051,7 +2052,7 @@
                     <div class="modal-section">
                         <div class="modal-rows-group">
                             <div class="modal-row-container">
-                                <div class="modal-row-label">Total Served</div>
+                                <div class="modal-row-label">Relay Total Served</div>
                                 <div class="modal-row-value">${displayValue}</div>
                             </div>
                             <div class="modal-row-container">
@@ -2065,7 +2066,7 @@
                         <div class="modal-info-text" style="line-height: 1.5;">
                             🔒 <strong>Zero-Log Policy</strong><br>
                             Per-viewer breakdown is not available in cloud mode to protect viewer privacy. 
-                            Only aggregate data is shown.
+                            Relay Total Served is cumulative since the relay counter began. Monthly usage in FadSec ID counts current-month relay data delivered to viewers; phone uploads are not counted.
                         </div>
                     </div>
                 `;
@@ -3680,7 +3681,7 @@
                 if (uptimeEl) uptimeEl.textContent = formattedUptime;
                 
                 const clientsEl = document.getElementById('clientsValue');
-                if (clientsEl) clientsEl.textContent = status.activeConnections || '0';
+                if (clientsEl) clientsEl.textContent = status.cloudMode && !status.cloudViewerTelemetryAvailable ? 'N/A' : (status.activeConnections || '0');
             }
             
             // Update iOS-style cards with visualizations
@@ -3697,7 +3698,9 @@
                 
                 // Update data transfer card
                 const dataTransferred = status.dataTransferredMb || 0;
-                const displayDataTransfer = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
+                const displayDataTransfer = status.cloudMode && !status.cloudViewerTelemetryAvailable
+                    ? 'N/A'
+                    : dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
                 const dataTransferEl = document.getElementById('dataTransferValue');
                 if (dataTransferEl) dataTransferEl.textContent = displayDataTransfer;
                 

@@ -41,6 +41,10 @@
   
   // Stream context (set when accessing /stream/{device_id}/)
   let streamContext = null;
+  let viewerHeartbeatTimer = null;
+  let viewerStats = null;
+  const VIEWER_SESSION_KEY = 'fadcam_viewer_session_id';
+  const VIEWER_HEARTBEAT_MS = 20000;
   
   // Check if running on web (not phone/LAN access)
   function isWebAccess() {
@@ -138,6 +142,54 @@
   // Get stored stream access token
   function getStreamToken() {
     return localStorage.getItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN);
+  }
+
+  function getViewerSessionId() {
+    let sessionId = sessionStorage.getItem(VIEWER_SESSION_KEY);
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      sessionStorage.setItem(VIEWER_SESSION_KEY, sessionId);
+    }
+    return sessionId;
+  }
+
+  async function updateViewerLease(action) {
+    if (!streamContext?.streamToken) throw new Error('Stream session unavailable');
+    const response = await fetch('https://live.fadseclab.com:8443/api/viewer-session', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${streamContext.streamToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ action, session_id: getViewerSessionId() }),
+      keepalive: action === 'release'
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.reason || result.error || 'Viewer session failed');
+
+    viewerStats = result;
+    if (result.stream_access_token) {
+      streamContext.streamToken = result.stream_access_token;
+      localStorage.setItem(CLOUD_CONFIG.STORAGE_KEYS.STREAM_TOKEN, result.stream_access_token);
+    }
+    window.dispatchEvent(new CustomEvent('cloud-viewers-updated', { detail: viewerStats }));
+    return result;
+  }
+
+  async function startViewerLease() {
+    await updateViewerLease('acquire');
+    if (viewerHeartbeatTimer) clearInterval(viewerHeartbeatTimer);
+    viewerHeartbeatTimer = setInterval(() => {
+      updateViewerLease('heartbeat').catch((error) => {
+        console.error('[FadCamRemote] Viewer heartbeat failed:', error);
+        viewerStats = null;
+      });
+    }, VIEWER_HEARTBEAT_MS);
+  }
+
+  function releaseViewerLease() {
+    if (!streamContext?.streamToken) return;
+    void updateViewerLease('release').catch(() => {});
   }
   
   // Exchange handoff token for session (called when arriving from Lab)
@@ -540,6 +592,8 @@
         };
       }
       
+      await startViewerLease();
+
       // Hide overlay and start streaming
       hideStreamOverlay();
       // Logo already links to Lab (set in HTML), no need to update
@@ -562,7 +616,7 @@
       
     } catch (error) {
       console.error('[FadCamRemote] Stream init failed:', error);
-      showStreamOverlay('Connection Failed', 'Unable to connect to device. Please try again.');
+      showStreamOverlay('Connection Failed', error.message || 'Unable to connect to device. Please try again.');
     }
   }
   
@@ -676,6 +730,7 @@
   } else {
     init();
   }
+  window.addEventListener('pagehide', releaseViewerLease);
   
   // Export for testing and integration
   window.FadCamRemote = {
@@ -685,6 +740,7 @@
     isWebAccess,
     streamContext: () => streamContext,
     getStreamToken: () => streamContext?.streamToken || getStreamToken(),
+    getViewerStats: () => viewerStats,
     getE2EVerifyTag,
     getSessionUserId,
     getRelayHlsUrl: () => {

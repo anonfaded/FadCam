@@ -244,6 +244,15 @@ class ApiService {
                     // ServerStatus model handles snake_case → camelCase transformation
                     this.statusCache = await response.json();
                     this.statusCache.cloudMode = true;
+                    const viewerStats = typeof FadCamRemote !== 'undefined' && FadCamRemote.getViewerStats
+                        ? FadCamRemote.getViewerStats()
+                        : null;
+                    if (viewerStats) {
+                        this.statusCache.activeConnections = viewerStats.device_viewers;
+                        this.statusCache.cloudViewers = viewerStats.device_viewers;
+                        this.statusCache.cloudViewerTelemetryAvailable = true;
+                        this.statusCache.totalDataTransferredMb = viewerStats.bytes_served / (1024 * 1024);
+                    }
                     this.lastFetchTime = Date.now();
                     console.log(`✅ [/status] ☁️ Cloud: state=${this.statusCache.state}, streaming=${this.statusCache.streaming}, lastUpdated=${this.statusCache.lastUpdated}`);
                     return this.statusCache;
