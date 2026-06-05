@@ -153,6 +153,30 @@
     return sessionId;
   }
 
+  function viewerLimitCopy(maxViewers) {
+    if (maxViewers === 3) {
+      return {
+        title: 'Viewer Limit Reached',
+        message: 'Lab allows 3 concurrent viewers. Close one of the active streams or keep watching from a single client on this tier.',
+        actionLabel: 'Open Lab'
+      };
+    }
+
+    if (maxViewers === 1) {
+      return {
+        title: 'Viewer Limit Reached',
+        message: 'Pro Plus allows 1 concurrent viewer. Close the other active stream or upgrade to Lab to watch from more clients.',
+        actionLabel: 'Open Lab'
+      };
+    }
+
+    return {
+      title: 'Viewer Limit Reached',
+      message: 'Your current tier has reached its concurrent viewer limit. Close one active stream or upgrade to watch from more clients.',
+      actionLabel: 'Open Lab'
+    };
+  }
+
   async function updateViewerLease(action) {
     if (!streamContext?.streamToken) throw new Error('Stream session unavailable');
     const response = await fetch('https://live.fadseclab.com:8443/api/viewer-session', {
@@ -165,7 +189,11 @@
       keepalive: action === 'release'
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.reason || result.error || 'Viewer session failed');
+    if (!response.ok) {
+      const error = new Error(result.reason || result.error || 'Viewer session failed');
+      error.viewerLease = result;
+      throw error;
+    }
 
     viewerStats = result;
     if (result.stream_access_token) {
@@ -616,6 +644,32 @@
       
     } catch (error) {
       console.error('[FadCamRemote] Stream init failed:', error);
+      const viewerLease = error.viewerLease || viewerStats || null;
+      if (error.message && error.message.includes('Concurrent viewer limit reached')) {
+        const copy = viewerLimitCopy(viewerLease?.max_viewers || streamContext?.maxViewers || 0);
+        showStreamOverlay(
+          copy.title,
+          copy.message,
+          {
+            actionLabel: copy.actionLabel,
+            actionHref: CLOUD_CONFIG.LAB_URL
+          }
+        );
+        return;
+      }
+
+      if (error.message && error.message.includes('Viewer session conflict')) {
+        showStreamOverlay(
+          'Viewer Session Busy',
+          'This browser tab already holds the active viewer lease for this stream. Close the other tab or refresh this one.',
+          {
+            actionLabel: 'Reload',
+            actionHref: window.location.href
+          }
+        );
+        return;
+      }
+
       showStreamOverlay('Connection Failed', error.message || 'Unable to connect to device. Please try again.');
     }
   }
@@ -626,7 +680,7 @@
   }
   
   // Show overlay on stream page
-  function showStreamOverlay(title, message) {
+  function showStreamOverlay(title, message, options = {}) {
     let overlay = document.getElementById('stream-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
@@ -648,12 +702,30 @@
     }
     
     overlay.innerHTML = `
-      <div style="max-width: 400px;">
+      <div style="max-width: 420px;">
         <div style="font-size: 24px; font-weight: bold; margin-bottom: 12px;">${title}</div>
-        <div style="font-size: 14px; color: #888;">${message}</div>
-        <div style="margin-top: 20px;">
-          <div style="width: 40px; height: 40px; border: 3px solid #333; border-top-color: #ff4444; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-        </div>
+        <div style="font-size: 14px; color: #b0b0b0; line-height: 1.6;">${message}</div>
+        ${options.actionLabel ? `
+          <div style="margin-top: 24px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <a href="${options.actionHref || CLOUD_CONFIG.LAB_URL}" style="
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              min-width: 140px;
+              padding: 11px 16px;
+              border-radius: 10px;
+              background: #dc2626;
+              color: #fff;
+              text-decoration: none;
+              font-size: 14px;
+              font-weight: 700;
+            ">${options.actionLabel}</a>
+          </div>
+        ` : `
+          <div style="margin-top: 20px;">
+            <div style="width: 40px; height: 40px; border: 3px solid #333; border-top-color: #ff4444; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+          </div>
+        `}
       </div>
       <style>
         @keyframes spin { to { transform: rotate(360deg); } }
