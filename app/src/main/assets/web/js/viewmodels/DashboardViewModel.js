@@ -136,19 +136,35 @@ class DashboardViewModel {
     async initialize() {
         console.log('[DashboardViewModel] Initializing...');
         
+        // Detect cloud handoff flow: if the URL has a 'token' parameter, the user
+        // is opening a cloud stream (not connecting to a local phone server).
+        // Skip local-mode status polling — wait for the handoff token exchange
+        // to complete and cloud mode to activate.
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasHandoffToken = urlParams.has('token');
+        const isCloudHandoff = hasHandoffToken;
+        
         // Listen for cloud mode ready event (FadCamRemote sets up stream context)
         if (typeof eventBus !== 'undefined') {
             eventBus.on('cloud-mode-ready', (ctx) => {
                 console.log('[DashboardViewModel] ☁️ Cloud mode ready, reinitializing...', ctx);
-                this.updateStatus(); // Force refresh with updated context
+                // Start polling if this is the first activation (handoff flow)
+                if (!this.isPolling) {
+                    this.startPolling();
+                }
+                this.updateStatus(); // Fetch fresh status with cloud context
             });
         }
         
-        // Initial fetch
-        await this.updateStatus();
-        
-        // Start polling
-        this.startPolling();
+        if (isCloudHandoff) {
+            // Cloud handoff flow — don't poll local server (will 404).
+            // Wait for cloud-mode-ready event to trigger first update and start polling.
+            console.log('[DashboardViewModel] ☁️ Cloud handoff detected (token present) — waiting for token exchange...');
+        } else {
+            // Local mode or already-initialized cloud — poll immediately
+            await this.updateStatus();
+            this.startPolling();
+        }
     }
     
     /**
