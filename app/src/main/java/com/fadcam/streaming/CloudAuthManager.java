@@ -98,45 +98,6 @@ public class CloudAuthManager {
     }
     
     /**
-     * Check if device auth fallback is available.
-     * Device auth requires both device ID and user ID.
-     * This is used as a tier-3 fallback when JWT and refresh tokens fail.
-     * 
-     * @return true if device_id and user_id are available for fallback auth
-     */
-    public boolean supportsDeviceAuth() {
-        String deviceId = getDeviceId();
-        String userId = getUserId();
-        return deviceId != null && !deviceId.isEmpty() && 
-               userId != null && !userId.isEmpty();
-    }
-    
-    /**
-     * Build device auth headers for fallback authentication.
-     * Used as tier-3 fallback when JWT and refresh tokens are unavailable/invalid.
-     * 
-     * Device auth is validated by the Edge Function which checks:
-     * - device_id matches a device in devices table
-     * - user_id matches the recorded owner
-     * - device is not marked as unlinked
-     * 
-     * @return Map of header name -> value, or empty map if device auth not available
-     */
-    @NonNull
-    public java.util.Map<String, String> getDeviceAuthHeaders() {
-        java.util.Map<String, String> headers = new java.util.HashMap<>();
-        
-        if (!supportsDeviceAuth()) {
-            return headers;
-        }
-        
-        headers.put("X-Device-ID", getDeviceId());
-        headers.put("X-User-ID", getUserId());
-        
-        return headers;
-    }
-    
-    /**
      * Check if device is linked to a cloud account
      */
     public boolean isLinked() {
@@ -827,9 +788,7 @@ public class CloudAuthManager {
      * Fetch a new stream_access_token from the get-stream-token Edge Function.
      * This token is used for authenticating uploads to the relay server.
      * 
-     * Supports two auth methods:
-     * 1. Bearer token (if valid Supabase access token available)
-     * 2. Device-based auth (device_id + user_id) - works even with expired Supabase session
+     * Requires a valid Supabase bearer token. Expired sessions are refreshed first.
      * 
      * @param listener Callback for success/error (called on main thread)
      */
@@ -890,9 +849,17 @@ public class CloudAuthManager {
         }
         
         String accessToken = getJwtToken();
+        if (accessToken == null || accessToken.isEmpty()) {
+            lastFailedStreamTokenFetchTime = System.currentTimeMillis();
+            if (listener != null) {
+                listener.onError("Cloud session unavailable - relink this device");
+            }
+            return;
+        }
+
         String url = SUPABASE_URL + "/functions/v1/get-stream-token";
         
-        FLog.i(TAG, "Fetching stream token for device: " + deviceId.substring(0, 8) + "... (using " + (accessToken != null ? "Bearer token" : "device auth") + ")");
+        FLog.i(TAG, "Fetching stream token for device: " + deviceId.substring(0, 8) + "... (using Bearer token)");
         
         new Thread(() -> {
             try {
@@ -904,13 +871,9 @@ public class CloudAuthManager {
                 conn.setDoOutput(true);
                 conn.setRequestProperty("Content-Type", "application/json");
                 
-                // Add Bearer token if available (now guaranteed to be fresh)
-                if (accessToken != null && !accessToken.isEmpty()) {
-                    conn.setRequestProperty("Authorization", "Bearer " + accessToken);
-                }
+                conn.setRequestProperty("Authorization", "Bearer " + accessToken);
                 
-                // Request body includes both device_id and user_id for fallback auth
-                String body = "{\"device_id\":\"" + deviceId + "\",\"user_id\":\"" + userId + "\"}";
+                String body = "{\"device_id\":\"" + deviceId + "\"}";
                 try (java.io.OutputStream os = conn.getOutputStream()) {
                     os.write(body.getBytes("UTF-8"));
                 }

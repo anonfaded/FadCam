@@ -2,6 +2,9 @@
 
 ## Canonical Rules
 
+- Free and Patreon-unlinked users may link 1 FadCam device to complete setup.
+- Cloud upload, handoff, playback, and viewer access require a linked, recently verified Patreon identity with Pro Plus, Lab, or linked beta access.
+- Beta access uses Pro Plus limits but never bypasses Patreon linking.
 - Pro Plus: up to 1 linked FadCam device.
 - Lab: up to 3 linked FadCam devices.
 - Monthly usage counts relay egress: bytes served from `/stream/...` to viewers.
@@ -39,9 +42,15 @@ Not counted:
 
 ## Viewer Concurrency
 
-Linked-device limits are enforced by `get_user_limits()` during device registration.
+Linked-device limits are enforced atomically by `register_user_device()` using the canonical `get_user_entitlement()` result.
 
 Viewer/client concurrency is enforced by anonymous Redis leases on the relay. Pro Plus permits 1 concurrent viewer and Lab permits 3. Browser tabs heartbeat every 20 seconds; leases expire after 60 seconds if a tab or device disappears. Admission is atomic per user.
+
+## Membership Verification
+
+Patreon webhooks update membership changes immediately. A scheduled verification job checks all linked Patreon accounts every 6 hours to recover from missed webhooks. Streaming fails closed when the latest successful verification is older than 48 hours.
+
+Stream tokens expire after 2 hours and device API authorization is cached for 110 minutes. This keeps the projected token-issuance plus auth-validation path for roughly 500 always-on devices below Supabase's 500K monthly Edge Function allowance. Playback and viewer heartbeats remain relay-local and do not call Supabase per request. Unlinking Patreon or a device blocks new tokens immediately and bounds already-issued access to under 2 hours.
 
 ## Operations
 
@@ -58,3 +67,24 @@ Local-network streaming may use private LAN IP addresses for local client metric
 Viewer heartbeats and playback authorization never call Supabase. Supabase Edge Functions are used only for the existing handoff/token issuance flow.
 
 Redis atomically deduplicates each relay response event before queueing it and incrementing Relay Total Served. This prevents Vector retries from inflating the relay counter while Supabase rejects the duplicate event.
+
+## End-To-End Test Matrix
+
+| Account state | Device linking | Phone upload/token | Open stream | Viewer limit |
+|---|---:|---:|---:|---:|
+| Patreon not linked, normal or beta | 1 device | Denied: `PATREON_REQUIRED` | Denied | 0 |
+| Patreon linked, Free | 1 device | Denied: `SUBSCRIPTION_REQUIRED` | Denied | 0 |
+| Patreon linked, verification older than 48h | 1 device | Denied: `MEMBERSHIP_VERIFICATION_REQUIRED` | Denied | 0 |
+| Patreon linked, beta | 1 device | Allowed | Allowed | 1 |
+| Patreon linked, Pro Plus | 1 device | Allowed | Allowed | 1 |
+| Patreon linked, Lab | 3 devices | Allowed | Allowed | 3 |
+| Any streaming account at monthly limit | Existing devices remain linked | Denied: `MONTHLY_DATA_LIMIT_REACHED` | Denied | Existing leases expire normally |
+
+Manual verification order:
+
+1. Link one device before connecting Patreon; confirm the device appears and streaming stays locked.
+2. Mark the same account beta without linking Patreon; confirm streaming remains locked.
+3. Connect a Free Patreon account; confirm linking remains available and streaming remains locked.
+4. Verify Pro Plus and Lab token issuance, upload, handoff, playback, device limits, and viewer limits.
+5. Unlink Patreon and unlink a device; confirm new tokens fail immediately and existing access expires within the two-hour token/auth-cache window.
+6. Confirm viewer playback increments monthly usage while phone-only upload does not.
