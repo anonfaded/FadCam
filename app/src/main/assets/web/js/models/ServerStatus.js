@@ -108,13 +108,14 @@ class ServerStatus {
         this.activeConnections = data.activeConnections || 0;
         this.clientIps = data.clients ? data.clients.map(c => c.ip) : [];
 
-        // Cloud viewers (viewers connected via relay, not directly to phone)
-        // This is separate from activeConnections which counts direct connections
+        // Cloud viewers connect through relay. In cloud mode activeConnections already
+        // represents this same value, so do not add it twice.
         this.cloudViewers = data.cloudViewers || 0;
         this.cloudViewerTelemetryAvailable = data.cloudViewerTelemetryAvailable === true;
 
-        // Total viewers = local clients + cloud viewers
-        this.totalConnectedClients = this.activeConnections + this.cloudViewers;
+        this.totalConnectedClients = data.cloudMode
+            ? this.activeConnections
+            : this.activeConnections + this.cloudViewers;
 
         // Store full clients array for modal display
         this.clients = data.clients || [];

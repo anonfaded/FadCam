@@ -96,7 +96,8 @@ public class RemoteStreamManager {
     // PRIVACY: We only track count and aggregate bytes, never individual IPs
     private int cloudViewerCount = 0;
     private long cloudViewerCountUpdatedAt = 0; // Timestamp of last update
-    private long cloudBytesServed = 0; // Total bytes served by relay to all cloud viewers
+    private long cloudBytesServed = 0; // Cumulative bytes served by relay since its persisted counter began
+    private boolean cloudViewerTelemetryAvailable = false;
 
     // Tracks the timestamp of the last successfully uploaded segment to the cloud relay.
     // Used by the dashboard to detect when the relay stream has gone stale/dead.
@@ -928,7 +929,7 @@ public class RemoteStreamManager {
                 "\"lastUpdated\": %d, \"serverVersion\": %s, " +
                 "\"isRecording\": %s, \"isPaused\": %s, \"fragmentsBuffered\": %d, \"bufferSizeMb\": %.2f, " +
                 "\"latestSequence\": %d, \"oldestSequence\": %d, \"activeConnections\": %d, " +
-                "\"cloudViewers\": %d, " +
+                "\"cloudViewers\": %d, \"cloudViewerTelemetryAvailable\": %s, " +
                 "\"hasInitSegment\": %s, \"uptimeSeconds\": %d, " +
                 "\"batteryDetails\": %s, " +
                 "\"uptimeDetails\": %s, " +
@@ -963,6 +964,7 @@ public class RemoteStreamManager {
                 oldestSequence,
                 isCloudMode ? cloudViewerCount : getAllClientMetrics().size(), // activeConnections: cloud viewers or local clients
                 cloudViewerCount,
+                cloudViewerTelemetryAvailable,
                 hasInit,
                 uptimeSeconds,
                 batteryDetailsJson,
@@ -1388,17 +1390,22 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Set cloud viewer count and bytes served (fetched from relay server by CloudStatusManager).
+     * Set cloud viewer count and cumulative bytes served (fetched from relay server by CloudStatusManager).
      * Cloud viewers connect to the relay, not directly to the phone.
-     * PRIVACY: bytesServed is aggregate total, not per-viewer.
+     * PRIVACY: bytesServed is aggregate cumulative egress, not per-viewer.
      * @param count Number of unique cloud viewers
-     * @param bytesServed Total bytes served by relay to all cloud viewers
+     * @param bytesServed Cumulative bytes served by relay since its persisted counter began
      */
     public void setCloudViewerCount(int count, long bytesServed) {
         this.cloudViewerCount = count;
         this.cloudBytesServed = bytesServed;
+        this.cloudViewerTelemetryAvailable = true;
         this.cloudViewerCountUpdatedAt = System.currentTimeMillis();
         FLog.d(TAG, "☁️ Cloud viewer count updated: " + count + " (bytes served: " + bytesServed + ")");
+    }
+
+    public void markCloudViewerTelemetryUnavailable() {
+        this.cloudViewerTelemetryAvailable = false;
     }
     
     /**
@@ -1410,9 +1417,9 @@ public class RemoteStreamManager {
     }
     
     /**
-     * Get total bytes served by relay to cloud viewers.
-     * PRIVACY: This is aggregate total, not per-viewer.
-     * @return Total bytes served, or 0 if not tracked
+     * Get cumulative bytes served by relay to cloud viewers.
+     * PRIVACY: This is aggregate cumulative egress, not per-viewer.
+     * @return Cumulative bytes served, or 0 if not tracked
      */
     public long getCloudBytesServed() {
         return cloudBytesServed;
@@ -1921,15 +1928,14 @@ public class RemoteStreamManager {
     
     /**
      * Get total data transferred to clients (persistent across session).
-     * In cloud mode, this includes data uploaded to the relay server.
+     * In cloud mode, this is relay egress delivered to viewers.
      */
     public long getTotalDataTransferred() {
-        // Include cloud uploads if cloud mode is active
+        // Phone-to-relay uploads are ingress and do not represent data served to viewers.
         if (context != null) {
             CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
             if (uploader != null && uploader.isEnabled()) {
-                // In cloud mode, return cloud upload data (that's what viewers are receiving)
-                return uploader.getTotalBytesUploaded();
+                return cloudBytesServed;
             }
         }
         // In local mode, return locally served data
