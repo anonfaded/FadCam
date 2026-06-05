@@ -111,6 +111,7 @@ class ServerStatus {
         // Cloud viewers (viewers connected via relay, not directly to phone)
         // This is separate from activeConnections which counts direct connections
         this.cloudViewers = data.cloudViewers || 0;
+        this.cloudViewerTelemetryAvailable = data.cloudViewerTelemetryAvailable === true;
 
         // Total viewers = local clients + cloud viewers
         this.totalConnectedClients = this.activeConnections + this.cloudViewers;
