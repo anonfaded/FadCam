@@ -697,7 +697,7 @@ public class FragmentedMp4MuxerWrapper {
                 
                 // Send to RemoteStreamManager for HLS streaming
                 if (initSegmentSent) {
-                    RemoteStreamManager.getInstance().onFragmentComplete(segment.segmentNr, data);
+                    RemoteStreamManager.getInstance().onFragmentComplete(segment.segmentNr, data, segment.durationMs);
                 } else {
                     FLog.w(TAG, "⚠️ Fragment #" + segment.segmentNr + 
                         " received before init segment - skipping stream upload");

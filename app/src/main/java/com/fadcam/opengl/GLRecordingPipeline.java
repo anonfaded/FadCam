@@ -409,8 +409,7 @@ public class GLRecordingPipeline {
         this.frontVideoMirrorEnabled = com.fadcam.SharedPreferencesManager
                 .getInstance(context)
                 .isFrontVideoMirrorEnabled();
-        // Fetch video bitrate from SharedPreferencesManager
-        this.videoBitrate = com.fadcam.SharedPreferencesManager.getInstance(context).getCurrentBitrate();
+        this.videoBitrate = getEffectiveVideoBitrate(context);
         // Initialize surface dimensions with video dimensions as default
         this.mSurfaceWidth = videoWidth;
         this.mSurfaceHeight = videoHeight;
@@ -444,8 +443,7 @@ public class GLRecordingPipeline {
         this.frontVideoMirrorEnabled = com.fadcam.SharedPreferencesManager
                 .getInstance(context)
                 .isFrontVideoMirrorEnabled();
-        // Fetch video bitrate from SharedPreferencesManager
-        this.videoBitrate = com.fadcam.SharedPreferencesManager.getInstance(context).getCurrentBitrate();
+        this.videoBitrate = getEffectiveVideoBitrate(context);
         // Initialize surface dimensions with video dimensions as default
         this.mSurfaceWidth = videoWidth;
         this.mSurfaceHeight = videoHeight;
@@ -457,6 +455,24 @@ public class GLRecordingPipeline {
     // ════════════════════════════════════════════════════════════════════
     // DUAL CAMERA CONSTRUCTORS
     // ════════════════════════════════════════════════════════════════════
+
+    private int getEffectiveVideoBitrate(Context context) {
+        boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        if (isStreaming) {
+            android.content.SharedPreferences fadcamPrefs =
+                    context.getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
+            int streamBitrate = fadcamPrefs.getInt("stream_bitrate", -1);
+            if (streamBitrate > 0) {
+                FLog.i(TAG, "[STREAM PRESET] GL encoder bitrate enforced: " + (streamBitrate / 1_000_000)
+                        + " Mbps");
+                return streamBitrate;
+            }
+            FLog.w(TAG, "[STREAM PRESET] GL encoder missing stream_bitrate, using default HIGH (5 Mbps)");
+            return 5_000_000;
+        }
+
+        return com.fadcam.SharedPreferencesManager.getInstance(context).getCurrentBitrate();
+    }
 
     /**
      * Dual camera constructor for file path (internal storage).
@@ -1180,10 +1196,10 @@ public class GLRecordingPipeline {
      * Uses user-configured settings from SharedPreferences.
      */
     private void configureIndustryStandardEncoder(MediaFormat format, int width, int height) {
-        // Basic encoder settings using user-configured values
+        // Basic encoder settings using the effective bitrate/framerate selected for this recording.
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate); // Already using user's bitrate setting
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate); // Already using user's framerate setting
+        format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VIDEO_IFRAME_INTERVAL);
 
         // ESSENTIAL: For constant framerate recording, especially on Samsung devices

@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * maintaining a circular buffer of recent fMP4 fragments for HLS streaming.
  * 
  * Architecture:
- * - Circular buffer with 5 fragment slots (~10 seconds of video at 2s/fragment)
+ * - Circular buffer with 15 fragment slots (~30 seconds of video at 2s/fragment)
  * - Thread-safe read/write access via ReadWriteLock
  * - Supports both stream-only and stream-and-save modes
  * - Stores initialization segment (ftyp + moov) separately
@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class RemoteStreamManager {
     private static final String TAG = "RemoteStreamManager";
-    private static final int BUFFER_SIZE = 15; // Keep last 15 fragments (~15 seconds, balanced for memory)
+    private static final int BUFFER_SIZE = 15; // Keep last 15 fragments (~30 seconds at 2s/fragment)
     
     private static RemoteStreamManager instance;
     
@@ -118,16 +118,22 @@ public class RemoteStreamManager {
         public final byte[] data; // moof + mdat bytes
         public final long timestamp;
         public final int sizeBytes;
+        public final long durationMs;
         
         public FragmentData(int sequenceNumber, byte[] data) {
+            this(sequenceNumber, data, 2000);
+        }
+
+        public FragmentData(int sequenceNumber, byte[] data, long durationMs) {
             this.sequenceNumber = sequenceNumber;
             this.data = data;
             this.timestamp = System.currentTimeMillis();
             this.sizeBytes = data.length;
+            this.durationMs = durationMs > 0 ? durationMs : 2000;
         }
         
         public double getDurationSeconds() {
-            return 1.0; // Fragments are configured for 1 second
+            return durationMs / 1000.0;
         }
     }
     
@@ -440,6 +446,16 @@ public class RemoteStreamManager {
      * @param fragmentData Complete moof+mdat bytes
      */
     public void onFragmentComplete(int sequenceNumber, byte[] fragmentData) {
+        onFragmentComplete(sequenceNumber, fragmentData, 2000);
+    }
+
+    /**
+     * Called by FragmentedMp4MuxerWrapper when a fragment is complete.
+     * @param sequenceNumber Fragment sequence number (1-based)
+     * @param fragmentData Complete moof+mdat bytes
+     * @param durationMs Fragment duration reported by Media3 muxer
+     */
+    public void onFragmentComplete(int sequenceNumber, byte[] fragmentData, long durationMs) {
         if (!streamingEnabled) {
             return;
         }
@@ -459,7 +475,7 @@ public class RemoteStreamManager {
             }
             
             // Create fragment object
-            FragmentData fragment = new FragmentData(sequenceNumber, fragmentData);
+            FragmentData fragment = new FragmentData(sequenceNumber, fragmentData, durationMs);
             
             // Add to circular buffer (overwrites old slot)
             fragmentBuffer[bufferHead] = fragment;
@@ -692,7 +708,7 @@ public class RemoteStreamManager {
             m3u8.append("#EXTM3U\n");
             m3u8.append("#EXT-X-VERSION:7\n"); // fMP4 requires version 7
             m3u8.append("#EXT-X-INDEPENDENT-SEGMENTS\n");
-            m3u8.append("#EXT-X-TARGETDURATION:4\n"); // 4-second max fragment duration (2s actual, with margin)
+            m3u8.append("#EXT-X-TARGETDURATION:").append(getTargetDurationSeconds(liveEdge)).append("\n");
             m3u8.append("#EXT-X-MEDIA-SEQUENCE:").append(liveEdge.get(0).sequenceNumber).append("\n");
             
             // Init segment - relative path for cloud (same directory)
@@ -708,6 +724,14 @@ public class RemoteStreamManager {
         } finally {
             bufferLock.readLock().unlock();
         }
+    }
+
+    public static int getTargetDurationSeconds(@NonNull List<FragmentData> fragments) {
+        double maxDurationSeconds = 0;
+        for (FragmentData fragment : fragments) {
+            maxDurationSeconds = Math.max(maxDurationSeconds, fragment.getDurationSeconds());
+        }
+        return Math.max(1, (int) Math.ceil(maxDurationSeconds));
     }
     
     /**

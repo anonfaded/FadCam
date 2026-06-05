@@ -44,9 +44,6 @@ import fi.iki.elonen.NanoHTTPD;
         private final RemoteStreamManager streamManager;
         private final android.content.Context context;
         
-        // HLS configuration
-        private static final int TARGET_DURATION = 2; // Segment duration in seconds (1s actual + safety margin)
-        
         public LiveM3U8Server(android.content.Context context, int port) throws IOException {
             super("0.0.0.0", port);  // CRITICAL FIX: Bind to ALL interfaces (0.0.0.0), not just localhost
             this.context = context.getApplicationContext();
@@ -277,7 +274,6 @@ import fi.iki.elonen.NanoHTTPD;
             m3u8.append("#EXTM3U\n");
             m3u8.append("#EXT-X-VERSION:7\n"); // fMP4 requires version 7
             m3u8.append("#EXT-X-INDEPENDENT-SEGMENTS\n"); // MUST come early
-            m3u8.append("#EXT-X-TARGETDURATION:4\n"); // 4-second max fragment duration (2s actual, with margin)
             
             // CRITICAL: Get buffered fragments before generating rest of playlist
             // Apple HLS spec requires minimum 6 segments, we use 8 for more buffer room
@@ -288,6 +284,10 @@ import fi.iki.elonen.NanoHTTPD;
             for (int i = startIdx; i < stable.size(); i++) {
                 liveEdge.add(stable.get(i));
             }
+
+            m3u8.append("#EXT-X-TARGETDURATION:")
+                .append(RemoteStreamManager.getTargetDurationSeconds(liveEdge))
+                .append("\n");
             
             // Media sequence BEFORE map
             m3u8.append("#EXT-X-MEDIA-SEQUENCE:").append(liveEdge.get(0).sequenceNumber).append("\n");
