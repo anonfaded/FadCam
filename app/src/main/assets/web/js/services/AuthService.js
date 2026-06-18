@@ -80,7 +80,11 @@ class AuthService {
             
             if (!response.ok) {
                 console.warn('[AuthService] Auth check failed:', response.status);
-                return { authEnabled: false, authenticated: false };
+                return {
+                    authEnabled: this.authEnabled,
+                    authenticated: this.authenticated,
+                    error: `AUTH_CHECK_HTTP_${response.status}`
+                };
             }
             
             const data = await response.json();
@@ -89,16 +93,24 @@ class AuthService {
             
             console.log('[AuthService] Auth status:', data);
             
-            // If token is invalid but we had one, clear it
             if (this.token && !data.tokenValid) {
                 console.log('[AuthService] Token invalid, clearing');
                 this.clearToken();
             }
             
-            return data;
+            return {
+                ...data,
+                authEnabled: this.authEnabled,
+                authenticated: this.authenticated,
+                error: null
+            };
         } catch (error) {
             console.error('[AuthService] Error checking auth:', error);
-            return { authEnabled: false, authenticated: false };
+            return {
+                authEnabled: this.authEnabled,
+                authenticated: this.authenticated,
+                error: 'AUTH_CHECK_NETWORK_ERROR'
+            };
         }
     }
     
