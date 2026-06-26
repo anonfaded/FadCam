@@ -58,17 +58,14 @@
     height="50"></a>
 -->
 <br>
-
+    
 <a href="https://apt.izzysoft.de/packages/com.fadcam">
     <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
     alt="Get it on IoD"
     height="70"></a>
 
-<a href="http://www.amazon.com/gp/product/B0CZKWZ8PG/ref=mas_pm_FadCam">
-    <img src="https://github.com/anonfaded/FadCam/assets/124708903/43550ba6-dcf2-46cb-8aa5-2a882968c529"
-    alt="Get it on Amazon appstore"
-    height="47"></a>
-
+<a href="https://apps.apple.com/us/app/fadcam-dashcam-bodycam/id6778121848?itscg=30200&itsct=apps_box_badge&mttnsubad=6778121848" style="display: inline-block;">
+    <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1782345600" alt="Download on the App Store" style="width: auto; height: 60px; vertical-align: middle; object-fit: contain;" /></a>
 
 <a href="https://f-droid.org/packages/com.fadcam">
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
