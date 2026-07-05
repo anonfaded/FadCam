@@ -58,7 +58,7 @@ public class RecordingTileService extends TileService {
         super.onStopListening();
         FLog.d(TAG, "onStopListening - performing lifecycle cleanups");
         unregisterStateReceiver();
-        cleanupPendingCallbacks();
+        cancelRestoreRunnable();
     }
 
     @Override
@@ -118,7 +118,6 @@ public class RecordingTileService extends TileService {
                 } else {
                     startRecording();
                 }
-                setTileState(!currentRecording);
                 clickRunnable = null;
             }
         };
@@ -170,6 +169,10 @@ public class RecordingTileService extends TileService {
 
     private void switchCamera(SharedPreferencesManager prefs, boolean recording) {
         CameraType current = prefs.getCameraSelection();
+        if (recording && current.isDual()) {
+            FLog.w(TAG, "switchCamera ignored: camera switching is not supported during active Dual recording");
+            return;
+        }
         CameraType target = (current == CameraType.FRONT) ? CameraType.BACK : CameraType.FRONT;
         FLog.i(TAG, "switchCamera requested: " + current + " -> " + target + " (Recording active: " + recording + ")");
 
@@ -200,7 +203,7 @@ public class RecordingTileService extends TileService {
             tile.setLabel(getString(R.string.front));
             tile.setIcon(Icon.createWithResource(this, R.drawable.start_front_shortcut));
         } else {
-            tile.setLabel(getString(R.string.rear));
+            tile.setLabel(getString(R.string.back));
             tile.setIcon(Icon.createWithResource(this, R.drawable.start_back_shortcut));
         }
         tile.updateTile();
