@@ -48,6 +48,7 @@
 
 ## Core Principles
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.
+- **No Backward Compat**: Never add backward-compatible overloads, fallbacks, or polyfills to support outdated code. When frontend/backend/Android contract changes (method signatures, API shapes), always ask the user before silently adding compat shims. Clean deploys preferred over layered hacks.
 - **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
 - **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
 

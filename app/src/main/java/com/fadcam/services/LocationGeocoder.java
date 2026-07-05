@@ -122,7 +122,8 @@ public class LocationGeocoder {
         String urlString = String.format(Locale.US, NOMINATIM_URL, latitude, longitude);
         FLog.d(TAG, "🌐 Querying Nominatim (~" + String.format(Locale.US, "%.2f", latitude) + ", ~" + String.format(Locale.US, "%.2f", longitude) + ")");
         
-        URL url = new URL(urlString);
+        java.net.URI uri = new java.net.URI(urlString);
+        java.net.URL url = uri.toURL();
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestProperty("User-Agent", USER_AGENT);
         conn.setRequestProperty("Accept-Language", "en");

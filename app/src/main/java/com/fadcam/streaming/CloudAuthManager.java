@@ -36,6 +36,9 @@ public class CloudAuthManager {
     private static final String KEY_STREAM_TOKEN = "cloud_stream_token";
     private static final String KEY_STREAM_TOKEN_EXPIRY = "cloud_stream_token_expiry";
 
+    // Device stream key — never expires, replaces JWT for get-stream-token requests
+    private static final String KEY_STREAM_KEY = "cloud_stream_key";
+
     // E2E verify tag — HMAC-SHA256(master_key, "fadcam-e2e-v1"), fetched from public.users
     private static final String KEY_E2E_VERIFY_TAG = "e2e_verify_tag";
     
@@ -355,6 +358,7 @@ public class CloudAuthManager {
     public void unlinkDevice() {
         final String deviceId = getDeviceId();
         final String userId = getUserId();
+        final String streamKey = getStreamKey();  // MUST read before clearing
         
         FLog.i(TAG, "Unlinking device from cloud account...");
         
@@ -369,12 +373,13 @@ public class CloudAuthManager {
             .remove(KEY_IS_LINKED)
             .remove(KEY_LINKED_AT)
             .remove(KEY_E2E_VERIFY_TAG)
+            .remove(KEY_STREAM_KEY)
             .apply();
         
         clearStreamToken();
         
-        // Notify backend asynchronously (don't block UI)
-        if (userId != null && deviceId != null) {
+        // Notify backend asynchronously using stream key for auth
+        if (streamKey != null && streamKey.length() == 64) {
             new Thread(() -> {
                 try {
                     String url = SUPABASE_URL + "/functions/v1/unlink-device";
@@ -385,9 +390,9 @@ public class CloudAuthManager {
                     conn.setReadTimeout(10000);
                     conn.setDoOutput(true);
                     conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setRequestProperty("Authorization", "Device " + streamKey);
                     
-                    // Send device_id and user_id for verification
-                    String body = "{\"device_id\":\"" + deviceId + "\",\"user_id\":\"" + userId + "\"}";
+                    String body = "{\"device_id\":\"" + deviceId + "\"}";
                     try (java.io.OutputStream os = conn.getOutputStream()) {
                         os.write(body.getBytes("UTF-8"));
                     }
@@ -400,7 +405,7 @@ public class CloudAuthManager {
                     } else if (responseCode == 403) {
                         FLog.w(TAG, "⚠️ Backend rejected unlink (ownership mismatch)");
                     } else {
-                        FLog.w(TAG, "⚠️ Backend unlink failed (HTTP " + responseCode + "), but local unlink complete");
+                        FLog.w(TAG, "⚠️ Backend unlink failed (HTTP " + responseCode + ")");
                     }
                     conn.disconnect();
                 } catch (Exception e) {
@@ -805,6 +810,7 @@ public class CloudAuthManager {
     private void fetchStreamTokenAsyncWithRetry(@Nullable StreamTokenListener listener, int refreshAttempt) {
         String deviceId = getDeviceId();
         String userId = getUserId();
+        String streamKey = getStreamKey();
         
         if (userId == null) {
             FLog.w(TAG, "No user ID available for stream token fetch");
@@ -814,144 +820,99 @@ public class CloudAuthManager {
             return;
         }
         
-        // Check if JWT token is expired and refresh if needed
-        if (isTokenExpired()) {
-            // Check retry limit to prevent hammering Supabase
-            if (refreshAttempt >= MAX_STREAM_TOKEN_REFRESH_ATTEMPTS) {
-                FLog.e(TAG, "❌ Stream token refresh exceeded max attempts (" + MAX_STREAM_TOKEN_REFRESH_ATTEMPTS + "), giving up");
-                lastFailedStreamTokenFetchTime = System.currentTimeMillis();
-                if (listener != null) {
-                    listener.onError("Token refresh failed - device may need to be re-linked");
-                }
-                return;
-            }
-            
-            FLog.i(TAG, "JWT token expired (attempt " + (refreshAttempt + 1) + "/" + MAX_STREAM_TOKEN_REFRESH_ATTEMPTS + "), refreshing...");
-            final int nextAttempt = refreshAttempt + 1;
-            refreshTokenAsync(new TokenRefreshListener() {
-                @Override
-                public void onRefreshSuccess(String newToken, long newExpiry) {
-                    FLog.i(TAG, "JWT token refreshed, now fetching stream token...");
-                    // Retry with incremented attempt count
-                    fetchStreamTokenAsyncWithRetry(listener, nextAttempt);
-                }
-                
-                @Override
-                public void onRefreshFailed(String error) {
-                    FLog.e(TAG, "JWT token refresh failed (attempt " + nextAttempt + "/" + MAX_STREAM_TOKEN_REFRESH_ATTEMPTS + "): " + error);
-                    lastFailedStreamTokenFetchTime = System.currentTimeMillis();
-                    if (listener != null) {
-                        listener.onError("Token refresh failed: " + error);
-                    }
-                }
-            });
-            return;  // Exit, will be called again after refresh or fail after max attempts
-        }
-        
-        String accessToken = getJwtToken();
-        if (accessToken == null || accessToken.isEmpty()) {
-            lastFailedStreamTokenFetchTime = System.currentTimeMillis();
+        // Device stream key is the ONLY auth method — no JWT fallback.
+        // If missing, the device was linked before stream keys were introduced — re-link needed.
+        if (streamKey == null || streamKey.length() != 64) {
+            FLog.w(TAG, "No device stream key available — re-link required to provision one");
             if (listener != null) {
-                listener.onError("Cloud session unavailable - relink this device");
+                listener.onError("Device credentials not provisioned — re-link required");
             }
             return;
         }
 
         String url = SUPABASE_URL + "/functions/v1/get-stream-token";
-        
-        FLog.i(TAG, "Fetching stream token for device: " + deviceId.substring(0, 8) + "... (using Bearer token)");
-        
-        new Thread(() -> {
-            try {
-                java.net.URI uri = java.net.URI.create(url);
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) uri.toURL().openConnection();
-                conn.setRequestMethod("POST");
-                conn.setConnectTimeout(15000);
-                conn.setReadTimeout(15000);
-                conn.setDoOutput(true);
-                conn.setRequestProperty("Content-Type", "application/json");
-                
-                conn.setRequestProperty("Authorization", "Bearer " + accessToken);
-                
-                String body = "{\"device_id\":\"" + deviceId + "\"}";
-                try (java.io.OutputStream os = conn.getOutputStream()) {
-                    os.write(body.getBytes("UTF-8"));
-                }
-                
-                int responseCode = conn.getResponseCode();
-                FLog.i(TAG, "Stream token response: HTTP " + responseCode);
-                
-                if (responseCode == 200) {
-                    // Read response
-                    java.io.BufferedReader reader = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(conn.getInputStream()));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
+        FLog.i(TAG, "Fetching stream token for device: " + deviceId.substring(0, 8) + "... (Device stream key)");
+
+            new Thread(() -> {
+                android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
+                try {
+                    java.net.URI uri = java.net.URI.create(url);
+                    java.net.HttpURLConnection conn = (java.net.HttpURLConnection) uri.toURL().openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setConnectTimeout(15000);
+                    conn.setReadTimeout(15000);
+                    conn.setDoOutput(true);
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setRequestProperty("apikey", SUPABASE_PUBLISHABLE_KEY);
+                    conn.setRequestProperty("Authorization", "Device " + streamKey);
+
+                    String body = "{\"device_id\":\"" + deviceId + "\"}";
+                    try (java.io.OutputStream os = conn.getOutputStream()) {
+                        os.write(body.getBytes("UTF-8"));
                     }
-                    reader.close();
-                    
-                    // Parse JSON response
-                    org.json.JSONObject json = new org.json.JSONObject(response.toString());
-                    String streamToken = json.optString("stream_token", null);
-                    long expiresAt = json.optLong("expires_at", 0);
-                    
-                    if (streamToken != null && !streamToken.isEmpty()) {
-                        // Store stream token
-                        prefs.edit()
-                            .putString(KEY_STREAM_TOKEN, streamToken)
-                            .putLong(KEY_STREAM_TOKEN_EXPIRY, expiresAt)
-                            .apply();
-                        
-                        FLog.i(TAG, "✅ Stream token fetched and stored, expires at: " + expiresAt);
-                        
-                        if (listener != null) {
-                            android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
-                            mainHandler.post(() -> listener.onSuccess(streamToken));
+
+                    int responseCode = conn.getResponseCode();
+                    FLog.i(TAG, "Stream token response (stream key): HTTP " + responseCode);
+
+                    if (responseCode == 200) {
+                        java.io.BufferedReader reader = new java.io.BufferedReader(
+                            new java.io.InputStreamReader(conn.getInputStream()));
+                        StringBuilder response = new StringBuilder();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            response.append(line);
+                        }
+                        reader.close();
+
+                        org.json.JSONObject json = new org.json.JSONObject(response.toString());
+                        String streamToken = json.optString("stream_token", null);
+                        long expiresAt = json.optLong("expires_at", 0);
+
+                        if (streamToken != null && !streamToken.isEmpty()) {
+                            prefs.edit()
+                                .putString(KEY_STREAM_TOKEN, streamToken)
+                                .putLong(KEY_STREAM_TOKEN_EXPIRY, expiresAt)
+                                .apply();
+                            FLog.i(TAG, "✅ Stream token fetched via stream key, expires: " + expiresAt);
+                            if (listener != null) {
+                                mainHandler.post(() -> listener.onSuccess(streamToken));
+                            }
+                        } else {
+                            String error = "Invalid stream token response";
+                            FLog.e(TAG, error);
+                            if (listener != null) {
+                                mainHandler.post(() -> listener.onError(error));
+                            }
                         }
                     } else {
-                        String error = "Invalid stream token response";
-                        FLog.e(TAG, error);
+                        String errorMsg = "HTTP " + responseCode;
+                        java.io.InputStream errorStream = conn.getErrorStream();
+                        if (errorStream != null) {
+                            java.io.BufferedReader errorReader = new java.io.BufferedReader(
+                                new java.io.InputStreamReader(errorStream));
+                            StringBuilder errorResponse = new StringBuilder();
+                            String l;
+                            while ((l = errorReader.readLine()) != null) {
+                                errorResponse.append(l);
+                            }
+                            errorReader.close();
+                            errorMsg = "HTTP " + responseCode + ": " + errorResponse;
+                        }
+                        FLog.e(TAG, "Stream token fetch failed (stream key): " + errorMsg);
+                        final String finalErrorMsg = errorMsg;
                         if (listener != null) {
-                            android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
-                            mainHandler.post(() -> listener.onError(error));
+                            mainHandler.post(() -> listener.onError(finalErrorMsg));
                         }
                     }
-                } else {
-                    // Error response
-                    java.io.InputStream errorStream = conn.getErrorStream();
-                    String errorMsg = "HTTP " + responseCode;
-                    if (errorStream != null) {
-                        java.io.BufferedReader errorReader = new java.io.BufferedReader(
-                            new java.io.InputStreamReader(errorStream));
-                        StringBuilder errorResponse = new StringBuilder();
-                        String line;
-                        while ((line = errorReader.readLine()) != null) {
-                            errorResponse.append(line);
-                        }
-                        errorReader.close();
-                        errorMsg = "HTTP " + responseCode + ": " + errorResponse;
-                    }
-                    
-                    FLog.e(TAG, "Stream token fetch failed: " + errorMsg);
-                    
-                    final String finalErrorMsg = errorMsg;
+                    conn.disconnect();
+                } catch (Exception e) {
+                    FLog.e(TAG, "Stream token fetch failed (stream key): " + e.getMessage());
+                    lastFailedStreamTokenFetchTime = System.currentTimeMillis();
                     if (listener != null) {
-                        android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
-                        mainHandler.post(() -> listener.onError(finalErrorMsg));
+                        mainHandler.post(() -> listener.onError("Failed: " + e.getMessage()));
                     }
                 }
-                
-                conn.disconnect();
-            } catch (Exception e) {
-                FLog.e(TAG, "Error fetching stream token", e);
-                if (listener != null) {
-                    android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
-                    mainHandler.post(() -> listener.onError(e.getMessage()));
-                }
-            }
-        }).start();
+            }).start();
     }
     
     /**
@@ -983,5 +944,29 @@ public class CloudAuthManager {
             .remove(KEY_STREAM_TOKEN_EXPIRY)
             .apply();
         FLog.i(TAG, "Stream token cleared");
+    }
+
+    /**
+     * Store device stream key (never expires, used for stream token requests).
+     */
+    public void setStreamKey(String key) {
+        prefs.edit().putString(KEY_STREAM_KEY, key).apply();
+        FLog.i(TAG, "Stream key stored");
+    }
+
+    /**
+     * Get the device stream key, or null if not set.
+     */
+    @Nullable
+    public String getStreamKey() {
+        return prefs.getString(KEY_STREAM_KEY, null);
+    }
+
+    /**
+     * Clear stream key (called on device unlink).
+     */
+    public void clearStreamKey() {
+        prefs.edit().remove(KEY_STREAM_KEY).apply();
+        FLog.i(TAG, "Stream key cleared");
     }
 }

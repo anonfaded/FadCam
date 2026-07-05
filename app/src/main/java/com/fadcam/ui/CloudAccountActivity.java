@@ -182,12 +182,21 @@ public class CloudAccountActivity extends AppCompatActivity {
          */
         @JavascriptInterface
         public void onLinkSuccess(String token, long expiryMs, String email,
-                                  String refreshToken, String userId, String e2eVerifyTag) {
+                                  String refreshToken, String userId, String e2eVerifyTag,
+                                  String streamKey) {
             FLog.i(TAG, "Device linked successfully to: " + email + ", has refresh: " + (refreshToken != null && !refreshToken.isEmpty()));
 
             cloudAuthManager.setJwtToken(token, expiryMs, refreshToken, userId);
             cloudAuthManager.setDeviceName(deviceName);
             cloudAuthManager.setUserEmail(email);
+
+            // Store device stream key — never expires, eliminates dependency on JWT refresh
+            if (streamKey != null && streamKey.length() == 64) {
+                cloudAuthManager.setStreamKey(streamKey);
+                FLog.i(TAG, "Device stream key stored (persistent auth)");
+            } else {
+                FLog.w(TAG, "No stream key returned — will fall back to JWT auth");
+            }
 
             // Cache the verify_tag locally so the settings row can validate password changes
             // without a fresh REST call.
