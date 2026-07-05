@@ -46,6 +46,9 @@ public class CloudAuthManager {
     static final String SUPABASE_URL = "https://vfhehknmxxedvesdvpew.supabase.co";
     static final String SUPABASE_PUBLISHABLE_KEY = "sb_publishable_PwOotJZQHwS9xnCFwUjHsQ_uXLNqkk9";
     
+    // Relay server — handles stream token issuance & verification locally
+    static final String RELAY_BASE_URL = "https://live.fadseclab.com:8443";
+    
     // Cloud service URLs
     public static final String AUTH_BASE_URL = "https://id.fadseclab.com";
     public static final String DEVICE_LINK_URL = AUTH_BASE_URL + "/device-link";
@@ -830,8 +833,10 @@ public class CloudAuthManager {
             return;
         }
 
-        String url = SUPABASE_URL + "/functions/v1/get-stream-token";
-        FLog.i(TAG, "Fetching stream token for device: " + deviceId.substring(0, 8) + "... (Device stream key)");
+        // Stream token is now issued by the relay worker (local), not Supabase.
+        // Zero Supabase edge function calls for streaming auth.
+        String url = RELAY_BASE_URL + "/internal/get-stream-token";
+        FLog.i(TAG, "Fetching stream token for device: " + deviceId.substring(0, 8) + "... (Device stream key → relay)");
 
             new Thread(() -> {
                 android.os.Handler mainHandler = new android.os.Handler(context.getMainLooper());
