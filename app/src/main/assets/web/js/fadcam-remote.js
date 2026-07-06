@@ -22,7 +22,15 @@
   
   // Configuration (renamed to avoid conflict with global CONFIG)
   const CLOUD_CONFIG = {
-    LAB_URL: 'https://id.fadseclab.com/lab',
+    // Lab dashboard URL — read from ?return= query param set by the id dashboard.
+    // No hardcoded ports or localhost URLs. Falls back to production only if param missing.
+    get LAB_URL() {
+      const params = new URLSearchParams(window.location.search);
+      const returnUrl = params.get('return');
+      if (returnUrl) return decodeURIComponent(returnUrl);
+      // Direct stream access without id dashboard — use production.
+      return 'https://id.fadseclab.com/lab';
+    },
     SUPABASE_URL: 'https://vfhehknmxxedvesdvpew.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmaGVoa25teHhlZHZlc2R2cGV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NDI2ODIsImV4cCI6MjA1MzMxODY4Mn0.1F8NF0IwBE-GYmR8Yrq4FKfFGKBRIUhWs0_fzFqF0gc',
     // Domains where cloud features should show

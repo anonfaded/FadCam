@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "FadCam",
+			"path": "."
+		},
+		{
+			"name": "id",
+			"path": "../id"
+		},
+		{
+			"name": "fadcam.fadseclab.com",
+			"path": "../fadcam.fadseclab.com"
+		}
+	],
+	"settings": {}
+}
