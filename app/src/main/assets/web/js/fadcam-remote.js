@@ -631,6 +631,9 @@
       
       console.log('[FadCamRemote] Stream context ready:', streamContext);
 
+      // Add Open Lab menu item to profile dropdown
+      addCloudMenuItem();
+
       // Show E2E unlock modal if verify_tag is present but key is not in IndexedDB
       await checkAndShowE2EUnlock();
       
@@ -743,7 +746,7 @@
   // Show device banner at top
   // NOTE: Device banner removed - logo in header always links to Lab (set in HTML)
   
-  // Add FadCam Remote menu item to profile dropdown
+  // Add Open Lab menu item to profile dropdown
   function addCloudMenuItem() {
     const dropdown = document.getElementById('profileDropdown');
     if (!dropdown) {
@@ -751,19 +754,19 @@
       return;
     }
     
-    // Create the menu item - always shows "My Account" link to Lab
+    if (!CLOUD_CONFIG.LAB_URL) return;
+    
     const menuItem = document.createElement('div');
-    menuItem.className = 'profile-item fadcam-remote-item';
-    menuItem.style.cssText = 'border-top: 1px solid rgba(255,255,255,0.1); margin-top: 4px; padding-top: 12px;';
+    menuItem.className = 'profile-item';
     
     menuItem.innerHTML = `
-      <i class="fas fa-cloud" style="color: #00d4ff;"></i> 
-      <span>FadCam Remote</span>
+      <i class="fas fa-flask" style="color: #dc2626;"></i> 
+      <span>Open Lab</span>
     `;
-    menuItem.onclick = () => window.open(CLOUD_CONFIG.LAB_URL, '_blank');
+    menuItem.onclick = () => { window.location.href = CLOUD_CONFIG.LAB_URL; };
     
-    // Insert before the last item (Logout)
-    const logoutItem = dropdown.querySelector('.profile-item:last-child');
+    // Insert before the logout item
+    const logoutItem = document.getElementById('profileLogoutItem');
     if (logoutItem) {
       dropdown.insertBefore(menuItem, logoutItem);
     } else {
