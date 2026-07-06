@@ -171,26 +171,9 @@
   }
 
   function viewerLimitCopy(maxViewers) {
-    if (maxViewers === 3) {
-      return {
-        title: 'Viewer Limit Reached',
-        message: 'Lab allows 3 concurrent viewers. Close one of the active streams or keep watching from a single client on this tier.',
-        actionLabel: 'Open Lab'
-      };
-    }
-
-    if (maxViewers === 1) {
-      return {
-        title: 'Viewer Limit Reached',
-        message: 'Pro Plus allows 1 concurrent viewer. Close the other active stream or upgrade to Lab to watch from more clients.',
-        actionLabel: 'Open Lab'
-      };
-    }
-
     return {
       title: 'Viewer Limit Reached',
-      message: 'Your current tier has reached its concurrent viewer limit. Close one active stream or upgrade to watch from more clients.',
-      actionLabel: 'Open Lab'
+      message: `Your tier allows ${maxViewers || 1} concurrent viewer${maxViewers === 1 ? '' : 's'}.<br>Close an active stream or upgrade to watch from more clients.<br>Contact us on Discord for assistance.`
     };
   }
 
@@ -651,8 +634,10 @@
           copy.title,
           copy.message,
           {
-            actionLabel: copy.actionLabel,
-            actionHref: CLOUD_CONFIG.LAB_URL
+            actions: [
+              { label: 'Back to Lab', href: CLOUD_CONFIG.LAB_URL, icon: 'fa-solid fa-flask' },
+              { label: 'Contact on Discord', href: 'https://discord.gg/kvAZvdkuuN', icon: 'fab fa-discord', newTab: true }
+            ]
           }
         );
         return;
@@ -679,7 +664,8 @@
     return isWebAccess() && streamContext !== null;
   }
   
-  // Show overlay on stream page
+  // Show overlay on stream page.
+  // Supports both legacy { actionLabel, actionHref } and new { actions: [{ label, href, icon }] }
   function showStreamOverlay(title, message, options = {}) {
     let overlay = document.getElementById('stream-overlay');
     if (!overlay) {
@@ -700,32 +686,37 @@
       `;
       document.body.appendChild(overlay);
     }
-    
+
+    // Build actions: support both legacy single-action and new multi-action array
+    const actions = options.actions || (options.actionLabel ? [{ label: options.actionLabel, href: options.actionHref || CLOUD_CONFIG.LAB_URL }] : null);
+    const buttonsHtml = actions ? `
+      <div style="margin-top: 24px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+        ${actions.map(a => `
+          <a href="${a.href || '#'}" ${a.newTab ? 'target="_blank" rel="noopener"' : ''} style="
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 18px;
+            border-radius: 10px;
+            background: #dc2626;
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+          ">${a.icon ? `<i class="${a.icon}"></i>` : ''}${a.label}</a>
+        `).join('')}
+      </div>
+    ` : `
+      <div style="margin-top: 20px;">
+        <div style="width: 40px; height: 40px; border: 3px solid #333; border-top-color: #ff4444; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+      </div>
+    `;
+
     overlay.innerHTML = `
       <div style="max-width: 420px;">
         <div style="font-size: 24px; font-weight: bold; margin-bottom: 12px;">${title}</div>
         <div style="font-size: 14px; color: #b0b0b0; line-height: 1.6;">${message}</div>
-        ${options.actionLabel ? `
-          <div style="margin-top: 24px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <a href="${options.actionHref || CLOUD_CONFIG.LAB_URL}" style="
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              min-width: 140px;
-              padding: 11px 16px;
-              border-radius: 10px;
-              background: #dc2626;
-              color: #fff;
-              text-decoration: none;
-              font-size: 14px;
-              font-weight: 700;
-            ">${options.actionLabel}</a>
-          </div>
-        ` : `
-          <div style="margin-top: 20px;">
-            <div style="width: 40px; height: 40px; border: 3px solid #333; border-top-color: #ff4444; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-          </div>
-        `}
+        ${buttonsHtml}
       </div>
       <style>
         @keyframes spin { to { transform: rotate(360deg); } }
