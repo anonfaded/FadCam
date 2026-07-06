@@ -225,7 +225,7 @@
                     <div class="card-clickable">
                         <i class="fas fa-arrow-down" style="font-size: 10px; color: #f85149; width: 12px; height: 12px; flex-shrink: 0;"></i>
                         <div class="card-sm-content">
-                            <div class="card-label-sm">This Month</div>
+                            <div class="card-label-sm">Data This Month</div>
                             <div class="card-value-sm" id="dataTransferValue">—</div>
                         </div>
                         <i class="fas fa-chevron-right card-arrow-sm"></i>
@@ -632,7 +632,7 @@
     <div class="modal" id="dataTransferModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Client Data Usage</h2>
+                <h2>Monthly Usage</h2>
                 <button class="modal-close" onclick="hideDataTransferModal()">✕</button>
             </div>
             <div class="modal-body" id="dataTransferContent"></div>
@@ -2035,12 +2035,14 @@
 
         async function showDataTransferModal() {
             if (!currentStatus) return;
-            const dataTransferred = currentStatus.dataTransferredMb || 0;
             const isCloudMode = currentStatus.cloudMode;
-            const displayValue = dataTransferred > 1000 ? (dataTransferred / 1024).toFixed(2) + ' GB' : dataTransferred.toFixed(1) + ' MB';
 
-            // Fetch monthly usage history from relay (cached, lightweight)
-            let historyHtml = '<div style="padding:16px;text-align:center;color:#6e7681;">Loading history…</div>';
+            // Show loading overlay immediately
+            showDataTransferContent('<div style="padding:32px;text-align:center;color:#6e7681;"><div style="width:28px;height:28px;border:2px solid #24272d;border-top-color:#f85149;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div>Loading usage history…</div>');
+
+            // Fetch monthly usage history from relay
+            let currentMb = 0;
+            let historyHtml = '<div style="padding:16px;text-align:center;color:#6e7681;">Could not load history</div>';
             try {
                 const streamToken = typeof FadCamRemote !== 'undefined' ? FadCamRemote.getStreamToken() : null;
                 const userId = typeof FadCamRemote !== 'undefined' && FadCamRemote.streamContext ? FadCamRemote.streamContext().userId : null;
@@ -2051,9 +2053,13 @@
                     });
                     if (histRes.ok) {
                         const hist = await histRes.json();
+                        currentMb = hist.current_month_mb || 0;
                         const rows = (hist.history || []).map(r => {
-                            const monthLabel = new Date(r.month + '-01').toLocaleDateString('en-US', { year:'numeric', month:'short' });
-                            const isCurrent = r.month === new Date().toISOString().slice(0, 7);
+                            // r.month is a full date string like "2026-07-05" — parse safely
+                            const d = new Date(r.month + 'T00:00:00Z');
+                            const monthLabel = isNaN(d.getTime()) ? r.month : d.toLocaleDateString('en-US', { year:'numeric', month:'short' });
+                            const thisMonth = new Date().toISOString().slice(0, 7);
+                            const isCurrent = r.month.startsWith(thisMonth);
                             return `<div class="modal-row-container">
                                 <div class="modal-row-label">${monthLabel}${isCurrent ? ' (current)' : ''}</div>
                                 <div class="modal-row-value">${r.mb > 1000 ? (r.mb/1024).toFixed(2)+' GB' : r.mb.toFixed(1)+' MB'}</div>
@@ -2066,22 +2072,24 @@
                 historyHtml = '<div style="padding:16px;text-align:center;color:#6e7681;">Could not load history</div>';
             }
 
+            const displayCurrent = currentMb > 1000 ? (currentMb/1024).toFixed(2) + ' GB' : currentMb.toFixed(1) + ' MB';
+
             let content = `
                 <div class="modal-section">
                     <div class="modal-rows-group">
                         <div class="modal-row-container">
-                            <div class="modal-row-label" style="font-weight:700;">This Month (Live)</div>
-                            <div class="modal-row-value" style="color:#f85149;">${displayValue}</div>
+                            <div class="modal-row-label" style="font-weight:700;">This Month</div>
+                            <div class="modal-row-value" style="color:#f85149;">${displayCurrent}</div>
                         </div>
                     </div>
                     <div style="margin-top:16px;padding-top:12px;border-top:1px solid #24272d;">
-                        <div style="font-size:11px;color:#6e7681;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Monthly History</div>
+                        <div style="font-size:11px;color:#6e7681;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">History</div>
                         ${historyHtml}
                     </div>
                 </div>
                 <div class="modal-info-box" style="background: rgba(255,255,255,0.05); border-radius: 8px;margin-top:12px;">
                     <div class="modal-info-text" style="line-height: 1.5;">
-                        ${isCloudMode ? '☁️ Cloud mode — data served to viewers via relay. Phone uploads not counted.' : '📡 Local mode — data served to LAN viewers.'}
+                        ${isCloudMode ? '☁️ Data delivered to viewers through the relay. Phone upload traffic is not counted here.' : '📡 Data served to LAN viewers.'}
                     </div>
                 </div>
             `;
@@ -2089,17 +2097,16 @@
             showDataTransferContent(content);
         }
 
+
+
         function showDataTransferContent(content) {
-            document.getElementById('dataTransferContent').innerHTML = content;
-            document.getElementById('dataTransferModal').classList.add('visible');
-        }
-            
             document.getElementById('dataTransferContent').innerHTML = content;
             document.getElementById('dataTransferModal').classList.add('visible');
         }
         function hideDataTransferModal() {
             closeModalAnimated('dataTransferModal');
         }
+
 
         function showSegmentsModal() {
             if (!currentStatus) return;
