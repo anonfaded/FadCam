@@ -1334,23 +1334,26 @@
         };
 
         /**
-         * Detect WebP support and load appropriate hero background image
+         * Detect WebP support and load appropriate hero background image.
+         * Uses an actual image decoding test — Safari can display WebP but
+         * cannot encode it via canvas.toDataURL, so a canvas test is wrong.
          */
         function detectWebPAndLoadHero() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 1;
-            canvas.height = 1;
-            const ctx = canvas.getContext('2d');
-            if (ctx && ctx.fillStyle) {
-                ctx.fillStyle = 'rgba(0,0,0,0)';
-                ctx.fillRect(0, 0, 1, 1);
-                const supportsWebP = canvas.toDataURL('image/webp').indexOf('image/webp') === 5;
-                const heroElement = document.getElementById('heroBackground');
-                if (heroElement && !supportsWebP) {
-                    heroElement.classList.add('no-webp');
-                    console.log('[Image] WebP not supported, using PNG fallback');
-                }
-            }
+            const heroElement = document.getElementById('heroBackground');
+            if (!heroElement) return;
+
+            // Test WebP decoding support via actual image loading
+            const img = new Image();
+            img.onload = function() {
+                // WebP supported — keep default .webp, no fallback needed
+            };
+            img.onerror = function() {
+                // WebP not supported — use PNG fallback
+                heroElement.classList.add('no-webp');
+                console.log('[Image] WebP not supported, using PNG fallback');
+            };
+            // Tiny 1x1 lossy WebP (valid, decodes on any browser with WebP support)
+            img.src = 'data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoCAAEAAQAcJaQAA3AA/v3AgAA=';
         }
 
         // Detect WebP support on page load
