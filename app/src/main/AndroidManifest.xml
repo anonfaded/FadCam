@@ -387,6 +387,18 @@
         <!-- Services and receivers remain unchanged -->
         <service android:name=".services.RecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone" />
 
+        <!-- Quick Settings tile for start/stop recording with camera switch -->
+        <service
+            android:name=".services.RecordingTileService"
+            android:exported="true"
+            android:icon="@drawable/start_back_shortcut"
+            android:label="@string/shortcut_start_back"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- Dual Camera Recording Service for PiP dual camera recording -->
         <service android:name=".dualcam.service.DualCameraRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone" />
 

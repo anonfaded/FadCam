@@ -384,6 +384,7 @@ Or:
 - Audio input source selection (phone mic, wired/Bluetooth)
 - Dynamic watermarks with timestamp, logo, and GPS options
  - App Shortcuts: Three quick actions are available (Start Recording, Stop Recording, Toggle Torch). These shortcuts can be triggered without opening the app and can be mapped with key-mapping apps (e.g. MacroDroid) to hardware buttons (like volume buttons) for convenient control.
+- Quick Settings Tile: Adds a notification shade Quick Settings tile. Single-tap to start/stop recording, double-tap to switch between Front/Rear camera (even live during recording), with secure keyguard lockscreen authentication.
 </details>
 
 <details>
