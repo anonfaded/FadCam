@@ -303,7 +303,7 @@ dependencies {
     // Unit Testing Dependencies (Local JVM tests - fast, no device needed)
     testImplementation(libs.junit)
     testImplementation("org.mockito:mockito-core:5.2.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0")
     testImplementation("org.json:json:20240303")
     
     // Android Instrumented Testing (runs on device/emulator)
