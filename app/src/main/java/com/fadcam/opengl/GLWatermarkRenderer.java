@@ -413,6 +413,40 @@ public class GLWatermarkRenderer {
         renderToEncoderInternal(true);
     }
 
+    /**
+     * Consumes the latest frame from the SurfaceTexture without rendering it
+     * to the encoder.  This MUST be called from the GL thread (the same thread
+     * that owns the EGL context) whenever a new frame is signalled via
+     * {@code onFrameAvailable} but the caller chooses to drop the frame for
+     * FPS throttling.
+     *
+     * <p>Simply skipping the frame without calling {@code updateTexImage()}
+     * will fill up the SurfaceTexture's internal buffer queue (only 1-2 slots
+     * in async mode).  Once the queue is full the VirtualDisplay producer
+     * blocks on {@code dequeueBuffer()}, deadlocking the entire capture
+     * pipeline.  This method releases the buffer so the producer can continue.
+     */
+    public void consumeLatestFrame() {
+        synchronized (renderLock) {
+            if (released || !initialized || cameraSurfaceTexture == null) {
+                return;
+            }
+            synchronized (frameSyncObject) {
+                if (!frameAvailable) {
+                    return; // nothing to consume
+                }
+                frameAvailable = false;
+            }
+            try {
+                cameraSurfaceTexture.updateTexImage();
+                cameraSurfaceTexture.getTransformMatrix(latestTexMatrix);
+                hasLatestTexMatrix = true;
+            } catch (Exception e) {
+                FLog.w(TAG, "consumeLatestFrame failed", e);
+            }
+        }
+    }
+
     public void setSuppressWatermarkForSnapshot(boolean suppress) {
         suppressWatermarkForSnapshot = suppress;
     }

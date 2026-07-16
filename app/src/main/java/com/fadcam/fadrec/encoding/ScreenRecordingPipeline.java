@@ -119,6 +119,8 @@ public class ScreenRecordingPipeline {
     private Handler glRenderHandler;
     private final AtomicBoolean renderRunnableQueued = new AtomicBoolean(false);
     private volatile boolean glInitialized = false;
+    /** Timestamp (System.nanoTime) of the last frame rendered to the encoder, for FPS throttling. */
+    private long lastFrameTimestampNanos = 0;
     /** Surface that VirtualDisplay writes screen frames into (GLWatermarkRenderer's camera input). */
     private Surface glScreenInputSurface;
 
@@ -136,7 +138,14 @@ public class ScreenRecordingPipeline {
                 if (isStopped || !isRecording) {
                     return;
                 }
-                // Refresh watermark text periodically (every ~30 frames ≈ 1 s at 30 fps)
+
+                // Refresh watermark text periodically (every ~30 rendered frames ≈ 1 s at 30 fps)
+                // NOTE: FPS throttling is done at the onFrameAvailable callback level
+                // (not here) so that every posted renderRunnable always calls
+                // glWatermarkRenderer.renderFrame() → updateTexImage().  If we throttled
+                // inside this runnable and returned early, the SurfaceTexture buffer queue
+                // would fill up (only 1-2 buffers capacity in async mode), the VirtualDisplay
+                // producer would block on dequeueBuffer(), and the pipeline would stall.
                 if (++frameCount % 30 == 0 && watermarkInfoProvider != null && glWatermarkRenderer != null) {
                     try {
                         String text = watermarkInfoProvider.getWatermarkText();
@@ -172,6 +181,9 @@ public class ScreenRecordingPipeline {
     private Handler videoEncodingHandler;
     private HandlerThread audioEncodingThread;
     private Handler audioEncodingHandler;
+    /** Dedicated thread for segment rollover I/O (SAF file creation) to avoid blocking the encoder drain loop. */
+    private HandlerThread rolloverThread;
+    private Handler rolloverHandler;
     
     // State management
     private boolean isRecording = false;
@@ -369,6 +381,11 @@ public class ScreenRecordingPipeline {
             audioEncodingHandler = new Handler(audioEncodingThread.getLooper());
         }
         
+        // Segment rollover I/O thread — keeps SAF file creation off the encoder drain loop.
+        rolloverThread = new HandlerThread("ScreenRolloverIO");
+        rolloverThread.start();
+        rolloverHandler = new Handler(rolloverThread.getLooper());
+        
         // Initialize muxer
         initializeMuxer();
         
@@ -560,9 +577,35 @@ public class ScreenRecordingPipeline {
                 // Frame-available callback is invoked on the GL handler thread (same Looper
                 // that GLWatermarkRenderer's SurfaceTexture listener uses).  We post
                 // renderRunnable via the same handler to keep all GL operations serial.
+                //
+                // ── Frame rate throttling ──────────────────────────────────────
+                // VirtualDisplay produces frames at the display's native refresh rate
+                // (60/90/120 Hz), but we only want to encode at the configured FPS.
+                // By gating the renderRunnable posting here (not inside the runnable),
+                // every posted renderRunnable always calls renderFrame() →
+                // updateTexImage(), which prevents the SurfaceTexture buffer queue
+                // from filling up and stalling the VirtualDisplay producer.
+                // ────────────────────────────────────────────────────────────────
                 glWatermarkRenderer.setOnFrameAvailableListener(() -> {
                     if (!isStopped && isRecording
                             && renderRunnableQueued.compareAndSet(false, true)) {
+                        if (videoFramerate > 0) {
+                            long now = System.nanoTime();
+                            long targetIntervalNanos = 1_000_000_000L / videoFramerate;
+                            if (now - lastFrameTimestampNanos < targetIntervalNanos) {
+                                // Too soon since the last rendered frame.
+                                // MUST consume the SurfaceTexture buffer via
+                                // updateTexImage() even when skipping — otherwise
+                                // the buffer queue (only 1-2 slots) fills up and
+                                // the VirtualDisplay producer deadlocks.
+                                if (glWatermarkRenderer != null) {
+                                    glWatermarkRenderer.consumeLatestFrame();
+                                }
+                                renderRunnableQueued.set(false);
+                                return;
+                            }
+                            lastFrameTimestampNanos = now;
+                        }
                         glRenderHandler.post(renderRunnable);
                     }
                 });
@@ -924,7 +967,19 @@ public class ScreenRecordingPipeline {
                     // Check if we need to split the segment due to size
                     if (shouldSplitSegment()) {
                         FLog.d(TAG, "Size limit reached, rolling over segment");
-                        rolloverSegment();
+                        // ── Asynchronous rollover ────────────────────────────────────
+                        // Stop writing to the current muxer immediately, then hand off
+                        // the heavy I/O (SAF file creation in the callback) to a dedicated
+                        // rollover thread so the encoder drain loop is never blocked.
+                        // The drain loop continues polling — frames are still dequeued
+                        // and released (preventing encoder from backing up), but sample
+                        // data is discarded until the new muxer is ready.
+                        // ─────────────────────────────────────────────────────────────
+                        muxerStarted = false;
+                        rolloverRequestedByDrain = true;
+                        rolloverHandler.post(() -> performAsyncRolloverIO());
+                        break; // Exit while loop so drainVideoEncoder returns and
+                               // releases encoderDrainLock promptly.
                     }
                 }
 
@@ -1208,7 +1263,152 @@ public class ScreenRecordingPipeline {
             rolloverInProgress = false;
         }
     }
-    
+
+    // ── Asynchronous segment rollover ──────────────────────────────────
+    // SAF file I/O (via the SegmentCallback) can take 100-500ms on some
+    // devices.  Running it inside the encoder drain loop blocks the encoder
+    // output drain, which can cascade into the GL pipeline stalling (the
+    // encoder's input surface backs up, eglSwapBuffers blocks, and the
+    // SurfaceTexture consumer stops, eventually starving the VirtualDisplay).
+    //
+    // We split the rollover into two phases:
+    //
+    //    Phase 1 (drain loop, fast):  Set flags, stop writing to old muxer,
+    //                                 post Phase 2 to the I/O handler thread.
+    //    Phase 2 (I/O thread, slow):  Call the SegmentCallback (SAF file
+    //                                 creation), then post Phase 3 back to
+    //                                 the video encoding handler.
+    //    Phase 3 (encoder handler):   Acquire encoderDrainLock, stop+release
+    //                                 old muxer, create new muxer, re-add
+    //                                 cached tracks, start new muxer.
+    //
+    // During Phase 2 the encoder drain loop keeps polling — frames are
+    // still dequeued (preventing encoder back-pressure) but silently
+    // discarded until the new muxer is ready in Phase 3.
+    // ────────────────────────────────────────────────────────────────────
+
+    /**
+     * Phase 2: Runs on the dedicated rollover I/O handler thread.
+     * Calls the SegmentCallback (may do slow SAF file I/O), then posts
+     * Phase 3 back to the video encoding handler to finalise the muxer.
+     */
+    private void performAsyncRolloverIO() {
+        try {
+            if (isStopped || !isRecording) {
+                rolloverRequestedByDrain = false;
+                return;
+            }
+
+            segmentNumber++;
+            if (segmentCallback == null) {
+                FLog.e(TAG, "Segment callback is null, cannot continue rollover");
+                rolloverRequestedByDrain = false;
+                return;
+            }
+
+            // ── Slow I/O: SAF file creation, content resolver queries, etc. ──
+            segmentCallback.onSegmentRollover(segmentNumber);
+
+            if (currentOutputFilePath == null && currentOutputFd == null) {
+                FLog.e(TAG, "Segment callback did not set new output path or descriptor");
+                rolloverRequestedByDrain = false;
+                return;
+            }
+
+            // Validate output path exists and is writable
+            if (currentOutputFilePath != null) {
+                java.io.File segFile = new java.io.File(currentOutputFilePath);
+                java.io.File parentDir = segFile.getParentFile();
+                if (parentDir != null && !parentDir.exists()) {
+                    if (!parentDir.mkdirs()) {
+                        FLog.e(TAG, "Failed to create segment directory: " + parentDir.getAbsolutePath());
+                        rolloverRequestedByDrain = false;
+                        return;
+                    }
+                }
+            }
+
+            // Phase 3: post muxer transition back to the video encoding handler.
+            videoEncodingHandler.post(() -> completeAsyncRollover());
+        } catch (Exception e) {
+            FLog.e(TAG, "Error during async rollover I/O", e);
+            rolloverRequestedByDrain = false;
+        }
+    }
+
+    /**
+     * Phase 3: Runs on the video encoding handler (holds encoderDrainLock).
+     * Stops the old muxer, creates a new one, re-adds cached tracks, and
+     * starts writing.  After this completes the drain loop writes to the
+     * new segment.
+     */
+    private void completeAsyncRollover() {
+        synchronized (encoderDrainLock) {
+            try {
+                if (isStopped || !isRecording) {
+                    rolloverRequestedByDrain = false;
+                    return;
+                }
+
+                FLog.i(TAG, "Auto-splitting: completing rollover to segment " + segmentNumber);
+
+                // Stop and release the current muxer
+                if (mediaMuxer != null) {
+                    try {
+                        if (muxerStarted) {
+                            mediaMuxer.stop();
+                        }
+                        mediaMuxer.release();
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error releasing muxer during async rollover", e);
+                    }
+                    mediaMuxer = null;
+                    muxerStarted = false;
+                }
+
+                // Reset track indices
+                audioTrackIndex = -1;
+                videoTrackIndex = -1;
+
+                // Reset byte counters for new segment
+                segmentBytesWritten = 0L;
+                lastVideoSegmentBytes = 0L;
+                lastAudioSegmentBytes = 0L;
+
+                // Create new muxer for the next segment
+                initializeMuxer();
+
+                // Re-add cached tracks
+                if (cachedVideoFormat != null) {
+                    videoTrackIndex = mediaMuxer.addTrack(cachedVideoFormat);
+                    FLog.d(TAG, "Added cached video track to new muxer. index=" + videoTrackIndex);
+                } else {
+                    FLog.w(TAG, "Video format not cached; new segment will wait for format change");
+                }
+
+                if (enableAudio && cachedAudioFormat != null) {
+                    try {
+                        audioTrackIndex = mediaMuxer.addTrack(cachedAudioFormat);
+                        FLog.d(TAG, "Added cached audio track to new muxer. index=" + audioTrackIndex);
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Failed adding cached audio track to new muxer", e);
+                    }
+                }
+
+                // Start muxer if conditions met
+                tryStartMuxer();
+
+                FLog.i(TAG, "Started new segment: " + segmentNumber +
+                        (currentOutputFilePath != null ? " at path: " + currentOutputFilePath
+                                : " with file descriptor"));
+            } catch (Exception e) {
+                FLog.e(TAG, "Error during async rollover muxer setup", e);
+            } finally {
+                rolloverRequestedByDrain = false;
+            }
+        }
+    }
+
     /**
      * Pause recording
      */
@@ -1369,6 +1569,12 @@ public class ScreenRecordingPipeline {
         if (audioEncodingThread != null) {
             audioEncodingThread.quitSafely();
             audioEncodingThread = null;
+        }
+        
+        if (rolloverThread != null) {
+            rolloverThread.quitSafely();
+            rolloverThread = null;
+            rolloverHandler = null;
         }
     }
     
