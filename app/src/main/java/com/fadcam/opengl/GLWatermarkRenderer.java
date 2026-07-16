@@ -1199,11 +1199,23 @@ public class GLWatermarkRenderer {
         // Ensures icons are visible while maintaining proper line spacing.
         float iconLineH = dynamicTextSize * 2.7f;
         
-        // Use standard line height for spacing between rows (no extra buffer)
-        float effectiveLineHeight = lineHeight;
-
         String[] lines = text.split("\n");
         watermarkLineCount = lines.length;
+
+        // Effective per-line height must account for icons, which are taller
+        // than the text glyphs at higher resolutions (e.g. 77.8 px icon vs
+        // 38.5 px lineHeight at 1440p).  Without this the watermark bitmap is
+        // too short and icon bottoms get truncated.
+        int linesWithIcons = 0;
+        for (String l : lines) {
+            if (l != null && (l.contains("<ICON>") || l.contains("<FADCAM_ICON>"))) {
+                linesWithIcons++;
+            }
+        }
+        float effectiveLineHeight = linesWithIcons > 0
+                ? Math.max(lineHeight, iconLineH)
+                : lineHeight;
+
         float maxLineWidth = 0f;
         for (String line : lines) {
             if (line == null) continue;

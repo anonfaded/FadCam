@@ -2113,7 +2113,11 @@ public class SharedPreferencesManager {
 
     /**
      * Gets the screen recording resolution from preferences.
-     * Falls back to device screen size if not set.
+     * Falls back to the device's physical screen dimensions (preserving native
+     * aspect ratio) if no preference has been saved.  We intentionally do NOT
+     * default to a fixed 16:9 resolution (like 1920×1080) because on modern
+     * phones (20:9, 20.8:9, 21:9) that would cause letterboxing/pillarboxing
+     * in the recorded video.
      */
     public android.util.Size getScreenRecordingResolution() {
         String saved = sharedPreferences.getString(Constants.PREF_SCREEN_RECORDING_RESOLUTION, null);
@@ -2124,6 +2128,27 @@ public class SharedPreferencesManager {
             } catch (Exception e) {
                 // fall through to default
             }
+        }
+        // Use the device's real screen dimensions as the fallback so the
+        // VirtualDisplay and encoder always start with the correct aspect ratio.
+        try {
+            android.view.WindowManager wm = (android.view.WindowManager)
+                    context.getSystemService(android.content.Context.WINDOW_SERVICE);
+            if (wm != null) {
+                android.view.Display display = wm.getDefaultDisplay();
+                if (display != null) {
+                    android.util.DisplayMetrics metrics = new android.util.DisplayMetrics();
+                    display.getRealMetrics(metrics);
+                    if (metrics.widthPixels > 0 && metrics.heightPixels > 0) {
+                        // Store in landscape order (longest × shortest) for consistency
+                        int longest = Math.max(metrics.widthPixels, metrics.heightPixels);
+                        int shortest = Math.min(metrics.widthPixels, metrics.heightPixels);
+                        return new android.util.Size(longest, shortest);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Fall through to hard-coded fallback
         }
         return new android.util.Size(
             Constants.DEFAULT_SCREEN_RECORDING_WIDTH,

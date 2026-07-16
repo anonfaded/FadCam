@@ -462,74 +462,84 @@ public class ScreenRecordingSettingsFragment extends Fragment {
      * This mirrors how professional screen recorders (e.g. AZ Screen Recorder,
      * Mobizen) handle resolution selection.
      */
+    /**
+     * Returns resolutions available for screen recording.
+     * <p>
+     * Every resolution offered here is an exact proportional scale of the
+     * device's physical screen.  This guarantees the VirtualDisplay
+     * (MediaProjection → SurfaceTexture → encoder) captures at the native
+     * aspect ratio and the recorded video is never letterboxed or pillarboxed.
+     * <p>
+     * The options are:
+     * <ul>
+     *   <li><b>Max</b>   — native screen resolution (1.0×)
+     *   <li><b>High</b>  — ¾ of native (0.75×)
+     *   <li><b>Medium</b>— ½ of native (0.50×)
+     *   <li><b>Low</b>   — ≈⅓ of native (0.35×)
+     * </ul>
+     * All dimensions are rounded to multiples of 8 (H.264 requirement) and the
+     * aspect ratio is preserved by computing the long side from the short side
+     * using the device's exact aspect ratio rather than scaling both axes
+     * independently.
+     */
     private List<Size> getSupportedResolutions() {
         List<Size> result = new ArrayList<>();
         Context ctx = getContext();
         if (ctx == null) return result;
 
+        // ── Device physical screen dimensions ──────────────────────
         android.util.DisplayMetrics metrics = ctx.getResources().getDisplayMetrics();
-        int nativeW = metrics.widthPixels;
-        int nativeH = metrics.heightPixels;
-
-        // Fallback: query WindowManager if resource metrics are too small
-        if (nativeW < 400 || nativeH < 400) {
+        int physW = metrics.widthPixels;
+        int physH = metrics.heightPixels;
+        if (physW < 400 || physH < 400) {
             WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
             if (wm != null) {
                 Display display = wm.getDefaultDisplay();
                 if (display != null) {
                     android.util.DisplayMetrics wmMetrics = new android.util.DisplayMetrics();
                     display.getRealMetrics(wmMetrics);
-                    if (wmMetrics.widthPixels > 0 && wmMetrics.heightPixels > 0) {
-                        nativeW = wmMetrics.widthPixels;
-                        nativeH = wmMetrics.heightPixels;
-                    }
+                    physW = wmMetrics.widthPixels;
+                    physH = wmMetrics.heightPixels;
                 }
             }
         }
+        if (physW < 400 || physH < 400) { physW = 1920; physH = 1080; }
 
-        if (nativeW < 400 || nativeH < 400) {
-            nativeW = 1920;
-            nativeH = 1080;
+        // Resolutions are stored in landscape order (longest × shortest)
+        // so they normalise correctly in ScreenRecordingService regardless
+        // of portrait / landscape preference.
+        final int longest  = Math.max(physW, physH);
+        final int shortest = Math.min(physW, physH);
+        final float deviceAspect = (float) longest / (float) shortest;
+
+        final Set<String> seen = new LinkedHashSet<>();
+
+        // ── Build options from proportional scales ─────────────────
+        // We scale the SHORTEST side (height in landscape), then compute
+        // the LONGEST side from the exact device aspect ratio.  This
+        // guarantees every option fills the encoder frame completely.
+        final float[] scales = {1.00f, 0.75f, 0.50f, 0.35f};
+        for (float scale : scales) {
+            int h = (Math.round(shortest * scale) / 8) * 8;
+            if (h < 360) continue; // below minimum sane recording height
+            int w = (Math.round(h * deviceAspect) / 8) * 8;
+            if (w < 640) continue;
+            addIfUnique(result, seen, w, h);
         }
 
-        // Landscape-ordered (longer side first) for consistency
-        int longest = Math.max(nativeW, nativeH);
-        int shortest = Math.min(nativeW, nativeH);
-
-        Set<String> seen = new LinkedHashSet<>();
-
-        // 1. Native display resolution
-        addIfUnique(result, seen, longest, shortest);
-
-        // 2. Downscale factors from native (aligned to multiples of 8 for codec)
-        double[] factors = {0.75, 0.5, 0.35};
-        for (double f : factors) {
-            int w = (Math.round(longest * (float) f) / 8) * 8;
-            int h = (Math.round(shortest * (float) f) / 8) * 8;
-            if (w >= 640 && h >= 360) {
-                addIfUnique(result, seen, w, h);
-            }
-        }
-
-        // 3. Standard target resolutions that fit within the native size
-        int[][] standards = {
-                {3840, 2160}, // 4K
-                {2560, 1440}, // 2K / QHD
-                {1920, 1080}, // FHD
-                {1280, 720},  // HD
-                {854, 480},   // 480p
-        };
-        for (int[] s : standards) {
-            if (s[0] <= longest && s[1] <= shortest) {
-                addIfUnique(result, seen, s[0], s[1]);
-            }
+        // ── Keep the current stored resolution selectable ──────────
+        Size currentStored = prefs.getScreenRecordingResolution();
+        if (currentStored != null) {
+            addIfUnique(result, seen, currentStored.getWidth(), currentStored.getHeight());
         }
 
         if (result.isEmpty()) {
-            result.add(new Size(nativeW, nativeH));
+            result.add(new Size(physW, physH));
         }
 
-        FLog.d(TAG, "Supported screen recording resolutions: " + result.size() + " options (native: " + longest + "x" + shortest + ")");
+        FLog.d(TAG, "Screen recording resolutions: " + result.size()
+                + " options (device " + longest + "×" + shortest
+                + ", aspect " + String.format(java.util.Locale.US, "%.3f", deviceAspect) + ")");
         return result;
     }
 
@@ -575,12 +585,30 @@ public class ScreenRecordingSettingsFragment extends Fragment {
         }
     }
 
+    /**
+     * Returns a human-readable label for a screen recording resolution.
+     * <p>
+     * Labels are based on the quality tier relative to the device's native
+     * screen size, not on arbitrary standard names like "1080p" which imply
+     * a 16:9 aspect ratio that may not match the device.
+     */
     private String buildResolutionLabel(Size s) {
         int w = s.getWidth();
-        if (w >= 3840) return "4K \u00b7 " + Math.max(w, s.getHeight()) + "p";
-        if (w >= 2560) return "2K \u00b7 " + Math.max(w, s.getHeight()) + "p";
-        if (w >= 1920) return "FHD \u00b7 " + Math.max(w, s.getHeight()) + "p";
-        if (w >= 1280) return "HD \u00b7 " + Math.max(w, s.getHeight()) + "p";
-        return Math.max(w, s.getHeight()) + "p";
+        int h = s.getHeight();
+
+        // Determine quality tier from the short side relative to native.
+        android.util.DisplayMetrics m = requireContext().getResources().getDisplayMetrics();
+        int nativeShortest = Math.min(m.widthPixels, m.heightPixels);
+
+        int targetShortest = Math.min(w, h);
+        float ratio = (float) targetShortest / (float) Math.max(nativeShortest, 1);
+
+        String tier;
+        if (ratio >= 0.95f)       tier = "Max";
+        else if (ratio >= 0.70f)  tier = "High";
+        else if (ratio >= 0.45f)  tier = "Medium";
+        else                       tier = "Low";
+
+        return tier + " (" + w + "\u00d7" + h + ")";
     }
 }
