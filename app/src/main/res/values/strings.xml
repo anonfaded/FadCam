@@ -2139,6 +2139,10 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <!-- Motion Lab -->
     <string name="motion_lab_title">Motion Lab</string>
     <string name="motion_lab_row_subtitle">Smart event recording for CCTV-style use</string>
+
+    <!-- Automation - coming soon -->
+    <string name="automation_title">Automation</string>
+    <string name="automation_row_subtitle">Button mapping, Bluetooth remotes, volume keys</string>
     <string name="motion_lab_enable">Enable Motion Recording</string>
     <string name="motion_lab_enable_sensor">Enable Motion Sensor</string>
     <string name="motion_lab_status_enabled">Active (records only when needed)</string>
