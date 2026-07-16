@@ -84,9 +84,9 @@ public class ChangelogParser {
             lines.add(line);
         }
         
-        // Start HTML content with Font Awesome CDN and CSS styling (for WebView)
-        html.append("<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'>")
-            .append("<style>")
+        // Start HTML content with inline CSS styling (for WebView).
+        // No external CDN resources — everything is self-contained.
+        html.append("<style>")
             .append("* { margin: 0; padding: 0; box-sizing: border-box; }")
             .append("body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #E0E0E0; font-size: 13px; }")
             .append("table { width: 100%; border-collapse: collapse; margin: 12px 0; background: #1a1a1a; border-radius: 8px; overflow: hidden; font-size: 12px; }")
@@ -101,9 +101,7 @@ public class ChangelogParser {
             .append("tbody tr:hover { background: rgba(228, 60, 60, 0.08); }")
             .append("tbody tr:hover td.improvement-cell { background: rgba(76, 175, 80, 0.2) !important; }")
             .append("tbody td.improvement-cell { background: rgba(76, 175, 80, 0.15) !important; color: #4CAF50; font-weight: 500; }")
-            .append(".fa-external-link-alt { color: #4CAF50; margin-left: 4px; font-size: 10px; }")
             .append("tbody tr:last-child td { border-bottom: none; }")
-            .append(".fa-arrow-up, .fa-arrow-down { color: #4CAF50; margin-right: 4px; font-size: 11px; }")
             .append(".thank-you-section { margin-top: 20px; padding: 20px 18px; text-align: center; animation: fadeSlideIn 0.8s ease-out forwards; opacity: 0; animation-delay: 800ms; }")
             .append(".thank-you-text { font-size: 14px; color: #A0A0A0; line-height: 1.6; }")
             .append(".tree { background: linear-gradient(180deg, #AA1F1F, #661111, #AA1F1F); background-size: 100% 200%; animation: flow 4s ease-in-out infinite, glow 3s ease-in-out infinite; }")
@@ -259,7 +257,7 @@ public class ChangelogParser {
         // Process links first: [text](url) → <a href="url">text <i class="fas fa-external-link-alt"></i></a>
         // Pattern: [text](url)
         text = text.replaceAll("\\[([^\\]]+)\\]\\(([^\\)]+)\\)", 
-            "<a href='$2' style='color:#4CAF50;text-decoration:none;font-weight:bold;'>$1&nbsp;<i class='fas fa-external-link-alt'></i></a>");
+            "<a href='$2' style='color:#4CAF50;text-decoration:none;font-weight:bold;'>$1&nbsp;\u2197</a>");
         
         // Process backticks (code blocks)
         // Pattern: `code` → <code style="...">code</code>
@@ -461,14 +459,11 @@ public class ChangelogParser {
     }
 
     /**
-     * Convert emoji arrows to Font Awesome icons
-     * ↓ → <i class="fas fa-arrow-down"></i>
-     * ↑ → <i class="fas fa-arrow-up"></i>
+     * Keep unicode arrows as-is — they render natively in WebView without
+     * any external font dependency.
      */
     private static String convertArrowsToIcons(String text) {
-        text = text.replace("↓", "<i class=\"fas fa-arrow-down\"></i>");
-        text = text.replace("↑", "<i class=\"fas fa-arrow-up\"></i>");
-        return text;
+        return text; // ↓ and ↑ render as native unicode characters
     }
 
     /**
