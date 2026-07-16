@@ -826,6 +826,8 @@ public class MainActivity extends AppCompatActivity {
         View current = touchedView;
         while (current != null) {
             if (current instanceof HorizontalScrollView) return true;
+            if (current.getId() == R.id.tutorial_scroll) return true;
+            if (current instanceof com.fadcam.ui.GalleryFastScroller) return true;
             if (current instanceof com.google.android.material.chip.Chip) return true;
             if (current instanceof com.google.android.material.chip.ChipGroup) return true;
             if (current instanceof BottomNavigationView) return true;
@@ -870,8 +872,10 @@ public class MainActivity extends AppCompatActivity {
         for (int i = group.getChildCount() - 1; i >= 0; i--) {
             View child = group.getChildAt(i);
             if (child.getVisibility() != View.VISIBLE) continue;
-            float childX = x - child.getLeft();
-            float childY = y - child.getTop();
+            // Account for the parent's scroll offset — child.getLeft() / getTop()
+            // return layout positions, which are NOT adjusted for scrolling.
+            float childX = x - child.getLeft() + group.getScrollX();
+            float childY = y - child.getTop() + group.getScrollY();
             View target = findDeepestViewAtInternal(child, childX, childY);
             if (target != null) return target;
         }

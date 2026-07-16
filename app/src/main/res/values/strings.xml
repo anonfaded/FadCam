@@ -2143,6 +2143,11 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <!-- Automation - coming soon -->
     <string name="automation_title">Automation</string>
     <string name="automation_row_subtitle">Button mapping, Bluetooth remotes, volume keys</string>
+
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Tutorial Videos</string>
+    <string name="tutorials_subtitle">We\'re planning to create short guides covering everything from basics to pro techniques. Subscribe and hit the bell so you\'ll be notified when they drop!</string>
+    <string name="tutorials_youtube_cta">Subscribe on YouTube</string>
     <string name="motion_lab_enable">Enable Motion Recording</string>
     <string name="motion_lab_enable_sensor">Enable Motion Sensor</string>
     <string name="motion_lab_status_enabled">Active (records only when needed)</string>

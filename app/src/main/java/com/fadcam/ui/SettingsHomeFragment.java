@@ -381,6 +381,19 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_about, () -> openSubFragment(new AboutFragment()));
         bindRow(root, R.id.group_review, () -> launchReview());
         bindRow(root, R.id.group_readme, () -> openReadmeDialog());
+
+        // Tutorial YouTube CTA
+        View tutorialYt = root.findViewById(R.id.group_tutorials_youtube);
+        if (tutorialYt != null) {
+            tutorialYt.setOnClickListener(v -> {
+                try {
+                    startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://www.youtube.com/@fadseclab")));
+                } catch (Exception e) {
+                    FLog.w("SettingsHome", "Could not open YouTube", e);
+                }
+            });
+        }
     }
 
     private void setupMiniAppCards(View root) {
