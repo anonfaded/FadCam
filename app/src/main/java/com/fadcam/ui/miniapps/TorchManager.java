@@ -7,6 +7,7 @@ import android.hardware.camera2.CameraManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 
 import com.fadcam.FLog;
 import com.fadcam.Constants;
@@ -28,6 +29,7 @@ public class TorchManager {
     private float screenBrightnessLevel = 1.0f;
     private FlashPattern currentPattern = FlashPattern.STEADY;
     private PatternHandler patternHandler;
+    private CameraManager.TorchCallback torchCallback;
 
     public enum FlashPattern {
         STEADY(0),
@@ -83,6 +85,7 @@ public class TorchManager {
         this.isTorchOn = false;
         initTorchCamera();
         loadSavedPattern();
+        registerTorchCallback();
     }
 
     private void loadSavedPattern() {
@@ -116,6 +119,115 @@ public class TorchManager {
                 listener.onError("Camera access failed");
             }
         }
+    }
+
+    /**
+     * Register a TorchCallback to detect torch state changes from external sources
+     * (system quick settings tile, other apps). Without this callback, the app's
+     * cached isTorchOn state goes stale when the torch is turned off externally.
+     *
+     * {@link CameraManager.TorchCallback#onTorchModeChanged} fires whenever the
+     * torch mode changes — whether by our app, the system QS tile, or another app.
+     */
+    private void registerTorchCallback() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            torchCallback = new CameraManager.TorchCallback() {
+                @Override
+                public void onTorchModeChanged(String cameraId, boolean enabled) {
+                    if (torchCameraId != null && torchCameraId.equals(cameraId)) {
+                        handleExternalTorchChange(enabled);
+                    }
+                }
+
+                @Override
+                public void onTorchModeUnavailable(String cameraId) {
+                    if (torchCameraId != null && torchCameraId.equals(cameraId)) {
+                        handleExternalTorchUnavailable();
+                    }
+                }
+            };
+            cameraManager.registerTorchCallback(torchCallback, mainHandler);
+        }
+    }
+
+    /**
+     * Called when the torch mode is changed externally (system QS, another app).
+     * During pattern execution (STROBE/SOS), the pattern handler toggles the flash
+     * rapidly — we skip processing to avoid interfering with pattern state.
+     */
+    private void handleExternalTorchChange(boolean enabled) {
+        // During pattern execution, the pattern handler manages the flash state.
+        // Skip to avoid corrupting pattern state with false syncs.
+        if (currentPattern != FlashPattern.STEADY && patternHandler != null) {
+            return;
+        }
+
+        if (this.isTorchOn != enabled) {
+            this.isTorchOn = enabled;
+
+            // If torch was turned off externally, stop any running pattern
+            if (!enabled && patternHandler != null) {
+                patternHandler.stop();
+                patternHandler = null;
+            }
+
+            // Sync state to SharedPreferences (both files for consistency)
+            saveTorchStateToPrefs(enabled);
+            broadcastTorchState(enabled);
+
+            if (listener != null) {
+                listener.onTorchStateChanged(enabled);
+            }
+        }
+    }
+
+    /**
+     * Called when the torch mode becomes unavailable (camera resources busy, etc.).
+     * If our torch was on, it was forcibly turned off — update state accordingly.
+     */
+    private void handleExternalTorchUnavailable() {
+        if (this.isTorchOn) {
+            this.isTorchOn = false;
+
+            if (patternHandler != null) {
+                patternHandler.stop();
+                patternHandler = null;
+            }
+
+            saveTorchStateToPrefs(false);
+            broadcastTorchState(false);
+
+            if (listener != null) {
+                listener.onTorchStateChanged(false);
+            }
+        }
+    }
+
+    /**
+     * Save torch state to SharedPreferences so all components see the correct state:
+     * - Constants.PREFS_NAME ("app_prefs"): used by SharedPreferencesManager, HomeFragment
+     * - Default shared prefs: used by RemoteStreamManager (the "API")
+     */
+    private void saveTorchStateToPrefs(boolean enabled) {
+        // Save to app_prefs (used by HomeFragment via SharedPreferencesManager)
+        context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(Constants.PREF_TORCH_STATE, enabled)
+            .apply();
+        // Also save to default prefs (used by RemoteStreamManager API)
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .edit()
+            .putBoolean(Constants.PREF_TORCH_STATE, enabled)
+            .apply();
+    }
+
+    /**
+     * Broadcast torch state change so all UI components (HomeFragment, etc.) stay in sync.
+     */
+    private void broadcastTorchState(boolean enabled) {
+        Intent broadcast = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED)
+            .putExtra(Constants.INTENT_EXTRA_TORCH_STATE, enabled);
+        context.sendBroadcast(broadcast);
     }
 
     public void setStateListener(TorchStateListener listener) {
@@ -152,17 +264,10 @@ public class TorchManager {
                     }
                 }
                 
-                // Save state to preferences for consistency
-                context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
-                    .edit()
-                    .putBoolean(Constants.PREF_TORCH_STATE, enabled)
-                    .apply();
-                
-                // Broadcast state change
-                Intent broadcast = new Intent(Constants.BROADCAST_ON_TORCH_STATE_CHANGED)
-                    .putExtra(Constants.INTENT_EXTRA_TORCH_STATE, enabled);
-                context.sendBroadcast(broadcast);
-                
+                // Sync state to SharedPreferences (both files for consistency)
+                saveTorchStateToPrefs(enabled);
+                broadcastTorchState(enabled);
+
                 if (listener != null) {
                     listener.onTorchStateChanged(enabled);
                 }

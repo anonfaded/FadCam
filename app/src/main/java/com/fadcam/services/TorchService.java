@@ -43,6 +43,7 @@ public class TorchService extends Service {
     private AtomicBoolean isTorchOn = new AtomicBoolean(false);
     private static WeakReference<HomeFragment> homeFragmentRef;
     private String selectedTorchSource;
+    private CameraManager.TorchCallback torchCallback;
 
     // Static method to set the home fragment
     public static void setHomeFragment(HomeFragment fragment) {
@@ -192,7 +193,49 @@ public class TorchService extends Service {
             }
         };
 
+        // Register TorchCallback to detect external torch state changes
+        // (system quick settings tile, other apps). Without this, the cached
+        // isTorchOn state goes stale when the torch is turned off externally.
+        registerTorchCallback();
+
         FLog.d(TAG, "TorchService created");
+    }
+
+    private void registerTorchCallback() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            torchCallback = new CameraManager.TorchCallback() {
+                @Override
+                public void onTorchModeChanged(String cameraId, boolean enabled) {
+                    if (isTorchOn.get() != enabled) {
+                        FLog.d(TAG, "Torch state changed externally: camera=" + cameraId + " enabled=" + enabled);
+                        isTorchOn.set(enabled);
+                        sharedPreferences.edit()
+                            .putBoolean(Constants.PREF_TORCH_STATE, enabled)
+                            .apply();
+                        updateUIAndBroadcastState(enabled);
+                        manageServiceNotification(enabled);
+                    }
+                }
+
+                @Override
+                public void onTorchModeUnavailable(String cameraId) {
+                    if (isTorchOn.get()) {
+                        FLog.d(TAG, "Torch became unavailable externally: camera=" + cameraId);
+                        isTorchOn.set(false);
+                        sharedPreferences.edit()
+                            .putBoolean(Constants.PREF_TORCH_STATE, false)
+                            .apply();
+                        updateUIAndBroadcastState(false);
+                        manageServiceNotification(false);
+                    }
+                }
+            };
+            try {
+                cameraManager.registerTorchCallback(torchCallback, backgroundHandler);
+            } catch (Exception e) {
+                FLog.e(TAG, "Failed to register torch callback", e);
+            }
+        }
     }
 
     private void createNotificationChannel() {
@@ -335,6 +378,16 @@ public class TorchService extends Service {
             }
         } catch (Exception e) {
             FLog.e(TAG, "Error turning off torch: " + e.getMessage());
+        }
+
+        // Unregister torch callback
+        if (torchCallback != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                cameraManager.unregisterTorchCallback(torchCallback);
+            } catch (Exception e) {
+                FLog.e(TAG, "Error unregistering torch callback", e);
+            }
+            torchCallback = null;
         }
 
         // Clean up background thread
