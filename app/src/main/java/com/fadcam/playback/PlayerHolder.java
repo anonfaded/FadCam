@@ -277,24 +277,23 @@ public final class PlayerHolder {
                 item = MediaItem.fromUri(uri);
             }
             
-            // Check if this is a fragmented MP4 that needs our VLC-like seeking approach
+            // Always use our SeekableFragmentedMp4MediaSourceFactory — it handles
+            // both fMP4 (with fragment index) and standard MP4 (with ClippingMediaSource
+            // for correct duration-based seeking). The default ProgressiveMediaSource
+            // fails for standard MP4 files with broken moov atoms (Faditor-converted).
             boolean usedFmp4Factory = false;
-            if (fmp4SourceFactory != null && fmp4SourceFactory.isFragmentedMp4(uri)) {
+            if (fmp4SourceFactory != null) {
                 try {
-                    FLog.d(TAG, "Detected fMP4 file, using VLC-like seekable media source");
-                    long startTime = System.currentTimeMillis();
                     MediaSource mediaSource = fmp4SourceFactory.createMediaSource(item);
                     player.setMediaSource(mediaSource);
-                    long buildTime = System.currentTimeMillis() - startTime;
-                    FLog.d(TAG, "fMP4 MediaSource created in " + buildTime + "ms (includes index scan)");
+                    FLog.d(TAG, "MediaSource created via SeekableFmp4Factory");
                     usedFmp4Factory = true;
                 } catch (Exception e) {
-                    FLog.w(TAG, "Failed to create fMP4 MediaSource, falling back to default", e);
+                    FLog.w(TAG, "Failed to create MediaSource via factory, falling back", e);
                 }
             }
             
             if (!usedFmp4Factory) {
-                // Use default MediaItem approach for non-fMP4 files
                 FLog.d(TAG, "Using default MediaItem for playback");
                 player.setMediaItem(item);
             }

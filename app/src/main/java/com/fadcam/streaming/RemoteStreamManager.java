@@ -426,8 +426,8 @@ public class RemoteStreamManager {
             if (initData != null) {
                 // FLog.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB) - Stream ready for fresh fragments");
                 
-                // Upload to cloud relay if enabled
-                if (context != null) {
+                // Upload to cloud relay ONLY if streaming is actually enabled
+                if (streamingEnabled && context != null) {
                     CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
                     if (uploader.isEnabled() && uploader.isReady()) {
                         uploader.uploadInitSegment(initData, null);

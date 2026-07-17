@@ -612,17 +612,21 @@ public class SeekableFragmentedMp4MediaSourceFactory {
             FLog.i(TAG_OUTPUT, "seekMap() called: isSeekable=" + seekMap.isSeekable() + 
                   ", duration=" + (seekMap.getDurationUs() / 1000000.0) + "s");
             
-            if (seekableChunkIndex != null && !seekMap.isSeekable()) {
-                // Replace UNSEEKABLE with our pre-built ChunkIndex
-                FLog.i(TAG_OUTPUT, "*** REPLACING UNSEEKABLE SeekMap with pre-built ChunkIndex ***");
+            if (seekableChunkIndex != null) {
+                // Always use our pre-built ChunkIndex — the delegate extractor's
+                // SeekMap may be "seekable" but broken (all seeks → position 0,
+                // especially for Faditor-converted standard MP4 files).
+                if (!seekMap.isSeekable()) {
+                    FLog.i(TAG_OUTPUT, "*** REPLACING UNSEEKABLE SeekMap with pre-built ChunkIndex ***");
+                } else {
+                    FLog.w(TAG_OUTPUT, "*** REPLACING delegate's (potentially broken) SeekMap with pre-built ChunkIndex ***");
+                }
                 FLog.i(TAG_OUTPUT, "ChunkIndex: duration=" + (seekableChunkIndex.getDurationUs() / 1000000.0) + "s");
                 delegate.seekMap(seekableChunkIndex);
             } else if (seekMap.isSeekable()) {
-                // Delegate already has a seekable map (has sidx)
                 FLog.d(TAG_OUTPUT, "Using delegate's seekable SeekMap (file has sidx)");
                 delegate.seekMap(seekMap);
             } else {
-                // No index and delegate is unseekable - pass through
                 FLog.w(TAG_OUTPUT, "No pre-built index, using original UNSEEKABLE SeekMap");
                 delegate.seekMap(seekMap);
             }

@@ -38,7 +38,7 @@ import com.fadcam.media.FragmentedMp4MuxerWrapper;
 public class GLRecordingPipeline {
     private static final String TAG = "GLRecordingPipeline";
     private static final String VIDEO_MIME_TYPE = "video/avc";
-    private static final int VIDEO_IFRAME_INTERVAL = 60; // I-frame every ~2s at 30fps
+    private static final int VIDEO_IFRAME_INTERVAL = 1; // 1 second between I-frames (Android MediaFormat KEY_I_FRAME_INTERVAL is in seconds, not frames)
     private static final int PREVIEW_RENDER_INTERVAL_MS = 33; // Safer 30fps instead of 60fps
     private static final int RENDER_RETRY_DELAY_MS = 33; // Match with preview render interval
 
@@ -1160,6 +1160,15 @@ public class GLRecordingPipeline {
         format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
         format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VIDEO_IFRAME_INTERVAL);
+        // CRITICAL: Embed SPS/PPS before every keyframe so the decoder can
+        // restart after a seek even without re-reading the init segment.
+        // Without this, the decoder flush after seek (maybeDropBuffersToKeyframe)
+        // leaves the decoder without codec config → video freezes, audio plays.
+        try {
+            format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 1);
+        } catch (Exception e) {
+            FLog.w(TAG, "KEY_PREPEND_HEADER_TO_SYNC_FRAMES not supported on this device");
+        }
 
         // ESSENTIAL: Bitrate mode — CBR for streaming (hard bandwidth cap), VBR for local recording (quality)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -1211,6 +1220,15 @@ public class GLRecordingPipeline {
         format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
         format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VIDEO_IFRAME_INTERVAL);
+        // CRITICAL: Embed SPS/PPS before every keyframe so the decoder can
+        // restart after a seek even without re-reading the init segment.
+        // Without this, the decoder flush after seek (maybeDropBuffersToKeyframe)
+        // leaves the decoder without codec config → video freezes, audio plays.
+        try {
+            format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 1);
+        } catch (Exception e) {
+            FLog.w(TAG, "KEY_PREPEND_HEADER_TO_SYNC_FRAMES not supported on this device");
+        }
 
         // ESSENTIAL: For constant framerate recording, especially on Samsung devices
         try {
@@ -2544,6 +2562,9 @@ public class GLRecordingPipeline {
      * @param surface The Surface to render the preview on.
      */
     public void setPreviewSurfaceImmediate(Surface surface) {
+        // Skip if surface unchanged — multiple rapid change-surface intents
+        // flood the GL handler with redundant operations.
+        if (this.previewSurface == surface) return;
         this.previewSurface = surface;
         FLog.d(TAG, "setPreviewSurfaceImmediate: " + (surface != null && surface.isValid() ? "VALID" : "NULL"));
         

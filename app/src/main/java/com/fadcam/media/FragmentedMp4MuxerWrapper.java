@@ -43,12 +43,6 @@ public class FragmentedMp4MuxerWrapper {
     private int orientationHint = 0;
     private int sampleCountDebug = 0;  // For limiting debug log spam
     
-    // Periodic fsync: write() goes to OS page cache (fast), flush() (fsync)
-    // only every N segments. fMP4 fragments survive app crashes even without
-    // per-fragment fsync.  Periodic flush balances crash-safety with performance.
-    private long segmentsSinceLastFlush = 0;
-    private static final int FSUNC_EVERY_N_SEGMENTS = 10; // ~20s at 2s fragments
-    
     // Track indices
     private int videoTrackIndex = -1;
     private int audioTrackIndex = -1;
@@ -68,6 +62,21 @@ public class FragmentedMp4MuxerWrapper {
     private boolean timestampOffsetsInitialized = false;
     // Track how many samples logged per track to avoid log spam
     private final android.util.SparseArray<Integer> trackSampleLogs = new android.util.SparseArray<>();
+
+    // Cached streaming manager reference to avoid repeated getInstance() calls
+    private RemoteStreamManager cachedStreamManager;
+    private boolean streamManagerChecked = false;
+
+    // --- mvhd duration patching ---
+    // Gallery apps (Instagram, etc.) read mvhd.duration from the moov atom
+    // at the beginning of the file.  fMP4 spec sets this to 0 because the
+    // duration is determined by fragments, but consumer apps don't parse
+    // fragments — they see 0 and show 00:00 or refuse to share.
+    // We track the file byte offset of the 4-byte mvhd.duration field
+    // and patch it with the correct value after recording completes.
+    private byte[] initSegmentData = null;
+    private long initSegmentFilePosition = -1;
+    private long cumulativeDurationUs = 0;
 
     /**
      * Creates a FragmentedMp4MuxerWrapper with a file path.
@@ -345,6 +354,12 @@ public class FragmentedMp4MuxerWrapper {
                 // Media3's FragmentedMp4Muxer.close() automatically creates the final fragment
                 // and finalizes all track durations. No need to manually write EOS samples.
                 muxer.close();
+
+                // Patch mvhd.duration so gallery apps (Instagram, etc.) see
+                // correct duration instead of 00:00.  fMP4 spec allows mvhd.duration=0
+                // but consumer apps parse only the moov atom, not fragments.
+                patchMvhdDuration();
+
                 // CRITICAL: Mark as not started so release() does not attempt a second muxer.close(),
                 // which would corrupt the file with a duplicate/empty final fragment.
                 started = false;
@@ -632,14 +647,49 @@ public class FragmentedMp4MuxerWrapper {
     }
     
     /**
+    }
+
+    /**
+     * Patches mvhd.duration in the init segment at the beginning of the file.
+     * fMP4 spec says mvhd.duration=0 is valid (fragments determine duration),
+     * but gallery apps / Instagram read mvhd.duration directly and show 00:00.
+     */
+    private void patchMvhdDuration() {
+        if (initSegmentData == null || initSegmentFilePosition < 0 || fileOutputStream == null) return;
+        try {
+            // Parse ftyp size from init segment (bytes 0-3, big-endian)
+            int ftypSize = ((initSegmentData[0] & 0xFF) << 24)
+                         | ((initSegmentData[1] & 0xFF) << 16)
+                         | ((initSegmentData[2] & 0xFF) << 8)
+                         |  (initSegmentData[3] & 0xFF);
+            // mvhd is first child of moov; duration field is at byte 24 within mvhd
+            // mvhd starts at ftypSize + 8 (moov header), so duration is at:
+            long durationOffset = initSegmentFilePosition + ftypSize + 8 + 24;
+
+            // Compute duration in mvhd timescale units (timescale = 10000)
+            int durationVu = (int)(cumulativeDurationUs * 10000L / 1_000_000L);
+
+            java.nio.ByteBuffer patch = java.nio.ByteBuffer.allocate(4);
+            patch.putInt(durationVu);
+            patch.flip();
+
+            java.nio.channels.FileChannel channel = fileOutputStream.getChannel();
+            channel.position(durationOffset);
+            channel.write(patch);
+            FLog.i(TAG, "Patched mvhd.duration at offset " + durationOffset
+                    + " to " + cumulativeDurationUs + "us (" + (cumulativeDurationUs / 1000000.0) + "s)");
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to patch mvhd duration", e);
+        }
+    }
+
+    /**
      * Handles processed segments from the patched Media3 muxer.
-     * This callback receives segments in real-time as they're muxed, enabling live streaming.
      * 
      * @param segment ProcessedSegment containing either init segment or media fragment
      */
     private void handleProcessedSegment(ProcessedSegment segment) {
-        // No muxerLock here — this runs on the library's dedicated writer thread,
-        // so there is zero contention with writeSampleData() on the drain thread.
+        // No muxerLock here — this runs on the library's dedicated writer thread.
         if (released) {
             return;
         }
@@ -673,11 +723,16 @@ public class FragmentedMp4MuxerWrapper {
             byte[] data = new byte[payload.remaining()];
             payload.get(data);
             
-            // Check streaming mode to determine if we should save to disk.
-            // Always write when the server is not running – a stale STREAM_ONLY setting from a
-            // previous streaming session must never silently suppress local saves.
-            RemoteStreamManager.StreamingMode streamingMode = RemoteStreamManager.getInstance().getStreamingMode();
-            boolean serverActive = RemoteStreamManager.getInstance().isStreamingEnabled();
+            // Lazy-init cached streaming state.  Callback runs on the library's
+            // writer thread — never block it with heavy init.
+            if (!streamManagerChecked && cachedStreamManager == null) {
+                cachedStreamManager = RemoteStreamManager.getInstance();
+                streamManagerChecked = true;
+            }
+            boolean serverActive = cachedStreamManager != null && cachedStreamManager.isStreamingEnabled();
+            RemoteStreamManager.StreamingMode streamingMode = serverActive
+                ? cachedStreamManager.getStreamingMode()
+                : RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
             boolean shouldSaveToDisk = !serverActive
                 || (streamingMode == RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
             
@@ -685,18 +740,23 @@ public class FragmentedMp4MuxerWrapper {
                 // Initialization segment (ftyp + moov)
                 // SEGMENT init log removed
                 
-                // Send to RemoteStreamManager for HLS streaming
-                RemoteStreamManager.getInstance().onInitializationSegment(data);
+                // Send to RemoteStreamManager for HLS streaming ONLY when active
+                if (serverActive && cachedStreamManager != null) {
+                    cachedStreamManager.onInitializationSegment(data);
+                }
                 initSegmentSent = true;
                 
                 // Write to file — no per-fragment fsync; periodic flush handles durability.
                 if (shouldSaveToDisk && fileOutputStream != null) {
-                    fileOutputStream.write(data);
-                    segmentsSinceLastFlush++;
-                    if (segmentsSinceLastFlush >= FSUNC_EVERY_N_SEGMENTS) {
-                        fileOutputStream.flush();
-                        segmentsSinceLastFlush = 0;
+                    // Save init segment for mvhd duration patching on close
+                    initSegmentData = data;
+                    try {
+                        initSegmentFilePosition = fileOutputStream.getChannel().position();
+                    } catch (IOException e) {
+                        FLog.w(TAG, "Failed to get file position for mvhd patch", e);
                     }
+                    fileOutputStream.write(data);
+                    fileOutputStream.flush();
                 } else {
                     // FLog.d(TAG, "⏭️ Init segment NOT written to file (STREAM_ONLY mode)");
                 }
@@ -705,28 +765,28 @@ public class FragmentedMp4MuxerWrapper {
                 // Fragment info logged only at DEBUG level to avoid
                 // flooding logcat during long recordings.
                 
-                // Send to RemoteStreamManager for HLS streaming
-                if (initSegmentSent) {
-                    RemoteStreamManager.getInstance().onFragmentComplete(segment.segmentNr, data, segment.durationMs);
-                } else {
-                    FLog.w(TAG, "⚠️ Fragment #" + segment.segmentNr + 
-                        " received before init segment - skipping stream upload");
+                // Send to RemoteStreamManager for HLS streaming ONLY when active
+                if (serverActive && cachedStreamManager != null) {
+                    if (initSegmentSent) {
+                        cachedStreamManager.onFragmentComplete(segment.segmentNr, data, segment.durationMs);
+                    } else {
+                        FLog.w(TAG, "⚠️ Fragment #" + segment.segmentNr + 
+                            " received before init segment - skipping stream upload");
+                    }
                 }
                 
-                // Write to file — no per-fragment fsync; periodic flush handles durability.
+                // Write to file — per-fragment flush for SAF visibility.
                 if (shouldSaveToDisk && fileOutputStream != null) {
                     fileOutputStream.write(data);
-                    segmentsSinceLastFlush++;
-                    if (segmentsSinceLastFlush >= FSUNC_EVERY_N_SEGMENTS) {
-                        fileOutputStream.flush();
-                        segmentsSinceLastFlush = 0;
-                    }
+                    fileOutputStream.flush();
                     // Fragment written log removed
                 } else {
                     // FLog.d(TAG, "⏭️ Fragment #" + segment.segmentNr + " NOT written to file (STREAM_ONLY mode)");
                 }
                 
                 nextFragmentNumber++;
+                // Track cumulative duration for mvhd patch
+                cumulativeDurationUs += segment.durationMs * 1000L;
             }
             } catch (Exception e) {
                 FLog.e(TAG, "❌ Error handling processed segment", e);
