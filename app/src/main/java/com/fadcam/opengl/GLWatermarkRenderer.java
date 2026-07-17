@@ -1202,19 +1202,18 @@ public class GLWatermarkRenderer {
         String[] lines = text.split("\n");
         watermarkLineCount = lines.length;
 
-        // Effective per-line height must account for icons, which are taller
-        // than the text glyphs at higher resolutions (e.g. 77.8 px icon vs
-        // 38.5 px lineHeight at 1440p).  Without this the watermark bitmap is
-        // too short and icon bottoms get truncated.
-        int linesWithIcons = 0;
-        for (String l : lines) {
-            if (l != null && (l.contains("<ICON>") || l.contains("<FADCAM_ICON>"))) {
-                linesWithIcons++;
-            }
+        // Compute per-line heights: lines with icons need extra vertical
+        // space (iconLineH ≈ 2.7× text height) while plain text lines use
+        // the smaller lineHeight.  Using a single uniform height creates
+        // empty gaps on non-icon lines.
+        float[] lineHeights = new float[lines.length];
+        float totalTextHeight = 0f;
+        for (int i = 0; i < lines.length; i++) {
+            String l = lines[i];
+            boolean hasIcon = l != null && (l.contains("<ICON>") || l.contains("<FADCAM_ICON>"));
+            lineHeights[i] = hasIcon ? Math.max(lineHeight, iconLineH) : lineHeight;
+            totalTextHeight += lineHeights[i];
         }
-        float effectiveLineHeight = linesWithIcons > 0
-                ? Math.max(lineHeight, iconLineH)
-                : lineHeight;
 
         float maxLineWidth = 0f;
         for (String line : lines) {
@@ -1231,7 +1230,7 @@ public class GLWatermarkRenderer {
         // Add top padding for vertical centering of watermark within its layout space
         float topPadding = Math.max(6f, padding * 0.5f);
         dynamicBitmapWidth = Math.max(256, Math.min(2048, Math.round(maxLineWidth + (padding * 2f))));
-        dynamicBitmapHeight = Math.max(64, Math.min(512, Math.round((effectiveLineHeight * lines.length) + topPadding + (padding * 1f))));
+        dynamicBitmapHeight = Math.max(64, Math.min(512, Math.round(totalTextHeight + topPadding + padding)));
         if (watermarkBitmap == null || watermarkBitmap.getWidth() != dynamicBitmapWidth
                 || watermarkBitmap.getHeight() != dynamicBitmapHeight) {
             watermarkBitmap = Bitmap.createBitmap(dynamicBitmapWidth, dynamicBitmapHeight, Bitmap.Config.ARGB_8888);
@@ -1241,9 +1240,10 @@ public class GLWatermarkRenderer {
 
         // Start text at topPadding + adjusted position for baseline alignment
         float textY = topPadding + padding - fm.ascent;
-        for (String line : lines) {
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
             if (line == null || line.isEmpty()) {
-                textY += effectiveLineHeight;
+                textY += lineHeights[i];
                 continue;
             }
 
@@ -1252,7 +1252,7 @@ public class GLWatermarkRenderer {
             } else {
                 canvas.drawText(line, padding, textY, watermarkPaint);
             }
-            textY += effectiveLineHeight;
+            textY += lineHeights[i];
         }
         // Flip the bitmap vertically before uploading to OpenGL.
         // Reuse cached flippedWatermarkBitmap if dimensions match to avoid repeated allocations.
