@@ -17,11 +17,13 @@
     <group
         android:rotation="-20"
         android:pivotX="95"
-        android:pivotY="75">
+        android:pivotY="75"
+        android:scaleX="0.85"
+        android:scaleY="0.85">
         <path
             android:fillColor="#6e6e6e"
             android:fillAlpha="0.60"
-            android:pathData="M 95,55 A 26,26 0 1,0 95,95 A 32,32 0 1,1 95,55 Z" />
+            android:pathData="M 95,55 A 26,26 0 1,0 95,95 A 35,35 0 1,1 95,55 Z" />
     </group>
 
     <!-- Star 1 — upper-right area, medium -->
