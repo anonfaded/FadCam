@@ -90,7 +90,9 @@ public class SharedPreferencesManager {
     private static final String PREF_KEY_TRASH_AUTO_DELETE_MINUTES =
         "trash_auto_delete_minutes";
     public static final int DEFAULT_TRASH_AUTO_DELETE_MINUTES = 30 * 24 * 60; // 30 days in minutes
-    public static final int TRASH_AUTO_DELETE_NEVER = -1; // This constant can remain as is, representing manual delete
+    public static final int TRASH_AUTO_DELETE_NEVER = -1;
+
+    private static final String PREF_KEY_SHOW_TRASH_IN_SETTINGS = "show_trash_in_settings";
     // -----
 
     private static final String PREF_KEY_CLOCK_CARD_COLOR = "clock_card_color";
@@ -1482,6 +1484,14 @@ public class SharedPreferencesManager {
             "Retrieved trash auto-delete duration: " + minutes + " minutes."
         );
         return minutes;
+    }
+
+    public void setShowTrashInSettings(boolean show) {
+        sharedPreferences.edit().putBoolean(PREF_KEY_SHOW_TRASH_IN_SETTINGS, show).apply();
+    }
+
+    public boolean isShowTrashInSettings() {
+        return sharedPreferences.getBoolean(PREF_KEY_SHOW_TRASH_IN_SETTINGS, true);
     }
 
     // (SharedPreferencesManager_trash_auto_delete_methods) -----

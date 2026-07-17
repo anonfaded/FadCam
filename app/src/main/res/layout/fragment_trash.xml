@@ -258,13 +258,55 @@
 
     <LinearLayout
         android:id="@+id/trash_actions_layout"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="?android:attr/windowBackground"
+         android:background="@drawable/bg_trash_bottom_section"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Show in Settings toggle -->
+        <LinearLayout
+            android:id="@+id/trash_show_in_settings_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:background="@drawable/bg_trash_toggle_row"
+            android:clickable="true"
+            android:focusable="true">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Show in Settings"
+                    android:textColor="?attr/colorHeading"
+                    android:textSize="14sp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Adds a Trash row to the Settings page for quick access"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="11sp"
+                    android:layout_marginTop="2dp"/>
+            </LinearLayout>
+            <com.fadcam.ui.AvatarToggleView
+                android:id="@+id/switch_show_trash_in_settings"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"/>
+        </LinearLayout>
 
         <!-- Auto-delete information text -->
         <TextView

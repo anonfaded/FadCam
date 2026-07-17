@@ -1099,6 +1099,119 @@
         </LinearLayout>
 
         <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- Trash Section — standalone                                       -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+
+        <LinearLayout
+            android:id="@+id/section_trash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/trash_settings_title"
+                    android:textColor="?attr/colorHeading"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05"/>
+
+                <LinearLayout
+                    android:id="@+id/group_trash_hide"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="2dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/trash_settings_hide_button"
+                        android:textColor="#CC6666"
+                        android:textSize="11sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="2dp"
+                        android:text="?"
+                        android:textColor="#CC6666"
+                        android:textSize="13sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/settings_group_card_bg">
+
+                <LinearLayout
+                    android:id="@+id/group_trash"
+                    style="@style/SettingsGroupRow">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_delete"
+                        android:tint="@android:color/darker_gray"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/trash_settings_title"
+                            android:textColor="?attr/colorHeading"
+                            android:textStyle="bold"
+                            android:textSize="15sp"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/trash_settings_subtitle"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- iOS-style footer text -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="6dp"
+                android:text="@string/trash_settings_info"
+                android:textColor="#8E8E93"
+                android:textSize="12sp"
+                android:lineSpacingExtra="3dp"/>
+
+        </LinearLayout>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
         <!-- Tutorial Videos Section                                      -->
         <!-- ═══════════════════════════════════════════════════════════ -->
 
@@ -1131,6 +1244,8 @@
             android:layout_height="wrap_content"
             android:scrollbars="none"
             android:overScrollMode="never"
+            android:requiresFadingEdge="horizontal"
+            android:fadingEdgeLength="24dp"
             android:paddingStart="4dp"
             android:paddingEnd="4dp">
 
@@ -1449,7 +1564,8 @@
             android:orientation="horizontal"
             android:background="@drawable/bg_youtube_button"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
 
             <ImageView
                 android:layout_width="20dp"

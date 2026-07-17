@@ -183,6 +183,27 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         textViewEmptyTrash = view.findViewById(R.id.empty_trash_text_view);
         emptyTrashLayout = view.findViewById(R.id.empty_trash_layout);
         tvAutoDeleteInfo = view.findViewById(R.id.tvAutoDeleteInfo);
+
+        // "Show in Settings" toggle
+        com.fadcam.ui.AvatarToggleView showInSettingsToggle =
+            view.findViewById(R.id.switch_show_trash_in_settings);
+        if (showInSettingsToggle != null) {
+            showInSettingsToggle.setChecked(sharedPreferencesManager.isShowTrashInSettings(), false);
+            showInSettingsToggle.setOnCheckedChangeListener((btn, isChecked) -> {
+                FLog.d("TrashDebug", "toggle set to: " + isChecked);
+                sharedPreferencesManager.setShowTrashInSettings(isChecked);
+                FLog.d("TrashDebug", "pref after set: " + sharedPreferencesManager.isShowTrashInSettings());
+            });
+        }
+        View showInSettingsRow = view.findViewById(R.id.trash_show_in_settings_row);
+        if (showInSettingsRow != null && showInSettingsToggle != null) {
+            showInSettingsRow.setOnClickListener(v -> {
+                boolean newVal = !showInSettingsToggle.isChecked();
+                showInSettingsToggle.setChecked(newVal, true);
+                FLog.d("TrashDebug", "row click set to: " + newVal);
+                sharedPreferencesManager.setShowTrashInSettings(newVal);
+            });
+        }
         chipAll = view.findViewById(R.id.chip_trash_all);
         chipVideos = view.findViewById(R.id.chip_trash_videos);
         chipEvidence = view.findViewById(R.id.chip_trash_evidence);

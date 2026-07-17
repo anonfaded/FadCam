@@ -35,6 +35,8 @@ public class SettingsHomeFragment extends Fragment {
     public enum SettingsMode { ALL, FADCAM, FADREC }
 
     private SettingsMode currentMode = SettingsMode.ALL;
+    private android.content.SharedPreferences.OnSharedPreferenceChangeListener prefListener;
+    private com.fadcam.SharedPreferencesManager prefManager;
 
     // View references for mode-specific groups
     private View dividerAfterVideo;
@@ -72,6 +74,48 @@ public class SettingsHomeFragment extends Fragment {
         });
 
         return root;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        prefManager = prefs;
+        prefListener = (sp, key) -> {
+            if (!"show_trash_in_settings".equals(key)) return;
+            boolean show = prefs.isShowTrashInSettings();
+            FLog.d("TrashDebug", "prefListener fired: show=" + show);
+            View sectionTrash = getView() != null ? getView().findViewById(R.id.section_trash) : null;
+            if (sectionTrash != null) {
+                sectionTrash.setVisibility(show ? View.VISIBLE : View.GONE);
+            }
+        };
+        prefs.sharedPreferences.registerOnSharedPreferenceChangeListener(prefListener);
+        FLog.d("TrashDebug", "listener registered, initial show=" + prefs.isShowTrashInSettings());
+    }
+
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        FLog.d("TrashDebug", "onHiddenChanged hidden=" + hidden + " pref=" + (prefManager != null ? prefManager.isShowTrashInSettings() : "null"));
+        if (!hidden && getView() != null && prefManager != null) {
+            View sectionTrash = getView().findViewById(R.id.section_trash);
+            FLog.d("TrashDebug", "onHiddenChanged sectionTrash=" + (sectionTrash != null) + " show=" + prefManager.isShowTrashInSettings());
+            if (sectionTrash != null) {
+                sectionTrash.setVisibility(
+                    prefManager.isShowTrashInSettings() ? View.VISIBLE : View.GONE);
+            }
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (prefListener != null && prefManager != null) {
+            prefManager.sharedPreferences.unregisterOnSharedPreferenceChangeListener(prefListener);
+        }
+        prefListener = null;
+        prefManager = null;
     }
 
     /** Setup the mode selector button that opens a custom popup. */
@@ -392,6 +436,37 @@ public class SettingsHomeFragment extends Fragment {
                 } catch (Exception e) {
                     FLog.w("SettingsHome", "Could not open YouTube", e);
                 }
+            });
+        }
+
+        // Trash section
+        com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        View sectionTrash = root.findViewById(R.id.section_trash);
+        if (sectionTrash != null) {
+            sectionTrash.setVisibility(prefs.isShowTrashInSettings() ? View.VISIBLE : View.GONE);
+        }
+
+        bindRow(root, R.id.group_trash, () -> {
+            try {
+                OverlayNavUtil.show(requireActivity(),
+                    new com.fadcam.ui.TrashFragment(), "trash_from_settings");
+            } catch (Exception e) {
+                FLog.w("SettingsHome", "Failed to open Trash", e);
+            }
+        });
+
+        View hideTrashBtn = root.findViewById(R.id.group_trash_hide);
+        if (hideTrashBtn != null) {
+            hideTrashBtn.setOnClickListener(v -> {
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(R.string.trash_settings_hide_dialog_title)
+                        .setMessage(R.string.trash_settings_hide_dialog_message)
+                        .setPositiveButton(R.string.trash_settings_hide_dialog_confirm, (d, w) -> {
+                            prefs.setShowTrashInSettings(false);
+                            if (sectionTrash != null) sectionTrash.setVisibility(View.GONE);
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
             });
         }
     }
