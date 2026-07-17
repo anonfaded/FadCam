@@ -1227,17 +1227,16 @@
             android:textStyle="bold"
             android:letterSpacing="0.05"/>
 
-        <TextView
+        <!-- Tutorial content card -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="14dp"
-            android:text="@string/tutorials_subtitle"
-            android:textColor="#9E9E9E"
-            android:textSize="12sp"
-            android:lineSpacingExtra="3dp"/>
+            android:layout_marginTop="10dp"
+            android:orientation="vertical"
+            android:background="@drawable/settings_group_card_bg"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-        <!-- Horizontal scrollable video card row -->
         <com.fadcam.ui.TouchSafeHorizontalScrollView
             android:id="@+id/tutorial_scroll"
             android:layout_width="match_parent"
@@ -1245,9 +1244,7 @@
             android:scrollbars="none"
             android:overScrollMode="never"
             android:requiresFadingEdge="horizontal"
-            android:fadingEdgeLength="24dp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp">
+            android:fadingEdgeLength="24dp">
 
             <LinearLayout
                 android:id="@+id/tutorial_videos_container"
@@ -1264,7 +1261,7 @@
                     android:layout_marginEnd="12dp"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="#1A1A1A">
+                    app:cardBackgroundColor="#2A2A2A">
 
                     <LinearLayout android:orientation="vertical"
                         android:layout_width="match_parent"
@@ -1284,19 +1281,12 @@
                                 android:src="@drawable/ic_lightbulb"
                                 android:tint="#FFFFFF"/>
 
-                            <LinearLayout
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
+                            <ImageView
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:layout_centerInParent="true"
-                                android:gravity="center"
-                                android:background="@drawable/bg_play_circle">
-                                <ImageView
-                                    android:layout_width="14dp"
-                                    android:layout_height="14dp"
-                                    android:layout_marginStart="3dp"
-                                    android:src="@drawable/ic_play_arrow_24"
-                                    android:tint="#FFFFFF"/>
-                            </LinearLayout>
+                                android:src="@drawable/play_button_rounded"
+                                android:tint="#55FFFFFF"/>
                             <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -1337,7 +1327,7 @@
                     android:layout_marginEnd="12dp"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="#1A1A1A">
+                    app:cardBackgroundColor="#2A2A2A">
 
                     <LinearLayout android:orientation="vertical"
                         android:layout_width="match_parent"
@@ -1357,19 +1347,12 @@
                                 android:src="@drawable/ic_settings"
                                 android:tint="#FFFFFF"/>
 
-                            <LinearLayout
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
+                            <ImageView
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:layout_centerInParent="true"
-                                android:gravity="center"
-                                android:background="@drawable/bg_play_circle">
-                                <ImageView
-                                    android:layout_width="16dp"
-                                    android:layout_height="16dp"
-                                    android:layout_marginStart="3dp"
-                                    android:src="@drawable/ic_play_arrow_24"
-                                    android:tint="#FFFFFF"/>
-                            </LinearLayout>
+                                android:src="@drawable/play_button_rounded"
+                                android:tint="#55FFFFFF"/>
                             <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -1410,7 +1393,7 @@
                     android:layout_marginEnd="12dp"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="#1A1A1A">
+                    app:cardBackgroundColor="#2A2A2A">
 
                     <LinearLayout android:orientation="vertical"
                         android:layout_width="match_parent"
@@ -1430,19 +1413,12 @@
                                 android:src="@drawable/ic_person_24"
                                 android:tint="#FFFFFF"/>
 
-                            <LinearLayout
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
+                            <ImageView
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:layout_centerInParent="true"
-                                android:gravity="center"
-                                android:background="@drawable/bg_play_circle">
-                                <ImageView
-                                    android:layout_width="16dp"
-                                    android:layout_height="16dp"
-                                    android:layout_marginStart="3dp"
-                                    android:src="@drawable/ic_play_arrow_24"
-                                    android:tint="#FFFFFF"/>
-                            </LinearLayout>
+                                android:src="@drawable/play_button_rounded"
+                                android:tint="#55FFFFFF"/>
                             <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -1483,7 +1459,7 @@
                     android:layout_marginEnd="12dp"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="0dp"
-                    app:cardBackgroundColor="#1A1A1A">
+                    app:cardBackgroundColor="#2A2A2A">
 
                     <LinearLayout android:orientation="vertical"
                         android:layout_width="match_parent"
@@ -1503,19 +1479,12 @@
                                 android:src="@drawable/ic_vehicle_24"
                                 android:tint="#FFFFFF"/>
 
-                            <LinearLayout
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
+                            <ImageView
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
                                 android:layout_centerInParent="true"
-                                android:gravity="center"
-                                android:background="@drawable/bg_play_circle">
-                                <ImageView
-                                    android:layout_width="16dp"
-                                    android:layout_height="16dp"
-                                    android:layout_marginStart="3dp"
-                                    android:src="@drawable/ic_play_arrow_24"
-                                    android:tint="#FFFFFF"/>
-                            </LinearLayout>
+                                android:src="@drawable/play_button_rounded"
+                                android:tint="#55FFFFFF"/>
                             <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -1558,8 +1527,8 @@
             android:layout_width="match_parent"
             android:layout_height="44dp"
             android:layout_marginHorizontal="12dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="4dp"
             android:gravity="center"
             android:orientation="horizontal"
             android:background="@drawable/bg_youtube_button"
@@ -1582,6 +1551,119 @@
                 android:textSize="14sp"
                 android:textStyle="bold"/>
         </LinearLayout>
+
+        </LinearLayout>
+        <!-- End tutorial content card -->
+
+        <!-- Footer subtitle -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="6dp"
+            android:text="@string/tutorials_subtitle"
+            android:textColor="#8E8E93"
+            android:textSize="12sp"
+            android:lineSpacingExtra="3dp"/>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- FadCam for iOS Section                                        -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="10dp"
+            android:text="FadCam for iOS"
+            android:textColor="?attr/colorHeading"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"/>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/group_ios_promo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="#1A1A1A"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_launcher_playstore"
+                        android:scaleType="fitCenter"
+                        android:background="@drawable/bg_icon_rounded"
+                        android:clipToOutline="true"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="14dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/ios_promo_title"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold"
+                            android:textSize="16sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/ios_promo_subtitle"
+                            android:textColor="#AAAAAA"
+                            android:textSize="12sp"
+                            android:lineSpacingExtra="2dp"/>
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_open_in_new"
+                        android:tint="#AAAAAA"
+                        android:layout_marginStart="8dp"/>
+                </LinearLayout>
+
+                <!-- App Store Badge -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:paddingVertical="4dp">
+                    <ImageView
+                        android:layout_width="180dp"
+                        android:layout_height="54dp"
+                        android:src="@drawable/ic_appstore_badge"
+                        android:scaleType="fitCenter"
+                        android:contentDescription="Download on the App Store"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

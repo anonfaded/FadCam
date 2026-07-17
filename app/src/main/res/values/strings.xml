@@ -2149,6 +2149,10 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="tutorials_subtitle">We\'re planning to create short guides covering everything from basics to pro techniques. Subscribe and hit the bell so you\'ll be notified when they drop!</string>
     <string name="tutorials_youtube_cta">Subscribe on YouTube</string>
 
+    <!-- iOS Promo -->
+    <string name="ios_promo_title">FadCam is now on iOS!</string>
+    <string name="ios_promo_subtitle">The same privacy-first camera app you love, now available for iPhone</string>
+
     <!-- Trash section in Settings -->
     <string name="trash_settings_title">Trash</string>
     <string name="trash_settings_subtitle">Recover deleted recordings and files</string>

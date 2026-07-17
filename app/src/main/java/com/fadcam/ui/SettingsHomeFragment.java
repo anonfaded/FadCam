@@ -469,6 +469,18 @@ public class SettingsHomeFragment extends Fragment {
                         .show();
             });
         }
+
+        // iOS promo — whole card opens App Store
+        bindRow(root, R.id.group_ios_promo, () -> openUrl("https://apps.apple.com/app/id6778121848"));
+    }
+
+    private void openUrl(String url) {
+        try {
+            startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                android.net.Uri.parse(url)));
+        } catch (Exception e) {
+            FLog.w("SettingsHome", "Could not open URL", e);
+        }
     }
 
     private void setupMiniAppCards(View root) {
