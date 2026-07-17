@@ -955,10 +955,10 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
 ]]></string>
     <string name="recording_already_active">Υπάρχει ήδη εγγραφή σε εξέλιξη ή σε παύση.</string>
     <string name="setting_back_lens_title">Φακός Πίσω Κάμερας</string>
-    <string name="setting_back_lens_note">Επιλέξτε συγκεκριμένο φακό αν είναι διαθέσιμος, π.χ. Ευρυγώνιος Φακός
-(Προεπιλογή: Κύριος (0))</string>
-    <string name="setting_back_lens_info_single">Μόνο κύριος φακός</string>
-    <string name="setting_back_lens_info_single_v2">Εντοπίστηκε μόνο κύρια πίσω κάμερα</string>
+    <string name="setting_back_lens_note">Χρησιμοποιήστε 0.5x ζουμ για ευρυγώνιο, 2x για τηλεφακό. Η αλλαγή γίνεται αυτόματα μέσω ζουμ.
+(Προεπιλογή: Κύρια)</string>
+    <string name="setting_back_lens_info_single">Κύριος φακός — χρησιμοποιήστε ζουμ για άλλους φακούς</string>
+    <string name="setting_back_lens_info_single_v2">Εντοπίστηκε μόνο μία πίσω κάμερα. Χρησιμοποιήστε ζουμ (0.5x/2x/5x) για άλλους φακούς.</string>
     <string-array name="theme_options" translatable="false">
         <item>Midnight Dusk</item>
         <item>Faded Night</item>

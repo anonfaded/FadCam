@@ -332,9 +332,10 @@
     <string name="applock_verification_canceled">Doğrulama iptal edildi</string>
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">Arka Kamera Lensi</string>
-    <string name="setting_back_lens_note">Mevcutsa belirli bir lens seçin, örn. Geniş Açı Lensi\n(Varsayılan: Ana Lens(0))</string>
-    <string name="setting_back_lens_info_single">Yalnızca ana lens</string>
-    <string name="setting_back_lens_info_single_v2">Yalnızca ana arka kamera algılandı</string>
+    <string name="setting_back_lens_note">Geniş açı için 0.5x, telefoto için 2x zoom kullanın. Lens değişimi zoom ile otomatik yapılır.
+(Varsayılan: Ana)</string>
+    <string name="setting_back_lens_info_single">Ana lens — diğer lensler için zoom kullanın</string>
+    <string name="setting_back_lens_info_single_v2">Yalnızca bir arka kamera algılandı. Diğer lenslere erişmek için zoom (0.5x/2x/5x) kullanın.</string>
     <!-- Video Settings -->
     <string name="setting_framerate_title">Video Kare Hızı</string>
     <string name="note_framerate">Kare hızı seçin\n(Varsayılan: %1$d)</string>

@@ -999,9 +999,9 @@
     </string>
     <string name="recording_already_active">Recording is already in progress or paused.</string>
     <string name="setting_back_lens_title">Back Camera Lens</string>
-    <string name="setting_back_lens_note">Select specific lens if available e.g. Wide Angle Lens\n(Default: Main (0))</string>
-    <string name="setting_back_lens_info_single">Main lens only</string>
-    <string name="setting_back_lens_info_single_v2">Only main back camera detected</string>
+    <string name="setting_back_lens_note">Use 0.5x zoom for wide-angle, 2x for telephoto. Lens switching is handled automatically via zoom.\n(Default: Main)</string>
+    <string name="setting_back_lens_info_single">Main lens — use zoom for other lenses</string>
+    <string name="setting_back_lens_info_single_v2">Only one back camera detected. Use zoom (0.5x/2x/5x) to access other lenses.</string>
 
     <string-array name="theme_options" translatable="false">
         <item>Midnight Dusk</item>

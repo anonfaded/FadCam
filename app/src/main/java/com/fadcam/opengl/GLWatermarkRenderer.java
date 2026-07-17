@@ -575,7 +575,8 @@ public class GLWatermarkRenderer {
                 throw new IllegalStateException("cameraSurfaceTexture is null");
             }
 
-            float[] texMatrix = new float[16];
+            float[] texMatrix = this.texMatrix; // reusable field, avoid per-frame alloc
+            android.opengl.Matrix.setIdentityM(texMatrix, 0);
             boolean consumedFreshFrame = false;
             if (allowStaleFrame) {
                 synchronized (frameSyncObject) {
@@ -605,7 +606,7 @@ public class GLWatermarkRenderer {
                     synchronized (frameSyncObject) {
                         while (!frameAvailable) {
                             try {
-                                frameSyncObject.wait(33); // one-frame budget at 30fps
+                                frameSyncObject.wait(17); // one-frame budget at 60fps
                                 if (!frameAvailable) {
                                     FLog.w(TAG, "renderToEncoder: frame wait timed out");
                                     return;
@@ -1623,30 +1624,9 @@ public class GLWatermarkRenderer {
             int[] textureArray = new int[1];
             GLES20.glGetIntegerv(GLES11Ext.GL_TEXTURE_BINDING_EXTERNAL_OES, textureArray, 0);
             if (textureArray[0] == 0) {
-                long now = System.currentTimeMillis();
-                if (!warnedNoExternalTexture || now - lastNoExternalTextureWarnMs > 5000) {
-                    long nowMs = System.currentTimeMillis();
-                    // Rate-limit: log at most once every 2000ms unless verbose enabled
-                    if (VERBOSE_GL_LOGS || nowMs - lastNoExternalTextureWarnMs > 2000) {
-                        FLog.w(TAG, "No external texture bound, attempting to rebind");
-                        lastNoExternalTextureWarnMs = nowMs;
-                    }
-                    warnedNoExternalTexture = true;
-                    lastNoExternalTextureWarnMs = now;
-                }
-                try {
-                    GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
-                    // Clear any existing GL errors
-                    int error = GLES20.glGetError();
-                    if (error != GLES20.GL_NO_ERROR) {
-                        FLog.w(TAG, "Cleared GL error when binding texture: 0x" + Integer.toHexString(error));
-                    }
-                } catch (Exception e) {
-                    FLog.e(TAG, "Error rebinding texture", e);
-                    return;
-                }
+                // Rebind proactively — common after EGL surface switches.
+                GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, oesTextureId);
             } else {
-                // Texture is bound; reset the warning gate
                 warnedNoExternalTexture = false;
             }
             // Clear any existing GL errors before drawing

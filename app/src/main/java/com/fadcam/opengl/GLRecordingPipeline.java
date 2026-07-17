@@ -38,7 +38,7 @@ import com.fadcam.media.FragmentedMp4MuxerWrapper;
 public class GLRecordingPipeline {
     private static final String TAG = "GLRecordingPipeline";
     private static final String VIDEO_MIME_TYPE = "video/avc";
-    private static final int VIDEO_IFRAME_INTERVAL = 1;
+    private static final int VIDEO_IFRAME_INTERVAL = 60; // I-frame every ~2s at 30fps
     private static final int PREVIEW_RENDER_INTERVAL_MS = 33; // Safer 30fps instead of 60fps
     private static final int RENDER_RETRY_DELAY_MS = 33; // Match with preview render interval
 
@@ -55,9 +55,15 @@ public class GLRecordingPipeline {
     private boolean isStopped = false;
     private HandlerThread renderThread;
     private Handler handler;
+    /** Dedicated thread for draining encoder output and writing to muxer.
+     *  Decoupled from the GL render thread so slow muxer I/O never blocks frame delivery. */
+    private HandlerThread drainThread;
+    private Handler drainHandler;
+    /** Dedicated thread for segment rollover I/O (SAF file ops) — keeps the drain loop unblocked. */
+    private HandlerThread rolloverIoThread;
+    private Handler rolloverIoHandler;
+    private final Object drainLock = new Object();
     private final AtomicBoolean renderRunnableQueued = new AtomicBoolean(false);
-    private long lastSlowRenderRunnableWarnMs = 0L;
-    private static final long SLOW_RENDER_RUNNABLE_WARN_INTERVAL_MS = 3000;
     private final int videoWidth;
     private final int videoHeight;
     private int videoBitrate;
@@ -777,7 +783,7 @@ public class GLRecordingPipeline {
                     for (int i = 0; i < 40 && audioTrackIndex == -1; i++) {
                         drainAudioEncoder();
                         if (audioTrackIndex != -1) {
-                            FLog.d(TAG, "Audio track added after " + (i + 1) + " drain attempts");
+                            // audio setup log removed  " + (i + 1) + " drain attempts");
                             break;
                         }
                         try {
@@ -824,6 +830,10 @@ public class GLRecordingPipeline {
 
                 // Start the render loop (which will trigger video encoder format change)
                 startRenderLoop();
+
+                // Start the drain loop on a dedicated thread — decoupled from GL rendering
+                // so slow muxer I/O never blocks the camera frame delivery pipeline.
+                startDrainLoop();
             }
         } catch (Exception e) {
             FLog.e(TAG, "Failed to start recording pipeline", e);
@@ -846,7 +856,7 @@ public class GLRecordingPipeline {
      * This ensures audio and video have the same duration.
      */
     private void emergencyDrainEncoders() {
-        FLog.d(TAG, "Draining encoders until EOS (production-grade finalization)");
+        // drain log removed
 
         videoEosReceived = false;
         audioEosReceived = !audioRecordingEnabled; // If no audio, mark as done
@@ -856,7 +866,7 @@ public class GLRecordingPipeline {
         if (videoEncoder != null) {
             try {
                 videoEncoder.signalEndOfInputStream();
-                FLog.d(TAG, "Signaled EOS to video encoder input surface");
+                // eos log removed
             } catch (Exception e) {
                 FLog.e(TAG, "Error signaling video EOS", e);
                 videoEosReceived = true; // Mark as done to prevent infinite loop
@@ -883,7 +893,7 @@ public class GLRecordingPipeline {
         }
         
         if (videoEosReceived) {
-            FLog.d(TAG, "Video encoder EOS received - video fully drained");
+            // eos log removed
         } else {
             FLog.w(TAG, "Video drain timeout - proceeding with audio stop");
         }
@@ -899,7 +909,7 @@ public class GLRecordingPipeline {
                 if (audioThread != null) {
                     try {
                         audioThread.join(3000); // Wait up to 3s for audio thread
-                        FLog.d(TAG, "Audio thread joined successfully");
+                        // audio log removed
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         FLog.w(TAG, "Interrupted waiting for audio thread");
@@ -910,7 +920,7 @@ public class GLRecordingPipeline {
                 if (audioRecord != null
                         && audioRecord.getRecordingState() == android.media.AudioRecord.RECORDSTATE_RECORDING) {
                     audioRecord.stop();
-                    FLog.d(TAG, "AudioRecord stopped");
+                    // audio log removed
                 }
             } catch (Exception e) {
                 FLog.e(TAG, "Error stopping audio input", e);
@@ -932,12 +942,12 @@ public class GLRecordingPipeline {
         }
 
         if (audioEosReceived) {
-            FLog.d(TAG, "Audio encoder EOS received - audio fully drained");
+            // audio log removed
         } else {
             FLog.w(TAG, "Audio drain timeout");
         }
 
-        FLog.d(TAG, "Encoder drain completed - videoEos=" + videoEosReceived + ", audioEos=" + audioEosReceived);
+        // audio log removed
     }
 
     /**
@@ -993,7 +1003,7 @@ public class GLRecordingPipeline {
 
                 // Check for EOS flag
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    FLog.d(TAG, "Video encoder EOS received - all frames drained");
+                    // eos log removed
                     return true;
                 }
             } else {
@@ -1065,7 +1075,7 @@ public class GLRecordingPipeline {
                     FLog.d(TAG, String.format(java.util.Locale.US,
                             "[AUDIO-FINAL] drain complete: %d samples, final pts=%dus (%.2fs)",
                             audioSamplesWritten, lastAudioPts, lastAudioPts / 1_000_000.0));
-                    FLog.d(TAG, "Audio encoder EOS received - all frames drained");
+                    // audio log removed
                     return true;
                 }
             } else {
@@ -1080,13 +1090,13 @@ public class GLRecordingPipeline {
      * Uses multiple fallback strategies if normal stop() fails.
      */
     private void emergencyFinalizeMuxer() {
-        FLog.d(TAG, "Emergency finalizing muxer to ensure file playability");
+        // muxer log removed
 
         boolean muxerStopped = false;
 
         // Strategy 1: Normal stop (preferred)
         try {
-            FLog.d(TAG, "Attempting normal muxer stop");
+            // muxer log removed
             FLog.d(TAG, String.format("═══ FINAL RECORDING STATS ═══\n" +
                 "  Video: %d samples, last pts=%.2fs\n" +
                 "  Audio: %d samples, last pts=%.2fs\n" +
@@ -1098,7 +1108,7 @@ public class GLRecordingPipeline {
             
             mediaMuxer.stop();
             muxerStopped = true;
-            FLog.d(TAG, "Normal muxer stop successful");
+            // muxer log removed
         } catch (Exception e) {
             FLog.w(TAG, "Normal muxer stop failed, trying emergency strategies", e);
         }
@@ -1124,7 +1134,7 @@ public class GLRecordingPipeline {
         // Always release the muxer (even if stop failed)
         try {
             mediaMuxer.release();
-            FLog.d(TAG, "Muxer released successfully");
+            // muxer log removed
         } catch (Exception e) {
             FLog.e(TAG, "Error releasing muxer", e);
         } finally {
@@ -1410,11 +1420,8 @@ public class GLRecordingPipeline {
         // Set up the muxer
         setupMuxer();
 
-        // Log encoder and muxer status
-        FLog.d(TAG, "Encoder setup complete. Encoder: " + (videoEncoder != null ? "valid" : "null") +
-                ", EncoderSurface: " + (encoderInputSurface != null ? "valid" : "null") +
-                ", Muxer: " + (mediaMuxer != null ? "valid" : "null") +
-                ", MuxerStarted: " + muxerStarted);
+        // Log encoder and muxer status (removed for performance)
+        // setup log removed
     }
 
     private void startRenderLoop() {
@@ -1426,16 +1433,145 @@ public class GLRecordingPipeline {
         // Do not kick off render loop immediately; wait for first camera frame
     }
 
+    /**
+     * Starts the independent encoder drain loop on a dedicated handler thread.
+     * This decouples muxer writes (which can block on SAF I/O for 10-100ms+)
+     * from the GL render thread so camera frame delivery never stalls.
+     */
+    private void startDrainLoop() {
+        if (drainThread != null) {
+            drainHandler.removeCallbacksAndMessages(null);
+            drainThread.quitSafely();
+            drainThread = null;
+            drainHandler = null;
+        }
+        drainThread = new HandlerThread("GLDrainThread");
+        drainThread.start();
+        drainHandler = new Handler(drainThread.getLooper());
+
+        if (rolloverIoThread != null) { rolloverIoThread.quitSafely(); }
+        rolloverIoThread = new HandlerThread("GLRolloverIO");
+        rolloverIoThread.start();
+        rolloverIoHandler = new Handler(rolloverIoThread.getLooper());
+
+        drainHandler.post(new DrainRunnable());
+    }
+
+    private final class DrainRunnable implements Runnable {
+        @Override
+        public void run() {
+            if (isStopped || !isRecording) return;
+            // Drain audio FIRST — audio encoder has finite input buffers.
+            // If the drain thread spends too much time on video (especially
+            // at 4K+ max quality), audio output backs up, blocking EOS at
+            // stop time and causing A/V timestamp drift (player stutter).
+            if (audioRecordingEnabled && audioEncoder != null && muxerStarted) {
+                drainAudioEncoderWithBudget(16L, false); // doubled budget for audio priority
+            }
+            drainEncoder();
+            if (shouldSplitSegment()) {
+                FLog.d(TAG, "Size limit reached, rolling over segment");
+                // Stop writing to old muxer; handle I/O asynchronously so the
+                // drain loop keeps consuming encoder output.
+                muxerStarted = false;
+                rolloverRequestedByDrain = true;
+                rolloverIoHandler.post(() -> performAsyncRolloverIO());
+            }
+            if (isRecording && !isStopped && drainHandler != null) {
+                drainHandler.postDelayed(this, 2); // 2ms instead of 10ms
+            }
+        }
+    }
+
+    /**
+     * Phase 2 of async rollover: runs on the rollover I/O thread.
+     * Calls the SegmentCallback (SAF file creation), then posts Phase 3
+     * back to the drain handler to finalise the muxer.
+     */
+    private void performAsyncRolloverIO() {
+        try {
+            if (isStopped || !isRecording) {
+                rolloverRequestedByDrain = false;
+                return;
+            }
+            segmentNumber++;
+            if (segmentCallback == null) {
+                FLog.e(TAG, "Segment callback is null, cannot continue rollover");
+                rolloverRequestedByDrain = false;
+                return;
+            }
+            segmentCallback.onSegmentRollover(segmentNumber);
+
+            if (currentOutputFilePath == null && currentOutputFd == null) {
+                FLog.e(TAG, "Segment callback did not set new output");
+                rolloverRequestedByDrain = false;
+                return;
+            }
+            // Post Phase 3 back to the drain handler
+            drainHandler.post(this::completeAsyncRollover);
+        } catch (Exception e) {
+            FLog.e(TAG, "Error during async rollover I/O", e);
+            rolloverRequestedByDrain = false;
+        }
+    }
+
+    /**
+     * Phase 3 of async rollover: runs on the drain handler.
+     * Stops old muxer, creates new, re-adds cached tracks, starts.
+     */
+    private void completeAsyncRollover() {
+        try {
+            if (isStopped || !isRecording) {
+                rolloverRequestedByDrain = false;
+                return;
+            }
+            FLog.i(TAG, "Completing rollover to segment " + segmentNumber);
+
+            if (mediaMuxer != null) {
+                try {
+                    if (muxerStarted) mediaMuxer.stop();
+                    mediaMuxer.release();
+                } catch (Exception e) { FLog.e(TAG, "Error releasing muxer during async rollover", e); }
+                mediaMuxer = null;
+                muxerStarted = false;
+            }
+
+            audioTrackIndex = -1;
+            videoTrackIndex = -1;
+
+            // Reset byte counters
+            segmentBytesWritten = 0L;
+
+            setupMuxer();
+
+            if (cachedVideoFormat != null) {
+                videoTrackIndex = mediaMuxer.addTrack(cachedVideoFormat);
+            }
+            if (audioRecordingEnabled && cachedAudioFormat != null) {
+                audioTrackIndex = mediaMuxer.addTrack(cachedAudioFormat);
+            }
+
+            if (!audioRecordingEnabled && videoTrackIndex != -1 && !muxerStarted) {
+                mediaMuxer.start();
+                muxerStarted = true;
+            } else if (videoTrackIndex != -1 && audioTrackIndex != -1 && !muxerStarted) {
+                mediaMuxer.start();
+                muxerStarted = true;
+            }
+
+            FLog.i(TAG, "Started new segment: " + segmentNumber);
+        } catch (Exception e) {
+            FLog.e(TAG, "Error during async rollover muxer setup", e);
+        } finally {
+            rolloverRequestedByDrain = false;
+            rolloverInProgress = false;
+        }
+    }
+
     // Render when a new frame is available (signaled by renderer)
     private final Runnable renderRunnable = new Runnable() {
         @Override
         public void run() {
-            final long runnableStartMs = System.nanoTime() / 1_000_000L;
-            long audioDrainMs = 0L;
-            long rendererActionMs = 0L;
-            long renderFrameMs = 0L;
-            long drainEncoderMs = 0L;
-            long rolloverMs = 0L;
             try {
                 if ((!isRecording && !previewOnlyRendering) || released) {
                     return;
@@ -1444,88 +1580,35 @@ public class GLRecordingPipeline {
                 if (previewOnlyRendering && !isRecording) {
                     Runnable action;
                     while ((action = rendererActions.poll()) != null) {
-                        try {
-                            action.run();
-                        } catch (Throwable t) {
-                            FLog.w(TAG, "Renderer action failed", t);
-                        }
+                        try { action.run(); } catch (Throwable t) { FLog.w(TAG, "Renderer action failed", t); }
                     }
-                    if (glRenderer != null) {
-                        glRenderer.renderPreviewOnlyFrame();
-                    }
+                    if (glRenderer != null) glRenderer.renderPreviewOnlyFrame();
                     return;
                 }
 
-                // CRITICAL: Drain audio encoder FIRST before rendering and draining video
-                // This ensures audio samples are queued in Media3 BEFORE video creates fragments
-                // Otherwise audio samples get dropped when video keyframes trigger fragment creation
-                if (audioRecordingEnabled && audioEncoder != null) {
-                    long phaseStartMs = System.nanoTime() / 1_000_000L;
-                    // Production-style startup priority: never let queued audio samples block
-                    // the first video frame. Before the muxer starts, drain only enough work to
-                    // discover/register the audio track. Once the muxer is running, keep audio
-                    // drain bounded per frame so video cadence stays smooth.
-                    drainAudioEncoderWithBudget(6L, true);
-                    audioDrainMs = (System.nanoTime() / 1_000_000L) - phaseStartMs;
-                }
+                // NOTE: Audio drain is done ONLY on the drain thread (DrainRunnable).
+                // Running it here on the GL render thread causes contention with
+                // the drain thread for the same audioEncoder.dequeueOutputBuffer(),
+                // blocking the GL handler and dropping video frames every ~2s.
+                // Audio is drained in full on the drain thread — no need here.
 
-                // Do NOT update watermark every frame; a separate timer handles it to avoid FPS
-                // drops
-                // Drain any queued GL operations to ensure they run on the GL thread
-                long actionPhaseStartMs = System.nanoTime() / 1_000_000L;
+                // Drain queued GL operations on the GL thread.
                 Runnable action;
                 while ((action = rendererActions.poll()) != null) {
-                    try {
-                        action.run();
-                    } catch (Throwable t) {
-                        FLog.w(TAG, "Renderer action failed", t);
-                    }
+                    try { action.run(); } catch (Throwable t) { FLog.w(TAG, "Renderer action failed", t); }
                 }
-                rendererActionMs = (System.nanoTime() / 1_000_000L) - actionPhaseStartMs;
+
+                // Render camera frame to encoder surface (non-blocking —
+                // encoder drain + muxer write happen on the separate drainHandler).
+                long renderStartNs = System.nanoTime();
 
                 if (glRenderer != null) {
-                    long renderPhaseStartMs = System.nanoTime() / 1_000_000L;
                     boolean dualMode = (dualCameraConfig != null);
-                    glRenderer.renderFrame(dualMode); // Dual cam uses stale-frame to keep encoder flowing
-                    renderFrameMs = (System.nanoTime() / 1_000_000L) - renderPhaseStartMs;
+                    glRenderer.renderFrame(dualMode);
                 }
-                long drainPhaseStartMs = System.nanoTime() / 1_000_000L;
-                drainEncoder();
-                drainEncoderMs = (System.nanoTime() / 1_000_000L) - drainPhaseStartMs;
-
-                if (audioRecordingEnabled && audioEncoder != null && muxerStarted) {
-                    // Flush a small amount of queued audio after video drain so audio catches up
-                    // without stalling the render loop.
-                    drainAudioEncoderWithBudget(8L, false);
-                }
-
-                // Check if we need to split the segment due to size
-                if (shouldSplitSegment()) {
-                    FLog.d(TAG, "Size limit reached, rolling over segment");
-                    long rolloverPhaseStartMs = System.nanoTime() / 1_000_000L;
-                    rolloverSegment();
-                    rolloverMs = (System.nanoTime() / 1_000_000L) - rolloverPhaseStartMs;
-                }
-
-                // Continue rendering loop when new frames arrive (onFrameAvailable posts this
-                // runnable).
-                // Avoid self-posting to reduce CPU load and sustain high FPS.
             } catch (Exception e) {
                 FLog.e(TAG, "Error in render loop", e);
             } finally {
-                long totalMs = System.nanoTime() / 1_000_000L - runnableStartMs;
-                if (totalMs > 80) {
-                    long now = System.currentTimeMillis();
-                    if (now - lastSlowRenderRunnableWarnMs > SLOW_RENDER_RUNNABLE_WARN_INTERVAL_MS) {
-                        FLog.w(TAG, "SLOW renderRunnable: " + totalMs
-                                + " ms total [audioDrain=" + audioDrainMs
-                                + ", actions=" + rendererActionMs
-                                + ", renderFrame=" + renderFrameMs
-                                + ", drainEncoder=" + drainEncoderMs
-                                + ", rollover=" + rolloverMs + "]");
-                        lastSlowRenderRunnableWarnMs = now;
-                    }
-                }
                 renderRunnableQueued.set(false);
             }
         }
@@ -1544,7 +1627,7 @@ public class GLRecordingPipeline {
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         try {
             while (true) {
-                int outputBufferIndex = videoEncoder.dequeueOutputBuffer(bufferInfo, 0);
+                int outputBufferIndex = videoEncoder.dequeueOutputBuffer(bufferInfo, 0); // non-blocking — drain all available
                 if (outputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
                     break;
                 } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
@@ -1910,13 +1993,13 @@ public class GLRecordingPipeline {
      * 4. THEN release all resources
      */
     public void stopRecording() {
-        FLog.d(TAG, "stopRecording: Stopping recording and releasing resources");
+        // stop log removed
         try {
-            FLog.d(TAG, "stopRecording: Stopping recording and releasing resources");
+            // stop log removed
         } catch (Throwable ignore) {
         }
         if (isStopped || released) {
-            FLog.d(TAG, "stopRecording: Already stopped or released, ignoring duplicate call");
+            // stop log removed
             return;
         }
         boolean wasPreviewOnly = previewOnlyRendering && !isRecording;
@@ -1973,6 +2056,26 @@ public class GLRecordingPipeline {
             return;
         }
 
+        // CRITICAL: Stop drain thread BEFORE emergency drain.
+        // Two threads must never call dequeueOutputBuffer on the same MediaCodec.
+        // Drain thread cleanup is done here, then emergency drain runs on the caller thread.
+        if (drainThread != null) {
+            if (drainHandler != null) drainHandler.removeCallbacksAndMessages(null);
+            drainThread.quitSafely();
+            try {
+                drainThread.join(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            drainThread = null;
+            drainHandler = null;
+        }
+        if (rolloverIoThread != null) {
+            rolloverIoThread.quitSafely();
+            rolloverIoThread = null;
+            rolloverIoHandler = null;
+        }
+
         // CRITICAL FIX: Drain encoders FIRST while GL thread is still alive
         // The video encoder's input surface uses the GL thread's SurfaceTexture
         // If we stop the render thread first, the SurfaceTexture handler dies
@@ -1993,10 +2096,17 @@ public class GLRecordingPipeline {
             renderThread = null;
         }
 
+        // Drain thread already stopped above — clean up rollover I/O thread here.
+        if (rolloverIoThread != null) {
+            rolloverIoThread.quitSafely();
+            rolloverIoThread = null;
+            rolloverIoHandler = null;
+        }
+
         // Now stop and release the video encoder
         if (videoEncoder != null) {
             try {
-                FLog.d(TAG, "Stopping video encoder");
+                // video log removed
                 videoEncoder.stop();
                 videoEncoder.release();
             } catch (Exception e) {
@@ -2031,7 +2141,7 @@ public class GLRecordingPipeline {
         // Release GL renderer last to ensure proper cleanup of OpenGL resources
         if (glRenderer != null) {
             try {
-                FLog.d(TAG, "Releasing GL renderer");
+                // gl log removed
                 glRenderer.release();
             } catch (Exception e) {
                 FLog.e(TAG, "Error releasing renderer", e);
@@ -2120,7 +2230,7 @@ public class GLRecordingPipeline {
         videoEosReceived = false;
         audioEosReceived = false;
 
-        FLog.d(TAG, "GLRecordingPipeline stopped and released.");
+        // stop log removed
         // Reset flags so a new recording can be started cleanly
         isStopped = false;
         released = false;
@@ -2953,7 +3063,7 @@ public class GLRecordingPipeline {
                 }
                 // CRITICAL: Signal EOS to audio encoder before exiting
                 // This is mandatory for proper fMP4 finalization
-                FLog.d(TAG, "Audio thread exiting, signaling EOS to encoder");
+                // audio log removed
                 int eosRetries = 3;
                 boolean eosQueued = false;
                 while (eosRetries > 0 && !eosQueued) {
@@ -2966,7 +3076,7 @@ public class GLRecordingPipeline {
                                 eosPtsUs = lastPtsUs; // monotonic safeguard
                             audioEncoder.queueInputBuffer(inputBufferIndex, 0, 0, eosPtsUs,
                                     MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                            FLog.d(TAG, "Audio EOS queued at PTS=" + eosPtsUs + "us (" + (eosPtsUs / 1000000.0) + "s)");
+                            // audio log removed
                             eosQueued = true;
                         }
                     } else {
@@ -2982,7 +3092,7 @@ public class GLRecordingPipeline {
             }
             // NOTE: Do NOT stop/release audioRecord here - let stopRecording() handle it
             // This prevents race conditions and ensures proper cleanup order
-            FLog.d(TAG, "Audio thread finished");
+            // audio log removed
         }, "AudioThread");
         audioThread.start();
     }

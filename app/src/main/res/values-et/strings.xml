@@ -978,9 +978,10 @@
     </string>
     <string name="recording_already_active">Salvestamine on juba pooleli või peatatud.</string>
     <string name="setting_back_lens_title">Tagakaamera objektiiv</string>
-    <string name="setting_back_lens_note">Vali konkreetne objektiiv, kui saadaval, nt lainurkobjektiiv\n(vaikimisi: Põhi (0))</string>
-    <string name="setting_back_lens_info_single">Ainult põhiline objektiiv</string>
-    <string name="setting_back_lens_info_single_v2">Tuvastatud ainult tagakaamera põhiline objektiiv</string>
+    <string name="setting_back_lens_note">Kasutage 0.5x suumi lainurk jaoks, 2x telefoto jaoks. Objektiivi vahetamine toimub automaatselt suumi kaudu.
+(Vaikimisi: Peamine)</string>
+    <string name="setting_back_lens_info_single">Peamine objektiiv — kasutage suumi teiste objektiivide jaoks</string>
+    <string name="setting_back_lens_info_single_v2">Tuvastati ainult üks tagakaamera. Kasutage suumi (0.5x/2x/5x) teistele objektiividele ligipääsuks.</string>
     <string-array name="theme_options" translatable="false">
         <item>Midnight Dusk</item>
         <item>Faded Night</item>

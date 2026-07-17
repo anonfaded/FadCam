@@ -284,9 +284,7 @@ public class SensorDataProvider implements SensorEventListener {
         else direction = "NW";
 
         String source = compassDataReceived ? "sensor" : (hasBearingFromGps ? "gps" : "none");
-        FLog.d(TAG, "Compass: " + degrees + "° " + direction + " (source=" + source
-                + ", sensorAz=" + String.format("%.1f", sensorAzimuth)
-                + ", gpsBearing=" + String.format("%.1f", smoothedBearing) + ")");
+        // Compass log removed for performance
         return degrees + "° " + direction;
     }
 

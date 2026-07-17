@@ -293,9 +293,10 @@
     </string>
     <string name="recording_already_active">Die Aufnahme läuft bereits oder ist pausiert.</string>
     <string name="setting_back_lens_title">Objektiv der Rückkamera</string>
-    <string name="setting_back_lens_note">Wähle ein bestimmtes Objektiv, falls verfügbar, z.B. Weitwinkelobjektiv\n(Standard: Haupt (0))</string>
-    <string name="setting_back_lens_info_single">Nur Hauptobjektiv</string>
-    <string name="setting_back_lens_info_single_v2">Nur Haupt-Rückkamera erkannt</string>
+    <string name="setting_back_lens_note">0,5x Zoom für Weitwinkel, 2x für Tele. Objektivwechsel erfolgt automatisch über Zoom.
+(Standard: Haupt)</string>
+    <string name="setting_back_lens_info_single">Hauptobjektiv — Zoom für andere Objektive nutzen</string>
+    <string name="setting_back_lens_info_single_v2">Nur eine Rückkamera erkannt. Zoom (0,5x/2x/5x) für andere Objektive nutzen.</string>
     <string name="theme_red">Purpurblüte</string>
     <string name="theme_gold">Premium-Gold</string>
     <string name="theme_silentforest">Stiller Wald</string>

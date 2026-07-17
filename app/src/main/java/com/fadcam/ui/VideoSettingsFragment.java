@@ -1444,7 +1444,7 @@ public class VideoSettingsFragment extends Fragment {
         
         int cameraCount = availableBackCameras.size();
         if (cameraCount == 1) {
-            return "Only one back camera detected. No lens switching available.";
+            return getString(R.string.setting_back_lens_info_single_v2);
         } else {
             StringBuilder helper = new StringBuilder();
             helper.append("Detected ").append(cameraCount).append(" back cameras: ");

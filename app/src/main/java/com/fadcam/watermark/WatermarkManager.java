@@ -59,6 +59,11 @@ public class WatermarkManager implements WatermarkInfoProvider {
     /** Initialise all sensor / location providers needed for watermark text. */
     public void initialize(LocationHelper existingLocationHelper) {
         locationHelper = existingLocationHelper;
+
+        // If the master watermark is disabled, don't start any providers.
+        String option = prefs.getWatermarkOption();
+        if ("no_watermark".equals(option)) return;
+
         if (locationHelper == null) {
             locationHelper = new LocationHelper(context);
             locationHelper.startLocationUpdates();

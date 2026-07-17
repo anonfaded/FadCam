@@ -43,6 +43,12 @@ public class FragmentedMp4MuxerWrapper {
     private int orientationHint = 0;
     private int sampleCountDebug = 0;  // For limiting debug log spam
     
+    // Periodic fsync: write() goes to OS page cache (fast), flush() (fsync)
+    // only every N segments. fMP4 fragments survive app crashes even without
+    // per-fragment fsync.  Periodic flush balances crash-safety with performance.
+    private long segmentsSinceLastFlush = 0;
+    private static final int FSUNC_EVERY_N_SEGMENTS = 10; // ~20s at 2s fragments
+    
     // Track indices
     private int videoTrackIndex = -1;
     private int audioTrackIndex = -1;
@@ -632,10 +638,11 @@ public class FragmentedMp4MuxerWrapper {
      * @param segment ProcessedSegment containing either init segment or media fragment
      */
     private void handleProcessedSegment(ProcessedSegment segment) {
-        synchronized (muxerLock) {
-            if (released) {
-                return;
-            }
+        // No muxerLock here — this runs on the library's dedicated writer thread,
+        // so there is zero contention with writeSampleData() on the drain thread.
+        if (released) {
+            return;
+        }
             try {
             // Defensive check: catch an invalid FileDescriptor early with a clear log message
             // rather than letting it surface as a cryptic EBADF inside fileOutputStream.write().
@@ -676,24 +683,27 @@ public class FragmentedMp4MuxerWrapper {
             
             if (segment.isInitSegment) {
                 // Initialization segment (ftyp + moov)
-                FLog.i(TAG, "📦 [SEGMENT] Received INIT segment: " + data.length + " bytes");
+                // SEGMENT init log removed
                 
                 // Send to RemoteStreamManager for HLS streaming
                 RemoteStreamManager.getInstance().onInitializationSegment(data);
                 initSegmentSent = true;
                 
-                // Write to file only if STREAM_AND_SAVE mode
+                // Write to file — no per-fragment fsync; periodic flush handles durability.
                 if (shouldSaveToDisk && fileOutputStream != null) {
                     fileOutputStream.write(data);
-                    fileOutputStream.flush();
-                    // FLog.d(TAG, "✅ Init segment written to file (STREAM_AND_SAVE mode)");
+                    segmentsSinceLastFlush++;
+                    if (segmentsSinceLastFlush >= FSUNC_EVERY_N_SEGMENTS) {
+                        fileOutputStream.flush();
+                        segmentsSinceLastFlush = 0;
+                    }
                 } else {
                     // FLog.d(TAG, "⏭️ Init segment NOT written to file (STREAM_ONLY mode)");
                 }
             } else {
                 // Media fragment (moof + mdat)
-                FLog.i(TAG, "🎬 [FRAGMENT] #" + segment.segmentNr + 
-                    ": " + (data.length / 1024) + " KB, duration: " + segment.durationMs + " ms");
+                // Fragment info logged only at DEBUG level to avoid
+                // flooding logcat during long recordings.
                 
                 // Send to RemoteStreamManager for HLS streaming
                 if (initSegmentSent) {
@@ -703,11 +713,15 @@ public class FragmentedMp4MuxerWrapper {
                         " received before init segment - skipping stream upload");
                 }
                 
-                // Write to file only if STREAM_AND_SAVE mode
+                // Write to file — no per-fragment fsync; periodic flush handles durability.
                 if (shouldSaveToDisk && fileOutputStream != null) {
                     fileOutputStream.write(data);
-                    fileOutputStream.flush();
-                    FLog.d(TAG, "✅ Fragment #" + segment.segmentNr + " written to file (STREAM_AND_SAVE mode)");
+                    segmentsSinceLastFlush++;
+                    if (segmentsSinceLastFlush >= FSUNC_EVERY_N_SEGMENTS) {
+                        fileOutputStream.flush();
+                        segmentsSinceLastFlush = 0;
+                    }
+                    // Fragment written log removed
                 } else {
                     // FLog.d(TAG, "⏭️ Fragment #" + segment.segmentNr + " NOT written to file (STREAM_ONLY mode)");
                 }
@@ -717,7 +731,6 @@ public class FragmentedMp4MuxerWrapper {
             } catch (Exception e) {
                 FLog.e(TAG, "❌ Error handling processed segment", e);
             }
-        }
     }
 
     /**

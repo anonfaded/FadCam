@@ -96,7 +96,7 @@ public class NoiseMonitor {
                         currentDb = Math.max(0, Math.min(maxDb, db));
                         logCounter++;
                         if (logCounter % 50 == 0) {
-                            FLog.d(TAG, "Noise level: " + String.format("%.1f", currentDb) + "dB");
+                        // Noise level log removed for performance
                         }
                     }
                     try {

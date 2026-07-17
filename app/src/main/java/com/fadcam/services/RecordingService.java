@@ -144,6 +144,7 @@ public class RecordingService extends Service {
     // Cached GPS provider state — refreshed every 5s to avoid unnecessary system calls
     private boolean cachedGpsProviderEnabled = false;
     private long lastGpsProviderCheckMs = 0;
+    
     private static final long GPS_PROVIDER_CHECK_INTERVAL_MS = 5000;
 
     private RecordingState recordingState = RecordingState.NONE;
@@ -1103,7 +1104,7 @@ public class RecordingService extends Service {
 
             // Initialize extended sensor providers only when recording actually starts
             // (NOT during preview-only mode — prevents mic/sensor memory leaks)
-            FLog.d(TAG, "Initializing extended sensor providers for recording");
+            // setup log removed
 
             // Shared watermark manager (DRY — used by both single and dual camera)
             if (watermarkManager == null) {
@@ -1111,7 +1112,12 @@ public class RecordingService extends Service {
             }
             watermarkManager.initialize(locationHelper);
 
-            if (sharedPreferencesManager != null && (sharedPreferencesManager.isSpeedEnabled()
+            // Only start sensor/noise/weather providers if the master watermark
+            // is enabled AND individual features are turned on.
+            boolean watermarkActive = !"no_watermark".equals(
+                sharedPreferencesManager != null ? sharedPreferencesManager.getWatermarkOption() : "");
+
+            if (watermarkActive && sharedPreferencesManager != null && (sharedPreferencesManager.isSpeedEnabled()
                     || sharedPreferencesManager.isAltitudeEnabled()
                     || sharedPreferencesManager.isCompassEnabled())) {
                 if (sensorDataProvider == null) {
@@ -1125,15 +1131,15 @@ public class RecordingService extends Service {
                     androidLoc.setLongitude(currentLoc.getLongitude());
                 }
                 sensorDataProvider.start(androidLoc);
-                FLog.d(TAG, "SensorDataProvider initialized for recording");
+                // setup log removed
             }
 
-            if (sharedPreferencesManager != null && sharedPreferencesManager.isNoiseEnabled()) {
+            if (watermarkActive && sharedPreferencesManager != null && sharedPreferencesManager.isNoiseEnabled()) {
                 if (noiseMonitor == null) {
                     noiseMonitor = com.fadcam.audio.NoiseMonitor.getInstance();
                 }
                 noiseMonitor.start(this);
-                FLog.d(TAG, "NoiseMonitor initialized for recording");
+                // setup log removed
             }
 
             if (sharedPreferencesManager != null && sharedPreferencesManager.isWeatherEnabled()) {
@@ -1793,7 +1799,7 @@ public class RecordingService extends Service {
             if (safRecordingPfd != null) {
                 try {
                     safRecordingPfd.close();
-                    FLog.d(TAG, "Closed SAF ParcelFileDescriptor after recording");
+                    // log removed
                 } catch (Exception e) {
                     FLog.e(TAG, "Error closing SAF ParcelFileDescriptor", e);
                 }
@@ -1983,7 +1989,7 @@ public class RecordingService extends Service {
                     if (recordingWakeLock != null && recordingWakeLock.isHeld()) {
                         try {
                             recordingWakeLock.release();
-                            FLog.d(TAG, "Recording wake lock released");
+                            // log removed
                         } catch (Exception e) {
                             FLog.e(TAG, "Error releasing wake lock", e);
                         }
@@ -1993,7 +1999,7 @@ public class RecordingService extends Service {
                     if (safRecordingPfd != null) {
                         try {
                             safRecordingPfd.close();
-                            FLog.d(TAG, "Closed SAF ParcelFileDescriptor after recording (background thread)");
+                            // log removed
                         } catch (Exception e) {
                             FLog.e(TAG, "Error closing SAF ParcelFileDescriptor (background thread)", e);
                         }
@@ -2469,7 +2475,7 @@ public class RecordingService extends Service {
         if (safRecordingPfd != null) {
             try {
                 safRecordingPfd.close();
-                FLog.d(TAG, "Closed SAF ParcelFileDescriptor after resource cleanup");
+                // log removed
             } catch (Exception e) {
                 FLog.e(TAG, "Error closing SAF ParcelFileDescriptor (resource cleanup)", e);
             }
@@ -3356,8 +3362,7 @@ public class RecordingService extends Service {
     private void checkIfServiceCanStop() {
         // Read volatile flag and check state atomically as best as possible
 
-        FLog.d(TAG, "checkIfServiceCanStop: RecordingState=" + recordingState + ", FfmpegTasks="
-                + ffmpegProcessingTaskCount.get());
+        // log removed
 
         // Use the new shouldServiceStayAlive method to determine if service should
         // continue running
@@ -3431,7 +3436,7 @@ public class RecordingService extends Service {
                         Set<String> physicalIds = chars.getPhysicalCameraIds();
                         if (physicalIds != null && !physicalIds.isEmpty()) {
                             allAvailableCameraIds.addAll(physicalIds);
-                            FLog.d(TAG, "Added physical camera IDs from logical camera " + id + ": " + physicalIds);
+                            // physical camera log removed  " + id + ": " + physicalIds);
                         }
                     } catch (Exception e) {
                         FLog.w(TAG, "Error checking physical IDs for camera " + id, e);
@@ -4439,9 +4444,12 @@ public class RecordingService extends Service {
             
             if (glRecordingPipeline != null) {
                 if (validNewSurface) {
-                    FLog.d(TAG, "Setting preview surface to GL pipeline (immediate=" + isFullscreenTransition + ")");
-                    // Use IMMEDIATE mode for fullscreen to bypass 200ms debounce
-                    if (isFullscreenTransition) {
+                    // Use IMMEDIATE mode during active recording to avoid the 200ms
+                    // debounce callback blocking the GL handler from processing
+                    // onFrameAvailable (causing periodic ~120-200ms frame gaps).
+                    boolean useImmediate = isFullscreenTransition || isRecording();
+                    FLog.d(TAG, "Setting preview surface to GL pipeline (immediate=" + useImmediate + ")");
+                    if (useImmediate) {
                         glRecordingPipeline.setPreviewSurfaceImmediate(previewSurface);
                     } else {
                         glRecordingPipeline.setPreviewSurface(previewSurface);
@@ -4493,7 +4501,7 @@ public class RecordingService extends Service {
         } else {
             videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(),
                     sharedPreferencesManager.getVideoFrameRate());
-            FLog.d(TAG, "[RECORDING] Using auto-estimated bitrate: " + (videoBitrate / 1000) + " kbps");
+            // bitrate log removed " + (videoBitrate / 1000) + " kbps");
         }
         return videoBitrate;
     }
@@ -4564,19 +4572,19 @@ public class RecordingService extends Service {
         long locationUpdateIntervalMs = sharedPreferencesManager.getWatermarkUpdateInterval();
         long timeSinceLastUpdateMs = currentTimeMs - lastLocationWatermarkUpdateMs;
         
-        FLog.d(TAG, "📍 Location update check: interval=" + locationUpdateIntervalMs + "ms, elapsed=" + timeSinceLastUpdateMs + "ms");
+        // Location update check interval=" + locationUpdateIntervalMs + "ms, elapsed=" + timeSinceLastUpdateMs + "ms");
         
         // Only refresh location data if enough time has passed
         if (timeSinceLastUpdateMs >= locationUpdateIntervalMs) {
-            FLog.d(TAG, "📍 Fetching fresh location data (interval elapsed)");
+            // Fetching fresh location data (interval elapsed)");
             
             String locData = locationHelper.getLocationData();
             // Avoid logging precise coordinates; getLocationData() already logs a redacted version
-            FLog.d(TAG, "📍 Raw location from helper: " + (locData != null && locData.contains("Lat:") ? "[coords present]" : "[no coords]"));
+            // Raw location from helper: " + (locData != null && locData.contains("Lat:") ? "[coords present]" : "[no coords]"));
             
             // Avoid adding "Location not available" to watermark, just add lat/lon if present
             if (locData == null || !locData.contains("Lat:")) {
-                FLog.w(TAG, "❌ Location data invalid or missing GPS coordinates");
+                // Location data invalid or missing GPS coordinates");
                 cachedLocationWatermarkText = "";
             } else {
                 // Apply format preference
@@ -4633,9 +4641,9 @@ public class RecordingService extends Service {
             }
             
             lastLocationWatermarkUpdateMs = currentTimeMs;
-            FLog.d(TAG, "📍 Location watermark cache updated");
+            // Location watermark cache updated");
         } else {
-            FLog.d(TAG, "📍 Using cached location data (too soon to update)");
+            // Using cached location data (too soon to update)");
         }
         
         // Show GPS-off message if provider is disabled — covers location + UTM independently
@@ -4736,13 +4744,13 @@ public class RecordingService extends Service {
 
         if (sharedPreferencesManager.isCompassEnabled() && sensorDataProvider != null) {
             String compass = sensorDataProvider.getCompassDirection();
-            FLog.d(TAG, "Extended: compass=" + compass);
+            // sensor log removed
             sb.append("\nCompass: ").append(compass);
         }
 
         if (sharedPreferencesManager.isNoiseEnabled() && noiseMonitor != null && noiseMonitor.isRunning()) {
             double db = noiseMonitor.getCurrentDb();
-            FLog.d(TAG, "Extended: noise=" + db + " dB");
+            // sensor log removed
             sb.append("\nNoise: ").append(noiseMonitor.getReadableDb());
         }
 
@@ -4766,7 +4774,7 @@ public class RecordingService extends Service {
 
         String result = sb.toString();
         if (!result.isEmpty()) {
-            FLog.d(TAG, "Extended sensor data: " + result.replace("\n", " | "));
+            // sensor log removed
         }
         return result;
     }
@@ -4798,7 +4806,7 @@ public class RecordingService extends Service {
             .remove(Constants.PREF_RECORDING_PAUSE_STARTED_AT)
             .remove(Constants.PREF_RECORDING_ACCUMULATED_PAUSED_DURATION)
             .apply();
-        FLog.d(TAG, "✅ SERVICE: Cleared recording timeline state from SharedPreferences");
+        // log removed
     }
 
     private long getEffectiveTimelineMs() {
@@ -5163,7 +5171,7 @@ public class RecordingService extends Service {
     private void cancelNotification() {
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
         notificationManager.cancel(NOTIFICATION_ID);
-        FLog.d(TAG, "Cancelled notification.");
+        // log removed
     }
 
     private PendingIntent createOpenAppIntent() {
@@ -5463,7 +5471,7 @@ public class RecordingService extends Service {
      */
     private void setCameraResourcesReleasing(boolean releasing) {
         isCameraResourceReleasing = releasing;
-        FLog.d(TAG, "Camera resources releasing state set to: " + releasing);
+        // log removed
 
         // Broadcast the current availability state
         broadcastCameraResourceAvailability(!releasing);
@@ -5473,7 +5481,7 @@ public class RecordingService extends Service {
         if (releasing) {
             mainHandler.postDelayed(() -> {
                 isCameraResourceReleasing = false;
-                FLog.d(TAG, "Camera resource cooldown ended, resources available now");
+                // log removed
 
                 // Broadcast that camera resources are available again
                 broadcastCameraResourceAvailability(true);
@@ -5784,8 +5792,7 @@ public class RecordingService extends Service {
             Boolean aeLock = sharedPreferencesManager.isAeLockedSaved();
             int afModePref = sharedPreferencesManager.getSavedAfMode();
 
-            FLog.d(TAG, "applySavedCameraPrefsToBuilder: savedEv=" + savedEv + ", aeLock=" + aeLock +
-                    ", afMode=" + afModePref);
+            // camera pref log removed : savedEv=" + savedEv + ", aeLock=" + aeLock +
 
             if (currentCameraCharacteristics != null) {
                 // Apply EV: use runtime value if available, otherwise saved value
@@ -6758,7 +6765,7 @@ public class RecordingService extends Service {
             @Override
             public void run() {
                 if (!pendingCameraReconnect) {
-                    FLog.d(TAG, "Camera reconnection attempts stopped by flag");
+                    // log removed
                     return;
                 }
                 tryReconnectCamera(cameraId);
@@ -6899,7 +6906,7 @@ public class RecordingService extends Service {
             @Override
             public void run() {
                 if (!isRenderingBlackFrames || recordingState != RecordingState.WAITING_FOR_CAMERA) {
-                    FLog.d(TAG, "Stopping black frame rendering");
+                    // log removed
                     stopBlackFrameRendering();
                     return;
                 }
@@ -6933,7 +6940,7 @@ public class RecordingService extends Service {
     private void stopBlackFrameRendering() {
         // Set flag first to prevent new frames from being scheduled
         isRenderingBlackFrames = false;
-        FLog.d(TAG, "Stopping black frame rendering");
+        // log removed
 
         // Cancel all pending messages in handler
         if (blackFrameHandler != null) {
@@ -6964,7 +6971,7 @@ public class RecordingService extends Service {
         // Clear handler reference
         blackFrameHandler = null;
 
-        FLog.d(TAG, "Stopped rendering black frames");
+        // log removed
     }
 
     /**
@@ -7008,7 +7015,7 @@ public class RecordingService extends Service {
         if (reconnectHandler != null && reconnectRunnable != null) {
             reconnectHandler.removeCallbacks(reconnectRunnable);
         }
-        FLog.d(TAG, "Camera reconnection attempts stopped");
+        // log removed
     }
 
     // Add this field to the class

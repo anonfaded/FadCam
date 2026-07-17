@@ -198,9 +198,10 @@
     <string name="applock_verification_canceled">تم إلغاء التحقق</string>
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">عدسة الكاميرا الخلفية</string>
-    <string name="setting_back_lens_note">اختر عدسة محددة إذا كانت متوفرة مثل عدسة الزاوية الواسعة\n(الافتراضي: الرئيسية (0))</string>
-    <string name="setting_back_lens_info_single">العدسة الرئيسية فقط</string>
-    <string name="setting_back_lens_info_single_v2">تم اكتشاف الكاميرا الخلفية الرئيسية فقط</string>
+    <string name="setting_back_lens_note">استخدم تكبير 0.5x للعدسة الواسعة، 2x للتقريب. يتم التبديل تلقائياً عبر التكبير.
+(الافتراضي: الرئيسية)</string>
+    <string name="setting_back_lens_info_single">العدسة الرئيسية — استخدم التكبير للعدسات الأخرى</string>
+    <string name="setting_back_lens_info_single_v2">تم اكتشاف كاميرا خلفية واحدة فقط. استخدم التكبير (0.5x/2x/5x) للوصول للعدسات الأخرى.</string>
     <!-- Video Settings -->
     <string name="setting_framerate_title">معدل إطارات الفيديو</string>
     <string name="note_framerate">اختر معدل الإطارات\n(الافتراضي: %1$d)</string>

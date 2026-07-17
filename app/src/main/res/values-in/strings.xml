@@ -1003,9 +1003,10 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     </string>
     <string name="recording_already_active">Perekaman sedang berlangsung atau dijeda.</string>
     <string name="setting_back_lens_title">Lensa Kamera Belakang</string>
-    <string name="setting_back_lens_note">Pilih lensa tertentu jika tersedia mis. Lensa Sudut Lebar\n(Default: Utama (0))</string>
-    <string name="setting_back_lens_info_single">Hanya lensa utama</string>
-    <string name="setting_back_lens_info_single_v2">Hanya kamera belakang utama yang terdeteksi</string>
+    <string name="setting_back_lens_note">Gunakan zoom 0.5x untuk sudut lebar, 2x untuk telefoto. Pergantian lensa otomatis via zoom.
+(Default: Utama)</string>
+    <string name="setting_back_lens_info_single">Lensa utama — gunakan zoom untuk lensa lain</string>
+    <string name="setting_back_lens_info_single_v2">Hanya satu kamera belakang terdeteksi. Gunakan zoom (0.5x/2x/5x) untuk lensa lain.</string>
 
     <string-array name="theme_options" translatable="false">
         <item>Midnight Dusk</item>

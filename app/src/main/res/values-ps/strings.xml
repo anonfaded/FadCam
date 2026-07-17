@@ -213,9 +213,9 @@
     <string name="applock_verification_canceled">Tasdiq laghwa sho</string>
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">Da Shaa Camera Lens</string>
-    <string name="setting_back_lens_note">Ke mujud wi, khas lens entekhab ka masalan Wide Angle Lens\n(Default: Asli (0))</string>
-    <string name="setting_back_lens_info_single">Faqat asli lens</string>
-    <string name="setting_back_lens_info_single_v2">Yawa asli shaa camera paidaa shwa</string>
+    <string name="setting_back_lens_note">0.5x zoom da wide angle lense lapara, 2x da telephoto lapara wokarai. Lens switching zoom da larey pa automatic toor da.\n(Default: Asli)</string>
+    <string name="setting_back_lens_info_single">Asli lens — noro lensono lapara zoom wokarai</string>
+    <string name="setting_back_lens_info_single_v2">Yawaza yo shaa camera detect shaway da. Noro lensono ta da access lapara zoom (0.5x/2x/5x) wokarai.</string>
     <!-- Video Settings -->
     <string name="setting_framerate_title">Da Video Framerate</string>
     <string name="note_framerate">Framerate entekhab ka\n(Default: %1$d)</string>

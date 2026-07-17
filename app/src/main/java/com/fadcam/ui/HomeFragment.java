@@ -957,7 +957,7 @@ public class HomeFragment extends BaseFragment {
             tvPreviewPlaceholder.setVisibility(View.GONE); // Keep hidden
             if (tvPreviewHint != null) tvPreviewHint.setText(getPreviewEnableHintResId());
             setHintVisibilityAnimated(true);
-            FLog.d(TAG, "Not recording - showing hint because area is reactive");
+            // log removed
         }
 
         // Show/hide the preview avatar container (complement TextureView visibility)
@@ -1784,14 +1784,14 @@ public class HomeFragment extends BaseFragment {
             FLog.w(TAG, "hidePausedOverlay: view null, overlay=" + (pausedPreviewOverlay == null) + " texture=" + (textureView == null));
             return;
         }
-        FLog.d(TAG, "hidePausedOverlay: hiding");
+        // log removed
         pausedPreviewOverlay.animate().cancel();
         textureView.animate().cancel();
         pausedPreviewOverlay.setAlpha(1f);
         pausedPreviewOverlay.animate().alpha(0f).setDuration(200).withEndAction(() -> {
             if (pausedPreviewOverlay != null) {
                 pausedPreviewOverlay.setVisibility(View.GONE);
-                FLog.d(TAG, "hidePausedOverlay: animation complete, overlay GONE");
+                // log removed
             }
         }).start();
         textureView.setAlpha(1f);
@@ -1805,7 +1805,7 @@ public class HomeFragment extends BaseFragment {
      * This method resets the UI to the IDLE state.
      */
     private void onRecordingStopped() {
-        FLog.d(TAG, "onRecordingStopped broadcast received.");
+        // log removed
 
         // OPTIMIZATION: Re-enable debug logging now that recording has stopped
         Log.setRecordingActive(false);
@@ -1821,7 +1821,7 @@ public class HomeFragment extends BaseFragment {
         recordingPauseStartedAt = 0L;
         recordingAccumulatedPausedDurationMs = 0L;
         latestElapsedDisplay = buildElapsedDisplayText(0L);
-        FLog.d(TAG, "onRecordingStopped: Reset recordingStartTime to 0");
+        // log removed
 
         // Release wake lock if it was acquired
         // WakeLock moved to service
@@ -1880,7 +1880,7 @@ public class HomeFragment extends BaseFragment {
      * with screen recording-specific behavior.
      */
     protected void resetUIButtonsToIdleState() {
-        FLog.d(TAG, "Reset UI to idle state");
+        // log removed
         if (!isAdded() || getContext() == null || getView() == null) {
             FLog.w(
                 TAG,
@@ -1911,7 +1911,7 @@ public class HomeFragment extends BaseFragment {
                     buttonStartStop.setAlpha(1.0f);
                 });
                 updateStartStopButtonForFoldedState();
-                FLog.d(TAG, "Start button force-enabled in resetUIButtonsToIdleState");
+                // log removed
             }
             if (buttonPauseResume != null) {
                 buttonPauseResume.setVisibility(View.VISIBLE);
@@ -3013,7 +3013,7 @@ public class HomeFragment extends BaseFragment {
 
                         try {
                             updateStats();
-                            FLog.d(TAG, "Completion: Updated stats.");
+                            // log removed
                         } catch (Exception e) {
                             FLog.e(TAG, "Completion: Err update stats", e);
                         }
@@ -5632,7 +5632,7 @@ public class HomeFragment extends BaseFragment {
      * Checks if views exist before modifying them.
      */
     private void disableInteractionButtons() {
-        FLog.d(TAG, "Attempting to disable interaction buttons.");
+        // log removed
         if (!isAdded() || getView() == null) {
             // Extra check for view availability
             FLog.w(
@@ -5645,7 +5645,7 @@ public class HomeFragment extends BaseFragment {
             // Null checks are crucial inside helper methods
             if (buttonStartStop != null) {
                 buttonStartStop.setEnabled(false);
-                FLog.v(TAG, "Disabled: Start/Stop Button"); // Verbose log
+                // log removed
             } else FLog.w(
                 TAG,
                 "buttonStartStop is null in disableInteractionButtons"
@@ -5653,7 +5653,7 @@ public class HomeFragment extends BaseFragment {
 
             if (buttonPauseResume != null) {
                 buttonPauseResume.setEnabled(false);
-                FLog.v(TAG, "Disabled: Pause/Resume Button");
+                // log removed
             } else FLog.w(
                 TAG,
                 "buttonPauseResume is null in disableInteractionButtons"
@@ -5662,7 +5662,7 @@ public class HomeFragment extends BaseFragment {
             if (buttonCamSwitch != null) {
                 // Keep camera switch button ENABLED during recording for live switching
                 buttonCamSwitch.setEnabled(true);
-                FLog.v(TAG, "Camera Switch Button: ENABLED (for live switching)");
+                // log removed
             } else FLog.w(
                 TAG,
                 "buttonCamSwitch is null in disableInteractionButtons"
@@ -5671,10 +5671,10 @@ public class HomeFragment extends BaseFragment {
             // if (buttonTorchSwitch != null) {
             // buttonTorchSwitch.setEnabled(false); // Also disable torch during these
             // states
-            // FLog.v(TAG,"Disabled: Torch Button");
+            // // log removed
             // } else FLog.w(TAG,"buttonTorchSwitch is null in disableInteractionButtons");
 
-            FLog.d(TAG, "Interaction buttons disabled.");
+            // log removed
         } catch (Exception e) {
             // Catch potential NPE or other issues if views are somehow null unexpectedly
             FLog.e(TAG, "Error occurred while disabling interaction buttons", e);
@@ -7158,7 +7158,7 @@ public class HomeFragment extends BaseFragment {
         if (updateInfoRunnable != null) {
             handlerClock.removeCallbacks(updateInfoRunnable);
             // Only log when we actually stop (not at every opportunity)
-            FLog.d(TAG, "stopUpdatingInfo: Stopped real-time storage/stats updates");
+            // log removed
         }
         updateInfoRunnable = null;
         infoUpdatesRunning = false;
@@ -7261,7 +7261,7 @@ public class HomeFragment extends BaseFragment {
                 FLog.d(TAG, "resumeUpdateHandlers: Info handler (storage + stats) resumed");
             }
         } else {
-            FLog.d(TAG, "resumeUpdateHandlers: Not recording or paused, handlers remain stopped");
+            // log removed
         }
         
         // Re-create executor service if needed
@@ -8887,7 +8887,7 @@ public class HomeFragment extends BaseFragment {
             FLog.d(TAG, "Camera switch intent sent, button stays enabled for responsiveness");
         } else {
             // Not recording: update preference only (old behavior)
-            FLog.d(TAG, "Not recording, updating camera preference: " + currentType + " → " + targetType);
+            // log removed
             
             sharedPreferencesManager.sharedPreferences
                 .edit()

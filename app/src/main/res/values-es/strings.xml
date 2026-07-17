@@ -995,9 +995,10 @@
     </string>
     <string name="recording_already_active">La grabación ya está en progreso o pausada.</string>
     <string name="setting_back_lens_title">Lente de cámara trasera</string>
-    <string name="setting_back_lens_note">Selecciona lente específico si está disponible, ej. Lente gran angular\n(Predeterminado: Principal (0))</string>
-    <string name="setting_back_lens_info_single">Solo lente principal</string>
-    <string name="setting_back_lens_info_single_v2">Solo se detectó cámara trasera principal</string>
+    <string name="setting_back_lens_note">Use zoom 0.5x para gran angular, 2x para teleobjetivo. El cambio de lente se maneja automáticamente mediante zoom.
+(Defecto: Principal)</string>
+    <string name="setting_back_lens_info_single">Lente principal — use zoom para otros lentes</string>
+    <string name="setting_back_lens_info_single_v2">Solo se detectó una cámara trasera. Use zoom (0.5x/2x/5x) para acceder a otros lentes.</string>
 
     <string-array name="theme_options" translatable="false">
         <item>Midnight Dusk</item>

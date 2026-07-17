@@ -623,9 +623,10 @@
     </string>
     <string name="recording_already_active">Запись уже выполняется или приостановлена.</string>
     <string name="setting_back_lens_title">Объектив задней камеры</string>
-    <string name="setting_back_lens_note">Выберите конкретный объектив, если доступен, например, Широкоугольный объектив\n(По умолчанию: Основной (0))</string>
-    <string name="setting_back_lens_info_single">Только основной объектив</string>
-    <string name="setting_back_lens_info_single_v2">Обнаружена только основная задняя камера</string>
+    <string name="setting_back_lens_note">Используйте зум 0.5x для широкого угла, 2x для телефото. Переключение автоматическое через зум.
+(По умолчанию: Основная)</string>
+    <string name="setting_back_lens_info_single">Основной объектив — используйте зум для других</string>
+    <string name="setting_back_lens_info_single_v2">Обнаружена только одна задняя камера. Используйте зум (0.5x/2x/5x) для доступа к другим объективам.</string>
     <string name="theme_red">Crimson Bloom</string>
     <string name="theme_gold">Premium Gold</string>
     <string name="theme_silentforest">Silent Forest</string>

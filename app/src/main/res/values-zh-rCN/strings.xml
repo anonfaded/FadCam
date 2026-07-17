@@ -200,9 +200,10 @@
     <string name="applock_verification_canceled">验证已取消</string>
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">后置摄像头镜头</string>
-    <string name="setting_back_lens_note">如果可用，请选择特定镜头，例如广角镜头\n(默认: 主镜头(0))</string>
-    <string name="setting_back_lens_info_single">仅有主镜头</string>
-    <string name="setting_back_lens_info_single_v2">仅检测到主后置摄像头</string>
+    <string name="setting_back_lens_note">使用 0.5x 变焦拍摄广角，2x 拍摄长焦。镜头切换通过变焦自动处理。
+（默认：主镜头）</string>
+    <string name="setting_back_lens_info_single">主镜头 — 使用变焦切换其他镜头</string>
+    <string name="setting_back_lens_info_single_v2">仅检测到一个后置摄像头。使用变焦（0.5x/2x/5x）访问其他镜头。</string>
     <!-- Video Settings -->
     <string name="setting_framerate_title">视频帧率</string>
     <string name="note_framerate">选择帧率\n(默认: %1$d)</string>

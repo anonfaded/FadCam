@@ -970,10 +970,10 @@
     <string name="warning_temp_file_detail">Questo file temporaneo verrà eliminato quando esci. Assicurati di salvarlo prima.</string>
     <string name="recording_already_active">Registrazione già attiva</string>
     <string name="setting_back_lens_title">Lente posteriore</string>
-    <string name="setting_back_lens_note">Scegli la lente specifica (0.x = ultra-wide, 1.x (etc) = standard, 2.x+ = zoom). La disponibilità dipende dall\'hardware del dispositivo.
-(Predefinito: 1.0x)</string>
-    <string name="setting_back_lens_info_single">La fotocamera posteriore ha una singola lente (1.0x). Il passaggio lente non è disponibile.</string>
-    <string name="setting_back_lens_info_single_v2">Lente fotocamera: solamente %1$.1fx. Il selettore lente non è disponibile per questo dispositivo.</string>
+    <string name="setting_back_lens_note">Usa zoom 0.5x per grandangolo, 2x per teleobiettivo. Il cambio è automatico via zoom.
+(Predefinito: Principale)</string>
+    <string name="setting_back_lens_info_single">Obiettivo principale — usa lo zoom per altri obiettivi</string>
+    <string name="setting_back_lens_info_single_v2">Rilevata solo una fotocamera posteriore. Usa lo zoom (0.5x/2x/5x) per altri obiettivi.</string>
     <string-array name="theme_options" translatable="false">
         <item>Midnight Dusk</item>
         <item>Faded Night</item>

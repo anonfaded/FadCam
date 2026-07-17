@@ -227,9 +227,10 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="applock_verification_canceled">Vérification annulée</string>
     <!-- Camera Settings -->
     <string name="setting_back_lens_title">Objectif Caméra Arrière</string>
-    <string name="setting_back_lens_note">Sélectionnez un objectif spécifique si disponible, par ex. Objectif Grand Angle\n(Par défaut: Principal (0))</string>
-    <string name="setting_back_lens_info_single">Uniquement objectif principal</string>
-    <string name="setting_back_lens_info_single_v2">Seule la caméra arrière principale est détectée</string>
+    <string name="setting_back_lens_note">Utilisez le zoom 0.5x pour grand angle, 2x pour téléobjectif. Le changement est automatique via le zoom.
+(Défaut : Principal)</string>
+    <string name="setting_back_lens_info_single">Objectif principal — utilisez le zoom pour les autres</string>
+    <string name="setting_back_lens_info_single_v2">Une seule caméra arrière détectée. Utilisez le zoom (0.5x/2x/5x) pour accéder aux autres objectifs.</string>
     <!-- Video Settings -->
     <string name="setting_video_bitrate_title">Débit Vidéo</string>
     <string name="button_video_bitrate_settings">Définir le Débit</string>
