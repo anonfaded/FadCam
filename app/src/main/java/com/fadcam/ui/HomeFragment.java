@@ -5310,8 +5310,11 @@ public class HomeFragment extends BaseFragment {
 
         boolean needsLocation = sharedPreferencesManager.isSpeedEnabled()
                 || sharedPreferencesManager.isAltitudeEnabled()
-                || sharedPreferencesManager.isCompassEnabled()
-                || sharedPreferencesManager.isWeatherEnabled();
+                || sharedPreferencesManager.isAccuracyEnabled()
+                || sharedPreferencesManager.isWeatherEnabled()
+                || sharedPreferencesManager.isLocalisationEnabled()
+                || sharedPreferencesManager.isLocationEmbeddingEnabled()
+                || sharedPreferencesManager.isUtmEnabled();
         if (!needsLocation) {
             banner.setVisibility(View.GONE);
             return;
@@ -9944,6 +9947,16 @@ public class HomeFragment extends BaseFragment {
         gpsProviderReceiver = new GpsProviderReceiver();
         IntentFilter gpsFilter = new IntentFilter(android.location.LocationManager.PROVIDERS_CHANGED_ACTION);
         requireContext().registerReceiver(gpsProviderReceiver, gpsFilter);
+
+        // Listen for location-related pref changes so the banner updates immediately
+        // when the user toggles location watermark or motion lab features
+        sharedPreferencesManager.sharedPreferences
+            .registerOnSharedPreferenceChangeListener((sp, key) -> {
+                if (key != null && (key.startsWith("location_") || key.startsWith("embed_location")
+                        || key.startsWith("watermark_location") || key.startsWith("motion_"))) {
+                    updateGpsWarningBanner();
+                }
+            });
 
         btnFullscreenPreview = view.findViewById(R.id.btnFullscreenPreview);
         btnCaptureShotPreview = view.findViewById(R.id.btnCaptureShotPreview);
