@@ -78,6 +78,14 @@ public class FragmentedMp4MuxerWrapper {
     private long initSegmentFilePosition = -1;
     private long cumulativeDurationUs = 0;
 
+    // Hybrid MP4 finalization: track fragment positions and per-track sample
+    // counts so we can build correct stco/stsc entries in the final moov.
+    private final java.util.List<Long> fragmentPositions = new java.util.ArrayList<>();
+    private final java.util.List<Integer> fragmentAudioCounts = new java.util.ArrayList<>();
+    private final java.util.List<Integer> fragmentVideoCounts = new java.util.ArrayList<>();
+    private final java.util.List<Integer> fragmentAudioOffsets = new java.util.ArrayList<>();
+    private final java.util.List<Integer> fragmentVideoOffsets = new java.util.ArrayList<>();
+
     /**
      * Creates a FragmentedMp4MuxerWrapper with a file path.
      *
@@ -354,14 +362,7 @@ public class FragmentedMp4MuxerWrapper {
                 // Media3's FragmentedMp4Muxer.close() automatically creates the final fragment
                 // and finalizes all track durations. No need to manually write EOS samples.
                 muxer.close();
-
-                // Patch mvhd.duration so gallery apps (Instagram, etc.) see
-                // correct duration instead of 00:00.  fMP4 spec allows mvhd.duration=0
-                // but consumer apps parse only the moov atom, not fragments.
-                patchMvhdDuration();
-
-                // CRITICAL: Mark as not started so release() does not attempt a second muxer.close(),
-                // which would corrupt the file with a duplicate/empty final fragment.
+                performHybridFinalization();
                 started = false;
                 FLog.d(TAG, "Muxer stopped successfully");
             } catch (MuxerException e) {
@@ -684,6 +685,119 @@ public class FragmentedMp4MuxerWrapper {
     }
 
     /**
+     * Extracts per-track sample counts and trun data offsets from a fragment's
+     * moof box, needed to build stco/stsc entries in the final moov.
+     */
+    private void parseFragmentForFinalization(byte[] data) {
+        try {
+            int moofSize = readIntBE(data, 0);
+            int audioCnt = 0, videoCnt = 0, audioOff = 0, videoOff = 0;
+            int pos = 8;
+            int mfhdSz = readIntBE(data, pos);
+            if (mfhdSz < 12) return;
+            pos += mfhdSz;
+            while (pos + 8 <= moofSize) {
+                int s = readIntBE(data, pos), t = readIntBE(data, pos + 4);
+                if (s < 8 || pos + s > moofSize) break;
+                if (t == 0x74726166) { // 'traf'
+                    int[] r = findTrun(data, pos + 8, s - 8);
+                    if (r != null) {
+                        if (r[0] == 1) { audioCnt = r[1]; audioOff = r[2]; }
+                        else { videoCnt = r[1]; videoOff = r[2]; }
+                    }
+                }
+                pos += s;
+            }
+            fragmentAudioCounts.add(audioCnt);
+            fragmentVideoCounts.add(videoCnt);
+            fragmentAudioOffsets.add(audioOff);
+            fragmentVideoOffsets.add(videoOff);
+        } catch (Exception ignore) {}
+    }
+
+    private static int readIntBE(byte[] d, int off) {
+        return ((d[off]&0xFF)<<24)|((d[off+1]&0xFF)<<16)|((d[off+2]&0xFF)<<8)|(d[off+3]&0xFF);
+    }
+
+    private static int[] findTrun(byte[] d, int start, int len) {
+        int pos = start, tid = 0;
+        while (pos + 8 <= start + len) {
+            int s = readIntBE(d, pos), t = readIntBE(d, pos + 4);
+            if (s < 8 || pos + s > start + len) break;
+            if (t == 0x74666864) tid = readIntBE(d, pos + 12);      // 'tfhd' → track_ID (after version/flags)
+            else if (t == 0x7472756E)                                 // 'trun'
+                return new int[]{tid, readIntBE(d, pos + 12),         // sample_count
+                                       readIntBE(d, pos + 16)};      // data_offset
+            pos += s;
+        }
+        return null;
+    }
+
+    /**
+     * Hybrid MP4 finalization: appends a complete moov box with sample
+     * tables at the end of the file and overwrites the free placeholder
+     * between ftyp and moov with an mdat header.  The file becomes a
+     * standard MP4 without copying any media data.  On failure the
+     * original fMP4 is left intact.
+     */
+    private void performHybridFinalization() {
+        FLog.d(TAG, "performHybridFinalization START — fragments=" + fragmentPositions.size());
+        patchMvhdDuration();
+        if (fragmentPositions.isEmpty() || initSegmentData == null || fileOutputStream == null) return;
+        try {
+            java.nio.channels.FileChannel ch = fileOutputStream.getChannel();
+            java.util.List<Long> aOff = new java.util.ArrayList<>();
+            java.util.List<Integer> aCnt = new java.util.ArrayList<>();
+            java.util.List<Long> vOff = new java.util.ArrayList<>();
+            java.util.List<Integer> vCnt = new java.util.ArrayList<>();
+            for (int i = 0; i < fragmentPositions.size(); i++) {
+                long fragPos = fragmentPositions.get(i);
+                int aoff = i < fragmentAudioOffsets.size() ? fragmentAudioOffsets.get(i) : 0;
+                int voff = i < fragmentVideoOffsets.size() ? fragmentVideoOffsets.get(i) : 0;
+                int acnt = i < fragmentAudioCounts.size() ? fragmentAudioCounts.get(i) : 0;
+                int vcnt = i < fragmentVideoCounts.size() ? fragmentVideoCounts.get(i) : 0;
+                if (acnt > 0 && aoff > 0) { aOff.add(fragPos + aoff); aCnt.add(acnt); }
+                if (vcnt > 0 && voff > 0) { vOff.add(fragPos + voff); vCnt.add(vcnt); }
+            }
+            java.nio.ByteBuffer moov = muxer.buildFinalMoov(aOff, aCnt, vOff, vCnt);
+            long moovPos = ch.size();
+            int moovSize = moov.remaining();
+            ch.position(moovPos);
+            ch.write(moov);
+            // Overwrite free box with mdat header
+            int ftypSize = readIntBE(initSegmentData, 0);
+            long freePos = initSegmentFilePosition + ftypSize;
+            long mdatEnd = moovPos;
+            long mdatStart = freePos + 16;
+            // Patch free box with mdat header.
+            // mdat total size = from header start to moov start
+            long mdatSize = mdatEnd - freePos;
+            if (mdatSize <= Integer.MAX_VALUE) {
+                java.nio.ByteBuffer hdr = java.nio.ByteBuffer.allocate(8);
+                hdr.putInt((int) mdatSize);
+                hdr.putInt(0x6D646174); // 'mdat'
+                hdr.flip();
+                ch.position(freePos);
+                ch.write(hdr);
+                FLog.i(TAG, "Hybrid MP4 finalized: " + fragmentPositions.size()
+                        + " fragments, moov=" + moovSize + "B, mdat(32bit)=" + mdatSize + "B");
+            } else {
+                java.nio.ByteBuffer hdr = java.nio.ByteBuffer.allocate(16);
+                hdr.putInt(1);
+                hdr.putLong(mdatEnd - mdatStart + 16);
+                hdr.putInt(0x6D646174);
+                hdr.flip();
+                ch.position(freePos);
+                ch.write(hdr);
+                FLog.i(TAG, "Hybrid MP4 finalized: " + fragmentPositions.size()
+                        + " fragments, moov=" + moovSize + "B, mdat(64bit)=" + mdatSize + "B");
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Hybrid finalization failed — fMP4 left intact", e);
+        }
+    }
+
+    /**
      * Handles processed segments from the patched Media3 muxer.
      * 
      * @param segment ProcessedSegment containing either init segment or media fragment
@@ -777,6 +891,12 @@ public class FragmentedMp4MuxerWrapper {
                 
                 // Write to file — per-fragment flush for SAF visibility.
                 if (shouldSaveToDisk && fileOutputStream != null) {
+                    // Track fragment position and parse moof for Hybrid MP4 finalization
+                    try {
+                        long pos = fileOutputStream.getChannel().position();
+                        fragmentPositions.add(pos);
+                        parseFragmentForFinalization(data);
+                    } catch (IOException ignore) {}
                     fileOutputStream.write(data);
                     fileOutputStream.flush();
                     // Fragment written log removed

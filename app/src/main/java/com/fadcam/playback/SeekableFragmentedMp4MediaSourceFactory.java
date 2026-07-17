@@ -20,6 +20,7 @@ import androidx.media3.exoplayer.source.ClippingMediaSource;
 import androidx.media3.exoplayer.source.MediaSource;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
 import androidx.media3.extractor.ChunkIndex;
+import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.extractor.Extractor;
 import androidx.media3.extractor.ExtractorInput;
 import androidx.media3.extractor.ExtractorOutput;
@@ -113,11 +114,10 @@ public class SeekableFragmentedMp4MediaSourceFactory {
             }
         }
 
-        // Create the ExtractorsFactory with our index
+        // Create the ExtractorsFactory — use standard Mp4Extractor for
+        // non-fragmented files, our FragmentedMp4Extractor wrapper only for fMP4.
         final FragmentedMp4IndexBuilder.FragmentIndex index = fragmentIndex;
-        ExtractorsFactory extractorsFactory = () -> new Extractor[] {
-            new SeekMapInjectingExtractor(index)
-        };
+        ExtractorsFactory extractorsFactory = extractorsFactoryFor(index);
 
         // Create ProgressiveMediaSource with our custom extractor
         DataSource.Factory dataSourceFactory = new FileDataSource.Factory();
@@ -159,9 +159,7 @@ public class SeekableFragmentedMp4MediaSourceFactory {
             MediaItem fileItem = MediaItem.fromUri(fileUri);
 
             final FragmentedMp4IndexBuilder.FragmentIndex index = fragmentIndex;
-            ExtractorsFactory extractorsFactory = () -> new Extractor[] {
-                new SeekMapInjectingExtractor(index)
-            };
+            ExtractorsFactory extractorsFactory = extractorsFactoryFor(index);
 
             DataSource.Factory dataSourceFactory = new FileDataSource.Factory();
             return new ProgressiveMediaSource.Factory(dataSourceFactory, extractorsFactory)
@@ -209,36 +207,42 @@ public class SeekableFragmentedMp4MediaSourceFactory {
             }
         }
 
-        // Fallback 2: ClippingMediaSource with DefaultDataSource
-        FLog.d(TAG, "Could not build index, using ClippingMediaSource fallback");
-        long durationUs = getDurationFromRetriever(uri);
-
-        // DefaultDataSource handles content:// URIs natively
-        DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(context);
-
-        ExtractorsFactory extractorsFactory = () -> new Extractor[] {
-            new SeekMapInjectingExtractor(null)
-        };
-
-        MediaSource baseSource = new ProgressiveMediaSource.Factory(
-                dataSourceFactory, extractorsFactory)
-                .createMediaSource(mediaItem);
-
-        if (durationUs > 0) {
-            FLog.d(TAG, "Content URI fMP4: ClippingMediaSource duration=" +
-                  (durationUs / 1_000_000.0) + "s");
-            return new ClippingMediaSource(
-                    baseSource,
-                    /* startPositionUs= */ 0,
-                    /* endPositionUs= */ durationUs,
-                    /* enableInitialDiscontinuity= */ false,
-                    /* allowDynamicClippingUpdates= */ true,
-                    /* relativeToDefaultPosition= */ false
-            );
+        // Fallback 2: For fMP4 without a file-level index, wrap with
+        // ClippingMediaSource.  For standard MP4 use the default extractor
+        // — Mp4Extractor provides a proper seek map natively.
+        FLog.d(TAG, "Could not build index, using fallback source");
+        boolean isFmp4 = isFragmentedMp4ContentUri(uri);
+        if (isFmp4) {
+            long durationUs = getDurationFromRetriever(uri);
+            DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(context);
+            ExtractorsFactory extractorsFactory = () -> new Extractor[] {
+                new SeekMapInjectingExtractor(null)
+            };
+            MediaSource baseSource = new ProgressiveMediaSource.Factory(
+                    dataSourceFactory, extractorsFactory)
+                    .createMediaSource(mediaItem);
+            if (durationUs > 0) {
+                FLog.d(TAG, "Content URI fMP4: ClippingMediaSource duration=" +
+                      (durationUs / 1_000_000.0) + "s");
+                return new ClippingMediaSource(
+                        baseSource,
+                        /* startPositionUs= */ 0,
+                        /* endPositionUs= */ durationUs,
+                        /* enableInitialDiscontinuity= */ false,
+                        /* allowDynamicClippingUpdates= */ true,
+                        /* relativeToDefaultPosition= */ false
+                );
+            }
+            FLog.w(TAG, "Content URI fMP4: could not determine duration, using raw source");
+            return baseSource;
+        } else {
+            // Standard MP4: DefaultExtractorsFactory provides Mp4Extractor with
+            // native duration and seek map support.
+            FLog.d(TAG, "Standard MP4 fallback: using DefaultExtractorsFactory");
+            DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(context);
+            return new ProgressiveMediaSource.Factory(dataSourceFactory)
+                    .createMediaSource(mediaItem);
         }
-
-        FLog.w(TAG, "Content URI fMP4: could not determine duration, using raw source");
-        return baseSource;
     }
 
     /**
@@ -338,6 +342,25 @@ public class SeekableFragmentedMp4MediaSourceFactory {
             }
         }
         return C.TIME_UNSET;
+    }
+
+    /**
+     * Returns an {@link ExtractorsFactory} appropriate for the given fragment index.
+     * <p>
+     * For fMP4 (index with fragments): uses {@link SeekMapInjectingExtractor} which
+     * extends {@link FragmentedMp4Extractor} for proper moof/mdat parsing.
+     * <p>
+     * For standard MP4 (empty or null index): uses {@link DefaultExtractorsFactory}
+     * which provides {@link Mp4Extractor} — handles stbl-based moov natively.
+     */
+    @NonNull
+    private ExtractorsFactory extractorsFactoryFor(
+            @Nullable FragmentedMp4IndexBuilder.FragmentIndex index) {
+        if (index != null && !index.fragments.isEmpty()) {
+            final FragmentedMp4IndexBuilder.FragmentIndex idx = index;
+            return () -> new Extractor[] { new SeekMapInjectingExtractor(idx) };
+        }
+        return new DefaultExtractorsFactory();
     }
 
     /**
