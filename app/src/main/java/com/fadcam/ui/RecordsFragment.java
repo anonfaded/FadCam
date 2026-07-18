@@ -2083,9 +2083,13 @@ public class RecordsFragment extends BaseFragment implements
             syncDeletionUiFromStore(true);
             
             // Always delta-scan on reappear to pick up new files (QR scans, shots, etc.)
+            // Invalidate the index FIRST so the delta scan finds new files even
+            // when videoItems is not empty (loadRecordsList skips if list is non-empty
+            // and forceReload is false).
+            com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
             if (!isLoading && recordsAdapter != null && recordsAdapter.getItemCount() > 0) {
                 FLog.d(TAG, "onHiddenChanged: running delta scan for new items");
-                loadRecordsList();
+                loadRecordsList(true);
             } else if (!isLoading) {
                 FLog.i(TAG, "onHiddenChanged: Need to refresh data");
                 loadRecordsList();

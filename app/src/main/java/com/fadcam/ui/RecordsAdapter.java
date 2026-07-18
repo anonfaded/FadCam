@@ -379,11 +379,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         final boolean allowGeneralInteractions = !isProcessing;
         final boolean allowMenuClick = allowGeneralInteractions && !this.isSelectionModeActive;
 
-        // Only log for debugging specific positions to reduce spam
-        if (position < 3 || position % 20 == 0) {
-            FLog.v(TAG, "onBindViewHolder Pos " + position + ": Name=" + displayName);
-        }
-
         // --- 3. Bind Standard Data, optimized for fewer UI operations ---
         if (holder.textViewSerialNumber != null)
             holder.textViewSerialNumber.setText(String.valueOf(entry.serialNumber));
@@ -435,7 +430,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     materialCardView.setStrokeWidth(dpToPx(1));
                 }
 
-                FLog.d(TAG, "Setting Home rail card background for records at position " + position);
             }
 
             if (holder.menuButton != null) {
@@ -1024,7 +1018,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 if (bitmap != null) {
                     holder.imageViewThumbnail.setImageBitmap(bitmap);
                     holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                    FLog.v(TAG, "Loaded thumbnail from cache for: " + uriString);
                     return;
                 }
             } catch (Exception e) {
@@ -2516,11 +2509,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
         
         if (safeMediaProbeMode) {
-            FLog.d(TAG, "probe_mode=safe_mmr uri=" + videoUri);
             return getVideoDurationWithMmr(videoUri, "safe_mmr");
         }
 
-        FLog.d(TAG, "probe_mode=ffprobe uri=" + videoUri);
         // Get file path for FFprobe - try multiple approaches for content:// URIs
         String filePath = getFFprobePathForUri(videoUri);
         

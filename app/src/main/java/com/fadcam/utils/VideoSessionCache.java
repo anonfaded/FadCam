@@ -60,7 +60,6 @@ public class VideoSessionCache {
      */
     private static synchronized void initializeCacheIfNeeded(com.fadcam.SharedPreferencesManager sharedPrefs) {
         if (sCacheInitialized) {
-            FLog.v(TAG, "Cache already initialized, skipping");
             return;
         }
         
@@ -90,11 +89,7 @@ public class VideoSessionCache {
      * @return true if cache exists and should be used
      */
     public static synchronized boolean isSessionCacheValid() {
-        boolean valid = sSessionCachedVideos != null && !sForceRefreshOnNextAccess;
-        FLog.v(TAG, "CACHE CHECK: isSessionCacheValid=" + valid + 
-                   " (videos=" + (sSessionCachedVideos != null ? sSessionCachedVideos.size() : "null") + 
-                   ", forceRefresh=" + sForceRefreshOnNextAccess + ")");
-        return valid;
+        return sSessionCachedVideos != null && !sForceRefreshOnNextAccess;
     }
     
     /**
@@ -103,10 +98,7 @@ public class VideoSessionCache {
      */
     public static synchronized boolean hasCachedData(com.fadcam.SharedPreferencesManager sharedPrefs) {
         initializeCacheIfNeeded(sharedPrefs);
-        boolean hasData = sCachedVideoCount > 0 && !sForceRefreshOnNextAccess;
-        FLog.v(TAG, "CACHE CHECK: hasCachedData=" + hasData + 
-                   " (count=" + sCachedVideoCount + ", forceRefresh=" + sForceRefreshOnNextAccess + ")");
-        return hasData;
+        return sCachedVideoCount > 0 && !sForceRefreshOnNextAccess;
     }
     
     /**
@@ -469,7 +461,6 @@ public class VideoSessionCache {
         if (uriString == null || thumbnailData == null) return;
         
         getThumbnailCache().put(uriString, thumbnailData);
-        FLog.v(TAG, "Cached thumbnail for: " + uriString + " (" + thumbnailData.length + " bytes)");
     }
     
     /**
@@ -477,12 +468,7 @@ public class VideoSessionCache {
      */
     public static byte[] getCachedThumbnail(String uriString) {
         if (uriString == null) return null;
-        
-        byte[] thumbnail = getThumbnailCache().get(uriString);
-        if (thumbnail != null) {
-            FLog.v(TAG, "Thumbnail cache hit for: " + uriString);
-        }
-        return thumbnail;
+        return getThumbnailCache().get(uriString);
     }
     
     /**
@@ -513,7 +499,6 @@ public class VideoSessionCache {
                 try (FileOutputStream fos = new FileOutputStream(thumbnailFile)) {
                     fos.write(thumbnailData);
                     fos.flush();
-                    FLog.v(TAG, "Saved thumbnail to disk: " + filename);
                 }
             } catch (Exception e) {
                 FLog.e(TAG, "Error saving thumbnail to disk", e);
@@ -539,7 +524,6 @@ public class VideoSessionCache {
             try (FileInputStream fis = new FileInputStream(thumbnailFile)) {
                 byte[] data = new byte[(int) thumbnailFile.length()];
                 fis.read(data);
-                FLog.v(TAG, "Loaded thumbnail from disk: " + filename);
                 return data;
             }
         } catch (Exception e) {
