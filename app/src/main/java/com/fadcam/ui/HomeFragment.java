@@ -5372,7 +5372,9 @@ public class HomeFragment extends BaseFragment {
         boolean serviceRunning = isMyServiceRunning(RecordingService.class);
         boolean allowStartFromPreviewOnly =
             serviceRunning && isPreviewOnlyActive;
-        if (serviceRunning && !allowStartFromPreviewOnly) {
+        // When recordingState is NONE the service is idle (or cleaning up) —
+        // allow start regardless of isMyServiceRunning.
+        if (serviceRunning && !allowStartFromPreviewOnly && recordingState != RecordingState.NONE) {
             FLog.w(
                 TAG,
                 "Start requested, but service appears to be already running or starting. Current state: " +
@@ -5570,7 +5572,9 @@ public class HomeFragment extends BaseFragment {
         boolean serviceRunning = isMyServiceRunning(RecordingService.class);
         boolean allowStartFromPreviewOnly =
             serviceRunning && isPreviewOnlyActive;
-        if (serviceRunning && !allowStartFromPreviewOnly) {
+        // When recordingState is NONE the service is idle (or cleaning up) —
+        // allow start regardless of isMyServiceRunning.
+        if (serviceRunning && !allowStartFromPreviewOnly && recordingState != RecordingState.NONE) {
             FLog.w(
                 TAG,
                 "Start requested, but service appears to be already running or starting. Current state: " +

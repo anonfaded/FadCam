@@ -1218,6 +1218,9 @@ public class RecordingService extends Service {
             if (recordingState == RecordingState.NONE) {
                 // Update the UI and Service state atomically
                 recordingState = RecordingState.STARTING;
+                // Clear a stale stopping flag from a previous recording that
+                // may still be cleaning up asynchronously on a background thread.
+                isStopping = false;
                 clearRecordingTimelineState();
                 sharedPreferencesManager.setRecordingInProgress(true);
                 CameraType selectedType = sharedPreferencesManager.getCameraSelection();
@@ -2018,14 +2021,24 @@ public class RecordingService extends Service {
                         currentSegmentParcelFileDescriptor = null;
                     }
                     // -----
-                    // Check if service can stop
-                    checkIfServiceCanStop();
+                    // Check if service can stop — but ONLY if no new recording
+                    // started during cleanup.  The GL pipeline finalisation
+                    // (audio drain, muxer close) can take >1 s, and the user
+                    // may have tapped "record" again in the meantime.
+                    if (recordingState == RecordingState.NONE) {
+                        checkIfServiceCanStop();
+                    } else {
+                        FLog.d(TAG, "Skipping service stop — new recording started during cleanup (state=" + recordingState + ")");
+                    }
 
                     // Reset stopping flag
                     isStopping = false;
 
-                    // Clear any pending recording start flag
-                    pendingStartRecording = false;
+                    // Clear any pending recording start flag — only if no
+                    // new recording is in progress
+                    if (recordingState == RecordingState.NONE) {
+                        pendingStartRecording = false;
+                    }
 
                     // Send broadcast to notify that recording is complete so RecordsFragment can
                     // refresh
@@ -3966,8 +3979,21 @@ public class RecordingService extends Service {
             FLog.e(TAG, "createCameraPreviewSession: cameraDevice is null!");
             if (previewOnlyActive) {
                 stopPreviewOnlyMode();
+            } else if (recordingState == RecordingState.IN_PROGRESS) {
+                // Camera disappeared during active recording — the recording
+                // pipeline is likely already handling this.  Do NOT call
+                // stopRecording() again as that spawns a duplicate cleanup
+                // thread that fights with the existing one.
+                FLog.w(TAG, "createCameraPreviewSession: cameraDevice null during IN_PROGRESS — skipping");
+                return;
+            } else if (recordingState == RecordingState.STARTING) {
+                // Camera failed during startup — abort cleanly
+                recordingState = RecordingState.NONE;
+                sharedPreferencesManager.setRecordingInProgress(false);
+                stopSelf();
+                return;
             } else {
-                stopRecording(); // Cannot create session without camera
+                stopRecording();
             }
             return;
         }
@@ -4025,7 +4051,7 @@ public class RecordingService extends Service {
                 FLog.d(TAG, "[RECORDING] Server OFF — using full FPS from settings: " + targetFrameRate + "fps");
             }
             
-            boolean isHighFrameRate = targetFrameRate >= 60;
+            boolean isHighFrameRate = targetFrameRate >= 120;
             boolean useHighSpeedSession = false;
             Size selected = sharedPreferencesManager.getCameraResolution();
             maybeAttachMotionAnalysisSurface(surfaces, targetFrameRate);
@@ -4113,7 +4139,7 @@ public class RecordingService extends Service {
             DeviceHelper.logDeviceInfo();
 
             // Check if we need to use high-speed session for 60fps+ recording
-            boolean isHighFrameRate = targetFrameRate >= 60;
+            boolean isHighFrameRate = targetFrameRate >= 120;
             boolean useHighSpeedSession = false;
 
             // Continue with existing code...

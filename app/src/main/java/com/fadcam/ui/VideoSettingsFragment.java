@@ -703,119 +703,98 @@ public class VideoSettingsFragment extends Fragment {
         if (type != null && type.isDual()) {
             type = CameraType.BACK;
         }
-        // First return cached list if available
-        if (type == CameraType.FRONT && !cachedResolutionsFront.isEmpty())
-            return cachedResolutionsFront;
-        if (type == CameraType.BACK && !cachedResolutionsBack.isEmpty())
+
+        // Build the resolution list from the INTERSECTION of BOTH cameras'
+        // SurfaceTexture output sizes.  FadCam uses SurfaceTexture for the
+        // GL pipeline, not MediaRecorder, so we query SurfaceTexture.class.
+        // Intersection guarantees that every listed resolution works on both
+        // cameras, making live switching during recording safe.
+        //
+        // Cache the result once — it's the same for both cameras.
+        if (!cachedResolutionsBack.isEmpty())
             return cachedResolutionsBack;
 
-        // New approach: enumerate raw supported sizes from StreamConfigurationMap so
-        // that
-        // smaller legacy/sub-SD resolutions (e.g. 320x240, 352x288, 426x240) not tied
-        // to a specific
-        // CamcorderProfile constant are still exposed to the user. The previous
-        // implementation only
-        // surfaced sizes that exactly matched a CamcorderProfile, resulting in seeing
-        // just SD/HD/FHD.
-        List<Size> supported = new ArrayList<>();
-        try {
-            String cameraId = getActualCameraIdForType(type);
-            if (cameraId != null) {
-                supported = getSupportedVideoSizesForCamera(cameraId); // already filtered by isReasonableVideoSize
-            }
-        } catch (Exception e) {
-            FLog.w(TAG, "Direct supported size enumeration failed, falling back", e);
-        }
-
-        if (supported == null)
-            supported = new ArrayList<>();
-
-        // Curate: intersect with canonical list to avoid overwhelming user with every
-        // sensor mode.
-        // Canonical ordered list from highest to lowest + legacy "super low" requests.
         final String[] CANONICAL = {
                 "7680x4320", // 8K
                 "3840x2160", // 4K
                 "2560x1440", // 2K
                 "1920x1080", // FHD
                 "1280x720", // HD
-                "854x480", // 480p widescreen (may not have label)
-                "720x480", // SD (widescreen-ish 3:2)
-                "640x480", // SD 4:3
-                "480x360", // legacy lower SD
-                "426x240", // 240p widescreen
-                "352x288", // CIF
-                "320x240" // QVGA
+                "854x480",
+                "720x480",
+                "640x480",
+                "480x360",
+                "426x240",
+                "352x288",
+                "320x240"
         };
-        Set<String> supportedSet = new HashSet<>();
-        for (Size s : supported) {
-            supportedSet.add(s.getWidth() + "x" + s.getHeight());
+        Set<String> canonicalSet = new HashSet<>(java.util.Arrays.asList(CANONICAL));
+
+        // ── 1. Gather SurfaceTexture output sizes for both cameras ──
+        Set<String> backSizes = new HashSet<>();
+        Set<String> frontSizes = new HashSet<>();
+        try {
+            for (CameraType ct : new CameraType[]{CameraType.BACK, CameraType.FRONT}) {
+                String camId = getActualCameraIdForType(ct);
+                if (camId == null) continue;
+                CameraManager mgr = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+                CameraCharacteristics chars = mgr.getCameraCharacteristics(camId);
+                StreamConfigurationMap map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                if (map == null) continue;
+                Size[] sizes = map.getOutputSizes(android.graphics.SurfaceTexture.class);
+                if (sizes == null) continue;
+                for (Size s : sizes) {
+                    if (isReasonableVideoSize(s)) {
+                        String key = s.getWidth() + "x" + s.getHeight();
+                        (ct == CameraType.BACK ? backSizes : frontSizes).add(key);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Resolution intersection: error reading camera sizes", e);
         }
 
+        // ── 2. Intersection = sizes both cameras can output via SurfaceTexture ──
+        Set<String> commonSizes = new HashSet<>(backSizes);
+        commonSizes.retainAll(frontSizes);
+
+        // ── 3. Canonical sizes that appear in the intersection ──
         List<Size> curated = new ArrayList<>();
-        // FIX: Remove CamcorderProfile requirement - FadCam uses MediaCodec (GLRecordingPipeline)
-        // directly, not MediaRecorder, so all hardware-supported resolutions should work.
-        // The old approach filtered out valid resolutions (e.g., front camera 4K on Xiaomi 15)
-        // because they lacked a matching CamcorderProfile even though the camera supports them.
-        // See GitHub issues #239, #204 for user reports.
         for (String dim : CANONICAL) {
-            if (!supportedSet.contains(dim))
-                continue; // hardware doesn't advertise it
+            if (!commonSizes.contains(dim)) continue;
             try {
                 String[] parts = dim.split("x");
-                Size candidate = new Size(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
-                curated.add(candidate);
-                FLog.d(TAG, "Resolution Validation: " + dim + " - SUPPORTED (hardware advertises it)");
+                curated.add(new Size(Integer.parseInt(parts[0]), Integer.parseInt(parts[1])));
+                FLog.d(TAG, "Resolution: " + dim + " — both cameras (SurfaceTexture)");
             } catch (Exception ignored) {
             }
         }
 
-        // Also add any non-canonical high-resolution sizes (>= 1080p) that the camera 
-        // supports but aren't in our canonical list. This ensures we don't miss
-        // device-specific resolutions like 3280x2464 on Pixel 6a or other unique sizes.
-        Set<String> canonicalSet = new HashSet<>(java.util.Arrays.asList(CANONICAL));
-        for (Size s : supported) {
-            String key = s.getWidth() + "x" + s.getHeight();
-            // Only add non-canonical sizes that are >= 1080p (to avoid cluttering with sensor-native weird sizes)
-            if (!canonicalSet.contains(key) && s.getWidth() >= 1920 && s.getHeight() >= 1080) {
-                boolean alreadyAdded = curated.stream().anyMatch(c -> c.getWidth() == s.getWidth() && c.getHeight() == s.getHeight());
-                if (!alreadyAdded) {
-                    curated.add(s);
-                    FLog.d(TAG, "Resolution Validation: " + key + " - SUPPORTED (non-canonical high-res)");
+        // ── 4. Non-canonical sizes (>=1080p) that appear in the intersection ──
+        for (String key : commonSizes) {
+            if (canonicalSet.contains(key)) continue;
+            try {
+                String[] parts = key.split("x");
+                int w = Integer.parseInt(parts[0]);
+                int h = Integer.parseInt(parts[1]);
+                if (w >= 1920 && h >= 1080) {
+                    curated.add(new Size(w, h));
+                    FLog.d(TAG, "Resolution: " + key + " — both cameras (non-canonical)");
                 }
+            } catch (Exception ignored) {
             }
-        }
-
-        // Ensure current saved resolution (if supported) appears even if non-canonical
-        try {
-            Size current = prefs.getCameraResolution();
-            String curKey = current.getWidth() + "x" + current.getHeight();
-            if (supportedSet.contains(curKey) && curated.stream()
-                    .noneMatch(s -> s.getWidth() == current.getWidth() && s.getHeight() == current.getHeight())) {
-                curated.add(0, current); // put at top to keep visible
-            }
-        } catch (Exception ignored) {
         }
 
         if (!curated.isEmpty()) {
-            // Sort by area desc (except we already placed current earlier if injected)
-            try {
-                Collections.sort(curated, (a, b) -> Long.compare((long) b.getWidth() * b.getHeight(),
-                        (long) a.getWidth() * a.getHeight()));
-            } catch (Exception ignored) {
-            }
-            // Auto-correct saved preference if it's no longer valid (e.g., user had 4K
-            // selected but profile absent)
+            Collections.sort(curated, (a, b) -> Long.compare(
+                    (long) b.getWidth() * b.getHeight(), (long) a.getWidth() * a.getHeight()));
+
+            // Auto-correct saved preference if it became invalid
             try {
                 Size saved = prefs.getCameraResolution();
-                boolean found = false;
-                for (Size s : curated) {
-                    if (s.getWidth() == saved.getWidth() && s.getHeight() == saved.getHeight()) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) { // downgrade to first (highest) valid size
+                boolean found = curated.stream().anyMatch(
+                        s -> s.getWidth() == saved.getWidth() && s.getHeight() == saved.getHeight());
+                if (!found) {
                     Size fallback = curated.get(0);
                     prefs.sharedPreferences.edit()
                             .putInt(Constants.PREF_VIDEO_RESOLUTION_WIDTH, fallback.getWidth())
@@ -824,35 +803,27 @@ public class VideoSettingsFragment extends Fragment {
                 }
             } catch (Exception ignored) {
             }
-            if (type == CameraType.FRONT)
-                cachedResolutionsFront = curated;
-            else
-                cachedResolutionsBack = curated;
+
+            // Same list for both cameras
+            cachedResolutionsBack = curated;
+            cachedResolutionsFront = curated;
             return curated;
         }
 
-        // Fallback: legacy profile-derived approach (should rarely be needed now and
-        // will still be curated upstream)
+        // Fallback to legacy profile-based approach
         List<CamcorderProfile> profiles = getCamcorderProfilesForTypeInternal(type);
         List<Size> sizes = new ArrayList<>();
         if (profiles != null) {
             for (CamcorderProfile p : profiles) {
-                if (p != null) {
-                    sizes.add(new Size(p.videoFrameWidth, p.videoFrameHeight));
-                }
+                if (p != null) sizes.add(new Size(p.videoFrameWidth, p.videoFrameHeight));
             }
         }
         Set<Size> uniq = new HashSet<>(sizes);
         List<Size> list = new ArrayList<>(uniq);
-        try {
-            Collections.sort(list,
-                    (a, b) -> Long.compare((long) b.getWidth() * b.getHeight(), (long) a.getWidth() * a.getHeight()));
-        } catch (Exception ignored) {
-        }
-        if (type == CameraType.FRONT)
-            cachedResolutionsFront = list;
-        else
-            cachedResolutionsBack = list;
+        Collections.sort(list, (a, b) -> Long.compare(
+                (long) b.getWidth() * b.getHeight(), (long) a.getWidth() * a.getHeight()));
+        cachedResolutionsBack = list;
+        cachedResolutionsFront = list;
         return list;
         // method(getCompatiblesVideoResolutions)-----------
     }
@@ -890,21 +861,52 @@ public class VideoSettingsFragment extends Fragment {
             StreamConfigurationMap configMap = characteristics
                     .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             if (configMap != null) {
+                // Query both MediaRecorder (for reference) and SurfaceTexture (what we actually use).
+                // Some cameras (e.g. Pixel 7 Pro front) list 4K only for certain output classes.
                 Size[] videoSizes = configMap.getOutputSizes(MediaRecorder.class);
-                if (videoSizes != null) {
-                    Arrays.sort(videoSizes, (s1, s2) -> Long.compare((long) s2.getWidth() * s2.getHeight(),
-                            (long) s1.getWidth() * s1.getHeight()));
-                    
-                    // Log all supported video sizes for diagnosis
-                    FLog.d(TAG, "Video Sizes: Camera " + cameraId + " supports " + videoSizes.length + " video resolutions:");
-                    for (Size size : videoSizes) {
-                        FLog.d(TAG, "Video Sizes: " + size.getWidth() + "x" + size.getHeight() + 
-                              " (reasonable: " + isReasonableVideoSize(size) + ")");
+                Size[] surfaceSizes = configMap.getOutputSizes(android.graphics.SurfaceTexture.class);
+                List<Size> merged = new ArrayList<>();
+                if (videoSizes != null) Collections.addAll(merged, videoSizes);
+                if (surfaceSizes != null) {
+                    for (Size s : surfaceSizes) {
+                        boolean exists = merged.stream().anyMatch(
+                                m -> m.getWidth() == s.getWidth() && m.getHeight() == s.getHeight());
+                        if (!exists) merged.add(s);
                     }
-                    
-                    for (Size size : videoSizes) {
-                        if (isReasonableVideoSize(size))
-                            supportedSizes.add(size);
+                }
+                merged.sort((s1, s2) -> Long.compare((long) s2.getWidth() * s2.getHeight(),
+                        (long) s1.getWidth() * s1.getHeight()));
+                
+                FLog.d(TAG, "Video Sizes: Camera " + cameraId + " supports " + merged.size() + " video resolutions:");
+                for (Size size : merged) {
+                    FLog.d(TAG, "Video Sizes: " + size.getWidth() + "x" + size.getHeight() + 
+                          " (reasonable: " + isReasonableVideoSize(size) + ")");
+                }
+                
+                for (Size size : merged) {
+                    if (isReasonableVideoSize(size))
+                        supportedSizes.add(size);
+                }
+            }
+            // Also query the maximum-resolution stream config map (Android 12+).
+            // Some devices (e.g. Pixel 7 Pro front camera) only list 4K here.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                StreamConfigurationMap maxResMap = characteristics
+                        .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP_MAXIMUM_RESOLUTION);
+                if (maxResMap != null) {
+                    Size[] maxResSizes = maxResMap.getOutputSizes(MediaRecorder.class);
+                    if (maxResSizes != null) {
+                        for (Size size : maxResSizes) {
+                            if (isReasonableVideoSize(size)) {
+                                String key = size.getWidth() + "x" + size.getHeight();
+                                boolean exists = supportedSizes.stream()
+                                        .anyMatch(s -> s.getWidth() == size.getWidth() && s.getHeight() == size.getHeight());
+                                if (!exists) {
+                                    supportedSizes.add(size);
+                                    FLog.d(TAG, "Video Sizes (max-res): " + key + " - added from maximum resolution map");
+                                }
+                            }
+                        }
                     }
                 }
             }

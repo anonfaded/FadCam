@@ -778,13 +778,16 @@ public class GLWatermarkRenderer {
                         int eglErr = EGL14.eglGetError();
                         FLog.e(TAG, "Failed to create EGL surface for preview, eglError=0x"
                                 + Integer.toHexString(eglErr));
-                        // Backoff a bit before next attempt
-                        previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L; // 200ms
+                        // If the native window is already connected (EGL_BAD_ALLOC /
+                        // EGL_BAD_NATIVE_WINDOW), retrying won't help — wait for the
+                        // caller to provide a fresh surface via setPreviewSurface().
+                        // Use a long backoff to avoid spamming the log.
+                        previewCreateRetryDeadlineNs = System.nanoTime() + 5_000_000_000L; // 5s
                         return;
                     }
                 } catch (Exception e) {
                     FLog.e(TAG, "Exception creating EGL surface for preview", e);
-                    previewCreateRetryDeadlineNs = System.nanoTime() + 200_000_000L;
+                    previewCreateRetryDeadlineNs = System.nanoTime() + 5_000_000_000L; // 5s
                     return;
                 }
             }

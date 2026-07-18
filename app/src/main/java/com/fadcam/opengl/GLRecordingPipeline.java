@@ -743,9 +743,17 @@ public class GLRecordingPipeline {
                 } catch (Throwable ignore) {
                 }
                 
-                // Reset timestamp tracking at recording start
-                recordingStartTimeNanos = -1;  // Will be initialized on first VIDEO frame
-                recordingStartSystemTimeNanos = System.nanoTime(); // Initialize for AUDIO thread reference NOW
+                // Reset timestamp tracking at recording start — only on the very
+                // first start.  During a camera-switch reconfiguration,
+                // startRecording() may be called again while isRecording is
+                // temporarily false, but the timestamp base must NOT change
+                // or audio/video PTS values will jump by hours.
+                recordingStartTimeNanos = -1;
+                synchronized (timestampLock) {
+                    if (recordingStartSystemTimeNanos == -1) {
+                        recordingStartSystemTimeNanos = System.nanoTime();
+                    }
+                }
 
                 // Make sure we have a valid renderer and surfaces
                 if (glRenderer == null || encoderInputSurface == null) {
@@ -2467,6 +2475,16 @@ public class GLRecordingPipeline {
 
         // Set recording flag to true to resume encoding frames
         isRecording = true;
+
+        // CRITICAL: Restart the drain loop.  During pause the DrainRunnable
+        // stops re-posting itself (line 1489: !isRecording → return without
+        // postDelayed).  Without this, audio/video encoder output buffers
+        // back up, the audio encoder stops accepting input, and all new audio
+        // data after resume is silently lost — the recorded file has audio
+        // only up to the pause point.
+        if (drainHandler != null) {
+            startDrainLoop();
+        }
 
         // Force an IDR (keyframe) on the very next video frame so that ExoPlayer
         // can seek into the post-resume segment without showing a still frame.
