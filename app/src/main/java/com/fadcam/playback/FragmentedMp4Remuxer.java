@@ -254,7 +254,6 @@ public class FragmentedMp4Remuxer {
             }
         }, log -> {
             // Log callback - could parse for progress
-            FLog.v(TAG, "FFmpeg: " + log.getMessage());
         }, statistics -> {
             // Progress callback
             if (callback != null && statistics.getTime() > 0) {

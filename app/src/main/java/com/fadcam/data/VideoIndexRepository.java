@@ -249,11 +249,9 @@ public class VideoIndexRepository {
         // Apply changes
         if (!toDelete.isEmpty()) {
             dao.deleteByUris(toDelete);
-            FLog.i(TAG, "Delta: removed " + toDelete.size() + " deleted files from index");
         }
         if (!toInsert.isEmpty()) {
             dao.insertOrReplaceAll(toInsert);
-            FLog.i(TAG, "Delta: added/updated " + toInsert.size() + " files in index");
         }
 
         // Return fresh list from DB
@@ -336,7 +334,6 @@ public class VideoIndexRepository {
      */
     public void startBackgroundEnrichment(@Nullable EnrichmentCallback callback) {
         if (!isEnriching.compareAndSet(false, true)) {
-            FLog.d(TAG, "Enrichment already running, skipping");
             return;
         }
 
@@ -363,7 +360,6 @@ public class VideoIndexRepository {
                         // Leaving items as `durationResolved=false` here causes the adapter to fall
                         // through to its FFprobe path (getVideoDuration) which correctly probes the file
                         // and persists the result via persistDurationToDb().
-                        FLog.d(TAG, "Enrichment: skipping " + entity.displayName + " (VIDEO) — FFprobe in adapter will handle it");
                         if (callback != null) callback.onItemEnriched(entity.uriString, -1);
 
                     } catch (Exception e) {

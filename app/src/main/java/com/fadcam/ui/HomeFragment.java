@@ -496,7 +496,6 @@ public class HomeFragment extends BaseFragment {
     // the general recordingCompleteReceiver
     private boolean isSegmentCompleteStatsReceiverRegistered = false;
 
-
     // important
     private void requestEssentialPermissions() {
         FLog.d(
@@ -1770,7 +1769,6 @@ public class HomeFragment extends BaseFragment {
             FLog.w(TAG, "showPausedOverlay: view null, overlay=" + (pausedPreviewOverlay == null) + " texture=" + (textureView == null));
             return;
         }
-        FLog.d(TAG, "showPausedOverlay: showing");
         pausedPreviewOverlay.animate().cancel();
         textureView.animate().cancel();
         textureView.setAlpha(0f);
@@ -2517,7 +2515,6 @@ public class HomeFragment extends BaseFragment {
                     boolean stateChanged = (serviceState != lastAppliedServiceState);
                     boolean startTimeChanged = (callbackStartTime > 0L && callbackStartTime != recordingStartTime);
                     if (!stateChanged && !previewOnlyChanged && !startTimeChanged) {
-                        FLog.d(TAG, "Service state callback deduplicated (same state=" + serviceState + ", skipping UI reset)");
                         return;
                     }
                     lastAppliedServiceState = serviceState;
@@ -3340,7 +3337,6 @@ public class HomeFragment extends BaseFragment {
             public void onReceive(Context context, Intent intent) {
                 String fromType = intent.getStringExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_FROM);
                 String toType = intent.getStringExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_TO);
-                FLog.d(TAG, "📹 BROADCAST_ON_CAMERA_SWITCH_STARTED: " + fromType + " → " + toType);
                 
                 isCameraSwitchInProgress = true;
                 // Keep button ENABLED during switch for responsive UI
@@ -3354,7 +3350,6 @@ public class HomeFragment extends BaseFragment {
             public void onReceive(Context context, Intent intent) {
                 String fromType = intent.getStringExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_FROM);
                 String toType = intent.getStringExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_TO);
-                FLog.d(TAG, "✅ BROADCAST_ON_CAMERA_SWITCH_COMPLETE: " + fromType + " → " + toType);
                 
                 isCameraSwitchInProgress = false;
                 lastCameraSwitchTime = System.currentTimeMillis(); // Track when switch completed
@@ -3685,17 +3680,13 @@ public class HomeFragment extends BaseFragment {
      */
     private void resetTextureView() {
         if (textureView == null) {
-            FLog.w(TAG, "resetTextureView: TextureView is null, can't reset");
             return;
         }
-
-        FLog.d(TAG, "resetTextureView: Attempting to reset TextureView");
 
         // First release any existing surface
         if (textureViewSurface != null) {
             textureViewSurface.release();
             textureViewSurface = null;
-            FLog.d(TAG, "resetTextureView: Released existing surface");
         }
 
         // If the TextureView is available, recreate the surface
@@ -3725,7 +3716,6 @@ public class HomeFragment extends BaseFragment {
             );
         }
     }
-
 
     // @Override
     // public void onRequestPermissionsResult(int requestCode, @NonNull String[]
@@ -3843,7 +3833,6 @@ public class HomeFragment extends BaseFragment {
         FLog.d(TAG, "Restoring fragment state after orientation change");
     }
 
-
     // Debug method to help diagnose recording time issue
     private void debugRecordingTimeVariables() {
         FLog.d(TAG, "======== DEBUG RECORDING TIME ========");
@@ -3874,7 +3863,6 @@ public class HomeFragment extends BaseFragment {
     private void savePreviewState() {
         // Use the SharedPreferencesManager's method which uses the correct constant
         sharedPreferencesManager.setPreviewEnabled(isPreviewEnabled);
-        FLog.d(TAG, "Preview state saved: " + isPreviewEnabled);
     }
 
     // function to use haptic feedbacks
@@ -4690,7 +4678,6 @@ public class HomeFragment extends BaseFragment {
         requireContext().getTheme().resolveAttribute(attr, typedValue, true);
         return typedValue.data;
     }
-
 
     /**
      * Show visual focus indicator at tap location
@@ -6969,7 +6956,6 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-
     /**
      * Converts a resolution Size to a friendly display name (e.g., "FHD", "4K",
      * "HD")
@@ -7390,20 +7376,17 @@ public class HomeFragment extends BaseFragment {
                 // Not recording: also run delta scan if index was invalidated
                 // (e.g. immediately after recording stopped, to pick up the new file).
                 if (repo.isIndexInvalidated()) {
-                    FLog.d(TAG, "updateStats BG: Index invalidated, running delta scan to pick up new files");
                     repo.getVideos(sharedPreferencesManager); // Consumes invalidation flag + delta scans
                     long[] freshStats = repo.getQuickStats();
                     int freshCount = (int) freshStats[0];
                     long freshMB = freshStats[1] / (1024 * 1024);
                     if (freshCount != dbCount || freshMB != dbTotalMB) {
-                        FLog.d(TAG, "updateStats BG: Delta scan found changes: " + freshCount + " videos, " + freshMB + "MB");
                         VideoStatsCache.updateStats(sharedPreferencesManager, freshCount, freshMB);
                         updateStatsUI(freshCount, freshMB);
                     }
                 }
                 return; // DB is the source of truth — done
             } catch (Exception e) {
-                FLog.w(TAG, "updateStats BG: Room DB query failed, falling back to scan: " + e.getMessage());
             }
 
             // --- Fallback: Full scan (only if Room DB failed) ---
@@ -7415,7 +7398,6 @@ public class HomeFragment extends BaseFragment {
             // --- Try to use shared session cache first (from VideoSessionCache) ---
             // IMPORTANT: Skip cache during active recording to ensure fresh file scans
             // for live size updates. Only use cache when not recording.
-            FLog.d(TAG, "updateStats BG: Checking for shared session cache... (isRecording=" + isRecording + ")");
             if (com.fadcam.utils.VideoSessionCache.isSessionCacheValid() && !isRecording) {
                 FLog.d(
                     TAG,
@@ -7434,7 +7416,6 @@ public class HomeFragment extends BaseFragment {
                 );
             } else {
                 if (isRecording) {
-                    FLog.d(TAG, "updateStats BG: Skipping session cache during active recording - forcing fresh file scan for live updates");
                 }
                 // --- Load File Lists (Same logic as RecordsFragment) ---
                 FLog.d(
@@ -7679,7 +7660,6 @@ public class HomeFragment extends BaseFragment {
         return items;
     }
 
-
     /**
      * Progressive SAF directory scanning with chunked processing to avoid blocking
      * main thread.
@@ -7807,9 +7787,6 @@ public class HomeFragment extends BaseFragment {
         // Redirect to progressive version without callback
         return getSafRecordsListProgressive(treeUri, null);
     }
-
-
-
 
     private void pauseRecording() {
         FLog.d(TAG, "pauseRecording: Pausing video recording");
@@ -10409,8 +10386,6 @@ public class HomeFragment extends BaseFragment {
 
     // ── End Preview Avatar Animation Logic ───────────────────────────────────
 
-
-
     // ─── Fullscreen Preview ──────────────────────────────────────────────────
 
     /**
@@ -10516,7 +10491,6 @@ public class HomeFragment extends BaseFragment {
         );
     }
 
-
     // This method replaces/refines the old updateRecordingSurface
     private void updateServiceWithCurrentSurface(
         @Nullable Surface surfaceToUse
@@ -10562,7 +10536,6 @@ public class HomeFragment extends BaseFragment {
             isMyServiceRunning(RecordingService.class) ||
             isFullscreenTransition;
         if (!isDualRecordingActive && !shouldSyncSingleService) {
-            FLog.d(TAG, "updateServiceWithCurrentSurface: Skipping surface sync while idle");
             return;
         }
 
@@ -10629,7 +10602,6 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-
     private boolean isMyServiceRunning(Class<?> serviceClass) {
         if (getContext() == null) {
             return false;
@@ -10650,7 +10622,6 @@ public class HomeFragment extends BaseFragment {
         }
         return false;
     }
-
 
     private void applyClockCardColor(String colorHex) {
         if (
@@ -10721,7 +10692,6 @@ public class HomeFragment extends BaseFragment {
             );
         }
     }
-
 
     /**
      * Override the onBackPressed method from BaseFragment
@@ -10854,7 +10824,6 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-
     private void initializeSegmentCompleteStatsReceiver() {
         if (segmentCompleteStatsReceiver == null) {
             segmentCompleteStatsReceiver = new BroadcastReceiver() {
@@ -10879,7 +10848,6 @@ public class HomeFragment extends BaseFragment {
             };
         }
     }
-
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private void registerSegmentCompleteStatsReceiver(Context context) {
@@ -10943,7 +10911,6 @@ public class HomeFragment extends BaseFragment {
             isSegmentCompleteStatsReceiverRegistered = false;
         }
     }
-
 
     @Override
     public void onHiddenChanged(boolean hidden) {
@@ -11031,7 +10998,6 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
-
     private void setTextColorsRecursive(View view, int primary, int secondary) {
         if (view == null) return;
         // Skip views tagged "preserve_color" (e.g. zzZ badge letters) — they have
@@ -11054,7 +11020,6 @@ public class HomeFragment extends BaseFragment {
             }
         }
     }
-
 
     private String getDefaultClockColorForTheme(String themeName) {
         FLog.i(
@@ -11176,7 +11141,6 @@ public class HomeFragment extends BaseFragment {
         );
         return result;
     }
-
 
     /**
      * Applies Snow Veil theme UI adjustments to improve contrast
@@ -12793,7 +12757,6 @@ public class HomeFragment extends BaseFragment {
             FLog.e(TAG, "Error making text black: " + e.getMessage());
         }
     }
-
 
     // Utility method to get the current app version (versionName)
     private String getAppVersionForUpdates() {

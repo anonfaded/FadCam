@@ -80,7 +80,6 @@ public class FastFileScanner {
             if (hasPermission) {
                 List<VideoIndexEntity> safResults = scanSaf(safUri);
                 long elapsed = System.currentTimeMillis() - start;
-                FLog.i(TAG, "SAF scan complete: " + safResults.size() + " files in " + elapsed + "ms");
                 return safResults;
             }
             FLog.w(TAG, "SAF URI set but no read permission, falling back to internal");
@@ -354,7 +353,6 @@ public class FastFileScanner {
                 FLog.d(TAG, "Found FadCam subdirectory under tree, using it as root");
                 recordingRoot = fadCamChild;
             } else {
-                FLog.d(TAG, "Using SAF tree root directly as recording root");
             }
 
             // Scan each known subdirectory

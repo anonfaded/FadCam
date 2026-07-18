@@ -1361,7 +1361,6 @@ public class RecordingService extends Service {
             return START_STICKY;
         } else if (Constants.BROADCAST_ON_RECORDING_STATE_REQUEST.equals(action)) {
             // Handle UI state sync requests
-            FLog.d(TAG, "Responding to state request");
             broadcastOnRecordingStateCallback();
             if (!isWorkingInProgress()) {
                 stopSelf();
@@ -1958,7 +1957,6 @@ public class RecordingService extends Service {
                 // Close the camera device last
                 if (cameraDevice != null) {
                     try {
-                        FLog.d(TAG, "Closing camera device");
                         cameraDevice.close();
                     } catch (Exception e) {
                         FLog.e(TAG, "Error closing camera device", e);
@@ -2048,7 +2046,6 @@ public class RecordingService extends Service {
                         // Note: We don't have the specific URI here, but RecordsFragment will do a full
                         // refresh
                         sendBroadcast(recordingCompleteIntent);
-                        FLog.d(TAG, "Broadcasted ACTION_RECORDING_COMPLETE for list refresh");
                     } catch (Exception e) {
                         FLog.e(TAG, "Error broadcasting recording complete", e);
                     }
@@ -2102,11 +2099,9 @@ public class RecordingService extends Service {
         // Pause noise monitor and sensors — no audio recorded, no watermark data needed
         if (noiseMonitor != null && noiseMonitor.isRunning()) {
             noiseMonitor.stop();
-            FLog.d(TAG, "NoiseMonitor paused with recording");
         }
         if (sensorDataProvider != null) {
             sensorDataProvider.stop();
-            FLog.d(TAG, "SensorDataProvider paused with recording");
         }
         if (watermarkManager != null) watermarkManager.pauseSensors();
         
@@ -2141,7 +2136,6 @@ public class RecordingService extends Service {
         // Resume noise monitor and sensors if they were enabled
         if (sharedPreferencesManager != null && sharedPreferencesManager.isNoiseEnabled() && noiseMonitor != null) {
             noiseMonitor.start(this);
-            FLog.d(TAG, "NoiseMonitor resumed with recording");
         }
         if (sensorDataProvider != null) {
             org.osmdroid.util.GeoPoint currentLoc = locationHelper != null ? locationHelper.getCurrentLocation() : null;
@@ -2152,7 +2146,6 @@ public class RecordingService extends Service {
                 androidLoc.setLongitude(currentLoc.getLongitude());
             }
             sensorDataProvider.start(androidLoc);
-            FLog.d(TAG, "SensorDataProvider resumed with recording");
         }
         if (watermarkManager != null) watermarkManager.resumeSensors(locationHelper);
         
@@ -2220,7 +2213,6 @@ public class RecordingService extends Service {
             }
 
             // PHASE 1: Pause recording
-            FLog.d(TAG, "PHASE 1: Pausing recording");
             pauseRecording();
 
             // PHASE 2: Drain encoder
@@ -2243,7 +2235,6 @@ public class RecordingService extends Service {
             openCamera(); // Will use updated preference
 
             // PHASE 6: Resume recording
-            FLog.d(TAG, "PHASE 6: Resuming recording");
             resumeRecording();
 
             // Brief delay to allow first frame from new camera
@@ -2290,7 +2281,6 @@ public class RecordingService extends Service {
             isSwitchingCamera = false;
             cameraSwitchPreviousType = null;
             cameraSwitchStartTimeNanos = -1L;
-            FLog.d(TAG, "Camera switch cleanup complete");
         }
     }
 
@@ -2394,7 +2384,6 @@ public class RecordingService extends Service {
             // Close the capture session
             if (captureSession != null) {
                 try {
-                    FLog.d(TAG, "Closing capture session");
                     captureSession.close();
                 } catch (Exception e) {
                     FLog.w(TAG, "Error closing capture session", e);
@@ -2405,7 +2394,6 @@ public class RecordingService extends Service {
             // Close the camera device
             if (cameraDevice != null) {
                 try {
-                    FLog.d(TAG, "Closing camera device");
                     cameraDevice.close();
                 } catch (Exception e) {
                     FLog.w(TAG, "Error closing camera device", e);
@@ -2414,7 +2402,6 @@ public class RecordingService extends Service {
             }
 
             isCameraOpen = false;
-            FLog.d(TAG, "Camera resources closed successfully");
         } catch (Exception e) {
             FLog.e(TAG, "Unexpected error closing camera resources", e);
         }
@@ -3269,7 +3256,6 @@ public class RecordingService extends Service {
         } catch (IllegalStateException ignored) {
             return null;
         } catch (Throwable t) {
-            FLog.v(TAG, "MotionLab debug frame skipped");
             return null;
         }
     }
@@ -3873,7 +3859,6 @@ public class RecordingService extends Service {
 
         @Override
         public void onClosed(@NonNull CameraDevice camera) {
-            FLog.d(TAG, "Camera device closed");
             isCameraOpen = false;
 
             // If we were in segment rollover, continue with the rollover process
@@ -4048,7 +4033,6 @@ public class RecordingService extends Service {
                     targetFrameRate = streamFpsCap;
                 }
             } else {
-                FLog.d(TAG, "[RECORDING] Server OFF — using full FPS from settings: " + targetFrameRate + "fps");
             }
             
             boolean isHighFrameRate = targetFrameRate >= 120;
@@ -4131,7 +4115,6 @@ public class RecordingService extends Service {
                     targetFrameRate = streamFpsCap;
                 }
             } else {
-                FLog.d(TAG, "[RECORDING] Server OFF — using full FPS from settings: " + targetFrameRate + "fps");
             }
             maybeAttachMotionAnalysisSurface(surfaces, targetFrameRate);
 
@@ -4474,7 +4457,6 @@ public class RecordingService extends Service {
                     // debounce callback blocking the GL handler from processing
                     // onFrameAvailable (causing periodic ~120-200ms frame gaps).
                     boolean useImmediate = isFullscreenTransition || isRecording();
-                    FLog.d(TAG, "Setting preview surface to GL pipeline (immediate=" + useImmediate + ")");
                     if (useImmediate) {
                         glRecordingPipeline.setPreviewSurfaceImmediate(previewSurface);
                     } else {
@@ -4490,7 +4472,6 @@ public class RecordingService extends Service {
             }
             // Only create dummy surface if truly backgrounding, not transitioning to fullscreen
             if (validOldSurface && !validNewSurface && isRecordingOrPaused() && !isFullscreenTransition) {
-                FLog.d(TAG, "Surface lost while recording - creating dummy surface to prevent recording issues");
                 createDummyBackgroundSurface();
             } else if (isFullscreenTransition) {
                 FLog.d(TAG, "Surface null due to fullscreen transition - skipping dummy surface creation");
@@ -4523,7 +4504,6 @@ public class RecordingService extends Service {
             }
         } else if (sharedPreferencesManager.sharedPreferences.getBoolean("bitrate_mode_custom", false)) {
             videoBitrate = sharedPreferencesManager.sharedPreferences.getInt("bitrate_custom_value", 16000) * 1000;
-            FLog.d(TAG, "[RECORDING] Using custom bitrate: " + (videoBitrate / 1000) + " kbps");
         } else {
             videoBitrate = Utils.estimateBitrate(sharedPreferencesManager.getCameraResolution(),
                     sharedPreferencesManager.getVideoFrameRate());
@@ -4864,7 +4844,6 @@ public class RecordingService extends Service {
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
         sendBroadcast(broadcastIntent);
-        FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_RESUMED");
     }
 
     private void broadcastOnRecordingPaused() {
@@ -4874,13 +4853,11 @@ public class RecordingService extends Service {
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
         sendBroadcast(broadcastIntent);
-        FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_PAUSED");
     }
 
     private void broadcastOnRecordingStopped() {
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STOPPED);
         sendBroadcast(broadcastIntent);
-        FLog.d(TAG, "Broadcasted: BROADCAST_ON_RECORDING_STOPPED");
     }
 
     private void broadcastOnPreviewOnlyStarted() {
@@ -5074,7 +5051,6 @@ public class RecordingService extends Service {
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
         notificationManager.notify(NOTIFICATION_ID, builder.build()); // Just update existing notification
-        FLog.d(TAG, "Foreground notification updated for PAUSED.");
     }
 
     private NotificationCompat.Builder createBaseNotificationBuilder() {
@@ -6048,9 +6024,7 @@ public class RecordingService extends Service {
         if (frameRate >= 60) {
             // Just log the high frame rate usage
             if (DeviceHelper.isSamsung()) {
-                FLog.d(TAG, "Using experimental " + frameRate + "fps mode for Samsung");
             } else {
-                FLog.d(TAG, "Using experimental " + frameRate + "fps mode");
             }
         }
     }
@@ -6096,7 +6070,6 @@ public class RecordingService extends Service {
      */
     private void handleSessionConfigured() {
         if (previewOnlyActive && recordingState == RecordingState.NONE) {
-            FLog.d(TAG, "Preview-only camera session configured");
             return;
         }
         // Handle recording states
@@ -6145,7 +6118,6 @@ public class RecordingService extends Service {
             }
         } else if (recordingState == RecordingState.IN_PROGRESS) {
             // This typically means the session was reconfigured
-            FLog.d(TAG, "Session reconfigured while recording is in progress");
             setupRecordingInProgressNotification();
         } else if (recordingState == RecordingState.PAUSED) {
             // Handle paused state
@@ -6740,7 +6712,6 @@ public class RecordingService extends Service {
             dummySurfaceTexture.setDefaultBufferSize(1, 1);
             dummyBackgroundSurface = new Surface(dummySurfaceTexture);
 
-            FLog.d(TAG, "Created dummy background surface to prevent green screen on Samsung");
         } catch (Exception e) {
             FLog.e(TAG, "Failed to create dummy background surface", e);
             dummySurfaceTexture = null;

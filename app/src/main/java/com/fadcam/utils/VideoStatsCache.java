@@ -48,11 +48,9 @@ public class VideoStatsCache {
                 long lastUpdate = sharedPrefs.sharedPreferences.getLong(PREF_STATS_LAST_UPDATE, 0L);
                 
                 if (videoCount >= 0 && totalSizeMB >= 0) {
-                    FLog.d(TAG, "Retrieved cached stats: " + videoCount + " videos, " + totalSizeMB + "MB");
                     return new VideoStats(videoCount, totalSizeMB, lastUpdate);
                 }
                 
-                FLog.d(TAG, "No valid cached stats found");
                 return null;
             } catch (Exception e) {
                 FLog.e(TAG, "Error retrieving cached stats", e);
@@ -94,7 +92,6 @@ public class VideoStatsCache {
                     .remove(PREF_STATS_LAST_UPDATE)
                     .apply();
                 
-                FLog.d(TAG, "Invalidated cached stats");
             } catch (Exception e) {
                 FLog.e(TAG, "Error invalidating cached stats", e);
             }

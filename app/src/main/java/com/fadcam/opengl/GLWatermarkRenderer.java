@@ -455,10 +455,8 @@ public class GLWatermarkRenderer {
         synchronized (renderLock) {
             // Check if we need to initialize or reinitialize EGL
             if (!initialized || eglDisplay == EGL14.EGL_NO_DISPLAY) {
-                FLog.e(TAG, "EGL not initialized, attempting to reinitialize");
                 try {
                     setupEGL();
-                    FLog.d(TAG, "Successfully reinitialized EGL");
                 } catch (Exception e) {
                     FLog.e(TAG, "Failed to reinitialize EGL", e);
                     throw new IllegalStateException("EGL not initialized and reinitialization failed");
@@ -1635,7 +1633,6 @@ public class GLWatermarkRenderer {
             // Clear any existing GL errors before drawing
             int error = GLES20.glGetError();
             if (error != GLES20.GL_NO_ERROR) {
-                FLog.w(TAG, "Clearing GL error before drawing: 0x" + Integer.toHexString(error));
             }
             if (mFullFrameBlit != null) {
                 try {
@@ -1666,7 +1663,6 @@ public class GLWatermarkRenderer {
                             GLES20.glUseProgram(currentProgram);
                             error = GLES20.glGetError();
                             if (error != GLES20.GL_NO_ERROR) {
-                                FLog.w(TAG, "Cleared GL error after matrix setup: 0x" + Integer.toHexString(error));
                             }
                         } catch (Exception e) {
                             FLog.e(TAG, "Error setting MVP matrix", e);
@@ -1698,7 +1694,6 @@ public class GLWatermarkRenderer {
             // Clear any existing errors
             int error = GLES20.glGetError();
             if (error != GLES20.GL_NO_ERROR) {
-                FLog.w(TAG, "Clearing GL error before fallback: 0x" + Integer.toHexString(error));
             }
 
             // Use the basic shader program
@@ -2163,7 +2158,6 @@ public class GLWatermarkRenderer {
     public void updatePipConfig(@NonNull DualCameraConfig newConfig) {
         this.pipConfig = newConfig;
         computePipGeometry();
-        FLog.d(TAG, "PiP config updated: " + newConfig);
     }
 
     /**
@@ -2476,7 +2470,6 @@ public class GLWatermarkRenderer {
 
     public void setSurfaceDimensions(int width, int height) {
         if (mSurfaceWidth != width || mSurfaceHeight != height) {
-            FLog.d(TAG, "Surface dimensions updated: " + width + "x" + height);
             mSurfaceWidth = width;
             mSurfaceHeight = height;
             updateMatrices();
@@ -2593,7 +2586,6 @@ public class GLWatermarkRenderer {
         }
 
         synchronized (renderLock) {
-            FLog.d(TAG, "Updating encoder output surface");
 
             // Save the new surface
             this.outputSurface = newSurface;
@@ -2628,12 +2620,10 @@ public class GLWatermarkRenderer {
                         return;
                     }
 
-                    FLog.d(TAG, "Successfully updated encoder EGL surface");
                 } catch (Exception e) {
                     FLog.e(TAG, "Error updating encoder surface", e);
                 }
             } else {
-                FLog.d(TAG, "EGL not initialized yet, just updating surface reference");
             }
         }
     }
@@ -2817,7 +2807,6 @@ public class GLWatermarkRenderer {
             // Just use the existing context if it's valid
             if (!initialized || eglDisplay == EGL14.EGL_NO_DISPLAY ||
                     eglContext == EGL14.EGL_NO_CONTEXT || eglSurface == EGL14.EGL_NO_SURFACE) {
-                FLog.d(TAG, "Cannot render black frame - EGL not initialized and we won't reinitialize");
                 return;
             }
             boolean contextMadeCurrent = false;

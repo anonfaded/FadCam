@@ -71,7 +71,6 @@ public class StorageInfoCache {
      */
     public static StorageInfo calculateAndCacheStorageInfo(Context context, 
                                                           SharedPreferencesManager prefsManager) {
-        FLog.d(TAG, "Calculating fresh storage information");
         
         // Default to internal external storage stats
         StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
@@ -167,7 +166,6 @@ public class StorageInfoCache {
             lastCacheTime = 0;
             cachedAvailableBytes = -1;
             cachedTotalBytes = -1;
-            FLog.d(TAG, "Storage info cache cleared");
         }
     }
     
