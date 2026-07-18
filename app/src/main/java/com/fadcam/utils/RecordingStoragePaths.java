@@ -216,6 +216,10 @@ public final class RecordingStoragePaths {
         if (base == null) return null;
         String folderName = folderNameForCategory(category);
         if (folderName.isEmpty()) return base;
+        // If the user selected the category folder itself (e.g. picked Camera/
+        // instead of the FadCam root), use it directly to prevent double-prefixing
+        // like Camera/Back/Camera/Back.
+        if (folderName.equals(base.getName())) return base;
         return findOrCreateChildDirectory(base, folderName, createIfMissing);
     }
 
@@ -240,7 +244,12 @@ public final class RecordingStoragePaths {
     ) {
         DocumentFile cameraRoot = getSafCategoryDir(context, treeUriString, Category.CAMERA, createIfMissing);
         if (cameraRoot == null) return null;
-        return findOrCreateChildDirectory(cameraRoot, folderNameForCameraSource(source), createIfMissing);
+        String srcName = folderNameForCameraSource(source);
+        // If the user picked the source folder itself as tree root
+        // (e.g. selected Camera/Back via getSafCategoryDir fix above),
+        // use it directly instead of nesting another Back inside.
+        if (srcName.equals(cameraRoot.getName())) return cameraRoot;
+        return findOrCreateChildDirectory(cameraRoot, srcName, createIfMissing);
     }
 
     @Nullable
