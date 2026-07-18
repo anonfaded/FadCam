@@ -118,9 +118,6 @@ public class FadRecHomeFragment extends HomeFragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // FLog.e(TAG, "============================================");
-        // FLog.e(TAG, "FadRecHomeFragment.onCreate() - FRAGMENT CLASS: " + this.getClass().getName());
-        // FLog.e(TAG, "============================================");
         
         // Initialize SharedPreferences
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
@@ -139,10 +136,8 @@ public class FadRecHomeFragment extends HomeFragment {
             new ActivityResultContracts.RequestPermission(),
             isGranted -> {
                 if (isGranted) {
-                    // FLog.d(TAG, "Audio permission granted, proceeding with screen capture");
                     requestScreenCapturePermission();
                 } else {
-                    // FLog.w(TAG, "Audio permission denied, starting without audio");
                     requestScreenCapturePermission();
                 }
             }
@@ -154,7 +149,6 @@ public class FadRecHomeFragment extends HomeFragment {
             result -> {
                 int resultCode = result.getResultCode();
                 Intent data = result.getData();
-                // FLog.d(TAG, "Screen capture result: resultCode=" + resultCode + 
                 //       " (RESULT_OK=" + Activity.RESULT_OK + "), data=" + (data != null ? "present" : "null"));
                 
                 if (resultCode == Activity.RESULT_OK && data != null) {
@@ -166,7 +160,6 @@ public class FadRecHomeFragment extends HomeFragment {
                             Toast.LENGTH_LONG
                         ).show();
                     } else {
-                        // FLog.d(TAG, "Screen capture permission granted, starting recording");
                         // RESULT_OK is -1, so we pass Activity.RESULT_OK constant instead
                         boolean forceNoAudio = forceMutedNoAudioThisStart;
                         isRecordingForcedMuted = forceNoAudio;
@@ -178,7 +171,6 @@ public class FadRecHomeFragment extends HomeFragment {
                     pendingPreviewOnlyPermission = false;
                     updateUIForRecordingState();
                     pendingPreviewOnlyPermission = false;
-                    // FLog.w(TAG, "Screen capture permission denied: resultCode=" + resultCode);
                     Toast.makeText(requireContext(), 
                         com.fadcam.R.string.fadrec_permission_denied, 
                         Toast.LENGTH_SHORT).show();
@@ -191,7 +183,6 @@ public class FadRecHomeFragment extends HomeFragment {
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (android.provider.Settings.canDrawOverlays(requireContext())) {
-                    // FLog.d(TAG, "Overlay permission granted");
                     // Enable unified annotation overlay
                     sharedPreferencesManager.setFloatingControlsEnabled(true);
                     // Update switch if view exists
@@ -207,7 +198,6 @@ public class FadRecHomeFragment extends HomeFragment {
                     }
                     startAnnotationService();
                 } else {
-                    // FLog.w(TAG, "Overlay permission denied");
                     com.fadcam.Utils.showQuickToast(
                         requireContext(),
                         com.fadcam.R.string.floating_controls_permission_needed
@@ -219,18 +209,13 @@ public class FadRecHomeFragment extends HomeFragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        // FLog.d(TAG, "========== onViewCreated START ==========");
-        // FLog.d(TAG, "Calling super.onViewCreated...");
         super.onViewCreated(view, savedInstanceState);
-        // FLog.d(TAG, "super.onViewCreated completed");
         
         // Apply FadRec-specific UI customizations
-        // FLog.d(TAG, "Customizing UI for screen recording...");
         customizeUIForScreenRecording(view);
         view.post(this::updateScreenRecordingCardInfo);
         
         // Setup button click handlers
-        // FLog.d(TAG, "Setting up button handlers...");
         setupButtonHandlers(view);
 
         // Override the camera row click handler: open screen recording settings
@@ -259,7 +244,6 @@ public class FadRecHomeFragment extends HomeFragment {
             });
         }
 
-        // FLog.d(TAG, "========== onViewCreated COMPLETE ==========");
         
         // NOTE: Receiver registration moved to onStart() to avoid double-registration
         // on fragment recreation and to maintain proper lifecycle coordination
@@ -269,12 +253,6 @@ public class FadRecHomeFragment extends HomeFragment {
     @Override
     public void onStart() {
         super.onStart();
-        // FLog.e(TAG, "============================================");
-        // FLog.e(TAG, "FadRecHomeFragment.onStart()");
-        // FLog.e(TAG, "buttonStartStop: " + buttonStartStop);
-        // FLog.e(TAG, "buttonStartStop enabled: " + (buttonStartStop != null ? buttonStartStop.isEnabled() : "NULL"));
-        // FLog.e(TAG, "buttonStartStop hasOnClickListeners: " + (buttonStartStop != null ? buttonStartStop.hasOnClickListeners() : "NULL"));
-        // FLog.e(TAG, "============================================");
         // Note: Broadcast receivers are now registered in onCreate()
         // to ensure they persist and are ready to receive state updates
         reapplyScreenRecordingCardState(false);
@@ -938,8 +916,6 @@ public class FadRecHomeFragment extends HomeFragment {
         // Start/Stop button
         if (buttonStartStop != null) {
             buttonStartStop.setOnClickListener(v -> {
-                // FLog.d(TAG, "=== FADREC START/STOP BUTTON CLICKED ===");
-                // FLog.d(TAG, "Current screenRecordingState: " + screenRecordingState);
                 
                 // Debounce rapid clicks
                 long currentTime = System.currentTimeMillis();
@@ -1214,7 +1190,6 @@ public class FadRecHomeFragment extends HomeFragment {
     private void registerScreenRecordingReceivers() {
         // Guard: Don't register twice
         if (isScreenRecordingReceiverRegistered) {
-            // FLog.d(TAG, "Screen recording receiver already registered, skipping.");
             return;
         }
         
@@ -1223,13 +1198,11 @@ public class FadRecHomeFragment extends HomeFragment {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     String action = intent.getAction();
-                    // FLog.d(TAG, "screenRecordingStateReceiver.onReceive: action=" + action + 
                     //            ", Android=" + android.os.Build.VERSION.SDK_INT);
                     if (action == null) return;
                     
                     switch (action) {
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_STARTED:
-                            // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_STARTED");
                             timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
                             screenRecordingState = ScreenRecordingState.IN_PROGRESS;
                             isScreenPreviewOnlyActive = false;
@@ -1241,7 +1214,6 @@ public class FadRecHomeFragment extends HomeFragment {
                             break;
                             
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_STOPPED:
-                            // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_STOPPED");
                             timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
                             screenRecordingState = ScreenRecordingState.NONE;
                             isScreenPreviewOnlyActive = false;
@@ -1257,7 +1229,6 @@ public class FadRecHomeFragment extends HomeFragment {
                             break;
                             
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_PAUSED:
-                            // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_PAUSED");
                             timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
                             screenRecordingState = ScreenRecordingState.PAUSED;
                             isScreenPreviewOnlyActive = false;
@@ -1269,7 +1240,6 @@ public class FadRecHomeFragment extends HomeFragment {
                             break;
                             
                         case Constants.BROADCAST_ON_SCREEN_RECORDING_RESUMED:
-                            // FLog.d(TAG, "Broadcast: SCREEN_RECORDING_RESUMED");
                             timerHandler.removeCallbacks(pendingStopStateReconcileRunnable);
                             screenRecordingState = ScreenRecordingState.IN_PROGRESS;
                             isScreenPreviewOnlyActive = false;
@@ -1310,7 +1280,6 @@ public class FadRecHomeFragment extends HomeFragment {
                             
                         // Handle overlay actions
                         case Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY:
-                            // FLog.d(TAG, "Received ACTION_START_SCREEN_RECORDING_FROM_OVERLAY");
                             if (screenRecordingState == ScreenRecordingState.NONE) {
                                 // When called from overlay while app is in background,
                                 // we need to handle this differently to avoid bringing app to foreground
@@ -1320,7 +1289,6 @@ public class FadRecHomeFragment extends HomeFragment {
                         
                         // Handle permission results from TransparentPermissionActivity
                         case Constants.ACTION_SCREEN_RECORDING_PERMISSION_GRANTED:
-                            // FLog.d(TAG, "Received ACTION_SCREEN_RECORDING_PERMISSION_GRANTED");
                             // Permission granted, start recording with the provided Intent
                             Intent permissionData = intent.getParcelableExtra("data");
                             if (permissionData == null) {
@@ -1328,15 +1296,12 @@ public class FadRecHomeFragment extends HomeFragment {
                             }
                             if (permissionData != null && mediaProjectionHelper != null) {
                                 int resultCode = intent.getIntExtra("resultCode", -1);
-                                // FLog.d(TAG, "Starting recording with resultCode: " + resultCode);
                                 mediaProjectionHelper.startScreenRecording(resultCode, permissionData, false);
                             } else {
-                                // FLog.e(TAG, "Permission granted but data or helper is null");
                             }
                             break;
                             
                         case Constants.ACTION_SCREEN_RECORDING_PERMISSION_DENIED:
-                            // FLog.d(TAG, "Received ACTION_SCREEN_RECORDING_PERMISSION_DENIED");
                             pendingPreviewOnlyPermission = false;
                             pendingPreviewOpenUntilSurfaceReady = false;
                             updateUIForRecordingState();
@@ -1344,7 +1309,6 @@ public class FadRecHomeFragment extends HomeFragment {
                             break;
                             
                         case Constants.ACTION_PAUSE_SCREEN_RECORDING:
-                            // FLog.d(TAG, "Received ACTION_PAUSE_SCREEN_RECORDING");
                             if (screenRecordingState == ScreenRecordingState.IN_PROGRESS) {
                                 if (mediaProjectionHelper != null) {
                                     mediaProjectionHelper.pauseScreenRecording();
@@ -1353,7 +1317,6 @@ public class FadRecHomeFragment extends HomeFragment {
                             break;
                             
                         case Constants.ACTION_RESUME_SCREEN_RECORDING:
-                            // FLog.d(TAG, "Received ACTION_RESUME_SCREEN_RECORDING");
                             if (screenRecordingState == ScreenRecordingState.PAUSED) {
                                 if (mediaProjectionHelper != null) {
                                     mediaProjectionHelper.resumeScreenRecording();
@@ -1362,7 +1325,6 @@ public class FadRecHomeFragment extends HomeFragment {
                             break;
                             
                         case Constants.ACTION_STOP_SCREEN_RECORDING:
-                            // FLog.d(TAG, "Received ACTION_STOP_SCREEN_RECORDING");
                             if (screenRecordingState != ScreenRecordingState.NONE) {
                                 if (mediaProjectionHelper != null) {
                                     mediaProjectionHelper.stopScreenRecording();
@@ -1400,9 +1362,7 @@ public class FadRecHomeFragment extends HomeFragment {
             LocalBroadcastManager.getInstance(requireContext()).registerReceiver(screenRecordingStateReceiver, filter);
             
             isScreenRecordingReceiverRegistered = true;
-            // FLog.d(TAG, "Screen recording broadcast receivers registered via LocalBroadcastManager");
         } catch (IllegalArgumentException e) {
-            // FLog.w(TAG, "Error registering screen recording receiver: " + e.getMessage());
             isScreenRecordingReceiverRegistered = false;
         }
     }
@@ -1413,18 +1373,15 @@ public class FadRecHomeFragment extends HomeFragment {
     private void updateUIForRecordingState() {
         View rootView = getView();
         if (rootView == null) {
-            // FLog.w(TAG, "updateUIForRecordingState: rootView is null, skipping state update");
             return;
         }
         
-        // FLog.d(TAG, "updateUIForRecordingState: screenRecordingState=" + screenRecordingState + 
         //            ", Android=" + android.os.Build.VERSION.SDK_INT);
         
         MaterialButton buttonStartStop = rootView.findViewById(com.fadcam.R.id.buttonStartStop);
         MaterialButton buttonPauseResume = rootView.findViewById(com.fadcam.R.id.buttonPauseResume);
         
         if (buttonStartStop == null) {
-            // FLog.e(TAG, "updateUIForRecordingState: buttonStartStop is null!");
         }
         
         // Update Start/Stop button with animation

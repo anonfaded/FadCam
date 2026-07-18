@@ -85,8 +85,6 @@ import fi.iki.elonen.NanoHTTPD;
         
         // OPTIMIZATION: Commented out HTTP request logging (called 10-30x per second during streaming)
         // Every request was being logged, massive I/O overhead during playback
-        // FLog.i(TAG, "📥 " + method + " " + uri + " from " + clientIP);
-        // FLog.d(TAG, "   User-Agent: " + (userAgent != null ? userAgent : "unknown"));
         
         // Track unique client IPs (only adds if new, Set handles duplicates)
         streamManager.trackClientIP(clientIP);

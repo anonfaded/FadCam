@@ -3995,7 +3995,6 @@ public class RecordingService extends Service {
             // if (previewSurface != null) {
             // surfaces.add(previewSurface);
             // } else {
-            // FLog.w(TAG, "Preview surface is null; preview will be disabled.");
             // }
             if (surfaces.isEmpty()) {
                 FLog.e(TAG, "No valid surfaces for camera session!");

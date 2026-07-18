@@ -116,11 +116,7 @@ public class MainActivity extends AppCompatActivity {
         View overlayContainer = findViewById(R.id.overlay_fragment_container);
         if (overlayContainer != null) {
             if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
-                FLog.d("OverlayDebug", "hideOverlayIfNoFragments: back stack empty -> hide overlay");
                 overlayContainer.setVisibility(View.GONE);
-            } else {
-                FLog.d("OverlayDebug", "hideOverlayIfNoFragments: back stack count="
-                        + getSupportFragmentManager().getBackStackEntryCount());
             }
         }
     }
@@ -329,8 +325,6 @@ public class MainActivity extends AppCompatActivity {
         View overlayContainer = findViewById(R.id.overlay_fragment_container);
         if (overlayContainer == null)
             return;
-        FLog.d("OverlayDebug", "showOverlayFragment: tag=" + tag + " currentBackStack="
-                + getSupportFragmentManager().getBackStackEntryCount());
         overlayContainer.setVisibility(View.VISIBLE);
         overlayContainer.setAlpha(0f);
         getSupportFragmentManager()
@@ -583,17 +577,13 @@ public class MainActivity extends AppCompatActivity {
 
         // Load initial fragment (Home tab) immediately with commitNow()
         // Check if there's already a fragment (e.g., after configuration change)
-        FLog.d("FragmentNav", "onCreate: About to load initial fragment (position 0), savedInstanceState=" + (savedInstanceState == null ? "null" : "exists"));
         if (savedInstanceState == null) {
             // Fresh launch — load Home tab
-            FLog.d("FragmentNav", "onCreate: No saved state, loading Home fragment");
             switchFragment(0, false); // Uses commitNow() for instant, synchronous load
-            FLog.d("FragmentNav", "onCreate: Initial fragment load completed");
             scheduleTabPrewarm();
         } else {
             // Configuration change / process death — FragmentManager restores all added fragments
             // We need to find which was the current one and ensure others are hidden
-            FLog.d("FragmentNav", "onCreate: Restoring from savedInstanceState");
             int restoredPosition = savedInstanceState.getInt("current_fragment_position", 0);
             androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
             
@@ -605,16 +595,13 @@ public class MainActivity extends AppCompatActivity {
                     if (f != null) {
                         if (i == restoredPosition && tag.equals(visibleTag)) {
                             fm.beginTransaction().show(f).commitNow();
-                            FLog.d("FragmentNav", "onCreate: Showing restored fragment at position " + i + ": " + f.getClass().getSimpleName());
                         } else {
                             fm.beginTransaction().hide(f).commitNow();
-                            FLog.d("FragmentNav", "onCreate: Hiding restored fragment at position " + i + ": " + f.getClass().getSimpleName());
                         }
                     }
                 }
             }
             currentFragmentPosition = restoredPosition;
-            FLog.d("FragmentNav", "onCreate: Restored current position to " + restoredPosition);
             scheduleTabPrewarm();
         }
 
@@ -668,7 +655,6 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences reopenPrefs = sharedPreferencesManager.sharedPreferences;
             boolean reopenAppearance = reopenPrefs.getBoolean("reopen_appearance_after_theme", false);
             if (reopenAppearance) {
-                FLog.d("FragmentNav", "Theme reopen: Switching to Settings tab");
                 // Clear flag to avoid loops
                 reopenPrefs.edit().putBoolean("reopen_appearance_after_theme", false).apply();
                 //  Ensure Settings tab selected (index 4)
@@ -1080,7 +1066,6 @@ public class MainActivity extends AppCompatActivity {
             public void handleOnBackPressed() {
                 // Unified: handle any visible overlay fragment (trash or settings)
                 if (handleOverlayBack()) {
-                    FLog.d("OverlayDebug", "onBackPressed: dismissed overlay fragment");
                     return;
                 }
 
@@ -1120,7 +1105,6 @@ public class MainActivity extends AppCompatActivity {
     public void onBackPressed() {
         // Unified: handle any visible overlay fragment (trash or settings)
         if (handleOverlayBack()) {
-            FLog.d("OverlayDebug", "onBackPressed: dismissed overlay fragment");
             return;
         }
 
@@ -1323,7 +1307,6 @@ public class MainActivity extends AppCompatActivity {
                 public void handleOnBackPressed() {
                     // Unified: generic overlay back handling (trash & settings)
                     if (handleOverlayBack()) {
-                        FLog.d("OverlayDebug", "DispatcherBack: dismissed overlay fragment");
                         return; // handled
                     }
 
@@ -1849,7 +1832,6 @@ public class MainActivity extends AppCompatActivity {
         String targetTag = getFragmentTagForPosition(position);
         Fragment existing = fm.findFragmentByTag(targetTag);
         if (existing != null) {
-            FLog.d("FragmentNav", "prewarmFragmentIfMissing: Fragment already exists for position " + position);
             return;
         }
         try {
@@ -1858,8 +1840,6 @@ public class MainActivity extends AppCompatActivity {
                     .add(R.id.fragment_container, prewarmedFragment, targetTag)
                     .hide(prewarmedFragment)
                     .commitNowAllowingStateLoss();
-            FLog.d("FragmentNav", "prewarmFragmentIfMissing: Prewarmed hidden fragment for position " + position
-                    + ": " + prewarmedFragment.getClass().getSimpleName());
         } catch (Exception e) {
             FLog.w("FragmentNav", "prewarmFragmentIfMissing: Failed for position " + position, e);
         }
@@ -1874,14 +1854,10 @@ public class MainActivity extends AppCompatActivity {
      * @param animate Whether to animate the transition
      */
     public void switchFragment(int position, boolean animate) {
-        FLog.d("FragmentNav", "switchFragment: Called with position=" + position + ", animate=" + animate + ", current=" + currentFragmentPosition);
-        
         if (position == currentFragmentPosition) {
-            FLog.d("FragmentNav", "switchFragment: Already showing position " + position + ", returning");
             return; // Already showing this fragment
         }
         
-        long startTime = System.currentTimeMillis();
         androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
         androidx.fragment.app.FragmentTransaction transaction = fm.beginTransaction();
         
@@ -1898,7 +1874,6 @@ public class MainActivity extends AppCompatActivity {
             Fragment currentFragment = findVisibleFragmentForPosition(fm, currentFragmentPosition);
             if (currentFragment != null) {
                 transaction.hide(currentFragment);
-                FLog.d("FragmentNav", "switchFragment: Hiding fragment at position " + currentFragmentPosition);
             }
         }
         
@@ -1909,28 +1884,20 @@ public class MainActivity extends AppCompatActivity {
         if (targetFragment != null) {
             // Fragment already added — just show it (instant, no view inflation)
             transaction.show(targetFragment);
-            FLog.d("FragmentNav", "switchFragment: Showing existing fragment at position " + position + ": " + targetFragment.getClass().getSimpleName());
         } else {
             // First time visiting this tab — create and add
             targetFragment = createFragmentForPosition(position);
             transaction.add(R.id.fragment_container, targetFragment, targetTag);
-            FLog.d("FragmentNav", "switchFragment: Adding new fragment at position " + position + ": " + targetFragment.getClass().getSimpleName());
         }
         
         // Use commitNow() for instant switching (no lag), commit() for animated transitions
         if (animate) {
-            FLog.d("FragmentNav", "switchFragment: Committing with animation (async)");
             transaction.commit(); // Async for animation
         } else {
-            FLog.d("FragmentNav", "switchFragment: Committing NOW (synchronous)");
             transaction.commitNow(); // Immediate for instant switching and initial load
         }
         
-        long endTime = System.currentTimeMillis();
-        FLog.d("FragmentNav", "switchFragment: Transaction completed in " + (endTime - startTime) + "ms");
-        
         currentFragmentPosition = position;
-        FLog.d("FragmentNav", "switchFragment: Updated currentFragmentPosition to " + position);
         
         // Handle tab-specific logic (same as old onPageSelected)
         handleTabSelected(position);
@@ -1941,8 +1908,6 @@ public class MainActivity extends AppCompatActivity {
      * Only called the first time a tab is visited — subsequent visits reuse the existing fragment.
      */
     private Fragment createFragmentForPosition(int position) {
-        FLog.d("FragmentNav", "createFragmentForPosition: Creating new fragment for position " + position);
-        
         // Create new fragment if not found
         Fragment newFragment;
         switch (position) {
@@ -1974,7 +1939,6 @@ public class MainActivity extends AppCompatActivity {
                 newFragment = new com.fadcam.ui.HomeFragment();
         }
         
-        FLog.d("FragmentNav", "createFragmentForPosition: Created new fragment for position " + position + ": " + newFragment.getClass().getSimpleName());
         return newFragment;
     }
     
@@ -1983,8 +1947,6 @@ public class MainActivity extends AppCompatActivity {
      * Replaces old ViewPager2.OnPageChangeCallback logic.
      */
     private void handleTabSelected(int position) {
-        FLog.d("FragmentNav", "handleTabSelected: Called for position " + position);
-        
         // Update bottom nav selection
         int navItemId = getNavItemIdForPosition(position);
         if (navItemId != -1) {
@@ -2045,8 +2007,6 @@ public class MainActivity extends AppCompatActivity {
      * @param position Tab position to recreate
      */
     public void forceRecreateFragment(int position, View continuityView) {
-        FLog.d("FragmentNav", "forceRecreateFragment: Forcing recreation of fragment at position " + position);
-
         if (position == 0) {
             switchHomeModeFragment();
             return;
@@ -2054,7 +2014,6 @@ public class MainActivity extends AppCompatActivity {
         
         androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
         String tag = FRAGMENT_TAG_PREFIX + position;
-        Fragment existingFragment = fm.findFragmentByTag(tag);
         Fragment newFragment = createFragmentForPosition(position);
         View continuityOverlay = createContinuityOverlay(continuityView);
         androidx.fragment.app.FragmentTransaction tx = fm.beginTransaction();
@@ -2069,10 +2028,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         tx.commitNow();
-        if (existingFragment != null) {
-            FLog.d("FragmentNav", "forceRecreateFragment: Replaced existing fragment: " + existingFragment.getClass().getSimpleName());
-        }
-        FLog.d("FragmentNav", "forceRecreateFragment: Added new fragment: " + newFragment.getClass().getSimpleName());
         clearContinuityOverlayAfterNextDraw(continuityOverlay, newFragment);
     }
 
@@ -2083,7 +2038,6 @@ public class MainActivity extends AppCompatActivity {
         Fragment targetFragment = fm.findFragmentByTag(targetTag);
 
         if (targetFragment == currentFragment && targetFragment != null) {
-            FLog.d("FragmentNav", "switchHomeModeFragment: Target fragment already visible");
             return;
         }
 
@@ -2092,16 +2046,13 @@ public class MainActivity extends AppCompatActivity {
 
         if (currentFragment != null) {
             tx.hide(currentFragment);
-            FLog.d("FragmentNav", "switchHomeModeFragment: Hiding " + currentFragment.getClass().getSimpleName());
         }
 
         if (targetFragment != null) {
             tx.show(targetFragment);
-            FLog.d("FragmentNav", "switchHomeModeFragment: Showing cached " + targetFragment.getClass().getSimpleName());
         } else {
             targetFragment = createFragmentForPosition(0);
             tx.add(R.id.fragment_container, targetFragment, targetTag);
-            FLog.d("FragmentNav", "switchHomeModeFragment: Added new " + targetFragment.getClass().getSimpleName());
         }
 
         tx.commitNow();

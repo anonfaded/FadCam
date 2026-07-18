@@ -599,7 +599,6 @@ public class GLRecordingPipeline {
             }
 
             if (glRenderer == null) {
-                // FLog.d(TAG, "Creating GLWatermarkRenderer with dimensions " + videoWidth + "x" + videoHeight);
                 glRenderer = new GLWatermarkRenderer(context, encoderInputSurface, orientation, sensorOrientation,
                         videoWidth, videoHeight, false);
                 glRenderer.setUserOrientationSetting(orientation);
@@ -637,7 +636,6 @@ public class GLRecordingPipeline {
                         }
 
                         if (previewSurface != null && previewSurface.isValid()) {
-                            // FLog.d(TAG, "Setting preview surface during prepareSurfaces (GL thread)");
                             glRenderer.setPreviewSurface(previewSurface);
                         } else {
                             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
@@ -713,7 +711,6 @@ public class GLRecordingPipeline {
                     FLog.w(TAG, "Failed to apply initial watermark", e);
                 }
 
-                // FLog.d(TAG, "GLWatermarkRenderer setup complete");
             }
         } catch (Exception e) {
             FLog.e(TAG, "Error preparing surfaces", e);
@@ -1190,9 +1187,7 @@ public class GLRecordingPipeline {
         try {
             // This helps ensure the encoder produces constant framerate output
             format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
-            // FLog.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
         } catch (Exception e) {
-            // FLog.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
         }
 
         // ESSENTIAL: Real-time priority for smooth recording (API 23+)
@@ -1204,7 +1199,6 @@ public class GLRecordingPipeline {
             }
         }
 
-        // FLog.d(TAG, "Applied basic encoder configuration: " +
         //     "bitrate=" + videoBitrate + ", framerate=" + videoFramerate + ", vbr=enabled, priority=realtime");
     }
 
@@ -1234,9 +1228,7 @@ public class GLRecordingPipeline {
         // ESSENTIAL: For constant framerate recording, especially on Samsung devices
         try {
             format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
-            // FLog.d(TAG, "Set MediaFormat.KEY_CAPTURE_RATE to " + videoFramerate + " for constant framerate");
         } catch (Exception e) {
-            // FLog.d(TAG, "KEY_CAPTURE_RATE not supported on this device");
         }
 
         // Industry Standard: Enhanced encoder configuration for reliability
@@ -1281,7 +1273,6 @@ public class GLRecordingPipeline {
             }
         }
 
-        // FLog.d(TAG, "Applied industry-standard encoder configuration with user settings: " +
         //     "codec=" + videoCodec + ", bitrate=" + videoBitrate + ", framerate=" + videoFramerate);
     }
 
@@ -1310,7 +1301,6 @@ public class GLRecordingPipeline {
 
         // Strategy 1: Try user's preferred codec with minimal settings
         try {
-            // FLog.d(TAG, "Attempting " + currentMimeType + " encoder with minimal settings");
             MediaFormat format = MediaFormat.createVideoFormat(currentMimeType, encoderWidth, encoderHeight);
             configureBasicEncoder(format);
 
@@ -1392,7 +1382,6 @@ public class GLRecordingPipeline {
             mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFd);
         } else {
             mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
-            // FLog.d(TAG, "Created FragmentedMp4Muxer with path: " + currentOutputFilePath + " (fMP4 for streaming)");
         }
 
         // Set location metadata if available
@@ -2724,35 +2713,6 @@ public class GLRecordingPipeline {
 
             // Debug aspect ratio information
             float recordingAspectRatio = (float) videoWidth / videoHeight;
-            FLog.d("DEBUG_ASPECT", "Recording dimensions: " + videoWidth + "x" + videoHeight);
-            FLog.d("DEBUG_ASPECT", "Recording aspect ratio: " + recordingAspectRatio);
-            FLog.d("DEBUG_ASPECT", "Forcing fixed dimensions: " + videoWidth + "x" + videoHeight +
-                    " with aspect ratio " + targetAspectRatio);
-
-            // Compare with the target aspect ratio
-            if (Math.abs(recordingAspectRatio - targetAspectRatio) > 0.01f) {
-                FLog.w("DEBUG_ASPECT", "Recording aspect ratio doesn't match target aspect ratio!");
-            }
-        }
-    }
-
-    /**
-     * Debug method to compare preview and recording dimensions and aspect ratios.
-     */
-    private void debugPreviewVsRecording() {
-        FLog.d("DEBUG_COMPARISON", "Preview surface: " + mSurfaceWidth + "x" + mSurfaceHeight);
-        FLog.d("DEBUG_COMPARISON", "Recording surface: " + videoWidth + "x" + videoHeight);
-
-        float previewAspectRatio = (float) mSurfaceWidth / mSurfaceHeight;
-        float recordingAspectRatio = (float) videoWidth / videoHeight;
-
-        FLog.d("DEBUG_COMPARISON", "Preview aspect ratio: " + previewAspectRatio);
-        FLog.d("DEBUG_COMPARISON", "Recording aspect ratio: " + recordingAspectRatio);
-
-        if (Math.abs(previewAspectRatio - recordingAspectRatio) > 0.01f) {
-            FLog.w("DEBUG_COMPARISON", "Preview and recording aspect ratios don't match!");
-        } else {
-            FLog.d("DEBUG_COMPARISON", "Preview and recording aspect ratios match.");
         }
     }
 

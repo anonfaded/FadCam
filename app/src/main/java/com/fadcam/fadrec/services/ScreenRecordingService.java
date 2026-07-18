@@ -166,7 +166,6 @@ public class ScreenRecordingService extends Service {
         }
 
         String action = intent.getAction();
-        // FLog.d(TAG, "onStartCommand: action=" + action);
 
         if (action == null) {
             stopSelf();
@@ -710,7 +709,6 @@ public class ScreenRecordingService extends Service {
                 .putLong("screen_recording_start_time", recordingStartTime)
                 .apply();
             
-            // FLog.i(TAG, "Screen recording started successfully");
             
             // Update UI on main thread
             mainHandler.post(() -> {

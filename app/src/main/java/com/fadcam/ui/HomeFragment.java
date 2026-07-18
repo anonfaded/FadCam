@@ -2255,7 +2255,6 @@ public class HomeFragment extends BaseFragment {
             return;
         }
         // OPTIMIZATION: Removed generic initialization log (not needed during recording)
-        // FLog.d(TAG, "Registering all HomeFragment broadcast receivers...");
 
         // Initialize if they are null (first time or after unregistration)
         initializeRecordingStateReceivers(); // Initializes all state-related receivers
@@ -2297,7 +2296,6 @@ public class HomeFragment extends BaseFragment {
         // registerRecordingCompleteReceiver
         // isTorchReceiverRegistered is managed by registerTorchReceiver
         // OPTIMIZATION: Removed generic completion log (reduced from 2x/sec to 0 during recording)
-        // FLog.i(
         //     TAG,
         //     "All HomeFragment broadcast receivers registration attempt finished."
         // );
@@ -3063,12 +3061,10 @@ public class HomeFragment extends BaseFragment {
         // Ensure boolean return type
         // method(registerRecordingStateReceivers_correct_signature_and_logic)-----
         // OPTIMIZATION: Removed generic initialization log (called 2x/sec during recording)
-        // FLog.d(TAG, "Registering recording state receivers...");
         
         // Guard: Don't register twice
         if (isStateReceiversRegistered) {
             // OPTIMIZATION: Removed redundant already-registered log
-            // FLog.d(TAG, "Recording state receivers already registered, skipping.");
             return true;
         }
         
@@ -3102,7 +3098,6 @@ public class HomeFragment extends BaseFragment {
                 );
             }
             // OPTIMIZATION: Removed generic receiver registration log
-            // FLog.d(TAG, "Registered broadcastOnRecordingStarted");
         } else {
             allRegisteredSuccessfully = false;
             FLog.e(TAG, "broadcastOnRecordingStarted is null, not registering");
@@ -3125,7 +3120,6 @@ public class HomeFragment extends BaseFragment {
                 );
             }
             // OPTIMIZATION: Removed generic receiver registration log
-            // FLog.d(TAG, "Registered broadcastOnRecordingResumed");
         } else {
             allRegisteredSuccessfully = false;
             FLog.e(TAG, "broadcastOnRecordingResumed is null, not registering");
@@ -3148,7 +3142,6 @@ public class HomeFragment extends BaseFragment {
                 );
             }
             // OPTIMIZATION: Removed generic receiver registration log
-            // FLog.d(TAG, "Registered broadcastOnRecordingPaused");
         } else {
             allRegisteredSuccessfully = false;
             FLog.e(TAG, "broadcastOnRecordingPaused is null, not registering");
@@ -3171,7 +3164,6 @@ public class HomeFragment extends BaseFragment {
                 );
             }
             // OPTIMIZATION: Removed generic receiver registration log
-            // FLog.d(TAG, "Registered broadcastOnRecordingStopped");
         } else {
             allRegisteredSuccessfully = false;
             FLog.e(TAG, "broadcastOnRecordingStopped is null, not registering");
@@ -3194,7 +3186,6 @@ public class HomeFragment extends BaseFragment {
                 );
             }
             // OPTIMIZATION: Removed generic receiver registration log
-            // FLog.d(TAG, "Registered broadcastOnRecordingStateCallback");
         } else {
             allRegisteredSuccessfully = false;
             FLog.e(
@@ -3748,7 +3739,6 @@ public class HomeFragment extends BaseFragment {
     // } else {
     // locationHelper.startLocationUpdates();
     // }
-    // FLog.d(TAG, "Requesting location permission.");
     // }
 
     @Nullable
@@ -10898,7 +10888,6 @@ public class HomeFragment extends BaseFragment {
                 }
                 isSegmentCompleteStatsReceiverRegistered = true;
                 // OPTIMIZATION: Removed generic receiver registration log
-                // FLog.d(TAG, "Registered segmentCompleteStatsReceiver.");
             } else {
                 isSegmentCompleteStatsReceiverRegistered = false;
                 FLog.e(

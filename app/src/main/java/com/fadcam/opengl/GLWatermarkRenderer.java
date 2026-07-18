@@ -2660,10 +2660,8 @@ public class GLWatermarkRenderer {
         }
         // Watermark texture dimensions are calculated from text metrics in
         // updateWatermarkTexture() to prevent squeeze/stretch artifacts.
-        // FLog.d(TAG, "updateMatrices: rotationDegrees=" + rotationDegrees +
         // ", deviceOrientation=" + deviceOrientation +
         // ", sensorOrientation=" + sensorOrientation);
-        // FLog.d("FAD-MATRIX", "Applying rotation: " + rotationDegrees);
 
         Matrix.setIdentityM(recordingMvpMatrix, 0);
         Matrix.rotateM(recordingMvpMatrix, 0, rotationDegrees, 0f, 0f, 1f);

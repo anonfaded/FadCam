@@ -1073,7 +1073,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                                 com.fadcam.utils.VideoSessionCache.saveThumbnailToDisk(context, uriString,
                                         thumbnailData);
 
-                                FLog.v(TAG, "Cached new thumbnail for: " + uriString);
                             } catch (Exception e) {
                                 FLog.w(TAG, "Error caching thumbnail", e);
                             }
@@ -1223,7 +1222,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             }
         }
-        FLog.v(TAG, "URI not found in adapter entries: " + uri); // Use v for verbose logs
+        // URI not found in adapter entries
         return -1; // Not found
     }
 
@@ -3055,7 +3054,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             holder.menuButtonContainer.setOnClickListener(null);
         }
 
-        FLog.v(TAG, "Professional shimmer skeleton bound at position " + position);
+
 
     }
 
@@ -3103,8 +3102,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         // Step 7: Restore normal item appearance
         holder.itemView.setAlpha(1.0f);
-
-        FLog.v(TAG, "Skeleton effects cleared for data binding");
 
     }
 

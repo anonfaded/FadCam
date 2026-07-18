@@ -109,7 +109,6 @@ public class FragmentedMp4MuxerWrapper {
         this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
                 .setFragmentDurationMs(2000) // 2 seconds per fragment for stable streaming
                 .build();
-        // FLog.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for path: " + path);
     }
 
     /**
@@ -137,7 +136,6 @@ public class FragmentedMp4MuxerWrapper {
         this.muxer = new FragmentedMp4Muxer.Builder(segmentConsumer)
                 .setFragmentDurationMs(2000) // 2 seconds per fragment for stable streaming
                 .build();
-        // FLog.d(TAG, "Created FragmentedMp4Muxer with 1s fragments and live streaming callback for file descriptor");
     }
 
     /**
@@ -872,7 +870,6 @@ public class FragmentedMp4MuxerWrapper {
                     fileOutputStream.write(data);
                     fileOutputStream.flush();
                 } else {
-                    // FLog.d(TAG, "⏭️ Init segment NOT written to file (STREAM_ONLY mode)");
                 }
             } else {
                 // Media fragment (moof + mdat)
@@ -901,7 +898,6 @@ public class FragmentedMp4MuxerWrapper {
                     fileOutputStream.flush();
                     // Fragment written log removed
                 } else {
-                    // FLog.d(TAG, "⏭️ Fragment #" + segment.segmentNr + " NOT written to file (STREAM_ONLY mode)");
                 }
                 
                 nextFragmentNumber++;

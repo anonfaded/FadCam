@@ -262,14 +262,12 @@ public class RemoteStreamManager {
      * Fragments are received via FragmentedMp4MuxerWrapper callbacks.
      */
     public void startRecording(@NonNull File recordingFile) {
-        // FLog.i(TAG, "🎬 START RECORDING called: enabled=" + streamingEnabled + ", file=" + recordingFile.getName());
         
         if (!streamingEnabled) {
             FLog.w(TAG, "❌ Streaming NOT enabled - ignoring startRecording call");
             return;
         }
         
-        // FLog.i(TAG, "✅ Streaming ENABLED - ready to receive fragments via callbacks");
         
         bufferLock.writeLock().lock();
         try {
@@ -282,15 +280,12 @@ public class RemoteStreamManager {
             
             if (isNewRecording) {
                 clearBuffer(); // Reset buffer for new recording
-                // FLog.d(TAG, "📋 Buffer cleared for new recording session");
             } else {
-                // FLog.d(TAG, "⚠️ Same recording file - buffer NOT cleared (duplicate call)");
             }
         } finally {
             bufferLock.writeLock().unlock();
         }
         
-        // FLog.i(TAG, "Remote streaming ready (callback-based)");
     }
 
     /**
@@ -363,7 +358,6 @@ public class RemoteStreamManager {
      * DOES NOT clear buffer - keeps fragments available for playback until next recording starts.
      */
     public void stopRecording() {
-        // FLog.i(TAG, "🛑 STOP RECORDING - buffer remains available for playback");
         
         bufferLock.writeLock().lock();
         try {
@@ -399,7 +393,6 @@ public class RemoteStreamManager {
      * @param initData ftyp + moov boxes
      */
     public void onInitializationSegment(byte[] initData) {
-        // FLog.i(TAG, "🔔 onInitializationSegment CALLED - data size: " + (initData != null ? initData.length : "NULL"));
         bufferLock.writeLock().lock();
         try {
             this.initializationSegment = initData;
@@ -420,11 +413,9 @@ public class RemoteStreamManager {
             bufferHead = 0;
             
             if (clearedCount > 0) {
-                // FLog.w(TAG, "🧹 CLEARED " + clearedCount + " stale fragments from previous session (PRODUCTION-GRADE RESET)");
             }
             
             if (initData != null) {
-                // FLog.i(TAG, "📋 Initialization segment STORED (" + (initData.length / 1024) + " KB) - Stream ready for fresh fragments");
                 
                 // Upload to cloud relay ONLY if streaming is actually enabled
                 if (streamingEnabled && context != null) {
@@ -472,7 +463,6 @@ public class RemoteStreamManager {
             // This prevents serving stale fragments when buffer wraps around
             if (fragmentBuffer[bufferHead] != null) {
                 int oldSeq = fragmentBuffer[bufferHead].sequenceNumber;
-                // FLog.d(TAG, "🗑️ Evicting old fragment #" + oldSeq + " from slot " + bufferHead);
             }
             
             // Create fragment object
@@ -489,7 +479,6 @@ public class RemoteStreamManager {
             // This ensures no stale data from previous buffer cycles
             for (int i = 0; i < BUFFER_SIZE; i++) {
                 if (fragmentBuffer[i] != null && fragmentBuffer[i].sequenceNumber < oldestSequence) {
-                    // FLog.d(TAG, "🗑️ Purging stale fragment #" + fragmentBuffer[i].sequenceNumber + " (< oldest " + oldestSequence + ")");
                     fragmentBuffer[i] = null;
                 }
             }
@@ -497,7 +486,6 @@ public class RemoteStreamManager {
             // Advance head pointer (circular)
             bufferHead = (bufferHead + 1) % BUFFER_SIZE;
             
-            // FLog.i(TAG, "🎬 Fragment #" + sequenceNumber + " buffered (" + 
             //     (fragmentData.length / 1024) + " KB) [" + getBufferedCount() + "/" + BUFFER_SIZE + " slots] oldest=" + oldestSequence + ", head=" + bufferHead);
             
             // Upload to cloud relay if enabled
@@ -542,7 +530,6 @@ public class RemoteStreamManager {
     public byte[] getInitializationSegment() {
         bufferLock.readLock().lock();
         try {
-            // FLog.d(TAG, "📥 getInitializationSegment called - returning: " + (initializationSegment != null ? (initializationSegment.length + " bytes") : "NULL"));
             return initializationSegment;
         } finally {
             bufferLock.readLock().unlock();
@@ -1526,7 +1513,6 @@ public class RemoteStreamManager {
         
         // Get configured battery warning threshold from SharedPreferencesManager
         int warningThreshold = prefs.getBatteryWarningThreshold();
-        // FLog.d(TAG, "[Battery] Retrieved threshold from prefs: " + warningThreshold);
         
         // Warning if battery is below or equal to threshold (only if not charging)
         if (currentLevel <= warningThreshold && !isCharging) {
@@ -1541,7 +1527,6 @@ public class RemoteStreamManager {
             "{\"percent\": %d, \"status\": \"%s\", \"consumed\": %d, \"remaining_hours\": %.1f, \"warning\": %s, \"warningThreshold\": %d}",
             currentLevel, chargingStatus, consumed, remainingHours, warningJson, warningThreshold
         );
-        // FLog.d(TAG, "[Battery] Returning JSON: " + result);
         return result;
     }
     

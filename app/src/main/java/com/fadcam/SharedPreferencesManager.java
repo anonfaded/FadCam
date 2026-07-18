@@ -64,11 +64,6 @@ public class SharedPreferencesManager {
                 .putStringSet(Constants.PREF_OPENED_VIDEO_URIS, openedUris)
                 .apply();
             FLog.d("SharedPrefs", "Added opened URI: " + uriString);
-        } else {
-            FLog.v(
-                "SharedPrefs",
-                "URI already marked as opened: " + uriString
-            );
         }
     }
 
