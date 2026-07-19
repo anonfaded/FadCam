@@ -359,6 +359,7 @@
     <string name="toast_no_drive_app">Η εφαρμογή Google Drive δεν βρέθηκε</string>
     <string name="records_title">Εγγραφές</string>
     <string name="records_filter_all">Όλα</string>
+    <string name="mode_all">Όλα</string>
     <string name="records_filter_camera">FadCam</string>
     <string name="records_filter_dual">Dual</string>
     <string name="records_filter_screen">FadRec</string>
@@ -711,6 +712,7 @@
     <string name="switched_front_camera">Μετάβαση στην μπροστινή κάμερα</string>
     <string name="switched_rear_camera">Μετάβαση στην πίσω κάμερα</string>
     <string name="notification_video_recording">Εγγραφή βίντεο</string>
+    <string name="recording_notification_title">Ειδοποίηση εγγραφής</string>
     <string name="notification_video_recording_progress_description">Η εγγραφή είναι σε εξέλιξη</string>
     <string name="notification_video_recording_paused_description">Η εγγραφή είναι σε παύση</string>
     <string name="torch_options_title">Επιλογές Φακού</string>
@@ -766,6 +768,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="widgets_helper_text">Καρφιτσώστε γρήγορες ενέργειες στην αρχική σας οθόνη για άμεση πρόσβαση.</string>
     <string name="widgets_pin_unsupported">Η καρφίτσωμα widget δεν υποστηρίζεται από τον εκκινητή σας.</string>
     <string name="widget_clock_title">Widget Ρολογιού</string>
+    <string name="widget_label_clock">Ρολόι</string>
     <string name="widgets_pin_fallback">Αν δεν εμφανιστεί προτροπή, πατήστε παρατεταμένα την Αρχική, ανοίξτε τα Widget και σύρετε το Widget Ρολογιού FadCam.</string>
     <!-- Widget Customization -->
     <string name="widget_customize_title">Προσαρμογή Widget Ρολογιού</string>
@@ -2029,6 +2032,16 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <!-- Motion Lab -->
     <string name="motion_lab_title">Εργαστήριο Κίνησης</string>
     <string name="motion_lab_row_subtitle">Έξυπνη εγγραφή συμβάντων για χρήση CCTV</string>
+    <string name="automation_title">Αυτοματισμός</string>
+    <string name="automation_row_subtitle">Αντιστοίχιση κουμπιών, τηλεχειριστήρια Bluetooth, πλήκτρα έντασης</string>
+    <string name="thermal_guardian_title">Θερμικός Φύλακας</string>
+    <string name="thermal_guardian_row_subtitle">Αυτόματη προσαρμογή εγγραφής για αποφυγή υπερθέρμανσης</string>
+    <string name="audio_vision_title">Ηχητική Όραση</string>
+    <string name="audio_vision_row_subtitle">Έναρξη εγγραφής κατά την ανίχνευση ήχου</string>
+    <string name="scheduled_recording_title">Προγραμματισμένη Εγγραφή</string>
+    <string name="scheduled_recording_row_subtitle">Αυτόματη έναρξη και διακοπή εγγραφής σε καθορισμένες ώρες</string>
+    <string name="profiles_title">Προφίλ</string>
+    <string name="profiles_row_subtitle">Αποθήκευση και φόρτωση προεπιλογών εγγραφής άμεσα</string>
     <string name="motion_lab_enable">Ενεργοποίηση Εγγραφής Κίνησης</string>
     <string name="motion_lab_enable_sensor">Ενεργοποίηση Αισθητήρα Κίνησης</string>
     <string name="motion_lab_status_enabled">Ενεργό (εγγραφή μόνο όταν χρειάζεται)</string>
@@ -2849,4 +2862,32 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="toast_failed_open_file">Αποτυχία ανοίγματος αρχείου για εγγραφή</string>
     <string name="toast_cannot_write_custom_dir">Δεν είναι δυνατή η εγγραφή στον επιλεγμένο προσαρμοσμένο κατάλογο</string>
     <string name="toast_failed_create_file">Αποτυχία δημιουργίας αρχείου για εγγραφή</string>
+
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Εκπαιδευτικά Βίντεο</string>
+    <string name="tutorials_subtitle">Σχεδιάζουμε να δημιουργήσουμε σύντομους οδηγούς που καλύπτουν τα πάντα, από βασικά έως προηγμένες τεχνικές. Κάνε εγγραφή και πάτα το κουδούνι για να ειδοποιηθείς όταν δημοσιευτούν!</string>
+    <string name="tutorials_youtube_cta">Εγγραφή στο YouTube</string>
+    <string name="badge_soon">Σύντομα</string>
+    <string name="tutorial_getting_started">Ξεκινώντας</string>
+    <string name="tutorial_advanced_features">Προηγμένες δυνατότητες</string>
+    <string name="tutorial_body_cam_setup">Ρύθμιση κάμερας σώματος</string>
+    <string name="tutorial_dashcam_setup">Ρύθμιση Dashcam</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam για iOS</string>
+    <string name="ios_promo_title">Το FadCam είναι τώρα διαθέσιμο στο iOS!</string>
+    <string name="ios_promo_subtitle">Η ίδια εφαρμογή κάμερας με προστασία απορρήτου που αγαπάς, τώρα διαθέσιμη για iPhone</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">Απορρίμματα</string>
+    <string name="trash_settings_subtitle">Ανάκτηση διαγραμμένων εγγραφών και αρχείων</string>
+    <string name="trash_settings_info">Αυτή η λειτουργία ήταν ήδη διαθέσιμη — απλά κρυμμένη πίσω από ένα παρατεταμένο πάτημα στο λογότυπο FadCam στην επάνω γραμμή της αρχικής οθόνης. Την εμφανίσαμε εδώ για να είναι πιο εύκολο να την ανακαλύψετε.</string>
+    <string name="trash_settings_hide_button">Απόκρυψη αυτής της ενότητας</string>
+    <string name="trash_settings_hide_dialog_title">Απόκρυψη ενότητας απορριμμάτων;</string>
+    <string name="trash_settings_hide_dialog_message">Η ενότητα απορριμμάτων θα εξαφανιστεί από τις Ρυθμίσεις. Για να την επαναφέρετε, ανοίξτε τα Απορρίμματα με παρατεταμένο πάτημα στο λογότυπο FadCam στην επάνω γραμμή της αρχικής οθόνης και ενεργοποιήστε την επιλογή «Εμφάνιση απορριμμάτων στις Ρυθμίσεις».</string>
+    <string name="trash_settings_hide_dialog_confirm">Απόκρυψη</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">Εμφάνιση στις Ρυθμίσεις</string>
+    <string name="trash_show_in_settings_desc">Προσθέτει μια γραμμή Απορριμμάτων στη σελίδα Ρυθμίσεων για γρήγορη πρόσβαση</string>
 </resources>

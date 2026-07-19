@@ -405,6 +405,7 @@
     <string name="switched_front_camera">Переключено на фронтальную камеру</string>
     <string name="switched_rear_camera">Переключено на заднюю камеру</string>
     <string name="notification_video_recording">Запись видео</string>
+    <string name="recording_notification_title">Уведомление о записи</string>
     <string name="notification_video_recording_progress_description">Запись в процессе</string>
     <string name="notification_video_recording_paused_description">Запись приостановлена</string>
     <string name="torch_options_title">Параметры фонарика</string>
@@ -449,6 +450,7 @@
     <string name="widgets_helper_text">Закрепите быстрые действия на главном экране для мгновенного доступа.</string>
     <string name="widgets_pin_unsupported">Закрепление виджетов не поддерживается вашим лаунчером.</string>
     <string name="widget_clock_title">Виджет часов</string>
+    <string name="widget_label_clock">Часы</string>
     <string name="widgets_pin_fallback">Если запрос не появляется, длительно нажмите главный экран, откройте Виджеты и перетащите виджет часов FadCam.</string>
 
     <!-- Widget Customization -->
@@ -1737,6 +1739,7 @@ FadCam использует фрагментированный формат MP4 
     <string name="photo_capture_preview_unavailable">Предпросмотр недоступен</string>
 
     <string name="records_filter_all">Все</string>
+    <string name="mode_all">Все</string>
 
     <string name="records_filter_camera">FadCam</string>
 
@@ -2752,6 +2755,16 @@ FadCam использует фрагментированный формат MP4 
     <!-- Motion Lab -->
     <string name="motion_lab_title">Лаборатория движения</string>
     <string name="motion_lab_row_subtitle">Умная запись событий для использования как CCTV</string>
+    <string name="automation_title">Автоматизация</string>
+    <string name="automation_row_subtitle">Назначение кнопок, Bluetooth-пульты, клавиши громкости</string>
+    <string name="thermal_guardian_title">Тепловой Защитник</string>
+    <string name="thermal_guardian_row_subtitle">Автоматическая настройка записи для предотвращения перегрева</string>
+    <string name="audio_vision_title">Аудио Видение</string>
+    <string name="audio_vision_row_subtitle">Запуск записи при обнаружении звука</string>
+    <string name="scheduled_recording_title">Запись по Расписанию</string>
+    <string name="scheduled_recording_row_subtitle">Автоматический запуск и остановка записи в заданное время</string>
+    <string name="profiles_title">Профили</string>
+    <string name="profiles_row_subtitle">Мгновенное сохранение и загрузка настроек записи</string>
     <string name="motion_lab_enable">Включить запись по движению</string>
     <string name="motion_lab_enable_sensor">Включить датчик движения</string>
     <string name="motion_lab_status_enabled">Активно (запись только при необходимости)</string>
@@ -3419,4 +3432,32 @@ FadCam использует фрагментированный формат MP4 
     <string name="toast_failed_open_file">Не удалось открыть файл для записи</string>
     <string name="toast_cannot_write_custom_dir">Не удалось записать в выбранный пользовательский каталог</string>
     <string name="toast_failed_create_file">Не удалось создать файл для записи</string>
+
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Обучающие видео</string>
+    <string name="tutorials_subtitle">Мы планируем создать короткие руководства, охватывающие всё от основ до профессиональных техник. Подпишитесь и нажмите на колокольчик, чтобы получить уведомление, когда они выйдут!</string>
+    <string name="tutorials_youtube_cta">Подписаться на YouTube</string>
+    <string name="badge_soon">Скоро</string>
+    <string name="tutorial_getting_started">Начало работы</string>
+    <string name="tutorial_advanced_features">Расширенные возможности</string>
+    <string name="tutorial_body_cam_setup">Настройка нашейной камеры</string>
+    <string name="tutorial_dashcam_setup">Настройка видеорегистратора</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam для iOS</string>
+    <string name="ios_promo_title">FadCam теперь на iOS!</string>
+    <string name="ios_promo_subtitle">То же приложение камеры, уважающее вашу конфиденциальность, теперь доступно для iPhone</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">Корзина</string>
+    <string name="trash_settings_subtitle">Восстановление удалённых записей и файлов</string>
+    <string name="trash_settings_info">Эта функция уже была доступна — просто спрятана за долгим нажатием на логотип FadCam в верхней панели главного экрана. Мы разместили её здесь, чтобы её было легче найти.</string>
+    <string name="trash_settings_hide_button">Скрыть этот раздел</string>
+    <string name="trash_settings_hide_dialog_title">Скрыть раздел Корзины?</string>
+    <string name="trash_settings_hide_dialog_message">Раздел Корзины исчезнет из Настроек. Чтобы вернуть его, откройте Корзину долгим нажатием на логотип FadCam в верхней панели главного экрана и включите «Показывать Корзину в Настройках».</string>
+    <string name="trash_settings_hide_dialog_confirm">Скрыть</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">Показывать в Настройках</string>
+    <string name="trash_show_in_settings_desc">Добавляет строку Корзины на страницу Настроек для быстрого доступа</string>
 </resources>

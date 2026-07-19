@@ -69,7 +69,7 @@
                 android:id="@+id/mode_selector_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="All"
+                android:text="@string/mode_all"
                 android:textColor="#A0A0A0"
                 android:textSize="11sp"
                 android:textStyle="bold"/>
@@ -718,6 +718,226 @@
             <View style="@style/SettingsDivider" />
 
             <LinearLayout
+                android:id="@+id/group_thermal_guardian"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_thermometer"
+                    android:tint="@android:color/darker_gray"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/thermal_guardian_title"
+                            android:textColor="?attr/colorHeading"
+                            android:textStyle="bold"
+                            android:textSize="15sp"/>
+                        <TextView
+                            android:id="@+id/thermal_guardian_coming_soon_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp"
+                            android:text="@string/remote_coming_soon_badge"
+                            android:textColor="#FFFFFF"
+                            android:textSize="8sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/bg_coming_soon_badge"/>
+                    </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/thermal_guardian_row_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+            <View style="@style/SettingsDivider" />
+
+            <LinearLayout
+                android:id="@+id/group_audio_vision"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_audio"
+                    android:tint="@android:color/darker_gray"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/audio_vision_title"
+                            android:textColor="?attr/colorHeading"
+                            android:textStyle="bold"
+                            android:textSize="15sp"/>
+                        <TextView
+                            android:id="@+id/audio_vision_coming_soon_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp"
+                            android:text="@string/remote_coming_soon_badge"
+                            android:textColor="#FFFFFF"
+                            android:textSize="8sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/bg_coming_soon_badge"/>
+                    </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/audio_vision_row_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+            <View style="@style/SettingsDivider" />
+
+            <LinearLayout
+                android:id="@+id/group_scheduled_recording"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_schedule"
+                    android:tint="@android:color/darker_gray"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/scheduled_recording_title"
+                            android:textColor="?attr/colorHeading"
+                            android:textStyle="bold"
+                            android:textSize="15sp"/>
+                        <TextView
+                            android:id="@+id/scheduled_recording_coming_soon_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp"
+                            android:text="@string/remote_coming_soon_badge"
+                            android:textColor="#FFFFFF"
+                            android:textSize="8sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/bg_coming_soon_badge"/>
+                    </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/scheduled_recording_row_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+            <View style="@style/SettingsDivider" />
+
+            <LinearLayout
+                android:id="@+id/group_profiles"
+                style="@style/SettingsGroupRow">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_profiles"
+                    android:tint="@android:color/darker_gray"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/profiles_title"
+                            android:textColor="?attr/colorHeading"
+                            android:textStyle="bold"
+                            android:textSize="15sp"/>
+                        <TextView
+                            android:id="@+id/profiles_coming_soon_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp"
+                            android:text="@string/remote_coming_soon_badge"
+                            android:textColor="#FFFFFF"
+                            android:textSize="8sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/bg_coming_soon_badge"/>
+                    </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/profiles_row_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+            <View style="@style/SettingsDivider" />
+
+            <LinearLayout
                 android:id="@+id/group_automation"
                 style="@style/SettingsGroupRow">
                 <ImageView
@@ -1221,7 +1441,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="20dp"
             android:layout_marginBottom="2dp"
-            android:text="Tutorial Videos"
+            android:text="@string/tutorials_title"
             android:textColor="?attr/colorHeading"
             android:textSize="14sp"
             android:textStyle="bold"
@@ -1299,7 +1519,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Soon"
+                                    android:text="@string/badge_soon"
                                     android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:textStyle="bold"/>
@@ -1311,7 +1531,7 @@
                             android:layout_height="wrap_content"
                             android:padding="10dp"
                             android:paddingBottom="12dp"
-                            android:text="Getting Started"
+                            android:text="@string/tutorial_getting_started"
                             android:textColor="#E0E0E0"
                             android:textSize="13sp"
                             android:textStyle="bold"
@@ -1365,7 +1585,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Soon"
+                                    android:text="@string/badge_soon"
                                     android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:textStyle="bold"/>
@@ -1377,7 +1597,7 @@
                             android:layout_height="wrap_content"
                             android:padding="10dp"
                             android:paddingBottom="12dp"
-                            android:text="Advanced Features"
+                            android:text="@string/tutorial_advanced_features"
                             android:textColor="#E0E0E0"
                             android:textSize="13sp"
                             android:textStyle="bold"
@@ -1431,7 +1651,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Soon"
+                                    android:text="@string/badge_soon"
                                     android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:textStyle="bold"/>
@@ -1443,7 +1663,7 @@
                             android:layout_height="wrap_content"
                             android:padding="10dp"
                             android:paddingBottom="12dp"
-                            android:text="Body Cam Setup"
+                            android:text="@string/tutorial_body_cam_setup"
                             android:textColor="#E0E0E0"
                             android:textSize="13sp"
                             android:textStyle="bold"
@@ -1497,7 +1717,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Soon"
+                                    android:text="@string/badge_soon"
                                     android:textColor="#FFFFFF"
                                     android:textSize="9sp"
                                     android:textStyle="bold"/>
@@ -1509,7 +1729,7 @@
                             android:layout_height="wrap_content"
                             android:padding="10dp"
                             android:paddingBottom="12dp"
-                            android:text="Dashcam Setup"
+                            android:text="@string/tutorial_dashcam_setup"
                             android:textColor="#E0E0E0"
                             android:textSize="13sp"
                             android:textStyle="bold"
@@ -1576,7 +1796,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="24dp"
             android:layout_marginBottom="10dp"
-            android:text="FadCam for iOS"
+            android:text="@string/fadcam_for_ios_title"
             android:textColor="?attr/colorHeading"
             android:textSize="14sp"
             android:textStyle="bold"

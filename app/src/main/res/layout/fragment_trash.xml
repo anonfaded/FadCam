@@ -288,13 +288,13 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Show in Settings"
+                    android:text="@string/trash_show_in_settings_title"
                     android:textColor="?attr/colorHeading"
                     android:textSize="14sp"/>
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Adds a Trash row to the Settings page for quick access"
+                    android:text="@string/trash_show_in_settings_desc"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="11sp"
                     android:layout_marginTop="2dp"/>

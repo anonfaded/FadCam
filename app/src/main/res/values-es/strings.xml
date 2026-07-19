@@ -407,6 +407,7 @@
     <string name="toast_no_drive_app">App de Google Drive no encontrada</string>
     <string name="records_title">Grabaciones</string>
     <string name="records_filter_all">Todas</string>
+    <string name="mode_all">Todo</string>
     <string name="records_filter_camera">FadCam</string>
     <string name="records_filter_dual">Dual</string>
     <string name="records_filter_screen">FadRec</string>
@@ -752,6 +753,7 @@
     <string name="switched_front_camera">Cambiado a cámara frontal</string>
     <string name="switched_rear_camera">Cambiado a cámara trasera</string>
     <string name="notification_video_recording">Grabación de video</string>
+    <string name="recording_notification_title">Notificación de grabación</string>
     <string name="notification_video_recording_progress_description">La grabación está en progreso</string>
     <string name="notification_video_recording_paused_description">La grabación está pausada</string>
     <string name="torch_options_title">Opciones de linterna</string>
@@ -802,6 +804,7 @@
     <string name="widgets_helper_text">Fija acciones rápidas a tu pantalla de inicio para acceso instantáneo.</string>
     <string name="widgets_pin_unsupported">Fijar widgets no es compatible con tu launcher.</string>
     <string name="widget_clock_title">Widget de reloj</string>
+    <string name="widget_label_clock">Reloj</string>
     <string name="widgets_pin_fallback">Si no aparece ningún aviso, mantén presionada tu pantalla de Inicio, abre Widgets y arrastra el widget de reloj FadCam.</string>
 
     <!-- Widget Customization -->
@@ -2095,6 +2098,16 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <!-- Motion Lab -->
     <string name="motion_lab_title">Laboratorio de Movimiento</string>
     <string name="motion_lab_row_subtitle">Grabación inteligente de eventos para uso estilo CCTV</string>
+    <string name="automation_title">Automatización</string>
+    <string name="automation_row_subtitle">Asignación de botones, controles remotos Bluetooth, teclas de volumen</string>
+    <string name="thermal_guardian_title">Guardián Térmico</string>
+    <string name="thermal_guardian_row_subtitle">Ajustar grabación automáticamente para evitar sobrecalentamiento</string>
+    <string name="audio_vision_title">Visión de Audio</string>
+    <string name="audio_vision_row_subtitle">Iniciar grabación al detectar sonido</string>
+    <string name="scheduled_recording_title">Grabación Programada</string>
+    <string name="scheduled_recording_row_subtitle">Iniciar y detener grabación automáticamente en horas fijadas</string>
+    <string name="profiles_title">Perfiles</string>
+    <string name="profiles_row_subtitle">Guardar y cargar ajustes de grabación al instante</string>
     <string name="motion_lab_enable">Habilitar grabación por motion</string>
     <string name="motion_lab_enable_sensor">Habilitar sensor de motion</string>
     <string name="motion_lab_status_enabled">Activo (graba solo cuando es necesario)</string>
@@ -2857,4 +2870,32 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <string name="toast_failed_open_file">Error al abrir archivo para escritura</string>
     <string name="toast_cannot_write_custom_dir">No se puede escribir en el directorio personalizado seleccionado</string>
     <string name="toast_failed_create_file">Error al crear archivo para escritura</string>
+
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Videos Tutoriales</string>
+    <string name="tutorials_subtitle">Planeamos crear guías cortas que cubran todo, desde lo básico hasta técnicas profesionales. ¡Suscríbete y activa la campana para recibir notificaciones cuando se publiquen!</string>
+    <string name="tutorials_youtube_cta">Suscribirse en YouTube</string>
+    <string name="badge_soon">Pronto</string>
+    <string name="tutorial_getting_started">Introducción</string>
+    <string name="tutorial_advanced_features">Funciones avanzadas</string>
+    <string name="tutorial_body_cam_setup">Configurar cámara corporal</string>
+    <string name="tutorial_dashcam_setup">Configurar Dashcam</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam para iOS</string>
+    <string name="ios_promo_title">¡FadCam ya está en iOS!</string>
+    <string name="ios_promo_subtitle">La misma app de cámara que prioriza tu privacidad y que te encanta, ahora disponible para iPhone</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">Papelera</string>
+    <string name="trash_settings_subtitle">Recuperar grabaciones y archivos eliminados</string>
+    <string name="trash_settings_info">Esta función ya estaba disponible, solo estaba oculta detrás de una pulsación larga en el logotipo de FadCam en la barra superior de la pantalla de inicio. La hemos puesto aquí para que sea más fácil de descubrir.</string>
+    <string name="trash_settings_hide_button">Ocultar esta sección</string>
+    <string name="trash_settings_hide_dialog_title">¿Ocultar sección de Papelera?</string>
+    <string name="trash_settings_hide_dialog_message">La sección Papelera desaparecerá de Ajustes. Para recuperarla, abre la Papelera manteniendo pulsado el logotipo de FadCam en la barra superior de la pantalla de inicio y activa «Mostrar Papelera en Ajustes».</string>
+    <string name="trash_settings_hide_dialog_confirm">Ocultar</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">Mostrar en Ajustes</string>
+    <string name="trash_show_in_settings_desc">Añade una fila de Papelera a la página de Ajustes para acceso rápido</string>
 </resources>

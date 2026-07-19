@@ -406,6 +406,7 @@
     <string name="toast_no_drive_app">Google Drive app not found</string>
     <string name="records_title">Recordings</string>
     <string name="records_filter_all">All</string>
+    <string name="mode_all">All</string>
     <string name="records_filter_camera">FadCam</string>
     <string name="records_filter_dual">Dual</string>
     <string name="records_filter_screen">FadRec</string>
@@ -753,6 +754,7 @@
     <string name="notification_video_recording">Video recording</string>
     <string name="notification_video_recording_progress_description">Recording is in progress</string>
     <string name="notification_video_recording_paused_description">Recording is paused</string>
+    <string name="recording_notification_title">Recording Notification</string>
     <string name="torch_options_title">Torch Options</string>
     <string name="torch_select_source">Select Torch Source:</string>
     <string name="torch_back">Back Torch</string>
@@ -801,6 +803,7 @@
     <string name="widgets_helper_text">Pin quick actions to your home screen for instant access.</string>
     <string name="widgets_pin_unsupported">Pinning widgets is not supported by your launcher.</string>
     <string name="widget_clock_title">Clock widget</string>
+    <string name="widget_label_clock">Clock</string>
     <string name="widgets_pin_fallback">If no prompt appears, long‑press your Home screen, open Widgets, and drag the FadCam Clock widget.</string>
 
     <!-- Widget Customization -->
@@ -2144,12 +2147,34 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="automation_title">Automation</string>
     <string name="automation_row_subtitle">Button mapping, Bluetooth remotes, volume keys</string>
 
+    <!-- Thermal Guardian - coming soon -->
+    <string name="thermal_guardian_title">Thermal Guardian</string>
+    <string name="thermal_guardian_row_subtitle">Auto-adjust recording to prevent overheating</string>
+
+    <!-- Audio Vision - coming soon -->
+    <string name="audio_vision_title">Audio Vision</string>
+    <string name="audio_vision_row_subtitle">Start recording when sound is detected</string>
+
+    <!-- Scheduled Recording - coming soon -->
+    <string name="scheduled_recording_title">Scheduled Recording</string>
+    <string name="scheduled_recording_row_subtitle">Auto start and stop recording at set times</string>
+
+    <!-- Profiles - coming soon -->
+    <string name="profiles_title">Profiles</string>
+    <string name="profiles_row_subtitle">Save and load recording presets instantly</string>
+
     <!-- Tutorials - coming soon -->
     <string name="tutorials_title">Tutorial Videos</string>
     <string name="tutorials_subtitle">We\'re planning to create short guides covering everything from basics to pro techniques. Subscribe and hit the bell so you\'ll be notified when they drop!</string>
     <string name="tutorials_youtube_cta">Subscribe on YouTube</string>
+    <string name="badge_soon">Soon</string>
+    <string name="tutorial_getting_started">Getting Started</string>
+    <string name="tutorial_advanced_features">Advanced Features</string>
+    <string name="tutorial_body_cam_setup">Body Cam Setup</string>
+    <string name="tutorial_dashcam_setup">Dashcam Setup</string>
 
     <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam for iOS</string>
     <string name="ios_promo_title">FadCam is now on iOS!</string>
     <string name="ios_promo_subtitle">The same privacy-first camera app you love, now available for iPhone</string>
 
@@ -2161,6 +2186,11 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="trash_settings_hide_dialog_title">Hide Trash section?</string>
     <string name="trash_settings_hide_dialog_message">The Trash section will disappear from Settings. To bring it back, open Trash by long-pressing the FadCam logo in the top bar of the home screen, then turn on \"Show Trash in Settings\" inside.</string>
     <string name="trash_settings_hide_dialog_confirm">Hide</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">Show in Settings</string>
+    <string name="trash_show_in_settings_desc">Adds a Trash row to the Settings page for quick access</string>
+
     <string name="motion_lab_enable">Enable Motion Recording</string>
     <string name="motion_lab_enable_sensor">Enable Motion Sensor</string>
     <string name="motion_lab_status_enabled">Active (records only when needed)</string>

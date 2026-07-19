@@ -46,6 +46,30 @@ public class AdvancedSettingsFragment extends Fragment {
                 "DigitalForensicsSettingsFragment"
             ));
         }
+        View thermalGuardian = view.findViewById(R.id.row_thermal_guardian);
+        if (thermalGuardian != null) {
+            thermalGuardian.setOnClickListener(v ->
+                android.widget.Toast.makeText(requireContext(), R.string.mini_app_coming_soon_desc, android.widget.Toast.LENGTH_SHORT).show()
+            );
+        }
+        View audioVision = view.findViewById(R.id.row_audio_vision);
+        if (audioVision != null) {
+            audioVision.setOnClickListener(v ->
+                android.widget.Toast.makeText(requireContext(), R.string.mini_app_coming_soon_desc, android.widget.Toast.LENGTH_SHORT).show()
+            );
+        }
+        View scheduledRecording = view.findViewById(R.id.row_scheduled_recording);
+        if (scheduledRecording != null) {
+            scheduledRecording.setOnClickListener(v ->
+                android.widget.Toast.makeText(requireContext(), R.string.mini_app_coming_soon_desc, android.widget.Toast.LENGTH_SHORT).show()
+            );
+        }
+        View profiles = view.findViewById(R.id.row_profiles);
+        if (profiles != null) {
+            profiles.setOnClickListener(v ->
+                android.widget.Toast.makeText(requireContext(), R.string.mini_app_coming_soon_desc, android.widget.Toast.LENGTH_SHORT).show()
+            );
+        }
     }
 
     private void handleBack() {

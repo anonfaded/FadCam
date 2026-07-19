@@ -406,6 +406,7 @@
     <string name="toast_no_drive_app">Aplikasi Google Drive tidak ditemukan</string>
     <string name="records_title">Rekaman</string>
     <string name="records_filter_all">All</string>
+    <string name="mode_all">Semua</string>
     <string name="records_filter_camera">FadCam</string>
     <string name="records_filter_dual">Dual</string>
     <string name="records_filter_screen">FadRec</string>
@@ -755,6 +756,7 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="switched_front_camera">Beralih ke kamera depan</string>
     <string name="switched_rear_camera">Beralih ke kamera belakang</string>
     <string name="notification_video_recording">Perekaman video</string>
+    <string name="recording_notification_title">Notifikasi Perekaman</string>
     <string name="notification_video_recording_progress_description">Perekaman sedang berlangsung</string>
     <string name="notification_video_recording_paused_description">Perekaman dijeda</string>
     <string name="torch_options_title">Opsi Senter</string>
@@ -805,6 +807,7 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="widgets_helper_text">Sematkan tindakan cepat ke layar beranda Anda untuk akses instan.</string>
     <string name="widgets_pin_unsupported">Penyematan widget tidak didukung oleh launcher Anda.</string>
     <string name="widget_clock_title">Widget jam</string>
+    <string name="widget_label_clock">Jam</string>
     <string name="widgets_pin_fallback">Jika tidak ada prompt yang muncul, tekan lama layar Beranda Anda, buka Widget, dan seret widget Jam FadCam.</string>
 
     <!-- Widget Customization -->
@@ -2152,6 +2155,16 @@ Apakah Anda ingin beralih ke H.264 dan mulai merekam?</string>
     <!-- Motion Lab -->
     <string name="motion_lab_title">Lab Gerakan</string>
     <string name="motion_lab_row_subtitle">Perekaman peristiwa cerdas untuk penggunaan gaya CCTV</string>
+    <string name="automation_title">Otomatisasi</string>
+    <string name="automation_row_subtitle">Pemetaan tombol, remote Bluetooth, tombol volume</string>
+    <string name="thermal_guardian_title">Pelindung Termal</string>
+    <string name="thermal_guardian_row_subtitle">Sesuaikan perekaman secara otomatis untuk mencegah panas berlebih</string>
+    <string name="audio_vision_title">Visi Audio</string>
+    <string name="audio_vision_row_subtitle">Mulai rekam saat suara terdeteksi</string>
+    <string name="scheduled_recording_title">Rekaman Terjadwal</string>
+    <string name="scheduled_recording_row_subtitle">Mulai dan hentikan rekam otomatis pada waktu yang ditentukan</string>
+    <string name="profiles_title">Profil</string>
+    <string name="profiles_row_subtitle">Simpan dan muat preset rekaman secara instan</string>
     <string name="motion_lab_enable">Aktifkan Perekaman Motion</string>
     <string name="motion_lab_enable_sensor">Aktifkan Sensor Motion</string>
     <string name="motion_lab_status_enabled">Aktif (hanya merekam saat diperlukan)</string>
@@ -3012,4 +3025,32 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="toast_failed_open_file">Gagal membuka file untuk ditulis</string>
     <string name="toast_cannot_write_custom_dir">Tidak dapat menulis ke direktori kustom yang dipilih</string>
     <string name="toast_failed_create_file">Gagal membuat file untuk ditulis</string>
+
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Video Tutorial</string>
+    <string name="tutorials_subtitle">Kami berencana membuat panduan singkat yang mencakup semuanya dari dasar hingga teknik pro. Berlangganan dan tekan lonceng agar kamu mendapat notifikasi saat video dirilis!</string>
+    <string name="tutorials_youtube_cta">Berlangganan di YouTube</string>
+    <string name="badge_soon">Segera</string>
+    <string name="tutorial_getting_started">Memulai</string>
+    <string name="tutorial_advanced_features">Fitur Lanjutan</string>
+    <string name="tutorial_body_cam_setup">Pengaturan Kamera Tubuh</string>
+    <string name="tutorial_dashcam_setup">Pengaturan Dashcam</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam untuk iOS</string>
+    <string name="ios_promo_title">FadCam sekarang tersedia di iOS!</string>
+    <string name="ios_promo_subtitle">Aplikasi kamera yang mengutamakan privasi yang kamu sukai, kini tersedia untuk iPhone</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">Sampah</string>
+    <string name="trash_settings_subtitle">Pulihkan rekaman dan file yang dihapus</string>
+    <string name="trash_settings_info">Fitur ini sudah tersedia — hanya tersembunyi di balik tekan lama logo FadCam di bilah atas layar beranda. Kami menampilkannya di sini agar lebih mudah ditemukan.</string>
+    <string name="trash_settings_hide_button">Sembunyikan bagian ini</string>
+    <string name="trash_settings_hide_dialog_title">Sembunyikan bagian Sampah?</string>
+    <string name="trash_settings_hide_dialog_message">Bagian Sampah akan hilang dari Pengaturan. Untuk mengembalikannya, buka Sampah dengan tekan lama logo FadCam di bilah atas layar beranda, lalu aktifkan \"Tampilkan Sampah di Pengaturan\" di dalamnya.</string>
+    <string name="trash_settings_hide_dialog_confirm">Sembunyikan</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">Tampilkan di Pengaturan</string>
+    <string name="trash_show_in_settings_desc">Menambahkan baris Sampah ke halaman Pengaturan untuk akses cepat</string>
 </resources>

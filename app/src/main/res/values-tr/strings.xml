@@ -224,6 +224,7 @@
     <string name="switched_front_camera">Ön kameraya geçildi</string>
     <string name="switched_rear_camera">Arka kameraya geçildi</string>
     <string name="notification_video_recording">Video kaydı</string>
+    <string name="recording_notification_title">Kayıt Bildirimi</string>
     <string name="notification_video_recording_progress_description">Kayıt devam ediyor</string>
     <string name="notification_video_recording_paused_description">Kayıt duraklatıldı</string>
     <string name="torch_options_title">Fener Seçenekleri</string>
@@ -614,6 +615,7 @@
     <string name="widgets_helper_text">Hızlı erişim için ana ekranınıza kısayollar ekleyin.</string>
     <string name="widgets_pin_unsupported">Pencere öğesi ekleme, başlatıcınız tarafından desteklenmiyor.</string>
     <string name="widget_clock_title">Saat penceresi</string>
+    <string name="widget_label_clock">Saat</string>
     <string name="widget_customize_title">Saat Pencere Öğesini Özelleştir</string>
     <string name="widget_customize_description">Saat pencere öğenizin saat ve tarih görüntüleme şeklini özelleştirin</string>
     <string name="widget_time_format_title">Saat Formatı</string>
@@ -1394,6 +1396,7 @@
     <string name="photo_capture_failed">Fotoğraf çekilemedi</string>
     <string name="photo_capture_preview_unavailable">Ön izleme kullanılamıyor</string>
     <string name="records_filter_all">Tümü</string>
+    <string name="mode_all">Tümü</string>
     <string name="records_filter_camera">FadCam</string>
     <string name="records_filter_dual">Çift</string>
     <string name="records_filter_screen">FadRec</string>
@@ -2187,6 +2190,16 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="front_video_mirror_disable">Ön video çevirmeyi devre dışı bırak</string>
     <string name="motion_lab_title">Hareket Laboratuvarı</string>
     <string name="motion_lab_row_subtitle">CCTV tarzı kullanım için akıllı olay kaydı</string>
+    <string name="automation_title">Otomasyon</string>
+    <string name="automation_row_subtitle">Tuş atama, Bluetooth kumandalar, ses tuşları</string>
+    <string name="thermal_guardian_title">Isı Koruyucu</string>
+    <string name="thermal_guardian_row_subtitle">Aşırı ısınmayı önlemek için kaydı otomatik ayarla</string>
+    <string name="audio_vision_title">Ses Görüşü</string>
+    <string name="audio_vision_row_subtitle">Ses algılandığında kaydı başlat</string>
+    <string name="scheduled_recording_title">Zamanlanmış Kayıt</string>
+    <string name="scheduled_recording_row_subtitle">Belirlenen saatlerde kaydı otomatik başlat ve durdur</string>
+    <string name="profiles_title">Profiller</string>
+    <string name="profiles_row_subtitle">Kayıt ön ayarlarını anında kaydet ve yükle</string>
     <string name="motion_lab_enable">Hareket Kaydını Etkinleştir</string>
     <string name="motion_lab_enable_sensor">Hareket Sensörünü Etkinleştir</string>
     <string name="motion_lab_status_enabled">Aktif (yalnızca gerektiğinde kaydeder)</string>
@@ -2649,4 +2662,32 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="toast_failed_open_file">Yazmak için dosya açılamadı</string>
     <string name="toast_cannot_write_custom_dir">Seçilen özel dizine yazılamıyor</string>
     <string name="toast_failed_create_file">Yazmak için dosya oluşturulamadı</string>
+
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Eğitim Videoları</string>
+    <string name="tutorials_subtitle">Temel bilgilerden profesyonel tekniklere kadar her şeyi kapsayan kısa rehberler oluşturmayı planlıyoruz. Abone olun ve yayınlandıklarında bildirim almak için zile basın!</string>
+    <string name="tutorials_youtube_cta">YouTube\'da Abone Ol</string>
+    <string name="badge_soon">Yakında</string>
+    <string name="tutorial_getting_started">Başlarken</string>
+    <string name="tutorial_advanced_features">Gelişmiş Özellikler</string>
+    <string name="tutorial_body_cam_setup">Vücut Kamerası Kurulumu</string>
+    <string name="tutorial_dashcam_setup">Dashcam Kurulumu</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">iOS için FadCam</string>
+    <string name="ios_promo_title">FadCam artık iOS\'ta!</string>
+    <string name="ios_promo_subtitle">Sevdiğiniz gizlilik odaklı kamera uygulaması, artık iPhone için de kullanılabilir</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">Çöp</string>
+    <string name="trash_settings_subtitle">Silinen kayıtları ve dosyaları kurtar</string>
+    <string name="trash_settings_info">Bu özellik zaten mevcuttu — sadece ana ekranın üst çubuğundaki FadCam logosuna uzun basmanın arkasında gizliydi. Buraya keşfedilmesi daha kolay olsun diye koyduk.</string>
+    <string name="trash_settings_hide_button">Bu bölümü gizle</string>
+    <string name="trash_settings_hide_dialog_title">Çöp bölümü gizlensin mi?</string>
+    <string name="trash_settings_hide_dialog_message">Çöp bölümü Ayarlar\'dan kaybolacak. Geri getirmek için ana ekranın üst çubuğundaki FadCam logosuna uzun basarak Çöp\'ü açın ve içerideki \"Ayarlar\'da Çöp\'ü Göster\" seçeneğini etkinleştirin.</string>
+    <string name="trash_settings_hide_dialog_confirm">Gizle</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">Ayarlarda Göster</string>
+    <string name="trash_show_in_settings_desc">Hızlı erişim için Ayarlar sayfasına bir Çöp satırı ekler</string>
 </resources>

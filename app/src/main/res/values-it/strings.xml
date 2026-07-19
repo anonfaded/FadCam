@@ -407,6 +407,7 @@
     <string name="toast_no_drive_app">App Google Drive non trovata</string>
     <string name="records_title">Registrazioni</string>
     <string name="records_filter_all">Tutte</string>
+    <string name="mode_all">Tutti</string>
     <string name="records_filter_camera">FadCam</string>
     <string name="records_filter_dual">Doppia</string>
     <string name="records_filter_screen">FadRec</string>
@@ -752,6 +753,7 @@
     <string name="switched_front_camera">Passato a fotocamera frontale</string>
     <string name="switched_rear_camera">Passato a fotocamera posteriore</string>
     <string name="notification_video_recording">Registrazione video</string>
+    <string name="recording_notification_title">Notifica registrazione</string>
     <string name="notification_video_recording_progress_description">Registrazione in corso</string>
     <string name="notification_video_recording_paused_description">Registrazione in pausa</string>
     <string name="torch_options_title">Opzioni torcia</string>
@@ -799,6 +801,7 @@
     <string name="widgets_helper_text">Appunta azioni rapide sulla schermata home per accesso immediato.</string>
     <string name="widgets_pin_unsupported">L\'appunto dei widget non è supportato dal tuo launcher.</string>
     <string name="widget_clock_title">Widget orologio</string>
+    <string name="widget_label_clock">Orologio</string>
     <string name="widgets_pin_fallback">Se non appare alcun prompt, tieni premuto sulla schermata Home, apri Widget e trascina il widget FadCam Orologio.</string>
     <string name="widget_customize_title">Personalizza widget orologio</string>
     <string name="widget_customize_description">Personalizza come il tuo widget orologio mostra ora e data</string>
@@ -1908,6 +1911,16 @@
     <string name="torch_unavailable">Torcia non disponibile</string>
     <string name="motion_lab_title">Laboratorio Movimento</string>
     <string name="motion_lab_row_subtitle">Rilevamento movimento con AI</string>
+    <string name="automation_title">Automazione</string>
+    <string name="automation_row_subtitle">Mappatura pulsanti, telecomandi Bluetooth, tasti volume</string>
+    <string name="thermal_guardian_title">Guardiano Termico</string>
+    <string name="thermal_guardian_row_subtitle">Regola automaticamente la registrazione per evitare il surriscaldamento</string>
+    <string name="audio_vision_title">Visione Audio</string>
+    <string name="audio_vision_row_subtitle">Avvia registrazione al rilevamento del suono</string>
+    <string name="scheduled_recording_title">Registrazione Programmata</string>
+    <string name="scheduled_recording_row_subtitle">Avvia e ferma la registrazione automaticamente a orari impostati</string>
+    <string name="profiles_title">Profili</string>
+    <string name="profiles_row_subtitle">Salva e carica preset di registrazione all\'istante</string>
     <string name="motion_lab_enable">Abilita Motion Lab</string>
     <string name="motion_lab_enable_sensor">Abilita sensore movimento</string>
     <string name="motion_lab_status_enabled">Abilitato</string>
@@ -2737,4 +2750,31 @@
     <string name="toast_cannot_write_custom_dir">Impossibile scrivere nella directory personalizzata selezionata</string>
     <string name="toast_failed_create_file">Creazione file per scrittura fallita</string>
 
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Video Tutorial</string>
+    <string name="tutorials_subtitle">Abbiamo in programma di creare brevi guide che coprono tutto, dalle basi alle tecniche professionali. Iscriviti e premi la campanella per ricevere una notifica quando usciranno!</string>
+    <string name="tutorials_youtube_cta">Iscriviti su YouTube</string>
+    <string name="badge_soon">Presto</string>
+    <string name="tutorial_getting_started">Per iniziare</string>
+    <string name="tutorial_advanced_features">Funzioni avanzate</string>
+    <string name="tutorial_body_cam_setup">Configurazione Body Cam</string>
+    <string name="tutorial_dashcam_setup">Configurazione Dashcam</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam per iOS</string>
+    <string name="ios_promo_title">FadCam è ora su iOS!</string>
+    <string name="ios_promo_subtitle">La stessa app fotocamera che rispetta la tua privacy che ami, ora disponibile per iPhone</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">Cestino</string>
+    <string name="trash_settings_subtitle">Recupera registrazioni e file eliminati</string>
+    <string name="trash_settings_info">Questa funzione era già disponibile — solo nascosta dietro una pressione prolungata sul logo FadCam nella barra superiore della schermata principale. L\'abbiamo messa qui per renderla più facile da scoprire.</string>
+    <string name="trash_settings_hide_button">Nascondi questa sezione</string>
+    <string name="trash_settings_hide_dialog_title">Nascondere la sezione Cestino?</string>
+    <string name="trash_settings_hide_dialog_message">La sezione Cestino scomparirà dalle Impostazioni. Per riportarla indietro, apri il Cestino premendo a lungo il logo FadCam nella barra superiore della schermata principale, quindi attiva "Mostra Cestino nelle Impostazioni".</string>
+    <string name="trash_settings_hide_dialog_confirm">Nascondi</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">Mostra nelle Impostazioni</string>
+    <string name="trash_show_in_settings_desc">Aggiunge una riga Cestino alla pagina Impostazioni per accesso rapido</string>
 </resources>

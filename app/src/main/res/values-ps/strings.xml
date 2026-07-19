@@ -418,6 +418,7 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="notification_preview">Da notification namoona</string>
     <string name="notification_preview_title">Namoona</string>
     <string name="notification_video_recording">Video recording</string>
+    <string name="recording_notification_title">Recording Notification</string>
     <string name="notification_video_recording_paused_description">Recording lag odrawa sho</string>
     <string name="notification_video_recording_progress_description">Recording rawan de</string>
     <string name="notification_stop">BAND</string>
@@ -1362,7 +1363,18 @@ Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programm
     <string name="motion_lab_set_value_row_title">Set value</string>
     <string name="motion_lab_status_disabled">Ghair faal de</string>
     <string name="motion_lab_status_enabled">Active (records only when needed)</string>
-    <string name="motion_lab_title">د حرکت لابراتوار</string>
+    <string name="motion_lab_title">Harkat Lab</string>
+    <string name="automation_title">Automation</string>
+    <string name="automation_row_subtitle">Button mapping, Bluetooth remotes, volume keys</string>
+
+    <string name="thermal_guardian_title">Harara Sati</string>
+    <string name="thermal_guardian_row_subtitle">Recording pa khpalkar tangle se garmi sam kawal</string>
+    <string name="audio_vision_title">Awazi Loid</string>
+    <string name="audio_vision_row_subtitle">Kala awaz wasta shi recording shuru kawal</string>
+    <string name="scheduled_recording_title">Waqt Tain Shwe Recording</string>
+    <string name="scheduled_recording_row_subtitle">Recording pa muqarrara waqto ke khpalkar shuru au band kawal</string>
+    <string name="profiles_title">Profiles</string>
+    <string name="profiles_row_subtitle">Recording presetona khpalkar save au load kawal</string>
     <string name="motion_lab_trigger_any_motion">Any Motion</string>
     <string name="motion_lab_trigger_any_motion_desc">Kala che movement detect shi, da aam CCTV motion camera shan shuru kai.</string>
     <string name="motion_lab_trigger_mode">Trigger Mode</string>
@@ -1585,6 +1597,7 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
         <item quantity="other">Deleting %d items in background.</item>
     </plurals>
     <string name="records_filter_all">Tol</string>
+    <string name="mode_all">Tol</string>
     <string name="records_filter_camera">FadCam</string>
     <string name="records_filter_camera_all">Tol</string>
     <string name="records_filter_camera_back">Shata</string>
@@ -2233,6 +2246,7 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="widget_branding_requires_background">Requires Tiyar Pasmanzar</string>
     <string name="widget_branding_title">FadSecLab Branding</string>
     <string name="widget_clock_title">Clock widget</string>
+    <string name="widget_label_clock">Gharyee</string>
     <string name="widget_customize_action_label">Khoso Ka</string>
     <string name="widget_customize_action_subtitle">Wakh, tarikh, aw theme intikhabuna</string>
     <string name="widget_customize_description">Khoso Ka how sta / khpal clock widget displays time and date</string>
@@ -2772,5 +2786,33 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="toast_failed_open_file">Lekhlo dapara file kholo na shwe</string>
     <string name="toast_cannot_write_custom_dir">Intekhab shwi khas directory ta likho na shi</string>
     <string name="toast_failed_create_file">Lekhlo dapara file jorolo na shwe</string>
+
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Tutorial Videos</string>
+    <string name="tutorials_subtitle">Mo plan kawalo che lag rahnumai video jor kalo che har shay da bunyad ta pro teqneeq ta shamil wi. Subscribe ka aw bell ta waha che ta notification mojood wi kala ze drop kalo!</string>
+    <string name="tutorials_youtube_cta">Pa YouTube Subscribe Ka</string>
+    <string name="badge_soon">Dabay</string>
+    <string name="tutorial_getting_started">Pil Awaz</string>
+    <string name="tutorial_advanced_features">Pram uty Fankar</string>
+    <string name="tutorial_body_cam_setup">Body Cam Setup</string>
+    <string name="tutorial_dashcam_setup">Dashcam Setup</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam iOS paara</string>
+    <string name="ios_promo_title">FadCam os waqt pa iOS ke mojood de!</string>
+    <string name="ios_promo_subtitle">Haman da miar privacy-first camera app che ta kha soom, os da iPhone dapara mojood de</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">Trash</string>
+    <string name="trash_settings_subtitle">Delete shwi recording au files berta restore ka</string>
+    <string name="trash_settings_info">Da ficha pehla dalta mojood wa — yawaz da FadCam logo pa home screen ke top bar ke long-press kawlo pa shan posh wa. Mo da dalta yawaz zaha karo che payda kawal asan shi.</string>
+    <string name="trash_settings_hide_button">Da section posh ka</string>
+    <string name="trash_settings_hide_dialog_title">Trash section posh sho?</string>
+    <string name="trash_settings_hide_dialog_message">Trash section da Settings na wawrti shi. Da berta rawstalo dapara, da home screen ke top bar ke FadCam logo long-press ka, Trash khole, au paki \"Show Trash in Settings\" faal ka.</string>
+    <string name="trash_settings_hide_dialog_confirm">Posh Ka</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">Settings ke Woyai</string>
+    <string name="trash_show_in_settings_desc">Settings page ke Trash row zayed kai che ta jaldi rasai woyai</string>
 
 </resources>

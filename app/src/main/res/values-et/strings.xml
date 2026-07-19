@@ -407,6 +407,7 @@
     <string name="toast_no_drive_app">Google Drive\'i rakendust ei leitud</string>
     <string name="records_title">Salvestised</string>
     <string name="records_filter_all">Kõik</string>
+    <string name="mode_all">Kõik</string>
     <string name="records_filter_camera">FadCam</string>
     <string name="records_filter_dual">Duaal</string>
     <string name="records_filter_screen">FadRec</string>
@@ -750,6 +751,7 @@
     <string name="switched_front_camera">Lülitatud esikaamerale</string>
     <string name="switched_rear_camera">Lülitatud tagakaamerale</string>
     <string name="notification_video_recording">Video salvestamine</string>
+    <string name="recording_notification_title">Salvestusteade</string>
     <string name="notification_video_recording_progress_description">Salvestamine on pooleli</string>
     <string name="notification_video_recording_paused_description">Salvestamine on peatatud</string>
     <string name="torch_options_title">Taskulambi valikud</string>
@@ -798,6 +800,7 @@
     <string name="widgets_helper_text">Kinnita kiirtoimingud avalehele koheseks juurdepääsuks.</string>
     <string name="widgets_pin_unsupported">Vidinate kinnitamine ei ole sinu käivitaja poolt toetatud.</string>
     <string name="widget_clock_title">Kella vidin</string>
+    <string name="widget_label_clock">Kell</string>
     <string name="widgets_pin_fallback">Kui viipa ei ilmu, vajuta pikalt avalehte, ava Vidinad ja lohista FadCam\'i kella vidin.</string>
     <string name="widget_customize_title">Kohanda kella vidinat</string>
     <string name="widget_customize_description">Kohanda, kuidas sinu kella vidin aega ja kuupäeva kuvab</string>
@@ -1959,6 +1962,16 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="torch_unavailable">Taskulamp ei ole selle kaamera jaoks saadaval</string>
     <string name="motion_lab_title">Liikumislabor</string>
     <string name="motion_lab_row_subtitle">Tark sündmuse salvestamine CCTV-stiilis kasutamiseks</string>
+    <string name="automation_title">Automaatika</string>
+    <string name="automation_row_subtitle">Nuppude sidumine, Bluetooth-puldid, helitugevusklahvid</string>
+    <string name="thermal_guardian_title">Soojuskaitse</string>
+    <string name="thermal_guardian_row_subtitle">Kohanda salvestust automaatselt, et vältida ülekuumenemist</string>
+    <string name="audio_vision_title">Helinägemine</string>
+    <string name="audio_vision_row_subtitle">Alusta salvestust heli tuvastamisel</string>
+    <string name="scheduled_recording_title">Ajastatud Salvestus</string>
+    <string name="scheduled_recording_row_subtitle">Automaatselt salvestuse käivitamine ja peatamine määratud aegadel</string>
+    <string name="profiles_title">Profiilid</string>
+    <string name="profiles_row_subtitle">Salvestuse sätete kiire salvestamine ja laadimine</string>
     <string name="motion_lab_enable">Luba liikumissalvestus</string>
     <string name="motion_lab_enable_sensor">Luba liikumisandur</string>
     <string name="motion_lab_status_enabled">Aktiivne (salvestab ainult vajadusel)</string>
@@ -2753,4 +2766,31 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="toast_cannot_write_custom_dir">Valitud kohandatud kataloogi ei saa kirjutada</string>
     <string name="toast_failed_create_file">Faili loomine kirjutamiseks nurjus</string>
 
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Õppevideod</string>
+    <string name="tutorials_subtitle">Plaanime luua lühikesed juhendid, mis hõlmavad kõike alustasandist professionaalsete tehnikateni. Tellige ja vajutage kella, et saada teavitus, kui need ilmuvad!</string>
+    <string name="tutorials_youtube_cta">Tellige YouTube\'is</string>
+    <string name="badge_soon">Varsti</string>
+    <string name="tutorial_getting_started">Alustamine</string>
+    <string name="tutorial_advanced_features">Täiustatud funktsioonid</string>
+    <string name="tutorial_body_cam_setup">Kehakaamera seadistamine</string>
+    <string name="tutorial_dashcam_setup">Sõidukaamera seadistamine</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam iOS-ile</string>
+    <string name="ios_promo_title">FadCam on nüüd iOS-is saadaval!</string>
+    <string name="ios_promo_subtitle">Sama privaatsuskeskne kaamerarakendus, mida armastad, nüüd saadaval iPhone\'ile</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">Prügikast</string>
+    <string name="trash_settings_subtitle">Taasta kustutatud salvestised ja failid</string>
+    <string name="trash_settings_info">See funktsioon oli juba saadaval — lihtsalt peidetud FadCam logo pika vajutuse taha avakuva ülemisel ribal. Oleme selle siia toonud, et seda oleks lihtsam leida.</string>
+    <string name="trash_settings_hide_button">Peida see jaotis</string>
+    <string name="trash_settings_hide_dialog_title">Peida prügikasti jaotis?</string>
+    <string name="trash_settings_hide_dialog_message">Prügikasti jaotis kaob Seadetest. Selle tagasitoomiseks ava prügikast, vajutades pikalt FadCam logo avakuva ülemisel ribal, ja lülita sees sisse „Näita prügikasti Seadetes".</string>
+    <string name="trash_settings_hide_dialog_confirm">Peida</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">Näita Seadetes</string>
+    <string name="trash_show_in_settings_desc">Lisab prügikasti rea Seadete lehele kiireks juurdepääsuks</string>
 </resources>

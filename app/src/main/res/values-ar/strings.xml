@@ -437,6 +437,7 @@
     <string name="notification_preview">معاينة الإشعار</string>
     <string name="notification_preview_title">معاينة</string>
     <string name="notification_video_recording">تسجيل فيديو</string>
+    <string name="recording_notification_title">إشعار التسجيل</string>
     <string name="notification_video_recording_progress_description">التسجيل قيد التقدم</string>
     <string name="notification_video_recording_paused_description">تم إيقاف التسجيل مؤقتًا</string>
     <string name="notification_stop">إيقاف</string>
@@ -1130,6 +1131,7 @@
     <string name="video_menu_upload_faddrive">تحميل إلى FadDrive</string>
 
     <string name="records_filter_all">الكل</string>
+    <string name="mode_all">الكل</string>
 
     <string name="records_filter_camera">FadCam</string>
 
@@ -1640,6 +1642,7 @@
     <string name="widgets_pin_unsupported">تثبيت الأدوات غير مدعوم من مشغل التطبيقات.</string>
 
     <string name="widget_clock_title">أداة الساعة</string>
+    <string name="widget_label_clock">الساعة</string>
 
     <string name="widgets_pin_fallback">إذا لم يظهر مربع حوار، اضغط مطولاً على شاشتك الرئيسية، افتح الأدوات، واسحب أداة ساعة FadCam.</string>
 
@@ -3419,6 +3422,21 @@
 
     <string name="motion_lab_row_subtitle">تسجيل الأحداث الذكي لاستخدام CCTV</string>
 
+    <string name="automation_title">أتمتة</string>
+    <string name="automation_row_subtitle">ربط الأزرار، أجهزة التحكم عن بعد بلوتوث، أزرار الصوت</string>
+
+    <string name="thermal_guardian_title">الوصي الحراري</string>
+    <string name="thermal_guardian_row_subtitle">ضبط التسجيل تلقائياً لمنع ارتفاع الحرارة</string>
+
+    <string name="audio_vision_title">الرؤية الصوتية</string>
+    <string name="audio_vision_row_subtitle">بدء التسجيل عند اكتشاف الصوت</string>
+
+    <string name="scheduled_recording_title">التسجيل المجدول</string>
+    <string name="scheduled_recording_row_subtitle">بدء وإيقاف التسجيل تلقائياً في أوقات محددة</string>
+
+    <string name="profiles_title">الملفات الشخصية</string>
+    <string name="profiles_row_subtitle">حفظ واستدعاء إعدادات التسجيل بسرعة</string>
+
     <string name="motion_lab_enable">تمكين تسجيل الحركة</string>
 
     <string name="motion_lab_enable_sensor">تمكين مستشعر الحركة</string>
@@ -4457,5 +4475,33 @@
     <string name="toast_failed_open_file">فشل فتح الملف للكتابة</string>
     <string name="toast_cannot_write_custom_dir">لا يمكن الكتابة إلى المجلد المخصص المحدد</string>
     <string name="toast_failed_create_file">فشل إنشاء الملف للكتابة</string>
+
+    <!-- Tutorials - قريباً -->
+    <string name="tutorials_title">فيديوهات تعليمية</string>
+    <string name="tutorials_subtitle">نخطط لإنشاء أدلة قصيرة تغطي كل شيء من الأساسيات إلى التقنيات المتقدمة. اشترك وفعّل الجرس ليصلك إشعار عند النشر!</string>
+    <string name="tutorials_youtube_cta">اشترك على YouTube</string>
+    <string name="badge_soon">قريبًا</string>
+    <string name="tutorial_getting_started">بدء الاستخدام</string>
+    <string name="tutorial_advanced_features">ميزات متقدمة</string>
+    <string name="tutorial_body_cam_setup">إعداد كاميرا الجسم</string>
+    <string name="tutorial_dashcam_setup">إعداد داش كام</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam لنظام iOS</string>
+    <string name="ios_promo_title">FadCam متوفر الآن على iOS!</string>
+    <string name="ios_promo_subtitle">نفس تطبيق الكاميرا الذي يحترم خصوصيتك والذي تحبه، متوفر الآن لـ iPhone</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">المهملات</string>
+    <string name="trash_settings_subtitle">استعادة التسجيلات والملفات المحذوفة</string>
+    <string name="trash_settings_info">هذه الميزة كانت متوفرة بالفعل — لكنها مخفية خلف ضغطة مطولة على شعار FadCam في الشريط العلوي للشاشة الرئيسية. أظهرناها هنا لتكون أسهل في الاكتشاف.</string>
+    <string name="trash_settings_hide_button">إخفاء هذا القسم</string>
+    <string name="trash_settings_hide_dialog_title">إخفاء قسم المهملات؟</string>
+    <string name="trash_settings_hide_dialog_message">سيختفي قسم المهملات من الإعدادات. لإعادته، افتح المهملات بالضغط المطول على شعار FadCam في الشريط العلوي للشاشة الرئيسية، ثم فعّل "إظهار المهملات في الإعدادات" بالداخل.</string>
+    <string name="trash_settings_hide_dialog_confirm">إخفاء</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">إظهار في الإعدادات</string>
+    <string name="trash_show_in_settings_desc">يضيف صف المهملات إلى صفحة الإعدادات للوصول السريع</string>
 
 </resources>

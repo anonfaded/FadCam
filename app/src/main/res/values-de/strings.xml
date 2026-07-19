@@ -247,6 +247,7 @@
     <string name="switched_front_camera">Auf Frontkamera umgeschaltet</string>
     <string name="switched_rear_camera">Auf Rückkamera umgeschaltet</string>
     <string name="notification_video_recording">Videoaufnahme</string>
+    <string name="recording_notification_title">Aufzeichnungsbenachrichtigung</string>
     <string name="notification_video_recording_progress_description">Aufnahme läuft</string>
     <string name="notification_video_recording_paused_description">Aufnahme ist pausiert</string>
     <string name="torch_options_title">Taschenlampen-Optionen</string>
@@ -958,6 +959,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="photo_capture_preview_unavailable">Vorschau ist nicht verfügbar</string>
     <string name="video_menu_upload_faddrive">Auf FadDrive hochladen</string>
     <string name="records_filter_all">Alle</string>
+    <string name="mode_all">Alle</string>
     <string name="records_filter_camera">FadCam</string>
     <string name="records_filter_dual">Dual</string>
     <string name="records_filter_screen">FadRec</string>
@@ -1195,6 +1197,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="widgets_helper_text">Hefte Schnellaktionen an deinen Startbildschirm für sofortigen Zugriff.</string>
     <string name="widgets_pin_unsupported">Das Anheften von Widgets wird von deinem Launcher nicht unterstützt.</string>
     <string name="widget_clock_title">Uhr-Widget</string>
+    <string name="widget_label_clock">Uhr</string>
     <string name="widgets_pin_fallback">Wenn keine Eingabeaufforderung erscheint, drücke lange auf deinen Startbildschirm, öffne Widgets und ziehe das FadCam Uhr-Widget.</string>
     <string name="widget_customize_title">Uhr-Widget anpassen</string>
     <string name="widget_customize_description">Anpassen, wie dein Uhr-Widget Zeit und Datum anzeigt</string>
@@ -1847,6 +1850,16 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="motion_lab_status_disabled">Deaktiviert</string>
     <string name="motion_lab_status_enabled">Aktiv (nimmt nur bei Bedarf auf)</string>
     <string name="motion_lab_title">Bewegungslabor</string>
+    <string name="automation_title">Automatisierung</string>
+    <string name="automation_row_subtitle">Tastenbelegung, Bluetooth-Fernbedienungen, Lautstärketasten</string>
+    <string name="thermal_guardian_title">Wärmeschutz</string>
+    <string name="thermal_guardian_row_subtitle">Aufnahme automatisch anpassen, um Überhitzung zu vermeiden</string>
+    <string name="audio_vision_title">Audio Vision</string>
+    <string name="audio_vision_row_subtitle">Aufnahme bei Geräuscherkennung starten</string>
+    <string name="scheduled_recording_title">Zeitgesteuerte Aufnahme</string>
+    <string name="scheduled_recording_row_subtitle">Automatischer Start und Stopp zu festgelegten Zeiten</string>
+    <string name="profiles_title">Profile</string>
+    <string name="profiles_row_subtitle">Aufnahme-Voreinstellungen speichern und laden</string>
     <string name="motion_lab_trigger_any_motion">Jede Bewegung</string>
     <string name="motion_lab_trigger_any_motion_desc">Startet, wenn eine Bewegung erkannt wird, wie eine normale CCTV-Bewegungskamera.</string>
     <string name="motion_lab_trigger_mode">Auslösemodus</string>
@@ -2694,4 +2707,32 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="toast_failed_open_file">Datei zum Schreiben konnte nicht geöffnet werden</string>
     <string name="toast_cannot_write_custom_dir">Kann nicht in das ausgewählte benutzerdefinierte Verzeichnis schreiben</string>
     <string name="toast_failed_create_file">Datei zum Schreiben konnte nicht erstellt werden</string>
+
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Tutorial-Videos</string>
+    <string name="tutorials_subtitle">Wir planen kurze Anleitungen, die alles von den Grundlagen bis zu Profi-Techniken abdecken. Abonniere und klicke die Glocke, damit du benachrichtigt wirst, wenn sie erscheinen!</string>
+    <string name="tutorials_youtube_cta">Auf YouTube abonnieren</string>
+    <string name="badge_soon">Bald</string>
+    <string name="tutorial_getting_started">Erste Schritte</string>
+    <string name="tutorial_advanced_features">Erweiterte Funktionen</string>
+    <string name="tutorial_body_cam_setup">Body-Cam einrichten</string>
+    <string name="tutorial_dashcam_setup">Dashcam einrichten</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam für iOS</string>
+    <string name="ios_promo_title">FadCam ist jetzt auf iOS!</string>
+    <string name="ios_promo_subtitle">Dieselbe datenschutzorientierte Kamera-App, die du liebst, jetzt auch für iPhone verfügbar</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">Papierkorb</string>
+    <string name="trash_settings_subtitle">Gelöschte Aufnahmen und Dateien wiederherstellen</string>
+    <string name="trash_settings_info">Diese Funktion war bereits verfügbar — nur versteckt hinter einem langen Druck auf das FadCam-Logo in der oberen Leiste des Startbildschirms. Wir haben sie hier platziert, damit sie leichter zu finden ist.</string>
+    <string name="trash_settings_hide_button">Diesen Bereich ausblenden</string>
+    <string name="trash_settings_hide_dialog_title">Papierkorb-Bereich ausblenden?</string>
+    <string name="trash_settings_hide_dialog_message">Der Papierkorb-Bereich wird aus den Einstellungen verschwinden. Um ihn zurückzubringen, öffne den Papierkorb durch langes Drücken auf das FadCam-Logo in der oberen Leiste des Startbildschirms und aktiviere dort „Papierkorb in Einstellungen anzeigen".</string>
+    <string name="trash_settings_hide_dialog_confirm">Ausblenden</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">In Einstellungen anzeigen</string>
+    <string name="trash_show_in_settings_desc">Fügt eine Papierkorb-Zeile zur Einstellungsseite hinzu für schnellen Zugriff</string>
 </resources>

@@ -182,6 +182,7 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="switched_front_camera">Interverti en caméra frontale</string>
     <string name="switched_rear_camera">Interverti en caméra arrière</string>
     <string name="notification_video_recording">Enregistrement vidéo</string>
+    <string name="recording_notification_title">Notification d\'enregistrement</string>
     <string name="notification_video_recording_paused_description">Enregistrement en pause</string>
     <string name="notification_video_recording_progress_description">Enregistrement en cours</string>
     <string name="torch_options_title">Options de la lampe torche</string>
@@ -1104,6 +1105,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="video_menu_upload_faddrive">Upload to FadDrive</string>
 
 <string name="records_filter_all">All</string>
+<string name="mode_all">Tout</string>
 
 <string name="records_filter_camera">FadCam</string>
 
@@ -1594,6 +1596,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="widgets_pin_unsupported">Pinning widgets is not supported by your launcher.</string>
 
 <string name="widget_clock_title">Clock widget</string>
+<string name="widget_label_clock">Horloge</string>
 
 <string name="widgets_pin_fallback">If no prompt appears, long‑press your Home screen, open Widgets, and drag the FadCam Clock widget.</string>
 
@@ -3355,6 +3358,18 @@ For the smoothest playback experience, you can use an external player like VLC. 
 
 <string name="motion_lab_row_subtitle">Smart event recording for CCTV-style use</string>
 
+<string name="automation_title">Automatisation</string>
+<string name="automation_row_subtitle">Mapping de boutons, télécommandes Bluetooth, touches de volume</string>
+<string name="thermal_guardian_title">Garde Thermique</string>
+<string name="thermal_guardian_row_subtitle">Ajuster automatiquement l\'enregistrement pour éviter la surchauffe</string>
+
+<string name="audio_vision_title">Vision Audio</string>
+<string name="audio_vision_row_subtitle">Démarrer l\'enregistrement lors de la détection de son</string>
+<string name="scheduled_recording_title">Enregistrement Planifié</string>
+<string name="scheduled_recording_row_subtitle">Démarrer et arrêter l\'enregistrement automatiquement à des heures définies</string>
+<string name="profiles_title">Profils</string>
+<string name="profiles_row_subtitle">Sauvegarder et charger des réglages d\'enregistrement instantanément</string>
+
 <string name="motion_lab_enable">Enable Motion Recording</string>
 
 <string name="motion_lab_enable_sensor">Enable Motion Sensor</string>
@@ -4391,5 +4406,33 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="toast_failed_open_file">Échec d\'ouverture du fichier en écriture</string>
     <string name="toast_cannot_write_custom_dir">Impossible d\'écrire dans le répertoire personnalisé sélectionné</string>
     <string name="toast_failed_create_file">Échec de création du fichier en écriture</string>
+
+    <!-- Tutorials - coming soon -->
+    <string name="tutorials_title">Vidéos Tutoriels</string>
+    <string name="tutorials_subtitle">Nous prévoyons de créer des guides courts couvrant tout, des bases aux techniques avancées. Abonnez-vous et activez la cloche pour être averti quand ils sortent !</string>
+    <string name="tutorials_youtube_cta">S\'abonner sur YouTube</string>
+    <string name="badge_soon">Bientôt</string>
+    <string name="tutorial_getting_started">Démarrage</string>
+    <string name="tutorial_advanced_features">Fonctions avancées</string>
+    <string name="tutorial_body_cam_setup">Configuration caméra embarquée</string>
+    <string name="tutorial_dashcam_setup">Configuration Dashcam</string>
+
+    <!-- iOS Promo -->
+    <string name="fadcam_for_ios_title">FadCam pour iOS</string>
+    <string name="ios_promo_title">FadCam est maintenant sur iOS !</string>
+    <string name="ios_promo_subtitle">La même application caméra respectueuse de la vie privée que vous aimez, désormais disponible pour iPhone</string>
+
+    <!-- Trash section in Settings -->
+    <string name="trash_settings_title">Corbeille</string>
+    <string name="trash_settings_subtitle">Récupérer les enregistrements et fichiers supprimés</string>
+    <string name="trash_settings_info">Cette fonctionnalité était déjà disponible — juste cachée derrière un appui long sur le logo FadCam dans la barre supérieure de l\'écran d\'accueil. Nous l\'avons placée ici pour qu\'elle soit plus facile à découvrir.</string>
+    <string name="trash_settings_hide_button">Masquer cette section</string>
+    <string name="trash_settings_hide_dialog_title">Masquer la section Corbeille ?</string>
+    <string name="trash_settings_hide_dialog_message">La section Corbeille disparaîtra des Paramètres. Pour la réafficher, ouvrez la Corbeille en appuyant longuement sur le logo FadCam dans la barre supérieure de l\'écran d\'accueil, puis activez « Afficher la Corbeille dans les Paramètres ».</string>
+    <string name="trash_settings_hide_dialog_confirm">Masquer</string>
+
+    <!-- Trash: Show in Settings toggle -->
+    <string name="trash_show_in_settings_title">Afficher dans les Paramètres</string>
+    <string name="trash_show_in_settings_desc">Ajoute une ligne Corbeille à la page Paramètres pour un accès rapide</string>
 
 </resources>
