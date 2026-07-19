@@ -1458,6 +1458,8 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="settings_notifications_subtitle">Εγγραφή &amp; προεπιλογή</string>
     <string name="settings_security_title">Ασφάλεια</string>
     <string name="settings_advanced_subtitle">Motion Lab και χειριστήρια</string>
+    <string name="fadcrypt_title">FadCrypt</string>
+    <string name="fadcrypt_row_subtitle">Κρυπτογραφήστε και προστατέψτε τις εγγραφές σας</string>
     <string name="digital_forensics_title">Ψηφιακή Εγκληματολογία</string>
     <string name="forensic_intelligence_title">Εγκληματολογική Νοημοσύνη</string>
     <string name="digital_forensics_row_subtitle">Χρονολόγιο αποδείξεων και έξυπνες πληροφορίες</string>

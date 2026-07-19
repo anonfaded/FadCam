@@ -1783,6 +1783,8 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="setting_header_logo_title">Header Logo</string>
     <string name="setting_zoom_ratio_title">Zoom Ratio</string>
     <string name="settings_advanced_subtitle">Motion Lab and power-user controls</string>
+    <string name="fadcrypt_title">FadCrypt</string>
+    <string name="fadcrypt_row_subtitle">Khpal recordings encrypt aw protect kawal</string>
     <string name="settings_advanced_title">Aala</string>
     <string name="settings_audio_title">Da Ghag Tanzimaat</string>
     <string name="settings_location_watermark_title">Mawqeiyat Watermark</string>

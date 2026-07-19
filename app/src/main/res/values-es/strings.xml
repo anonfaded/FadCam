@@ -1500,6 +1500,8 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="settings_notifications_subtitle">Grabación y preajuste</string>
     <string name="settings_security_title">Seguridad</string>
     <string name="settings_advanced_subtitle">Motion Lab y controles de usuario avanzado</string>
+    <string name="fadcrypt_title">FadCrypt</string>
+    <string name="fadcrypt_row_subtitle">Cifra y protege tus grabaciones</string>
     <string name="digital_forensics_title">Forensia digital</string>
     <string name="forensic_intelligence_title">Inteligencia forense</string>
     <string name="digital_forensics_row_subtitle">Línea de tiempo de evidencia, reenlace de identidad e información inteligente</string>

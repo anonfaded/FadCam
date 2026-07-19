@@ -1542,6 +1542,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="settings_notifications_subtitle">Perekaman &amp; preset</string>
     <string name="settings_security_title">Keamanan</string>
     <string name="settings_advanced_subtitle">Motion Lab dan kontrol pengguna ahli</string>
+    <string name="fadcrypt_title">FadCrypt</string>
+    <string name="fadcrypt_row_subtitle">Enkripsi dan lindungi rekaman Anda</string>
     <string name="digital_forensics_title">Forensik Digital</string>
     <string name="forensic_intelligence_title">Intelijen Forensik</string>
     <string name="digital_forensics_row_subtitle">Timeline bukti, penghubungan ulang identitas, dan wawasan cerdas</string>

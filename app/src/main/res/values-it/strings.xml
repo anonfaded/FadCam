@@ -1382,6 +1382,8 @@
     <string name="settings_notifications_subtitle">Registrazione e preimpostazioni</string>
     <string name="settings_security_title">Sicurezza</string>
     <string name="settings_advanced_subtitle">Motion Lab e controlli avanzati</string>
+    <string name="fadcrypt_title">FadCrypt</string>
+    <string name="fadcrypt_row_subtitle">Crittografa e proteggi le tue registrazioni</string>
     <string name="digital_forensics_title">Forensics digitale</string>
     <string name="forensic_intelligence_title">Intelligence forense</string>
     <string name="digital_forensics_row_subtitle">Timeline prove, ricollegamento identità e insight intelligenti</string>

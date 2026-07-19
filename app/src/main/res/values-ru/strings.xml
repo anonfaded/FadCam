@@ -2372,6 +2372,8 @@ FadCam использует фрагментированный формат MP4 
     <string name="header_logo_avatar" translatable="false">Avatar</string>
 
     <string name="settings_advanced_subtitle">Лаборатория движения и расширенные настройки</string>
+    <string name="fadcrypt_title">FadCrypt</string>
+    <string name="fadcrypt_row_subtitle">Шифруйте и защищайте свои записи</string>
 
     <string name="digital_forensics_title">Цифровая форензика</string>
 

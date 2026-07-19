@@ -761,6 +761,8 @@
     <string name="settings_notifications_subtitle">Kayıt ve hazır ayar</string>
     <string name="settings_security_title">Güvenlik</string>
     <string name="settings_advanced_subtitle">Motion Lab ve güç kullanıcı kontrolleri</string>
+    <string name="fadcrypt_title">FadCrypt</string>
+    <string name="fadcrypt_row_subtitle">Kayıtlarınızı şifreleyin ve koruyun</string>
     <string name="settings_watermark_subtitle">Katman markalama modu</string>
     <string name="shortcuts_pin_to_home">Başlat/Durdur/Feneri Ana Ekrana Sabitle</string>
     <string name="storage_sheet_title">Depolama Konumu</string>

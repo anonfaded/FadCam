@@ -1425,6 +1425,8 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="settings_notifications_subtitle">Salvestamine ja eelseadistus</string>
     <string name="settings_security_title">Turvalisus</string>
     <string name="settings_advanced_subtitle">Motion Lab ja jõukasutaja juhtnupud</string>
+    <string name="fadcrypt_title">FadCrypt</string>
+    <string name="fadcrypt_row_subtitle">Krüpteeri ja kaitse oma salvestisi</string>
     <string name="digital_forensics_title">Digitaalne kohtuekspertiis</string>
     <string name="forensic_intelligence_title">Kohtuekspertiisi analüüs</string>
     <string name="digital_forensics_row_subtitle">Tõendite ajajoon, identiteedi taaslinkimine ja targad ülevaated</string>

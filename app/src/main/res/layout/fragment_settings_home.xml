@@ -989,6 +989,7 @@
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
+
         </LinearLayout>
 
         <!-- Mini Apps Section Header -->

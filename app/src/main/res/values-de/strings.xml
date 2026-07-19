@@ -1999,6 +1999,8 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="setting_header_logo_desc">Wähle den Stil des Header-Logos</string>
     <string name="setting_header_logo_title">Header-Logo</string>
     <string name="settings_advanced_subtitle">Motion Lab und Power-User-Steuerungen</string>
+    <string name="fadcrypt_title">FadCrypt</string>
+    <string name="fadcrypt_row_subtitle">Verschlüsseln und schützen Sie Ihre Aufnahmen</string>
     <string name="settings_notifications_subtitle">Aufnahme &amp; Voreinstellung</string>
     <string name="settings_notifications_title">Benachrichtigungen</string>
     <string name="settings_section_app">App</string>

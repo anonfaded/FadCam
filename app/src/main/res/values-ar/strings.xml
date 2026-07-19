@@ -2515,6 +2515,8 @@
     <string name="settings_security_title">الأمان</string>
 
     <string name="settings_advanced_subtitle">Motion Lab وعناصر التحكم للمستخدم المتقدم</string>
+    <string name="fadcrypt_title">FadCrypt</string>
+    <string name="fadcrypt_row_subtitle">تشفير وحماية تسجيلاتك</string>
 
     <string name="digital_forensics_title">التحليل الجنائي الرقمي</string>
 

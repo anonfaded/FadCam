@@ -2479,6 +2479,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="settings_security_title">Security</string>
 
 <string name="settings_advanced_subtitle">Motion Lab and power-user controls</string>
+<string name="fadcrypt_title">FadCrypt</string>
+<string name="fadcrypt_row_subtitle">Chiffrez et protégez vos enregistrements</string>
 
 <string name="digital_forensics_title">Digital Forensics</string>
 
