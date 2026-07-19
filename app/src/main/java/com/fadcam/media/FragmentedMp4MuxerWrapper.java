@@ -700,8 +700,14 @@ public class FragmentedMp4MuxerWrapper {
                 if (t == 0x74726166) { // 'traf'
                     int[] r = findTrun(data, pos + 8, s - 8);
                     if (r != null) {
-                        if (r[0] == 1) { audioCnt = r[1]; audioOff = r[2]; }
-                        else { videoCnt = r[1]; videoOff = r[2]; }
+                        int mp4TrackId = r[0];
+                        int videoMp4Id = videoTrackIndex >= 0 ? videoTrackIndex + 1 : -1;
+                        int audioMp4Id = audioTrackIndex >= 0 ? audioTrackIndex + 1 : -1;
+                        if (mp4TrackId == videoMp4Id) {
+                            videoCnt = r[1]; videoOff = r[2];
+                        } else if (mp4TrackId == audioMp4Id) {
+                            audioCnt = r[1]; audioOff = r[2];
+                        }
                     }
                 }
                 pos += s;
@@ -781,9 +787,9 @@ public class FragmentedMp4MuxerWrapper {
                         + " fragments, moov=" + moovSize + "B, mdat(32bit)=" + mdatSize + "B");
             } else {
                 java.nio.ByteBuffer hdr = java.nio.ByteBuffer.allocate(16);
-                hdr.putInt(1);
-                hdr.putLong(mdatEnd - mdatStart + 16);
-                hdr.putInt(0x6D646174);
+                hdr.putInt(1);                    // size = 1 (extended)
+                hdr.putInt(0x6D646174);           // type = 'mdat'
+                hdr.putLong(mdatEnd - mdatStart + 16);  // largesize
                 hdr.flip();
                 ch.position(freePos);
                 ch.write(hdr);
