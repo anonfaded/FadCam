@@ -192,6 +192,9 @@ public class GLRecordingPipeline {
     // waiting for INFO_OUTPUT_FORMAT_CHANGED (only fired once per encoder start)
     private MediaFormat cachedVideoFormat;
     private MediaFormat cachedAudioFormat;
+    private MediaFormat pendingHevcFormat;
+    private ByteBuffer capturedHevcCsd0;
+    private ByteBuffer capturedHevcCsd1;
     // Audio settings (always set from preferences or app defaults)
     private int audioSource;
     private android.media.AudioDeviceInfo preferredAudioDevice;
@@ -1638,50 +1641,46 @@ public class GLRecordingPipeline {
                     // The encoder's output format often doesn't include these values
                     if (!newFormat.containsKey(MediaFormat.KEY_FRAME_RATE)) {
                         newFormat.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
-                        FLog.d(TAG, "Injected frame rate: " + videoFramerate);
                     }
                     if (!newFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
                         newFormat.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
-                        FLog.d(TAG, "Injected bitrate: " + videoBitrate);
                     }
 
                     // Cache for future segment rollovers
                     cachedVideoFormat = newFormat;
 
+                    // Log all format keys for diagnostic purposes
+                    String mimeType = newFormat.containsKey(MediaFormat.KEY_MIME) 
+                        ? newFormat.getString(MediaFormat.KEY_MIME) : "unknown";
+                    boolean hasCsd0 = newFormat.containsKey("csd-0");
+                    boolean hasCsd1 = newFormat.containsKey("csd-1");
+                    FLog.i(TAG, "[CODEC-FORMAT] MIME=" + mimeType + " | csd-0=" + hasCsd0 + " | csd-1=" + hasCsd1);
+
+                    boolean needHevcCsd = MediaFormat.MIMETYPE_VIDEO_HEVC.equals(mimeType) && !hasCsd0;
+                    if (needHevcCsd) {
+                        FLog.w(TAG, "[HEVC-CSD] HEVC encoder output format missing csd-0 — deferring track registration until codec config buffers arrive");
+                        pendingHevcFormat = newFormat;
+                        capturedHevcCsd0 = null;
+                        capturedHevcCsd1 = null;
+                        continue; // Skip normal addTrack; wait for CODEC_CONFIG buffers
+                    }
+
                     if (muxerStarted) {
-                        // This should NOT happen if we wait for format before starting muxer
-                        FLog.e(TAG, "CRITICAL: Format changed after muxer started - this indicates a timing issue!");
-                        try {
-                            FLog.e(TAG, "CRITICAL: Format changed after muxer started - timing issue");
-                        } catch (Throwable ignore) {
-                        }
-                        // Don't restart muxer - this causes duration issues
-                        // Instead, log the error and continue with existing muxer
-                        FLog.w(TAG, "Continuing with existing muxer to prevent duration corruption");
+                        FLog.e(TAG, "CRITICAL: Format changed after muxer started - timing issue, continuing");
                     } else {
-                        // Normal case - add video track first
                         videoTrackIndex = mediaMuxer.addTrack(newFormat);
 
-                        // Start muxer immediately if audio is disabled
                         if (!audioRecordingEnabled) {
                             mediaMuxer.start();
                             muxerStarted = true;
                             flushPreMuxerVideoBuffer();
                         } else {
-                            // Audio is enabled - check if audio track is already added
                             if (audioTrackIndex != -1) {
-                                // Both tracks are ready, start muxer
                                 mediaMuxer.start();
                                 muxerStarted = true;
                                 flushPreMuxerVideoBuffer();
                             } else {
-                                // Wait for audio track to be added
                                 FLog.d(TAG, "Video track added, waiting for audio track before starting muxer");
-                                FLog.d(TAG, "DEBUG: audioRecordingEnabled=" + audioRecordingEnabled + ", audioEncoder=" + (audioEncoder != null) + ", audioTrackIndex=" + audioTrackIndex);
-                                try {
-                                    FLog.d(TAG, "Waiting for audio track before starting muxer");
-                                } catch (Throwable ignore) {
-                                }
                             }
                         }
                     }
@@ -1694,7 +1693,51 @@ public class GLRecordingPipeline {
                     }
 
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
-                        // Codec config data - we don't write this to the muxer
+                        // Capture HEVC csd-0/csd-1 from codec config buffers if format was missing them
+                        if (pendingHevcFormat != null && bufferInfo.size > 0) {
+                            try {
+                                byte[] csdData = new byte[bufferInfo.size];
+                                encodedData.position(bufferInfo.offset);
+                                encodedData.get(csdData, 0, bufferInfo.size);
+                                if (capturedHevcCsd0 == null) {
+                                    capturedHevcCsd0 = ByteBuffer.wrap(csdData);
+                                    FLog.i(TAG, "[HEVC-CSD] Captured csd-0 from CODEC_CONFIG buffer (" + bufferInfo.size + " bytes)");
+                                } else if (capturedHevcCsd1 == null) {
+                                    capturedHevcCsd1 = ByteBuffer.wrap(csdData);
+                                    FLog.i(TAG, "[HEVC-CSD] Captured csd-1 from CODEC_CONFIG buffer (" + bufferInfo.size + " bytes)");
+                                }
+                                // Inject csd into the pending format and register track
+                                ByteBuffer csd0Final = capturedHevcCsd0 != null ? capturedHevcCsd0.duplicate() : null;
+                                if (csd0Final != null) {
+                                    csd0Final.position(0);
+                                    pendingHevcFormat.setByteBuffer("csd-0", csd0Final);
+                                }
+                                if (capturedHevcCsd1 != null) {
+                                    ByteBuffer csd1Final = capturedHevcCsd1.duplicate();
+                                    csd1Final.position(0);
+                                    pendingHevcFormat.setByteBuffer("csd-1", csd1Final);
+                                }
+                                // Register the track now that csd-0 is available
+                                videoTrackIndex = mediaMuxer.addTrack(pendingHevcFormat);
+                                FLog.i(TAG, "[HEVC-CSD] Registered HEVC video track with csd-0 captured from codec config buffers");
+                                pendingHevcFormat = null;
+                                capturedHevcCsd0 = null;
+                                capturedHevcCsd1 = null;
+                                // Start muxer if ready
+                                if (!audioRecordingEnabled) {
+                                    mediaMuxer.start();
+                                    muxerStarted = true;
+                                    flushPreMuxerVideoBuffer();
+                                } else if (audioTrackIndex != -1) {
+                                    mediaMuxer.start();
+                                    muxerStarted = true;
+                                    flushPreMuxerVideoBuffer();
+                                }
+                            } catch (Exception e) {
+                                FLog.e(TAG, "[HEVC-CSD] Failed to capture csd-0 from CODEC_CONFIG", e);
+                            }
+                        }
+                        // Codec config data - we don't write this to the muxer (or already captured above)
                         bufferInfo.size = 0;
                     }
 
@@ -1769,15 +1812,53 @@ public class GLRecordingPipeline {
                         if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0
                                 && preMuxerVideoFrameBuffer.size() < MAX_PRE_MUXER_BUFFER_FRAMES) {
                             try {
-                                ByteBuffer copy = ByteBuffer.allocateDirect(bufferInfo.size);
-                                encodedData.position(bufferInfo.offset);
-                                encodedData.limit(bufferInfo.offset + bufferInfo.size);
-                                copy.put(encodedData);
-                                copy.flip();
-                                MediaCodec.BufferInfo infoCopy = new MediaCodec.BufferInfo();
-                                infoCopy.set(0, bufferInfo.size, bufferInfo.presentationTimeUs, bufferInfo.flags);
-                                preMuxerVideoFrameBuffer.add(new PendingVideoFrame(copy, infoCopy));
-                                FLog.d(TAG, "Buffered pre-muxer video frame (total=" + preMuxerVideoFrameBuffer.size() + ", pts=" + bufferInfo.presentationTimeUs + ")");
+                                // Emergency: if still waiting for HEVC csd-0, extract from keyframe bitstream
+                                if (pendingHevcFormat != null && isKeyframe) {
+                                    ByteBuffer csdFromKeyframe = extractHevcCsdFromBitstream(encodedData, bufferInfo.offset, bufferInfo.size);
+                                    if (csdFromKeyframe != null) {
+                                        FLog.i(TAG, "[HEVC-CSD] Extracted csd-0 from keyframe bitstream (" + csdFromKeyframe.remaining() + " bytes) — CODEC_CONFIG buffer never arrived");
+                                        pendingHevcFormat.setByteBuffer("csd-0", csdFromKeyframe);
+                                        videoTrackIndex = mediaMuxer.addTrack(pendingHevcFormat);
+                                        FLog.i(TAG, "[HEVC-CSD] Registered HEVC video track with csd-0 extracted from keyframe");
+                                        pendingHevcFormat = null;
+                                        capturedHevcCsd0 = null;
+                                        capturedHevcCsd1 = null;
+                                        if (!audioRecordingEnabled) {
+                                            mediaMuxer.start();
+                                            muxerStarted = true;
+                                            flushPreMuxerVideoBuffer();
+                                        } else if (audioTrackIndex != -1) {
+                                            mediaMuxer.start();
+                                            muxerStarted = true;
+                                            flushPreMuxerVideoBuffer();
+                                        }
+                                    } else {
+                                        FLog.e(TAG, "[HEVC-CSD] CRITICAL: Cannot extract csd-0 from keyframe — recording will fail");
+                                    }
+                                }
+                                if (pendingHevcFormat == null) {
+                                    if (muxerStarted && videoTrackIndex != -1) {
+                                        encodedData.position(bufferInfo.offset);
+                                        encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                                        mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
+                                        videoSamplesWritten++;
+                                        lastVideoPts = bufferInfo.presentationTimeUs;
+                                        segmentBytesWritten += bufferInfo.size;
+                                        FLog.d(TAG, "[HEVC-CSD] Wrote extraction-source keyframe directly (pts=" + bufferInfo.presentationTimeUs + ")");
+                                    } else {
+                                        ByteBuffer copy = ByteBuffer.allocateDirect(bufferInfo.size);
+                                        encodedData.position(bufferInfo.offset);
+                                        encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                                        copy.put(encodedData);
+                                        copy.flip();
+                                        MediaCodec.BufferInfo infoCopy = new MediaCodec.BufferInfo();
+                                        infoCopy.set(0, bufferInfo.size, bufferInfo.presentationTimeUs, bufferInfo.flags);
+                                        preMuxerVideoFrameBuffer.add(new PendingVideoFrame(copy, infoCopy));
+                                        FLog.d(TAG, "Buffered pre-muxer video frame (total=" + preMuxerVideoFrameBuffer.size() + ", pts=" + bufferInfo.presentationTimeUs + ")");
+                                    }
+                                } else {
+                                    FLog.w(TAG, "[HEVC-CSD] Still waiting for csd-0, frame not keyframe — dropping");
+                                }
                             } catch (Exception e) {
                                 FLog.w(TAG, "Failed to buffer pre-muxer frame, will be lost", e);
                             }
@@ -1983,6 +2064,57 @@ public class GLRecordingPipeline {
         }
     }
 
+    private ByteBuffer extractHevcCsdFromBitstream(ByteBuffer data, int offset, int size) {
+        try {
+            java.util.List<byte[]> nalUnits = new java.util.ArrayList<>();
+            int pos = offset;
+            int end = offset + size;
+            while (pos < end - 3) {
+                int startCodeLen;
+                if (data.get(pos) == 0 && data.get(pos + 1) == 0 && data.get(pos + 2) == 0 && data.get(pos + 3) == 1) {
+                    startCodeLen = 4;
+                } else if (data.get(pos) == 0 && data.get(pos + 1) == 0 && data.get(pos + 2) == 1) {
+                    startCodeLen = 3;
+                } else {
+                    pos++;
+                    continue;
+                }
+                int nalStart = pos + startCodeLen;
+                int nalEnd = nalStart;
+                while (nalEnd < end - 2) {
+                    if (data.get(nalEnd) == 0 && data.get(nalEnd + 1) == 0) {
+                        if (nalEnd + 2 < end && data.get(nalEnd + 2) == 1) break;
+                        if (nalEnd + 3 < end && data.get(nalEnd + 2) == 0 && data.get(nalEnd + 3) == 1) break;
+                    }
+                    nalEnd++;
+                }
+                if (nalEnd >= end - 2) nalEnd = end;
+                if (nalStart < nalEnd) {
+                    byte nalType = (byte) ((data.get(nalStart) >> 1) & 0x3F);
+                    if (nalType == 32 || nalType == 33 || nalType == 34) {
+                        byte[] nalu = new byte[nalEnd - pos];
+                        for (int i = 0; i < nalu.length; i++) {
+                            nalu[i] = data.get(pos + i);
+                        }
+                        nalUnits.add(nalu);
+                    }
+                }
+                pos = nalEnd;
+            }
+            if (nalUnits.isEmpty()) return null;
+            int totalLen = 0;
+            for (byte[] nalu : nalUnits) totalLen += nalu.length;
+            FLog.i(TAG, "[HEVC-CSD] Extracted " + nalUnits.size() + " NAL units from keyframe (" + totalLen + " bytes total)");
+            ByteBuffer result = ByteBuffer.allocate(totalLen);
+            for (byte[] nalu : nalUnits) result.put(nalu);
+            result.flip();
+            return result;
+        } catch (Exception e) {
+            FLog.w(TAG, "[HEVC-CSD] Failed to extract csd from bitstream", e);
+            return null;
+        }
+    }
+
     /**
      * Stops recording and releases all resources with bulletproof error handling.
      * Ensures recorded files are always playable even when errors occur.
@@ -2003,6 +2135,9 @@ public class GLRecordingPipeline {
             // stop log removed
             return;
         }
+        pendingHevcFormat = null;
+        capturedHevcCsd0 = null;
+        capturedHevcCsd1 = null;
         boolean wasPreviewOnly = previewOnlyRendering && !isRecording;
         isStopped = true;
         released = true;

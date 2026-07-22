@@ -533,6 +533,8 @@ public class FragmentedMp4MuxerWrapper {
                     csd0.rewind();
                     initData.add(csd0Bytes);
                 }
+            } else if (MimeTypes.VIDEO_H265.equals(mimeType)) {
+                FLog.w(TAG, "[HEVC-CSD] HEVC video format missing csd-0 — MP4 header will fail without it");
             }
             if (mediaFormat.containsKey("csd-1")) {
                 ByteBuffer csd1 = mediaFormat.getByteBuffer("csd-1");
