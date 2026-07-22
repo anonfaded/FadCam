@@ -1850,6 +1850,10 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="debug_log_empty">Aún no hay registro de depuración</string>
     <string name="debug_log_share_fail">Compartición fallida</string>
     <string name="debug_log_open_fail">Apertura fallida</string>
+    <string name="debug_log_max_lines_title">Líneas máximas de registro</string>
+    <string name="debug_log_max_lines_desc">Líneas máximas mantenidas antes de recortar las entradas más antiguas</string>
+    <string name="debug_log_max_lines_current">Actualmente %d líneas (predeterminado: 5000)</string>
+    <string name="debug_log_max_lines_message">Número máximo de líneas mantenidas en el archivo de registro de depuración antes de recortar las entradas más antiguas. Rango: 100 – 50000.</string>
 
     <!-- Scroll navigation -->
     <string name="scroll_to_top">Desplazar al inicio</string>

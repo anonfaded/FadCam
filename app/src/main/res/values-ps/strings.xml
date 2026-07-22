@@ -630,6 +630,10 @@ Would you like to switch to H.264 and start recording?</string>
     <string name="debug_log_delete_title">Debug Log Delete Ka</string>
     <string name="debug_log_empty">Tarto debug log nadi</string>
     <string name="debug_log_open_fail">Khola failed</string>
+    <string name="debug_log_max_lines_title">Log Kre Tsog Akhri</string>
+    <string name="debug_log_max_lines_desc">Tsog akhri kre da zokre tar pake sato na shwe trim</string>
+    <string name="debug_log_max_lines_current">Os %d kre de (default: 5000)</string>
+    <string name="debug_log_max_lines_message">Tsog akhri ta da debug log file ke sato na shwe trim. Had: 100 – 50000.</string>
     <string name="debug_log_open_subtitle">Ogora in a browser or HTML viewer</string>
     <string name="debug_log_open_title">Beheran Khola</string>
     <string name="debug_log_search_hint">Log model kae…</string>

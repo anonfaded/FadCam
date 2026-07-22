@@ -855,6 +855,10 @@
     <string name="debug_log_empty">暂无调试日志</string>
     <string name="debug_log_share_fail">共享失败</string>
     <string name="debug_log_open_fail">打开失败</string>
+    <string name="debug_log_max_lines_title">最大日志行数</string>
+    <string name="debug_log_max_lines_desc">在裁剪最早条目之前保留的最大行数</string>
+    <string name="debug_log_max_lines_current">当前 %d 行（默认：5000）</string>
+    <string name="debug_log_max_lines_message">在裁剪最早条目之前调试日志文件中保留的最大行数。范围：100 – 50000。</string>
     <string name="scroll_to_top">滚动至顶部</string>
     <string name="scroll_to_bottom">滚动至底部</string>
     <string name="restore_destination_title">选择恢复位置</string>

@@ -2956,6 +2956,10 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="debug_log_share_fail">Share failed</string>
 
 <string name="debug_log_open_fail">Open failed</string>
+<string name="debug_log_max_lines_title">Lignes de log max</string>
+<string name="debug_log_max_lines_desc">Lignes maximales conservées avant suppression des plus anciennes</string>
+<string name="debug_log_max_lines_current">Actuellement %d lignes (par défaut : 5000)</string>
+<string name="debug_log_max_lines_message">Nombre maximal de lignes conservées dans le fichier de log de débogage avant suppression des plus anciennes. Plage : 100 – 50000.</string>
 
 <string name="scroll_to_top">Scroll to top</string>
 

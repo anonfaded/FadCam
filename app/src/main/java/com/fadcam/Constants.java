@@ -59,6 +59,7 @@ public abstract class Constants {
     public static final String PREF_LOCATION_DATA = "location_data";
     public static final String PREF_EMBED_LOCATION_DATA = "embed_location_data";
     public static final String PREF_DEBUG_DATA = "debug_data";
+    public static final String PREF_DEBUG_MAX_LINES = "debug_max_lines";
     public static final String PREF_WATERMARK_OPTION = "watermark_option";
     public static final String PREF_WATERMARK_CUSTOM_TEXT = "watermark_custom_text";
     public static final String PREF_WATERMARK_UPDATE_INTERVAL = "watermark_update_interval"; // milliseconds

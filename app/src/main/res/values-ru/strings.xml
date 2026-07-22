@@ -1165,6 +1165,10 @@
     <string name="debug_log_empty">Журнала отладки ещё нет</string>
     <string name="debug_log_share_fail">Поделиться не удалось</string>
     <string name="debug_log_open_fail">Открыть не удалось</string>
+    <string name="debug_log_max_lines_title">Макс. строк лога</string>
+    <string name="debug_log_max_lines_desc">Максимум строк перед обрезкой старых записей</string>
+    <string name="debug_log_max_lines_current">Сейчас %d строк (по умолч.: 5000)</string>
+    <string name="debug_log_max_lines_message">Максимальное количество строк в файле журнала отладки перед обрезкой старых записей. Диапазон: 100 – 50000.</string>
 
     <!-- Scroll navigation -->
     <string name="scroll_to_top">Прокрутить вверх</string>

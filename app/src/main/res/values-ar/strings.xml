@@ -3012,6 +3012,10 @@
     <string name="debug_log_share_fail">فشلت المشاركة</string>
 
     <string name="debug_log_open_fail">فشل الفتح</string>
+    <string name="debug_log_max_lines_title">أقصى عدد لأسطر السجل</string>
+    <string name="debug_log_max_lines_desc">الحد الأقصى للأسطر المحفوظة قبل تقليم الأقدم</string>
+    <string name="debug_log_max_lines_current">حاليًا %d سطر (الافتراضي: 5000)</string>
+    <string name="debug_log_max_lines_message">الحد الأقصى لعدد الأسطر المحفوظة في ملف سجل التصحيح قبل تقليم الأقدم. النطاق: 100 – 50000.</string>
 
     <string name="scroll_to_top">التمرير للأعلى</string>
 

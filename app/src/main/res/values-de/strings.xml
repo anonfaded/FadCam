@@ -1362,6 +1362,10 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="debug_log_delete_title">Debug-Protokoll löschen</string>
     <string name="debug_log_empty">Noch kein Debug-Protokoll</string>
     <string name="debug_log_open_fail">Öffnen fehlgeschlagen</string>
+    <string name="debug_log_max_lines_title">Maximale Protokollzeilen</string>
+    <string name="debug_log_max_lines_desc">Maximale Zeilen, bevor die ältesten Einträge gekürzt werden</string>
+    <string name="debug_log_max_lines_current">Derzeit %d Zeilen (Standard: 5000)</string>
+    <string name="debug_log_max_lines_message">Maximale Anzahl der im Debug-Protokoll gespeicherten Zeilen, bevor die ältesten Einträge gekürzt werden. Bereich: 100 – 50000.</string>
     <string name="debug_log_open_subtitle">Im Browser oder HTML-Viewer anzeigen</string>
     <string name="debug_log_open_title">Extern öffnen</string>
     <string name="debug_log_search_hint">Protokoll durchsuchen…</string>

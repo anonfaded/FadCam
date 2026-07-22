@@ -1038,6 +1038,10 @@ public class SharedPreferencesManager {
         return sharedPreferences.getBoolean(Constants.PREF_DEBUG_DATA, false);
     }
 
+    public int getDebugMaxLines() {
+        return sharedPreferences.getInt(Constants.PREF_DEBUG_MAX_LINES, 5000);
+    }
+
     public String getWatermarkOption() {
         return sharedPreferences.getString(
             Constants.PREF_WATERMARK_OPTION,

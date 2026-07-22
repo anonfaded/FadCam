@@ -2102,6 +2102,10 @@
     <string name="debug_log_empty">Henüz hata ayıklama günlüğü yok</string>
     <string name="debug_log_share_fail">Paylaşma başarısız</string>
     <string name="debug_log_open_fail">Açma başarısız</string>
+    <string name="debug_log_max_lines_title">Maks. Günlük Satırı</string>
+    <string name="debug_log_max_lines_desc">En eski girdiler kesilmeden önce tutulan maksimum satır</string>
+    <string name="debug_log_max_lines_current">Şu anda %d satır (varsayılan: 5000)</string>
+    <string name="debug_log_max_lines_message">Hata ayıklama günlük dosyasında en eski girdiler kesilmeden önce tutulan maksimum satır sayısı. Aralık: 100 – 50000.</string>
     <string name="restore_destination_title">Geri Yükleme Konumu Seç</string>
     <string name="restore_destination_downloads">İndirilenler Klasörü</string>
     <string name="restore_destination_downloads_desc">Genel Downloads/FadCam/ klasörü</string>

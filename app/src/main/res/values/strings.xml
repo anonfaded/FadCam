@@ -1892,6 +1892,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="debug_log_empty">No debug log yet</string>
     <string name="debug_log_share_fail">Share failed</string>
     <string name="debug_log_open_fail">Open failed</string>
+    <string name="debug_log_max_lines_title">Max Log Lines</string>
+    <string name="debug_log_max_lines_desc">Maximum lines kept before oldest entries are trimmed</string>
+    <string name="debug_log_max_lines_current">Currently %d lines (default: 5000)</string>
+    <string name="debug_log_max_lines_message">Maximum number of lines kept in the debug log file before oldest entries are trimmed. Range: 100 – 50000.</string>
 
     <!-- Scroll navigation -->
     <string name="scroll_to_top">Scroll to top</string>

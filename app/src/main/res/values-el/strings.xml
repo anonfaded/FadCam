@@ -1801,6 +1801,10 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="debug_log_empty">Κανένα αρχείο καταγραφής</string>
     <string name="debug_log_share_fail">Η κοινή χρήση απέτυχε</string>
     <string name="debug_log_open_fail">Το άνοιγμα απέτυχε</string>
+    <string name="debug_log_max_lines_title">Μέγιστες γραμμές καταγραφής</string>
+    <string name="debug_log_max_lines_desc">Μέγιστος αριθμός γραμμών πριν την περικοπή παλαιότερων εγγραφών</string>
+    <string name="debug_log_max_lines_current">Τρέχουσες %d γραμμές (προεπιλογή: 5000)</string>
+    <string name="debug_log_max_lines_message">Μέγιστος αριθμός γραμμών που διατηρούνται στο αρχείο καταγραφής πριν την περικοπή παλαιότερων εγγραφών. Εύρος: 100 – 50000.</string>
     <!-- Scroll navigation -->
     <string name="scroll_to_top">Μετάβαση στην κορυφή</string>
     <string name="scroll_to_bottom">Μετάβαση στο τέλος</string>

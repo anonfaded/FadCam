@@ -1901,6 +1901,10 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="debug_log_empty">Belum ada log debug</string>
     <string name="debug_log_share_fail">Berbagi gagal</string>
     <string name="debug_log_open_fail">Membuka gagal</string>
+    <string name="debug_log_max_lines_title">Baris Log Maks</string>
+    <string name="debug_log_max_lines_desc">Baris maksimum yang disimpan sebelum entri terlama dipangkas</string>
+    <string name="debug_log_max_lines_current">Saat ini %d baris (default: 5000)</string>
+    <string name="debug_log_max_lines_message">Jumlah maksimum baris yang disimpan dalam file log debug sebelum entri terlama dipangkas. Rentang: 100 – 50000.</string>
 
     <!-- Scroll navigation -->
     <string name="scroll_to_top">Gulir ke atas</string>

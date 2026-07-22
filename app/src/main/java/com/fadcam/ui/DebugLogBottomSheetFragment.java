@@ -32,6 +32,7 @@ import com.fadcam.Constants;
 import com.fadcam.FLog;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.ui.picker.NumberInputBottomSheetFragment;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -106,6 +107,10 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
                 optionsCard.setPadding(dp(12), dp(4), dp(12), dp(4));
 
                 optionsCard.addView(buildToggleRow());
+                optionsCard.addView(makeDivider());
+
+                LinearLayout maxLinesRow = buildMaxLinesRow();
+                optionsCard.addView(maxLinesRow);
                 optionsCard.addView(makeDivider());
 
                 LinearLayout shareRow = buildActionRow(android.R.drawable.ic_menu_share,
@@ -201,14 +206,15 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
 
     private void onShare() {
         try {
-            Uri share = Log.getSharableLogUri(requireContext());
-            if (share == null) {
+            Uri uri = Log.getFullHtmlPageUri(requireContext());
+            if (uri == null) {
                 Toast.makeText(requireContext(), R.string.debug_log_empty, Toast.LENGTH_SHORT).show();
                 return;
             }
             Intent send = new Intent(Intent.ACTION_SEND);
-            send.setType("*/*");
-            send.putExtra(Intent.EXTRA_STREAM, share);
+            send.setType("text/html");
+            send.putExtra(Intent.EXTRA_STREAM, uri);
+            send.putExtra(Intent.EXTRA_SUBJECT, "FADCAM_debug.html");
             send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             Intent chooser = Intent.createChooser(send, getString(R.string.debug_log_share_title));
             shareLauncher.launch(chooser);
@@ -236,7 +242,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
 
     private void onOpenExternal() {
         try {
-            Uri uri = Log.getSharableLogUri(requireContext());
+            Uri uri = Log.getFullHtmlPageUri(requireContext());
             if (uri == null) {
                 Toast.makeText(requireContext(), R.string.debug_log_empty, Toast.LENGTH_SHORT).show();
                 return;
@@ -244,7 +250,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(uri, "text/html");
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(intent);
+            startActivity(Intent.createChooser(intent, getString(R.string.debug_log_open_title)));
         } catch (Exception e) {
             Toast.makeText(requireContext(), getString(R.string.debug_log_open_fail) + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
@@ -320,12 +326,47 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
             prefs.sharedPreferences.edit().putBoolean(Constants.PREF_DEBUG_DATA, isChecked).apply();
             Log.setDebugEnabled(isChecked);
         });
-    row.addView(sw, new LinearLayout.LayoutParams(dp(52), dp(52)));
-        // Make entire row clickable, not just the avatar
+        row.addView(sw, new LinearLayout.LayoutParams(dp(52), dp(52)));
         row.setClickable(true);
         row.setFocusable(true);
         row.setOnClickListener(v -> sw.performClick());
-    return row;
+        return row;
+    }
+
+    private static final String MAX_LINES_RESULT_KEY = "debug_max_lines_input";
+
+    private LinearLayout buildMaxLinesRow() {
+        SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
+        int current = prefs.getDebugMaxLines();
+        LinearLayout row = buildActionRow(R.drawable.ic_fadcrypt,
+                getString(R.string.debug_log_max_lines_title),
+                getString(R.string.debug_log_max_lines_current, current));
+        row.setOnClickListener(v -> {
+            NumberInputBottomSheetFragment sheet = NumberInputBottomSheetFragment.newInstance(
+                    getString(R.string.debug_log_max_lines_title),
+                    100, 50000, current,
+                    getString(R.string.debug_log_max_lines_desc),
+                    0, 0, null, null, MAX_LINES_RESULT_KEY);
+            sheet.show(getParentFragmentManager(), MAX_LINES_RESULT_KEY);
+        });
+        getChildFragmentManager().setFragmentResultListener(MAX_LINES_RESULT_KEY, this, (requestKey, result) -> {
+            int val = result.getInt(NumberInputBottomSheetFragment.RESULT_NUMBER, current);
+            if (val >= 100 && val <= 50000) {
+                prefs.sharedPreferences.edit().putInt(Constants.PREF_DEBUG_MAX_LINES, val).apply();
+                refreshMaxLinesRowLabel(row);
+            }
+        });
+        return row;
+    }
+
+    private void refreshMaxLinesRowLabel(LinearLayout row) {
+        int current = SharedPreferencesManager.getInstance(requireContext()).getDebugMaxLines();
+        if (row.getChildCount() > 1 && row.getChildAt(1) instanceof LinearLayout) {
+            LinearLayout textCol = (LinearLayout) row.getChildAt(1);
+            if (textCol.getChildCount() > 1 && textCol.getChildAt(1) instanceof TextView) {
+                ((TextView) textCol.getChildAt(1)).setText(getString(R.string.debug_log_max_lines_current, current));
+            }
+        }
     }
 
     private int dp(int v){ return (int)(v * getResources().getDisplayMetrics().density + 0.5f); }
@@ -483,6 +524,12 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
 
     private class LogAdapter extends RecyclerView.Adapter<LogAdapter.VH>{
         private final int grey = getResources().getColor(android.R.color.darker_gray);
+        private final int colorError = 0xFFDC2626;
+        private final int colorWarn  = 0xFFD97706;
+        private final int colorDebug = 0xFF5B9BD5;
+        private final int colorVerbose = 0xFF8B8B8B;
+        private final int colorSystem = 0xFFDC2626;
+        private final int colorInfo  = 0xFFDDDDDD;
         private String query = "";
         void setQuery(String q){ this.query = q==null?"":q; notifyDataSetChanged(); }
         @NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType){
@@ -518,6 +565,13 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
                     idx += ql.length();
                 }
             }
+            int lineColor = colorInfo;
+            if (lineHtml.contains("severity-error\"")) lineColor = colorError;
+            else if (lineHtml.contains("severity-warn\"")) lineColor = colorWarn;
+            else if (lineHtml.contains("severity-debug\"")) lineColor = colorDebug;
+            else if (lineHtml.contains("severity-verbose\"")) lineColor = colorVerbose;
+            else if (lineHtml.contains("severity-system\"")) lineColor = colorSystem;
+            holder.tv.setTextColor(lineColor);
             holder.tv.setText(out);
         }
         @Override public int getItemCount(){ return linesHtml==null?0:linesHtml.size(); }

@@ -1711,6 +1711,10 @@
     <string name="debug_log_empty">Nessun log ancora</string>
     <string name="debug_log_share_fail">Condivisione fallita</string>
     <string name="debug_log_open_fail">Apertura fallita</string>
+    <string name="debug_log_max_lines_title">Righe log max</string>
+    <string name="debug_log_max_lines_desc">Righe massime mantenute prima del taglio delle voci più vecchie</string>
+    <string name="debug_log_max_lines_current">Attualmente %d righe (predefinito: 5000)</string>
+    <string name="debug_log_max_lines_message">Numero massimo di righe mantenute nel file di log di debug prima del taglio delle voci più vecchie. Intervallo: 100 – 50000.</string>
     <string name="scroll_to_top">Scorri su</string>
     <string name="scroll_to_bottom">Scorri giù</string>
     <string name="restore_destination_title">Scegli posizione ripristino</string>

@@ -35,7 +35,7 @@
             android:layout_gravity="center_horizontal"
             android:gravity="center"
             android:textSize="28sp"
-            android:textColor="?attr/colorPrimary"
+            android:textColor="@android:color/darker_gray"
             android:fontFamily="@font/materialicons" />
 
         <TextView

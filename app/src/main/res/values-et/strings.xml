@@ -1755,6 +1755,10 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="debug_log_empty">Silumislogi pole veel</string>
     <string name="debug_log_share_fail">Jagamine nurjus</string>
     <string name="debug_log_open_fail">Avamine nurjus</string>
+    <string name="debug_log_max_lines_title">Maksimaalsed logiread</string>
+    <string name="debug_log_max_lines_desc">Maksimaalsed read enne vanimate kirjete kärpimist</string>
+    <string name="debug_log_max_lines_current">Praegu %d rida (vaikimisi: 5000)</string>
+    <string name="debug_log_max_lines_message">Maksimaalne ridade arv silumislogifailis enne vanimate kirjete kärpimist. Vahemik: 100 – 50000.</string>
     <string name="scroll_to_top">Keri üles</string>
     <string name="scroll_to_bottom">Keri alla</string>
     <string name="restore_destination_title">Vali taastamise asukoht</string>
