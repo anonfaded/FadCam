@@ -300,9 +300,10 @@ public final class PhotoStorageHelper {
                 break;
         }
 
-        // Append extended sensor data if available
+        // Append extended sensor data if available, with a blank line gap
+        // matching the video watermark pipeline layout
         if (extraWatermarkData != null && !extraWatermarkData.isEmpty()) {
-            base += "\n" + extraWatermarkData;
+            base += "\n\n" + extraWatermarkData;
         }
 
         return base;
