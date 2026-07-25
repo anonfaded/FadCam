@@ -400,14 +400,31 @@ public class VideoSettingsFragment extends Fragment {
     private void showResolutionBottomSheet() {
         // method(showResolutionBottomSheet)-----------
         CameraType cam = prefs.getCameraSelection();
-        java.util.List<Size> resolutions = getCompatiblesVideoResolutions(cam);
+        java.util.List<ResolutionInfo> resolutions = getCompatiblesVideoResolutionsWithFlags(cam);
         Size current = prefs.getCameraResolution();
-        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         String currentId = current.getWidth() + "x" + current.getHeight();
-        for (Size s : resolutions) {
-            String id = s.getWidth() + "x" + s.getHeight();
-            String title = buildResolutionLabel(s);
-            items.add(new com.fadcam.ui.picker.OptionItem(id, title));
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+
+        for (ResolutionInfo ri : resolutions) {
+            String id = ri.size.getWidth() + "x" + ri.size.getHeight();
+            String title = buildResolutionLabel(ri.size);
+            if (ri.supportedByBothCameras) {
+                items.add(new com.fadcam.ui.picker.OptionItem(
+                        id, title,
+                        getString(R.string.resolution_subtitle_both),
+                        null, null, null, null, null, null,
+                        getString(R.string.resolution_badge_both),
+                        com.fadcam.R.drawable.badge_background_green,
+                        false));
+            } else {
+                items.add(new com.fadcam.ui.picker.OptionItem(
+                        id, title,
+                        getString(R.string.resolution_subtitle_current),
+                        null, null, null, null, null, null,
+                        getString(R.string.resolution_badge_current),
+                        com.fadcam.R.drawable.badge_background_blue,
+                        false));
+            }
         }
         final String resultKey = "picker_result_resolution";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
@@ -429,7 +446,7 @@ public class VideoSettingsFragment extends Fragment {
                 refreshAllValues();
             }
         });
-        String helper = getString(R.string.setting_quailty_title); // reuse title as we have no separate summary here
+        String helper = getString(R.string.resolution_helper_all);
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstance(
                         getString(R.string.setting_quailty_title), items, currentId, resultKey, helper);
@@ -826,6 +843,146 @@ public class VideoSettingsFragment extends Fragment {
         cachedResolutionsFront = list;
         return list;
         // method(getCompatiblesVideoResolutions)-----------
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // ResolutionInfo — pairs a Size with a flag indicating whether both cameras
+    // support it (safe for live camera switching during recording).
+    // ────────────────────────────────────────────────────────────────────────────
+    private static class ResolutionInfo {
+        final Size size;
+        final boolean supportedByBothCameras;
+
+        ResolutionInfo(Size size, boolean supportedByBothCameras) {
+            this.size = size;
+            this.supportedByBothCameras = supportedByBothCameras;
+        }
+    }
+
+    /**
+     * Returns ALL supported resolutions for the current camera, each tagged with
+     * whether BOTH cameras support it (safe for live switching) or the current
+     * camera only.
+     */
+    private List<ResolutionInfo> getCompatiblesVideoResolutionsWithFlags(CameraType type) {
+        // method(getCompatiblesVideoResolutionsWithFlags)-----------
+        if (type != null && type.isDual()) {
+            type = CameraType.BACK;
+        }
+
+        final String[] CANONICAL = {
+                "7680x4320", // 8K
+                "3840x2160", // 4K
+                "2560x1440", // 2K
+                "1920x1080", // FHD
+                "1280x720",  // HD
+                "854x480",
+                "720x480",
+                "640x480",
+                "480x360",
+                "426x240",
+                "352x288",
+                "320x240"
+        };
+        Set<String> canonicalSet = new HashSet<>(java.util.Arrays.asList(CANONICAL));
+
+        // ── 1. Gather SurfaceTexture output sizes for both cameras ──
+        Set<String> backSizes = new HashSet<>();
+        Set<String> frontSizes = new HashSet<>();
+        try {
+            for (CameraType ct : new CameraType[]{CameraType.BACK, CameraType.FRONT}) {
+                String camId = getActualCameraIdForType(ct);
+                if (camId == null) continue;
+                CameraManager mgr = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+                CameraCharacteristics chars = mgr.getCameraCharacteristics(camId);
+                StreamConfigurationMap map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                if (map == null) continue;
+                Size[] sizes = map.getOutputSizes(android.graphics.SurfaceTexture.class);
+                if (sizes == null) continue;
+                for (Size s : sizes) {
+                    if (isReasonableVideoSize(s)) {
+                        String key = s.getWidth() + "x" + s.getHeight();
+                        (ct == CameraType.BACK ? backSizes : frontSizes).add(key);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Resolution flags: error reading camera sizes", e);
+        }
+
+        // ── 2. Intersection = sizes both cameras support ──
+        Set<String> commonSizes = new HashSet<>(backSizes);
+        commonSizes.retainAll(frontSizes);
+
+        // ── 3. Current camera's sizes ──
+        Set<String> currentSizes = (type == CameraType.FRONT) ? frontSizes : backSizes;
+
+        // ── 4. Build result: canonical + non-canonical high-res ──
+        List<ResolutionInfo> result = new ArrayList<>();
+        Set<String> added = new HashSet<>();
+
+        // Canonical sizes that the current camera supports
+        for (String dim : CANONICAL) {
+            if (!currentSizes.contains(dim)) continue;
+            try {
+                String[] parts = dim.split("x");
+                Size s = new Size(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+                result.add(new ResolutionInfo(s, commonSizes.contains(dim)));
+                added.add(dim);
+            } catch (Exception ignored) {
+            }
+        }
+
+        // Non-canonical >=1080p sizes that the current camera supports
+        for (String key : currentSizes) {
+            if (canonicalSet.contains(key) || added.contains(key)) continue;
+            try {
+                String[] parts = key.split("x");
+                int w = Integer.parseInt(parts[0]);
+                int h = Integer.parseInt(parts[1]);
+                if (w >= 1920 && h >= 1080) {
+                    result.add(new ResolutionInfo(new Size(w, h), commonSizes.contains(key)));
+                    added.add(key);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        // ── 5. Sort: by area desc, common-first tiebreaker ──
+        if (!result.isEmpty()) {
+            Collections.sort(result, (a, b) -> {
+                long areaA = (long) a.size.getWidth() * a.size.getHeight();
+                long areaB = (long) b.size.getWidth() * b.size.getHeight();
+                if (areaA != areaB) return Long.compare(areaB, areaA);
+                if (a.supportedByBothCameras != b.supportedByBothCameras)
+                    return a.supportedByBothCameras ? -1 : 1;
+                return 0;
+            });
+
+            // Auto-correct saved preference if it's no longer valid
+            try {
+                Size saved = prefs.getCameraResolution();
+                boolean found = result.stream().anyMatch(
+                        ri -> ri.size.getWidth() == saved.getWidth() && ri.size.getHeight() == saved.getHeight());
+                if (!found) {
+                    ResolutionInfo fallback = result.get(0);
+                    prefs.sharedPreferences.edit()
+                            .putInt(Constants.PREF_VIDEO_RESOLUTION_WIDTH, fallback.size.getWidth())
+                            .putInt(Constants.PREF_VIDEO_RESOLUTION_HEIGHT, fallback.size.getHeight())
+                            .apply();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        // Update the legacy flat caches for backward compat
+        List<Size> flatResolutions = new ArrayList<>();
+        for (ResolutionInfo ri : result) flatResolutions.add(ri.size);
+        cachedResolutionsBack = flatResolutions;
+        cachedResolutionsFront = flatResolutions;
+
+        return result;
+        // method(getCompatiblesVideoResolutionsWithFlags)-----------
     }
 
     // Legacy internal helpers (copied/adapted from SettingsFragment to ensure

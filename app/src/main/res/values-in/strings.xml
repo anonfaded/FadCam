@@ -558,6 +558,12 @@ Ini BUKAN bug — ini adalah batasan perangkat keras perangkat Anda.</string>
     <string name="dual_cam_settings_row_subtitle">Konfigurasi tata letak dan tampilan PiP</string>
 
     <string name="setting_quailty_title">Kualitas Kamera</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Kedua Kamera</string>
+    <string name="resolution_badge_current">Kamera Saat Ini</string>
+    <string name="resolution_subtitle_both">Aman untuk perpindahan kamera langsung</string>
+    <string name="resolution_subtitle_current">Hanya berfungsi dengan kamera saat ini</string>
+    <string name="resolution_helper_all">Resolusi yang ditandai \"Kedua Kamera\" didukung oleh kamera depan dan belakang serta memungkinkan perpindahan kamera langsung selama perekaman. Resolusi yang ditandai \"Kamera Saat Ini\" hanya berfungsi dengan kamera yang sedang dipilih.</string>
     <string name="setting_framerate_title">Framerate Video</string>
     <string name="setting_zoom_ratio_title">Rasio Zoom</string>
     <string name="zoom_not_available_toast">Zoom tidak tersedia</string>

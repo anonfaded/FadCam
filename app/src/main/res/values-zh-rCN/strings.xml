@@ -59,6 +59,12 @@
     <string name="nav_about">关于</string>
     <string name="button_settings_readme">使用须知</string>
     <string name="setting_quailty_title">视频分辨率</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">双摄像头</string>
+    <string name="resolution_badge_current">当前摄像头</string>
+    <string name="resolution_subtitle_both">可安全进行实时摄像头切换</string>
+    <string name="resolution_subtitle_current">仅适用于当前摄像头</string>
+    <string name="resolution_helper_all">标记为"双摄像头"的分辨率由前置和后置摄像头同时支持，允许在录制过程中实时切换摄像头。标记为"当前摄像头"的分辨率仅适用于当前选中的摄像头。</string>
     <string name="setting_location_title">位置信息</string>
     <string name="setting_cam_title">摄像头</string>
     <string name="note_cam_sele">选择摄像头\n(默认: 后摄)</string>

@@ -124,6 +124,12 @@
     <string name="button_settings_cam_back">Rückseite</string>
     <string name="button_settings_cam_front">Vorderseite</string>
     <string name="setting_quailty_title">Videoqualität</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Beide Kameras</string>
+    <string name="resolution_badge_current">Aktuelle Kamera</string>
+    <string name="resolution_subtitle_both">Sicher für Live-Kamerawechsel</string>
+    <string name="resolution_subtitle_current">Funktioniert nur mit aktueller Kamera</string>
+    <string name="resolution_helper_all">Auflösungen mit der Markierung "Beide Kameras" werden von beiden Kameras unterstützt und ermöglichen Live-Kamerawechsel während der Aufnahme. Auflösungen mit der Markierung "Aktuelle Kamera" funktionieren nur mit der aktuell ausgewählten Kamera.</string>
     <string name="setting_framerate_title">Video-Bildrate</string>
     <string name="note_quailty">Qualität wählen\n(Standard: HD)</string>
     <string name="note_framerate">Bildrate wählen\n(Standard: %1$d)</string>

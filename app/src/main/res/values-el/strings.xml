@@ -505,6 +505,12 @@
     <string name="dual_cam_settings_row_title">Ρυθμίσεις Dual Κάμερας</string>
     <string name="dual_cam_settings_row_subtitle">Διαμόρφωση διάταξης και εμφάνισης PiP</string>
     <string name="setting_quailty_title">Ποιότητα Βίντεο</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Και οι δύο κάμερες</string>
+    <string name="resolution_badge_current">Τρέχουσα κάμερα</string>
+    <string name="resolution_subtitle_both">Ασφαλές για εναλλαγή κάμερας εν ζωή</string>
+    <string name="resolution_subtitle_current">Λειτουργεί μόνο με τρέχουσα κάμερα</string>
+    <string name="resolution_helper_all">Οι αναλύσεις που σημειώνονται ως "Και οι δύο κάμερες" υποστηρίζονται από μπροστινή και πίσω κάμερα και επιτρέπουν εναλλαγή κάμερας εν ζωή κατά την εγγραφή. Οι αναλύσεις που σημειώνονται ως "Τρέχουσα κάμερα" λειτουργούν μόνο με την επιλεγμένη κάμερα.</string>
     <string name="setting_framerate_title">Ρυθμός Καρέ Βίντεο</string>
     <string name="setting_zoom_ratio_title">Αναλογία Ζουμ</string>
     <string name="zoom_not_available_toast">Το ζουμ δεν είναι διαθέσιμο</string>

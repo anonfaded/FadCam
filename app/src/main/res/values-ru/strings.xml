@@ -210,6 +210,12 @@
     <string name="button_settings_cam_back">Задняя</string>
     <string name="button_settings_cam_front">Фронтальная</string>
     <string name="setting_quailty_title">Качество видео</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Обе камеры</string>
+    <string name="resolution_badge_current">Текущая камера</string>
+    <string name="resolution_subtitle_both">Безопасно для переключения камер в реальном времени</string>
+    <string name="resolution_subtitle_current">Работает только с текущей камерой</string>
+    <string name="resolution_helper_all">Разрешения с пометкой "Обе камеры" поддерживаются обеими камерами и позволяют переключать камеры в реальном времени во время записи. Разрешения с пометкой "Текущая камера" работают только с выбранной в данный момент камерой.</string>
     <string name="setting_framerate_title">Частота кадров видео</string>
     <string name="setting_zoom_ratio_title">Коэффициент увеличения</string>
     <string name="zoom_not_available_toast">Увеличение недоступно</string>

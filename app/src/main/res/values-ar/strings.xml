@@ -56,6 +56,12 @@
     <string name="nav_about">حول</string>
     <string name="button_settings_readme">اقرأني</string>
     <string name="setting_quailty_title">جودة الفيديو</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">كلتا الكاميرتين</string>
+    <string name="resolution_badge_current">الكاميرا الحالية</string>
+    <string name="resolution_subtitle_both">آمن للتبديل المباشر بين الكاميرات</string>
+    <string name="resolution_subtitle_current">يعمل فقط مع الكاميرا الحالية</string>
+    <string name="resolution_helper_all">الدقة التي تحمل علامة "كلتا الكاميرتين" مدعومة من الكاميرا الأمامية والخلفية وتسمح بالتبديل المباشر بين الكاميرات أثناء التسجيل. الدقة التي تحمل علامة "الكاميرا الحالية" تعمل فقط مع الكاميرا المحددة حالياً.</string>
     <string name="setting_location_title">معلومات موقع الهاتف</string>
     <string name="setting_cam_title">الكاميرا</string>
     <string name="note_cam_sele">اختر الكاميرا\n(الافتراضي: الكاميرا الخلفية)</string>

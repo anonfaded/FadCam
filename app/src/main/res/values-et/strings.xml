@@ -557,6 +557,12 @@
     <string name="dual_cam_settings_row_subtitle">Seadista PiP paigutust ja välimust</string>
 
     <string name="setting_quailty_title">Video kvaliteet</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Mõlemad kaamerad</string>
+    <string name="resolution_badge_current">Praegune kaamera</string>
+    <string name="resolution_subtitle_both">Ohutu otsekaamera vahetamiseks</string>
+    <string name="resolution_subtitle_current">Töötab ainult praeguse kaameraga</string>
+    <string name="resolution_helper_all">Eraldusvõimed, mis on märgitud "Mõlemad kaamerad", on toetatud nii esi- kui tagakaamera poolt ja võimaldavad salvestuse ajal otse kaamerate vahetamist. Eraldusvõimed, mis on märgitud "Praegune kaamera", töötavad ainult hetkel valitud kaameraga.</string>
     <string name="setting_framerate_title">Video kaadrisagedus</string>
     <string name="setting_zoom_ratio_title">Suumitase</string>
     <string name="zoom_not_available_toast">Suum ei ole saadaval</string>

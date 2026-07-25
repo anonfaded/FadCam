@@ -70,6 +70,12 @@ FadCam a été présenté dans les chaînes YouTube populaires comme <font color
     <string name="button_settings_cam_back">Arrière</string>
     <string name="button_settings_cam_front">Frontale</string>
     <string name="setting_quailty_title">Qualité vidéo</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Les deux caméras</string>
+    <string name="resolution_badge_current">Caméra actuelle</string>
+    <string name="resolution_subtitle_both">Sûr pour le changement de caméra en direct</string>
+    <string name="resolution_subtitle_current">Fonctionne uniquement avec la caméra actuelle</string>
+    <string name="resolution_helper_all">Les résolutions marquées \"Les deux caméras\" sont prises en charge par les deux caméras et permettent le changement de caméra en direct pendant l\'enregistrement. Les résolutions marquées \"Caméra actuelle\" fonctionnent uniquement avec la caméra actuellement sélectionnée.</string>
     <string name="setting_framerate_title">Fréquence d\'Images Vidéo</string>
     <string name="note_quailty">Choix de la qualité\n(Défaut: HD)</string>
     <string name="note_framerate">Choisir la fréquence d\'images\n(Par défaut: %1$d)</string>

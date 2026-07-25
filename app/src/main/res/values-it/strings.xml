@@ -557,6 +557,12 @@
     <string name="dual_cam_settings_row_subtitle">Configura layout e aspetto PiP</string>
 
     <string name="setting_quailty_title">Qualità video</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Entrambe le fotocamere</string>
+    <string name="resolution_badge_current">Fotocamera attuale</string>
+    <string name="resolution_subtitle_both">Sicuro per il cambio fotocamera in diretta</string>
+    <string name="resolution_subtitle_current">Funziona solo con la fotocamera attuale</string>
+    <string name="resolution_helper_all">Le risoluzioni contrassegnate con \"Entrambe le fotocamere\" sono supportate da entrambe le fotocamere e consentono il cambio fotocamera in diretta durante la registrazione. Le risoluzioni contrassegnate con \"Fotocamera attuale\" funzionano solo con la fotocamera attualmente selezionata.</string>
     <string name="setting_framerate_title">Frequenza fotogrammi video</string>
     <string name="setting_zoom_ratio_title">Rapporto zoom</string>
     <string name="zoom_not_available_toast">Zoom non disponibile</string>

@@ -557,6 +557,12 @@
     <string name="dual_cam_settings_row_subtitle">Configurar diseño y apariencia PiP</string>
 
     <string name="setting_quailty_title">Calidad de video</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Ambas cámaras</string>
+    <string name="resolution_badge_current">Cámara actual</string>
+    <string name="resolution_subtitle_both">Seguro para cambio en vivo de cámara</string>
+    <string name="resolution_subtitle_current">Solo funciona con la cámara actual</string>
+    <string name="resolution_helper_all">Las resoluciones marcadas como "Ambas cámaras" son compatibles con ambas cámaras y permiten cambiar de cámara en vivo durante la grabación. Las resoluciones marcadas como "Cámara actual" solo funcionan con la cámara actualmente seleccionada.</string>
     <string name="setting_framerate_title">Velocidad de fotogramas</string>
     <string name="setting_zoom_ratio_title">Relación de zoom</string>
     <string name="zoom_not_available_toast">Zoom no disponible</string>

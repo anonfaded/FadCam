@@ -1232,7 +1232,7 @@ public class GLWatermarkRenderer {
         // Add top padding for vertical centering of watermark within its layout space
         float topPadding = Math.max(6f, padding * 0.5f);
         dynamicBitmapWidth = Math.max(256, Math.min(2048, Math.round(maxLineWidth + (padding * 2f))));
-        dynamicBitmapHeight = Math.max(64, Math.min(512, Math.round(totalTextHeight + topPadding + padding)));
+        dynamicBitmapHeight = Math.max(64, Math.min(1024, Math.round(totalTextHeight + topPadding + padding)));
         if (watermarkBitmap == null || watermarkBitmap.getWidth() != dynamicBitmapWidth
                 || watermarkBitmap.getHeight() != dynamicBitmapHeight) {
             watermarkBitmap = Bitmap.createBitmap(dynamicBitmapWidth, dynamicBitmapHeight, Bitmap.Config.ARGB_8888);
@@ -1407,7 +1407,7 @@ public class GLWatermarkRenderer {
         float ndcWidth = targetFractionOfWidth * 2.0f;
         // Correct for active viewport aspect ratio so watermark text shape remains consistent.
         float ndcHeight = (ndcWidth * ((float) vpW / (float) vpH)) / bitmapAspect;
-        float maxNdcHeight = Math.min(0.55f, 0.08f + watermarkLineCount * 0.06f);
+        float maxNdcHeight = Math.min(0.65f, 0.08f + watermarkLineCount * 0.06f);
         ndcHeight = Math.min(ndcHeight, maxNdcHeight);
 
         if (watermarkRectBuffer != null

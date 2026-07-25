@@ -115,6 +115,12 @@
     <string name="button_settings_cam_back">Arka</string>
     <string name="button_settings_cam_front">Ön</string>
     <string name="setting_quailty_title">Video Kalitesi</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Her İki Kamera</string>
+    <string name="resolution_badge_current">Mevcut Kamera</string>
+    <string name="resolution_subtitle_both">Canlı kamera değiştirme için güvenli</string>
+    <string name="resolution_subtitle_current">Yalnızca mevcut kamerayla çalışır</string>
+    <string name="resolution_helper_all">"Her İki Kamera" olarak işaretlenen çözünürlükler, hem ön hem arka kamera tarafından desteklenir ve kayıt sırasında canlı kamera değiştirmeye izin verir. "Mevcut Kamera" olarak işaretlenen çözünürlükler yalnızca seçili kamera ile çalışır.</string>
     <string name="note_quailty">Kalite seçin\n(Varsayılan: HD)</string>
     <string name="setting_watermark">Filigran</string>
     <string name="note_watermark">Filigran seçeneğini belirleyin\n(Varsayılan: Zaman Damgası ile FadCam)</string>

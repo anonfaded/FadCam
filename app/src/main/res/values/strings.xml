@@ -556,6 +556,12 @@
     <string name="dual_cam_settings_row_subtitle">Configure PiP layout and appearance</string>
 
     <string name="setting_quailty_title">Video Quality</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Both Cameras</string>
+    <string name="resolution_badge_current">Current Camera</string>
+    <string name="resolution_subtitle_both">Safe for live camera switching</string>
+    <string name="resolution_subtitle_current">Only works with current camera</string>
+    <string name="resolution_helper_all">Resolutions marked \"Both Cameras\" are supported by both front and back cameras and allow live camera switching during recording. Resolutions marked \"Current Camera\" only work with the currently selected camera.</string>
     <string name="setting_framerate_title">Video Framerate</string>
     <string name="setting_zoom_ratio_title">Zoom Ratio</string>
     <string name="zoom_not_available_toast">Zoom not available</string>

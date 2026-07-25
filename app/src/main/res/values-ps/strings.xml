@@ -75,6 +75,12 @@
     <string name="button_settings_cam_back">Shata</string>
     <string name="button_settings_cam_front">Makhki</string>
     <string name="setting_quailty_title">Da Video Quality</string>
+    <!-- Resolution picker badges -->
+    <string name="resolution_badge_both">Duwe Kamera</string>
+    <string name="resolution_badge_current">Aanwaany Kamera</string>
+    <string name="resolution_subtitle_both">Da barah ghwandar kamera swaps la para saaf</string>
+    <string name="resolution_subtitle_current">Yawaz da aanwaany kamera saar kaar kawi</string>
+    <string name="resolution_helper_all">Hagh resolution ki che "Duwe Kamera" di, da makhki aw shata kamaruno pa lar malati ki aw da recording pa wakht ke da kamara badalwalo (live switching) ijazat warkawi. Hagh resolution ki che "Current Camera" di, yawaz da aanwaany intikhab shawi kamera saar kaar kawi.</string>
     <string name="note_quailty">Quality intikhab kai\n(Default: HD)</string>
     <string name="setting_watermark">Watermark</string>
     <string name="note_watermark">Watermark option intikhab kai\n(Default: Timestamp sara da FadCam)</string>
