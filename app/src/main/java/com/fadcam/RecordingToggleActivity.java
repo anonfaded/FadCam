@@ -45,7 +45,12 @@ public class RecordingToggleActivity extends Activity {
         } catch (Exception e) {
             FLog.e(TAG, "Error toggling recording via shortcut", e);
         } finally {
-            finish();
+            finishWithoutUi();
         }
+    }
+
+    void finishWithoutUi() {
+        moveTaskToBack(true);
+        finish();
     }
 }
