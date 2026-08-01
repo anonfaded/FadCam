@@ -191,18 +191,6 @@ public class ShortcutsManager {
                 ctx.getString(com.fadcam.R.string.shortcut_toggle_recording)
             )
         );
-        // Torch
-        list.add(
-            buildShortcut(
-                ID_TORCH,
-                new Intent(Intent.ACTION_VIEW).setClassName(
-                    ctx,
-                    "com.fadcam.TorchToggleActivity"
-                ),
-                com.fadcam.R.drawable.flashlight_shortcut,
-                ctx.getString(com.fadcam.R.string.torch_shortcut_short_label)
-            )
-        );
         // Start
         list.add(
             buildShortcut(
@@ -216,6 +204,18 @@ public class ShortcutsManager {
                 ),
                 com.fadcam.R.drawable.start_back_shortcut,
                 ctx.getString(com.fadcam.R.string.shortcut_start_back)
+            )
+        );
+        // Stop
+        list.add(
+            buildShortcut(
+                ID_STOP,
+                new Intent(Intent.ACTION_VIEW).setClassName(
+                    ctx,
+                    "com.fadcam.RecordingStopActivity"
+                ),
+                com.fadcam.R.drawable.stop_shortcut,
+                ctx.getString(com.fadcam.R.string.stop_recording)
             )
         );
         list.add(
@@ -260,16 +260,16 @@ public class ShortcutsManager {
                 ctx.getString(com.fadcam.R.string.shortcut_start_dual)
             )
         );
-        // Stop
+        // Torch
         list.add(
             buildShortcut(
-                ID_STOP,
+                ID_TORCH,
                 new Intent(Intent.ACTION_VIEW).setClassName(
                     ctx,
-                    "com.fadcam.RecordingStopActivity"
+                    "com.fadcam.TorchToggleActivity"
                 ),
-                com.fadcam.R.drawable.stop_shortcut,
-                ctx.getString(com.fadcam.R.string.stop_recording)
+                com.fadcam.R.drawable.flashlight_shortcut,
+                ctx.getString(com.fadcam.R.string.torch_shortcut_short_label)
             )
         );
         // Photo
@@ -311,7 +311,18 @@ public class ShortcutsManager {
                 ctx.getString(com.fadcam.R.string.shortcut_take_screenshot)
             )
         );
-        ShortcutManagerCompat.setDynamicShortcuts(ctx, list);
+        List<ShortcutInfoCompat> published = list;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N_MR1) {
+            android.content.pm.ShortcutManager shortcutManager =
+                ctx.getSystemService(android.content.pm.ShortcutManager.class);
+            if (shortcutManager != null) {
+                int maxCount = shortcutManager.getMaxShortcutCountPerActivity();
+                if (maxCount > 0 && list.size() > maxCount) {
+                    published = new ArrayList<>(list.subList(0, maxCount));
+                }
+            }
+        }
+        ShortcutManagerCompat.setDynamicShortcuts(ctx, published);
     }
 
     /**
