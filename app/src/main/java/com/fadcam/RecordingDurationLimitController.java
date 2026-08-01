@@ -86,13 +86,28 @@ public final class RecordingDurationLimitController {
     }
 
     /** Re-evaluates the current session after the user changes the configured limit. */
-    public synchronized boolean onLimitChanged() {
-        if (!sessionActive) {
-            return false;
+    public boolean onLimitChanged() {
+        boolean notifyLimitReached = false;
+        synchronized (this) {
+            if (!sessionActive) {
+                return false;
+            }
+
+            invalidateScheduleLocked();
+            long limitMs = Math.max(0L, limitProvider.getLimitMs());
+            if (limitMs != 0L) {
+                long elapsedMs = getElapsedRecordingMsLocked();
+                if (elapsedMs >= limitMs) {
+                    completeSessionLocked();
+                    notifyLimitReached = true;
+                } else if (counting) {
+                    scheduleLocked();
+                }
+            }
         }
-        invalidateScheduleLocked();
-        if (counting) {
-            scheduleLocked();
+
+        if (notifyLimitReached) {
+            onLimitReached.run();
         }
         return true;
     }
@@ -136,10 +151,7 @@ public final class RecordingDurationLimitController {
                 return;
             }
 
-            sessionActive = false;
-            counting = false;
-            sessionGeneration++;
-            scheduleGeneration++;
+            completeSessionLocked();
             notifyLimitReached = true;
         }
 
@@ -158,6 +170,13 @@ public final class RecordingDurationLimitController {
             return Long.MAX_VALUE;
         }
         return accumulatedRecordingMs + deltaMs;
+    }
+
+    private void completeSessionLocked() {
+        sessionActive = false;
+        counting = false;
+        sessionGeneration++;
+        scheduleGeneration++;
     }
 
     private void invalidateScheduleLocked() {

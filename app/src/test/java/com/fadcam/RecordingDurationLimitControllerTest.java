@@ -42,7 +42,6 @@ public class RecordingDurationLimitControllerTest {
 
         limitMs[0] = 50L;
         assertTrue(controller.onLimitChanged());
-        scheduler.advanceBy(0L);
         assertEquals(1, stops[0]);
     }
 
@@ -82,6 +81,76 @@ public class RecordingDurationLimitControllerTest {
         assertEquals(0, stops[0]);
         scheduler.advanceBy(1L);
         assertEquals(1, stops[0]);
+    }
+
+    @Test
+    public void shorterLimitStopsPausedSessionImmediately() {
+        FakeScheduler scheduler = new FakeScheduler();
+        long[] limitMs = {100L};
+        int[] stops = {0};
+        RecordingDurationLimitController controller = createController(
+                scheduler, limitMs, stops);
+
+        controller.startSession();
+        Runnable staleCallback = scheduler.lastScheduledRunnable();
+        scheduler.advanceBy(40L);
+        assertTrue(controller.pauseSession());
+
+        limitMs[0] = 40L;
+        assertTrue(controller.onLimitChanged());
+        assertEquals(1, stops[0]);
+        assertEquals(0, scheduler.pendingTaskCount());
+
+        staleCallback.run();
+        assertEquals(1, stops[0]);
+    }
+
+    @Test
+    public void longerLimitWhilePausedPreservesElapsedTimeUntilResume() {
+        FakeScheduler scheduler = new FakeScheduler();
+        long[] limitMs = {100L};
+        int[] stops = {0};
+        RecordingDurationLimitController controller = createController(
+                scheduler, limitMs, stops);
+
+        controller.startSession();
+        scheduler.advanceBy(40L);
+        assertTrue(controller.pauseSession());
+        scheduler.advanceBy(1_000L);
+
+        limitMs[0] = 80L;
+        assertTrue(controller.onLimitChanged());
+        assertEquals(0, stops[0]);
+        assertEquals(0, scheduler.pendingTaskCount());
+
+        assertTrue(controller.resumeSession());
+        scheduler.advanceBy(39L);
+        assertEquals(0, stops[0]);
+        scheduler.advanceBy(1L);
+        assertEquals(1, stops[0]);
+    }
+
+    @Test
+    public void noLimitWhilePausedRemainsUnlimitedAfterResume() {
+        FakeScheduler scheduler = new FakeScheduler();
+        long[] limitMs = {100L};
+        int[] stops = {0};
+        RecordingDurationLimitController controller = createController(
+                scheduler, limitMs, stops);
+
+        controller.startSession();
+        Runnable staleCallback = scheduler.lastScheduledRunnable();
+        scheduler.advanceBy(40L);
+        assertTrue(controller.pauseSession());
+
+        limitMs[0] = 0L;
+        assertTrue(controller.onLimitChanged());
+        assertTrue(controller.resumeSession());
+        staleCallback.run();
+        scheduler.advanceBy(1_000L);
+
+        assertEquals(0, stops[0]);
+        assertEquals(0, scheduler.pendingTaskCount());
     }
 
     @Test
