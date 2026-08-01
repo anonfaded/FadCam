@@ -25,6 +25,7 @@ import androidx.fragment.app.Fragment;
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
 import com.fadcam.MainActivity;
+import com.fadcam.MaximumRecordingDuration;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.VideoCodec;
@@ -72,6 +73,7 @@ public class VideoSettingsFragment extends Fragment {
     private TextView valueLocationEmbed;
     // Newly migrated rows
     private TextView valueZoomRatio;
+    private TextView valueMaximumRecordingDuration;
     private TextView valueVideoSplitEnabled;
     private TextView valueVideoSplitSize; // removed from layout (merged)
     private TextView valueBitrateHelper; // now null since helper removed
@@ -123,6 +125,7 @@ public class VideoSettingsFragment extends Fragment {
         valueOrientation = root.findViewById(R.id.value_orientation);
         valueLocationEmbed = root.findViewById(R.id.value_location_embed);
         valueZoomRatio = root.findViewById(R.id.value_zoom_ratio);
+        valueMaximumRecordingDuration = root.findViewById(R.id.value_maximum_recording_duration);
         valueVideoSplitEnabled = root.findViewById(R.id.value_video_split_enabled);
         valueVideoSplitSize = null; // merged design
         valueBitrateHelper = null; // helper removed from layout
@@ -139,6 +142,9 @@ public class VideoSettingsFragment extends Fragment {
         View zr = root.findViewById(R.id.row_zoom_ratio);
         if (zr != null)
             zr.setOnClickListener(v -> showZoomRatioBottomSheet());
+        View durationRow = root.findViewById(R.id.row_maximum_recording_duration);
+        if (durationRow != null)
+            durationRow.setOnClickListener(v -> showMaximumRecordingDurationBottomSheet());
         View splitRow = root.findViewById(R.id.row_video_splitting);
         if (splitRow != null)
             splitRow.setOnClickListener(v -> showVideoSplittingBottomSheet());
@@ -216,6 +222,10 @@ public class VideoSettingsFragment extends Fragment {
             View zrRow = requireView().findViewById(R.id.row_zoom_ratio);
             if (zrRow != null)
                 zrRow.setVisibility(View.VISIBLE);
+        }
+
+        if (valueMaximumRecordingDuration != null) {
+            valueMaximumRecordingDuration.setText(getMaximumRecordingDurationLabel());
         }
 
         // Video Splitting
@@ -1416,6 +1426,112 @@ public class VideoSettingsFragment extends Fragment {
             FLog.w(TAG, "Zoom ratio query failed", e);
         }
         return defaultMaxZoom;
+    }
+
+    // ---- Maximum Recording Duration ----
+    private String getMaximumRecordingDurationLabel() {
+        String option = prefs.getMaximumRecordingDurationOption();
+        if (MaximumRecordingDuration.OPTION_5_MINUTES.equals(option)) {
+            return getString(R.string.maximum_recording_duration_5_minutes);
+        }
+        if (MaximumRecordingDuration.OPTION_10_MINUTES.equals(option)) {
+            return getString(R.string.maximum_recording_duration_10_minutes);
+        }
+        if (MaximumRecordingDuration.OPTION_30_MINUTES.equals(option)) {
+            return getString(R.string.maximum_recording_duration_30_minutes);
+        }
+        if (MaximumRecordingDuration.OPTION_1_HOUR.equals(option)) {
+            return getString(R.string.maximum_recording_duration_1_hour);
+        }
+        if (MaximumRecordingDuration.OPTION_CUSTOM.equals(option)) {
+            return getString(
+                    R.string.maximum_recording_duration_custom_value,
+                    prefs.getCustomMaximumRecordingDurationMinutes());
+        }
+        return getString(R.string.maximum_recording_duration_no_limit);
+    }
+
+    private void showMaximumRecordingDurationBottomSheet() {
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                MaximumRecordingDuration.OPTION_NO_LIMIT,
+                getString(R.string.maximum_recording_duration_no_limit)));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                MaximumRecordingDuration.OPTION_5_MINUTES,
+                getString(R.string.maximum_recording_duration_5_minutes)));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                MaximumRecordingDuration.OPTION_10_MINUTES,
+                getString(R.string.maximum_recording_duration_10_minutes)));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                MaximumRecordingDuration.OPTION_30_MINUTES,
+                getString(R.string.maximum_recording_duration_30_minutes)));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                MaximumRecordingDuration.OPTION_1_HOUR,
+                getString(R.string.maximum_recording_duration_1_hour)));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                MaximumRecordingDuration.OPTION_CUSTOM,
+                getString(R.string.maximum_recording_duration_custom)));
+
+        final String resultKey = "picker_result_maximum_recording_duration";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, result) -> {
+            String selected = result.getString(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (selected == null) {
+                return;
+            }
+            if (MaximumRecordingDuration.OPTION_CUSTOM.equals(selected)) {
+                showCustomMaximumRecordingDurationBottomSheet();
+                return;
+            }
+            if (prefs.setMaximumRecordingDurationOption(selected)) {
+                refreshAllValues();
+            }
+        });
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                        getString(R.string.maximum_recording_duration_title),
+                        items,
+                        prefs.getMaximumRecordingDurationOption(),
+                        resultKey,
+                        getString(R.string.maximum_recording_duration_summary));
+        sheet.show(getParentFragmentManager(), "maximum_recording_duration_picker");
+    }
+
+    private void showCustomMaximumRecordingDurationBottomSheet() {
+        final String resultKey = "picker_result_custom_recording_duration";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, result) -> {
+            if (!result.containsKey(
+                    com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER)) {
+                return;
+            }
+            int minutes = result.getInt(
+                    com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER);
+            if (prefs.setCustomMaximumRecordingDurationMinutes(minutes)) {
+                prefs.setMaximumRecordingDurationOption(MaximumRecordingDuration.OPTION_CUSTOM);
+                refreshAllValues();
+            }
+        });
+
+        com.fadcam.ui.picker.NumberInputBottomSheetFragment sheet =
+                com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
+                        getString(R.string.maximum_recording_duration_custom_title),
+                        MaximumRecordingDuration.MIN_CUSTOM_MINUTES,
+                        MaximumRecordingDuration.MAX_CUSTOM_MINUTES,
+                        prefs.getCustomMaximumRecordingDurationMinutes(),
+                        getString(R.string.maximum_recording_duration_custom_hint),
+                        0,
+                        0,
+                        null,
+                        null,
+                        resultKey);
+        Bundle arguments = sheet.getArguments();
+        if (arguments != null) {
+            arguments.putString(
+                    com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION,
+                    getString(R.string.maximum_recording_duration_custom_description));
+        }
+        sheet.show(getParentFragmentManager(), "custom_recording_duration_input");
     }
 
     // ---- Video Splitting Migration ----
