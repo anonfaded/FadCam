@@ -22,6 +22,7 @@ import java.util.List;
 public class ShortcutsManager {
 
     public static final String ID_TORCH = "torch_toggle";
+    public static final String ID_TOGGLE = "record_toggle";
     public static final String ID_START = "record_start";
     public static final String ID_START_FRONT = "record_start_front";
     public static final String ID_START_CURRENT = "record_start_current";
@@ -178,6 +179,18 @@ public class ShortcutsManager {
      */
     public void publishAllDynamic() {
         List<ShortcutInfoCompat> list = new ArrayList<>();
+        // Toggle recording
+        list.add(
+            buildShortcut(
+                ID_TOGGLE,
+                new Intent(Intent.ACTION_VIEW).setClassName(
+                    ctx,
+                    "com.fadcam.RecordingToggleActivity"
+                ),
+                com.fadcam.R.drawable.toggle_recording_shortcut,
+                ctx.getString(com.fadcam.R.string.shortcut_toggle_recording)
+            )
+        );
         // Torch
         list.add(
             buildShortcut(
@@ -321,6 +334,20 @@ public class ShortcutsManager {
             // shortcuts but tries to update their metadata where supported.
             if (isPinSupported()) {
                 List<ShortcutInfoCompat> pinned = new ArrayList<>();
+
+                pinned.add(
+                    buildShortcutForPin(
+                        ID_TOGGLE,
+                        new Intent(Intent.ACTION_VIEW).setClassName(
+                            ctx,
+                            "com.fadcam.RecordingToggleActivity"
+                        ),
+                        com.fadcam.R.drawable.toggle_recording_shortcut,
+                        ctx.getString(
+                            com.fadcam.R.string.shortcut_toggle_recording
+                        )
+                    )
+                );
 
                 pinned.add(
                     buildShortcutForPin(

@@ -980,6 +980,8 @@
     <string name="shortcut_start_front">Start Front</string>
     <string name="shortcut_start_current">Start Current</string>
     <string name="shortcut_start_dual">Start Dual</string>
+    <string name="shortcut_toggle_recording">Toggle Recording</string>
+    <string name="shortcut_toggle_recording_long">Start or stop recording</string>
     <string name="stop_recording">Stop</string>
     <string name="shortcut_take_photo">Photo</string>
     <string name="shortcut_take_photo_front">Selfie</string>
