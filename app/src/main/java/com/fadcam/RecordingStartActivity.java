@@ -53,7 +53,13 @@ public class RecordingStartActivity extends Activity {
                         .apply();
             }
 
-            if (CAMERA_MODE_DUAL.equals(mode)) {
+            CameraType selectedCamera = sharedPreferencesManager.getCameraSelection();
+            boolean shouldStartDual = CAMERA_MODE_DUAL.equals(mode)
+                    || (CAMERA_MODE_CURRENT.equals(mode)
+                    && selectedCamera != null
+                    && selectedCamera.isDual());
+
+            if (shouldStartDual) {
                 Intent startDualIntent = new Intent(this, DualCameraRecordingService.class);
                 startDualIntent.setAction(Constants.INTENT_ACTION_START_DUAL_RECORDING);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
