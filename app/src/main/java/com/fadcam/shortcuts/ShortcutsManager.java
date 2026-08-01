@@ -46,10 +46,20 @@ public class ShortcutsManager {
         @DrawableRes int defaultIcon,
         @NonNull CharSequence defaultLabel
     ) {
+        return buildShortcut(id, intent, defaultIcon, defaultLabel, defaultLabel);
+    }
+
+    public ShortcutInfoCompat buildShortcut(
+        @NonNull String id,
+        @NonNull Intent intent,
+        @DrawableRes int defaultIcon,
+        @NonNull CharSequence defaultShortLabel,
+        @NonNull CharSequence defaultLongLabel
+    ) {
         ShortcutInfoCompat.Builder b = new ShortcutInfoCompat.Builder(ctx, id);
         String customLabel = prefs.getCustomLabel(id);
-        b.setShortLabel(customLabel != null ? customLabel : defaultLabel);
-        b.setLongLabel(customLabel != null ? customLabel : defaultLabel);
+        b.setShortLabel(customLabel != null ? customLabel : defaultShortLabel);
+        b.setLongLabel(customLabel != null ? customLabel : defaultLongLabel);
         IconCompat icon = resolveIcon(id, defaultIcon);
         if (icon != null) b.setIcon(icon);
         b.setIntent(intent);
@@ -188,7 +198,8 @@ public class ShortcutsManager {
                     "com.fadcam.RecordingToggleActivity"
                 ),
                 com.fadcam.R.drawable.toggle_recording_shortcut,
-                ctx.getString(com.fadcam.R.string.shortcut_toggle_recording)
+                ctx.getString(com.fadcam.R.string.shortcut_toggle_recording),
+                ctx.getString(com.fadcam.R.string.shortcut_toggle_recording_long)
             )
         );
         // Start
