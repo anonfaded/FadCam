@@ -45,20 +45,7 @@ public class RecordingToggleActivity extends Activity {
         } catch (Exception e) {
             FLog.e(TAG, "Error toggling recording via shortcut", e);
         } finally {
-            moveTaskToBack(true);
             finish();
         }
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        finish();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        moveTaskToBack(true);
     }
 }
