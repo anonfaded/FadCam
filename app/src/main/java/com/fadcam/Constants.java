@@ -56,6 +56,7 @@ public abstract class Constants {
     public static final String PREF_SELECTED_TORCH_SOURCE =
         "pref_selected_torch_source";
     public static final String PREF_TORCH_STATE = "pref_torch_state";
+    public static final String PREF_VOLUME_SHUTTER_ENABLED = "pref_volume_shutter_enabled"; // Volume keys as camera shutter (long press = record, click = FadShot)
     public static final String PREF_LOCATION_DATA = "location_data";
     public static final String PREF_EMBED_LOCATION_DATA = "embed_location_data";
     public static final String PREF_DEBUG_DATA = "debug_data";

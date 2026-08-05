@@ -849,6 +849,7 @@
     <string name="arabic_date_description_default">Full Arabic (Default)</string>
 
     <string name="shortcuts_helper_text">Add shortcuts from above. They also work with automation apps (e.g., MacroDroid) to trigger actions like mapping volume buttons.</string>
+    <string name="shortcuts_macrodroid_template">Official MacroDroid template: https://templates.macrodroid.com/view/28194</string>
     <string name="shortcuts_add_to_home">Add to Home screen</string>
     <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
     <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
@@ -2158,6 +2159,9 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <!-- Automation - coming soon -->
     <string name="automation_title">Automation</string>
     <string name="automation_row_subtitle">Button mapping, Bluetooth remotes, volume keys</string>
+    <string name="setting_volume_shutter_title">Volume Shutter</string>
+    <string name="setting_volume_shutter_summary">Volume keys act as a camera shutter on the home tab</string>
+    <string name="setting_volume_shutter_footer">Volume keys become your shutter on the home tab:\n• Tap — snap a photo\n• Double-tap — flip the camera\n• Hold — start or stop recording\n\nBluetooth remote shutters work too, triggering the same actions. Buttons work while the FadCam home tab is open — future versions will let any button trigger FadCam intents, even in the background.\n\nFor now, use MacroDroid to map FadCam\u2019s shortcuts — find them in Settings → Shortcuts &amp; Widgets.</string>
 
     <!-- Thermal Guardian - coming soon -->
     <string name="thermal_guardian_title">Thermal Guardian</string>

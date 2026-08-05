@@ -76,6 +76,18 @@ public class MainActivity extends AppCompatActivity {
     private android.widget.ImageView cloakIconView;
     private android.widget.TextView cloakTitleView;
 
+    // ── Volume shutter (volume keys as camera shutter) ─────────────
+    // Tracks the keycode of the volume key currently held down (0 = none held).
+    private int volumeShutterActiveKeyCode = 0;
+    // True once a long-press already fired the recording toggle, so the
+    // subsequent key-up does not ALSO capture a photo.
+    private boolean volumeShutterLongPressTriggered = false;
+    // Double-click window: two short presses within this time switch camera.
+    private static final long VOLUME_DOUBLE_CLICK_TIMEOUT_MS = 350L;
+    // Pending single-click action, delayed to allow a second click to arrive.
+    private Runnable pendingVolumeSingleClickRunnable;
+    private final Handler volumeShutterHandler = new Handler(Looper.getMainLooper());
+
     private final Runnable backPressRunnable = new Runnable() {
         @Override
         public void run() {
@@ -1142,6 +1154,28 @@ public class MainActivity extends AppCompatActivity {
      */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // ── Volume shutter ──────────────────────────────────────────
+        // Long press = start/stop recording, single click = FadShot photo,
+        // double click = switch camera. Active only on the home tab while the
+        // preference is enabled.
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (isVolumeShutterActive()) {
+                if (event.getRepeatCount() == 0) {
+                    // First key-down: arm the shutter, wait for long-press or release
+                    volumeShutterActiveKeyCode = keyCode;
+                    volumeShutterLongPressTriggered = false;
+                } else if (volumeShutterActiveKeyCode == keyCode && !volumeShutterLongPressTriggered) {
+                    // Key repeat = long press → toggle recording
+                    volumeShutterLongPressTriggered = true;
+                    // A click was pending from a previous tap — cancel it, this is now a long press
+                    cancelPendingVolumeClick();
+                    triggerVolumeShutterLongPress();
+                }
+                return true; // Consume so the system volume doesn't change
+            }
+            volumeShutterActiveKeyCode = 0;
+        }
+
         Fragment currentFragment = getCurrentFragment();
         int currentPos = getCurrentFragmentPosition();
 
@@ -1224,6 +1258,97 @@ public class MainActivity extends AppCompatActivity {
         }
         
         return super.onKeyDown(keyCode, event);
+    }
+
+    /**
+     * Volume shutter key-up: a short press captures a FadShot photo, unless a
+     * second press arrives within the double-click window (then it switches
+     * camera instead). A long press already toggled recording, so key-up only
+     * resets the shutter state.
+     */
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (volumeShutterActiveKeyCode == keyCode && isVolumeShutterActive()) {
+                if (!volumeShutterLongPressTriggered) {
+                    // Short press: wait briefly to distinguish single from double click
+                    if (pendingVolumeSingleClickRunnable != null) {
+                        // Second click within the window → double click → switch camera
+                        volumeShutterHandler.removeCallbacks(pendingVolumeSingleClickRunnable);
+                        pendingVolumeSingleClickRunnable = null;
+                        triggerVolumeShutterCameraSwitch();
+                    } else {
+                        pendingVolumeSingleClickRunnable = () -> {
+                            pendingVolumeSingleClickRunnable = null;
+                            // Re-check so we never fire after the user left the home tab
+                            if (isVolumeShutterActive()) {
+                                triggerVolumeShutterClick();
+                            }
+                        };
+                        volumeShutterHandler.postDelayed(
+                                pendingVolumeSingleClickRunnable, VOLUME_DOUBLE_CLICK_TIMEOUT_MS);
+                    }
+                } else {
+                    // Long press already toggled recording — drop any pending click
+                    cancelPendingVolumeClick();
+                }
+                volumeShutterActiveKeyCode = 0;
+                volumeShutterLongPressTriggered = false;
+                return true; // Consume so the system volume doesn't change
+            }
+            cancelPendingVolumeClick();
+            volumeShutterActiveKeyCode = 0;
+            volumeShutterLongPressTriggered = false;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    /**
+     * Whether the volume shutter is currently active: home tab visible AND the
+     * preference is enabled. Falls back to disabled on any error.
+     */
+    private boolean isVolumeShutterActive() {
+        if (getCurrentFragmentPosition() != 0) return false;
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            }
+            return sharedPreferencesManager.isVolumeShutterEnabled();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Route a volume-shutter long press to the home fragment (start/stop recording). */
+    private void triggerVolumeShutterLongPress() {
+        Fragment current = getCurrentFragment();
+        if (current instanceof HomeFragment) {
+            ((HomeFragment) current).handleVolumeShutterLongPress();
+        }
+    }
+
+    /** Route a volume-shutter click to the home fragment (capture FadShot photo). */
+    private void triggerVolumeShutterClick() {
+        Fragment current = getCurrentFragment();
+        if (current instanceof HomeFragment) {
+            ((HomeFragment) current).handleVolumeShutterClick();
+        }
+    }
+
+    /** Route a volume-shutter double click to the home fragment (switch camera). */
+    private void triggerVolumeShutterCameraSwitch() {
+        Fragment current = getCurrentFragment();
+        if (current instanceof HomeFragment) {
+            ((HomeFragment) current).handleVolumeShutterCameraSwitch();
+        }
+    }
+
+    /** Drop any scheduled single-click action (e.g. after a long press or leaving home). */
+    private void cancelPendingVolumeClick() {
+        if (pendingVolumeSingleClickRunnable != null) {
+            volumeShutterHandler.removeCallbacks(pendingVolumeSingleClickRunnable);
+            pendingVolumeSingleClickRunnable = null;
+        }
     }
 
     /**
@@ -1344,7 +1469,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
+     protected void onPause() {
+        // Cancel any pending volume-shutter click (e.g. app backgrounded mid double-click)
+        cancelPendingVolumeClick();
+        volumeShutterActiveKeyCode = 0;
+        volumeShutterLongPressTriggered = false;
         // Show cloak just before going into background to affect recents snapshot
         try {
             if (sharedPreferencesManager == null) {

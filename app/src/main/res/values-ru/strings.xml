@@ -2769,6 +2769,10 @@ FadCam использует фрагментированный формат MP4 
     <string name="motion_lab_row_subtitle">Умная запись событий для использования как CCTV</string>
     <string name="automation_title">Автоматизация</string>
     <string name="automation_row_subtitle">Назначение кнопок, Bluetooth-пульты, клавиши громкости</string>
+    <string name="setting_volume_shutter_title">Затвор клавишами громкости</string>
+    <string name="setting_volume_shutter_summary">Клавиши громкости работают как затвор камеры на главной вкладке</string>
+    <string name="setting_volume_shutter_footer">Клавиши громкости становятся затвором на главной вкладке:\n• Касание — фото\n• Двойное касание — смена камеры\n• Долгое нажатие — начать или остановить запись\n\nBluetooth-пульты-затворы тоже работают и запускают те же действия. Клавиши работают, пока открыта главная вкладка FadCam — будущие версии позволят любой кнопке запускать действия FadCam, даже в фоне.\n\nПока используйте MacroDroid для назначения ярлыков FadCam — они в разделе «Настройки → Ярлыки и виджеты».</string>
+    <string name="shortcuts_macrodroid_template">Официальный шаблон MacroDroid: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Тепловой Защитник</string>
     <string name="thermal_guardian_row_subtitle">Автоматическая настройка записи для предотвращения перегрева</string>
     <string name="audio_vision_title">Аудио Видение</string>

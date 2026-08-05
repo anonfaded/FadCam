@@ -2112,6 +2112,10 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <string name="motion_lab_row_subtitle">Grabación inteligente de eventos para uso estilo CCTV</string>
     <string name="automation_title">Automatización</string>
     <string name="automation_row_subtitle">Asignación de botones, controles remotos Bluetooth, teclas de volumen</string>
+    <string name="setting_volume_shutter_title">Disparador por volumen</string>
+    <string name="setting_volume_shutter_summary">Las teclas de volumen actúan como obturador en la pestaña de inicio</string>
+    <string name="setting_volume_shutter_footer">Las teclas de volumen se convierten en tu obturador en la pestaña de inicio:\n• Toca — toma una foto\n• Doble toca — cambia de cámara\n• Mantén pulsado — inicia o detiene la grabación\n\nLos disparadores remotos Bluetooth también funcionan y activan las mismas acciones. Las teclas funcionan mientras la pestaña de inicio de FadCam esté abierta — las versiones futuras permitirán que cualquier tecla active acciones de FadCam, incluso en segundo plano.\n\nPor ahora, usa MacroDroid para asignar los accesos directos de FadCam — los encontrarás en Ajustes → Accesos directos y widgets.</string>
+    <string name="shortcuts_macrodroid_template">Plantilla oficial de MacroDroid: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Guardián Térmico</string>
     <string name="thermal_guardian_row_subtitle">Ajustar grabación automáticamente para evitar sobrecalentamiento</string>
     <string name="audio_vision_title">Visión de Audio</string>

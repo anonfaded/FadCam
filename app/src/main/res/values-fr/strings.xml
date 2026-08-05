@@ -3372,6 +3372,10 @@ For the smoothest playback experience, you can use an external player like VLC. 
 
 <string name="automation_title">Automatisation</string>
 <string name="automation_row_subtitle">Mapping de boutons, télécommandes Bluetooth, touches de volume</string>
+<string name="setting_volume_shutter_title">Déclencheur par volume</string>
+<string name="setting_volume_shutter_summary">Les touches de volume agissent comme un déclencheur sur l\'onglet d\'accueil</string>
+<string name="setting_volume_shutter_footer">Les touches de volume deviennent votre déclencheur sur l\'onglet d\'accueil :\n• Toucher — prendre une photo\n• Double toucher — changer de caméra\n• Appui long — démarrer ou arrêter l\'enregistrement\n\nLes déclencheurs Bluetooth fonctionnent aussi et déclenchent les mêmes actions. Les touches fonctionnent tant que l\'onglet d\'accueil de FadCam est ouvert — les versions futures permettront à n\'importe quelle touche de déclencher les actions FadCam, même en arrière-plan.\n\nPour l\'instant, utilisez MacroDroid pour mapper les raccourcis de FadCam — retrouvez-les dans Réglages → Raccourcis et widgets.</string>
+<string name="shortcuts_macrodroid_template">Modèle officiel MacroDroid : https://templates.macrodroid.com/view/28194</string>
 <string name="thermal_guardian_title">Garde Thermique</string>
 <string name="thermal_guardian_row_subtitle">Ajuster automatiquement l\'enregistrement pour éviter la surchauffe</string>
 

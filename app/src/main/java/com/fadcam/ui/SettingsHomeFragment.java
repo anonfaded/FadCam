@@ -421,9 +421,7 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_profiles, () -> {
             android.widget.Toast.makeText(requireContext(), R.string.mini_app_coming_soon_desc, android.widget.Toast.LENGTH_SHORT).show();
         });
-        bindRow(root, R.id.group_automation, () -> {
-            android.widget.Toast.makeText(requireContext(), R.string.mini_app_coming_soon_desc, android.widget.Toast.LENGTH_SHORT).show();
-        });
+        bindRow(root, R.id.group_automation, () -> openSubFragment(new AutomationSettingsFragment()));
         bindRow(root, R.id.group_widgets, () -> openSubFragment(new ShortcutsSettingsFragment()));
         bindRow(root, R.id.group_notifications, () -> openSubFragment(new NotificationSettingsFragment()));
         bindRow(root, R.id.group_prefs_backup, () -> {

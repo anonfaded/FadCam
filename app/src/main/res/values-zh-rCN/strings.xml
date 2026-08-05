@@ -3043,6 +3043,10 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <!-- thermal_guardian_title - coming soon -->
 <string name="automation_title">自动化</string>
 <string name="automation_row_subtitle">按键映射、蓝牙遥控器、音量键</string>
+<string name="setting_volume_shutter_title">音量键快门</string>
+<string name="setting_volume_shutter_summary">音量键在主标签页用作相机快门</string>
+<string name="setting_volume_shutter_footer">在主标签页，音量键就是您的快门：\n• 单击 — 拍照\n• 双击 — 切换相机\n• 长按 — 开始或停止录制\n\n蓝牙遥控快门同样适用，可触发相同的操作。按键在 FadCam 主标签页打开时有效 — 未来版本将允许任意按键触发 FadCam 操作，即使在后台也可以。\n\n目前，可使用 MacroDroid 映射 FadCam 快捷方式 — 可在“设置 → 快捷方式和微件”中找到。</string>
+<string name="shortcuts_macrodroid_template">MacroDroid 官方模板：https://templates.macrodroid.com/view/28194</string>
 <string name="thermal_guardian_title">热力守护</string>
 <string name="thermal_guardian_row_subtitle">自动调整录制设置以防止过热</string>
 

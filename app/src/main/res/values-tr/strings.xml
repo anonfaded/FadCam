@@ -2204,6 +2204,10 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="motion_lab_row_subtitle">CCTV tarzı kullanım için akıllı olay kaydı</string>
     <string name="automation_title">Otomasyon</string>
     <string name="automation_row_subtitle">Tuş atama, Bluetooth kumandalar, ses tuşları</string>
+    <string name="setting_volume_shutter_title">Ses Tuşu Deklanşörü</string>
+    <string name="setting_volume_shutter_summary">Ses tuşları ana sekmede kamera deklanşörü görevi görür</string>
+    <string name="setting_volume_shutter_footer">Ses tuşları ana sekmede deklanşörünüz olur:\n• Dokun — fotoğraf çek\n• Çift dokun — kamerayı değiştir\n• Basılı tut — kaydı başlat veya durdur\n\nBluetooth uzaktan deklanşörler de çalışır ve aynı eylemleri tetikler. Tuşlar FadCam ana sekmesi açıkken çalışır — gelecek sürümler herhangi bir tuşun FadCam eylemlerini arka planda bile tetiklemesini sağlayacak.\n\nŞimdilik FadCam kısayollarını eşlemek için MacroDroid kullanın — bunları Ayarlar → Kısayollar ve Widget\'lar bölümünde bulabilirsiniz.</string>
+    <string name="shortcuts_macrodroid_template">Resmi MacroDroid şablonu: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Isı Koruyucu</string>
     <string name="thermal_guardian_row_subtitle">Aşırı ısınmayı önlemek için kaydı otomatik ayarla</string>
     <string name="audio_vision_title">Ses Görüşü</string>

@@ -458,6 +458,20 @@
         android:textSize="12sp"
         android:text="@string/shortcuts_helper_text"/>
 
+    <TextView
+        android:id="@+id/shortcuts_macrodroid_link"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:textColor="@android:color/darker_gray"
+        android:textColorLink="@color/red_theme_accent"
+        android:textSize="12sp"
+        android:autoLink="web"
+        android:linksClickable="true"
+        android:text="@string/shortcuts_macrodroid_template"/>
+
     <!-- Widgets Section Title -->
     <TextView
         android:id="@+id/heading_widgets"

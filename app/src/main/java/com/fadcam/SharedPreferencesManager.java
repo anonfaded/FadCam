@@ -832,6 +832,23 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    // -------------- Volume shutter (volume keys as camera shutter) --------------
+    /** Returns whether volume keys act as a shutter while the home screen is open. Default: true. */
+    public boolean isVolumeShutterEnabled() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_VOLUME_SHUTTER_ENABLED,
+            true
+        );
+    }
+
+    /** Sets whether volume keys act as a shutter while the home screen is open. */
+    public void setVolumeShutterEnabled(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_VOLUME_SHUTTER_ENABLED, enabled)
+            .apply();
+    }
+
     // -------------- Background playback auto-stop timer (in seconds) --------------
     /** Returns the auto-stop time in seconds. 0 = disabled. Default: 0. */
     public int getBackgroundPlaybackTimerSeconds() {

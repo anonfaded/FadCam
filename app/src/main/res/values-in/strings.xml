@@ -2169,6 +2169,10 @@ Apakah Anda ingin beralih ke H.264 dan mulai merekam?</string>
     <string name="motion_lab_row_subtitle">Perekaman peristiwa cerdas untuk penggunaan gaya CCTV</string>
     <string name="automation_title">Otomatisasi</string>
     <string name="automation_row_subtitle">Pemetaan tombol, remote Bluetooth, tombol volume</string>
+    <string name="setting_volume_shutter_title">Rana Tombol Volume</string>
+    <string name="setting_volume_shutter_summary">Tombol volume berfungsi sebagai rana kamera di tab beranda</string>
+    <string name="setting_volume_shutter_footer">Tombol volume menjadi rana kamera Anda di tab beranda:\n• Ketuk — ambil foto\n• Ketuk dua kali — ganti kamera\n• Tahan — mulai atau hentikan rekaman\n\nRemote Bluetooth juga berfungsi dan memicu tindakan yang sama. Tombol berfungsi saat tab beranda FadCam terbuka — versi mendatang akan memungkinkan tombol mana pun memicu tindakan FadCam, bahkan di latar belakang.\n\nUntuk saat ini, gunakan MacroDroid untuk memetakan pintasan FadCam — temukan di Setelan → Pintasan &amp; Widget.</string>
+    <string name="shortcuts_macrodroid_template">Template resmi MacroDroid: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Pelindung Termal</string>
     <string name="thermal_guardian_row_subtitle">Sesuaikan perekaman secara otomatis untuk mencegah panas berlebih</string>
     <string name="audio_vision_title">Visi Audio</string>

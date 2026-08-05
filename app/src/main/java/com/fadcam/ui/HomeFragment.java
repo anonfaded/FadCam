@@ -5136,78 +5136,7 @@ public class HomeFragment extends BaseFragment {
             }, 500); // 0.5 second debounce for stop (shorter for responsiveness)
         }
 
-        buttonStartStop.setOnClickListener(v -> {
-            FLog.d(
-                TAG,
-                "Start/Stop button clicked. recordingState=" +
-                recordingState +
-                ", enabled=" +
-                buttonStartStop.isEnabled()
-            );
-
-            // Prevent rapid clicking by temporarily disabling the button
-            if (!buttonStartStop.isEnabled()) {
-                FLog.d(TAG, "Button click ignored - button disabled");
-                return;
-            }
-
-            // If service is not running, force recordingState to NONE
-            if (!isMyServiceRunning(RecordingService.class)
-                    && !isMyServiceRunning(DualCameraRecordingService.class)) {
-                recordingState = RecordingState.NONE;
-                isDualRecordingActive = false;
-            }
-
-            // Temporarily disable button to prevent rapid clicks
-            buttonStartStop.setEnabled(false);
-            
-            // Re-enable after a short delay
-            handlerClock.postDelayed(() -> {
-                if (buttonStartStop != null && isAdded()) {
-                    buttonStartStop.setEnabled(true);
-                }
-            }, 1500); // 1.5 second cooldown
-
-            if (recordingState.equals(RecordingState.NONE)) {
-                if (isCardRailCurrentlyFolded()) {
-                    applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
-                            AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-                        buttonStartStop.setBackgroundTintList(
-                                ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
-                        );
-                        buttonStartStop.setAlpha(1.0f);
-                    });
-                } else {
-                    animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
-                            AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-                        buttonStartStop.setBackgroundTintList(
-                                ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
-                        );
-                        buttonStartStop.setAlpha(1.0f);
-                    }, true);
-                }
-                debouncedStartRecording.run();
-            } else {
-                if (isCardRailCurrentlyFolded()) {
-                    applyButtonTransition(buttonStartStop, getString(R.string.button_start),
-                            AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
-                        buttonStartStop.setBackgroundTintList(
-                                ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-                        );
-                        buttonStartStop.setAlpha(1.0f);
-                    });
-                } else {
-                    animateButtonTransition(buttonStartStop, getString(R.string.button_start),
-                            AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
-                        buttonStartStop.setBackgroundTintList(
-                                ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-                        );
-                        buttonStartStop.setAlpha(1.0f);
-                    }, false);
-                }
-                debouncedStopRecording.run();
-            }
-        });
+        buttonStartStop.setOnClickListener(v -> performStartStopToggle());
 
         buttonPauseResume.setOnClickListener(v -> {
             if (isPaused()) {
@@ -5231,6 +5160,113 @@ public class HomeFragment extends BaseFragment {
                 updateMirrorButtonVisibilityAndState();
             });
         }
+    }
+
+    /**
+     * Start/Stop recording toggle — single source of truth used by both the
+     * Start/Stop button and the volume shutter long-press.
+     */
+    private void performStartStopToggle() {
+        FLog.d(
+            TAG,
+            "Start/Stop toggle. recordingState=" +
+            recordingState +
+            ", enabled=" +
+            buttonStartStop.isEnabled()
+        );
+
+        // Prevent rapid toggling by temporarily disabling the button
+        if (!buttonStartStop.isEnabled()) {
+            FLog.d(TAG, "Toggle ignored - button disabled");
+            return;
+        }
+
+        // If service is not running, force recordingState to NONE
+        if (!isMyServiceRunning(RecordingService.class)
+                && !isMyServiceRunning(DualCameraRecordingService.class)) {
+            recordingState = RecordingState.NONE;
+            isDualRecordingActive = false;
+        }
+
+        // Temporarily disable button to prevent rapid toggles
+        buttonStartStop.setEnabled(false);
+
+        // Re-enable after a short delay
+        handlerClock.postDelayed(() -> {
+            if (buttonStartStop != null && isAdded()) {
+                buttonStartStop.setEnabled(true);
+            }
+        }, 1500); // 1.5 second cooldown
+
+        if (recordingState.equals(RecordingState.NONE)) {
+            if (isCardRailCurrentlyFolded()) {
+                applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
+                    buttonStartStop.setBackgroundTintList(
+                            ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
+                    );
+                    buttonStartStop.setAlpha(1.0f);
+                });
+            } else {
+                animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
+                    buttonStartStop.setBackgroundTintList(
+                            ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
+                    );
+                    buttonStartStop.setAlpha(1.0f);
+                }, true);
+            }
+            debouncedStartRecording.run();
+        } else {
+            if (isCardRailCurrentlyFolded()) {
+                applyButtonTransition(buttonStartStop, getString(R.string.button_start),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
+                    buttonStartStop.setBackgroundTintList(
+                            ColorStateList.valueOf(Color.parseColor("#4CAF50"))
+                    );
+                    buttonStartStop.setAlpha(1.0f);
+                });
+            } else {
+                animateButtonTransition(buttonStartStop, getString(R.string.button_start),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
+                    buttonStartStop.setBackgroundTintList(
+                            ColorStateList.valueOf(Color.parseColor("#4CAF50"))
+                    );
+                    buttonStartStop.setAlpha(1.0f);
+                }, false);
+            }
+            debouncedStopRecording.run();
+        }
+    }
+
+    /**
+     * Volume shutter long press: start/stop recording.
+     * Called by MainActivity when the user long-presses a volume key while the
+     * home tab is visible. Mirrors the Start/Stop button behavior exactly.
+     */
+    public void handleVolumeShutterLongPress() {
+        if (!isAdded() || getView() == null) return;
+        performStartStopToggle();
+    }
+
+    /**
+     * Volume shutter single click: capture a FadShot photo.
+     * Called by MainActivity when the user taps a volume key while the home tab
+     * is visible. Mirrors the capture-shot button behavior exactly.
+     */
+    public void handleVolumeShutterClick() {
+        if (!isAdded() || getView() == null) return;
+        captureShotFromCurrentPreview();
+    }
+
+    /**
+     * Volume shutter double click: switch between front/back camera.
+     * Called by MainActivity when the user double-taps a volume key while the
+     * home tab is visible. Mirrors the camera-switch button behavior exactly.
+     */
+    public void handleVolumeShutterCameraSwitch() {
+        if (!isAdded() || getView() == null) return;
+        switchCamera();
     }
 
     private void pushFrontMirrorToService(boolean enabled) {

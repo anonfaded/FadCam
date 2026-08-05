@@ -1862,6 +1862,10 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="motion_lab_title">Bewegungslabor</string>
     <string name="automation_title">Automatisierung</string>
     <string name="automation_row_subtitle">Tastenbelegung, Bluetooth-Fernbedienungen, Lautstärketasten</string>
+    <string name="setting_volume_shutter_title">Lautstärketasten-Auslöser</string>
+    <string name="setting_volume_shutter_summary">Die Lautstärketasten dienen als Kameraauslöser auf dem Start-Tab</string>
+    <string name="setting_volume_shutter_footer">Die Lautstärketasten werden auf dem Start-Tab zu Ihrem Auslöser:\n• Tippen — Foto aufnehmen\n• Doppeltippen — Kamera wechseln\n• Gedrückt halten — Aufnahme starten oder stoppen\n\nBluetooth-Fernauslöser funktionieren ebenfalls und lösen dieselben Aktionen aus. Die Tasten funktionieren, solange der FadCam-Start-Tab geöffnet ist — zukünftige Versionen lassen jede Taste FadCam-Aktionen auslösen, auch im Hintergrund.\n\nNutzen Sie vorerst MacroDroid, um FadCam-Verknüpfungen zuzuordnen — Sie finden sie unter Einstellungen → Verknüpfungen &amp; Widgets.</string>
+    <string name="shortcuts_macrodroid_template">Offizielle MacroDroid-Vorlage: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Wärmeschutz</string>
     <string name="thermal_guardian_row_subtitle">Aufnahme automatisch anpassen, um Überhitzung zu vermeiden</string>
     <string name="audio_vision_title">Audio Vision</string>

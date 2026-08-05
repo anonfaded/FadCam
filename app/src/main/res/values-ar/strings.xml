@@ -3436,6 +3436,10 @@
 
     <string name="automation_title">أتمتة</string>
     <string name="automation_row_subtitle">ربط الأزرار، أجهزة التحكم عن بعد بلوتوث، أزرار الصوت</string>
+    <string name="setting_volume_shutter_title">مصراع أزرار الصوت</string>
+    <string name="setting_volume_shutter_summary">تعمل أزرار الصوت كشتر للكاميرا في علامة التبويب الرئيسية</string>
+    <string name="setting_volume_shutter_footer">أزرار الصوت تصبح شتر الكاميرا في علامة التبويب الرئيسية:\n• نقرة — التقاط صورة\n• نقرة مزدوجة — تبديل الكاميرا\n• ضغطة مطولة — بدء أو إيقاف التسجيل\n\nأجهزة البلوتوث عن بُعد تعمل أيضًا وتُفعّل نفس الإجراءات. الأزرار تعمل أثناء فتح علامة التبويب الرئيسية لتطبيق FadCam — الإصدارات المستقبلية ستسمح لأي زر بتفعيل إجراءات FadCam حتى في الخلفية.\n\nحاليًا، استخدم MacroDroid لربط اختصارات FadCam — ستجدها في الإعدادات ← الاختصارات والأدوات.</string>
+    <string name="shortcuts_macrodroid_template">قالب MacroDroid الرسمي: https://templates.macrodroid.com/view/28194</string>
 
     <string name="thermal_guardian_title">الوصي الحراري</string>
     <string name="thermal_guardian_row_subtitle">ضبط التسجيل تلقائياً لمنع ارتفاع الحرارة</string>

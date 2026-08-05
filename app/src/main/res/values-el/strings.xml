@@ -2046,6 +2046,10 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="motion_lab_row_subtitle">Έξυπνη εγγραφή συμβάντων για χρήση CCTV</string>
     <string name="automation_title">Αυτοματισμός</string>
     <string name="automation_row_subtitle">Αντιστοίχιση κουμπιών, τηλεχειριστήρια Bluetooth, πλήκτρα έντασης</string>
+    <string name="setting_volume_shutter_title">Σκανδάλη πλήκτρων έντασης</string>
+    <string name="setting_volume_shutter_summary">Τα πλήκτρα έντασης λειτουργούν ως κλείστρο κάμερας στην αρχική καρτέλα</string>
+    <string name="setting_volume_shutter_footer">Τα πλήκτρα έντασης γίνονται το κλείστρο σας στην αρχική καρτέλα:\n• Πάτημα — λήψη φωτογραφίας\n• Διπλό πάτημα — εναλλαγή κάμερας\n• Παρατεταμένο πάτημα — έναρξη ή διακοπή εγγραφής\n\nΤα τηλεχειριστήρια Bluetooth λειτουργούν επίσης και ενεργοποιούν τις ίδιες ενέργειες. Τα πλήκτρα λειτουργούν όσο η αρχική καρτέλα FadCam είναι ανοιχτή — οι μελλοντικές εκδόσεις θα επιτρέπουν σε οποιοδήποτε πλήκτρο να ενεργοποιεί ενέργειες FadCam, ακόμη και στο παρασκήνιο.\n\nΠρος το παρόν, χρησιμοποιήστε το MacroDroid για να αντιστοιχίσετε τις συντομεύσεις FadCam — θα τις βρείτε στις Ρυθμίσεις → Συντομεύσεις &amp; Widgets.</string>
+    <string name="shortcuts_macrodroid_template">Επίσημο πρότυπο MacroDroid: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Θερμικός Φύλακας</string>
     <string name="thermal_guardian_row_subtitle">Αυτόματη προσαρμογή εγγραφής για αποφυγή υπερθέρμανσης</string>
     <string name="audio_vision_title">Ηχητική Όραση</string>

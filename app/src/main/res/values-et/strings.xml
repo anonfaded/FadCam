@@ -1976,6 +1976,10 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="motion_lab_row_subtitle">Tark sündmuse salvestamine CCTV-stiilis kasutamiseks</string>
     <string name="automation_title">Automaatika</string>
     <string name="automation_row_subtitle">Nuppude sidumine, Bluetooth-puldid, helitugevusklahvid</string>
+    <string name="setting_volume_shutter_title">Helitugevusklahvi päästik</string>
+    <string name="setting_volume_shutter_summary">Helitugevusklahvid toimivad avakuval kaamera päästikutena</string>
+    <string name="setting_volume_shutter_footer">Helitugevusklahvid saavad avakuval teie päästikuteks:\n• Puudutus — foto tegemine\n• Topeltpuudutus — kaamera vahetamine\n• Pikk vajutus — salvestuse alustamine või lõpetamine\n\nBluetooth-kaugpäästikud töötavad samuti ja käivitavad samu toiminguid. Klahvid töötavad, kui FadCami avakuva on avatud — tulevased versioonid võimaldavad mis tahes nupul käivitada FadCami toiminguid ka taustal.\n\nKasutage praegu MacroDroidi FadCami otseteede määramiseks — leiate need Seadetes → Otseteed ja vidinad.</string>
+    <string name="shortcuts_macrodroid_template">MacroDroidi ametlik mall: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Soojuskaitse</string>
     <string name="thermal_guardian_row_subtitle">Kohanda salvestust automaatselt, et vältida ülekuumenemist</string>
     <string name="audio_vision_title">Helinägemine</string>

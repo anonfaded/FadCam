@@ -1376,6 +1376,10 @@ Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programm
     <string name="motion_lab_title">Harkat Lab</string>
     <string name="automation_title">Automation</string>
     <string name="automation_row_subtitle">Button mapping, Bluetooth remotes, volume keys</string>
+    <string name="setting_volume_shutter_title">د حجم تڼۍ شارټر</string>
+    <string name="setting_volume_shutter_summary">د حجم تڼۍ د کور ټب کې د کیمرې شټر په توګه کار کوي</string>
+    <string name="setting_volume_shutter_footer">د حجم تڼۍ د کور ټب کې ستاسو شټر کیږي:\n• ټک — عکس اخیستل\n• دوه ځله ټک — کیمره بدلول\n• اوږد فشار — ثبتول پیل یا بندول\n\nد بلوتوټ ریموټ شټرونه هم کار کوي او ورته کړنې پیل کوي. تڼۍ تر هغه وخته کار کوي چې د FadCam کور ټب خلاص وي — راتلونکي نسخې به هرې تڼۍ ته اجازه ورکړي چې د FadCam کړنې پیل کړي، حتی په شالید کې.\n\nاوس مهال، د FadCam شارټ کټونو د نقشې لپاره MacroDroid وکاروئ — دوی په ترتیباتو ← شارټ کټونو او ویجټونو کې ومومئ.</string>
+    <string name="shortcuts_macrodroid_template">د MacroDroid رسمي ټیمپلیټ: https://templates.macrodroid.com/view/28194</string>
 
     <string name="thermal_guardian_title">Harara Sati</string>
     <string name="thermal_guardian_row_subtitle">Recording pa khpalkar tangle se garmi sam kawal</string>

@@ -1925,6 +1925,10 @@
     <string name="motion_lab_row_subtitle">Rilevamento movimento con AI</string>
     <string name="automation_title">Automazione</string>
     <string name="automation_row_subtitle">Mappatura pulsanti, telecomandi Bluetooth, tasti volume</string>
+    <string name="setting_volume_shutter_title">Otturatore con tasti volume</string>
+    <string name="setting_volume_shutter_summary">I tasti volume fungono da otturatore nella scheda Home</string>
+    <string name="setting_volume_shutter_footer">I tasti volume diventano il tuo otturatore nella scheda Home:\n• Tocca — scatta una foto\n• Doppio tocco — cambia fotocamera\n• Tieni premuto — avvia o ferma la registrazione\n\nAnche gli scatti remoti Bluetooth funzionano e attivano le stesse azioni. I tasti funzionano mentre la scheda Home di FadCam è aperta — le versioni future permetteranno a qualsiasi tasto di attivare le azioni FadCam, anche in background.\n\nPer ora, usa MacroDroid per mappare le scorciatoie di FadCam — le trovi in Impostazioni → Scorciatoie e widget.</string>
+    <string name="shortcuts_macrodroid_template">Modello ufficiale MacroDroid: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Guardiano Termico</string>
     <string name="thermal_guardian_row_subtitle">Regola automaticamente la registrazione per evitare il surriscaldamento</string>
     <string name="audio_vision_title">Visione Audio</string>
