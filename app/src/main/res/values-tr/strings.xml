@@ -1680,6 +1680,8 @@
 <string name="shortcut_take_photo_front">Selfie</string>
 <string name="preview_quick_actions_title">Önizleme hızlı işlemleri</string>
 <string name="preview_quick_actions_sub">Kayıt boştayken bile FadShot ve Tam Ekran simgelerini göster.</string>
+<string name="grid_lines_title">Izgara çizgileri</string>
+<string name="grid_lines_subtitle">Önizlemede üçte birlik ızgara</string>
 <string name="preview_quick_actions_state_always">Her zaman görünür (boşta + kayıt)</string>
 <string name="preview_quick_actions_state_recording_only">Yalnızca kayıt sırasında görünür</string>
 <string name="coming_soon_toast">Çok yakında! İnşallah</string>

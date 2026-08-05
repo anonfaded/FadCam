@@ -440,6 +440,69 @@
 
             </LinearLayout>
 
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginStart="0dp"
+                android:layout_marginEnd="0dp"
+                app:dividerColor="#262626"/>
+
+            <!-- Grid lines (rule of thirds) row -->
+            <LinearLayout
+                android:id="@+id/row_grid_lines"
+                style="@style/SettingsGroupRow"
+                android:layout_height="wrap_content"
+                android:minHeight="56dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:fontFamily="@font/materialicons"
+                    android:text="grid_on"
+                    android:textColor="?attr/colorHeading"
+                    android:textSize="18sp"
+                    android:gravity="center" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tv_grid_lines_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/grid_lines_title"
+                        android:textColor="?attr/colorHeading"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textAlignment="viewStart"
+                        android:layout_marginBottom="2dp" />
+
+                    <TextView
+                        android:id="@+id/tv_grid_lines_sub"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/grid_lines_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="11sp"
+                        android:textAlignment="viewStart" />
+                </LinearLayout>
+
+                <com.fadcam.ui.AvatarToggleView
+                    android:id="@+id/switch_grid_lines"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_gravity="center_vertical" />
+
+            </LinearLayout>
+
         </LinearLayout>
 
         <!-- Group: Mini Apps -->

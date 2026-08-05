@@ -3134,6 +3134,8 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 
 <!-- preview_quick_actions_sub -->
 <string name="preview_quick_actions_sub">即使在录制空闲时也显示FadShot和全屏图标。</string>
+<string name="grid_lines_title">网格线</string>
+<string name="grid_lines_subtitle">预览中的三分法网格</string>
 
 <!-- preview_quick_actions_title -->
 <string name="preview_quick_actions_title">预览快捷操作</string>

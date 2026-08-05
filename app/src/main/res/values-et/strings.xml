@@ -972,6 +972,8 @@
     <string name="shortcuts_picture_category">Pilt</string>
     <string name="preview_quick_actions_title">Eelvaate kiirtoimingud</string>
     <string name="preview_quick_actions_sub">Kuva FadShot ja täisekraani ikoonid isegi siis, kui salvestamine on ootel.</string>
+    <string name="grid_lines_title">Ruudustiku jooned</string>
+    <string name="grid_lines_subtitle">Kolmikute ruudustik eelvaates</string>
     <string name="preview_quick_actions_state_always">Alati nähtav (ootel + salvestamisel)</string>
     <string name="preview_quick_actions_state_recording_only">Nähtav ainult salvestamise ajal</string>
     <string name="warning_temp_file_detail">

@@ -1915,6 +1915,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="preview_quick_actions_title">Preview quick actions</string>
 
 <string name="preview_quick_actions_sub">Show FadShot and Fullscreen icons even when recording is idle.</string>
+<string name="grid_lines_title">Grille</string>
+<string name="grid_lines_subtitle">Grille des tiers sur l\'aperçu</string>
 
 <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>
 

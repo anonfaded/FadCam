@@ -1479,6 +1479,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>
     <string name="preview_quick_actions_state_recording_only">Zaher only while recording</string>
     <string name="preview_quick_actions_sub">FadShot aw Fullscreen icons woyai hatta kala che recording idle wi.</string>
+    <string name="grid_lines_title">د گرډ کرښې</string>
+    <string name="grid_lines_subtitle">په مخکتنه کې د درېیو برخو گرډ</string>
     <string name="preview_quick_actions_title">Preview quick actions</string>
     <string name="preview_starting">Starting live preview...</string>
     <string name="preview_state_disable">Ghair Faal Ka</string>

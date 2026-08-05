@@ -974,6 +974,8 @@
     <string name="shortcuts_picture_category">Foto</string>
     <string name="preview_quick_actions_title">Azioni rapide anteprima</string>
     <string name="preview_quick_actions_sub">Scegli quando mostrare le azioni rapide nell\'anteprima live</string>
+    <string name="grid_lines_title">Linee della griglia</string>
+    <string name="grid_lines_subtitle">Griglia dei terzi nell\'anteprima</string>
     <string name="preview_quick_actions_state_always">Sempre</string>
     <string name="preview_quick_actions_state_recording_only">Solo durante registrazione</string>
     <string name="warning_temp_file_detail">Questo file temporaneo verrà eliminato quando esci. Assicurati di salvarlo prima.</string>

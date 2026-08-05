@@ -1917,6 +1917,8 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="preview_quick_actions_state_always">Immer sichtbar (Bereitschaft + Aufnahme)</string>
     <string name="preview_quick_actions_state_recording_only">Nur während der Aufnahme sichtbar</string>
     <string name="preview_quick_actions_sub">FadShot- und Vollbildsymbole auch im Leerlauf anzeigen.</string>
+    <string name="grid_lines_title">Rasterlinien</string>
+    <string name="grid_lines_subtitle">Drittel-Regel-Overlay auf der Vorschau</string>
     <string name="preview_quick_actions_title">Vorschau-Schnellaktionen</string>
     <string name="preview_starting">Live-Vorschau wird gestartet…</string>
     <string name="previous">Zurück</string>

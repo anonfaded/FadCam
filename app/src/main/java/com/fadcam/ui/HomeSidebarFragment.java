@@ -220,6 +220,35 @@ public class HomeSidebarFragment extends DialogFragment {
                     quickActionsRow.setOnClickListener(v -> sw.performClick());
                 }
             }
+
+            View gridRow = view.findViewById(R.id.row_grid_lines);
+            if (gridRow != null) {
+                TextView tvGridSub = gridRow.findViewById(R.id.tv_grid_lines_sub);
+                AvatarToggleView swGrid = gridRow.findViewById(R.id.switch_grid_lines);
+                if (swGrid != null) {
+                    boolean gridEnabled = sp.isGridLinesEnabled();
+                    swGrid.setChecked(gridEnabled);
+                    if (tvGridSub != null) {
+                        tvGridSub.setText(gridEnabled
+                            ? getString(R.string.setting_enabled_msg)
+                            : getString(R.string.setting_disabled_msg));
+                    }
+                    swGrid.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                        sp.setGridLinesEnabled(isChecked);
+                        if (tvGridSub != null) {
+                            tvGridSub.setText(isChecked
+                                ? getString(R.string.setting_enabled_msg)
+                                : getString(R.string.setting_disabled_msg));
+                        }
+                        try {
+                            Bundle b = new Bundle();
+                            b.putBoolean("grid_lines_enabled", isChecked);
+                            getParentFragmentManager().setFragmentResult(resultKey, b);
+                        } catch (Exception ignored) {}
+                    });
+                    gridRow.setOnClickListener(v -> swGrid.performClick());
+                }
+            }
         } catch (Exception e) {
             FLog.w(
                 "HomeSidebar",

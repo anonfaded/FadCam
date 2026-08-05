@@ -613,6 +613,13 @@
             <!-- TextureView for live camera preview (shows on top when recording) -->
             <TextureView android:id="@+id/textureView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center" />
 
+            <!-- Rule-of-thirds grid overlay (shown only when Grid Lines setting is on) -->
+            <com.fadcam.ui.GridOverlayView
+                android:id="@+id/grid_overlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
             <!-- Paused recording overlay — shown on top of preview when recording is paused -->
             <LinearLayout
                 android:id="@+id/paused_preview_overlay"

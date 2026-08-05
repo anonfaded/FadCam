@@ -225,6 +225,7 @@ public class HomeFragment extends BaseFragment {
 
     private TextureView textureView;
     private View pausedPreviewOverlay;
+    private GridOverlayView gridOverlay;
 
     private Handler tipHandler = new Handler();
     private int typingIndex = 0;
@@ -886,6 +887,9 @@ public class HomeFragment extends BaseFragment {
             return;
         }
 
+        // Keep the grid overlay in sync with the live preview on every call.
+        updateGridOverlayVisibility();
+
         if (usesModeSpecificPreviewBehavior()) {
             updateModeSpecificPreviewVisibility();
             return;
@@ -948,6 +952,7 @@ public class HomeFragment extends BaseFragment {
                     updateServiceWithCurrentSurface(textureViewSurface, textureView.getWidth(), textureView.getHeight());
                 }
                 updateFullscreenButtonVisibility();
+                updateGridOverlayVisibility();
                 return;
             }
             // Not recording, keep placeholder and hint hidden (using layered icons only)
@@ -1067,6 +1072,7 @@ public class HomeFragment extends BaseFragment {
                                 @Override public void onAnimationEnd(Animator a) {
                                     isPreviewCloseAnimating = false;
                                     if (textureView != null) textureView.setVisibility(View.INVISIBLE);
+                                    updateGridOverlayVisibility();
                                     if (!isAdded()) return;
                                     // Brief hold so user sees the awake avatar before sleeping.
                                     // ~650ms matches the sun spin-in duration (520ms + small buffer).
@@ -1084,6 +1090,7 @@ public class HomeFragment extends BaseFragment {
                         } else {
                             isPreviewCloseAnimating = false;
                             textureView.setVisibility(View.INVISIBLE);
+                            updateGridOverlayVisibility();
                         }
                     } else {
                         // Fallback: fade textureView out
@@ -1093,6 +1100,7 @@ public class HomeFragment extends BaseFragment {
                                     isPreviewCloseAnimating = false;
                                     textureView.setVisibility(View.INVISIBLE);
                                     textureView.setAlpha(1f);
+                                    updateGridOverlayVisibility();
                                     if (isAdded()) applyHomeAvatarState(false, true);
                                 }).start();
                         } else {
@@ -1125,6 +1133,47 @@ public class HomeFragment extends BaseFragment {
 
         // Show fullscreen button only when preview is active and recording
         updateFullscreenButtonVisibility();
+    }
+
+    /**
+     * Show/hide the rule-of-thirds grid overlay with a short fade. The grid is
+     * visible only when the Grid Lines setting is enabled AND the live preview
+     * is currently shown; it disappears (fades out) whenever the preview closes,
+     * recording stops, or the avatar returns.
+     */
+    private void updateGridOverlayVisibility() {
+        if (gridOverlay == null) return;
+        boolean prefEnabled = false;
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+            prefEnabled = sharedPreferencesManager.isGridLinesEnabled();
+        } catch (Exception ignored) {}
+        boolean livePreviewShowing =
+                textureView != null && textureView.getVisibility() == View.VISIBLE;
+        boolean shouldShow = prefEnabled && livePreviewShowing;
+
+        // Cancel any in-flight fade so rapid state changes don't leave stale callbacks.
+        gridOverlay.animate().cancel();
+
+        if (shouldShow) {
+            if (gridOverlay.getVisibility() != View.VISIBLE) {
+                gridOverlay.setAlpha(0f);
+                gridOverlay.setVisibility(View.VISIBLE);
+            }
+            gridOverlay.animate().alpha(1f).setDuration(250).start();
+        } else if (gridOverlay.getVisibility() == View.VISIBLE) {
+            final View g = gridOverlay;
+            g.animate().alpha(0f).setDuration(250)
+                .withEndAction(() -> {
+                    // Only hide if we actually finished fading out (not re-shown meanwhile).
+                    if (g.getAlpha() < 0.01f) {
+                        g.setVisibility(View.GONE);
+                        g.setAlpha(1f);
+                    }
+                }).start();
+        }
     }
 
     /**
@@ -4418,6 +4467,9 @@ public class HomeFragment extends BaseFragment {
                     if (bundle.containsKey("preview_quick_actions_always_visible")) {
                         updateFullscreenButtonVisibility();
                     }
+                    if (bundle.containsKey("grid_lines_enabled")) {
+                        updateGridOverlayVisibility();
+                    }
                     if (!bundle.containsKey("preview_enabled")) return;
                     boolean enabled = bundle.getBoolean("preview_enabled", true);
 
@@ -4790,6 +4842,8 @@ public class HomeFragment extends BaseFragment {
     private void setupTextureView(@NonNull View view) {
         textureView = view.findViewById(R.id.textureView);
         pausedPreviewOverlay = view.findViewById(R.id.paused_preview_overlay);
+        gridOverlay = view.findViewById(R.id.grid_overlay);
+        updateGridOverlayVisibility();
 
         FLog.d(
             TAG,

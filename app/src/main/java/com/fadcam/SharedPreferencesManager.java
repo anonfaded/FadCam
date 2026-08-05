@@ -1240,6 +1240,21 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    // Rule-of-thirds grid overlay on the preview (default off)
+    public boolean isGridLinesEnabled() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_GRID_LINES_ENABLED,
+            false
+        );
+    }
+
+    public void setGridLinesEnabled(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_GRID_LINES_ENABLED, enabled)
+            .apply();
+    }
+
     public String getLanguage() {
         return sharedPreferences.getString(
             Constants.LANGUAGE_KEY,

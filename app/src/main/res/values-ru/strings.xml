@@ -2058,6 +2058,8 @@ FadCam использует фрагментированный формат MP4 
     <string name="preview_quick_actions_title">Быстрые действия предпросмотра</string>
 
     <string name="preview_quick_actions_sub">Показывать иконки FadShot и полноэкранного режима даже в режиме ожидания записи.</string>
+    <string name="grid_lines_title">Линии сетки</string>
+    <string name="grid_lines_subtitle">Правило третей на предпросмотре</string>
 
     <string name="preview_quick_actions_state_always">Всегда видимы (ожидание + запись)</string>
 

@@ -1961,6 +1961,8 @@
     <string name="preview_quick_actions_title">إجراءات المعاينة السريعة</string>
 
     <string name="preview_quick_actions_sub">إظهار أيقونات FadShot والشاشة الكاملة حتى عندما يكون التسجيل خاملاً.</string>
+    <string name="grid_lines_title">خطوط الشبكة</string>
+    <string name="grid_lines_subtitle">شبكة الأثلاث على المعاينة</string>
 
     <string name="preview_quick_actions_state_always">مرئية دائمًا (خامل + تسجيل)</string>
 

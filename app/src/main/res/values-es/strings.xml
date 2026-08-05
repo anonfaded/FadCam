@@ -989,6 +989,8 @@
     <string name="shortcuts_picture_category">Imagen</string>
     <string name="preview_quick_actions_title">Acciones rápidas de vista previa</string>
     <string name="preview_quick_actions_sub">Mostrar íconos de FadShot y Pantalla completa incluso cuando la grabación está inactiva.</string>
+    <string name="grid_lines_title">Líneas de cuadrícula</string>
+    <string name="grid_lines_subtitle">Cuadrícula de tercios en la vista previa</string>
     <string name="preview_quick_actions_state_always">Siempre visible (inactivo + grabando)</string>
     <string name="preview_quick_actions_state_recording_only">Visible solo mientras graba</string>
     <string name="warning_temp_file_detail">

@@ -635,6 +635,8 @@ public abstract class Constants {
     // Show preview quick actions (FadShot + Fullscreen) even when recording is not active.
     public static final String PREF_PREVIEW_QUICK_ACTIONS_ALWAYS_VISIBLE =
         "pref_preview_quick_actions_always_visible";
+    // Rule-of-thirds grid overlay on the camera preview (default off).
+    public static final String PREF_GRID_LINES_ENABLED = "pref_grid_lines_enabled";
     // Player controller auto-hide timeout in seconds. Controls disappear after this many seconds of inactivity.
     // 0 = never auto-hide (controls stay visible until user toggles).
     public static final String PREF_PLAYER_CONTROLS_TIMEOUT_SECONDS =
