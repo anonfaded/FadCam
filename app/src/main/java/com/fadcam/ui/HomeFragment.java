@@ -298,6 +298,9 @@ public class HomeFragment extends BaseFragment {
     private float previewUiScale = 1.0f;
     private float previewUiPanX = 0f;
     private float previewUiPanY = 0f;
+    /** True while a pinch-zoom gesture is active; used to suppress tap-to-focus
+     *  when the pinch releases and to re-anchor panning between gestures. */
+    private boolean previewPinchGestureActive = false;
     private boolean isPanningPreview = false;
     private float previewLastTouchX = 0f;
     private float previewLastTouchY = 0f;
@@ -3455,6 +3458,19 @@ public class HomeFragment extends BaseFragment {
                 float ratio = intent.getFloatExtra(Constants.EXTRA_BROADCAST_ZOOM_RATIO, -1f);
                 float panX  = intent.getFloatExtra(Constants.EXTRA_BROADCAST_PAN_X, 0f);
                 float panY  = intent.getFloatExtra(Constants.EXTRA_BROADCAST_PAN_Y, 0f);
+
+                // While the user is actively pinching/panning, the local mirror is the
+                // authoritative source. The echo carries the LAST-SENT pan, which is
+                // already behind the finger — applying it would yank the mirror backward
+                // every frame (perceived lag). Keep external ratio sync only.
+                if (isPanningPreview || previewPinchGestureActive) {
+                    if (ratio > 0f) {
+                        previewPinchZoomRatio = ratio;
+                        previewUiScale = Math.max(1.0f, Math.min(4.0f, ratio));
+                    }
+                    return;
+                }
+
                 FLog.d(TAG, "📡 BROADCAST_ON_ZOOM_CHANGED ratio=" + ratio + " pan=" + panX + "," + panY);
                 if (ratio > 0f) {
                     previewPinchZoomRatio = ratio;
@@ -4892,7 +4908,7 @@ public class HomeFragment extends BaseFragment {
             new android.view.ScaleGestureDetector.SimpleOnScaleGestureListener() {
                 @Override
                 public boolean onScale(android.view.ScaleGestureDetector detector) {
-                    applyPreviewPinchZoom(detector.getScaleFactor());
+                    applyPreviewPinchZoom(detector.getScaleFactor(), detector.getFocusX(), detector.getFocusY());
                     return true;
                 }
             }
@@ -4908,6 +4924,7 @@ public class HomeFragment extends BaseFragment {
                 if (previewScaleGestureDetector != null) {
                     previewScaleGestureDetector.onTouchEvent(event);
                     if (previewScaleGestureDetector.isInProgress()) {
+                        previewPinchGestureActive = true;
                         if (pendingPreviewLongPressRunnable != null) {
                             previewLongPressHandler.removeCallbacks(pendingPreviewLongPressRunnable);
                         }
@@ -4919,6 +4936,7 @@ public class HomeFragment extends BaseFragment {
                 switch (action) {
                     case MotionEvent.ACTION_DOWN:
                         isPanningPreview = false;
+                        previewPinchGestureActive = false;
                         previewLongPressTriggered = false;
                         updateMainSwipeGestureGate(zoomGestureLock);
                         previewLastTouchX = event.getX();
@@ -4948,11 +4966,27 @@ public class HomeFragment extends BaseFragment {
                                 updateMainSwipeGestureGate(true);
                                 previewUiPanX += dx;
                                 previewUiPanY += dy;
+                                clampPreviewPan();
                                 applyPreviewTransform();
+                                long panNow = System.currentTimeMillis();
+                                if (panNow - previewZoomDispatchMs >= 16L) {
+                                    previewZoomDispatchMs = panNow;
+                                    dispatchZoomPanToCamera(previewPinchZoomRatio);
+                                }
                                 previewLastTouchX = event.getX();
                                 previewLastTouchY = event.getY();
                                 return true;
                             }
+                        }
+                        break;
+                    case MotionEvent.ACTION_POINTER_UP:
+                        // A pinch is ending. Re-anchor the single-finger pan origin to the
+                        // remaining finger so the first move after the pinch doesn't compute a
+                        // phantom delta from the stale pre-pinch anchor (which snapped the view).
+                        if (event.getPointerCount() > 1) {
+                            int remainingIndex = (event.getActionIndex() == 0) ? 1 : 0;
+                            previewLastTouchX = event.getX(remainingIndex);
+                            previewLastTouchY = event.getY(remainingIndex);
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -4962,6 +4996,8 @@ public class HomeFragment extends BaseFragment {
                         }
                         updateMainSwipeGestureGate(false);
                         requestPreviewParentIntercept(v, false);
+                        boolean wasPinchGesture = previewPinchGestureActive;
+                        previewPinchGestureActive = false;
                         if (previewLongPressTriggered) {
                             previewLongPressTriggered = false;
                             isPanningPreview = false;
@@ -4970,6 +5006,12 @@ public class HomeFragment extends BaseFragment {
                         if (isPanningPreview) {
                             isPanningPreview = false;
                             dispatchCurrentPreviewZoomPan();
+                            return true;
+                        }
+                        if (wasPinchGesture) {
+                            // The pinch released — this is not a tap, so don't trigger
+                            // tap-to-focus (which would show the focus dot).
+                            isPanningPreview = false;
                             return true;
                         }
                         if ((isRecordingOrPaused() || isPreviewOnlyActive) && textureView != null) {
@@ -8312,7 +8354,7 @@ public class HomeFragment extends BaseFragment {
         return list;
     }
 
-    private void applyPreviewPinchZoom(float scaleFactor) {
+    private void applyPreviewPinchZoom(float scaleFactor, float focusX, float focusY) {
         if (!isAdded() || getContext() == null) return;
         CameraType cam = sharedPreferencesManager.getCameraSelection();
         if (cam == null || cam.isDual()) return;
@@ -8324,22 +8366,37 @@ public class HomeFragment extends BaseFragment {
             : sharedPreferencesManager.getSpecificZoomRatio(cam);
         float next = Math.max(minZoom, Math.min(maxZoom, base * scaleFactor));
         previewPinchZoomRatio = next;
-        previewUiScale = Math.max(1.0f, Math.min(4.0f, next));
+
+        // The camera crop (SCALER_CROP_REGION) is the real zoom — previewUiScale is a
+        // mirror used only for pan math and the zoom map. Anchor the zoom at the pinch
+        // focal point (industry standard) so the content under the fingers stays put:
+        //   panNew = (F − C) + (s2/s1) * (panOld − (F − C))
+        float oldScale = previewUiScale;
+        float newScale = Math.max(1.0f, Math.min(4.0f, next));
+        if (textureView != null) {
+            float w = textureView.getWidth();
+            float h = textureView.getHeight();
+            if (w > 0f && h > 0f) {
+                float cx = w / 2f;
+                float cy = h / 2f;
+                float fx = focusX - cx;
+                float fy = focusY - cy;
+                float scaleRatio = (oldScale > 1.001f) ? (newScale / oldScale) : newScale;
+                previewUiPanX = fx + scaleRatio * (previewUiPanX - fx);
+                previewUiPanY = fy + scaleRatio * (previewUiPanY - fy);
+            }
+        }
+        previewUiScale = newScale;
+        clampPreviewPan();
         applyPreviewTransform();
         sharedPreferencesManager.setSpecificZoomRatio(cam, next);
         updatePreviewZoomHudUi(next);
 
         long now = System.currentTimeMillis();
-        if (now - previewZoomDispatchMs < 60L) return;
+        if (now - previewZoomDispatchMs < 16L) return;
         previewZoomDispatchMs = now;
 
-        try {
-            Intent zoomIntent = RecordingControlIntents.setZoomRatio(requireContext(), next);
-            zoomIntent.setClass(requireContext(), RecordingService.class);
-            requireContext().startService(zoomIntent);
-        } catch (Exception e) {
-            FLog.w(TAG, "Failed to dispatch pinch zoom update: " + e.getMessage());
-        }
+        dispatchZoomPanToCamera(next);
     }
 
     private void applyPreviewTransform() {
@@ -8348,16 +8405,39 @@ public class HomeFragment extends BaseFragment {
         float h = textureView.getHeight();
         if (w <= 0f || h <= 0f) return;
 
+        // The camera crop (SCALER_CROP_REGION) is the single source of zoom: the preview
+        // surface is a direct camera-session output, so it already shows the zoomed feed.
+        // Applying a second scale here double-zoomed and broke focal-point anchoring — keep
+        // the texture matrix identity. previewUiScale/pan remain as a mirror for the zoom
+        // map and the normalized-pan dispatch below.
+        textureView.setTransform(null);
+        updatePreviewZoomMapUi();
+    }
+
+    private void clampPreviewPan() {
+        if (textureView == null) return;
+        float w = textureView.getWidth();
+        float h = textureView.getHeight();
+        if (w <= 0f || h <= 0f) return;
         float maxPanX = (w * (previewUiScale - 1f)) / 2f;
         float maxPanY = (h * (previewUiScale - 1f)) / 2f;
         previewUiPanX = Math.max(-maxPanX, Math.min(maxPanX, previewUiPanX));
         previewUiPanY = Math.max(-maxPanY, Math.min(maxPanY, previewUiPanY));
+    }
 
-        android.graphics.Matrix matrix = new android.graphics.Matrix();
-        matrix.postScale(previewUiScale, previewUiScale, w / 2f, h / 2f);
-        matrix.postTranslate(previewUiPanX, previewUiPanY);
-        textureView.setTransform(matrix);
-        updatePreviewZoomMapUi();
+    private void dispatchZoomPanToCamera(float zoomRatio) {
+        try {
+            Intent zoomIntent = RecordingControlIntents.setZoomRatio(
+                requireContext(),
+                zoomRatio,
+                getCurrentNormalizedPreviewPanX(),
+                getCurrentNormalizedPreviewPanY()
+            );
+            zoomIntent.setClass(requireContext(), RecordingService.class);
+            requireContext().startService(zoomIntent);
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to dispatch pinch zoom update: " + e.getMessage());
+        }
     }
 
     private void applyNormalizedPreviewPan(float normalizedPanX, float normalizedPanY) {

@@ -795,6 +795,35 @@ public class RecordingService extends Service {
             float clampedPanX = Math.max(-1.0f, Math.min(1.0f, panX));
             float clampedPanY = Math.max(-1.0f, Math.min(1.0f, panY));
 
+            // The crop region lives in SENSOR coordinates while the user drags on the
+            // upright preview. The pan (display space) must be rotated by the sensor's
+            // display orientation before offsetting the crop centre, otherwise panning
+            // is transposed/flipped (e.g. dragging right moves the view vertically).
+            float sensorPanX = clampedPanX;
+            float sensorPanY = clampedPanY;
+            try {
+                switch (getDisplayToSensorRotation()) {
+                    case 90:
+                        // Display right/down ↔ sensor +Y/−X : cropShift = −R⁻¹(drag)
+                        sensorPanX = clampedPanY;
+                        sensorPanY = -clampedPanX;
+                        break;
+                    case 180:
+                        sensorPanX = -clampedPanX;
+                        sensorPanY = -clampedPanY;
+                        break;
+                    case 270:
+                        sensorPanX = -clampedPanY;
+                        sensorPanY = clampedPanX;
+                        break;
+                    default:
+                        break; // 0°
+                }
+            } catch (Exception e) {
+                sensorPanX = clampedPanX;
+                sensorPanY = clampedPanY;
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && zoomRatioRange != null && clampedZoom < 1.0f) {
                 if (currentCameraCharacteristics != null) {
                     android.graphics.Rect activeArray = currentCameraCharacteristics
@@ -834,9 +863,9 @@ public class RecordingService extends Service {
                     int maxOffX = (sensorW - cropW) / 2;
                     int maxOffY = (sensorH - cropH) / 2;
 
-                    // Crop centre with pan offset
-                    int cx = activeArray.left + sensorW / 2 + Math.round(clampedPanX * maxOffX);
-                    int cy = activeArray.top  + sensorH / 2 + Math.round(clampedPanY * maxOffY);
+                    // Crop centre with pan offset (pan already rotated into sensor space)
+                    int cx = activeArray.left + sensorW / 2 + Math.round(sensorPanX * maxOffX);
+                    int cy = activeArray.top  + sensorH / 2 + Math.round(sensorPanY * maxOffY);
 
                     int cropLeft  = Math.max(activeArray.left,  cx - cropW / 2);
                     int cropTop   = Math.max(activeArray.top,   cy - cropH / 2);
@@ -907,16 +936,42 @@ public class RecordingService extends Service {
             return;
         }
 
-        // Metering regions require sensor coordinates. We'll map normalized preview
-        // coords to - if available - active array size.
+        // Metering regions require sensor coordinates. The tap arrives in display
+        // space (upright preview), so rotate it into the sensor's coordinate space
+        // first — otherwise the focus/metering region lands at a transposed location
+        // on rotated (portrait) sensors.
         Rect activeArray = currentCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
         if (activeArray == null) {
             FLog.w(TAG, "Cannot perform tap-to-focus: active array size not available");
             return;
         }
 
-        int x = activeArray.left + (int) (nx * activeArray.width());
-        int y = activeArray.top + (int) (ny * activeArray.height());
+        float sensorNX = nx;
+        float sensorNY = ny;
+        try {
+            switch (getDisplayToSensorRotation()) {
+                case 90:
+                    sensorNX = ny;
+                    sensorNY = 1f - nx;
+                    break;
+                case 180:
+                    sensorNX = 1f - nx;
+                    sensorNY = 1f - ny;
+                    break;
+                case 270:
+                    sensorNX = 1f - ny;
+                    sensorNY = nx;
+                    break;
+                default:
+                    break; // 0°
+            }
+        } catch (Exception e) {
+            sensorNX = nx;
+            sensorNY = ny;
+        }
+
+        int x = activeArray.left + (int) (sensorNX * activeArray.width());
+        int y = activeArray.top + (int) (sensorNY * activeArray.height());
 
         // Clamp coordinates to active array bounds before creating rectangle
         // This prevents IllegalArgumentException when normalized coords go out of bounds (>1.0)
@@ -3294,6 +3349,33 @@ public class RecordingService extends Service {
         }
         Integer so = currentCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
         return so == null ? 90 : so;
+    }
+
+    /**
+     * Rotation (0/90/180/270) that maps a display-space point/vector into the
+     * sensor's coordinate space, accounting for the sensor's mounting rotation,
+     * the current device rotation, and the front-camera flip. Used to translate
+     * touch input (pan, tap-to-focus) into SCALER_CROP_REGION / metering region
+     * coordinates.
+     */
+    private int getDisplayToSensorRotation() {
+        int displayRotationDeg = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            android.view.WindowManager wm = (android.view.WindowManager)
+                    getSystemService(Context.WINDOW_SERVICE);
+            if (wm != null && wm.getDefaultDisplay() != null) {
+                displayRotationDeg = 90 * wm.getDefaultDisplay().getRotation();
+            }
+        }
+        int total = (getCurrentSensorOrientationDegrees() + displayRotationDeg) % 360;
+        if (currentCameraCharacteristics != null) {
+            Integer facing = currentCameraCharacteristics.get(
+                    CameraCharacteristics.LENS_FACING);
+            if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                total = (360 - total) % 360;
+            }
+        }
+        return total % 360;
     }
 
     private boolean shouldMirrorForensicsSnapshots() {

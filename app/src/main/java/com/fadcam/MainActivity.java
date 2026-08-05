@@ -830,6 +830,17 @@ public class MainActivity extends AppCompatActivity {
             if (current instanceof com.google.android.material.chip.ChipGroup) return true;
             if (current instanceof BottomNavigationView) return true;
             if (current.getId() == R.id.textureView || current.getId() == R.id.fullscreenTextureView) return true;
+            if (current.getId() == R.id.cardPreview) {
+                // Home camera preview container: while the live preview is showing,
+                // swipes must not change tabs or open the sidebar. Overlays (preview
+                // hint, zoom HUD, grid) sit ON TOP of the TextureView, so a touch that
+                // starts on them never reaches the textureView check above — gate on
+                // the whole container instead.
+                View previewTexture = findViewById(R.id.textureView);
+                if (previewTexture != null && previewTexture.getVisibility() == View.VISIBLE) {
+                    return true;
+                }
+            }
             if (current instanceof RecyclerView) {
                 RecyclerView rv = (RecyclerView) current;
                 if (rv.canScrollHorizontally(-1) || rv.canScrollHorizontally(1)) return true;
