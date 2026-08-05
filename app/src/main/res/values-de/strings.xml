@@ -2226,6 +2226,9 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="video_setting_location_embed_disabled">Deaktiviert</string>
     <string name="video_setting_location_embed_enabled">Aktiviert</string>
     <string name="video_setting_location_embed_title">Standort-Metadaten einbetten</string>
+    <string name="setting_video_stabilization_title">Video-Stabilisierung</string>
+    <string name="setting_not_supported">Auf diesem Gerät nicht unterstützt</string>
+    <string name="video_stabilization_footer">Sorgt für ruhige Videos, indem Handbewegungen per elektronischer (EIS) und optischer (OIS) Stabilisierung ausgeglichen werden. Ein kleiner Bildausschnitt wird dafür benötigt.</string>
     <string name="view_mode_grid">Raster</string>
     <string name="view_mode_list">Liste</string>
     <string name="watch_audio_label">Audio</string>

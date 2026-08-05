@@ -737,6 +737,9 @@
     <string name="helper_location_watermark">录制时添加实时位置文字叠加。</string>
     <string name="helper_location_embed">将GPS坐标嵌入视频元数据（地理标签）。</string>
     <string name="video_setting_location_embed_title">嵌入位置元数据</string>
+    <string name="setting_video_stabilization_title">视频防抖</string>
+    <string name="setting_not_supported">此设备不支持</string>
+    <string name="video_stabilization_footer">通过电子防抖（EIS）和光学防抖（OIS）补偿手部晃动，让视频保持稳定。为此会对画面进行轻微裁剪。</string>
     <string name="video_setting_location_embed_enabled">已启用</string>
     <string name="video_setting_location_embed_disabled">已禁用</string>
     <string name="helper_watermark_option">选择叠加内容：时间戳+品牌、仅时间戳或无</string>

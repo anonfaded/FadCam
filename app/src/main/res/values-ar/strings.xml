@@ -2349,6 +2349,9 @@
     <string name="helper_location_embed">يضمّن إحداثيات GPS في بيانات الفيديو الوصفية (geotag).</string>
 
     <string name="video_setting_location_embed_title">تضمين بيانات الموقع الوصفية</string>
+    <string name="setting_video_stabilization_title">تثبيت الفيديو</string>
+    <string name="setting_not_supported">غير مدعوم على هذا الجهاز</string>
+    <string name="video_stabilization_footer">يثبّت مقاطع الفيديو بمعادلة اهتزاز اليد باستخدام التثبيت الإلكتروني (EIS) والبصري (OIS). يتطلب ذلك اقتصاصًا طفيفًا للإطار.</string>
 
     <string name="video_setting_location_embed_enabled">مفعّل</string>
 

@@ -2303,6 +2303,9 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="helper_location_embed">Embeds GPS coordinates into video metadata (geotag).</string>
 
 <string name="video_setting_location_embed_title">Embed Location Metadata</string>
+<string name="setting_video_stabilization_title">Stabilisation vidéo</string>
+<string name="setting_not_supported">Non pris en charge sur cet appareil</string>
+<string name="video_stabilization_footer">Stabilise vos vidéos en compensant les mouvements de main grâce à la stabilisation électronique (EIS) et optique (OIS). Une petite partie du cadre est recadrée pour y parvenir.</string>
 
 <string name="video_setting_location_embed_enabled">Enabled</string>
 

@@ -1479,6 +1479,15 @@ public class RecordingService extends Service {
                 FLog.w(TAG, "TAP_TO_FOCUS intent missing coordinates");
             }
             return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_VIDEO_STABILIZATION.equals(action)) {
+            // Toggle video stabilization (EIS/OIS) at runtime.
+            boolean enable = intent.getBooleanExtra(
+                    Constants.EXTRA_VIDEO_STABILIZATION_ENABLED, true);
+            if (sharedPreferencesManager != null) {
+                sharedPreferencesManager.setVideoStabilizationEnabled(enable);
+            }
+            reapplyVideoStabilizationToSession();
+            return START_STICKY;
         } else if (Constants.INTENT_ACTION_SET_ZOOM_RATIO.equals(action)) {
             if (intent.hasExtra(Constants.EXTRA_ZOOM_RATIO)) {
                 float zoomRatio = intent.getFloatExtra(Constants.EXTRA_ZOOM_RATIO, 1.0f);
@@ -5967,11 +5976,94 @@ public class RecordingService extends Service {
                 } else {
                     FLog.w(TAG, "AF modes not available from camera characteristics");
                 }
+
+                // Video stabilization (EIS + OIS). Safe no-op when unsupported.
+                applyVideoStabilization(builder);
             } else {
                 FLog.e(TAG, "applySavedCameraPrefsToBuilder: currentCameraCharacteristics is null!");
             }
         } catch (Exception e) {
             FLog.w(TAG, "Error applying camera prefs: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Applies video stabilization (EIS + OIS) to the capture request when the
+     * user preference is enabled AND the hardware exposes the mode. Never
+     * throws — every failure path falls back to stabilization OFF so a quirky
+     * HAL can never take the camera down.
+     *
+     * Tagged "FadCamEIS" for logcat grepping to verify the feature is active.
+     */
+    private void applyVideoStabilization(CaptureRequest.Builder builder) {
+        try {
+            if (builder == null || currentCameraCharacteristics == null) {
+                FLog.w("FadCamEIS", "applyVideoStabilization skipped (builder/chars null)");
+                return;
+            }
+            boolean prefEnabled = sharedPreferencesManager != null
+                    && sharedPreferencesManager.isVideoStabilizationEnabled();
+
+            boolean eisSupported = false;
+            int[] stabModes = currentCameraCharacteristics.get(
+                    CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
+            if (stabModes != null) {
+                for (int m : stabModes) {
+                    if (m == CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON) {
+                        eisSupported = true;
+                        break;
+                    }
+                }
+            }
+            int eisMode = (prefEnabled && eisSupported)
+                    ? CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON
+                    : CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_OFF;
+            builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, eisMode);
+
+            boolean oisSupported = false;
+            int[] oisModes = currentCameraCharacteristics.get(
+                    CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION);
+            if (oisModes != null) {
+                for (int m : oisModes) {
+                    if (m == CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON) {
+                        oisSupported = true;
+                        break;
+                    }
+                }
+            }
+            int oisMode = (prefEnabled && oisSupported)
+                    ? CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON
+                    : CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_OFF;
+            builder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, oisMode);
+
+            FLog.i("FadCamEIS", "VideoStab applied -> pref=" + prefEnabled
+                    + " eisSupported=" + eisSupported + " eis=" + eisMode
+                    + " oisSupported=" + oisSupported + " ois=" + oisMode
+                    + " cameraId=" + (cameraDevice != null ? cameraDevice.getId() : "null"));
+        } catch (Throwable t) {
+            // Catch Throwable: a stabilization bug must never crash the recorder.
+            FLog.w("FadCamEIS", "applyVideoStabilization failed, falling back to OFF: " + t.getMessage());
+        }
+    }
+
+    /**
+     * Re-applies the current stabilization preference to an already-running
+     * session (e.g. after the user toggles it in Settings mid-recording).
+     * Fully guarded — never throws.
+     */
+    private void reapplyVideoStabilizationToSession() {
+        try {
+            if (captureSession == null || captureRequestBuilder == null
+                    || cameraDevice == null || isStopping) {
+                FLog.w("FadCamEIS", "reapply skipped (session/builder/device not ready)");
+                return;
+            }
+            applyVideoStabilization(captureRequestBuilder);
+            captureSession.setRepeatingRequest(
+                    captureRequestBuilder.build(), null, backgroundHandler);
+            FLog.i("FadCamEIS", "Repeating request re-issued with new stabilization state");
+        } catch (Throwable t) {
+            FLog.w("FadCamEIS", "reapplyVideoStabilizationToSession failed safely: " + t.getMessage());
         }
     }
 

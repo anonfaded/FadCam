@@ -1201,6 +1201,9 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="helper_location_watermark">Lisab reaalajas asukoha teksti ülekatte salvestamise ajal.</string>
     <string name="helper_location_embed">Lisab GPS-koordinaadid video metaandmetesse (geosilt).</string>
     <string name="video_setting_location_embed_title">Lisa asukoha metaandmed</string>
+    <string name="setting_video_stabilization_title">Videostabiliseerimine</string>
+    <string name="setting_not_supported">Selles seadmes ei toetata</string>
+    <string name="video_stabilization_footer">Hoiab videod stabiilsena, kompenseerides käe värinat elektroonilise (EIS) ja optilise (OIS) stabiliseerimisega. Selleks kärbitakse kaadrit veidi.</string>
     <string name="video_setting_location_embed_enabled">Lubatud</string>
     <string name="video_setting_location_embed_disabled">Keelatud</string>
     <string name="helper_watermark_option">Vali ülekatte sisu: ajatempel + bränd, ainult ajatempel või puudub.</string>

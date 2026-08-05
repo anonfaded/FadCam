@@ -1187,6 +1187,9 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="helper_location_watermark">Προσθέτει ζωντανή επικάλυψη τοποθεσίας κατά την εγγραφή.</string>
     <string name="helper_location_embed">Ενσωματώνει συντεταγμένες GPS στα μεταδεδομένα βίντεο.</string>
     <string name="video_setting_location_embed_title">Ενσωμάτωση Μεταδεδομένων Τοποθεσίας</string>
+    <string name="setting_video_stabilization_title">Σταθεροποίηση βίντεο</string>
+    <string name="setting_not_supported">Δεν υποστηρίζεται σε αυτή τη συσκευή</string>
+    <string name="video_stabilization_footer">Σταθεροποιεί τα βίντεό σας αντισταθμίζοντας το τρέμουλο του χεριού με ηλεκτρονική (EIS) και οπτική (OIS) σταθεροποίηση. Απαιτείται ελαφρύ περικόψιμο του κάδρου.</string>
     <string name="video_setting_location_embed_enabled">Ενεργοποιημένο</string>
     <string name="video_setting_location_embed_disabled">Απενεργοποιημένο</string>
     <string name="helper_watermark_option">Επιλέξτε περιεχόμενο επικάλυψης.</string>

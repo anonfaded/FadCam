@@ -1230,6 +1230,9 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="helper_location_watermark">Agrega superposición de texto de ubicación en vivo durante la grabación.</string>
     <string name="helper_location_embed">Incrusta coordenadas GPS en los metadatos del video (geotag).</string>
     <string name="video_setting_location_embed_title">Incrustar metadatos de ubicación</string>
+    <string name="setting_video_stabilization_title">Estabilización de video</string>
+    <string name="setting_not_supported">No compatible con este dispositivo</string>
+    <string name="video_stabilization_footer">Mantiene estables tus videos compensando el movimiento de la mano con estabilización electrónica (EIS) y óptica (OIS). Para lograrlo se recorta una pequeña parte del encuadre.</string>
     <string name="video_setting_location_embed_enabled">Habilitado</string>
     <string name="video_setting_location_embed_disabled">Desactivado</string>
     <string name="helper_watermark_option">Elige contenido de superposición: marca de tiempo + marca, solo marca de tiempo, o ninguno.</string>

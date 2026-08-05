@@ -2140,6 +2140,9 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="video_setting_location_embed_disabled">Ghair faal de</string>
     <string name="video_setting_location_embed_enabled">Faal de</string>
     <string name="video_setting_location_embed_title">Embed Mawqeiyat Metadata</string>
+    <string name="setting_video_stabilization_title">د ویډیو ثبات</string>
+    <string name="setting_not_supported">په دې وسیله ملاتړ نه کیږي</string>
+    <string name="video_stabilization_footer">ستاسو ویډیوګانې د لاس د رپېدو په مقابل کې د الکترونیکي (EIS) او نظري (OIS) ثبات سره سمې ساتي. د دې لپاره د چوکاټ لږ پرې کول اړین دي.</string>
     <string name="view_mode_grid">Grid</string>
     <string name="view_mode_list">Fehrist</string>
     <string name="warning_temp_file_detail"><![CDATA[

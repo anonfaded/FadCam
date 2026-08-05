@@ -3,9 +3,11 @@ package com.fadcam.ui;
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.Build;
@@ -30,6 +32,7 @@ import com.fadcam.SharedPreferencesManager;
 import com.fadcam.VideoCodec;
 import com.fadcam.dualcam.DualCameraCapability;
 import com.fadcam.dualcam.ui.DualCameraSettingsFragment;
+import com.fadcam.services.RecordingService;
 import com.fadcam.ui.OverlayNavUtil;
 
 import java.util.ArrayList;
@@ -77,6 +80,10 @@ public class VideoSettingsFragment extends Fragment {
     private TextView valueBitrateHelper; // now null since helper removed
     // Optional helper text not in current layout
 
+    // Video stabilization row
+    private TextView valueVideoStabilization;
+    private boolean videoStabilizationSupported = true;
+
     // Cached dynamic data
     private List<Size> cachedResolutionsFront = new ArrayList<>();
     private List<Size> cachedResolutionsBack = new ArrayList<>();
@@ -102,6 +109,9 @@ public class VideoSettingsFragment extends Fragment {
         prefs = SharedPreferencesManager.getInstance(requireContext());
         bindViews(view);
         bindRowHandlers(view);
+        // Cache stabilization hardware support before the first value refresh.
+        videoStabilizationSupported = isVideoStabilizationHardwareSupported();
+        FLog.i("FadCamEIS", "UI: stabilization supported on selected camera = " + videoStabilizationSupported);
         // Detect back cameras early
         detectAvailableBackCameras();
         // Preload codecs
@@ -126,10 +136,120 @@ public class VideoSettingsFragment extends Fragment {
         valueVideoSplitEnabled = root.findViewById(R.id.value_video_split_enabled);
         valueVideoSplitSize = null; // merged design
         valueBitrateHelper = null; // helper removed from layout
+        valueVideoStabilization = root.findViewById(R.id.value_video_stabilization);
+    }
+
+    /**
+     * Opens the Video Stabilization bottom sheet: an AvatarToggleView switch plus
+     * the explanation footer. On devices without EIS/OIS the switch is shown but
+     * disabled with a clear "not supported" note — we never hide capability info.
+     */
+    private void showVideoStabilizationBottomSheet() {
+        boolean supported = videoStabilizationSupported;
+        boolean enabled = prefs.isVideoStabilizationEnabled();
+        final String resultKey = "picker_result_video_stabilization";
+
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
+            if (b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)) {
+                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                prefs.setVideoStabilizationEnabled(state);
+                // If the recording service is running, apply immediately.
+                try {
+                    Intent i = new Intent(Constants.INTENT_ACTION_SET_VIDEO_STABILIZATION);
+                    i.setClass(requireContext(), RecordingService.class);
+                    i.putExtra(Constants.EXTRA_VIDEO_STABILIZATION_ENABLED, state);
+                    requireContext().startService(i);
+                } catch (Exception e) {
+                    FLog.w("FadCamEIS", "UI: failed to dispatch stabilization change: " + e.getMessage());
+                }
+                refreshAllValues();
+            }
+        });
+
+        String helper = getString(R.string.video_stabilization_footer);
+        if (!supported) {
+            helper += "\n\n" + getString(R.string.setting_not_supported);
+        }
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
+                .newInstanceWithSwitch(
+                        getString(R.string.setting_video_stabilization_title),
+                        items,
+                        null,
+                        resultKey,
+                        helper,
+                        getString(R.string.setting_video_stabilization_title),
+                        enabled && supported);
+        if (!supported && sheet.getArguments() != null) {
+            // Show the switch but keep it disabled (unsupported hardware).
+            sheet.getArguments().putBoolean(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_SWITCH_ENABLED, false);
+        }
+        sheet.show(getParentFragmentManager(), "video_stabilization_picker");
+    }
+
+    /**
+     * Checks whether the currently selected camera advertises EIS (video
+     * stabilization) and/or OIS. Fully guarded — any failure (permissions,
+     * camera busy, no characteristics) is treated as "not supported" rather
+     * than crashing, and is logged for diagnosis.
+     */
+    private boolean isVideoStabilizationHardwareSupported() {
+        try {
+            CameraManager cm = (CameraManager) requireContext().getSystemService(Context.CAMERA_SERVICE);
+            if (cm == null) return false;
+
+            CameraType cam = prefs.getCameraSelection();
+            String cameraId = null;
+            if (cam == CameraType.BACK) {
+                cameraId = prefs.getSelectedBackCameraId();
+            } else {
+                for (String id : cm.getCameraIdList()) {
+                    CameraCharacteristics ch = cm.getCameraCharacteristics(id);
+                    Integer facing = ch.get(CameraCharacteristics.LENS_FACING);
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                        cameraId = id;
+                        break;
+                    }
+                }
+            }
+            if (cameraId == null) return false;
+
+            CameraCharacteristics chars = cm.getCameraCharacteristics(cameraId);
+
+            boolean eis = false;
+            int[] stabModes = chars.get(CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
+            if (stabModes != null) {
+                for (int m : stabModes) {
+                    if (m == CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON) {
+                        eis = true;
+                        break;
+                    }
+                }
+            }
+
+            boolean ois = false;
+            int[] oisModes = chars.get(CameraCharacteristics.LENS_INFO_AVAILABLE_OPTICAL_STABILIZATION);
+            if (oisModes != null) {
+                for (int m : oisModes) {
+                    if (m == CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON) {
+                        ois = true;
+                        break;
+                    }
+                }
+            }
+            FLog.i("FadCamEIS", "UI: camera=" + cameraId + " eis=" + eis + " ois=" + ois);
+            return eis || ois;
+        } catch (Exception e) {
+            FLog.w("FadCamEIS", "UI: stabilization capability check failed, treated as unsupported: "
+                    + e.getMessage());
+            return false;
+        }
     }
 
     private void bindRowHandlers(View root) {
         root.findViewById(R.id.row_camera_type).setOnClickListener(v -> showCameraBottomSheet());
+        root.findViewById(R.id.row_video_stabilization).setOnClickListener(v -> showVideoStabilizationBottomSheet());
         root.findViewById(R.id.row_lens).setOnClickListener(v -> showLensBottomSheet());
         root.findViewById(R.id.row_resolution).setOnClickListener(v -> showResolutionBottomSheet());
         root.findViewById(R.id.row_framerate).setOnClickListener(v -> showFrameRateBottomSheet());
@@ -162,6 +282,15 @@ public class VideoSettingsFragment extends Fragment {
         } else {
             valueCamera.setText(cam == CameraType.FRONT ? getString(R.string.button_settings_cam_front)
                     : getString(R.string.button_settings_cam_back));
+        }
+
+        // Video stabilization row value
+        if (valueVideoStabilization != null) {
+            valueVideoStabilization.setText(videoStabilizationSupported
+                    ? (prefs.isVideoStabilizationEnabled()
+                            ? getString(R.string.setting_enabled_msg)
+                            : getString(R.string.setting_disabled_msg))
+                    : getString(R.string.setting_not_supported));
         }
 
         // Show/hide Dual Camera Settings row and its divider

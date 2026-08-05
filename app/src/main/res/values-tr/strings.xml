@@ -1832,6 +1832,9 @@
 <string name="universal_back">Geri</string>
 <string name="audio_bitrate_recommended_line">Önerilen: 192000 bps</string>
 <string name="video_setting_location_embed_title">Konum Metaverisini Göm</string>
+<string name="setting_video_stabilization_title">Video sabitleme</string>
+<string name="setting_not_supported">Bu cihazda desteklenmiyor</string>
+<string name="video_stabilization_footer">Elektronik (EIS) ve optik (OIS) sabitleme ile el titremesini dengeleyerek videolarınızı sabit tutar. Bunun için çerçevenin küçük bir kısmı kırpılır.</string>
 <string name="video_setting_location_embed_enabled">Etkin</string>
 <string name="video_setting_location_embed_disabled">Devre Dışı</string>
 <string name="delete_video_dialog_title">Video Silinsin mi?</string>

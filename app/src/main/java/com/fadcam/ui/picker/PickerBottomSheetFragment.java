@@ -38,6 +38,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     public static final String ARG_SWITCH_PRESENT = "switch_present";
     public static final String ARG_SWITCH_TITLE = "switch_title";
     public static final String ARG_SWITCH_STATE = "switch_state";
+    /** Whether the sheet's switch is interactive (false = shown but disabled). */
+    public static final String ARG_SWITCH_ENABLED = "switch_enabled";
     public static final String BUNDLE_SWITCH_STATE = "switch_state";
     public static final String ARG_SWITCH_DEPENDENT_IDS =
         "switch_dependent_ids"; // ArrayList<String> of option ids disabled when switch is off
@@ -143,6 +145,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             f.getArguments().putBoolean(ARG_SWITCH_PRESENT, true);
             f.getArguments().putString(ARG_SWITCH_TITLE, switchTitle);
             f.getArguments().putBoolean(ARG_SWITCH_STATE, switchState);
+            f.getArguments().putBoolean(ARG_SWITCH_ENABLED, true);
         }
         return f;
     }
@@ -837,11 +840,15 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 if (switchDivider != null && !items.isEmpty()) switchDivider.setVisibility(View.VISIBLE);
                 switchLabel.setText(switchTitle);
                 swc.setChecked(switchState);
+                boolean swEnabled = getArguments().getBoolean(ARG_SWITCH_ENABLED, true);
+                swc.setEnabled(swEnabled);
+                swc.setAlpha(swEnabled ? 1f : 0.4f);
                 applyThemedSwitchColors(swc);
                 switchRef = swc;
 
                 // Ensure row click triggers the switch's native toggle (keeps internal animations + accessibility)
                 switchRow.setOnClickListener(v -> {
+                    if (!swc.isEnabled()) return; // shown-but-disabled (e.g. unsupported hardware)
                     FLog.d("PickerBottomSheet", "Row clicked -> performing switch click (prev state=" + swc.isChecked() + ")");
                     swc.performClick();
                 });

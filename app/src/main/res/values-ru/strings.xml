@@ -697,6 +697,9 @@
     <string name="helper_location_watermark">Добавляет наложение текста с местоположением в реальном времени во время записи.</string>
     <string name="helper_location_embed">Встраивает GPS-координаты в метаданные видео (геотег).</string>
     <string name="video_setting_location_embed_title">Встроить метаданные местоположения</string>
+    <string name="setting_video_stabilization_title">Стабилизация видео</string>
+    <string name="setting_not_supported">Не поддерживается на этом устройстве</string>
+    <string name="video_stabilization_footer">Делает видео стабильным, компенсируя дрожание рук электронной (EIS) и оптической (OIS) стабилизацией. Для этого кадр слегка обрезается.</string>
     <string name="video_setting_location_embed_enabled">Включено</string>
     <string name="video_setting_location_embed_disabled">Отключено</string>
     <string name="helper_watermark_option">Выберите содержимое наложения: временная метка + бренд, только временная метка или ничего.</string>

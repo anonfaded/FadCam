@@ -1240,6 +1240,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="helper_location_watermark">Menambahkan overlay teks lokasi langsung saat merekam.</string>
     <string name="helper_location_embed">Menyematkan koordinat GPS ke dalam metadata video (geotag).</string>
     <string name="video_setting_location_embed_title">Sematkan Metadata Lokasi</string>
+    <string name="setting_video_stabilization_title">Stabilisasi video</string>
+    <string name="setting_not_supported">Tidak didukung di perangkat ini</string>
+    <string name="video_stabilization_footer">Menjaga rekaman video tetap stabil dengan mengimbangi getaran tangan melalui stabilisasi elektronik (EIS) dan optik (OIS). Sebagian kecil bingkai dipotong untuk mencapai hal ini.</string>
     <string name="video_setting_location_embed_enabled">Diaktifkan</string>
     <string name="video_setting_location_embed_disabled">Dinonaktifkan</string>
     <string name="helper_watermark_option">Pilih konten overlay: stempel waktu + merek, stempel waktu saja, atau tidak ada.</string>

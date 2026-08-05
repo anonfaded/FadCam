@@ -1185,6 +1185,9 @@
     <string name="helper_location_watermark">Sovrapponi coordinate GPS o indirizzo come filigrana nel video.</string>
     <string name="helper_location_embed">Incorpora le coordinate GPS nei metadati del file video per visualizzazione in app galleria.</string>
     <string name="video_setting_location_embed_title">Incorpora posizione</string>
+    <string name="setting_video_stabilization_title">Stabilizzazione video</string>
+    <string name="setting_not_supported">Non supportato su questo dispositivo</string>
+    <string name="video_stabilization_footer">Mantiene stabili i tuoi video compensando il tremolio della mano con la stabilizzazione elettronica (EIS) e ottica (OIS). Per ottenerlo viene ritagliata una piccola parte dell\'inquadratura.</string>
     <string name="video_setting_location_embed_enabled">Abilitato</string>
     <string name="video_setting_location_embed_disabled">Disabilitato</string>
     <string name="helper_watermark_option">Scegli lo stile della filigrana per i tuoi video.</string>
