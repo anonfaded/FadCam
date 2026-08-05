@@ -20,6 +20,8 @@ public class MotionStateMachine {
     private long pendingSinceMs = -1L;
     private long pendingLastTriggeredAtMs = -1L;
     private long postRollUntilMs = -1L;
+    private long postRollTriggeredSinceMs = -1L; // debounce POST_ROLL → RECORDING
+    private long recordingLossSinceMs = -1L;     // debounce RECORDING → POST_ROLL
     private long recordingStartedAtMs = -1L;
     private long cooldownUntilMs = -1L;
 
@@ -64,18 +66,38 @@ public class MotionStateMachine {
 
             case RECORDING:
                 if (triggered) {
+                    recordingLossSinceMs = -1L;
+                    return TransitionAction.NONE;
+                }
+                // Apply debounce to RECORDING → POST_ROLL so a brief motion dip
+                // (single-frame noise) does not start the pause cascade.
+                if (recordingLossSinceMs < 0) {
+                    recordingLossSinceMs = signal.getTimestampMs();
+                }
+                if (signal.getTimestampMs() - recordingLossSinceMs < settings.getDebounceMs()) {
                     return TransitionAction.NONE;
                 }
                 state = MotionSessionState.POST_ROLL;
                 postRollUntilMs = signal.getTimestampMs() + settings.getPostRollMs();
+                recordingLossSinceMs = -1L;
                 return TransitionAction.NONE;
 
             case POST_ROLL:
                 if (triggered) {
-                    state = MotionSessionState.RECORDING;
-                    postRollUntilMs = -1L;
+                    // Apply debounceMs to POST_ROLL → RECORDING to prevent rapid
+                    // state toggling from brief motion false-positives while recording
+                    // is paused.
+                    if (postRollTriggeredSinceMs < 0) {
+                        postRollTriggeredSinceMs = signal.getTimestampMs();
+                    }
+                    if (signal.getTimestampMs() - postRollTriggeredSinceMs >= settings.getDebounceMs()) {
+                        state = MotionSessionState.RECORDING;
+                        postRollUntilMs = -1L;
+                        postRollTriggeredSinceMs = -1L;
+                    }
                     return TransitionAction.NONE;
                 }
+                postRollTriggeredSinceMs = -1L;
                 if (postRollUntilMs > 0 && signal.getTimestampMs() >= postRollUntilMs) {
                     if (recordingStartedAtMs > 0
                             && signal.getTimestampMs() - recordingStartedAtMs < DEFAULT_MIN_CLIP_MS) {
@@ -98,6 +120,8 @@ public class MotionStateMachine {
         pendingSinceMs = -1L;
         pendingLastTriggeredAtMs = -1L;
         postRollUntilMs = -1L;
+        postRollTriggeredSinceMs = -1L;
+        recordingLossSinceMs = -1L;
         recordingStartedAtMs = -1L;
     }
 }

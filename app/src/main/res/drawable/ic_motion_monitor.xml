@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Motion monitoring / detection icon: three activity bars + scan arc -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Scan arc (top) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,2C6.48,2 2,6.48 2,12h2c0,-4.41 3.59,-8 8,-8s8,3.59 8,8h2c0,-5.52 -4.48,-10 -10,-10z" />
+    <!-- Activity bar 1 (short) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M5,20v-4l2,-2l2,2v4H5z" />
+    <!-- Activity bar 2 (medium) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,20v-7l2,-3l2,3v7H10z" />
+    <!-- Activity bar 3 (tall) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15,20v-5l2,-2l2,2v5H15z" />
+</vector>

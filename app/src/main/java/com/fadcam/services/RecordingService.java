@@ -2539,11 +2539,6 @@ public class RecordingService extends Service {
         if (!motionLabEnabledForSession) {
             return;
         }
-        // Keep combination safe for first rollout.
-        if (targetFrameRate >= 60) {
-            disableMotionLabForSession("unsupported_high_fps_" + targetFrameRate);
-            return;
-        }
         Surface surface = getOrCreateMotionAnalysisSurface();
         if (surface != null) {
             surfaces.add(surface);
@@ -2578,9 +2573,16 @@ public class RecordingService extends Service {
             Size selected = sharedPreferencesManager != null
                     ? sharedPreferencesManager.getCameraResolution()
                     : Constants.DEFAULT_VIDEO_RESOLUTION;
-            int divisor = motionSafeMode ? 6 : (motionOpenCvActive ? 1 : 2);
-            int maxWidth = motionSafeMode ? 192 : (motionOpenCvActive ? 1280 : 640);
-            int maxHeight = motionSafeMode ? 108 : (motionOpenCvActive ? 720 : 360);
+            // Scale divisor with recording resolution: MOG2 and EfficientDet both work
+            // fine at lower resolutions, but the camera ISP has to produce YUV frames
+            // for the analysis surface, which can starve the encoder at high res+fps.
+            int recordingHeight = selected.getHeight();
+            int divisor = motionSafeMode ? 6
+                    : (motionOpenCvActive
+                        ? (recordingHeight >= 2160 ? 4 : (recordingHeight >= 1080 ? 3 : 1))
+                        : 2);
+            int maxWidth = motionSafeMode ? 192 : (motionOpenCvActive ? 640 : 640);
+            int maxHeight = motionSafeMode ? 108 : (motionOpenCvActive ? 360 : 360);
             int width = Math.max(96, Math.min(maxWidth, selected.getWidth() / divisor));
             int height = Math.max(54, Math.min(maxHeight, selected.getHeight() / divisor));
             boolean recreate = motionAnalysisReader == null
@@ -2597,7 +2599,16 @@ public class RecordingService extends Service {
                             return;
                         }
                         long now = SystemClock.elapsedRealtime();
-                        if (now - lastMotionAnalysisTimestampMs < motionAnalysisIntervalMs) {
+                        // When the motion state has been IDLE (no motion for a while), throttle analysis
+                        // to 1 fps to save power and reduce heat.  Cameras with a third output surface
+                        // (analysis YUV) keep the ISP active even when nothing is recording.
+                        long effectiveIntervalMs = motionAnalysisIntervalMs;
+                        if (motionStateMachine != null
+                                && motionStateMachine.getState() == com.fadcam.motion.domain.state.MotionSessionState.IDLE
+                                && recordingState == RecordingState.PAUSED) {
+                            effectiveIntervalMs = Math.max(effectiveIntervalMs, 1000L);
+                        }
+                        if (now - lastMotionAnalysisTimestampMs < effectiveIntervalMs) {
                             return;
                         }
                         lastMotionAnalysisTimestampMs = now;
@@ -2695,7 +2706,8 @@ public class RecordingService extends Service {
         if (motionStateMachine != null && sharedPreferencesManager != null) {
             com.fadcam.motion.domain.model.MotionSettings settings = new com.fadcam.motion.domain.model.MotionSettings(
                     sharedPreferencesManager.isMotionModeEnabled(),
-                    com.fadcam.motion.domain.model.MotionTriggerMode.ANY_MOTION,
+                    com.fadcam.motion.domain.model.MotionTriggerMode.fromValue(
+                            sharedPreferencesManager.getMotionTriggerMode()),
                     sharedPreferencesManager.getMotionSensitivity(),
                     sharedPreferencesManager.getMotionAnalysisFps(),
                     sharedPreferencesManager.getMotionDebounceMs(),
@@ -3026,7 +3038,8 @@ public class RecordingService extends Service {
         if (watermarkText == null) {
             watermarkText = "";
         }
-        watermarkText = watermarkText.replace("\n", " ").replace("\r", " ").replace("||wm||", " ");
+        // Only sanitize the separator token; preserve newlines for proper watermark layout
+        watermarkText = watermarkText.replace("||wm||", " ");
 
         return "__DF_OVERLAY__:" + payload
                 + "||wm||" + watermarkText;
@@ -3220,6 +3233,7 @@ public class RecordingService extends Service {
         if (frameJpeg != null && frameJpeg.length > 0) {
             debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG, frameJpeg);
         }
+        debugIntent.setPackage(getPackageName());
         sendBroadcast(debugIntent);
     }
 
@@ -3267,7 +3281,11 @@ public class RecordingService extends Service {
         if (!shouldEmitDebugFrame) {
             return false;
         }
-        return sharedPreferencesManager != null && sharedPreferencesManager.isMotionDebugUiActive();
+        // Always encode the JPEG when a debug broadcast is due; the broadcast receiver
+        // is only registered while MotionLabSettingsFragment is on-screen, so the
+        // frame data is only consumed when the UI is visible.  The 900 ms throttle
+        // in maybeBroadcastMotionDebug already bounds encoding frequency.
+        return sharedPreferencesManager != null;
     }
 
     private int getCurrentSensorOrientationDegrees() {
