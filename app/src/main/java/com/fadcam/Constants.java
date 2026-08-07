@@ -403,6 +403,8 @@ public abstract class Constants {
     // Video stabilization (EIS/OIS) — default ON
     public static final String PREF_VIDEO_STABILIZATION_ENABLED =
         "pref_video_stabilization_enabled";
+    // Raw (unprocessed) audio capture — OFF by default (platform-processed CAMCORDER)
+    public static final String PREF_RAW_AUDIO_ENABLED = "pref_raw_audio_enabled";
     /** Pan offset Y for zoom: float -1.0 (full top) to +1.0 (full bottom), 0.0 = centre */
     public static final String EXTRA_PAN_Y = "com.fadcam.EXTRA_PAN_Y"; // float
     public static final String INTENT_ACTION_PAUSE_RECORDING =

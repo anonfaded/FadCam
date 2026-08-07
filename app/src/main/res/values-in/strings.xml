@@ -754,7 +754,8 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="row_orientation_title">Orientasi</string>
     <string name="row_record_audio_title">Rekam Audio</string>
     <string name="row_input_source_title">Sumber Input</string>
-    <string name="row_noise_suppression_title">Peredam Kebisingan</string>
+    <string name="row_raw_audio_title">Audio mentah</string>
+    <string name="raw_audio_banner">Audio mentah sepenuhnya tidak tersedia di perangkat ini</string>
     <string name="settings_location_watermark_title">Tanda Air Lokasi</string>
     <string name="delete_all_videos_title">Hapus semua Video</string>
     <string name="delete_all_videos_description">Apakah kamu yakin mau menghapus semua video?</string>
@@ -1225,7 +1226,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Helper subtitles for new Audio rows -->
     <string name="helper_record_audio">Aktifkan/nonaktifkan pengambilan audio mikrofon dalam video.</string>
     <string name="helper_audio_input_source">Pilih mikrofon/input yang terhubung untuk digunakan.</string>
-    <string name="helper_noise_suppression">Filter eksperimental untuk mengurangi kebisingan latar belakang.</string>
+    <string name="helper_raw_audio">Merekam suara mentah mikrofon tanpa pengurangan kebisingan dan penyeimbangan volume otomatis ponsel. Bagus jika Anda berencana menyunting audio sendiri nanti. Berlaku untuk rekaman baru.</string>
     <string name="helper_audio_advanced">Kustomisasi bitrate &amp; sampling rate untuk keseimbangan kualitas/ukuran.</string>
     <string name="helper_audio_bitrate_detail">Disarankan: 192000 bps untuk stereo berkualitas tinggi. Nilai yang lebih rendah mengurangi ukuran file tetapi dapat mengurangi kejernihan. Rentang 64000–384000 bps.</string>
     <string name="helper_audio_sampling_detail">Pilih 48000 Hz untuk video (disarankan) atau 44100 Hz untuk kompatibilitas audio umum.</string>
@@ -1882,7 +1883,7 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="camera_error_service">Kesalahan layanan kamera</string>
     <string name="camera_error_unknown">Kesalahan kamera tidak diketahui</string>
     <string name="camera_resources_cooldown">Harap tunggu sebentar sebelum memulai perekaman baru</string>
-    <string name="dialog_audio_noise_suppression_label">Penekanan Kebisingan</string>
+    <string name="raw_audio_unprocessed_note">Audio mentah sepenuhnya tidak tersedia di perangkat ini. Sebagai gantinya digunakan mode mikrofon pengenalan suara (VOICE_RECOGNITION), yang menonaktifkan sebagian besar pemrosesan — perbedaannya dari rekaman normal mungkin halus.</string>
     <!-- duplicate removed: row_record_audio_title already defined above -->
 
     <string name="fix_video_menu_title">Perbaiki Video (Perbaiki Pemutaran)</string>

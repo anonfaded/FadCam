@@ -474,7 +474,7 @@
     <string name="video_menu_upload_drive">تحميل على Google Drive</string>
     <string name="toast_no_youtube_app">لم يتم العثور على تطبيق YouTube</string>
     <string name="toast_no_drive_app">لم يتم العثور على تطبيق Google Drive</string>
-    <string name="dialog_audio_noise_suppression_label">تثبيط الضوضاء</string>
+    <string name="raw_audio_unprocessed_note">الصوت الخام بالكامل غير متاح على هذا الجهاز. يُستخدم بدلاً منه وضع ميكروفون التعرف على الصوت (VOICE_RECOGNITION)، الذي يعطّل معظم المعالجة — قد يكون الفرق عن التسجيل العادي طفيفًا.</string>
     <string name="fix_video_menu_title">إصلاح الفيديو (إصلاح التشغيل)</string>
     <string name="fix_video_repairing">جاري الإصلاح… قد يستغرق ذلك بضع ثوانٍ.</string>
     <string name="fix_video_success">تم إصلاح الفيديو! تم الحفظ باسم: %1$s</string>
@@ -1555,7 +1555,8 @@
 
     <string name="row_input_source_title">مصدر الإدخال</string>
 
-    <string name="row_noise_suppression_title">تثبيط الضوضاء</string>
+    <string name="row_raw_audio_title">صوت خام</string>
+    <string name="raw_audio_banner">الصوت الخام بالكامل غير متاح على هذا الجهاز</string>
 
     <string name="settings_location_watermark_title">علامة الموقع المائية</string>
 
@@ -2322,7 +2323,7 @@
 
     <string name="helper_audio_input_source">اختر أي ميكروفون/مدخل متصل لاستخدامه.</string>
 
-    <string name="helper_noise_suppression">فلتر تجريبي لتقليل الضوضاء الخلفية.</string>
+    <string name="helper_raw_audio">يلتقط الصوت الخام من الميكروفون دون تقليل الضوضاء وموازنة الصوت التلقائيين من الهاتف. مثالي إذا كنت تخطط لتحرير الصوت بنفسك لاحقًا. يسري على التسجيلات الجديدة.</string>
 
     <string name="helper_audio_advanced">تخصيص معدل البت ومعدل أخذ العينات لتوازن الجودة/الحجم.</string>
 

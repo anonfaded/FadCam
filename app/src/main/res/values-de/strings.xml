@@ -653,7 +653,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="camera_error_service">Kameradienstfehler</string>
     <string name="camera_error_unknown">Unbekannter Kamerafehler</string>
     <string name="camera_resources_cooldown">Bitte warte einen Moment, bevor du eine neue Aufnahme startest</string>
-    <string name="dialog_audio_noise_suppression_label">Rauschunterdrückung</string>
+    <string name="raw_audio_unprocessed_note">Vollständig unverarbeitetes Audio ist auf diesem Gerät nicht verfügbar. Es wird stattdessen der Mikrofonmodus zur Spracherkennung (VOICE_RECOGNITION) verwendet, der die meiste Verarbeitung deaktiviert — der Unterschied zur normalen Aufnahme kann dezent sein.</string>
     <string name="fix_video_menu_title">Video reparieren (Wiedergabe wiederherstellen)</string>
     <string name="fix_video_repairing">Repariere... Dies kann einige Sekunden dauern.</string>
     <string name="fix_video_success">Video repariert! Gespeichert als: %1$s</string>
@@ -1168,7 +1168,8 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="row_orientation_title">Ausrichtung</string>
     <string name="row_record_audio_title">Audio aufnehmen</string>
     <string name="row_input_source_title">Eingabequelle</string>
-    <string name="row_noise_suppression_title">Rauschunterdrückung</string>
+    <string name="row_raw_audio_title">Rohes Audio</string>
+    <string name="raw_audio_banner">Vollständig unverarbeitetes Audio ist auf diesem Gerät nicht verfügbar</string>
     <string name="settings_location_watermark_title">Standort-Wasserzeichen</string>
     <string name="delete_single_video_subtitle">Diese Aufnahme entfernen</string>
     <string name="note_debug_detailed">Wenn aktiviert, schreibt FadCam eine Debug-Protokoll-HTML-Datei (FADCAM_debug.html) im öffentlichen Ordner Downloads/FadCam/. Teile diese Datei beim Melden von Problemen. Deaktivieren, um zukünftige Schreibvorgänge zu stoppen.\nHinweis: Debug-Protokollierung kann während der Aufnahme Performance-Overhead hinzufügen – deaktiviert lassen, außer zur Fehlersuche.</string>
@@ -1735,7 +1736,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="helper_audio_sampling_recommended">Empfohlen: 48000 Hz</string>
     <string name="helper_location_embed">Bettet GPS-Koordinaten in Video-Metadaten ein (Geotag).</string>
     <string name="helper_location_watermark">Fügt während der Aufnahme einen Live-Standorttext-Overlay hinzu.</string>
-    <string name="helper_noise_suppression">Experimenteller Filter zur Reduzierung von Hintergrundgeräuschen.</string>
+    <string name="helper_raw_audio">Zeichnet den Rohklang des Mikrofons ohne automatische Rauschunterdrückung und Lautstärkeanpassung des Telefons auf. Ideal, wenn du den Ton später selbst bearbeiten möchtest. Gilt für neue Aufnahmen.</string>
     <string name="helper_record_audio">Schaltet die Mikrofon-Audioaufnahme in Videos um.</string>
     <string name="helper_watermark_option">Wähle Overlay-Inhalt: Zeitstempel + Marke, nur Zeitstempel oder keines.</string>
     <string name="home_sidebar_discord">Discord</string>

@@ -750,7 +750,8 @@
     <string name="row_orientation_title">Orientation</string>
     <string name="row_record_audio_title">Record Audio</string>
     <string name="row_input_source_title">Input Source</string>
-    <string name="row_noise_suppression_title">Noise Suppression</string>
+    <string name="row_raw_audio_title">Raw audio</string>
+    <string name="raw_audio_banner">Fully raw audio isn\'t available on this device</string>
     <string name="settings_location_watermark_title">Location Watermark</string>
     <string name="delete_all_videos_title">Delete All Videos</string>
     <string name="delete_all_videos_description">Are you sure you want to delete all videos?</string>
@@ -1222,7 +1223,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Helper subtitles for new Audio rows -->
     <string name="helper_record_audio">Toggle capturing microphone audio in videos.</string>
     <string name="helper_audio_input_source">Select which connected microphone/input to use.</string>
-    <string name="helper_noise_suppression">Experimental filter to reduce background noise.</string>
+    <string name="helper_raw_audio">Captures the mic\'s raw sound without the phone\'s automatic noise reduction and volume balancing. Great if you plan to edit the audio yourself later. Takes effect on new recordings.</string>
     <string name="helper_audio_advanced">Customize bitrate &amp; sampling rate for quality/size balance.</string>
     <string name="helper_audio_bitrate_detail">Recommended: 192000 bps for high-quality stereo. Lower values reduce file size but may reduce clarity. Range 64000–384000 bps.</string>
     <string name="helper_audio_sampling_detail">Select 48000 Hz for video (recommended) or 44100 Hz for general audio compatibility.</string>
@@ -1874,7 +1875,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="camera_error_service">Camera service error</string>
     <string name="camera_error_unknown">Unknown camera error</string>
     <string name="camera_resources_cooldown">Please wait a moment before starting a new recording</string>
-    <string name="dialog_audio_noise_suppression_label">Noise Suppression</string>
+    <string name="raw_audio_unprocessed_note">Fully raw audio isn\'t available on this device. Recording falls back to the voice-recognition microphone mode (VOICE_RECOGNITION), which disables most processing — the difference from normal recording may be subtle.</string>
     <!-- duplicate removed: row_record_audio_title already defined above -->
 
     <string name="fix_video_menu_title">Fix Video (Repair Playback)</string>

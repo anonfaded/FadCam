@@ -480,7 +480,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="video_menu_upload_drive">Importer sur Google Drive</string>
     <string name="toast_no_youtube_app">Application YouTube introuvable</string>
     <string name="toast_no_drive_app">Application Google Drive introuvable</string>
-    <string name="dialog_audio_noise_suppression_label">Suppression du bruit</string>
+    <string name="raw_audio_unprocessed_note">L\'audio entièrement brut n\'est pas disponible sur cet appareil. Un mode micro de reconnaissance vocale (VOICE_RECOGNITION) est utilisé à la place, qui désactive la majeure partie du traitement — la différence avec l\'enregistrement normal peut être subtile.</string>
     <string name="fix_video_menu_title">Réparer la vidéo (Lecture)</string>
     <string name="fix_video_repairing">Réparation… Cela peut prendre quelques secondes.</string>
     <string name="fix_video_success">Vidéo réparée ! Enregistrée sous : %1$s</string>
@@ -1527,7 +1527,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="row_input_source_title">Input Source</string>
 
-<string name="row_noise_suppression_title">Noise Suppression</string>
+<string name="row_raw_audio_title">Audio brut</string>
+<string name="raw_audio_banner">L\'audio entièrement brut n\'est pas disponible sur cet appareil</string>
 
 <string name="settings_location_watermark_title">Location Watermark</string>
 
@@ -2276,7 +2277,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="helper_audio_input_source">Select which connected microphone/input to use.</string>
 
-<string name="helper_noise_suppression">Experimental filter to reduce background noise.</string>
+<string name="helper_raw_audio">Capture le son brut du micro, sans la réduction de bruit ni l\'équilibrage du volume automatiques du téléphone. Idéal si vous comptez éditer le son vous-même plus tard. S\'applique aux nouveaux enregistrements.</string>
 
 <string name="helper_audio_advanced">Customize bitrate &amp; sampling rate for quality/size balance.</string>
 

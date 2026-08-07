@@ -279,7 +279,7 @@
     <string name="dialog_audio_invalid_sampling_rate">采样率无效。请输入44100或48000。</string>
     <string name="dialog_audio_settings_summary">配置音频比特率和采样率以获得最佳质量。默认值：192000 bps，48000 Hz，立体声。</string>
     <string name="dialog_audio_info_text">• 比特率 (bps) 控制音频质量和文件大小。较高的值意味着更好的质量但文件更大。192000对大多数用途来说是一个很好的默认值。\n• 采样率 (Hz) 是每秒捕获音频的次数。48000 Hz是视频的标准，44100 Hz是音频常用的。\n推荐大多数用户使用：192000 bps，48000 Hz。</string>
-    <string name="dialog_audio_noise_suppression_label">降噪</string>
+    <string name="raw_audio_unprocessed_note">此设备无法提供完全原始的音频。将改用语音识别麦克风模式（VOICE_RECOGNITION），该模式会禁用大部分处理 — 与普通录音的差异可能很细微。</string>
     <!-- Debug Settings -->
     <string name="setting_debug_title">调试日志</string>
     <string name="note_debug">启用调试日志文件生成\n(默认: 已禁用)</string>
@@ -564,7 +564,8 @@
     <string name="row_orientation_title">方向</string>
     <string name="row_record_audio_title">录音</string>
     <string name="row_input_source_title">输入源</string>
-    <string name="row_noise_suppression_title">降噪</string>
+    <string name="row_raw_audio_title">原始音频</string>
+    <string name="raw_audio_banner">此设备无法提供完全原始的音频</string>
     <string name="settings_location_watermark_title">位置水印</string>
     <string name="delete_single_video_subtitle">删除此文件</string>
     <string name="torch_select_source">选择手电筒来源:</string>
@@ -728,7 +729,7 @@
     <string name="faditor_mini_toast">Faditor Mini—— 即将到来</string>
     <string name="helper_record_audio">切换视频中是否录制麦克风音频。</string>
     <string name="helper_audio_input_source">选择要使用的已连接麦克风/输入源。</string>
-    <string name="helper_noise_suppression">实验性滤镜，用于降低背景噪音。</string>
+    <string name="helper_raw_audio">录制麦克风的原始声音，不使用手机的自动降噪和音量平衡。如果您计划之后自己编辑音频，这非常合适。适用于新录音。</string>
     <string name="helper_audio_sampling_detail">视频录制建议选择 48000 Hz；为保证通用音频兼容性，可选择 44100 Hz。</string>
     <string name="helper_audio_sampling_recommended">推荐值：48000 Hz</string>
     <string name="universal_reset">重置</string>

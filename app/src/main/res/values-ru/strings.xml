@@ -403,7 +403,8 @@
     <string name="row_orientation_title">Ориентация</string>
     <string name="row_record_audio_title">Записывать аудио</string>
     <string name="row_input_source_title">Источник входа</string>
-    <string name="row_noise_suppression_title">Подавление шума</string>
+    <string name="row_raw_audio_title">Сырой звук</string>
+    <string name="raw_audio_banner">Полностью сырой звук недоступен на этом устройстве</string>
     <string name="settings_location_watermark_title">Водяной знак местоположения</string>
     <string name="delete_all_videos_title">Удалить все видео</string>
     <string name="delete_all_videos_description">Вы уверены, что хотите удалить все видео?</string>
@@ -682,7 +683,7 @@
     <!-- Helper subtitles for new Audio rows -->
     <string name="helper_record_audio">Переключить захват микрофонного аудио в видео.</string>
     <string name="helper_audio_input_source">Выберите, какой подключённый микрофон/вход использовать.</string>
-    <string name="helper_noise_suppression">Экспериментальный фильтр для уменьшения фонового шума.</string>
+    <string name="helper_raw_audio">Записывает сырой звук микрофона без автоматического подавления шума и балансировки громкости телефона. Отлично подходит, если вы планируете редактировать звук самостоятельно. Применяется к новым записям.</string>
     <string name="helper_audio_advanced">Настроить битрейт и частоту дискретизации для баланса качества/размера.</string>
     <string name="helper_audio_bitrate_detail">Рекомендуется: 192000 бит/с для высококачественного стерео. Более низкие значения уменьшают размер файла, но могут снизить ясность. Диапазон 64000–384000 бит/с.</string>
     <string name="helper_audio_sampling_detail">Выберите 48000 Гц для видео (рекомендуется) или 44100 Гц для общей совместимости аудио.</string>
@@ -1144,7 +1145,7 @@
     <string name="camera_error_service">Ошибка службы камеры</string>
     <string name="camera_error_unknown">Неизвестная ошибка камеры</string>
     <string name="camera_resources_cooldown">Пожалуйста, подождите немного перед началом новой записи</string>
-    <string name="dialog_audio_noise_suppression_label">Подавление шума</string>
+    <string name="raw_audio_unprocessed_note">Полностью сырой звук недоступен на этом устройстве. Вместо этого используется режим микрофона для распознавания речи (VOICE_RECOGNITION), отключающий большую часть обработки — разница с обычной записью может быть едва заметной.</string>
     <!-- duplicate removed: row_record_audio_title already defined above -->
 
     <string name="fix_video_menu_title">Исправить видео (Восстановить воспроизведение)</string>

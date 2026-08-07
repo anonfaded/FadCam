@@ -751,7 +751,8 @@
     <string name="row_orientation_title">Orientamento</string>
     <string name="row_record_audio_title">Registra audio</string>
     <string name="row_input_source_title">Sorgente ingresso</string>
-    <string name="row_noise_suppression_title">Riduzione rumore</string>
+    <string name="row_raw_audio_title">Audio grezzo</string>
+    <string name="raw_audio_banner">L\'audio completamente grezzo non è disponibile su questo dispositivo</string>
     <string name="settings_location_watermark_title">Filigrana posizione</string>
     <string name="delete_all_videos_title">Elimina tutti i video</string>
     <string name="delete_all_videos_description">Sei sicuro di voler eliminare tutti i video?</string>
@@ -1171,7 +1172,7 @@
     <string name="dialog_audio_info_text">Le impostazioni audio personalizzate ti permettono di controllare bitrate e frequenza di campionamento dell\'audio registrato.</string>
     <string name="helper_record_audio">Abilita o disabilita la registrazione audio.</string>
     <string name="helper_audio_input_source">Scegli la sorgente del segnale audio per la registrazione.</string>
-    <string name="helper_noise_suppression">Riduce il rumore di fondo durante la registrazione.</string>
+    <string name="helper_raw_audio">Cattura il suono grezzo del microfono senza la riduzione del rumore e il bilanciamento del volume automatici del telefono. Ideale se pensi di modificare l\'audio da solo in seguito. Si applica alle nuove registrazioni.</string>
     <string name="helper_audio_advanced">Regola bitrate e frequenza di campionamento per la registrazione audio.</string>
     <string name="helper_audio_bitrate_detail">Valori più alti = migliore qualità audio ma file più grandi.</string>
     <string name="helper_audio_sampling_detail">Valori più alti catturano frequenze più alte ma aumentano la dimensione del file.</string>
@@ -1696,7 +1697,7 @@
     <string name="camera_error_service">Errore servizio fotocamera</string>
     <string name="camera_error_unknown">Errore fotocamera sconosciuto</string>
     <string name="camera_resources_cooldown">Attendi prima di avviare</string>
-    <string name="dialog_audio_noise_suppression_label">Riduzione rumore</string>
+    <string name="raw_audio_unprocessed_note">L\'audio completamente grezzo non è disponibile su questo dispositivo. Viene usata la modalità microfono per riconoscimento vocale (VOICE_RECOGNITION), che disattiva la maggior parte dell\'elaborazione — la differenza rispetto alla registrazione normale può essere sottile.</string>
     <string name="fix_video_menu_title">Ripara video</string>
     <string name="fix_video_repairing">Riparazione in corso...</string>
     <string name="fix_video_success">Video riparato! Salvato come: %1$s</string>

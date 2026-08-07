@@ -184,6 +184,10 @@ public class VideoSettingsFragment extends Fragment {
             // Show the switch but keep it disabled (unsupported hardware).
             sheet.getArguments().putBoolean(
                     com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_SWITCH_ENABLED, false);
+            // Clear warning banner so users see the limitation immediately.
+            sheet.getArguments().putString(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_BANNER_TEXT,
+                    getString(R.string.setting_not_supported));
         }
         sheet.show(getParentFragmentManager(), "video_stabilization_picker");
     }
@@ -487,12 +491,19 @@ public class VideoSettingsFragment extends Fragment {
         });
         String helper = getString(R.string.note_cam_sele);
         // Append dual camera unsupported note if device doesn't support it
-        if (!dualCap.isSupported()) {
+        boolean dualCamUnsupported = !dualCap.isSupported();
+        if (dualCamUnsupported) {
             helper += "\n\n" + getString(R.string.note_cam_dual_unsupported);
         }
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstance(
                         getString(R.string.setting_cam_title), items, current.toString(), resultKey, helper);
+        if (dualCamUnsupported && sheet.getArguments() != null) {
+            // Clear warning banner so users see immediately that dual camera is unavailable.
+            sheet.getArguments().putString(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_BANNER_TEXT,
+                    getString(R.string.dual_cam_banner_unsupported));
+        }
         sheet.show(getParentFragmentManager(), "camera_picker");
     }
 

@@ -371,6 +371,26 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    /**
+     * Whether raw (unprocessed) audio capture is requested. Defaults to OFF,
+     * which uses the platform-processed CAMCORDER source (built-in noise
+     * suppression + AGC). When ON the pipeline records the unprocessed
+     * microphone signal (UNPROCESSED, falling back to VOICE_RECOGNITION).
+     */
+    public boolean isRawAudioEnabled() {
+        return sharedPreferences.getBoolean(
+            Constants.PREF_RAW_AUDIO_ENABLED,
+            false
+        );
+    }
+
+    public void setRawAudioEnabled(boolean enabled) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_RAW_AUDIO_ENABLED, enabled)
+            .apply();
+    }
+
     public Size getCameraResolution() {
         return new Size(
             sharedPreferences.getInt(
@@ -1955,20 +1975,6 @@ public class SharedPreferencesManager {
 
     public static final String PREF_AUDIO_NOISE_SUPPRESSION =
         "audio_noise_suppression";
-
-    public boolean isNoiseSuppressionEnabled() {
-        return sharedPreferences.getBoolean(
-            PREF_AUDIO_NOISE_SUPPRESSION,
-            false
-        );
-    }
-
-    public void setNoiseSuppressionEnabled(boolean enabled) {
-        sharedPreferences
-            .edit()
-            .putBoolean(PREF_AUDIO_NOISE_SUPPRESSION, enabled)
-            .apply();
-    }
 
     /**
      * Returns the current video bitrate in bps, using custom or default as set in

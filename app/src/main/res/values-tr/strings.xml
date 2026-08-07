@@ -541,7 +541,7 @@
     <string name="video_menu_upload_drive">Google Drive\'a yükle</string>
     <string name="toast_no_youtube_app">YouTube uygulaması bulunamadı</string>
     <string name="toast_no_drive_app">Google Drive uygulaması bulunamadı</string>
-    <string name="dialog_audio_noise_suppression_label">Gürültü Bastırma</string>
+    <string name="raw_audio_unprocessed_note">Tamamen ham ses bu cihazda mevcut değil. Bunun yerine işlemenin çoğunu devre dışı bırakan ses tanıma mikrofon modu (VOICE_RECOGNITION) kullanılır — normal kayıttan fark ince olabilir.</string>
     <string name="fix_video_menu_title">Videoyu Düzelt (Oynatmayı Onar)</string>
     <string name="fix_video_repairing">Düzeltiliyor… Birkaç saniye sürebilir.</string>
     <string name="fix_video_success">Video düzeltildi! Şu adla kaydedildi: %1$s</string>
@@ -722,7 +722,7 @@
     <string name="stream_notes_title">Notlar</string>
     <string name="helper_record_audio">Videolarda mikrofon sesini yakalamayı açıp kapatır.</string>
     <string name="helper_audio_input_source">Hangi bağlı mikrofon/girişin kullanılacağını seçin.</string>
-    <string name="helper_noise_suppression">Arka plan gürültüsünü azaltmak için deneysel filtre.</string>
+    <string name="helper_raw_audio">Telefonun otomatik gürültü azaltma ve ses dengeleme olmadan mikrofonun ham sesini kaydeder. Sesi daha sonra kendiniz düzenlemeyi planlıyorsanız harika. Yeni kayıtlar için geçerlidir.</string>
     <string name="helper_audio_advanced">Kalite/boyut dengesi için bit hızı ve örnekleme hızını özelleştirin.</string>
     <string name="helper_audio_bitrate_detail">Önerilen: Yüksek kaliteli stereo için 192000 bps. Düşük değerler dosya boyutunu küçültür ancak netliği azaltabilir. Aralık 64000–384000 bps.</string>
     <string name="helper_audio_sampling_detail">Video için 48000 Hz (önerilen) veya genel ses uyumluluğu için 44100 Hz seçin.</string>
@@ -1598,7 +1598,8 @@
 <string name="row_orientation_title">Yön</string>
 <string name="row_record_audio_title">Ses Kaydet</string>
 <string name="row_input_source_title">Giriş Kaynağı</string>
-<string name="row_noise_suppression_title">Gürültü Engelleme</string>
+<string name="row_raw_audio_title">Ham ses</string>
+<string name="raw_audio_banner">Tamamen ham ses bu cihazda mevcut değil</string>
 <string name="delete_single_video_subtitle">Bu kaydı kaldır</string>
 <string name="note_debug_detailed">Etkinleştirildiğinde, FadCam hata ayıklama günlüğü HTML dosyasını (FADCAM_debug.html) herkese açık İndirilenler/FadCam/ klasörüne yazar. Sorun bildirirken bu dosyayı paylaşın. Gelecekteki yazmaları durdurmak için kapatın.\nNot: Hata ayıklama günlüğü kayıt sırasında performans yükü ekleyebilir — sorun gidermiyorsanız kapalı tutun.</string>
 <string name="location_format_title">Konum Biçimi</string>

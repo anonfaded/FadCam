@@ -749,7 +749,8 @@
     <string name="row_orientation_title">Suund</string>
     <string name="row_record_audio_title">Salvesta heli</string>
     <string name="row_input_source_title">Sisendallikas</string>
-    <string name="row_noise_suppression_title">Mürasummutus</string>
+    <string name="row_raw_audio_title">Toores heli</string>
+    <string name="raw_audio_banner">Täielikult töötlemata heli pole sellel seadmel saadaval</string>
     <string name="settings_location_watermark_title">Asukoha vesimärk</string>
     <string name="delete_all_videos_title">Kustuta kõik videod</string>
     <string name="delete_all_videos_description">Kas oled kindel, et soovid kõik videod kustutada?</string>
@@ -1187,7 +1188,7 @@
 Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="helper_record_audio">Lülita mikrofoni heli salvestamine videotesse.</string>
     <string name="helper_audio_input_source">Vali, millist ühendatud mikrofoni/sisendit kasutada.</string>
-    <string name="helper_noise_suppression">Eksperimentaalne filter taustamüra vähendamiseks.</string>
+    <string name="helper_raw_audio">Salvestab mikrofoni toore heli ilma telefoni automaatse mürasummutuse ja helitugevuse tasakaalustamiseta. Suurepärane, kui plaanite heli hiljem ise redigeerida. Kehtib uute salvestiste kohta.</string>
     <string name="helper_audio_advanced">Kohanda bitikiirust ja diskreetimissagedust kvaliteedi/suuruse tasakaalu jaoks.</string>
     <string name="helper_audio_bitrate_detail">Soovitatav: 192000 bps kõrgekvaliteedilise stereo jaoks. Madalamad väärtused vähendavad faili suurust, kuid võivad vähendada selgust. Vahemik 64000–384000 bps.</string>
     <string name="helper_audio_sampling_detail">Vali 48000 Hz video jaoks (soovitatav) või 44100 Hz üldise heli ühilduvuse jaoks.</string>
@@ -1740,7 +1741,7 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="camera_error_service">Kaamera teenuse viga</string>
     <string name="camera_error_unknown">Tundmatu kaamera viga</string>
     <string name="camera_resources_cooldown">Palun oota hetk enne uue salvestamise alustamist</string>
-    <string name="dialog_audio_noise_suppression_label">Mürasummutus</string>
+    <string name="raw_audio_unprocessed_note">Täielikult töötlemata heli pole sellel seadmel saadaval. Selle asemel kasutatakse hääletuvastuse mikrofonirežiimi (VOICE_RECOGNITION), mis keelab suurema osa töötlusest — erinevus tavasalvestusest võib olla väike.</string>
     <string name="fix_video_menu_title">Paranda video (taasta esitus)</string>
     <string name="fix_video_repairing">Parandan… See võib võtta mõne sekundi.</string>
     <string name="fix_video_success">Video parandatud! Salvestatud kui: %1$s</string>

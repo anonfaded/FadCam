@@ -764,7 +764,7 @@ public class ScreenRecordingPipeline {
             if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                 throw new IOException("AudioRecord not initialized - source: " + audioSource);
             }
-            
+
             // Create audio encoder (AAC)
             MediaFormat audioFormat_encoder = MediaFormat.createAudioFormat(
                 MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, 1);

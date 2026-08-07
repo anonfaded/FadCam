@@ -296,7 +296,7 @@ Yadona: da H.265 (HEVC) sara, taso kawalai shai da H.264 pa nisbatan neema bitra
 • Sampling Rate (Hz) har second ke da tso zala ghag akhestelo shmair de. 48000 Hz da video lapara standard de, 44100 Hz da ghag lapara aam de.
 
 Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
-    <string name="dialog_audio_noise_suppression_label">Shor kamawalo</string>
+    <string name="raw_audio_unprocessed_note">Da da wusiya ke de kham audio shantun na she. Da dai wadi da ghag pezhantane (VOICE_RECOGNITION) mode karul keegi, che zyate prakarak bandawi — da aadi recording na farq kam day.</string>
     <!-- Debug Settings -->
     <string name="setting_debug_title">Debug Logging</string>
     <string name="note_debug">Da debug log file jorolo faal ka \n(Default: Ghair Faal)</string>
@@ -1124,7 +1124,7 @@ Da video-linked items dapara, photo viewer ke evidence details istemal ka che so
     <string name="helper_location_overlay_short">Watermark landi taqriban coordinates zaheer kawi.</string>
     <string name="helper_location_watermark">Pa recording wakht ke live location text overlay zaher kawi.</string>
     <string name="helper_location_watermark_option">Overlay ke sta device location zyadawalo badal ka. Da location ejazat darkar de.</string>
-    <string name="helper_noise_suppression">Experimental filter to reduce background noise.</string>
+    <string name="helper_raw_audio">Da microphone kham ghag rekawdawi, da tilipon da automatic shor kamawalo aw da ghag dawa parasto. Warosta audio khpil edit kawol lapara behtar day. Da noe recordingo lapara qayada keegi.</string>
     <string name="helper_record_audio">Toggle capturing microphone audio in videos.</string>
     <string name="helper_theme_option">Intikhab Ka a theme. Applies instantly.</string>
     <string name="helper_watermark_custom_text">Custom text line zaat ka che timestamp aw location landi (ke faal wi) sta watermark ki zaher shi.
@@ -1376,10 +1376,10 @@ Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programm
     <string name="motion_lab_title">Harkat Lab</string>
     <string name="automation_title">Automation</string>
     <string name="automation_row_subtitle">Button mapping, Bluetooth remotes, volume keys</string>
-    <string name="setting_volume_shutter_title">د حجم تڼۍ شارټر</string>
-    <string name="setting_volume_shutter_summary">د حجم تڼۍ د کور ټب کې د کیمرې شټر په توګه کار کوي</string>
-    <string name="setting_volume_shutter_footer">د حجم تڼۍ د کور ټب کې ستاسو شټر کیږي:\n• ټک — عکس اخیستل\n• دوه ځله ټک — کیمره بدلول\n• اوږد فشار — ثبتول پیل یا بندول\n\nد بلوتوټ ریموټ شټرونه هم کار کوي او ورته کړنې پیل کوي. تڼۍ تر هغه وخته کار کوي چې د FadCam کور ټب خلاص وي — راتلونکي نسخې به هرې تڼۍ ته اجازه ورکړي چې د FadCam کړنې پیل کړي، حتی په شالید کې.\n\nاوس مهال، د FadCam شارټ کټونو د نقشې لپاره MacroDroid وکاروئ — دوی په ترتیباتو ← شارټ کټونو او ویجټونو کې ومومئ.</string>
-    <string name="shortcuts_macrodroid_template">د MacroDroid رسمي ټیمپلیټ: https://templates.macrodroid.com/view/28194</string>
+    <string name="setting_volume_shutter_title">Volume Shutter</string>
+    <string name="setting_volume_shutter_summary">Da volume tano da khor tab ke da camera shutter pa shey kar kawi</string>
+    <string name="setting_volume_shutter_footer">Da volume tano da khor tab ke sta shutter keegi:\n• Tap — aksa wokha\n• Double-tap — camera wobada\n• Wrokhi sa — recording pila ya band ka\n\nBluetooth remote shutters ham kar kawi aw hamagha akhtiyarat pila kawi. Tano kar kawi kala che da FadCam khor tab khali we — raatloonky wee bandono ke che har tano da FadCam intents pila kawi, chey pa shalide ki ham.\n\nDa anhaa waqto, da FadCam shortcuts de map karolow lapara MacroDroid wokara — da Settings → Shortcuts &amp; Widgets ke yee mooma.</string>
+    <string name="shortcuts_macrodroid_template">Da MacroDroid rasmi template: https://templates.macrodroid.com/view/28194</string>
 
     <string name="thermal_guardian_title">Harara Sati</string>
     <string name="thermal_guardian_row_subtitle">Recording pa khpalkar tangle se garmi sam kawal</string>
@@ -1479,8 +1479,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>
     <string name="preview_quick_actions_state_recording_only">Zaher only while recording</string>
     <string name="preview_quick_actions_sub">FadShot aw Fullscreen icons woyai hatta kala che recording idle wi.</string>
-    <string name="grid_lines_title">د گرډ کرښې</string>
-    <string name="grid_lines_subtitle">په مخکتنه کې د درېیو برخو گرډ</string>
+    <string name="grid_lines_title">Grid Karke</string>
+    <string name="grid_lines_subtitle">Da preview bana ke dree bargo grid</string>
     <string name="preview_quick_actions_title">Preview quick actions</string>
     <string name="preview_starting">Starting live preview...</string>
     <string name="preview_state_disable">Ghair Faal Ka</string>
@@ -1751,7 +1751,8 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="row_frame_rate_title">Frame Rate</string>
     <string name="row_input_source_title">Dakhelegi Manba</string>
     <string name="row_lens_title">Lens</string>
-    <string name="row_noise_suppression_title">Shor Kamawalo</string>
+    <string name="row_raw_audio_title">Kham Audio</string>
+    <string name="raw_audio_banner">Da da wusiya ke de kham audio shantun na she</string>
     <string name="row_orientation_title">Samt</string>
     <string name="row_record_audio_title">Ghag Record Ka</string>
     <string name="row_resolution_title">Resolution</string>
@@ -2140,9 +2141,9 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="video_setting_location_embed_disabled">Ghair faal de</string>
     <string name="video_setting_location_embed_enabled">Faal de</string>
     <string name="video_setting_location_embed_title">Embed Mawqeiyat Metadata</string>
-    <string name="setting_video_stabilization_title">د ویډیو ثبات</string>
-    <string name="setting_not_supported">په دې وسیله ملاتړ نه کیږي</string>
-    <string name="video_stabilization_footer">ستاسو ویډیوګانې د لاس د رپېدو په مقابل کې د الکترونیکي (EIS) او نظري (OIS) ثبات سره سمې ساتي. د دې لپاره د چوکاټ لږ پرې کول اړین دي.</string>
+    <string name="setting_video_stabilization_title">Video Stabilization</string>
+    <string name="setting_not_supported">Da da wusiya bana mowlari na she</string>
+    <string name="video_stabilization_footer">Da las rasedawal pa electronic (EIS) aw optical (OIS) stabilization sar sta videoyono sabata sata. Da dai kaar de lapara da frame yawa kach portion prun keegi.</string>
     <string name="view_mode_grid">Grid</string>
     <string name="view_mode_list">Fehrist</string>
     <string name="warning_temp_file_detail"><![CDATA[

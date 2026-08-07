@@ -751,7 +751,8 @@
     <string name="row_orientation_title">Orientación</string>
     <string name="row_record_audio_title">Grabar audio</string>
     <string name="row_input_source_title">Fuente de entrada</string>
-    <string name="row_noise_suppression_title">Supresión de ruido</string>
+    <string name="row_raw_audio_title">Audio sin procesar</string>
+    <string name="raw_audio_banner">El audio totalmente crudo no está disponible en este dispositivo</string>
     <string name="settings_location_watermark_title">Marca de agua de ubicación</string>
     <string name="delete_all_videos_title">Eliminar todos los videos</string>
     <string name="delete_all_videos_description">¿Estás seguro de que quieres eliminar todos los videos?</string>
@@ -1216,7 +1217,7 @@
 Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="helper_record_audio">Alternar captura de audio del micrófono en videos.</string>
     <string name="helper_audio_input_source">Seleccionar qué micrófono/entrada conectada usar.</string>
-    <string name="helper_noise_suppression">Filtro experimental para reducir ruido de fondo.</string>
+    <string name="helper_raw_audio">Captura el sonido crudo del micrófono sin la reducción de ruido ni el balance de volumen automáticos del teléfono. Ideal si piensas editar el audio tú mismo más tarde. Se aplica a grabaciones nuevas.</string>
     <string name="helper_audio_advanced">Personalizar tasa de bits y frecuencia de muestreo para equilibrio calidad/tamaño.</string>
     <string name="helper_audio_bitrate_detail">Recomendado: 192000 bps para estéreo de alta calidad. Valores más bajos reducen tamaño de archivo pero pueden reducir claridad. Rango 64000–384000 bps.</string>
     <string name="helper_audio_sampling_detail">Selecciona 48000 Hz para video (recomendado) o 44100 Hz para compatibilidad general de audio.</string>
@@ -1832,7 +1833,7 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="camera_error_service">Error del servicio de cámara</string>
     <string name="camera_error_unknown">Error de cámara desconocido</string>
     <string name="camera_resources_cooldown">Espera un momento antes de iniciar una nueva grabación</string>
-    <string name="dialog_audio_noise_suppression_label">Supresión de ruido</string>
+    <string name="raw_audio_unprocessed_note">El audio totalmente crudo no está disponible en este dispositivo. Se usa el modo de micrófono de reconocimiento de voz (VOICE_RECOGNITION), que desactiva la mayor parte del procesamiento — la diferencia con la grabación normal puede ser sutil.</string>
 
     <string name="fix_video_menu_title">Arreglar video (reparar reproducción)</string>
     <string name="fix_video_repairing">Reparando… Esto puede tomar unos segundos.</string>

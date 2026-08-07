@@ -35,6 +35,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     public static final String ARG_RESULT_KEY = "result_key";
     public static final String BUNDLE_SELECTED_ID = "selected_id";
     public static final String ARG_HELPER_TEXT = "helper_text";
+    /** Optional warning banner shown at the top of the sheet (e.g. feature not supported). */
+    public static final String ARG_BANNER_TEXT = "picker_banner_text";
     public static final String ARG_SWITCH_PRESENT = "switch_present";
     public static final String ARG_SWITCH_TITLE = "switch_title";
     public static final String ARG_SWITCH_STATE = "switch_state";
@@ -823,6 +825,21 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             } catch (Exception ignored) {}
         }
         TextView helperView = view.findViewById(R.id.picker_helper);
+        // Optional warning banner at the top of the card (e.g. "not supported on this device").
+        try {
+            String bannerText = getArguments() != null
+                    ? getArguments().getString(ARG_BANNER_TEXT, null) : null;
+            if (bannerText != null && !bannerText.isEmpty()) {
+                View banner = view.findViewById(R.id.picker_banner);
+                TextView bannerTextView = view.findViewById(R.id.picker_banner_text);
+                if (banner != null && bannerTextView != null) {
+                    bannerTextView.setText(bannerText);
+                    banner.setVisibility(View.VISIBLE);
+                }
+            }
+        } catch (Exception e) {
+            FLog.w("PickerBottomSheet", "Failed to apply banner: " + e.getMessage());
+        }
         LayoutInflater li = LayoutInflater.from(view.getContext());
         // Optional switch row: the slider layout has a dedicated switch row and divider
         if (switchPresent) {

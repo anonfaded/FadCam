@@ -78,6 +78,44 @@
                 android:paddingStart="0dp"
                 android:paddingEnd="0dp">
 
+                <!-- Warning banner: shown when the caller provides one (e.g. unsupported feature) -->
+                <LinearLayout
+                    android:id="@+id/picker_banner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/picker_banner_bg"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="10dp"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:text="block"
+                        android:textSize="18sp"
+                        android:textColor="#FFC107" />
+
+                    <TextView
+                        android:id="@+id/picker_banner_text"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="#E8A33D"
+                        android:textSize="13sp"
+                        android:lineSpacingExtra="2dp"
+                        android:textAlignment="viewStart" />
+                </LinearLayout>
+
                 <!-- Switch row styled like other settings rows -->
                 <LinearLayout
                     android:id="@+id/picker_switch_row"

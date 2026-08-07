@@ -710,7 +710,8 @@
     <string name="row_orientation_title">Προσανατολισμός</string>
     <string name="row_record_audio_title">Εγγραφή Ήχου</string>
     <string name="row_input_source_title">Πηγή Εισόδου</string>
-    <string name="row_noise_suppression_title">Καταστολή Θορύβου</string>
+    <string name="row_raw_audio_title">Ακατέργαστος ήχος</string>
+    <string name="raw_audio_banner">Ο πλήρως ακατέργαστος ήχος δεν είναι διαθέσιμος σε αυτή τη συσκευή</string>
     <string name="settings_location_watermark_title">Υδατογράφημα Τοποθεσίας</string>
     <string name="delete_all_videos_title">Διαγραφή Όλων των Βίντεο</string>
     <string name="delete_all_videos_description">Είστε σίγουροι ότι θέλετε να διαγράψετε όλα τα βίντεο;</string>
@@ -1172,7 +1173,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <!-- Helper subtitles for new Audio rows -->
     <string name="helper_record_audio">Εναλλαγή λήψης ήχου μικροφώνου στα βίντεο.</string>
     <string name="helper_audio_input_source">Επιλέξτε ποιο μικρόφωνο/είσοδο θα χρησιμοποιηθεί.</string>
-    <string name="helper_noise_suppression">Πειραματικό φίλτρο μείωσης θορύβου.</string>
+    <string name="helper_raw_audio">Καταγράφει τον ωμό ήχο του μικροφώνου χωρίς την αυτόματη μείωση θορύβου και την εξισορρόπηση έντασης του τηλεφώνου. Ιδανικό αν σκοπεύετε να επεξεργαστείτε μόνοι σας τον ήχο αργότερα. Ισχύει για νέες εγγραφές.</string>
     <string name="helper_audio_advanced">Προσαρμογή ρυθμού μετάδοσης &amp; ρυθμού δειγματοληψίας.</string>
     <string name="helper_audio_bitrate_detail">Συνιστάται: 192000 bps. Εύρος 64000–384000 bps.</string>
     <string name="helper_audio_sampling_detail">Επιλέξτε 48000 Hz για βίντεο ή 44100 Hz για συμβατότητα.</string>
@@ -1784,7 +1785,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="camera_error_service">Σφάλμα υπηρεσίας κάμερας</string>
     <string name="camera_error_unknown">Άγνωστο σφάλμα κάμερας</string>
     <string name="camera_resources_cooldown">Παρακαλώ περιμένετε πριν ξεκινήσετε νέα εγγραφή</string>
-    <string name="dialog_audio_noise_suppression_label">Καταστολή Θορύβου</string>
+    <string name="raw_audio_unprocessed_note">Ο πλήρως ακατέργαστος ήχος δεν είναι διαθέσιμος σε αυτή τη συσκευή. Χρησιμοποιείται αντί αυτού η λειτουργία μικροφώνου αναγνώρισης φωνής (VOICE_RECOGNITION), η οποία απενεργοποιεί το μεγαλύτερο μέρος της επεξεργασίας — η διαφορά από την κανονική εγγραφή μπορεί να είναι διακριτική.</string>
     <!-- duplicate removed: row_record_audio_title already defined above -->
     <string name="fix_video_menu_title">Επιδιόρθωση Βίντεο</string>
     <string name="fix_video_repairing">Επιδιόρθωση…</string>
