@@ -235,6 +235,8 @@ public abstract class Constants {
         "com.fadcam.ACTION_SET_FRONT_VIDEO_MIRROR";
     public static final String INTENT_ACTION_SET_VIDEO_STABILIZATION =
         "com.fadcam.ACTION_SET_VIDEO_STABILIZATION";
+    public static final String INTENT_ACTION_SET_AUDIO_MUTED =
+        "com.fadcam.ACTION_SET_AUDIO_MUTED";
     public static final String INTENT_ACTION_START_PREVIEW_ONLY =
         "com.fadcam.ACTION_START_PREVIEW_ONLY";
     public static final String INTENT_ACTION_STOP_PREVIEW_ONLY =
@@ -400,11 +402,19 @@ public abstract class Constants {
     public static final String EXTRA_PAN_X = "com.fadcam.EXTRA_PAN_X"; // float
     public static final String EXTRA_VIDEO_STABILIZATION_ENABLED =
         "com.fadcam.EXTRA_VIDEO_STABILIZATION_ENABLED"; // boolean
+    public static final String EXTRA_AUDIO_MUTED =
+        "com.fadcam.EXTRA_AUDIO_MUTED"; // boolean
     // Video stabilization (EIS/OIS) — default ON
     public static final String PREF_VIDEO_STABILIZATION_ENABLED =
         "pref_video_stabilization_enabled";
     // Raw (unprocessed) audio capture — OFF by default (platform-processed CAMCORDER)
     public static final String PREF_RAW_AUDIO_ENABLED = "pref_raw_audio_enabled";
+    // Realtime audio mute state for the home quick action (persisted per user's choice)
+    public static final String PREF_AUDIO_MUTED = "pref_audio_muted";
+    // Quick-action button slots (comma-separated "token:slot" pairs). Key bumped to
+    // v2 so polluted positions saved by earlier broken drag builds are discarded.
+    public static final String PREF_QUICK_ACTIONS_ORDER = "pref_quick_actions_slots_v2";
+    public static final String DEFAULT_QUICK_ACTIONS_ORDER = "mute,full,fadshot";
     /** Pan offset Y for zoom: float -1.0 (full top) to +1.0 (full bottom), 0.0 = centre */
     public static final String EXTRA_PAN_Y = "com.fadcam.EXTRA_PAN_Y"; // float
     public static final String INTENT_ACTION_PAUSE_RECORDING =

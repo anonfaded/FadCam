@@ -175,6 +175,9 @@ public class GLRecordingPipeline {
     private boolean audioEncoderStarted = false;
     private boolean audioRecordingEnabled = false;
     private boolean audioThreadRunning = false;
+    /** Realtime mute: when true, captured mic frames are zeroed so the AAC track
+     *  stays continuous (no desync) but silent. Toggled live from the home UI. */
+    private volatile boolean audioMuted = false;
     private final Object audioLock = new Object();
     private android.media.AudioManager audioManager;
     private android.media.AudioManager.OnAudioFocusChangeListener audioFocusListener;
@@ -2662,6 +2665,16 @@ public class GLRecordingPipeline {
         }
     }
 
+    /** Realtime audio mute for the LIVE recording (thread-safe, volatile flag). */
+    public void setAudioMuted(boolean muted) {
+        this.audioMuted = muted;
+        FLog.i(TAG, "Realtime audio mute = " + muted);
+    }
+
+    public boolean isAudioMuted() {
+        return audioMuted;
+    }
+
     public void setFrontVideoMirrorEnabled(boolean enabled) {
         frontVideoMirrorEnabled = enabled;
         if (glRenderer != null) {
@@ -3141,6 +3154,10 @@ public class GLRecordingPipeline {
                     
                     int read = audioRecord.read(readBuffer, 0, readBuffer.length);
                     if (read > 0) {
+                        if (audioMuted) {
+                            // Realtime mute: encode silence (track stays continuous).
+                            java.util.Arrays.fill(readBuffer, 0, read, (byte) 0);
+                        }
                         int offset = 0;
                         while (offset < read && audioThreadRunning && !isPaused) {
                             int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);

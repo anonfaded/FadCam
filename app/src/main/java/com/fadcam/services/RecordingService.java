@@ -1479,6 +1479,15 @@ public class RecordingService extends Service {
                 FLog.w(TAG, "TAP_TO_FOCUS intent missing coordinates");
             }
             return START_STICKY;
+        } else if (Constants.INTENT_ACTION_SET_AUDIO_MUTED.equals(action)) {
+            // Realtime mute/unmute of the live recording's audio track.
+            boolean muted = intent.getBooleanExtra(Constants.EXTRA_AUDIO_MUTED, false);
+            if (glRecordingPipeline != null) {
+                glRecordingPipeline.setAudioMuted(muted);
+            } else {
+                FLog.w(TAG, "Audio mute: no active GL pipeline");
+            }
+            return START_STICKY;
         } else if (Constants.INTENT_ACTION_SET_VIDEO_STABILIZATION.equals(action)) {
             // Toggle video stabilization (EIS/OIS) at runtime.
             boolean enable = intent.getBooleanExtra(

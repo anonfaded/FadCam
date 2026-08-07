@@ -996,6 +996,8 @@
     <string name="preview_quick_actions_title">Preview quick actions</string>
     <string name="preview_quick_actions_sub">Show FadShot and Fullscreen icons even when recording is idle.</string>
     <string name="grid_lines_title">Grid Lines</string>
+    <string name="quick_mute_label">Mute</string>
+    <string name="quick_unmute_label">Unmute</string>
     <string name="grid_lines_subtitle">Rule-of-thirds overlay on the preview</string>
     <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>
     <string name="preview_quick_actions_state_recording_only">Visible only while recording</string>

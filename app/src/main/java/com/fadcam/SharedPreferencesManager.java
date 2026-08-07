@@ -391,6 +391,33 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    /** Realtime audio mute state for the home quick action (default off = audio on). */
+    public boolean isAudioMuted() {
+        return sharedPreferences.getBoolean(Constants.PREF_AUDIO_MUTED, false);
+    }
+
+    public void setAudioMuted(boolean muted) {
+        sharedPreferences
+            .edit()
+            .putBoolean(Constants.PREF_AUDIO_MUTED, muted)
+            .apply();
+    }
+
+    /** Quick-action button order as comma-separated tokens (e.g. "mute,full,fadshot"). */
+    public String getQuickActionsOrder() {
+        return sharedPreferences.getString(
+            Constants.PREF_QUICK_ACTIONS_ORDER,
+            Constants.DEFAULT_QUICK_ACTIONS_ORDER
+        );
+    }
+
+    public void setQuickActionsOrder(String order) {
+        sharedPreferences
+            .edit()
+            .putString(Constants.PREF_QUICK_ACTIONS_ORDER, order)
+            .apply();
+    }
+
     public Size getCameraResolution() {
         return new Size(
             sharedPreferences.getInt(

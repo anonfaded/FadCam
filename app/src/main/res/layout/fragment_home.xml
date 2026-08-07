@@ -725,22 +725,25 @@
                     app:strokeWidth="1dp" />
             </LinearLayout>
 
-            <!-- Bottom-right controls container -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_margin="8dp"
-                android:orientation="horizontal"
-                android:clipChildren="false"
-                android:clipToPadding="false">
+                        <!-- Bottom-right controls container -->
+            <FrameLayout
+                 android:id="@+id/quick_actions_row"
+                 android:layout_width="match_parent"
+                 android:layout_height="wrap_content"
+                 android:layout_gravity="bottom"
+                 android:layout_margin="8dp"
+                 android:paddingStart="16dp"
+                 android:paddingEnd="16dp"
+                 android:paddingTop="8dp"
+                 android:paddingBottom="8dp"
+                 android:clipChildren="false"
+                 android:clipToPadding="false">
 
-                <!-- Quick shot button with label -->
+                <!-- Realtime audio mute/unmute button with label -->
                 <LinearLayout
-                    android:id="@+id/btnCaptureShotPreview"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/btnQuickMuteAudio"
+                    android:layout_width="44dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
                     android:orientation="vertical"
                     android:gravity="center"
                     android:clickable="true"
@@ -748,22 +751,28 @@
                     android:visibility="gone"
                     android:background="?attr/selectableItemBackgroundBorderless">
 
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="@drawable/fullscreen_icon_bg"
-                        android:src="@drawable/camera_rounded"
-                        android:tint="@android:color/white"
-                        android:scaleType="centerInside"
-                        android:padding="7dp" />
+                    <TextView
+                        android:id="@+id/ivQuickMuteIcon"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:text="mic"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/white"
+                        android:contentDescription="@string/quick_mute_label" />
 
                     <TextView
+                        android:id="@+id/tvQuickMuteLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="FadShot"
+                        android:text="@string/quick_mute_label"
                         android:textColor="@android:color/white"
                         android:textSize="9sp"
                         android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
                         android:layout_marginTop="2dp"
                         android:shadowColor="#BB000000"
                         android:shadowDx="1"
@@ -774,7 +783,7 @@
                 <!-- Fullscreen preview button with label -->
                 <LinearLayout
                     android:id="@+id/btnFullscreenPreview"
-                    android:layout_width="wrap_content"
+                    android:layout_width="44dp"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:gravity="center"
@@ -784,13 +793,14 @@
                     android:background="?attr/selectableItemBackgroundBorderless">
 
                     <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="@drawable/fullscreen_icon_bg"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
                         android:src="@drawable/fullscreen_rounded"
                         android:tint="@android:color/white"
                         android:scaleType="centerInside"
-                        android:padding="7dp" />
+                        android:padding="6dp"
+                        android:contentDescription="@string/watch_fullscreen_desc" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -799,6 +809,8 @@
                         android:textColor="@android:color/white"
                         android:textSize="9sp"
                         android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
                         android:layout_marginTop="2dp"
                         android:shadowColor="#BB000000"
                         android:shadowDx="1"
@@ -806,7 +818,46 @@
                         android:shadowRadius="1"/>
                 </LinearLayout>
 
-            </LinearLayout>
+                <!-- Quick shot button with label -->
+                <LinearLayout
+                    android:id="@+id/btnCaptureShotPreview"
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless">
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:src="@drawable/camera_rounded"
+                        android:tint="@android:color/white"
+                        android:scaleType="centerInside"
+                        android:padding="6dp"
+                        android:contentDescription="@string/watch_fadshot_desc" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="FadShot"
+                        android:textColor="@android:color/white"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
+                        android:layout_marginTop="2dp"
+                        android:shadowColor="#BB000000"
+                        android:shadowDx="1"
+                        android:shadowDy="1"
+                        android:shadowRadius="1"/>
+                </LinearLayout>
+
+            </FrameLayout>
+
 
         </FrameLayout>
     </androidx.cardview.widget.CardView>

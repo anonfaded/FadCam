@@ -103,6 +103,9 @@ public class MainActivity extends AppCompatActivity {
     private int swipeTouchSlop = 0;
     private static final float SWIPE_HORIZONTAL_RATIO = 1.35f;
     private boolean previewGestureInProgress = false;
+    /** True while the home quick-actions rearrange (jiggle) mode is active —
+     *  tab-swipes and the sidebar-open swipe must not interfere with dragging. */
+    private boolean quickActionsRearrangeActive = false;
     private float previewGestureZoomRatio = 1.0f;
 
     /**
@@ -743,10 +746,20 @@ public class MainActivity extends AppCompatActivity {
                 if (previewGestureInProgress && Math.abs(previewGestureZoomRatio - 0.5f) >= 0.01f) {
                     swipeCandidate = false;
                 }
+                // Rearrange mode: dragging quick-action icons must never trigger
+                // tab navigation or the sidebar-open swipe.
+                if (quickActionsRearrangeActive) {
+                    swipeCandidate = false;
+                }
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
                 if (!swipeCandidate || swipeHandled) break;
+                // Rearrange mode may start mid-gesture (long-press) — kill the swipe.
+                if (quickActionsRearrangeActive) {
+                    swipeCandidate = false;
+                    break;
+                }
                 if (previewGestureInProgress && Math.abs(previewGestureZoomRatio - 0.5f) >= 0.01f) {
                     swipeCandidate = false;
                     break;
@@ -760,6 +773,11 @@ public class MainActivity extends AppCompatActivity {
             }
             case MotionEvent.ACTION_UP: {
                 if (!swipeCandidate || swipeHandled) break;
+                // Rearrange mode: never navigate tabs or open the sidebar.
+                if (quickActionsRearrangeActive) {
+                    swipeCandidate = false;
+                    break;
+                }
                 float dx = ev.getRawX() - swipeDownX;
                 float dy = ev.getRawY() - swipeDownY;
                 if (Math.abs(dx) > Math.max(swipeTouchSlop * 6f, 180f)
@@ -855,6 +873,11 @@ public class MainActivity extends AppCompatActivity {
     public void setPreviewGestureInProgress(boolean inProgress, float zoomRatio) {
         previewGestureInProgress = inProgress;
         previewGestureZoomRatio = zoomRatio;
+    }
+
+    /** Called by HomeFragment when the quick-actions rearrange mode starts/ends. */
+    public void setQuickActionsRearrangeActive(boolean active) {
+        quickActionsRearrangeActive = active;
     }
 
     private boolean isDescendantOf(@NonNull View child, @NonNull View ancestor) {
