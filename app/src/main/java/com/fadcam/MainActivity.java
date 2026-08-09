@@ -106,6 +106,8 @@ public class MainActivity extends AppCompatActivity {
     /** True while the home quick-actions rearrange (jiggle) mode is active —
      *  tab-swipes and the sidebar-open swipe must not interfere with dragging. */
     private boolean quickActionsRearrangeActive = false;
+    /** True while the mode-switcher pill is being dragged. */
+    private boolean modePillDragActive = false;
     private float previewGestureZoomRatio = 1.0f;
 
     /**
@@ -752,7 +754,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 // Rearrange mode: dragging quick-action icons must never trigger
                 // tab navigation or the sidebar-open swipe.
-                if (quickActionsRearrangeActive) {
+                if (quickActionsRearrangeActive || modePillDragActive) {
                     swipeCandidate = false;
                 }
                 break;
@@ -760,7 +762,7 @@ public class MainActivity extends AppCompatActivity {
             case MotionEvent.ACTION_MOVE: {
                 if (!swipeCandidate || swipeHandled) break;
                 // Rearrange mode may start mid-gesture (long-press) — kill the swipe.
-                if (quickActionsRearrangeActive) {
+                if (quickActionsRearrangeActive || modePillDragActive) {
                     swipeCandidate = false;
                     break;
                 }
@@ -778,7 +780,7 @@ public class MainActivity extends AppCompatActivity {
             case MotionEvent.ACTION_UP: {
                 if (!swipeCandidate || swipeHandled) break;
                 // Rearrange mode: never navigate tabs or open the sidebar.
-                if (quickActionsRearrangeActive) {
+                if (quickActionsRearrangeActive || modePillDragActive) {
                     swipeCandidate = false;
                     break;
                 }
@@ -847,6 +849,9 @@ public class MainActivity extends AppCompatActivity {
         while (current != null) {
             if (current instanceof HorizontalScrollView) return true;
             if (current.getId() == R.id.tutorial_scroll) return true;
+            // The mode switcher is included with <include id="mode_switcher">,
+            // which REPLACES the layout's own root id — check both.
+            if (current.getId() == R.id.mode_switcher || current.getId() == R.id.mode_switcher_root) return true;
             if (current instanceof com.fadcam.ui.GalleryFastScroller) return true;
             if (current instanceof com.google.android.material.chip.Chip) return true;
             if (current instanceof com.google.android.material.chip.ChipGroup) return true;
@@ -882,6 +887,11 @@ public class MainActivity extends AppCompatActivity {
     /** Called by HomeFragment when the quick-actions rearrange mode starts/ends. */
     public void setQuickActionsRearrangeActive(boolean active) {
         quickActionsRearrangeActive = active;
+    }
+
+    /** Called by the mode-switcher component while the pill is being dragged. */
+    public void setModePillDragActive(boolean active) {
+        modePillDragActive = active;
     }
 
     private boolean isDescendantOf(@NonNull View child, @NonNull View ancestor) {

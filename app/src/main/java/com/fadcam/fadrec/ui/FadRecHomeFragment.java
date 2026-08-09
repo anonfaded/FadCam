@@ -910,6 +910,11 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // NOTE: Don't load persisted state here - it interferes with broadcast-based state
         // State will be loaded from broadcasts or set to NONE if no broadcasts arrive
+
+        // Pill-style tap animations for the FadRec controls.
+        com.fadcam.Utils.attachPressScale(buttonStartStop);
+        com.fadcam.Utils.attachPressScale(buttonPauseResume);
+        com.fadcam.Utils.attachPressScale(buttonFadRecMute);
         
         // Start/Stop button
         if (buttonStartStop != null) {

@@ -7,9 +7,9 @@
     <corners android:radius="8dp" />
     <gradient
         android:angle="90"
-        android:startColor="#8A000000"
-        android:endColor="#26FFFFFF" />
-    <stroke android:width="1dp" android:color="#33FFFFFF" />
+        android:startColor="#FF000000"
+        android:endColor="#FF262626" />
+    <stroke android:width="1dp" android:color="?attr/homeRailSegmentedBorder" />
 </shape>
     </item>
 </ripple>

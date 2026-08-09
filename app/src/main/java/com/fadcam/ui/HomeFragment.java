@@ -2005,7 +2005,10 @@ public class HomeFragment extends BaseFragment {
                 // log removed
             }
             if (buttonPauseResume != null) {
-                animateControlButton(buttonPauseResume, true, null);
+                // Cancel any fade-in animation first: animateControlButton() fades
+                // alpha to 1.0, which would otherwise override the disabled 0.5
+                // alpha below and leave the button looking ENABLED while idle.
+                buttonPauseResume.animate().cancel();
                 buttonPauseResume.setEnabled(false);
                 buttonPauseResume.setAlpha(0.5f);
                 buttonPauseResume.setIcon(
@@ -4697,6 +4700,7 @@ public class HomeFragment extends BaseFragment {
         View proBadgeDot = view.findViewById(R.id.proBadgeDot);
         
         if (btnGetPro != null) {
+            Utils.attachPressScale(btnGetPro);
             // Update badge visibility based on pro feature state
             if (proBadgeDot != null) {
                 try {
@@ -5228,6 +5232,12 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void setupButtonListeners() {
+        // Pill-style tap animations for the main camera controls.
+        Utils.attachPressScale(buttonStartStop);
+        Utils.attachPressScale(buttonPauseResume);
+        Utils.attachPressScale(buttonCamSwitch);
+        Utils.attachPressScale(buttonMirrorSwitch);
+
         // Initialize debounced runnables for start/stop actions to prevent rapid clicking
         if (debouncedStartRecording == null) {
             debouncedStartRecording = new DebouncedRunnable(() -> {
@@ -8050,6 +8060,11 @@ public class HomeFragment extends BaseFragment {
             tileExp = root.findViewById(R.id.tile_exp);
             tileZoom = root.findViewById(R.id.tile_zoom);
 
+            // Pill-style tap animations for the AF/exposure/zoom tiles.
+            Utils.attachPressScale(tileAfToggle);
+            Utils.attachPressScale(tileExp);
+            Utils.attachPressScale(tileZoom);
+
             // Initialize AF tile icon from saved afMode and apply Material Icons typeface
             try {
                 if (tileAfToggle != null) {
@@ -9256,6 +9271,9 @@ public class HomeFragment extends BaseFragment {
             return;
         }
 
+        // Pill-style tap animation for the torch control.
+        Utils.attachPressScale(buttonTorchSwitch);
+
         // Initial state update
         // updateTorchButtonState(isTorchOn); // This might be called too early,
         // consider moving or ensuring isTorchOn is accurate
@@ -10128,12 +10146,15 @@ public class HomeFragment extends BaseFragment {
         leftPanel = view.findViewById(R.id.leftPanel);
         rightPanel = view.findViewById(R.id.rightPanel);
         cardRailTogglePortrait = view.findViewById(R.id.cardRailTogglePortrait);
+        // Tiny arrow (38x16dp): bigger press scale so the animation is visible.
+        Utils.attachPressScale(cardRailTogglePortrait, 1.15f);
         cardRailToggleLandscape = view.findViewById(R.id.cardRailToggleLandscape);
         ivCardRailTogglePortrait = view.findViewById(R.id.ivCardRailTogglePortrait);
         ivCardRailToggleLandscape = view.findViewById(R.id.ivCardRailToggleLandscape);
         tvRemainingTitle = null;
         tvRemainingSubtitle = null;
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
+        Utils.attachPressScale(btnHamburgerMenu);
         hamburgerBadgeDot = view.findViewById(R.id.hamburgerBadgeDot);
         ivAppTitle = view.findViewById(R.id.ivAppTitle);
         // Set up header logo click handler for Privacy Black Mode
@@ -10768,12 +10789,45 @@ public class HomeFragment extends BaseFragment {
      */
     private void setupQuickActionsReorder() {
         if (quickActionsRow == null) return;
-        quickActionsRow.post(this::applyQuickActionSlots);
+        // Unclip all ancestors so the pick-up scale (1.12) and press nudge never clip.
+        try {
+            android.view.ViewParent p = quickActionsRow.getParent();
+            while (p instanceof android.view.ViewGroup) {
+                android.view.ViewGroup g = (android.view.ViewGroup) p;
+                g.setClipChildren(false);
+                g.setClipToPadding(false);
+                p = p.getParent();
+            }
+        } catch (Exception ignored) {
+        }
+        applyQuickActionSlotsSoon();
+        // Re-apply instantly once layout is known so the buttons never show a
+        // frame stacked at the left edge on slow devices.
+        quickActionsRow.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+            int w = v.getWidth();
+            if (w > 0 && w != quickLastRowWidth) {
+                quickLastRowWidth = w;
+                applyQuickActionSlotsSoon();
+            }
+        });
 
         View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
         for (final View b : buttons) {
             if (b == null) continue;
             b.setOnTouchListener((v, event) -> handleQuickActionGesture(v, event));
+        }
+    }
+
+    private int quickLastRowWidth = 0;
+
+    /** Applies slot positions as soon as the row has a width (retries via post). */
+    private void applyQuickActionSlotsSoon() {
+        if (quickActionsRow == null) return;
+        if (quickActionsRow.getWidth() > 0) {
+            quickLastRowWidth = quickActionsRow.getWidth();
+            applyQuickActionSlots();
+        } else {
+            quickActionsRow.post(this::applyQuickActionSlotsSoon);
         }
     }
 
@@ -10902,6 +10956,11 @@ public class HomeFragment extends BaseFragment {
     private boolean handleQuickActionGesture(View v, android.view.MotionEvent event) {
         switch (event.getActionMasked()) {
             case android.view.MotionEvent.ACTION_DOWN:
+                // Pill-style press nudge (superseded by the 1.12 pick-up on long-press).
+                v.animate().scaleX(1.06f).scaleY(1.06f)
+                        .setDuration(90)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                        .start();
                 cancelQuickLongPress();
                 quickDragView = null;
                 quickDragStartRawX = event.getRawX();
@@ -11023,6 +11082,11 @@ public class HomeFragment extends BaseFragment {
                     return true;
                 }
                 quickDragView = null;
+                // Plain tap (no drag): spring the press nudge back with an overshoot.
+                v.animate().scaleX(1f).scaleY(1f)
+                        .setDuration(220)
+                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
+                        .start();
                 // Safety net: never leave the icons stuck in rearrange mode.
                 if (quickActionsEditMode) {
                     setQuickActionsEditMode(false);

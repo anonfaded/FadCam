@@ -207,4 +207,51 @@ public class Utils {
             return null;
         }
     }
+
+    /**
+     * Pill-style tap animation for buttons: press scales the view up slightly,
+     * release springs it back (with a gentle overshoot). Matches the mode pill's
+     * press nudge + overshoot settle so all home controls feel consistent.
+     * The touch listener returns false so click/long-click listeners keep working.
+     *
+     * @param v the view to animate
+     * @param scale the scale while pressed (e.g. 1.06f)
+     */
+    public static void attachPressScale(final android.view.View v, final float scale) {
+        if (v == null) return;
+        // Unclip every ancestor so the scaled button never gets cut off
+        // mid-animation (same treatment as the mode pill).
+        try {
+            android.view.ViewParent p = v.getParent();
+            while (p instanceof android.view.ViewGroup) {
+                android.view.ViewGroup g = (android.view.ViewGroup) p;
+                g.setClipChildren(false);
+                g.setClipToPadding(false);
+                p = p.getParent();
+            }
+        } catch (Exception ignored) {
+        }
+        v.setOnTouchListener((view, event) -> {
+            switch (event.getActionMasked()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    view.animate().scaleX(scale).scaleY(scale)
+                            .setDuration(90)
+                            .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                            .start();
+                    break;
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    view.animate().scaleX(1f).scaleY(1f)
+                            .setDuration(220)
+                            .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
+                            .start();
+                    break;
+            }
+            return false; // never consume — clicks/long-clicks still fire
+        });
+    }
+
+    public static void attachPressScale(final android.view.View v) {
+        attachPressScale(v, 1.06f);
+    }
 }
