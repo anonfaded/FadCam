@@ -422,8 +422,8 @@
 
     <FrameLayout
         android:id="@+id/cardRailToggleLandscape"
-        android:layout_width="20dp"
-        android:layout_height="48dp"
+        android:layout_width="24dp"
+        android:layout_height="56dp"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="0dp"
         android:background="@drawable/bg_home_fold_toggle_right"

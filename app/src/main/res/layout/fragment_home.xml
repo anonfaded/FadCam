@@ -141,7 +141,7 @@
                     app:cardCornerRadius="10dp" 
                     app:cardElevation="0dp" 
                     app:rippleColor="#22FFFFFF" 
-                    app:strokeWidth="0dp">
+                    app:strokeWidth="0dp" android:stateListAnimator="@null">
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp" android:clipChildren="false" android:clipToPadding="false">
 
@@ -175,7 +175,7 @@
 
                 <com.google.android.material.card.MaterialCardView android:id="@+id/rowEstimateTime" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="3dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="10dp" app:cardElevation="0dp" app:rippleColor="#22FFFFFF" app:strokeWidth="0dp"
                     android:nextFocusUp="@+id/rowCamera"
-                    android:nextFocusDown="@+id/rowStorageAvailable">
+                    android:nextFocusDown="@+id/rowStorageAvailable" android:stateListAnimator="@null">
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp" android:clipChildren="false" android:clipToPadding="false">
 
@@ -209,7 +209,7 @@
                 <!-- Available Space Row -->
                 <com.google.android.material.card.MaterialCardView android:id="@+id/rowStorageAvailable" android:layout_width="match_parent" android:layout_height="wrap_content" android:clickable="true" android:focusable="true" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="10dp" app:cardElevation="0dp" app:rippleColor="#22FFFFFF" app:strokeWidth="0dp"
                     android:nextFocusUp="@+id/rowEstimateTime"
-                    android:nextFocusDown="@+id/cardClock">
+                    android:nextFocusDown="@+id/cardClock" android:stateListAnimator="@null">
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp" android:clipChildren="false" android:clipToPadding="false">
 
@@ -364,7 +364,7 @@
 
             <com.google.android.material.card.MaterialCardView android:id="@+id/cardClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:rippleColor="#22FFFFFF" app:strokeWidth="0dp"
                 android:nextFocusUp="@+id/cardElapsedHero"
-                android:nextFocusDown="@+id/cardStats">
+                android:nextFocusDown="@+id/cardStats" android:stateListAnimator="@null">
 
                 <LinearLayout android:id="@+id/layoutClockInner" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp" android:clipChildren="false" android:clipToPadding="false">
 
@@ -384,7 +384,7 @@
 
             <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:rippleColor="#22FFFFFF" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp"
                 android:nextFocusUp="@+id/cardClock"
-                android:nextFocusDown="@+id/tile_af_toggle">
+                android:nextFocusDown="@+id/tile_af_toggle" android:stateListAnimator="@null">
 
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="4dp" android:clipChildren="false" android:clipToPadding="false">
 
@@ -425,8 +425,8 @@
 
     <FrameLayout
         android:id="@+id/cardRailTogglePortrait"
-        android:layout_width="38dp"
-        android:layout_height="16dp"
+        android:layout_width="48dp"
+        android:layout_height="22dp"
         android:layout_marginTop="0dp"
         android:layout_marginBottom="8dp"
         android:background="@drawable/bg_home_fold_toggle_bottom"
@@ -441,8 +441,8 @@
 
         <ImageView
             android:id="@+id/ivCardRailTogglePortrait"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:layout_gravity="center"
             android:src="@drawable/ic_expand_more"
             android:tint="#555555" />

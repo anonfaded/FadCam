@@ -218,6 +218,25 @@ public class Utils {
      * @param scale the scale while pressed (e.g. 1.06f)
      */
     public static void attachPressScale(final android.view.View v, final float scale) {
+        attachPressScale(v, scale, true);
+    }
+
+    public static void attachPressScale(final android.view.View v) {
+        attachPressScale(v, 1.06f, true);
+    }
+
+    /**
+     * Pill-style tap animation for buttons: press scales the view up slightly,
+     * release settles it back. Matches the mode pill's press nudge + overshoot
+     * settle so all home controls feel consistent.
+     *
+     * @param v the view to animate
+     * @param scale the scale while pressed (e.g. 1.06f)
+     * @param spring true = overshoot bounce on release (buttons), false = smooth
+     *               single-motion settle (wide rows — the overshoot would read
+     *               as a visible "bubble" on large surfaces)
+     */
+    public static void attachPressScale(final android.view.View v, final float scale, final boolean spring) {
         if (v == null) return;
         // Unclip every ancestor so the scaled button never gets cut off
         // mid-animation (same treatment as the mode pill).
@@ -241,17 +260,20 @@ public class Utils {
                     break;
                 case android.view.MotionEvent.ACTION_UP:
                 case android.view.MotionEvent.ACTION_CANCEL:
-                    view.animate().scaleX(1f).scaleY(1f)
-                            .setDuration(220)
-                            .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
-                            .start();
+                    if (spring) {
+                        view.animate().scaleX(1f).scaleY(1f)
+                                .setDuration(220)
+                                .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
+                                .start();
+                    } else {
+                        view.animate().scaleX(1f).scaleY(1f)
+                                .setDuration(180)
+                                .setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator())
+                                .start();
+                    }
                     break;
             }
             return false; // never consume — clicks/long-clicks still fire
         });
-    }
-
-    public static void attachPressScale(final android.view.View v) {
-        attachPressScale(v, 1.06f);
     }
 }

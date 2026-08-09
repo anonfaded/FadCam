@@ -85,6 +85,10 @@ public class AudioSettingsFragment extends Fragment {
     }
 
     private void bindRowHandlers(View root){
+    // Pill-style tap animation for every tappable arrow row.
+    // Wide full-width rows: smaller scale (1.03) so the growth stays subtle.
+    int[] rowIds = { R.id.row_record_audio, R.id.row_audio_input_source, R.id.row_raw_audio, R.id.row_audio_advanced };
+    for (int id : rowIds) com.fadcam.Utils.attachPressScale(root.findViewById(id), 1.03f, false);
     root.findViewById(R.id.row_record_audio).setOnClickListener(v -> showRecordAudioBottomSheet());
     rowInputSource.setOnClickListener(v -> showMicSelectionBottomSheet());
     root.findViewById(R.id.row_raw_audio).setOnClickListener(v -> showRawAudioBottomSheet());

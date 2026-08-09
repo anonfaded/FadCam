@@ -442,6 +442,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         // Handle close button - simple direct listener on the visible close ImageView
         View closeBtn = view.findViewById(R.id.picker_close_btn);
         if (closeBtn != null) {
+            // Small 31dp icon: bigger press scale so the animation is visible.
+            com.fadcam.Utils.attachPressScale(closeBtn, 1.15f);
             closeBtn.setOnClickListener(v -> dismiss());
         }
         if (useGradientBg) {

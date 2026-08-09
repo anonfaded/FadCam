@@ -5919,10 +5919,8 @@ public class HomeFragment extends BaseFragment {
             cardClock.setFocusable(true);
             cardClock.setOnLongClickListener(null);
             cardClock.setOnClickListener(v -> {
-                animatePressBounce(v, () -> {
-                    performHapticFeedback();
-                    showClockAppearanceDialog();
-                });
+                performHapticFeedback();
+                showClockAppearanceDialog();
             });
         }
     }
@@ -10090,17 +10088,15 @@ public class HomeFragment extends BaseFragment {
             stats.setClickable(true);
             stats.setFocusable(true);
             stats.setOnClickListener(v -> {
-                animatePressBounce(v, () -> {
-                    performHapticFeedback();
-                    try {
-                        if (getActivity() instanceof com.fadcam.MainActivity) {
-                            com.fadcam.MainActivity act = (com.fadcam.MainActivity) getActivity();
-                            act.switchFragment(1, true);
-                        }
-                    } catch (Exception e) {
-                        FLog.e(TAG, "Failed to navigate to Records from Stats card", e);
+                performHapticFeedback();
+                try {
+                    if (getActivity() instanceof com.fadcam.MainActivity) {
+                        com.fadcam.MainActivity act = (com.fadcam.MainActivity) getActivity();
+                        act.switchFragment(1, true);
                     }
-                });
+                } catch (Exception e) {
+                    FLog.e(TAG, "Failed to navigate to Records from Stats card", e);
+                }
             });
         } catch (Exception e) {
             FLog.e(TAG, "setupStatsCardNavigation error", e);
@@ -10140,6 +10136,13 @@ public class HomeFragment extends BaseFragment {
         rowStorageAvailable = view.findViewById(R.id.rowStorageAvailable);
         rowEstimateTime = view.findViewById(R.id.rowEstimateTime);
         rowCamera = view.findViewById(R.id.rowCamera);
+        // Pill-style tap animation for all tappable rail rows.
+        // Wide full-width rows: smaller scale (1.03) so the growth stays subtle.
+        Utils.attachPressScale(rowStorageAvailable, 1.03f, false);
+        Utils.attachPressScale(rowEstimateTime, 1.03f, false);
+        Utils.attachPressScale(rowCamera, 1.03f, false);
+        Utils.attachPressScale(view.findViewById(R.id.cardClock), 1.03f, false);
+        Utils.attachPressScale(view.findViewById(R.id.cardStats), 1.03f, false);
         cameraRowUiInitialized = false;
         layoutCards = view.findViewById(R.id.layoutCards);
         layoutCardRailSection = view.findViewById(R.id.layoutCardRailSection);
@@ -10154,7 +10157,8 @@ public class HomeFragment extends BaseFragment {
         tvRemainingTitle = null;
         tvRemainingSubtitle = null;
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
-        Utils.attachPressScale(btnHamburgerMenu);
+        // Small 24dp icon: bigger press scale so the animation is clearly visible.
+        Utils.attachPressScale(btnHamburgerMenu, 1.15f);
         hamburgerBadgeDot = view.findViewById(R.id.hamburgerBadgeDot);
         ivAppTitle = view.findViewById(R.id.ivAppTitle);
         // Set up header logo click handler for Privacy Black Mode
@@ -12498,28 +12502,22 @@ public class HomeFragment extends BaseFragment {
     private void setupHomeCustomizationListeners() {
         if (cardElapsedHero != null) {
             cardElapsedHero.setOnClickListener(v -> {
-                animatePressBounce(v, () -> {
-                    performHapticFeedback();
-                    showElapsedCustomizeSheet();
-                });
+                performHapticFeedback();
+                showElapsedCustomizeSheet();
             });
         }
 
         if (rowStorageAvailable != null) {
             rowStorageAvailable.setOnClickListener(v -> {
-                animatePressBounce(v, () -> {
-                    performHapticFeedback();
-                    showStorageCustomizeSheet();
-                });
+                performHapticFeedback();
+                showStorageCustomizeSheet();
             });
         }
 
         if (rowEstimateTime != null) {
             rowEstimateTime.setOnClickListener(v -> {
-                animatePressBounce(v, () -> {
-                    performHapticFeedback();
-                    showTimeLeftColorSheet();
-                });
+                performHapticFeedback();
+                showTimeLeftColorSheet();
             });
         }
 
