@@ -369,11 +369,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     buttonStartStop.setIcon(
                         AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.play_button_rounded)
                     );
-                    buttonStartStop.setBackgroundTintList(
-                        android.content.res.ColorStateList.valueOf(
-                            android.graphics.Color.parseColor("#4CAF50")
-                        )
-                    );
+                    buttonStartStop.setBackgroundResource(com.fadcam.R.drawable.control_button_bg_green);
                     buttonStartStop.setEnabled(true);
                     buttonStartStop.setAlpha(1.0f);
                 }
@@ -385,11 +381,7 @@ public class FadRecHomeFragment extends HomeFragment {
                     buttonStartStop.setIcon(
                         AppCompatResources.getDrawable(getContext(), com.fadcam.R.drawable.stop_rounded)
                     );
-                    buttonStartStop.setBackgroundTintList(
-                        android.content.res.ColorStateList.valueOf(
-                            androidx.core.content.ContextCompat.getColor(getContext(), com.fadcam.R.color.button_stop)
-                        )
-                    );
+                    buttonStartStop.setBackgroundResource(com.fadcam.R.drawable.control_button_bg_red);
                     buttonStartStop.setEnabled(true);
                     buttonStartStop.setAlpha(1.0f);
                 }
@@ -430,6 +422,8 @@ public class FadRecHomeFragment extends HomeFragment {
             if (buttonTorchSwitch != null) {
                 buttonTorchSwitch.setVisibility(View.GONE);
             }
+            View torchWrapperGone = getView() != null ? getView().findViewById(com.fadcam.R.id.torch_btn_wrapper) : null;
+            if (torchWrapperGone != null) torchWrapperGone.setVisibility(View.GONE);
             
             FLog.d(TAG, "FadRec: UI elements reset complete (screen recording mode, state: " + currentState + ")");
         } catch (Exception e) {
@@ -498,10 +492,14 @@ public class FadRecHomeFragment extends HomeFragment {
             FLog.d(TAG, "Camera switch button hidden");
         }
         
-        // Hide torch button
+        // Hide torch button (wrapper + label together, no ghost label left)
         View torchBtn = rootView.findViewById(com.fadcam.R.id.buttonTorchSwitch);
         if (torchBtn != null) {
             torchBtn.setVisibility(View.GONE);
+        }
+        View torchWrapper = rootView.findViewById(com.fadcam.R.id.torch_btn_wrapper);
+        if (torchWrapper != null) {
+            torchWrapper.setVisibility(View.GONE);
             FLog.d(TAG, "Torch button hidden");
         }
         
@@ -979,6 +977,8 @@ public class FadRecHomeFragment extends HomeFragment {
 
         if (buttonFadRecMute != null) {
             buttonFadRecMute.setVisibility(View.VISIBLE);
+            View muteWrapperV = rootView != null ? rootView.findViewById(com.fadcam.R.id.fadrec_mute_wrapper) : null;
+            if (muteWrapperV != null) muteWrapperV.setVisibility(View.VISIBLE);
             buttonFadRecMute.setOnClickListener(v -> {
                 boolean isRecordingActive = screenRecordingState == ScreenRecordingState.IN_PROGRESS
                     || screenRecordingState == ScreenRecordingState.PAUSED;
@@ -1161,10 +1161,10 @@ public class FadRecHomeFragment extends HomeFragment {
                     : com.fadcam.R.drawable.play_button_rounded
             ),
             () -> {
-                buttonStartStop.setBackgroundTintList(
+                buttonStartStop.setBackgroundResource(
                     recordingActive
-                        ? ContextCompat.getColorStateList(requireContext(), com.fadcam.R.color.button_stop)
-                        : ColorStateList.valueOf(Color.parseColor("#4CAF50"))
+                        ? com.fadcam.R.drawable.control_button_bg_red
+                        : com.fadcam.R.drawable.control_button_bg_green
                 );
                 buttonStartStop.setAlpha(1.0f);
             }
@@ -1401,10 +1401,10 @@ public class FadRecHomeFragment extends HomeFragment {
                         ? com.fadcam.R.drawable.play_button_rounded
                         : com.fadcam.R.drawable.stop_rounded
                 ),
-                () -> buttonStartStop.setBackgroundTintList(
+                () -> buttonStartStop.setBackgroundResource(
                     screenRecordingState == ScreenRecordingState.NONE
-                        ? ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-                        : ContextCompat.getColorStateList(requireContext(), com.fadcam.R.color.button_stop)
+                        ? com.fadcam.R.drawable.control_button_bg_green
+                        : com.fadcam.R.drawable.control_button_bg_red
                 )
             );
         }
@@ -1475,22 +1475,19 @@ public class FadRecHomeFragment extends HomeFragment {
         boolean isRecordingActive = screenRecordingState == ScreenRecordingState.IN_PROGRESS
             || screenRecordingState == ScreenRecordingState.PAUSED;
         
-        // Choose icon based on audio source and mute state
-        int iconRes;
+        // Icon = the SAME Material Icons ligatures the audio-source sheet uses.
+        String iconLigature;
         if (Constants.AUDIO_SOURCE_NONE.equals(audioSource)) {
-            iconRes = com.fadcam.R.drawable.ic_volume_off_24;
+            iconLigature = "volume_off";
         } else if (muted && isRecordingActive) {
-            iconRes = com.fadcam.R.drawable.ic_volume_off_24;
+            iconLigature = "volume_off";
         } else if (Constants.AUDIO_SOURCE_INTERNAL.equals(audioSource)) {
-            iconRes = com.fadcam.R.drawable.ic_volume_up_24;
+            iconLigature = "volume_up";
         } else {
-            // Microphone
-            iconRes = com.fadcam.R.drawable.ic_mic;
+            iconLigature = "mic"; // Microphone
         }
-        
-        buttonFadRecMute.setIcon(
-            AppCompatResources.getDrawable(requireContext(), iconRes)
-        );
+        TextView muteIcon = getView() != null ? getView().findViewById(com.fadcam.R.id.fadrec_mute_icon) : null;
+        if (muteIcon != null) muteIcon.setText(iconLigature);
         
         // Button always enabled - behavior changes based on recording state
         buttonFadRecMute.setEnabled(true);
@@ -1505,12 +1502,46 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // Tint: red when off, default when active
         boolean isOff = Constants.AUDIO_SOURCE_NONE.equals(audioSource);
-        buttonFadRecMute.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+        buttonFadRecMute.setBackgroundResource(
             isOff
-                ? androidx.core.content.ContextCompat.getColor(requireContext(), com.fadcam.R.color.button_stop)
-                : 0xFF3A3A3A
-        ));
+                ? com.fadcam.R.drawable.control_button_bg_red
+                : com.fadcam.R.drawable.control_button_bg
+        );
         buttonFadRecMute.setIconTint(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+
+        // Tiny status label (bottom-right): OFF / MUTED / MIC / INT, same style
+        // as the torch/flip labels.
+        TextView muteLabel = getView() != null ? getView().findViewById(com.fadcam.R.id.fadrec_mute_status_label) : null;
+        if (muteLabel != null) {
+            String label;
+            int color;
+            if (isOff) {
+                label = "OFF";
+                color = 0xFFFFFFFF;
+            } else if (muted && isRecordingActive) {
+                label = "MUTED";
+                color = 0xFFFFFFFF;
+            } else if (Constants.AUDIO_SOURCE_INTERNAL.equals(audioSource)) {
+                label = "INT";
+                color = 0xFFFFFFFF;
+            } else {
+                label = "MIC";
+                color = 0xFFFFFFFF;
+            }
+            muteLabel.setTextColor(color);
+            if (!label.equals(muteLabel.getText().toString())) {
+                muteLabel.setText(label);
+                muteLabel.animate().cancel();
+                muteLabel.setAlpha(0f);
+                muteLabel.setScaleX(0.4f);
+                muteLabel.setScaleY(0.4f);
+                muteLabel.animate()
+                        .alpha(1f).scaleX(1f).scaleY(1f)
+                        .setDuration(220)
+                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                        .start();
+            }
+        }
     }
 
     /**

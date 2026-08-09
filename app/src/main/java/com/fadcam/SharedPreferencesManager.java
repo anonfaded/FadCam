@@ -403,6 +403,21 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    /** Home nav icon choice — default is the pilot icon. */
+    public String getHomeIcon() {
+        return sharedPreferences.getString(
+            Constants.PREF_HOME_ICON,
+            Constants.HOME_ICON_PILOT
+        );
+    }
+
+    public void setHomeIcon(String choice) {
+        sharedPreferences
+            .edit()
+            .putString(Constants.PREF_HOME_ICON, choice)
+            .apply();
+    }
+
     /** Quick-action button order as comma-separated tokens (e.g. "mute,full,fadshot"). */
     public String getQuickActionsOrder() {
         return sharedPreferences.getString(

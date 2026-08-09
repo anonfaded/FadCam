@@ -1963,6 +1963,10 @@
 
     <string name="preview_quick_actions_sub">إظهار أيقونات FadShot والشاشة الكاملة حتى عندما يكون التسجيل خاملاً.</string>
     <string name="grid_lines_title">خطوط الشبكة</string>
+    <string name="home_icon_picker_title">أيقونة الرئيسية</string>
+    <string name="home_icon_home">الرئيسية</string>
+    <string name="home_icon_jet">طائرة مقاتلة</string>
+    <string name="home_icon_pilot">طيار</string>
     <string name="quick_mute_label">كتم</string>
     <string name="quick_unmute_label">إلغاء الكتم</string>
     <string name="grid_lines_subtitle">شبكة الأثلاث على المعاينة</string>

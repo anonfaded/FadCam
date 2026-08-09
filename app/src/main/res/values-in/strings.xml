@@ -999,6 +999,10 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="preview_quick_actions_title">Preview quick actions</string>
     <string name="preview_quick_actions_sub">Show FadShot and Fullscreen icons even when recording is idle.</string>
     <string name="grid_lines_title">Garis kisi</string>
+    <string name="home_icon_picker_title">Ikon beranda</string>
+    <string name="home_icon_home">Beranda</string>
+    <string name="home_icon_jet">Jet tempur</string>
+    <string name="home_icon_pilot">Pilot</string>
     <string name="quick_mute_label">Bisukan</string>
     <string name="quick_unmute_label">Suara</string>
     <string name="grid_lines_subtitle">Kisi sepertiga di pratinjau</string>

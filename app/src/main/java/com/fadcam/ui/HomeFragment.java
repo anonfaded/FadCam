@@ -284,6 +284,8 @@ public class HomeFragment extends BaseFragment {
     protected MaterialButton buttonPauseResume;
     protected Button buttonCamSwitch;
     protected MaterialButton buttonTorchSwitch;
+    private TextView torchStatusLabel;
+    private TextView mirrorStatusLabel;
     protected MaterialButton buttonMirrorSwitch;
     
     private boolean isPreviewEnabled = true;
@@ -1809,11 +1811,7 @@ public class HomeFragment extends BaseFragment {
 
         applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                 AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-            buttonStartStop.setBackgroundTintList(
-                ColorStateList.valueOf(
-                    ContextCompat.getColor(requireContext(), R.color.button_stop)
-                )
-            );
+            buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
             buttonStartStop.setEnabled(true);
         });
         updateStartStopButtonForFoldedState();
@@ -1852,11 +1850,7 @@ public class HomeFragment extends BaseFragment {
 
         applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                 AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-            buttonStartStop.setBackgroundTintList(
-                ColorStateList.valueOf(
-                    ContextCompat.getColor(requireContext(), R.color.button_stop)
-                )
-            );
+            buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
         });
         updateStartStopButtonForFoldedState();
         updateStorageInfo();
@@ -2002,10 +1996,7 @@ public class HomeFragment extends BaseFragment {
                 applyButtonTransition(buttonStartStop, getString(R.string.button_start),
                         AppCompatResources.getDrawable(getContext(), R.drawable.play_button_rounded), () -> {
                     // Always use green color for start button regardless of theme
-                    int btnColor = Color.parseColor("#4CAF50"); // Always green
-                    buttonStartStop.setBackgroundTintList(
-                        ColorStateList.valueOf(btnColor)
-                    );
+                    buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_green);
                     // Force enable the button when resetting to idle state, regardless of any debouncing
                     buttonStartStop.setEnabled(true);
                     buttonStartStop.setAlpha(1.0f);
@@ -2014,7 +2005,7 @@ public class HomeFragment extends BaseFragment {
                 // log removed
             }
             if (buttonPauseResume != null) {
-                buttonPauseResume.setVisibility(View.VISIBLE);
+                animateControlButton(buttonPauseResume, true, null);
                 buttonPauseResume.setEnabled(false);
                 buttonPauseResume.setAlpha(0.5f);
                 buttonPauseResume.setIcon(
@@ -2026,7 +2017,7 @@ public class HomeFragment extends BaseFragment {
             }
             if (buttonCamSwitch != null) {
                 buttonCamSwitch.setEnabled(true);
-                buttonCamSwitch.setVisibility(View.VISIBLE);
+                animateControlButton(buttonCamSwitch, true, null);
                 buttonCamSwitch.setAlpha(1f);
             }
             if (buttonTorchSwitch != null) {
@@ -2063,9 +2054,7 @@ public class HomeFragment extends BaseFragment {
             buttonStartStop.setAlpha(shouldEnable ? 1.0f : 0.5f);
 
             // Always maintain green color even when disabled
-            buttonStartStop.setBackgroundTintList(
-                ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-            );
+            buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_green);;
 
             if (!shouldEnable) {
                 FLog.d(
@@ -2922,12 +2911,7 @@ public class HomeFragment extends BaseFragment {
             applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                     AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
                 buttonStartStop.setEnabled(true); // Enable STOP
-                buttonStartStop.setBackgroundTintList(
-                    ContextCompat.getColorStateList(
-                        requireContext(),
-                        R.color.button_stop
-                    )
-                );
+                buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
             });
 
             buttonPauseResume.setEnabled(true); // Enable PAUSE
@@ -2938,12 +2922,7 @@ public class HomeFragment extends BaseFragment {
                 )
             );
             buttonPauseResume.setAlpha(1.0f); // Make fully visible when enabled
-            buttonPauseResume.setBackgroundTintList(
-                ContextCompat.getColorStateList(
-                    requireContext(),
-                    R.color.button_pause
-                )
-            );
+            buttonPauseResume.setBackgroundResource(R.drawable.control_button_bg_orange);;
 
             // Keep button enabled ALWAYS during recording (for live camera switching)
             // Even if state updates happen right after a switch, keep it enabled
@@ -2974,12 +2953,7 @@ public class HomeFragment extends BaseFragment {
             applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                     AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
                 buttonStartStop.setEnabled(true); // Enable STOP
-                buttonStartStop.setBackgroundTintList(
-                    ContextCompat.getColorStateList(
-                        requireContext(),
-                        R.color.button_stop
-                    )
-                );
+                buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
             });
 
             buttonPauseResume.setEnabled(true); // Enable RESUME
@@ -2993,12 +2967,7 @@ public class HomeFragment extends BaseFragment {
             // icon for
             // RESUME
             buttonPauseResume.setAlpha(1.0f); // Make fully visible when enabled
-            buttonPauseResume.setBackgroundTintList(
-                ContextCompat.getColorStateList(
-                    requireContext(),
-                    R.color.button_pause
-                )
-            );
+            buttonPauseResume.setBackgroundResource(R.drawable.control_button_bg_orange);;
 
             // Keep button enabled ALWAYS during recording (for live camera switching)
             // Even during pause, allow camera switch to resume recording
@@ -3033,12 +3002,7 @@ public class HomeFragment extends BaseFragment {
             applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                     AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
                 buttonStartStop.setEnabled(true); // Enable STOP (user can still stop recording)
-                buttonStartStop.setBackgroundTintList(
-                    ContextCompat.getColorStateList(
-                        requireContext(),
-                        R.color.button_stop
-                    )
-                );
+                buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
             });
 
             // Disable pause button during camera interruption (doesn't make sense)
@@ -4717,16 +4681,16 @@ public class HomeFragment extends BaseFragment {
             cameraId = getCameraWithFlash();
             if (cameraId == null) {
                 buttonTorchSwitch.setEnabled(false);
-                buttonTorchSwitch.setVisibility(View.GONE);
+                animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, false, buttonTorchSwitch);
             } else {
                 buttonTorchSwitch.setEnabled(true);
-                buttonTorchSwitch.setVisibility(View.VISIBLE);
+                animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, true, buttonTorchSwitch);
             }
         } catch (CameraAccessException e) {
             FLog.e(TAG, "Camera access error: " + e.getMessage());
             e.printStackTrace();
             buttonTorchSwitch.setEnabled(false);
-            buttonTorchSwitch.setVisibility(View.GONE);
+            animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, false, buttonTorchSwitch);
         }
 
         View btnGetPro = view.findViewById(R.id.btnGetPro);
@@ -5348,17 +5312,13 @@ public class HomeFragment extends BaseFragment {
             if (isCardRailCurrentlyFolded()) {
                 applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                         AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-                    buttonStartStop.setBackgroundTintList(
-                            ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
-                    );
+                    buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
                     buttonStartStop.setAlpha(1.0f);
                 });
             } else {
                 animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
                         AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-                    buttonStartStop.setBackgroundTintList(
-                            ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
-                    );
+                    buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
                     buttonStartStop.setAlpha(1.0f);
                 }, true);
             }
@@ -5367,17 +5327,13 @@ public class HomeFragment extends BaseFragment {
             if (isCardRailCurrentlyFolded()) {
                 applyButtonTransition(buttonStartStop, getString(R.string.button_start),
                         AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
-                    buttonStartStop.setBackgroundTintList(
-                            ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-                    );
+                    buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_green);;
                     buttonStartStop.setAlpha(1.0f);
                 });
             } else {
                 animateButtonTransition(buttonStartStop, getString(R.string.button_start),
                         AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
-                    buttonStartStop.setBackgroundTintList(
-                            ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-                    );
+                    buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_green);;
                     buttonStartStop.setAlpha(1.0f);
                 }, false);
             }
@@ -5435,6 +5391,48 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+
+    /**
+     * Animated appearance for bottom control buttons: slide/bounce in on show,
+     * shrink/fade out on hide (same motion family as the flip button).
+     * When an inner button is provided, its visibility follows the wrapper.
+     */
+    private void animateControlButton(final View view, boolean show, final View inner) {
+        if (view == null) return;
+        view.animate().cancel();
+        float density = getResources().getDisplayMetrics().density;
+        float slide = 16f * density;
+        // Consistent 240ms motion both ways (Material standard):
+        // enter decelerates, exit accelerates — same duration, minimal slide + fade.
+        if (show) {
+            if (inner != null) inner.setVisibility(View.VISIBLE);
+            if (view.getVisibility() != View.VISIBLE) {
+                // Slide in from the RIGHT so it never collides with the neighbor.
+                view.setAlpha(0f);
+                view.setTranslationX(slide);
+                view.setVisibility(View.VISIBLE);
+            }
+            view.animate()
+                    .alpha(1f).translationX(0f)
+                    .setDuration(240)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
+                    .start();
+        } else {
+            // Slide out to the RIGHT, mirroring the enter motion.
+            view.animate()
+                    .alpha(0f).translationX(slide)
+                    .setDuration(240)
+                    .setInterpolator(new android.view.animation.AccelerateInterpolator(1.5f))
+                    .withEndAction(() -> {
+                        view.setVisibility(View.GONE);
+                        view.setAlpha(1f);
+                        view.setTranslationX(0f);
+                        if (inner != null) inner.setVisibility(View.GONE);
+                    })
+                    .start();
+        }
+    }
+
     protected void updateMirrorButtonVisibilityAndState() {
         if (buttonMirrorSwitch == null || sharedPreferencesManager == null) return;
         CameraType selectedCamera = sharedPreferencesManager.getCameraSelection();
@@ -5442,7 +5440,10 @@ public class HomeFragment extends BaseFragment {
             (selectedCamera == CameraType.FRONT || selectedCamera.isDual()) &&
             !getClass().getName().contains("FadRecHomeFragment");
 
-        buttonMirrorSwitch.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+        // Animate the flip button (wrapper) in/out smoothly.
+        animateControlButton(
+                getView() != null ? getView().findViewById(R.id.mirror_btn_wrapper) : null,
+                shouldShow, buttonMirrorSwitch);
         if (!shouldShow) {
             return;
         }
@@ -5453,10 +5454,29 @@ public class HomeFragment extends BaseFragment {
         buttonMirrorSwitch.setContentDescription(
             getString(enabled ? R.string.front_video_mirror_disable : R.string.front_video_mirror_enable)
         );
-        buttonMirrorSwitch.setBackgroundTintList(
-            ColorStateList.valueOf(enabled ? ContextCompat.getColor(requireContext(), R.color.button_stop) : 0xFF3A3A3A)
-        );
+        buttonMirrorSwitch.setBackgroundResource(enabled ? R.drawable.control_button_bg_red : R.drawable.control_button_bg);;
         buttonMirrorSwitch.setIconTint(ColorStateList.valueOf(Color.WHITE));
+
+        // ON/OFF status label (tiny, bottom-right — avatar-toggle style).
+        // White "ON" contrasts with the red fill when flipped; light gray "OFF"
+        // sits quietly on the neutral glass.
+        if (mirrorStatusLabel != null) {
+            String label = enabled ? "ON" : "OFF";
+            int color = enabled ? 0xFFFFFFFF : 0xFFB0BEC5;
+            if (!label.equals(mirrorStatusLabel.getText().toString())) {
+                mirrorStatusLabel.setText(label);
+                mirrorStatusLabel.setTextColor(color);
+                mirrorStatusLabel.animate().cancel();
+                mirrorStatusLabel.setAlpha(0f);
+                mirrorStatusLabel.setScaleX(0.4f);
+                mirrorStatusLabel.setScaleY(0.4f);
+                mirrorStatusLabel.animate()
+                        .alpha(1f).scaleX(1f).scaleY(1f)
+                        .setDuration(220)
+                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                        .start();
+            }
+        }
     }
 
     // --- Start Recording ---
@@ -6813,6 +6833,7 @@ public class HomeFragment extends BaseFragment {
                         } catch (Exception ignored) {}
                     }
                     cameraRowUiInitialized = true;
+
 
                     // Time-left row
                     if (!suppressDefaultTimeLeftRowUpdates()) {
@@ -9215,16 +9236,16 @@ public class HomeFragment extends BaseFragment {
             cameraId = getCameraWithFlash();
             if (cameraId == null) {
                 buttonTorchSwitch.setEnabled(false);
-                buttonTorchSwitch.setVisibility(View.GONE);
+                animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, false, buttonTorchSwitch);
             } else {
                 buttonTorchSwitch.setEnabled(true);
-                buttonTorchSwitch.setVisibility(View.VISIBLE);
+                animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, true, buttonTorchSwitch);
             }
         } catch (CameraAccessException e) {
             FLog.e(TAG, "Camera access error: " + e.getMessage());
             e.printStackTrace();
             buttonTorchSwitch.setEnabled(false);
-            buttonTorchSwitch.setVisibility(View.GONE);
+            animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, false, buttonTorchSwitch);
         }
     }
 
@@ -9764,6 +9785,27 @@ public class HomeFragment extends BaseFragment {
                             )
                         );
                         buttonTorchSwitch.setSelected(isOn); // This controls the visual feedback (e.g., tint)
+                        // Yellow border when the torch is ON.
+                        buttonTorchSwitch.setBackgroundResource(isOn
+                                ? R.drawable.control_button_bg_yellow
+                                : R.drawable.control_button_bg);
+
+                        // ON/OFF label — same green/red + scale/fade/overshoot
+                        // animation as the custom AvatarToggleView status label.
+                        if (torchStatusLabel != null) {
+                            torchStatusLabel.setText(isOn ? "ON" : "OFF");
+                            // Neutral palette matching the cam-switch button (white on / gray off).
+                            torchStatusLabel.setTextColor(isOn ? 0xFFFFFFFF : 0xFFB0BEC5);
+                            torchStatusLabel.animate().cancel();
+                            torchStatusLabel.setAlpha(0f);
+                            torchStatusLabel.setScaleX(0.4f);
+                            torchStatusLabel.setScaleY(0.4f);
+                            torchStatusLabel.animate()
+                                    .alpha(1f).scaleX(1f).scaleY(1f)
+                                    .setDuration(220)
+                                    .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                                    .start();
+                        }
 
                         // Store the torch state
                         isTorchOn = isOn;
@@ -10118,6 +10160,25 @@ public class HomeFragment extends BaseFragment {
             });
         }
 
+        // When a control button appears/disappears, the center-aligned row
+        // re-lays out — animate those position changes so the remaining buttons
+        // slide horizontally instead of jumping. Appear/disappear of the new
+        // button itself is handled by animateControlButton().
+        try {
+            View controlsRow = view.findViewById(R.id.layoutControls);
+            if (controlsRow instanceof android.widget.LinearLayout) {
+                android.animation.LayoutTransition lt = new android.animation.LayoutTransition();
+                lt.setDuration(260);
+                lt.setStartDelay(android.animation.LayoutTransition.CHANGE_APPEARING, 0);
+                lt.setStartDelay(android.animation.LayoutTransition.CHANGE_DISAPPEARING, 0);
+                lt.setAnimator(android.animation.LayoutTransition.APPEARING, null);
+                lt.setAnimator(android.animation.LayoutTransition.DISAPPEARING, null);
+                ((android.widget.LinearLayout) controlsRow).setLayoutTransition(lt);
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "LayoutTransition setup failed: " + e.getMessage());
+        }
+
         tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
         tvPreviewHint = view.findViewById(R.id.tvPreviewHint);
         buttonStartStop = view.findViewById(R.id.buttonStartStop);
@@ -10125,6 +10186,25 @@ public class HomeFragment extends BaseFragment {
         buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
         buttonMirrorSwitch = view.findViewById(R.id.buttonMirrorSwitch);
         cardPreview = view.findViewById(R.id.cardPreview); // Assuming R.id.cardPreview exists
+
+        // MaterialButton applies a theme background tint over custom backgrounds,
+        // which would flatten our gradient drawables to a solid dark color.
+        // Strip the tint so the colored-glass backgrounds render as designed.
+        try {
+            com.google.android.material.button.MaterialButton[] glassButtons = {
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonTorchSwitch),
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonStartStop),
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonPauseResume),
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonFadRecMute),
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonCamSwitch),
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonMirrorSwitch)
+            };
+            for (com.google.android.material.button.MaterialButton b : glassButtons) {
+                if (b != null) b.setSupportBackgroundTintList(null);
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to strip MaterialButton tints: " + e.getMessage());
+        }
 
         // GPS warning banner
         View bannerGpsWarning = view.findViewById(R.id.banner_gps_warning);
@@ -10203,8 +10283,9 @@ public class HomeFragment extends BaseFragment {
         // Torch button (already initialized elsewhere, but good to have it
         // consistently)
         buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
+        torchStatusLabel = view.findViewById(R.id.torch_status_label);
+        mirrorStatusLabel = view.findViewById(R.id.mirror_status_label);
         updateMirrorButtonVisibilityAndState();
-
         // Initialize rotating bubble background (now replaced by avatar — will be null)
         ivBubbleBackground = view.findViewById(R.id.ivBubbleBackground);
 

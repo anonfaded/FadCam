@@ -955,6 +955,10 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="preview_quick_actions_title">Γρήγορες ενέργειες προεπισκόπησης</string>
     <string name="preview_quick_actions_sub">Εμφάνιση εικονιδίων FadShot και Πλήρους οθόνης.</string>
     <string name="grid_lines_title">Γραμμές πλέγματος</string>
+    <string name="home_icon_picker_title">Εικονίδιο αρχικής</string>
+    <string name="home_icon_home">Αρχική</string>
+    <string name="home_icon_jet">Μαχητικό αεροσκάφος</string>
+    <string name="home_icon_pilot">Πιλότος</string>
     <string name="quick_mute_label">Σίγαση</string>
     <string name="quick_unmute_label">Ήχος</string>
     <string name="grid_lines_subtitle">Πλέγμα τρίτων στην προεπισκόπηση</string>

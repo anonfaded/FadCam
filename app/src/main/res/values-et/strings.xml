@@ -974,6 +974,10 @@
     <string name="preview_quick_actions_title">Eelvaate kiirtoimingud</string>
     <string name="preview_quick_actions_sub">Kuva FadShot ja täisekraani ikoonid isegi siis, kui salvestamine on ootel.</string>
     <string name="grid_lines_title">Ruudustiku jooned</string>
+    <string name="home_icon_picker_title">Avakuva ikoon</string>
+    <string name="home_icon_home">Avakuva</string>
+    <string name="home_icon_jet">Hävituslennuk</string>
+    <string name="home_icon_pilot">Piloot</string>
     <string name="quick_mute_label">Vaigista</string>
     <string name="quick_unmute_label">Heli sisse</string>
     <string name="grid_lines_subtitle">Kolmikute ruudustik eelvaates</string>

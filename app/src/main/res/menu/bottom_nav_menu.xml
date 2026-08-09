@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/navigation_home"
-        android:icon="@drawable/ic_house"
+        android:icon="@drawable/pilot_steering_white"
         android:title="@string/nav_home" />
     <item
         android:id="@+id/navigation_records"

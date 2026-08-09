@@ -1480,6 +1480,10 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="preview_quick_actions_state_recording_only">Zaher only while recording</string>
     <string name="preview_quick_actions_sub">FadShot aw Fullscreen icons woyai hatta kala che recording idle wi.</string>
     <string name="grid_lines_title">Grid Karke</string>
+    <string name="home_icon_picker_title">Da Home Icon</string>
+    <string name="home_icon_home">Home</string>
+    <string name="home_icon_jet">Jangari Jet</string>
+    <string name="home_icon_pilot">Pilot</string>
     <string name="quick_mute_label">Khamosh Ka</string>
     <string name="quick_unmute_label">Ghag Wosata</string>
     <string name="grid_lines_subtitle">Da preview bana ke dree bargo grid</string>

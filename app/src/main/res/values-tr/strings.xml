@@ -1682,6 +1682,10 @@
 <string name="preview_quick_actions_title">Önizleme hızlı işlemleri</string>
 <string name="preview_quick_actions_sub">Kayıt boştayken bile FadShot ve Tam Ekran simgelerini göster.</string>
 <string name="grid_lines_title">Izgara çizgileri</string>
+<string name="home_icon_picker_title">Ana simge</string>
+<string name="home_icon_home">Ana</string>
+<string name="home_icon_jet">Savaş uçağı</string>
+<string name="home_icon_pilot">Pilot</string>
 <string name="quick_mute_label">Sustur</string>
 <string name="quick_unmute_label">Ses</string>
 <string name="grid_lines_subtitle">Önizlemede üçte birlik ızgara</string>

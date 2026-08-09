@@ -864,9 +864,33 @@
 
     <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:layout_marginBottom="72dp" android:gravity="center" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent">
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonTorchSwitch" android:layout_width="48dp" android:layout_height="41dp" android:layout_marginEnd="4dp" style="@style/Widget.MaterialComponents.Button.OutlinedButton" app:icon="@drawable/ic_flashlight_on" app:iconSize="24dp" app:iconTint="@color/button_icon_tint_selector" app:iconGravity="textStart" app:iconPadding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:paddingStart="0dp" android:paddingEnd="0dp" app:rippleColor="#22FFFFFF" app:backgroundTint="@android:color/transparent" android:enabled="false" app:cornerRadius="15dp"
+        <FrameLayout
+            android:id="@+id/torch_btn_wrapper"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="4dp">
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonTorchSwitch" android:layout_width="match_parent" android:layout_height="match_parent" style="@style/Widget.MaterialComponents.Button.OutlinedButton" app:icon="@drawable/ic_flashlight_on" app:iconSize="24dp" app:iconTint="@color/button_icon_tint_selector" app:iconGravity="textStart" app:iconPadding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:paddingStart="0dp" android:paddingEnd="0dp" app:rippleColor="#22FFFFFF" android:background="@drawable/control_button_bg" android:enabled="false" app:cornerRadius="15dp"
             android:nextFocusUp="@+id/cardElapsedHero"
             android:nextFocusDown="@+id/buttonStartStop" />
+
+            <TextView
+                android:id="@+id/torch_status_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginBottom="6dp"
+                android:layout_marginEnd="7dp"
+                android:text="OFF"
+                android:textColor="#E43C3C"
+                android:textSize="6.5sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:includeFontPadding="false"
+/>
+        </FrameLayout>
+
 
         <com.fadcam.ui.utils.AnimatedMaterialButton
             android:id="@+id/buttonStartStop"
@@ -879,26 +903,86 @@
             app:icon="@drawable/play_button_rounded"
             app:iconSize="14dp"
             android:enabled="false"
-            app:backgroundTint="@color/button_start"
+            android:background="@drawable/control_button_bg_green"
             app:iconTint="@color/white"
             android:textColor="@color/white"
             android:text="@string/button_start"
             android:nextFocusUp="@+id/cardElapsedHero"
             android:nextFocusDown="@+id/buttonPauseResume" />
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/pause_rounded" app:iconSize="16dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" app:backgroundTint="@color/button_pause" app:iconTint="@color/white" app:cornerRadius="15dp"
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/pause_rounded" app:iconSize="16dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="15dp"
             android:nextFocusUp="@+id/cardElapsedHero"
             android:nextFocusDown="@+id/buttonCamSwitch" />
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonFadRecMute" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/ic_volume_up_24" app:iconSize="24dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:backgroundTint="@color/button_pause" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone" />
+                <FrameLayout
+            android:id="@+id/fadrec_mute_wrapper"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="4dp"
+            android:visibility="gone">
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/cam_switch" app:iconSize="24dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:cornerRadius="15dp"
+<com.google.android.material.button.MaterialButton android:id="@+id/buttonFadRecMute" android:layout_width="match_parent" android:layout_height="match_parent" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/fadrec_mute_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="mic"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:fontFamily="@font/materialicons"/>
+
+            <TextView
+                android:id="@+id/fadrec_mute_status_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginBottom="6dp"
+                android:layout_marginEnd="7dp"
+                android:text="OFF"
+                android:textColor="#FFFFFF"
+                android:textSize="6.5sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:includeFontPadding="false"/>
+        </FrameLayout>
+
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/cam_switch" app:iconSize="24dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="15dp"
             android:nextFocusUp="@+id/cardElapsedHero"
             android:nextFocusDown="@+id/buttonMirrorSwitch" />
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonMirrorSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/ic_mirror_video" app:iconSize="22dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone"
+
+
+                <FrameLayout
+            android:id="@+id/mirror_btn_wrapper"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="4dp">
+
+<com.google.android.material.button.MaterialButton android:id="@+id/buttonMirrorSwitch" android:layout_width="match_parent" android:layout_height="match_parent" app:icon="@drawable/ic_mirror_video" app:iconSize="22dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone"
             android:nextFocusUp="@+id/cardElapsedHero"
             android:nextFocusDown="@+id/buttonMirrorSwitch" />
+
+            <TextView
+                android:id="@+id/mirror_status_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginBottom="6dp"
+                android:layout_marginEnd="7dp"
+                android:text="OFF"
+                android:textColor="#B0BEC5"
+                android:textSize="6.5sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:includeFontPadding="false"
+/>
+        </FrameLayout>
+
 
     </LinearLayout>
 

@@ -411,6 +411,11 @@ public abstract class Constants {
     public static final String PREF_RAW_AUDIO_ENABLED = "pref_raw_audio_enabled";
     // Realtime audio mute state for the home quick action (persisted per user's choice)
     public static final String PREF_AUDIO_MUTED = "pref_audio_muted";
+    // Home nav icon choice: "default" | "jet" | "pilot" (default = normal house)
+    public static final String PREF_HOME_ICON = "pref_home_icon";
+    public static final String HOME_ICON_DEFAULT = "default";
+    public static final String HOME_ICON_JET = "jet";
+    public static final String HOME_ICON_PILOT = "pilot";
     // Quick-action button slots (comma-separated "token:slot" pairs). Key bumped to
     // v2 so polluted positions saved by earlier broken drag builds are discarded.
     public static final String PREF_QUICK_ACTIONS_ORDER = "pref_quick_actions_slots_v2";

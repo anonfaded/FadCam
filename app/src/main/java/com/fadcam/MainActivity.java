@@ -626,6 +626,8 @@ public class MainActivity extends AppCompatActivity {
             
             if (itemId == R.id.navigation_home) {
                 targetPosition = 0;
+                // Keep the user's chosen icon applied (selection re-renders the item).
+                applyHomeNavIcon();
             } else if (itemId == R.id.navigation_records) {
                 targetPosition = 1;
             } else if (itemId == R.id.navigation_remote) {
@@ -663,6 +665,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // The initial bar colors and transparency are now handled by switchFragment(0, false) 
+        applyHomeNavIcon();
+        setupHomeIconCustomization();
         // or restored from saved state via restoreBarColorsForCurrentTab() inside handleTabSelected.
 
         // theme change)-----------
@@ -1972,6 +1976,97 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return null;
+    }
+
+    /**
+     * Applies the user's chosen home nav icon (default house / fighter jet / pilot).
+     */
+    private void applyHomeNavIcon() {
+        if (bottomNavigationView == null) return;
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            }
+            String choice = sharedPreferencesManager.getHomeIcon();
+            int res;
+            if (Constants.HOME_ICON_JET.equals(choice)) {
+                res = R.drawable.fighter_jet_top_view;
+            } else if (Constants.HOME_ICON_PILOT.equals(choice)) {
+                res = R.drawable.pilot_steering_white;
+            } else {
+                res = R.drawable.ic_house;
+            }
+            android.view.MenuItem home = bottomNavigationView.getMenu().findItem(R.id.navigation_home);
+            if (home != null) home.setIcon(res);
+        } catch (Exception e) {
+            FLog.w("MainActivity", "applyHomeNavIcon failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Long-press the home nav item to pick which icon it shows.
+     */
+    private void setupHomeIconCustomization() {
+        if (bottomNavigationView == null) return;
+        bottomNavigationView.post(() -> {
+            try {
+                if (bottomNavigationView.getChildCount() == 0) return;
+                View menuView = bottomNavigationView.getChildAt(0);
+                if (!(menuView instanceof ViewGroup)) return;
+                ViewGroup group = (ViewGroup) menuView;
+                if (group.getChildCount() == 0) return;
+                View homeItem = group.getChildAt(0); // menu order: home is first
+                if (homeItem != null) {
+                    homeItem.setOnLongClickListener(v -> {
+                        showHomeIconPicker();
+                        return true;
+                    });
+                }
+            } catch (Exception e) {
+                FLog.w("MainActivity", "setupHomeIconCustomization failed: " + e.getMessage());
+            }
+        });
+    }
+
+    private void showHomeIconPicker() {
+        final String resultKey = "picker_result_home_icon";
+        getSupportFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
+            String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (sel != null) {
+                try {
+                    if (sharedPreferencesManager == null) {
+                        sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+                    }
+                    sharedPreferencesManager.setHomeIcon(sel);
+                    applyHomeNavIcon();
+                } catch (Exception e) {
+                    FLog.w("MainActivity", "home icon selection failed: " + e.getMessage());
+                }
+            }
+        });
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        // Pilot is the default — list it first.
+        items.add(new com.fadcam.ui.picker.OptionItem(Constants.HOME_ICON_PILOT,
+                getString(R.string.home_icon_pilot),
+                R.drawable.pilot_steering_white));
+        items.add(new com.fadcam.ui.picker.OptionItem(Constants.HOME_ICON_JET,
+                getString(R.string.home_icon_jet),
+                R.drawable.fighter_jet_top_view));
+        items.add(new com.fadcam.ui.picker.OptionItem(Constants.HOME_ICON_DEFAULT,
+                getString(R.string.home_icon_home),
+                R.drawable.ic_house));
+        String current = Constants.HOME_ICON_DEFAULT;
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            }
+            current = sharedPreferencesManager.getHomeIcon();
+        } catch (Exception ignored) {
+        }
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                        getString(R.string.home_icon_picker_title), items, current, resultKey, null);
+        sheet.show(getSupportFragmentManager(), "home_icon_picker");
     }
 
     private void scheduleTabPrewarm() {

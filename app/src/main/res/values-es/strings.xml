@@ -991,6 +991,10 @@
     <string name="preview_quick_actions_title">Acciones rápidas de vista previa</string>
     <string name="preview_quick_actions_sub">Mostrar íconos de FadShot y Pantalla completa incluso cuando la grabación está inactiva.</string>
     <string name="grid_lines_title">Líneas de cuadrícula</string>
+    <string name="home_icon_picker_title">Icono de inicio</string>
+    <string name="home_icon_home">Inicio</string>
+    <string name="home_icon_jet">Avión de combate</string>
+    <string name="home_icon_pilot">Piloto</string>
     <string name="quick_mute_label">Silenciar</string>
     <string name="quick_unmute_label">Sonido</string>
     <string name="grid_lines_subtitle">Cuadrícula de tercios en la vista previa</string>
