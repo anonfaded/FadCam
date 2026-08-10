@@ -429,6 +429,9 @@ public class HomeFragment extends BaseFragment {
     // Recording tile controls
     private TextView tileAfToggle;
     private TextView tileExp;
+    private TextView tileExpLabel;
+    private TextView tileZoomLabel;
+    private TextView tileAfStatusIcon;
     private TextView tileZoom;
 
     // overlay (removed - using PickerBottomSheetFragment instead)
@@ -4221,6 +4224,7 @@ public class HomeFragment extends BaseFragment {
                                 }
                             }
                         }
+                        updateExposureTileLabel(currentEvIndex);
                     } catch (Exception ignored) {}
                 }
             );
@@ -4313,6 +4317,7 @@ public class HomeFragment extends BaseFragment {
                             tileExp.setScaleX(aeLocked ? 1.05f : 1f);
                             tileExp.setScaleY(aeLocked ? 1.05f : 1f);
                         }
+                        updateExposureTileLabel(currentEvIndex);
                     } catch (Exception e) {
                         FLog.e(
                             TAG,
@@ -4365,6 +4370,13 @@ public class HomeFragment extends BaseFragment {
                                     ? "center_focus_strong"
                                     : "center_focus_weak"
                             );
+                        }
+                        // Lock/unlock status icon in the corner (in place of a text label),
+                        // with the same torch-style pop animation as the zoom/EV labels.
+                        if (tileAfStatusIcon != null) {
+                            boolean afOn =
+                                afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+                            animateTileLabel(tileAfStatusIcon, afOn ? "lock_open" : "lock", !afOn);
                         }
                     } catch (Exception ignored) {}
                 }
@@ -5024,12 +5036,16 @@ public class HomeFragment extends BaseFragment {
                         if (isPanningPreview) {
                             isPanningPreview = false;
                             dispatchCurrentPreviewZoomPan();
+                            // Final pop of the zoom label with the settled value.
+                            updatePreviewZoomHudUi(previewPinchZoomRatio, true);
                             return true;
                         }
                         if (wasPinchGesture) {
                             // The pinch released — this is not a tap, so don't trigger
                             // tap-to-focus (which would show the focus dot).
                             isPanningPreview = false;
+                            // Final pop of the zoom label with the settled value.
+                            updatePreviewZoomHudUi(previewPinchZoomRatio, true);
                             return true;
                         }
                         if ((isRecordingOrPaused() || isPreviewOnlyActive) && textureView != null) {
@@ -8057,6 +8073,22 @@ public class HomeFragment extends BaseFragment {
             tileAfToggle = root.findViewById(R.id.tile_af_toggle);
             tileExp = root.findViewById(R.id.tile_exp);
             tileZoom = root.findViewById(R.id.tile_zoom);
+            tileExpLabel = root.findViewById(R.id.tile_exp_label);
+            tileZoomLabel = root.findViewById(R.id.tile_zoom_label);
+            tileAfStatusIcon = root.findViewById(R.id.tile_af_status_icon);
+            // Initial label values (no animation on first render).
+            if (tileZoomLabel != null) {
+                tileZoomLabel.setText(String.format(
+                        java.util.Locale.US, "%.1fx",
+                        sharedPreferencesManager.getSpecificZoomRatio(
+                                sharedPreferencesManager.getCameraSelection())));
+            }
+            if (tileExpLabel != null) {
+                float step = sharedPreferencesManager.getExposureCompensationStep();
+                tileExpLabel.setText(String.format(
+                        java.util.Locale.US, "%+.1f",
+                        sharedPreferencesManager.getSavedExposureCompensation() * step));
+            }
 
             // Pill-style tap animations for the AF/exposure/zoom tiles.
             Utils.attachPressScale(tileAfToggle);
@@ -8089,6 +8121,21 @@ public class HomeFragment extends BaseFragment {
                             ? "center_focus_strong"
                             : "center_focus_weak"
                     );
+                    // Lock/unlock status icon in the corner (in place of a text label).
+                    if (tileAfStatusIcon != null) {
+                        tileAfStatusIcon.setText(
+                            afMode ==
+                                android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
+                                ? "lock_open"
+                                : "lock"
+                        );
+                        tileAfStatusIcon.setTextColor(
+                            afMode ==
+                                android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
+                                ? android.graphics.Color.WHITE
+                                : ContextCompat.getColor(requireContext(), R.color.orange_accent)
+                        );
+                    }
 
                     // theme)-----------
                     // Set appropriate color based on theme
@@ -8599,7 +8646,9 @@ public class HomeFragment extends BaseFragment {
         if (textureView != null) {
             textureView.setTransform(null);
         }
-        updatePreviewZoomHudUi(1.0f);
+        // Keep the zoom HUD/label HONEST: the UI mirror resets to 1.0 but the real
+        // camera zoom is untouched — show the actual zoom, never a forced "1.0x".
+        updatePreviewZoomHudUi(previewPinchZoomRatio);
     }
 
     private void requestPreviewParentIntercept(View child, boolean disallow) {
@@ -8718,10 +8767,21 @@ public class HomeFragment extends BaseFragment {
                 }
             });
         }
+        // Init the HUD/label from the PERSISTED zoom so the label never shows a
+        // stale default (e.g. "1.0x" while the saved zoom is 0.5x/2.0x).
+        CameraType initCam = sharedPreferencesManager != null
+                ? sharedPreferencesManager.getCameraSelection() : null;
+        if (initCam != null) {
+            previewPinchZoomRatio = sharedPreferencesManager.getSpecificZoomRatio(initCam);
+        }
         updatePreviewZoomHudUi(previewPinchZoomRatio);
     }
 
     private void updatePreviewZoomHudUi(float zoomRatio) {
+        updatePreviewZoomHudUi(zoomRatio, false);
+    }
+
+    private void updatePreviewZoomHudUi(float zoomRatio, boolean forceLabelPop) {
         if (containerPreviewZoomHud == null || textPreviewZoomHud == null) return;
         textPreviewZoomHud.setText(String.format(java.util.Locale.getDefault(), "%.1fx", zoomRatio));
         boolean show = zoomRatio > 1.01f;
@@ -8730,6 +8790,83 @@ public class HomeFragment extends BaseFragment {
             btnPreviewZoomReset.setVisibility(show ? View.VISIBLE : View.GONE);
         }
         updatePreviewZoomMapUi();
+        updateZoomTileLabel(zoomRatio, forceLabelPop);
+    }
+
+    /**
+     * Torch-style status label for the zoom tile: shows the live zoom level
+     * (e.g. "1.0x", "2.5x") bottom-right, with the same scale/fade animation
+     * as the torch ON/OFF label. Orange when zoomed, default color otherwise.
+     *
+     * Edge cases:
+     *  - During an active pinch/pan the text is updated IN PLACE (no scale/fade
+     *    per frame — that flickered on every little movement).
+     *  - When the value is unchanged (e.g. pan echo re-broadcasts the same
+     *    ratio) only the color is synced — the animation never re-runs.
+     */
+    private void updateZoomTileLabel(float ratio) {
+        updateZoomTileLabel(ratio, false);
+    }
+
+    private void updateZoomTileLabel(float ratio, boolean forcePop) {
+        if (tileZoomLabel == null || !isAdded()) return;
+        String text = String.format(java.util.Locale.US, "%.1fx", ratio);
+        boolean active = ratio > 1.01f;
+        if (!forcePop && (previewPinchGestureActive || isPanningPreview)) {
+            tileZoomLabel.setText(text);
+            tileZoomLabel.setTextColor(tileLabelColor(active));
+            return;
+        }
+        if (!forcePop && tileZoomLabel.getText().toString().equals(text)) {
+            tileZoomLabel.setTextColor(tileLabelColor(active));
+            return;
+        }
+        animateTileLabel(tileZoomLabel, text, active);
+    }
+
+    /**
+     * Torch-style status label for the exposure tile: shows the EV value
+     * (e.g. "+0.0", "-0.7") bottom-right, with the same scale/fade animation
+     * as the torch ON/OFF label. Orange when AE locked or compensated.
+     * Unchanged values (broadcast echoes) only sync the color — no re-animation.
+     */
+    private void updateExposureTileLabel(int evIndex) {
+        if (tileExpLabel == null || !isAdded()) return;
+        float step = sharedPreferencesManager.getExposureCompensationStep();
+        String text = String.format(java.util.Locale.US, "%+.1f", evIndex * step);
+        boolean active = aeLocked || evIndex != 0;
+        if (tileExpLabel.getText().toString().equals(text)) {
+            tileExpLabel.setTextColor(tileLabelColor(active));
+            return;
+        }
+        animateTileLabel(tileExpLabel, text, active);
+    }
+
+    /** Active → orange, Snow Veil → dark gray, otherwise white. */
+    private int tileLabelColor(boolean active) {
+        if (active) {
+            return ContextCompat.getColor(requireContext(), R.color.orange_accent);
+        }
+        if ("Snow Veil".equals(sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME))) {
+            return Color.parseColor("#424242");
+        }
+        return android.graphics.Color.WHITE;
+    }
+
+    /** Scale/fade/overshoot animation for the tile status labels (torch-style). */
+    private void animateTileLabel(TextView label, String text, boolean active) {
+        label.setText(text);
+        label.setTextColor(tileLabelColor(active));
+        label.animate().cancel();
+        label.setAlpha(0f);
+        label.setScaleX(0.4f);
+        label.setScaleY(0.4f);
+        label.animate()
+                .alpha(1f).scaleX(1f).scaleY(1f)
+                .setDuration(220)
+                .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                .start();
     }
 
     private void updatePreviewZoomMapUi() {
@@ -8845,6 +8982,7 @@ public class HomeFragment extends BaseFragment {
 
         tileExp.setScaleX(aeLocked ? 1.05f : 1f);
         tileExp.setScaleY(aeLocked ? 1.05f : 1f);
+        updateExposureTileLabel(currentEvIndex);
     }
 
     private void refreshZoomTileTintFromState() {
