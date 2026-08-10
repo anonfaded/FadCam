@@ -340,6 +340,7 @@ public class HomeFragment extends BaseFragment {
     private final java.util.ArrayList<View> quickSnapMarkers = new java.util.ArrayList<>();
     private final java.util.HashMap<View, Integer> quickSlotMap = new java.util.HashMap<>();
     private int quickSlotWidth = 0;
+    private float quickSlotStep = 0f; // content width / slot count (equal spacing)
     private int quickSlotCount = 0;
     private int quickHighlightedSlot = -1;
     private View quickActionsScrim = null;
@@ -11045,10 +11046,15 @@ public class HomeFragment extends BaseFragment {
             return;
         }
         float density = getResources().getDisplayMetrics().density;
-        quickSlotWidth = Math.round(44f * density);
+        // 40dp slots: tighter grid so the quick icons don't feel spread out
+        // (44dp left big gaps on smaller/lower-dpi screens).
+        quickSlotWidth = Math.round(40f * density);
         int padL = quickActionsRow.getPaddingLeft();
         int padR = quickActionsRow.getPaddingRight();
-        quickSlotCount = Math.max(3, (rowW - padL - padR) / quickSlotWidth);
+        int contentW = rowW - padL - padR;
+        quickSlotCount = Math.max(3, contentW / quickSlotWidth);
+        // Equal spacing across the padded content area — symmetric on both sides.
+        quickSlotStep = contentW / (float) quickSlotCount;
         quickSlotMap.clear();
         FLog.d("QuickActions", "applyQuickActionSlots: rowW=" + rowW + " slotCount=" + quickSlotCount
                 + " padL=" + padL + " padR=" + padR);
@@ -11128,7 +11134,7 @@ public class HomeFragment extends BaseFragment {
             View v = e.getKey();
             if (v == null || v.getParent() != quickActionsRow) continue;
             int slot = Math.max(0, Math.min(quickSlotCount - 1, e.getValue()));
-            v.setX(padL + slot * quickSlotWidth);
+            v.setX(padL + Math.round(quickSlotStep * slot));
             log.append(" ").append(quickActionIdToToken(v.getId()))
                .append("=").append(slot).append("(x").append(v.getX()).append(")");
         }
@@ -11264,12 +11270,12 @@ public class HomeFragment extends BaseFragment {
                             int padL = quickActionsRow.getPaddingLeft();
                             for (java.util.Map.Entry<View, Integer> e : quickSlotMap.entrySet()) {
                                 if (e.getKey() == drag) continue;
-                                e.getKey().setX(padL + Math.max(0,
-                                        Math.min(quickSlotCount - 1, e.getValue())) * quickSlotWidth);
+                                e.getKey().setX(padL + Math.round(quickSlotStep * Math.max(0,
+                                        Math.min(quickSlotCount - 1, e.getValue()))));
                             }
                             drag.animate()
-                                    .translationX(Math.max(0, Math.min(quickSlotCount - 1, target))
-                                            * quickSlotWidth)
+                                    .translationX(Math.round(quickSlotStep * Math.max(0,
+                                            Math.min(quickSlotCount - 1, target))))
                                     .setDuration(160)
                                     .start();
                         }
@@ -11318,8 +11324,16 @@ public class HomeFragment extends BaseFragment {
         int rowW = quickActionsRow.getWidth();
         if (rowW <= 0) return;
         float density = getResources().getDisplayMetrics().density;
-        quickSlotWidth = Math.round(44f * density);
-        quickSlotCount = Math.max(3, rowW / quickSlotWidth);
+        quickSlotWidth = Math.round(40f * density);
+        // MUST mirror applyQuickActionSlots() exactly: count from the PADDED
+        // content width and equally-spaced step, or the snap points overflow
+        // past paddingRight (too close to the screen edge) while the icons
+        // stay padding-aware — the asymmetric markers bug.
+        int padL = quickActionsRow.getPaddingLeft();
+        int padR = quickActionsRow.getPaddingRight();
+        int contentW = rowW - padL - padR;
+        quickSlotCount = Math.max(3, contentW / quickSlotWidth);
+        quickSlotStep = contentW / (float) quickSlotCount;
         int outlineSize = Math.round(36f * density);
         // Label ghost sized like the 9sp bold label (e.g. "Mute"/"Full").
         int barW = Math.round(26f * density);
@@ -11348,7 +11362,7 @@ public class HomeFragment extends BaseFragment {
             parent.addView(skeleton, insertAt, new ViewGroup.LayoutParams(quickSlotWidth,
                     ViewGroup.LayoutParams.WRAP_CONTENT));
             float slotCenterX = quickActionsRow.getLeft()
-                    + quickActionsRow.getPaddingLeft() + quickSlotWidth * (i + 0.5f);
+                    + quickActionsRow.getPaddingLeft() + quickSlotStep * (i + 0.5f);
             skeleton.setX(slotCenterX - quickSlotWidth / 2f);
             skeleton.setY(quickActionsRow.getTop() + quickActionsRow.getPaddingTop());
             skeleton.setVisibility(View.GONE);
@@ -11394,14 +11408,14 @@ public class HomeFragment extends BaseFragment {
      *  Hysteresis: small nudges near the boundary keep the icon in its current
      *  slot, so the icon only moves when the user clearly drags it to another slot. */
     private int computeQuickTargetSlot(View drag, int currentSlot) {
-        if (quickSlotWidth <= 0) return -1;
+        if (quickSlotStep <= 0f) return -1;
         float centerInRow = drag.getX() + drag.getWidth() / 2f
                 - quickActionsRow.getPaddingLeft();
-        int slot = Math.round(centerInRow / quickSlotWidth - 0.5f);
+        int slot = Math.round(centerInRow / quickSlotStep - 0.5f);
         slot = Math.max(0, Math.min(quickSlotCount - 1, slot));
         if (currentSlot >= 0 && Math.abs(slot - currentSlot) <= 1) {
-            float curCenter = (currentSlot + 0.5f) * quickSlotWidth;
-            if (Math.abs(centerInRow - curCenter) < quickSlotWidth * 0.35f) {
+            float curCenter = (currentSlot + 0.5f) * quickSlotStep;
+            if (Math.abs(centerInRow - curCenter) < quickSlotStep * 0.35f) {
                 return currentSlot; // nudge too small — stay put
             }
         }
