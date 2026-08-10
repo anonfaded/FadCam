@@ -649,10 +649,18 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // Dock reveal animation – only on fresh cold start, not config changes
-        if (savedInstanceState == null) {
-            View navContainer = findViewById(R.id.nav_container);
-            com.fadcam.ui.DockRevealAnimator.reveal(navContainer, bottomNavigationView);
+        // Dock reveal animation – REMOVED: the launch reveal (scale/fade/slide of
+        // the bottom nav dock) consumed resources and delayed the dock's presence
+        // on every cold start. The dock now simply renders in place.
+        // (DockRevealAnimator kept for reference but no longer invoked.)
+        View navContainer = findViewById(R.id.nav_container);
+        if (navContainer != null) {
+            navContainer.setScaleX(1f);
+            navContainer.setAlpha(1f);
+            navContainer.setTranslationY(0f);
+        }
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setAlpha(1f);
         }
 
         // This is the path for the osmdroid tile cache
