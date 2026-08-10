@@ -2023,7 +2023,7 @@ public class HomeFragment extends BaseFragment {
             }
             if (buttonCamSwitch != null) {
                 buttonCamSwitch.setEnabled(true);
-                animateControlButton(buttonCamSwitch, true, null);
+                animateControlButtonScale(buttonCamSwitch, true, null);
                 buttonCamSwitch.setAlpha(1f);
             }
             if (buttonTorchSwitch != null) {
@@ -2288,7 +2288,7 @@ public class HomeFragment extends BaseFragment {
         updateStats();
         isTorchOn = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.PREF_TORCH_STATE, false);
         updateTorchUI(isTorchOn);
-        updateMirrorButtonVisibilityAndState();
+        updateMirrorButtonVisibilityAndState(false); // instant on resume
         if (isRecordingOrPaused() || isPreviewOnlyActive) {
             pushFrontMirrorToService(sharedPreferencesManager.isFrontVideoMirrorEnabled());
         }
@@ -4690,23 +4690,9 @@ public class HomeFragment extends BaseFragment {
 
         // Setup lifecycle observer for background/foreground handling
         setupLifecycleObserver();
-
-        // Attempt to find camera with flash
-        try {
-            cameraId = getCameraWithFlash();
-            if (cameraId == null) {
-                buttonTorchSwitch.setEnabled(false);
-                animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, false, buttonTorchSwitch);
-            } else {
-                buttonTorchSwitch.setEnabled(true);
-                animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, true, buttonTorchSwitch);
-            }
-        } catch (CameraAccessException e) {
-            FLog.e(TAG, "Camera access error: " + e.getMessage());
-            e.printStackTrace();
-            buttonTorchSwitch.setEnabled(false);
-            animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, false, buttonTorchSwitch);
-        }
+        // NOTE: torch flash detection is done once in initializeTorch() above —
+        // the duplicate block that animated the wrapper here was removed (it
+        // caused the control row to re-center with a slide on cold start).
 
         View btnGetPro = view.findViewById(R.id.btnGetPro);
         View proBadgeDot = view.findViewById(R.id.proBadgeDot);
@@ -5459,17 +5445,75 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    /**
+     * Scale-based show/hide for control buttons (used by the camera switch):
+     * grows in from 0.6 + fade on show, shrinks to 0.6 + fades on hide.
+     */
+    protected void animateControlButtonScale(final View view, boolean show, final View inner) {
+        if (view == null) return;
+        view.animate().cancel();
+        // Never inherit a stale horizontal offset (leftover from a cancelled slide).
+        view.setTranslationX(0f);
+        if (show) {
+            if (inner != null) inner.setVisibility(View.VISIBLE);
+            if (view.getVisibility() != View.VISIBLE) {
+                view.setAlpha(0f);
+                view.setScaleX(0.6f);
+                view.setScaleY(0.6f);
+                view.setVisibility(View.VISIBLE);
+            }
+            view.animate()
+                    .alpha(1f).scaleX(1f).scaleY(1f)
+                    .setDuration(240)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
+                    .start();
+        } else {
+            view.animate()
+                    .alpha(0f).scaleX(0.6f).scaleY(0.6f)
+                    .setDuration(240)
+                    .setInterpolator(new android.view.animation.AccelerateInterpolator(1.5f))
+                    .withEndAction(() -> {
+                        view.setVisibility(View.GONE);
+                        view.setAlpha(1f);
+                        view.setScaleX(1f);
+                        view.setScaleY(1f);
+                        if (inner != null) inner.setVisibility(View.GONE);
+                    })
+                    .start();
+        }
+    }
+
     protected void updateMirrorButtonVisibilityAndState() {
+        updateMirrorButtonVisibilityAndState(true);
+    }
+
+    protected void updateMirrorButtonVisibilityAndState(boolean animate) {
         if (buttonMirrorSwitch == null || sharedPreferencesManager == null) return;
         CameraType selectedCamera = sharedPreferencesManager.getCameraSelection();
         boolean shouldShow =
             (selectedCamera == CameraType.FRONT || selectedCamera.isDual()) &&
             !getClass().getName().contains("FadRecHomeFragment");
 
-        // Animate the flip button (wrapper) in/out smoothly.
-        animateControlButton(
-                getView() != null ? getView().findViewById(R.id.mirror_btn_wrapper) : null,
-                shouldShow, buttonMirrorSwitch);
+        View mirrorWrapper = getView() != null ? getView().findViewById(R.id.mirror_btn_wrapper) : null;
+        if (mirrorWrapper == null) return;
+        if (animate) {
+            // Scale in/out (grow/shrink + fade) — NO slide, consistent with the
+            // camera switch button.
+            animateControlButtonScale(mirrorWrapper, shouldShow, buttonMirrorSwitch);
+        } else {
+            // INSTANT at init/resume — no slide, no row re-centering on cold start.
+            if (shouldShow) {
+                mirrorWrapper.setVisibility(View.VISIBLE);
+                mirrorWrapper.setAlpha(1f);
+                mirrorWrapper.setTranslationX(0f);
+                buttonMirrorSwitch.setVisibility(View.VISIBLE);
+            } else {
+                mirrorWrapper.setVisibility(View.GONE);
+                mirrorWrapper.setAlpha(1f);
+                mirrorWrapper.setTranslationX(0f);
+                buttonMirrorSwitch.setVisibility(View.GONE);
+            }
+        }
         if (!shouldShow) {
             return;
         }
@@ -9383,20 +9427,37 @@ public class HomeFragment extends BaseFragment {
         cameraManager = (CameraManager) requireContext().getSystemService(
             Context.CAMERA_SERVICE
         );
+        View wrapper = getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null;
         try {
             cameraId = getCameraWithFlash();
             if (cameraId == null) {
                 buttonTorchSwitch.setEnabled(false);
-                animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, false, buttonTorchSwitch);
+                // INSTANT visibility at init — animating here (or hiding at all)
+                // re-centers the whole control row on the first frames, which the
+                // user sees as the buttons appearing LEFT then jumping to their
+                // real position. Keep the wrapper visible, just disabled.
+                if (wrapper != null) {
+                    wrapper.setVisibility(View.VISIBLE);
+                    wrapper.setAlpha(1f);
+                    wrapper.setTranslationX(0f);
+                }
             } else {
                 buttonTorchSwitch.setEnabled(true);
-                animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, true, buttonTorchSwitch);
+                if (wrapper != null) {
+                    wrapper.setVisibility(View.VISIBLE);
+                    wrapper.setAlpha(1f);
+                    wrapper.setTranslationX(0f);
+                }
             }
         } catch (CameraAccessException e) {
             FLog.e(TAG, "Camera access error: " + e.getMessage());
             e.printStackTrace();
             buttonTorchSwitch.setEnabled(false);
-            animateControlButton(getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null, false, buttonTorchSwitch);
+            if (wrapper != null) {
+                wrapper.setVisibility(View.VISIBLE);
+                wrapper.setAlpha(1f);
+                wrapper.setTranslationX(0f);
+            }
         }
     }
 
@@ -10325,8 +10386,10 @@ public class HomeFragment extends BaseFragment {
 
         // When a control button appears/disappears, the center-aligned row
         // re-lays out — animate those position changes so the remaining buttons
-        // slide horizontally instead of jumping. Appear/disappear of the new
-        // button itself is handled by animateControlButton().
+        // SLIDE horizontally to make space instead of teleporting. The appearing/
+        // disappearing button itself animates via animateControlButtonScale().
+        // (Safe at cold start now: the torch wrapper never hides/shows at init,
+        // so no startup slide is triggered.)
         try {
             View controlsRow = view.findViewById(R.id.layoutControls);
             if (controlsRow instanceof android.widget.LinearLayout) {
@@ -10448,7 +10511,7 @@ public class HomeFragment extends BaseFragment {
         buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
         torchStatusLabel = view.findViewById(R.id.torch_status_label);
         mirrorStatusLabel = view.findViewById(R.id.mirror_status_label);
-        updateMirrorButtonVisibilityAndState();
+        updateMirrorButtonVisibilityAndState(false); // instant on cold start
         // Initialize rotating bubble background (now replaced by avatar — will be null)
         ivBubbleBackground = view.findViewById(R.id.ivBubbleBackground);
 

@@ -417,7 +417,7 @@ public class FadRecHomeFragment extends HomeFragment {
             
             // Keep camera controls HIDDEN (parent makes them visible)
             if (buttonCamSwitch != null) {
-                buttonCamSwitch.setVisibility(View.GONE);
+                animateControlButtonScale(buttonCamSwitch, false, null);
             }
             if (buttonTorchSwitch != null) {
                 buttonTorchSwitch.setVisibility(View.GONE);
@@ -459,7 +459,7 @@ public class FadRecHomeFragment extends HomeFragment {
         
         // Also ensure camera controls stay hidden
         if (buttonCamSwitch != null) {
-            buttonCamSwitch.setVisibility(View.GONE);
+            animateControlButtonScale(buttonCamSwitch, false, null);
         }
     }
 
