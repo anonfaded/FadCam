@@ -1297,6 +1297,22 @@ public class HomeFragment extends BaseFragment {
             tvPreviewHint.bringToFront();
             boolean quickVisible = btnQuickMuteAudio != null
                     && btnQuickMuteAudio.getVisibility() == View.VISIBLE;
+            if (isLandscapeMode()) {
+                // Landscape preview is short: the hint lives BELOW the avatar at the
+                // bottom (6dp). When the quick actions occupy the bottom strip, raise
+                // it just above them. NEVER touch visibility here — that's owned by
+                // setHintVisibilityAnimated() (forcing it hid the hint permanently
+                // when quick actions were "always visible").
+                android.view.ViewGroup.MarginLayoutParams lp =
+                        (android.view.ViewGroup.MarginLayoutParams) tvPreviewHint.getLayoutParams();
+                int targetDp = quickVisible ? 72 : 6;
+                int target = Math.round(targetDp * getResources().getDisplayMetrics().density);
+                if (lp != null && lp.bottomMargin != target) {
+                    lp.bottomMargin = target;
+                    tvPreviewHint.setLayoutParams(lp);
+                }
+                return;
+            }
             android.view.ViewGroup.MarginLayoutParams lp =
                     (android.view.ViewGroup.MarginLayoutParams) tvPreviewHint.getLayoutParams();
             int targetDp = quickVisible ? 76 : 48;
@@ -11476,7 +11492,12 @@ public class HomeFragment extends BaseFragment {
      */
     private void ensureQuickActionsScrim() {
         if (quickActionsScrim != null) return;
-        View root = getView();
+        // Attach to the ACTIVITY content root (not the fragment view) so the dim
+        // covers EVERYTHING: home, the bottom nav dock, and the status-bar area.
+        // The bright-window math uses screen coordinates, so this stays aligned.
+        View root = getActivity() != null
+                ? getActivity().findViewById(android.R.id.content)
+                : getView();
         if (!(root instanceof ViewGroup) || quickActionsRow == null) return;
         float density = getResources().getDisplayMetrics().density;
         final android.graphics.Paint dimPaint = new android.graphics.Paint();
@@ -11499,6 +11520,10 @@ public class HomeFragment extends BaseFragment {
         };
         // CLEAR xfermode needs a software layer to punch reliably.
         quickActionsScrim.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        // The scrim is added DIRECTLY to the root ConstraintLayout — it MUST have
+        // an id or ConstraintSet.clone(root) throws "All children of ConstraintLayout
+        // must have ids" (e.g. the landscape rail fold toggle crashed).
+        quickActionsScrim.setId(android.view.View.generateViewId());
         ((ViewGroup) root).addView(quickActionsScrim, new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         quickActionsScrim.setVisibility(View.GONE);
