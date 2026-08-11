@@ -282,18 +282,36 @@ public class ModeSwitcherComponent {
 
             cancelActiveIndicatorAnimation();
             FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) activeIndicator.getLayoutParams();
+            // IDEMPOTENCY GUARD — critical: setLayoutParams() triggers requestLayout(),
+            // and the root's onLayoutChangeListener re-runs this method on every layout
+            // pass. Without skipping identical params, that ping-pongs into an infinite
+            // layout loop (the "requestLayout improperly called during layout" flood).
+            boolean paramsDirty = lp.gravity != (Gravity.TOP | Gravity.START)
+                    || lp.leftMargin != 0 || lp.topMargin != 0
+                    || lp.width != targetWidth || lp.height != targetHeight;
             lp.gravity = Gravity.TOP | Gravity.START;
             lp.leftMargin = 0;
             lp.topMargin = 0;
             lp.width = targetWidth;
             lp.height = targetHeight;
-            activeIndicator.setBackgroundResource(R.drawable.segment_active_background);
+            if (activeIndicator.getBackground() == null
+                    || activeIndicator.getBackground().getConstantState() == null
+                    || !activeIndicator.getBackground().getConstantState().equals(
+                            context.getDrawable(R.drawable.segment_active_background).getConstantState())) {
+                activeIndicator.setBackgroundResource(R.drawable.segment_active_background);
+            }
             activeIndicator.setVisibility(View.VISIBLE);
-            activeIndicator.setLayoutParams(lp);
-            activeIndicator.setY(targetTop);
+            if (paramsDirty) {
+                activeIndicator.setLayoutParams(lp);
+            }
+            if (Math.abs(activeIndicator.getY() - targetTop) > 0.5f) {
+                activeIndicator.setY(targetTop);
+            }
 
             if (!animate) {
-                activeIndicator.setX(targetLeft);
+                if (Math.abs(activeIndicator.getX() - targetLeft) > 0.5f) {
+                    activeIndicator.setX(targetLeft);
+                }
                 FLog.d(TAG, "updateActiveIndicator: positioned mode=" + mode + " left=" + targetLeft);
                 if (onAnimationComplete != null) {
                     onAnimationComplete.run();

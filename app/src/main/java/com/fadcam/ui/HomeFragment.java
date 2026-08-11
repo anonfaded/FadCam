@@ -1498,19 +1498,40 @@ public class HomeFragment extends BaseFragment {
                             return;
                         }
 
-                        // Show bottom sheet ONLY for stable updates
-                        if (result.hasStable) {
-                            final String finalVersion = result.stableVersion;
-                            final String finalUrl = result.stableUrl;
+                        // Auto-popup on app open:
+                        //  - BETA app (package com.fadcam.beta): show the BETA update
+                        //    sheet DIRECTLY so beta testers see urgent releases
+                        //    immediately (badge-only was too quiet for them).
+                        //  - Stable app: only stable updates pop (existing behavior).
+                        //    (On the beta app a newer STABLE still pops if no beta
+                        //    is available — e.g. current beta < next stable.)
+                        final boolean isBetaApp =
+                                com.fadcam.BuildConfig.APPLICATION_ID.endsWith(".beta");
+                        FLog.d("UpdateCheck", "Home check: package="
+                                + com.fadcam.BuildConfig.APPLICATION_ID
+                                + " isBetaApp=" + isBetaApp
+                                + " current=" + currentVersion
+                                + " stable=" + result.stableVersion + "(" + result.hasStable + ")"
+                                + " beta=" + result.betaVersion + "(" + result.hasBeta + ")"
+                                + " pro=" + result.proVersion + "(" + result.hasPro + ")");
+                        if ((isBetaApp && result.hasBeta) || (!isBetaApp && result.hasStable)) {
                             requireActivity().runOnUiThread(() -> {
                                 if (isAdded() && !isDetached()
                                         && getActivity() != null
                                         && !getActivity().isFinishing()) {
                                     try {
-                                        UpdateAvailableBottomSheet.newInstance(
-                                            finalVersion, "", finalUrl
-                                        ).show(getParentFragmentManager(),
-                                               "UpdateAvailableBottomSheet");
+                                        if (isBetaApp && result.hasBeta) {
+                                            BetaUpdateBottomSheet.newInstance(
+                                                    result.betaVersion, result.betaUrl,
+                                                    currentVersion
+                                            ).show(getParentFragmentManager(),
+                                                   "BetaUpdateSheet");
+                                        } else {
+                                            UpdateAvailableBottomSheet.newInstance(
+                                                result.stableVersion, "", result.stableUrl
+                                            ).show(getParentFragmentManager(),
+                                                   "UpdateAvailableBottomSheet");
+                                        }
                                     } catch (IllegalStateException e) {
                                         FLog.e(TAG, "Cannot show update sheet", e);
                                     }

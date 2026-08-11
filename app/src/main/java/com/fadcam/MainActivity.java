@@ -354,6 +354,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Build/package identity for update-channel verification (beta vs stable).
+        try {
+            FLog.d("UpdateCheck", "App identity: applicationId=" + BuildConfig.APPLICATION_ID
+                    + " package=" + getPackageName()
+                    + " isBeta=" + BuildConfig.APPLICATION_ID.endsWith(".beta")
+                    + " versionName=" + BuildConfig.VERSION_NAME);
+        } catch (Exception e) {
+            FLog.w("UpdateCheck", "App identity log failed: " + e.getMessage());
+        }
         super.onCreate(savedInstanceState);
         swipeTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
         // Install splash screen (shows the themed windowSplashScreenAnimatedIcon)
