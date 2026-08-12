@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
+        android:id="@+id/record_toggle"
+        android:enabled="true"
+        android:icon="@drawable/toggle_recording_shortcut"
+        android:shortcutShortLabel="@string/shortcut_toggle_recording"
+        android:shortcutLongLabel="@string/shortcut_toggle_recording_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.fadcam.RecordingToggleActivity"
+            android:targetPackage="com.fadcam" />
+    </shortcut>
+
+    <shortcut
         android:id="@+id/torch_toggle"
         android:enabled="true"
         android:icon="@drawable/flashlight_shortcut"

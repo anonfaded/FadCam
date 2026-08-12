@@ -22,6 +22,7 @@ import java.util.List;
 public class ShortcutsManager {
 
     public static final String ID_TORCH = "torch_toggle";
+    public static final String ID_TOGGLE = "record_toggle";
     public static final String ID_START = "record_start";
     public static final String ID_START_FRONT = "record_start_front";
     public static final String ID_START_CURRENT = "record_start_current";
@@ -45,10 +46,20 @@ public class ShortcutsManager {
         @DrawableRes int defaultIcon,
         @NonNull CharSequence defaultLabel
     ) {
+        return buildShortcut(id, intent, defaultIcon, defaultLabel, defaultLabel);
+    }
+
+    public ShortcutInfoCompat buildShortcut(
+        @NonNull String id,
+        @NonNull Intent intent,
+        @DrawableRes int defaultIcon,
+        @NonNull CharSequence defaultShortLabel,
+        @NonNull CharSequence defaultLongLabel
+    ) {
         ShortcutInfoCompat.Builder b = new ShortcutInfoCompat.Builder(ctx, id);
         String customLabel = prefs.getCustomLabel(id);
-        b.setShortLabel(customLabel != null ? customLabel : defaultLabel);
-        b.setLongLabel(customLabel != null ? customLabel : defaultLabel);
+        b.setShortLabel(customLabel != null ? customLabel : defaultShortLabel);
+        b.setLongLabel(customLabel != null ? customLabel : defaultLongLabel);
         IconCompat icon = resolveIcon(id, defaultIcon);
         if (icon != null) b.setIcon(icon);
         b.setIntent(intent);
@@ -178,16 +189,17 @@ public class ShortcutsManager {
      */
     public void publishAllDynamic() {
         List<ShortcutInfoCompat> list = new ArrayList<>();
-        // Torch
+        // Toggle recording
         list.add(
             buildShortcut(
-                ID_TORCH,
+                ID_TOGGLE,
                 new Intent(Intent.ACTION_VIEW).setClassName(
                     ctx,
-                    "com.fadcam.TorchToggleActivity"
+                    "com.fadcam.RecordingToggleActivity"
                 ),
-                com.fadcam.R.drawable.flashlight_shortcut,
-                ctx.getString(com.fadcam.R.string.torch_shortcut_short_label)
+                com.fadcam.R.drawable.toggle_recording_shortcut,
+                ctx.getString(com.fadcam.R.string.shortcut_toggle_recording),
+                ctx.getString(com.fadcam.R.string.shortcut_toggle_recording_long)
             )
         );
         // Start
@@ -203,6 +215,18 @@ public class ShortcutsManager {
                 ),
                 com.fadcam.R.drawable.start_back_shortcut,
                 ctx.getString(com.fadcam.R.string.shortcut_start_back)
+            )
+        );
+        // Stop
+        list.add(
+            buildShortcut(
+                ID_STOP,
+                new Intent(Intent.ACTION_VIEW).setClassName(
+                    ctx,
+                    "com.fadcam.RecordingStopActivity"
+                ),
+                com.fadcam.R.drawable.stop_shortcut,
+                ctx.getString(com.fadcam.R.string.stop_recording)
             )
         );
         list.add(
@@ -247,16 +271,16 @@ public class ShortcutsManager {
                 ctx.getString(com.fadcam.R.string.shortcut_start_dual)
             )
         );
-        // Stop
+        // Torch
         list.add(
             buildShortcut(
-                ID_STOP,
+                ID_TORCH,
                 new Intent(Intent.ACTION_VIEW).setClassName(
                     ctx,
-                    "com.fadcam.RecordingStopActivity"
+                    "com.fadcam.TorchToggleActivity"
                 ),
-                com.fadcam.R.drawable.stop_shortcut,
-                ctx.getString(com.fadcam.R.string.stop_recording)
+                com.fadcam.R.drawable.flashlight_shortcut,
+                ctx.getString(com.fadcam.R.string.torch_shortcut_short_label)
             )
         );
         // Photo
@@ -298,7 +322,18 @@ public class ShortcutsManager {
                 ctx.getString(com.fadcam.R.string.shortcut_take_screenshot)
             )
         );
-        ShortcutManagerCompat.setDynamicShortcuts(ctx, list);
+        List<ShortcutInfoCompat> published = list;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N_MR1) {
+            android.content.pm.ShortcutManager shortcutManager =
+                ctx.getSystemService(android.content.pm.ShortcutManager.class);
+            if (shortcutManager != null) {
+                int maxCount = shortcutManager.getMaxShortcutCountPerActivity();
+                if (maxCount > 0 && list.size() > maxCount) {
+                    published = new ArrayList<>(list.subList(0, maxCount));
+                }
+            }
+        }
+        ShortcutManagerCompat.setDynamicShortcuts(ctx, published);
     }
 
     /**
@@ -321,6 +356,20 @@ public class ShortcutsManager {
             // shortcuts but tries to update their metadata where supported.
             if (isPinSupported()) {
                 List<ShortcutInfoCompat> pinned = new ArrayList<>();
+
+                pinned.add(
+                    buildShortcutForPin(
+                        ID_TOGGLE,
+                        new Intent(Intent.ACTION_VIEW).setClassName(
+                            ctx,
+                            "com.fadcam.RecordingToggleActivity"
+                        ),
+                        com.fadcam.R.drawable.toggle_recording_shortcut,
+                        ctx.getString(
+                            com.fadcam.R.string.shortcut_toggle_recording
+                        )
+                    )
+                );
 
                 pinned.add(
                     buildShortcutForPin(
