@@ -248,6 +248,7 @@
     <string name="tips_title">Tips</string>
     <string name="tips_subtitle">Tips penggunaan yang bermanfaat</string>
     <string name="whats_new_title">Yang Baru</string>
+    <string name="whats_new_no_browser">Tidak ada aplikasi untuk membuka tautan ini</string>
     <string name="whats_new_subtitle">Lihat fitur dan pembaruan terbaru</string>
     <string name="home_menu">Menu Utama</string>
     <string name="home_sidebar_title">Beranda</string>

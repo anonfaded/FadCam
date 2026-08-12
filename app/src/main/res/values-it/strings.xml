@@ -249,6 +249,7 @@
     <string name="tips_title">Suggerimenti</string>
     <string name="tips_subtitle">Suggerimenti utili per l\'utilizzo</string>
     <string name="whats_new_title">Novità</string>
+    <string name="whats_new_no_browser">Nessuna app trovata per aprire questo link</string>
     <string name="whats_new_subtitle">Scopri le ultime funzionalità e aggiornamenti</string>
     <string name="home_menu">Menu Home</string>
     <string name="home_sidebar_title">Home</string>

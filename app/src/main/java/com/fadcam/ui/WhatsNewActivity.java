@@ -81,15 +81,18 @@ public class WhatsNewActivity extends AppCompatActivity {
             // Set WebViewClient to handle link clicks and open them in browser
             changelogWebView.setWebViewClient(new WebViewClient() {
                 @Override
-                public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                    // Open external links in browser
+                public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
+                    // Open external links in browser (modern overload — the
+                    // String-only variant is deprecated since API 24).
+                    String url = request.getUrl().toString();
                     if (url.startsWith("http://") || url.startsWith("https://")) {
                         Intent intent = new Intent(Intent.ACTION_VIEW);
                         intent.setData(Uri.parse(url));
                         try {
                             startActivity(intent);
                         } catch (ActivityNotFoundException e) {
-                            Toast.makeText(view.getContext(), "No app found to open this link", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(view.getContext(),
+                                    R.string.whats_new_no_browser, Toast.LENGTH_SHORT).show();
                         }
                         return true;
                     }

@@ -563,6 +563,7 @@
     <string name="tips_title">İpuçları</string>
     <string name="tips_subtitle">Yardımcı kullanım ipuçları</string>
     <string name="whats_new_title">Yenilikler</string>
+    <string name="whats_new_no_browser">Bu bağlantıyı açacak bir uygulama bulunamadı</string>
     <string name="whats_new_subtitle">En son özellikleri ve güncellemeleri görün</string>
     <string name="watch_video_saved_toast">Downloads/FadCam klasörüne kaydedildi</string>
     <string name="video_menu_info">Bilgi</string>

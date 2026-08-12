@@ -248,6 +248,7 @@
     <string name="tips_title">Tips</string>
     <string name="tips_subtitle">Helpful usage tips</string>
     <string name="whats_new_title">What\'s New</string>
+    <string name="whats_new_no_browser">No app found to open this link</string>
     <string name="whats_new_subtitle">See latest features and updates</string>
     <string name="home_menu">Home Menu</string>
     <string name="home_sidebar_title">Home</string>

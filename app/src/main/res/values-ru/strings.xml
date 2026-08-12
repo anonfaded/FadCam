@@ -140,6 +140,7 @@
     <string name="tips_title">Советы</string>
     <string name="tips_subtitle">Полезные советы по использованию</string>
     <string name="whats_new_title">Что нового</string>
+    <string name="whats_new_no_browser">Не найдено приложения для открытия этой ссылки</string>
     <string name="whats_new_subtitle">Посмотрите последние функции и обновления</string>
     <string name="home_menu">Главное меню</string>
     <string name="home_sidebar_title">Главная</string>

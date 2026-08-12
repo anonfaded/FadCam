@@ -249,6 +249,7 @@
     <string name="tips_title">Consejos</string>
     <string name="tips_subtitle">Consejos útiles de uso</string>
     <string name="whats_new_title">Novedades</string>
+    <string name="whats_new_no_browser">No se encontró ninguna aplicación para abrir este enlace</string>
     <string name="whats_new_subtitle">Ver últimas funciones y actualizaciones</string>
     <string name="home_menu">Menú de Inicio</string>
     <string name="home_sidebar_title">Inicio</string>

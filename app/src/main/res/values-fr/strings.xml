@@ -846,6 +846,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="whats_new_title">What\'s New</string>
 
+<string name="whats_new_no_browser">Aucune application trouvée pour ouvrir ce lien</string>
+
 <string name="whats_new_subtitle">See latest features and updates</string>
 
 <string name="home_menu">Home Menu</string>

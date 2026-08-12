@@ -204,6 +204,7 @@
     <string name="tips_title">Συμβουλές</string>
     <string name="tips_subtitle">Χρήσιμες συμβουλές χρήσης</string>
     <string name="whats_new_title">Τι Νέο</string>
+    <string name="whats_new_no_browser">Δεν βρέθηκε εφαρμογή για το άνοιγμα αυτού του συνδέσμου</string>
     <string name="whats_new_subtitle">Δείτε τις τελευταίες λειτουργίες και ενημερώσεις</string>
     <string name="home_menu">Μενού Αρχικής</string>
     <string name="home_sidebar_title">Αρχική</string>

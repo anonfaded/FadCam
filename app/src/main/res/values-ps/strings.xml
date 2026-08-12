@@ -2263,6 +2263,7 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="waveform_helper_text">Control kai che audio waveform visualization pa progress bar ke video playback wakht ke zaher shi ke na.</string>
     <string name="waveform_switch_label">Audio Waveform Faal Ka</string>
     <string name="website_title">Website</string>
+    <string name="whats_new_no_browser">Da link paųčhelawalo kompyutar nay mung</string>
     <string name="whats_new_subtitle">See latest features and updates</string>
     <string name="whats_new_title">What\'s New</string>
     <string name="widget_arabic_date_format_title">Arabic Tarikh Format</string>

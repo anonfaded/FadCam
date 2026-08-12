@@ -249,6 +249,7 @@
     <string name="tips_title">Näpunäited</string>
     <string name="tips_subtitle">Kasulikud kasutusnõuanded</string>
     <string name="whats_new_title">Mis on uut</string>
+    <string name="whats_new_no_browser">Selle lingi avamiseks ei leitud ühtegi rakendust</string>
     <string name="whats_new_subtitle">Vaata viimaseid funktsioone ja uuendusi</string>
     <string name="home_menu">Avalehe menüü</string>
     <string name="home_sidebar_title">Avaleht</string>

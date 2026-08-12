@@ -988,6 +988,7 @@
     <string name="fadrec_permission_denied">屏幕录制权限被拒绝</string>
     <string name="fadrec_mode_title">FadRec • 屏幕录制</string>
     <string name="whats_new_title">新功能</string>
+    <string name="whats_new_no_browser">未找到可以打开此链接的应用</string>
     <string name="whats_new_subtitle">查看最新功能和更新</string>
     <string name="rename_layer_title">重命名图层</string>
     <string name="rename_layer_message">为图层输入新名称</string>

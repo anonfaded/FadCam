@@ -850,6 +850,7 @@
 
     <string name="whats_new_title">ما الجديد</string>
 
+    <string name="whats_new_no_browser">لم يتم العثور على تطبيق لفتح هذا الرابط</string>
     <string name="whats_new_subtitle">اطلع على أحدث الميزات والتحديثات</string>
 
     <string name="home_menu">قائمة الصفحة الرئيسية</string>

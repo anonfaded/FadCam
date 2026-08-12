@@ -827,6 +827,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="tips_title">Tipps</string>
     <string name="tips_subtitle">Hilfreiche Nutzungstipps</string>
     <string name="whats_new_title">Was ist neu</string>
+    <string name="whats_new_no_browser">Keine App zum Öffnen dieses Links gefunden</string>
     <string name="whats_new_subtitle">Neueste Funktionen und Updates ansehen</string>
     <string name="home_menu">Home-Menü</string>
     <string name="home_sidebar_title">Home</string>
