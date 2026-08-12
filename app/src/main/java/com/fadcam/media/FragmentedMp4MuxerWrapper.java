@@ -38,6 +38,13 @@ public class FragmentedMp4MuxerWrapper {
     private final FragmentedMp4Muxer muxer;
     private final FileOutputStream fileOutputStream;
     private final Object muxerLock = new Object();
+    // Guards writer-thread callbacks vs release()'s stream close. WITHOUT this, a
+    // handleProcessedSegment() that passed the `released` check can race release()
+    // closing the stream — writes hit an invalid fd and are silently DROPPED, which
+    // is exactly the "FileDescriptor is INVALID — skipping write" flood and the
+    // 0-byte split segments on some devices (Samsung SAF especially).
+    private final Object ioLock = new Object();
+    private int invalidFdLogCount = 0;
     private boolean started = false;
     private boolean released = false;
     private int orientationHint = 0;
@@ -392,15 +399,19 @@ public class FragmentedMp4MuxerWrapper {
                         FLog.e(TAG, "Error closing muxer", e);
                     }
                 }
-                // CRITICAL: Flush BEFORE closing to ensure all data (including moov box) is written to disk
-                try {
-                    fileOutputStream.flush();
-                    FLog.d(TAG, "FileOutputStream flushed successfully");
-                } catch (IOException e) {
-                    FLog.w(TAG, "Failed to flush FileOutputStream", e);
+                // CRITICAL: Flush BEFORE closing to ensure all data (including moov box) is written to disk.
+                // Under ioLock: waits for any in-flight writer-thread callback to finish its write,
+                // then closes — no write can ever hit an invalid fd.
+                synchronized (ioLock) {
+                    try {
+                        fileOutputStream.flush();
+                        FLog.d(TAG, "FileOutputStream flushed successfully");
+                    } catch (IOException e) {
+                        FLog.w(TAG, "Failed to flush FileOutputStream", e);
+                    }
+                    fileOutputStream.close();
+                    FLog.d(TAG, "Muxer released and file closed");
                 }
-                fileOutputStream.close();
-                FLog.d(TAG, "Muxer released and file closed");
             } catch (IOException e) {
                 FLog.e(TAG, "Error releasing muxer", e);
             }
@@ -810,6 +821,10 @@ public class FragmentedMp4MuxerWrapper {
      */
     private void handleProcessedSegment(ProcessedSegment segment) {
         // No muxerLock here — this runs on the library's dedicated writer thread.
+        // ioLock is shared with release(): either this callback completes its write
+        // before the stream closes, or release() has already set `released` and we
+        // skip. There is no window where a write can hit a closed fd.
+        synchronized (ioLock) {
         if (released) {
             return;
         }
@@ -822,9 +837,14 @@ public class FragmentedMp4MuxerWrapper {
                 try {
                     java.io.FileDescriptor fd = fileOutputStream.getFD();
                     if (fd == null || !fd.valid()) {
-                        FLog.e(TAG, "handleProcessedSegment: FileDescriptor is INVALID — skipping write. " +
-                                "This indicates the ParcelFileDescriptor was closed before the muxer finished. " +
-                                "segment.isInit=" + segment.isInitSegment);
+                        // Rate-limited: this used to flood logcat with thousands of identical lines.
+                        if (invalidFdLogCount < 5) {
+                            FLog.e(TAG, "handleProcessedSegment: FileDescriptor is INVALID — skipping write. " +
+                                    "This indicates the ParcelFileDescriptor was closed before the muxer finished. " +
+                                    "segment.isInit=" + segment.isInitSegment
+                                    + " (suppressing further identical logs)");
+                        }
+                        invalidFdLogCount++;
                         return;
                     }
                 } catch (IOException e) {
@@ -915,6 +935,7 @@ public class FragmentedMp4MuxerWrapper {
             } catch (Exception e) {
                 FLog.e(TAG, "❌ Error handling processed segment", e);
             }
+        } // end synchronized(ioLock)
     }
 
     /**

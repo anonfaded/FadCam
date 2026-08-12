@@ -2046,10 +2046,15 @@ public class GLRecordingPipeline {
                     }
                 }
 
-                // Force a frame render to ensure the encoder has valid data for the new segment
+                // Ask the GL loop for a frame ASYNCHRONOUSLY (never block the drain
+                // thread on the render): a synchronous renderFrame() here deadlocks
+                // when the encoder input surface is full — the GL loop is stuck in
+                // eglSwapBuffers waiting for the encoder, and the encoder waits for
+                // the drain, which is this thread. This was the root cause of empty
+                // split segments (parts 2+ = 68KB) at 2GB/4GB splits.
                 if (glRenderer != null) {
-                    glRenderer.renderFrame();
-                    FLog.d(TAG, "Forced a frame render for the new segment");
+                    glRenderer.requestRenderAsync();
+                    FLog.d(TAG, "Requested async frame render for the new segment");
                 }
 
                 FLog.i(TAG, "Started new segment: " + segmentNumber +
