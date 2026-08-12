@@ -4,6 +4,8 @@ import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ActivityNotFoundException;
+import android.widget.Toast;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -84,7 +86,11 @@ public class WhatsNewActivity extends AppCompatActivity {
                     if (url.startsWith("http://") || url.startsWith("https://")) {
                         Intent intent = new Intent(Intent.ACTION_VIEW);
                         intent.setData(Uri.parse(url));
-                        startActivity(intent);
+                        try {
+                            startActivity(intent);
+                        } catch (ActivityNotFoundException e) {
+                            Toast.makeText(view.getContext(), "No app found to open this link", Toast.LENGTH_SHORT).show();
+                        }
                         return true;
                     }
                     return false;
