@@ -4,11 +4,8 @@ import com.fadcam.FLog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ShortcutInfo;
-import android.content.pm.ShortcutManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,6 +19,7 @@ import android.view.ViewConfiguration;
 import android.widget.Toast;
 import android.widget.ImageView;
 import com.fadcam.ui.OverlayNavUtil;
+import com.fadcam.shortcuts.ShortcutsManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -997,46 +995,7 @@ public class MainActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.N_MR1)
     private void createDynamicShortcuts() {
-        ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
-
-        // Torch Toggle Shortcut
-        Intent torchIntent = new Intent(this, TorchToggleActivity.class);
-        torchIntent.setAction(Intent.ACTION_VIEW);
-
-        ShortcutInfo torchShortcut = new ShortcutInfo.Builder(this, "torch_toggle")
-                .setShortLabel(getString(R.string.torch_shortcut_short_label))
-                .setLongLabel(getString(R.string.torch_shortcut_long_label))
-                .setIcon(Icon.createWithResource(this, R.drawable.flashlight_shortcut))
-                .setIntent(torchIntent)
-                .build();
-
-        // Recording Start Shortcut
-        Intent startRecordIntent = new Intent(this, RecordingStartActivity.class);
-        startRecordIntent.setAction(Intent.ACTION_VIEW);
-
-        ShortcutInfo startRecordShortcut = new ShortcutInfo.Builder(this, "record_start")
-                .setShortLabel(getString(R.string.start_recording))
-                .setLongLabel(getString(R.string.start_recording))
-                .setIcon(Icon.createWithResource(this, R.drawable.start_back_shortcut))
-                .setIntent(startRecordIntent)
-                .build();
-
-        // Recording Stop Shortcut
-        Intent stopRecordIntent = new Intent(this, RecordingStopActivity.class);
-        stopRecordIntent.setAction(Intent.ACTION_VIEW);
-
-        ShortcutInfo stopRecordShortcut = new ShortcutInfo.Builder(this, "record_stop")
-                .setShortLabel(getString(R.string.stop_recording))
-                .setLongLabel(getString(R.string.stop_recording))
-                .setIcon(Icon.createWithResource(this, R.drawable.stop_shortcut))
-                .setIntent(stopRecordIntent)
-                .build();
-
-        // Set all shortcuts
-        shortcutManager.setDynamicShortcuts(Arrays.asList(
-                torchShortcut,
-                startRecordShortcut,
-                stopRecordShortcut));
+        new ShortcutsManager(this).publishAllDynamic();
     }
 
     public void applyLanguage(String languageCode) {
