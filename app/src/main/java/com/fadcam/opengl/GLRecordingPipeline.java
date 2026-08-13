@@ -1315,6 +1315,11 @@ public class GLRecordingPipeline {
 
             videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
             videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            // Encoder identity — critical for OEM-specific CSD bugs (Samsung C2 vs Google C2 etc.)
+            try {
+                FLog.i(TAG, "[ENCODER] Video encoder: " + videoEncoder.getCanonicalName() + " | MIME=" + currentMimeType
+                        + " | " + encoderWidth + "x" + encoderHeight);
+            } catch (Exception ignored) {}
             
             encoderInputSurface = videoEncoder.createInputSurface();
             
@@ -1339,6 +1344,10 @@ public class GLRecordingPipeline {
 
                 videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
                 videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                try {
+                    FLog.i(TAG, "[ENCODER] Video encoder (H.264 fallback): " + videoEncoder.getCanonicalName()
+                            + " | MIME=" + currentMimeType + " | " + encoderWidth + "x" + encoderHeight);
+                } catch (Exception ignored) {}
                 
                 encoderInputSurface = videoEncoder.createInputSurface();
                 
@@ -1738,11 +1747,13 @@ public class GLRecordingPipeline {
                                         FLog.i(TAG, "[AVC-CSD] Captured PPS from CODEC_CONFIG buffer (" + spsPps[1].length + " bytes)");
                                     }
                                 } else if (capturedAvcCsd0 == null) {
+                                    // splitAvcSpsPps found no type-7/8 Annex-B NALs — wrap the raw config buffer as-is.
+                                    // MediaCodec CODEC_CONFIG buffers are Annex-B, so this should keep start codes.
                                     capturedAvcCsd0 = ByteBuffer.wrap(csdData);
-                                    FLog.i(TAG, "[AVC-CSD] Captured csd-0 from CODEC_CONFIG buffer (" + bufferInfo.size + " bytes)");
+                                    FLog.w(TAG, "[AVC-CSD] No SPS/PPS NALs found in CODEC_CONFIG buffer — wrapping raw buffer as csd-0 (" + bufferInfo.size + " bytes)");
                                 } else if (capturedAvcCsd1 == null) {
                                     capturedAvcCsd1 = ByteBuffer.wrap(csdData);
-                                    FLog.i(TAG, "[AVC-CSD] Captured csd-1 from CODEC_CONFIG buffer (" + bufferInfo.size + " bytes)");
+                                    FLog.w(TAG, "[AVC-CSD] No SPS/PPS NALs found in CODEC_CONFIG buffer — wrapping raw buffer as csd-1 (" + bufferInfo.size + " bytes)");
                                 }
                                 if (capturedAvcCsd0 != null && capturedAvcCsd1 != null) {
                                     ByteBuffer csd0Final = capturedAvcCsd0.duplicate();
@@ -1752,7 +1763,8 @@ public class GLRecordingPipeline {
                                     csd1Final.position(0);
                                     pendingAvcFormat.setByteBuffer("csd-1", csd1Final);
                                     videoTrackIndex = mediaMuxer.addTrack(pendingAvcFormat);
-                                    FLog.i(TAG, "[AVC-CSD] Registered AVC video track with csd captured from codec config buffers");
+                                    FLog.i(TAG, "[AVC-CSD] Registered AVC video track with csd captured from codec config buffers"
+                                            + " | csd-0: " + describeCsd(csd0Final) + " | csd-1: " + describeCsd(csd1Final));
                                     pendingAvcFormat = null;
                                     capturedAvcCsd0 = null;
                                     capturedAvcCsd1 = null;
@@ -1857,6 +1869,9 @@ public class GLRecordingPipeline {
                                 mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                                 
                                 videoSamplesWritten++;
+                                if (videoSamplesWritten == 1) {
+                                    FLog.i(TAG, "[AVC-CSD] First video sample written OK — muxer header built, samples flowing");
+                                }
                                 lastVideoPts = bufferInfo.presentationTimeUs;
                                 
                                 segmentBytesWritten += bufferInfo.size;
@@ -1897,7 +1912,9 @@ public class GLRecordingPipeline {
                                         pendingAvcFormat.setByteBuffer("csd-0", ByteBuffer.wrap(spsPps[0]));
                                         pendingAvcFormat.setByteBuffer("csd-1", ByteBuffer.wrap(spsPps[1]));
                                         videoTrackIndex = mediaMuxer.addTrack(pendingAvcFormat);
-                                        FLog.i(TAG, "[AVC-CSD] Registered AVC video track with csd extracted from keyframe");
+                                        FLog.i(TAG, "[AVC-CSD] Registered AVC video track with csd extracted from keyframe"
+                                                + " | csd-0: " + describeCsd(ByteBuffer.wrap(spsPps[0]))
+                                                + " | csd-1: " + describeCsd(ByteBuffer.wrap(spsPps[1])));
                                         pendingAvcFormat = null;
                                         capturedAvcCsd0 = null;
                                         capturedAvcCsd1 = null;
@@ -2171,6 +2188,26 @@ public class GLRecordingPipeline {
         }
     }
 
+    /**
+     * Diagnostic: "len=NN hex=00 00 00 01 67.." for a csd buffer.
+     * First 4 bytes MUST be the Annex-B start code 00 00 00 01 (or 00 00 01) for media3.
+     */
+    private String describeCsd(ByteBuffer csd) {
+        try {
+            ByteBuffer b = csd.duplicate();
+            b.position(0);
+            int len = b.remaining();
+            StringBuilder hex = new StringBuilder();
+            int shown = Math.min(4, len);
+            for (int i = 0; i < shown; i++) {
+                hex.append(String.format("%02X ", b.get(i)));
+            }
+            return "len=" + len + " head=" + hex.toString().trim();
+        } catch (Exception e) {
+            return "len=? unreadable";
+        }
+    }
+
     private ByteBuffer extractHevcCsdFromBitstream(ByteBuffer data, int offset, int size) {
         try {
             java.util.List<byte[]> nalUnits = new java.util.ArrayList<>();
@@ -2255,8 +2292,13 @@ public class GLRecordingPipeline {
                 if (nalStart < nalEnd) {
                     // AVC NAL header byte: forbidden_zero_bit(1) | nal_ref_idc(2) | nal_unit_type(5)
                     byte nalType = (byte) (data.get(nalStart) & 0x1F);
-                    byte[] nalu = new byte[nalEnd - nalStart];
-                    for (int i = 0; i < nalu.length; i++) nalu[i] = data.get(nalStart + i);
+                    // CRITICAL: Preserve the Annex-B start code (copy from `pos`, not `nalStart`).
+                    // Media3's avcC box parser (AnnexBUtils.findNalUnits) requires csd-0/csd-1 to be
+                    // Annex-B formatted (start code + NAL). Stripping the start code made Samsung
+                    // AVC recordings fail with "Invalid Nal units" while HEVC worked (HEVC path
+                    // already copied from `pos`).
+                    byte[] nalu = new byte[nalEnd - pos];
+                    for (int i = 0; i < nalu.length; i++) nalu[i] = data.get(pos + i);
                     if (nalType == 7 && sps == null) {
                         sps = nalu;
                     } else if (nalType == 8 && pps == null) {
@@ -2302,8 +2344,10 @@ public class GLRecordingPipeline {
                 if (nalEnd >= end - 2) nalEnd = end;
                 if (nalStart < nalEnd) {
                     byte nalType = (byte) (data[nalStart] & 0x1F);
-                    byte[] nalu = new byte[nalEnd - nalStart];
-                    System.arraycopy(data, nalStart, nalu, 0, nalu.length);
+                    // CRITICAL: Preserve the Annex-B start code (copy from `pos`, not `nalStart`).
+                    // Media3's avcC box parser requires csd-0/csd-1 in Annex-B format.
+                    byte[] nalu = new byte[nalEnd - pos];
+                    System.arraycopy(data, pos, nalu, 0, nalu.length);
                     if (nalType == 7 && sps == null) sps = nalu;
                     else if (nalType == 8 && pps == null) pps = nalu;
                 }
