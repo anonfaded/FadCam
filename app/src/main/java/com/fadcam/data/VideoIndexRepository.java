@@ -634,4 +634,35 @@ public class VideoIndexRepository {
         }
         return 0;
     }
+
+    // ----- Self-healing finalization state (issue #332) -----
+
+    /** URIs of videos never verified as finalized — the only files the scan touches. */
+    public List<String> getUnfinalizedUris() {
+        try {
+            return dao.getUnfinalizedUris();
+        } catch (Exception e) {
+            FLog.w(TAG, "getUnfinalizedUris failed", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /** 0 = pending, 1 = finalized ok, 2 = unrepairable. */
+    public void markFinalized(@NonNull String uriString, int state) {
+        try {
+            dao.setFinalized(uriString, state);
+        } catch (Exception e) {
+            FLog.w(TAG, "markFinalized failed for " + uriString, e);
+        }
+    }
+
+    /** One-time cleanup: retry files wrongly marked unrepairable by a buggy build. */
+    public int resetUnrepairable() {
+        try {
+            return dao.resetUnrepairable();
+        } catch (Exception e) {
+            FLog.w(TAG, "resetUnrepairable failed", e);
+            return 0;
+        }
+    }
 }

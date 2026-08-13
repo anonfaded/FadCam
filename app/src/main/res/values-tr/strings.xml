@@ -1197,6 +1197,14 @@
 	<string name="screen_rec_audio_device_title">Ses Giriş Aygıtı</string>
 	<string name="screen_rec_audio_device_default">Varsayılan (sistem yönlendirmesi)</string>
 	<string name="screen_rec_audio_device_helper">Ekran kayıtlarının hangi mikrofonla kaydedileceğini seçin. \"Varsayılan\", sistemin otomatik yönlendirmesini kullanır — USB mikrofonlarda güvenilir seçenek.</string>
+
+    <string name="records_repair_banner_dismiss">Kapat</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s, kayıt durdurulduğunda sonlandırılmamıştı. Otomatik olarak oynatılabilir formata dönüştürüldü.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s, uygulama arka plandayken kayıt kesildiği için oynatılamıyordu. Otomatik olarak oynatılabilir formata dönüştürüldü.</string>
+
+    <string name="records_repair_banner_title">Kayıt onarıldı</string>
     <string name="recording_controls_title">AF · Pozlama · Yakınlaştırma</string>
     <string name="mainpage_camera_front">Ön Kamera</string>
     <string name="mainpage_camera_back">Arka Kamera</string>

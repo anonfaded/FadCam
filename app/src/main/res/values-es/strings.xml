@@ -147,6 +147,14 @@
 	<string name="screen_rec_audio_device_default">Predeterminado (enrutamiento del sistema)</string>
 	<string name="screen_rec_audio_device_helper">Elige el micrófono con el que graban las grabaciones de pantalla. \"Predeterminado\" usa el enrutamiento automático del sistema: la opción fiable con micrófonos USB.</string>
 
+    <string name="records_repair_banner_dismiss">Descartar</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s no se finalizó al detener la grabación. Se ha convertido automáticamente a un formato reproducible.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s no se podía reproducir porque la grabación se interrumpió mientras la app estaba en segundo plano. Se ha convertido automáticamente a un formato reproducible.</string>
+
+    <string name="records_repair_banner_title">Grabación reparada</string>
+
     <string name="video_recording_started">Grabación iniciada</string>
     <string name="video_recording_stopped">Grabación detenida</string>
     <string name="video_recording_paused">Grabación pausada</string>

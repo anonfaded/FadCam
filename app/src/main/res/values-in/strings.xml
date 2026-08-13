@@ -146,6 +146,14 @@
 	<string name="screen_rec_audio_device_default">Default (rute sistem)</string>
 	<string name="screen_rec_audio_device_helper">Pilih mikrofon yang digunakan untuk merekam layar. \"Default\" menggunakan rute otomatis sistem — opsi paling andal saat menggunakan mikrofon USB.</string>
 
+    <string name="records_repair_banner_dismiss">Tutup</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s tidak difinalisasi saat perekaman dihentikan. File telah dikonversi otomatis ke format yang dapat diputar.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s tidak dapat diputar karena perekaman terputus saat aplikasi berada di latar belakang. File telah dikonversi otomatis ke format yang dapat diputar.</string>
+
+    <string name="records_repair_banner_title">Rekaman diperbaiki</string>
+
     <string name="video_recording_started">Perekaman dimulai</string>
     <string name="video_recording_stopped">Perekaman dihentikan</string>
     <string name="video_recording_paused">Perekaman dijeda</string>

@@ -145,6 +145,14 @@
     <string name="screen_rec_audio_device_default">Default (system routing)</string>
     <string name="screen_rec_audio_device_helper">Choose which microphone screen recordings record from. "Default" uses the system\u2019s automatic routing — the reliable option when using USB microphones.</string>
 
+    <string name="records_repair_banner_dismiss">Dismiss</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s was not finalized when the recording stopped. It has been converted to a playable format automatically.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s was left unplayable because the recording was interrupted while the app was in the background. It has been converted to a playable format automatically.</string>
+
+    <string name="records_repair_banner_title">Recording repaired</string>
+
     <string name="video_recording_started">Recording started</string>
     <string name="video_recording_stopped">Recording stopped</string>
     <string name="video_recording_paused">Recording paused</string>

@@ -147,6 +147,14 @@
 	<string name="screen_rec_audio_device_default">Predefinito (routing di sistema)</string>
 	<string name="screen_rec_audio_device_helper">Scegli il microfono con cui vengono registrate le registrazioni dello schermo. \"Predefinito\" usa il routing automatico di sistema: l\'opzione affidabile con i microfoni USB.</string>
 
+    <string name="records_repair_banner_dismiss">Chiudi</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s non è stato finalizzato al termine della registrazione. È stato convertito automaticamente in un formato riproducibile.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s non era riproducibile perché la registrazione è stata interrotta mentre l\'app era in background. È stato convertito automaticamente in un formato riproducibile.</string>
+
+    <string name="records_repair_banner_title">Registrazione riparata</string>
+
     <string name="video_recording_started">Registrazione avviata</string>
     <string name="video_recording_stopped">Registrazione interrotta</string>
     <string name="video_recording_paused">Registrazione in pausa</string>

@@ -339,7 +339,9 @@ Or:
 <summary><strong>📸 Dashcam & Background Recording</strong></summary>
 
 - Background video recording with screen off capability
-- Fragmented MP4 format for zero corruption risk
+- **Custom hybrid MP4 output** — FadCam's recording engine is built on a custom-patched version of the Media3 library that streams recordings as a fragmented MP4 while recording (zero corruption risk, instant recovery), then finalizes them into a universally playable MP4 on stop. This hybrid format is specific to FadCam and not part of the stock Media3 library
+- **Auto-repair of interrupted recordings** — if the process is killed mid-recording (aggressive OEM background management, crashes, battery optimization), the file is automatically detected and repaired on the next app launch
+- **Repair notifications** — a banner in the Records tab tells you when an interrupted recording was successfully recovered
 - Auto-splitting large files with customizable size limits
 - Wide-angle camera detection and support
 </details>
@@ -398,11 +400,29 @@ Or:
 </details>
 
 ## `>_` Upcoming Features:
-
 - **Scheduled Recording:** Automatically start/stop recordings at set times.
 - **In-App Video Editor:** Quick trim/edit with Faditor Mini (coming soon).
 - **Enhanced Remote Features:** Additional remote control capabilities.
 
+
+
+<details>
+<summary><strong>🛡️ How Recording Reliability Works</strong></summary>
+
+FadCam writes recordings in a **hybrid MP4 format** that balances crash safety with universal compatibility. This format is implemented through a custom patch of the Media3 library — the hybrid finalization and self-healing repair described below are FadCam-specific features, not part of the stock library:
+
+1. **While recording**, the file is streamed as a *fragmented MP4* — data is appended in small fragments with the metadata kept at the front. If the app or process dies at any moment, nothing already written is ever lost or corrupted.
+2. **On a clean stop**, the file is finalized into a *standard MP4* (a single `moov` metadata block + one `mdat` container) that plays everywhere — gallery, WhatsApp, Instagram, VLC, PC players.
+3. **If the process is killed mid-recording** (background kill by the OS, crash, battery optimization), the file is left as a valid fragmented MP4. On the next app launch, FadCam's **self-healing scan**:
+   - Detects the interrupted file automatically
+   - Rebuilds the metadata directly from the file's fragments
+   - Converts it into a playable standard MP4 — often byte-identical to a clean stop
+   - Shows a **repair banner** in the Records tab so you know the recording was recovered
+
+The scan is database-driven and runs once per file — it only ever examines recordings that were never verified as finalized, so it adds no overhead to normal use. Files that cannot be recovered are left untouched and marked so they are never retried.
+
+This means **no more lost recordings** from background kills — the worst case is a recovered file, not a corrupted one.
+</details>
 
 
 

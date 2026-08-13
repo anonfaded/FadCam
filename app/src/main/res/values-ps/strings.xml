@@ -956,6 +956,14 @@ Export runs as a background service — you can close the app and it will keep e
 	<string name="screen_rec_audio_device_title">Da Aawaz Dakhila Aalaat</string>
 	<string name="screen_rec_audio_device_default">Asli (da system routing)</string>
 	<string name="screen_rec_audio_device_helper">Wakhele che screen recording da kom Microphone na aawaz wokhli. \"Asli\" da system otomatic routing kare — da USB microphones lapara reliable option.</string>
+
+    <string name="records_repair_banner_dismiss">Bandid kol</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s na finalize shwe kala recording band shwe. Da otomatic toor da playable format ta awbadal shwe.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s na de playable che da recording wosliga che app da pasmanzel ke wo. Da otomatic toor da playable format ta awbadal shwe.</string>
+
+    <string name="records_repair_banner_title">Recording tamir shwe</string>
     <string name="fadrec_audio_source_mic">Microphone</string>
     <string name="fadrec_audio_source_none">Ghag Nadi</string>
     <string name="fadrec_audio_source_title">Da Ghag Manba</string>

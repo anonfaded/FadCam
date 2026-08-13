@@ -645,6 +645,14 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 	<string name="screen_rec_audio_device_default">Par défaut (routage système)</string>
 	<string name="screen_rec_audio_device_helper">Choisissez le microphone utilisé par les enregistrements d\'écran. « Par défaut » utilise le routage automatique du système — l\'option fiable avec les micros USB.</string>
 
+    <string name="records_repair_banner_dismiss">Fermer</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s n\'a pas été finalisé à l\'arrêt de l\'enregistrement. Il a été converti automatiquement dans un format lisible.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s n\'était pas lisible car l\'enregistrement a été interrompu pendant que l\'application était en arrière-plan. Il a été converti automatiquement dans un format lisible.</string>
+
+    <string name="records_repair_banner_title">Enregistrement réparé</string>
+
 <string name="recording_controls_title">AF · Exposure · Zoom</string>
 
 <string name="mainpage_camera_front">Front Camera</string>

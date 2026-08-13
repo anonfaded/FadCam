@@ -72,6 +72,21 @@ public interface VideoIndexDao {
     List<String> getAllUriStrings();
 
     /**
+     * URIs of videos that have never been verified as finalized (issue #332).
+     * These are the ONLY files the self-healing scan ever touches — once a row is
+     * marked finalized it is never re-examined, so repeated scans cost nothing.
+     */
+    @Query("SELECT uri_string FROM video_index WHERE media_type != 'IMAGE' AND is_temporary = 0 AND finalized = 0")
+    List<String> getUnfinalizedUris();
+
+    /** Marks a file's hybrid-finalization state: 0 pending, 1 ok, 2 unrepairable. */
+    @Query("UPDATE video_index SET finalized = :state WHERE uri_string = :uriString")
+    void setFinalized(String uriString, int state);
+
+    /** One-time cleanup: files wrongly marked unrepairable by an earlier buggy build. */
+    @Query("UPDATE video_index SET finalized = 0 WHERE finalized = 2")
+    int resetUnrepairable();
+    /**
      * Get lightweight list for delta detection: uri + lastModified + size.
      * This avoids loading full entities just to compare timestamps.
      */

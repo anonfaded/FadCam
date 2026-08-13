@@ -447,6 +447,8 @@ public class RecordsFragment extends BaseFragment implements
     private BroadcastReceiver recordsDeletionUpdateReceiver;
     private boolean isRecordsDeletionReceiverRegistered = false;
     private BroadcastReceiver batchOperationUpdateReceiver;
+    private BroadcastReceiver repairScanReceiver;
+    private boolean isRepairScanReceiverRegistered;
     private boolean isBatchOperationReceiverRegistered = false;
     private RecordsDeletionSessionStore deletionSessionStore;
     private BatchOperationSessionStore batchOperationSessionStore;
@@ -1208,6 +1210,7 @@ public class RecordsFragment extends BaseFragment implements
         registerBatchMediaCompletedReceiver();
         registerRecordsDeletionReceiver();
         registerBatchOperationReceiver();
+        registerRepairScanReceiver();
         if (invalidationCoordinator == null && getContext() != null) {
             invalidationCoordinator = new RealtimeMediaInvalidationCoordinator(requireContext());
             invalidationCoordinator.addListener(reason -> requestRealtimeRefresh("coordinator:" + reason));
@@ -1238,6 +1241,45 @@ public class RecordsFragment extends BaseFragment implements
         unregisterBatchMediaCompletedReceiver();
         unregisterRecordsDeletionReceiver();
         unregisterBatchOperationReceiver();
+        unregisterRepairScanReceiver();
+    }
+
+    /**
+     * Listens for self-healing scans finishing in the background (issue #332):
+     * the InvalidationTracker-triggered scan runs with a null onDone callback,
+     * so the repair banner needs this broadcast to appear without a manual
+     * refresh.
+     */
+    private void registerRepairScanReceiver() {
+        if (isRepairScanReceiverRegistered || getContext() == null) return;
+        if (repairScanReceiver == null) {
+            repairScanReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (!isAdded() || intent == null) return;
+                    if (!com.fadcam.services.RecordingService.ACTION_SELF_HEAL_REPAIRED
+                            .equals(intent.getAction())) return;
+                    FLog.d(TAG, "Self-heal scan finished — refreshing repair banner");
+                    showRepairBannerIfNeeded();
+                }
+            };
+        }
+        ContextCompat.registerReceiver(
+                requireContext(),
+                repairScanReceiver,
+                new IntentFilter(com.fadcam.services.RecordingService.ACTION_SELF_HEAL_REPAIRED),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+        isRepairScanReceiverRegistered = true;
+    }
+
+    private void unregisterRepairScanReceiver() {
+        if (!isRepairScanReceiverRegistered || repairScanReceiver == null || getContext() == null) return;
+        try {
+            requireContext().unregisterReceiver(repairScanReceiver);
+        } catch (IllegalArgumentException ignored) {
+        }
+        isRepairScanReceiverRegistered = false;
     }
 
     private void registerBatchMediaCompletedReceiver() {
@@ -1843,6 +1885,14 @@ public class RecordsFragment extends BaseFragment implements
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setOnRefreshListener(() -> {
                 FLog.d(TAG, "Swipe to refresh triggered — silent background refresh (no skeleton)");
+                // Self-healing scan alongside the refresh (issue #332) — DB-driven,
+                // only touches pending rows, then refreshes the banner.
+                try {
+                    com.fadcam.services.RecordingService.runSelfHealingScan(requireContext(),
+                            this::showRepairBannerIfNeeded);
+                } catch (Exception e) {
+                    FLog.w(TAG, "Self-healing scan on refresh failed", e);
+                }
 
                 // Production pattern: keep existing data visible, refresh silently
                 // in background, swap data when ready. No skeleton, no UI thrashing.
@@ -1978,11 +2028,70 @@ public class RecordsFragment extends BaseFragment implements
         registerRecordingCompleteReceiver();
     } // End onViewCreated
 
+    /**
+     * Shows the repair-notice banner when an interrupted recording was automatically
+     * repaired (issue #332). Only fires when a repair event was actually recorded —
+     * i.e. the file conversion genuinely succeeded — so there are no false positives.
+     */
+    private void showRepairBannerIfNeeded() {
+        try {
+            if (getView() == null || sharedPreferencesManager == null) return;
+            final View banner = getView().findViewById(R.id.records_repair_banner);
+            if (banner == null) return;
+            final TextView message = getView().findViewById(R.id.text_records_repair_message);
+            final View dismiss = getView().findViewById(R.id.btn_dismiss_records_repair);
+
+            java.util.List<String[]> events = sharedPreferencesManager.getRecordingRepairEvents();
+            if (events.isEmpty()) {
+                banner.setVisibility(View.GONE);
+                return;
+            }
+
+            final String[] event = events.get(0); // {time, reason, file}
+            final long eventId = Long.parseLong(event[0]);
+            String file = event[2];
+            int slash = file.lastIndexOf('/');
+            if (slash >= 0) file = file.substring(slash + 1);
+            String msg = "finalize".equals(event[1])
+                    ? getString(R.string.records_repair_banner_message_finalize, file)
+                    : getString(R.string.records_repair_banner_message_interrupted, file);
+            if (message != null) message.setText(msg);
+            TextView timeView = getView().findViewById(R.id.text_records_repair_time);
+            if (timeView != null) {
+                java.util.Date d = new java.util.Date(eventId);
+                timeView.setText(android.text.format.DateFormat.getTimeFormat(getContext()).format(d));
+            }
+            banner.setVisibility(View.VISIBLE);
+
+            if (dismiss != null) {
+                dismiss.setOnClickListener(v -> {
+                    sharedPreferencesManager.removeRecordingRepairEvent(eventId);
+                    banner.setVisibility(View.GONE);
+                    showRepairBannerIfNeeded(); // show next event if any
+                });
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to show repair banner", e);
+        }
+    }
+
     @Override
     public void onResume() {
         super.onResume();
         FLog.d(TAG, "lifecycle onResume: activeFilter=" + activeFilter + ", loadedItems=" + allLoadedItems.size());
         FLog.i(TAG, "LOG_LIFECYCLE: onResume called.");
+        // Self-healing scan (issue #332): repairs any recording left as an
+        // unfinalized fMP4, then shows the repair banner. Background thread —
+        // DB-driven (only pending rows), never touches live files. Additional
+        // triggers are native: Room invalidation fires the scan the instant a
+        // new file is indexed (registered once in FadCamApplication).
+        try {
+            com.fadcam.services.RecordingService.runSelfHealingScan(requireContext(),
+                    this::showRepairBannerIfNeeded);
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to start self-healing scan", e);
+            showRepairBannerIfNeeded();
+        }
 
         // Check if an external event (e.g. Faditor export, FadShot capture) requested a refresh
         boolean needsForceReload = false;

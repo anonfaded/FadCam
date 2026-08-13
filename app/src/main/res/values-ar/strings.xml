@@ -639,6 +639,14 @@
 	<string name="screen_rec_audio_device_default">افتراضي (توجيه النظام)</string>
 	<string name="screen_rec_audio_device_helper">اختر الميكروفون الذي تسجل منه تسجيلات الشاشة. خيار \"افتراضي\" يستخدم التوجيه التلقائي للنظام — الخيار الموثوق عند استخدام ميكروفونات USB.</string>
 
+    <string name="records_repair_banner_dismiss">إغلاق</string>
+
+    <string name="records_repair_banner_message_finalize">لم يتم إنهاء %1$s عند توقف التسجيل. تم تحويله إلى تنسيق قابل للتشغيل تلقائيًا.</string>
+
+    <string name="records_repair_banner_message_interrupted">تعذر تشغيل %1$s لأن التسجيل انقطع أثناء وجود التطبيق في الخلفية. تم تحويله إلى تنسيق قابل للتشغيل تلقائيًا.</string>
+
+    <string name="records_repair_banner_title">تم إصلاح التسجيل</string>
+
     <string name="video_recording_started">بدأ التسجيل</string>
 
     <string name="video_recording_stopped">تم إيقاف التسجيل</string>

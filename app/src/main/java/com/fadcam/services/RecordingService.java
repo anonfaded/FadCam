@@ -286,6 +286,12 @@ public class RecordingService extends Service {
         // been leaked before this fix was applied.
         com.fadcam.audio.NoiseMonitor.resetInstance();
 
+        // Self-healing (issue #332): if a previous recording session was abandoned
+        // because HyperOS/OEM background management killed the process mid-recording,
+        // the file is a valid fMP4 that never got its hybrid moov. Convert it now
+        // from the file contents so the tester's videos always end up playable.
+        finalizeStaleRecordingIfNeeded();
+
         createNotificationChannel(); // Setup notifications early
 
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
@@ -1048,10 +1054,284 @@ public class RecordingService extends Service {
     }
 
     // --- onStartCommand (Ensure START action ignores processing state) ---
+    // ═══ Self-healing hybrid-MP4 finalization (issue #332) ═══
+    // A recording left as a valid fMP4 without the hybrid moov is unplayable in
+    // consumer apps. All finalization state still exists in the FILE, so we
+    // rebuild the moov from the file contents via
+    // FragmentedMp4Muxer.finalizeAbandonedFile.
+    //
+    // DB-DRIVEN: the video index tracks per-file finalization state (0=pending,
+    // 1=ok, 2=unrepairable). The scan ONLY touches rows still pending — confirmed
+    // files are never re-examined, so repeated scans cost nothing. Live recordings
+    // are excluded by the isRecordingInProgress guard and the is_temporary flag.
+
+    private boolean staleFinalizeAttempted = false;
+
+    private void finalizeStaleRecordingIfNeeded() {
+        if (staleFinalizeAttempted) return;
+        staleFinalizeAttempted = true;
+        runSelfHealingScan(this, null);
+    }
+
+    /**
+     * Scans pending (unfinalized) recordings and repairs them. Runs on a
+     * background thread; safe to call from any component.
+     *
+     * @param context Application or activity context.
+     * @param onDone  Optional UI-thread callback after the scan (banner refresh).
+     */
+    public static void runSelfHealingScan(final Context context, @Nullable final Runnable onDone) {
+        try {
+            final android.content.Context app = context.getApplicationContext();
+            final SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(app);
+            // Never scan while a recording is active — its file may be mid-write.
+            if (prefs.isRecordingInProgress()) {
+                if (onDone != null) onDone.run();
+                return;
+            }
+            // Single-flight: coalesce bursts (e.g. many DB rows indexed at once)
+            // into one scan; if one is already running, request one follow-up.
+            if (!scanRunning.compareAndSet(false, true)) {
+                scanRerunRequested.set(true);
+                if (onDone != null) onDone.run();
+                return;
+            }
+            new Thread(() -> {
+                try {
+                    doSelfHealingScan(app);
+                } catch (Exception e) {
+                    FLog.w(TAG, "Self-healing scan failed", e);
+                } finally {
+                    scanRunning.set(false);
+                    // Re-run once if new invalidation arrived while we were busy.
+                    if (scanRerunRequested.compareAndSet(true, false)) {
+                        runSelfHealingScan(app, null);
+                    }
+                    // A repair may have been recorded by an observer-triggered scan
+                    // (onDone == null) — notify the Records UI so the banner appears
+                    // without requiring a manual refresh.
+                    try {
+                        android.content.Intent repair =
+                                new android.content.Intent(ACTION_SELF_HEAL_REPAIRED)
+                                        .setPackage(app.getPackageName());
+                        app.sendBroadcast(repair);
+                    } catch (Exception ignored) {}
+                    if (onDone != null) {
+                        try {
+                            new android.os.Handler(android.os.Looper.getMainLooper()).post(onDone);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }, "SelfHealingScan").start();
+        } catch (Exception e) {
+            FLog.w(TAG, "Self-healing scan failed to start", e);
+            if (onDone != null) onDone.run();
+        }
+    }
+
+    private static final java.util.concurrent.atomic.AtomicBoolean scanRunning =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+    private static final java.util.concurrent.atomic.AtomicBoolean scanRerunRequested =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+
+    /** Broadcast after a self-healing scan finishes (may have repaired a file). */
+    public static final String ACTION_SELF_HEAL_REPAIRED =
+            "com.fadcam.action.SELF_HEAL_REPAIRED";
+
+    private static void doSelfHealingScan(final android.content.Context app) {
+                    final SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(app);
+                    com.fadcam.data.VideoIndexRepository repo =
+                            com.fadcam.data.VideoIndexRepository.getInstance(app);
+                    // One-time cleanup: earlier builds marked SAF files "unrepairable"
+                    // because the write-only channel crashed on read. Retry them once
+                    // (guarded by a pref so genuinely broken files are never re-looped).
+                    if (!prefs.isRepairV2ResetDone()) {
+                        prefs.setRepairV2ResetDone(true);
+                        int reset = repo.resetUnrepairable();
+                        if (reset > 0) {
+                            FLog.i(TAG, "Self-healing scan: retrying " + reset
+                                    + " file(s) wrongly marked unrepairable");
+                        }
+                    }
+                    java.util.List<String> pending = repo.getUnfinalizedUris();
+                    if (pending.isEmpty()) {
+                        FLog.d(TAG, "Self-healing scan: no pending files");
+                        return;
+                    }
+                    FLog.i(TAG, "Self-healing scan: " + pending.size() + " pending file(s)");
+                    final long now = System.currentTimeMillis();
+                    for (String uriString : pending) {
+                        try {
+                            android.net.Uri uri = android.net.Uri.parse(uriString);
+                            String scheme = uri.getScheme();
+                            int result;
+                            if ("file".equals(scheme)) {
+                                java.io.File f = new java.io.File(uri.getPath());
+                                if (!f.exists() || f.length() == 0) {
+                                    repo.markFinalized(uriString, 2);
+                                    continue;
+                                }
+                                java.nio.channels.FileChannel ch =
+                                        new java.io.RandomAccessFile(f, "rw").getChannel();
+                                try {
+                                    result = androidx.media3.muxer.FragmentedMp4Muxer
+                                            .finalizeAbandonedFile(ch);
+                                } finally {
+                                    try { ch.close(); } catch (Exception ignored) {}
+                                }
+                            } else if ("content".equals(scheme)) {
+                                android.os.ParcelFileDescriptor pfd =
+                                        app.getContentResolver().openFileDescriptor(uri, "rw");
+                                if (pfd == null) {
+                                    repo.markFinalized(uriString, 2);
+                                    continue;
+                                }
+                                try {
+                                    // Two channels over the same fd: FileOutputStream's
+                                    // channel is write-only (reads throw
+                                    // NonReadableChannelException), so read via
+                                    // FileInputStream's channel, write via
+                                    // FileOutputStream's — the kernel offset is shared.
+                                    result = androidx.media3.muxer.FragmentedMp4Muxer
+                                            .finalizeAbandonedFile(
+                                                    new java.io.FileInputStream(
+                                                            pfd.getFileDescriptor()).getChannel(),
+                                                    new java.io.FileOutputStream(
+                                                            pfd.getFileDescriptor()).getChannel());
+                                } finally {
+                                    try { pfd.close(); } catch (Exception ignored) {}
+                                }
+                            } else {
+                                repo.markFinalized(uriString, 2);
+                                continue;
+                            }
+                            if (result == 1) {
+                                repo.markFinalized(uriString, 1);
+                                recordRepairEventStatic(prefs,
+                                        fileNameFromUri(uriString), now, "background_interrupted");
+                            } else if (result == 0) {
+                                // Already hybrid/plain MP4 — confirmed fine.
+                                repo.markFinalized(uriString, 1);
+                            } else {
+                                // Fragmented but unrepairable — mark so we never retry.
+                                repo.markFinalized(uriString, 2);
+                            }
+                        } catch (Exception e) {
+                            FLog.w(TAG, "Self-healing scan failed on " + uriString, e);
+                            try { repo.markFinalized(uriString, 2); } catch (Exception ignored) {}
+                        }
+                    }
+                    // A stale in-progress session that produced no file is dead.
+                    if (prefs.isRecordingInProgress()) {
+                        prefs.setRecordingInProgress(false);
+                    }
+    }
+
+    /** Extracts a clean file name from file:// or content:// URIs for user messages. */
+    private static String fileNameFromUri(String uriString) {
+        try {
+            String s = uriString;
+            int q = s.indexOf('?');
+            if (q >= 0) s = s.substring(0, q);
+            // content://.../document/primary%3ADownload%2FFadCam%2F...%2FFadCam_x.mp4
+            if (s.contains("%2F")) {
+                s = s.substring(s.lastIndexOf("%2F") + 3);
+            } else {
+                int slash = s.lastIndexOf('/');
+                if (slash >= 0) s = s.substring(slash + 1);
+            }
+            if (s.contains("%20")) s = s.replace("%20", " ");
+            return s.isEmpty() ? uriString : s;
+        } catch (Exception e) {
+            return uriString;
+        }
+    }
+
+    private static void recordRepairEventStatic(SharedPreferencesManager prefs,
+            String fileName, long timeMs, String reason) {
+        try {
+            prefs.addRecordingRepairEvent(fileName, timeMs, reason);
+            FLog.i(TAG, "Repair event recorded for " + fileName + " (reason=" + reason + ")");
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to record repair event", e);
+        }
+    }
+
+    /** Safety net after a clean stop: converts the file if finalization silently skipped it. */
+    private void finalizeJustStoppedRecording() {
+        try {
+            String uriString = currentSegmentPath != null
+                    ? android.net.Uri.fromFile(new java.io.File(currentSegmentPath)).toString()
+                    : currentSegmentUriString;
+            if (uriString == null) return;
+            int result = finalizeFileChannelFor(uriString);
+            if (result >= 0) {
+                try {
+                    com.fadcam.data.VideoIndexRepository.getInstance(this)
+                            .markFinalized(uriString, 1);
+                } catch (Exception ignored) {}
+            }
+            if (result == 1) {
+                FLog.i(TAG, "Safety-net finalization converted "
+                        + fileNameFromUri(uriString));
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Safety-net finalization failed", e);
+        }
+    }
+
+    /** Finalizes a file/URI; returns 1 converted, 0 already-ok, -1 failed. */
+    private int finalizeFileChannelFor(String uriString) {
+        try {
+            android.net.Uri uri = android.net.Uri.parse(uriString);
+            int result;
+            if ("content".equals(uri.getScheme())) {
+                android.os.ParcelFileDescriptor pfd =
+                        getContentResolver().openFileDescriptor(uri, "rw");
+                if (pfd == null) return -1;
+                try {
+                    // Two channels over the same fd (FileOutputStream channel is
+                    // write-only; reads would throw NonReadableChannelException).
+                    result = androidx.media3.muxer.FragmentedMp4Muxer.finalizeAbandonedFile(
+                            new java.io.FileInputStream(pfd.getFileDescriptor()).getChannel(),
+                            new java.io.FileOutputStream(pfd.getFileDescriptor()).getChannel());
+                } finally {
+                    try { pfd.close(); } catch (Exception ignored) {}
+                }
+            } else {
+                java.io.File f = new java.io.File(uri.getPath());
+                if (!f.exists()) return -1;
+                java.nio.channels.FileChannel ch = new java.io.RandomAccessFile(f, "rw").getChannel();
+                try {
+                    result = androidx.media3.muxer.FragmentedMp4Muxer.finalizeAbandonedFile(ch);
+                } finally {
+                    try { ch.close(); } catch (Exception ignored) {}
+                }
+            }
+            FLog.i(TAG, "Self-healing finalize(" + uriString + ") → " + result);
+            if (result == 1) {
+                recordRepairEvent(fileNameFromUri(uriString), "finalize");
+            }
+            return result;
+        } catch (Exception e) {
+            FLog.w(TAG, "Self-healing finalize threw for " + uriString, e);
+            return -1;
+        }
+    }
+
+    /** Records a repair event so the Records tab can inform the user (banner). */
+    private void recordRepairEvent(String name, String reason) {
+        try {
+            long id = sharedPreferencesManager.addRecordingRepairEvent(
+                    name, System.currentTimeMillis(), reason);
+            FLog.i(TAG, "Repair event recorded for " + name + " (id=" + id + ", reason=" + reason + ")");
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to record repair event", e);
+        }
+    }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent == null) {
+    public int onStartCommand(Intent intent, int flags, int startId) {        if (intent == null) {
             FLog.d(TAG, "onStartCommand received null intent. Ensuring service stays alive.");
             return START_STICKY;
         }
@@ -2124,8 +2404,8 @@ public class RecordingService extends Service {
                     }
 
                     FLog.d(TAG, "stopRecording sequence completed successfully");
-                });
-            } catch (Exception e) {
+                    finalizeJustStoppedRecording();
+                });            } catch (Exception e) {
                 FLog.e(TAG, "Error in stopRecording cleanup thread", e);
                 mainHandler.post(() -> {
                     isStopping = false;

@@ -147,6 +147,14 @@
 	<string name="screen_rec_audio_device_default">Vaikimisi (süsteemi marsruutimine)</string>
 	<string name="screen_rec_audio_device_helper">Vali mikrofon, millega ekraanisalvestused heli salvestavad. \"Vaikimisi\" kasutab süsteemi automaatset marsruutimist — usaldusväärne valik USB-mikrofonide puhul.</string>
 
+    <string name="records_repair_banner_dismiss">Sulge</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s ei lõpetatud salvestuse peatamisel. See teisendati automaatselt taasesitatavasse vormingusse.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s ei olnud taasesitatav, kuna salvestus katkes, kui rakendus oli taustal. See teisendati automaatselt taasesitatavasse vormingusse.</string>
+
+    <string name="records_repair_banner_title">Salvestis parandatud</string>
+
     <string name="video_recording_started">Salvestamine alustatud</string>
     <string name="video_recording_stopped">Salvestamine peatatud</string>
     <string name="video_recording_paused">Salvestamine peatatud</string>

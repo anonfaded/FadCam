@@ -2008,6 +2008,14 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 	<string name="screen_rec_audio_device_title">音频输入设备</string>
 	<string name="screen_rec_audio_device_default">默认（系统路由）</string>
 	<string name="screen_rec_audio_device_helper">选择屏幕录制使用的麦克风。“默认”使用系统的自动路由——使用 USB 麦克风时的可靠选择。</string>
+
+    <string name="records_repair_banner_dismiss">关闭</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s 在录制停止时未完成收尾，现已自动转换为可播放格式。</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s 因应用在后台时录制被中断而无法播放，现已自动转换为可播放格式。</string>
+
+    <string name="records_repair_banner_title">录制已修复</string>
 <string name="fadrec_audio_source_internal">设备音频（内部）</string>
 
 <!-- fadrec_audio_source_mic -->

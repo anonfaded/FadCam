@@ -78,6 +78,15 @@ public class VideoIndexEntity {
     @ColumnInfo(name = "is_temporary")
     public boolean isTemporary;
 
+    /**
+     * Hybrid-MP4 finalization state (issue #332):
+     * 0 = unknown/pending (never verified), 1 = finalized/playable, 2 = unrepairable.
+     * Drives the self-healing scan — only rows with 0 are ever touched, so no
+     * files are re-examined after they are confirmed good.
+     */
+    @ColumnInfo(name = "finalized", defaultValue = "0")
+    public int finalized;
+
     /** Timestamp when this row was last indexed/updated. */
     @ColumnInfo(name = "indexed_at")
     public long indexedAt;

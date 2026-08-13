@@ -102,6 +102,14 @@
 	<string name="screen_rec_audio_device_title">Συσκευή εισόδου ήχου</string>
 	<string name="screen_rec_audio_device_default">Προεπιλογή (δρομολόγηση συστήματος)</string>
 	<string name="screen_rec_audio_device_helper">Επιλέξτε το μικρόφωνο με το οποίο ηχογραφούν οι εγγραφές οθόνης. Η \"Προεπιλογή\" χρησιμοποιεί την αυτόματη δρομολόγηση του συστήματος — η αξιόπιστη επιλογή όταν χρησιμοποιείτε μικρόφωνα USB.</string>
+
+    <string name="records_repair_banner_dismiss">Απόρριψη</string>
+
+    <string name="records_repair_banner_message_finalize">Το %1$s δεν οριστικοποιήθηκε όταν σταμάτησε η εγγραφή. Μετατράπηκε αυτόματα σε αναπαραγώγιμη μορφή.</string>
+
+    <string name="records_repair_banner_message_interrupted">Το %1$s δεν ήταν δυνατό να αναπαραχθεί επειδή η εγγραφή διακόπηκε ενώ η εφαρμογή ήταν σε δεύτερο πλάνο. Μετατράπηκε αυτόματα σε αναπαραγώγιμη μορφή.</string>
+
+    <string name="records_repair_banner_title">Η εγγραφή επισκευάστηκε</string>
     <string name="video_recording_started">Η εγγραφή ξεκίνησε</string>
     <string name="video_recording_stopped">Η εγγραφή σταμάτησε</string>
     <string name="video_recording_paused">Η εγγραφή τέθηκε σε παύση</string>

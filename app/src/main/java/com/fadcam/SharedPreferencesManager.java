@@ -2277,6 +2277,105 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putString(PREF_KEY_SCREEN_AUDIO_DEVICE_NAME, name).apply();
     }
 
+    // ----- Self-healing repair events (issue #332) -----
+    // Persisted JSON array so the user can be told (Records banner) that an
+    // interrupted recording was automatically repaired. Only ever written when
+    // the file conversion ACTUALLY succeeded — no false positives.
+
+    private static final String PREF_KEY_REPAIR_EVENTS = "recording_repair_events_v1";
+    private static final int MAX_REPAIR_EVENTS = 5;
+
+    /** Adds a repair event; returns the new event id (timeMs) for dismissal. */
+    public long addRecordingRepairEvent(String fileName, long timeMs, String reason) {
+        try {
+            org.json.JSONArray arr = getRepairEventsArray();
+            org.json.JSONObject ev = new org.json.JSONObject();
+            ev.put("file", fileName);
+            ev.put("time", timeMs);
+            ev.put("reason", reason);
+            arr.put(ev);
+            while (arr.length() > MAX_REPAIR_EVENTS) {
+                arr.remove(0);
+            }
+            sharedPreferences.edit().putString(PREF_KEY_REPAIR_EVENTS, arr.toString()).apply();
+            return timeMs;
+        } catch (Exception e) {
+            return timeMs;
+        }
+    }
+
+    /** Removes a repair event by its timeMs id (banner dismissed). */
+    public void removeRecordingRepairEvent(long timeMs) {
+        try {
+            org.json.JSONArray arr = getRepairEventsArray();
+            org.json.JSONArray out = new org.json.JSONArray();
+            for (int i = 0; i < arr.length(); i++) {
+                org.json.JSONObject ev = arr.optJSONObject(i);
+                if (ev == null || ev.optLong("time", -1) != timeMs) {
+                    out.put(ev);
+                }
+            }
+            sharedPreferences.edit().putString(PREF_KEY_REPAIR_EVENTS, out.toString()).apply();
+        } catch (Exception ignored) {}
+    }
+
+    /** Returns pending repair events as {timeMs, reason, fileName}, newest first. */
+    public java.util.List<String[]> getRecordingRepairEvents() {
+        java.util.List<String[]> events = new java.util.ArrayList<>();
+        try {
+            org.json.JSONArray arr = getRepairEventsArray();
+            for (int i = arr.length() - 1; i >= 0; i--) {
+                org.json.JSONObject ev = arr.optJSONObject(i);
+                if (ev == null) continue;
+                long time = ev.optLong("time", -1);
+                String file = ev.optString("file", "");
+                String reason = ev.optString("reason", "background_interrupted");
+                if (time >= 0 && !file.isEmpty()) {
+                    events.add(new String[]{String.valueOf(time), reason, file});
+                }
+            }
+        } catch (Exception ignored) {}
+        return events;
+    }
+
+    private org.json.JSONArray getRepairEventsArray() {
+        try {
+            String raw = sharedPreferences.getString(PREF_KEY_REPAIR_EVENTS, null);
+            if (raw == null || raw.isEmpty()) return new org.json.JSONArray();
+            return new org.json.JSONArray(raw);
+        } catch (Exception e) {
+            return new org.json.JSONArray();
+        }
+    }
+
+    // ----- Self-healing scan watermark (issue #332) -----
+    // Files modified BEFORE this timestamp were already checked; the scan only
+    // touches newer ones, so repeated scans stay O(new files) — never a full
+    // directory walk of old recordings.
+
+    private static final String PREF_KEY_REPAIR_LAST_SCAN = "recording_repair_last_scan_v1";
+
+    public long getLastRepairScanTime() {
+        return sharedPreferences.getLong(PREF_KEY_REPAIR_LAST_SCAN, 0L);
+    }
+
+    public void setLastRepairScanTime(long timeMs) {
+        sharedPreferences.edit().putLong(PREF_KEY_REPAIR_LAST_SCAN, timeMs).apply();
+    }
+
+    // One-time flag: retry files wrongly marked "unrepairable" by earlier buggy
+    // builds (write-only channel crash, then the avcC sample-entry offset bug).
+    // Guarded so genuinely broken files are never re-looped by the observer.
+    private static final String PREF_KEY_REPAIR_V2_RESET = "recording_repair_v3_reset_done";
+
+    public boolean isRepairV2ResetDone() {
+        return sharedPreferences.getBoolean(PREF_KEY_REPAIR_V2_RESET, false);
+    }
+
+    public void setRepairV2ResetDone(boolean done) {
+        sharedPreferences.edit().putBoolean(PREF_KEY_REPAIR_V2_RESET, done).apply();
+    }
+
     /**
      * Gets the screen recording resolution from preferences.
      * Falls back to the device's physical screen dimensions (preserving native
