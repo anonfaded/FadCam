@@ -2042,10 +2042,17 @@ public class SharedPreferencesManager {
      * @return Current app icon key (e.g., "default", "pakistan", "minimal", etc.)
      */
     public String getCurrentAppIcon() {
-        return sharedPreferences.getString(
+        String key = sharedPreferences.getString(
             Constants.PREF_APP_ICON,
             Constants.APP_ICON_DEFAULT
         );
+        // Migration: a legacy icon key was renamed. Map old stored values so
+        // saved choices survive.
+        if ("noor".equals(key)) {
+            key = Constants.APP_ICON_NOORISTIC;
+            sharedPreferences.edit().putString(Constants.PREF_APP_ICON, key).apply();
+        }
+        return key;
     }
 
 
@@ -2085,8 +2092,8 @@ public class SharedPreferencesManager {
             Constants.APP_ICON_FADSECLAB.equals(iconKey)
         ) return com.fadcam.R.mipmap.ic_launcher_fadseclab;
         if (
-            Constants.APP_ICON_NOOR.equals(iconKey)
-        ) return com.fadcam.R.mipmap.ic_launcher_noor;
+            Constants.APP_ICON_NOORISTIC.equals(iconKey)
+        ) return com.fadcam.R.mipmap.ic_launcher_nooristic;
         if (
             Constants.APP_ICON_BAT.equals(iconKey)
         ) return com.fadcam.R.mipmap.ic_launcher_bat;
@@ -2128,60 +2135,26 @@ public class SharedPreferencesManager {
         String key = getCurrentAppIcon();
         try {
             if (Constants.APP_ICON_BLACK.equals(key)) return ""; // No name as requested
-            if (
-                Constants.APP_ICON_MINIMAL.equals(key)
-            ) return context.getString(R.string.app_icon_minimal);
-            if (
-                Constants.APP_ICON_ALTERNATIVE.equals(key)
-            ) return context.getString(R.string.app_icon_alternative);
-            if (Constants.APP_ICON_FADED.equals(key)) return context.getString(
-                R.string.app_icon_faded
-            );
-            if (
-                Constants.APP_ICON_PALESTINE.equals(key)
-            ) return context.getString(R.string.app_icon_palestine);
-            if (
-                Constants.APP_ICON_PAKISTAN.equals(key)
-            ) return context.getString(R.string.app_icon_pakistan);
-            if (
-                Constants.APP_ICON_FADSECLAB.equals(key)
-            ) return context.getString(R.string.app_icon_fadseclab);
-            if (Constants.APP_ICON_NOOR.equals(key)) return context.getString(
-                R.string.app_icon_noor
-            );
-            if (Constants.APP_ICON_BAT.equals(key)) return context.getString(
-                R.string.app_icon_bat
-            );
-            if (
-                Constants.APP_ICON_REDBINARY.equals(key)
-            ) return context.getString(R.string.app_icon_redbinary);
-            if (Constants.APP_ICON_NOTES.equals(key)) return context.getString(
-                R.string.app_icon_notes
-            );
-            if (
-                Constants.APP_ICON_CALCULATOR.equals(key)
-            ) return context.getString(R.string.app_icon_calculator);
-            if (Constants.APP_ICON_CLOCK.equals(key)) return context.getString(
-                R.string.app_icon_clock
-            );
-            if (
-                Constants.APP_ICON_WEATHER.equals(key)
-            ) return context.getString(R.string.app_icon_weather);
-            if (
-                Constants.APP_ICON_FOOTBALL.equals(key)
-            ) return context.getString(R.string.app_icon_football);
-            if (Constants.APP_ICON_CAR.equals(key)) return context.getString(
-                R.string.app_icon_car
-            );
-            if (Constants.APP_ICON_JET.equals(key)) return context.getString(
-                R.string.app_icon_jet
-            );
-        } catch (Exception ignored) {}
-        // Default app label
-        try {
-            return context.getString(R.string.app_name);
+            if (Constants.APP_ICON_DEFAULT.equals(key)) return context.getString(R.string.app_icon_default);
+            if (Constants.APP_ICON_MINIMAL.equals(key)) return context.getString(R.string.app_icon_minimal);
+            if (Constants.APP_ICON_ALTERNATIVE.equals(key)) return context.getString(R.string.app_icon_alternative);
+            if (Constants.APP_ICON_FADED.equals(key)) return context.getString(R.string.app_icon_faded);
+            if (Constants.APP_ICON_PALESTINE.equals(key)) return context.getString(R.string.app_icon_palestine);
+            if (Constants.APP_ICON_PAKISTAN.equals(key)) return context.getString(R.string.app_icon_pakistan);
+            if (Constants.APP_ICON_FADSECLAB.equals(key)) return context.getString(R.string.app_icon_fadseclab);
+            if (Constants.APP_ICON_NOORISTIC.equals(key)) return context.getString(R.string.app_icon_nooristic);
+            if (Constants.APP_ICON_BAT.equals(key)) return context.getString(R.string.app_icon_bat);
+            if (Constants.APP_ICON_REDBINARY.equals(key)) return context.getString(R.string.app_icon_redbinary);
+            if (Constants.APP_ICON_NOTES.equals(key)) return context.getString(R.string.app_icon_notes);
+            if (Constants.APP_ICON_CALCULATOR.equals(key)) return context.getString(R.string.app_icon_calculator);
+            if (Constants.APP_ICON_CLOCK.equals(key)) return context.getString(R.string.app_icon_clock);
+            if (Constants.APP_ICON_WEATHER.equals(key)) return context.getString(R.string.app_icon_weather);
+            if (Constants.APP_ICON_FOOTBALL.equals(key)) return context.getString(R.string.app_icon_football);
+            if (Constants.APP_ICON_CAR.equals(key)) return context.getString(R.string.app_icon_car);
+            if (Constants.APP_ICON_JET.equals(key)) return context.getString(R.string.app_icon_jet);
+            return key;
         } catch (Exception e) {
-            return "";
+            return key;
         }
     }
     

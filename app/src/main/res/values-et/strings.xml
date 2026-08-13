@@ -1417,13 +1417,13 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="header_logo_avatar" translatable="false">Avatar</string>
     <string name="setting_app_icon_desc">Muuda rakenduse käivitaja ikooni ja nime</string>
     <string name="app_icon_dialog_title">Vali rakenduse ikoon</string>
-    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_default" translatable="false">FadCam</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
     <string name="app_icon_pakistan" translatable="false">FadCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_nooristic" translatable="false">FadCam ++</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>
@@ -1634,7 +1634,7 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="storage_icon_description">Mälu ikoon</string>
     <string name="location_icon_description">Asukoha ikoon</string>
     <string name="location_embedding_icon_description">Asukoha lisamise ikoon</string>
-    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
     <string name="onboarding_swipe_instruction">Pühkida paremale jätkamiseks</string>
     <string name="onboarding_select_language">Vali eelistatud rakenduse keel.</string>
     <string name="onboarding_camera">Kaamera</string>

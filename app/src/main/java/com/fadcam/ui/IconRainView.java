@@ -65,7 +65,7 @@ public class IconRainView extends View {
         iconBitmaps[0] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher);
         iconBitmaps[1] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_2);
         iconBitmaps[2] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_faded);
-        iconBitmaps[3] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_noor);
+        iconBitmaps[3] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_nooristic);
         iconBitmaps[4] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_bat);
         iconBitmaps[5] = BitmapFactory.decodeResource(context.getResources(), R.mipmap.ic_launcher_redbinary);
         

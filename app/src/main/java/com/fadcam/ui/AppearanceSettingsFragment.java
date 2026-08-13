@@ -431,55 +431,30 @@ public class AppearanceSettingsFragment extends Fragment {
         if (key.equals(Constants.APP_ICON_DEFAULT)) button.setText(
             getString(R.string.app_icon_default)
         );
-        else if (key.equals(Constants.APP_ICON_MINIMAL)) button.setText(
-            getString(R.string.app_icon_minimal)
-        );
-        else if (key.equals(Constants.APP_ICON_ALTERNATIVE)) button.setText(
-            getString(R.string.app_icon_alternative)
-        );
-        else if (key.equals(Constants.APP_ICON_FADED)) button.setText(
-            getString(R.string.app_icon_faded)
-        );
-        else if (key.equals(Constants.APP_ICON_PALESTINE)) button.setText(
-            getString(R.string.app_icon_palestine)
-        );
-        else if (key.equals(Constants.APP_ICON_PAKISTAN)) button.setText(
-            getString(R.string.app_icon_pakistan)
-        );
-        else if (key.equals(Constants.APP_ICON_FADSECLAB)) button.setText(
-            getString(R.string.app_icon_fadseclab)
-        );
-        else if (key.equals(Constants.APP_ICON_NOOR)) button.setText(
-            getString(R.string.app_icon_noor)
-        );
-        else if (key.equals(Constants.APP_ICON_BAT)) button.setText(
-            getString(R.string.app_icon_bat)
-        );
-        else if (key.equals(Constants.APP_ICON_REDBINARY)) button.setText(
-            getString(R.string.app_icon_redbinary)
-        );
-        else if (key.equals(Constants.APP_ICON_NOTES)) button.setText(
-            getString(R.string.app_icon_notes)
-        );
-        else if (key.equals(Constants.APP_ICON_CALCULATOR)) button.setText(
-            getString(R.string.app_icon_calculator)
-        );
-        else if (key.equals(Constants.APP_ICON_CLOCK)) button.setText(
-            getString(R.string.app_icon_clock)
-        );
-        else if (key.equals(Constants.APP_ICON_WEATHER)) button.setText(
-            getString(R.string.app_icon_weather)
-        );
-        else if (key.equals(Constants.APP_ICON_FOOTBALL)) button.setText(
-            getString(R.string.app_icon_football)
-        );
-        else if (key.equals(Constants.APP_ICON_CAR)) button.setText(
-            getString(R.string.app_icon_car)
-        );
-        else if (key.equals(Constants.APP_ICON_JET)) button.setText(
-            getString(R.string.app_icon_jet)
-        );
+        else if (key.equals(Constants.APP_ICON_MINIMAL)) button.setText(getString(R.string.app_icon_minimal));
+        else if (key.equals(Constants.APP_ICON_ALTERNATIVE)) button.setText(getString(R.string.app_icon_alternative));
+        else if (key.equals(Constants.APP_ICON_FADED)) button.setText(getString(R.string.app_icon_faded));
+        else if (key.equals(Constants.APP_ICON_PALESTINE)) button.setText(getString(R.string.app_icon_palestine));
+        else if (key.equals(Constants.APP_ICON_PAKISTAN)) button.setText(getString(R.string.app_icon_pakistan));
+        else if (key.equals(Constants.APP_ICON_FADSECLAB)) button.setText(getString(R.string.app_icon_fadseclab));
+        else if (key.equals(Constants.APP_ICON_NOORISTIC)) button.setText(getString(R.string.app_icon_nooristic));
+        else if (key.equals(Constants.APP_ICON_BAT)) button.setText(getString(R.string.app_icon_bat));
+        else if (key.equals(Constants.APP_ICON_REDBINARY)) button.setText(getString(R.string.app_icon_redbinary));
+        else if (key.equals(Constants.APP_ICON_NOTES)) button.setText(getString(R.string.app_icon_notes));
+        else if (key.equals(Constants.APP_ICON_CALCULATOR)) button.setText(getString(R.string.app_icon_calculator));
+        else if (key.equals(Constants.APP_ICON_CLOCK)) button.setText(getString(R.string.app_icon_clock));
+        else if (key.equals(Constants.APP_ICON_WEATHER)) button.setText(getString(R.string.app_icon_weather));
+        else if (key.equals(Constants.APP_ICON_FOOTBALL)) button.setText(getString(R.string.app_icon_football));
+        else if (key.equals(Constants.APP_ICON_CAR)) button.setText(getString(R.string.app_icon_car));
+        else if (key.equals(Constants.APP_ICON_JET)) button.setText(getString(R.string.app_icon_jet));
         else if (key.equals(Constants.APP_ICON_BLACK)) button.setText("");
+    }
+
+    /** Icon option: original label string + descriptive codename badge (like shortcuts). */
+    private com.fadcam.ui.picker.OptionItem iconOption(String key, String label, String badge, int mipmap) {
+        return new com.fadcam.ui.picker.OptionItem(
+            key, label, null, null, mipmap, null, null, null, null,
+            badge, R.drawable.badge_icon_codename, null);
     }
 
     private void showAppIconSelectionDialog(TextView valueView) {
@@ -507,130 +482,58 @@ public class AppearanceSettingsFragment extends Fragment {
             new java.util.ArrayList<>();
         // Provide iconResId mapping to mipmap resources (assumes names exist)
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_DEFAULT,
-                getString(R.string.app_icon_default),
-                R.mipmap.ic_launcher
-            )
+            iconOption(Constants.APP_ICON_DEFAULT, getString(R.string.app_icon_default), "Original", R.mipmap.ic_launcher)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_MINIMAL,
-                getString(R.string.app_icon_minimal),
-                R.mipmap.ic_launcher_minimal
-            )
+            iconOption(Constants.APP_ICON_MINIMAL, getString(R.string.app_icon_minimal), "Minimal", R.mipmap.ic_launcher_minimal)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_ALTERNATIVE,
-                getString(R.string.app_icon_alternative),
-                R.mipmap.ic_launcher_2
-            )
+            iconOption(Constants.APP_ICON_ALTERNATIVE, getString(R.string.app_icon_alternative), "Detective", R.mipmap.ic_launcher_2)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_FADED,
-                getString(R.string.app_icon_faded),
-                R.mipmap.ic_launcher_faded
-            )
+            iconOption(Constants.APP_ICON_FADED, getString(R.string.app_icon_faded), "Faded", R.mipmap.ic_launcher_faded)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_PALESTINE,
-                getString(R.string.app_icon_palestine),
-                R.mipmap.ic_launcher_palestine
-            )
+            iconOption(Constants.APP_ICON_PALESTINE, getString(R.string.app_icon_palestine), "Sumud صمود", R.mipmap.ic_launcher_palestine)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_PAKISTAN,
-                getString(R.string.app_icon_pakistan),
-                R.mipmap.ic_launcher_pakistan
-            )
+            iconOption(Constants.APP_ICON_PAKISTAN, getString(R.string.app_icon_pakistan), "MadeInPK", R.mipmap.ic_launcher_pakistan)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_FADSECLAB,
-                getString(R.string.app_icon_fadseclab),
-                R.mipmap.ic_launcher_fadseclab
-            )
+            iconOption(Constants.APP_ICON_FADSECLAB, getString(R.string.app_icon_fadseclab), "r00t", R.mipmap.ic_launcher_fadseclab)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_NOOR,
-                getString(R.string.app_icon_noor),
-                R.mipmap.ic_launcher_noor
-            )
+            iconOption(Constants.APP_ICON_NOORISTIC, getString(R.string.app_icon_nooristic), "Nooristic", R.mipmap.ic_launcher_nooristic)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_BAT,
-                getString(R.string.app_icon_bat),
-                R.mipmap.ic_launcher_bat
-            )
+            iconOption(Constants.APP_ICON_BAT, getString(R.string.app_icon_bat), "FadBat", R.mipmap.ic_launcher_bat)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_REDBINARY,
-                getString(R.string.app_icon_redbinary),
-                R.mipmap.ic_launcher_redbinary
-            )
+            iconOption(Constants.APP_ICON_REDBINARY, getString(R.string.app_icon_redbinary), "RedBinary", R.mipmap.ic_launcher_redbinary)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_NOTES,
-                getString(R.string.app_icon_notes),
-                R.mipmap.ic_launcher_notes
-            )
+            iconOption(Constants.APP_ICON_NOTES, getString(R.string.app_icon_notes), "Notes", R.mipmap.ic_launcher_notes)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_CALCULATOR,
-                getString(R.string.app_icon_calculator),
-                R.mipmap.ic_launcher_calculator
-            )
+            iconOption(Constants.APP_ICON_CALCULATOR, getString(R.string.app_icon_calculator), "Calculator", R.mipmap.ic_launcher_calculator)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_CLOCK,
-                getString(R.string.app_icon_clock),
-                R.mipmap.ic_launcher_clock
-            )
+            iconOption(Constants.APP_ICON_CLOCK, getString(R.string.app_icon_clock), "Clock", R.mipmap.ic_launcher_clock)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_WEATHER,
-                getString(R.string.app_icon_weather),
-                R.mipmap.ic_launcher_weather
-            )
+            iconOption(Constants.APP_ICON_WEATHER, getString(R.string.app_icon_weather), "Weather", R.mipmap.ic_launcher_weather)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_FOOTBALL,
-                getString(R.string.app_icon_football),
-                R.mipmap.ic_launcher_football
-            )
+            iconOption(Constants.APP_ICON_FOOTBALL, getString(R.string.app_icon_football), "Football", R.mipmap.ic_launcher_football)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_CAR,
-                getString(R.string.app_icon_car),
-                R.mipmap.ic_launcher_car
-            )
+            iconOption(Constants.APP_ICON_CAR, getString(R.string.app_icon_car), "Car", R.mipmap.ic_launcher_car)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_JET,
-                getString(R.string.app_icon_jet),
-                R.mipmap.ic_launcher_jet
-            )
+            iconOption(Constants.APP_ICON_JET, getString(R.string.app_icon_jet), "Jet", R.mipmap.ic_launcher_jet)
         );
         items.add(
-            new com.fadcam.ui.picker.OptionItem(
-                Constants.APP_ICON_BLACK,
-                "",
-                R.mipmap.ic_launcher_black
-            )
+            iconOption(Constants.APP_ICON_BLACK, "", "Black", R.mipmap.ic_launcher_black)
         );
         String current = sharedPreferencesManager.sharedPreferences.getString(
             Constants.PREF_APP_ICON,
@@ -673,9 +576,9 @@ public class AppearanceSettingsFragment extends Fragment {
             requireContext(),
             "com.fadcam.MainActivity.FadSecLabIcon"
         );
-        ComponentName noorIcon = new ComponentName(
+        ComponentName nooristicIcon = new ComponentName(
             requireContext(),
-            "com.fadcam.MainActivity.NoorIcon"
+            "com.fadcam.MainActivity.NooristicIcon"
         );
         ComponentName batIcon = new ComponentName(
             requireContext(),
@@ -729,7 +632,7 @@ public class AppearanceSettingsFragment extends Fragment {
             palestineIcon,
             pakistanIcon,
             fadseclabIcon,
-            noorIcon,
+            nooristicIcon,
             batIcon,
             redbinaryIcon,
             notesIcon,
@@ -761,7 +664,7 @@ public class AppearanceSettingsFragment extends Fragment {
             pakistanIcon;
         else if (Constants.APP_ICON_FADSECLAB.equals(iconKey)) enable =
             fadseclabIcon;
-        else if (Constants.APP_ICON_NOOR.equals(iconKey)) enable = noorIcon;
+        else if (Constants.APP_ICON_NOORISTIC.equals(iconKey)) enable = nooristicIcon;
         else if (Constants.APP_ICON_BAT.equals(iconKey)) enable = batIcon;
         else if (Constants.APP_ICON_REDBINARY.equals(iconKey)) enable =
             redbinaryIcon;

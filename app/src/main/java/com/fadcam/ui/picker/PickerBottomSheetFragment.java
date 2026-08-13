@@ -1357,6 +1357,19 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             android.widget.ImageView check = cell.findViewById(R.id.icon_check);
             android.widget.TextView label = cell.findViewById(R.id.icon_label);
             label.setText(item.title);
+            // Badge pill under the label (same codename style as shortcuts).
+            android.widget.TextView badge = cell.findViewById(R.id.icon_badge);
+            if (badge != null) {
+                if (item.badgeText != null && !item.badgeText.isEmpty()) {
+                    badge.setText(item.badgeText);
+                    if (item.badgeBgResId != null) {
+                        badge.setBackgroundResource(item.badgeBgResId);
+                    }
+                    badge.setVisibility(View.VISIBLE);
+                } else {
+                    badge.setVisibility(View.GONE);
+                }
+            }
             if (item.iconResId != null) {
                 icon.setImageResource(item.iconResId);
                 icon.setImageTintList(null);

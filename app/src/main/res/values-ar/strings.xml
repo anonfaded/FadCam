@@ -2493,7 +2493,7 @@
 
     <string name="header_logo_avatar" translatable="false">Avatar</string>
 
-    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_default" translatable="false">FadCam</string>
 
     <string name="app_icon_alternative" translatable="false">Camera</string>
 
@@ -2505,7 +2505,7 @@
 
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
 
-    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_nooristic" translatable="false">FadCam ++</string>
 
     <string name="app_icon_bat" translatable="false">FadCam</string>
 
@@ -2899,7 +2899,7 @@
 
     <string name="storage_helper_current_custom_uri_prefix">URI:</string>
 
-    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
 
     <string name="onboarding_intro_line4">مفتوح المصدر. بدون إعلانات. لك.</string>
 

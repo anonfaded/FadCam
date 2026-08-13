@@ -623,7 +623,7 @@ public abstract class Constants {
     public static final String APP_ICON_PALESTINE = "palestine"; // Sumud icon
     public static final String APP_ICON_PAKISTAN = "pakistan"; // MadeInPK icon
     public static final String APP_ICON_FADSECLAB = "fadseclab"; // r00t icon
-    public static final String APP_ICON_NOOR = "noor"; // Noor icon
+    public static final String APP_ICON_NOORISTIC = "nooristic"; // Nooristic icon
     public static final String APP_ICON_BAT = "bat"; // FadBat icon
     public static final String APP_ICON_REDBINARY = "redbinary"; // RedBinary icon
     public static final String APP_ICON_NOTES = "notes"; // Notes icon

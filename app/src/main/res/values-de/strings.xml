@@ -527,13 +527,13 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="setting_app_icon_title">App-Symbol</string>
     <string name="setting_app_icon_desc">Ändere das Start-Symbol und den Namen der App</string>
     <string name="app_icon_dialog_title">App-Symbol auswählen</string>
-    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_default" translatable="false">FadCam</string>
     <string name="app_icon_alternative" translatable="false">Kamera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">Sumud (صُمود)</string>
     <string name="app_icon_pakistan" translatable="false">FadCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor (FadCam ++)</string>
+    <string name="app_icon_nooristic" translatable="false">FadCam ++</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notizen</string>
@@ -562,7 +562,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="storage_icon_description">Speicher-Symbol</string>
     <string name="location_icon_description">Standort-Symbol</string>
     <string name="location_embedding_icon_description">Symbol für Standorteinbettung</string>
-    <string name="app_icon_minimal" translatable="false">Minimalistisch</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Wische nach rechts, um fortzufahren</string>
     <string name="onboarding_select_language">Wähle deine bevorzugte App-Sprache.</string>

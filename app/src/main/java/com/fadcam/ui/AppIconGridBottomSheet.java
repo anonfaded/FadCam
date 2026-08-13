@@ -78,7 +78,7 @@ public class AppIconGridBottomSheet extends BottomSheetDialogFragment {
             getString(R.string.app_icon_default),          // Legacy first
             getString(R.string.app_icon_minimal),          // Minimal (new)
             getString(R.string.app_icon_alternative),      // $ sign icon
-            getString(R.string.app_icon_noor),             // Noor
+            getString(R.string.app_icon_nooristic),             // Nooristic
             getString(R.string.app_icon_redbinary),        // 0xFF0000
             getString(R.string.app_icon_fadseclab),        // FadSecLab
             getString(R.string.app_icon_bat),              // Bat icon
@@ -100,7 +100,7 @@ public class AppIconGridBottomSheet extends BottomSheetDialogFragment {
             R.mipmap.ic_launcher,                // Legacy
             R.mipmap.ic_launcher_minimal,        // Minimal (new)
             R.mipmap.ic_launcher_2,              // Alternative ($ sign)
-            R.mipmap.ic_launcher_noor,           // Noor
+            R.mipmap.ic_launcher_nooristic,           // Nooristic
             R.mipmap.ic_launcher_redbinary,      // 0xFF0000
             R.mipmap.ic_launcher_fadseclab,      // FadSecLab
             R.mipmap.ic_launcher_bat,            // Bat
@@ -122,7 +122,7 @@ public class AppIconGridBottomSheet extends BottomSheetDialogFragment {
             Constants.APP_ICON_DEFAULT,          // Legacy
             Constants.APP_ICON_MINIMAL,          // Minimal (new)
             Constants.APP_ICON_ALTERNATIVE,      // Alternative ($ sign)
-            Constants.APP_ICON_NOOR,             // Noor
+            Constants.APP_ICON_NOORISTIC,             // Nooristic
             Constants.APP_ICON_REDBINARY,        // 0xFF0000
             Constants.APP_ICON_FADSECLAB,        // FadSecLab
             Constants.APP_ICON_BAT,              // Bat
