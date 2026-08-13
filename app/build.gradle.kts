@@ -31,7 +31,7 @@ android {
         applicationId = "com.fadcam"
         minSdk = 24
         targetSdk = 36
-        versionCode = 41
+        versionCode = 42
         versionName = "4.0.0"
         vectorDrawables.useSupportLibrary = true
         
@@ -144,20 +144,23 @@ android {
 // ./gradlew assembleWeatherProRelease - Weather Pro variant
 // ./gradlew assembleDefaultProPlusRelease -PcustomAppName="Custom Name" - Pro+ custom build (standalone)
 
-    // Variant filter: only build specific variants
-    variantFilter {
-        val isPreBuiltFlavor = name.contains("notesPro") || name.contains("calcPro") || name.contains("weatherPro")
-        val isDefaultFlavor = name.contains("default")
-        
-        if (isPreBuiltFlavor) {
-            // Pre-built flavors: only 'release' build type
-            if (!name.endsWith("Release")) {
-                ignore = true
-            }
-        } else if (isDefaultFlavor) {
-            // Default flavor: allow 'debug', 'release', and 'proPlus' build types
-            if (name.endsWith("Pro") && !name.endsWith("ProPlus")) {
-                ignore = true
+    // Variant filter: only build specific variants (modern API — the old
+    // variantFilter{} is deprecated since AGP 8.x).
+    androidComponents {
+        beforeVariants { variant ->
+            val isPreBuiltFlavor = variant.name.contains("notesPro") || variant.name.contains("calcPro") || variant.name.contains("weatherPro")
+            val isDefaultFlavor = variant.name.contains("default")
+
+            if (isPreBuiltFlavor) {
+                // Pre-built flavors: only 'release' build type
+                if (!variant.name.endsWith("Release")) {
+                    variant.enable = false
+                }
+            } else if (isDefaultFlavor) {
+                // Default flavor: allow 'debug', 'release', and 'proPlus' build types
+                if (variant.name.endsWith("Pro") && !variant.name.endsWith("ProPlus")) {
+                    variant.enable = false
+                }
             }
         }
     }

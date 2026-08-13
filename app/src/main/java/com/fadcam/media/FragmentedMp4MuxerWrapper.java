@@ -84,6 +84,8 @@ public class FragmentedMp4MuxerWrapper {
     private byte[] initSegmentData = null;
     private long initSegmentFilePosition = -1;
     private long cumulativeDurationUs = 0;
+    // Diagnostic: where the output lives (null for pure-fd/SAF constructions).
+    private String outputPath;
 
     // Hybrid MP4 finalization: track fragment positions and per-track sample
     // counts so we can build correct stco/stsc entries in the final moov.
@@ -101,6 +103,7 @@ public class FragmentedMp4MuxerWrapper {
      */
     public FragmentedMp4MuxerWrapper(@NonNull String path) throws IOException {
         this.fileOutputStream = new FileOutputStream(path);
+        this.outputPath = path;
         
         // Create callback consumer for live streaming integration
         Consumer<ProcessedSegment> segmentConsumer = segment -> {
@@ -423,6 +426,9 @@ public class FragmentedMp4MuxerWrapper {
      *
      * @param degrees The orientation in degrees (0, 90, 180, or 270).
      */
+    /** Lets the pipeline record the output path even for fd-based constructions. */
+    public void setOutputPath(String path) { this.outputPath = path; }
+
     public void setOrientationHint(int degrees) {
         if (started) {
             FLog.w(TAG, "Cannot set orientation after muxer started");
@@ -810,7 +816,28 @@ public class FragmentedMp4MuxerWrapper {
                         + " fragments, moov=" + moovSize + "B, mdat(64bit)=" + mdatSize + "B");
             }
         } catch (Exception e) {
-            FLog.w(TAG, "Hybrid finalization failed — fMP4 left intact", e);
+            // DIAGNOSTIC (failure path only — zero steady-state cost):
+            // distinguish "file truly deleted" from "fd stale but file intact"
+            // (FUSE/MediaProvider restart on aggressive OEMs). If the file still
+            // exists, a re-open-by-path retry can recover the data.
+            try {
+                StringBuilder diag = new StringBuilder("Hybrid finalization failed — fMP4 left intact: ").append(e.getMessage());
+                if (outputPath != null) {
+                    java.io.File f = new java.io.File(outputPath);
+                    diag.append(" | path=").append(outputPath)
+                        .append(" | exists=").append(f.exists())
+                        .append(" | length=").append(f.exists() ? f.length() : -1);
+                }
+                try {
+                    diag.append(" | fdValid=").append(fileOutputStream != null ? fileOutputStream.getFD().valid() : false);
+                } catch (Exception ignored) {}
+                try {
+                    diag.append(" | channelOpen=").append(fileOutputStream != null ? fileOutputStream.getChannel().isOpen() : false);
+                } catch (Exception ignored) {}
+                FLog.w(TAG, diag.toString(), e);
+            } catch (Exception logEx) {
+                FLog.w(TAG, "Hybrid finalization failed — fMP4 left intact", e);
+            }
         }
     }
 

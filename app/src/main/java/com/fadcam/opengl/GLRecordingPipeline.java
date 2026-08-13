@@ -1392,6 +1392,13 @@ public class GLRecordingPipeline {
         } else {
             mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
         }
+        // Diagnostic: let the wrapper know the output path even for fd-based
+        // construction, so finalization failures can report exists()/length().
+        try {
+            if (currentOutputFilePath != null) {
+                mediaMuxer.setOutputPath(currentOutputFilePath);
+            }
+        } catch (Exception ignored) {}
 
         // Set location metadata if available
         if (locationLatitude != null && locationLongitude != null) {
