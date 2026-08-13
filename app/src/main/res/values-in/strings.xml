@@ -2389,6 +2389,7 @@ Catatan: Setidaknya satu metode keluar harus tetap diaktifkan untuk mencegah ter
     <string name="watermark_gps_disabled_warning">⚠ GPS mati — aktifkan lokasi perangkat agar fitur ini berfungsi</string>
     <string name="watermark_gps_disabled_home_toast">Fitur tanda air bergantung lokasi diaktifkan tetapi GPS mati. Aktifkan lokasi perangkat agar berfungsi.</string>
     <string name="watermark_gps_disabled_banner_message">Fitur tanda air bergantung lokasi tidak akan muncul sampai lokasi perangkat diaktifkan</string>
+    <string name="watermark_day_title">Hari</string>
     <string name="watermark_timezone_title">Zona Waktu</string>
     <string name="watermark_timezone_off">Mati</string>
     <string name="watermark_timezone_on_gmt">Aktif — Offset GMT di tanda air</string>

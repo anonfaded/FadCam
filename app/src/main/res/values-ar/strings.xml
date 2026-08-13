@@ -3766,6 +3766,8 @@
 
     <string name="watermark_gps_disabled_banner_message">ميزات العلامة المائية المعتمدة على الموقع لن تظهر حتى يتم تمكين موقع الجهاز</string>
 
+    <string name="watermark_day_title">اليوم</string>
+
     <string name="watermark_timezone_title">المنطقة الزمنية</string>
 
     <string name="watermark_timezone_off">إيقاف</string>

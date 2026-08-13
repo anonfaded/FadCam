@@ -2254,6 +2254,7 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="watermark_timezone_format_title">Gaz Bande Format</string>
     <string name="watermark_timezone_off">Band</string>
     <string name="watermark_timezone_on_gmt">On — GMT offset in watermark</string>
+    <string name="watermark_day_title">Wradzha</string>
     <string name="watermark_timezone_title">Gaz Bande</string>
     <string name="watermark_utm_helper">UTM Earth 60 zones ke wehai aw lat/lon easting &amp; northing meters ke badlai. Military, surveyors, aw topographic maps pa mreshta precise grid positioning dapara istemal kegi.
 

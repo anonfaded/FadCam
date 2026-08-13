@@ -2151,6 +2151,7 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="watermark_gps_disabled_warning">⚠ GPS on väljas — luba seadme asukoht, et see funktsioon töötaks</string>
     <string name="watermark_gps_disabled_home_toast">Asukohast sõltuvad vesimärgi funktsioonid lubatud, kuid GPS on väljas. Luba seadme asukoht, et need töötaksid.</string>
     <string name="watermark_gps_disabled_banner_message">Asukohast sõltuvad vesimärgi funktsioonid ei ilmu, kuni seadme asukoht on lubatud</string>
+    <string name="watermark_day_title">Päev</string>
     <string name="watermark_timezone_title">Ajavöönd</string>
     <string name="watermark_timezone_off">Väljas</string>
     <string name="watermark_timezone_on_gmt">Sees — GMT nihe vesimärgis</string>

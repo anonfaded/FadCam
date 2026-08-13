@@ -4269,6 +4269,7 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="watermark_timezone_on_gmt">开 — 水印中显示GMT偏移</string>
 
 <!-- watermark_timezone_title -->
+<string name="watermark_day_title">星期</string>
 <string name="watermark_timezone_title">时区</string>
 
 <!-- watermark_utm_helper -->

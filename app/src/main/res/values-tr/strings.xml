@@ -1016,6 +1016,7 @@
     <string name="watermark_network_warning_message">Bu özellik, potansiyel olarak izlenebilecek ağ istekleri gerektirir. Tam anonimlik istiyorsanız devre dışı bırakın. Devam edilsin mi?</string>
     <string name="watermark_network_warning_enable">Etkinleştir</string>
     <string name="watermark_audio_permission_required">Gürültü izleme için mikrofon izni gerekli</string>
+    <string name="watermark_day_title">Gün</string>
     <string name="watermark_timezone_title">Saat Dilimi</string>
     <string name="watermark_timezone_off">Kapalı</string>
     <string name="watermark_timezone_on_gmt">Açık — Filigranda GMT farkı</string>

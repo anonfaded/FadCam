@@ -3042,6 +3042,7 @@ FadCam использует фрагментированный формат MP4 
     <string name="watermark_gps_disabled_warning">⚠ GPS выключен — включите геолокацию устройства для работы этой функции</string>
     <string name="watermark_gps_disabled_home_toast">Функции водяного знака с местоположением включены, но GPS выключен. Включите геолокацию устройства для их работы.</string>
     <string name="watermark_gps_disabled_banner_message">Функции водяного знака, зависящие от местоположения, не будут отображаться, пока не включена геолокация устройства</string>
+    <string name="watermark_day_title">День</string>
     <string name="watermark_timezone_title">Часовой пояс</string>
     <string name="watermark_timezone_off">Выкл</string>
     <string name="watermark_timezone_on_gmt">Вкл — GMT смещение в водяном знаке</string>

@@ -3700,6 +3700,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
 
 <string name="watermark_gps_disabled_banner_message">Location-dependent watermark features will not appear until device location is enabled</string>
 
+<string name="watermark_day_title">Jour</string>
+
 <string name="watermark_timezone_title">Timezone</string>
 
 <string name="watermark_timezone_off">Off</string>

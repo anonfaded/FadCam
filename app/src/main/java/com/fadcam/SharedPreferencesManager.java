@@ -1267,6 +1267,14 @@ public class SharedPreferencesManager {
         return sharedPreferences.getBoolean(Constants.PREF_WATERMARK_TIMEZONE, false);
     }
 
+    public boolean isWatermarkDayEnabled() {
+        return sharedPreferences.getBoolean(Constants.PREF_WATERMARK_DAY, true); // default ON
+    }
+
+    public void setWatermarkDayEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_WATERMARK_DAY, enabled).apply();
+    }
+
     public void setTimezoneEnabled(boolean enabled) {
         sharedPreferences.edit().putBoolean(Constants.PREF_WATERMARK_TIMEZONE, enabled).apply();
     }

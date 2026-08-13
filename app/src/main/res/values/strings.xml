@@ -2383,6 +2383,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="watermark_gps_disabled_warning">⚠ GPS is off — enable device location for this feature to work</string>
     <string name="watermark_gps_disabled_home_toast">Location-dependent watermark features enabled but GPS is off. Enable device location for them to work.</string>
     <string name="watermark_gps_disabled_banner_message">Location-dependent watermark features will not appear until device location is enabled</string>
+    <string name="watermark_day_title">Day</string>
     <string name="watermark_timezone_title">Timezone</string>
     <string name="watermark_timezone_off">Off</string>
     <string name="watermark_timezone_on_gmt">On — GMT offset in watermark</string>

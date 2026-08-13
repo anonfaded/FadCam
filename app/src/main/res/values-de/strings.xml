@@ -2308,6 +2308,7 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="watermark_timezone_format_title">Zeitzonenformat</string>
     <string name="watermark_timezone_off">Aus</string>
     <string name="watermark_timezone_on_gmt">Ein – GMT-Offset im Wasserzeichen</string>
+    <string name="watermark_day_title">Tag</string>
     <string name="watermark_timezone_title">Zeitzone</string>
     <string name="watermark_utm_helper">UTM teilt die Erde in 60 Zonen auf und wandelt Breiten-/Längengrade in Easting &amp; Northing in Metern um. Wird vom Militär, Vermessern und topografischen Karten für präzise Gitterpositionierung verwendet.\n\nSo lesen: „Zone 42N — 372.684m E, 3.512.334m N" = Zone 42 auf der Nordhalbkugel, 372.684 Meter Easting (Ost-West), 3.512.334 Meter Northing (Nord-Süd).</string>
     <string name="watermark_utm_off">Aus</string>

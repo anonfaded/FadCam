@@ -4645,8 +4645,10 @@ public class RecordingService extends Service {
     }
 
     private String getCurrentTimestamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH); // 12-hour format with
-                                                                                               // AM/PM
+        // Abbreviated day (e.g. "Wed, ") included when the Day toggle is on.
+        String pattern = (sharedPreferencesManager.isWatermarkDayEnabled() ? "EEE, " : "")
+                + "dd/MMM/yyyy hh:mm:ss a";
+        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH); // 12-hour format with AM/PM
         return convertArabicNumeralsToEnglish(sdf.format(new Date()));
     }
 

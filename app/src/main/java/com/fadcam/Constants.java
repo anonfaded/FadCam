@@ -74,6 +74,7 @@ public abstract class Constants {
     public static final String PREF_WATERMARK_WEATHER = "watermark_weather_enabled";
     public static final String PREF_WATERMARK_NETWORK_WARNING_SHOWN = "watermark_network_warning_shown";
     public static final String PREF_WATERMARK_TIMEZONE = "watermark_timezone_enabled";
+    public static final String PREF_WATERMARK_DAY = "watermark_day_enabled";
     public static final String PREF_WATERMARK_TIMEZONE_FORMAT = "watermark_timezone_format";
     public static final String PREF_WATERMARK_UTM = "watermark_utm_enabled";
     public static final String PREF_WATERMARK_ACCURACY = "watermark_accuracy_enabled";

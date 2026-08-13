@@ -190,7 +190,10 @@ public class WatermarkManager implements WatermarkInfoProvider {
     // ── Timestamp helpers ─────────────────────────────────────────────
 
     private String getCurrentTimestamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH);
+        // Day name (e.g. "Wednesday, ") is included when the Day toggle is on.
+        String pattern = (prefs.isWatermarkDayEnabled() ? "EEE, " : "")
+                + "dd/MMM/yyyy hh:mm:ss a";
+        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH);
         return convertArabicNumeralsToEnglish(sdf.format(new Date()));
     }
 
