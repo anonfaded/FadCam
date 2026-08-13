@@ -508,7 +508,10 @@ public class FadRecHomeFragment extends HomeFragment {
         updateCardForScreenRecording(rootView);
         configurePreviewCardForScreenRecording(rootView);
         
-        // Hide recording tiles (AF, exposure, zoom - camera specific)
+        // Hide recording tiles (AF, exposure, zoom - camera specific).
+        // NOTE: the floating-controls card (avatar toggle) is inserted INTO the
+        // AF tile's parent FrameLayout, so the container must stay visible —
+        // only the tile buttons and their value labels are hidden.
         View tileAfToggle = rootView.findViewById(com.fadcam.R.id.tile_af_toggle);
         if (tileAfToggle != null) {
             tileAfToggle.setVisibility(View.GONE);
@@ -521,6 +524,21 @@ public class FadRecHomeFragment extends HomeFragment {
         View tileZoom = rootView.findViewById(com.fadcam.R.id.tile_zoom);
         if (tileZoom != null) {
             tileZoom.setVisibility(View.GONE);
+        }
+        
+        // Hide the per-tile value labels too — they are separate TextViews that
+        // would otherwise linger as ghosts next to the floating-controls card.
+        View tileAfStatus = rootView.findViewById(com.fadcam.R.id.tile_af_status_icon);
+        if (tileAfStatus != null) {
+            tileAfStatus.setVisibility(View.GONE);
+        }
+        View tileExpLabel = rootView.findViewById(com.fadcam.R.id.tile_exp_label);
+        if (tileExpLabel != null) {
+            tileExpLabel.setVisibility(View.GONE);
+        }
+        View tileZoomLabel = rootView.findViewById(com.fadcam.R.id.tile_zoom_label);
+        if (tileZoomLabel != null) {
+            tileZoomLabel.setVisibility(View.GONE);
         }
         
         // Hide recording controls title (AF · Exposure · Zoom)
@@ -554,17 +572,22 @@ public class FadRecHomeFragment extends HomeFragment {
             null
         );
         
-        // Find the parent layout where tiles were (should be tile_af_toggle's parent)
-        View tileAfToggle = rootView.findViewById(com.fadcam.R.id.tile_af_toggle);
+        // Insert the card FULL-WIDTH where the tiles row sits (inside the
+        // recording-controls card's vertical container), then hide the tiles
+        // row. Inserting into tile_af_toggle's FrameLayout would squeeze the
+        // card to 1/3 width and push the avatar next to the title.
+        View tilesRow = rootView.findViewById(com.fadcam.R.id.includeRecordingTiles);
         android.view.ViewGroup tilesParent = null;
-        
-        if (tileAfToggle != null && tileAfToggle.getParent() instanceof android.view.ViewGroup) {
-            tilesParent = (android.view.ViewGroup) tileAfToggle.getParent();
+        int insertIndex = 0;
+        if (tilesRow != null && tilesRow.getParent() instanceof android.view.ViewGroup) {
+            tilesParent = (android.view.ViewGroup) tilesRow.getParent();
+            insertIndex = tilesParent.indexOfChild(tilesRow);
         }
         
         if (tilesParent != null) {
-            // Add the floating controls card at the beginning
-            tilesParent.addView(cardFloatingControls, 0);
+            // Replace the tiles row position with the floating controls card
+            tilesParent.addView(cardFloatingControls, insertIndex);
+            tilesRow.setVisibility(View.GONE);
             
             // Setup switch
             com.fadcam.ui.AvatarToggleView switchFloatingControls = 
