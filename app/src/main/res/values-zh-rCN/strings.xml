@@ -628,7 +628,8 @@
     <string name="shortcuts_helper_text">添加上方的快捷方式。它们也可与自动化应用（如 MacroDroid）协同工作，用于触发诸如映射音量键之类的操作。</string>
     <string name="shortcuts_add_to_home">添加到主屏幕</string>
     <string name="shortcuts_sheet_helper">您的启动器将提示您选择放置位置。</string>
-    <string name="shortcuts_and_widgets">快捷方式与小组件</string>
+    <string name="shortcuts_widgets_screen_title">快捷方式与小组件</string>
+    <string name="shortcuts_and_widgets">小组件</string>
     <string name="video_player_settings_title">视频播放器设置</string>
     <string name="video_player_settings_helper">播放速度用于改变视频的正常播放速率。快速播放则是一个临时加速功能，仅在您长按视频时生效。您可以在此处或直接从视频播放器界面更改这些设置。</string>
     <string name="video_player_settings_subtitle">播放与快速播放</string>
@@ -711,6 +712,7 @@
     <string name="shortcuts_rename_helper">提示：留空则使用默认名称。</string>
     <string name="shortcuts_rename_action_title">重命名</string>
     <string name="shortcuts_rename_action_subtitle">点击重命名</string>
+    <string name="shortcut_purpose_toggle">一个单一的动态快捷方式，使用默认相机开始或停止录制 — 手动控制请使用单独的“开始”和“停止”快捷方式。</string>
     <string name="shortcut_purpose_torch">此快捷方式可切换手电筒。</string>
     <string name="widget_customize_action_label">自定义</string>
     <string name="widget_customize_action_subtitle">时间、日期与主题选项</string>
@@ -3770,6 +3772,8 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="shortcut_start_current">当前开始</string>
 
 <!-- shortcut_start_dual -->
+<string name="shortcut_toggle_recording">开始 / 停止</string>
+<string name="shortcut_toggle_recording_long">开始或停止录制</string>
 <string name="shortcut_start_dual">双摄开始</string>
 
 <!-- shortcut_start_front -->

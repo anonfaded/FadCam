@@ -601,7 +601,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/shortcuts_and_widgets"
+                        android:text="@string/shortcuts_widgets_screen_title"
                         android:textColor="?attr/colorHeading"
                         android:textStyle="bold"
                         android:textSize="15sp"/>

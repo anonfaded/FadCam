@@ -844,7 +844,8 @@
     <string name="shortcuts_helper_text">Aggiungi scorciatoie delle azioni alla schermata home.</string>
     <string name="shortcuts_add_to_home">Aggiungi alla home</string>
     <string name="shortcuts_sheet_helper">Scegli un\'azione e tocca Aggiungi alla Home. Puoi anche rinominare la scorciatoia o cambiarne l\'icona.</string>
-    <string name="shortcuts_and_widgets">Scorciatoie e widget</string>
+    <string name="shortcuts_widgets_screen_title">Scorciatoie e widget</string>
+    <string name="shortcuts_and_widgets">Widget</string>
     <string name="video_player_settings_title">Impostazioni lettore video</string>
     <string name="video_player_settings_helper">Personalizza l\'esperienza del lettore video.</string>
     <string name="video_player_settings_subtitle">Velocità, audio, controlli</string>
@@ -938,6 +939,7 @@
     <string name="shortcut_purpose_start_current">Avvia fotocamera corrente</string>
     <string name="shortcut_purpose_start_dual">Avvia doppia</string>
     <string name="shortcut_purpose_stop">Ferma</string>
+    <string name="shortcut_purpose_toggle">Una singola scorciatoia dinamica che avvia o ferma la registrazione usando la fotocamera predefinita — usa le scorciatoie Avvia e Ferma separate per il controllo manuale.</string>
     <string name="shortcut_purpose_torch">Torcia</string>
     <string name="shortcut_purpose_photo">Scatta foto</string>
     <string name="shortcut_purpose_photo_front">Scatta selfie</string>
@@ -962,6 +964,8 @@
     <string name="shortcut_start_back">Avvia posteriore</string>
     <string name="shortcut_start_front">Avvia frontale</string>
     <string name="shortcut_start_current">Avvia fotocamera corrente</string>
+    <string name="shortcut_toggle_recording">Avvia / Ferma</string>
+    <string name="shortcut_toggle_recording_long">Avvia o ferma la registrazione</string>
     <string name="shortcut_start_dual">Avvia doppia</string>
     <string name="stop_recording">Ferma registrazione</string>
     <string name="shortcut_take_photo">Scatta foto</string>

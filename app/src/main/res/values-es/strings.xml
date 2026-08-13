@@ -854,7 +854,8 @@
     <string name="shortcuts_helper_text">Agrega accesos directos desde arriba. También funcionan con apps de automatización (ej. MacroDroid) para activar acciones como mapear botones de volumen.</string>
     <string name="shortcuts_add_to_home">Agregar a pantalla de inicio</string>
     <string name="shortcuts_sheet_helper">Tu launcher pedirá confirmación para la ubicación.</string>
-    <string name="shortcuts_and_widgets">Accesos directos y widgets</string>
+    <string name="shortcuts_widgets_screen_title">Accesos directos y widgets</string>
+    <string name="shortcuts_and_widgets">Widgets</string>
     <string name="video_player_settings_title">Ajustes del reproductor de video</string>
     <string name="video_player_settings_helper">Velocidad de reproducción cambia la velocidad normal de reproducción del video. Velocidad rápida es un impulso temporal aplicado solo mientras mantienes presionado el video. Puedes cambiar estos ajustes aquí o directamente desde la pantalla del reproductor de video.</string>
     <string name="video_player_settings_subtitle">Velocidad de reproducción y velocidad rápida</string>
@@ -952,6 +953,7 @@
     <string name="shortcut_purpose_start_current">Este acceso directo inicia grabación con el modo de cámara actualmente seleccionado.</string>
     <string name="shortcut_purpose_start_dual">Este acceso directo inicia grabación de cámara dual (PiP).</string>
     <string name="shortcut_purpose_stop">Este acceso directo detiene la grabación actual.</string>
+    <string name="shortcut_purpose_toggle">Un único acceso directo dinámico que inicia o detiene la grabación con la cámara predeterminada — usa los accesos directos Iniciar y Detener por separado para control manual.</string>
     <string name="shortcut_purpose_torch">Este acceso directo alterna la linterna.</string>
     <string name="shortcut_purpose_photo">Este acceso directo captura una foto con la cámara trasera y la guarda en la ubicación FadCam/FadShot.</string>
     <string name="shortcut_purpose_photo_front">Este acceso directo captura una foto con la cámara frontal y la guarda en la ubicación FadCam/FadShot.</string>
@@ -977,6 +979,8 @@
     <string name="shortcut_start_back">Iniciar trasera</string>
     <string name="shortcut_start_front">Iniciar frontal</string>
     <string name="shortcut_start_current">Iniciar actual</string>
+    <string name="shortcut_toggle_recording">Iniciar / Detener</string>
+    <string name="shortcut_toggle_recording_long">Iniciar o detener la grabación</string>
     <string name="shortcut_start_dual">Iniciar dual</string>
     <string name="stop_recording">Detener</string>
     <string name="shortcut_take_photo">Foto</string>

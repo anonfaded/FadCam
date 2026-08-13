@@ -843,7 +843,8 @@
     <string name="shortcuts_helper_text">Lisa otseteed ülalt. Need töötavad ka automatiseerimise rakendustega (nt MacroDroid), et määrata helitugevusnuppe.</string>
     <string name="shortcuts_add_to_home">Lisa avalehele</string>
     <string name="shortcuts_sheet_helper">Sinu käivitaja küsib paigutust.</string>
-    <string name="shortcuts_and_widgets">Otseteed ja vidinad</string>
+    <string name="shortcuts_widgets_screen_title">Otseteed ja vidinad</string>
+    <string name="shortcuts_and_widgets">Vidinad</string>
     <string name="video_player_settings_title">Videoesitaja seaded</string>
     <string name="video_player_settings_helper">Esituskiirus muudab video esitamise normaalset kiirust. Kiirkiirus on ajutine tõuge, mida rakendatakse ainult siis, kui vajutad videol pikalt. Saad muuta neid seadeid siin või otse videoesitaja ekraanilt.</string>
     <string name="video_player_settings_subtitle">Esitus ja kiirkiirus</string>
@@ -937,6 +938,7 @@
     <string name="shortcut_purpose_start_current">See otsetee alustab hetkel valitud kaamerarežiimiga salvestamist.</string>
     <string name="shortcut_purpose_start_dual">See otsetee alustab duaalkaamera salvestamist (PiP).</string>
     <string name="shortcut_purpose_stop">See otsetee peatab praeguse salvestamise.</string>
+    <string name="shortcut_purpose_toggle">Üks dünaamiline otsetee, mis alustab või peatab salvestuse vaikekaameraga — käsitsi juhtimiseks kasuta eraldi Salvesta ja Peata otseteid.</string>
     <string name="shortcut_purpose_torch">See otsetee lülitab taskulampi.</string>
     <string name="shortcut_purpose_photo">See otsetee jäädvustab tagakaamera foto ja salvestab selle FadCam/FadShot asukohta.</string>
     <string name="shortcut_purpose_photo_front">See otsetee jäädvustab esikaamera foto ja salvestab selle FadCam/FadShot asukohta.</string>
@@ -960,6 +962,8 @@
     <string name="shortcut_start_back">Alusta taga</string>
     <string name="shortcut_start_front">Alusta ees</string>
     <string name="shortcut_start_current">Alusta praegune</string>
+    <string name="shortcut_toggle_recording">Salvesta / Peata</string>
+    <string name="shortcut_toggle_recording_long">Salvestamise alustamine või lõpetamine</string>
     <string name="shortcut_start_dual">Alusta duaalselt</string>
     <string name="stop_recording">Peata</string>
     <string name="shortcut_take_photo">Foto</string>

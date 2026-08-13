@@ -68,6 +68,11 @@ public class ShortcutsSettingsFragment extends Fragment {
         } catch (Throwable ignored) {
         }
 
+        wireShortcutRow(view, R.id.cell_toggle, R.id.icon_toggle, R.drawable.toggle_recording_shortcut,
+                getString(R.string.shortcut_toggle_recording),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.RecordingToggleActivity"),
+                ShortcutsManager.ID_TOGGLE);
         wireShortcutRow(view, R.id.cell_start, R.id.icon_start, R.drawable.start_back_shortcut,
                 getString(R.string.shortcut_start_back),
                 new Intent(Intent.ACTION_VIEW)
@@ -138,7 +143,9 @@ public class ShortcutsSettingsFragment extends Fragment {
         // Also show immutable codename/purpose under the label if a dedicated subtitle
         // view exists
         TextView subtitle = null;
-        if (rowId == R.id.cell_start) {
+        if (rowId == R.id.cell_toggle) {
+            subtitle = root.findViewById(R.id.subtitle_toggle);
+        } else if (rowId == R.id.cell_start) {
             subtitle = root.findViewById(R.id.subtitle_start);
         } else if (rowId == R.id.cell_start_front) {
             subtitle = root.findViewById(R.id.subtitle_start_front);
@@ -163,18 +170,15 @@ public class ShortcutsSettingsFragment extends Fragment {
         if (label != null)
             label.setText(custom != null ? custom : title);
         if (subtitle != null) {
-            // Show a small badge with the canonical action name (no codename/id)
-            String badgeText = title; // localized label like Start/Stop/Torch
-            // Special badge text for photo shortcuts
-            if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
-                badgeText = "FadShot Back";
-            } else if (ShortcutsManager.ID_SHOT_FRONT.equals(shortcutId)) {
-                badgeText = "FadShot Front";
-            }
+            // Descriptive 1-2 word badge (title case, never full caps), distinct
+            // from the row title so users instantly see what the shortcut does.
+            String badgeText = badgeTextFor(shortcutId);
             subtitle.setText(badgeText);
             subtitle.setVisibility(View.VISIBLE);
-            // Apply background badge color based on shortcut
-            if (ShortcutsManager.ID_START.equals(shortcutId)) {
+            // Badge color matches the shortcut's icon color (consistency rule).
+            if (ShortcutsManager.ID_TOGGLE.equals(shortcutId)) {
+                subtitle.setBackgroundResource(R.drawable.badge_white);
+            } else if (ShortcutsManager.ID_START.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_blue);
             } else if (ShortcutsManager.ID_START_FRONT.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_purple);
@@ -189,7 +193,7 @@ public class ShortcutsSettingsFragment extends Fragment {
             } else if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_white);
             } else if (ShortcutsManager.ID_SHOT_FRONT.equals(shortcutId)) {
-                subtitle.setBackgroundResource(R.drawable.badge_white);
+                subtitle.setBackgroundResource(R.drawable.badge_teal);
             } else if (ShortcutsManager.ID_SCREENSHOT.equals(shortcutId)) {
                 subtitle.setBackgroundResource(R.drawable.badge_orange);
             }
@@ -197,17 +201,18 @@ public class ShortcutsSettingsFragment extends Fragment {
         if (icon != null)
             loadShortcutIconInto(icon, shortcutId, iconRes);
 
-        // Icon click must also show confirmation (no direct pinning)
-        if (icon != null) {
-            icon.setOnClickListener(v -> showShortcutSheet(title, shortcutId, iconRes, intent));
-        }
-
+        // NOTE: NO click listener on the icon itself. A clickable child consumes
+        // the touch, so the parent cell never enters the pressed state and its
+        // ripple never shows (the "no visual feedback" bug). Taps on the icon
+        // fall through to the row, which shows the ripple and opens the sheet.
         if (row != null) {
             row.setOnClickListener(v -> showShortcutSheet(title, shortcutId, iconRes, intent));
         }
     }
 
     private int titleIdFor(int rowId) {
+        if (rowId == R.id.cell_toggle)
+            return R.id.title_toggle;
         if (rowId == R.id.cell_start)
             return R.id.title_start;
         if (rowId == R.id.cell_start_front)
@@ -411,8 +416,36 @@ public class ShortcutsSettingsFragment extends Fragment {
         sheet.show(getParentFragmentManager(), "rename_" + shortcutId);
     }
 
+    /** Descriptive 1-2 word badge per shortcut (title case, consistent with icons). */
+    private String badgeTextFor(String shortcutId) {
+        if (ShortcutsManager.ID_TOGGLE.equals(shortcutId)) {
+            return "Rec Toggle";
+        } else if (ShortcutsManager.ID_START.equals(shortcutId)) {
+            return "Back";
+        } else if (ShortcutsManager.ID_START_FRONT.equals(shortcutId)) {
+            return "Front";
+        } else if (ShortcutsManager.ID_START_CURRENT.equals(shortcutId)) {
+            return "Current";
+        } else if (ShortcutsManager.ID_START_DUAL.equals(shortcutId)) {
+            return "Dual";
+        } else if (ShortcutsManager.ID_STOP.equals(shortcutId)) {
+            return "Stop";
+        } else if (ShortcutsManager.ID_TORCH.equals(shortcutId)) {
+            return "Torch";
+        } else if (ShortcutsManager.ID_SHOT.equals(shortcutId)) {
+            return "FadShot Back";
+        } else if (ShortcutsManager.ID_SHOT_FRONT.equals(shortcutId)) {
+            return "FadShot Front";
+        } else if (ShortcutsManager.ID_SCREENSHOT.equals(shortcutId)) {
+            return "Screen Rec";
+        }
+        return "Shortcut";
+    }
+
     private String getShortcutPurposeLine(String shortcutId) {
-        if (ShortcutsManager.ID_START.equals(shortcutId)) {
+        if (ShortcutsManager.ID_TOGGLE.equals(shortcutId)) {
+            return getString(R.string.shortcut_purpose_toggle);
+        } else if (ShortcutsManager.ID_START.equals(shortcutId)) {
             return getString(R.string.shortcut_purpose_start);
         } else if (ShortcutsManager.ID_START_FRONT.equals(shortcutId)) {
             return getString(R.string.shortcut_purpose_start_front);
@@ -437,6 +470,12 @@ public class ShortcutsSettingsFragment extends Fragment {
         View view = getView();
         if (view == null)
             return;
+        // Toggle recording
+        wireShortcutRow(view, R.id.cell_toggle, R.id.icon_toggle, R.drawable.toggle_recording_shortcut,
+                getString(R.string.shortcut_toggle_recording),
+                new Intent(Intent.ACTION_VIEW)
+                        .setClassName(requireContext(), "com.fadcam.RecordingToggleActivity"),
+                ShortcutsManager.ID_TOGGLE);
         // Start
         wireShortcutRow(view, R.id.cell_start, R.id.icon_start, R.drawable.start_back_shortcut,
                 getString(R.string.shortcut_start_back),
@@ -889,8 +928,11 @@ public class ShortcutsSettingsFragment extends Fragment {
                         int px = dpToPx(clampedDp);
                         brandingPreview.setMaxHeight(px);
                         brandingPreview.setMinimumHeight(px);
-                        // Upward translation: 10dp
-                        brandingPreview.setTranslationY(-dpToPx(10));
+                        // NO upward translation here: the widget's -10dp shift is
+                        // safe in the tall real widget, but in the short 120dp
+                        // preview it pushes the flag's top outside the container
+                        // and clips it. Centered = fully visible, like the widget.
+                        brandingPreview.setTranslationY(0f);
                         brandingPreview.requestLayout();
                     }
                 });

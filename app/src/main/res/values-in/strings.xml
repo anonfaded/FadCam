@@ -857,7 +857,8 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="shortcuts_helper_text">Tambahkan pintasan dari atas. Pintasan ini juga berfungsi dengan aplikasi otomasi (mis., MacroDroid) untuk memicu tindakan seperti memetakan tombol volume.</string>
     <string name="shortcuts_add_to_home">Tambahkan ke layar Beranda</string>
     <string name="shortcuts_sheet_helper">Launcher Anda akan meminta penempatan.</string>
-    <string name="shortcuts_and_widgets">Pintasan &amp; Widget</string>
+    <string name="shortcuts_widgets_screen_title">Pintasan &amp; Widget</string>
+    <string name="shortcuts_and_widgets">Widget</string>
     <string name="video_player_settings_title">Pengaturan Pemutar Video</string>
     <string name="video_player_settings_helper">Kecepatan Putar mengubah kecepatan normal pemutaran video. Kecepatan Cepat adalah dorongan sementara yang hanya diterapkan selama Anda menekan dan menahan video. Anda dapat mengubah pengaturan ini di sini atau langsung dari layar Pemutar Video.</string>
     <string name="video_player_settings_subtitle">Putar &amp; Kecepatan Cepat</string>
@@ -959,6 +960,7 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="shortcut_purpose_start_current">Pintasan ini memulai perekaman dengan mode kamera yang sedang dipilih.</string>
     <string name="shortcut_purpose_start_dual">Pintasan ini memulai perekaman kamera dual (PiP).</string>
     <string name="shortcut_purpose_stop">Pintasan ini menghentikan perekaman saat ini.</string>
+    <string name="shortcut_purpose_toggle">Satu pintasan dinamis yang memulai atau menghentikan perekaman dengan kamera default — gunakan pintasan Mulai dan Hentikan terpisah untuk kontrol manual.</string>
     <string name="shortcut_purpose_torch">Pintasan ini mengaktifkan/menonaktifkan senter.</string>
     <string name="shortcut_purpose_photo">Pintasan ini mengambil foto kamera belakang dan menyimpannya ke lokasi FadCam/FadShot.</string>
     <string name="shortcut_purpose_photo_front">Pintasan ini mengambil foto kamera depan dan menyimpannya ke lokasi FadCam/FadShot.</string>
@@ -985,6 +987,8 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="shortcut_start_back">Start Back</string>
     <string name="shortcut_start_front">Start Front</string>
     <string name="shortcut_start_current">Start Current</string>
+    <string name="shortcut_toggle_recording">Mulai / Hentikan</string>
+    <string name="shortcut_toggle_recording_long">Mulai atau hentikan perekaman</string>
     <string name="shortcut_start_dual">Start Dual</string>
     <string name="stop_recording">Hentikan</string>
     <string name="shortcut_take_photo">Photo</string>

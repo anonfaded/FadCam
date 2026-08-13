@@ -1675,7 +1675,9 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
 
-<string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
+<string name="shortcuts_widgets_screen_title">Shortcuts &amp; Widgets</string>
+
+<string name="shortcuts_and_widgets">Widgets</string>
 
 <string name="video_player_settings_title">Video Player Settings</string>
 
@@ -1863,6 +1865,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
 
+<string name="shortcut_purpose_toggle">Un raccourci dynamique unique qui démarre ou arrête l’enregistrement avec la caméra par défaut — utilisez les raccourcis Démarrer et Arrêter séparés pour un contrôle manuel.</string>
+
 <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
 
 <string name="shortcut_purpose_photo">This shortcut captures a back camera photo and saves it to FadCam/FadShot location.</string>
@@ -1890,6 +1894,10 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="shortcut_start_front">Start Front</string>
 
 <string name="shortcut_start_current">Start Current</string>
+
+<string name="shortcut_toggle_recording">Démarrer / Arrêter</string>
+
+<string name="shortcut_toggle_recording_long">Démarrer ou arrêter l’enregistrement</string>
 
 <string name="shortcut_start_dual">Start Dual</string>
 

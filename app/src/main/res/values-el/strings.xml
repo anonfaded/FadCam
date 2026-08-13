@@ -814,7 +814,8 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="shortcuts_helper_text">Προσθέστε συντομεύσεις από πάνω. Λειτουργούν επίσης με εφαρμογές αυτοματισμού (π.χ. MacroDroid) για ενεργοποίηση ενεργειών όπως αντιστοίχιση κουμπιών έντασης.</string>
     <string name="shortcuts_add_to_home">Προσθήκη στην Αρχική Οθόνη</string>
     <string name="shortcuts_sheet_helper">Ο εκκινητής σας θα ζητήσει τοποθέτηση.</string>
-    <string name="shortcuts_and_widgets">Συντομεύσεις &amp; Widget</string>
+    <string name="shortcuts_widgets_screen_title">Συντομεύσεις &amp; Widget</string>
+    <string name="shortcuts_and_widgets">Widget</string>
     <string name="video_player_settings_title">Ρυθμίσεις Αναπαραγωγής Βίντεο</string>
     <string name="video_player_settings_helper">Η Ταχύτητα Αναπαραγωγής αλλάζει την κανονική ταχύτητα αναπαραγωγής βίντεο. Η Γρήγορη Ταχύτητα είναι μια προσωρινή ενίσχυση που εφαρμόζεται μόνο όταν κρατάτε πατημένο το βίντεο. Μπορείτε να αλλάξετε αυτές τις ρυθμίσεις εδώ ή απευθείας από την οθόνη Αναπαραγωγής Βίντεο.</string>
     <string name="video_player_settings_subtitle">Αναπαραγωγή &amp; Γρήγορη Ταχύτητα</string>
@@ -915,6 +916,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="shortcut_purpose_start_current">Αυτή η συντόμευση ξεκινά εγγραφή με την τρέχουσα επιλεγμένη λειτουργία κάμερας.</string>
     <string name="shortcut_purpose_start_dual">Αυτή η συντόμευση ξεκινά εγγραφή dual κάμερας (PiP).</string>
     <string name="shortcut_purpose_stop">Αυτή η συντόμευση σταματά την τρέχουσα εγγραφή.</string>
+    <string name="shortcut_purpose_toggle">Ένα δυναμικό συντόμευση που ξεκινάει ή σταματάει την εγγραφή με την προεπιλεγμένη κάμερα — χρησιμοποιήστε τις ξεχωριστές συντομεύσεις Έναρξης και Διακοπής για χειροκίνητο έλεγχο.</string>
     <string name="shortcut_purpose_torch">Αυτή η συντόμευση ενεργοποιεί/απενεργοποιεί τον φακό.</string>
     <string name="shortcut_purpose_photo">Αυτή η συντόμευση τραβά μια φωτογραφία με την πίσω κάμερα.</string>
     <string name="shortcut_purpose_photo_front">Αυτή η συντόμευση τραβά μια φωτογραφία με την μπροστινή κάμερα.</string>
@@ -941,6 +943,8 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="shortcut_start_back">Έναρξη Πίσω</string>
     <string name="shortcut_start_front">Έναρξη Μπροστά</string>
     <string name="shortcut_start_current">Έναρξη Τρέχουσας</string>
+    <string name="shortcut_toggle_recording">Έναρξη / Διακοπή</string>
+    <string name="shortcut_toggle_recording_long">Έναρξη ή διακοπή εγγραφής</string>
     <string name="shortcut_start_dual">Έναρξη Dual</string>
     <string name="stop_recording">Διακοπή</string>
     <string name="shortcut_take_photo">Φωτογραφία</string>

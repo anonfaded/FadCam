@@ -636,7 +636,8 @@
     <string name="shortcuts_helper_text">Yukarıdan kısayollar ekleyin. Ayrıca, ses düğmelerini eşleme gibi eylemleri tetiklemek için otomasyon uygulamalarıyla (rn. MacroDroid) çalışır.</string>
     <string name="shortcuts_add_to_home">Ana ekrana ekle</string>
     <string name="shortcuts_sheet_helper">Başlatıcınız yerleştirme için sizi yönlendirecek.</string>
-    <string name="shortcuts_and_widgets">Kısayollar ve Pencere Öğeleri</string>
+    <string name="shortcuts_widgets_screen_title">Kısayollar ve Pencere Öğeleri</string>
+    <string name="shortcuts_and_widgets">Pencere Öğeleri</string>
     <string name="video_player_settings_helper">Oynatma Hızı, video oynatmanın normal hızını değiştirir. Hızlı Hız, yalnızca videoya basılı tuttuğunuz sürece uygulanan geçici bir hızlandırmadır. Bu ayarları buradan veya doğrudan Video Oynatıcı ekranından değiştirebilirsiniz.</string>
     <string name="video_player_settings_subtitle">Oynatma ve Hızlı Hız</string>
     <string name="waveform_helper_text">Ses dalga formu görselleştirmesinin video oynatma sırasında ilerleme çubuğunda görünüp görünmeyeceğini kontrol eder.</string>
@@ -686,12 +687,15 @@
     <string name="shortcut_purpose_start_current">Bu kısayol, şu anda seçili kamera modu ile kaydı başlatır.</string>
     <string name="shortcut_purpose_start_dual">Bu kısayol, çift kamera kaydını başlatır (PiP).</string>
     <string name="shortcut_purpose_stop">Bu kısayol, mevcut kaydı durdurur.</string>
+    <string name="shortcut_purpose_toggle">Kaydı varsayılan kamerayla başlatan veya durduran tek bir dinamik kısayol — manuel kontrol için ayrı Başlat ve Durdur kısayollarını kullanın.</string>
     <string name="shortcut_purpose_torch">Bu kısayol, feneri açar/kapatır.</string>
     <string name="shortcut_purpose_photo">Bu kısayol, arka kameradan bir fotoğraf çeker ve FadCam/FadShot konumuna kaydeder.</string>
     <string name="shortcut_purpose_screenshot">Bu kısayol, bir ekran görüntüsü alır ve FadCam/FadShot konumuna kaydeder (Ayarlar &gt; Gizlilik &gt; Erişilebilirlik\'ten Erişilebilirlik iznini etkinleştirin).</string>
     <string name="widget_customize_action_label">Özelleştir</string>
     <string name="widget_customize_action_subtitle">Saat, tarih, tema seçenekleri</string>
     <string name="shortcut_start_current">Mevcut ile Başlat</string>
+    <string name="shortcut_toggle_recording">Başlat / Durdur</string>
+    <string name="shortcut_toggle_recording_long">Kaydı başlat veya durdur</string>
     <string name="shortcut_start_dual">Çift ile Başlat</string>
     <string name="shortcut_take_photo">Fotoğraf</string>
     <string name="shortcut_take_screenshot">FadRec</string>

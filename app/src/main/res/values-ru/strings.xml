@@ -500,7 +500,8 @@
     <string name="shortcuts_helper_text">Добавьте ярлыки выше. Они также работают с приложениями автоматизации (например, MacroDroid) для запуска действий, таких как переназначение кнопок громкости.</string>
     <string name="shortcuts_add_to_home">Добавить на главный экран</string>
     <string name="shortcuts_sheet_helper">Ваша программа запуска запросит место размещения.</string>
-    <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_widgets_screen_title">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_and_widgets">Виджеты</string>
     <string name="video_player_settings_title">Настройки видеопроигрывателя</string>
     <string name="video_player_settings_helper">Скорость воспроизведения изменяет обычную скорость воспроизведения видео. Быстрая скорость — это временное повышение, применяемое только при нажатии и удержании видео. Вы можете изменить эти параметры здесь или непосредственно с экрана видеопроигрывателя.</string>
     <string name="video_player_settings_subtitle">Playback &amp; Quick Speed</string>
@@ -599,6 +600,7 @@
     <string name="shortcuts_rename_action_subtitle">Нажмите для переименования</string>
     <string name="shortcut_purpose_start">Этот ярлык начинает запись с задней камеры.</string>
     <string name="shortcut_purpose_stop">Этот ярлык останавливает текущую запись.</string>
+    <string name="shortcut_purpose_toggle">Один динамический ярлык-экция запускает или останавливает запись с камерой по умолчанию — для ручного управления используйте отдельные ярлыки Начать и Остановить.</string>
     <string name="shortcut_purpose_torch">Этот ярлык переключает фонарик.</string>
     <!-- Widget sheet action labels (avoid hardcoded) -->
     <string name="widget_customize_action_label">Настроить</string>
@@ -2037,6 +2039,10 @@ FadCam использует фрагментированный формат MP4 
     <string name="shortcut_start_front">Старт фронтальная</string>
 
     <string name="shortcut_start_current">Старт текущая</string>
+
+    <string name="shortcut_toggle_recording">Начать / Остановить</string>
+
+    <string name="shortcut_toggle_recording_long">Начать или остановить запись</string>
 
     <string name="shortcut_start_dual">Старт двойная</string>
 

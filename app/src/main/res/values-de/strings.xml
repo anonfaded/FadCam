@@ -1240,7 +1240,8 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="shortcuts_helper_text">Füge Shortcuts von oben hinzu. Sie funktionieren auch mit Automatisierungs-Apps (z.B. MacroDroid), um Aktionen wie das Belegen von Lautstärketasten auszulösen.</string>
     <string name="shortcuts_add_to_home">Zum Startbildschirm hinzufügen</string>
     <string name="shortcuts_sheet_helper">Dein Launcher wird nach der Platzierung fragen.</string>
-    <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_widgets_screen_title">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_and_widgets">Widgets</string>
     <string name="video_player_settings_title">Video-Player-Einstellungen</string>
     <string name="video_player_settings_helper">Wiedergabegeschwindigkeit ändert die normale Geschwindigkeit der Videowiedergabe. Schnell-Geschwindigkeit ist eine temporäre Beschleunigung, die nur angewendet wird, während du auf das Video drückst und hältst. Du kannst diese Einstellungen hier oder direkt vom Video-Player-Bildschirm aus ändern.</string>
     <string name="video_player_settings_subtitle">Wiedergabe- &amp; Schnell-Geschwindigkeit</string>
@@ -2039,9 +2040,12 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="shortcut_purpose_start_dual">Dieser Shortcut startet die Dual-Kamera-Aufnahme (PiP).</string>
     <string name="shortcut_purpose_start_front">Dieser Shortcut startet die Aufnahme mit der Frontkamera.</string>
     <string name="shortcut_purpose_stop">Dieser Shortcut stoppt die aktuelle Aufnahme.</string>
+    <string name="shortcut_purpose_toggle">Eine einzige dynamische Verknüpfung, die die Aufnahme mit der Standardkamera startet oder stoppt — für manuelle Steuerung die separaten Start- und Stop-Verknüpfungen verwenden.</string>
     <string name="shortcut_purpose_torch">Dieser Shortcut schaltet die Taschenlampe um.</string>
     <string name="shortcut_start_back">Rückseite starten</string>
     <string name="shortcut_start_current">Aktuelle starten</string>
+    <string name="shortcut_toggle_recording">Start / Stop</string>
+    <string name="shortcut_toggle_recording_long">Aufnahme starten oder stoppen</string>
     <string name="shortcut_start_dual">Dual starten</string>
     <string name="shortcut_start_front">Vorderseite starten</string>
     <string name="shortcut_take_photo">Foto</string>

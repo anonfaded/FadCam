@@ -854,7 +854,8 @@
     <string name="shortcuts_macrodroid_template">Official MacroDroid template: https://templates.macrodroid.com/view/28194</string>
     <string name="shortcuts_add_to_home">Add to Home screen</string>
     <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
-    <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_widgets_screen_title">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_and_widgets">Widgets</string>
     <string name="video_player_settings_title">Video Player Settings</string>
     <string name="video_player_settings_helper">Playback Speed changes the normal speed of video playback. Quick Speed is a temporary boost applied only while you press and hold on the video. You can change these settings here or directly from the Video Player screen.</string>
     <string name="video_player_settings_subtitle">Playback &amp; Quick Speed</string>
@@ -956,6 +957,7 @@
     <string name="shortcut_purpose_start_current">This shortcut starts recording with the currently selected camera mode.</string>
     <string name="shortcut_purpose_start_dual">This shortcut starts dual camera recording (PiP).</string>
     <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
+    <string name="shortcut_purpose_toggle">A single dynamic shortcut that starts or stops the recording using the default camera — use the separate Start and Stop shortcuts for manual control.</string>
     <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
     <string name="shortcut_purpose_photo">This shortcut captures a back camera photo and saves it to FadCam/FadShot location.</string>
     <string name="shortcut_purpose_photo_front">This shortcut captures a front camera photo and saves it to FadCam/FadShot location.</string>
@@ -983,7 +985,7 @@
     <string name="shortcut_start_front">Start Front</string>
     <string name="shortcut_start_current">Start Current</string>
     <string name="shortcut_start_dual">Start Dual</string>
-    <string name="shortcut_toggle_recording">Toggle Recording</string>
+    <string name="shortcut_toggle_recording">Start / Stop</string>
     <string name="shortcut_toggle_recording_long">Start or stop recording</string>
     <string name="stop_recording">Stop</string>
     <string name="shortcut_take_photo">Photo</string>

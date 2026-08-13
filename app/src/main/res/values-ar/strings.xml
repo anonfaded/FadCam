@@ -1720,7 +1720,9 @@
 
     <string name="shortcuts_sheet_helper">سيطلب مشغل التطبيقات تحديد الموقع.</string>
 
-    <string name="shortcuts_and_widgets">الاختصارات &amp; الأدوات</string>
+    <string name="shortcuts_widgets_screen_title">الاختصارات &amp; الأدوات</string>
+
+    <string name="shortcuts_and_widgets">الأدوات</string>
 
     <string name="video_player_settings_title">إعدادات مشغل الفيديو</string>
 
@@ -1908,6 +1910,8 @@
 
     <string name="shortcut_purpose_stop">يوقف هذا الاختصار التسجيل الحالي.</string>
 
+    <string name="shortcut_purpose_toggle">اختصار ديناميكي واحد يبدأ أو يوقف التسجيل باستخدام الكاميرا الافتراضية — استخدم اختصاري البدء والإيقاف المنفصلين للتحكم اليدوي.</string>
+
     <string name="shortcut_purpose_torch">يبدّل هذا الاختصار الفلاش.</string>
 
     <string name="shortcut_purpose_photo">يلتقط هذا الاختصار صورة بالكاميرا الخلفية ويحفظها في موقع FadCam/FadShot.</string>
@@ -1935,6 +1939,10 @@
     <string name="shortcut_start_front">بدء أمامي</string>
 
     <string name="shortcut_start_current">بدء الحالي</string>
+
+    <string name="shortcut_toggle_recording">بدء / إيقاف</string>
+
+    <string name="shortcut_toggle_recording_long">بدء أو إيقاف التسجيل</string>
 
     <string name="shortcut_start_dual">بدء مزدوج</string>
 
