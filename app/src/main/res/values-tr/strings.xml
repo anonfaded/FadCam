@@ -1187,9 +1187,16 @@
     <string name="fadrec_record_muted">Sessiz Kaydet</string>
     <string name="fadrec_audio_source_title">Ses Kaynağı</string>
     <string name="fadrec_audio_source_choose">Ses kaynağı seç</string>
+
+	<string name="fadrec_audio_source_helper">Ekran kayıtlarının hangi sesi yakalayacağını seçin. \"Varsayılan (sistem yönlendirmesi)\" USB ve kablolu mikrofonlar için önerilir — açık yönlendirme için belirli bir cihaz da seçebilirsiniz.</string>
+	<string name="fadrec_audio_source_mic_default">Mikrofon (varsayılan yönlendirme)</string>
     <string name="fadrec_audio_source_none">Ses Yok</string>
     <string name="fadrec_audio_source_mic">Mikrofon</string>
     <string name="fadrec_audio_source_internal">Cihaz Sesi (Dahili)</string>
+
+	<string name="screen_rec_audio_device_title">Ses Giriş Aygıtı</string>
+	<string name="screen_rec_audio_device_default">Varsayılan (sistem yönlendirmesi)</string>
+	<string name="screen_rec_audio_device_helper">Ekran kayıtlarının hangi mikrofonla kaydedileceğini seçin. \"Varsayılan\", sistemin otomatik yönlendirmesini kullanır — USB mikrofonlarda güvenilir seçenek.</string>
     <string name="recording_controls_title">AF · Pozlama · Yakınlaştırma</string>
     <string name="mainpage_camera_front">Ön Kamera</string>
     <string name="mainpage_camera_back">Arka Kamera</string>

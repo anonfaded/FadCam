@@ -686,78 +686,51 @@ public class ScreenRecordingPipeline {
                 
                 FLog.d(TAG, "AudioRecord initialized with AudioPlaybackCapture (internal audio)");
             } else {
+                // MIC source — audio input device selection is INDEPENDENT of video
+                // mode (issue #334: cast previously inherited video's WIRED device
+                // selection and force-routed to a device matched by type only, which
+                // made USB-mic capture intermittent; legacy default routing was
+                // reliable). Cast now has its own source/device prefs, defaulting to
+                // system routing with no forced device.
                 com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(context);
-                android.media.AudioDeviceInfo preferredDevice = null;
-                isBtSco = false;
+                String inputSource = prefs.getScreenRecordingAudioInputSource();
+                int savedDeviceType = prefs.getScreenRecordingAudioDeviceType();
+                String savedDeviceName = prefs.getScreenRecordingAudioDeviceName();
+                FLog.i(TAG, "FadRec: cast audio input source=" + inputSource
+                        + " | savedDeviceType=" + savedDeviceType
+                        + " | savedDeviceName=" + savedDeviceName);
 
-                if (com.fadcam.SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED.equals(prefs.getAudioInputSource())) {
-                    int savedDeviceType = prefs.getAudioInputDeviceType();
+                android.media.AudioDeviceInfo preferredDevice =
+                        com.fadcam.utils.AudioDeviceResolver.resolvePreferredInput(
+                                context, inputSource, savedDeviceType, savedDeviceName);
+                isBtSco = preferredDevice != null && isBluetoothDeviceType(preferredDevice.getType());
+
+                // Deterministic routing: setAudioDevice() BEFORE build (API 23+).
+                // setPreferredDevice() after build is best-effort and unreliable.
+                audioRecord = buildAudioRecord(sampleRate, channelConfig, audioFormat, bufferSize, preferredDevice);
+                if (audioRecord == null || audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+                    FLog.w(TAG, "FadRec: AudioRecord with forced device "
+                            + (preferredDevice != null ? preferredDevice.getProductName() : "null")
+                            + " failed to initialize — retrying with system default routing");
+                    audioRecord = buildAudioRecord(sampleRate, channelConfig, audioFormat, bufferSize, null);
+                }
+
+                if (audioRecord != null && preferredDevice != null
+                        && audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
+                    FLog.i(TAG, "FadRec: AudioRecord routed to " + preferredDevice.getProductName()
+                            + " (type=" + preferredDevice.getType() + ")");
+                } else {
+                    FLog.i(TAG, "FadRec: Using system default routing (no forced device)");
+                }
+
+                if (isBtSco) {
                     android.media.AudioManager am = (android.media.AudioManager)
                             context.getSystemService(Context.AUDIO_SERVICE);
                     if (am != null) {
-                        android.media.AudioDeviceInfo[] devices = am.getDevices(android.media.AudioManager.GET_DEVICES_INPUTS);
-                        if (devices != null) {
-                            for (android.media.AudioDeviceInfo device : devices) {
-                                if (device == null) continue;
-                                int type = device.getType();
-                                if (type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET
-                                        || type == android.media.AudioDeviceInfo.TYPE_USB_DEVICE
-                                        || type == android.media.AudioDeviceInfo.TYPE_USB_HEADSET
-                                        || type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO
-                                        || type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
-                                        || type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET) {
-                                    if (savedDeviceType == -1 || type == savedDeviceType) {
-                                        preferredDevice = device;
-                                        isBtSco = (type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO
-                                                || type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
-                                                || type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET);
-                                        break;
-                                    }
-                                }
-                            }
-                            if (preferredDevice == null) {
-                                for (android.media.AudioDeviceInfo device : devices) {
-                                    if (device != null) {
-                                        int type = device.getType();
-                                        if (type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET
-                                                || type == android.media.AudioDeviceInfo.TYPE_USB_DEVICE
-                                                || type == android.media.AudioDeviceInfo.TYPE_USB_HEADSET
-                                                || type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO
-                                                || type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
-                                                || type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET) {
-                                            preferredDevice = device;
-                                            isBtSco = (type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO
-                                                    || type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
-                                                    || type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (isBtSco) {
-                            am.startBluetoothSco();
-                            am.setBluetoothScoOn(true);
-                            FLog.i(TAG, "FadRec: BT SCO started for external mic");
-                        }
+                        am.startBluetoothSco();
+                        am.setBluetoothScoOn(true);
+                        FLog.i(TAG, "FadRec: BT SCO started for external mic");
                     }
-                }
-
-                audioRecord = new android.media.AudioRecord.Builder()
-                    .setAudioSource(MediaRecorder.AudioSource.MIC)
-                    .setAudioFormat(new AudioFormat.Builder()
-                        .setEncoding(audioFormat)
-                        .setSampleRate(sampleRate)
-                        .setChannelMask(channelConfig)
-                        .build())
-                    .setBufferSizeInBytes(bufferSize)
-                    .build();
-
-                if (preferredDevice != null) {
-                    boolean routed = audioRecord.setPreferredDevice(preferredDevice);
-                    FLog.i(TAG, "FadRec: setPreferredDevice -> " + preferredDevice.getProductName() + ": " + (routed ? "SUCCESS" : "FAILED"));
-                } else {
-                    FLog.i(TAG, "FadRec: Using default device mic (no external selected)");
                 }
             }
             
@@ -782,6 +755,44 @@ public class ScreenRecordingPipeline {
             FLog.e(TAG, "Failed to initialize audio encoder (source: " + audioSource + ")", e);
             throw e;
         }
+    }
+
+    /**
+     * Builds the MIC AudioRecord, optionally force-routed to {@code device} via
+     * setPreferredDevice() (the only routing API for AudioRecord; same as video
+     * mode). Returns null on build failure so the caller can retry with system
+     * routing.
+     */
+    @Nullable
+    private android.media.AudioRecord buildAudioRecord(int sampleRate, int channelConfig,
+            int audioFormat, int bufferSize, @Nullable android.media.AudioDeviceInfo device) {
+        try {
+            android.media.AudioRecord record = new android.media.AudioRecord.Builder()
+                    .setAudioSource(MediaRecorder.AudioSource.MIC)
+                    .setAudioFormat(new AudioFormat.Builder()
+                            .setEncoding(audioFormat)
+                            .setSampleRate(sampleRate)
+                            .setChannelMask(channelConfig)
+                            .build())
+                    .setBufferSizeInBytes(bufferSize)
+                    .build();
+            if (device != null) {
+                boolean routed = record.setPreferredDevice(device);
+                FLog.i(TAG, "FadRec: setPreferredDevice -> " + device.getProductName()
+                        + ": " + (routed ? "SUCCESS" : "FAILED"));
+            }
+            return record;
+        } catch (Exception e) {
+            FLog.e(TAG, "FadRec: AudioRecord build failed (device="
+                    + (device != null ? device.getProductName() : "default") + ")", e);
+            return null;
+        }
+    }
+
+    private static boolean isBluetoothDeviceType(int type) {
+        return type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                || type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
+                || type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET;
     }
     
     

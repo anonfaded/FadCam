@@ -256,6 +256,7 @@ public class FadRecHomeFragment extends HomeFragment {
         // Note: Broadcast receivers are now registered in onCreate()
         // to ensure they persist and are ready to receive state updates
         reapplyScreenRecordingCardState(false);
+        registerAudioDeviceCallback();
     }
     
     /**
@@ -1479,7 +1480,20 @@ public class FadRecHomeFragment extends HomeFragment {
         boolean muted = sharedPreferencesManager != null && sharedPreferencesManager.isScreenRecordingMuted();
         boolean isRecordingActive = screenRecordingState == ScreenRecordingState.IN_PROGRESS
             || screenRecordingState == ScreenRecordingState.PAUSED;
-        
+
+        // Resolve the currently selected external device (if any) — independent cast prefs.
+        String deviceName = null;
+        int deviceType = -1;
+        boolean hasWiredDevice = sharedPreferencesManager != null
+                && SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED.equals(
+                        sharedPreferencesManager.getScreenRecordingAudioInputSource());
+        if (hasWiredDevice) {
+            deviceName = sharedPreferencesManager.getScreenRecordingAudioDeviceName();
+            deviceType = sharedPreferencesManager.getScreenRecordingAudioDeviceType();
+        }
+        boolean micWithDevice = Constants.AUDIO_SOURCE_MIC.equals(audioSource)
+                && deviceName != null && !deviceName.isEmpty();
+
         // Icon = the SAME Material Icons ligatures the audio-source sheet uses.
         String iconLigature;
         if (Constants.AUDIO_SOURCE_NONE.equals(audioSource)) {
@@ -1493,18 +1507,24 @@ public class FadRecHomeFragment extends HomeFragment {
         }
         TextView muteIcon = getView() != null ? getView().findViewById(com.fadcam.R.id.fadrec_mute_icon) : null;
         if (muteIcon != null) muteIcon.setText(iconLigature);
-        
+
         // Button always enabled - behavior changes based on recording state
         buttonFadRecMute.setEnabled(true);
         buttonFadRecMute.setAlpha(1.0f);
+
+        // Content description reflects the CURRENT selection (not a static hint).
         if (isRecordingActive) {
             buttonFadRecMute.setContentDescription("Toggle mute (during recording)");
+        } else if (Constants.AUDIO_SOURCE_NONE.equals(audioSource)) {
+            buttonFadRecMute.setContentDescription(getString(R.string.fadrec_audio_source_none));
+        } else if (Constants.AUDIO_SOURCE_INTERNAL.equals(audioSource)) {
+            buttonFadRecMute.setContentDescription(getString(R.string.fadrec_audio_source_internal));
+        } else if (micWithDevice) {
+            buttonFadRecMute.setContentDescription(deviceName);
         } else {
-            buttonFadRecMute.setContentDescription(
-                getString(com.fadcam.R.string.fadrec_audio_source_choose)
-            );
+            buttonFadRecMute.setContentDescription(getString(R.string.fadrec_audio_source_mic_default));
         }
-        
+
         // Tint: red when off, default when active
         boolean isOff = Constants.AUDIO_SOURCE_NONE.equals(audioSource);
         buttonFadRecMute.setBackgroundResource(
@@ -1514,8 +1534,8 @@ public class FadRecHomeFragment extends HomeFragment {
         );
         buttonFadRecMute.setIconTint(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
 
-        // Tiny status label (bottom-right): OFF / MUTED / MIC / INT, same style
-        // as the torch/flip labels.
+        // Tiny status label (bottom-right): OFF / MUTED / INT / MIC / USB / AUX / BT —
+        // reflects the current selection, including the chosen external device.
         TextView muteLabel = getView() != null ? getView().findViewById(com.fadcam.R.id.fadrec_mute_status_label) : null;
         if (muteLabel != null) {
             String label;
@@ -1528,6 +1548,9 @@ public class FadRecHomeFragment extends HomeFragment {
                 color = 0xFFFFFFFF;
             } else if (Constants.AUDIO_SOURCE_INTERNAL.equals(audioSource)) {
                 label = "INT";
+                color = 0xFFFFFFFF;
+            } else if (micWithDevice) {
+                label = shortDeviceLabel(deviceType);
                 color = 0xFFFFFFFF;
             } else {
                 label = "MIC";
@@ -1546,6 +1569,24 @@ public class FadRecHomeFragment extends HomeFragment {
                         .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
                         .start();
             }
+        }
+    }
+
+    /** Short status-label text for an external device type (fits the tiny badge). */
+    private static String shortDeviceLabel(int type) {
+        switch (type) {
+            case android.media.AudioDeviceInfo.TYPE_USB_DEVICE:
+            case android.media.AudioDeviceInfo.TYPE_USB_HEADSET:
+                return "USB";
+            case android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET:
+            case android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
+                return "AUX";
+            case android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO:
+            case android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
+            case android.media.AudioDeviceInfo.TYPE_BLE_HEADSET:
+                return "BT";
+            default:
+                return "EXT";
         }
     }
 
@@ -1596,26 +1637,143 @@ public class FadRecHomeFragment extends HomeFragment {
             "speaker"  // Material Symbol icon
         ));
         
+        // ── External audio input device options (independent cast prefs) ──
+        // "Default" = system routing (no forced device) — the reliable option for
+        // USB mics. Picking a specific device force-routes the mic to it.
+        String deviceDefaultId = SharedPreferencesManager.AUDIO_INPUT_SOURCE_PHONE;
+        items.add(new OptionItem(
+            deviceDefaultId,
+            getString(R.string.screen_rec_audio_device_default),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "settings_overscan"  // Material Symbol icon
+        ));
+        try {
+            android.media.AudioManager am = (android.media.AudioManager)
+                    requireContext().getSystemService(Context.AUDIO_SERVICE);
+            android.media.AudioDeviceInfo[] devices = am.getDevices(android.media.AudioManager.GET_DEVICES_INPUTS);
+            if (devices != null) {
+                for (android.media.AudioDeviceInfo device : devices) {
+                    if (device == null || !com.fadcam.utils.AudioDeviceResolver.isExternalInputDevice(device.getType())) {
+                        continue;
+                    }
+                    CharSequence pn = device.getProductName();
+                    String label = pn != null ? pn.toString() : getDeviceTypeLabel(device.getType());
+                    String id = "dev:" + device.getType() + ":" + label;
+                    items.add(new OptionItem(id, label, getDeviceTypeLabel(device.getType()),
+                            null, null, null, null, null, "mic"));
+                }
+            }
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to enumerate audio devices for picker", e);
+        }
+        
         final String resultKey = "picker_result_audio_source";
+        
+        // Current selection: the audio source id, or the saved device id.
+        final String currentSelection;
+        if (SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED.equals(
+                sharedPreferencesManager.getScreenRecordingAudioInputSource())) {
+            String name = sharedPreferencesManager.getScreenRecordingAudioDeviceName();
+            int type = sharedPreferencesManager.getScreenRecordingAudioDeviceType();
+            currentSelection = "dev:" + type + ":" + (name != null ? name : "");
+        } else {
+            currentSelection = currentSource;
+        }
+        final String selectionBeforePick = currentSelection;
         
         // Set up fragment result listener
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
-            String selectedSource = b.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            if (selectedSource != null && !selectedSource.equals(currentSource)) {
-                sharedPreferencesManager.setScreenRecordingAudioSource(selectedSource);
-                FLog.d(TAG, "Audio source changed to: " + selectedSource);
-                updateMuteButtonUi();
+            String selectedId = b.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (selectedId == null || selectedId.equals(selectionBeforePick)) return;
+            
+            if (deviceDefaultId.equals(selectedId)) {
+                // Default system routing — keep current source (usually MIC).
+                sharedPreferencesManager.setScreenRecordingAudioInputSource(
+                        SharedPreferencesManager.AUDIO_INPUT_SOURCE_PHONE);
+                sharedPreferencesManager.setScreenRecordingAudioDeviceType(-1);
+                sharedPreferencesManager.setScreenRecordingAudioDeviceName(null);
+                // Device selection implies mic recording.
+                if (Constants.AUDIO_SOURCE_NONE.equals(currentSource)
+                        || Constants.AUDIO_SOURCE_INTERNAL.equals(currentSource)) {
+                    sharedPreferencesManager.setScreenRecordingAudioSource(Constants.AUDIO_SOURCE_MIC);
+                }
+                FLog.d(TAG, "Audio device set to default (system routing)");
+            } else if (selectedId.startsWith("dev:")) {
+                String[] parts = selectedId.split(":", 3);
+                int type = parts.length > 1 ? parseDeviceType(parts[1]) : -1;
+                String label = parts.length > 2 ? parts[2] : null;
+                String name = resolveDeviceProductName(selectedId);
+                if (name == null) name = label;
+                sharedPreferencesManager.setScreenRecordingAudioInputSource(
+                        SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED);
+                sharedPreferencesManager.setScreenRecordingAudioDeviceType(type);
+                sharedPreferencesManager.setScreenRecordingAudioDeviceName(name);
+                // A chosen device only applies to mic recording.
+                if (Constants.AUDIO_SOURCE_NONE.equals(currentSource)
+                        || Constants.AUDIO_SOURCE_INTERNAL.equals(currentSource)) {
+                    sharedPreferencesManager.setScreenRecordingAudioSource(Constants.AUDIO_SOURCE_MIC);
+                }
+                FLog.d(TAG, "Audio device changed to: " + name + " (type=" + type + ")");
+            } else {
+                sharedPreferencesManager.setScreenRecordingAudioSource(selectedId);
+                FLog.d(TAG, "Audio source changed to: " + selectedId);
             }
+            updateMuteButtonUi();
         });
         
         PickerBottomSheetFragment picker = PickerBottomSheetFragment.newInstance(
             getString(R.string.fadrec_audio_source_title),
             items,
-            currentSource,
+            selectionBeforePick,
             resultKey,
-            getString(R.string.fadrec_audio_source_choose)
+            getString(R.string.fadrec_audio_source_helper)
         );
         picker.show(getParentFragmentManager(), "audio_source_picker");
+    }
+
+    private String getDeviceTypeLabel(int type) {
+        if (type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET) return getString(R.string.audio_device_type_wired_headset);
+        if (type == android.media.AudioDeviceInfo.TYPE_USB_DEVICE) return getString(R.string.audio_device_type_usb);
+        if (type == android.media.AudioDeviceInfo.TYPE_USB_HEADSET) return getString(R.string.audio_device_type_usb_headset);
+        if (type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO) return getString(R.string.audio_device_type_bt_sco);
+        if (type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) return getString(R.string.audio_device_type_bt_a2dp);
+        if (type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET) return getString(R.string.audio_device_type_ble_headset);
+        return getString(R.string.audio_device_type_external);
+    }
+
+    private static int parseDeviceType(String s) {
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    /** Re-enumerates to resolve the real product name for a picked device id. */
+    @Nullable
+    private String resolveDeviceProductName(String deviceId) {
+        try {
+            android.media.AudioManager am = (android.media.AudioManager)
+                    requireContext().getSystemService(Context.AUDIO_SERVICE);
+            android.media.AudioDeviceInfo[] devices = am.getDevices(android.media.AudioManager.GET_DEVICES_INPUTS);
+            if (devices == null) return null;
+            for (android.media.AudioDeviceInfo device : devices) {
+                if (device == null || !com.fadcam.utils.AudioDeviceResolver.isExternalInputDevice(device.getType())) {
+                    continue;
+                }
+                CharSequence pn = device.getProductName();
+                String label = pn != null ? pn.toString() : getDeviceTypeLabel(device.getType());
+                if (("dev:" + device.getType() + ":" + label).equals(deviceId)) {
+                    return pn != null ? pn.toString() : null;
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
     
     /**
@@ -2576,10 +2734,111 @@ public class FadRecHomeFragment extends HomeFragment {
 
     @Override
     public void onStop() {
+        unregisterAudioDeviceCallback();
         super.onStop();
         FLog.d(TAG, "FadRecHomeFragment onStop");
         // Note: Broadcast receivers remain registered to continue receiving state updates
         // even when fragment is stopped but still in the backstack
+    }
+
+    // ── Realtime audio-device monitoring ──
+    // Keeps the audio-source picker's device list live: plugging in / unplugging
+    // a USB/wired/BT mic refreshes the open sheet immediately, and if the
+    // currently-selected device disappears we fall back to Default (system
+    // routing) so the UI never claims to record from a device that's gone.
+
+    private android.media.AudioDeviceCallback audioDeviceCallback;
+
+    private void registerAudioDeviceCallback() {
+        try {
+            if (audioDeviceCallback != null || !isAdded()) return;
+            android.media.AudioManager am = (android.media.AudioManager)
+                    requireContext().getSystemService(Context.AUDIO_SERVICE);
+            audioDeviceCallback = new android.media.AudioDeviceCallback() {
+                @Override
+                public void onAudioDevicesAdded(android.media.AudioDeviceInfo[] addedDevices) {
+                    refreshAudioDevices();
+                }
+
+                @Override
+                public void onAudioDevicesRemoved(android.media.AudioDeviceInfo[] removedDevices) {
+                    refreshAudioDevices();
+                }
+            };
+            am.registerAudioDeviceCallback(audioDeviceCallback, null);
+            FLog.d(TAG, "Audio device callback registered (realtime mic list)");
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to register audio device callback", e);
+        }
+    }
+
+    private void unregisterAudioDeviceCallback() {
+        try {
+            if (audioDeviceCallback == null || !isAdded()) {
+                audioDeviceCallback = null;
+                return;
+            }
+            android.media.AudioManager am = (android.media.AudioManager)
+                    requireContext().getSystemService(Context.AUDIO_SERVICE);
+            am.unregisterAudioDeviceCallback(audioDeviceCallback);
+            audioDeviceCallback = null;
+            FLog.d(TAG, "Audio device callback unregistered");
+        } catch (Exception ignored) {}
+    }
+
+    /** Runs on device attach/detach (binder thread → hops to main). */
+    private void refreshAudioDevices() {
+        if (!isAdded() || getActivity() == null) return;
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            getActivity().runOnUiThread(this::refreshAudioDevices);
+            return;
+        }
+
+        // 1) Saved device vanished → fall back to Default (system routing).
+        if (sharedPreferencesManager != null
+                && SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED.equals(
+                        sharedPreferencesManager.getScreenRecordingAudioInputSource())) {
+            String savedName = sharedPreferencesManager.getScreenRecordingAudioDeviceName();
+            int savedType = sharedPreferencesManager.getScreenRecordingAudioDeviceType();
+            if (!isExternalDevicePresent(savedName, savedType)) {
+                FLog.w(TAG, "Selected audio device no longer present — falling back to Default (system routing)");
+                sharedPreferencesManager.setScreenRecordingAudioInputSource(
+                        SharedPreferencesManager.AUDIO_INPUT_SOURCE_PHONE);
+                sharedPreferencesManager.setScreenRecordingAudioDeviceType(-1);
+                sharedPreferencesManager.setScreenRecordingAudioDeviceName(null);
+                updateMuteButtonUi();
+            }
+        }
+
+        // 2) Picker open → rebuild it with the fresh device list.
+        androidx.fragment.app.Fragment picker = getParentFragmentManager()
+                .findFragmentByTag("audio_source_picker");
+        if (picker instanceof PickerBottomSheetFragment) {
+            ((PickerBottomSheetFragment) picker).dismiss();
+            showAudioSourcePicker();
+        }
+    }
+
+    private boolean isExternalDevicePresent(String name, int type) {
+        try {
+            android.media.AudioManager am = (android.media.AudioManager)
+                    requireContext().getSystemService(Context.AUDIO_SERVICE);
+            android.media.AudioDeviceInfo[] devices = am.getDevices(android.media.AudioManager.GET_DEVICES_INPUTS);
+            if (devices == null) return false;
+            for (android.media.AudioDeviceInfo d : devices) {
+                if (d == null || !com.fadcam.utils.AudioDeviceResolver.isExternalInputDevice(d.getType())) continue;
+                if (name != null && !name.isEmpty()) {
+                    CharSequence pn = d.getProductName();
+                    if (pn != null && name.contentEquals(pn)) return true;
+                } else if (type != -1 && d.getType() == type) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            // Be conservative on errors — never reset the user's selection.
+            return true;
+        }
     }
 
     /**

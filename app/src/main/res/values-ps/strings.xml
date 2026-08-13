@@ -948,7 +948,14 @@ Export runs as a background service — you can close the app and it will keep e
     <string name="faditor_volume_warning">Above 100%% may degrade audio quality</string>
     <string name="faditor_your_recordings">Your Recordings</string>
     <string name="fadrec_audio_source_choose">Da ghag manba intikhab ka</string>
+
+	<string name="fadrec_audio_source_helper">Wakhele che screen recording kom aawaz wokhli. \"Asli (da system routing)\" da USB aw wired microphones lapara warshnale — ya kom khas device entikhab kai explicit routing lapara.</string>
+	<string name="fadrec_audio_source_mic_default">Microphone (asli routing)</string>
     <string name="fadrec_audio_source_internal">Da Device Ghag (Dakhili)</string>
+
+	<string name="screen_rec_audio_device_title">Da Aawaz Dakhila Aalaat</string>
+	<string name="screen_rec_audio_device_default">Asli (da system routing)</string>
+	<string name="screen_rec_audio_device_helper">Wakhele che screen recording da kom Microphone na aawaz wokhli. \"Asli\" da system otomatic routing kare — da USB microphones lapara reliable option.</string>
     <string name="fadrec_audio_source_mic">Microphone</string>
     <string name="fadrec_audio_source_none">Ghag Nadi</string>
     <string name="fadrec_audio_source_title">Da Ghag Manba</string>

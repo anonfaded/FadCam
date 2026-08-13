@@ -2237,6 +2237,46 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    // ----- Screen recording (cast) audio input device — INDEPENDENT from video mode.
+    // Video mode has its own audio input source/device prefs; cast must not inherit
+    // them (that inheritance is what regressed USB-mic capture — issue #334).
+    // Default = PHONE ("default routing", no forced device) = the reliable pre-split
+    // behavior. -----
+    private static final String PREF_KEY_SCREEN_AUDIO_INPUT_SOURCE =
+        "screen_recording_audio_input_source";
+    private static final String PREF_KEY_SCREEN_AUDIO_DEVICE_TYPE =
+        "screen_recording_audio_device_type";
+    private static final String PREF_KEY_SCREEN_AUDIO_DEVICE_NAME =
+        "screen_recording_audio_device_name";
+
+    /** Cast audio input source: PHONE (system routing) or WIRED (explicit device). */
+    public String getScreenRecordingAudioInputSource() {
+        return sharedPreferences.getString(
+            PREF_KEY_SCREEN_AUDIO_INPUT_SOURCE, AUDIO_INPUT_SOURCE_PHONE);
+    }
+
+    public void setScreenRecordingAudioInputSource(String source) {
+        sharedPreferences.edit().putString(PREF_KEY_SCREEN_AUDIO_INPUT_SOURCE, source).apply();
+    }
+
+    /** Cast audio input device type (AudioDeviceInfo.TYPE_*), -1 = any. */
+    public int getScreenRecordingAudioDeviceType() {
+        return sharedPreferences.getInt(PREF_KEY_SCREEN_AUDIO_DEVICE_TYPE, -1);
+    }
+
+    public void setScreenRecordingAudioDeviceType(int type) {
+        sharedPreferences.edit().putInt(PREF_KEY_SCREEN_AUDIO_DEVICE_TYPE, type).apply();
+    }
+
+    /** Cast audio input device product name (matched by name first), null = any. */
+    public String getScreenRecordingAudioDeviceName() {
+        return sharedPreferences.getString(PREF_KEY_SCREEN_AUDIO_DEVICE_NAME, null);
+    }
+
+    public void setScreenRecordingAudioDeviceName(String name) {
+        sharedPreferences.edit().putString(PREF_KEY_SCREEN_AUDIO_DEVICE_NAME, name).apply();
+    }
+
     /**
      * Gets the screen recording resolution from preferences.
      * Falls back to the device's physical screen dimensions (preserving native

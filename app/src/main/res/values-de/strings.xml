@@ -720,9 +720,16 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="fadrec_record_muted">Stumm aufnehmen</string>
     <string name="fadrec_audio_source_title">Audioquelle</string>
     <string name="fadrec_audio_source_choose">Audioquelle wählen</string>
+
+	<string name="fadrec_audio_source_helper">Wählen Sie, welchen Ton Bildschirmaufnahmen erfassen. „Standard (System-Routing)“ wird für USB- und kabelgebundene Mikrofone empfohlen – oder wählen Sie ein bestimmtes Gerät für explizites Routing.</string>
+	<string name="fadrec_audio_source_mic_default">Mikrofon (Standard-Routing)</string>
     <string name="fadrec_audio_source_none">Kein Audio</string>
     <string name="fadrec_audio_source_mic">Mikrofon</string>
     <string name="fadrec_audio_source_internal">Geräte-Audio (Intern)</string>
+
+	<string name="screen_rec_audio_device_title">Audio-Eingabegerät</string>
+	<string name="screen_rec_audio_device_default">Standard (System-Routing)</string>
+	<string name="screen_rec_audio_device_helper">Wählen Sie das Mikrofon für Bildschirmaufnahmen. „Standard“ verwendet das automatische System-Routing – die zuverlässige Option bei USB-Mikrofonen.</string>
     <string name="recording_controls_title">AF · Belichtung · Zoom</string>
     <string name="mainpage_camera_front">Frontkamera</string>
     <string name="mainpage_camera_back">Rückkamera</string>

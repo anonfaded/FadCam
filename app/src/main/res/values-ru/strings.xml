@@ -1375,11 +1375,18 @@ FadCam использует фрагментированный формат MP4 
 
     <string name="fadrec_audio_source_choose">Выберите источник аудио</string>
 
+	<string name="fadrec_audio_source_helper">Выберите, какой звук будут захватывать записи экрана. «По умолчанию (маршрутизация системы)» рекомендуется для USB- и проводных микрофонов — или выберите конкретное устройство для явной маршрутизации.</string>
+	<string name="fadrec_audio_source_mic_default">Микрофон (маршрутизация по умолчанию)</string>
+
     <string name="fadrec_audio_source_none">Без аудио</string>
 
     <string name="fadrec_audio_source_mic">Микрофон</string>
 
     <string name="fadrec_audio_source_internal">Аудио устройства (Внутренний)</string>
+
+	<string name="screen_rec_audio_device_title">Устройство ввода звука</string>
+	<string name="screen_rec_audio_device_default">По умолчанию (маршрутизация системы)</string>
+	<string name="screen_rec_audio_device_helper">Выберите микрофон для записи экрана. «По умолчанию» использует автоматическую маршрутизацию системы — надёжный вариант при использовании USB-микрофонов.</string>
 
     <string name="recording_time_left">Осталось времени</string>
 

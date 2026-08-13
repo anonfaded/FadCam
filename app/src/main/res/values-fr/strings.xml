@@ -632,11 +632,18 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="fadrec_audio_source_choose">Choose audio source</string>
 
+	<string name="fadrec_audio_source_helper">Choisissez ce que les enregistrements d\'écran capturent comme audio. « Par défaut (routage système) » est recommandé pour les micros USB et filaires — ou choisissez un périphérique précis pour un routage explicite.</string>
+	<string name="fadrec_audio_source_mic_default">Microphone (routage par défaut)</string>
+
 <string name="fadrec_audio_source_none">No Audio</string>
 
 <string name="fadrec_audio_source_mic">Microphone</string>
 
 <string name="fadrec_audio_source_internal">Device Audio (Internal)</string>
+
+	<string name="screen_rec_audio_device_title">Périphérique d\'entrée audio</string>
+	<string name="screen_rec_audio_device_default">Par défaut (routage système)</string>
+	<string name="screen_rec_audio_device_helper">Choisissez le microphone utilisé par les enregistrements d\'écran. « Par défaut » utilise le routage automatique du système — l\'option fiable avec les micros USB.</string>
 
 <string name="recording_controls_title">AF · Exposure · Zoom</string>
 

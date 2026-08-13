@@ -136,9 +136,16 @@
     <!-- FadRec audio source picker -->
     <string name="fadrec_audio_source_title">Fuente de audio</string>
     <string name="fadrec_audio_source_choose">Elegir fuente de audio</string>
+
+	<string name="fadrec_audio_source_helper">Elige qué audio capturan las grabaciones de pantalla. \"Predeterminado (enrutamiento del sistema)\" es lo recomendado con micrófonos USB y con cable, o elige un dispositivo específico para enrutamiento explícito.</string>
+	<string name="fadrec_audio_source_mic_default">Micrófono (enrutamiento predeterminado)</string>
     <string name="fadrec_audio_source_none">Sin audio</string>
     <string name="fadrec_audio_source_mic">Micrófono</string>
     <string name="fadrec_audio_source_internal">Audio del dispositivo (interno)</string>
+
+	<string name="screen_rec_audio_device_title">Dispositivo de entrada de audio</string>
+	<string name="screen_rec_audio_device_default">Predeterminado (enrutamiento del sistema)</string>
+	<string name="screen_rec_audio_device_helper">Elige el micrófono con el que graban las grabaciones de pantalla. \"Predeterminado\" usa el enrutamiento automático del sistema: la opción fiable con micrófonos USB.</string>
 
     <string name="video_recording_started">Grabación iniciada</string>
     <string name="video_recording_stopped">Grabación detenida</string>

@@ -626,11 +626,18 @@
 
     <string name="fadrec_audio_source_choose">اختر مصدر الصوت</string>
 
+	<string name="fadrec_audio_source_helper">اختر ما تلتقطه تسجيلات الشاشة من الصوت. يُنصح بخيار \"افتراضي (توجيه النظام)\" مع ميكروفونات USB والسلكية — أو اختر جهازًا محددًا للتوجيه الصريح.</string>
+	<string name="fadrec_audio_source_mic_default">ميكروفون (توجيه افتراضي)</string>
+
     <string name="fadrec_audio_source_none">بدون صوت</string>
 
     <string name="fadrec_audio_source_mic">الميكروفون</string>
 
     <string name="fadrec_audio_source_internal">صوت الجهاز (داخلي)</string>
+
+	<string name="screen_rec_audio_device_title">جهاز إدخال الصوت</string>
+	<string name="screen_rec_audio_device_default">افتراضي (توجيه النظام)</string>
+	<string name="screen_rec_audio_device_helper">اختر الميكروفون الذي تسجل منه تسجيلات الشاشة. خيار \"افتراضي\" يستخدم التوجيه التلقائي للنظام — الخيار الموثوق عند استخدام ميكروفونات USB.</string>
 
     <string name="video_recording_started">بدأ التسجيل</string>
 

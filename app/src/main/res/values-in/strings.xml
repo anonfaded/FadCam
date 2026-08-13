@@ -135,9 +135,16 @@
     <!-- FadRec audio source picker -->
     <string name="fadrec_audio_source_title">Sumber Audio</string>
     <string name="fadrec_audio_source_choose">Pilih sumber audio</string>
+
+	<string name="fadrec_audio_source_helper">Pilih audio yang direkam oleh rekaman layar. \"Default (rute sistem)\" disarankan untuk mikrofon USB dan berkabel — atau pilih perangkat tertentu untuk rute eksplisit.</string>
+	<string name="fadrec_audio_source_mic_default">Mikrofon (rute default)</string>
     <string name="fadrec_audio_source_none">Tanpa Audio</string>
     <string name="fadrec_audio_source_mic">Mikrofon</string>
     <string name="fadrec_audio_source_internal">Audio Perangkat (Internal)</string>
+
+	<string name="screen_rec_audio_device_title">Perangkat Masukan Audio</string>
+	<string name="screen_rec_audio_device_default">Default (rute sistem)</string>
+	<string name="screen_rec_audio_device_helper">Pilih mikrofon yang digunakan untuk merekam layar. \"Default\" menggunakan rute otomatis sistem — opsi paling andal saat menggunakan mikrofon USB.</string>
 
     <string name="video_recording_started">Perekaman dimulai</string>
     <string name="video_recording_stopped">Perekaman dihentikan</string>

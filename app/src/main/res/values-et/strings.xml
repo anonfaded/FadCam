@@ -136,9 +136,16 @@
     <!-- FadRec audio source picker -->
     <string name="fadrec_audio_source_title">Heliallikas</string>
     <string name="fadrec_audio_source_choose">Vali heliallikas</string>
+
+	<string name="fadrec_audio_source_helper">Vali, millist heli ekraanisalvestused jäädvustavad. \"Vaikimisi (süsteemi marsruutimine)\" on soovitatav USB- ja juhtmega mikrofonide puhul — või vali konkreetne seade selgesõnaliseks marsruutimiseks.</string>
+	<string name="fadrec_audio_source_mic_default">Mikrofon (vaikimisi marsruutimine)</string>
     <string name="fadrec_audio_source_none">Helita</string>
     <string name="fadrec_audio_source_mic">Mikrofon</string>
     <string name="fadrec_audio_source_internal">Seadme heli (sisemine)</string>
+
+	<string name="screen_rec_audio_device_title">Helisisendseade</string>
+	<string name="screen_rec_audio_device_default">Vaikimisi (süsteemi marsruutimine)</string>
+	<string name="screen_rec_audio_device_helper">Vali mikrofon, millega ekraanisalvestused heli salvestavad. \"Vaikimisi\" kasutab süsteemi automaatset marsruutimist — usaldusväärne valik USB-mikrofonide puhul.</string>
 
     <string name="video_recording_started">Salvestamine alustatud</string>
     <string name="video_recording_stopped">Salvestamine peatatud</string>

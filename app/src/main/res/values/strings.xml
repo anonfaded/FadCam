@@ -135,9 +135,15 @@
     <!-- FadRec audio source picker -->
     <string name="fadrec_audio_source_title">Audio Source</string>
     <string name="fadrec_audio_source_choose">Choose audio source</string>
+
+	<string name="fadrec_audio_source_helper">Choose what audio screen recordings capture. \"Default (system routing)\" is recommended for USB and wired microphones — or pick a specific device for explicit routing.</string>
+	<string name="fadrec_audio_source_mic_default">Microphone (Default routing)</string>
     <string name="fadrec_audio_source_none">No Audio</string>
     <string name="fadrec_audio_source_mic">Microphone</string>
     <string name="fadrec_audio_source_internal">Device Audio (Internal)</string>
+    <string name="screen_rec_audio_device_title">Audio Input Device</string>
+    <string name="screen_rec_audio_device_default">Default (system routing)</string>
+    <string name="screen_rec_audio_device_helper">Choose which microphone screen recordings record from. "Default" uses the system\u2019s automatic routing — the reliable option when using USB microphones.</string>
 
     <string name="video_recording_started">Recording started</string>
     <string name="video_recording_stopped">Recording stopped</string>

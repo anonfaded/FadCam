@@ -92,9 +92,16 @@
     <!-- FadRec audio source picker -->
     <string name="fadrec_audio_source_title">Πηγή Ήχου</string>
     <string name="fadrec_audio_source_choose">Επιλογή πηγής ήχου</string>
+
+	<string name="fadrec_audio_source_helper">Επιλέξτε τι ήχο καταγράφουν οι εγγραφές οθόνης. Η \"Προεπιλογή (δρομολόγηση συστήματος)\" συνιστάται για μικρόφωνα USB και ενσύρματα — ή επιλέξτε μια συγκεκριμένη συσκευή για ρητή δρομολόγηση.</string>
+	<string name="fadrec_audio_source_mic_default">Μικρόφωνο (προεπιλεγμένη δρομολόγηση)</string>
     <string name="fadrec_audio_source_none">Χωρίς Ήχο</string>
     <string name="fadrec_audio_source_mic">Μικρόφωνο</string>
     <string name="fadrec_audio_source_internal">Ήχος Συσκευής (Εσωτερικός)</string>
+
+	<string name="screen_rec_audio_device_title">Συσκευή εισόδου ήχου</string>
+	<string name="screen_rec_audio_device_default">Προεπιλογή (δρομολόγηση συστήματος)</string>
+	<string name="screen_rec_audio_device_helper">Επιλέξτε το μικρόφωνο με το οποίο ηχογραφούν οι εγγραφές οθόνης. Η \"Προεπιλογή\" χρησιμοποιεί την αυτόματη δρομολόγηση του συστήματος — η αξιόπιστη επιλογή όταν χρησιμοποιείτε μικρόφωνα USB.</string>
     <string name="video_recording_started">Η εγγραφή ξεκίνησε</string>
     <string name="video_recording_stopped">Η εγγραφή σταμάτησε</string>
     <string name="video_recording_paused">Η εγγραφή τέθηκε σε παύση</string>
