@@ -6813,6 +6813,12 @@ public class RecordingService extends Service {
                         videoHeight, videoFramerate, safRecordingPfd.getFileDescriptor(), splitSizeBytes,
                         initialSegmentNumber, segmentCallback, previewSurface, orientation, sensorOrientation,
                         selectedCodec, latitude, longitude);
+                // Stale-fd resilience (#332): register the SAF URI so hybrid finalization
+                // can re-open the file with a fresh fd after process-death churn.
+                try {
+                    glRecordingPipeline.setOutputUri(safUri.toString());
+                } catch (Exception ignored) {}
+                FLog.i(TAG, "[STORAGE] SAF mode: uri=" + safUri);
             } else {
                 // Get location data for metadata embedding
                 Float latitude = null;
@@ -6850,6 +6856,8 @@ public class RecordingService extends Service {
                 currentSegmentPath = outputFile.getAbsolutePath();
                 currentSegmentUriString = Uri.fromFile(outputFile).toString();
                 com.fadcam.ActiveRecordingStats.setActiveSegment(outputFile.getAbsolutePath(), null);
+                FLog.i(TAG, "[STORAGE] Internal mode: path=" + outputFile.getAbsolutePath()
+                        + " | streamOnly=" + isStreamOnly);
                 
                 glRecordingPipeline = new com.fadcam.opengl.GLRecordingPipeline(this, watermarkInfoProvider, videoWidth,
                         videoHeight, videoFramerate, outputFile.getAbsolutePath(), splitSizeBytes, initialSegmentNumber,

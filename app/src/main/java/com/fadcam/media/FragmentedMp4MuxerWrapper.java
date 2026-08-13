@@ -36,7 +36,8 @@ public class FragmentedMp4MuxerWrapper {
     private static final String TAG = "FragmentedMp4MuxerWrap";
 
     private final FragmentedMp4Muxer muxer;
-    private final FileOutputStream fileOutputStream;
+    // Non-final: hot-swapped to a fresh stream if the FUSE fd dies mid-recording (#332).
+    private FileOutputStream fileOutputStream;
     private final Object muxerLock = new Object();
     // Guards writer-thread callbacks vs release()'s stream close. WITHOUT this, a
     // handleProcessedSegment() that passed the `released` check can race release()
@@ -94,6 +95,9 @@ public class FragmentedMp4MuxerWrapper {
     private final java.util.List<Integer> fragmentVideoCounts = new java.util.ArrayList<>();
     private final java.util.List<Integer> fragmentAudioOffsets = new java.util.ArrayList<>();
     private final java.util.List<Integer> fragmentVideoOffsets = new java.util.ArrayList<>();
+
+    /** Last hybrid-finalization outcome (also reported via ungated critical log). */
+    private String lastFinalizeOutcome = "never ran";
 
     /**
      * Creates a FragmentedMp4MuxerWrapper with a file path.
@@ -369,13 +373,23 @@ public class FragmentedMp4MuxerWrapper {
             try {
                 // Media3's FragmentedMp4Muxer.close() automatically creates the final fragment
                 // and finalizes all track durations. No need to manually write EOS samples.
-                muxer.close();
+                try {
+                    muxer.close();
+                } catch (MuxerException e) {
+                    // ROOT-CAUSE FIX (#332): a close() failure must NOT skip finalization —
+                    // the media data on disk may still be perfectly recoverable.
+                    FLog.e(TAG, "Error closing media3 muxer — proceeding with hybrid finalization attempt", e);
+                }
                 performHybridFinalization();
                 started = false;
                 FLog.d(TAG, "Muxer stopped successfully");
-            } catch (MuxerException e) {
+                FLog.d(TAG, "Recording telemetry: fragments=" + fragmentPositions.size()
+                        + " | finalize=" + lastFinalizeOutcome
+                        + " | writeFailures=" + segmentWriteFailures
+                        + " | streamReopens=" + streamReopenCount);
+            } catch (RuntimeException e) {
                 FLog.e(TAG, "Error stopping muxer", e);
-                throw new RuntimeException("Failed to stop muxer: " + e.getMessage(), e);
+                throw e;
             }
         }
     }
@@ -672,33 +686,28 @@ public class FragmentedMp4MuxerWrapper {
      * fMP4 spec says mvhd.duration=0 is valid (fragments determine duration),
      * but gallery apps / Instagram read mvhd.duration directly and show 00:00.
      */
-    private void patchMvhdDuration() {
-        if (initSegmentData == null || initSegmentFilePosition < 0 || fileOutputStream == null) return;
-        try {
-            // Parse ftyp size from init segment (bytes 0-3, big-endian)
-            int ftypSize = ((initSegmentData[0] & 0xFF) << 24)
-                         | ((initSegmentData[1] & 0xFF) << 16)
-                         | ((initSegmentData[2] & 0xFF) << 8)
-                         |  (initSegmentData[3] & 0xFF);
-            // mvhd is first child of moov; duration field is at byte 24 within mvhd
-            // mvhd starts at ftypSize + 8 (moov header), so duration is at:
-            long durationOffset = initSegmentFilePosition + ftypSize + 8 + 24;
+    private void patchMvhdDuration(java.nio.channels.FileChannel channel) throws IOException {
+        if (initSegmentData == null || initSegmentFilePosition < 0) return;
+        // Parse ftyp size from init segment (bytes 0-3, big-endian)
+        int ftypSize = ((initSegmentData[0] & 0xFF) << 24)
+                     | ((initSegmentData[1] & 0xFF) << 16)
+                     | ((initSegmentData[2] & 0xFF) << 8)
+                     |  (initSegmentData[3] & 0xFF);
+        // mvhd is first child of moov; duration field is at byte 24 within mvhd
+        // mvhd starts at ftypSize + 8 (moov header), so duration is at:
+        long durationOffset = initSegmentFilePosition + ftypSize + 8 + 24;
 
-            // Compute duration in mvhd timescale units (timescale = 10000)
-            int durationVu = (int)(cumulativeDurationUs * 10000L / 1_000_000L);
+        // Compute duration in mvhd timescale units (timescale = 10000)
+        int durationVu = (int)(cumulativeDurationUs * 10000L / 1_000_000L);
 
-            java.nio.ByteBuffer patch = java.nio.ByteBuffer.allocate(4);
-            patch.putInt(durationVu);
-            patch.flip();
+        java.nio.ByteBuffer patch = java.nio.ByteBuffer.allocate(4);
+        patch.putInt(durationVu);
+        patch.flip();
 
-            java.nio.channels.FileChannel channel = fileOutputStream.getChannel();
-            channel.position(durationOffset);
-            channel.write(patch);
-            FLog.i(TAG, "Patched mvhd.duration at offset " + durationOffset
-                    + " to " + cumulativeDurationUs + "us (" + (cumulativeDurationUs / 1000000.0) + "s)");
-        } catch (Exception e) {
-            FLog.w(TAG, "Failed to patch mvhd duration", e);
-        }
+        channel.position(durationOffset);
+        channel.write(patch);
+        FLog.i(TAG, "Patched mvhd.duration at offset " + durationOffset
+                + " to " + cumulativeDurationUs + "us (" + (cumulativeDurationUs / 1000000.0) + "s)");
     }
 
     /**
@@ -762,82 +771,245 @@ public class FragmentedMp4MuxerWrapper {
      * between ftyp and moov with an mdat header.  The file becomes a
      * standard MP4 without copying any media data.  On failure the
      * original fMP4 is left intact.
+     *
+     * <p>ROOT-CAUSE FIX (issue #332): the original FileOutputStream fd is
+     * FUSE-backed on emulated storage (MediaProvider). On aggressive OEMs
+     * (Xiaomi HyperOS etc.) the process is killed/frozen during long
+     * screen-off recordings; after recovery the fd can go stale — buffered
+     * writes still "succeed" but fstat (FileChannel.size()) throws
+     * ENOENT ("No such file or directory"). If we rely on that fd, the moov
+     * append never happens and the data is destroyed when the stream closes.
+     * Fix: on any channel failure, re-open the file with a FRESH channel
+     * (path or SAF re-opener) and redo the finalization. The media data is
+     * already on disk — only the stale handle was broken.
      */
     private void performHybridFinalization() {
         FLog.d(TAG, "performHybridFinalization START — fragments=" + fragmentPositions.size());
-        patchMvhdDuration();
-        if (fragmentPositions.isEmpty() || initSegmentData == null || fileOutputStream == null) return;
+        if (fragmentPositions.isEmpty() || initSegmentData == null || fileOutputStream == null) {
+            String msg = "SKIPPED — fragments=" + fragmentPositions.size()
+                    + " initSegmentData=" + (initSegmentData != null)
+                    + " stream=" + (fileOutputStream != null) + " | fMP4 left intact";
+            FLog.w(TAG, "performHybridFinalization " + msg);
+            lastFinalizeOutcome = msg;
+            return;
+        }
+        logFileState("before finalization");
+
+        // Attempt 1: original (possibly stale) channel.
         try {
-            java.nio.channels.FileChannel ch = fileOutputStream.getChannel();
-            java.util.List<Long> aOff = new java.util.ArrayList<>();
-            java.util.List<Integer> aCnt = new java.util.ArrayList<>();
-            java.util.List<Long> vOff = new java.util.ArrayList<>();
-            java.util.List<Integer> vCnt = new java.util.ArrayList<>();
-            for (int i = 0; i < fragmentPositions.size(); i++) {
-                long fragPos = fragmentPositions.get(i);
-                int aoff = i < fragmentAudioOffsets.size() ? fragmentAudioOffsets.get(i) : 0;
-                int voff = i < fragmentVideoOffsets.size() ? fragmentVideoOffsets.get(i) : 0;
-                int acnt = i < fragmentAudioCounts.size() ? fragmentAudioCounts.get(i) : 0;
-                int vcnt = i < fragmentVideoCounts.size() ? fragmentVideoCounts.get(i) : 0;
-                if (acnt > 0 && aoff > 0) { aOff.add(fragPos + aoff); aCnt.add(acnt); }
-                if (vcnt > 0 && voff > 0) { vOff.add(fragPos + voff); vCnt.add(vcnt); }
-            }
-            java.nio.ByteBuffer moov = muxer.buildFinalMoov(aOff, aCnt, vOff, vCnt);
-            long moovPos = ch.size();
-            int moovSize = moov.remaining();
-            ch.position(moovPos);
-            ch.write(moov);
-            // Overwrite free box with mdat header
-            int ftypSize = readIntBE(initSegmentData, 0);
-            long freePos = initSegmentFilePosition + ftypSize;
-            long mdatEnd = moovPos;
-            long mdatStart = freePos + 16;
-            // Patch free box with mdat header.
-            // mdat total size = from header start to moov start
-            long mdatSize = mdatEnd - freePos;
-            if (mdatSize <= Integer.MAX_VALUE) {
-                java.nio.ByteBuffer hdr = java.nio.ByteBuffer.allocate(8);
-                hdr.putInt((int) mdatSize);
-                hdr.putInt(0x6D646174); // 'mdat'
-                hdr.flip();
-                ch.position(freePos);
-                ch.write(hdr);
-                FLog.i(TAG, "Hybrid MP4 finalized: " + fragmentPositions.size()
-                        + " fragments, moov=" + moovSize + "B, mdat(32bit)=" + mdatSize + "B");
-            } else {
-                java.nio.ByteBuffer hdr = java.nio.ByteBuffer.allocate(16);
-                hdr.putInt(1);                    // size = 1 (extended)
-                hdr.putInt(0x6D646174);           // type = 'mdat'
-                hdr.putLong(mdatEnd - mdatStart + 16);  // largesize
-                hdr.flip();
-                ch.position(freePos);
-                ch.write(hdr);
-                FLog.i(TAG, "Hybrid MP4 finalized: " + fragmentPositions.size()
-                        + " fragments, moov=" + moovSize + "B, mdat(64bit)=" + mdatSize + "B");
-            }
+            finalizeWithChannel(fileOutputStream.getChannel());
+            logFileState("after finalization (original channel)");
+            FLog.i(TAG, "Hybrid MP4 finalization succeeded (original channel)");
+            lastFinalizeOutcome = "OK (original channel)";
+            return;
         } catch (Exception e) {
-            // DIAGNOSTIC (failure path only — zero steady-state cost):
-            // distinguish "file truly deleted" from "fd stale but file intact"
-            // (FUSE/MediaProvider restart on aggressive OEMs). If the file still
-            // exists, a re-open-by-path retry can recover the data.
+            FLog.w(TAG, "Hybrid finalization failed on original channel (" + e.getMessage()
+                    + ") — re-opening with a fresh channel (stale FUSE fd after process churn)", e);
+        }
+
+        // Attempt 2: fresh channel — the file data is on disk; only the fd went stale.
+        java.nio.channels.FileChannel fresh = reopenChannel();
+        if (fresh != null) {
             try {
-                StringBuilder diag = new StringBuilder("Hybrid finalization failed — fMP4 left intact: ").append(e.getMessage());
-                if (outputPath != null) {
-                    java.io.File f = new java.io.File(outputPath);
-                    diag.append(" | path=").append(outputPath)
-                        .append(" | exists=").append(f.exists())
-                        .append(" | length=").append(f.exists() ? f.length() : -1);
-                }
-                try {
-                    diag.append(" | fdValid=").append(fileOutputStream != null ? fileOutputStream.getFD().valid() : false);
-                } catch (Exception ignored) {}
-                try {
-                    diag.append(" | channelOpen=").append(fileOutputStream != null ? fileOutputStream.getChannel().isOpen() : false);
-                } catch (Exception ignored) {}
-                FLog.w(TAG, diag.toString(), e);
-            } catch (Exception logEx) {
-                FLog.w(TAG, "Hybrid finalization failed — fMP4 left intact", e);
+                finalizeWithChannel(fresh);
+                logFileState("after finalization (re-opened channel)");
+                FLog.i(TAG, "Hybrid MP4 finalization succeeded (re-opened channel) — data preserved");
+                lastFinalizeOutcome = "OK (re-opened channel)";
+            } catch (Exception e2) {
+                lastFinalizeOutcome = "FAILED on re-opened channel: " + e2.getMessage();
+                logFinalizationFailure(e2, "re-opened channel");
+            } finally {
+                closeQuietly(fresh);
             }
+        } else {
+            lastFinalizeOutcome = "FAILED on original channel, re-open unavailable";
+            logFinalizationFailure(null, "original channel (fresh re-open unavailable)");
+        }
+    }
+
+    /** Performs the moov-append + mdat-header patch on the given channel. */
+    private void finalizeWithChannel(java.nio.channels.FileChannel ch) throws IOException {
+        patchMvhdDuration(ch);
+        java.util.List<Long> aOff = new java.util.ArrayList<>();
+        java.util.List<Integer> aCnt = new java.util.ArrayList<>();
+        java.util.List<Long> vOff = new java.util.ArrayList<>();
+        java.util.List<Integer> vCnt = new java.util.ArrayList<>();
+        for (int i = 0; i < fragmentPositions.size(); i++) {
+            long fragPos = fragmentPositions.get(i);
+            int aoff = i < fragmentAudioOffsets.size() ? fragmentAudioOffsets.get(i) : 0;
+            int voff = i < fragmentVideoOffsets.size() ? fragmentVideoOffsets.get(i) : 0;
+            int acnt = i < fragmentAudioCounts.size() ? fragmentAudioCounts.get(i) : 0;
+            int vcnt = i < fragmentVideoCounts.size() ? fragmentVideoCounts.get(i) : 0;
+            if (acnt > 0 && aoff > 0) { aOff.add(fragPos + aoff); aCnt.add(acnt); }
+            if (vcnt > 0 && voff > 0) { vOff.add(fragPos + voff); vCnt.add(vcnt); }
+        }
+        java.nio.ByteBuffer moov = muxer.buildFinalMoov(aOff, aCnt, vOff, vCnt);
+        long moovPos = ch.size();
+        int moovSize = moov.remaining();
+        ch.position(moovPos);
+        ch.write(moov);
+        // Overwrite free box with mdat header
+        int ftypSize = readIntBE(initSegmentData, 0);
+        long freePos = initSegmentFilePosition + ftypSize;
+        long mdatEnd = moovPos;
+        long mdatStart = freePos + 16;
+        // Patch free box with mdat header.
+        // mdat total size = from header start to moov start
+        long mdatSize = mdatEnd - freePos;
+        if (mdatSize <= Integer.MAX_VALUE) {
+            java.nio.ByteBuffer hdr = java.nio.ByteBuffer.allocate(8);
+            hdr.putInt((int) mdatSize);
+            hdr.putInt(0x6D646174); // 'mdat'
+            hdr.flip();
+            ch.position(freePos);
+            ch.write(hdr);
+            FLog.i(TAG, "Hybrid MP4 finalized: " + fragmentPositions.size()
+                    + " fragments, moov=" + moovSize + "B, mdat(32bit)=" + mdatSize + "B");
+        } else {
+            java.nio.ByteBuffer hdr = java.nio.ByteBuffer.allocate(16);
+            hdr.putInt(1);                    // size = 1 (extended)
+            hdr.putInt(0x6D646174);           // type = 'mdat'
+            hdr.putLong(mdatEnd - mdatStart + 16);  // largesize
+            hdr.flip();
+            ch.position(freePos);
+            ch.write(hdr);
+            FLog.i(TAG, "Hybrid MP4 finalized: " + fragmentPositions.size()
+                    + " fragments, moov=" + moovSize + "B, mdat(64bit)=" + mdatSize + "B");
+        }
+    }
+
+    /**
+     * Supplies a FRESH stream to the output file, used both by hybrid
+     * finalization and mid-recording hot-swap when the original fd went stale
+     * (FUSE/MediaProvider churn after process death on aggressive OEMs).
+     * Implementations must NOT truncate the file.
+     */
+    public interface FileReopener {
+        java.io.FileOutputStream reopen() throws IOException;
+    }
+    private FileReopener fileReopener;
+    public void setFileReopener(FileReopener reopener) { this.fileReopener = reopener; }
+
+    /** Fresh stream for continuing sequential fragment writes (positioned at EOF). */
+    private java.io.FileOutputStream reopenStreamForWrite() {
+        java.io.FileOutputStream fresh = null;
+        if (fileReopener != null) {
+            try {
+                fresh = fileReopener.reopen();
+                if (fresh != null) FLog.i(TAG, "Reopened output stream via FileReopener");
+            } catch (Exception e) {
+                FLog.w(TAG, "FileReopener (stream) failed", e);
+            }
+        }
+        if (fresh == null && outputPath != null) {
+            try {
+                java.io.File f = new java.io.File(outputPath);
+                if (f.exists()) {
+                    fresh = new java.io.FileOutputStream(f, true); // append-safe, no truncation
+                    FLog.i(TAG, "Reopened output stream by path: " + outputPath);
+                } else {
+                    FLog.w(TAG, "Reopen stream by path failed: file does not exist: " + outputPath);
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "Reopen stream by path failed", e);
+            }
+        }
+        if (fresh != null) {
+            // Position at EOF so sequential writes append (critical for SAF fds,
+            // which start at offset 0 after re-open).
+            try {
+                fresh.getChannel().position(fresh.getChannel().size());
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed to position re-opened stream at EOF", e);
+            }
+        }
+        return fresh;
+    }
+
+    /** Fresh positionable channel for finalization. */
+    private java.nio.channels.FileChannel reopenChannel() {
+        // 1) Explicit re-opener (SAF/fd mode: re-resolves the content URI).
+        if (fileReopener != null) {
+            try {
+                java.io.FileOutputStream s = fileReopener.reopen();
+                if (s != null) {
+                    FLog.i(TAG, "Reopened output channel via FileReopener");
+                    return s.getChannel();
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "FileReopener failed", e);
+            }
+        }
+        // 2) Path-based re-open (internal storage mode). "rw" preserves existing
+        //    data (no truncation) and lets us control the write position.
+        if (outputPath != null) {
+            try {
+                java.io.File f = new java.io.File(outputPath);
+                if (f.exists()) {
+                    java.nio.channels.FileChannel ch =
+                            new java.io.RandomAccessFile(f, "rw").getChannel();
+                    FLog.i(TAG, "Reopened output channel by path: " + outputPath);
+                    return ch;
+                }
+                FLog.w(TAG, "Reopen by path failed: file does not exist: " + outputPath);
+            } catch (Exception e) {
+                FLog.w(TAG, "Reopen by path failed", e);
+            }
+        }
+        return null;
+    }
+
+    private static void closeQuietly(java.nio.channels.FileChannel ch) {
+        try { if (ch != null) ch.close(); } catch (Exception ignored) {}
+    }
+
+    private static void closeQuietlyStream(java.io.FileOutputStream s) {
+        try { if (s != null) s.close(); } catch (Exception ignored) {}
+    }
+
+    /** Logs existence/length/fd state of the output file at a given phase. */
+    private void logFileState(String phase) {
+        try {
+            StringBuilder sb = new StringBuilder("File state " + phase + ":");
+            if (outputPath != null) {
+                java.io.File f = new java.io.File(outputPath);
+                sb.append(" path=").append(outputPath)
+                  .append(" exists=").append(f.exists())
+                  .append(" length=").append(f.exists() ? f.length() : -1);
+            } else {
+                sb.append(" path=null");
+            }
+            try {
+                sb.append(" | fdValid=").append(fileOutputStream != null ? fileOutputStream.getFD().valid() : false);
+            } catch (Exception ignored) {}
+            try {
+                sb.append(" | channelOpen=").append(fileOutputStream != null ? fileOutputStream.getChannel().isOpen() : false);
+            } catch (Exception ignored) {}
+            FLog.i(TAG, sb.toString());
+        } catch (Exception ignored) {}
+    }
+
+    /** DIAGNOSTIC (failure path only — zero steady-state cost): */
+    private void logFinalizationFailure(Exception e, String channelDesc) {
+        try {
+            StringBuilder diag = new StringBuilder("Hybrid finalization failed — fMP4 left intact: ")
+                    .append(e != null ? e.getMessage() : "unknown")
+                    .append(" | channel=").append(channelDesc);
+            if (outputPath != null) {
+                java.io.File f = new java.io.File(outputPath);
+                diag.append(" | path=").append(outputPath)
+                    .append(" | exists=").append(f.exists())
+                    .append(" | length=").append(f.exists() ? f.length() : -1);
+            }
+            try {
+                diag.append(" | fdValid=").append(fileOutputStream != null ? fileOutputStream.getFD().valid() : false);
+            } catch (Exception ignored) {}
+            try {
+                diag.append(" | channelOpen=").append(fileOutputStream != null ? fileOutputStream.getChannel().isOpen() : false);
+            } catch (Exception ignored) {}
+            FLog.w(TAG, diag.toString(), e != null ? e : new RuntimeException("finalization failed"));
+        } catch (Exception logEx) {
+            FLog.w(TAG, "Hybrid finalization failed — fMP4 left intact", e);
         }
     }
 
@@ -915,16 +1087,7 @@ public class FragmentedMp4MuxerWrapper {
                 
                 // Write to file — no per-fragment fsync; periodic flush handles durability.
                 if (shouldSaveToDisk && fileOutputStream != null) {
-                    // Save init segment for mvhd duration patching on close
-                    initSegmentData = data;
-                    try {
-                        initSegmentFilePosition = fileOutputStream.getChannel().position();
-                    } catch (IOException e) {
-                        FLog.w(TAG, "Failed to get file position for mvhd patch", e);
-                    }
-                    fileOutputStream.write(data);
-                    fileOutputStream.flush();
-                } else {
+                    writeSegmentWithRecovery(data, true);
                 }
             } else {
                 // Media fragment (moof + mdat)
@@ -943,16 +1106,7 @@ public class FragmentedMp4MuxerWrapper {
                 
                 // Write to file — per-fragment flush for SAF visibility.
                 if (shouldSaveToDisk && fileOutputStream != null) {
-                    // Track fragment position and parse moof for Hybrid MP4 finalization
-                    try {
-                        long pos = fileOutputStream.getChannel().position();
-                        fragmentPositions.add(pos);
-                        parseFragmentForFinalization(data);
-                    } catch (IOException ignore) {}
-                    fileOutputStream.write(data);
-                    fileOutputStream.flush();
-                    // Fragment written log removed
-                } else {
+                    writeSegmentWithRecovery(data, false);
                 }
                 
                 nextFragmentNumber++;
@@ -963,6 +1117,70 @@ public class FragmentedMp4MuxerWrapper {
                 FLog.e(TAG, "❌ Error handling processed segment", e);
             }
         } // end synchronized(ioLock)
+    }
+
+    // ----- Stale-fd hot-swap recovery (FUSE/MediaProvider churn, issue #332) -----
+    private int segmentWriteFailures = 0;
+    private int streamReopenCount = 0;
+
+    /**
+     * Writes a processed segment. If the underlying FUSE fd died mid-recording
+     * (writes start throwing ENOENT/EBADF after process churn), hot-swaps to a
+     * FRESH stream (SAF re-opener or path re-open) and retries the segment —
+     * instead of silently dropping fragments, which is what previously left
+     * files "fragmented-only" or lost the tail of recordings.
+     */
+    private void writeSegmentWithRecovery(byte[] data, boolean isInit) {
+        try {
+            writeSegmentBytes(data, isInit);
+        } catch (IOException e) {
+            segmentWriteFailures++;
+            FLog.e(TAG, "Segment write failed (" + e.getMessage()
+                    + ") — hot-swapping to a fresh stream", e);
+            java.io.FileOutputStream fresh = reopenStreamForWrite();
+            if (fresh == null) {
+                FLog.e(TAG, "Segment write recovery FAILED — no fresh stream available; segment lost (failures="
+                        + segmentWriteFailures + ")");
+                return;
+            }
+            java.io.FileOutputStream old = fileOutputStream;
+            fileOutputStream = fresh;
+            closeQuietlyStream(old);
+            streamReopenCount++;
+            FLog.w(TAG, "HOT-SWAP: output stream re-opened mid-recording (failures="
+                    + segmentWriteFailures + ", reopens=" + streamReopenCount + ")");
+            try {
+                writeSegmentBytes(data, isInit);
+            } catch (IOException e2) {
+                FLog.e(TAG, "Segment write failed AGAIN after re-open — segment lost", e2);
+            }
+        }
+    }
+
+    private void writeSegmentBytes(byte[] data, boolean isInit) throws IOException {
+        if (isInit) {
+            initSegmentData = data;
+            long pos = fileOutputStream.getChannel().position();
+            initSegmentFilePosition = pos;
+            fileOutputStream.write(data);
+            fileOutputStream.flush();
+        } else {
+            long pos = fileOutputStream.getChannel().position();
+            fragmentPositions.add(pos);
+            parseFragmentForFinalization(data);
+            try {
+                fileOutputStream.write(data);
+                fileOutputStream.flush();
+            } catch (IOException e) {
+                // Roll back tracking for this fragment — it never landed on disk.
+                if (!fragmentPositions.isEmpty()) fragmentPositions.remove(fragmentPositions.size() - 1);
+                if (!fragmentAudioCounts.isEmpty()) fragmentAudioCounts.remove(fragmentAudioCounts.size() - 1);
+                if (!fragmentVideoCounts.isEmpty()) fragmentVideoCounts.remove(fragmentVideoCounts.size() - 1);
+                if (!fragmentAudioOffsets.isEmpty()) fragmentAudioOffsets.remove(fragmentAudioOffsets.size() - 1);
+                if (!fragmentVideoOffsets.isEmpty()) fragmentVideoOffsets.remove(fragmentVideoOffsets.size() - 1);
+                throw e;
+            }
+        }
     }
 
     /**

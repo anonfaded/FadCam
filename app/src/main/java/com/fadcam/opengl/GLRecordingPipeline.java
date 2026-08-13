@@ -70,6 +70,10 @@ public class GLRecordingPipeline {
     private final int videoFramerate;
     private final String outputFilePath;
     private final FileDescriptor outputFd;
+    /** SAF content URI for fd-based outputs — used to re-open a fresh channel on stale-fd finalization. */
+    private String outputUri;
+    /** Keeps the SAF re-open ParcelFileDescriptor referenced so GC cannot close it mid-finalization. */
+    private android.os.ParcelFileDescriptor reopenPfd;
     private Surface previewSurface;
     // Pending preview apply support to debounce rapid preview surface changes
     private Surface pendingPreviewToApply = null;
@@ -1149,6 +1153,12 @@ public class GLRecordingPipeline {
             muxerStarted = false;
         }
 
+        // Release the SAF re-open PFD (kept referenced so GC didn't close it mid-finalization).
+        try {
+            if (reopenPfd != null) reopenPfd.close();
+        } catch (Exception ignored) {}
+        reopenPfd = null;
+
         // BULLETPROOF: If file exists but may be corrupted, log for user awareness
         if (!muxerStopped) {
             FLog.w(TAG, "WARNING: Video file may have playback issues due to muxer stop failure");
@@ -1408,6 +1418,30 @@ public class GLRecordingPipeline {
                 mediaMuxer.setOutputPath(currentOutputFilePath);
             }
         } catch (Exception ignored) {}
+
+        // ROOT-CAUSE FIX (issue #332): when the output is an fd (SAF/FUSE), the
+        // long-lived fd can go stale after process-death/recovery churn on
+        // aggressive OEMs (Xiaomi HyperOS) — finalization then fails with
+        // ENOENT and the recording data is lost on close. Provide a re-opener
+        // that re-resolves the content URI with a FRESH fd so hybrid
+        // finalization can complete against the on-disk data.
+        try {
+            if (currentOutputFd != null && outputUri != null) {
+                final String uri = outputUri;
+                mediaMuxer.setFileReopener(() -> {
+                    if (reopenPfd != null) {
+                        try { reopenPfd.close(); } catch (Exception ignored) {}
+                    }
+                    reopenPfd = context.getContentResolver().openFileDescriptor(
+                            android.net.Uri.parse(uri), "rw");
+                    if (reopenPfd == null) return null;
+                    return new java.io.FileOutputStream(reopenPfd.getFileDescriptor());
+                });
+                FLog.d(TAG, "[STORAGE] SAF re-opener registered for finalization: " + uri);
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "[STORAGE] Failed to register SAF re-opener", e);
+        }
 
         // Set location metadata if available
         if (locationLatitude != null && locationLongitude != null) {
@@ -2506,6 +2540,21 @@ public class GLRecordingPipeline {
 
         // BULLETPROOF: Stop and release the media muxer with emergency finalization
         if (mediaMuxer != null && muxerStarted) {
+            // File-state snapshot BEFORE finalization — tells us if the output
+            // survived process churn (Xiaomi HyperOS stale-fd diagnosis, #332).
+            try {
+                StringBuilder st = new StringBuilder("[STORAGE] stopRecording output state:");
+                if (currentOutputFilePath != null) {
+                    java.io.File f = new java.io.File(currentOutputFilePath);
+                    st.append(" path=").append(currentOutputFilePath)
+                      .append(" exists=").append(f.exists())
+                      .append(" length=").append(f.exists() ? f.length() : -1);
+                } else {
+                    st.append(" path=null (fd mode) uri=").append(outputUri);
+                }
+                String msg = st.toString();
+                FLog.i(TAG, msg);
+            } catch (Exception ignored) {}
             emergencyFinalizeMuxer();
         }
 
@@ -2880,6 +2929,15 @@ public class GLRecordingPipeline {
     public void setNextOutput(String filePath, FileDescriptor fd) {
         this.currentOutputFilePath = filePath;
         this.currentOutputFd = fd;
+    }
+
+    /**
+     * Sets the SAF content URI for fd-based outputs, enabling hybrid
+     * finalization to re-open the file with a fresh fd if the original
+     * FUSE fd went stale (Xiaomi HyperOS process-death churn, issue #332).
+     */
+    public void setOutputUri(String uri) {
+        this.outputUri = uri;
     }
 
     /**
