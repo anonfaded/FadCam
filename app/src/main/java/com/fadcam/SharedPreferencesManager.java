@@ -1118,6 +1118,23 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    // ----- Lab (Forensics Gallery) grid span preference -----
+    private static final String PREF_KEY_LAB_GRID_SPAN =
+        "pref_lab_grid_span";
+
+    /** Returns the persisted Lab gallery grid span (columns), clamped to 1-5. Default: 2. */
+    public int getLabGridSpan() {
+        int span = sharedPreferences.getInt(PREF_KEY_LAB_GRID_SPAN, 2);
+        if (span < 1 || span > 5) span = 2;
+        return span;
+    }
+
+    /** Sets the persisted Lab gallery grid span (columns). */
+    public void setLabGridSpan(int span) {
+        if (span < 1 || span > 5) span = 2;
+        sharedPreferences.edit().putInt(PREF_KEY_LAB_GRID_SPAN, span).apply();
+    }
+
     public boolean isLocalisationEnabled() {
         return sharedPreferences.getBoolean(
             Constants.PREF_LOCATION_DATA,
@@ -1265,6 +1282,26 @@ public class SharedPreferencesManager {
 
     public boolean isTimezoneEnabled() {
         return sharedPreferences.getBoolean(Constants.PREF_WATERMARK_TIMEZONE, false);
+    }
+
+    public String getRecordsSortOption() {
+        return sharedPreferences.getString(Constants.PREF_RECORDS_SORT, "LATEST_FIRST");
+    }
+
+    public void setRecordsSortOption(String option) {
+        sharedPreferences.edit().putString(Constants.PREF_RECORDS_SORT, option).apply();
+    }
+
+    /** Returns the persisted Records grid span (columns), clamped to 1-5. Default: 2. */
+    public int getRecordsGridSpan() {
+        int span = sharedPreferences.getInt(Constants.PREF_RECORDS_GRID_SPAN, 2);
+        if (span < 1 || span > 5) span = 2;
+        return span;
+    }
+
+    public void setRecordsGridSpan(int span) {
+        if (span < 1 || span > 5) span = 2;
+        sharedPreferences.edit().putInt(Constants.PREF_RECORDS_GRID_SPAN, span).apply();
     }
 
     public boolean isWatermarkDayEnabled() {

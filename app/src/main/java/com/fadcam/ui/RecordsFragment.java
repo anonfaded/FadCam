@@ -354,6 +354,32 @@ public class RecordsFragment extends BaseFragment implements
     /** Separate executor for background delta scans — never blocks the main executor. */
     private volatile ExecutorService deltaExecutor = Executors.newSingleThreadExecutor();
     private SortOption currentSortOption = SortOption.LATEST_FIRST;
+
+    /** Loads the persisted sort option (falls back to LATEST_FIRST). */
+    private SortOption loadPersistedSortOption() {
+        try {
+            if (sharedPreferencesManager != null) {
+                String saved = sharedPreferencesManager.getRecordsSortOption();
+                if (saved != null) {
+                    for (SortOption o : SortOption.values()) {
+                        if (o.name().equals(saved)) return o;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return SortOption.LATEST_FIRST;
+    }
+
+    /** Loads the persisted grid span (falls back to 2). */
+    private int loadPersistedGridSpan() {
+        try {
+            if (sharedPreferencesManager != null) {
+                int span = sharedPreferencesManager.getRecordsGridSpan();
+                if (span >= 1 && span <= 5) return span;
+            }
+        } catch (Exception ignored) {}
+        return 2;
+    }
     private SharedPreferencesManager sharedPreferencesManager;
     private SpacesItemDecoration itemDecoration; // Keep a reference
     private ProgressBar loadingIndicator; // *** ADD field for ProgressBar ***
@@ -1569,7 +1595,9 @@ public class RecordsFragment extends BaseFragment implements
         if (sharedPreferencesManager == null) {
             try {
                 sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-                FLog.d(TAG, "SharedPreferencesManager initialized in onCreate.");
+                currentSortOption = loadPersistedSortOption();
+                currentGridSpan = loadPersistedGridSpan();
+                FLog.d(TAG, "SharedPreferencesManager initialized in onCreate; sort=" + currentSortOption + ", gridSpan=" + currentGridSpan);
             } catch (IllegalStateException e) {
                 FLog.e(TAG, "Error getting context in onCreate: Fragment not attached?", e);
                 // Handle error appropriately - maybe defer init to onViewCreated?
@@ -2439,6 +2467,12 @@ public class RecordsFragment extends BaseFragment implements
     private void applyGridSpan(int newSpan) {
         vibrate();
         currentGridSpan = newSpan;
+        // Persist so the choice survives cold starts.
+        try {
+            if (sharedPreferencesManager != null) {
+                sharedPreferencesManager.setRecordsGridSpan(currentGridSpan);
+            }
+        } catch (Exception ignored) {}
         setLayoutManager();
         if (recordsAdapter != null) {
             recordsAdapter.setGridSpan(currentGridSpan);
@@ -4646,6 +4680,12 @@ public class RecordsFragment extends BaseFragment implements
                         SortOption newOption = mapIdToSort(sortId);
                         if (newOption != currentSortOption) {
                             currentSortOption = newOption;
+                            // Persist so the choice survives cold starts.
+                            try {
+                                if (sharedPreferencesManager != null) {
+                                    sharedPreferencesManager.setRecordsSortOption(newOption.name());
+                                }
+                            } catch (Exception ignored) {}
                             performVideoSort();
                         }
                     }
