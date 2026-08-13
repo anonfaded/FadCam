@@ -198,6 +198,9 @@ public class GLRecordingPipeline {
     private MediaFormat pendingHevcFormat;
     private ByteBuffer capturedHevcCsd0;
     private ByteBuffer capturedHevcCsd1;
+    private MediaFormat pendingAvcFormat;
+    private ByteBuffer capturedAvcCsd0;
+    private ByteBuffer capturedAvcCsd1;
     // Audio settings (always set from preferences or app defaults)
     private int audioSource;
     private android.media.AudioDeviceInfo preferredAudioDevice;
@@ -1667,6 +1670,19 @@ public class GLRecordingPipeline {
                         capturedHevcCsd1 = null;
                         continue; // Skip normal addTrack; wait for CODEC_CONFIG buffers
                     }
+                    // AVC (H.264) requires BOTH csd-0 (SPS) and csd-1 (PPS) for the
+                    // avcC box. Some encoders omit them from the output format —
+                    // defer registration and capture/extract them (same pattern
+                    // as the HEVC fix).
+                    boolean needAvcCsd = MediaFormat.MIMETYPE_VIDEO_AVC.equals(mimeType)
+                            && (!hasCsd0 || !hasCsd1);
+                    if (needAvcCsd) {
+                        FLog.w(TAG, "[AVC-CSD] AVC encoder output format missing csd-0/csd-1 — deferring track registration until codec config buffers arrive");
+                        pendingAvcFormat = newFormat;
+                        capturedAvcCsd0 = null;
+                        capturedAvcCsd1 = null;
+                        continue; // Skip normal addTrack; wait for CODEC_CONFIG buffers
+                    }
 
                     if (muxerStarted) {
                         FLog.e(TAG, "CRITICAL: Format changed after muxer started - timing issue, continuing");
@@ -1696,6 +1712,57 @@ public class GLRecordingPipeline {
                     }
 
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                        // Capture csd-0/csd-1 from codec config buffers if the format was missing them.
+                        // AVC config buffers are parsed as Annex-B NALs and split into SPS/PPS
+                        // (robust for encoders that deliver SPS+PPS in one buffer).
+                        if (pendingAvcFormat != null && bufferInfo.size > 0) {
+                            try {
+                                byte[] csdData = new byte[bufferInfo.size];
+                                encodedData.position(bufferInfo.offset);
+                                encodedData.get(csdData, 0, bufferInfo.size);
+                                byte[][] spsPps = splitAvcSpsPps(csdData);
+                                if (spsPps != null) {
+                                    if (capturedAvcCsd0 == null) {
+                                        capturedAvcCsd0 = ByteBuffer.wrap(spsPps[0]);
+                                        FLog.i(TAG, "[AVC-CSD] Captured SPS from CODEC_CONFIG buffer (" + spsPps[0].length + " bytes)");
+                                    }
+                                    if (spsPps[1] != null && capturedAvcCsd1 == null) {
+                                        capturedAvcCsd1 = ByteBuffer.wrap(spsPps[1]);
+                                        FLog.i(TAG, "[AVC-CSD] Captured PPS from CODEC_CONFIG buffer (" + spsPps[1].length + " bytes)");
+                                    }
+                                } else if (capturedAvcCsd0 == null) {
+                                    capturedAvcCsd0 = ByteBuffer.wrap(csdData);
+                                    FLog.i(TAG, "[AVC-CSD] Captured csd-0 from CODEC_CONFIG buffer (" + bufferInfo.size + " bytes)");
+                                } else if (capturedAvcCsd1 == null) {
+                                    capturedAvcCsd1 = ByteBuffer.wrap(csdData);
+                                    FLog.i(TAG, "[AVC-CSD] Captured csd-1 from CODEC_CONFIG buffer (" + bufferInfo.size + " bytes)");
+                                }
+                                if (capturedAvcCsd0 != null && capturedAvcCsd1 != null) {
+                                    ByteBuffer csd0Final = capturedAvcCsd0.duplicate();
+                                    csd0Final.position(0);
+                                    pendingAvcFormat.setByteBuffer("csd-0", csd0Final);
+                                    ByteBuffer csd1Final = capturedAvcCsd1.duplicate();
+                                    csd1Final.position(0);
+                                    pendingAvcFormat.setByteBuffer("csd-1", csd1Final);
+                                    videoTrackIndex = mediaMuxer.addTrack(pendingAvcFormat);
+                                    FLog.i(TAG, "[AVC-CSD] Registered AVC video track with csd captured from codec config buffers");
+                                    pendingAvcFormat = null;
+                                    capturedAvcCsd0 = null;
+                                    capturedAvcCsd1 = null;
+                                    if (!audioRecordingEnabled) {
+                                        mediaMuxer.start();
+                                        muxerStarted = true;
+                                        flushPreMuxerVideoBuffer();
+                                    } else if (audioTrackIndex != -1) {
+                                        mediaMuxer.start();
+                                        muxerStarted = true;
+                                        flushPreMuxerVideoBuffer();
+                                    }
+                                }
+                            } catch (Exception e) {
+                                FLog.e(TAG, "[AVC-CSD] Failed to capture csd from CODEC_CONFIG", e);
+                            }
+                        }
                         // Capture HEVC csd-0/csd-1 from codec config buffers if format was missing them
                         if (pendingHevcFormat != null && bufferInfo.size > 0) {
                             try {
@@ -1815,6 +1882,31 @@ public class GLRecordingPipeline {
                         if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0
                                 && preMuxerVideoFrameBuffer.size() < MAX_PRE_MUXER_BUFFER_FRAMES) {
                             try {
+                                // Emergency: if still waiting for AVC csd, extract SPS/PPS from the keyframe
+                                if (pendingAvcFormat != null && isKeyframe) {
+                                    byte[][] spsPps = extractAvcCsdFromBitstream(encodedData, bufferInfo.offset, bufferInfo.size);
+                                    if (spsPps != null) {
+                                        FLog.i(TAG, "[AVC-CSD] Extracted SPS/PPS from keyframe bitstream (" + spsPps[0].length + "+" + spsPps[1].length + " bytes) — CODEC_CONFIG buffer never arrived");
+                                        pendingAvcFormat.setByteBuffer("csd-0", ByteBuffer.wrap(spsPps[0]));
+                                        pendingAvcFormat.setByteBuffer("csd-1", ByteBuffer.wrap(spsPps[1]));
+                                        videoTrackIndex = mediaMuxer.addTrack(pendingAvcFormat);
+                                        FLog.i(TAG, "[AVC-CSD] Registered AVC video track with csd extracted from keyframe");
+                                        pendingAvcFormat = null;
+                                        capturedAvcCsd0 = null;
+                                        capturedAvcCsd1 = null;
+                                        if (!audioRecordingEnabled) {
+                                            mediaMuxer.start();
+                                            muxerStarted = true;
+                                            flushPreMuxerVideoBuffer();
+                                        } else if (audioTrackIndex != -1) {
+                                            mediaMuxer.start();
+                                            muxerStarted = true;
+                                            flushPreMuxerVideoBuffer();
+                                        }
+                                    } else {
+                                        FLog.e(TAG, "[AVC-CSD] CRITICAL: Cannot extract SPS/PPS from keyframe — recording will fail");
+                                    }
+                                }
                                 // Emergency: if still waiting for HEVC csd-0, extract from keyframe bitstream
                                 if (pendingHevcFormat != null && isKeyframe) {
                                     ByteBuffer csdFromKeyframe = extractHevcCsdFromBitstream(encodedData, bufferInfo.offset, bufferInfo.size);
@@ -1839,7 +1931,7 @@ public class GLRecordingPipeline {
                                         FLog.e(TAG, "[HEVC-CSD] CRITICAL: Cannot extract csd-0 from keyframe — recording will fail");
                                     }
                                 }
-                                if (pendingHevcFormat == null) {
+                                if (pendingHevcFormat == null && pendingAvcFormat == null) {
                                     if (muxerStarted && videoTrackIndex != -1) {
                                         encodedData.position(bufferInfo.offset);
                                         encodedData.limit(bufferInfo.offset + bufferInfo.size);
@@ -1860,7 +1952,7 @@ public class GLRecordingPipeline {
                                         FLog.d(TAG, "Buffered pre-muxer video frame (total=" + preMuxerVideoFrameBuffer.size() + ", pts=" + bufferInfo.presentationTimeUs + ")");
                                     }
                                 } else {
-                                    FLog.w(TAG, "[HEVC-CSD] Still waiting for csd-0, frame not keyframe — dropping");
+                                    FLog.w(TAG, "Still waiting for codec csd (HEVC/AVC), frame not keyframe — dropping");
                                 }
                             } catch (Exception e) {
                                 FLog.w(TAG, "Failed to buffer pre-muxer frame, will be lost", e);
@@ -2119,6 +2211,101 @@ public class GLRecordingPipeline {
             return result;
         } catch (Exception e) {
             FLog.w(TAG, "[HEVC-CSD] Failed to extract csd from bitstream", e);
+            return null;
+        }
+    }
+
+    /**
+     * Extracts SPS (NAL type 7) and PPS (NAL type 8) from an AVC keyframe's
+     * Annex-B bitstream for the avcC box. Returns {sps, pps} or null.
+     */
+    private byte[][] extractAvcCsdFromBitstream(ByteBuffer data, int offset, int size) {
+        try {
+            byte[] sps = null;
+            byte[] pps = null;
+            int pos = offset;
+            int end = offset + size;
+            while (pos < end - 3 && (sps == null || pps == null)) {
+                int startCodeLen;
+                if (data.get(pos) == 0 && data.get(pos + 1) == 0 && data.get(pos + 2) == 0 && data.get(pos + 3) == 1) {
+                    startCodeLen = 4;
+                } else if (data.get(pos) == 0 && data.get(pos + 1) == 0 && data.get(pos + 2) == 1) {
+                    startCodeLen = 3;
+                } else {
+                    pos++;
+                    continue;
+                }
+                int nalStart = pos + startCodeLen;
+                int nalEnd = nalStart;
+                while (nalEnd < end - 2) {
+                    if (data.get(nalEnd) == 0 && data.get(nalEnd + 1) == 0) {
+                        if (nalEnd + 2 < end && data.get(nalEnd + 2) == 1) break;
+                        if (nalEnd + 3 < end && data.get(nalEnd + 2) == 0 && data.get(nalEnd + 3) == 1) break;
+                    }
+                    nalEnd++;
+                }
+                if (nalEnd >= end - 2) nalEnd = end;
+                if (nalStart < nalEnd) {
+                    // AVC NAL header byte: forbidden_zero_bit(1) | nal_ref_idc(2) | nal_unit_type(5)
+                    byte nalType = (byte) (data.get(nalStart) & 0x1F);
+                    byte[] nalu = new byte[nalEnd - nalStart];
+                    for (int i = 0; i < nalu.length; i++) nalu[i] = data.get(nalStart + i);
+                    if (nalType == 7 && sps == null) {
+                        sps = nalu;
+                    } else if (nalType == 8 && pps == null) {
+                        pps = nalu;
+                    }
+                }
+                pos = nalEnd;
+            }
+            if (sps == null || pps == null) return null;
+            return new byte[][]{sps, pps};
+        } catch (Exception e) {
+            FLog.w(TAG, "[AVC-CSD] Failed to extract SPS/PPS from bitstream", e);
+            return null;
+        }
+    }
+
+    /** Splits an AVC CODEC_CONFIG buffer (Annex-B or raw) into {SPS, PPS}. */
+    private byte[][] splitAvcSpsPps(byte[] data) {
+        try {
+            byte[] sps = null;
+            byte[] pps = null;
+            int pos = 0;
+            int end = data.length;
+            while (pos < end - 3 && (sps == null || pps == null)) {
+                int startCodeLen;
+                if (pos + 3 < end && data[pos] == 0 && data[pos + 1] == 0 && data[pos + 2] == 0 && data[pos + 3] == 1) {
+                    startCodeLen = 4;
+                } else if (pos + 2 < end && data[pos] == 0 && data[pos + 1] == 0 && data[pos + 2] == 1) {
+                    startCodeLen = 3;
+                } else {
+                    pos++;
+                    continue;
+                }
+                int nalStart = pos + startCodeLen;
+                int nalEnd = nalStart;
+                while (nalEnd < end - 2) {
+                    if (data[nalEnd] == 0 && data[nalEnd + 1] == 0) {
+                        if (nalEnd + 2 < end && data[nalEnd + 2] == 1) break;
+                        if (nalEnd + 3 < end && data[nalEnd + 2] == 0 && data[nalEnd + 3] == 1) break;
+                    }
+                    nalEnd++;
+                }
+                if (nalEnd >= end - 2) nalEnd = end;
+                if (nalStart < nalEnd) {
+                    byte nalType = (byte) (data[nalStart] & 0x1F);
+                    byte[] nalu = new byte[nalEnd - nalStart];
+                    System.arraycopy(data, nalStart, nalu, 0, nalu.length);
+                    if (nalType == 7 && sps == null) sps = nalu;
+                    else if (nalType == 8 && pps == null) pps = nalu;
+                }
+                pos = nalEnd;
+            }
+            if (sps == null && pps == null) return null; // no Annex-B NALs found
+            return new byte[][]{sps, pps};
+        } catch (Exception e) {
+            FLog.w(TAG, "[AVC-CSD] Failed to split config buffer", e);
             return null;
         }
     }
