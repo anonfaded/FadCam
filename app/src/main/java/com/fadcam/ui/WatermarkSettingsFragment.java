@@ -71,6 +71,7 @@ public class WatermarkSettingsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         
         // Mark main watermark feature as seen (dismisses NEW badge on Quick Access)

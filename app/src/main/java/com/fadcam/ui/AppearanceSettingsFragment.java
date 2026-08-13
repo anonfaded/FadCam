@@ -54,6 +54,7 @@ public class AppearanceSettingsFragment extends Fragment {
         @NonNull View view,
         @Nullable Bundle savedInstanceState
     ) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         // -------------- Update Start for this method(onViewCreated)-----------
         sharedPreferencesManager = SharedPreferencesManager.getInstance(

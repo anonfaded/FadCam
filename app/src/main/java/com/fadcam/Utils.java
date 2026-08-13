@@ -226,6 +226,95 @@ public class Utils {
     }
 
     /**
+     * Press-scale for settings ROWS: unclips ancestors so the expansion stays
+     * visible, and RAISES the row's z on press so it draws above BOTH sibling
+     * dividers — the top and bottom divider hide together symmetrically
+     * (without the z-raise, only the divider above gets covered because of
+     * child draw order, which looks inconsistent).
+     */
+    public static void attachPressScaleRow(final android.view.View v, final float scale) {
+        if (v == null) return;
+        try {
+            android.view.ViewParent p = v.getParent();
+            while (p instanceof android.view.ViewGroup) {
+                android.view.ViewGroup g = (android.view.ViewGroup) p;
+                g.setClipChildren(false);
+                g.setClipToPadding(false);
+                p = p.getParent();
+            }
+        } catch (Exception ignored) {
+        }
+        final float zDp = 4f * v.getResources().getDisplayMetrics().density;
+        v.setOnTouchListener((view, event) -> {
+            switch (event.getActionMasked()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    view.setTranslationZ(zDp);
+                    view.animate().scaleX(scale).scaleY(scale)
+                            .setDuration(90)
+                            .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                            .start();
+                    break;
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    view.setTranslationZ(0f);
+                    view.animate().scaleX(1f).scaleY(1f)
+                            .setDuration(180)
+                            .setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator())
+                            .start();
+                    break;
+            }
+            return false; // never consume — clicks/long-clicks still fire
+        });
+    }
+
+    /**
+     * Recursively attaches the pill press-scale (subtle 1.03, no spring — wide
+     * rows) to every clickable row in a settings screen. Skips compound widgets
+     * (switches, sliders, checkboxes) that manage their own touch feedback.
+     * Idempotent via a tag, so it is safe to call from any fragment.
+     */
+    public static void attachPressScaleToClickableRows(final android.view.View root) {
+        if (root == null) return;
+        boolean isCompound = root instanceof android.widget.CompoundButton
+                || root instanceof android.widget.SeekBar
+                || root instanceof android.widget.RatingBar;
+        // Rows hosting a toggle (custom avatar switch / compound widget) must NOT
+        // scale — the toggle is the feedback there, scaling looks wrong.
+        boolean containsToggle = root instanceof android.view.ViewGroup
+                && containsToggleDescendant((android.view.ViewGroup) root);
+        if (!isCompound && !containsToggle && root.isClickable()
+                && root.getTag(R.id.press_scale_attached) == null) {
+            // Row variant: visible expansion + z-raise so both dividers hide together.
+            attachPressScaleRow(root, 1.03f);
+            root.setTag(R.id.press_scale_attached, Boolean.TRUE);
+        }
+        if (root instanceof android.view.ViewGroup) {
+            android.view.ViewGroup g = (android.view.ViewGroup) root;
+            for (int i = 0; i < g.getChildCount(); i++) {
+                attachPressScaleToClickableRows(g.getChildAt(i));
+            }
+        }
+    }
+
+    /** True if the group contains a compound widget or the custom AvatarToggleView. */
+    private static boolean containsToggleDescendant(android.view.ViewGroup group) {
+        for (int i = 0; i < group.getChildCount(); i++) {
+            android.view.View child = group.getChildAt(i);
+            if (child instanceof android.widget.CompoundButton
+                    || child instanceof android.widget.SeekBar
+                    || child instanceof android.widget.RatingBar
+                    || child.getClass().getSimpleName().contains("AvatarToggleView")) {
+                return true;
+            }
+            if (child instanceof android.view.ViewGroup
+                    && containsToggleDescendant((android.view.ViewGroup) child)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Pill-style tap animation for buttons: press scales the view up slightly,
      * release settles it back. Matches the mode pill's press nudge + overshoot
      * settle so all home controls feel consistent.

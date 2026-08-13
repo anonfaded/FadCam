@@ -105,6 +105,7 @@ public class VideoSettingsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         prefs = SharedPreferencesManager.getInstance(requireContext());
         bindViews(view);
@@ -260,7 +261,6 @@ public class VideoSettingsFragment extends Fragment {
             R.id.row_orientation, R.id.row_zoom_ratio, R.id.row_video_splitting,
             R.id.row_location_embed, R.id.row_dual_camera_settings
         };
-        for (int id : rowIds) com.fadcam.Utils.attachPressScale(root.findViewById(id), 1.03f, false);
         root.findViewById(R.id.row_camera_type).setOnClickListener(v -> showCameraBottomSheet());
         root.findViewById(R.id.row_video_stabilization).setOnClickListener(v -> showVideoStabilizationBottomSheet());
         root.findViewById(R.id.row_lens).setOnClickListener(v -> showLensBottomSheet());

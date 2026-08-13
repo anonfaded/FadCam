@@ -78,6 +78,7 @@ public class StorageSettingsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         valueStorageMode = view.findViewById(R.id.value_storage_mode);
         view.findViewById(R.id.row_storage_mode).setOnClickListener(v -> showStorageOptionsSheet());

@@ -50,6 +50,7 @@ public class ShortcutsSettingsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         // Init image picker for custom shortcut icons
         initImagePicker();

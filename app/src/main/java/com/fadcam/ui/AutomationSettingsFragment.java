@@ -31,6 +31,7 @@ public class AutomationSettingsFragment extends BaseFragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         prefs = SharedPreferencesManager.getInstance(requireContext());
         toggleVolumeShutter = view.findViewById(R.id.toggle_volume_shutter);

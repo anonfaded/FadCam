@@ -80,7 +80,7 @@
                     android:gravity="center"
                     android:text="graphic_eq"
                     android:textSize="18sp"
-                    android:textColor="?attr/colorHeading" />
+                    android:textColor="@android:color/darker_gray" />
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

@@ -44,6 +44,7 @@ public class SecuritySettingsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
         valueTabLock = view.findViewById(R.id.value_tab_lock_status);
