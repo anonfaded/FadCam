@@ -1107,6 +1107,7 @@ public class FragmentedMp4MuxerWrapper {
                 // Write to file — per-fragment flush for SAF visibility.
                 if (shouldSaveToDisk && fileOutputStream != null) {
                     writeSegmentWithRecovery(data, false);
+                    logFirstVideoSampleInFragment(data);
                 }
                 
                 nextFragmentNumber++;
@@ -1122,6 +1123,9 @@ public class FragmentedMp4MuxerWrapper {
     // ----- Stale-fd hot-swap recovery (FUSE/MediaProvider churn, issue #332) -----
     private int segmentWriteFailures = 0;
     private int streamReopenCount = 0;
+
+    /** AVC corruption tracing: only the first media fragment is hex-dumped. */
+    private boolean firstMediaFragmentLogged = false;
 
     /**
      * Writes a processed segment. If the underlying FUSE fd died mid-recording
@@ -1157,8 +1161,63 @@ public class FragmentedMp4MuxerWrapper {
         }
     }
 
-    private void writeSegmentBytes(byte[] data, boolean isInit) throws IOException {
-        if (isInit) {
+    /**
+     * AVC corruption tracing: parses the FIRST media fragment's moof to find the
+     * video track's first sample and hex-dumps its head — i.e. what the muxer
+     * ACTUALLY wrote to the file. Valid AVCC video starts with a 4-byte length
+     * (e.g. 00 00 00 16 for a 22-byte SPS) followed by 0x67. If this shows
+     * Annex-B start codes (00 00 00 01) or garbage, the library conversion broke.
+     */
+    private void logFirstVideoSampleInFragment(byte[] data) {
+        try {
+            if (firstMediaFragmentLogged || data == null || data.length < 8) return;
+            int moofSize = readIntBE(data, 0);
+            if (moofSize < 8 || moofSize > data.length) return;
+            int pos = 8; // skip moof box header
+            int moofEnd = moofSize;
+            while (pos + 8 <= moofEnd) {
+                int s = readIntBE(data, pos), t = readIntBE(data, pos + 4);
+                if (s < 8 || pos + s > moofEnd) break;
+                if (t == 0x74726166) { // 'traf'
+                    int tid = -1;
+                    int p = pos + 8, trafEnd = pos + s;
+                    while (p + 8 <= trafEnd) {
+                        int bs = readIntBE(data, p), bt = readIntBE(data, p + 4);
+                        if (bs < 8 || p + bs > trafEnd) break;
+                        if (bt == 0x74666864) { // 'tfhd': track_ID at offset 12 (after size/type/version/flags)
+                            tid = readIntBE(data, p + 12);
+                        } else if (bt == 0x7472756E) { // 'trun'
+                            int verFlags = readIntBE(data, p + 8);
+                            int cnt = readIntBE(data, p + 12);
+                            // data_offset is only present when flags & 0x1 is set.
+                            boolean hasDataOffset = (verFlags & 0x1) != 0;
+                            int dataOff = hasDataOffset ? readIntBE(data, p + 16) : -1;
+                            if (tid == 2 && hasDataOffset) { // video track (audio registered first → id 1)
+                                int videoStart = moofSize + dataOff;
+                                StringBuilder hex = new StringBuilder();
+                                int shown = Math.min(16, Math.max(0, data.length - videoStart));
+                                for (int i = 0; i < shown; i++) {
+                                    hex.append(String.format("%02X ", data[videoStart + i]));
+                                }
+                                FLog.i(TAG, "[AVC-DIAG] First fragment: moof=" + moofSize + "B"
+                                        + " | video samples=" + cnt
+                                        + " | first video sample @ " + videoStart
+                                        + " head=" + hex.toString().trim());
+                                firstMediaFragmentLogged = true;
+                                return;
+                            }
+                        }
+                        p += bs;
+                    }
+                }
+                pos += s;
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "[AVC-DIAG] Failed to locate first video sample in fragment", e);
+        }
+    }
+
+    private void writeSegmentBytes(byte[] data, boolean isInit) throws IOException {        if (isInit) {
             initSegmentData = data;
             long pos = fileOutputStream.getChannel().position();
             initSegmentFilePosition = pos;

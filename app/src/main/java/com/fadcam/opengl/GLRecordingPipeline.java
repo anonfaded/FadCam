@@ -1903,6 +1903,12 @@ public class GLRecordingPipeline {
                                 mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                                 
                                 videoSamplesWritten++;
+                                if (videoSamplesWritten <= 2) {
+                                    FLog.i(TAG, "[AVC-DIAG] Sample #" + videoSamplesWritten
+                                            + " to muxer: size=" + bufferInfo.size
+                                            + " keyframe=" + isKeyframe
+                                            + " head=" + hexPrefix(encodedData, bufferInfo.offset, bufferInfo.size));
+                                }
                                 if (videoSamplesWritten == 1) {
                                     FLog.i(TAG, "[AVC-CSD] First video sample written OK — muxer header built, samples flowing");
                                 }
@@ -1995,6 +2001,12 @@ public class GLRecordingPipeline {
                                         encodedData.limit(bufferInfo.offset + bufferInfo.size);
                                         mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                                         videoSamplesWritten++;
+                                        if (videoSamplesWritten <= 2) {
+                                            FLog.i(TAG, "[AVC-DIAG] Extraction-source sample #" + videoSamplesWritten
+                                                    + " to muxer: size=" + bufferInfo.size
+                                                    + " keyframe=" + isKeyframe
+                                                    + " head=" + hexPrefix(encodedData, bufferInfo.offset, bufferInfo.size));
+                                        }
                                         lastVideoPts = bufferInfo.presentationTimeUs;
                                         segmentBytesWritten += bufferInfo.size;
                                         FLog.d(TAG, "[HEVC-CSD] Wrote extraction-source keyframe directly (pts=" + bufferInfo.presentationTimeUs + ")");
@@ -2239,6 +2251,21 @@ public class GLRecordingPipeline {
             return "len=" + len + " head=" + hex.toString().trim();
         } catch (Exception e) {
             return "len=? unreadable";
+        }
+    }
+
+    /** Diagnostic: first 16 bytes of a sample as hex (for AVC corruption tracing). */
+    private String hexPrefix(ByteBuffer data, int offset, int size) {
+        try {
+            ByteBuffer b = data.duplicate();
+            StringBuilder hex = new StringBuilder();
+            int shown = Math.min(16, size);
+            for (int i = 0; i < shown; i++) {
+                hex.append(String.format("%02X ", b.get(offset + i)));
+            }
+            return hex.toString().trim();
+        } catch (Exception e) {
+            return "unreadable";
         }
     }
 
