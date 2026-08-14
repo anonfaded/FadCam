@@ -1138,6 +1138,13 @@ public class RecordingService extends Service {
     public static final String ACTION_SELF_HEAL_REPAIRED =
             "com.fadcam.action.SELF_HEAL_REPAIRED";
 
+    /**
+     * Delay before a failed (unrepairable) file is retried. Transient failures —
+     * a finalizer bug fixed in a later build, a temporarily-locked file, a
+     * mid-write snapshot — must not permanently abandon a recoverable recording.
+     */
+    public static final long REPAIR_RETRY_DELAY_MS = 24L * 60 * 60 * 1000; // 24h
+
     private static void doSelfHealingScan(final android.content.Context app) {
                     final SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(app);
                     com.fadcam.data.VideoIndexRepository repo =
@@ -1160,6 +1167,7 @@ public class RecordingService extends Service {
                     }
                     FLog.i(TAG, "Self-healing scan: " + pending.size() + " pending file(s)");
                     final long now = System.currentTimeMillis();
+                    final long retryAfter = now + REPAIR_RETRY_DELAY_MS;
                     for (String uriString : pending) {
                         try {
                             android.net.Uri uri = android.net.Uri.parse(uriString);
@@ -1168,7 +1176,7 @@ public class RecordingService extends Service {
                             if ("file".equals(scheme)) {
                                 java.io.File f = new java.io.File(uri.getPath());
                                 if (!f.exists() || f.length() == 0) {
-                                    repo.markFinalized(uriString, 2);
+                                    repo.markUnrepairableWithRetry(uriString, retryAfter);
                                     continue;
                                 }
                                 java.nio.channels.FileChannel ch =
@@ -1183,7 +1191,7 @@ public class RecordingService extends Service {
                                 android.os.ParcelFileDescriptor pfd =
                                         app.getContentResolver().openFileDescriptor(uri, "rw");
                                 if (pfd == null) {
-                                    repo.markFinalized(uriString, 2);
+                                    repo.markUnrepairableWithRetry(uriString, retryAfter);
                                     continue;
                                 }
                                 try {
@@ -1202,7 +1210,7 @@ public class RecordingService extends Service {
                                     try { pfd.close(); } catch (Exception ignored) {}
                                 }
                             } else {
-                                repo.markFinalized(uriString, 2);
+                                repo.markUnrepairableWithRetry(uriString, retryAfter);
                                 continue;
                             }
                             if (result == 1) {
@@ -1213,12 +1221,14 @@ public class RecordingService extends Service {
                                 // Already hybrid/plain MP4 — confirmed fine.
                                 repo.markFinalized(uriString, 1);
                             } else {
-                                // Fragmented but unrepairable — mark so we never retry.
-                                repo.markFinalized(uriString, 2);
+                                // Fragmented but unrepairable NOW — schedule a retry so
+                                // transient failures (e.g. a fixed finalizer bug) are
+                                // not permanently abandoned.
+                                repo.markUnrepairableWithRetry(uriString, retryAfter);
                             }
                         } catch (Exception e) {
                             FLog.w(TAG, "Self-healing scan failed on " + uriString, e);
-                            try { repo.markFinalized(uriString, 2); } catch (Exception ignored) {}
+                            try { repo.markUnrepairableWithRetry(uriString, retryAfter); } catch (Exception ignored) {}
                         }
                     }
                     // A stale in-progress session that produced no file is dead.
@@ -1266,10 +1276,19 @@ public class RecordingService extends Service {
             if (uriString == null) return;
             int result = finalizeFileChannelFor(uriString);
             if (result >= 0) {
-                try {
-                    com.fadcam.data.VideoIndexRepository.getInstance(this)
-                            .markFinalized(uriString, 1);
-                } catch (Exception ignored) {}
+                // Room forbids DB access on the main thread — dispatch the
+                // markFinalized write to the background handler.
+                final String finalUri = uriString;
+                if (backgroundHandler != null) {
+                    backgroundHandler.post(() -> {
+                        try {
+                            com.fadcam.data.VideoIndexRepository.getInstance(
+                                    RecordingService.this).markFinalized(finalUri, 1);
+                        } catch (Exception e) {
+                            FLog.w(TAG, "Safety-net markFinalized failed", e);
+                        }
+                    });
+                }
             }
             if (result == 1) {
                 FLog.i(TAG, "Safety-net finalization converted "

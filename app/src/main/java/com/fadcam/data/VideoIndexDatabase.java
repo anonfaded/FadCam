@@ -20,7 +20,7 @@ import com.fadcam.data.entity.VideoIndexEntity;
  */
 @Database(
     entities = {VideoIndexEntity.class},
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 public abstract class VideoIndexDatabase extends RoomDatabase {
@@ -33,6 +33,14 @@ public abstract class VideoIndexDatabase extends RoomDatabase {
         @Override
         public void migrate(androidx.sqlite.db.SupportSQLiteDatabase db) {
             db.execSQL("ALTER TABLE video_index ADD COLUMN finalized INTEGER NOT NULL DEFAULT 0");
+        }
+    };
+
+    /** Migration 2→3: add retry_after so unrepairable files can be retried later. */
+    public static final androidx.room.migration.Migration MIGRATION_2_3 = new androidx.room.migration.Migration(2, 3) {
+        @Override
+        public void migrate(androidx.sqlite.db.SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE video_index ADD COLUMN retry_after INTEGER NOT NULL DEFAULT 0");
         }
     };
 
@@ -53,7 +61,7 @@ public abstract class VideoIndexDatabase extends RoomDatabase {
                             VideoIndexDatabase.class,
                             DB_NAME
                         )
-                        .addMigrations(MIGRATION_1_2)
+                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                         .fallbackToDestructiveMigration()
                         .build();
                 }

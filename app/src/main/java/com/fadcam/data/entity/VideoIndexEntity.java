@@ -87,6 +87,15 @@ public class VideoIndexEntity {
     @ColumnInfo(name = "finalized", defaultValue = "0")
     public int finalized;
 
+    /**
+     * Earliest timestamp (epoch ms) at which a finalized=2 row may be retried.
+     * 0 = retry immediately (or not applicable). Transient failures (e.g. a
+     * file that couldn't be repaired by an older buggy build) become retryable
+     * again after {@link com.fadcam.services.RecordingService#REPAIR_RETRY_DELAY_MS}.
+     */
+    @ColumnInfo(name = "retry_after", defaultValue = "0")
+    public long retryAfter;
+
     /** Timestamp when this row was last indexed/updated. */
     @ColumnInfo(name = "indexed_at")
     public long indexedAt;
