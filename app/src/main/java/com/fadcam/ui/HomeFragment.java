@@ -2060,7 +2060,7 @@ public class HomeFragment extends BaseFragment {
         super.onStop();
         // unregisterStatsReceiver(); // Unregister receiver when fragment stops
 
-        FLog.e(TAG, "HomeFragment stopped");
+        FLog.d(TAG, "HomeFragment stopped");
 
         // Reset dedup state so the first callback after next resume always applies.
         lastAppliedServiceState = null;
@@ -7448,25 +7448,20 @@ public class HomeFragment extends BaseFragment {
      * This prevents unnecessary CPU/battery drain while app is not visible.
      */
     private void pauseUpdateHandlers() {
-        FLog.d(TAG, "pauseUpdateHandlers: Pausing clock and info handlers");
-        
         // Stop clock updates
         if (updateClockRunnable != null) {
             handlerClock.removeCallbacks(updateClockRunnable);
-            FLog.d(TAG, "pauseUpdateHandlers: Clock handler paused");
         }
         clockUpdatesRunning = false;
         
         // Stop storage + stats updates
         if (updateInfoRunnable != null) {
             handlerClock.removeCallbacks(updateInfoRunnable);
-            FLog.d(TAG, "pauseUpdateHandlers: Info handler (storage + stats) paused");
         }
         infoUpdatesRunning = false;
         
         // Pause background executor for file scanning
         if (executorService != null && !executorService.isShutdown()) {
-            FLog.d(TAG, "pauseUpdateHandlers: Shutting down executor service");
             executorService.shutdown();
             try {
                 if (!executorService.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
@@ -7525,7 +7520,6 @@ public class HomeFragment extends BaseFragment {
         // Re-create executor service if needed
         if (executorService == null || executorService.isShutdown()) {
             executorService = java.util.concurrent.Executors.newSingleThreadExecutor();
-            FLog.d(TAG, "resumeUpdateHandlers: Executor service re-created");
         }
     }
     

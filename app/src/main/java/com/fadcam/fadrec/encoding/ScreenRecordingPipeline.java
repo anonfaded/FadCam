@@ -191,6 +191,13 @@ public class ScreenRecordingPipeline {
     private boolean isStopped = false;
     private boolean muxerStarted = false;
     private volatile boolean audioMuted = false;
+    // ── Audio diagnostics (counters only — no behavior change) ────────────
+    // Used to identify silent-audio root causes on long recordings without
+    // guessing: capture health (bytes/RMS), encoder-input drops, and muxer
+    // rollover-window drops are all counted and logged.
+    private volatile long audioBytesCaptured = 0;
+    private volatile long audioChunksDropped = 0;
+    private volatile long audioSamplesDroppedDuringRollover = 0;
     
     // Timestamp management
     private final Object timestampLock = new Object();
@@ -737,6 +744,13 @@ public class ScreenRecordingPipeline {
             if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                 throw new IOException("AudioRecord not initialized - source: " + audioSource);
             }
+            // Diagnostics: capture-session baseline — routing, buffering and
+            // mute state at init, so silent recordings can be traced to the
+            // capture, the mute path or the encoder.
+            FLog.i(TAG, "FadRec audio init: source=" + audioSource
+                    + " sampleRate=" + sampleRate + " muted=" + audioMuted
+                    + " minBuffer=" + minBufferSize + " buffer=" + bufferSize
+                    + " recordState=" + audioRecord.getState());
 
             // Create audio encoder (AAC)
             MediaFormat audioFormat_encoder = MediaFormat.createAudioFormat(
@@ -1005,6 +1019,7 @@ public class ScreenRecordingPipeline {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
             
             ByteBuffer audioBuffer = ByteBuffer.allocateDirect(16384);
+            long readCount = 0;
             
             while (isRecording && !isStopped) {
                 if (isPaused) {
@@ -1020,15 +1035,49 @@ public class ScreenRecordingPipeline {
                 int bytesRead = audioRecord.read(audioBuffer, audioBuffer.capacity());
                 
                 if (bytesRead > 0) {
+                    readCount++;
+                    audioBytesCaptured += bytesRead;
+                    // Diagnostics: log the first reads and a periodic health
+                    // sample (RMS + device dB) so a silent capture is visible
+                    // in logs from the very first chunk.
+                    if (readCount <= 3 || readCount % 300 == 0) {
+                        FLog.i(TAG, "FadRec audio health: chunk#" + readCount
+                                + " bytes=" + bytesRead
+                                + " rms=" + computeRms(audioBuffer, bytesRead)
+                                + " muted=" + audioMuted
+                                + " droppedInput=" + audioChunksDropped
+                                + " droppedMuxerWindow=" + audioSamplesDroppedDuringRollover);
+                    }
                     if (audioMuted) {
                         zeroAudioBuffer(audioBuffer, bytesRead);
                     }
                     audioBuffer.limit(bytesRead);
                     queueAudioData(audioBuffer, bytesRead);
+                } else {
+                    // read() <= 0: overrun, dead object, or stopped — capture
+                    // problems must be visible, not silent.
+                    FLog.w(TAG, "FadRec audio: read() returned " + bytesRead
+                            + " (chunk#" + readCount + ")");
                 }
             }
+            FLog.i(TAG, "FadRec audio loop ended: chunks=" + readCount
+                    + " bytes=" + audioBytesCaptured
+                    + " droppedInput=" + audioChunksDropped
+                    + " droppedMuxerWindow=" + audioSamplesDroppedDuringRollover);
         });
         audioRecordingThread.start();
+    }
+
+    /** Lightweight RMS of the first 512 samples — detects zero-capture immediately. */
+    private static int computeRms(ByteBuffer buffer, int bytes) {
+        int samples = Math.min(bytes / 2, 512);
+        if (samples <= 0) return 0;
+        long sumSq = 0;
+        for (int i = 0; i < samples; i++) {
+            short s = buffer.getShort(i * 2);
+            sumSq += (long) s * s;
+        }
+        return (int) Math.sqrt((double) sumSq / samples);
     }
 
     private void zeroAudioBuffer(ByteBuffer buffer, int size) {
@@ -1049,6 +1098,14 @@ public class ScreenRecordingPipeline {
             
             long presentationTimeUs = getSynchronizedAudioTimestamp();
             audioEncoder.queueInputBuffer(inputBufferIndex, 0, size, presentationTimeUs, 0);
+        } else {
+            // Diagnostics: encoder input full → chunk dropped. Repeated drops
+            // starve the encoder and can cascade into an AudioRecord overrun.
+            audioChunksDropped++;
+            if (audioChunksDropped <= 3 || audioChunksDropped % 100 == 0) {
+                FLog.w(TAG, "FadRec audio: encoder input full — chunk dropped (total="
+                        + audioChunksDropped + ")");
+            }
         }
     }
     
@@ -1113,6 +1170,14 @@ public class ScreenRecordingPipeline {
 
                     segmentBytesWritten += bufferInfo.size;
                     lastAudioSegmentBytes += bufferInfo.size;
+                } else if (bufferInfo.size > 0) {
+                    // Diagnostics: audio drained while the muxer is being
+                    // recreated (rollover) or paused is silently discarded.
+                    audioSamplesDroppedDuringRollover += bufferInfo.size;
+                    if (audioSamplesDroppedDuringRollover <= 4 * 1024) {
+                        FLog.w(TAG, "FadRec audio: " + bufferInfo.size + " bytes skipped"
+                                + " (muxerStarted=" + muxerStarted + ", paused=" + isPaused + ")");
+                    }
                 }
                 
                 audioEncoder.releaseOutputBuffer(outputBufferIndex, false);
@@ -1449,6 +1514,7 @@ public class ScreenRecordingPipeline {
      */
     public void setAudioMuted(boolean muted) {
         this.audioMuted = muted;
+        FLog.i(TAG, "FadRec audio muted=" + muted);
     }
     
     /**

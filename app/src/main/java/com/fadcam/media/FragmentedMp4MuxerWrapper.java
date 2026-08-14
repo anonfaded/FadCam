@@ -49,7 +49,6 @@ public class FragmentedMp4MuxerWrapper {
     private boolean started = false;
     private boolean released = false;
     private int orientationHint = 0;
-    private int sampleCountDebug = 0;  // For limiting debug log spam
     
     // Track indices
     private int videoTrackIndex = -1;
@@ -649,10 +648,6 @@ public class FragmentedMp4MuxerWrapper {
 
         if ((mediaCodecFlags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
             flags |= C.BUFFER_FLAG_KEY_FRAME;
-            if (trackIndex == videoTrackIndex && videoTrackIndex != -1 && sampleCountDebug < 3) {
-                sampleCountDebug++;
-                FLog.d(TAG, "[VLC-VIDEO-CONVERT] Video keyframe flag mapped to Media3 — first 3 keyframes only");
-            }
         }
         
         // DO NOT force audio keyframes

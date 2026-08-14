@@ -199,7 +199,7 @@ public class ModeSwitcherComponent {
         }
 
         if (isInitializing) {
-            FLog.d(TAG, "setExclusiveSelected - isInitializing=true, only backgrounds applied, skipping text");
+            FLog.v(TAG, "setExclusiveSelected - isInitializing=true, only backgrounds applied, skipping text");
         } else {
             FLog.d(TAG, "setExclusiveSelected - user click, current=" + previousMode + ", new=" + mode);
 
@@ -312,7 +312,7 @@ public class ModeSwitcherComponent {
                 if (Math.abs(activeIndicator.getX() - targetLeft) > 0.5f) {
                     activeIndicator.setX(targetLeft);
                 }
-                FLog.d(TAG, "updateActiveIndicator: positioned mode=" + mode + " left=" + targetLeft);
+                FLog.v(TAG, "updateActiveIndicator: positioned mode=" + mode + " left=" + targetLeft);
                 if (onAnimationComplete != null) {
                     onAnimationComplete.run();
                 }
@@ -425,7 +425,7 @@ public class ModeSwitcherComponent {
         
         // Only change color if it's actually different
         if (currentColor == targetColor) {
-            FLog.d(TAG, "styleText - segment=" + segment.getId() + " already has correct color, skipping");
+            FLog.v(TAG, "styleText - segment=" + segment.getId() + " already has correct color, skipping");
             return;
         }
         

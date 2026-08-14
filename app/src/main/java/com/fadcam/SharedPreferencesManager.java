@@ -2658,11 +2658,16 @@ public class SharedPreferencesManager {
      * @param state State string (NONE, IN_PROGRESS, PAUSED)
      */
     public void setScreenRecordingState(String state) {
+        String previous = sharedPreferences.getString(Constants.PREF_SCREEN_RECORDING_STATE, null);
         sharedPreferences
             .edit()
             .putString(Constants.PREF_SCREEN_RECORDING_STATE, state)
             .apply();
-        FLog.d("SharedPrefs", "Screen recording state changed to: " + state);
+        // Log only on an actual transition — the same state is persisted
+        // repeatedly during a session and would flood logcat otherwise.
+        if (!state.equals(previous)) {
+            FLog.d("SharedPrefs", "Screen recording state changed to: " + state);
+        }
     }
 
     /**
