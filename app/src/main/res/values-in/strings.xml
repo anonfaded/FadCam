@@ -767,6 +767,19 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="row_bitrate_title">Bitrate</string>
     <string name="row_zoom_ratio_title">Rasio Zoom</string>
     <string name="row_video_splitting_title">Pemisahan Video</string>
+
+    <string name="maximum_recording_duration_title">Durasi perekaman maksimum</string>
+    <string name="maximum_recording_duration_summary">Otomatis menghentikan dan menyimpan perekaman kamera setelah durasi yang dipilih. Waktu jeda tidak dihitung.</string>
+    <string name="maximum_recording_duration_no_limit">Tanpa batas</string>
+    <string name="maximum_recording_duration_5_minutes">5 menit</string>
+    <string name="maximum_recording_duration_10_minutes">10 menit</string>
+    <string name="maximum_recording_duration_30_minutes">30 menit</string>
+    <string name="maximum_recording_duration_1_hour">1 jam</string>
+    <string name="maximum_recording_duration_custom">Durasi khusus</string>
+    <string name="maximum_recording_duration_custom_value">Khusus (%1$d mnt)</string>
+    <string name="maximum_recording_duration_custom_title">Durasi perekaman khusus</string>
+    <string name="maximum_recording_duration_custom_hint">Menit (1–1440)</string>
+    <string name="maximum_recording_duration_custom_description">Masukkan angka bulat menit dari 1 hingga 1440. Nilai khusus sebelumnya dipertahankan.</string>
     <string name="row_orientation_title">Orientasi</string>
     <string name="row_record_audio_title">Rekam Audio</string>
     <string name="row_input_source_title">Sumber Input</string>

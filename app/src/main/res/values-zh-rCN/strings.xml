@@ -561,6 +561,19 @@
     <string name="row_codec_title">编码器</string>
     <string name="row_zoom_ratio_title">变焦倍数</string>
     <string name="row_video_splitting_title">视频分割</string>
+
+    <string name="maximum_recording_duration_title">最长录制时长</string>
+    <string name="maximum_recording_duration_summary">达到所选时长后自动停止并保存摄像头录制。暂停时间不计入。</string>
+    <string name="maximum_recording_duration_no_limit">无限制</string>
+    <string name="maximum_recording_duration_5_minutes">5 分钟</string>
+    <string name="maximum_recording_duration_10_minutes">10 分钟</string>
+    <string name="maximum_recording_duration_30_minutes">30 分钟</string>
+    <string name="maximum_recording_duration_1_hour">1 小时</string>
+    <string name="maximum_recording_duration_custom">自定义时长</string>
+    <string name="maximum_recording_duration_custom_value">自定义（%1$d 分钟）</string>
+    <string name="maximum_recording_duration_custom_title">自定义录制时长</string>
+    <string name="maximum_recording_duration_custom_hint">分钟（1–1440）</string>
+    <string name="maximum_recording_duration_custom_description">请输入 1 到 1440 之间的整数分钟数。之前自定义的值会保留。</string>
     <string name="row_orientation_title">方向</string>
     <string name="row_record_audio_title">录音</string>
     <string name="row_input_source_title">输入源</string>

@@ -1616,6 +1616,19 @@
 <string name="row_bitrate_title">Bit Hızı</string>
 <string name="row_zoom_ratio_title">Yakınlaştırma Oranı</string>
 <string name="row_video_splitting_title">Video Bölme</string>
+
+    <string name="maximum_recording_duration_title">Maksimum kayıt süresi</string>
+    <string name="maximum_recording_duration_summary">Seçilen süre dolduğunda kamera kaydını otomatik olarak durdurur ve kaydeder. Duraklatılan süre sayılmaz.</string>
+    <string name="maximum_recording_duration_no_limit">Sınır yok</string>
+    <string name="maximum_recording_duration_5_minutes">5 dakika</string>
+    <string name="maximum_recording_duration_10_minutes">10 dakika</string>
+    <string name="maximum_recording_duration_30_minutes">30 dakika</string>
+    <string name="maximum_recording_duration_1_hour">1 saat</string>
+    <string name="maximum_recording_duration_custom">Özel süre</string>
+    <string name="maximum_recording_duration_custom_value">Özel (%1$d dk)</string>
+    <string name="maximum_recording_duration_custom_title">Özel kayıt süresi</string>
+    <string name="maximum_recording_duration_custom_hint">Dakika (1–1440)</string>
+    <string name="maximum_recording_duration_custom_description">1 ile 1440 arasında tam sayı dakika girin. Önceki özel değer korunur.</string>
 <string name="row_orientation_title">Yön</string>
 <string name="row_record_audio_title">Ses Kaydet</string>
 <string name="row_input_source_title">Giriş Kaynağı</string>

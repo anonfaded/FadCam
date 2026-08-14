@@ -1778,6 +1778,19 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="row_record_audio_title">Ghag Record Ka</string>
     <string name="row_resolution_title">Resolution</string>
     <string name="row_video_splitting_title">Video Taqsimolo</string>
+
+    <string name="maximum_recording_duration_title">د ثبت اعظمي موده</string>
+    <string name="maximum_recording_duration_summary">د ټاکل شوې مودې وروسته د کیمرې ثبت په اتوماتيک ډول ودروي او خوندي کړي. د وقفې وخت نه شمېرل کیږي.</string>
+    <string name="maximum_recording_duration_no_limit">بې حده</string>
+    <string name="maximum_recording_duration_5_minutes">۵ دقیقې</string>
+    <string name="maximum_recording_duration_10_minutes">۱۰ دقیقې</string>
+    <string name="maximum_recording_duration_30_minutes">۳۰ دقیقې</string>
+    <string name="maximum_recording_duration_1_hour">۱ ساعت</string>
+    <string name="maximum_recording_duration_custom">دودیزه موده</string>
+    <string name="maximum_recording_duration_custom_value">دودیزه (%1$d دقیقې)</string>
+    <string name="maximum_recording_duration_custom_title">د ثبت دودیزه موده</string>
+    <string name="maximum_recording_duration_custom_hint">دقیقې (۱–۱۴۴۰)</string>
+    <string name="maximum_recording_duration_custom_description">له ۱ څخه تر ۱۴۴۰ پورې بشپړ شمېر دقیقې دننه کړئ. مخکینۍ دودیزه ارزښت ساتل کیږي.</string>
     <string name="row_zoom_ratio_title">Zoom Ratio</string>
     <string name="saf_permission_missing_dialog_instructions">SAF ejazat mojood nadi. Mehrbani oka intikhab shwi folder ta rasai werka.</string>
     <string name="saf_permission_missing_dialog_message_for_start_recording">Da recordings khoso zai ke save kolo dapara, FadCam ta intikhab shwi folder ta rasai dapara ejazat pakar de. Kala che prompt kai, mehrbani oka ejazat werka.</string>

@@ -401,6 +401,19 @@
     <string name="row_bitrate_title">Битрейт</string>
     <string name="row_zoom_ratio_title">Коэффициент увеличения</string>
     <string name="row_video_splitting_title">Разделение видео</string>
+
+    <string name="maximum_recording_duration_title">Максимальная длительность записи</string>
+    <string name="maximum_recording_duration_summary">Автоматически останавливает и сохраняет запись с камеры после выбранной длительности. Время паузы не учитывается.</string>
+    <string name="maximum_recording_duration_no_limit">Без ограничения</string>
+    <string name="maximum_recording_duration_5_minutes">5 минут</string>
+    <string name="maximum_recording_duration_10_minutes">10 минут</string>
+    <string name="maximum_recording_duration_30_minutes">30 минут</string>
+    <string name="maximum_recording_duration_1_hour">1 час</string>
+    <string name="maximum_recording_duration_custom">Своя длительность</string>
+    <string name="maximum_recording_duration_custom_value">Своя (%1$d мин)</string>
+    <string name="maximum_recording_duration_custom_title">Своя длительность записи</string>
+    <string name="maximum_recording_duration_custom_hint">Минуты (1–1440)</string>
+    <string name="maximum_recording_duration_custom_description">Введите целое число минут от 1 до 1440. Предыдущее значение сохраняется.</string>
     <string name="row_orientation_title">Ориентация</string>
     <string name="row_record_audio_title">Записывать аудио</string>
     <string name="row_input_source_title">Источник входа</string>

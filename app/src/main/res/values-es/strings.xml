@@ -764,6 +764,19 @@
     <string name="row_bitrate_title">Tasa de bits</string>
     <string name="row_zoom_ratio_title">Relación de zoom</string>
     <string name="row_video_splitting_title">División de video</string>
+
+    <string name="maximum_recording_duration_title">Duración máxima de grabación</string>
+    <string name="maximum_recording_duration_summary">Detiene y guarda automáticamente la grabación de la cámara después de la duración seleccionada. El tiempo en pausa no se cuenta.</string>
+    <string name="maximum_recording_duration_no_limit">Sin límite</string>
+    <string name="maximum_recording_duration_5_minutes">5 minutos</string>
+    <string name="maximum_recording_duration_10_minutes">10 minutos</string>
+    <string name="maximum_recording_duration_30_minutes">30 minutos</string>
+    <string name="maximum_recording_duration_1_hour">1 hora</string>
+    <string name="maximum_recording_duration_custom">Duración personalizada</string>
+    <string name="maximum_recording_duration_custom_value">Personalizada (%1$d min)</string>
+    <string name="maximum_recording_duration_custom_title">Duración de grabación personalizada</string>
+    <string name="maximum_recording_duration_custom_hint">Minutos (1–1440)</string>
+    <string name="maximum_recording_duration_custom_description">Introduce un número entero de minutos entre 1 y 1440. Se conserva el valor personalizado anterior.</string>
     <string name="row_orientation_title">Orientación</string>
     <string name="row_record_audio_title">Grabar audio</string>
     <string name="row_input_source_title">Fuente de entrada</string>

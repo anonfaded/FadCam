@@ -723,6 +723,19 @@
     <string name="row_bitrate_title">Ρυθμός Μετάδοσης</string>
     <string name="row_zoom_ratio_title">Αναλογία Ζουμ</string>
     <string name="row_video_splitting_title">Διαχωρισμός Βίντεο</string>
+
+    <string name="maximum_recording_duration_title">Μέγιστη διάρκεια εγγραφής</string>
+    <string name="maximum_recording_duration_summary">Διακόπτει και αποθηκεύει αυτόματα την εγγραφή της κάμερας μετά την επιλεγμένη διάρκεια. Ο χρόνος παύσης δεν προσμετράται.</string>
+    <string name="maximum_recording_duration_no_limit">Χωρίς όριο</string>
+    <string name="maximum_recording_duration_5_minutes">5 λεπτά</string>
+    <string name="maximum_recording_duration_10_minutes">10 λεπτά</string>
+    <string name="maximum_recording_duration_30_minutes">30 λεπτά</string>
+    <string name="maximum_recording_duration_1_hour">1 ώρα</string>
+    <string name="maximum_recording_duration_custom">Προσαρμοσμένη διάρκεια</string>
+    <string name="maximum_recording_duration_custom_value">Προσαρμοσμένη (%1$d λεπτά)</string>
+    <string name="maximum_recording_duration_custom_title">Προσαρμοσμένη διάρκεια εγγραφής</string>
+    <string name="maximum_recording_duration_custom_hint">Λεπτά (1–1440)</string>
+    <string name="maximum_recording_duration_custom_description">Εισάγετε έναν ακέραιο αριθμό λεπτών από 1 έως 1440. Η προηγούμενη προσαρμοσμένη τιμή διατηρείται.</string>
     <string name="row_orientation_title">Προσανατολισμός</string>
     <string name="row_record_audio_title">Εγγραφή Ήχου</string>
     <string name="row_input_source_title">Πηγή Εισόδου</string>

@@ -1538,6 +1538,19 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="row_video_splitting_title">Video Splitting</string>
 
+    <string name="maximum_recording_duration_title">Durée d\'enregistrement maximale</string>
+    <string name="maximum_recording_duration_summary">Arrête et enregistre automatiquement la vidéo après la durée sélectionnée. Le temps en pause n\'est pas compté.</string>
+    <string name="maximum_recording_duration_no_limit">Sans limite</string>
+    <string name="maximum_recording_duration_5_minutes">5 minutes</string>
+    <string name="maximum_recording_duration_10_minutes">10 minutes</string>
+    <string name="maximum_recording_duration_30_minutes">30 minutes</string>
+    <string name="maximum_recording_duration_1_hour">1 heure</string>
+    <string name="maximum_recording_duration_custom">Durée personnalisée</string>
+    <string name="maximum_recording_duration_custom_value">Personnalisée (%1$d min)</string>
+    <string name="maximum_recording_duration_custom_title">Durée d\'enregistrement personnalisée</string>
+    <string name="maximum_recording_duration_custom_hint">Minutes (1–1440)</string>
+    <string name="maximum_recording_duration_custom_description">Saisissez un nombre entier de minutes entre 1 et 1440. La valeur personnalisée précédente est conservée.</string>
+
 <string name="row_orientation_title">Orientation</string>
 
 <string name="row_record_audio_title">Record Audio</string>

@@ -1565,6 +1565,19 @@
 
     <string name="row_video_splitting_title">تقسيم الفيديو</string>
 
+    <string name="maximum_recording_duration_title">الحد الأقصى لمدة التسجيل</string>
+    <string name="maximum_recording_duration_summary">إيقاف تسجيل الكاميرا وحفظه تلقائيًا بعد المدة المحددة. لا يتم احتساب وقت الإيقاف المؤقت.</string>
+    <string name="maximum_recording_duration_no_limit">بدون حد</string>
+    <string name="maximum_recording_duration_5_minutes">5 دقائق</string>
+    <string name="maximum_recording_duration_10_minutes">10 دقائق</string>
+    <string name="maximum_recording_duration_30_minutes">30 دقيقة</string>
+    <string name="maximum_recording_duration_1_hour">ساعة واحدة</string>
+    <string name="maximum_recording_duration_custom">مدة مخصصة</string>
+    <string name="maximum_recording_duration_custom_value">مخصص (%1$d دقيقة)</string>
+    <string name="maximum_recording_duration_custom_title">مدة تسجيل مخصصة</string>
+    <string name="maximum_recording_duration_custom_hint">دقائق (1–1440)</string>
+    <string name="maximum_recording_duration_custom_description">أدخل عددًا صحيحًا من الدقائق من 1 إلى 1440. يتم الاحتفاظ بالقيمة المخصصة السابقة.</string>
+
     <string name="row_orientation_title">الاتجاه</string>
 
     <string name="row_record_audio_title">تسجيل الصوت</string>

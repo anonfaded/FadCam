@@ -762,6 +762,19 @@
     <string name="row_bitrate_title">Bitikiirus</string>
     <string name="row_zoom_ratio_title">Suumitase</string>
     <string name="row_video_splitting_title">Video tükeldamine</string>
+
+    <string name="maximum_recording_duration_title">Maksimaalne salvestuse kestus</string>
+    <string name="maximum_recording_duration_summary">Peatab ja salvestab kaamera salvestuse automaatselt pärast valitud kestust. Pausi aega ei arvestata.</string>
+    <string name="maximum_recording_duration_no_limit">Ilma piiranguta</string>
+    <string name="maximum_recording_duration_5_minutes">5 minutit</string>
+    <string name="maximum_recording_duration_10_minutes">10 minutit</string>
+    <string name="maximum_recording_duration_30_minutes">30 minutit</string>
+    <string name="maximum_recording_duration_1_hour">1 tund</string>
+    <string name="maximum_recording_duration_custom">Kohandatud kestus</string>
+    <string name="maximum_recording_duration_custom_value">Kohandatud (%1$d min)</string>
+    <string name="maximum_recording_duration_custom_title">Kohandatud salvestuse kestus</string>
+    <string name="maximum_recording_duration_custom_hint">Minutid (1–1440)</string>
+    <string name="maximum_recording_duration_custom_description">Sisestage täisarv minuteid vahemikus 1 kuni 1440. Eelmine kohandatud väärtus säilitatakse.</string>
     <string name="row_orientation_title">Suund</string>
     <string name="row_record_audio_title">Salvesta heli</string>
     <string name="row_input_source_title">Sisendallikas</string>

@@ -1181,6 +1181,19 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="row_bitrate_title">Bitrate</string>
     <string name="row_zoom_ratio_title">Zoom-Verhältnis</string>
     <string name="row_video_splitting_title">Video-Aufteilung</string>
+
+    <string name="maximum_recording_duration_title">Maximale Aufnahmedauer</string>
+    <string name="maximum_recording_duration_summary">Die Kameraaufnahme wird nach der ausgewählten Dauer automatisch gestoppt und gespeichert. Pausierte Zeit wird nicht gezählt.</string>
+    <string name="maximum_recording_duration_no_limit">Keine Begrenzung</string>
+    <string name="maximum_recording_duration_5_minutes">5 Minuten</string>
+    <string name="maximum_recording_duration_10_minutes">10 Minuten</string>
+    <string name="maximum_recording_duration_30_minutes">30 Minuten</string>
+    <string name="maximum_recording_duration_1_hour">1 Stunde</string>
+    <string name="maximum_recording_duration_custom">Benutzerdefinierte Dauer</string>
+    <string name="maximum_recording_duration_custom_value">Benutzerdefiniert (%1$d Min.)</string>
+    <string name="maximum_recording_duration_custom_title">Benutzerdefinierte Aufnahmedauer</string>
+    <string name="maximum_recording_duration_custom_hint">Minuten (1–1440)</string>
+    <string name="maximum_recording_duration_custom_description">Geben Sie eine ganze Zahl von Minuten zwischen 1 und 1440 ein. Der vorherige benutzerdefinierte Wert bleibt erhalten.</string>
     <string name="row_orientation_title">Ausrichtung</string>
     <string name="row_record_audio_title">Audio aufnehmen</string>
     <string name="row_input_source_title">Eingabequelle</string>
