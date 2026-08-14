@@ -1789,7 +1789,15 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="maximum_recording_duration_custom">دودیزه موده</string>
     <string name="maximum_recording_duration_custom_value">دودیزه (%1$d دقیقې)</string>
     <string name="maximum_recording_duration_custom_title">د ثبت دودیزه موده</string>
-    <string name="maximum_recording_duration_custom_hint">دقیقې (۱–۱۴۴۰)</string>
+    <string name="maximum_recording_duration_custom_hint">ساعتونه · دقیقې · ثانیې</string>
+
+    <string name="duration_picker_hours">ساعتونه</string>
+    <string name="duration_picker_minutes">دقیقې</string>
+    <string name="duration_picker_seconds">ثانیې</string>
+    <string name="duration_picker_ok">ښه</string>
+    <string name="duration_picker_cancel">لغوه کول</string>
+    <string name="quick_timer_label">ټایمر</string>
+    <string name="quick_timer_desc">د ثبت اعظمي موده وټاکئ</string>
     <string name="maximum_recording_duration_custom_description">له ۱ څخه تر ۱۴۴۰ پورې بشپړ شمېر دقیقې دننه کړئ. مخکینۍ دودیزه ارزښت ساتل کیږي.</string>
     <string name="row_zoom_ratio_title">Zoom Ratio</string>
     <string name="saf_permission_missing_dialog_instructions">SAF ejazat mojood nadi. Mehrbani oka intikhab shwi folder ta rasai werka.</string>

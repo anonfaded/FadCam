@@ -2172,8 +2172,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                     if ("t_custom".equals(sel2)) {
                                         final String RK_NUM =
                                             "rk_vps_background_playback_timer_custom";
-                                        com.fadcam.ui.picker.NumberInputBottomSheetFragment num =
-                                            com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
+                                        com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment num =
+                                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.newInstance(
                                                 getString(
                                                     R.string.timer_custom_title
                                                 ),
@@ -2198,13 +2198,13 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                                 ? num.getArguments()
                                                 : new android.os.Bundle();
                                         _b.putString(
-                                            com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION,
+                                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DESCRIPTION,
                                             getString(
                                                 R.string.timer_custom_description
                                             )
                                         );
                                         _b.putBoolean(
-                                            com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_ENABLE_TIMER_CALC,
+                                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_ENABLE_TIMER_CALC,
                                             true
                                         );
                                         num.setArguments(_b);
@@ -2214,7 +2214,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                                 ? num.getArguments()
                                                 : new android.os.Bundle();
                                         _nb.putString(
-                                            com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION,
+                                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DESCRIPTION,
                                             getString(
                                                 R.string.seek_amount_helper
                                             )
@@ -2225,7 +2225,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                                 this,
                                                 (rkN, nb) -> {
                                                     int minutes = nb.getInt(
-                                                        com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER,
+                                                        com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER,
                                                         0
                                                     );
                                                     if (minutes > 0) {
@@ -2387,13 +2387,13 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             if (s == null) return;
                             if ("c_custom".equals(s)) {
                                 final String RK_NUM = "rk_vps_controller_timeout_custom";
-                                com.fadcam.ui.picker.NumberInputBottomSheetFragment num = com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(getString(R.string.timer_custom_title), 1, 86400, 1, getString(R.string.universal_enter_number), 5, 60, getString(R.string.timer_custom_low_hint), getString(R.string.timer_custom_high_hint), RK_NUM);
+                                com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment num = com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.newInstance(getString(R.string.timer_custom_title), 1, 86400, 1, getString(R.string.universal_enter_number), 5, 60, getString(R.string.timer_custom_low_hint), getString(R.string.timer_custom_high_hint), RK_NUM);
                                 android.os.Bundle _b = num.getArguments() != null ? num.getArguments() : new android.os.Bundle();
-                                _b.putString(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.controls_hide_delay_helper));
+                                _b.putString(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.controls_hide_delay_helper));
                                 num.setArguments(_b);
                                 try { getSupportFragmentManager().clearFragmentResultListener(RK_NUM); } catch (Exception ignored) {}
                                 getSupportFragmentManager().setFragmentResultListener(RK_NUM, this, (rkn, nb) -> {
-                                    int val = nb.getInt(com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER, 0);
+                                    int val = nb.getInt(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER, 0);
                                     if (val > 0) {
                                         SharedPreferencesManager.getInstance(this).setPlayerControlsTimeoutSeconds(val);
                                         View root = findViewById(android.R.id.content);
@@ -2550,8 +2550,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                     if ("s_custom".equals(s)) {
                                         final String RK_NUM =
                                             "rk_vps_seek_amount_custom_activity";
-                                        com.fadcam.ui.picker.NumberInputBottomSheetFragment num =
-                                            com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
+                                        com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment num =
+                                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.newInstance(
                                                 getString(
                                                     R.string.seek_amount_custom_title
                                                 ),
@@ -2581,7 +2581,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                                 this,
                                                 (rkN, nb) -> {
                                                     int val = nb.getInt(
-                                                        com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER,
+                                                        com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER,
                                                         0
                                                     );
                                                     if (val > 0) {

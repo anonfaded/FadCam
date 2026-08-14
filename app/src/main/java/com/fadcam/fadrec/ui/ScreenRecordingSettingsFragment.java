@@ -19,7 +19,7 @@ import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.ui.OverlayNavUtil;
-import com.fadcam.ui.picker.NumberInputBottomSheetFragment;
+import com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import com.fadcam.FLog;
@@ -282,14 +282,14 @@ public class ScreenRecordingSettingsFragment extends Fragment {
 
         final String resultKey = "picker_result_screen_bitrate_value";
         getParentFragmentManager().setFragmentResultListener(resultKey, getViewLifecycleOwner(), (key, bundle) -> {
-            if (bundle.containsKey(NumberInputBottomSheetFragment.RESULT_NUMBER)) {
-                int val = bundle.getInt(NumberInputBottomSheetFragment.RESULT_NUMBER);
+            if (bundle.containsKey(MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER)) {
+                int val = bundle.getInt(MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER);
                 prefs.setScreenRecordingBitrate(val * 1_000_000);
                 refreshValues();
             }
         });
 
-        NumberInputBottomSheetFragment sheet = NumberInputBottomSheetFragment.newInstance(
+        MaterialNumberPickerBottomSheetFragment sheet = MaterialNumberPickerBottomSheetFragment.newInstance(
                 getString(R.string.screen_rec_bitrate), 1, 50, currentMbps,
                 getString(R.string.screen_rec_bitrate_range),
                 3, 20,
@@ -585,14 +585,14 @@ public class ScreenRecordingSettingsFragment extends Fragment {
 
         final String resultKey = "picker_result_screen_split_custom";
         getParentFragmentManager().setFragmentResultListener(resultKey, getViewLifecycleOwner(), (key, bundle) -> {
-            if (bundle.containsKey(NumberInputBottomSheetFragment.RESULT_NUMBER)) {
-                int mb = bundle.getInt(NumberInputBottomSheetFragment.RESULT_NUMBER);
+            if (bundle.containsKey(MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER)) {
+                int mb = bundle.getInt(MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER);
                 prefs.setVideoSplitSizeMb(mb);
                 refreshValues();
             }
         });
 
-        NumberInputBottomSheetFragment sheet = NumberInputBottomSheetFragment.newInstance(
+        MaterialNumberPickerBottomSheetFragment sheet = MaterialNumberPickerBottomSheetFragment.newInstance(
                 "Custom Split Size (MB)", 10, 102400, current, "10 - 102400", 0, 0,
                 null, null, resultKey);
         sheet.show(getParentFragmentManager(), "screen_split_custom_input");

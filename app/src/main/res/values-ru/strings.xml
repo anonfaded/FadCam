@@ -412,7 +412,15 @@
     <string name="maximum_recording_duration_custom">Своя длительность</string>
     <string name="maximum_recording_duration_custom_value">Своя (%1$d мин)</string>
     <string name="maximum_recording_duration_custom_title">Своя длительность записи</string>
-    <string name="maximum_recording_duration_custom_hint">Минуты (1–1440)</string>
+    <string name="maximum_recording_duration_custom_hint">Часы · Минуты · Секунды</string>
+
+    <string name="duration_picker_hours">Часы</string>
+    <string name="duration_picker_minutes">Минуты</string>
+    <string name="duration_picker_seconds">Секунды</string>
+    <string name="duration_picker_ok">ОК</string>
+    <string name="duration_picker_cancel">Отмена</string>
+    <string name="quick_timer_label">Таймер</string>
+    <string name="quick_timer_desc">Задать максимальную длительность записи</string>
     <string name="maximum_recording_duration_custom_description">Введите целое число минут от 1 до 1440. Предыдущее значение сохраняется.</string>
     <string name="row_orientation_title">Ориентация</string>
     <string name="row_record_audio_title">Записывать аудио</string>

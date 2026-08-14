@@ -1512,11 +1512,14 @@ public class DualCameraRecordingService extends Service {
                 });
 
         durationPreferenceListener = (preferences, key) -> {
+            boolean customValueKey =
+                    SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES.equals(key)
+                            || SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_SECONDS.equals(key);
             if (!SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_OPTION.equals(key)
-                    && !SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES.equals(key)) {
+                    && !customValueKey) {
                 return;
             }
-            if (SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES.equals(key)
+            if (customValueKey
                     && !MaximumRecordingDuration.OPTION_CUSTOM.equals(
                     prefs.getMaximumRecordingDurationOption())) {
                 return;

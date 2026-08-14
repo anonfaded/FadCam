@@ -880,7 +880,7 @@ public class GLWatermarkRenderer {
                 // viewport larger than the surface is fine. This creates a zoomed-in,
                 // edge-extended background that replaces the black letterbox/pillarbox
                 // bars with actual camera content — the same technique used by YouTube,
-                // Instagram, and iOS Photos.
+                // Instagram, and the default Photos apps.
                 if (needsLetterbox) {
                     int fillVpX, fillVpY, fillVpW, fillVpH;
                     if (surfaceAR > contentAR) {

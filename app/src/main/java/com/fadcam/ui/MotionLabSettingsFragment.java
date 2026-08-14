@@ -32,7 +32,7 @@ import com.fadcam.motion.data.SharedPrefsMotionSettingsRepository;
 import com.fadcam.motion.presentation.MotionLabViewModel;
 import com.fadcam.motion.presentation.MotionLabViewModelFactory;
 import com.fadcam.motion.presentation.MotionLabViewState;
-import com.fadcam.ui.picker.NumberInputBottomSheetFragment;
+import com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import com.fadcam.ui.AvatarToggleView;
@@ -272,7 +272,7 @@ public class MotionLabSettingsFragment extends Fragment {
             if (!"set_value".equals(selected)) {
                 return;
             }
-            NumberInputBottomSheetFragment inputSheet = NumberInputBottomSheetFragment.newInstance(
+            MaterialNumberPickerBottomSheetFragment inputSheet = MaterialNumberPickerBottomSheetFragment.newInstance(
                 title,
                 min,
                 max,
@@ -285,7 +285,7 @@ public class MotionLabSettingsFragment extends Fragment {
                 inputResultKey
             );
             getParentFragmentManager().setFragmentResultListener(inputResultKey, this, (inputKey, inputBundle) -> {
-                int value = inputBundle.getInt(NumberInputBottomSheetFragment.RESULT_NUMBER, initial);
+                int value = inputBundle.getInt(MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER, initial);
                 consumer.accept(value);
             });
             inputSheet.show(getParentFragmentManager(), inputResultKey + "_sheet");

@@ -258,6 +258,9 @@ public class SharedPreferencesManager {
     public static final int DEFAULT_VIDEO_SPLIT_SIZE_MB = 2048; // 2GB
     public static final String PREF_MAX_RECORDING_DURATION_OPTION =
         "max_recording_duration_option";
+    public static final String PREF_MAX_RECORDING_DURATION_CUSTOM_SECONDS =
+        "max_recording_duration_custom_seconds";
+    /** Legacy key from the original minutes-only custom duration (PR #323). */
     public static final String PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES =
         "max_recording_duration_custom_minutes";
     // -----
@@ -1707,23 +1710,38 @@ public class SharedPreferencesManager {
         return true;
     }
 
-    public int getCustomMaximumRecordingDurationMinutes() {
-        int minutes = sharedPreferences.getInt(
-            PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES,
-            MaximumRecordingDuration.DEFAULT_CUSTOM_MINUTES
+    public int getCustomMaximumRecordingDurationSeconds() {
+        // Migrate the legacy minutes-only key (PR #323) to seconds once.
+        int legacyMinutes = sharedPreferences.getInt(
+            PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES, -1);
+        if (legacyMinutes >= 1) {
+            int seconds = legacyMinutes * 60;
+            sharedPreferences
+                .edit()
+                .putInt(PREF_MAX_RECORDING_DURATION_CUSTOM_SECONDS, seconds)
+                .remove(PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES)
+                .apply();
+            return MaximumRecordingDuration.isValidCustomSeconds(seconds)
+                ? seconds
+                : MaximumRecordingDuration.DEFAULT_CUSTOM_SECONDS;
+        }
+        int seconds = sharedPreferences.getInt(
+            PREF_MAX_RECORDING_DURATION_CUSTOM_SECONDS,
+            MaximumRecordingDuration.DEFAULT_CUSTOM_SECONDS
         );
-        return MaximumRecordingDuration.isValidCustomMinutes(minutes)
-            ? minutes
-            : MaximumRecordingDuration.DEFAULT_CUSTOM_MINUTES;
+        return MaximumRecordingDuration.isValidCustomSeconds(seconds)
+            ? seconds
+            : MaximumRecordingDuration.DEFAULT_CUSTOM_SECONDS;
     }
 
-    public boolean setCustomMaximumRecordingDurationMinutes(int minutes) {
-        if (!MaximumRecordingDuration.isValidCustomMinutes(minutes)) {
+    public boolean setCustomMaximumRecordingDurationSeconds(int seconds) {
+        if (!MaximumRecordingDuration.isValidCustomSeconds(seconds)) {
             return false;
         }
         sharedPreferences
             .edit()
-            .putInt(PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES, minutes)
+            .putInt(PREF_MAX_RECORDING_DURATION_CUSTOM_SECONDS, seconds)
+            .remove(PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES)
             .apply();
         return true;
     }
@@ -1731,8 +1749,26 @@ public class SharedPreferencesManager {
     public long getMaximumRecordingDurationMs() {
         return MaximumRecordingDuration.resolveDurationMillis(
             getMaximumRecordingDurationOption(),
-            getCustomMaximumRecordingDurationMinutes()
+            getCustomMaximumRecordingDurationSeconds()
         );
+    }
+
+    /**
+     * Human-readable summary for the custom duration, e.g. "1h 30m" / "45s" /
+     * "10s". Falls back to "No limit" for preset options handled by callers.
+     */
+    public String getCustomMaximumRecordingDurationHuman() {
+        int seconds = getCustomMaximumRecordingDurationSeconds();
+        int h = seconds / 3600;
+        int m = (seconds % 3600) / 60;
+        int s = seconds % 60;
+        if (h > 0 && m > 0 && s > 0) return h + "h " + m + "m " + s + "s";
+        if (h > 0 && m > 0) return h + "h " + m + "m";
+        if (h > 0 && s > 0) return h + "h " + s + "s";
+        if (h > 0) return h + "h";
+        if (m > 0 && s > 0) return m + "m " + s + "s";
+        if (m > 0) return m + "m";
+        return s + "s";
     }
 
     // (SharedPreferencesManager_video_splitting_methods) -----

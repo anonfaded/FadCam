@@ -778,7 +778,15 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="maximum_recording_duration_custom">Durasi khusus</string>
     <string name="maximum_recording_duration_custom_value">Khusus (%1$d mnt)</string>
     <string name="maximum_recording_duration_custom_title">Durasi perekaman khusus</string>
-    <string name="maximum_recording_duration_custom_hint">Menit (1–1440)</string>
+    <string name="maximum_recording_duration_custom_hint">Jam · Menit · Detik</string>
+
+    <string name="duration_picker_hours">Jam</string>
+    <string name="duration_picker_minutes">Menit</string>
+    <string name="duration_picker_seconds">Detik</string>
+    <string name="duration_picker_ok">OK</string>
+    <string name="duration_picker_cancel">Batal</string>
+    <string name="quick_timer_label">Timer</string>
+    <string name="quick_timer_desc">Atur durasi perekaman maksimum</string>
     <string name="maximum_recording_duration_custom_description">Masukkan angka bulat menit dari 1 hingga 1440. Nilai khusus sebelumnya dipertahankan.</string>
     <string name="row_orientation_title">Orientasi</string>
     <string name="row_record_audio_title">Rekam Audio</string>

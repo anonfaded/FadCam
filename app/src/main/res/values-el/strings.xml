@@ -734,7 +734,15 @@
     <string name="maximum_recording_duration_custom">Προσαρμοσμένη διάρκεια</string>
     <string name="maximum_recording_duration_custom_value">Προσαρμοσμένη (%1$d λεπτά)</string>
     <string name="maximum_recording_duration_custom_title">Προσαρμοσμένη διάρκεια εγγραφής</string>
-    <string name="maximum_recording_duration_custom_hint">Λεπτά (1–1440)</string>
+    <string name="maximum_recording_duration_custom_hint">Ώρες · Λεπτά · Δευτερόλεπτα</string>
+
+    <string name="duration_picker_hours">Ώρες</string>
+    <string name="duration_picker_minutes">Λεπτά</string>
+    <string name="duration_picker_seconds">Δευτερόλεπτα</string>
+    <string name="duration_picker_ok">ΟΚ</string>
+    <string name="duration_picker_cancel">Ακύρωση</string>
+    <string name="quick_timer_label">Χρονοδιακόπτης</string>
+    <string name="quick_timer_desc">Ορισμός μέγιστης διάρκειας εγγραφής</string>
     <string name="maximum_recording_duration_custom_description">Εισάγετε έναν ακέραιο αριθμό λεπτών από 1 έως 1440. Η προηγούμενη προσαρμοσμένη τιμή διατηρείται.</string>
     <string name="row_orientation_title">Προσανατολισμός</string>
     <string name="row_record_audio_title">Εγγραφή Ήχου</string>

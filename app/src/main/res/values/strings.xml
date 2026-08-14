@@ -765,15 +765,33 @@
     <string name="maximum_recording_duration_title">Maximum recording duration</string>
     <string name="maximum_recording_duration_summary">Automatically stop and save the camera recording after the selected duration. Paused time is not counted.</string>
     <string name="maximum_recording_duration_no_limit">No limit</string>
+    <string name="maximum_recording_duration_1_minute">1 minute</string>
+    <string name="maximum_recording_duration_2_minutes">2 minutes</string>
+    <string name="maximum_recording_duration_3_minutes">3 minutes</string>
+    <string name="maximum_recording_duration_4_minutes">4 minutes</string>
     <string name="maximum_recording_duration_5_minutes">5 minutes</string>
     <string name="maximum_recording_duration_10_minutes">10 minutes</string>
     <string name="maximum_recording_duration_30_minutes">30 minutes</string>
     <string name="maximum_recording_duration_1_hour">1 hour</string>
+    <string name="maximum_recording_duration_2_hours">2 hours</string>
+    <string name="maximum_recording_duration_3_hours">3 hours</string>
+    <string name="maximum_recording_duration_4_hours">4 hours</string>
+    <string name="maximum_recording_duration_5_hours">5 hours</string>
     <string name="maximum_recording_duration_custom">Custom duration</string>
     <string name="maximum_recording_duration_custom_value">Custom (%1$d min)</string>
     <string name="maximum_recording_duration_custom_title">Custom recording duration</string>
-    <string name="maximum_recording_duration_custom_hint">Minutes (1–1440)</string>
-    <string name="maximum_recording_duration_custom_description">Enter a whole number of minutes from 1 to 1440. The previous custom value is preserved.</string>
+    <string name="maximum_recording_duration_custom_hint">Hours · Minutes · Seconds</string>
+    <string name="maximum_recording_duration_custom_description">Set the exact recording limit from 0 seconds (no timer) up to 24 hours. The previous custom value is preserved.</string>
+    <string name="duration_picker_hours">Hours</string>
+    <string name="duration_picker_minutes">Minutes</string>
+    <string name="duration_picker_seconds">Seconds</string>
+    <string name="duration_picker_ok">OK</string>
+    <string name="duration_picker_cancel">Cancel</string>
+    <string name="duration_picker_helper_hint">0:00:00 = No timer</string>
+    <string name="duration_picker_selected_caption">Selected duration</string>
+    <string name="duration_picker_reset_hours">Reset hours</string>
+    <string name="duration_picker_reset_minutes">Reset minutes</string>
+    <string name="duration_picker_reset_seconds">Reset seconds</string>
     <string name="row_orientation_title">Orientation</string>
     <string name="row_record_audio_title">Record Audio</string>
     <string name="row_input_source_title">Input Source</string>
@@ -1032,6 +1050,11 @@
     <string name="home_icon_jet">Fighter Jet</string>
     <string name="home_icon_pilot">Pilot</string>
     <string name="quick_mute_label">Mute</string>
+    <string name="quick_timer_label">Timer</string>
+    <string name="quick_timer_desc">Set maximum recording duration</string>
+    <!-- Future feature: countdown BEFORE recording starts (e.g. "start in 5s"). -->
+    <string name="quick_countdown_label">Countdown</string>
+    <string name="quick_countdown_desc">Start recording after a countdown</string>
     <string name="quick_unmute_label">Unmute</string>
     <string name="grid_lines_subtitle">Rule-of-thirds overlay on the preview</string>
     <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>

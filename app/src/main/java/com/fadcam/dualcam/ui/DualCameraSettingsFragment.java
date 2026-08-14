@@ -22,7 +22,7 @@ import com.fadcam.dualcam.DualCameraCapability;
 import com.fadcam.dualcam.DualCameraConfig;
 import com.fadcam.ui.OverlayNavUtil;
 import com.fadcam.ui.picker.OptionItem;
-import com.fadcam.ui.picker.NumberInputBottomSheetFragment;
+import com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
 
 import java.util.ArrayList;
@@ -448,14 +448,14 @@ public class DualCameraSettingsFragment extends Fragment {
         final String resultKey = "picker_result_pip_margin";
 
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
-            if (b.containsKey(NumberInputBottomSheetFragment.RESULT_NUMBER)) {
-                int val = b.getInt(NumberInputBottomSheetFragment.RESULT_NUMBER);
+            if (b.containsKey(MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER)) {
+                int val = b.getInt(MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER);
                 configBuilder.pipMarginDp(val);
                 onSettingChanged();
             }
         });
 
-        NumberInputBottomSheetFragment sheet = NumberInputBottomSheetFragment.newInstance(
+        MaterialNumberPickerBottomSheetFragment sheet = MaterialNumberPickerBottomSheetFragment.newInstance(
                 getString(R.string.dual_cam_pip_margin_title),
                 0, 48, currentMargin,
                 getString(R.string.dual_cam_pip_margin_hint),

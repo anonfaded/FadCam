@@ -775,7 +775,15 @@
     <string name="maximum_recording_duration_custom">Duración personalizada</string>
     <string name="maximum_recording_duration_custom_value">Personalizada (%1$d min)</string>
     <string name="maximum_recording_duration_custom_title">Duración de grabación personalizada</string>
-    <string name="maximum_recording_duration_custom_hint">Minutos (1–1440)</string>
+    <string name="maximum_recording_duration_custom_hint">Horas · Minutos · Segundos</string>
+
+    <string name="duration_picker_hours">Horas</string>
+    <string name="duration_picker_minutes">Minutos</string>
+    <string name="duration_picker_seconds">Segundos</string>
+    <string name="duration_picker_ok">Aceptar</string>
+    <string name="duration_picker_cancel">Cancelar</string>
+    <string name="quick_timer_label">Temporizador</string>
+    <string name="quick_timer_desc">Establecer duración máxima de grabación</string>
     <string name="maximum_recording_duration_custom_description">Introduce un número entero de minutos entre 1 y 1440. Se conserva el valor personalizado anterior.</string>
     <string name="row_orientation_title">Orientación</string>
     <string name="row_record_audio_title">Grabar audio</string>

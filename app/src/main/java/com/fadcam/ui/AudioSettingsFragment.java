@@ -28,7 +28,7 @@ import java.util.Locale;
 /**
  * AudioSettingsFragment
  * Modular extraction of audio related settings from legacy SettingsFragment.
- * Preserves EXACT logic & preference keys. UI presented as iOS-style rows.
+ * Preserves EXACT logic & preference keys. UI presented as settings rows.
  */
 public class AudioSettingsFragment extends Fragment {
 
@@ -353,8 +353,8 @@ public class AudioSettingsFragment extends Fragment {
     private void showBitrateInputSheet(){
         final String rk = "num_result_audio_bitrate";
         getParentFragmentManager().setFragmentResultListener(rk, this, (k,b)->{
-            if(b.containsKey(com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER)){
-                int br = b.getInt(com.fadcam.ui.picker.NumberInputBottomSheetFragment.RESULT_NUMBER);
+            if(b.containsKey(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER)){
+                int br = b.getInt(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER);
                 prefs.setAudioBitrate(br);
                 refreshAllValues();
             }
@@ -363,13 +363,13 @@ public class AudioSettingsFragment extends Fragment {
     String lowMsg = getString(R.string.helper_audio_bitrate_low_hint);
     String highMsg = getString(R.string.helper_audio_bitrate_high_hint);
     // Build sheet with reset & description (including recommended value marker)
-    com.fadcam.ui.picker.NumberInputBottomSheetFragment sheet = com.fadcam.ui.picker.NumberInputBottomSheetFragment.newInstance(
+    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment sheet = com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.newInstance(
         getString(R.string.dialog_audio_bitrate_label), 64000, 384000, prefs.getAudioBitrate(), getString(R.string.helper_audio_bitrate_detail) + " " + getString(R.string.label_recommended) + ": 192000", 128000, 320000, lowMsg, highMsg, rk);
     // Add extra args for reset
     if(sheet.getArguments()!=null){
-        sheet.getArguments().putBoolean(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_SHOW_RESET, true);
-        sheet.getArguments().putInt(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DEFAULT_VALUE, 192000);
-    sheet.getArguments().putString(com.fadcam.ui.picker.NumberInputBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.helper_audio_bitrate_detail) + "\n" + getString(R.string.audio_bitrate_recommended_line));
+        sheet.getArguments().putBoolean(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET, true);
+        sheet.getArguments().putInt(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE, 192000);
+    sheet.getArguments().putString(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.helper_audio_bitrate_detail) + "\n" + getString(R.string.audio_bitrate_recommended_line));
     }
         sheet.show(getParentFragmentManager(), "audio_bitrate_input");
     }

@@ -32,7 +32,7 @@ import com.fadcam.Constants;
 import com.fadcam.FLog;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
-import com.fadcam.ui.picker.NumberInputBottomSheetFragment;
+import com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -342,7 +342,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
                 getString(R.string.debug_log_max_lines_title),
                 getString(R.string.debug_log_max_lines_current, current));
         row.setOnClickListener(v -> {
-            NumberInputBottomSheetFragment sheet = NumberInputBottomSheetFragment.newInstance(
+            MaterialNumberPickerBottomSheetFragment sheet = MaterialNumberPickerBottomSheetFragment.newInstance(
                     getString(R.string.debug_log_max_lines_title),
                     100, 50000, current,
                     getString(R.string.debug_log_max_lines_desc),
@@ -350,7 +350,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
             sheet.show(getParentFragmentManager(), MAX_LINES_RESULT_KEY);
         });
         getChildFragmentManager().setFragmentResultListener(MAX_LINES_RESULT_KEY, this, (requestKey, result) -> {
-            int val = result.getInt(NumberInputBottomSheetFragment.RESULT_NUMBER, current);
+            int val = result.getInt(MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER, current);
             if (val >= 100 && val <= 50000) {
                 prefs.sharedPreferences.edit().putInt(Constants.PREF_DEBUG_MAX_LINES, val).apply();
                 refreshMaxLinesRowLabel(row);

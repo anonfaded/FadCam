@@ -1627,7 +1627,15 @@
     <string name="maximum_recording_duration_custom">Özel süre</string>
     <string name="maximum_recording_duration_custom_value">Özel (%1$d dk)</string>
     <string name="maximum_recording_duration_custom_title">Özel kayıt süresi</string>
-    <string name="maximum_recording_duration_custom_hint">Dakika (1–1440)</string>
+    <string name="maximum_recording_duration_custom_hint">Saat · Dakika · Saniye</string>
+
+    <string name="duration_picker_hours">Saat</string>
+    <string name="duration_picker_minutes">Dakika</string>
+    <string name="duration_picker_seconds">Saniye</string>
+    <string name="duration_picker_ok">Tamam</string>
+    <string name="duration_picker_cancel">İptal</string>
+    <string name="quick_timer_label">Zamanlayıcı</string>
+    <string name="quick_timer_desc">Maksimum kayıt süresini ayarla</string>
     <string name="maximum_recording_duration_custom_description">1 ile 1440 arasında tam sayı dakika girin. Önceki özel değer korunur.</string>
 <string name="row_orientation_title">Yön</string>
 <string name="row_record_audio_title">Ses Kaydet</string>

@@ -619,6 +619,62 @@
                  android:clipChildren="false"
                  android:clipToPadding="false">
 
+                <!-- Maximum recording duration timer button with value line (leftmost).
+                     Direct child of quick_actions_row — drag-reorder math requires
+                     the button's parent to BE the row. -->
+                <LinearLayout
+                    android:id="@+id/btnQuickTimer"
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:clipChildren="false" android:clipToPadding="false">
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:src="@drawable/hourglass_top_24px"
+                        android:tint="@android:color/white"
+                        android:scaleType="centerInside"
+                        android:padding="6dp"
+                        android:contentDescription="@string/quick_timer_desc" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/quick_timer_label"
+                        android:textColor="@android:color/white"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
+                        android:layout_marginTop="2dp"
+                        android:shadowColor="#BB000000"
+                        android:shadowDx="1"
+                        android:shadowDy="1"
+                        android:shadowRadius="1"/>
+
+                    <!-- Compact value line under the label (e.g. "5m", "1h 30m", "45s", "Off").
+                         AnimatedTextView: rolls digits like the elapsed display. -->
+                    <com.fadcam.ui.utils.AnimatedTextView
+                        android:id="@+id/tvQuickTimerValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Off"
+                        android:textColor="#FFD54F"
+                        android:textSize="8sp"
+                        android:fontFamily="monospace"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:gravity="center"
+                        android:layout_marginTop="1dp"
+                        android:includeFontPadding="false"/>
+                </LinearLayout>
+
                 <!-- Realtime audio mute/unmute button with label -->
                 <LinearLayout
                     android:id="@+id/btnQuickMuteAudio"

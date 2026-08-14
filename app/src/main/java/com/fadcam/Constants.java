@@ -422,7 +422,7 @@ public abstract class Constants {
     // Quick-action button slots (comma-separated "token:slot" pairs). Key bumped to
     // v2 so polluted positions saved by earlier broken drag builds are discarded.
     public static final String PREF_QUICK_ACTIONS_ORDER = "pref_quick_actions_slots_v2";
-    public static final String DEFAULT_QUICK_ACTIONS_ORDER = "mute,full,fadshot";
+    public static final String DEFAULT_QUICK_ACTIONS_ORDER = "timer,mute,full,fadshot";
     /** Pan offset Y for zoom: float -1.0 (full top) to +1.0 (full bottom), 0.0 = centre */
     public static final String EXTRA_PAN_Y = "com.fadcam.EXTRA_PAN_Y"; // float
     public static final String INTENT_ACTION_PAUSE_RECORDING =

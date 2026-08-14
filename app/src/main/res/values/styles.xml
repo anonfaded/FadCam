@@ -191,4 +191,18 @@
         <item name="colorAccent">#CC2222</item>
     </style>
 
+    <!-- Theme-aware filled button for the material number/time picker.
+         Uses the app's per-theme pickerButtonBackground/Text so the sheet is
+         consistent with every app theme (base, AMOLED, Crimson, Gold, etc.). -->
+    <style name="PickerActionButton" parent="Widget.Material3.Button">
+        <item name="backgroundTint">?attr/pickerButtonBackground</item>
+        <item name="android:textColor">?attr/pickerButtonText</item>
+    </style>
+
+    <!-- Theme-aware text button (cancel / reset) for the picker. Uses the
+         secondary text color instead of the framework default (purple). -->
+    <style name="PickerCancelButton" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">?attr/homeRailTextSecondary</item>
+    </style>
+
 </resources>

@@ -481,7 +481,7 @@ public class SettingsHomeFragment extends Fragment {
             });
         }
 
-        // iOS promo — whole card opens App Store
+        // Promo card — whole card opens App Store
         bindRow(root, R.id.group_ios_promo, () -> openUrl("https://apps.apple.com/app/id6778121848"));
     }
 

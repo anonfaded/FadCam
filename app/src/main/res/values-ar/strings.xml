@@ -1575,7 +1575,15 @@
     <string name="maximum_recording_duration_custom">مدة مخصصة</string>
     <string name="maximum_recording_duration_custom_value">مخصص (%1$d دقيقة)</string>
     <string name="maximum_recording_duration_custom_title">مدة تسجيل مخصصة</string>
-    <string name="maximum_recording_duration_custom_hint">دقائق (1–1440)</string>
+    <string name="maximum_recording_duration_custom_hint">ساعات · دقائق · ثوانٍ</string>
+
+    <string name="duration_picker_hours">ساعات</string>
+    <string name="duration_picker_minutes">دقائق</string>
+    <string name="duration_picker_seconds">ثوانٍ</string>
+    <string name="duration_picker_ok">موافق</string>
+    <string name="duration_picker_cancel">إلغاء</string>
+    <string name="quick_timer_label">مؤقّت</string>
+    <string name="quick_timer_desc">تعيين الحد الأقصى لمدة التسجيل</string>
     <string name="maximum_recording_duration_custom_description">أدخل عددًا صحيحًا من الدقائق من 1 إلى 1440. يتم الاحتفاظ بالقيمة المخصصة السابقة.</string>
 
     <string name="row_orientation_title">الاتجاه</string>

@@ -321,6 +321,8 @@ public class HomeFragment extends BaseFragment {
     private View btnFullscreenPreview;
     private View btnCaptureShotPreview;
     private View btnQuickMuteAudio;
+    private View btnQuickTimer;
+    private TextView tvQuickTimerValue;
     private TextView ivQuickMuteIcon;
     private TextView tvQuickMuteLabel;
     private boolean quickAudioMuted = false;
@@ -1412,6 +1414,12 @@ public class HomeFragment extends BaseFragment {
                     case SharedPreferencesManager.PREF_VIDEO_ORIENTATION: // video orientation changed
                         refreshPrefsAndUpdateStorage();
                         break;
+                    case SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_OPTION:
+                    case SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_SECONDS:
+                        // Max-duration changes (settings or quick action) reflect on
+                        // the timer badge immediately — no stale state.
+                        refreshQuickTimerValue();
+                        break;
                     default:
                         break;
                 }
@@ -1610,151 +1618,6 @@ public class HomeFragment extends BaseFragment {
         requireActivity().startService(startIntent);
     }
 
-    private void registerBroadcastOnRecordingStateCallback() {
-        broadcastOnRecordingStateCallback = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent i) {
-                RecordingState recordingStateIntent =
-                    (RecordingState) i.getSerializableExtra(
-                        Constants.INTENT_EXTRA_RECORDING_STATE
-                    );
-                if (recordingStateIntent == null) {
-                    recordingStateIntent = RecordingState.NONE;
-                }
-
-                // Note: Timer value is read directly from SharedPreferences by update methods
-                // No need to extract from broadcast - service writes to SharedPreferences
-
-                switch (recordingStateIntent) {
-                    case NONE:
-                        hidePausedOverlay();
-                        onRecordingStopped();
-                        break;
-                    case IN_PROGRESS:
-                        hidePausedOverlay();
-                        if (isRecording()) {
-                            updateRecordingSurface();
-                        } else {
-                            onRecordingStarted(false);
-                            updateRecordingSurface();
-                        }
-                        break;
-                    case PAUSED:
-                        onRecordingPaused();
-                        break;
-                    case WAITING_FOR_CAMERA:
-                        // Camera taken by another app - recording continues with black frames
-                        // Show appropriate UI state
-                        setUIForWaitingForCamera();
-                        break;
-                }
-
-                recordingState = recordingStateIntent;
-            }
-        };
-    }
-
-    private void registerBroadcastOnRecordingStarted() {
-        broadcastOnRecordingStarted = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent i) {
-                // Note: Timer value is written to SharedPreferences by service
-                // Fragment reads it directly when calculating elapsed time
-                FLog.d(TAG, "✅ BROADCAST_ON_RECORDING_STARTED received");
-                long startTimeFromBroadcast = i.getLongExtra(
-                    Constants.INTENT_EXTRA_RECORDING_START_TIME,
-                    0L
-                );
-                if (startTimeFromBroadcast > 0L) {
-                    recordingStartTime = startTimeFromBroadcast;
-                }
-
-                // Update our internal state first
-                onRecordingStarted(true);
-
-                // Force a clean surface reset when recording starts to ensure preview works
-                if (textureView != null) {
-                    // Try to create a new surface immediately if possible
-                    if (textureView.getSurfaceTexture() != null) {
-                        if (textureViewSurface != null) {
-                            textureViewSurface.release();
-                        }
-                        textureViewSurface = new Surface(
-                            textureView.getSurfaceTexture()
-                        );
-                        FLog.d(
-                            TAG,
-                            "BROADCAST_ON_RECORDING_STARTED: Created new surface"
-                        );
-                        updateServiceWithCurrentSurface(textureViewSurface);
-                    }
-
-                    // Schedule a secondary attempt with a slight delay as backup
-                    handlerClock.postDelayed(
-                        () -> {
-                            if (isRecording() && isPreviewEnabled) {
-                                if (textureView.getSurfaceTexture() != null) {
-                                    // Only recreate if needed
-                                    if (
-                                        textureViewSurface == null ||
-                                        !textureViewSurface.isValid()
-                                    ) {
-                                        if (textureViewSurface != null) {
-                                            textureViewSurface.release();
-                                        }
-                                        textureViewSurface = new Surface(
-                                            textureView.getSurfaceTexture()
-                                        );
-                                    }
-                                    updateServiceWithCurrentSurface(
-                                        textureViewSurface
-                                    );
-                                    FLog.d(
-                                        TAG,
-                                        "BROADCAST_ON_RECORDING_STARTED: Delayed surface creation"
-                                    );
-                                } else {
-                                    FLog.d(
-                                        TAG,
-                                        "BROADCAST_ON_RECORDING_STARTED: SurfaceTexture still not available after delay"
-                                    );
-                                }
-                            }
-                        },
-                        200
-                    ); // Slightly longer delay as a final attempt
-                }
-            }
-        };
-    }
-
-    private void registerBroadcastOnRecordingResumed() {
-        broadcastOnRecordingResumed = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent i) {
-                onRecordingResumed();
-            }
-        };
-    }
-
-    private void registerBroadcastOnRecordingPaused() {
-        broadcastOnRecordingPaused = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context c, Intent i) {
-                if (isAdded()) onRecordingPaused();
-            }
-        };
-    }
-
-    private void registerBrodcastOnRecordingStopped() {
-        broadcastOnRecordingStopped = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent i) {
-                onRecordingStopped();
-            }
-        };
-    }
-
     private void onRecordingStarted(boolean toast) {
         FLog.d(TAG, "📍 onRecordingStarted(toast=" + toast + ") - Timer managed by service in SharedPreferences");
         // Note: Timer value (recordingStartTime) is managed by RecordingService
@@ -1950,6 +1813,7 @@ public class HomeFragment extends BaseFragment {
 
         // First update the recording state
         recordingState = RecordingState.NONE;
+        quickCountdownSessionActive = false;
         
         // Reset timer (service will have cleared its value too)
         recordingStartTime = 0;
@@ -6499,6 +6363,110 @@ public class HomeFragment extends BaseFragment {
             ((LinearLayout.LayoutParams) arabicParams).gravity = Gravity.END;
             tvDateArabic.setLayoutParams(arabicParams);
         }
+
+        // Live max-duration countdown badge (runs on the same 1s tick).
+        updateQuickTimerCountdown();
+    }
+
+    /**
+     * Updates the timer quick-action value in real time:
+     * - Idle (no active session): shows the configured limit (e.g. "5m", "1h 30m", "No limit").
+     * - Recording: shows remaining time (e.g. "4:32") counting down, using the
+     *   same paused-time-excluded elapsed calculation as the stats card.
+     * - Paused: shows the FROZEN remaining time (dimmed) — never flashes back to
+     *   the configured value during the pause/resume state transitions.
+     * - Limit reached: shows "0:00" and keeps it until a new recording starts.
+     */
+    private void updateQuickTimerCountdown() {
+        if (btnQuickTimer == null || btnQuickTimer.getVisibility() != View.VISIBLE) {
+            return;
+        }
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+            long limitMs = sharedPreferencesManager.getMaximumRecordingDurationMs();
+            boolean sessionActive = isRecording() || isPaused() || quickCountdownSessionActive;
+            if (!sessionActive || limitMs <= 0L) {
+                quickCountdownSessionActive = false;
+                // Idle or no limit: static configured value (or "Off").
+                refreshQuickTimerValue();
+                return;
+            }
+
+            // First tick of a fresh session (idle → countdown): render directly
+            // so the static label (e.g. "1m") doesn't roll into "1:00" oddly;
+            // subsequent ticks use the slot animation.
+            boolean wasQuickCountdownActive = quickCountdownSessionActive;
+
+            // Freeze the countdown across pause/resume transitions: once a session
+            // is seen, stay in countdown mode until the recording fully stops.
+            quickCountdownSessionActive = true;
+
+            // Same elapsed-recording-time math as the stats card (excludes paused time).
+            long elapsedMs = 0L;
+            if (recordingStartTime > 0L) {
+                long anchorTime = (isPaused() && recordingPauseStartedAt > 0L)
+                        ? recordingPauseStartedAt
+                        : SystemClock.elapsedRealtime();
+                elapsedMs = Math.max(0L,
+                        anchorTime - recordingStartTime - recordingAccumulatedPausedDurationMs);
+            }
+            long remainingMs = Math.max(0L, limitMs - elapsedMs);
+            long remainingSec = (remainingMs + 999L) / 1000L;
+            String text = formatCountdown(remainingSec);
+            if (tvQuickTimerValue != null) {
+                // Active recording: accent color; last 10s: red pulse; paused: dimmed.
+                int color;
+                if (isPaused()) {
+                    color = 0xFF9E9E9E;
+                } else if (remainingSec <= 10L) {
+                    color = 0xFFFF5252;
+                } else {
+                    color = 0xFFFFD54F;
+                }
+                tvQuickTimerValue.setTextColor(color);
+                // Slot-machine roll, same as the elapsed display: only the
+                // changed digit animates (slides down as the countdown shrinks).
+                if (tvQuickTimerValue instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                    com.fadcam.ui.utils.AnimatedTextView animated =
+                            (com.fadcam.ui.utils.AnimatedTextView) tvQuickTimerValue;
+                    if (wasQuickCountdownActive) {
+                        animated.animateSlotDown(text, 350);
+                    } else {
+                        // Fresh session: jump to the value (no odd roll from the
+                        // static configured label).
+                        animated.cancelAnimation();
+                        animated.setText(text);
+                    }
+                } else {
+                    tvQuickTimerValue.setText(text);
+                }
+                boolean pulse = !isPaused() && remainingSec <= 10L && remainingSec > 0L;
+                float targetScale = pulse && (System.currentTimeMillis() / 500L) % 2L == 0L
+                        ? 1.25f : 1.0f;
+                if (tvQuickTimerValue.getScaleX() != targetScale) {
+                    tvQuickTimerValue.animate().scaleX(targetScale).scaleY(targetScale)
+                            .setDuration(180L).start();
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to update quick timer countdown", e);
+        }
+    }
+
+    /** True while a recording session with an active max-duration countdown is running. */
+    private boolean quickCountdownSessionActive = false;
+
+    /** Formats remaining seconds as m:ss (or h:mm:ss above one hour). */
+    private String formatCountdown(long totalSeconds) {
+        long h = totalSeconds / 3600;
+        long m = (totalSeconds % 3600) / 60;
+        long s = totalSeconds % 60;
+        if (h > 0) {
+            return h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+        }
+        return m + ":" + (s < 10 ? "0" : "") + s;
     }
 
     /**
@@ -10491,11 +10459,17 @@ public class HomeFragment extends BaseFragment {
                         || key.startsWith("watermark_location") || key.startsWith("motion_"))) {
                     updateGpsWarningBanner();
                 }
+                if (key != null && (SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_OPTION.equals(key)
+                        || SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_SECONDS.equals(key))) {
+                    refreshQuickTimerValue();
+                }
             });
 
         btnFullscreenPreview = view.findViewById(R.id.btnFullscreenPreview);
         btnCaptureShotPreview = view.findViewById(R.id.btnCaptureShotPreview);
         btnQuickMuteAudio = view.findViewById(R.id.btnQuickMuteAudio);
+        btnQuickTimer = view.findViewById(R.id.btnQuickTimer);
+        tvQuickTimerValue = view.findViewById(R.id.tvQuickTimerValue);
         ivQuickMuteIcon = view.findViewById(R.id.ivQuickMuteIcon);
         tvQuickMuteLabel = view.findViewById(R.id.tvQuickMuteLabel);
         quickActionsRow = view.findViewById(R.id.quick_actions_row);
@@ -10507,6 +10481,7 @@ public class HomeFragment extends BaseFragment {
         setupFullscreenButton();
         setupCaptureShotButton();
         setupQuickMuteButton();
+        setupQuickTimerButton();
         setupQuickActionsReorder();
         setupPreviewZoomHud();
         vibrator = (Vibrator) requireActivity().getSystemService(
@@ -10970,6 +10945,161 @@ public class HomeFragment extends BaseFragment {
     }
 
     /**
+     * Wires the maximum-recording-duration quick-action. Opens the SAME duration
+     * picker component used by the Video settings screen (single source of
+     * truth — same prefs, same validation). The compact value badge next to the
+     * icon reflects the configured limit and refreshes after picking.
+     */
+    private void setupQuickTimerButton() {
+        if (btnQuickTimer == null) return;
+        btnQuickTimer.setOnClickListener(v -> {
+            try {
+                v.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+            } catch (Exception ignored) {
+            }
+            showQuickTimerDurationPicker();
+        });
+    }
+
+    private void showQuickTimerDurationPicker() {
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+            // The quick action opens the same duration-option sheet as Settings
+            // (No limit / presets / Custom) so "no timer" is one tap away.
+            final String optionsKey = "picker_result_quick_timer_duration_options";
+            getParentFragmentManager().setFragmentResultListener(optionsKey, this, (key, result) -> {
+                String selected = result.getString(
+                        com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if (selected == null) {
+                    return;
+                }
+                if (com.fadcam.MaximumRecordingDuration.OPTION_CUSTOM.equals(selected)) {
+                    showQuickTimerCustomDurationSheet();
+                    return;
+                }
+                if (sharedPreferencesManager.setMaximumRecordingDurationOption(selected)) {
+                    refreshQuickTimerValue();
+                }
+            });
+
+            com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                            getString(R.string.maximum_recording_duration_title),
+                            com.fadcam.MaximumRecordingDuration.buildOptionItems(requireContext()),
+                            sharedPreferencesManager.getMaximumRecordingDurationOption(),
+                            optionsKey,
+                            getString(R.string.maximum_recording_duration_summary));
+            sheet.show(getParentFragmentManager(), "quick_timer_duration_picker");
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to open quick timer picker", e);
+        }
+    }
+
+    /** Custom option chain: the exact-hours picker for the quick-action timer. */
+    private void showQuickTimerCustomDurationSheet() {
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+            final String resultKey = "picker_result_quick_timer_duration";
+            getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, result) -> {
+                if (!result.containsKey(
+                        com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.RESULT_DURATION_SECONDS)) {
+                    return;
+                }
+                int seconds = result.getInt(
+                        com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.RESULT_DURATION_SECONDS);
+                // 0:00:00 means "no timer" — switch to the no-limit option so
+                // the badge and settings stay consistent.
+                if (seconds <= 0) {
+                    sharedPreferencesManager.setMaximumRecordingDurationOption(
+                            com.fadcam.MaximumRecordingDuration.OPTION_NO_LIMIT);
+                    refreshQuickTimerValue();
+                } else if (sharedPreferencesManager != null
+                        && sharedPreferencesManager.setCustomMaximumRecordingDurationSeconds(seconds)) {
+                    sharedPreferencesManager.setMaximumRecordingDurationOption(
+                            com.fadcam.MaximumRecordingDuration.OPTION_CUSTOM);
+                    refreshQuickTimerValue();
+                }
+            });
+
+            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment sheet =
+                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.newTimeInstance(
+                            getString(R.string.maximum_recording_duration_custom_title),
+                            sharedPreferencesManager.getCustomMaximumRecordingDurationSeconds(),
+                            resultKey);
+            if (sheet.getArguments() != null) {
+                sheet.getArguments().putString(
+                        com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_FOOTER,
+                        getString(R.string.maximum_recording_duration_summary));
+            }
+            sheet.show(getParentFragmentManager(), "quick_timer_custom_picker");
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to open quick timer custom picker", e);
+        }
+    }
+
+    /** Compact badge value for the timer quick action: "5m" / "1h 30m" / "45s" / "No limit". */
+    private void refreshQuickTimerValue() {
+        if (btnQuickTimer == null) return;
+        try {
+            // While a countdown session is active the badge is owned by
+            // updateQuickTimerCountdown(); repainting it here would flash the
+            // configured total back during pause/resume UI refreshes.
+            if (quickCountdownSessionActive) return;
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+            String option = sharedPreferencesManager.getMaximumRecordingDurationOption();
+            String label;
+            if (com.fadcam.MaximumRecordingDuration.OPTION_NO_LIMIT.equals(option)) {
+                label = getString(R.string.maximum_recording_duration_no_limit);
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_1_MINUTE.equals(option)) {
+                label = "1m";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_2_MINUTES.equals(option)) {
+                label = "2m";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_3_MINUTES.equals(option)) {
+                label = "3m";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_4_MINUTES.equals(option)) {
+                label = "4m";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_5_MINUTES.equals(option)) {
+                label = "5m";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_10_MINUTES.equals(option)) {
+                label = "10m";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_30_MINUTES.equals(option)) {
+                label = "30m";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_1_HOUR.equals(option)) {
+                label = "1h";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_2_HOURS.equals(option)) {
+                label = "2h";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_3_HOURS.equals(option)) {
+                label = "3h";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_4_HOURS.equals(option)) {
+                label = "4h";
+            } else if (com.fadcam.MaximumRecordingDuration.OPTION_5_HOURS.equals(option)) {
+                label = "5h";
+            } else {
+                label = sharedPreferencesManager.getCustomMaximumRecordingDurationHuman();
+            }
+            if (tvQuickTimerValue != null) {
+                if (tvQuickTimerValue instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                    ((com.fadcam.ui.utils.AnimatedTextView) tvQuickTimerValue).cancelAnimation();
+                }
+                tvQuickTimerValue.setText(label);
+                tvQuickTimerValue.setVisibility(
+                        btnQuickTimer.getVisibility() == View.VISIBLE ? View.VISIBLE : View.GONE);
+                // Idle state: neutral gray (default = no limit, not an active color).
+                tvQuickTimerValue.setTextColor(0xFFB0BEC5);
+                tvQuickTimerValue.animate().scaleX(1f).scaleY(1f).setDuration(120L).start();
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to refresh quick timer value", e);
+        }
+    }
+
+    /**
      * Wires the realtime audio mute/unmute quick-action. Toggles the LIVE audio
      * track of the running recording via the service. The muted state is loaded
      * from the saved preference (user's choice persists across sessions).
@@ -11054,7 +11184,7 @@ public class HomeFragment extends BaseFragment {
             }
         });
 
-        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
+        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview, btnQuickTimer };
         for (final View b : buttons) {
             if (b == null) continue;
             b.setOnTouchListener((v, event) -> handleQuickActionGesture(v, event));
@@ -11089,7 +11219,7 @@ public class HomeFragment extends BaseFragment {
         int padL = quickActionsRow.getPaddingLeft();
         int padR = quickActionsRow.getPaddingRight();
         int contentW = rowW - padL - padR;
-        quickSlotCount = Math.max(3, contentW / quickSlotWidth);
+        quickSlotCount = Math.max(4, contentW / quickSlotWidth); // min 4 slots (mute, full, fadshot, timer)
         // Equal spacing across the padded content area — symmetric on both sides.
         quickSlotStep = contentW / (float) quickSlotCount;
         quickSlotMap.clear();
@@ -11120,10 +11250,10 @@ public class HomeFragment extends BaseFragment {
             }
         }
 
-        // Default: right-packed in preference order (mute leftmost of the group).
+        // Default: right-packed in preference order (timer leftmost of the group).
         // Any button missing from the saved slots (corrupt/outdated data) is
         // right-packed into the first free slot so the layout is never broken.
-        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
+        View[] buttons = { btnQuickTimer, btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
         int nextSlot = quickSlotCount - buttons.length;
         for (View b : buttons) {
             if (b == null) continue;
@@ -11369,7 +11499,7 @@ public class HomeFragment extends BaseFragment {
         int padL = quickActionsRow.getPaddingLeft();
         int padR = quickActionsRow.getPaddingRight();
         int contentW = rowW - padL - padR;
-        quickSlotCount = Math.max(3, contentW / quickSlotWidth);
+        quickSlotCount = Math.max(4, contentW / quickSlotWidth); // min 4 slots (mute, full, fadshot, timer)
         quickSlotStep = contentW / (float) quickSlotCount;
         int outlineSize = Math.round(36f * density);
         // Label ghost sized like the 9sp bold label (e.g. "Mute"/"Full").
@@ -11470,6 +11600,7 @@ public class HomeFragment extends BaseFragment {
         if ("mute".equals(token)) return R.id.btnQuickMuteAudio;
         if ("full".equals(token)) return R.id.btnFullscreenPreview;
         if ("fadshot".equals(token)) return R.id.btnCaptureShotPreview;
+        if ("timer".equals(token)) return R.id.btnQuickTimer;
         return 0;
     }
 
@@ -11477,6 +11608,7 @@ public class HomeFragment extends BaseFragment {
         if (id == R.id.btnQuickMuteAudio) return "mute";
         if (id == R.id.btnFullscreenPreview) return "full";
         if (id == R.id.btnCaptureShotPreview) return "fadshot";
+        if (id == R.id.btnQuickTimer) return "timer";
         return null;
     }
 
@@ -11569,7 +11701,7 @@ public class HomeFragment extends BaseFragment {
 
     private void startQuickActionJiggle(View exclude) {
         stopQuickActionJiggle();
-        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
+        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview, btnQuickTimer };
         java.util.Random r = new java.util.Random();
         for (View b : buttons) {
             if (b == null || b == exclude) continue;
@@ -11592,7 +11724,7 @@ public class HomeFragment extends BaseFragment {
             if (a != null) a.cancel();
         }
         quickJiggleAnimators.clear();
-        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
+        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview, btnQuickTimer };
         for (View b : buttons) {
             if (b != null) b.setRotation(0f);
         }
@@ -11672,6 +11804,11 @@ public class HomeFragment extends BaseFragment {
         if (btnCaptureShotPreview != null) {
             btnCaptureShotPreview.setVisibility(show ? View.VISIBLE : View.GONE);
         }
+        // Timer quick action is always relevant (set before or during recording).
+        if (btnQuickTimer != null) {
+            btnQuickTimer.setVisibility(show ? View.VISIBLE : View.GONE);
+        }
+        refreshQuickTimerValue();
         // Mute button is only meaningful when audio recording is enabled.
         if (btnQuickMuteAudio != null) {
             boolean audioEnabled = true;

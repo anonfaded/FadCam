@@ -1192,7 +1192,15 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="maximum_recording_duration_custom">Benutzerdefinierte Dauer</string>
     <string name="maximum_recording_duration_custom_value">Benutzerdefiniert (%1$d Min.)</string>
     <string name="maximum_recording_duration_custom_title">Benutzerdefinierte Aufnahmedauer</string>
-    <string name="maximum_recording_duration_custom_hint">Minuten (1–1440)</string>
+    <string name="maximum_recording_duration_custom_hint">Stunden · Minuten · Sekunden</string>
+
+    <string name="duration_picker_hours">Stunden</string>
+    <string name="duration_picker_minutes">Minuten</string>
+    <string name="duration_picker_seconds">Sekunden</string>
+    <string name="duration_picker_ok">OK</string>
+    <string name="duration_picker_cancel">Abbrechen</string>
+    <string name="quick_timer_label">Timer</string>
+    <string name="quick_timer_desc">Maximale Aufnahmedauer festlegen</string>
     <string name="maximum_recording_duration_custom_description">Geben Sie eine ganze Zahl von Minuten zwischen 1 und 1440 ein. Der vorherige benutzerdefinierte Wert bleibt erhalten.</string>
     <string name="row_orientation_title">Ausrichtung</string>
     <string name="row_record_audio_title">Audio aufnehmen</string>

@@ -1402,7 +1402,7 @@ app:layout_constraintTop_toTopOf="parent"
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- iOS-style footer text -->
+            <!-- Footer text -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -1771,7 +1771,7 @@ app:layout_constraintTop_toTopOf="parent"
             android:lineSpacingExtra="3dp"/>
 
         <!-- ═══════════════════════════════════════════════════════════ -->
-        <!-- FadCam for iOS Section                                        -->
+        <!-- App promo section                                           -->
         <!-- ═══════════════════════════════════════════════════════════ -->
 
         <TextView

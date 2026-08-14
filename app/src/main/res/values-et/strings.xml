@@ -773,7 +773,15 @@
     <string name="maximum_recording_duration_custom">Kohandatud kestus</string>
     <string name="maximum_recording_duration_custom_value">Kohandatud (%1$d min)</string>
     <string name="maximum_recording_duration_custom_title">Kohandatud salvestuse kestus</string>
-    <string name="maximum_recording_duration_custom_hint">Minutid (1–1440)</string>
+    <string name="maximum_recording_duration_custom_hint">Tunnid · Minutid · Sekundid</string>
+
+    <string name="duration_picker_hours">Tunnid</string>
+    <string name="duration_picker_minutes">Minutid</string>
+    <string name="duration_picker_seconds">Sekundid</string>
+    <string name="duration_picker_ok">OK</string>
+    <string name="duration_picker_cancel">Tühista</string>
+    <string name="quick_timer_label">Taimer</string>
+    <string name="quick_timer_desc">Määra maksimaalne salvestuse kestus</string>
     <string name="maximum_recording_duration_custom_description">Sisestage täisarv minuteid vahemikus 1 kuni 1440. Eelmine kohandatud väärtus säilitatakse.</string>
     <string name="row_orientation_title">Suund</string>
     <string name="row_record_audio_title">Salvesta heli</string>
