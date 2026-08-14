@@ -71,6 +71,7 @@ public class WatermarkSettingsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         
         // Mark main watermark feature as seen (dismisses NEW badge on Quick Access)
@@ -124,6 +125,39 @@ public class WatermarkSettingsFragment extends Fragment {
         if (rowTimezone != null) rowTimezone.setOnClickListener(v -> {
             if (switchTimezone != null) switchTimezone.performClick();
         });
+
+        // Day name toggle (default ON) — shows e.g. "Wednesday, " before the timestamp.
+        com.fadcam.ui.AvatarToggleView switchDay = view.findViewById(R.id.switch_day);
+        final android.widget.TextView valueDay = view.findViewById(R.id.value_day);
+        final java.text.SimpleDateFormat dayFmt =
+                new java.text.SimpleDateFormat("EEE", java.util.Locale.ENGLISH);
+        final Runnable updateDayValue = () -> {
+            if (valueDay != null) {
+                if (prefs.isWatermarkDayEnabled()) {
+                    // Matches the timezone value pattern: live value in green when on.
+                    valueDay.setText(dayFmt.format(new java.util.Date()));
+                    valueDay.setTextColor(0xFF16A34A);
+                } else {
+                    // Off state mirrors the other rows ("Off" in gray) instead of
+                    // the value disappearing entirely.
+                    valueDay.setText(getString(R.string.watermark_timezone_off));
+                    valueDay.setTextColor(android.graphics.Color.GRAY);
+                }
+            }
+        };
+        if (switchDay != null) {
+            switchDay.setChecked(prefs.isWatermarkDayEnabled());
+            switchDay.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                prefs.setWatermarkDayEnabled(isChecked);
+                updateDayValue.run();
+                updatePreview(); // refresh the watermark preview live
+            });
+        }
+        View rowDay = view.findViewById(R.id.row_day);
+        if (rowDay != null) rowDay.setOnClickListener(v -> {
+            if (switchDay != null) switchDay.performClick();
+        });
+        updateDayValue.run();
 
         // Timezone format picker
         View rowTimezoneFormat = view.findViewById(R.id.row_timezone_format);
@@ -478,7 +512,9 @@ public class WatermarkSettingsFragment extends Fragment {
 
     private void updatePreview(){
         String v = prefs.getWatermarkOption();
-        String formatted = "10/Jul/2024 04:47:00 PM"; // static sample
+        // Static sample (10 Jul 2024 is a Wednesday) — day shown when the toggle is on.
+        String formatted = (prefs.isWatermarkDayEnabled() ? "Wed, " : "")
+                + "10/Jul/2024 04:47:00 PM";
 
         // Build FadCam preview text — [FADCAM_ICON] triggers ImageSpan in adapter
         String fadcamBase = null;

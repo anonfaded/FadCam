@@ -140,6 +140,7 @@
     <string name="tips_title">Советы</string>
     <string name="tips_subtitle">Полезные советы по использованию</string>
     <string name="whats_new_title">Что нового</string>
+    <string name="whats_new_no_browser">Не найдено приложения для открытия этой ссылки</string>
     <string name="whats_new_subtitle">Посмотрите последние функции и обновления</string>
     <string name="home_menu">Главное меню</string>
     <string name="home_sidebar_title">Главная</string>
@@ -403,7 +404,8 @@
     <string name="row_orientation_title">Ориентация</string>
     <string name="row_record_audio_title">Записывать аудио</string>
     <string name="row_input_source_title">Источник входа</string>
-    <string name="row_noise_suppression_title">Подавление шума</string>
+    <string name="row_raw_audio_title">Сырой звук</string>
+    <string name="raw_audio_banner">Полностью сырой звук недоступен на этом устройстве</string>
     <string name="settings_location_watermark_title">Водяной знак местоположения</string>
     <string name="delete_all_videos_title">Удалить все видео</string>
     <string name="delete_all_videos_description">Вы уверены, что хотите удалить все видео?</string>
@@ -498,7 +500,8 @@
     <string name="shortcuts_helper_text">Добавьте ярлыки выше. Они также работают с приложениями автоматизации (например, MacroDroid) для запуска действий, таких как переназначение кнопок громкости.</string>
     <string name="shortcuts_add_to_home">Добавить на главный экран</string>
     <string name="shortcuts_sheet_helper">Ваша программа запуска запросит место размещения.</string>
-    <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_widgets_screen_title">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_and_widgets">Виджеты</string>
     <string name="video_player_settings_title">Настройки видеопроигрывателя</string>
     <string name="video_player_settings_helper">Скорость воспроизведения изменяет обычную скорость воспроизведения видео. Быстрая скорость — это временное повышение, применяемое только при нажатии и удержании видео. Вы можете изменить эти параметры здесь или непосредственно с экрана видеопроигрывателя.</string>
     <string name="video_player_settings_subtitle">Playback &amp; Quick Speed</string>
@@ -597,6 +600,7 @@
     <string name="shortcuts_rename_action_subtitle">Нажмите для переименования</string>
     <string name="shortcut_purpose_start">Этот ярлык начинает запись с задней камеры.</string>
     <string name="shortcut_purpose_stop">Этот ярлык останавливает текущую запись.</string>
+    <string name="shortcut_purpose_toggle">Один динамический ярлык-экция запускает или останавливает запись с камерой по умолчанию — для ручного управления используйте отдельные ярлыки Начать и Остановить.</string>
     <string name="shortcut_purpose_torch">Этот ярлык переключает фонарик.</string>
     <!-- Widget sheet action labels (avoid hardcoded) -->
     <string name="widget_customize_action_label">Настроить</string>
@@ -682,7 +686,7 @@
     <!-- Helper subtitles for new Audio rows -->
     <string name="helper_record_audio">Переключить захват микрофонного аудио в видео.</string>
     <string name="helper_audio_input_source">Выберите, какой подключённый микрофон/вход использовать.</string>
-    <string name="helper_noise_suppression">Экспериментальный фильтр для уменьшения фонового шума.</string>
+    <string name="helper_raw_audio">Записывает сырой звук микрофона без автоматического подавления шума и балансировки громкости телефона. Отлично подходит, если вы планируете редактировать звук самостоятельно. Применяется к новым записям.</string>
     <string name="helper_audio_advanced">Настроить битрейт и частоту дискретизации для баланса качества/размера.</string>
     <string name="helper_audio_bitrate_detail">Рекомендуется: 192000 бит/с для высококачественного стерео. Более низкие значения уменьшают размер файла, но могут снизить ясность. Диапазон 64000–384000 бит/с.</string>
     <string name="helper_audio_sampling_detail">Выберите 48000 Гц для видео (рекомендуется) или 44100 Гц для общей совместимости аудио.</string>
@@ -697,6 +701,9 @@
     <string name="helper_location_watermark">Добавляет наложение текста с местоположением в реальном времени во время записи.</string>
     <string name="helper_location_embed">Встраивает GPS-координаты в метаданные видео (геотег).</string>
     <string name="video_setting_location_embed_title">Встроить метаданные местоположения</string>
+    <string name="setting_video_stabilization_title">Стабилизация видео</string>
+    <string name="setting_not_supported">Не поддерживается на этом устройстве</string>
+    <string name="video_stabilization_footer">Делает видео стабильным, компенсируя дрожание рук электронной (EIS) и оптической (OIS) стабилизацией. Для этого кадр слегка обрезается.</string>
     <string name="video_setting_location_embed_enabled">Включено</string>
     <string name="video_setting_location_embed_disabled">Отключено</string>
     <string name="helper_watermark_option">Выберите содержимое наложения: временная метка + бренд, только временная метка или ничего.</string>
@@ -947,13 +954,13 @@
     <string name="setting_app_icon_title">Иконка приложения</string>
     <string name="setting_app_icon_desc">Изменить иконку запуска приложения и имя</string>
     <string name="app_icon_dialog_title">Выбрать иконку приложения</string>
-    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_default" translatable="false">FadCam</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
     <string name="app_icon_pakistan" translatable="false">FadCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_nooristic" translatable="false">FadCam ++</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>
@@ -1015,7 +1022,7 @@
     <string name="location_icon_description">Иконка местоположения</string>
     <string name="location_embedding_icon_description">Иконка встраивания местоположения</string>
 
-    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
 
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Проведите вправо для продолжения</string>
@@ -1141,7 +1148,7 @@
     <string name="camera_error_service">Ошибка службы камеры</string>
     <string name="camera_error_unknown">Неизвестная ошибка камеры</string>
     <string name="camera_resources_cooldown">Пожалуйста, подождите немного перед началом новой записи</string>
-    <string name="dialog_audio_noise_suppression_label">Подавление шума</string>
+    <string name="raw_audio_unprocessed_note">Полностью сырой звук недоступен на этом устройстве. Вместо этого используется режим микрофона для распознавания речи (VOICE_RECOGNITION), отключающий большую часть обработки — разница с обычной записью может быть едва заметной.</string>
     <!-- duplicate removed: row_record_audio_title already defined above -->
 
     <string name="fix_video_menu_title">Исправить видео (Восстановить воспроизведение)</string>
@@ -1368,11 +1375,26 @@ FadCam использует фрагментированный формат MP4 
 
     <string name="fadrec_audio_source_choose">Выберите источник аудио</string>
 
+	<string name="fadrec_audio_source_helper">Выберите, какой звук будут захватывать записи экрана. «По умолчанию (маршрутизация системы)» рекомендуется для USB- и проводных микрофонов — или выберите конкретное устройство для явной маршрутизации.</string>
+	<string name="fadrec_audio_source_mic_default">Микрофон (маршрутизация по умолчанию)</string>
+
     <string name="fadrec_audio_source_none">Без аудио</string>
 
     <string name="fadrec_audio_source_mic">Микрофон</string>
 
     <string name="fadrec_audio_source_internal">Аудио устройства (Внутренний)</string>
+
+	<string name="screen_rec_audio_device_title">Устройство ввода звука</string>
+	<string name="screen_rec_audio_device_default">По умолчанию (маршрутизация системы)</string>
+	<string name="screen_rec_audio_device_helper">Выберите микрофон для записи экрана. «По умолчанию» использует автоматическую маршрутизацию системы — надёжный вариант при использовании USB-микрофонов.</string>
+
+    <string name="records_repair_banner_dismiss">Закрыть</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s не был финализирован при остановке записи. Файл автоматически преобразован в воспроизводимый формат.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s нельзя было воспроизвести, так как запись была прервана, пока приложение работало в фоне. Файл автоматически преобразован в воспроизводимый формат.</string>
+
+    <string name="records_repair_banner_title">Запись восстановлена</string>
 
     <string name="recording_time_left">Осталось времени</string>
 
@@ -2033,6 +2055,10 @@ FadCam использует фрагментированный формат MP4 
 
     <string name="shortcut_start_current">Старт текущая</string>
 
+    <string name="shortcut_toggle_recording">Начать / Остановить</string>
+
+    <string name="shortcut_toggle_recording_long">Начать или остановить запись</string>
+
     <string name="shortcut_start_dual">Старт двойная</string>
 
     <string name="shortcut_take_photo">Фото</string>
@@ -2058,6 +2084,14 @@ FadCam использует фрагментированный формат MP4 
     <string name="preview_quick_actions_title">Быстрые действия предпросмотра</string>
 
     <string name="preview_quick_actions_sub">Показывать иконки FadShot и полноэкранного режима даже в режиме ожидания записи.</string>
+    <string name="grid_lines_title">Линии сетки</string>
+    <string name="home_icon_picker_title">Иконка главного экрана</string>
+    <string name="home_icon_home">Главная</string>
+    <string name="home_icon_jet">Истребитель</string>
+    <string name="home_icon_pilot">Пилот</string>
+    <string name="quick_mute_label">Без звука</string>
+    <string name="quick_unmute_label">Звук</string>
+    <string name="grid_lines_subtitle">Правило третей на предпросмотре</string>
 
     <string name="preview_quick_actions_state_always">Всегда видимы (ожидание + запись)</string>
 
@@ -2769,6 +2803,10 @@ FadCam использует фрагментированный формат MP4 
     <string name="motion_lab_row_subtitle">Умная запись событий для использования как CCTV</string>
     <string name="automation_title">Автоматизация</string>
     <string name="automation_row_subtitle">Назначение кнопок, Bluetooth-пульты, клавиши громкости</string>
+    <string name="setting_volume_shutter_title">Затвор клавишами громкости</string>
+    <string name="setting_volume_shutter_summary">Клавиши громкости работают как затвор камеры на главной вкладке</string>
+    <string name="setting_volume_shutter_footer">Клавиши громкости становятся затвором на главной вкладке:\n• Касание — фото\n• Двойное касание — смена камеры\n• Долгое нажатие — начать или остановить запись\n\nBluetooth-пульты-затворы тоже работают и запускают те же действия. Клавиши работают, пока открыта главная вкладка FadCam — будущие версии позволят любой кнопке запускать действия FadCam, даже в фоне.\n\nПока используйте MacroDroid для назначения ярлыков FadCam — они в разделе «Настройки → Ярлыки и виджеты».</string>
+    <string name="shortcuts_macrodroid_template">Официальный шаблон MacroDroid: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Тепловой Защитник</string>
     <string name="thermal_guardian_row_subtitle">Автоматическая настройка записи для предотвращения перегрева</string>
     <string name="audio_vision_title">Аудио Видение</string>
@@ -3019,6 +3057,7 @@ FadCam использует фрагментированный формат MP4 
     <string name="watermark_gps_disabled_warning">⚠ GPS выключен — включите геолокацию устройства для работы этой функции</string>
     <string name="watermark_gps_disabled_home_toast">Функции водяного знака с местоположением включены, но GPS выключен. Включите геолокацию устройства для их работы.</string>
     <string name="watermark_gps_disabled_banner_message">Функции водяного знака, зависящие от местоположения, не будут отображаться, пока не включена геолокация устройства</string>
+    <string name="watermark_day_title">День</string>
     <string name="watermark_timezone_title">Часовой пояс</string>
     <string name="watermark_timezone_off">Выкл</string>
     <string name="watermark_timezone_on_gmt">Вкл — GMT смещение в водяном знаке</string>

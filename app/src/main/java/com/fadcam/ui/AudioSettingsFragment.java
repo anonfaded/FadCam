@@ -3,6 +3,7 @@ package com.fadcam.ui;
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -38,13 +39,13 @@ public class AudioSettingsFragment extends Fragment {
     // Row value TextViews
     private TextView valueRecordAudio;
     private TextView valueInputSource;
-    private TextView valueNoiseSuppression;
+    private TextView valueRawAudio;
     private TextView valueAdvancedSummary;
 
     // Row containers for enabling/disabling when record audio off
     private View rowInputSource;
     private View rowAdvanced;
-    private View rowNoiseSuppression;
+    private View rowRawAudio;
 
     // State mirrors (legacy variables)
     private final List<AudioDeviceInfo> availableInputMics = new ArrayList<>();
@@ -60,6 +61,7 @@ public class AudioSettingsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         prefs = SharedPreferencesManager.getInstance(requireContext());
         bindViews(view);
@@ -76,17 +78,20 @@ public class AudioSettingsFragment extends Fragment {
     private void bindViews(View root){
         valueRecordAudio = root.findViewById(R.id.value_record_audio);
         valueInputSource = root.findViewById(R.id.value_audio_input_source);
-        valueNoiseSuppression = root.findViewById(R.id.value_noise_suppression);
+        valueRawAudio = root.findViewById(R.id.value_raw_audio);
         valueAdvancedSummary = root.findViewById(R.id.value_audio_advanced);
         rowInputSource = root.findViewById(R.id.row_audio_input_source);
     rowAdvanced = root.findViewById(R.id.row_audio_advanced);
-    rowNoiseSuppression = root.findViewById(R.id.row_noise_suppression);
+    rowRawAudio = root.findViewById(R.id.row_raw_audio);
     }
 
     private void bindRowHandlers(View root){
+    // Pill-style tap animation for every tappable arrow row.
+    // Wide full-width rows: smaller scale (1.03) so the growth stays subtle.
+    int[] rowIds = { R.id.row_record_audio, R.id.row_audio_input_source, R.id.row_raw_audio, R.id.row_audio_advanced };
     root.findViewById(R.id.row_record_audio).setOnClickListener(v -> showRecordAudioBottomSheet());
     rowInputSource.setOnClickListener(v -> showMicSelectionBottomSheet());
-    root.findViewById(R.id.row_noise_suppression).setOnClickListener(v -> showNoiseSuppressionBottomSheet());
+    root.findViewById(R.id.row_raw_audio).setOnClickListener(v -> showRawAudioBottomSheet());
         rowAdvanced.setOnClickListener(v -> showAudioAdvancedBottomSheet());
     }
 
@@ -96,9 +101,9 @@ public class AudioSettingsFragment extends Fragment {
 
         updateAudioInputSourceStatusUI();
 
-        boolean ns = prefs.isNoiseSuppressionEnabled();
-        if(valueNoiseSuppression!=null){
-            valueNoiseSuppression.setText(ns? getString(R.string.setting_enabled) : getString(R.string.setting_disabled));
+        boolean raw = prefs.isRawAudioEnabled();
+        if(valueRawAudio!=null){
+            valueRawAudio.setText(raw? getString(R.string.setting_enabled) : getString(R.string.setting_disabled));
         }
 
         // Advanced summary (bitrate + sampling)
@@ -115,10 +120,52 @@ public class AudioSettingsFragment extends Fragment {
         refreshAllValues();
     }
 
-    private void toggleNoiseSuppression(){
-        boolean cur = prefs.isNoiseSuppressionEnabled();
-        prefs.setNoiseSuppressionEnabled(!cur);
-        refreshAllValues();
+    private void showRawAudioBottomSheet(){
+        boolean enabled = prefs.isRawAudioEnabled();
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        final String resultKey = "picker_result_raw_audio";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
+            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+                prefs.setRawAudioEnabled(state);
+                refreshAllValues();
+            }
+        });
+        String helper = getString(R.string.helper_raw_audio);
+        // Honest capability note: when UNPROCESSED isn't supported we fall back to
+        // VOICE_RECOGNITION (still bypasses most platform processing).
+        try {
+            android.media.AudioManager am = (android.media.AudioManager)
+                    requireContext().getSystemService(Context.AUDIO_SERVICE);
+            boolean unprocessedSupported = am != null && "true".equalsIgnoreCase(
+                    am.getProperty(android.media.AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED));
+            FLog.i("FadCamRawAudio", "UI: UNPROCESSED supported = " + unprocessedSupported);
+            if (!unprocessedSupported) {
+                helper += "\n\n" + getString(R.string.raw_audio_unprocessed_note);
+            }
+        } catch (Exception e) {
+            FLog.w("FadCamRawAudio", "UI: raw audio capability check failed: " + e.getMessage());
+        }
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
+                getString(R.string.row_raw_audio_title), items, null, resultKey, helper,
+                getString(R.string.row_raw_audio_title), enabled);
+        // Show a clear warning banner when fully raw audio isn't available on this device,
+        // so users can't miss it even if they don't read the footer below.
+        boolean unprocessedSupported = false;
+        try {
+            android.media.AudioManager am = (android.media.AudioManager)
+                    requireContext().getSystemService(Context.AUDIO_SERVICE);
+            unprocessedSupported = am != null && "true".equalsIgnoreCase(
+                    am.getProperty(android.media.AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED));
+        } catch (Exception e) {
+            FLog.w("FadCamRawAudio", "UI: raw audio capability check failed: " + e.getMessage());
+        }
+        if (!unprocessedSupported && sheet.getArguments() != null) {
+            sheet.getArguments().putString(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_BANNER_TEXT,
+                    getString(R.string.raw_audio_banner));
+        }
+        sheet.show(getParentFragmentManager(), "raw_audio_picker");
     }
 
     private void showRecordAudioBottomSheet(){
@@ -137,24 +184,6 @@ public class AudioSettingsFragment extends Fragment {
                 getString(R.string.row_record_audio_title), items, null, resultKey, helper,
                 getString(R.string.row_record_audio_title), enabled);
         sheet.show(getParentFragmentManager(), "record_audio_picker");
-    }
-
-    private void showNoiseSuppressionBottomSheet(){
-        boolean enabled = prefs.isNoiseSuppressionEnabled();
-        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
-        final String resultKey = "picker_result_noise_suppression";
-        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k,b)->{
-            if(b.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
-                boolean state = b.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
-                prefs.setNoiseSuppressionEnabled(state);
-                refreshAllValues();
-            }
-        });
-    String helper = getString(R.string.helper_noise_suppression);
-        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceWithSwitch(
-                getString(R.string.dialog_audio_noise_suppression_label), items, null, resultKey, helper,
-                getString(R.string.dialog_audio_noise_suppression_label), enabled);
-        sheet.show(getParentFragmentManager(), "noise_suppression_picker");
     }
 
     // --- Legacy audio input source logic (copied & adapted) ---
@@ -387,13 +416,13 @@ public class AudioSettingsFragment extends Fragment {
                 rowAdvanced.setOnClickListener(null);
             }
         }
-        if(rowNoiseSuppression!=null){
-            rowNoiseSuppression.setAlpha(recordAudioEnabled?1f:disabledAlpha);
-            rowNoiseSuppression.setEnabled(recordAudioEnabled);
+        if(rowRawAudio!=null){
+            rowRawAudio.setAlpha(recordAudioEnabled?1f:disabledAlpha);
+            rowRawAudio.setEnabled(recordAudioEnabled);
             if(recordAudioEnabled){
-                rowNoiseSuppression.setOnClickListener(v-> showNoiseSuppressionBottomSheet());
+                rowRawAudio.setOnClickListener(v-> showRawAudioBottomSheet());
             } else {
-                rowNoiseSuppression.setOnClickListener(null);
+                rowRawAudio.setOnClickListener(null);
             }
         }
     }

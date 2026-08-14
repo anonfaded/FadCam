@@ -6,8 +6,10 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
@@ -78,6 +80,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         initViewModel();
         bindViews(view);
@@ -408,7 +411,25 @@ public class MotionLabSettingsFragment extends Fragment {
 
         byte[] frameJpeg = intent.getByteArrayExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG);
         if (frameJpeg != null && frameJpeg.length > 0 && imageDebugFrame != null) {
-            imageDebugFrame.setImageBitmap(BitmapFactory.decodeByteArray(frameJpeg, 0, frameJpeg.length));
+            Bitmap decoded = BitmapFactory.decodeByteArray(frameJpeg, 0, frameJpeg.length);
+            if (decoded != null) {
+                // Rotate to match recording orientation so portrait users see an upright preview
+                if (isAdded()) {
+                    SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
+                    if (prefs != null && SharedPreferencesManager.ORIENTATION_PORTRAIT.equals(prefs.getVideoOrientation())) {
+                        Matrix matrix = new Matrix();
+                        matrix.postRotate(90f);
+                        Bitmap rotated = Bitmap.createBitmap(decoded, 0, 0, decoded.getWidth(), decoded.getHeight(), matrix, true);
+                        if (rotated != decoded) {
+                            decoded.recycle();
+                            decoded = rotated;
+                        }
+                    }
+                }
+                imageDebugFrame.setImageBitmap(decoded);
+                imageDebugFrame.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                imageDebugFrame.clearColorFilter();
+            }
         }
     }
 

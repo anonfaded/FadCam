@@ -813,7 +813,10 @@ public class ScreenRecordingService extends Service {
      * Returns the current date/time as a formatted timestamp string for the watermark.
      */
     private String getRecordingTimestamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MMM/yyyy hh:mm:ss a", Locale.ENGLISH);
+        // Abbreviated day (e.g. "Wed, ") included when the Day toggle is on.
+        String pattern = (sharedPreferencesManager.isWatermarkDayEnabled() ? "EEE, " : "")
+                + "dd/MMM/yyyy hh:mm:ss a";
+        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH);
         return sdf.format(new Date());
     }
     

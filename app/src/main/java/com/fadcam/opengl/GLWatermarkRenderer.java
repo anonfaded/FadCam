@@ -321,6 +321,30 @@ public class GLWatermarkRenderer {
         renderFrame(false);
     }
 
+    /**
+     * Requests a render ASYNCHRONOUSLY on the GL thread. NEVER blocks the caller.
+     * Used by the recording pipeline's rollover path: calling renderFrame()
+     * synchronously from the drain thread deadlocks when the video encoder's
+     * input surface is full (the GL loop is stuck in eglSwapBuffers waiting for
+     * the encoder, which waits for the drain — circular wait).
+     */
+    public void requestRenderAsync() {
+        if (glThreadHandler == null || released) {
+            return;
+        }
+        try {
+            glThreadHandler.post(() -> {
+                try {
+                    renderFrame();
+                } catch (Exception e) {
+                    FLog.w(TAG, "Async renderFrame failed: " + e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to post async render: " + e.getMessage());
+        }
+    }
+
     /** Renders a frame, optionally using a stale frame when no fresh one is available. */
     public void renderFrame(boolean allowStaleFrame) {
         try {

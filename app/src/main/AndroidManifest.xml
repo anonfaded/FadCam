@@ -154,8 +154,8 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- Noor App Icon (Activity Alias) -->
-        <activity-alias android:name=".MainActivity.NoorIcon" android:enabled="false" android:label="FadCam ++" android:icon="@mipmap/ic_launcher_noor" android:roundIcon="@mipmap/ic_launcher_noor_round" android:targetActivity=".MainActivity" android:exported="true">
+        <!-- Nooristic App Icon (Activity Alias) -->
+        <activity-alias android:name=".MainActivity.NooristicIcon" android:enabled="false" android:label="FadCam ++" android:icon="@mipmap/ic_launcher_nooristic" android:roundIcon="@mipmap/ic_launcher_nooristic_round" android:targetActivity=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -333,6 +333,7 @@
 
         <activity android:name=".RecordingStartActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize" android:windowSoftInputMode="stateAlwaysHidden" android:screenOrientation="portrait" />
         <activity android:name=".RecordingStopActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize" android:windowSoftInputMode="stateAlwaysHidden" android:screenOrientation="portrait" />
+        <activity android:name=".RecordingToggleActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" android:exported="true" />
         <activity
             android:name=".PhotoCaptureActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"

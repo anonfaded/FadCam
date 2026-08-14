@@ -35,9 +35,13 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     public static final String ARG_RESULT_KEY = "result_key";
     public static final String BUNDLE_SELECTED_ID = "selected_id";
     public static final String ARG_HELPER_TEXT = "helper_text";
+    /** Optional warning banner shown at the top of the sheet (e.g. feature not supported). */
+    public static final String ARG_BANNER_TEXT = "picker_banner_text";
     public static final String ARG_SWITCH_PRESENT = "switch_present";
     public static final String ARG_SWITCH_TITLE = "switch_title";
     public static final String ARG_SWITCH_STATE = "switch_state";
+    /** Whether the sheet's switch is interactive (false = shown but disabled). */
+    public static final String ARG_SWITCH_ENABLED = "switch_enabled";
     public static final String BUNDLE_SWITCH_STATE = "switch_state";
     public static final String ARG_SWITCH_DEPENDENT_IDS =
         "switch_dependent_ids"; // ArrayList<String> of option ids disabled when switch is off
@@ -143,6 +147,7 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             f.getArguments().putBoolean(ARG_SWITCH_PRESENT, true);
             f.getArguments().putString(ARG_SWITCH_TITLE, switchTitle);
             f.getArguments().putBoolean(ARG_SWITCH_STATE, switchState);
+            f.getArguments().putBoolean(ARG_SWITCH_ENABLED, true);
         }
         return f;
     }
@@ -437,6 +442,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
         // Handle close button - simple direct listener on the visible close ImageView
         View closeBtn = view.findViewById(R.id.picker_close_btn);
         if (closeBtn != null) {
+            // Small 31dp icon: bigger press scale so the animation is visible.
+            com.fadcam.Utils.attachPressScale(closeBtn, 1.15f);
             closeBtn.setOnClickListener(v -> dismiss());
         }
         if (useGradientBg) {
@@ -820,6 +827,21 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             } catch (Exception ignored) {}
         }
         TextView helperView = view.findViewById(R.id.picker_helper);
+        // Optional warning banner at the top of the card (e.g. "not supported on this device").
+        try {
+            String bannerText = getArguments() != null
+                    ? getArguments().getString(ARG_BANNER_TEXT, null) : null;
+            if (bannerText != null && !bannerText.isEmpty()) {
+                View banner = view.findViewById(R.id.picker_banner);
+                TextView bannerTextView = view.findViewById(R.id.picker_banner_text);
+                if (banner != null && bannerTextView != null) {
+                    bannerTextView.setText(bannerText);
+                    banner.setVisibility(View.VISIBLE);
+                }
+            }
+        } catch (Exception e) {
+            FLog.w("PickerBottomSheet", "Failed to apply banner: " + e.getMessage());
+        }
         LayoutInflater li = LayoutInflater.from(view.getContext());
         // Optional switch row: the slider layout has a dedicated switch row and divider
         if (switchPresent) {
@@ -837,11 +859,15 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 if (switchDivider != null && !items.isEmpty()) switchDivider.setVisibility(View.VISIBLE);
                 switchLabel.setText(switchTitle);
                 swc.setChecked(switchState);
+                boolean swEnabled = getArguments().getBoolean(ARG_SWITCH_ENABLED, true);
+                swc.setEnabled(swEnabled);
+                swc.setAlpha(swEnabled ? 1f : 0.4f);
                 applyThemedSwitchColors(swc);
                 switchRef = swc;
 
                 // Ensure row click triggers the switch's native toggle (keeps internal animations + accessibility)
                 switchRow.setOnClickListener(v -> {
+                    if (!swc.isEnabled()) return; // shown-but-disabled (e.g. unsupported hardware)
                     FLog.d("PickerBottomSheet", "Row clicked -> performing switch click (prev state=" + swc.isChecked() + ")");
                     swc.performClick();
                 });
@@ -1331,6 +1357,19 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             android.widget.ImageView check = cell.findViewById(R.id.icon_check);
             android.widget.TextView label = cell.findViewById(R.id.icon_label);
             label.setText(item.title);
+            // Badge pill under the label (same codename style as shortcuts).
+            android.widget.TextView badge = cell.findViewById(R.id.icon_badge);
+            if (badge != null) {
+                if (item.badgeText != null && !item.badgeText.isEmpty()) {
+                    badge.setText(item.badgeText);
+                    if (item.badgeBgResId != null) {
+                        badge.setBackgroundResource(item.badgeBgResId);
+                    }
+                    badge.setVisibility(View.VISIBLE);
+                } else {
+                    badge.setVisibility(View.GONE);
+                }
+            }
             if (item.iconResId != null) {
                 icon.setImageResource(item.iconResId);
                 icon.setImageTintList(null);

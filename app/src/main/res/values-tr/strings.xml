@@ -541,7 +541,7 @@
     <string name="video_menu_upload_drive">Google Drive\'a yükle</string>
     <string name="toast_no_youtube_app">YouTube uygulaması bulunamadı</string>
     <string name="toast_no_drive_app">Google Drive uygulaması bulunamadı</string>
-    <string name="dialog_audio_noise_suppression_label">Gürültü Bastırma</string>
+    <string name="raw_audio_unprocessed_note">Tamamen ham ses bu cihazda mevcut değil. Bunun yerine işlemenin çoğunu devre dışı bırakan ses tanıma mikrofon modu (VOICE_RECOGNITION) kullanılır — normal kayıttan fark ince olabilir.</string>
     <string name="fix_video_menu_title">Videoyu Düzelt (Oynatmayı Onar)</string>
     <string name="fix_video_repairing">Düzeltiliyor… Birkaç saniye sürebilir.</string>
     <string name="fix_video_success">Video düzeltildi! Şu adla kaydedildi: %1$s</string>
@@ -563,6 +563,7 @@
     <string name="tips_title">İpuçları</string>
     <string name="tips_subtitle">Yardımcı kullanım ipuçları</string>
     <string name="whats_new_title">Yenilikler</string>
+    <string name="whats_new_no_browser">Bu bağlantıyı açacak bir uygulama bulunamadı</string>
     <string name="whats_new_subtitle">En son özellikleri ve güncellemeleri görün</string>
     <string name="watch_video_saved_toast">Downloads/FadCam klasörüne kaydedildi</string>
     <string name="video_menu_info">Bilgi</string>
@@ -635,7 +636,8 @@
     <string name="shortcuts_helper_text">Yukarıdan kısayollar ekleyin. Ayrıca, ses düğmelerini eşleme gibi eylemleri tetiklemek için otomasyon uygulamalarıyla (rn. MacroDroid) çalışır.</string>
     <string name="shortcuts_add_to_home">Ana ekrana ekle</string>
     <string name="shortcuts_sheet_helper">Başlatıcınız yerleştirme için sizi yönlendirecek.</string>
-    <string name="shortcuts_and_widgets">Kısayollar ve Pencere Öğeleri</string>
+    <string name="shortcuts_widgets_screen_title">Kısayollar ve Pencere Öğeleri</string>
+    <string name="shortcuts_and_widgets">Pencere Öğeleri</string>
     <string name="video_player_settings_helper">Oynatma Hızı, video oynatmanın normal hızını değiştirir. Hızlı Hız, yalnızca videoya basılı tuttuğunuz sürece uygulanan geçici bir hızlandırmadır. Bu ayarları buradan veya doğrudan Video Oynatıcı ekranından değiştirebilirsiniz.</string>
     <string name="video_player_settings_subtitle">Oynatma ve Hızlı Hız</string>
     <string name="waveform_helper_text">Ses dalga formu görselleştirmesinin video oynatma sırasında ilerleme çubuğunda görünüp görünmeyeceğini kontrol eder.</string>
@@ -685,12 +687,15 @@
     <string name="shortcut_purpose_start_current">Bu kısayol, şu anda seçili kamera modu ile kaydı başlatır.</string>
     <string name="shortcut_purpose_start_dual">Bu kısayol, çift kamera kaydını başlatır (PiP).</string>
     <string name="shortcut_purpose_stop">Bu kısayol, mevcut kaydı durdurur.</string>
+    <string name="shortcut_purpose_toggle">Kaydı varsayılan kamerayla başlatan veya durduran tek bir dinamik kısayol — manuel kontrol için ayrı Başlat ve Durdur kısayollarını kullanın.</string>
     <string name="shortcut_purpose_torch">Bu kısayol, feneri açar/kapatır.</string>
     <string name="shortcut_purpose_photo">Bu kısayol, arka kameradan bir fotoğraf çeker ve FadCam/FadShot konumuna kaydeder.</string>
     <string name="shortcut_purpose_screenshot">Bu kısayol, bir ekran görüntüsü alır ve FadCam/FadShot konumuna kaydeder (Ayarlar &gt; Gizlilik &gt; Erişilebilirlik\'ten Erişilebilirlik iznini etkinleştirin).</string>
     <string name="widget_customize_action_label">Özelleştir</string>
     <string name="widget_customize_action_subtitle">Saat, tarih, tema seçenekleri</string>
     <string name="shortcut_start_current">Mevcut ile Başlat</string>
+    <string name="shortcut_toggle_recording">Başlat / Durdur</string>
+    <string name="shortcut_toggle_recording_long">Kaydı başlat veya durdur</string>
     <string name="shortcut_start_dual">Çift ile Başlat</string>
     <string name="shortcut_take_photo">Fotoğraf</string>
     <string name="shortcut_take_screenshot">FadRec</string>
@@ -722,7 +727,7 @@
     <string name="stream_notes_title">Notlar</string>
     <string name="helper_record_audio">Videolarda mikrofon sesini yakalamayı açıp kapatır.</string>
     <string name="helper_audio_input_source">Hangi bağlı mikrofon/girişin kullanılacağını seçin.</string>
-    <string name="helper_noise_suppression">Arka plan gürültüsünü azaltmak için deneysel filtre.</string>
+    <string name="helper_raw_audio">Telefonun otomatik gürültü azaltma ve ses dengeleme olmadan mikrofonun ham sesini kaydeder. Sesi daha sonra kendiniz düzenlemeyi planlıyorsanız harika. Yeni kayıtlar için geçerlidir.</string>
     <string name="helper_audio_advanced">Kalite/boyut dengesi için bit hızı ve örnekleme hızını özelleştirin.</string>
     <string name="helper_audio_bitrate_detail">Önerilen: Yüksek kaliteli stereo için 192000 bps. Düşük değerler dosya boyutunu küçültür ancak netliği azaltabilir. Aralık 64000–384000 bps.</string>
     <string name="helper_audio_sampling_detail">Video için 48000 Hz (önerilen) veya genel ses uyumluluğu için 44100 Hz seçin.</string>
@@ -1011,6 +1016,7 @@
     <string name="watermark_network_warning_message">Bu özellik, potansiyel olarak izlenebilecek ağ istekleri gerektirir. Tam anonimlik istiyorsanız devre dışı bırakın. Devam edilsin mi?</string>
     <string name="watermark_network_warning_enable">Etkinleştir</string>
     <string name="watermark_audio_permission_required">Gürültü izleme için mikrofon izni gerekli</string>
+    <string name="watermark_day_title">Gün</string>
     <string name="watermark_timezone_title">Saat Dilimi</string>
     <string name="watermark_timezone_off">Kapalı</string>
     <string name="watermark_timezone_on_gmt">Açık — Filigranda GMT farkı</string>
@@ -1181,9 +1187,24 @@
     <string name="fadrec_record_muted">Sessiz Kaydet</string>
     <string name="fadrec_audio_source_title">Ses Kaynağı</string>
     <string name="fadrec_audio_source_choose">Ses kaynağı seç</string>
+
+	<string name="fadrec_audio_source_helper">Ekran kayıtlarının hangi sesi yakalayacağını seçin. \"Varsayılan (sistem yönlendirmesi)\" USB ve kablolu mikrofonlar için önerilir — açık yönlendirme için belirli bir cihaz da seçebilirsiniz.</string>
+	<string name="fadrec_audio_source_mic_default">Mikrofon (varsayılan yönlendirme)</string>
     <string name="fadrec_audio_source_none">Ses Yok</string>
     <string name="fadrec_audio_source_mic">Mikrofon</string>
     <string name="fadrec_audio_source_internal">Cihaz Sesi (Dahili)</string>
+
+	<string name="screen_rec_audio_device_title">Ses Giriş Aygıtı</string>
+	<string name="screen_rec_audio_device_default">Varsayılan (sistem yönlendirmesi)</string>
+	<string name="screen_rec_audio_device_helper">Ekran kayıtlarının hangi mikrofonla kaydedileceğini seçin. \"Varsayılan\", sistemin otomatik yönlendirmesini kullanır — USB mikrofonlarda güvenilir seçenek.</string>
+
+    <string name="records_repair_banner_dismiss">Kapat</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s, kayıt durdurulduğunda sonlandırılmamıştı. Otomatik olarak oynatılabilir formata dönüştürüldü.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s, uygulama arka plandayken kayıt kesildiği için oynatılamıyordu. Otomatik olarak oynatılabilir formata dönüştürüldü.</string>
+
+    <string name="records_repair_banner_title">Kayıt onarıldı</string>
     <string name="recording_controls_title">AF · Pozlama · Yakınlaştırma</string>
     <string name="mainpage_camera_front">Ön Kamera</string>
     <string name="mainpage_camera_back">Arka Kamera</string>
@@ -1598,7 +1619,8 @@
 <string name="row_orientation_title">Yön</string>
 <string name="row_record_audio_title">Ses Kaydet</string>
 <string name="row_input_source_title">Giriş Kaynağı</string>
-<string name="row_noise_suppression_title">Gürültü Engelleme</string>
+<string name="row_raw_audio_title">Ham ses</string>
+<string name="raw_audio_banner">Tamamen ham ses bu cihazda mevcut değil</string>
 <string name="delete_single_video_subtitle">Bu kaydı kaldır</string>
 <string name="note_debug_detailed">Etkinleştirildiğinde, FadCam hata ayıklama günlüğü HTML dosyasını (FADCAM_debug.html) herkese açık İndirilenler/FadCam/ klasörüne yazar. Sorun bildirirken bu dosyayı paylaşın. Gelecekteki yazmaları durdurmak için kapatın.\nNot: Hata ayıklama günlüğü kayıt sırasında performans yükü ekleyebilir — sorun gidermiyorsanız kapalı tutun.</string>
 <string name="location_format_title">Konum Biçimi</string>
@@ -1680,6 +1702,14 @@
 <string name="shortcut_take_photo_front">Selfie</string>
 <string name="preview_quick_actions_title">Önizleme hızlı işlemleri</string>
 <string name="preview_quick_actions_sub">Kayıt boştayken bile FadShot ve Tam Ekran simgelerini göster.</string>
+<string name="grid_lines_title">Izgara çizgileri</string>
+<string name="home_icon_picker_title">Ana simge</string>
+<string name="home_icon_home">Ana</string>
+<string name="home_icon_jet">Savaş uçağı</string>
+<string name="home_icon_pilot">Pilot</string>
+<string name="quick_mute_label">Sustur</string>
+<string name="quick_unmute_label">Ses</string>
+<string name="grid_lines_subtitle">Önizlemede üçte birlik ızgara</string>
 <string name="preview_quick_actions_state_always">Her zaman görünür (boşta + kayıt)</string>
 <string name="preview_quick_actions_state_recording_only">Yalnızca kayıt sırasında görünür</string>
 <string name="coming_soon_toast">Çok yakında! İnşallah</string>
@@ -1830,6 +1860,9 @@
 <string name="universal_back">Geri</string>
 <string name="audio_bitrate_recommended_line">Önerilen: 192000 bps</string>
 <string name="video_setting_location_embed_title">Konum Metaverisini Göm</string>
+<string name="setting_video_stabilization_title">Video sabitleme</string>
+<string name="setting_not_supported">Bu cihazda desteklenmiyor</string>
+<string name="video_stabilization_footer">Elektronik (EIS) ve optik (OIS) sabitleme ile el titremesini dengeleyerek videolarınızı sabit tutar. Bunun için çerçevenin küçük bir kısmı kırpılır.</string>
 <string name="video_setting_location_embed_enabled">Etkin</string>
 <string name="video_setting_location_embed_disabled">Devre Dışı</string>
 <string name="delete_video_dialog_title">Video Silinsin mi?</string>
@@ -1867,13 +1900,13 @@
 <string name="update_visit_github">GitHub\'ı Ziyaret Et</string>
 <string name="header_logo_default" translatable="false">FadCam</string>
 <string name="header_logo_avatar" translatable="false">Avatar</string>
-<string name="app_icon_default" translatable="false">Legacy</string>
+<string name="app_icon_default" translatable="false">FadCam</string>
 <string name="app_icon_alternative" translatable="false">Camera</string>
 <string name="app_icon_faded" translatable="false">0xFF0000</string>
 <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
 <string name="app_icon_pakistan" translatable="false">FadCam</string>
 <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-<string name="app_icon_noor" translatable="false">Noor</string>
+<string name="app_icon_nooristic" translatable="false">FadCam ++</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>
@@ -2050,7 +2083,7 @@
     <string name="share_feedback">Geri bildirim paylaş</string>
     <string name="storage_helper_current_custom_prefix">Mevcut özel klasör:</string>
     <string name="storage_helper_current_custom_uri_prefix">URI:</string>
-    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
     <string name="onboarding_intro_line4">açık kaynak. reklamsız. senin.</string>
     <string name="records_sort_helper">Kayıtların listede nasıl sıralanacağını seçin.</string>
     <string name="records_sort_order_title">Sıralama düzeni</string>
@@ -2204,6 +2237,10 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="motion_lab_row_subtitle">CCTV tarzı kullanım için akıllı olay kaydı</string>
     <string name="automation_title">Otomasyon</string>
     <string name="automation_row_subtitle">Tuş atama, Bluetooth kumandalar, ses tuşları</string>
+    <string name="setting_volume_shutter_title">Ses Tuşu Deklanşörü</string>
+    <string name="setting_volume_shutter_summary">Ses tuşları ana sekmede kamera deklanşörü görevi görür</string>
+    <string name="setting_volume_shutter_footer">Ses tuşları ana sekmede deklanşörünüz olur:\n• Dokun — fotoğraf çek\n• Çift dokun — kamerayı değiştir\n• Basılı tut — kaydı başlat veya durdur\n\nBluetooth uzaktan deklanşörler de çalışır ve aynı eylemleri tetikler. Tuşlar FadCam ana sekmesi açıkken çalışır — gelecek sürümler herhangi bir tuşun FadCam eylemlerini arka planda bile tetiklemesini sağlayacak.\n\nŞimdilik FadCam kısayollarını eşlemek için MacroDroid kullanın — bunları Ayarlar → Kısayollar ve Widget\'lar bölümünde bulabilirsiniz.</string>
+    <string name="shortcuts_macrodroid_template">Resmi MacroDroid şablonu: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Isı Koruyucu</string>
     <string name="thermal_guardian_row_subtitle">Aşırı ısınmayı önlemek için kaydı otomatik ayarla</string>
     <string name="audio_vision_title">Ses Görüşü</string>

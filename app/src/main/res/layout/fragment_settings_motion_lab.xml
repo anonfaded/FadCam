@@ -16,6 +16,7 @@
         android:paddingTop="16dp"
         android:paddingEnd="16dp"
         android:paddingBottom="12dp"
+        android:elevation="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -162,13 +163,14 @@
                     <ImageView
                         android:id="@+id/image_motion_debug_frame"
                         android:layout_width="match_parent"
-                        android:layout_height="110dp"
+                        android:layout_height="130dp"
                         android:layout_marginTop="8dp"
                         android:background="@drawable/motion_lab_frame_bg"
                         android:clipToOutline="true"
                         android:contentDescription="@string/motion_lab_debug_frame"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/ic_photo" />
+                        android:scaleType="center"
+                        android:src="@drawable/ic_photo"
+                        android:tint="#33888888" />
                 </LinearLayout>
 
                 <LinearLayout

@@ -17,7 +17,8 @@
         android:paddingTop="16dp"
         android:paddingBottom="12dp"
         android:background="@drawable/header_bar_rounded_bg"
-        app:layout_constraintTop_toTopOf="parent"
+                android:elevation="8dp"
+app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
         <ImageView
@@ -31,7 +32,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
-            android:text="@string/shortcuts_and_widgets"
+            android:text="@string/shortcuts_widgets_screen_title"
             android:textStyle="bold"
             android:textColor="@android:color/white"
             android:textSize="20sp"/>
@@ -94,7 +95,48 @@
                 android:gravity="center_horizontal">
 
                 <LinearLayout
+                    android:id="@+id/cell_toggle"
+                    android:foreground="@drawable/shortcut_cell_feedback"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:padding="8dp">
+                    <ImageView
+                        android:id="@+id/icon_toggle"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:src="@drawable/toggle_recording_shortcut"/>
+                    <TextView
+                        android:id="@+id/title_toggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@android:color/white"
+                        android:textSize="14sp"
+                        android:text="@string/shortcut_toggle_recording"/>
+                    <TextView
+                        android:id="@+id/subtitle_toggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@android:color/black"
+                        android:textSize="12sp"
+                        android:layout_marginTop="4dp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:paddingTop="2dp"
+                        android:paddingBottom="2dp"
+                        android:visibility="gone"/>
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/cell_start"
+                    android:foreground="@drawable/shortcut_cell_feedback"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -130,6 +172,9 @@
 
                 <LinearLayout
                     android:id="@+id/cell_stop"
+                    android:foreground="@drawable/shortcut_cell_feedback"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -165,6 +210,9 @@
 
                 <LinearLayout
                     android:id="@+id/cell_torch"
+                    android:foreground="@drawable/shortcut_cell_feedback"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -209,6 +257,9 @@
 
                 <LinearLayout
                     android:id="@+id/cell_start_front"
+                    android:foreground="@drawable/shortcut_cell_feedback"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -244,6 +295,9 @@
 
                 <LinearLayout
                     android:id="@+id/cell_start_current"
+                    android:foreground="@drawable/shortcut_cell_feedback"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -279,6 +333,9 @@
 
                 <LinearLayout
                     android:id="@+id/cell_start_dual"
+                    android:foreground="@drawable/shortcut_cell_feedback"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -342,6 +399,9 @@
             android:gravity="center_horizontal">
             <LinearLayout
                 android:id="@+id/cell_photo"
+                    android:foreground="@drawable/shortcut_cell_feedback"
+                    android:clickable="true"
+                    android:focusable="true"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -377,6 +437,9 @@
 
             <LinearLayout
                 android:id="@+id/cell_photo_front"
+                    android:foreground="@drawable/shortcut_cell_feedback"
+                    android:clickable="true"
+                    android:focusable="true"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -412,6 +475,9 @@
 
             <LinearLayout
                 android:id="@+id/cell_screenshot"
+                    android:foreground="@drawable/shortcut_cell_feedback"
+                    android:clickable="true"
+                    android:focusable="true"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -458,6 +524,20 @@
         android:textSize="12sp"
         android:text="@string/shortcuts_helper_text"/>
 
+    <TextView
+        android:id="@+id/shortcuts_macrodroid_link"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:textColor="@android:color/darker_gray"
+        android:textColorLink="@color/red_theme_accent"
+        android:textSize="12sp"
+        android:autoLink="web"
+        android:linksClickable="true"
+        android:text="@string/shortcuts_macrodroid_template"/>
+
     <!-- Widgets Section Title -->
     <TextView
         android:id="@+id/heading_widgets"
@@ -486,7 +566,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="8dp"
-            android:foreground="?android:attr/selectableItemBackground"
+            android:foreground="@drawable/shortcut_cell_feedback"
             android:clickable="true"
             android:focusable="true">
 

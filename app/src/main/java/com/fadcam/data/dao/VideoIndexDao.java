@@ -72,6 +72,34 @@ public interface VideoIndexDao {
     List<String> getAllUriStrings();
 
     /**
+     * URIs of videos that have never been verified as finalized (issue #332),
+     * PLUS unrepairable files whose retry_after deadline has passed. This is
+     * the ONLY set the self-healing scan ever touches — confirmed-good rows
+     * are excluded, so repeated scans cost nothing.
+     */
+    @Query("SELECT uri_string FROM video_index WHERE media_type != 'IMAGE' AND is_temporary = 0 "
+            + "AND (finalized = 0 OR (finalized = 2 AND retry_after <= :nowMs))")
+    List<String> getRetryableUris(long nowMs);
+
+    /** Marks a file's hybrid-finalization state: 0 pending, 1 ok, 2 unrepairable. */
+    @Query("UPDATE video_index SET finalized = :state WHERE uri_string = :uriString")
+    void setFinalized(String uriString, int state);
+
+    /**
+     * Marks a file unrepairable but schedules a retry at {@code retryAfterMs}
+     * (transient failures must not be permanently abandoned).
+     */
+    @Query("UPDATE video_index SET finalized = 2, retry_after = :retryAfterMs WHERE uri_string = :uriString")
+    void markUnrepairable(String uriString, long retryAfterMs);
+
+    /** Clears the retry deadline after a successful conversion. */
+    @Query("UPDATE video_index SET retry_after = 0 WHERE uri_string = :uriString")
+    void clearRetryDeadline(String uriString);
+
+    /** One-time cleanup: files wrongly marked unrepairable by an earlier buggy build. */
+    @Query("UPDATE video_index SET finalized = 0 WHERE finalized = 2")
+    int resetUnrepairable();
+    /**
      * Get lightweight list for delta detection: uri + lastModified + size.
      * This avoids loading full entities just to compare timestamps.
      */

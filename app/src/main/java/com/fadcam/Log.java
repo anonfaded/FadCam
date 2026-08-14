@@ -243,8 +243,11 @@ public class Log {
         // Ensure worker is up
         startWorkerIfNeeded();
 
-        // Offer line to queue; drop oldest if saturated to avoid UI jank during recording
-        String line = htmlContent + "<br>";
+        // Offer line to queue; drop oldest if saturated to avoid UI jank during recording.
+        // "<br>\n": the <br> keeps legacy HTML rendering working, while the REAL
+        // newline makes plain-text copies (select-all, file readers, bug reports)
+        // produce one clean line per entry instead of one giant concatenated blob.
+        String line = htmlContent + "<br>\n";
         boolean offered = PENDING.offer(line);
         if (!offered) {
             // Try to make room by dropping one oldest; then attempt again
@@ -360,7 +363,7 @@ public class Log {
         int start = parts.length - maxLines;
         for (int i = start; i < parts.length; i++) {
             sb.append(parts[i]);
-            if (i < parts.length - 1) sb.append("<br>");
+            if (i < parts.length - 1) sb.append("<br>\n");
         }
         // Rewrite file with truncated content
         writeAllHtml(sb.toString());
@@ -466,7 +469,7 @@ public class Log {
                 // If we dropped lines earlier due to backpressure, record a single notice
                 if (droppedSinceLastNote > 0) {
                     batch.add("<font color=\"#d97706\" class=\"le severity-warn\">" + getCurrentTimeStamp()
-                        + " WARN: Dropped " + droppedSinceLastNote + " debug lines due to backpressure</font><br>");
+                        + " WARN: Dropped " + droppedSinceLastNote + " debug lines due to backpressure</font><br>\n");
                     droppedSinceLastNote = 0;
                 }
 
@@ -607,7 +610,12 @@ public class Log {
                      .replaceAll("<font color=\"[^\"]*\" class=\"le severity-(\\w+)\">",
                          "<span class=\"le severity-$1\">")
                      .replaceAll("<font color=\"[^\"]*\">", "")
-                     .replace("</font>", "");
+                     // CRITICAL: </font> MUST become </span> — the opening <font> tags
+                     // were converted to <span> above. Removing the closers instead
+                     // nested every log line inside the previous one (padding and
+                     // line numbers accumulated per level → lines drifted right,
+                     // content centered, and copies concatenated into one blob).
+                     .replace("</font>", "</span>");
         }
         StringBuilder sb = new StringBuilder();
         sb.append("<!DOCTYPE html><html lang=\"en\"><head>\n");

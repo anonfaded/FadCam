@@ -480,7 +480,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="video_menu_upload_drive">Importer sur Google Drive</string>
     <string name="toast_no_youtube_app">Application YouTube introuvable</string>
     <string name="toast_no_drive_app">Application Google Drive introuvable</string>
-    <string name="dialog_audio_noise_suppression_label">Suppression du bruit</string>
+    <string name="raw_audio_unprocessed_note">L\'audio entièrement brut n\'est pas disponible sur cet appareil. Un mode micro de reconnaissance vocale (VOICE_RECOGNITION) est utilisé à la place, qui désactive la majeure partie du traitement — la différence avec l\'enregistrement normal peut être subtile.</string>
     <string name="fix_video_menu_title">Réparer la vidéo (Lecture)</string>
     <string name="fix_video_repairing">Réparation… Cela peut prendre quelques secondes.</string>
     <string name="fix_video_success">Vidéo réparée ! Enregistrée sous : %1$s</string>
@@ -632,11 +632,26 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="fadrec_audio_source_choose">Choose audio source</string>
 
+	<string name="fadrec_audio_source_helper">Choisissez ce que les enregistrements d\'écran capturent comme audio. « Par défaut (routage système) » est recommandé pour les micros USB et filaires — ou choisissez un périphérique précis pour un routage explicite.</string>
+	<string name="fadrec_audio_source_mic_default">Microphone (routage par défaut)</string>
+
 <string name="fadrec_audio_source_none">No Audio</string>
 
 <string name="fadrec_audio_source_mic">Microphone</string>
 
 <string name="fadrec_audio_source_internal">Device Audio (Internal)</string>
+
+	<string name="screen_rec_audio_device_title">Périphérique d\'entrée audio</string>
+	<string name="screen_rec_audio_device_default">Par défaut (routage système)</string>
+	<string name="screen_rec_audio_device_helper">Choisissez le microphone utilisé par les enregistrements d\'écran. « Par défaut » utilise le routage automatique du système — l\'option fiable avec les micros USB.</string>
+
+    <string name="records_repair_banner_dismiss">Fermer</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s n\'a pas été finalisé à l\'arrêt de l\'enregistrement. Il a été converti automatiquement dans un format lisible.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s n\'était pas lisible car l\'enregistrement a été interrompu pendant que l\'application était en arrière-plan. Il a été converti automatiquement dans un format lisible.</string>
+
+    <string name="records_repair_banner_title">Enregistrement réparé</string>
 
 <string name="recording_controls_title">AF · Exposure · Zoom</string>
 
@@ -845,6 +860,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="tips_subtitle">Helpful usage tips</string>
 
 <string name="whats_new_title">What\'s New</string>
+
+<string name="whats_new_no_browser">Aucune application trouvée pour ouvrir ce lien</string>
 
 <string name="whats_new_subtitle">See latest features and updates</string>
 
@@ -1527,7 +1544,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="row_input_source_title">Input Source</string>
 
-<string name="row_noise_suppression_title">Noise Suppression</string>
+<string name="row_raw_audio_title">Audio brut</string>
+<string name="raw_audio_banner">L\'audio entièrement brut n\'est pas disponible sur cet appareil</string>
 
 <string name="settings_location_watermark_title">Location Watermark</string>
 
@@ -1672,7 +1690,9 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="shortcuts_sheet_helper">Your launcher will prompt for placement.</string>
 
-<string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
+<string name="shortcuts_widgets_screen_title">Shortcuts &amp; Widgets</string>
+
+<string name="shortcuts_and_widgets">Widgets</string>
 
 <string name="video_player_settings_title">Video Player Settings</string>
 
@@ -1860,6 +1880,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="shortcut_purpose_stop">This shortcut stops the current recording.</string>
 
+<string name="shortcut_purpose_toggle">Un raccourci dynamique unique qui démarre ou arrête l’enregistrement avec la caméra par défaut — utilisez les raccourcis Démarrer et Arrêter séparés pour un contrôle manuel.</string>
+
 <string name="shortcut_purpose_torch">This shortcut toggles the torch.</string>
 
 <string name="shortcut_purpose_photo">This shortcut captures a back camera photo and saves it to FadCam/FadShot location.</string>
@@ -1888,6 +1910,10 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="shortcut_start_current">Start Current</string>
 
+<string name="shortcut_toggle_recording">Démarrer / Arrêter</string>
+
+<string name="shortcut_toggle_recording_long">Démarrer ou arrêter l’enregistrement</string>
+
 <string name="shortcut_start_dual">Start Dual</string>
 
 <string name="stop_recording">Stop</string>
@@ -1915,6 +1941,14 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="preview_quick_actions_title">Preview quick actions</string>
 
 <string name="preview_quick_actions_sub">Show FadShot and Fullscreen icons even when recording is idle.</string>
+<string name="grid_lines_title">Grille</string>
+<string name="home_icon_picker_title">Icône d\'accueil</string>
+<string name="home_icon_home">Accueil</string>
+<string name="home_icon_jet">Avion de chasse</string>
+<string name="home_icon_pilot">Pilote</string>
+<string name="quick_mute_label">Couper le son</string>
+<string name="quick_unmute_label">Son</string>
+<string name="grid_lines_subtitle">Grille des tiers sur l\'aperçu</string>
 
 <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>
 
@@ -2274,7 +2308,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="helper_audio_input_source">Select which connected microphone/input to use.</string>
 
-<string name="helper_noise_suppression">Experimental filter to reduce background noise.</string>
+<string name="helper_raw_audio">Capture le son brut du micro, sans la réduction de bruit ni l\'équilibrage du volume automatiques du téléphone. Idéal si vous comptez éditer le son vous-même plus tard. S\'applique aux nouveaux enregistrements.</string>
 
 <string name="helper_audio_advanced">Customize bitrate &amp; sampling rate for quality/size balance.</string>
 
@@ -2301,6 +2335,9 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="helper_location_embed">Embeds GPS coordinates into video metadata (geotag).</string>
 
 <string name="video_setting_location_embed_title">Embed Location Metadata</string>
+<string name="setting_video_stabilization_title">Stabilisation vidéo</string>
+<string name="setting_not_supported">Non pris en charge sur cet appareil</string>
+<string name="video_stabilization_footer">Stabilise vos vidéos en compensant les mouvements de main grâce à la stabilisation électronique (EIS) et optique (OIS). Une petite partie du cadre est recadrée pour y parvenir.</string>
 
 <string name="video_setting_location_embed_enabled">Enabled</string>
 
@@ -2436,7 +2473,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="header_logo_avatar" translatable="false">Avatar</string>
 
-<string name="app_icon_default" translatable="false">Legacy</string>
+<string name="app_icon_default" translatable="false">FadCam</string>
 
 <string name="app_icon_alternative" translatable="false">Camera</string>
 
@@ -2448,7 +2485,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
 
-<string name="app_icon_noor" translatable="false">Noor</string>
+<string name="app_icon_nooristic" translatable="false">FadCam ++</string>
 
 <string name="app_icon_bat" translatable="false">FadCam</string>
 
@@ -2839,7 +2876,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="storage_helper_current_custom_uri_prefix">URI:</string>
 
-<string name="app_icon_minimal" translatable="false">Minimal</string>
+<string name="app_icon_minimal" translatable="false">FadCam</string>
 
 <string name="onboarding_intro_line4">open-source. ad-free. yours.</string>
 
@@ -3372,6 +3409,10 @@ For the smoothest playback experience, you can use an external player like VLC. 
 
 <string name="automation_title">Automatisation</string>
 <string name="automation_row_subtitle">Mapping de boutons, télécommandes Bluetooth, touches de volume</string>
+<string name="setting_volume_shutter_title">Déclencheur par volume</string>
+<string name="setting_volume_shutter_summary">Les touches de volume agissent comme un déclencheur sur l\'onglet d\'accueil</string>
+<string name="setting_volume_shutter_footer">Les touches de volume deviennent votre déclencheur sur l\'onglet d\'accueil :\n• Toucher — prendre une photo\n• Double toucher — changer de caméra\n• Appui long — démarrer ou arrêter l\'enregistrement\n\nLes déclencheurs Bluetooth fonctionnent aussi et déclenchent les mêmes actions. Les touches fonctionnent tant que l\'onglet d\'accueil de FadCam est ouvert — les versions futures permettront à n\'importe quelle touche de déclencher les actions FadCam, même en arrière-plan.\n\nPour l\'instant, utilisez MacroDroid pour mapper les raccourcis de FadCam — retrouvez-les dans Réglages → Raccourcis et widgets.</string>
+<string name="shortcuts_macrodroid_template">Modèle officiel MacroDroid : https://templates.macrodroid.com/view/28194</string>
 <string name="thermal_guardian_title">Garde Thermique</string>
 <string name="thermal_guardian_row_subtitle">Ajuster automatiquement l\'enregistrement pour éviter la surchauffe</string>
 
@@ -3673,6 +3714,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
 <string name="watermark_gps_disabled_home_toast">Location-dependent watermark features enabled but GPS is off. Enable device location for them to work.</string>
 
 <string name="watermark_gps_disabled_banner_message">Location-dependent watermark features will not appear until device location is enabled</string>
+
+<string name="watermark_day_title">Jour</string>
 
 <string name="watermark_timezone_title">Timezone</string>
 

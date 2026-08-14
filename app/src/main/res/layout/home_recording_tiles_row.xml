@@ -8,65 +8,121 @@
     android:paddingBottom="2dp"
     android:weightSum="3">
 
-    <!-- AF mode toggle (continuous / off) -->
-    <TextView
-        android:id="@+id/tile_af_toggle"
+    <!-- AF mode toggle (continuous / off) — lock status icon bottom-right -->
+    <FrameLayout
         android:layout_width="0dp"
         android:layout_height="40dp"
         android:layout_weight="1"
-        android:layout_marginEnd="4dp"
-        android:background="@drawable/home_tile_bg"
-        android:gravity="center"
-        android:fontFamily="@font/materialicons"
-        android:text="center_focus_strong"
-        android:contentDescription="@string/desc_autofocus_toggle"
-        android:textColor="?attr/homeRailTextPrimary"
-        android:textSize="24sp"
-        android:padding="6dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:nextFocusUp="@+id/cardStats"
-        android:nextFocusDown="@+id/cardRailTogglePortrait" />
+        android:layout_marginEnd="4dp">
 
+        <TextView
+            android:id="@+id/tile_af_toggle"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/home_tile_bg_glass"
+            android:gravity="center"
+            android:fontFamily="@font/materialicons"
+            android:text="center_focus_strong"
+            android:contentDescription="@string/desc_autofocus_toggle"
+            android:textColor="?attr/homeRailTextPrimary"
+            android:textSize="24sp"
+            android:padding="6dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:nextFocusUp="@+id/cardStats"
+            android:nextFocusDown="@+id/cardRailTogglePortrait" />
 
+        <TextView
+            android:id="@+id/tile_af_status_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="5dp"
+            android:layout_marginEnd="6dp"
+            android:text="lock_open"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:fontFamily="@font/materialicons"
+            android:includeFontPadding="false" />
+    </FrameLayout>
 
-    <!-- Exposure (single tile opens slider picker) -->
-    <TextView
-        android:id="@+id/tile_exp"
+    <!-- Exposure (single tile opens slider picker) — value label bottom-right -->
+    <FrameLayout
         android:layout_width="0dp"
         android:layout_height="40dp"
         android:layout_weight="1"
-        android:layout_marginEnd="4dp"
-        android:background="@drawable/home_tile_bg"
-        android:gravity="center"
-        android:text="exposure"
-        android:fontFamily="@font/materialicons"
-        android:textSize="24sp"
-        android:contentDescription="@string/desc_exposure_compensation"
-        android:textColor="?attr/homeRailTextPrimary"
-        android:padding="6dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:nextFocusUp="@+id/cardStats"
-        android:nextFocusDown="@+id/cardRailTogglePortrait" />
+        android:layout_marginEnd="4dp">
 
-    <!-- Zoom ratio (quick access to zoom settings) -->
-    <TextView
-        android:id="@+id/tile_zoom"
+        <TextView
+            android:id="@+id/tile_exp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/home_tile_bg_glass"
+            android:gravity="center"
+            android:text="exposure"
+            android:fontFamily="@font/materialicons"
+            android:textSize="24sp"
+            android:contentDescription="@string/desc_exposure_compensation"
+            android:textColor="?attr/homeRailTextPrimary"
+            android:padding="6dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:nextFocusUp="@+id/cardStats"
+            android:nextFocusDown="@+id/cardRailTogglePortrait" />
+
+        <TextView
+            android:id="@+id/tile_exp_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="5dp"
+            android:layout_marginEnd="6dp"
+            android:text="+0.0"
+            android:textColor="#FFFFFF"
+            android:textSize="6.5sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            android:includeFontPadding="false" />
+    </FrameLayout>
+
+    <!-- Zoom ratio (quick access to zoom settings) — level label bottom-right -->
+    <FrameLayout
         android:layout_width="0dp"
         android:layout_height="40dp"
-        android:layout_weight="1"
-        android:background="@drawable/home_tile_bg"
-        android:padding="6dp"
-        android:gravity="center"
-        android:text="zoom_in"
-        android:fontFamily="@font/materialicons"
-        android:textSize="24sp"
-        android:contentDescription="@string/desc_zoom_ratio"
-        android:textColor="?attr/homeRailTextPrimary"
-        android:clickable="true"
-        android:focusable="true"
-        android:nextFocusUp="@+id/cardStats"
-        android:nextFocusDown="@+id/cardRailTogglePortrait" />
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/tile_zoom"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/home_tile_bg_glass"
+            android:padding="6dp"
+            android:gravity="center"
+            android:text="zoom_in"
+            android:fontFamily="@font/materialicons"
+            android:textSize="24sp"
+            android:contentDescription="@string/desc_zoom_ratio"
+            android:textColor="?attr/homeRailTextPrimary"
+            android:clickable="true"
+            android:focusable="true"
+            android:nextFocusUp="@+id/cardStats"
+            android:nextFocusDown="@+id/cardRailTogglePortrait" />
+
+        <TextView
+            android:id="@+id/tile_zoom_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginBottom="5dp"
+            android:layout_marginEnd="6dp"
+            android:text="1.0x"
+            android:textColor="#FFFFFF"
+            android:textSize="6.5sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            android:includeFontPadding="false" />
+    </FrameLayout>
 
 </LinearLayout>

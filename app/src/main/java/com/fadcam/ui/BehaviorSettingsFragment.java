@@ -46,6 +46,7 @@ public class BehaviorSettingsFragment extends BaseFragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         prefs = SharedPreferencesManager.getInstance(requireContext());
         valueOnboardingState = view.findViewById(R.id.value_onboarding_state);

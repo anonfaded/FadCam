@@ -115,6 +115,8 @@ public class HomeSidebarFragment extends DialogFragment {
         // Handle close button
         ImageView closeButton = view.findViewById(R.id.home_sidebar_close_btn);
         if (closeButton != null) {
+            // Tiny 14dp icon: bigger press scale so the animation is visible.
+            com.fadcam.Utils.attachPressScale(closeButton, 1.2f);
             closeButton.setOnClickListener(v -> dismiss());
         }
 
@@ -220,6 +222,35 @@ public class HomeSidebarFragment extends DialogFragment {
                     quickActionsRow.setOnClickListener(v -> sw.performClick());
                 }
             }
+
+            View gridRow = view.findViewById(R.id.row_grid_lines);
+            if (gridRow != null) {
+                TextView tvGridSub = gridRow.findViewById(R.id.tv_grid_lines_sub);
+                AvatarToggleView swGrid = gridRow.findViewById(R.id.switch_grid_lines);
+                if (swGrid != null) {
+                    boolean gridEnabled = sp.isGridLinesEnabled();
+                    swGrid.setChecked(gridEnabled);
+                    if (tvGridSub != null) {
+                        tvGridSub.setText(gridEnabled
+                            ? getString(R.string.setting_enabled_msg)
+                            : getString(R.string.setting_disabled_msg));
+                    }
+                    swGrid.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                        sp.setGridLinesEnabled(isChecked);
+                        if (tvGridSub != null) {
+                            tvGridSub.setText(isChecked
+                                ? getString(R.string.setting_enabled_msg)
+                                : getString(R.string.setting_disabled_msg));
+                        }
+                        try {
+                            Bundle b = new Bundle();
+                            b.putBoolean("grid_lines_enabled", isChecked);
+                            getParentFragmentManager().setFragmentResult(resultKey, b);
+                        } catch (Exception ignored) {}
+                    });
+                    gridRow.setOnClickListener(v -> swGrid.performClick());
+                }
+            }
         } catch (Exception e) {
             FLog.w(
                 "HomeSidebar",
@@ -231,6 +262,7 @@ public class HomeSidebarFragment extends DialogFragment {
         // Discord branding row
         View discordRow = view.findViewById(R.id.row_discord_branding);
         if (discordRow != null) {
+            com.fadcam.Utils.attachPressScale(discordRow);
             discordRow.setOnClickListener(v -> {
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW,
@@ -248,6 +280,8 @@ public class HomeSidebarFragment extends DialogFragment {
         // Mini Apps Info Button
         View btnMiniAppsInfo = view.findViewById(R.id.btn_mini_apps_info);
         if (btnMiniAppsInfo != null) {
+            // Small 20dp icon: slightly bigger press scale so it's perceptible.
+            com.fadcam.Utils.attachPressScale(btnMiniAppsInfo, 1.15f);
             btnMiniAppsInfo.setOnClickListener(v -> {
                 MiniAppsInfoBottomSheet infoBS = MiniAppsInfoBottomSheet.newInstance();
                 infoBS.show(getParentFragmentManager(), "mini_apps_info");

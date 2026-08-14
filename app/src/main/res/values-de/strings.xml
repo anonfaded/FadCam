@@ -527,13 +527,13 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="setting_app_icon_title">App-Symbol</string>
     <string name="setting_app_icon_desc">Ändere das Start-Symbol und den Namen der App</string>
     <string name="app_icon_dialog_title">App-Symbol auswählen</string>
-    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_default" translatable="false">FadCam</string>
     <string name="app_icon_alternative" translatable="false">Kamera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">Sumud (صُمود)</string>
     <string name="app_icon_pakistan" translatable="false">FadCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor (FadCam ++)</string>
+    <string name="app_icon_nooristic" translatable="false">FadCam ++</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notizen</string>
@@ -562,7 +562,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="storage_icon_description">Speicher-Symbol</string>
     <string name="location_icon_description">Standort-Symbol</string>
     <string name="location_embedding_icon_description">Symbol für Standorteinbettung</string>
-    <string name="app_icon_minimal" translatable="false">Minimalistisch</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Wische nach rechts, um fortzufahren</string>
     <string name="onboarding_select_language">Wähle deine bevorzugte App-Sprache.</string>
@@ -653,7 +653,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="camera_error_service">Kameradienstfehler</string>
     <string name="camera_error_unknown">Unbekannter Kamerafehler</string>
     <string name="camera_resources_cooldown">Bitte warte einen Moment, bevor du eine neue Aufnahme startest</string>
-    <string name="dialog_audio_noise_suppression_label">Rauschunterdrückung</string>
+    <string name="raw_audio_unprocessed_note">Vollständig unverarbeitetes Audio ist auf diesem Gerät nicht verfügbar. Es wird stattdessen der Mikrofonmodus zur Spracherkennung (VOICE_RECOGNITION) verwendet, der die meiste Verarbeitung deaktiviert — der Unterschied zur normalen Aufnahme kann dezent sein.</string>
     <string name="fix_video_menu_title">Video reparieren (Wiedergabe wiederherstellen)</string>
     <string name="fix_video_repairing">Repariere... Dies kann einige Sekunden dauern.</string>
     <string name="fix_video_success">Video repariert! Gespeichert als: %1$s</string>
@@ -720,9 +720,24 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="fadrec_record_muted">Stumm aufnehmen</string>
     <string name="fadrec_audio_source_title">Audioquelle</string>
     <string name="fadrec_audio_source_choose">Audioquelle wählen</string>
+
+	<string name="fadrec_audio_source_helper">Wählen Sie, welchen Ton Bildschirmaufnahmen erfassen. „Standard (System-Routing)“ wird für USB- und kabelgebundene Mikrofone empfohlen – oder wählen Sie ein bestimmtes Gerät für explizites Routing.</string>
+	<string name="fadrec_audio_source_mic_default">Mikrofon (Standard-Routing)</string>
     <string name="fadrec_audio_source_none">Kein Audio</string>
     <string name="fadrec_audio_source_mic">Mikrofon</string>
     <string name="fadrec_audio_source_internal">Geräte-Audio (Intern)</string>
+
+	<string name="screen_rec_audio_device_title">Audio-Eingabegerät</string>
+	<string name="screen_rec_audio_device_default">Standard (System-Routing)</string>
+	<string name="screen_rec_audio_device_helper">Wählen Sie das Mikrofon für Bildschirmaufnahmen. „Standard“ verwendet das automatische System-Routing – die zuverlässige Option bei USB-Mikrofonen.</string>
+
+    <string name="records_repair_banner_dismiss">Schließen</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s wurde beim Stoppen der Aufnahme nicht finalisiert. Sie wurde automatisch in ein abspielbares Format konvertiert.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s war nicht abspielbar, weil die Aufnahme unterbrochen wurde, während die App im Hintergrund lief. Sie wurde automatisch in ein abspielbares Format konvertiert.</string>
+
+    <string name="records_repair_banner_title">Aufnahme repariert</string>
     <string name="recording_controls_title">AF · Belichtung · Zoom</string>
     <string name="mainpage_camera_front">Frontkamera</string>
     <string name="mainpage_camera_back">Rückkamera</string>
@@ -827,6 +842,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="tips_title">Tipps</string>
     <string name="tips_subtitle">Hilfreiche Nutzungstipps</string>
     <string name="whats_new_title">Was ist neu</string>
+    <string name="whats_new_no_browser">Keine App zum Öffnen dieses Links gefunden</string>
     <string name="whats_new_subtitle">Neueste Funktionen und Updates ansehen</string>
     <string name="home_menu">Home-Menü</string>
     <string name="home_sidebar_title">Home</string>
@@ -1168,7 +1184,8 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="row_orientation_title">Ausrichtung</string>
     <string name="row_record_audio_title">Audio aufnehmen</string>
     <string name="row_input_source_title">Eingabequelle</string>
-    <string name="row_noise_suppression_title">Rauschunterdrückung</string>
+    <string name="row_raw_audio_title">Rohes Audio</string>
+    <string name="raw_audio_banner">Vollständig unverarbeitetes Audio ist auf diesem Gerät nicht verfügbar</string>
     <string name="settings_location_watermark_title">Standort-Wasserzeichen</string>
     <string name="delete_single_video_subtitle">Diese Aufnahme entfernen</string>
     <string name="note_debug_detailed">Wenn aktiviert, schreibt FadCam eine Debug-Protokoll-HTML-Datei (FADCAM_debug.html) im öffentlichen Ordner Downloads/FadCam/. Teile diese Datei beim Melden von Problemen. Deaktivieren, um zukünftige Schreibvorgänge zu stoppen.\nHinweis: Debug-Protokollierung kann während der Aufnahme Performance-Overhead hinzufügen – deaktiviert lassen, außer zur Fehlersuche.</string>
@@ -1238,7 +1255,8 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="shortcuts_helper_text">Füge Shortcuts von oben hinzu. Sie funktionieren auch mit Automatisierungs-Apps (z.B. MacroDroid), um Aktionen wie das Belegen von Lautstärketasten auszulösen.</string>
     <string name="shortcuts_add_to_home">Zum Startbildschirm hinzufügen</string>
     <string name="shortcuts_sheet_helper">Dein Launcher wird nach der Platzierung fragen.</string>
-    <string name="shortcuts_and_widgets">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_widgets_screen_title">Shortcuts &amp; Widgets</string>
+    <string name="shortcuts_and_widgets">Widgets</string>
     <string name="video_player_settings_title">Video-Player-Einstellungen</string>
     <string name="video_player_settings_helper">Wiedergabegeschwindigkeit ändert die normale Geschwindigkeit der Videowiedergabe. Schnell-Geschwindigkeit ist eine temporäre Beschleunigung, die nur angewendet wird, während du auf das Video drückst und hältst. Du kannst diese Einstellungen hier oder direkt vom Video-Player-Bildschirm aus ändern.</string>
     <string name="video_player_settings_subtitle">Wiedergabe- &amp; Schnell-Geschwindigkeit</string>
@@ -1735,7 +1753,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="helper_audio_sampling_recommended">Empfohlen: 48000 Hz</string>
     <string name="helper_location_embed">Bettet GPS-Koordinaten in Video-Metadaten ein (Geotag).</string>
     <string name="helper_location_watermark">Fügt während der Aufnahme einen Live-Standorttext-Overlay hinzu.</string>
-    <string name="helper_noise_suppression">Experimenteller Filter zur Reduzierung von Hintergrundgeräuschen.</string>
+    <string name="helper_raw_audio">Zeichnet den Rohklang des Mikrofons ohne automatische Rauschunterdrückung und Lautstärkeanpassung des Telefons auf. Ideal, wenn du den Ton später selbst bearbeiten möchtest. Gilt für neue Aufnahmen.</string>
     <string name="helper_record_audio">Schaltet die Mikrofon-Audioaufnahme in Videos um.</string>
     <string name="helper_watermark_option">Wähle Overlay-Inhalt: Zeitstempel + Marke, nur Zeitstempel oder keines.</string>
     <string name="home_sidebar_discord">Discord</string>
@@ -1862,6 +1880,10 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="motion_lab_title">Bewegungslabor</string>
     <string name="automation_title">Automatisierung</string>
     <string name="automation_row_subtitle">Tastenbelegung, Bluetooth-Fernbedienungen, Lautstärketasten</string>
+    <string name="setting_volume_shutter_title">Lautstärketasten-Auslöser</string>
+    <string name="setting_volume_shutter_summary">Die Lautstärketasten dienen als Kameraauslöser auf dem Start-Tab</string>
+    <string name="setting_volume_shutter_footer">Die Lautstärketasten werden auf dem Start-Tab zu Ihrem Auslöser:\n• Tippen — Foto aufnehmen\n• Doppeltippen — Kamera wechseln\n• Gedrückt halten — Aufnahme starten oder stoppen\n\nBluetooth-Fernauslöser funktionieren ebenfalls und lösen dieselben Aktionen aus. Die Tasten funktionieren, solange der FadCam-Start-Tab geöffnet ist — zukünftige Versionen lassen jede Taste FadCam-Aktionen auslösen, auch im Hintergrund.\n\nNutzen Sie vorerst MacroDroid, um FadCam-Verknüpfungen zuzuordnen — Sie finden sie unter Einstellungen → Verknüpfungen &amp; Widgets.</string>
+    <string name="shortcuts_macrodroid_template">Offizielle MacroDroid-Vorlage: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Wärmeschutz</string>
     <string name="thermal_guardian_row_subtitle">Aufnahme automatisch anpassen, um Überhitzung zu vermeiden</string>
     <string name="audio_vision_title">Audio Vision</string>
@@ -1913,6 +1935,14 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="preview_quick_actions_state_always">Immer sichtbar (Bereitschaft + Aufnahme)</string>
     <string name="preview_quick_actions_state_recording_only">Nur während der Aufnahme sichtbar</string>
     <string name="preview_quick_actions_sub">FadShot- und Vollbildsymbole auch im Leerlauf anzeigen.</string>
+    <string name="grid_lines_title">Rasterlinien</string>
+    <string name="home_icon_picker_title">Home-Symbol</string>
+    <string name="home_icon_home">Home</string>
+    <string name="home_icon_jet">Kampfjet</string>
+    <string name="home_icon_pilot">Pilot</string>
+    <string name="quick_mute_label">Stummsch.</string>
+    <string name="quick_unmute_label">Ton an</string>
+    <string name="grid_lines_subtitle">Drittel-Regel-Overlay auf der Vorschau</string>
     <string name="preview_quick_actions_title">Vorschau-Schnellaktionen</string>
     <string name="preview_starting">Live-Vorschau wird gestartet…</string>
     <string name="previous">Zurück</string>
@@ -2025,9 +2055,12 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="shortcut_purpose_start_dual">Dieser Shortcut startet die Dual-Kamera-Aufnahme (PiP).</string>
     <string name="shortcut_purpose_start_front">Dieser Shortcut startet die Aufnahme mit der Frontkamera.</string>
     <string name="shortcut_purpose_stop">Dieser Shortcut stoppt die aktuelle Aufnahme.</string>
+    <string name="shortcut_purpose_toggle">Eine einzige dynamische Verknüpfung, die die Aufnahme mit der Standardkamera startet oder stoppt — für manuelle Steuerung die separaten Start- und Stop-Verknüpfungen verwenden.</string>
     <string name="shortcut_purpose_torch">Dieser Shortcut schaltet die Taschenlampe um.</string>
     <string name="shortcut_start_back">Rückseite starten</string>
     <string name="shortcut_start_current">Aktuelle starten</string>
+    <string name="shortcut_toggle_recording">Start / Stop</string>
+    <string name="shortcut_toggle_recording_long">Aufnahme starten oder stoppen</string>
     <string name="shortcut_start_dual">Dual starten</string>
     <string name="shortcut_start_front">Vorderseite starten</string>
     <string name="shortcut_take_photo">Foto</string>
@@ -2220,6 +2253,9 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="video_setting_location_embed_disabled">Deaktiviert</string>
     <string name="video_setting_location_embed_enabled">Aktiviert</string>
     <string name="video_setting_location_embed_title">Standort-Metadaten einbetten</string>
+    <string name="setting_video_stabilization_title">Video-Stabilisierung</string>
+    <string name="setting_not_supported">Auf diesem Gerät nicht unterstützt</string>
+    <string name="video_stabilization_footer">Sorgt für ruhige Videos, indem Handbewegungen per elektronischer (EIS) und optischer (OIS) Stabilisierung ausgeglichen werden. Ein kleiner Bildausschnitt wird dafür benötigt.</string>
     <string name="view_mode_grid">Raster</string>
     <string name="view_mode_list">Liste</string>
     <string name="watch_audio_label">Audio</string>
@@ -2287,6 +2323,7 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="watermark_timezone_format_title">Zeitzonenformat</string>
     <string name="watermark_timezone_off">Aus</string>
     <string name="watermark_timezone_on_gmt">Ein – GMT-Offset im Wasserzeichen</string>
+    <string name="watermark_day_title">Tag</string>
     <string name="watermark_timezone_title">Zeitzone</string>
     <string name="watermark_utm_helper">UTM teilt die Erde in 60 Zonen auf und wandelt Breiten-/Längengrade in Easting &amp; Northing in Metern um. Wird vom Militär, Vermessern und topografischen Karten für präzise Gitterpositionierung verwendet.\n\nSo lesen: „Zone 42N — 372.684m E, 3.512.334m N" = Zone 42 auf der Nordhalbkugel, 372.684 Meter Easting (Ost-West), 3.512.334 Meter Northing (Nord-Süd).</string>
     <string name="watermark_utm_off">Aus</string>

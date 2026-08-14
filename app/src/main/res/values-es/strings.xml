@@ -136,9 +136,24 @@
     <!-- FadRec audio source picker -->
     <string name="fadrec_audio_source_title">Fuente de audio</string>
     <string name="fadrec_audio_source_choose">Elegir fuente de audio</string>
+
+	<string name="fadrec_audio_source_helper">Elige qué audio capturan las grabaciones de pantalla. \"Predeterminado (enrutamiento del sistema)\" es lo recomendado con micrófonos USB y con cable, o elige un dispositivo específico para enrutamiento explícito.</string>
+	<string name="fadrec_audio_source_mic_default">Micrófono (enrutamiento predeterminado)</string>
     <string name="fadrec_audio_source_none">Sin audio</string>
     <string name="fadrec_audio_source_mic">Micrófono</string>
     <string name="fadrec_audio_source_internal">Audio del dispositivo (interno)</string>
+
+	<string name="screen_rec_audio_device_title">Dispositivo de entrada de audio</string>
+	<string name="screen_rec_audio_device_default">Predeterminado (enrutamiento del sistema)</string>
+	<string name="screen_rec_audio_device_helper">Elige el micrófono con el que graban las grabaciones de pantalla. \"Predeterminado\" usa el enrutamiento automático del sistema: la opción fiable con micrófonos USB.</string>
+
+    <string name="records_repair_banner_dismiss">Descartar</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s no se finalizó al detener la grabación. Se ha convertido automáticamente a un formato reproducible.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s no se podía reproducir porque la grabación se interrumpió mientras la app estaba en segundo plano. Se ha convertido automáticamente a un formato reproducible.</string>
+
+    <string name="records_repair_banner_title">Grabación reparada</string>
 
     <string name="video_recording_started">Grabación iniciada</string>
     <string name="video_recording_stopped">Grabación detenida</string>
@@ -249,6 +264,7 @@
     <string name="tips_title">Consejos</string>
     <string name="tips_subtitle">Consejos útiles de uso</string>
     <string name="whats_new_title">Novedades</string>
+    <string name="whats_new_no_browser">No se encontró ninguna aplicación para abrir este enlace</string>
     <string name="whats_new_subtitle">Ver últimas funciones y actualizaciones</string>
     <string name="home_menu">Menú de Inicio</string>
     <string name="home_sidebar_title">Inicio</string>
@@ -751,7 +767,8 @@
     <string name="row_orientation_title">Orientación</string>
     <string name="row_record_audio_title">Grabar audio</string>
     <string name="row_input_source_title">Fuente de entrada</string>
-    <string name="row_noise_suppression_title">Supresión de ruido</string>
+    <string name="row_raw_audio_title">Audio sin procesar</string>
+    <string name="raw_audio_banner">El audio totalmente crudo no está disponible en este dispositivo</string>
     <string name="settings_location_watermark_title">Marca de agua de ubicación</string>
     <string name="delete_all_videos_title">Eliminar todos los videos</string>
     <string name="delete_all_videos_description">¿Estás seguro de que quieres eliminar todos los videos?</string>
@@ -852,7 +869,8 @@
     <string name="shortcuts_helper_text">Agrega accesos directos desde arriba. También funcionan con apps de automatización (ej. MacroDroid) para activar acciones como mapear botones de volumen.</string>
     <string name="shortcuts_add_to_home">Agregar a pantalla de inicio</string>
     <string name="shortcuts_sheet_helper">Tu launcher pedirá confirmación para la ubicación.</string>
-    <string name="shortcuts_and_widgets">Accesos directos y widgets</string>
+    <string name="shortcuts_widgets_screen_title">Accesos directos y widgets</string>
+    <string name="shortcuts_and_widgets">Widgets</string>
     <string name="video_player_settings_title">Ajustes del reproductor de video</string>
     <string name="video_player_settings_helper">Velocidad de reproducción cambia la velocidad normal de reproducción del video. Velocidad rápida es un impulso temporal aplicado solo mientras mantienes presionado el video. Puedes cambiar estos ajustes aquí o directamente desde la pantalla del reproductor de video.</string>
     <string name="video_player_settings_subtitle">Velocidad de reproducción y velocidad rápida</string>
@@ -950,6 +968,7 @@
     <string name="shortcut_purpose_start_current">Este acceso directo inicia grabación con el modo de cámara actualmente seleccionado.</string>
     <string name="shortcut_purpose_start_dual">Este acceso directo inicia grabación de cámara dual (PiP).</string>
     <string name="shortcut_purpose_stop">Este acceso directo detiene la grabación actual.</string>
+    <string name="shortcut_purpose_toggle">Un único acceso directo dinámico que inicia o detiene la grabación con la cámara predeterminada — usa los accesos directos Iniciar y Detener por separado para control manual.</string>
     <string name="shortcut_purpose_torch">Este acceso directo alterna la linterna.</string>
     <string name="shortcut_purpose_photo">Este acceso directo captura una foto con la cámara trasera y la guarda en la ubicación FadCam/FadShot.</string>
     <string name="shortcut_purpose_photo_front">Este acceso directo captura una foto con la cámara frontal y la guarda en la ubicación FadCam/FadShot.</string>
@@ -975,6 +994,8 @@
     <string name="shortcut_start_back">Iniciar trasera</string>
     <string name="shortcut_start_front">Iniciar frontal</string>
     <string name="shortcut_start_current">Iniciar actual</string>
+    <string name="shortcut_toggle_recording">Iniciar / Detener</string>
+    <string name="shortcut_toggle_recording_long">Iniciar o detener la grabación</string>
     <string name="shortcut_start_dual">Iniciar dual</string>
     <string name="stop_recording">Detener</string>
     <string name="shortcut_take_photo">Foto</string>
@@ -989,6 +1010,14 @@
     <string name="shortcuts_picture_category">Imagen</string>
     <string name="preview_quick_actions_title">Acciones rápidas de vista previa</string>
     <string name="preview_quick_actions_sub">Mostrar íconos de FadShot y Pantalla completa incluso cuando la grabación está inactiva.</string>
+    <string name="grid_lines_title">Líneas de cuadrícula</string>
+    <string name="home_icon_picker_title">Icono de inicio</string>
+    <string name="home_icon_home">Inicio</string>
+    <string name="home_icon_jet">Avión de combate</string>
+    <string name="home_icon_pilot">Piloto</string>
+    <string name="quick_mute_label">Silenciar</string>
+    <string name="quick_unmute_label">Sonido</string>
+    <string name="grid_lines_subtitle">Cuadrícula de tercios en la vista previa</string>
     <string name="preview_quick_actions_state_always">Siempre visible (inactivo + grabando)</string>
     <string name="preview_quick_actions_state_recording_only">Visible solo mientras graba</string>
     <string name="warning_temp_file_detail">
@@ -1214,7 +1243,7 @@
 Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="helper_record_audio">Alternar captura de audio del micrófono en videos.</string>
     <string name="helper_audio_input_source">Seleccionar qué micrófono/entrada conectada usar.</string>
-    <string name="helper_noise_suppression">Filtro experimental para reducir ruido de fondo.</string>
+    <string name="helper_raw_audio">Captura el sonido crudo del micrófono sin la reducción de ruido ni el balance de volumen automáticos del teléfono. Ideal si piensas editar el audio tú mismo más tarde. Se aplica a grabaciones nuevas.</string>
     <string name="helper_audio_advanced">Personalizar tasa de bits y frecuencia de muestreo para equilibrio calidad/tamaño.</string>
     <string name="helper_audio_bitrate_detail">Recomendado: 192000 bps para estéreo de alta calidad. Valores más bajos reducen tamaño de archivo pero pueden reducir claridad. Rango 64000–384000 bps.</string>
     <string name="helper_audio_sampling_detail">Selecciona 48000 Hz para video (recomendado) o 44100 Hz para compatibilidad general de audio.</string>
@@ -1228,6 +1257,9 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="helper_location_watermark">Agrega superposición de texto de ubicación en vivo durante la grabación.</string>
     <string name="helper_location_embed">Incrusta coordenadas GPS en los metadatos del video (geotag).</string>
     <string name="video_setting_location_embed_title">Incrustar metadatos de ubicación</string>
+    <string name="setting_video_stabilization_title">Estabilización de video</string>
+    <string name="setting_not_supported">No compatible con este dispositivo</string>
+    <string name="video_stabilization_footer">Mantiene estables tus videos compensando el movimiento de la mano con estabilización electrónica (EIS) y óptica (OIS). Para lograrlo se recorta una pequeña parte del encuadre.</string>
     <string name="video_setting_location_embed_enabled">Habilitado</string>
     <string name="video_setting_location_embed_disabled">Desactivado</string>
     <string name="helper_watermark_option">Elige contenido de superposición: marca de tiempo + marca, solo marca de tiempo, o ninguno.</string>
@@ -1469,13 +1501,13 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
 
     <string name="setting_app_icon_desc">Cambiar el ícono y nombre del launcher de la app</string>
     <string name="app_icon_dialog_title">Elegir ícono de la app</string>
-    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_default" translatable="false">FadCam</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
     <string name="app_icon_pakistan" translatable="false">FadCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_nooristic" translatable="false">FadCam ++</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>
@@ -1695,7 +1727,7 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="location_icon_description">Ícono de ubicación</string>
     <string name="location_embedding_icon_description">Ícono de incrustación de ubicación</string>
 
-    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
 
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Desliza a la derecha para continuar</string>
@@ -1827,7 +1859,7 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="camera_error_service">Error del servicio de cámara</string>
     <string name="camera_error_unknown">Error de cámara desconocido</string>
     <string name="camera_resources_cooldown">Espera un momento antes de iniciar una nueva grabación</string>
-    <string name="dialog_audio_noise_suppression_label">Supresión de ruido</string>
+    <string name="raw_audio_unprocessed_note">El audio totalmente crudo no está disponible en este dispositivo. Se usa el modo de micrófono de reconocimiento de voz (VOICE_RECOGNITION), que desactiva la mayor parte del procesamiento — la diferencia con la grabación normal puede ser sutil.</string>
 
     <string name="fix_video_menu_title">Arreglar video (reparar reproducción)</string>
     <string name="fix_video_repairing">Reparando… Esto puede tomar unos segundos.</string>
@@ -2112,6 +2144,10 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <string name="motion_lab_row_subtitle">Grabación inteligente de eventos para uso estilo CCTV</string>
     <string name="automation_title">Automatización</string>
     <string name="automation_row_subtitle">Asignación de botones, controles remotos Bluetooth, teclas de volumen</string>
+    <string name="setting_volume_shutter_title">Disparador por volumen</string>
+    <string name="setting_volume_shutter_summary">Las teclas de volumen actúan como obturador en la pestaña de inicio</string>
+    <string name="setting_volume_shutter_footer">Las teclas de volumen se convierten en tu obturador en la pestaña de inicio:\n• Toca — toma una foto\n• Doble toca — cambia de cámara\n• Mantén pulsado — inicia o detiene la grabación\n\nLos disparadores remotos Bluetooth también funcionan y activan las mismas acciones. Las teclas funcionan mientras la pestaña de inicio de FadCam esté abierta — las versiones futuras permitirán que cualquier tecla active acciones de FadCam, incluso en segundo plano.\n\nPor ahora, usa MacroDroid para asignar los accesos directos de FadCam — los encontrarás en Ajustes → Accesos directos y widgets.</string>
+    <string name="shortcuts_macrodroid_template">Plantilla oficial de MacroDroid: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Guardián Térmico</string>
     <string name="thermal_guardian_row_subtitle">Ajustar grabación automáticamente para evitar sobrecalentamiento</string>
     <string name="audio_vision_title">Visión de Audio</string>
@@ -2278,6 +2314,7 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <string name="watermark_gps_disabled_warning">⚠ GPS desactivado — habilita la ubicación del dispositivo para que esta función funcione</string>
     <string name="watermark_gps_disabled_home_toast">Funciones de marca de agua dependientes de ubicación activadas pero GPS está desactivado. Habilita la ubicación del dispositivo para que funcionen.</string>
     <string name="watermark_gps_disabled_banner_message">Las funciones de marca de agua dependientes de ubicación no aparecerán hasta que se habilite la ubicación del dispositivo</string>
+    <string name="watermark_day_title">Día</string>
     <string name="watermark_timezone_title">Zona horaria</string>
     <string name="watermark_timezone_off">Desactivado</string>
     <string name="watermark_timezone_on_gmt">Activado — Desplazamiento GMT en marca de agua</string>

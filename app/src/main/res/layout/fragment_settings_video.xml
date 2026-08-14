@@ -17,7 +17,8 @@
         android:paddingTop="16dp"
         android:paddingBottom="12dp"
         android:background="@drawable/header_bar_rounded_bg"
-        app:layout_constraintTop_toTopOf="parent"
+                android:elevation="8dp"
+app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
         <ImageView
@@ -65,6 +66,44 @@
                 android:background="@drawable/settings_group_card_bg"
 
 >
+
+            <!-- Video Stabilization Row (opens bottom sheet) -->
+            <LinearLayout
+                android:id="@+id/row_video_stabilization"
+                style="@style/SettingsGroupRow"
+                android:clickable="true"
+                android:focusable="true">
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:fontFamily="@font/materialicons"
+                    android:gravity="center"
+                    android:text="graphic_eq"
+                    android:textSize="18sp"
+                    android:textColor="@android:color/darker_gray" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/setting_video_stabilization_title"
+                    android:textStyle="bold"
+                    android:textSize="15sp"
+                    android:textColor="?attr/colorHeading"/>
+                <TextView
+                    android:id="@+id/value_video_stabilization"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="13sp"/>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+            <View style="@style/SettingsDivider" />
 
             <!-- Camera Selection Row -->
             <LinearLayout

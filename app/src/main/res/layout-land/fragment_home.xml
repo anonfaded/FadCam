@@ -422,8 +422,8 @@
 
     <FrameLayout
         android:id="@+id/cardRailToggleLandscape"
-        android:layout_width="20dp"
-        android:layout_height="48dp"
+        android:layout_width="24dp"
+        android:layout_height="56dp"
         android:layout_marginTop="4dp"
         android:layout_marginBottom="0dp"
         android:background="@drawable/bg_home_fold_toggle_right"
@@ -563,91 +563,180 @@
                 <!-- TextureView for live camera preview (shows on top when recording) -->
                 <TextureView android:id="@+id/textureView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_gravity="center" />
 
+                <!-- Rule-of-thirds grid overlay (shown only when Grid Lines setting is on) -->
+                <com.fadcam.ui.GridOverlayView
+                    android:id="@+id/grid_overlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone" />
+
+                <!-- Paused recording overlay — shown on top of preview when recording is paused -->
+                <LinearLayout
+                    android:id="@+id/paused_preview_overlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:background="#CC1a1a1a"
+                    android:visibility="gone" android:clipChildren="false" android:clipToPadding="false">
+
+                    <TextView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:gravity="center"
+                        android:text="pause_circle"
+                        android:textSize="48sp"
+                        android:textColor="#FFFFFF"
+                        android:alpha="0.9"
+                        android:fontFamily="@font/materialicons" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Recording Paused"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#FFFFFF"
+                        android:alpha="0.9" />
+
+                </LinearLayout>
+
                 <!-- Hidden placeholder text (replaced by icons) -->
                 <TextView android:id="@+id/tvPreviewPlaceholder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/ui_preview_area" android:textColor="?attr/homeRailTextPrimary" android:textSize="24sp" android:visibility="gone" />
 
-                <!-- Bottom-right controls container -->
+                <!-- Bottom-right controls container (quick actions row — mirrors portrait exactly) -->
+            <FrameLayout
+                 android:id="@+id/quick_actions_row"
+                 android:layout_width="match_parent"
+                 android:layout_height="wrap_content"
+                 android:layout_gravity="bottom"
+                 android:layout_margin="2dp"
+                 android:paddingStart="12dp"
+                 android:paddingEnd="12dp"
+                 android:paddingTop="2dp"
+                 android:paddingBottom="2dp"
+                 android:clipChildren="false"
+                 android:clipToPadding="false">
+
+                <!-- Realtime audio mute/unmute button with label -->
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:id="@+id/btnQuickMuteAudio"
+                    android:layout_width="44dp"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|end"
-                    android:layout_margin="8dp"
-                    android:orientation="horizontal"
-                    android:clipChildren="false"
-                    android:clipToPadding="false">
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:clipChildren="false" android:clipToPadding="false">
 
-                    <!-- Quick shot button with label -->
-                    <LinearLayout
-                        android:id="@+id/btnCaptureShotPreview"
+                    <TextView
+                        android:id="@+id/ivQuickMuteIcon"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:text="mic"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/white"
+                        android:contentDescription="@string/quick_mute_label" />
+
+                    <TextView
+                        android:id="@+id/tvQuickMuteLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="8dp"
-                        android:orientation="vertical"
+                        android:text="@string/quick_mute_label"
+                        android:textColor="@android:color/white"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:maxLines="2"
                         android:gravity="center"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:visibility="gone"
-                        android:background="?attr/selectableItemBackgroundBorderless">
-
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:background="@drawable/fullscreen_icon_bg"
-                            android:src="@drawable/camera_rounded"
-                            android:tint="@android:color/white"
-                            android:scaleType="centerInside"
-                            android:padding="7dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="FadShot"
-                            android:textColor="@android:color/white"
-                            android:textSize="9sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="2dp"
-                            android:shadowColor="#BB000000"
-                            android:shadowDx="1"
-                            android:shadowDy="1"
-                            android:shadowRadius="1"/>
-                    </LinearLayout>
-
-                    <!-- Fullscreen preview button with label -->
-                    <LinearLayout
-                        android:id="@+id/btnFullscreenPreview"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:visibility="gone"
-                        android:background="?attr/selectableItemBackgroundBorderless">
-
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:background="@drawable/fullscreen_icon_bg"
-                            android:src="@drawable/fullscreen_rounded"
-                            android:tint="@android:color/white"
-                            android:scaleType="centerInside"
-                            android:padding="7dp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Full"
-                            android:textColor="@android:color/white"
-                            android:textSize="9sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="2dp"
-                            android:shadowColor="#BB000000"
-                            android:shadowDx="1"
-                            android:shadowDy="1"
-                            android:shadowRadius="1"/>
-                    </LinearLayout>
-
+                        android:layout_marginTop="2dp"
+                        android:shadowColor="#BB000000"
+                        android:shadowDx="1"
+                        android:shadowDy="1"
+                        android:shadowRadius="1"/>
                 </LinearLayout>
+
+                <!-- Fullscreen preview button with label -->
+                <LinearLayout
+                    android:id="@+id/btnFullscreenPreview"
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:clipChildren="false" android:clipToPadding="false">
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:src="@drawable/fullscreen_rounded"
+                        android:tint="@android:color/white"
+                        android:scaleType="centerInside"
+                        android:padding="6dp"
+                        android:contentDescription="@string/watch_fullscreen_desc" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Full"
+                        android:textColor="@android:color/white"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
+                        android:layout_marginTop="2dp"
+                        android:shadowColor="#BB000000"
+                        android:shadowDx="1"
+                        android:shadowDy="1"
+                        android:shadowRadius="1"/>
+                </LinearLayout>
+
+                <!-- Quick shot button with label -->
+                <LinearLayout
+                    android:id="@+id/btnCaptureShotPreview"
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:clipChildren="false" android:clipToPadding="false">
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:src="@drawable/camera_rounded"
+                        android:tint="@android:color/white"
+                        android:scaleType="centerInside"
+                        android:padding="6dp"
+                        android:contentDescription="@string/watch_fadshot_desc" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="FadShot"
+                        android:textColor="@android:color/white"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
+                        android:layout_marginTop="2dp"
+                        android:shadowColor="#BB000000"
+                        android:shadowDx="1"
+                        android:shadowDy="1"
+                        android:shadowRadius="1"/>
+                </LinearLayout>
+
+            </FrameLayout>
 
                 <LinearLayout
                     android:id="@+id/containerPreviewZoomHud"
@@ -716,52 +805,136 @@
                         app:strokeWidth="1dp" />
                 </LinearLayout>
 
+                <!-- Hint text for long press to enable preview — INSIDE the preview
+                     card (bottom), same placement as portrait. -->
+                <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center|bottom" android:layout_marginBottom="6dp" android:text="@string/preview_enable_hint" android:textColor="?attr/colorHeading" android:textSize="13sp" android:alpha="0.75" android:letterSpacing="0.05" android:visibility="gone" />
+
             </FrameLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Hint text for long press to enable preview -->
-        <TextView android:id="@+id/tvPreviewHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:text="@string/preview_enable_hint" android:textColor="?attr/colorHeading" android:textSize="13sp" android:alpha="0.75" android:letterSpacing="0.05" />
-
         <!-- Main Action Buttons -->
-        <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:layout_marginBottom="72dp" android:gravity="center" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false">
+        <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginBottom="72dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:gravity="center" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent">
 
-            <com.google.android.material.button.MaterialButton android:id="@+id/buttonTorchSwitch" android:layout_width="48dp" android:layout_height="41dp" android:layout_marginEnd="4dp" style="@style/Widget.MaterialComponents.Button.OutlinedButton" app:icon="@drawable/ic_flashlight_on" app:iconSize="24dp" app:iconTint="@color/button_icon_tint_selector" app:iconGravity="textStart" app:iconPadding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:paddingStart="0dp" android:paddingEnd="0dp" app:rippleColor="#22FFFFFF" app:backgroundTint="@android:color/transparent" android:enabled="false" app:cornerRadius="15dp"
-                android:focusable="true"
-                android:nextFocusUp="@+id/cardRailToggleLandscape"
-                android:nextFocusDown="@+id/buttonStartStop" />
+        <FrameLayout
+            android:id="@+id/torch_btn_wrapper"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="4dp" android:clipChildren="false" android:clipToPadding="false">
 
-                <com.fadcam.ui.utils.AnimatedMaterialButton
-                    android:id="@+id/buttonStartStop"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="4dp"
-                    android:minWidth="84dp"
-                    android:maxLines="1"
-                    android:ellipsize="end"
-                    app:icon="@drawable/play_button_rounded"
-                    app:iconSize="14dp"
-                    android:enabled="false"
-                    app:backgroundTint="@color/button_start"
-                    app:iconTint="@color/white"
-                    android:textColor="@color/white"
-                    android:text="@string/button_start"
-                android:focusable="true"
-                android:nextFocusUp="@+id/buttonTorchSwitch"
-                android:nextFocusDown="@+id/buttonPauseResume" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonTorchSwitch" android:layout_width="match_parent" android:layout_height="match_parent" style="@style/Widget.MaterialComponents.Button.OutlinedButton" app:icon="@drawable/ic_flashlight_on" app:iconSize="24dp" app:iconTint="@color/button_icon_tint_selector" app:iconGravity="textStart" app:iconPadding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:paddingStart="0dp" android:paddingEnd="0dp" app:rippleColor="#22FFFFFF" android:background="@drawable/control_button_bg" android:enabled="false" app:cornerRadius="15dp"
+            android:nextFocusUp="@+id/cardRailToggleLandscape"
+            android:nextFocusDown="@+id/buttonStartStop" />
 
-            <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/pause_rounded" app:iconSize="16dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" app:backgroundTint="@color/button_pause" app:iconTint="@color/white" app:cornerRadius="15dp"
-                android:focusable="true"
-                android:nextFocusUp="@+id/buttonStartStop"
-                android:nextFocusDown="@+id/buttonCamSwitch" />
+            <TextView
+                android:id="@+id/torch_status_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginBottom="6dp"
+                android:layout_marginEnd="7dp"
+                android:text="OFF"
+                android:textColor="#E43C3C"
+                android:textSize="6.5sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:includeFontPadding="false"
+/>
+        </FrameLayout>
 
-            <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/cam_switch" app:iconSize="24dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:cornerRadius="15dp"
-                android:focusable="true"
-                android:nextFocusUp="@+id/buttonPauseResume"
-                android:nextFocusDown="@+id/buttonMirrorSwitch" />
 
-            <com.google.android.material.button.MaterialButton android:id="@+id/buttonMirrorSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/ic_mirror_video" app:iconSize="22dp" android:paddingLeft="12dp" android:paddingRight="0dp" android:enabled="false" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone" />
+        <com.fadcam.ui.utils.AnimatedMaterialButton
+            android:id="@+id/buttonStartStop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:minWidth="84dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:icon="@drawable/play_button_rounded"
+            app:iconSize="14dp"
+            android:enabled="false"
+            android:background="@drawable/control_button_bg_green"
+            app:iconTint="@color/white"
+            android:textColor="@color/white"
+            android:text="@string/button_start"
+            android:nextFocusUp="@+id/cardRailToggleLandscape"
+            android:nextFocusDown="@+id/buttonPauseResume" />
 
-        </LinearLayout>
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/pause_rounded" app:iconSize="16dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="15dp"
+            android:nextFocusUp="@+id/cardRailToggleLandscape"
+            android:nextFocusDown="@+id/buttonCamSwitch" />
+
+                <FrameLayout
+            android:id="@+id/fadrec_mute_wrapper"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="4dp"
+            android:visibility="gone" android:clipChildren="false" android:clipToPadding="false">
+
+<com.google.android.material.button.MaterialButton android:id="@+id/buttonFadRecMute" android:layout_width="match_parent" android:layout_height="match_parent" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/fadrec_mute_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="mic"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:fontFamily="@font/materialicons"/>
+
+            <TextView
+                android:id="@+id/fadrec_mute_status_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginBottom="6dp"
+                android:layout_marginEnd="7dp"
+                android:text="OFF"
+                android:textColor="#FFFFFF"
+                android:textSize="6.5sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:includeFontPadding="false"/>
+        </FrameLayout>
+
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/cam_switch" app:iconSize="24dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="15dp"
+            android:nextFocusUp="@+id/cardRailToggleLandscape"
+            android:nextFocusDown="@+id/buttonMirrorSwitch" />
+
+
+
+                <FrameLayout
+            android:id="@+id/mirror_btn_wrapper"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="4dp" android:clipChildren="false" android:clipToPadding="false">
+
+<com.google.android.material.button.MaterialButton android:id="@+id/buttonMirrorSwitch" android:layout_width="match_parent" android:layout_height="match_parent" app:icon="@drawable/ic_mirror_video" app:iconSize="22dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone"
+            android:nextFocusUp="@+id/cardRailToggleLandscape"
+            android:nextFocusDown="@+id/buttonMirrorSwitch" />
+
+            <TextView
+                android:id="@+id/mirror_status_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginBottom="6dp"
+                android:layout_marginEnd="7dp"
+                android:text="OFF"
+                android:textColor="#B0BEC5"
+                android:textSize="6.5sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:includeFontPadding="false"
+/>
+        </FrameLayout>
+
+    </LinearLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

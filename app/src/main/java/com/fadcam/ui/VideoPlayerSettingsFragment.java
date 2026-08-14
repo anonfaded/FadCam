@@ -29,6 +29,7 @@ public class VideoPlayerSettingsFragment extends Fragment {
             container,
             false
         );
+        com.fadcam.Utils.attachPressScaleToClickableRows(root);
         LinearLayout rowPlayback = root.findViewById(R.id.row_playback_speed);
         LinearLayout rowQuick = root.findViewById(R.id.row_quick_speed);
         TextView subPlayback = root.findViewById(R.id.sub_playback_speed);

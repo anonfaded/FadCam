@@ -225,6 +225,7 @@ public class HomeFragment extends BaseFragment {
 
     private TextureView textureView;
     private View pausedPreviewOverlay;
+    private GridOverlayView gridOverlay;
 
     private Handler tipHandler = new Handler();
     private int typingIndex = 0;
@@ -283,6 +284,8 @@ public class HomeFragment extends BaseFragment {
     protected MaterialButton buttonPauseResume;
     protected Button buttonCamSwitch;
     protected MaterialButton buttonTorchSwitch;
+    private TextView torchStatusLabel;
+    private TextView mirrorStatusLabel;
     protected MaterialButton buttonMirrorSwitch;
     
     private boolean isPreviewEnabled = true;
@@ -297,6 +300,9 @@ public class HomeFragment extends BaseFragment {
     private float previewUiScale = 1.0f;
     private float previewUiPanX = 0f;
     private float previewUiPanY = 0f;
+    /** True while a pinch-zoom gesture is active; used to suppress tap-to-focus
+     *  when the pinch releases and to re-anchor panning between gestures. */
+    private boolean previewPinchGestureActive = false;
     private boolean isPanningPreview = false;
     private float previewLastTouchX = 0f;
     private float previewLastTouchY = 0f;
@@ -314,6 +320,31 @@ public class HomeFragment extends BaseFragment {
     private View cardPreview;
     private View btnFullscreenPreview;
     private View btnCaptureShotPreview;
+    private View btnQuickMuteAudio;
+    private TextView ivQuickMuteIcon;
+    private TextView tvQuickMuteLabel;
+    private boolean quickAudioMuted = false;
+
+    // Quick-actions rearrange (hold → drag → release)
+    private android.view.ViewGroup quickActionsRow;
+    private boolean quickActionsEditMode = false;
+    private final java.util.ArrayList<android.animation.ObjectAnimator> quickJiggleAnimators =
+            new java.util.ArrayList<>();
+    private View quickDragView = null;
+    private float quickDragStartRawX = 0f;
+    private float quickDragBaseX = 0f;
+    private final android.os.Handler quickActionsHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable quickLongPressRunnable = null;
+    // Snap-point markers shown while dragging
+    private final java.util.ArrayList<View> quickSnapMarkers = new java.util.ArrayList<>();
+    private final java.util.HashMap<View, Integer> quickSlotMap = new java.util.HashMap<>();
+    private int quickSlotWidth = 0;
+    private float quickSlotStep = 0f; // content width / slot count (equal spacing)
+    private int quickSlotCount = 0;
+    private int quickHighlightedSlot = -1;
+    private View quickActionsScrim = null;
+    private final android.graphics.RectF quickScrimWindow = new android.graphics.RectF();
     private boolean isLaunchingPhotoCapture = false;
     private Vibrator vibrator;
     private ImageView ivBubbleBackground; // Rotating bubble shape behind camera icon (legacy, null after layout update)
@@ -399,6 +430,9 @@ public class HomeFragment extends BaseFragment {
     // Recording tile controls
     private TextView tileAfToggle;
     private TextView tileExp;
+    private TextView tileExpLabel;
+    private TextView tileZoomLabel;
+    private TextView tileAfStatusIcon;
     private TextView tileZoom;
 
     // overlay (removed - using PickerBottomSheetFragment instead)
@@ -886,6 +920,9 @@ public class HomeFragment extends BaseFragment {
             return;
         }
 
+        // Keep the grid overlay in sync with the live preview on every call.
+        updateGridOverlayVisibility();
+
         if (usesModeSpecificPreviewBehavior()) {
             updateModeSpecificPreviewVisibility();
             return;
@@ -948,6 +985,7 @@ public class HomeFragment extends BaseFragment {
                     updateServiceWithCurrentSurface(textureViewSurface, textureView.getWidth(), textureView.getHeight());
                 }
                 updateFullscreenButtonVisibility();
+                updateGridOverlayVisibility();
                 return;
             }
             // Not recording, keep placeholder and hint hidden (using layered icons only)
@@ -1067,6 +1105,7 @@ public class HomeFragment extends BaseFragment {
                                 @Override public void onAnimationEnd(Animator a) {
                                     isPreviewCloseAnimating = false;
                                     if (textureView != null) textureView.setVisibility(View.INVISIBLE);
+                                    updateGridOverlayVisibility();
                                     if (!isAdded()) return;
                                     // Brief hold so user sees the awake avatar before sleeping.
                                     // ~650ms matches the sun spin-in duration (520ms + small buffer).
@@ -1084,6 +1123,7 @@ public class HomeFragment extends BaseFragment {
                         } else {
                             isPreviewCloseAnimating = false;
                             textureView.setVisibility(View.INVISIBLE);
+                            updateGridOverlayVisibility();
                         }
                     } else {
                         // Fallback: fade textureView out
@@ -1093,6 +1133,7 @@ public class HomeFragment extends BaseFragment {
                                     isPreviewCloseAnimating = false;
                                     textureView.setVisibility(View.INVISIBLE);
                                     textureView.setAlpha(1f);
+                                    updateGridOverlayVisibility();
                                     if (isAdded()) applyHomeAvatarState(false, true);
                                 }).start();
                         } else {
@@ -1125,6 +1166,47 @@ public class HomeFragment extends BaseFragment {
 
         // Show fullscreen button only when preview is active and recording
         updateFullscreenButtonVisibility();
+    }
+
+    /**
+     * Show/hide the rule-of-thirds grid overlay with a short fade. The grid is
+     * visible only when the Grid Lines setting is enabled AND the live preview
+     * is currently shown; it disappears (fades out) whenever the preview closes,
+     * recording stops, or the avatar returns.
+     */
+    private void updateGridOverlayVisibility() {
+        if (gridOverlay == null) return;
+        boolean prefEnabled = false;
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+            prefEnabled = sharedPreferencesManager.isGridLinesEnabled();
+        } catch (Exception ignored) {}
+        boolean livePreviewShowing =
+                textureView != null && textureView.getVisibility() == View.VISIBLE;
+        boolean shouldShow = prefEnabled && livePreviewShowing;
+
+        // Cancel any in-flight fade so rapid state changes don't leave stale callbacks.
+        gridOverlay.animate().cancel();
+
+        if (shouldShow) {
+            if (gridOverlay.getVisibility() != View.VISIBLE) {
+                gridOverlay.setAlpha(0f);
+                gridOverlay.setVisibility(View.VISIBLE);
+            }
+            gridOverlay.animate().alpha(1f).setDuration(250).start();
+        } else if (gridOverlay.getVisibility() == View.VISIBLE) {
+            final View g = gridOverlay;
+            g.animate().alpha(0f).setDuration(250)
+                .withEndAction(() -> {
+                    // Only hide if we actually finished fading out (not re-shown meanwhile).
+                    if (g.getAlpha() < 0.01f) {
+                        g.setVisibility(View.GONE);
+                        g.setAlpha(1f);
+                    }
+                }).start();
+        }
     }
 
     /**
@@ -1171,6 +1253,9 @@ public class HomeFragment extends BaseFragment {
      */
     private void setHintVisibilityAnimated(boolean show) {
         if (tvPreviewHint == null) return;
+        // Keep the hint above the quick-action icons and clear their space:
+        // raise the bottom margin when the icon row is visible.
+        updatePreviewHintPosition();
         if (show) {
             if (tvPreviewHint.getVisibility() == View.VISIBLE && tvPreviewHint.getAlpha() >= 0.99f) return;
             tvPreviewHint.animate().cancel();
@@ -1199,6 +1284,45 @@ public class HomeFragment extends BaseFragment {
                     }
                 })
                 .start();
+        }
+    }
+
+    /**
+     * Keeps the preview hint above the quick-action icon row: raises it in z-order
+     * and lifts its bottom margin so the icon row keeps its own space.
+     */
+    private void updatePreviewHintPosition() {
+        if (tvPreviewHint == null) return;
+        try {
+            tvPreviewHint.bringToFront();
+            boolean quickVisible = btnQuickMuteAudio != null
+                    && btnQuickMuteAudio.getVisibility() == View.VISIBLE;
+            if (isLandscapeMode()) {
+                // Landscape preview is short: the hint lives BELOW the avatar at the
+                // bottom (6dp). When the quick actions occupy the bottom strip, raise
+                // it just above them. NEVER touch visibility here — that's owned by
+                // setHintVisibilityAnimated() (forcing it hid the hint permanently
+                // when quick actions were "always visible").
+                android.view.ViewGroup.MarginLayoutParams lp =
+                        (android.view.ViewGroup.MarginLayoutParams) tvPreviewHint.getLayoutParams();
+                int targetDp = quickVisible ? 72 : 6;
+                int target = Math.round(targetDp * getResources().getDisplayMetrics().density);
+                if (lp != null && lp.bottomMargin != target) {
+                    lp.bottomMargin = target;
+                    tvPreviewHint.setLayoutParams(lp);
+                }
+                return;
+            }
+            android.view.ViewGroup.MarginLayoutParams lp =
+                    (android.view.ViewGroup.MarginLayoutParams) tvPreviewHint.getLayoutParams();
+            int targetDp = quickVisible ? 76 : 48;
+            int target = Math.round(targetDp * getResources().getDisplayMetrics().density);
+            if (lp != null && lp.bottomMargin != target) {
+                lp.bottomMargin = target;
+                tvPreviewHint.setLayoutParams(lp);
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "updatePreviewHintPosition failed: " + e.getMessage());
         }
     }
 
@@ -1374,19 +1498,40 @@ public class HomeFragment extends BaseFragment {
                             return;
                         }
 
-                        // Show bottom sheet ONLY for stable updates
-                        if (result.hasStable) {
-                            final String finalVersion = result.stableVersion;
-                            final String finalUrl = result.stableUrl;
+                        // Auto-popup on app open:
+                        //  - BETA app (package com.fadcam.beta): show the BETA update
+                        //    sheet DIRECTLY so beta testers see urgent releases
+                        //    immediately (badge-only was too quiet for them).
+                        //  - Stable app: only stable updates pop (existing behavior).
+                        //    (On the beta app a newer STABLE still pops if no beta
+                        //    is available — e.g. current beta < next stable.)
+                        final boolean isBetaApp =
+                                com.fadcam.BuildConfig.APPLICATION_ID.endsWith(".beta");
+                        FLog.d("UpdateCheck", "Home check: package="
+                                + com.fadcam.BuildConfig.APPLICATION_ID
+                                + " isBetaApp=" + isBetaApp
+                                + " current=" + currentVersion
+                                + " stable=" + result.stableVersion + "(" + result.hasStable + ")"
+                                + " beta=" + result.betaVersion + "(" + result.hasBeta + ")"
+                                + " pro=" + result.proVersion + "(" + result.hasPro + ")");
+                        if ((isBetaApp && result.hasBeta) || (!isBetaApp && result.hasStable)) {
                             requireActivity().runOnUiThread(() -> {
                                 if (isAdded() && !isDetached()
                                         && getActivity() != null
                                         && !getActivity().isFinishing()) {
                                     try {
-                                        UpdateAvailableBottomSheet.newInstance(
-                                            finalVersion, "", finalUrl
-                                        ).show(getParentFragmentManager(),
-                                               "UpdateAvailableBottomSheet");
+                                        if (isBetaApp && result.hasBeta) {
+                                            BetaUpdateBottomSheet.newInstance(
+                                                    result.betaVersion, result.betaUrl,
+                                                    currentVersion
+                                            ).show(getParentFragmentManager(),
+                                                   "BetaUpdateSheet");
+                                        } else {
+                                            UpdateAvailableBottomSheet.newInstance(
+                                                result.stableVersion, "", result.stableUrl
+                                            ).show(getParentFragmentManager(),
+                                                   "UpdateAvailableBottomSheet");
+                                        }
                                     } catch (IllegalStateException e) {
                                         FLog.e(TAG, "Cannot show update sheet", e);
                                     }
@@ -1707,11 +1852,7 @@ public class HomeFragment extends BaseFragment {
 
         applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                 AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-            buttonStartStop.setBackgroundTintList(
-                ColorStateList.valueOf(
-                    ContextCompat.getColor(requireContext(), R.color.button_stop)
-                )
-            );
+            buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
             buttonStartStop.setEnabled(true);
         });
         updateStartStopButtonForFoldedState();
@@ -1750,11 +1891,7 @@ public class HomeFragment extends BaseFragment {
 
         applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                 AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-            buttonStartStop.setBackgroundTintList(
-                ColorStateList.valueOf(
-                    ContextCompat.getColor(requireContext(), R.color.button_stop)
-                )
-            );
+            buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
         });
         updateStartStopButtonForFoldedState();
         updateStorageInfo();
@@ -1900,10 +2037,7 @@ public class HomeFragment extends BaseFragment {
                 applyButtonTransition(buttonStartStop, getString(R.string.button_start),
                         AppCompatResources.getDrawable(getContext(), R.drawable.play_button_rounded), () -> {
                     // Always use green color for start button regardless of theme
-                    int btnColor = Color.parseColor("#4CAF50"); // Always green
-                    buttonStartStop.setBackgroundTintList(
-                        ColorStateList.valueOf(btnColor)
-                    );
+                    buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_green);
                     // Force enable the button when resetting to idle state, regardless of any debouncing
                     buttonStartStop.setEnabled(true);
                     buttonStartStop.setAlpha(1.0f);
@@ -1912,7 +2046,10 @@ public class HomeFragment extends BaseFragment {
                 // log removed
             }
             if (buttonPauseResume != null) {
-                buttonPauseResume.setVisibility(View.VISIBLE);
+                // Cancel any fade-in animation first: animateControlButton() fades
+                // alpha to 1.0, which would otherwise override the disabled 0.5
+                // alpha below and leave the button looking ENABLED while idle.
+                buttonPauseResume.animate().cancel();
                 buttonPauseResume.setEnabled(false);
                 buttonPauseResume.setAlpha(0.5f);
                 buttonPauseResume.setIcon(
@@ -1924,7 +2061,7 @@ public class HomeFragment extends BaseFragment {
             }
             if (buttonCamSwitch != null) {
                 buttonCamSwitch.setEnabled(true);
-                buttonCamSwitch.setVisibility(View.VISIBLE);
+                animateControlButtonScale(buttonCamSwitch, true, null);
                 buttonCamSwitch.setAlpha(1f);
             }
             if (buttonTorchSwitch != null) {
@@ -1961,9 +2098,7 @@ public class HomeFragment extends BaseFragment {
             buttonStartStop.setAlpha(shouldEnable ? 1.0f : 0.5f);
 
             // Always maintain green color even when disabled
-            buttonStartStop.setBackgroundTintList(
-                ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-            );
+            buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_green);;
 
             if (!shouldEnable) {
                 FLog.d(
@@ -2191,7 +2326,7 @@ public class HomeFragment extends BaseFragment {
         updateStats();
         isTorchOn = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.PREF_TORCH_STATE, false);
         updateTorchUI(isTorchOn);
-        updateMirrorButtonVisibilityAndState();
+        updateMirrorButtonVisibilityAndState(false); // instant on resume
         if (isRecordingOrPaused() || isPreviewOnlyActive) {
             pushFrontMirrorToService(sharedPreferencesManager.isFrontVideoMirrorEnabled());
         }
@@ -2820,12 +2955,7 @@ public class HomeFragment extends BaseFragment {
             applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                     AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
                 buttonStartStop.setEnabled(true); // Enable STOP
-                buttonStartStop.setBackgroundTintList(
-                    ContextCompat.getColorStateList(
-                        requireContext(),
-                        R.color.button_stop
-                    )
-                );
+                buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
             });
 
             buttonPauseResume.setEnabled(true); // Enable PAUSE
@@ -2836,12 +2966,7 @@ public class HomeFragment extends BaseFragment {
                 )
             );
             buttonPauseResume.setAlpha(1.0f); // Make fully visible when enabled
-            buttonPauseResume.setBackgroundTintList(
-                ContextCompat.getColorStateList(
-                    requireContext(),
-                    R.color.button_pause
-                )
-            );
+            buttonPauseResume.setBackgroundResource(R.drawable.control_button_bg_orange);;
 
             // Keep button enabled ALWAYS during recording (for live camera switching)
             // Even if state updates happen right after a switch, keep it enabled
@@ -2872,12 +2997,7 @@ public class HomeFragment extends BaseFragment {
             applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                     AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
                 buttonStartStop.setEnabled(true); // Enable STOP
-                buttonStartStop.setBackgroundTintList(
-                    ContextCompat.getColorStateList(
-                        requireContext(),
-                        R.color.button_stop
-                    )
-                );
+                buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
             });
 
             buttonPauseResume.setEnabled(true); // Enable RESUME
@@ -2891,12 +3011,7 @@ public class HomeFragment extends BaseFragment {
             // icon for
             // RESUME
             buttonPauseResume.setAlpha(1.0f); // Make fully visible when enabled
-            buttonPauseResume.setBackgroundTintList(
-                ContextCompat.getColorStateList(
-                    requireContext(),
-                    R.color.button_pause
-                )
-            );
+            buttonPauseResume.setBackgroundResource(R.drawable.control_button_bg_orange);;
 
             // Keep button enabled ALWAYS during recording (for live camera switching)
             // Even during pause, allow camera switch to resume recording
@@ -2931,12 +3046,7 @@ public class HomeFragment extends BaseFragment {
             applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
                     AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
                 buttonStartStop.setEnabled(true); // Enable STOP (user can still stop recording)
-                buttonStartStop.setBackgroundTintList(
-                    ContextCompat.getColorStateList(
-                        requireContext(),
-                        R.color.button_stop
-                    )
-                );
+                buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
             });
 
             // Disable pause button during camera interruption (doesn't make sense)
@@ -3406,6 +3516,19 @@ public class HomeFragment extends BaseFragment {
                 float ratio = intent.getFloatExtra(Constants.EXTRA_BROADCAST_ZOOM_RATIO, -1f);
                 float panX  = intent.getFloatExtra(Constants.EXTRA_BROADCAST_PAN_X, 0f);
                 float panY  = intent.getFloatExtra(Constants.EXTRA_BROADCAST_PAN_Y, 0f);
+
+                // While the user is actively pinching/panning, the local mirror is the
+                // authoritative source. The echo carries the LAST-SENT pan, which is
+                // already behind the finger — applying it would yank the mirror backward
+                // every frame (perceived lag). Keep external ratio sync only.
+                if (isPanningPreview || previewPinchGestureActive) {
+                    if (ratio > 0f) {
+                        previewPinchZoomRatio = ratio;
+                        previewUiScale = Math.max(1.0f, Math.min(4.0f, ratio));
+                    }
+                    return;
+                }
+
                 FLog.d(TAG, "📡 BROADCAST_ON_ZOOM_CHANGED ratio=" + ratio + " pan=" + panX + "," + panY);
                 if (ratio > 0f) {
                     previewPinchZoomRatio = ratio;
@@ -4139,6 +4262,7 @@ public class HomeFragment extends BaseFragment {
                                 }
                             }
                         }
+                        updateExposureTileLabel(currentEvIndex);
                     } catch (Exception ignored) {}
                 }
             );
@@ -4231,6 +4355,7 @@ public class HomeFragment extends BaseFragment {
                             tileExp.setScaleX(aeLocked ? 1.05f : 1f);
                             tileExp.setScaleY(aeLocked ? 1.05f : 1f);
                         }
+                        updateExposureTileLabel(currentEvIndex);
                     } catch (Exception e) {
                         FLog.e(
                             TAG,
@@ -4283,6 +4408,13 @@ public class HomeFragment extends BaseFragment {
                                     ? "center_focus_strong"
                                     : "center_focus_weak"
                             );
+                        }
+                        // Lock/unlock status icon in the corner (in place of a text label),
+                        // with the same torch-style pop animation as the zoom/EV labels.
+                        if (tileAfStatusIcon != null) {
+                            boolean afOn =
+                                afMode == android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
+                            animateTileLabel(tileAfStatusIcon, afOn ? "lock_open" : "lock", !afOn);
                         }
                     } catch (Exception ignored) {}
                 }
@@ -4417,6 +4549,9 @@ public class HomeFragment extends BaseFragment {
                     if (bundle == null) return;
                     if (bundle.containsKey("preview_quick_actions_always_visible")) {
                         updateFullscreenButtonVisibility();
+                    }
+                    if (bundle.containsKey("grid_lines_enabled")) {
+                        updateGridOverlayVisibility();
                     }
                     if (!bundle.containsKey("preview_enabled")) return;
                     boolean enabled = bundle.getBoolean("preview_enabled", true);
@@ -4593,28 +4728,15 @@ public class HomeFragment extends BaseFragment {
 
         // Setup lifecycle observer for background/foreground handling
         setupLifecycleObserver();
-
-        // Attempt to find camera with flash
-        try {
-            cameraId = getCameraWithFlash();
-            if (cameraId == null) {
-                buttonTorchSwitch.setEnabled(false);
-                buttonTorchSwitch.setVisibility(View.GONE);
-            } else {
-                buttonTorchSwitch.setEnabled(true);
-                buttonTorchSwitch.setVisibility(View.VISIBLE);
-            }
-        } catch (CameraAccessException e) {
-            FLog.e(TAG, "Camera access error: " + e.getMessage());
-            e.printStackTrace();
-            buttonTorchSwitch.setEnabled(false);
-            buttonTorchSwitch.setVisibility(View.GONE);
-        }
+        // NOTE: torch flash detection is done once in initializeTorch() above —
+        // the duplicate block that animated the wrapper here was removed (it
+        // caused the control row to re-center with a slide on cold start).
 
         View btnGetPro = view.findViewById(R.id.btnGetPro);
         View proBadgeDot = view.findViewById(R.id.proBadgeDot);
         
         if (btnGetPro != null) {
+            Utils.attachPressScale(btnGetPro);
             // Update badge visibility based on pro feature state
             if (proBadgeDot != null) {
                 try {
@@ -4790,6 +4912,8 @@ public class HomeFragment extends BaseFragment {
     private void setupTextureView(@NonNull View view) {
         textureView = view.findViewById(R.id.textureView);
         pausedPreviewOverlay = view.findViewById(R.id.paused_preview_overlay);
+        gridOverlay = view.findViewById(R.id.grid_overlay);
+        updateGridOverlayVisibility();
 
         FLog.d(
             TAG,
@@ -4838,7 +4962,7 @@ public class HomeFragment extends BaseFragment {
             new android.view.ScaleGestureDetector.SimpleOnScaleGestureListener() {
                 @Override
                 public boolean onScale(android.view.ScaleGestureDetector detector) {
-                    applyPreviewPinchZoom(detector.getScaleFactor());
+                    applyPreviewPinchZoom(detector.getScaleFactor(), detector.getFocusX(), detector.getFocusY());
                     return true;
                 }
             }
@@ -4854,6 +4978,7 @@ public class HomeFragment extends BaseFragment {
                 if (previewScaleGestureDetector != null) {
                     previewScaleGestureDetector.onTouchEvent(event);
                     if (previewScaleGestureDetector.isInProgress()) {
+                        previewPinchGestureActive = true;
                         if (pendingPreviewLongPressRunnable != null) {
                             previewLongPressHandler.removeCallbacks(pendingPreviewLongPressRunnable);
                         }
@@ -4865,6 +4990,7 @@ public class HomeFragment extends BaseFragment {
                 switch (action) {
                     case MotionEvent.ACTION_DOWN:
                         isPanningPreview = false;
+                        previewPinchGestureActive = false;
                         previewLongPressTriggered = false;
                         updateMainSwipeGestureGate(zoomGestureLock);
                         previewLastTouchX = event.getX();
@@ -4894,11 +5020,27 @@ public class HomeFragment extends BaseFragment {
                                 updateMainSwipeGestureGate(true);
                                 previewUiPanX += dx;
                                 previewUiPanY += dy;
+                                clampPreviewPan();
                                 applyPreviewTransform();
+                                long panNow = System.currentTimeMillis();
+                                if (panNow - previewZoomDispatchMs >= 16L) {
+                                    previewZoomDispatchMs = panNow;
+                                    dispatchZoomPanToCamera(previewPinchZoomRatio);
+                                }
                                 previewLastTouchX = event.getX();
                                 previewLastTouchY = event.getY();
                                 return true;
                             }
+                        }
+                        break;
+                    case MotionEvent.ACTION_POINTER_UP:
+                        // A pinch is ending. Re-anchor the single-finger pan origin to the
+                        // remaining finger so the first move after the pinch doesn't compute a
+                        // phantom delta from the stale pre-pinch anchor (which snapped the view).
+                        if (event.getPointerCount() > 1) {
+                            int remainingIndex = (event.getActionIndex() == 0) ? 1 : 0;
+                            previewLastTouchX = event.getX(remainingIndex);
+                            previewLastTouchY = event.getY(remainingIndex);
                         }
                         break;
                     case MotionEvent.ACTION_UP:
@@ -4908,6 +5050,8 @@ public class HomeFragment extends BaseFragment {
                         }
                         updateMainSwipeGestureGate(false);
                         requestPreviewParentIntercept(v, false);
+                        boolean wasPinchGesture = previewPinchGestureActive;
+                        previewPinchGestureActive = false;
                         if (previewLongPressTriggered) {
                             previewLongPressTriggered = false;
                             isPanningPreview = false;
@@ -4916,6 +5060,16 @@ public class HomeFragment extends BaseFragment {
                         if (isPanningPreview) {
                             isPanningPreview = false;
                             dispatchCurrentPreviewZoomPan();
+                            // Final pop of the zoom label with the settled value.
+                            updatePreviewZoomHudUi(previewPinchZoomRatio, true);
+                            return true;
+                        }
+                        if (wasPinchGesture) {
+                            // The pinch released — this is not a tap, so don't trigger
+                            // tap-to-focus (which would show the focus dot).
+                            isPanningPreview = false;
+                            // Final pop of the zoom label with the settled value.
+                            updatePreviewZoomHudUi(previewPinchZoomRatio, true);
                             return true;
                         }
                         if ((isRecordingOrPaused() || isPreviewOnlyActive) && textureView != null) {
@@ -5118,6 +5272,12 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void setupButtonListeners() {
+        // Pill-style tap animations for the main camera controls.
+        Utils.attachPressScale(buttonStartStop);
+        Utils.attachPressScale(buttonPauseResume);
+        Utils.attachPressScale(buttonCamSwitch);
+        Utils.attachPressScale(buttonMirrorSwitch);
+
         // Initialize debounced runnables for start/stop actions to prevent rapid clicking
         if (debouncedStartRecording == null) {
             debouncedStartRecording = new DebouncedRunnable(() -> {
@@ -5136,78 +5296,7 @@ public class HomeFragment extends BaseFragment {
             }, 500); // 0.5 second debounce for stop (shorter for responsiveness)
         }
 
-        buttonStartStop.setOnClickListener(v -> {
-            FLog.d(
-                TAG,
-                "Start/Stop button clicked. recordingState=" +
-                recordingState +
-                ", enabled=" +
-                buttonStartStop.isEnabled()
-            );
-
-            // Prevent rapid clicking by temporarily disabling the button
-            if (!buttonStartStop.isEnabled()) {
-                FLog.d(TAG, "Button click ignored - button disabled");
-                return;
-            }
-
-            // If service is not running, force recordingState to NONE
-            if (!isMyServiceRunning(RecordingService.class)
-                    && !isMyServiceRunning(DualCameraRecordingService.class)) {
-                recordingState = RecordingState.NONE;
-                isDualRecordingActive = false;
-            }
-
-            // Temporarily disable button to prevent rapid clicks
-            buttonStartStop.setEnabled(false);
-            
-            // Re-enable after a short delay
-            handlerClock.postDelayed(() -> {
-                if (buttonStartStop != null && isAdded()) {
-                    buttonStartStop.setEnabled(true);
-                }
-            }, 1500); // 1.5 second cooldown
-
-            if (recordingState.equals(RecordingState.NONE)) {
-                if (isCardRailCurrentlyFolded()) {
-                    applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
-                            AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-                        buttonStartStop.setBackgroundTintList(
-                                ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
-                        );
-                        buttonStartStop.setAlpha(1.0f);
-                    });
-                } else {
-                    animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
-                            AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
-                        buttonStartStop.setBackgroundTintList(
-                                ContextCompat.getColorStateList(requireContext(), R.color.button_stop)
-                        );
-                        buttonStartStop.setAlpha(1.0f);
-                    }, true);
-                }
-                debouncedStartRecording.run();
-            } else {
-                if (isCardRailCurrentlyFolded()) {
-                    applyButtonTransition(buttonStartStop, getString(R.string.button_start),
-                            AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
-                        buttonStartStop.setBackgroundTintList(
-                                ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-                        );
-                        buttonStartStop.setAlpha(1.0f);
-                    });
-                } else {
-                    animateButtonTransition(buttonStartStop, getString(R.string.button_start),
-                            AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
-                        buttonStartStop.setBackgroundTintList(
-                                ColorStateList.valueOf(Color.parseColor("#4CAF50"))
-                        );
-                        buttonStartStop.setAlpha(1.0f);
-                    }, false);
-                }
-                debouncedStopRecording.run();
-            }
-        });
+        buttonStartStop.setOnClickListener(v -> performStartStopToggle());
 
         buttonPauseResume.setOnClickListener(v -> {
             if (isPaused()) {
@@ -5233,6 +5322,105 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    /**
+     * Start/Stop recording toggle — single source of truth used by both the
+     * Start/Stop button and the volume shutter long-press.
+     */
+    private void performStartStopToggle() {
+        FLog.d(
+            TAG,
+            "Start/Stop toggle. recordingState=" +
+            recordingState +
+            ", enabled=" +
+            buttonStartStop.isEnabled()
+        );
+
+        // Prevent rapid toggling by temporarily disabling the button
+        if (!buttonStartStop.isEnabled()) {
+            FLog.d(TAG, "Toggle ignored - button disabled");
+            return;
+        }
+
+        // If service is not running, force recordingState to NONE
+        if (!isMyServiceRunning(RecordingService.class)
+                && !isMyServiceRunning(DualCameraRecordingService.class)) {
+            recordingState = RecordingState.NONE;
+            isDualRecordingActive = false;
+        }
+
+        // Temporarily disable button to prevent rapid toggles
+        buttonStartStop.setEnabled(false);
+
+        // Re-enable after a short delay
+        handlerClock.postDelayed(() -> {
+            if (buttonStartStop != null && isAdded()) {
+                buttonStartStop.setEnabled(true);
+            }
+        }, 1500); // 1.5 second cooldown
+
+        if (recordingState.equals(RecordingState.NONE)) {
+            if (isCardRailCurrentlyFolded()) {
+                applyButtonTransition(buttonStartStop, getString(R.string.button_stop),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
+                    buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
+                    buttonStartStop.setAlpha(1.0f);
+                });
+            } else {
+                animateButtonTransition(buttonStartStop, getString(R.string.button_stop),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.stop_rounded), () -> {
+                    buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_red);;
+                    buttonStartStop.setAlpha(1.0f);
+                }, true);
+            }
+            debouncedStartRecording.run();
+        } else {
+            if (isCardRailCurrentlyFolded()) {
+                applyButtonTransition(buttonStartStop, getString(R.string.button_start),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
+                    buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_green);;
+                    buttonStartStop.setAlpha(1.0f);
+                });
+            } else {
+                animateButtonTransition(buttonStartStop, getString(R.string.button_start),
+                        AppCompatResources.getDrawable(requireContext(), R.drawable.play_button_rounded), () -> {
+                    buttonStartStop.setBackgroundResource(R.drawable.control_button_bg_green);;
+                    buttonStartStop.setAlpha(1.0f);
+                }, false);
+            }
+            debouncedStopRecording.run();
+        }
+    }
+
+    /**
+     * Volume shutter long press: start/stop recording.
+     * Called by MainActivity when the user long-presses a volume key while the
+     * home tab is visible. Mirrors the Start/Stop button behavior exactly.
+     */
+    public void handleVolumeShutterLongPress() {
+        if (!isAdded() || getView() == null) return;
+        performStartStopToggle();
+    }
+
+    /**
+     * Volume shutter single click: capture a FadShot photo.
+     * Called by MainActivity when the user taps a volume key while the home tab
+     * is visible. Mirrors the capture-shot button behavior exactly.
+     */
+    public void handleVolumeShutterClick() {
+        if (!isAdded() || getView() == null) return;
+        captureShotFromCurrentPreview();
+    }
+
+    /**
+     * Volume shutter double click: switch between front/back camera.
+     * Called by MainActivity when the user double-taps a volume key while the
+     * home tab is visible. Mirrors the camera-switch button behavior exactly.
+     */
+    public void handleVolumeShutterCameraSwitch() {
+        if (!isAdded() || getView() == null) return;
+        switchCamera();
+    }
+
     private void pushFrontMirrorToService(boolean enabled) {
         if (!isAdded() || getContext() == null) return;
         if (!isRecordingOrPaused() && !isMyServiceRunning(RecordingService.class)
@@ -5253,14 +5441,117 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+
+    /**
+     * Animated appearance for bottom control buttons: slide/bounce in on show,
+     * shrink/fade out on hide (same motion family as the flip button).
+     * When an inner button is provided, its visibility follows the wrapper.
+     */
+    private void animateControlButton(final View view, boolean show, final View inner) {
+        if (view == null) return;
+        view.animate().cancel();
+        float density = getResources().getDisplayMetrics().density;
+        float slide = 16f * density;
+        // Consistent 240ms motion both ways (Material standard):
+        // enter decelerates, exit accelerates — same duration, minimal slide + fade.
+        if (show) {
+            if (inner != null) inner.setVisibility(View.VISIBLE);
+            if (view.getVisibility() != View.VISIBLE) {
+                // Slide in from the RIGHT so it never collides with the neighbor.
+                view.setAlpha(0f);
+                view.setTranslationX(slide);
+                view.setVisibility(View.VISIBLE);
+            }
+            view.animate()
+                    .alpha(1f).translationX(0f)
+                    .setDuration(240)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
+                    .start();
+        } else {
+            // Slide out to the RIGHT, mirroring the enter motion.
+            view.animate()
+                    .alpha(0f).translationX(slide)
+                    .setDuration(240)
+                    .setInterpolator(new android.view.animation.AccelerateInterpolator(1.5f))
+                    .withEndAction(() -> {
+                        view.setVisibility(View.GONE);
+                        view.setAlpha(1f);
+                        view.setTranslationX(0f);
+                        if (inner != null) inner.setVisibility(View.GONE);
+                    })
+                    .start();
+        }
+    }
+
+    /**
+     * Scale-based show/hide for control buttons (used by the camera switch):
+     * grows in from 0.6 + fade on show, shrinks to 0.6 + fades on hide.
+     */
+    protected void animateControlButtonScale(final View view, boolean show, final View inner) {
+        if (view == null) return;
+        view.animate().cancel();
+        // Never inherit a stale horizontal offset (leftover from a cancelled slide).
+        view.setTranslationX(0f);
+        if (show) {
+            if (inner != null) inner.setVisibility(View.VISIBLE);
+            if (view.getVisibility() != View.VISIBLE) {
+                view.setAlpha(0f);
+                view.setScaleX(0.6f);
+                view.setScaleY(0.6f);
+                view.setVisibility(View.VISIBLE);
+            }
+            view.animate()
+                    .alpha(1f).scaleX(1f).scaleY(1f)
+                    .setDuration(240)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
+                    .start();
+        } else {
+            view.animate()
+                    .alpha(0f).scaleX(0.6f).scaleY(0.6f)
+                    .setDuration(240)
+                    .setInterpolator(new android.view.animation.AccelerateInterpolator(1.5f))
+                    .withEndAction(() -> {
+                        view.setVisibility(View.GONE);
+                        view.setAlpha(1f);
+                        view.setScaleX(1f);
+                        view.setScaleY(1f);
+                        if (inner != null) inner.setVisibility(View.GONE);
+                    })
+                    .start();
+        }
+    }
+
     protected void updateMirrorButtonVisibilityAndState() {
+        updateMirrorButtonVisibilityAndState(true);
+    }
+
+    protected void updateMirrorButtonVisibilityAndState(boolean animate) {
         if (buttonMirrorSwitch == null || sharedPreferencesManager == null) return;
         CameraType selectedCamera = sharedPreferencesManager.getCameraSelection();
         boolean shouldShow =
             (selectedCamera == CameraType.FRONT || selectedCamera.isDual()) &&
             !getClass().getName().contains("FadRecHomeFragment");
 
-        buttonMirrorSwitch.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+        View mirrorWrapper = getView() != null ? getView().findViewById(R.id.mirror_btn_wrapper) : null;
+        if (mirrorWrapper == null) return;
+        if (animate) {
+            // Scale in/out (grow/shrink + fade) — NO slide, consistent with the
+            // camera switch button.
+            animateControlButtonScale(mirrorWrapper, shouldShow, buttonMirrorSwitch);
+        } else {
+            // INSTANT at init/resume — no slide, no row re-centering on cold start.
+            if (shouldShow) {
+                mirrorWrapper.setVisibility(View.VISIBLE);
+                mirrorWrapper.setAlpha(1f);
+                mirrorWrapper.setTranslationX(0f);
+                buttonMirrorSwitch.setVisibility(View.VISIBLE);
+            } else {
+                mirrorWrapper.setVisibility(View.GONE);
+                mirrorWrapper.setAlpha(1f);
+                mirrorWrapper.setTranslationX(0f);
+                buttonMirrorSwitch.setVisibility(View.GONE);
+            }
+        }
         if (!shouldShow) {
             return;
         }
@@ -5271,10 +5562,29 @@ public class HomeFragment extends BaseFragment {
         buttonMirrorSwitch.setContentDescription(
             getString(enabled ? R.string.front_video_mirror_disable : R.string.front_video_mirror_enable)
         );
-        buttonMirrorSwitch.setBackgroundTintList(
-            ColorStateList.valueOf(enabled ? ContextCompat.getColor(requireContext(), R.color.button_stop) : 0xFF3A3A3A)
-        );
+        buttonMirrorSwitch.setBackgroundResource(enabled ? R.drawable.control_button_bg_red : R.drawable.control_button_bg);;
         buttonMirrorSwitch.setIconTint(ColorStateList.valueOf(Color.WHITE));
+
+        // ON/OFF status label (tiny, bottom-right — avatar-toggle style).
+        // White "ON" contrasts with the red fill when flipped; light gray "OFF"
+        // sits quietly on the neutral glass.
+        if (mirrorStatusLabel != null) {
+            String label = enabled ? "ON" : "OFF";
+            int color = enabled ? 0xFFFFFFFF : 0xFFB0BEC5;
+            if (!label.equals(mirrorStatusLabel.getText().toString())) {
+                mirrorStatusLabel.setText(label);
+                mirrorStatusLabel.setTextColor(color);
+                mirrorStatusLabel.animate().cancel();
+                mirrorStatusLabel.setAlpha(0f);
+                mirrorStatusLabel.setScaleX(0.4f);
+                mirrorStatusLabel.setScaleY(0.4f);
+                mirrorStatusLabel.animate()
+                        .alpha(1f).scaleX(1f).scaleY(1f)
+                        .setDuration(220)
+                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                        .start();
+            }
+        }
     }
 
     // --- Start Recording ---
@@ -5707,10 +6017,8 @@ public class HomeFragment extends BaseFragment {
             cardClock.setFocusable(true);
             cardClock.setOnLongClickListener(null);
             cardClock.setOnClickListener(v -> {
-                animatePressBounce(v, () -> {
-                    performHapticFeedback();
-                    showClockAppearanceDialog();
-                });
+                performHapticFeedback();
+                showClockAppearanceDialog();
             });
         }
     }
@@ -6631,6 +6939,7 @@ public class HomeFragment extends BaseFragment {
                         } catch (Exception ignored) {}
                     }
                     cameraRowUiInitialized = true;
+
 
                     // Time-left row
                     if (!suppressDefaultTimeLeftRowUpdates()) {
@@ -7846,6 +8155,27 @@ public class HomeFragment extends BaseFragment {
             tileAfToggle = root.findViewById(R.id.tile_af_toggle);
             tileExp = root.findViewById(R.id.tile_exp);
             tileZoom = root.findViewById(R.id.tile_zoom);
+            tileExpLabel = root.findViewById(R.id.tile_exp_label);
+            tileZoomLabel = root.findViewById(R.id.tile_zoom_label);
+            tileAfStatusIcon = root.findViewById(R.id.tile_af_status_icon);
+            // Initial label values (no animation on first render).
+            if (tileZoomLabel != null) {
+                tileZoomLabel.setText(String.format(
+                        java.util.Locale.US, "%.1fx",
+                        sharedPreferencesManager.getSpecificZoomRatio(
+                                sharedPreferencesManager.getCameraSelection())));
+            }
+            if (tileExpLabel != null) {
+                float step = sharedPreferencesManager.getExposureCompensationStep();
+                tileExpLabel.setText(String.format(
+                        java.util.Locale.US, "%+.1f",
+                        sharedPreferencesManager.getSavedExposureCompensation() * step));
+            }
+
+            // Pill-style tap animations for the AF/exposure/zoom tiles.
+            Utils.attachPressScale(tileAfToggle);
+            Utils.attachPressScale(tileExp);
+            Utils.attachPressScale(tileZoom);
 
             // Initialize AF tile icon from saved afMode and apply Material Icons typeface
             try {
@@ -7873,6 +8203,21 @@ public class HomeFragment extends BaseFragment {
                             ? "center_focus_strong"
                             : "center_focus_weak"
                     );
+                    // Lock/unlock status icon in the corner (in place of a text label).
+                    if (tileAfStatusIcon != null) {
+                        tileAfStatusIcon.setText(
+                            afMode ==
+                                android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
+                                ? "lock_open"
+                                : "lock"
+                        );
+                        tileAfStatusIcon.setTextColor(
+                            afMode ==
+                                android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
+                                ? android.graphics.Color.WHITE
+                                : ContextCompat.getColor(requireContext(), R.color.orange_accent)
+                        );
+                    }
 
                     // theme)-----------
                     // Set appropriate color based on theme
@@ -8222,7 +8567,7 @@ public class HomeFragment extends BaseFragment {
         return list;
     }
 
-    private void applyPreviewPinchZoom(float scaleFactor) {
+    private void applyPreviewPinchZoom(float scaleFactor, float focusX, float focusY) {
         if (!isAdded() || getContext() == null) return;
         CameraType cam = sharedPreferencesManager.getCameraSelection();
         if (cam == null || cam.isDual()) return;
@@ -8234,22 +8579,37 @@ public class HomeFragment extends BaseFragment {
             : sharedPreferencesManager.getSpecificZoomRatio(cam);
         float next = Math.max(minZoom, Math.min(maxZoom, base * scaleFactor));
         previewPinchZoomRatio = next;
-        previewUiScale = Math.max(1.0f, Math.min(4.0f, next));
+
+        // The camera crop (SCALER_CROP_REGION) is the real zoom — previewUiScale is a
+        // mirror used only for pan math and the zoom map. Anchor the zoom at the pinch
+        // focal point (industry standard) so the content under the fingers stays put:
+        //   panNew = (F − C) + (s2/s1) * (panOld − (F − C))
+        float oldScale = previewUiScale;
+        float newScale = Math.max(1.0f, Math.min(4.0f, next));
+        if (textureView != null) {
+            float w = textureView.getWidth();
+            float h = textureView.getHeight();
+            if (w > 0f && h > 0f) {
+                float cx = w / 2f;
+                float cy = h / 2f;
+                float fx = focusX - cx;
+                float fy = focusY - cy;
+                float scaleRatio = (oldScale > 1.001f) ? (newScale / oldScale) : newScale;
+                previewUiPanX = fx + scaleRatio * (previewUiPanX - fx);
+                previewUiPanY = fy + scaleRatio * (previewUiPanY - fy);
+            }
+        }
+        previewUiScale = newScale;
+        clampPreviewPan();
         applyPreviewTransform();
         sharedPreferencesManager.setSpecificZoomRatio(cam, next);
         updatePreviewZoomHudUi(next);
 
         long now = System.currentTimeMillis();
-        if (now - previewZoomDispatchMs < 60L) return;
+        if (now - previewZoomDispatchMs < 16L) return;
         previewZoomDispatchMs = now;
 
-        try {
-            Intent zoomIntent = RecordingControlIntents.setZoomRatio(requireContext(), next);
-            zoomIntent.setClass(requireContext(), RecordingService.class);
-            requireContext().startService(zoomIntent);
-        } catch (Exception e) {
-            FLog.w(TAG, "Failed to dispatch pinch zoom update: " + e.getMessage());
-        }
+        dispatchZoomPanToCamera(next);
     }
 
     private void applyPreviewTransform() {
@@ -8258,16 +8618,39 @@ public class HomeFragment extends BaseFragment {
         float h = textureView.getHeight();
         if (w <= 0f || h <= 0f) return;
 
+        // The camera crop (SCALER_CROP_REGION) is the single source of zoom: the preview
+        // surface is a direct camera-session output, so it already shows the zoomed feed.
+        // Applying a second scale here double-zoomed and broke focal-point anchoring — keep
+        // the texture matrix identity. previewUiScale/pan remain as a mirror for the zoom
+        // map and the normalized-pan dispatch below.
+        textureView.setTransform(null);
+        updatePreviewZoomMapUi();
+    }
+
+    private void clampPreviewPan() {
+        if (textureView == null) return;
+        float w = textureView.getWidth();
+        float h = textureView.getHeight();
+        if (w <= 0f || h <= 0f) return;
         float maxPanX = (w * (previewUiScale - 1f)) / 2f;
         float maxPanY = (h * (previewUiScale - 1f)) / 2f;
         previewUiPanX = Math.max(-maxPanX, Math.min(maxPanX, previewUiPanX));
         previewUiPanY = Math.max(-maxPanY, Math.min(maxPanY, previewUiPanY));
+    }
 
-        android.graphics.Matrix matrix = new android.graphics.Matrix();
-        matrix.postScale(previewUiScale, previewUiScale, w / 2f, h / 2f);
-        matrix.postTranslate(previewUiPanX, previewUiPanY);
-        textureView.setTransform(matrix);
-        updatePreviewZoomMapUi();
+    private void dispatchZoomPanToCamera(float zoomRatio) {
+        try {
+            Intent zoomIntent = RecordingControlIntents.setZoomRatio(
+                requireContext(),
+                zoomRatio,
+                getCurrentNormalizedPreviewPanX(),
+                getCurrentNormalizedPreviewPanY()
+            );
+            zoomIntent.setClass(requireContext(), RecordingService.class);
+            requireContext().startService(zoomIntent);
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to dispatch pinch zoom update: " + e.getMessage());
+        }
     }
 
     private void applyNormalizedPreviewPan(float normalizedPanX, float normalizedPanY) {
@@ -8345,7 +8728,9 @@ public class HomeFragment extends BaseFragment {
         if (textureView != null) {
             textureView.setTransform(null);
         }
-        updatePreviewZoomHudUi(1.0f);
+        // Keep the zoom HUD/label HONEST: the UI mirror resets to 1.0 but the real
+        // camera zoom is untouched — show the actual zoom, never a forced "1.0x".
+        updatePreviewZoomHudUi(previewPinchZoomRatio);
     }
 
     private void requestPreviewParentIntercept(View child, boolean disallow) {
@@ -8464,10 +8849,21 @@ public class HomeFragment extends BaseFragment {
                 }
             });
         }
+        // Init the HUD/label from the PERSISTED zoom so the label never shows a
+        // stale default (e.g. "1.0x" while the saved zoom is 0.5x/2.0x).
+        CameraType initCam = sharedPreferencesManager != null
+                ? sharedPreferencesManager.getCameraSelection() : null;
+        if (initCam != null) {
+            previewPinchZoomRatio = sharedPreferencesManager.getSpecificZoomRatio(initCam);
+        }
         updatePreviewZoomHudUi(previewPinchZoomRatio);
     }
 
     private void updatePreviewZoomHudUi(float zoomRatio) {
+        updatePreviewZoomHudUi(zoomRatio, false);
+    }
+
+    private void updatePreviewZoomHudUi(float zoomRatio, boolean forceLabelPop) {
         if (containerPreviewZoomHud == null || textPreviewZoomHud == null) return;
         textPreviewZoomHud.setText(String.format(java.util.Locale.getDefault(), "%.1fx", zoomRatio));
         boolean show = zoomRatio > 1.01f;
@@ -8476,6 +8872,83 @@ public class HomeFragment extends BaseFragment {
             btnPreviewZoomReset.setVisibility(show ? View.VISIBLE : View.GONE);
         }
         updatePreviewZoomMapUi();
+        updateZoomTileLabel(zoomRatio, forceLabelPop);
+    }
+
+    /**
+     * Torch-style status label for the zoom tile: shows the live zoom level
+     * (e.g. "1.0x", "2.5x") bottom-right, with the same scale/fade animation
+     * as the torch ON/OFF label. Orange when zoomed, default color otherwise.
+     *
+     * Edge cases:
+     *  - During an active pinch/pan the text is updated IN PLACE (no scale/fade
+     *    per frame — that flickered on every little movement).
+     *  - When the value is unchanged (e.g. pan echo re-broadcasts the same
+     *    ratio) only the color is synced — the animation never re-runs.
+     */
+    private void updateZoomTileLabel(float ratio) {
+        updateZoomTileLabel(ratio, false);
+    }
+
+    private void updateZoomTileLabel(float ratio, boolean forcePop) {
+        if (tileZoomLabel == null || !isAdded()) return;
+        String text = String.format(java.util.Locale.US, "%.1fx", ratio);
+        boolean active = ratio > 1.01f;
+        if (!forcePop && (previewPinchGestureActive || isPanningPreview)) {
+            tileZoomLabel.setText(text);
+            tileZoomLabel.setTextColor(tileLabelColor(active));
+            return;
+        }
+        if (!forcePop && tileZoomLabel.getText().toString().equals(text)) {
+            tileZoomLabel.setTextColor(tileLabelColor(active));
+            return;
+        }
+        animateTileLabel(tileZoomLabel, text, active);
+    }
+
+    /**
+     * Torch-style status label for the exposure tile: shows the EV value
+     * (e.g. "+0.0", "-0.7") bottom-right, with the same scale/fade animation
+     * as the torch ON/OFF label. Orange when AE locked or compensated.
+     * Unchanged values (broadcast echoes) only sync the color — no re-animation.
+     */
+    private void updateExposureTileLabel(int evIndex) {
+        if (tileExpLabel == null || !isAdded()) return;
+        float step = sharedPreferencesManager.getExposureCompensationStep();
+        String text = String.format(java.util.Locale.US, "%+.1f", evIndex * step);
+        boolean active = aeLocked || evIndex != 0;
+        if (tileExpLabel.getText().toString().equals(text)) {
+            tileExpLabel.setTextColor(tileLabelColor(active));
+            return;
+        }
+        animateTileLabel(tileExpLabel, text, active);
+    }
+
+    /** Active → orange, Snow Veil → dark gray, otherwise white. */
+    private int tileLabelColor(boolean active) {
+        if (active) {
+            return ContextCompat.getColor(requireContext(), R.color.orange_accent);
+        }
+        if ("Snow Veil".equals(sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_APP_THEME, Constants.DEFAULT_APP_THEME))) {
+            return Color.parseColor("#424242");
+        }
+        return android.graphics.Color.WHITE;
+    }
+
+    /** Scale/fade/overshoot animation for the tile status labels (torch-style). */
+    private void animateTileLabel(TextView label, String text, boolean active) {
+        label.setText(text);
+        label.setTextColor(tileLabelColor(active));
+        label.animate().cancel();
+        label.setAlpha(0f);
+        label.setScaleX(0.4f);
+        label.setScaleY(0.4f);
+        label.animate()
+                .alpha(1f).scaleX(1f).scaleY(1f)
+                .setDuration(220)
+                .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                .start();
     }
 
     private void updatePreviewZoomMapUi() {
@@ -8591,6 +9064,7 @@ public class HomeFragment extends BaseFragment {
 
         tileExp.setScaleX(aeLocked ? 1.05f : 1f);
         tileExp.setScaleY(aeLocked ? 1.05f : 1f);
+        updateExposureTileLabel(currentEvIndex);
     }
 
     private void refreshZoomTileTintFromState() {
@@ -8991,20 +9465,37 @@ public class HomeFragment extends BaseFragment {
         cameraManager = (CameraManager) requireContext().getSystemService(
             Context.CAMERA_SERVICE
         );
+        View wrapper = getView() != null ? getView().findViewById(R.id.torch_btn_wrapper) : null;
         try {
             cameraId = getCameraWithFlash();
             if (cameraId == null) {
                 buttonTorchSwitch.setEnabled(false);
-                buttonTorchSwitch.setVisibility(View.GONE);
+                // INSTANT visibility at init — animating here (or hiding at all)
+                // re-centers the whole control row on the first frames, which the
+                // user sees as the buttons appearing LEFT then jumping to their
+                // real position. Keep the wrapper visible, just disabled.
+                if (wrapper != null) {
+                    wrapper.setVisibility(View.VISIBLE);
+                    wrapper.setAlpha(1f);
+                    wrapper.setTranslationX(0f);
+                }
             } else {
                 buttonTorchSwitch.setEnabled(true);
-                buttonTorchSwitch.setVisibility(View.VISIBLE);
+                if (wrapper != null) {
+                    wrapper.setVisibility(View.VISIBLE);
+                    wrapper.setAlpha(1f);
+                    wrapper.setTranslationX(0f);
+                }
             }
         } catch (CameraAccessException e) {
             FLog.e(TAG, "Camera access error: " + e.getMessage());
             e.printStackTrace();
             buttonTorchSwitch.setEnabled(false);
-            buttonTorchSwitch.setVisibility(View.GONE);
+            if (wrapper != null) {
+                wrapper.setVisibility(View.VISIBLE);
+                wrapper.setAlpha(1f);
+                wrapper.setTranslationX(0f);
+            }
         }
     }
 
@@ -9014,6 +9505,9 @@ public class HomeFragment extends BaseFragment {
             FLog.e(TAG, "buttonTorchSwitch is null, cannot set up listener.");
             return;
         }
+
+        // Pill-style tap animation for the torch control.
+        Utils.attachPressScale(buttonTorchSwitch);
 
         // Initial state update
         // updateTorchButtonState(isTorchOn); // This might be called too early,
@@ -9544,6 +10038,27 @@ public class HomeFragment extends BaseFragment {
                             )
                         );
                         buttonTorchSwitch.setSelected(isOn); // This controls the visual feedback (e.g., tint)
+                        // Yellow border when the torch is ON.
+                        buttonTorchSwitch.setBackgroundResource(isOn
+                                ? R.drawable.control_button_bg_yellow
+                                : R.drawable.control_button_bg);
+
+                        // ON/OFF label — same green/red + scale/fade/overshoot
+                        // animation as the custom AvatarToggleView status label.
+                        if (torchStatusLabel != null) {
+                            torchStatusLabel.setText(isOn ? "ON" : "OFF");
+                            // Neutral palette matching the cam-switch button (white on / gray off).
+                            torchStatusLabel.setTextColor(isOn ? 0xFFFFFFFF : 0xFFB0BEC5);
+                            torchStatusLabel.animate().cancel();
+                            torchStatusLabel.setAlpha(0f);
+                            torchStatusLabel.setScaleX(0.4f);
+                            torchStatusLabel.setScaleY(0.4f);
+                            torchStatusLabel.animate()
+                                    .alpha(1f).scaleX(1f).scaleY(1f)
+                                    .setDuration(220)
+                                    .setInterpolator(new android.view.animation.OvershootInterpolator(1.2f))
+                                    .start();
+                        }
 
                         // Store the torch state
                         isTorchOn = isOn;
@@ -9810,17 +10325,15 @@ public class HomeFragment extends BaseFragment {
             stats.setClickable(true);
             stats.setFocusable(true);
             stats.setOnClickListener(v -> {
-                animatePressBounce(v, () -> {
-                    performHapticFeedback();
-                    try {
-                        if (getActivity() instanceof com.fadcam.MainActivity) {
-                            com.fadcam.MainActivity act = (com.fadcam.MainActivity) getActivity();
-                            act.switchFragment(1, true);
-                        }
-                    } catch (Exception e) {
-                        FLog.e(TAG, "Failed to navigate to Records from Stats card", e);
+                performHapticFeedback();
+                try {
+                    if (getActivity() instanceof com.fadcam.MainActivity) {
+                        com.fadcam.MainActivity act = (com.fadcam.MainActivity) getActivity();
+                        act.switchFragment(1, true);
                     }
-                });
+                } catch (Exception e) {
+                    FLog.e(TAG, "Failed to navigate to Records from Stats card", e);
+                }
             });
         } catch (Exception e) {
             FLog.e(TAG, "setupStatsCardNavigation error", e);
@@ -9860,18 +10373,29 @@ public class HomeFragment extends BaseFragment {
         rowStorageAvailable = view.findViewById(R.id.rowStorageAvailable);
         rowEstimateTime = view.findViewById(R.id.rowEstimateTime);
         rowCamera = view.findViewById(R.id.rowCamera);
+        // Pill-style tap animation for all tappable rail rows.
+        // Wide full-width rows: smaller scale (1.03) so the growth stays subtle.
+        Utils.attachPressScale(rowStorageAvailable, 1.03f, false);
+        Utils.attachPressScale(rowEstimateTime, 1.03f, false);
+        Utils.attachPressScale(rowCamera, 1.03f, false);
+        Utils.attachPressScale(view.findViewById(R.id.cardClock), 1.03f, false);
+        Utils.attachPressScale(view.findViewById(R.id.cardStats), 1.03f, false);
         cameraRowUiInitialized = false;
         layoutCards = view.findViewById(R.id.layoutCards);
         layoutCardRailSection = view.findViewById(R.id.layoutCardRailSection);
         leftPanel = view.findViewById(R.id.leftPanel);
         rightPanel = view.findViewById(R.id.rightPanel);
         cardRailTogglePortrait = view.findViewById(R.id.cardRailTogglePortrait);
+        // Tiny arrow (38x16dp): bigger press scale so the animation is visible.
+        Utils.attachPressScale(cardRailTogglePortrait, 1.15f);
         cardRailToggleLandscape = view.findViewById(R.id.cardRailToggleLandscape);
         ivCardRailTogglePortrait = view.findViewById(R.id.ivCardRailTogglePortrait);
         ivCardRailToggleLandscape = view.findViewById(R.id.ivCardRailToggleLandscape);
         tvRemainingTitle = null;
         tvRemainingSubtitle = null;
         btnHamburgerMenu = view.findViewById(R.id.btnHamburgerMenu);
+        // Small 24dp icon: bigger press scale so the animation is clearly visible.
+        Utils.attachPressScale(btnHamburgerMenu, 1.15f);
         hamburgerBadgeDot = view.findViewById(R.id.hamburgerBadgeDot);
         ivAppTitle = view.findViewById(R.id.ivAppTitle);
         // Set up header logo click handler for Privacy Black Mode
@@ -9898,6 +10422,27 @@ public class HomeFragment extends BaseFragment {
             });
         }
 
+        // When a control button appears/disappears, the center-aligned row
+        // re-lays out — animate those position changes so the remaining buttons
+        // SLIDE horizontally to make space instead of teleporting. The appearing/
+        // disappearing button itself animates via animateControlButtonScale().
+        // (Safe at cold start now: the torch wrapper never hides/shows at init,
+        // so no startup slide is triggered.)
+        try {
+            View controlsRow = view.findViewById(R.id.layoutControls);
+            if (controlsRow instanceof android.widget.LinearLayout) {
+                android.animation.LayoutTransition lt = new android.animation.LayoutTransition();
+                lt.setDuration(260);
+                lt.setStartDelay(android.animation.LayoutTransition.CHANGE_APPEARING, 0);
+                lt.setStartDelay(android.animation.LayoutTransition.CHANGE_DISAPPEARING, 0);
+                lt.setAnimator(android.animation.LayoutTransition.APPEARING, null);
+                lt.setAnimator(android.animation.LayoutTransition.DISAPPEARING, null);
+                ((android.widget.LinearLayout) controlsRow).setLayoutTransition(lt);
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "LayoutTransition setup failed: " + e.getMessage());
+        }
+
         tvPreviewPlaceholder = view.findViewById(R.id.tvPreviewPlaceholder);
         tvPreviewHint = view.findViewById(R.id.tvPreviewHint);
         buttonStartStop = view.findViewById(R.id.buttonStartStop);
@@ -9905,6 +10450,25 @@ public class HomeFragment extends BaseFragment {
         buttonCamSwitch = view.findViewById(R.id.buttonCamSwitch);
         buttonMirrorSwitch = view.findViewById(R.id.buttonMirrorSwitch);
         cardPreview = view.findViewById(R.id.cardPreview); // Assuming R.id.cardPreview exists
+
+        // MaterialButton applies a theme background tint over custom backgrounds,
+        // which would flatten our gradient drawables to a solid dark color.
+        // Strip the tint so the colored-glass backgrounds render as designed.
+        try {
+            com.google.android.material.button.MaterialButton[] glassButtons = {
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonTorchSwitch),
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonStartStop),
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonPauseResume),
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonFadRecMute),
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonCamSwitch),
+                (com.google.android.material.button.MaterialButton) view.findViewById(R.id.buttonMirrorSwitch)
+            };
+            for (com.google.android.material.button.MaterialButton b : glassButtons) {
+                if (b != null) b.setSupportBackgroundTintList(null);
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to strip MaterialButton tints: " + e.getMessage());
+        }
 
         // GPS warning banner
         View bannerGpsWarning = view.findViewById(R.id.banner_gps_warning);
@@ -9931,6 +10495,10 @@ public class HomeFragment extends BaseFragment {
 
         btnFullscreenPreview = view.findViewById(R.id.btnFullscreenPreview);
         btnCaptureShotPreview = view.findViewById(R.id.btnCaptureShotPreview);
+        btnQuickMuteAudio = view.findViewById(R.id.btnQuickMuteAudio);
+        ivQuickMuteIcon = view.findViewById(R.id.ivQuickMuteIcon);
+        tvQuickMuteLabel = view.findViewById(R.id.tvQuickMuteLabel);
+        quickActionsRow = view.findViewById(R.id.quick_actions_row);
         containerPreviewZoomHud = view.findViewById(R.id.containerPreviewZoomHud);
         textPreviewZoomHud = view.findViewById(R.id.textPreviewZoomHud);
         containerPreviewZoomMap = view.findViewById(R.id.containerPreviewZoomMap);
@@ -9938,6 +10506,8 @@ public class HomeFragment extends BaseFragment {
         btnPreviewZoomReset = view.findViewById(R.id.btnPreviewZoomReset);
         setupFullscreenButton();
         setupCaptureShotButton();
+        setupQuickMuteButton();
+        setupQuickActionsReorder();
         setupPreviewZoomHud();
         vibrator = (Vibrator) requireActivity().getSystemService(
             Context.VIBRATOR_SERVICE
@@ -9977,8 +10547,9 @@ public class HomeFragment extends BaseFragment {
         // Torch button (already initialized elsewhere, but good to have it
         // consistently)
         buttonTorchSwitch = view.findViewById(R.id.buttonTorchSwitch);
-        updateMirrorButtonVisibilityAndState();
-
+        torchStatusLabel = view.findViewById(R.id.torch_status_label);
+        mirrorStatusLabel = view.findViewById(R.id.mirror_status_label);
+        updateMirrorButtonVisibilityAndState(false); // instant on cold start
         // Initialize rotating bubble background (now replaced by avatar — will be null)
         ivBubbleBackground = view.findViewById(R.id.ivBubbleBackground);
 
@@ -10398,6 +10969,635 @@ public class HomeFragment extends BaseFragment {
         btnCaptureShotPreview.setOnClickListener(v -> captureShotFromCurrentPreview());
     }
 
+    /**
+     * Wires the realtime audio mute/unmute quick-action. Toggles the LIVE audio
+     * track of the running recording via the service. The muted state is loaded
+     * from the saved preference (user's choice persists across sessions).
+     */
+    private void setupQuickMuteButton() {
+        if (btnQuickMuteAudio == null) return;
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+            quickAudioMuted = sharedPreferencesManager.isAudioMuted();
+        } catch (Exception e) {
+            quickAudioMuted = false;
+        }
+        btnQuickMuteAudio.setOnClickListener(v -> {
+            quickAudioMuted = !quickAudioMuted;
+            try {
+                if (sharedPreferencesManager != null) {
+                    sharedPreferencesManager.setAudioMuted(quickAudioMuted);
+                }
+                Intent i = new Intent(Constants.INTENT_ACTION_SET_AUDIO_MUTED);
+                i.setClass(requireContext(),
+                        isDualRecordingActive ? DualCameraRecordingService.class : RecordingService.class);
+                i.putExtra(Constants.EXTRA_AUDIO_MUTED, quickAudioMuted);
+                requireContext().startService(i);
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed to dispatch audio mute change: " + e.getMessage());
+            }
+            updateQuickMuteUi();
+        });
+        updateQuickMuteUi();
+    }
+
+    /** Updates the mute button's icon + label to reflect the current state.
+     *  Uses the native Material Icons ligatures (mic / mic_off): green border +
+     *  mic when audio is on, red border + mic-with-slash when muted. */
+    private void updateQuickMuteUi() {
+        if (btnQuickMuteAudio == null) return;
+        if (ivQuickMuteIcon != null) {
+            ivQuickMuteIcon.setText(quickAudioMuted ? "mic_off" : "mic");
+            ivQuickMuteIcon.setTextColor(quickAudioMuted ? 0xFFE43C3C : 0xFF4CAF50);
+            ivQuickMuteIcon.setBackgroundResource(quickAudioMuted
+                    ? R.drawable.fullscreen_icon_bg_gradient_red
+                    : R.drawable.fullscreen_icon_bg_gradient_green);
+        }
+        if (tvQuickMuteLabel != null) {
+            tvQuickMuteLabel.setText(quickAudioMuted
+                    ? getString(R.string.quick_unmute_label)
+                    : getString(R.string.quick_mute_label));
+        }
+    }
+
+    // ─── Quick-actions rearrange (hold → drag → release) ───────────────────
+
+    /**
+     * Long-press any quick-action icon to rearrange: the row highlights and the
+     * icons jiggle; keep holding and drag the pressed icon anywhere along the
+     * row; release to snap it to the nearest slot. Positions persist across
+     * sessions. Icons default to the right end of the row.
+     */
+    private void setupQuickActionsReorder() {
+        if (quickActionsRow == null) return;
+        // Unclip all ancestors so the pick-up scale (1.12) and press nudge never clip.
+        try {
+            android.view.ViewParent p = quickActionsRow.getParent();
+            while (p instanceof android.view.ViewGroup) {
+                android.view.ViewGroup g = (android.view.ViewGroup) p;
+                g.setClipChildren(false);
+                g.setClipToPadding(false);
+                p = p.getParent();
+            }
+        } catch (Exception ignored) {
+        }
+        applyQuickActionSlotsSoon();
+        // Re-apply instantly once layout is known so the buttons never show a
+        // frame stacked at the left edge on slow devices.
+        quickActionsRow.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+            int w = v.getWidth();
+            if (w > 0 && w != quickLastRowWidth) {
+                quickLastRowWidth = w;
+                applyQuickActionSlotsSoon();
+            }
+        });
+
+        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
+        for (final View b : buttons) {
+            if (b == null) continue;
+            b.setOnTouchListener((v, event) -> handleQuickActionGesture(v, event));
+        }
+    }
+
+    private int quickLastRowWidth = 0;
+
+    /** Applies slot positions as soon as the row has a width (retries via post). */
+    private void applyQuickActionSlotsSoon() {
+        if (quickActionsRow == null) return;
+        if (quickActionsRow.getWidth() > 0) {
+            quickLastRowWidth = quickActionsRow.getWidth();
+            applyQuickActionSlots();
+        } else {
+            quickActionsRow.post(this::applyQuickActionSlotsSoon);
+        }
+    }
+
+    /** Loads persisted slots (or right-packs by default) and positions the icons. */
+    private void applyQuickActionSlots() {
+        if (quickActionsRow == null) return;
+        int rowW = quickActionsRow.getWidth();
+        if (rowW <= 0) {
+            FLog.w("QuickActions", "applyQuickActionSlots skipped: row width=" + rowW);
+            return;
+        }
+        float density = getResources().getDisplayMetrics().density;
+        // 40dp slots: tighter grid so the quick icons don't feel spread out
+        // (44dp left big gaps on smaller/lower-dpi screens).
+        quickSlotWidth = Math.round(40f * density);
+        int padL = quickActionsRow.getPaddingLeft();
+        int padR = quickActionsRow.getPaddingRight();
+        int contentW = rowW - padL - padR;
+        quickSlotCount = Math.max(3, contentW / quickSlotWidth);
+        // Equal spacing across the padded content area — symmetric on both sides.
+        quickSlotStep = contentW / (float) quickSlotCount;
+        quickSlotMap.clear();
+        FLog.d("QuickActions", "applyQuickActionSlots: rowW=" + rowW + " slotCount=" + quickSlotCount
+                + " padL=" + padL + " padR=" + padR);
+
+        String pref = Constants.DEFAULT_QUICK_ACTIONS_ORDER;
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+            }
+            pref = sharedPreferencesManager.getQuickActionsOrder();
+        } catch (Exception ignored) {
+        }
+
+        boolean hasExplicitSlots = pref.contains(":");
+        if (hasExplicitSlots) {
+            for (String part : pref.split(",")) {
+                String[] kv = part.trim().split(":");
+                if (kv.length != 2) continue;
+                int id = quickActionTokenToId(kv[0].trim());
+                View v = id == 0 ? null : quickActionsRow.findViewById(id);
+                if (v == null) continue;
+                try {
+                    quickSlotMap.put(v, Integer.parseInt(kv[1].trim()));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        // Default: right-packed in preference order (mute leftmost of the group).
+        // Any button missing from the saved slots (corrupt/outdated data) is
+        // right-packed into the first free slot so the layout is never broken.
+        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
+        int nextSlot = quickSlotCount - buttons.length;
+        for (View b : buttons) {
+            if (b == null) continue;
+            if (!quickSlotMap.containsKey(b)) {
+                while (quickSlotMap.containsValue(nextSlot)) nextSlot++;
+                quickSlotMap.put(b, Math.min(nextSlot, quickSlotCount - 1));
+                nextSlot++;
+            } else {
+                // Clamp any out-of-range saved slot.
+                int clamped = Math.max(0, Math.min(quickSlotCount - 1, quickSlotMap.get(b)));
+                quickSlotMap.put(b, clamped);
+            }
+        }
+
+        // De-duplicate: after clamping, saved data (or a rotation changing slot
+        // count) can leave two buttons on the same slot — that would overlap them.
+        java.util.HashSet<Integer> usedSlots = new java.util.HashSet<>();
+        for (View b : buttons) {
+            if (b == null || !quickSlotMap.containsKey(b)) continue;
+            int slot = Math.max(0, Math.min(quickSlotCount - 1, quickSlotMap.get(b)));
+            if (usedSlots.contains(slot)) {
+                // Reassign to the nearest free slot.
+                for (int d = 1; d < quickSlotCount; d++) {
+                    if (slot - d >= 0 && !usedSlots.contains(slot - d)) {
+                        slot = slot - d;
+                        break;
+                    }
+                    if (slot + d < quickSlotCount && !usedSlots.contains(slot + d)) {
+                        slot = slot + d;
+                        break;
+                    }
+                }
+            }
+            usedSlots.add(slot);
+            quickSlotMap.put(b, slot);
+        }
+        applyQuickActionPositions();
+    }
+
+    /** Places each icon at its slot X position within the row (padding-aware). */
+    private void applyQuickActionPositions() {
+        int padL = quickActionsRow.getPaddingLeft();
+        StringBuilder log = new StringBuilder("positions:");
+        for (java.util.Map.Entry<View, Integer> e : quickSlotMap.entrySet()) {
+            View v = e.getKey();
+            if (v == null || v.getParent() != quickActionsRow) continue;
+            int slot = Math.max(0, Math.min(quickSlotCount - 1, e.getValue()));
+            v.setX(padL + Math.round(quickSlotStep * slot));
+            log.append(" ").append(quickActionIdToToken(v.getId()))
+               .append("=").append(slot).append("(x").append(v.getX()).append(")");
+        }
+        FLog.d("QuickActions", log.toString());
+    }
+
+    /** Persists "token:slot" pairs ordered by slot position. */
+    private void saveQuickActionsOrder() {
+        java.util.List<java.util.Map.Entry<View, Integer>> list =
+                new java.util.ArrayList<>(quickSlotMap.entrySet());
+        list.sort((a, b) -> Integer.compare(a.getValue(), b.getValue()));
+        StringBuilder sb = new StringBuilder();
+        for (java.util.Map.Entry<View, Integer> e : list) {
+            String token = quickActionIdToToken(e.getKey().getId());
+            if (token == null) continue;
+            if (sb.length() > 0) sb.append(",");
+            sb.append(token).append(":").append(e.getValue());
+        }
+        try {
+            if (sharedPreferencesManager != null) {
+                sharedPreferencesManager.setQuickActionsOrder(sb.toString());
+            }
+            FLog.d(TAG, "Saved quick actions order: " + sb);
+        } catch (Exception e) {
+            FLog.w(TAG, "Failed to save quick actions order: " + e.getMessage());
+        }
+    }
+
+    /** Gesture state machine: hold → drag freely → release to snap into place. */
+    private boolean handleQuickActionGesture(View v, android.view.MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case android.view.MotionEvent.ACTION_DOWN:
+                // Pill-style press nudge (superseded by the 1.12 pick-up on long-press).
+                v.animate().scaleX(1.06f).scaleY(1.06f)
+                        .setDuration(90)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                        .start();
+                cancelQuickLongPress();
+                quickDragView = null;
+                quickDragStartRawX = event.getRawX();
+                final View pressView = v;
+                quickLongPressRunnable = () -> {
+                    // Hold reached: enter rearrange mode and arm this icon for free dragging.
+                    setQuickActionsEditMode(true);
+                    // Re-assert slot positions: some layout passes can reset x to 0,
+                    // which would otherwise teleport the held icon to the left.
+                    if (quickSlotCount <= 0) {
+                        applyQuickActionSlots();
+                    } else {
+                        applyQuickActionPositions();
+                    }
+                    quickDragView = pressView;
+                    // Icons are positioned via setX; the drag delta must be ADDED to
+                    // the slot translation (getTranslationX), not replace it.
+                    quickDragBaseX = pressView.getTranslationX();
+                    // "Pick up" the icon: lift + scale up slightly, with a haptic —
+                    // standard drag-and-release affordance.
+                    pressView.animate().scaleX(1.12f).scaleY(1.12f).setDuration(150).start();
+                    pressView.setTranslationZ(10f * getResources().getDisplayMetrics().density);
+                    pressView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                    showQuickSnapMarkers();
+                    FLog.d("QuickActions", "long-press armed: " + quickActionIdToToken(pressView.getId())
+                            + " slot=" + quickSlotMap.get(pressView) + " getX=" + pressView.getX());
+                    // Keep the other icons jiggling while this one is dragged.
+                    startQuickActionJiggle(pressView);
+                };
+                quickActionsHandler.postDelayed(quickLongPressRunnable, 450L);
+                return false;
+            case android.view.MotionEvent.ACTION_MOVE: {
+                float dx = event.getRawX() - quickDragStartRawX;
+                if (quickDragView == v) {
+                    // Long-press fired — the icon follows the finger freely (no live swap).
+                    View drag = quickDragView; // local ref: crash-proof against re-entrancy
+                    // translationX = base slot translation + finger delta; clamp so
+                    // the icon never leaves the padded row container.
+                    int padL = quickActionsRow.getPaddingLeft();
+                    int padR = quickActionsRow.getPaddingRight();
+                    float minTx = 0f;
+                    float maxTx = quickActionsRow.getWidth() - padL - padR - drag.getWidth();
+                    float tx = Math.max(minTx, Math.min(maxTx, quickDragBaseX + dx));
+                    drag.setTranslationX(tx);
+                    drag.setTranslationY(0f);
+                    // Update which snap point is under the icon.
+                    int slot = computeQuickTargetSlot(drag,
+                            quickSlotMap.containsKey(drag) ? quickSlotMap.get(drag) : -1);
+                    if (slot != quickHighlightedSlot) {
+                        for (int i = 0; i < quickSnapMarkers.size(); i++) {
+                            setQuickSnapMarkerState(quickSnapMarkers.get(i), i == slot);
+                        }
+                        quickHighlightedSlot = slot;
+                        // Subtle tick when the highlighted slot changes.
+                        drag.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
+                        FLog.d("QuickActions", "drag: token=" + quickActionIdToToken(drag.getId())
+                                + " baseX=" + quickDragBaseX + " dx=" + dx + " tx=" + tx
+                                + " getX=" + drag.getX() + " highlightSlot=" + slot);
+                    }
+                    return true;
+                }
+                // Moved before the hold completed — treat as a normal tap/click.
+                if (Math.abs(dx) > android.view.ViewConfiguration
+                        .get(requireContext()).getScaledTouchSlop()) {
+                    cancelQuickLongPress();
+                }
+                return false;
+            }
+            case android.view.MotionEvent.ACTION_UP:
+            case android.view.MotionEvent.ACTION_CANCEL: {
+                cancelQuickLongPress();
+                if (quickDragView == v) {
+                    View drag = quickDragView;
+                    // Snap to the nearest slot on release. If another icon occupies
+                    // that slot, swap their slots instead of crashing.
+                    if (drag.getParent() == quickActionsRow) {
+                        int currentSlot = quickSlotMap.containsKey(drag)
+                                ? quickSlotMap.get(drag) : -1;
+                        int target = computeQuickTargetSlot(drag, currentSlot);
+                        FLog.d("QuickActions", "release: token=" + quickActionIdToToken(drag.getId())
+                                + " targetSlot=" + target + " currentSlot=" + currentSlot);
+                        if (target >= 0) {
+                            View occupant = null;
+                            for (java.util.Map.Entry<View, Integer> e : quickSlotMap.entrySet()) {
+                                if (e.getKey() != drag && e.getValue() == target) {
+                                    occupant = e.getKey();
+                                    break;
+                                }
+                            }
+                            if (occupant != null && currentSlot >= 0) {
+                                quickSlotMap.put(occupant, currentSlot); // swap
+                            }
+                            quickSlotMap.put(drag, target);
+                            // Position the other icons instantly; animate the dragged
+                            // icon settling into its slot so the snap feels intentional.
+                            int padL = quickActionsRow.getPaddingLeft();
+                            for (java.util.Map.Entry<View, Integer> e : quickSlotMap.entrySet()) {
+                                if (e.getKey() == drag) continue;
+                                e.getKey().setX(padL + Math.round(quickSlotStep * Math.max(0,
+                                        Math.min(quickSlotCount - 1, e.getValue()))));
+                            }
+                            drag.animate()
+                                    .translationX(Math.round(quickSlotStep * Math.max(0,
+                                            Math.min(quickSlotCount - 1, target))))
+                                    .setDuration(160)
+                                    .start();
+                        }
+                    }
+                    // Settle back to normal size/elevation and confirm the snap.
+                    drag.animate().scaleX(1f).scaleY(1f).setDuration(160).start();
+                    drag.setTranslationZ(0f);
+                    drag.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+                    drag.setPressed(false);
+                    drag.setHovered(false);
+                    drag.jumpDrawablesToCurrentState();
+                    quickDragView = null;
+                    hideQuickSnapMarkers();
+                    setQuickActionsEditMode(false); // persists the new order
+                    return true;
+                }
+                quickDragView = null;
+                // Plain tap (no drag): spring the press nudge back with an overshoot.
+                v.animate().scaleX(1f).scaleY(1f)
+                        .setDuration(220)
+                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
+                        .start();
+                // Safety net: never leave the icons stuck in rearrange mode.
+                if (quickActionsEditMode) {
+                    setQuickActionsEditMode(false);
+                    return true;
+                }
+                return false;
+            }
+            default:
+                return false;
+        }
+    }
+
+    /** Builds the snap-point markers across the full-width row (parent space).
+     *  Each marker is a skeleton of a quick-action button: an icon-shaped outline
+     *  with a small label bar beneath it. */
+    private void buildQuickSnapMarkers() {
+        for (View m : quickSnapMarkers) {
+            ViewGroup p = (ViewGroup) m.getParent();
+            if (p != null) p.removeView(m);
+        }
+        quickSnapMarkers.clear();
+        ViewGroup parent = (ViewGroup) quickActionsRow.getParent();
+        if (parent == null) return;
+        int rowW = quickActionsRow.getWidth();
+        if (rowW <= 0) return;
+        float density = getResources().getDisplayMetrics().density;
+        quickSlotWidth = Math.round(40f * density);
+        // MUST mirror applyQuickActionSlots() exactly: count from the PADDED
+        // content width and equally-spaced step, or the snap points overflow
+        // past paddingRight (too close to the screen edge) while the icons
+        // stay padding-aware — the asymmetric markers bug.
+        int padL = quickActionsRow.getPaddingLeft();
+        int padR = quickActionsRow.getPaddingRight();
+        int contentW = rowW - padL - padR;
+        quickSlotCount = Math.max(3, contentW / quickSlotWidth);
+        quickSlotStep = contentW / (float) quickSlotCount;
+        int outlineSize = Math.round(36f * density);
+        // Label ghost sized like the 9sp bold label (e.g. "Mute"/"Full").
+        int barW = Math.round(26f * density);
+        int barH = Math.round(12f * density);
+        for (int i = 0; i < quickSlotCount; i++) {
+            // Skeleton mirrors the real button exactly: 44dp wide container,
+            // 36dp icon-shaped ghost at the top, 2dp gap, then a label-shaped
+            // ghost (same height as the 9sp label).
+            android.widget.LinearLayout skeleton = new android.widget.LinearLayout(requireContext());
+            skeleton.setOrientation(android.widget.LinearLayout.VERTICAL);
+            skeleton.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+            View outline = new View(requireContext());
+            outline.setBackgroundResource(R.drawable.quick_snap_outline);
+            skeleton.addView(outline, new ViewGroup.LayoutParams(outlineSize, outlineSize));
+            View bar = new View(requireContext());
+            bar.setBackgroundResource(R.drawable.quick_snap_labelbar);
+            android.widget.LinearLayout.LayoutParams barLp =
+                    new android.widget.LinearLayout.LayoutParams(barW, barH);
+            barLp.topMargin = Math.round(2f * density); // matches label marginTop
+            skeleton.addView(bar, barLp);
+            skeleton.setTag(outline); // keep ref for active-state styling
+            skeleton.setTag(R.id.ivQuickMuteIcon, bar);
+            // Insert BELOW the row so the dragged icon (and its label) always
+            // draws on top of the slot skeletons — professional drag UX.
+            int insertAt = Math.max(0, parent.indexOfChild(quickActionsRow));
+            parent.addView(skeleton, insertAt, new ViewGroup.LayoutParams(quickSlotWidth,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+            float slotCenterX = quickActionsRow.getLeft()
+                    + quickActionsRow.getPaddingLeft() + quickSlotStep * (i + 0.5f);
+            skeleton.setX(slotCenterX - quickSlotWidth / 2f);
+            skeleton.setY(quickActionsRow.getTop() + quickActionsRow.getPaddingTop());
+            skeleton.setVisibility(View.GONE);
+            quickSnapMarkers.add(skeleton);
+        }
+        quickHighlightedSlot = -1;
+    }
+
+    private void setQuickSnapMarkerState(View marker, boolean active) {
+        if (!(marker instanceof android.widget.LinearLayout)) return;
+        android.widget.LinearLayout skeleton = (android.widget.LinearLayout) marker;
+        View outline = (View) skeleton.getTag();
+        View bar = (View) skeleton.getTag(R.id.ivQuickMuteIcon);
+        if (outline != null) {
+            outline.setBackgroundResource(active ? R.drawable.quick_snap_outline_active
+                                                 : R.drawable.quick_snap_outline);
+        }
+        if (bar != null) {
+            bar.setBackgroundResource(active ? R.drawable.quick_snap_labelbar_active
+                                             : R.drawable.quick_snap_labelbar);
+        }
+    }
+
+    private void showQuickSnapMarkers() {
+        buildQuickSnapMarkers();
+        for (View m : quickSnapMarkers) {
+            m.setVisibility(View.VISIBLE);
+            setQuickSnapMarkerState(m, false);
+        }
+        quickHighlightedSlot = -1;
+    }
+
+    private void hideQuickSnapMarkers() {
+        for (View m : quickSnapMarkers) {
+            m.setVisibility(View.GONE);
+        }
+        quickHighlightedSlot = -1;
+    }
+
+    /** Nearest snap slot for the dragged icon (padding-aware, row-relative space).
+     *  NOTE: getX() already includes the drag translation — do NOT add
+     *  getTranslationX() again or the highlight/snap races 2x away from the finger.
+     *  Hysteresis: small nudges near the boundary keep the icon in its current
+     *  slot, so the icon only moves when the user clearly drags it to another slot. */
+    private int computeQuickTargetSlot(View drag, int currentSlot) {
+        if (quickSlotStep <= 0f) return -1;
+        float centerInRow = drag.getX() + drag.getWidth() / 2f
+                - quickActionsRow.getPaddingLeft();
+        int slot = Math.round(centerInRow / quickSlotStep - 0.5f);
+        slot = Math.max(0, Math.min(quickSlotCount - 1, slot));
+        if (currentSlot >= 0 && Math.abs(slot - currentSlot) <= 1) {
+            float curCenter = (currentSlot + 0.5f) * quickSlotStep;
+            if (Math.abs(centerInRow - curCenter) < quickSlotStep * 0.35f) {
+                return currentSlot; // nudge too small — stay put
+            }
+        }
+        return slot;
+    }
+
+    private void cancelQuickLongPress() {
+        if (quickLongPressRunnable != null) {
+            quickActionsHandler.removeCallbacks(quickLongPressRunnable);
+            quickLongPressRunnable = null;
+        }
+    }
+
+    private int quickActionTokenToId(String token) {
+        if ("mute".equals(token)) return R.id.btnQuickMuteAudio;
+        if ("full".equals(token)) return R.id.btnFullscreenPreview;
+        if ("fadshot".equals(token)) return R.id.btnCaptureShotPreview;
+        return 0;
+    }
+
+    private String quickActionIdToToken(int id) {
+        if (id == R.id.btnQuickMuteAudio) return "mute";
+        if (id == R.id.btnFullscreenPreview) return "full";
+        if (id == R.id.btnCaptureShotPreview) return "fadshot";
+        return null;
+    }
+
+    private void setQuickActionsEditMode(boolean edit) {
+        if (quickActionsEditMode == edit) return;
+        quickActionsEditMode = edit;
+        // While rearranging, tab-swipes and the sidebar swipe must not interfere.
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setQuickActionsRearrangeActive(edit);
+        }
+        // Highlight the draggable area so the user sees where icons can be moved.
+        if (quickActionsRow != null) {
+            quickActionsRow.setBackgroundResource(edit ? R.drawable.quick_actions_edit_bg : 0);
+        }
+        // Dim the whole home screen except the row (bright window) for focus.
+        ensureQuickActionsScrim();
+        if (quickActionsScrim != null) {
+            quickActionsScrim.setVisibility(edit ? View.VISIBLE : View.GONE);
+            if (edit) updateQuickScrimWindow();
+        }
+        if (edit) {
+            buildQuickSnapMarkers();
+            startQuickActionJiggle(null);
+        } else {
+            stopQuickActionJiggle();
+            hideQuickSnapMarkers();
+            saveQuickActionsOrder();
+        }
+    }
+
+    /**
+     * Dim overlay covering the ENTIRE home screen with a transparent rounded
+     * window over the quick-actions row, so only the drag zone stays bright.
+     */
+    private void ensureQuickActionsScrim() {
+        if (quickActionsScrim != null) return;
+        // Attach to the ACTIVITY content root (not the fragment view) so the dim
+        // covers EVERYTHING: home, the bottom nav dock, and the status-bar area.
+        // The bright-window math uses screen coordinates, so this stays aligned.
+        View root = getActivity() != null
+                ? getActivity().findViewById(android.R.id.content)
+                : getView();
+        if (!(root instanceof ViewGroup) || quickActionsRow == null) return;
+        float density = getResources().getDisplayMetrics().density;
+        final android.graphics.Paint dimPaint = new android.graphics.Paint();
+        dimPaint.setColor(0x66000000);
+        final android.graphics.Paint clearPaint = new android.graphics.Paint();
+        clearPaint.setXfermode(new android.graphics.PorterDuffXfermode(
+                android.graphics.PorterDuff.Mode.CLEAR));
+        final float corner = 14f * density;
+        quickActionsScrim = new View(requireContext()) {
+            @Override
+            protected void onDraw(android.graphics.Canvas canvas) {
+                super.onDraw(canvas);
+                int w = getWidth(), h = getHeight();
+                if (w <= 0 || h <= 0) return;
+                canvas.drawRect(0, 0, w, h, dimPaint);
+                if (quickScrimWindow.width() > 0 && quickScrimWindow.height() > 0) {
+                    canvas.drawRoundRect(quickScrimWindow, corner, corner, clearPaint);
+                }
+            }
+        };
+        // CLEAR xfermode needs a software layer to punch reliably.
+        quickActionsScrim.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        // The scrim is added DIRECTLY to the root ConstraintLayout — it MUST have
+        // an id or ConstraintSet.clone(root) throws "All children of ConstraintLayout
+        // must have ids" (e.g. the landscape rail fold toggle crashed).
+        quickActionsScrim.setId(android.view.View.generateViewId());
+        ((ViewGroup) root).addView(quickActionsScrim, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        quickActionsScrim.setVisibility(View.GONE);
+        // Keep the window aligned with the row (rotation / layout changes).
+        quickActionsRow.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+            if (quickActionsEditMode) updateQuickScrimWindow();
+        });
+    }
+
+    /** Recomputes the bright window over the row in scrim coordinates. */
+    private void updateQuickScrimWindow() {
+        if (quickActionsScrim == null || quickActionsRow == null) return;
+        int[] sLoc = new int[2];
+        int[] rLoc = new int[2];
+        quickActionsScrim.getLocationOnScreen(sLoc);
+        quickActionsRow.getLocationOnScreen(rLoc);
+        quickScrimWindow.set(rLoc[0] - sLoc[0], rLoc[1] - sLoc[1],
+                rLoc[0] - sLoc[0] + quickActionsRow.getWidth(),
+                rLoc[1] - sLoc[1] + quickActionsRow.getHeight());
+        quickActionsScrim.invalidate();
+    }
+
+    private void startQuickActionJiggle(View exclude) {
+        stopQuickActionJiggle();
+        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
+        java.util.Random r = new java.util.Random();
+        for (View b : buttons) {
+            if (b == null || b == exclude) continue;
+            float amp = 2f + r.nextFloat() * 2f;
+            long duration = 260 + r.nextInt(140);
+            android.animation.ObjectAnimator anim = android.animation.ObjectAnimator
+                    .ofFloat(b, "rotation", -amp, amp);
+            anim.setDuration(duration);
+            anim.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            anim.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            anim.setInterpolator(new android.view.animation.LinearInterpolator());
+            anim.setStartDelay(r.nextInt(120));
+            anim.start();
+            quickJiggleAnimators.add(anim);
+        }
+    }
+
+    private void stopQuickActionJiggle() {
+        for (android.animation.ObjectAnimator a : quickJiggleAnimators) {
+            if (a != null) a.cancel();
+        }
+        quickJiggleAnimators.clear();
+        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
+        for (View b : buttons) {
+            if (b != null) b.setRotation(0f);
+        }
+    }
+
     private void captureShotFromCurrentPreview() {
         if (isRecordingOrPaused() || isPreviewOnlyActive || isPreviewOnlyStartPending) {
             Intent intent = new Intent(
@@ -10472,6 +11672,20 @@ public class HomeFragment extends BaseFragment {
         if (btnCaptureShotPreview != null) {
             btnCaptureShotPreview.setVisibility(show ? View.VISIBLE : View.GONE);
         }
+        // Mute button is only meaningful when audio recording is enabled.
+        if (btnQuickMuteAudio != null) {
+            boolean audioEnabled = true;
+            try {
+                if (sharedPreferencesManager == null) {
+                    sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
+                }
+                audioEnabled = sharedPreferencesManager.isRecordAudioEnabled();
+            } catch (Exception ignored) {
+            }
+            btnQuickMuteAudio.setVisibility((show && audioEnabled) ? View.VISIBLE : View.GONE);
+        }
+        // Keep the preview hint clear of the icon row whenever it appears/disappears.
+        updatePreviewHintPosition();
     }
 
     private boolean isRecordingOrPaused() {
@@ -11549,28 +12763,22 @@ public class HomeFragment extends BaseFragment {
     private void setupHomeCustomizationListeners() {
         if (cardElapsedHero != null) {
             cardElapsedHero.setOnClickListener(v -> {
-                animatePressBounce(v, () -> {
-                    performHapticFeedback();
-                    showElapsedCustomizeSheet();
-                });
+                performHapticFeedback();
+                showElapsedCustomizeSheet();
             });
         }
 
         if (rowStorageAvailable != null) {
             rowStorageAvailable.setOnClickListener(v -> {
-                animatePressBounce(v, () -> {
-                    performHapticFeedback();
-                    showStorageCustomizeSheet();
-                });
+                performHapticFeedback();
+                showStorageCustomizeSheet();
             });
         }
 
         if (rowEstimateTime != null) {
             rowEstimateTime.setOnClickListener(v -> {
-                animatePressBounce(v, () -> {
-                    performHapticFeedback();
-                    showTimeLeftColorSheet();
-                });
+                performHapticFeedback();
+                showTimeLeftColorSheet();
             });
         }
 

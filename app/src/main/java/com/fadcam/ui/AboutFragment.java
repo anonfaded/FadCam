@@ -475,11 +475,26 @@ public class AboutFragment extends BaseFragment {
                 String currentVersion = getAppVersionForUpdates();
                 com.fadcam.services.UpdateCheckService.UpdateCheckResult result =
                     com.fadcam.services.UpdateCheckService.checkForUpdate(currentVersion);
+                FLog.d("UpdateCheck", "About check: package="
+                        + com.fadcam.BuildConfig.APPLICATION_ID
+                        + " isBetaApp=" + com.fadcam.BuildConfig.APPLICATION_ID.endsWith(".beta")
+                        + " current=" + currentVersion
+                        + " stable=" + result.stableVersion + "(" + result.hasStable + ")"
+                        + " beta=" + result.betaVersion + "(" + result.hasBeta + ")"
+                        + " pro=" + result.proVersion + "(" + result.hasPro + ")"
+                        + " error=" + result.errorOccurred);
 
                 requireActivity().runOnUiThread(() -> {
                     dismissLoadingDialog();
                     if (result.errorOccurred) {
                         showErrorDialog(getString(R.string.about_update_failed));
+                    } else if (com.fadcam.BuildConfig.APPLICATION_ID.endsWith(".beta")
+                            && result.hasBeta) {
+                        // Beta app: surface the BETA update directly (testers need
+                        // the urgent info without hunting in the sidebar).
+                        BetaUpdateBottomSheet.newInstance(
+                            result.betaVersion, result.betaUrl, currentVersion)
+                            .show(getParentFragmentManager(), "BetaUpdateSheet");
                     } else if (result.hasStable) {
                         UpdateAvailableBottomSheet.newInstance(
                             result.stableVersion, "", result.stableUrl)

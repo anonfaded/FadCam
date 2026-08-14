@@ -20,13 +20,29 @@ import com.fadcam.data.entity.VideoIndexEntity;
  */
 @Database(
     entities = {VideoIndexEntity.class},
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 public abstract class VideoIndexDatabase extends RoomDatabase {
 
     private static final String DB_NAME = "video_index.db";
     private static volatile VideoIndexDatabase instance;
+
+    /** Migration 1→2: add the hybrid-finalization state column (issue #332). */
+    public static final androidx.room.migration.Migration MIGRATION_1_2 = new androidx.room.migration.Migration(1, 2) {
+        @Override
+        public void migrate(androidx.sqlite.db.SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE video_index ADD COLUMN finalized INTEGER NOT NULL DEFAULT 0");
+        }
+    };
+
+    /** Migration 2→3: add retry_after so unrepairable files can be retried later. */
+    public static final androidx.room.migration.Migration MIGRATION_2_3 = new androidx.room.migration.Migration(2, 3) {
+        @Override
+        public void migrate(androidx.sqlite.db.SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE video_index ADD COLUMN retry_after INTEGER NOT NULL DEFAULT 0");
+        }
+    };
 
     public abstract VideoIndexDao videoIndexDao();
 
@@ -45,6 +61,7 @@ public abstract class VideoIndexDatabase extends RoomDatabase {
                             VideoIndexDatabase.class,
                             DB_NAME
                         )
+                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                         .fallbackToDestructiveMigration()
                         .build();
                 }

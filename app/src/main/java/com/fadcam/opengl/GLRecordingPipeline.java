@@ -70,6 +70,10 @@ public class GLRecordingPipeline {
     private final int videoFramerate;
     private final String outputFilePath;
     private final FileDescriptor outputFd;
+    /** SAF content URI for fd-based outputs — used to re-open a fresh channel on stale-fd finalization. */
+    private String outputUri;
+    /** Keeps the SAF re-open ParcelFileDescriptor referenced so GC cannot close it mid-finalization. */
+    private android.os.ParcelFileDescriptor reopenPfd;
     private Surface previewSurface;
     // Pending preview apply support to debounce rapid preview surface changes
     private Surface pendingPreviewToApply = null;
@@ -175,6 +179,9 @@ public class GLRecordingPipeline {
     private boolean audioEncoderStarted = false;
     private boolean audioRecordingEnabled = false;
     private boolean audioThreadRunning = false;
+    /** Realtime mute: when true, captured mic frames are zeroed so the AAC track
+     *  stays continuous (no desync) but silent. Toggled live from the home UI. */
+    private volatile boolean audioMuted = false;
     private final Object audioLock = new Object();
     private android.media.AudioManager audioManager;
     private android.media.AudioManager.OnAudioFocusChangeListener audioFocusListener;
@@ -195,6 +202,9 @@ public class GLRecordingPipeline {
     private MediaFormat pendingHevcFormat;
     private ByteBuffer capturedHevcCsd0;
     private ByteBuffer capturedHevcCsd1;
+    private MediaFormat pendingAvcFormat;
+    private ByteBuffer capturedAvcCsd0;
+    private ByteBuffer capturedAvcCsd1;
     // Audio settings (always set from preferences or app defaults)
     private int audioSource;
     private android.media.AudioDeviceInfo preferredAudioDevice;
@@ -1143,6 +1153,12 @@ public class GLRecordingPipeline {
             muxerStarted = false;
         }
 
+        // Release the SAF re-open PFD (kept referenced so GC didn't close it mid-finalization).
+        try {
+            if (reopenPfd != null) reopenPfd.close();
+        } catch (Exception ignored) {}
+        reopenPfd = null;
+
         // BULLETPROOF: If file exists but may be corrupted, log for user awareness
         if (!muxerStopped) {
             FLog.w(TAG, "WARNING: Video file may have playback issues due to muxer stop failure");
@@ -1309,6 +1325,11 @@ public class GLRecordingPipeline {
 
             videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
             videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            // Encoder identity — critical for OEM-specific CSD bugs (Samsung C2 vs Google C2 etc.)
+            try {
+                FLog.i(TAG, "[ENCODER] Video encoder: " + videoEncoder.getCanonicalName() + " | MIME=" + currentMimeType
+                        + " | " + encoderWidth + "x" + encoderHeight);
+            } catch (Exception ignored) {}
             
             encoderInputSurface = videoEncoder.createInputSurface();
             
@@ -1333,6 +1354,10 @@ public class GLRecordingPipeline {
 
                 videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
                 videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+                try {
+                    FLog.i(TAG, "[ENCODER] Video encoder (H.264 fallback): " + videoEncoder.getCanonicalName()
+                            + " | MIME=" + currentMimeType + " | " + encoderWidth + "x" + encoderHeight);
+                } catch (Exception ignored) {}
                 
                 encoderInputSurface = videoEncoder.createInputSurface();
                 
@@ -1385,6 +1410,37 @@ public class GLRecordingPipeline {
             mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFd);
         } else {
             mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
+        }
+        // Diagnostic: let the wrapper know the output path even for fd-based
+        // construction, so finalization failures can report exists()/length().
+        try {
+            if (currentOutputFilePath != null) {
+                mediaMuxer.setOutputPath(currentOutputFilePath);
+            }
+        } catch (Exception ignored) {}
+
+        // ROOT-CAUSE FIX (issue #332): when the output is an fd (SAF/FUSE), the
+        // long-lived fd can go stale after process-death/recovery churn on
+        // aggressive OEMs (Xiaomi HyperOS) — finalization then fails with
+        // ENOENT and the recording data is lost on close. Provide a re-opener
+        // that re-resolves the content URI with a FRESH fd so hybrid
+        // finalization can complete against the on-disk data.
+        try {
+            if (currentOutputFd != null && outputUri != null) {
+                final String uri = outputUri;
+                mediaMuxer.setFileReopener(() -> {
+                    if (reopenPfd != null) {
+                        try { reopenPfd.close(); } catch (Exception ignored) {}
+                    }
+                    reopenPfd = context.getContentResolver().openFileDescriptor(
+                            android.net.Uri.parse(uri), "rw");
+                    if (reopenPfd == null) return null;
+                    return new java.io.FileOutputStream(reopenPfd.getFileDescriptor());
+                });
+                FLog.d(TAG, "[STORAGE] SAF re-opener registered for finalization: " + uri);
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "[STORAGE] Failed to register SAF re-opener", e);
         }
 
         // Set location metadata if available
@@ -1664,6 +1720,19 @@ public class GLRecordingPipeline {
                         capturedHevcCsd1 = null;
                         continue; // Skip normal addTrack; wait for CODEC_CONFIG buffers
                     }
+                    // AVC (H.264) requires BOTH csd-0 (SPS) and csd-1 (PPS) for the
+                    // avcC box. Some encoders omit them from the output format —
+                    // defer registration and capture/extract them (same pattern
+                    // as the HEVC fix).
+                    boolean needAvcCsd = MediaFormat.MIMETYPE_VIDEO_AVC.equals(mimeType)
+                            && (!hasCsd0 || !hasCsd1);
+                    if (needAvcCsd) {
+                        FLog.w(TAG, "[AVC-CSD] AVC encoder output format missing csd-0/csd-1 — deferring track registration until codec config buffers arrive");
+                        pendingAvcFormat = newFormat;
+                        capturedAvcCsd0 = null;
+                        capturedAvcCsd1 = null;
+                        continue; // Skip normal addTrack; wait for CODEC_CONFIG buffers
+                    }
 
                     if (muxerStarted) {
                         FLog.e(TAG, "CRITICAL: Format changed after muxer started - timing issue, continuing");
@@ -1693,6 +1762,60 @@ public class GLRecordingPipeline {
                     }
 
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                        // Capture csd-0/csd-1 from codec config buffers if the format was missing them.
+                        // AVC config buffers are parsed as Annex-B NALs and split into SPS/PPS
+                        // (robust for encoders that deliver SPS+PPS in one buffer).
+                        if (pendingAvcFormat != null && bufferInfo.size > 0) {
+                            try {
+                                byte[] csdData = new byte[bufferInfo.size];
+                                encodedData.position(bufferInfo.offset);
+                                encodedData.get(csdData, 0, bufferInfo.size);
+                                byte[][] spsPps = splitAvcSpsPps(csdData);
+                                if (spsPps != null) {
+                                    if (capturedAvcCsd0 == null) {
+                                        capturedAvcCsd0 = ByteBuffer.wrap(spsPps[0]);
+                                        FLog.i(TAG, "[AVC-CSD] Captured SPS from CODEC_CONFIG buffer (" + spsPps[0].length + " bytes)");
+                                    }
+                                    if (spsPps[1] != null && capturedAvcCsd1 == null) {
+                                        capturedAvcCsd1 = ByteBuffer.wrap(spsPps[1]);
+                                        FLog.i(TAG, "[AVC-CSD] Captured PPS from CODEC_CONFIG buffer (" + spsPps[1].length + " bytes)");
+                                    }
+                                } else if (capturedAvcCsd0 == null) {
+                                    // splitAvcSpsPps found no type-7/8 Annex-B NALs — wrap the raw config buffer as-is.
+                                    // MediaCodec CODEC_CONFIG buffers are Annex-B, so this should keep start codes.
+                                    capturedAvcCsd0 = ByteBuffer.wrap(csdData);
+                                    FLog.w(TAG, "[AVC-CSD] No SPS/PPS NALs found in CODEC_CONFIG buffer — wrapping raw buffer as csd-0 (" + bufferInfo.size + " bytes)");
+                                } else if (capturedAvcCsd1 == null) {
+                                    capturedAvcCsd1 = ByteBuffer.wrap(csdData);
+                                    FLog.w(TAG, "[AVC-CSD] No SPS/PPS NALs found in CODEC_CONFIG buffer — wrapping raw buffer as csd-1 (" + bufferInfo.size + " bytes)");
+                                }
+                                if (capturedAvcCsd0 != null && capturedAvcCsd1 != null) {
+                                    ByteBuffer csd0Final = capturedAvcCsd0.duplicate();
+                                    csd0Final.position(0);
+                                    pendingAvcFormat.setByteBuffer("csd-0", csd0Final);
+                                    ByteBuffer csd1Final = capturedAvcCsd1.duplicate();
+                                    csd1Final.position(0);
+                                    pendingAvcFormat.setByteBuffer("csd-1", csd1Final);
+                                    videoTrackIndex = mediaMuxer.addTrack(pendingAvcFormat);
+                                    FLog.i(TAG, "[AVC-CSD] Registered AVC video track with csd captured from codec config buffers"
+                                            + " | csd-0: " + describeCsd(csd0Final) + " | csd-1: " + describeCsd(csd1Final));
+                                    pendingAvcFormat = null;
+                                    capturedAvcCsd0 = null;
+                                    capturedAvcCsd1 = null;
+                                    if (!audioRecordingEnabled) {
+                                        mediaMuxer.start();
+                                        muxerStarted = true;
+                                        flushPreMuxerVideoBuffer();
+                                    } else if (audioTrackIndex != -1) {
+                                        mediaMuxer.start();
+                                        muxerStarted = true;
+                                        flushPreMuxerVideoBuffer();
+                                    }
+                                }
+                            } catch (Exception e) {
+                                FLog.e(TAG, "[AVC-CSD] Failed to capture csd from CODEC_CONFIG", e);
+                            }
+                        }
                         // Capture HEVC csd-0/csd-1 from codec config buffers if format was missing them
                         if (pendingHevcFormat != null && bufferInfo.size > 0) {
                             try {
@@ -1780,6 +1903,23 @@ public class GLRecordingPipeline {
                                 mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                                 
                                 videoSamplesWritten++;
+                                if (videoSamplesWritten == 1) {
+                                    FLog.i(TAG, "[AVC-CSD] First video sample written OK — muxer header built, samples flowing");
+                                    // Bounded AVCC corruption trace: head of the first encoded video
+                                    // sample as fed to the muxer. Annex-B start codes (00 00 00 01)
+                                    // indicate the converter did not run; AVCC length prefixes
+                                    // (e.g. 00 00 00 16 67...) are expected here.
+                                    try {
+                                        StringBuilder hex = new StringBuilder();
+                                        int shown = Math.min(16, bufferInfo.size);
+                                        for (int i = 0; i < shown; i++) {
+                                            hex.append(String.format("%02X ",
+                                                    encodedData.get(bufferInfo.offset + i)));
+                                        }
+                                        FLog.i(TAG, "[AVC-DIAG] Extraction-source sample #1 size="
+                                                + bufferInfo.size + " head=" + hex.toString().trim());
+                                    } catch (Exception ignored) {}
+                                }
                                 lastVideoPts = bufferInfo.presentationTimeUs;
                                 
                                 segmentBytesWritten += bufferInfo.size;
@@ -1812,6 +1952,33 @@ public class GLRecordingPipeline {
                         if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0
                                 && preMuxerVideoFrameBuffer.size() < MAX_PRE_MUXER_BUFFER_FRAMES) {
                             try {
+                                // Emergency: if still waiting for AVC csd, extract SPS/PPS from the keyframe
+                                if (pendingAvcFormat != null && isKeyframe) {
+                                    byte[][] spsPps = extractAvcCsdFromBitstream(encodedData, bufferInfo.offset, bufferInfo.size);
+                                    if (spsPps != null) {
+                                        FLog.i(TAG, "[AVC-CSD] Extracted SPS/PPS from keyframe bitstream (" + spsPps[0].length + "+" + spsPps[1].length + " bytes) — CODEC_CONFIG buffer never arrived");
+                                        pendingAvcFormat.setByteBuffer("csd-0", ByteBuffer.wrap(spsPps[0]));
+                                        pendingAvcFormat.setByteBuffer("csd-1", ByteBuffer.wrap(spsPps[1]));
+                                        videoTrackIndex = mediaMuxer.addTrack(pendingAvcFormat);
+                                        FLog.i(TAG, "[AVC-CSD] Registered AVC video track with csd extracted from keyframe"
+                                                + " | csd-0: " + describeCsd(ByteBuffer.wrap(spsPps[0]))
+                                                + " | csd-1: " + describeCsd(ByteBuffer.wrap(spsPps[1])));
+                                        pendingAvcFormat = null;
+                                        capturedAvcCsd0 = null;
+                                        capturedAvcCsd1 = null;
+                                        if (!audioRecordingEnabled) {
+                                            mediaMuxer.start();
+                                            muxerStarted = true;
+                                            flushPreMuxerVideoBuffer();
+                                        } else if (audioTrackIndex != -1) {
+                                            mediaMuxer.start();
+                                            muxerStarted = true;
+                                            flushPreMuxerVideoBuffer();
+                                        }
+                                    } else {
+                                        FLog.e(TAG, "[AVC-CSD] CRITICAL: Cannot extract SPS/PPS from keyframe — recording will fail");
+                                    }
+                                }
                                 // Emergency: if still waiting for HEVC csd-0, extract from keyframe bitstream
                                 if (pendingHevcFormat != null && isKeyframe) {
                                     ByteBuffer csdFromKeyframe = extractHevcCsdFromBitstream(encodedData, bufferInfo.offset, bufferInfo.size);
@@ -1836,7 +2003,7 @@ public class GLRecordingPipeline {
                                         FLog.e(TAG, "[HEVC-CSD] CRITICAL: Cannot extract csd-0 from keyframe — recording will fail");
                                     }
                                 }
-                                if (pendingHevcFormat == null) {
+                                if (pendingHevcFormat == null && pendingAvcFormat == null) {
                                     if (muxerStarted && videoTrackIndex != -1) {
                                         encodedData.position(bufferInfo.offset);
                                         encodedData.limit(bufferInfo.offset + bufferInfo.size);
@@ -1857,7 +2024,7 @@ public class GLRecordingPipeline {
                                         FLog.d(TAG, "Buffered pre-muxer video frame (total=" + preMuxerVideoFrameBuffer.size() + ", pts=" + bufferInfo.presentationTimeUs + ")");
                                     }
                                 } else {
-                                    FLog.w(TAG, "[HEVC-CSD] Still waiting for csd-0, frame not keyframe — dropping");
+                                    FLog.w(TAG, "Still waiting for codec csd (HEVC/AVC), frame not keyframe — dropping");
                                 }
                             } catch (Exception e) {
                                 FLog.w(TAG, "Failed to buffer pre-muxer frame, will be lost", e);
@@ -2043,10 +2210,15 @@ public class GLRecordingPipeline {
                     }
                 }
 
-                // Force a frame render to ensure the encoder has valid data for the new segment
+                // Ask the GL loop for a frame ASYNCHRONOUSLY (never block the drain
+                // thread on the render): a synchronous renderFrame() here deadlocks
+                // when the encoder input surface is full — the GL loop is stuck in
+                // eglSwapBuffers waiting for the encoder, and the encoder waits for
+                // the drain, which is this thread. This was the root cause of empty
+                // split segments (parts 2+ = 68KB) at 2GB/4GB splits.
                 if (glRenderer != null) {
-                    glRenderer.renderFrame();
-                    FLog.d(TAG, "Forced a frame render for the new segment");
+                    glRenderer.requestRenderAsync();
+                    FLog.d(TAG, "Requested async frame render for the new segment");
                 }
 
                 FLog.i(TAG, "Started new segment: " + segmentNumber +
@@ -2063,6 +2235,27 @@ public class GLRecordingPipeline {
             rolloverInProgress = false;
         }
     }
+
+    /**
+     * Diagnostic: "len=NN hex=00 00 00 01 67.." for a csd buffer.
+     * First 4 bytes MUST be the Annex-B start code 00 00 00 01 (or 00 00 01) for media3.
+     */
+    private String describeCsd(ByteBuffer csd) {
+        try {
+            ByteBuffer b = csd.duplicate();
+            b.position(0);
+            int len = b.remaining();
+            StringBuilder hex = new StringBuilder();
+            int shown = Math.min(4, len);
+            for (int i = 0; i < shown; i++) {
+                hex.append(String.format("%02X ", b.get(i)));
+            }
+            return "len=" + len + " head=" + hex.toString().trim();
+        } catch (Exception e) {
+            return "len=? unreadable";
+        }
+    }
+
 
     private ByteBuffer extractHevcCsdFromBitstream(ByteBuffer data, int offset, int size) {
         try {
@@ -2111,6 +2304,108 @@ public class GLRecordingPipeline {
             return result;
         } catch (Exception e) {
             FLog.w(TAG, "[HEVC-CSD] Failed to extract csd from bitstream", e);
+            return null;
+        }
+    }
+
+    /**
+     * Extracts SPS (NAL type 7) and PPS (NAL type 8) from an AVC keyframe's
+     * Annex-B bitstream for the avcC box. Returns {sps, pps} or null.
+     */
+    private byte[][] extractAvcCsdFromBitstream(ByteBuffer data, int offset, int size) {
+        try {
+            byte[] sps = null;
+            byte[] pps = null;
+            int pos = offset;
+            int end = offset + size;
+            while (pos < end - 3 && (sps == null || pps == null)) {
+                int startCodeLen;
+                if (data.get(pos) == 0 && data.get(pos + 1) == 0 && data.get(pos + 2) == 0 && data.get(pos + 3) == 1) {
+                    startCodeLen = 4;
+                } else if (data.get(pos) == 0 && data.get(pos + 1) == 0 && data.get(pos + 2) == 1) {
+                    startCodeLen = 3;
+                } else {
+                    pos++;
+                    continue;
+                }
+                int nalStart = pos + startCodeLen;
+                int nalEnd = nalStart;
+                while (nalEnd < end - 2) {
+                    if (data.get(nalEnd) == 0 && data.get(nalEnd + 1) == 0) {
+                        if (nalEnd + 2 < end && data.get(nalEnd + 2) == 1) break;
+                        if (nalEnd + 3 < end && data.get(nalEnd + 2) == 0 && data.get(nalEnd + 3) == 1) break;
+                    }
+                    nalEnd++;
+                }
+                if (nalEnd >= end - 2) nalEnd = end;
+                if (nalStart < nalEnd) {
+                    // AVC NAL header byte: forbidden_zero_bit(1) | nal_ref_idc(2) | nal_unit_type(5)
+                    byte nalType = (byte) (data.get(nalStart) & 0x1F);
+                    // CRITICAL: Preserve the Annex-B start code (copy from `pos`, not `nalStart`).
+                    // Media3's avcC box parser (AnnexBUtils.findNalUnits) requires csd-0/csd-1 to be
+                    // Annex-B formatted (start code + NAL). Stripping the start code made Samsung
+                    // AVC recordings fail with "Invalid Nal units" while HEVC worked (HEVC path
+                    // already copied from `pos`).
+                    byte[] nalu = new byte[nalEnd - pos];
+                    for (int i = 0; i < nalu.length; i++) nalu[i] = data.get(pos + i);
+                    if (nalType == 7 && sps == null) {
+                        sps = nalu;
+                    } else if (nalType == 8 && pps == null) {
+                        pps = nalu;
+                    }
+                }
+                pos = nalEnd;
+            }
+            if (sps == null || pps == null) return null;
+            return new byte[][]{sps, pps};
+        } catch (Exception e) {
+            FLog.w(TAG, "[AVC-CSD] Failed to extract SPS/PPS from bitstream", e);
+            return null;
+        }
+    }
+
+    /** Splits an AVC CODEC_CONFIG buffer (Annex-B or raw) into {SPS, PPS}. */
+    private byte[][] splitAvcSpsPps(byte[] data) {
+        try {
+            byte[] sps = null;
+            byte[] pps = null;
+            int pos = 0;
+            int end = data.length;
+            while (pos < end - 3 && (sps == null || pps == null)) {
+                int startCodeLen;
+                if (pos + 3 < end && data[pos] == 0 && data[pos + 1] == 0 && data[pos + 2] == 0 && data[pos + 3] == 1) {
+                    startCodeLen = 4;
+                } else if (pos + 2 < end && data[pos] == 0 && data[pos + 1] == 0 && data[pos + 2] == 1) {
+                    startCodeLen = 3;
+                } else {
+                    pos++;
+                    continue;
+                }
+                int nalStart = pos + startCodeLen;
+                int nalEnd = nalStart;
+                while (nalEnd < end - 2) {
+                    if (data[nalEnd] == 0 && data[nalEnd + 1] == 0) {
+                        if (nalEnd + 2 < end && data[nalEnd + 2] == 1) break;
+                        if (nalEnd + 3 < end && data[nalEnd + 2] == 0 && data[nalEnd + 3] == 1) break;
+                    }
+                    nalEnd++;
+                }
+                if (nalEnd >= end - 2) nalEnd = end;
+                if (nalStart < nalEnd) {
+                    byte nalType = (byte) (data[nalStart] & 0x1F);
+                    // CRITICAL: Preserve the Annex-B start code (copy from `pos`, not `nalStart`).
+                    // Media3's avcC box parser requires csd-0/csd-1 in Annex-B format.
+                    byte[] nalu = new byte[nalEnd - pos];
+                    System.arraycopy(data, pos, nalu, 0, nalu.length);
+                    if (nalType == 7 && sps == null) sps = nalu;
+                    else if (nalType == 8 && pps == null) pps = nalu;
+                }
+                pos = nalEnd;
+            }
+            if (sps == null && pps == null) return null; // no Annex-B NALs found
+            return new byte[][]{sps, pps};
+        } catch (Exception e) {
+            FLog.w(TAG, "[AVC-CSD] Failed to split config buffer", e);
             return null;
         }
     }
@@ -2260,6 +2555,21 @@ public class GLRecordingPipeline {
 
         // BULLETPROOF: Stop and release the media muxer with emergency finalization
         if (mediaMuxer != null && muxerStarted) {
+            // File-state snapshot BEFORE finalization — tells us if the output
+            // survived process churn (Xiaomi HyperOS stale-fd diagnosis, #332).
+            try {
+                StringBuilder st = new StringBuilder("[STORAGE] stopRecording output state:");
+                if (currentOutputFilePath != null) {
+                    java.io.File f = new java.io.File(currentOutputFilePath);
+                    st.append(" path=").append(currentOutputFilePath)
+                      .append(" exists=").append(f.exists())
+                      .append(" length=").append(f.exists() ? f.length() : -1);
+                } else {
+                    st.append(" path=null (fd mode) uri=").append(outputUri);
+                }
+                String msg = st.toString();
+                FLog.i(TAG, msg);
+            } catch (Exception ignored) {}
             emergencyFinalizeMuxer();
         }
 
@@ -2637,6 +2947,15 @@ public class GLRecordingPipeline {
     }
 
     /**
+     * Sets the SAF content URI for fd-based outputs, enabling hybrid
+     * finalization to re-open the file with a fresh fd if the original
+     * FUSE fd went stale (Xiaomi HyperOS process-death churn, issue #332).
+     */
+    public void setOutputUri(String uri) {
+        this.outputUri = uri;
+    }
+
+    /**
      * Updates the device orientation for the renderer to adjust the preview.
      * 
      * @param deviceOrientation The current orientation of the device (e.g.,
@@ -2660,6 +2979,16 @@ public class GLRecordingPipeline {
         if (glRenderer != null) {
             glRenderer.setExposureCompensation(evStops);
         }
+    }
+
+    /** Realtime audio mute for the LIVE recording (thread-safe, volatile flag). */
+    public void setAudioMuted(boolean muted) {
+        this.audioMuted = muted;
+        FLog.i(TAG, "Realtime audio mute = " + muted);
+    }
+
+    public boolean isAudioMuted() {
+        return audioMuted;
     }
 
     public void setFrontVideoMirrorEnabled(boolean enabled) {
@@ -2910,9 +3239,36 @@ public class GLRecordingPipeline {
         if (this.preferredAudioDevice != null) {
             this.audioSource = android.media.MediaRecorder.AudioSource.MIC;
             FLog.i(TAG, "Audio source: MIC (external device route)");
+        } else if (com.fadcam.SharedPreferencesManager.getInstance(context).isRawAudioEnabled()) {
+            // Raw audio: bypass platform processing (noise suppression + AGC).
+            //
+            // UNPROCESSED is the true raw source; VOICE_RECOGNITION is the officially
+            // documented fallback (developer.android.com: "If unavailable, consider
+            // VOICE_RECOGNITION"). Per AOSP, VOICE_RECOGNITION disables noise suppression
+            // and AGC but MAY still apply echo cancellation (AEC) if the device has it —
+            // so it's "no NS, no AGC, possibly AEC", not perfectly raw. That's inherent
+            // to the platform, not a bug. On devices advertising UNPROCESSED we never
+            // reach this branch.
+            boolean unprocessedSupported = false;
+            try {
+                android.media.AudioManager am = (android.media.AudioManager)
+                        context.getSystemService(Context.AUDIO_SERVICE);
+                if (am != null) {
+                    String prop = am.getProperty(
+                            android.media.AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED);
+                    unprocessedSupported = "true".equalsIgnoreCase(prop);
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "UNPROCESSED support check failed: " + e.getMessage());
+            }
+            this.audioSource = unprocessedSupported
+                    ? android.media.MediaRecorder.AudioSource.UNPROCESSED
+                    : android.media.MediaRecorder.AudioSource.VOICE_RECOGNITION;
+            FLog.i(TAG, "Audio source (RAW): " + this.audioSource
+                    + " (unprocessedSupported=" + unprocessedSupported + ")");
         } else {
             this.audioSource = android.media.MediaRecorder.AudioSource.CAMCORDER;
-            FLog.i(TAG, "Audio source: CAMCORDER (default device mic)");
+            FLog.i(TAG, "Audio source: CAMCORDER (default device mic, platform-processed)");
         }
     }
 
@@ -3010,19 +3366,6 @@ public class GLRecordingPipeline {
 
             if (audioRecord.getState() != android.media.AudioRecord.STATE_INITIALIZED) {
                 throw new RuntimeException("AudioRecord initialization failed");
-            }
-            boolean noiseSuppression = com.fadcam.SharedPreferencesManager.getInstance(context)
-                    .isNoiseSuppressionEnabled();
-            if (noiseSuppression && android.media.audiofx.NoiseSuppressor.isAvailable()) {
-                android.media.audiofx.NoiseSuppressor ns = android.media.audiofx.NoiseSuppressor
-                        .create(audioRecord.getAudioSessionId());
-                if (ns != null) {
-                    FLog.i(TAG, "NoiseSuppressor enabled for AudioRecord");
-                } else {
-                    FLog.w(TAG, "Failed to enable NoiseSuppressor (create returned null)");
-                }
-            } else if (noiseSuppression) {
-                FLog.w(TAG, "NoiseSuppressor requested but not available on this device");
             }
 
             // CRITICAL: Set AudioManager mode for recording
@@ -3127,6 +3470,10 @@ public class GLRecordingPipeline {
                     
                     int read = audioRecord.read(readBuffer, 0, readBuffer.length);
                     if (read > 0) {
+                        if (audioMuted) {
+                            // Realtime mute: encode silence (track stays continuous).
+                            java.util.Arrays.fill(readBuffer, 0, read, (byte) 0);
+                        }
                         int offset = 0;
                         while (offset < read && audioThreadRunning && !isPaused) {
                             int inputBufferIndex = audioEncoder.dequeueInputBuffer(10000);

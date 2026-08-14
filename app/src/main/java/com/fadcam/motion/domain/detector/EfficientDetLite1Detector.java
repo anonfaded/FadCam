@@ -175,7 +175,7 @@ public class EfficientDetLite1Detector {
             return out;
         }
         try {
-            Bitmap bitmap = yuv420ToBitmap(packet);
+            Bitmap bitmap = yuv420ToScaledBitmap(packet, 384);
             if (bitmap == null || bitmap.getWidth() <= 0 || bitmap.getHeight() <= 0) {
                 return out;
             }
@@ -338,6 +338,42 @@ public class EfficientDetLite1Detector {
             }
         }
         return Bitmap.createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888);
+    }
+
+    /**
+     * Convert YUV420 to a downscaled ARGB bitmap, avoiding full-resolution allocation.
+     * EfficientDet-Lite1 works at 320–640 px; 384 px preserves quality while cutting
+     * per-frame memory by ~90 % (e.g. 7.4 MB → 0.6 MB for 1280×720 input).
+     */
+    private Bitmap yuv420ToScaledBitmap(FramePacket packet, int maxDimension) {
+        int srcW = packet.width;
+        int srcH = packet.height;
+        float scale = Math.min(1f, Math.min(
+                (float) maxDimension / srcW,
+                (float) maxDimension / srcH));
+        int dstW = Math.max(1, Math.round(srcW * scale));
+        int dstH = Math.max(1, Math.round(srcH * scale));
+        int[] pixels = new int[dstW * dstH];
+        int index = 0;
+        for (int yDst = 0; yDst < dstH; yDst++) {
+            int ySrc = (yDst * srcH) / dstH;
+            int yRowStart = ySrc * packet.yRowStride;
+            int uvRowStart = (ySrc / 2) * packet.uvRowStride;
+            for (int xDst = 0; xDst < dstW; xDst++) {
+                int xSrc = (xDst * srcW) / dstW;
+                int yIndex = yRowStart + (xSrc * packet.yPixelStride);
+                int uvIndex = uvRowStart + ((xSrc / 2) * packet.uvPixelStride);
+                int yValue = (yIndex >= 0 && yIndex < packet.y.length) ? (packet.y[yIndex] & 0xFF) : 0;
+                int uValue = (uvIndex >= 0 && uvIndex < packet.u.length) ? (packet.u[uvIndex] & 0xFF) : 128;
+                int vValue = (uvIndex >= 0 && uvIndex < packet.v.length) ? (packet.v[uvIndex] & 0xFF) : 128;
+
+                int r = clampByte(yValue + (int) (1.402f * (vValue - 128)));
+                int g = clampByte(yValue - (int) (0.344136f * (uValue - 128)) - (int) (0.714136f * (vValue - 128)));
+                int b = clampByte(yValue + (int) (1.772f * (uValue - 128)));
+                pixels[index++] = 0xFF000000 | (r << 16) | (g << 8) | b;
+            }
+        }
+        return Bitmap.createBitmap(pixels, dstW, dstH, Bitmap.Config.ARGB_8888);
     }
 
     private int clampByte(int value) {

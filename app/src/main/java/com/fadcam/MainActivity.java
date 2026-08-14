@@ -4,11 +4,8 @@ import com.fadcam.FLog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ShortcutInfo;
-import android.content.pm.ShortcutManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,6 +19,7 @@ import android.view.ViewConfiguration;
 import android.widget.Toast;
 import android.widget.ImageView;
 import com.fadcam.ui.OverlayNavUtil;
+import com.fadcam.shortcuts.ShortcutsManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -76,6 +74,18 @@ public class MainActivity extends AppCompatActivity {
     private android.widget.ImageView cloakIconView;
     private android.widget.TextView cloakTitleView;
 
+    // ── Volume shutter (volume keys as camera shutter) ─────────────
+    // Tracks the keycode of the volume key currently held down (0 = none held).
+    private int volumeShutterActiveKeyCode = 0;
+    // True once a long-press already fired the recording toggle, so the
+    // subsequent key-up does not ALSO capture a photo.
+    private boolean volumeShutterLongPressTriggered = false;
+    // Double-click window: two short presses within this time switch camera.
+    private static final long VOLUME_DOUBLE_CLICK_TIMEOUT_MS = 350L;
+    // Pending single-click action, delayed to allow a second click to arrive.
+    private Runnable pendingVolumeSingleClickRunnable;
+    private final Handler volumeShutterHandler = new Handler(Looper.getMainLooper());
+
     private final Runnable backPressRunnable = new Runnable() {
         @Override
         public void run() {
@@ -91,6 +101,11 @@ public class MainActivity extends AppCompatActivity {
     private int swipeTouchSlop = 0;
     private static final float SWIPE_HORIZONTAL_RATIO = 1.35f;
     private boolean previewGestureInProgress = false;
+    /** True while the home quick-actions rearrange (jiggle) mode is active —
+     *  tab-swipes and the sidebar-open swipe must not interfere with dragging. */
+    private boolean quickActionsRearrangeActive = false;
+    /** True while the mode-switcher pill is being dragged. */
+    private boolean modePillDragActive = false;
     private float previewGestureZoomRatio = 1.0f;
 
     /**
@@ -337,6 +352,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Build/package identity for update-channel verification (beta vs stable).
+        try {
+            FLog.d("UpdateCheck", "App identity: applicationId=" + BuildConfig.APPLICATION_ID
+                    + " package=" + getPackageName()
+                    + " isBeta=" + BuildConfig.APPLICATION_ID.endsWith(".beta")
+                    + " versionName=" + BuildConfig.VERSION_NAME);
+        } catch (Exception e) {
+            FLog.w("UpdateCheck", "App identity log failed: " + e.getMessage());
+        }
         super.onCreate(savedInstanceState);
         swipeTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
         // Install splash screen (shows the themed windowSplashScreenAnimatedIcon)
@@ -611,6 +635,8 @@ public class MainActivity extends AppCompatActivity {
             
             if (itemId == R.id.navigation_home) {
                 targetPosition = 0;
+                // Keep the user's chosen icon applied (selection re-renders the item).
+                applyHomeNavIcon();
             } else if (itemId == R.id.navigation_records) {
                 targetPosition = 1;
             } else if (itemId == R.id.navigation_remote) {
@@ -630,10 +656,18 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // Dock reveal animation – only on fresh cold start, not config changes
-        if (savedInstanceState == null) {
-            View navContainer = findViewById(R.id.nav_container);
-            com.fadcam.ui.DockRevealAnimator.reveal(navContainer, bottomNavigationView);
+        // Dock reveal animation – REMOVED: the launch reveal (scale/fade/slide of
+        // the bottom nav dock) consumed resources and delayed the dock's presence
+        // on every cold start. The dock now simply renders in place.
+        // (DockRevealAnimator kept for reference but no longer invoked.)
+        View navContainer = findViewById(R.id.nav_container);
+        if (navContainer != null) {
+            navContainer.setScaleX(1f);
+            navContainer.setAlpha(1f);
+            navContainer.setTranslationY(0f);
+        }
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setAlpha(1f);
         }
 
         // This is the path for the osmdroid tile cache
@@ -648,6 +682,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // The initial bar colors and transparency are now handled by switchFragment(0, false) 
+        applyHomeNavIcon();
+        setupHomeIconCustomization();
         // or restored from saved state via restoreBarColorsForCurrentTab() inside handleTabSelected.
 
         // theme change)-----------
@@ -731,10 +767,20 @@ public class MainActivity extends AppCompatActivity {
                 if (previewGestureInProgress && Math.abs(previewGestureZoomRatio - 0.5f) >= 0.01f) {
                     swipeCandidate = false;
                 }
+                // Rearrange mode: dragging quick-action icons must never trigger
+                // tab navigation or the sidebar-open swipe.
+                if (quickActionsRearrangeActive || modePillDragActive) {
+                    swipeCandidate = false;
+                }
                 break;
             }
             case MotionEvent.ACTION_MOVE: {
                 if (!swipeCandidate || swipeHandled) break;
+                // Rearrange mode may start mid-gesture (long-press) — kill the swipe.
+                if (quickActionsRearrangeActive || modePillDragActive) {
+                    swipeCandidate = false;
+                    break;
+                }
                 if (previewGestureInProgress && Math.abs(previewGestureZoomRatio - 0.5f) >= 0.01f) {
                     swipeCandidate = false;
                     break;
@@ -748,6 +794,11 @@ public class MainActivity extends AppCompatActivity {
             }
             case MotionEvent.ACTION_UP: {
                 if (!swipeCandidate || swipeHandled) break;
+                // Rearrange mode: never navigate tabs or open the sidebar.
+                if (quickActionsRearrangeActive || modePillDragActive) {
+                    swipeCandidate = false;
+                    break;
+                }
                 float dx = ev.getRawX() - swipeDownX;
                 float dy = ev.getRawY() - swipeDownY;
                 if (Math.abs(dx) > Math.max(swipeTouchSlop * 6f, 180f)
@@ -813,11 +864,25 @@ public class MainActivity extends AppCompatActivity {
         while (current != null) {
             if (current instanceof HorizontalScrollView) return true;
             if (current.getId() == R.id.tutorial_scroll) return true;
+            // The mode switcher is included with <include id="mode_switcher">,
+            // which REPLACES the layout's own root id — check both.
+            if (current.getId() == R.id.mode_switcher || current.getId() == R.id.mode_switcher_root) return true;
             if (current instanceof com.fadcam.ui.GalleryFastScroller) return true;
             if (current instanceof com.google.android.material.chip.Chip) return true;
             if (current instanceof com.google.android.material.chip.ChipGroup) return true;
             if (current instanceof BottomNavigationView) return true;
             if (current.getId() == R.id.textureView || current.getId() == R.id.fullscreenTextureView) return true;
+            if (current.getId() == R.id.cardPreview) {
+                // Home camera preview container: while the live preview is showing,
+                // swipes must not change tabs or open the sidebar. Overlays (preview
+                // hint, zoom HUD, grid) sit ON TOP of the TextureView, so a touch that
+                // starts on them never reaches the textureView check above — gate on
+                // the whole container instead.
+                View previewTexture = findViewById(R.id.textureView);
+                if (previewTexture != null && previewTexture.getVisibility() == View.VISIBLE) {
+                    return true;
+                }
+            }
             if (current instanceof RecyclerView) {
                 RecyclerView rv = (RecyclerView) current;
                 if (rv.canScrollHorizontally(-1) || rv.canScrollHorizontally(1)) return true;
@@ -832,6 +897,16 @@ public class MainActivity extends AppCompatActivity {
     public void setPreviewGestureInProgress(boolean inProgress, float zoomRatio) {
         previewGestureInProgress = inProgress;
         previewGestureZoomRatio = zoomRatio;
+    }
+
+    /** Called by HomeFragment when the quick-actions rearrange mode starts/ends. */
+    public void setQuickActionsRearrangeActive(boolean active) {
+        quickActionsRearrangeActive = active;
+    }
+
+    /** Called by the mode-switcher component while the pill is being dragged. */
+    public void setModePillDragActive(boolean active) {
+        modePillDragActive = active;
     }
 
     private boolean isDescendantOf(@NonNull View child, @NonNull View ancestor) {
@@ -920,46 +995,7 @@ public class MainActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.N_MR1)
     private void createDynamicShortcuts() {
-        ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
-
-        // Torch Toggle Shortcut
-        Intent torchIntent = new Intent(this, TorchToggleActivity.class);
-        torchIntent.setAction(Intent.ACTION_VIEW);
-
-        ShortcutInfo torchShortcut = new ShortcutInfo.Builder(this, "torch_toggle")
-                .setShortLabel(getString(R.string.torch_shortcut_short_label))
-                .setLongLabel(getString(R.string.torch_shortcut_long_label))
-                .setIcon(Icon.createWithResource(this, R.drawable.flashlight_shortcut))
-                .setIntent(torchIntent)
-                .build();
-
-        // Recording Start Shortcut
-        Intent startRecordIntent = new Intent(this, RecordingStartActivity.class);
-        startRecordIntent.setAction(Intent.ACTION_VIEW);
-
-        ShortcutInfo startRecordShortcut = new ShortcutInfo.Builder(this, "record_start")
-                .setShortLabel(getString(R.string.start_recording))
-                .setLongLabel(getString(R.string.start_recording))
-                .setIcon(Icon.createWithResource(this, R.drawable.start_back_shortcut))
-                .setIntent(startRecordIntent)
-                .build();
-
-        // Recording Stop Shortcut
-        Intent stopRecordIntent = new Intent(this, RecordingStopActivity.class);
-        stopRecordIntent.setAction(Intent.ACTION_VIEW);
-
-        ShortcutInfo stopRecordShortcut = new ShortcutInfo.Builder(this, "record_stop")
-                .setShortLabel(getString(R.string.stop_recording))
-                .setLongLabel(getString(R.string.stop_recording))
-                .setIcon(Icon.createWithResource(this, R.drawable.stop_shortcut))
-                .setIntent(stopRecordIntent)
-                .build();
-
-        // Set all shortcuts
-        shortcutManager.setDynamicShortcuts(Arrays.asList(
-                torchShortcut,
-                startRecordShortcut,
-                stopRecordShortcut));
+        new ShortcutsManager(this).publishAllDynamic();
     }
 
     public void applyLanguage(String languageCode) {
@@ -1142,6 +1178,28 @@ public class MainActivity extends AppCompatActivity {
      */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // ── Volume shutter ──────────────────────────────────────────
+        // Long press = start/stop recording, single click = FadShot photo,
+        // double click = switch camera. Active only on the home tab while the
+        // preference is enabled.
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (isVolumeShutterActive()) {
+                if (event.getRepeatCount() == 0) {
+                    // First key-down: arm the shutter, wait for long-press or release
+                    volumeShutterActiveKeyCode = keyCode;
+                    volumeShutterLongPressTriggered = false;
+                } else if (volumeShutterActiveKeyCode == keyCode && !volumeShutterLongPressTriggered) {
+                    // Key repeat = long press → toggle recording
+                    volumeShutterLongPressTriggered = true;
+                    // A click was pending from a previous tap — cancel it, this is now a long press
+                    cancelPendingVolumeClick();
+                    triggerVolumeShutterLongPress();
+                }
+                return true; // Consume so the system volume doesn't change
+            }
+            volumeShutterActiveKeyCode = 0;
+        }
+
         Fragment currentFragment = getCurrentFragment();
         int currentPos = getCurrentFragmentPosition();
 
@@ -1224,6 +1282,97 @@ public class MainActivity extends AppCompatActivity {
         }
         
         return super.onKeyDown(keyCode, event);
+    }
+
+    /**
+     * Volume shutter key-up: a short press captures a FadShot photo, unless a
+     * second press arrives within the double-click window (then it switches
+     * camera instead). A long press already toggled recording, so key-up only
+     * resets the shutter state.
+     */
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (volumeShutterActiveKeyCode == keyCode && isVolumeShutterActive()) {
+                if (!volumeShutterLongPressTriggered) {
+                    // Short press: wait briefly to distinguish single from double click
+                    if (pendingVolumeSingleClickRunnable != null) {
+                        // Second click within the window → double click → switch camera
+                        volumeShutterHandler.removeCallbacks(pendingVolumeSingleClickRunnable);
+                        pendingVolumeSingleClickRunnable = null;
+                        triggerVolumeShutterCameraSwitch();
+                    } else {
+                        pendingVolumeSingleClickRunnable = () -> {
+                            pendingVolumeSingleClickRunnable = null;
+                            // Re-check so we never fire after the user left the home tab
+                            if (isVolumeShutterActive()) {
+                                triggerVolumeShutterClick();
+                            }
+                        };
+                        volumeShutterHandler.postDelayed(
+                                pendingVolumeSingleClickRunnable, VOLUME_DOUBLE_CLICK_TIMEOUT_MS);
+                    }
+                } else {
+                    // Long press already toggled recording — drop any pending click
+                    cancelPendingVolumeClick();
+                }
+                volumeShutterActiveKeyCode = 0;
+                volumeShutterLongPressTriggered = false;
+                return true; // Consume so the system volume doesn't change
+            }
+            cancelPendingVolumeClick();
+            volumeShutterActiveKeyCode = 0;
+            volumeShutterLongPressTriggered = false;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    /**
+     * Whether the volume shutter is currently active: home tab visible AND the
+     * preference is enabled. Falls back to disabled on any error.
+     */
+    private boolean isVolumeShutterActive() {
+        if (getCurrentFragmentPosition() != 0) return false;
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            }
+            return sharedPreferencesManager.isVolumeShutterEnabled();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Route a volume-shutter long press to the home fragment (start/stop recording). */
+    private void triggerVolumeShutterLongPress() {
+        Fragment current = getCurrentFragment();
+        if (current instanceof HomeFragment) {
+            ((HomeFragment) current).handleVolumeShutterLongPress();
+        }
+    }
+
+    /** Route a volume-shutter click to the home fragment (capture FadShot photo). */
+    private void triggerVolumeShutterClick() {
+        Fragment current = getCurrentFragment();
+        if (current instanceof HomeFragment) {
+            ((HomeFragment) current).handleVolumeShutterClick();
+        }
+    }
+
+    /** Route a volume-shutter double click to the home fragment (switch camera). */
+    private void triggerVolumeShutterCameraSwitch() {
+        Fragment current = getCurrentFragment();
+        if (current instanceof HomeFragment) {
+            ((HomeFragment) current).handleVolumeShutterCameraSwitch();
+        }
+    }
+
+    /** Drop any scheduled single-click action (e.g. after a long press or leaving home). */
+    private void cancelPendingVolumeClick() {
+        if (pendingVolumeSingleClickRunnable != null) {
+            volumeShutterHandler.removeCallbacks(pendingVolumeSingleClickRunnable);
+            pendingVolumeSingleClickRunnable = null;
+        }
     }
 
     /**
@@ -1344,7 +1493,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
+     protected void onPause() {
+        // Cancel any pending volume-shutter click (e.g. app backgrounded mid double-click)
+        cancelPendingVolumeClick();
+        volumeShutterActiveKeyCode = 0;
+        volumeShutterLongPressTriggered = false;
         // Show cloak just before going into background to affect recents snapshot
         try {
             if (sharedPreferencesManager == null) {
@@ -1809,6 +1962,97 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return null;
+    }
+
+    /**
+     * Applies the user's chosen home nav icon (default house / fighter jet / pilot).
+     */
+    private void applyHomeNavIcon() {
+        if (bottomNavigationView == null) return;
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            }
+            String choice = sharedPreferencesManager.getHomeIcon();
+            int res;
+            if (Constants.HOME_ICON_JET.equals(choice)) {
+                res = R.drawable.fighter_jet_top_view;
+            } else if (Constants.HOME_ICON_PILOT.equals(choice)) {
+                res = R.drawable.pilot_steering_white;
+            } else {
+                res = R.drawable.ic_house;
+            }
+            android.view.MenuItem home = bottomNavigationView.getMenu().findItem(R.id.navigation_home);
+            if (home != null) home.setIcon(res);
+        } catch (Exception e) {
+            FLog.w("MainActivity", "applyHomeNavIcon failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Long-press the home nav item to pick which icon it shows.
+     */
+    private void setupHomeIconCustomization() {
+        if (bottomNavigationView == null) return;
+        bottomNavigationView.post(() -> {
+            try {
+                if (bottomNavigationView.getChildCount() == 0) return;
+                View menuView = bottomNavigationView.getChildAt(0);
+                if (!(menuView instanceof ViewGroup)) return;
+                ViewGroup group = (ViewGroup) menuView;
+                if (group.getChildCount() == 0) return;
+                View homeItem = group.getChildAt(0); // menu order: home is first
+                if (homeItem != null) {
+                    homeItem.setOnLongClickListener(v -> {
+                        showHomeIconPicker();
+                        return true;
+                    });
+                }
+            } catch (Exception e) {
+                FLog.w("MainActivity", "setupHomeIconCustomization failed: " + e.getMessage());
+            }
+        });
+    }
+
+    private void showHomeIconPicker() {
+        final String resultKey = "picker_result_home_icon";
+        getSupportFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
+            String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (sel != null) {
+                try {
+                    if (sharedPreferencesManager == null) {
+                        sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+                    }
+                    sharedPreferencesManager.setHomeIcon(sel);
+                    applyHomeNavIcon();
+                } catch (Exception e) {
+                    FLog.w("MainActivity", "home icon selection failed: " + e.getMessage());
+                }
+            }
+        });
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        // Pilot is the default — list it first.
+        items.add(new com.fadcam.ui.picker.OptionItem(Constants.HOME_ICON_PILOT,
+                getString(R.string.home_icon_pilot),
+                R.drawable.pilot_steering_white));
+        items.add(new com.fadcam.ui.picker.OptionItem(Constants.HOME_ICON_JET,
+                getString(R.string.home_icon_jet),
+                R.drawable.fighter_jet_top_view));
+        items.add(new com.fadcam.ui.picker.OptionItem(Constants.HOME_ICON_DEFAULT,
+                getString(R.string.home_icon_home),
+                R.drawable.ic_house));
+        String current = Constants.HOME_ICON_DEFAULT;
+        try {
+            if (sharedPreferencesManager == null) {
+                sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+            }
+            current = sharedPreferencesManager.getHomeIcon();
+        } catch (Exception ignored) {
+        }
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                        getString(R.string.home_icon_picker_title), items, current, resultKey, null);
+        sheet.show(getSupportFragmentManager(), "home_icon_picker");
     }
 
     private void scheduleTabPrewarm() {

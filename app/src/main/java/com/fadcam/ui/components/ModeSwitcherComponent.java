@@ -7,6 +7,7 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.view.View;
 import android.view.Gravity;
+import android.view.ViewParent;
 import android.view.ViewPropertyAnimator;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -45,6 +46,20 @@ public class ModeSwitcherComponent {
 
     // Guard during initialization
     private boolean isInitializing = false;
+
+    // Hold-to-drag: grab the pill, drag between segments, snap on release.
+    private final android.os.Handler dragHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+
+    // Cached segment geometry — computed once on layout, reused everywhere
+    // (state management instead of repeated calculations).
+    private final float[] cachedSegmentLefts = new float[3];
+    private float cachedSegmentWidth = 0f;
+    private Runnable dragLongPressRunnable;
+    private boolean dragActive = false;
+    private float dragStartRawX = 0f;
+    private float dragBaseX = 0f;
+    private int dragHighlightedSegment = -1;
     
     /**
      * Interface for mode switcher callbacks
@@ -93,6 +108,18 @@ public class ModeSwitcherComponent {
                 FLog.e(TAG, "Segment views missing");
                 return;
             }
+
+            // Position the pill as soon as layout is known (first frame, no delay),
+            // and re-position on layout changes (e.g. rotation). Never interrupt a
+            // running slide/pulse animation — that would teleport the pill or leave
+            // it stuck scaled.
+            switcherRoot.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, orr, ob) -> {
+                updateCachedSegmentGeometry();
+                if (!dragActive && !isInitializing && v.getWidth() > 0
+                        && activeIndicatorAnimator == null) {
+                    updateActiveIndicator(currentMode, false);
+                }
+            });
 
             // Show/hide FadRec NEW badge based on NewFeatureManager
             View badgeFadRec = rootView.findViewById(R.id.badge_fadrec);
@@ -240,6 +267,13 @@ public class ModeSwitcherComponent {
                 resolvedTargetHeight = target.getHeight();
             }
             final int targetHeight = resolvedTargetHeight;
+            if (targetWidth <= 0) {
+                // Use the cached geometry (state from the last layout pass) so the
+                // pill is in place on the very first frame.
+                int segIndex = segmentIndexForMode(mode);
+                targetWidth = (int) cachedSegmentWidth;
+                targetLeft = (int) cachedSegmentLefts[segIndex];
+            }
             if (targetWidth <= 0 || targetHeight <= 0) {
                 FLog.w(TAG, "updateActiveIndicator: invalid target size mode=" + mode
                         + " width=" + targetWidth + " height=" + targetHeight);
@@ -248,18 +282,36 @@ public class ModeSwitcherComponent {
 
             cancelActiveIndicatorAnimation();
             FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) activeIndicator.getLayoutParams();
+            // IDEMPOTENCY GUARD — critical: setLayoutParams() triggers requestLayout(),
+            // and the root's onLayoutChangeListener re-runs this method on every layout
+            // pass. Without skipping identical params, that ping-pongs into an infinite
+            // layout loop (the "requestLayout improperly called during layout" flood).
+            boolean paramsDirty = lp.gravity != (Gravity.TOP | Gravity.START)
+                    || lp.leftMargin != 0 || lp.topMargin != 0
+                    || lp.width != targetWidth || lp.height != targetHeight;
             lp.gravity = Gravity.TOP | Gravity.START;
             lp.leftMargin = 0;
             lp.topMargin = 0;
             lp.width = targetWidth;
             lp.height = targetHeight;
-            activeIndicator.setBackgroundResource(R.drawable.segment_active_background);
+            if (activeIndicator.getBackground() == null
+                    || activeIndicator.getBackground().getConstantState() == null
+                    || !activeIndicator.getBackground().getConstantState().equals(
+                            context.getDrawable(R.drawable.segment_active_background).getConstantState())) {
+                activeIndicator.setBackgroundResource(R.drawable.segment_active_background);
+            }
             activeIndicator.setVisibility(View.VISIBLE);
-            activeIndicator.setLayoutParams(lp);
-            activeIndicator.setY(targetTop);
+            if (paramsDirty) {
+                activeIndicator.setLayoutParams(lp);
+            }
+            if (Math.abs(activeIndicator.getY() - targetTop) > 0.5f) {
+                activeIndicator.setY(targetTop);
+            }
 
             if (!animate) {
-                activeIndicator.setX(targetLeft);
+                if (Math.abs(activeIndicator.getX() - targetLeft) > 0.5f) {
+                    activeIndicator.setX(targetLeft);
+                }
                 FLog.d(TAG, "updateActiveIndicator: positioned mode=" + mode + " left=" + targetLeft);
                 if (onAnimationComplete != null) {
                     onAnimationComplete.run();
@@ -268,18 +320,55 @@ public class ModeSwitcherComponent {
             }
 
             float startLeft = activeIndicator.getX();
-            activeIndicatorAnimator = activeIndicator.animate()
-                    .x(targetLeft)
-                    .setDuration(ANIMATION_DURATION + 70L)
-                    .setInterpolator(new FastOutSlowInInterpolator())
-                    .withEndAction(() -> {
-                        activeIndicatorAnimator = null;
-                        activeIndicator.setX(targetLeft);
-                        FLog.d(TAG, "updateActiveIndicator: animation end mode=" + mode + " left=" + targetLeft);
-                        if (onAnimationComplete != null) {
-                            onAnimationComplete.run();
-                        }
-                    });
+            final float finalLeft = targetLeft;
+            unclipHierarchy(activeIndicator);
+            boolean alreadyScaled = activeIndicator.getScaleX() > 1.05f;
+            if (alreadyScaled) {
+                // Drag-release: the pill is already grown — slide at the current
+                // scale, then settle to normal ONCE. No re-grow, no two phases.
+                activeIndicatorAnimator = activeIndicator.animate()
+                        .x(targetLeft)
+                        .setDuration(ANIMATION_DURATION + 70L)
+                        .setInterpolator(new FastOutSlowInInterpolator())
+                        .withEndAction(() -> {
+                            activeIndicatorAnimator = null;
+                            activeIndicator.setX(finalLeft);
+                            activeIndicator.animate().scaleX(1f).scaleY(1f)
+                                    .setDuration(220)
+                                    .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
+                                    .withEndAction(() -> {
+                                        // Run AFTER the scale-down completes so the
+                                        // rebuild never cuts the settle motion.
+                                        if (onAnimationComplete != null) {
+                                            onAnimationComplete.run();
+                                        }
+                                    })
+                                    .start();
+                            FLog.d(TAG, "updateActiveIndicator: animation end mode=" + mode + " left=" + finalLeft);
+                        });
+            } else {
+                // Click: grow + slide, then spring back.
+                activeIndicatorAnimator = activeIndicator.animate()
+                        .x(targetLeft)
+                        .scaleX(1.12f)
+                        .scaleY(1.12f)
+                        .setDuration(ANIMATION_DURATION + 70L)
+                        .setInterpolator(new FastOutSlowInInterpolator())
+                        .withEndAction(() -> {
+                            activeIndicatorAnimator = null;
+                            activeIndicator.setX(finalLeft);
+                            activeIndicator.animate().scaleX(1f).scaleY(1f)
+                                    .setDuration(220)
+                                    .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
+                                    .withEndAction(() -> {
+                                        if (onAnimationComplete != null) {
+                                            onAnimationComplete.run();
+                                        }
+                                    })
+                                    .start();
+                            FLog.d(TAG, "updateActiveIndicator: animation end mode=" + mode + " left=" + finalLeft);
+                        });
+            }
             FLog.d(TAG, "updateActiveIndicator: animating mode=" + mode + " fromLeft=" + Math.round(startLeft) + " toLeft=" + targetLeft);
         };
 
@@ -369,7 +458,13 @@ public class ModeSwitcherComponent {
         
         if (segmentFadMic != null) {
             segmentFadMic.setOnClickListener(v -> handleModeClick(Constants.MODE_FADMIC));
+            setupDragToSwitch();
         }
+
+        // Unclip the whole hierarchy once at init so the pill can overflow
+        // freely on ALL interactions (clicks, press nudge, drags) from the start.
+        unclipHierarchy(activeIndicator);
+        updateCachedSegmentGeometry();
     }
     
     /**
@@ -418,6 +513,224 @@ public class ModeSwitcherComponent {
         FLog.d(TAG, "Mode switched -> " + currentMode);
     }
     
+    /**
+     * Hold + drag the active pill between segments; it scales up while grabbed,
+     * follows the finger, and snaps to the nearest segment on release.
+     */
+    private void setupDragToSwitch() {
+        if (switcherRoot == null || activeIndicator == null) return;
+        // The segments are clickable children, so the root's OnTouchListener never
+        // fires — attach the gesture listener to each segment instead.
+        android.view.View.OnTouchListener dragListener = (v, event) -> {
+            switch (event.getActionMasked()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    cancelDragLongPress();
+                    dragStartRawX = event.getRawX();
+                    dragBaseX = activeIndicator.getX();
+                    dragActive = false;
+                    // Touch press feedback: nudge the pill up slightly.
+                    activeIndicator.animate().scaleX(1.06f).scaleY(1.06f)
+                            .setDuration(90).start();
+                    dragLongPressRunnable = () -> {
+                        if (switcherRoot == null || activeIndicator == null) return;
+                        grabPill();
+                    };
+                    dragHandler.postDelayed(dragLongPressRunnable, 300L);
+                    return false; // let normal taps/segment clicks work
+                case android.view.MotionEvent.ACTION_MOVE: {
+                    float dx = event.getRawX() - dragStartRawX;
+                    if (!dragActive) {
+                        // Click-and-drag: grab the pill immediately once the finger
+                        // moves past the touch slop (no long-press required).
+                        if (Math.abs(dx) > android.view.ViewConfiguration
+                                .get(context).getScaledTouchSlop()) {
+                            cancelDragLongPress();
+                            grabPill();
+                        } else {
+                            return false;
+                        }
+                    }
+                    if (dragActive) {
+                        // Free drag: the pill follows the finger 1:1. It only
+                        // snaps (instantly, no animation lag) once its center gets
+                        // close to a segment center — a gentle magnetic pull.
+                        float maxX = Math.max(0f,
+                                switcherRoot.getWidth() - activeIndicator.getWidth());
+                        float targetX = Math.max(0f, Math.min(maxX, dragBaseX + dx));
+                        activeIndicator.setX(targetX);
+
+                        int seg = nearestSegment(targetX);
+                        float segLeft = cachedSegmentLefts[seg];
+                        float segCenter = segmentCenter(seg);
+                        float pillCenter = targetX + activeIndicator.getWidth() / 2f;
+                        if (Math.abs(pillCenter - segCenter) < cachedSegmentWidth * 0.22f) {
+                            // Magnetic: within the capture zone, snap to the segment.
+                            activeIndicator.setX(segLeft);
+                        }
+                        if (seg != dragHighlightedSegment) {
+                            dragHighlightedSegment = seg;
+                            activeIndicator.performHapticFeedback(
+                                    android.view.HapticFeedbackConstants.CLOCK_TICK);
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_CANCEL: {
+                    cancelDragLongPress();
+                    setPillDragGate(false);
+                    if (!dragActive && activeIndicatorAnimator == null) {
+                        // Plain tap: revert the press nudge (selection animation,
+                        // if any, takes over with its own pulse).
+                        activeIndicator.animate().scaleX(1f).scaleY(1f)
+                                .setDuration(150)
+                                .setInterpolator(new FastOutSlowInInterpolator())
+                                .start();
+                    }
+                    if (dragActive) {
+                        dragActive = false;
+                        float centerX = activeIndicator.getX() + activeIndicator.getWidth() / 2f;
+                        int seg = nearestSegment(centerX);
+                        String mode = modeForSegment(seg);
+                        if (mode != null && !mode.equals(currentMode)) {
+                            // Mode change: let handleModeClick drive ONE smooth
+                            // slide+pulse to the segment — no settle-then-jump.
+                            handleModeClick(mode);
+                            // Blocked mode (e.g. FadMic): glide back to the current mode.
+                            if (!mode.equals(currentMode)) {
+                                settlePillToSegment(segmentIndexForMode(currentMode));
+                            }
+                        } else {
+                            // Same mode: settle the scale + stay on the segment.
+                            settlePillToSegment(seg);
+                        }
+                        return true;
+                    }
+                    return false;
+                }
+                default:
+                    return false;
+            }
+        };
+        FrameLayout[] segments = { segmentFadCam, segmentFadRec, segmentFadMic };
+        for (FrameLayout seg : segments) {
+            if (seg != null) seg.setOnTouchListener(dragListener);
+        }
+    }
+
+    private void grabPill() {
+        if (switcherRoot == null || activeIndicator == null || dragActive) return;
+        // Belt-and-suspenders: unclip every ancestor so the scaled pill can
+        // overflow freely in all directions.
+        unclipHierarchy(activeIndicator);
+        // Scale from the exact center so growth is symmetric on all sides.
+        activeIndicator.setPivotX(activeIndicator.getWidth() / 2f);
+        activeIndicator.setPivotY(activeIndicator.getHeight() / 2f);
+        cancelActiveIndicatorAnimation();
+        dragBaseX = activeIndicator.getX();
+        dragActive = true;
+        dragHighlightedSegment = nearestSegment(dragBaseX);
+        // Pick-up: scale up like the quick-action reorder.
+        activeIndicator.animate().scaleX(1.15f).scaleY(1.15f).setDuration(150).start();
+        activeIndicator.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+        setPillDragGate(true);
+    }
+
+    private void unclipHierarchy(View v) {
+        try {
+            ViewParent p = v.getParent();
+            while (p instanceof android.view.ViewGroup) {
+                android.view.ViewGroup g = (android.view.ViewGroup) p;
+                g.setClipChildren(false);
+                g.setClipToPadding(false);
+                p = p.getParent();
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "unclipHierarchy failed: " + e.getMessage());
+        }
+    }
+
+    private void cancelDragLongPress() {
+        if (dragLongPressRunnable != null) {
+            dragHandler.removeCallbacks(dragLongPressRunnable);
+            dragLongPressRunnable = null;
+        }
+    }
+
+    private void setPillDragGate(boolean active) {
+        try {
+            android.content.Context c = switcherRoot != null ? switcherRoot.getContext() : context;
+            if (c instanceof com.fadcam.MainActivity) {
+                ((com.fadcam.MainActivity) c).setModePillDragActive(active);
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "setPillDragGate failed: " + e.getMessage());
+        }
+    }
+
+    private void updateCachedSegmentGeometry() {
+        if (switcherRoot == null) return;
+        float rootW = switcherRoot.getWidth();
+        if (rootW <= 0f) return;
+        cachedSegmentWidth = rootW / 3f;
+        float pad = switcherRoot.getPaddingLeft();
+        for (int i = 0; i < 3; i++) {
+            cachedSegmentLefts[i] = pad + i * cachedSegmentWidth;
+        }
+    }
+
+    private float segmentCenter(int index) {
+        if (cachedSegmentWidth <= 0f) {
+            updateCachedSegmentGeometry();
+        }
+        return cachedSegmentLefts[index] + cachedSegmentWidth / 2f;
+    }
+
+    private int nearestSegment(float indicatorLeft) {
+        float center = indicatorLeft
+                + (activeIndicator != null ? activeIndicator.getWidth() / 2f : 0f);
+        int best = 0;
+        float bestDist = Float.MAX_VALUE;
+        for (int i = 0; i < 3; i++) {
+            float d = Math.abs(center - segmentCenter(i));
+            if (d < bestDist) {
+                bestDist = d;
+                best = i;
+            }
+        }
+        return best;
+    }
+
+    private String modeForSegment(int index) {
+        if (index == 1) return Constants.MODE_FADREC;
+        if (index == 2) return Constants.MODE_FADMIC;
+        return Constants.MODE_FADCAM;
+    }
+
+    private int segmentIndexForMode(String mode) {
+        if (Constants.MODE_FADREC.equals(mode)) return 1;
+        if (Constants.MODE_FADMIC.equals(mode)) return 2;
+        return 0;
+    }
+
+    private void settlePillToSegment(int index) {
+        if (activeIndicator == null || switcherRoot == null) return;
+        float targetLeft = cachedSegmentLefts[index];
+        if (cachedSegmentWidth <= 0f) updateCachedSegmentGeometry();
+        cancelActiveIndicatorAnimation();
+        activeIndicator.animate()
+                .x(targetLeft)
+                .scaleX(1f).scaleY(1f)
+                .setDuration(200)
+                .setInterpolator(new FastOutSlowInInterpolator())
+                .withEndAction(() -> {
+                    if (activeIndicator != null) activeIndicator.setX(targetLeft);
+                })
+                .start();
+        activeIndicator.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+    }
+
     /**
      * Update the active state visual indicator
      * @param activeMode The currently active mode
@@ -486,8 +799,9 @@ public class ModeSwitcherComponent {
      * @param modeName The name of the mode
      */
     private void showComingSoonToast(String modeName) {
-        String message = modeName + " coming soon! 🚀";
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        // modeName is already a complete sentence (e.g. "FadMic (Mic Recording)
+        // coming soon!") — never append, that duplicated "coming soon" in the toast.
+        Toast.makeText(context, modeName, Toast.LENGTH_SHORT).show();
         FLog.d(TAG, "Showed coming soon toast for: " + modeName);
     }
     

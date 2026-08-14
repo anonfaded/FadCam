@@ -92,9 +92,24 @@
     <!-- FadRec audio source picker -->
     <string name="fadrec_audio_source_title">Πηγή Ήχου</string>
     <string name="fadrec_audio_source_choose">Επιλογή πηγής ήχου</string>
+
+	<string name="fadrec_audio_source_helper">Επιλέξτε τι ήχο καταγράφουν οι εγγραφές οθόνης. Η \"Προεπιλογή (δρομολόγηση συστήματος)\" συνιστάται για μικρόφωνα USB και ενσύρματα — ή επιλέξτε μια συγκεκριμένη συσκευή για ρητή δρομολόγηση.</string>
+	<string name="fadrec_audio_source_mic_default">Μικρόφωνο (προεπιλεγμένη δρομολόγηση)</string>
     <string name="fadrec_audio_source_none">Χωρίς Ήχο</string>
     <string name="fadrec_audio_source_mic">Μικρόφωνο</string>
     <string name="fadrec_audio_source_internal">Ήχος Συσκευής (Εσωτερικός)</string>
+
+	<string name="screen_rec_audio_device_title">Συσκευή εισόδου ήχου</string>
+	<string name="screen_rec_audio_device_default">Προεπιλογή (δρομολόγηση συστήματος)</string>
+	<string name="screen_rec_audio_device_helper">Επιλέξτε το μικρόφωνο με το οποίο ηχογραφούν οι εγγραφές οθόνης. Η \"Προεπιλογή\" χρησιμοποιεί την αυτόματη δρομολόγηση του συστήματος — η αξιόπιστη επιλογή όταν χρησιμοποιείτε μικρόφωνα USB.</string>
+
+    <string name="records_repair_banner_dismiss">Απόρριψη</string>
+
+    <string name="records_repair_banner_message_finalize">Το %1$s δεν οριστικοποιήθηκε όταν σταμάτησε η εγγραφή. Μετατράπηκε αυτόματα σε αναπαραγώγιμη μορφή.</string>
+
+    <string name="records_repair_banner_message_interrupted">Το %1$s δεν ήταν δυνατό να αναπαραχθεί επειδή η εγγραφή διακόπηκε ενώ η εφαρμογή ήταν σε δεύτερο πλάνο. Μετατράπηκε αυτόματα σε αναπαραγώγιμη μορφή.</string>
+
+    <string name="records_repair_banner_title">Η εγγραφή επισκευάστηκε</string>
     <string name="video_recording_started">Η εγγραφή ξεκίνησε</string>
     <string name="video_recording_stopped">Η εγγραφή σταμάτησε</string>
     <string name="video_recording_paused">Η εγγραφή τέθηκε σε παύση</string>
@@ -204,6 +219,7 @@
     <string name="tips_title">Συμβουλές</string>
     <string name="tips_subtitle">Χρήσιμες συμβουλές χρήσης</string>
     <string name="whats_new_title">Τι Νέο</string>
+    <string name="whats_new_no_browser">Δεν βρέθηκε εφαρμογή για το άνοιγμα αυτού του συνδέσμου</string>
     <string name="whats_new_subtitle">Δείτε τις τελευταίες λειτουργίες και ενημερώσεις</string>
     <string name="home_menu">Μενού Αρχικής</string>
     <string name="home_sidebar_title">Αρχική</string>
@@ -710,7 +726,8 @@
     <string name="row_orientation_title">Προσανατολισμός</string>
     <string name="row_record_audio_title">Εγγραφή Ήχου</string>
     <string name="row_input_source_title">Πηγή Εισόδου</string>
-    <string name="row_noise_suppression_title">Καταστολή Θορύβου</string>
+    <string name="row_raw_audio_title">Ακατέργαστος ήχος</string>
+    <string name="raw_audio_banner">Ο πλήρως ακατέργαστος ήχος δεν είναι διαθέσιμος σε αυτή τη συσκευή</string>
     <string name="settings_location_watermark_title">Υδατογράφημα Τοποθεσίας</string>
     <string name="delete_all_videos_title">Διαγραφή Όλων των Βίντεο</string>
     <string name="delete_all_videos_description">Είστε σίγουροι ότι θέλετε να διαγράψετε όλα τα βίντεο;</string>
@@ -812,7 +829,8 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="shortcuts_helper_text">Προσθέστε συντομεύσεις από πάνω. Λειτουργούν επίσης με εφαρμογές αυτοματισμού (π.χ. MacroDroid) για ενεργοποίηση ενεργειών όπως αντιστοίχιση κουμπιών έντασης.</string>
     <string name="shortcuts_add_to_home">Προσθήκη στην Αρχική Οθόνη</string>
     <string name="shortcuts_sheet_helper">Ο εκκινητής σας θα ζητήσει τοποθέτηση.</string>
-    <string name="shortcuts_and_widgets">Συντομεύσεις &amp; Widget</string>
+    <string name="shortcuts_widgets_screen_title">Συντομεύσεις &amp; Widget</string>
+    <string name="shortcuts_and_widgets">Widget</string>
     <string name="video_player_settings_title">Ρυθμίσεις Αναπαραγωγής Βίντεο</string>
     <string name="video_player_settings_helper">Η Ταχύτητα Αναπαραγωγής αλλάζει την κανονική ταχύτητα αναπαραγωγής βίντεο. Η Γρήγορη Ταχύτητα είναι μια προσωρινή ενίσχυση που εφαρμόζεται μόνο όταν κρατάτε πατημένο το βίντεο. Μπορείτε να αλλάξετε αυτές τις ρυθμίσεις εδώ ή απευθείας από την οθόνη Αναπαραγωγής Βίντεο.</string>
     <string name="video_player_settings_subtitle">Αναπαραγωγή &amp; Γρήγορη Ταχύτητα</string>
@@ -913,6 +931,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="shortcut_purpose_start_current">Αυτή η συντόμευση ξεκινά εγγραφή με την τρέχουσα επιλεγμένη λειτουργία κάμερας.</string>
     <string name="shortcut_purpose_start_dual">Αυτή η συντόμευση ξεκινά εγγραφή dual κάμερας (PiP).</string>
     <string name="shortcut_purpose_stop">Αυτή η συντόμευση σταματά την τρέχουσα εγγραφή.</string>
+    <string name="shortcut_purpose_toggle">Ένα δυναμικό συντόμευση που ξεκινάει ή σταματάει την εγγραφή με την προεπιλεγμένη κάμερα — χρησιμοποιήστε τις ξεχωριστές συντομεύσεις Έναρξης και Διακοπής για χειροκίνητο έλεγχο.</string>
     <string name="shortcut_purpose_torch">Αυτή η συντόμευση ενεργοποιεί/απενεργοποιεί τον φακό.</string>
     <string name="shortcut_purpose_photo">Αυτή η συντόμευση τραβά μια φωτογραφία με την πίσω κάμερα.</string>
     <string name="shortcut_purpose_photo_front">Αυτή η συντόμευση τραβά μια φωτογραφία με την μπροστινή κάμερα.</string>
@@ -939,6 +958,8 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="shortcut_start_back">Έναρξη Πίσω</string>
     <string name="shortcut_start_front">Έναρξη Μπροστά</string>
     <string name="shortcut_start_current">Έναρξη Τρέχουσας</string>
+    <string name="shortcut_toggle_recording">Έναρξη / Διακοπή</string>
+    <string name="shortcut_toggle_recording_long">Έναρξη ή διακοπή εγγραφής</string>
     <string name="shortcut_start_dual">Έναρξη Dual</string>
     <string name="stop_recording">Διακοπή</string>
     <string name="shortcut_take_photo">Φωτογραφία</string>
@@ -953,6 +974,14 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="shortcuts_picture_category">Φωτογραφία</string>
     <string name="preview_quick_actions_title">Γρήγορες ενέργειες προεπισκόπησης</string>
     <string name="preview_quick_actions_sub">Εμφάνιση εικονιδίων FadShot και Πλήρους οθόνης.</string>
+    <string name="grid_lines_title">Γραμμές πλέγματος</string>
+    <string name="home_icon_picker_title">Εικονίδιο αρχικής</string>
+    <string name="home_icon_home">Αρχική</string>
+    <string name="home_icon_jet">Μαχητικό αεροσκάφος</string>
+    <string name="home_icon_pilot">Πιλότος</string>
+    <string name="quick_mute_label">Σίγαση</string>
+    <string name="quick_unmute_label">Ήχος</string>
+    <string name="grid_lines_subtitle">Πλέγμα τρίτων στην προεπισκόπηση</string>
     <string name="preview_quick_actions_state_always">Πάντα ορατό (αδρανές + εγγραφή)</string>
     <string name="preview_quick_actions_state_recording_only">Ορατό μόνο κατά την εγγραφή</string>
     <string name="warning_temp_file_detail"><![CDATA[
@@ -1170,7 +1199,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <!-- Helper subtitles for new Audio rows -->
     <string name="helper_record_audio">Εναλλαγή λήψης ήχου μικροφώνου στα βίντεο.</string>
     <string name="helper_audio_input_source">Επιλέξτε ποιο μικρόφωνο/είσοδο θα χρησιμοποιηθεί.</string>
-    <string name="helper_noise_suppression">Πειραματικό φίλτρο μείωσης θορύβου.</string>
+    <string name="helper_raw_audio">Καταγράφει τον ωμό ήχο του μικροφώνου χωρίς την αυτόματη μείωση θορύβου και την εξισορρόπηση έντασης του τηλεφώνου. Ιδανικό αν σκοπεύετε να επεξεργαστείτε μόνοι σας τον ήχο αργότερα. Ισχύει για νέες εγγραφές.</string>
     <string name="helper_audio_advanced">Προσαρμογή ρυθμού μετάδοσης &amp; ρυθμού δειγματοληψίας.</string>
     <string name="helper_audio_bitrate_detail">Συνιστάται: 192000 bps. Εύρος 64000–384000 bps.</string>
     <string name="helper_audio_sampling_detail">Επιλέξτε 48000 Hz για βίντεο ή 44100 Hz για συμβατότητα.</string>
@@ -1185,6 +1214,9 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="helper_location_watermark">Προσθέτει ζωντανή επικάλυψη τοποθεσίας κατά την εγγραφή.</string>
     <string name="helper_location_embed">Ενσωματώνει συντεταγμένες GPS στα μεταδεδομένα βίντεο.</string>
     <string name="video_setting_location_embed_title">Ενσωμάτωση Μεταδεδομένων Τοποθεσίας</string>
+    <string name="setting_video_stabilization_title">Σταθεροποίηση βίντεο</string>
+    <string name="setting_not_supported">Δεν υποστηρίζεται σε αυτή τη συσκευή</string>
+    <string name="video_stabilization_footer">Σταθεροποιεί τα βίντεό σας αντισταθμίζοντας το τρέμουλο του χεριού με ηλεκτρονική (EIS) και οπτική (OIS) σταθεροποίηση. Απαιτείται ελαφρύ περικόψιμο του κάδρου.</string>
     <string name="video_setting_location_embed_enabled">Ενεργοποιημένο</string>
     <string name="video_setting_location_embed_disabled">Απενεργοποιημένο</string>
     <string name="helper_watermark_option">Επιλέξτε περιεχόμενο επικάλυψης.</string>
@@ -1425,13 +1457,13 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="header_logo_avatar" translatable="false">Avatar</string>
     <string name="setting_app_icon_desc">Αλλαγή εικονιδίου και ονόματος εκκινητή</string>
     <string name="app_icon_dialog_title">Επιλογή Εικονιδίου Εφαρμογής</string>
-    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_default" translatable="false">FadCam</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
     <string name="app_icon_pakistan" translatable="false">FadCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_nooristic" translatable="false">FadCam ++</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>
@@ -1651,7 +1683,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="storage_icon_description">Εικονίδιο Αποθήκευσης</string>
     <string name="location_icon_description">Εικονίδιο Τοποθεσίας</string>
     <string name="location_embedding_icon_description">Εικονίδιο Ενσωμάτωσης Τοποθεσίας</string>
-    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Σύρετε δεξιά για συνέχεια</string>
     <string name="onboarding_select_language">Επιλέξτε γλώσσα εφαρμογής.</string>
@@ -1779,7 +1811,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="camera_error_service">Σφάλμα υπηρεσίας κάμερας</string>
     <string name="camera_error_unknown">Άγνωστο σφάλμα κάμερας</string>
     <string name="camera_resources_cooldown">Παρακαλώ περιμένετε πριν ξεκινήσετε νέα εγγραφή</string>
-    <string name="dialog_audio_noise_suppression_label">Καταστολή Θορύβου</string>
+    <string name="raw_audio_unprocessed_note">Ο πλήρως ακατέργαστος ήχος δεν είναι διαθέσιμος σε αυτή τη συσκευή. Χρησιμοποιείται αντί αυτού η λειτουργία μικροφώνου αναγνώρισης φωνής (VOICE_RECOGNITION), η οποία απενεργοποιεί το μεγαλύτερο μέρος της επεξεργασίας — η διαφορά από την κανονική εγγραφή μπορεί να είναι διακριτική.</string>
     <!-- duplicate removed: row_record_audio_title already defined above -->
     <string name="fix_video_menu_title">Επιδιόρθωση Βίντεο</string>
     <string name="fix_video_repairing">Επιδιόρθωση…</string>
@@ -2046,6 +2078,10 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="motion_lab_row_subtitle">Έξυπνη εγγραφή συμβάντων για χρήση CCTV</string>
     <string name="automation_title">Αυτοματισμός</string>
     <string name="automation_row_subtitle">Αντιστοίχιση κουμπιών, τηλεχειριστήρια Bluetooth, πλήκτρα έντασης</string>
+    <string name="setting_volume_shutter_title">Σκανδάλη πλήκτρων έντασης</string>
+    <string name="setting_volume_shutter_summary">Τα πλήκτρα έντασης λειτουργούν ως κλείστρο κάμερας στην αρχική καρτέλα</string>
+    <string name="setting_volume_shutter_footer">Τα πλήκτρα έντασης γίνονται το κλείστρο σας στην αρχική καρτέλα:\n• Πάτημα — λήψη φωτογραφίας\n• Διπλό πάτημα — εναλλαγή κάμερας\n• Παρατεταμένο πάτημα — έναρξη ή διακοπή εγγραφής\n\nΤα τηλεχειριστήρια Bluetooth λειτουργούν επίσης και ενεργοποιούν τις ίδιες ενέργειες. Τα πλήκτρα λειτουργούν όσο η αρχική καρτέλα FadCam είναι ανοιχτή — οι μελλοντικές εκδόσεις θα επιτρέπουν σε οποιοδήποτε πλήκτρο να ενεργοποιεί ενέργειες FadCam, ακόμη και στο παρασκήνιο.\n\nΠρος το παρόν, χρησιμοποιήστε το MacroDroid για να αντιστοιχίσετε τις συντομεύσεις FadCam — θα τις βρείτε στις Ρυθμίσεις → Συντομεύσεις &amp; Widgets.</string>
+    <string name="shortcuts_macrodroid_template">Επίσημο πρότυπο MacroDroid: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Θερμικός Φύλακας</string>
     <string name="thermal_guardian_row_subtitle">Αυτόματη προσαρμογή εγγραφής για αποφυγή υπερθέρμανσης</string>
     <string name="audio_vision_title">Ηχητική Όραση</string>
@@ -2217,6 +2253,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="watermark_gps_disabled_warning">⚠ Το GPS είναι απενεργοποιημένο</string>
     <string name="watermark_gps_disabled_home_toast">Οι λειτουργίες υδατογραφήματος που εξαρτώνται από τοποθεσία είναι ενεργοποιημένες αλλά το GPS είναι απενεργοποιημένο.</string>
     <string name="watermark_gps_disabled_banner_message">Οι λειτουργίες υδατογραφήματος που εξαρτώνται από τοποθεσία δεν θα εμφανίζονται μέχρι να ενεργοποιηθεί η τοποθεσία</string>
+    <string name="watermark_day_title">Ημέρα</string>
     <string name="watermark_timezone_title">Ζώνη Ώρας</string>
     <string name="watermark_timezone_off">Απενεργοποιημένο</string>
     <string name="watermark_timezone_on_gmt">Ενεργοποιημένο — Απόκλιση GMT στο υδατογράφημα</string>

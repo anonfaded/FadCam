@@ -32,7 +32,7 @@ android {
         minSdk = 24
         targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 39
+        versionCode = 46
         versionName = "4.0.0"
         vectorDrawables.useSupportLibrary = true
         
@@ -67,7 +67,7 @@ android {
         debug {
             applicationIdSuffix = ".beta"
             isDebuggable = true
-            versionNameSuffix = "-beta10.3" // Increment the beta version suffix for each release. Use `beta1` for the first beta release, then `beta2`, etc.
+            versionNameSuffix = "-beta10.4" // Increment the beta version suffix for each release. Use `beta1` for the first beta release, then `beta2`, etc.
             resValue("string", "app_name", "FadCam Beta")
         }
         
@@ -145,20 +145,23 @@ android {
 // ./gradlew assembleWeatherProRelease - Weather Pro variant
 // ./gradlew assembleDefaultProPlusRelease -PcustomAppName="Custom Name" - Pro+ custom build (standalone)
 
-    // Variant filter: only build specific variants
-    variantFilter {
-        val isPreBuiltFlavor = name.contains("notesPro") || name.contains("calcPro") || name.contains("weatherPro")
-        val isDefaultFlavor = name.contains("default")
-        
-        if (isPreBuiltFlavor) {
-            // Pre-built flavors: only 'release' build type
-            if (!name.endsWith("Release")) {
-                ignore = true
-            }
-        } else if (isDefaultFlavor) {
-            // Default flavor: allow 'debug', 'release', and 'proPlus' build types
-            if (name.endsWith("Pro") && !name.endsWith("ProPlus")) {
-                ignore = true
+    // Variant filter: only build specific variants (modern API — the old
+    // variantFilter{} is deprecated since AGP 8.x).
+    androidComponents {
+        beforeVariants { variant ->
+            val isPreBuiltFlavor = variant.name.contains("notesPro") || variant.name.contains("calcPro") || variant.name.contains("weatherPro")
+            val isDefaultFlavor = variant.name.contains("default")
+
+            if (isPreBuiltFlavor) {
+                // Pre-built flavors: only 'release' build type
+                if (!variant.name.endsWith("Release")) {
+                    variant.enable = false
+                }
+            } else if (isDefaultFlavor) {
+                // Default flavor: allow 'debug', 'release', and 'proPlus' build types
+                if (variant.name.endsWith("Pro") && !variant.name.endsWith("ProPlus")) {
+                    variant.enable = false
+                }
             }
         }
     }

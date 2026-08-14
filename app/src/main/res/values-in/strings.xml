@@ -135,9 +135,24 @@
     <!-- FadRec audio source picker -->
     <string name="fadrec_audio_source_title">Sumber Audio</string>
     <string name="fadrec_audio_source_choose">Pilih sumber audio</string>
+
+	<string name="fadrec_audio_source_helper">Pilih audio yang direkam oleh rekaman layar. \"Default (rute sistem)\" disarankan untuk mikrofon USB dan berkabel — atau pilih perangkat tertentu untuk rute eksplisit.</string>
+	<string name="fadrec_audio_source_mic_default">Mikrofon (rute default)</string>
     <string name="fadrec_audio_source_none">Tanpa Audio</string>
     <string name="fadrec_audio_source_mic">Mikrofon</string>
     <string name="fadrec_audio_source_internal">Audio Perangkat (Internal)</string>
+
+	<string name="screen_rec_audio_device_title">Perangkat Masukan Audio</string>
+	<string name="screen_rec_audio_device_default">Default (rute sistem)</string>
+	<string name="screen_rec_audio_device_helper">Pilih mikrofon yang digunakan untuk merekam layar. \"Default\" menggunakan rute otomatis sistem — opsi paling andal saat menggunakan mikrofon USB.</string>
+
+    <string name="records_repair_banner_dismiss">Tutup</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s tidak difinalisasi saat perekaman dihentikan. File telah dikonversi otomatis ke format yang dapat diputar.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s tidak dapat diputar karena perekaman terputus saat aplikasi berada di latar belakang. File telah dikonversi otomatis ke format yang dapat diputar.</string>
+
+    <string name="records_repair_banner_title">Rekaman diperbaiki</string>
 
     <string name="video_recording_started">Perekaman dimulai</string>
     <string name="video_recording_stopped">Perekaman dihentikan</string>
@@ -248,6 +263,7 @@
     <string name="tips_title">Tips</string>
     <string name="tips_subtitle">Tips penggunaan yang bermanfaat</string>
     <string name="whats_new_title">Yang Baru</string>
+    <string name="whats_new_no_browser">Tidak ada aplikasi untuk membuka tautan ini</string>
     <string name="whats_new_subtitle">Lihat fitur dan pembaruan terbaru</string>
     <string name="home_menu">Menu Utama</string>
     <string name="home_sidebar_title">Beranda</string>
@@ -754,7 +770,8 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="row_orientation_title">Orientasi</string>
     <string name="row_record_audio_title">Rekam Audio</string>
     <string name="row_input_source_title">Sumber Input</string>
-    <string name="row_noise_suppression_title">Peredam Kebisingan</string>
+    <string name="row_raw_audio_title">Audio mentah</string>
+    <string name="raw_audio_banner">Audio mentah sepenuhnya tidak tersedia di perangkat ini</string>
     <string name="settings_location_watermark_title">Tanda Air Lokasi</string>
     <string name="delete_all_videos_title">Hapus semua Video</string>
     <string name="delete_all_videos_description">Apakah kamu yakin mau menghapus semua video?</string>
@@ -855,7 +872,8 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="shortcuts_helper_text">Tambahkan pintasan dari atas. Pintasan ini juga berfungsi dengan aplikasi otomasi (mis., MacroDroid) untuk memicu tindakan seperti memetakan tombol volume.</string>
     <string name="shortcuts_add_to_home">Tambahkan ke layar Beranda</string>
     <string name="shortcuts_sheet_helper">Launcher Anda akan meminta penempatan.</string>
-    <string name="shortcuts_and_widgets">Pintasan &amp; Widget</string>
+    <string name="shortcuts_widgets_screen_title">Pintasan &amp; Widget</string>
+    <string name="shortcuts_and_widgets">Widget</string>
     <string name="video_player_settings_title">Pengaturan Pemutar Video</string>
     <string name="video_player_settings_helper">Kecepatan Putar mengubah kecepatan normal pemutaran video. Kecepatan Cepat adalah dorongan sementara yang hanya diterapkan selama Anda menekan dan menahan video. Anda dapat mengubah pengaturan ini di sini atau langsung dari layar Pemutar Video.</string>
     <string name="video_player_settings_subtitle">Putar &amp; Kecepatan Cepat</string>
@@ -957,6 +975,7 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="shortcut_purpose_start_current">Pintasan ini memulai perekaman dengan mode kamera yang sedang dipilih.</string>
     <string name="shortcut_purpose_start_dual">Pintasan ini memulai perekaman kamera dual (PiP).</string>
     <string name="shortcut_purpose_stop">Pintasan ini menghentikan perekaman saat ini.</string>
+    <string name="shortcut_purpose_toggle">Satu pintasan dinamis yang memulai atau menghentikan perekaman dengan kamera default — gunakan pintasan Mulai dan Hentikan terpisah untuk kontrol manual.</string>
     <string name="shortcut_purpose_torch">Pintasan ini mengaktifkan/menonaktifkan senter.</string>
     <string name="shortcut_purpose_photo">Pintasan ini mengambil foto kamera belakang dan menyimpannya ke lokasi FadCam/FadShot.</string>
     <string name="shortcut_purpose_photo_front">Pintasan ini mengambil foto kamera depan dan menyimpannya ke lokasi FadCam/FadShot.</string>
@@ -983,6 +1002,8 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="shortcut_start_back">Start Back</string>
     <string name="shortcut_start_front">Start Front</string>
     <string name="shortcut_start_current">Start Current</string>
+    <string name="shortcut_toggle_recording">Mulai / Hentikan</string>
+    <string name="shortcut_toggle_recording_long">Mulai atau hentikan perekaman</string>
     <string name="shortcut_start_dual">Start Dual</string>
     <string name="stop_recording">Hentikan</string>
     <string name="shortcut_take_photo">Photo</string>
@@ -997,6 +1018,14 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="shortcuts_picture_category">Picture</string>
     <string name="preview_quick_actions_title">Preview quick actions</string>
     <string name="preview_quick_actions_sub">Show FadShot and Fullscreen icons even when recording is idle.</string>
+    <string name="grid_lines_title">Garis kisi</string>
+    <string name="home_icon_picker_title">Ikon beranda</string>
+    <string name="home_icon_home">Beranda</string>
+    <string name="home_icon_jet">Jet tempur</string>
+    <string name="home_icon_pilot">Pilot</string>
+    <string name="quick_mute_label">Bisukan</string>
+    <string name="quick_unmute_label">Suara</string>
+    <string name="grid_lines_subtitle">Kisi sepertiga di pratinjau</string>
     <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>
     <string name="preview_quick_actions_state_recording_only">Visible only while recording</string>
     <string name="warning_temp_file_detail">
@@ -1223,7 +1252,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Helper subtitles for new Audio rows -->
     <string name="helper_record_audio">Aktifkan/nonaktifkan pengambilan audio mikrofon dalam video.</string>
     <string name="helper_audio_input_source">Pilih mikrofon/input yang terhubung untuk digunakan.</string>
-    <string name="helper_noise_suppression">Filter eksperimental untuk mengurangi kebisingan latar belakang.</string>
+    <string name="helper_raw_audio">Merekam suara mentah mikrofon tanpa pengurangan kebisingan dan penyeimbangan volume otomatis ponsel. Bagus jika Anda berencana menyunting audio sendiri nanti. Berlaku untuk rekaman baru.</string>
     <string name="helper_audio_advanced">Kustomisasi bitrate &amp; sampling rate untuk keseimbangan kualitas/ukuran.</string>
     <string name="helper_audio_bitrate_detail">Disarankan: 192000 bps untuk stereo berkualitas tinggi. Nilai yang lebih rendah mengurangi ukuran file tetapi dapat mengurangi kejernihan. Rentang 64000–384000 bps.</string>
     <string name="helper_audio_sampling_detail">Pilih 48000 Hz untuk video (disarankan) atau 44100 Hz untuk kompatibilitas audio umum.</string>
@@ -1238,6 +1267,9 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="helper_location_watermark">Menambahkan overlay teks lokasi langsung saat merekam.</string>
     <string name="helper_location_embed">Menyematkan koordinat GPS ke dalam metadata video (geotag).</string>
     <string name="video_setting_location_embed_title">Sematkan Metadata Lokasi</string>
+    <string name="setting_video_stabilization_title">Stabilisasi video</string>
+    <string name="setting_not_supported">Tidak didukung di perangkat ini</string>
+    <string name="video_stabilization_footer">Menjaga rekaman video tetap stabil dengan mengimbangi getaran tangan melalui stabilisasi elektronik (EIS) dan optik (OIS). Sebagian kecil bingkai dipotong untuk mencapai hal ini.</string>
     <string name="video_setting_location_embed_enabled">Diaktifkan</string>
     <string name="video_setting_location_embed_disabled">Dinonaktifkan</string>
     <string name="helper_watermark_option">Pilih konten overlay: stempel waktu + merek, stempel waktu saja, atau tidak ada.</string>
@@ -1507,13 +1539,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <string name="setting_app_icon_desc">Ubah ikon dan nama aplikasi di peluncur</string>
     <string name="app_icon_dialog_title">Pilih Ikon Aplikasi</string>
-    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_default" translatable="false">FadCam</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
     <string name="app_icon_pakistan" translatable="false">FadCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_nooristic" translatable="false">FadCam ++</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>
@@ -1742,7 +1774,7 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="location_icon_description">Ikon Lokasi</string>
     <string name="location_embedding_icon_description">Ikon Penyematan Lokasi</string>
 
-    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
 
     <!-- Onboarding Strings -->
     <string name="onboarding_swipe_instruction">Geser ke kanan untuk melanjutkan</string>
@@ -1877,7 +1909,7 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="camera_error_service">Kesalahan layanan kamera</string>
     <string name="camera_error_unknown">Kesalahan kamera tidak diketahui</string>
     <string name="camera_resources_cooldown">Harap tunggu sebentar sebelum memulai perekaman baru</string>
-    <string name="dialog_audio_noise_suppression_label">Penekanan Kebisingan</string>
+    <string name="raw_audio_unprocessed_note">Audio mentah sepenuhnya tidak tersedia di perangkat ini. Sebagai gantinya digunakan mode mikrofon pengenalan suara (VOICE_RECOGNITION), yang menonaktifkan sebagian besar pemrosesan — perbedaannya dari rekaman normal mungkin halus.</string>
     <!-- duplicate removed: row_record_audio_title already defined above -->
 
     <string name="fix_video_menu_title">Perbaiki Video (Perbaiki Pemutaran)</string>
@@ -2169,6 +2201,10 @@ Apakah Anda ingin beralih ke H.264 dan mulai merekam?</string>
     <string name="motion_lab_row_subtitle">Perekaman peristiwa cerdas untuk penggunaan gaya CCTV</string>
     <string name="automation_title">Otomatisasi</string>
     <string name="automation_row_subtitle">Pemetaan tombol, remote Bluetooth, tombol volume</string>
+    <string name="setting_volume_shutter_title">Rana Tombol Volume</string>
+    <string name="setting_volume_shutter_summary">Tombol volume berfungsi sebagai rana kamera di tab beranda</string>
+    <string name="setting_volume_shutter_footer">Tombol volume menjadi rana kamera Anda di tab beranda:\n• Ketuk — ambil foto\n• Ketuk dua kali — ganti kamera\n• Tahan — mulai atau hentikan rekaman\n\nRemote Bluetooth juga berfungsi dan memicu tindakan yang sama. Tombol berfungsi saat tab beranda FadCam terbuka — versi mendatang akan memungkinkan tombol mana pun memicu tindakan FadCam, bahkan di latar belakang.\n\nUntuk saat ini, gunakan MacroDroid untuk memetakan pintasan FadCam — temukan di Setelan → Pintasan &amp; Widget.</string>
+    <string name="shortcuts_macrodroid_template">Template resmi MacroDroid: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Pelindung Termal</string>
     <string name="thermal_guardian_row_subtitle">Sesuaikan perekaman secara otomatis untuk mencegah panas berlebih</string>
     <string name="audio_vision_title">Visi Audio</string>
@@ -2368,6 +2404,7 @@ Catatan: Setidaknya satu metode keluar harus tetap diaktifkan untuk mencegah ter
     <string name="watermark_gps_disabled_warning">⚠ GPS mati — aktifkan lokasi perangkat agar fitur ini berfungsi</string>
     <string name="watermark_gps_disabled_home_toast">Fitur tanda air bergantung lokasi diaktifkan tetapi GPS mati. Aktifkan lokasi perangkat agar berfungsi.</string>
     <string name="watermark_gps_disabled_banner_message">Fitur tanda air bergantung lokasi tidak akan muncul sampai lokasi perangkat diaktifkan</string>
+    <string name="watermark_day_title">Hari</string>
     <string name="watermark_timezone_title">Zona Waktu</string>
     <string name="watermark_timezone_off">Mati</string>
     <string name="watermark_timezone_on_gmt">Aktif — Offset GMT di tanda air</string>

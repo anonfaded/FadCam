@@ -170,6 +170,9 @@ public class ForensicsGalleryFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         embeddedMode = getArguments() != null && getArguments().getBoolean(ARG_EMBEDDED, false);
 
+        // Restore persisted grid span before layout setup
+        currentGridSpan = SharedPreferencesManager.getInstance(requireContext()).getLabGridSpan();
+
         recycler = view.findViewById(R.id.recycler_gallery);
         swipeRefresh = view.findViewById(R.id.swipe_gallery);
         emptyState = view.findViewById(R.id.layout_gallery_empty_state);
@@ -1012,6 +1015,8 @@ public class ForensicsGalleryFragment extends Fragment {
             }
         });
         adapter.setGridSpan(currentGridSpan);
+        // Persist so the choice survives cold starts.
+        SharedPreferencesManager.getInstance(requireContext()).setLabGridSpan(currentGridSpan);
         grid.requestLayout();
     }
 

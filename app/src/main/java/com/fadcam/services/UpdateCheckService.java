@@ -166,27 +166,32 @@ public class UpdateCheckService {
         if (lv.major != cv.major) return lv.major > cv.major;
         if (lv.minor != cv.minor) return lv.minor > cv.minor;
         if (lv.patch != cv.patch) return lv.patch > cv.patch;
-        if (cv.beta == null && lv.beta == null) return false;
-        if (cv.beta != null && lv.beta == null) return true;
-        if (cv.beta == null && lv.beta != null) return false;
-        return lv.beta > cv.beta;
+        // Beta handling: betaSeries == null means a STABLE release (newer than any
+        // beta of the same version). Dotted betas (e.g. "-beta10.4") compare the
+        // series first, then the patch — so beta10.10 correctly beats beta10.9.
+        if (cv.betaSeries == null && lv.betaSeries == null) return false;
+        if (cv.betaSeries == null && lv.betaSeries != null) return false; // stable current, beta latest
+        if (cv.betaSeries != null && lv.betaSeries == null) return true;  // beta current, stable latest
+        if (lv.betaSeries != cv.betaSeries) return lv.betaSeries > cv.betaSeries;
+        return lv.betaPatch > cv.betaPatch;
     }
 
     static Version parse(String raw) {
-        if (raw == null) return new Version(0,0,0,null);
-        Matcher m = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)-beta(\\d+)$", Pattern.CASE_INSENSITIVE).matcher(raw);
-        if (m.find()) return new Version(i(m,1), i(m,2), i(m,3), i(m,4));
+        if (raw == null) return new Version(0,0,0,null,0);
+        // Full: 4.0.0-beta10 / 4.0.0-beta10.3 (dotted patch supported)
+        Matcher m = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)-beta(\\d+)(?:\\.(\\d+))?$", Pattern.CASE_INSENSITIVE).matcher(raw);
+        if (m.find()) return new Version(i(m,1), i(m,2), i(m,3), i(m,4), m.group(5) != null ? i(m,5) : 0);
         m = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)-beta$", Pattern.CASE_INSENSITIVE).matcher(raw);
-        if (m.find()) return new Version(i(m,1), i(m,2), i(m,3), 1);
+        if (m.find()) return new Version(i(m,1), i(m,2), i(m,3), 1, 0);
         m = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)").matcher(raw);
-        if (m.find()) return new Version(i(m,1), i(m,2), i(m,3), null);
-        return new Version(0,0,0,null);
+        if (m.find()) return new Version(i(m,1), i(m,2), i(m,3), null, 0);
+        return new Version(0,0,0,null,0);
     }
 
     private static int i(Matcher m, int g) { return Integer.parseInt(m.group(g)); }
 
     static class Version {
-        final int major, minor, patch; final Integer beta;
-        Version(int a, int b, int c, Integer d) { major=a; minor=b; patch=c; beta=d; }
+        final int major, minor, patch; final Integer betaSeries; final int betaPatch;
+        Version(int a, int b, int c, Integer s, int p) { major=a; minor=b; patch=c; betaSeries=s; betaPatch=p; }
     }
 }

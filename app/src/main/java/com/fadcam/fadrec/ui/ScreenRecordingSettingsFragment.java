@@ -59,6 +59,7 @@ public class ScreenRecordingSettingsFragment extends Fragment {
     private TextView valueBitrate;
     private TextView valueOrientation;
     private TextView valueAudioSource;
+    private TextView valueAudioDevice;
     private TextView valueSplitting;
 
     @Nullable
@@ -69,6 +70,7 @@ public class ScreenRecordingSettingsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
         prefs = SharedPreferencesManager.getInstance(requireContext());
 
@@ -77,6 +79,7 @@ public class ScreenRecordingSettingsFragment extends Fragment {
         valueBitrate = view.findViewById(R.id.value_bitrate);
         valueOrientation = view.findViewById(R.id.value_orientation);
         valueAudioSource = view.findViewById(R.id.value_audio_source);
+        valueAudioDevice = view.findViewById(R.id.value_audio_device);
         valueSplitting = view.findViewById(R.id.value_splitting);
 
         ImageView backBtn = view.findViewById(R.id.back_button);
@@ -104,6 +107,7 @@ public class ScreenRecordingSettingsFragment extends Fragment {
         root.findViewById(R.id.row_bitrate).setOnClickListener(v -> showBitrateModePicker());
         root.findViewById(R.id.row_orientation).setOnClickListener(v -> showOrientationPicker());
         root.findViewById(R.id.row_audio_source).setOnClickListener(v -> showAudioSourcePicker());
+        root.findViewById(R.id.row_audio_device).setOnClickListener(v -> showAudioDevicePicker());
         root.findViewById(R.id.row_video_splitting).setOnClickListener(v -> showVideoSplittingPicker());
     }
 
@@ -142,6 +146,10 @@ public class ScreenRecordingSettingsFragment extends Fragment {
             } else {
                 valueAudioSource.setText(getString(R.string.fadrec_audio_source_mic));
             }
+        }
+
+        if (valueAudioDevice != null) {
+            valueAudioDevice.setText(buildAudioDeviceStatus());
         }
 
         // Video splitting — uses shared prefs (same as FadCam)
@@ -348,8 +356,145 @@ public class ScreenRecordingSettingsFragment extends Fragment {
 
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
                 getString(R.string.fadrec_audio_source_title), items, current, resultKey,
-                getString(R.string.fadrec_audio_source_choose));
+                getString(R.string.fadrec_audio_source_helper));
         sheet.show(getParentFragmentManager(), "screen_audio_source_picker");
+    }
+
+    // ── Audio input device (independent from video mode, issue #334) ──
+    // "Default" = system routing (no forced device) — the reliable legacy behavior.
+    // Any external device = explicit force-routing via setAudioDevice at record time.
+
+    private String buildAudioDeviceStatus() {
+        if (!SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED.equals(
+                prefs.getScreenRecordingAudioInputSource())) {
+            return getString(R.string.screen_rec_audio_device_default);
+        }
+        String name = prefs.getScreenRecordingAudioDeviceName();
+        if (name != null && !name.isEmpty()) {
+            return name;
+        }
+        return getDeviceTypeLabel(prefs.getScreenRecordingAudioDeviceType());
+    }
+
+    private String getDeviceTypeLabel(int type) {
+        if (type == android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET) return getString(R.string.audio_device_type_wired_headset);
+        if (type == android.media.AudioDeviceInfo.TYPE_USB_DEVICE) return getString(R.string.audio_device_type_usb);
+        if (type == android.media.AudioDeviceInfo.TYPE_USB_HEADSET) return getString(R.string.audio_device_type_usb_headset);
+        if (type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO) return getString(R.string.audio_device_type_bt_sco);
+        if (type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) return getString(R.string.audio_device_type_bt_a2dp);
+        if (type == android.media.AudioDeviceInfo.TYPE_BLE_HEADSET) return getString(R.string.audio_device_type_ble_headset);
+        return getString(R.string.audio_device_type_external);
+    }
+
+    private void showAudioDevicePicker() {
+        if (!isAdded() || getActivity() == null) return;
+
+        ArrayList<OptionItem> items = new ArrayList<>();
+        String defaultId = SharedPreferencesManager.AUDIO_INPUT_SOURCE_PHONE;
+        items.add(new OptionItem(defaultId, getString(R.string.screen_rec_audio_device_default),
+                getString(R.string.screen_rec_audio_device_helper)));
+
+        // Enumerate external input devices (same candidates as video mode's picker).
+        try {
+            android.media.AudioManager am = (android.media.AudioManager)
+                    requireContext().getSystemService(Context.AUDIO_SERVICE);
+            android.media.AudioDeviceInfo[] devices =
+                    am.getDevices(android.media.AudioManager.GET_DEVICES_INPUTS);
+            if (devices != null) {
+                for (android.media.AudioDeviceInfo device : devices) {
+                    if (device == null || !com.fadcam.utils.AudioDeviceResolver.isExternalInputDevice(device.getType())) {
+                        continue;
+                    }
+                    CharSequence pn = device.getProductName();
+                    String label = pn != null ? pn.toString() : getDeviceTypeLabel(device.getType());
+                    String id = "dev:" + device.getType() + ":" + label; // unique per device
+                    items.add(new OptionItem(id, label, getDeviceTypeLabel(device.getType())));
+                }
+            }
+        } catch (Exception e) {
+            com.fadcam.FLog.e("ScreenRecordingSettingsFragment", "Failed to enumerate audio devices", e);
+        }
+
+        String currentId;
+        if (SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED.equals(
+                prefs.getScreenRecordingAudioInputSource())) {
+            String name = prefs.getScreenRecordingAudioDeviceName();
+            if (name != null && !name.isEmpty()) {
+                currentId = "dev:" + prefs.getScreenRecordingAudioDeviceType() + ":" + name;
+            } else {
+                currentId = "dev:" + prefs.getScreenRecordingAudioDeviceType() + ":";
+            }
+        } else {
+            currentId = defaultId;
+        }
+
+        final String resultKey = "picker_result_screen_audio_device";
+        getParentFragmentManager().setFragmentResultListener(resultKey, getViewLifecycleOwner(), (key, bundle) -> {
+            String sel = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (sel == null) return;
+            if (defaultId.equals(sel)) {
+                prefs.setScreenRecordingAudioInputSource(SharedPreferencesManager.AUDIO_INPUT_SOURCE_PHONE);
+                prefs.setScreenRecordingAudioDeviceType(-1);
+                prefs.setScreenRecordingAudioDeviceName(null);
+            } else if (sel.startsWith("dev:")) {
+                // Find the matching device for its product name/type.
+                String[] parts = sel.split(":", 3);
+                int type = parts.length > 1 ? parseType(parts[1]) : -1;
+                String label = parts.length > 2 ? parts[2] : null;
+                String name = null;
+                if (label != null && !label.isEmpty()) {
+                    // Resolve the real product name (label may be a type label fallback).
+                    for (OptionItem item : items) {
+                        if (item.id.equals(sel)) {
+                            CharSequence pn = findDeviceProductName(item);
+                            if (pn != null) name = pn.toString();
+                            break;
+                        }
+                    }
+                    if (name == null) name = label;
+                }
+                prefs.setScreenRecordingAudioInputSource(SharedPreferencesManager.AUDIO_INPUT_SOURCE_WIRED);
+                prefs.setScreenRecordingAudioDeviceType(type);
+                prefs.setScreenRecordingAudioDeviceName(name);
+            }
+            refreshValues();
+        });
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
+                getString(R.string.screen_rec_audio_device_title), items, currentId, resultKey,
+                getString(R.string.screen_rec_audio_device_helper));
+        sheet.show(getParentFragmentManager(), "screen_audio_device_picker");
+    }
+
+    /** Finds the real product name for a picked device item by re-enumerating. */
+    @Nullable
+    private CharSequence findDeviceProductName(OptionItem pickedItem) {
+        try {
+            android.media.AudioManager am = (android.media.AudioManager)
+                    requireContext().getSystemService(Context.AUDIO_SERVICE);
+            android.media.AudioDeviceInfo[] devices =
+                    am.getDevices(android.media.AudioManager.GET_DEVICES_INPUTS);
+            if (devices == null) return null;
+            for (android.media.AudioDeviceInfo device : devices) {
+                if (device == null || !com.fadcam.utils.AudioDeviceResolver.isExternalInputDevice(device.getType())) {
+                    continue;
+                }
+                CharSequence pn = device.getProductName();
+                String label = pn != null ? pn.toString() : getDeviceTypeLabel(device.getType());
+                if (pickedItem.id.equals("dev:" + device.getType() + ":" + label)) {
+                    return pn;
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private static int parseType(String s) {
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
     // ── Video Splitting (reuses exact same logic & prefs as FadCam) ──

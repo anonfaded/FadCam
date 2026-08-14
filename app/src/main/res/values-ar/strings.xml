@@ -474,7 +474,7 @@
     <string name="video_menu_upload_drive">تحميل على Google Drive</string>
     <string name="toast_no_youtube_app">لم يتم العثور على تطبيق YouTube</string>
     <string name="toast_no_drive_app">لم يتم العثور على تطبيق Google Drive</string>
-    <string name="dialog_audio_noise_suppression_label">تثبيط الضوضاء</string>
+    <string name="raw_audio_unprocessed_note">الصوت الخام بالكامل غير متاح على هذا الجهاز. يُستخدم بدلاً منه وضع ميكروفون التعرف على الصوت (VOICE_RECOGNITION)، الذي يعطّل معظم المعالجة — قد يكون الفرق عن التسجيل العادي طفيفًا.</string>
     <string name="fix_video_menu_title">إصلاح الفيديو (إصلاح التشغيل)</string>
     <string name="fix_video_repairing">جاري الإصلاح… قد يستغرق ذلك بضع ثوانٍ.</string>
     <string name="fix_video_success">تم إصلاح الفيديو! تم الحفظ باسم: %1$s</string>
@@ -626,11 +626,26 @@
 
     <string name="fadrec_audio_source_choose">اختر مصدر الصوت</string>
 
+	<string name="fadrec_audio_source_helper">اختر ما تلتقطه تسجيلات الشاشة من الصوت. يُنصح بخيار \"افتراضي (توجيه النظام)\" مع ميكروفونات USB والسلكية — أو اختر جهازًا محددًا للتوجيه الصريح.</string>
+	<string name="fadrec_audio_source_mic_default">ميكروفون (توجيه افتراضي)</string>
+
     <string name="fadrec_audio_source_none">بدون صوت</string>
 
     <string name="fadrec_audio_source_mic">الميكروفون</string>
 
     <string name="fadrec_audio_source_internal">صوت الجهاز (داخلي)</string>
+
+	<string name="screen_rec_audio_device_title">جهاز إدخال الصوت</string>
+	<string name="screen_rec_audio_device_default">افتراضي (توجيه النظام)</string>
+	<string name="screen_rec_audio_device_helper">اختر الميكروفون الذي تسجل منه تسجيلات الشاشة. خيار \"افتراضي\" يستخدم التوجيه التلقائي للنظام — الخيار الموثوق عند استخدام ميكروفونات USB.</string>
+
+    <string name="records_repair_banner_dismiss">إغلاق</string>
+
+    <string name="records_repair_banner_message_finalize">لم يتم إنهاء %1$s عند توقف التسجيل. تم تحويله إلى تنسيق قابل للتشغيل تلقائيًا.</string>
+
+    <string name="records_repair_banner_message_interrupted">تعذر تشغيل %1$s لأن التسجيل انقطع أثناء وجود التطبيق في الخلفية. تم تحويله إلى تنسيق قابل للتشغيل تلقائيًا.</string>
+
+    <string name="records_repair_banner_title">تم إصلاح التسجيل</string>
 
     <string name="video_recording_started">بدأ التسجيل</string>
 
@@ -850,6 +865,7 @@
 
     <string name="whats_new_title">ما الجديد</string>
 
+    <string name="whats_new_no_browser">لم يتم العثور على تطبيق لفتح هذا الرابط</string>
     <string name="whats_new_subtitle">اطلع على أحدث الميزات والتحديثات</string>
 
     <string name="home_menu">قائمة الصفحة الرئيسية</string>
@@ -1555,7 +1571,8 @@
 
     <string name="row_input_source_title">مصدر الإدخال</string>
 
-    <string name="row_noise_suppression_title">تثبيط الضوضاء</string>
+    <string name="row_raw_audio_title">صوت خام</string>
+    <string name="raw_audio_banner">الصوت الخام بالكامل غير متاح على هذا الجهاز</string>
 
     <string name="settings_location_watermark_title">علامة الموقع المائية</string>
 
@@ -1718,7 +1735,9 @@
 
     <string name="shortcuts_sheet_helper">سيطلب مشغل التطبيقات تحديد الموقع.</string>
 
-    <string name="shortcuts_and_widgets">الاختصارات &amp; الأدوات</string>
+    <string name="shortcuts_widgets_screen_title">الاختصارات &amp; الأدوات</string>
+
+    <string name="shortcuts_and_widgets">الأدوات</string>
 
     <string name="video_player_settings_title">إعدادات مشغل الفيديو</string>
 
@@ -1906,6 +1925,8 @@
 
     <string name="shortcut_purpose_stop">يوقف هذا الاختصار التسجيل الحالي.</string>
 
+    <string name="shortcut_purpose_toggle">اختصار ديناميكي واحد يبدأ أو يوقف التسجيل باستخدام الكاميرا الافتراضية — استخدم اختصاري البدء والإيقاف المنفصلين للتحكم اليدوي.</string>
+
     <string name="shortcut_purpose_torch">يبدّل هذا الاختصار الفلاش.</string>
 
     <string name="shortcut_purpose_photo">يلتقط هذا الاختصار صورة بالكاميرا الخلفية ويحفظها في موقع FadCam/FadShot.</string>
@@ -1934,6 +1955,10 @@
 
     <string name="shortcut_start_current">بدء الحالي</string>
 
+    <string name="shortcut_toggle_recording">بدء / إيقاف</string>
+
+    <string name="shortcut_toggle_recording_long">بدء أو إيقاف التسجيل</string>
+
     <string name="shortcut_start_dual">بدء مزدوج</string>
 
     <string name="stop_recording">إيقاف</string>
@@ -1961,6 +1986,14 @@
     <string name="preview_quick_actions_title">إجراءات المعاينة السريعة</string>
 
     <string name="preview_quick_actions_sub">إظهار أيقونات FadShot والشاشة الكاملة حتى عندما يكون التسجيل خاملاً.</string>
+    <string name="grid_lines_title">خطوط الشبكة</string>
+    <string name="home_icon_picker_title">أيقونة الرئيسية</string>
+    <string name="home_icon_home">الرئيسية</string>
+    <string name="home_icon_jet">طائرة مقاتلة</string>
+    <string name="home_icon_pilot">طيار</string>
+    <string name="quick_mute_label">كتم</string>
+    <string name="quick_unmute_label">إلغاء الكتم</string>
+    <string name="grid_lines_subtitle">شبكة الأثلاث على المعاينة</string>
 
     <string name="preview_quick_actions_state_always">مرئية دائمًا (خامل + تسجيل)</string>
 
@@ -2320,7 +2353,7 @@
 
     <string name="helper_audio_input_source">اختر أي ميكروفون/مدخل متصل لاستخدامه.</string>
 
-    <string name="helper_noise_suppression">فلتر تجريبي لتقليل الضوضاء الخلفية.</string>
+    <string name="helper_raw_audio">يلتقط الصوت الخام من الميكروفون دون تقليل الضوضاء وموازنة الصوت التلقائيين من الهاتف. مثالي إذا كنت تخطط لتحرير الصوت بنفسك لاحقًا. يسري على التسجيلات الجديدة.</string>
 
     <string name="helper_audio_advanced">تخصيص معدل البت ومعدل أخذ العينات لتوازن الجودة/الحجم.</string>
 
@@ -2347,6 +2380,9 @@
     <string name="helper_location_embed">يضمّن إحداثيات GPS في بيانات الفيديو الوصفية (geotag).</string>
 
     <string name="video_setting_location_embed_title">تضمين بيانات الموقع الوصفية</string>
+    <string name="setting_video_stabilization_title">تثبيت الفيديو</string>
+    <string name="setting_not_supported">غير مدعوم على هذا الجهاز</string>
+    <string name="video_stabilization_footer">يثبّت مقاطع الفيديو بمعادلة اهتزاز اليد باستخدام التثبيت الإلكتروني (EIS) والبصري (OIS). يتطلب ذلك اقتصاصًا طفيفًا للإطار.</string>
 
     <string name="video_setting_location_embed_enabled">مفعّل</string>
 
@@ -2472,7 +2508,7 @@
 
     <string name="header_logo_avatar" translatable="false">Avatar</string>
 
-    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_default" translatable="false">FadCam</string>
 
     <string name="app_icon_alternative" translatable="false">Camera</string>
 
@@ -2484,7 +2520,7 @@
 
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
 
-    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_nooristic" translatable="false">FadCam ++</string>
 
     <string name="app_icon_bat" translatable="false">FadCam</string>
 
@@ -2878,7 +2914,7 @@
 
     <string name="storage_helper_current_custom_uri_prefix">URI:</string>
 
-    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
 
     <string name="onboarding_intro_line4">مفتوح المصدر. بدون إعلانات. لك.</string>
 
@@ -3436,6 +3472,10 @@
 
     <string name="automation_title">أتمتة</string>
     <string name="automation_row_subtitle">ربط الأزرار، أجهزة التحكم عن بعد بلوتوث، أزرار الصوت</string>
+    <string name="setting_volume_shutter_title">مصراع أزرار الصوت</string>
+    <string name="setting_volume_shutter_summary">تعمل أزرار الصوت كشتر للكاميرا في علامة التبويب الرئيسية</string>
+    <string name="setting_volume_shutter_footer">أزرار الصوت تصبح شتر الكاميرا في علامة التبويب الرئيسية:\n• نقرة — التقاط صورة\n• نقرة مزدوجة — تبديل الكاميرا\n• ضغطة مطولة — بدء أو إيقاف التسجيل\n\nأجهزة البلوتوث عن بُعد تعمل أيضًا وتُفعّل نفس الإجراءات. الأزرار تعمل أثناء فتح علامة التبويب الرئيسية لتطبيق FadCam — الإصدارات المستقبلية ستسمح لأي زر بتفعيل إجراءات FadCam حتى في الخلفية.\n\nحاليًا، استخدم MacroDroid لربط اختصارات FadCam — ستجدها في الإعدادات ← الاختصارات والأدوات.</string>
+    <string name="shortcuts_macrodroid_template">قالب MacroDroid الرسمي: https://templates.macrodroid.com/view/28194</string>
 
     <string name="thermal_guardian_title">الوصي الحراري</string>
     <string name="thermal_guardian_row_subtitle">ضبط التسجيل تلقائياً لمنع ارتفاع الحرارة</string>
@@ -3740,6 +3780,8 @@
     <string name="watermark_gps_disabled_home_toast">ميزات العلامة المائية المعتمدة على الموقع مفعّلة لكن GPS معطّل. فعّل موقع الجهاز لتعمل.</string>
 
     <string name="watermark_gps_disabled_banner_message">ميزات العلامة المائية المعتمدة على الموقع لن تظهر حتى يتم تمكين موقع الجهاز</string>
+
+    <string name="watermark_day_title">اليوم</string>
 
     <string name="watermark_timezone_title">المنطقة الزمنية</string>
 

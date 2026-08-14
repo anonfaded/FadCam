@@ -33,6 +33,7 @@ public class WatchSettingsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
 
         // Video settings row → VideoSettingsFragment overlay

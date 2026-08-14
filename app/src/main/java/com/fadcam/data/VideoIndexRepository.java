@@ -634,4 +634,51 @@ public class VideoIndexRepository {
         }
         return 0;
     }
+
+    // ----- Self-healing finalization state (issue #332) -----
+
+    /** URIs never verified as finalized, plus unrepairable files past their retry deadline. */
+    public List<String> getUnfinalizedUris() {
+        try {
+            return dao.getRetryableUris(System.currentTimeMillis());
+        } catch (Exception e) {
+            FLog.w(TAG, "getUnfinalizedUris failed", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /** 0 = pending, 1 = finalized ok, 2 = unrepairable. */
+    public void markFinalized(@NonNull String uriString, int state) {
+        try {
+            dao.setFinalized(uriString, state);
+            if (state == 1) {
+                dao.clearRetryDeadline(uriString);
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "markFinalized failed for " + uriString, e);
+        }
+    }
+
+    /**
+     * Marks a file unrepairable but schedules a retry after {@code retryAfterMs}.
+     * Transient failures (e.g. a finalizer bug that is later fixed) must not
+     * permanently abandon a recoverable recording.
+     */
+    public void markUnrepairableWithRetry(@NonNull String uriString, long retryAfterMs) {
+        try {
+            dao.markUnrepairable(uriString, retryAfterMs);
+        } catch (Exception e) {
+            FLog.w(TAG, "markUnrepairableWithRetry failed for " + uriString, e);
+        }
+    }
+
+    /** One-time cleanup: retry files wrongly marked unrepairable by a buggy build. */
+    public int resetUnrepairable() {
+        try {
+            return dao.resetUnrepairable();
+        } catch (Exception e) {
+            FLog.w(TAG, "resetUnrepairable failed", e);
+            return 0;
+        }
+    }
 }

@@ -78,7 +78,9 @@ public class DualCameraSettingsFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_settings_dual_camera, container, false);
+        android.view.View v = inflater.inflate(R.layout.fragment_settings_dual_camera, container, false);
+        com.fadcam.Utils.attachPressScaleToClickableRows(v);
+        return v;
     }
 
     @Override

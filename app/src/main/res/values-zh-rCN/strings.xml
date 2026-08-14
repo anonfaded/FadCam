@@ -279,7 +279,7 @@
     <string name="dialog_audio_invalid_sampling_rate">采样率无效。请输入44100或48000。</string>
     <string name="dialog_audio_settings_summary">配置音频比特率和采样率以获得最佳质量。默认值：192000 bps，48000 Hz，立体声。</string>
     <string name="dialog_audio_info_text">• 比特率 (bps) 控制音频质量和文件大小。较高的值意味着更好的质量但文件更大。192000对大多数用途来说是一个很好的默认值。\n• 采样率 (Hz) 是每秒捕获音频的次数。48000 Hz是视频的标准，44100 Hz是音频常用的。\n推荐大多数用户使用：192000 bps，48000 Hz。</string>
-    <string name="dialog_audio_noise_suppression_label">降噪</string>
+    <string name="raw_audio_unprocessed_note">此设备无法提供完全原始的音频。将改用语音识别麦克风模式（VOICE_RECOGNITION），该模式会禁用大部分处理 — 与普通录音的差异可能很细微。</string>
     <!-- Debug Settings -->
     <string name="setting_debug_title">调试日志</string>
     <string name="note_debug">启用调试日志文件生成\n(默认: 已禁用)</string>
@@ -564,7 +564,8 @@
     <string name="row_orientation_title">方向</string>
     <string name="row_record_audio_title">录音</string>
     <string name="row_input_source_title">输入源</string>
-    <string name="row_noise_suppression_title">降噪</string>
+    <string name="row_raw_audio_title">原始音频</string>
+    <string name="raw_audio_banner">此设备无法提供完全原始的音频</string>
     <string name="settings_location_watermark_title">位置水印</string>
     <string name="delete_single_video_subtitle">删除此文件</string>
     <string name="torch_select_source">选择手电筒来源:</string>
@@ -627,7 +628,8 @@
     <string name="shortcuts_helper_text">添加上方的快捷方式。它们也可与自动化应用（如 MacroDroid）协同工作，用于触发诸如映射音量键之类的操作。</string>
     <string name="shortcuts_add_to_home">添加到主屏幕</string>
     <string name="shortcuts_sheet_helper">您的启动器将提示您选择放置位置。</string>
-    <string name="shortcuts_and_widgets">快捷方式与小组件</string>
+    <string name="shortcuts_widgets_screen_title">快捷方式与小组件</string>
+    <string name="shortcuts_and_widgets">小组件</string>
     <string name="video_player_settings_title">视频播放器设置</string>
     <string name="video_player_settings_helper">播放速度用于改变视频的正常播放速率。快速播放则是一个临时加速功能，仅在您长按视频时生效。您可以在此处或直接从视频播放器界面更改这些设置。</string>
     <string name="video_player_settings_subtitle">播放与快速播放</string>
@@ -710,6 +712,7 @@
     <string name="shortcuts_rename_helper">提示：留空则使用默认名称。</string>
     <string name="shortcuts_rename_action_title">重命名</string>
     <string name="shortcuts_rename_action_subtitle">点击重命名</string>
+    <string name="shortcut_purpose_toggle">一个单一的动态快捷方式，使用默认相机开始或停止录制 — 手动控制请使用单独的“开始”和“停止”快捷方式。</string>
     <string name="shortcut_purpose_torch">此快捷方式可切换手电筒。</string>
     <string name="widget_customize_action_label">自定义</string>
     <string name="widget_customize_action_subtitle">时间、日期与主题选项</string>
@@ -728,7 +731,7 @@
     <string name="faditor_mini_toast">Faditor Mini—— 即将到来</string>
     <string name="helper_record_audio">切换视频中是否录制麦克风音频。</string>
     <string name="helper_audio_input_source">选择要使用的已连接麦克风/输入源。</string>
-    <string name="helper_noise_suppression">实验性滤镜，用于降低背景噪音。</string>
+    <string name="helper_raw_audio">录制麦克风的原始声音，不使用手机的自动降噪和音量平衡。如果您计划之后自己编辑音频，这非常合适。适用于新录音。</string>
     <string name="helper_audio_sampling_detail">视频录制建议选择 48000 Hz；为保证通用音频兼容性，可选择 44100 Hz。</string>
     <string name="helper_audio_sampling_recommended">推荐值：48000 Hz</string>
     <string name="universal_reset">重置</string>
@@ -737,6 +740,9 @@
     <string name="helper_location_watermark">录制时添加实时位置文字叠加。</string>
     <string name="helper_location_embed">将GPS坐标嵌入视频元数据（地理标签）。</string>
     <string name="video_setting_location_embed_title">嵌入位置元数据</string>
+    <string name="setting_video_stabilization_title">视频防抖</string>
+    <string name="setting_not_supported">此设备不支持</string>
+    <string name="video_stabilization_footer">通过电子防抖（EIS）和光学防抖（OIS）补偿手部晃动，让视频保持稳定。为此会对画面进行轻微裁剪。</string>
     <string name="video_setting_location_embed_enabled">已启用</string>
     <string name="video_setting_location_embed_disabled">已禁用</string>
     <string name="helper_watermark_option">选择叠加内容：时间戳+品牌、仅时间戳或无</string>
@@ -984,6 +990,7 @@
     <string name="fadrec_permission_denied">屏幕录制权限被拒绝</string>
     <string name="fadrec_mode_title">FadRec • 屏幕录制</string>
     <string name="whats_new_title">新功能</string>
+    <string name="whats_new_no_browser">未找到可以打开此链接的应用</string>
     <string name="whats_new_subtitle">查看最新功能和更新</string>
     <string name="rename_layer_title">重命名图层</string>
     <string name="rename_layer_message">为图层输入新名称</string>
@@ -1991,9 +1998,24 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="faditor_your_recordings">您的录制文件</string>
 
 <!-- fadrec_audio_source_choose -->
+
+	<string name="fadrec_audio_source_helper">选择屏幕录制捕获的音频。“默认（系统路由）”推荐用于 USB 和有线麦克风——或选择特定设备进行显式路由。</string>
+	<string name="fadrec_audio_source_mic_default">麦克风（默认路由）</string>
 <string name="fadrec_audio_source_choose">选择音频源</string>
 
 <!-- fadrec_audio_source_internal -->
+
+	<string name="screen_rec_audio_device_title">音频输入设备</string>
+	<string name="screen_rec_audio_device_default">默认（系统路由）</string>
+	<string name="screen_rec_audio_device_helper">选择屏幕录制使用的麦克风。“默认”使用系统的自动路由——使用 USB 麦克风时的可靠选择。</string>
+
+    <string name="records_repair_banner_dismiss">关闭</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s 在录制停止时未完成收尾，现已自动转换为可播放格式。</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s 因应用在后台时录制被中断而无法播放，现已自动转换为可播放格式。</string>
+
+    <string name="records_repair_banner_title">录制已修复</string>
 <string name="fadrec_audio_source_internal">设备音频（内部）</string>
 
 <!-- fadrec_audio_source_mic -->
@@ -3043,6 +3065,10 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <!-- thermal_guardian_title - coming soon -->
 <string name="automation_title">自动化</string>
 <string name="automation_row_subtitle">按键映射、蓝牙遥控器、音量键</string>
+<string name="setting_volume_shutter_title">音量键快门</string>
+<string name="setting_volume_shutter_summary">音量键在主标签页用作相机快门</string>
+<string name="setting_volume_shutter_footer">在主标签页，音量键就是您的快门：\n• 单击 — 拍照\n• 双击 — 切换相机\n• 长按 — 开始或停止录制\n\n蓝牙遥控快门同样适用，可触发相同的操作。按键在 FadCam 主标签页打开时有效 — 未来版本将允许任意按键触发 FadCam 操作，即使在后台也可以。\n\n目前，可使用 MacroDroid 映射 FadCam 快捷方式 — 可在“设置 → 快捷方式和微件”中找到。</string>
+<string name="shortcuts_macrodroid_template">MacroDroid 官方模板：https://templates.macrodroid.com/view/28194</string>
 <string name="thermal_guardian_title">热力守护</string>
 <string name="thermal_guardian_row_subtitle">自动调整录制设置以防止过热</string>
 
@@ -3130,6 +3156,14 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 
 <!-- preview_quick_actions_sub -->
 <string name="preview_quick_actions_sub">即使在录制空闲时也显示FadShot和全屏图标。</string>
+    <string name="grid_lines_title">网格线</string>
+    <string name="home_icon_picker_title">主屏幕图标</string>
+    <string name="home_icon_home">主屏幕</string>
+    <string name="home_icon_jet">战斗机</string>
+    <string name="home_icon_pilot">飞行员</string>
+    <string name="quick_mute_label">静音</string>
+    <string name="quick_unmute_label">声音</string>
+<string name="grid_lines_subtitle">预览中的三分法网格</string>
 
 <!-- preview_quick_actions_title -->
 <string name="preview_quick_actions_title">预览快捷操作</string>
@@ -3753,6 +3787,8 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="shortcut_start_current">当前开始</string>
 
 <!-- shortcut_start_dual -->
+<string name="shortcut_toggle_recording">开始 / 停止</string>
+<string name="shortcut_toggle_recording_long">开始或停止录制</string>
 <string name="shortcut_start_dual">双摄开始</string>
 
 <!-- shortcut_start_front -->
@@ -4248,6 +4284,7 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="watermark_timezone_on_gmt">开 — 水印中显示GMT偏移</string>
 
 <!-- watermark_timezone_title -->
+<string name="watermark_day_title">星期</string>
 <string name="watermark_timezone_title">时区</string>
 
 <!-- watermark_utm_helper -->

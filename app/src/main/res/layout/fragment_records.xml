@@ -28,7 +28,6 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-
             <ImageView
                 android:id="@+id/action_close"
                 android:layout_width="24dp"
@@ -254,6 +253,75 @@
                 android:textColor="#CCFFFFFF"
                 android:textSize="12sp"
                 tools:text="2 of 3 complete • 1 failed" />
+        </LinearLayout>
+
+        <!-- Repair notice banner (issue #332): shown inside the header when an
+             interrupted recording was automatically repaired to a playable format.
+             Living inside header_bar keeps it above the filter row with no overlap. -->
+        <LinearLayout
+            android:id="@+id/records_repair_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/gps_warning_banner_bg"
+            android:paddingStart="12dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="10dp"
+                android:src="@drawable/ic_error"
+                android:tint="#EF5350" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/records_repair_banner_title"
+                    android:textColor="#EF9A9A"
+                    android:textStyle="bold"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/text_records_repair_message"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="#EF9A9A"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/text_records_repair_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="#C99A9A"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/btn_dismiss_records_repair"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:padding="4dp"
+                android:layout_marginStart="4dp"
+                android:src="@drawable/ic_cross"
+                android:tint="#EF9A9A"
+                android:contentDescription="@string/records_repair_banner_dismiss"
+                android:background="?attr/selectableItemBackgroundBorderless" />
         </LinearLayout>
     </LinearLayout>
 

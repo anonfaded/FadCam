@@ -17,6 +17,7 @@
         android:paddingTop="16dp"
         android:paddingBottom="12dp"
         android:background="@drawable/header_bar_rounded_bg"
+        android:elevation="8dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -411,6 +412,45 @@
                     </LinearLayout>
                     <com.fadcam.ui.AvatarToggleView
                         android:id="@+id/switch_timezone"
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:layout_gravity="center_vertical" />
+                </LinearLayout>
+                <View style="@style/SettingsDivider" />
+
+                <!-- Day Name Row -->
+                <LinearLayout
+                    android:id="@+id/row_day"
+                    style="@style/SettingsGroupRow">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_calendar"
+                        android:tint="@android:color/darker_gray"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/watermark_day_title"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"/>
+                        <TextView
+                            android:id="@+id/value_day"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="12dp"
+                            android:text=""
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"/>
+                    </LinearLayout>
+                    <com.fadcam.ui.AvatarToggleView
+                        android:id="@+id/switch_day"
                         android:layout_width="52dp"
                         android:layout_height="52dp"
                         android:layout_gravity="center_vertical" />

@@ -7,6 +7,8 @@
     android:layout_marginTop="4dp"
     android:layout_marginEnd="16dp"
     android:layout_marginBottom="0dp"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     android:background="@drawable/segmented_control_background">
 
     <View
@@ -19,12 +21,12 @@
         android:id="@+id/mode_switcher_segments"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false">
 
         <!-- FadCam Segment -->
         <FrameLayout android:id="@+id/segment_fadcam" android:layout_width="0dp" android:layout_height="28dp" android:layout_weight="1" android:clickable="true" android:focusable="true"
             android:nextFocusUp="@+id/btnGetPro"
-            android:nextFocusDown="@+id/rowCamera">
+            android:nextFocusDown="@+id/rowCamera" android:clipChildren="false" android:clipToPadding="false">
 
             <TextView android:id="@+id/text_fadcam" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="FadCam" android:textSize="11sp" />
         </FrameLayout>
@@ -32,7 +34,7 @@
         <!-- FadRec Segment -->
         <FrameLayout android:id="@+id/segment_fadrec" android:layout_width="0dp" android:layout_height="28dp" android:layout_weight="1" android:clickable="true" android:focusable="true"
             android:nextFocusUp="@+id/btnGetPro"
-            android:nextFocusDown="@+id/rowCamera">
+            android:nextFocusDown="@+id/rowCamera" android:clipChildren="false" android:clipToPadding="false">
 
             <TextView android:id="@+id/text_fadrec" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="FadRec" android:textSize="11sp" />
 
@@ -43,7 +45,7 @@
         <!-- FadMic Segment -->
         <FrameLayout android:id="@+id/segment_fadmic" android:layout_width="0dp" android:layout_height="28dp" android:layout_weight="1" android:clickable="true" android:focusable="true"
             android:nextFocusUp="@+id/btnGetPro"
-            android:nextFocusDown="@+id/rowCamera">
+            android:nextFocusDown="@+id/rowCamera" android:clipChildren="false" android:clipToPadding="false">
 
             <TextView android:id="@+id/text_fadmic" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="FadMic" android:textSize="11sp" />
         </FrameLayout>

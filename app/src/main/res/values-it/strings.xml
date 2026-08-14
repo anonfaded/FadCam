@@ -136,9 +136,24 @@
     <!-- FadRec audio source picker -->
     <string name="fadrec_audio_source_title">Fonte audio</string>
     <string name="fadrec_audio_source_choose">Scegli fonte audio</string>
+
+	<string name="fadrec_audio_source_helper">Scegli quale audio catturano le registrazioni dello schermo. \"Predefinito (routing di sistema)\" è consigliato per microfoni USB e cablati — oppure scegli un dispositivo specifico per un routing esplicito.</string>
+	<string name="fadrec_audio_source_mic_default">Microfono (routing predefinito)</string>
     <string name="fadrec_audio_source_none">Nessun audio</string>
     <string name="fadrec_audio_source_mic">Microfono</string>
     <string name="fadrec_audio_source_internal">Audio dispositivo (interno)</string>
+
+	<string name="screen_rec_audio_device_title">Dispositivo di ingresso audio</string>
+	<string name="screen_rec_audio_device_default">Predefinito (routing di sistema)</string>
+	<string name="screen_rec_audio_device_helper">Scegli il microfono con cui vengono registrate le registrazioni dello schermo. \"Predefinito\" usa il routing automatico di sistema: l\'opzione affidabile con i microfoni USB.</string>
+
+    <string name="records_repair_banner_dismiss">Chiudi</string>
+
+    <string name="records_repair_banner_message_finalize">%1$s non è stato finalizzato al termine della registrazione. È stato convertito automaticamente in un formato riproducibile.</string>
+
+    <string name="records_repair_banner_message_interrupted">%1$s non era riproducibile perché la registrazione è stata interrotta mentre l\'app era in background. È stato convertito automaticamente in un formato riproducibile.</string>
+
+    <string name="records_repair_banner_title">Registrazione riparata</string>
 
     <string name="video_recording_started">Registrazione avviata</string>
     <string name="video_recording_stopped">Registrazione interrotta</string>
@@ -249,6 +264,7 @@
     <string name="tips_title">Suggerimenti</string>
     <string name="tips_subtitle">Suggerimenti utili per l\'utilizzo</string>
     <string name="whats_new_title">Novità</string>
+    <string name="whats_new_no_browser">Nessuna app trovata per aprire questo link</string>
     <string name="whats_new_subtitle">Scopri le ultime funzionalità e aggiornamenti</string>
     <string name="home_menu">Menu Home</string>
     <string name="home_sidebar_title">Home</string>
@@ -751,7 +767,8 @@
     <string name="row_orientation_title">Orientamento</string>
     <string name="row_record_audio_title">Registra audio</string>
     <string name="row_input_source_title">Sorgente ingresso</string>
-    <string name="row_noise_suppression_title">Riduzione rumore</string>
+    <string name="row_raw_audio_title">Audio grezzo</string>
+    <string name="raw_audio_banner">L\'audio completamente grezzo non è disponibile su questo dispositivo</string>
     <string name="settings_location_watermark_title">Filigrana posizione</string>
     <string name="delete_all_videos_title">Elimina tutti i video</string>
     <string name="delete_all_videos_description">Sei sicuro di voler eliminare tutti i video?</string>
@@ -842,7 +859,8 @@
     <string name="shortcuts_helper_text">Aggiungi scorciatoie delle azioni alla schermata home.</string>
     <string name="shortcuts_add_to_home">Aggiungi alla home</string>
     <string name="shortcuts_sheet_helper">Scegli un\'azione e tocca Aggiungi alla Home. Puoi anche rinominare la scorciatoia o cambiarne l\'icona.</string>
-    <string name="shortcuts_and_widgets">Scorciatoie e widget</string>
+    <string name="shortcuts_widgets_screen_title">Scorciatoie e widget</string>
+    <string name="shortcuts_and_widgets">Widget</string>
     <string name="video_player_settings_title">Impostazioni lettore video</string>
     <string name="video_player_settings_helper">Personalizza l\'esperienza del lettore video.</string>
     <string name="video_player_settings_subtitle">Velocità, audio, controlli</string>
@@ -936,6 +954,7 @@
     <string name="shortcut_purpose_start_current">Avvia fotocamera corrente</string>
     <string name="shortcut_purpose_start_dual">Avvia doppia</string>
     <string name="shortcut_purpose_stop">Ferma</string>
+    <string name="shortcut_purpose_toggle">Una singola scorciatoia dinamica che avvia o ferma la registrazione usando la fotocamera predefinita — usa le scorciatoie Avvia e Ferma separate per il controllo manuale.</string>
     <string name="shortcut_purpose_torch">Torcia</string>
     <string name="shortcut_purpose_photo">Scatta foto</string>
     <string name="shortcut_purpose_photo_front">Scatta selfie</string>
@@ -960,6 +979,8 @@
     <string name="shortcut_start_back">Avvia posteriore</string>
     <string name="shortcut_start_front">Avvia frontale</string>
     <string name="shortcut_start_current">Avvia fotocamera corrente</string>
+    <string name="shortcut_toggle_recording">Avvia / Ferma</string>
+    <string name="shortcut_toggle_recording_long">Avvia o ferma la registrazione</string>
     <string name="shortcut_start_dual">Avvia doppia</string>
     <string name="stop_recording">Ferma registrazione</string>
     <string name="shortcut_take_photo">Scatta foto</string>
@@ -974,6 +995,14 @@
     <string name="shortcuts_picture_category">Foto</string>
     <string name="preview_quick_actions_title">Azioni rapide anteprima</string>
     <string name="preview_quick_actions_sub">Scegli quando mostrare le azioni rapide nell\'anteprima live</string>
+    <string name="grid_lines_title">Linee della griglia</string>
+    <string name="home_icon_picker_title">Icona Home</string>
+    <string name="home_icon_home">Home</string>
+    <string name="home_icon_jet">Caccia</string>
+    <string name="home_icon_pilot">Pilota</string>
+    <string name="quick_mute_label">Muta</string>
+    <string name="quick_unmute_label">Audio</string>
+    <string name="grid_lines_subtitle">Griglia dei terzi nell\'anteprima</string>
     <string name="preview_quick_actions_state_always">Sempre</string>
     <string name="preview_quick_actions_state_recording_only">Solo durante registrazione</string>
     <string name="warning_temp_file_detail">Questo file temporaneo verrà eliminato quando esci. Assicurati di salvarlo prima.</string>
@@ -1169,7 +1198,7 @@
     <string name="dialog_audio_info_text">Le impostazioni audio personalizzate ti permettono di controllare bitrate e frequenza di campionamento dell\'audio registrato.</string>
     <string name="helper_record_audio">Abilita o disabilita la registrazione audio.</string>
     <string name="helper_audio_input_source">Scegli la sorgente del segnale audio per la registrazione.</string>
-    <string name="helper_noise_suppression">Riduce il rumore di fondo durante la registrazione.</string>
+    <string name="helper_raw_audio">Cattura il suono grezzo del microfono senza la riduzione del rumore e il bilanciamento del volume automatici del telefono. Ideale se pensi di modificare l\'audio da solo in seguito. Si applica alle nuove registrazioni.</string>
     <string name="helper_audio_advanced">Regola bitrate e frequenza di campionamento per la registrazione audio.</string>
     <string name="helper_audio_bitrate_detail">Valori più alti = migliore qualità audio ma file più grandi.</string>
     <string name="helper_audio_sampling_detail">Valori più alti catturano frequenze più alte ma aumentano la dimensione del file.</string>
@@ -1183,6 +1212,9 @@
     <string name="helper_location_watermark">Sovrapponi coordinate GPS o indirizzo come filigrana nel video.</string>
     <string name="helper_location_embed">Incorpora le coordinate GPS nei metadati del file video per visualizzazione in app galleria.</string>
     <string name="video_setting_location_embed_title">Incorpora posizione</string>
+    <string name="setting_video_stabilization_title">Stabilizzazione video</string>
+    <string name="setting_not_supported">Non supportato su questo dispositivo</string>
+    <string name="video_stabilization_footer">Mantiene stabili i tuoi video compensando il tremolio della mano con la stabilizzazione elettronica (EIS) e ottica (OIS). Per ottenerlo viene ritagliata una piccola parte dell\'inquadratura.</string>
     <string name="video_setting_location_embed_enabled">Abilitato</string>
     <string name="video_setting_location_embed_disabled">Disabilitato</string>
     <string name="helper_watermark_option">Scegli lo stile della filigrana per i tuoi video.</string>
@@ -1691,7 +1723,7 @@
     <string name="camera_error_service">Errore servizio fotocamera</string>
     <string name="camera_error_unknown">Errore fotocamera sconosciuto</string>
     <string name="camera_resources_cooldown">Attendi prima di avviare</string>
-    <string name="dialog_audio_noise_suppression_label">Riduzione rumore</string>
+    <string name="raw_audio_unprocessed_note">L\'audio completamente grezzo non è disponibile su questo dispositivo. Viene usata la modalità microfono per riconoscimento vocale (VOICE_RECOGNITION), che disattiva la maggior parte dell\'elaborazione — la differenza rispetto alla registrazione normale può essere sottile.</string>
     <string name="fix_video_menu_title">Ripara video</string>
     <string name="fix_video_repairing">Riparazione in corso...</string>
     <string name="fix_video_success">Video riparato! Salvato come: %1$s</string>
@@ -1925,6 +1957,10 @@
     <string name="motion_lab_row_subtitle">Rilevamento movimento con AI</string>
     <string name="automation_title">Automazione</string>
     <string name="automation_row_subtitle">Mappatura pulsanti, telecomandi Bluetooth, tasti volume</string>
+    <string name="setting_volume_shutter_title">Otturatore con tasti volume</string>
+    <string name="setting_volume_shutter_summary">I tasti volume fungono da otturatore nella scheda Home</string>
+    <string name="setting_volume_shutter_footer">I tasti volume diventano il tuo otturatore nella scheda Home:\n• Tocca — scatta una foto\n• Doppio tocco — cambia fotocamera\n• Tieni premuto — avvia o ferma la registrazione\n\nAnche gli scatti remoti Bluetooth funzionano e attivano le stesse azioni. I tasti funzionano mentre la scheda Home di FadCam è aperta — le versioni future permetteranno a qualsiasi tasto di attivare le azioni FadCam, anche in background.\n\nPer ora, usa MacroDroid per mappare le scorciatoie di FadCam — le trovi in Impostazioni → Scorciatoie e widget.</string>
+    <string name="shortcuts_macrodroid_template">Modello ufficiale MacroDroid: https://templates.macrodroid.com/view/28194</string>
     <string name="thermal_guardian_title">Guardiano Termico</string>
     <string name="thermal_guardian_row_subtitle">Regola automaticamente la registrazione per evitare il surriscaldamento</string>
     <string name="audio_vision_title">Visione Audio</string>
@@ -2078,6 +2114,7 @@
     <string name="watermark_gps_disabled_warning">GPS disabilitato</string>
     <string name="watermark_gps_disabled_home_toast">Abilita GPS per posizione</string>
     <string name="watermark_gps_disabled_banner_message">Il GPS è spento.</string>
+    <string name="watermark_day_title">Giorno</string>
     <string name="watermark_timezone_title">Fuso orario</string>
     <string name="watermark_timezone_off">Spento</string>
     <string name="watermark_timezone_on_gmt">GMT</string>
@@ -2221,13 +2258,13 @@
     <string name="eye_color_magenta" translatable="false">Magenta</string>
     <string name="header_logo_default" translatable="false">FadCam</string>
     <string name="header_logo_avatar" translatable="false">Avatar</string>
-    <string name="app_icon_default" translatable="false">Legacy</string>
+    <string name="app_icon_default" translatable="false">FadCam</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_faded" translatable="false">0xFF0000</string>
     <string name="app_icon_palestine" translatable="false">I❤️Palestine</string>
     <string name="app_icon_pakistan" translatable="false">FadCam</string>
     <string name="app_icon_fadseclab" translatable="false">FadSec Lab</string>
-    <string name="app_icon_noor" translatable="false">Noor</string>
+    <string name="app_icon_nooristic" translatable="false">FadCam ++</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_notes" translatable="false">Notes</string>
@@ -2238,7 +2275,7 @@
     <string name="app_icon_car" translatable="false">ClutchX</string>
     <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
     <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
-    <string name="app_icon_minimal" translatable="false">Minimal</string>
+    <string name="app_icon_minimal" translatable="false">FadCam</string>
     <string name="home_sidebar_copyright" translatable="false">© FadSec Lab 2024 – 2026</string>
     <string name="export_center">Centro Esportazione</string>
 

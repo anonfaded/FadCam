@@ -10,7 +10,7 @@
         android:layout_width="68dp"
         android:layout_height="68dp"
         android:background="@drawable/settings_group_card_bg"
-        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:foreground="@drawable/shortcut_cell_feedback"
         android:clipToPadding="false"
         android:padding="6dp">
         <ImageView
@@ -48,5 +48,22 @@
         android:layout_marginTop="4dp"
         android:maxLines="1"
         android:ellipsize="end"
+        android:textAlignment="center"/>
+
+    <TextView
+        android:id="@+id/icon_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:background="@drawable/badge_icon_codename"
+        android:textColor="#E6E6E6"
+        android:textSize="9sp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="1dp"
+        android:paddingBottom="1dp"
+        android:visibility="gone"
         android:textAlignment="center"/>
 </LinearLayout>

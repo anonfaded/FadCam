@@ -17,7 +17,8 @@
         android:paddingTop="16dp"
         android:paddingBottom="12dp"
         android:background="@drawable/header_bar_rounded_bg"
-        app:layout_constraintTop_toTopOf="parent"
+                android:elevation="8dp"
+app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
         <ImageView
@@ -224,6 +225,40 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/setting_microphone"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="13sp"/>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+
+                <View style="@style/SettingsDivider" />
+
+                <!-- Audio Input Device Row (independent from video mode) -->
+                <LinearLayout
+                    android:id="@+id/row_audio_device"
+                    style="@style/SettingsGroupRow">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_mic"
+                        android:tint="@android:color/darker_gray"/>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/screen_rec_audio_device_title"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorHeading"/>
+                    <TextView
+                        android:id="@+id/value_audio_device"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/screen_rec_audio_device_default"
                         android:textColor="@android:color/darker_gray"
                         android:textSize="13sp"/>
                     <ImageView
