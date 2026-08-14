@@ -8,6 +8,7 @@ import android.app.Notification;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.hardware.camera2.CameraAccessException;
@@ -36,7 +37,9 @@ import androidx.documentfile.provider.DocumentFile;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.fadcam.Constants;
+import com.fadcam.MaximumRecordingDuration;
 import com.fadcam.R;
+import com.fadcam.RecordingDurationLimitController;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.dualcam.DualCameraCapability;
 import com.fadcam.dualcam.DualCameraConfig;
@@ -126,6 +129,8 @@ public class DualCameraRecordingService extends Service {
     private HandlerThread backgroundThread;
     private Handler backgroundHandler;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private RecordingDurationLimitController durationLimitController;
+    private SharedPreferences.OnSharedPreferenceChangeListener durationPreferenceListener;
 
     // ── System ─────────────────────────────────────────────────────────
 
@@ -172,6 +177,7 @@ public class DualCameraRecordingService extends Service {
         FLog.d(TAG, "onCreate");
 
         prefs = SharedPreferencesManager.getInstance(getApplicationContext());
+        initializeDurationLimitController();
         capability = new DualCameraCapability(this);
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
 
@@ -266,6 +272,7 @@ public class DualCameraRecordingService extends Service {
     @Override
     public void onDestroy() {
         FLog.d(TAG, "onDestroy");
+        releaseDurationLimitController();
         releaseAllResources();
         stopBackgroundThread();
         releaseWakeLock();
@@ -293,6 +300,9 @@ public class DualCameraRecordingService extends Service {
         if (state != DualCameraState.DISABLED) {
             FLog.w(TAG, "Cannot start dual recording — state=" + state);
             return;
+        }
+        if (durationLimitController != null) {
+            durationLimitController.stopSession();
         }
         lastRecordingUriString = null;
 
@@ -375,6 +385,9 @@ public class DualCameraRecordingService extends Service {
      * Stop dual camera recording and clean up all resources.
      */
     private void handleStopDualRecording() {
+        if (durationLimitController != null && durationLimitController.stopSession()) {
+            FLog.d(TAG, "Cancelled maximum recording duration for current dual session");
+        }
         if (state == DualCameraState.DISABLED) {
             FLog.w(TAG, "Already stopped / disabled");
             stopSelf();
@@ -449,6 +462,9 @@ public class DualCameraRecordingService extends Service {
         if (watermarkManager != null) watermarkManager.pauseSensors();
         state = DualCameraState.PAUSED;
         pauseStartedAt = SystemClock.elapsedRealtime();
+        if (durationLimitController != null && durationLimitController.pauseSession()) {
+            FLog.d(TAG, "Paused maximum recording duration countdown");
+        }
         persistRecordingTimelineState();
         broadcastActionWithTiming(Constants.BROADCAST_ON_DUAL_RECORDING_PAUSED);
         updatePausedNotification();
@@ -469,6 +485,9 @@ public class DualCameraRecordingService extends Service {
         if (pauseStartedAt > 0L) {
             accumulatedPausedDurationMs += Math.max(0L, SystemClock.elapsedRealtime() - pauseStartedAt);
             pauseStartedAt = 0L;
+        }
+        if (durationLimitController != null && durationLimitController.resumeSession()) {
+            FLog.d(TAG, "Resumed maximum recording duration countdown");
         }
         persistRecordingTimelineState();
         broadcastActionWithTiming(Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED);
@@ -1356,6 +1375,7 @@ public class DualCameraRecordingService extends Service {
                     .commit();
 
             persistRecordingTimelineState();
+            startDurationLimitSession();
             broadcastActionWithTiming(Constants.BROADCAST_ON_DUAL_RECORDING_STARTED);
             FLog.i(TAG, "✅ Dual camera recording started");
         } catch (Exception e) {
@@ -1439,6 +1459,9 @@ public class DualCameraRecordingService extends Service {
 
     /** Release everything in case of crash/destroy. */
     private void releaseAllResources() {
+        if (durationLimitController != null) {
+            durationLimitController.stopSession();
+        }
         // Stop fallback snapshot loop
         fallbackMode = false;
         isCapturingSnapshot = false;
@@ -1462,6 +1485,77 @@ public class DualCameraRecordingService extends Service {
         state = DualCameraState.DISABLED;
         sessionsConfigured = 0;
         camerasOpened = 0;
+    }
+
+    private void initializeDurationLimitController() {
+        durationLimitController = new RecordingDurationLimitController(
+                new RecordingDurationLimitController.Scheduler() {
+                    @Override
+                    public long elapsedRealtime() {
+                        return SystemClock.elapsedRealtime();
+                    }
+
+                    @Override
+                    public void postDelayed(Runnable runnable, long delayMs) {
+                        mainHandler.postDelayed(runnable, delayMs);
+                    }
+
+                    @Override
+                    public void removeCallbacks(Runnable runnable) {
+                        mainHandler.removeCallbacks(runnable);
+                    }
+                },
+                prefs::getMaximumRecordingDurationMs,
+                () -> {
+                    FLog.i(TAG, "Maximum recording duration reached; stopping current dual recording");
+                    handleStopDualRecording();
+                });
+
+        durationPreferenceListener = (preferences, key) -> {
+            if (!SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_OPTION.equals(key)
+                    && !SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES.equals(key)) {
+                return;
+            }
+            if (SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES.equals(key)
+                    && !MaximumRecordingDuration.OPTION_CUSTOM.equals(
+                    prefs.getMaximumRecordingDurationOption())) {
+                return;
+            }
+            if (durationLimitController.onLimitChanged()) {
+                long limitMs = prefs.getMaximumRecordingDurationMs();
+                if (limitMs == 0L) {
+                    FLog.i(TAG, "Maximum recording duration disabled for current dual session");
+                } else {
+                    FLog.i(TAG, "Maximum recording duration updated for current dual session: "
+                            + limitMs + " ms");
+                }
+            }
+        };
+        prefs.sharedPreferences.registerOnSharedPreferenceChangeListener(durationPreferenceListener);
+    }
+
+    private void startDurationLimitSession() {
+        if (durationLimitController == null) {
+            return;
+        }
+        long limitMs = durationLimitController.startSession();
+        if (limitMs == 0L) {
+            FLog.d(TAG, "Maximum recording duration is disabled for this dual session");
+        } else {
+            FLog.i(TAG, "Maximum recording duration scheduled for current dual session: "
+                    + limitMs + " ms");
+        }
+    }
+
+    private void releaseDurationLimitController() {
+        if (durationLimitController != null) {
+            durationLimitController.stopSession();
+        }
+        if (prefs != null && durationPreferenceListener != null) {
+            prefs.sharedPreferences.unregisterOnSharedPreferenceChangeListener(
+                    durationPreferenceListener);
+            durationPreferenceListener = null;
+        }
     }
 
     // ── Error handling ────────────────────────────────────────────────

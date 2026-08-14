@@ -7,6 +7,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
@@ -49,7 +50,9 @@ import android.content.pm.ServiceInfo;
 import com.fadcam.CameraType;
 import com.fadcam.Constants;
 import com.fadcam.MainActivity;
+import com.fadcam.MaximumRecordingDuration;
 import com.fadcam.R;
+import com.fadcam.RecordingDurationLimitController;
 import com.fadcam.RecordingState;
 import com.fadcam.SharedPreferencesManager; // Use your manager
 import com.fadcam.Utils;
@@ -173,6 +176,8 @@ public class RecordingService extends Service {
     private boolean isCameraOpen = false;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private RecordingDurationLimitController durationLimitController;
+    private SharedPreferences.OnSharedPreferenceChangeListener durationPreferenceListener;
 
     // Cached notification large icon — decoded once and reused to avoid BitmapFactory on every build.
     private android.graphics.Bitmap cachedNotificationIconBitmap = null;
@@ -254,6 +259,7 @@ public class RecordingService extends Service {
         super.onCreate();
         // Initialize essential components first
         sharedPreferencesManager = SharedPreferencesManager.getInstance(getApplicationContext());
+        initializeDurationLimitController();
 
         // Only initialize LocationHelper if location is explicitly enabled
         if (sharedPreferencesManager != null && sharedPreferencesManager.isLocalisationEnabled()) {
@@ -320,6 +326,78 @@ public class RecordingService extends Service {
 
         // Broadcast initial camera resource availability
         broadcastCameraResourceAvailability(true);
+    }
+
+    private void initializeDurationLimitController() {
+        durationLimitController = new RecordingDurationLimitController(
+                new RecordingDurationLimitController.Scheduler() {
+                    @Override
+                    public long elapsedRealtime() {
+                        return SystemClock.elapsedRealtime();
+                    }
+
+                    @Override
+                    public void postDelayed(Runnable runnable, long delayMs) {
+                        mainHandler.postDelayed(runnable, delayMs);
+                    }
+
+                    @Override
+                    public void removeCallbacks(Runnable runnable) {
+                        mainHandler.removeCallbacks(runnable);
+                    }
+                },
+                sharedPreferencesManager::getMaximumRecordingDurationMs,
+                () -> {
+                    FLog.i(TAG, "Maximum recording duration reached; stopping current recording");
+                    stopRecording();
+                });
+
+        durationPreferenceListener = (preferences, key) -> {
+            if (!SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_OPTION.equals(key)
+                    && !SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES.equals(key)) {
+                return;
+            }
+            if (SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES.equals(key)
+                    && !MaximumRecordingDuration.OPTION_CUSTOM.equals(
+                    sharedPreferencesManager.getMaximumRecordingDurationOption())) {
+                return;
+            }
+            if (durationLimitController.onLimitChanged()) {
+                long limitMs = sharedPreferencesManager.getMaximumRecordingDurationMs();
+                if (limitMs == 0L) {
+                    FLog.i(TAG, "Maximum recording duration disabled for current session");
+                } else {
+                    FLog.i(TAG, "Maximum recording duration updated for current session: "
+                            + limitMs + " ms");
+                }
+            }
+        };
+        sharedPreferencesManager.sharedPreferences.registerOnSharedPreferenceChangeListener(
+                durationPreferenceListener);
+    }
+
+    private void startDurationLimitSession() {
+        if (durationLimitController == null) {
+            return;
+        }
+        long limitMs = durationLimitController.startSession();
+        if (limitMs == 0L) {
+            FLog.d(TAG, "Maximum recording duration is disabled for this session");
+        } else {
+            FLog.i(TAG, "Maximum recording duration scheduled for current session: "
+                    + limitMs + " ms");
+        }
+    }
+
+    private void releaseDurationLimitController() {
+        if (durationLimitController != null) {
+            durationLimitController.stopSession();
+        }
+        if (sharedPreferencesManager != null && durationPreferenceListener != null) {
+            sharedPreferencesManager.sharedPreferences.unregisterOnSharedPreferenceChangeListener(
+                    durationPreferenceListener);
+            durationPreferenceListener = null;
+        }
     }
 
     private void scheduleMotionDetectorWarmupIfNeeded() {
@@ -1570,6 +1648,9 @@ public class RecordingService extends Service {
 
             // Only proceed if we're in NONE state
             if (recordingState == RecordingState.NONE) {
+                if (durationLimitController != null) {
+                    durationLimitController.stopSession();
+                }
                 // Update the UI and Service state atomically
                 recordingState = RecordingState.STARTING;
                 // Clear a stale stopping flag from a previous recording that
@@ -2058,6 +2139,7 @@ public class RecordingService extends Service {
     @Override
     public void onDestroy() {
         FLog.d(TAG, "onDestroy: Service being destroyed...");
+        releaseDurationLimitController();
 
         // Stop any active reconnection attempts
         stopReconnectionAttempts();
@@ -2149,6 +2231,9 @@ public class RecordingService extends Service {
 
     // --- Core Recording Logic ---
     private void stopRecording() {
+        if (durationLimitController != null && durationLimitController.stopSession()) {
+            FLog.d(TAG, "Cancelled maximum recording duration for current session");
+        }
         if (isStopping) {
             FLog.w(TAG, "stopRecording: Already in stopping process, ignoring duplicate call");
             return;
@@ -2456,6 +2541,9 @@ public class RecordingService extends Service {
         persistRecordingTimelineState();
         recordingState = RecordingState.PAUSED;
         sharedPreferencesManager.setRecordingInProgress(false);
+        if (durationLimitController != null && durationLimitController.pauseSession()) {
+            FLog.d(TAG, "Paused maximum recording duration countdown");
+        }
         // Notify RemoteStreamManager so status JSON reflects paused state
         com.fadcam.streaming.RemoteStreamManager.getInstance().pauseRecording();
 
@@ -2502,6 +2590,9 @@ public class RecordingService extends Service {
         persistRecordingTimelineState();
         recordingState = RecordingState.IN_PROGRESS;
         sharedPreferencesManager.setRecordingInProgress(true);
+        if (durationLimitController != null && durationLimitController.resumeSession()) {
+            FLog.d(TAG, "Resumed maximum recording duration countdown");
+        }
         // Notify RemoteStreamManager so status JSON reflects resumed (recording) state
         com.fadcam.streaming.RemoteStreamManager.getInstance().resumeRecording();
         
@@ -6587,6 +6678,7 @@ public class RecordingService extends Service {
                 accumulatedPausedDurationMs = 0L;
 
                 persistRecordingTimelineState();
+                startDurationLimitSession();
 
                 // Setup notification
                 setupRecordingInProgressNotification();
