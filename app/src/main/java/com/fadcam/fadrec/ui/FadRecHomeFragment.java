@@ -1016,9 +1016,6 @@ public class FadRecHomeFragment extends HomeFragment {
         }
     }
     
-    /** Throttles the per-second screen-recording UI log (see updateStorageInfoForScreenRecording). */
-    private long lastScreenRecordingUiLogMs = 0;
-
     /**
      * Load persisted recording state from SharedPreferences.
      */
@@ -2055,16 +2052,6 @@ public class FadRecHomeFragment extends HomeFragment {
 
                 updateStartStopButtonForFoldedState();
             });
-
-            // Throttled to 30s — this runs on the 1s UI timer and would
-            // otherwise flood logcat during long recordings.
-            long nowMs = android.os.SystemClock.elapsedRealtime();
-            if (nowMs - lastScreenRecordingUiLogMs >= 30_000L) {
-                lastScreenRecordingUiLogMs = nowMs;
-                FLog.d(TAG, "Screen recording UI updated [" + (isStreamOnly ? "STREAM_ONLY" : "STREAM_AND_SAVE")
-                    + "] available=" + availableSpace + " elapsed=" + elapsedTimeText
-                    + " remaining=" + remainingTimeText);
-            }
         } catch (Exception e) {
             FLog.e(TAG, "Error in updateStorageInfoForScreenRecording", e);
         }
