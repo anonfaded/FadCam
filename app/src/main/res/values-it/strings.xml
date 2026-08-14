@@ -778,9 +778,20 @@
     <string name="maximum_recording_duration_custom_hint">Ore · Minuti · Secondi</string>
 
     <string name="duration_picker_hours">Ore</string>
+    <string name="duration_picker_helper_hint">Tocca un valore per digitarlo · 0:00:00 = Nessun timer</string>
     <string name="duration_picker_minutes">Minuti</string>
     <string name="duration_picker_seconds">Secondi</string>
     <string name="duration_picker_ok">OK</string>
+    <string name="seek_amount_footer">Di quanti secondi il pulsante di ricerca salta avanti o indietro.</string>
+    <string name="controls_hide_delay_footer">Per quanto tempo i controlli di riproduzione restano visibili dopo aver smesso di toccare lo schermo.</string>
+    <string name="background_playback_timer_footer">Interrompe la riproduzione in background dopo la durata selezionata.</string>
+    <string name="video_split_unit_mb">Megabyte (MB)</string>
+    <string name="video_split_unit_gb">Gigabyte (GB)</string>
+    <string name="video_split_custom_footer">Imposta la dimensione del file alla quale una registrazione viene divisa in un nuovo file.</string>
+    <string name="debug_log_max_lines_footer">Più righe di log vengono catturate, più grande è il file di log. 5000 è il valore predefinito.</string>
+    <string name="audio_bitrate_footer">Un bitrate più alto significa migliore qualità video e file più grandi</string>
+    <string name="number_input_selected_caption">Valore selezionato</string>
+    <string name="duration_picker_tap_hint">Tocca il valore per digitarlo</string>
     <string name="duration_picker_cancel">Annulla</string>
     <string name="quick_timer_label">Timer</string>
     <string name="quick_timer_desc">Imposta durata massima di registrazione</string>
@@ -946,8 +957,6 @@
     <string name="timer_hours_short">h</string>
     <string name="timer_custom_label">Personalizzato</string>
     <string name="timer_custom_title">Timer personalizzato</string>
-    <string name="number_input_default_helper">Inserisci un numero</string>
-    <string name="number_input_ok_helper">Conferma valore inserito</string>
     <string name="timer_custom_low_hint">Secondi</string>
     <string name="timer_custom_high_hint">Minuti</string>
     <string name="timer_custom_description">%1$d secondi (%2$d minuti)</string>
@@ -1264,8 +1273,6 @@
     <string name="bitrate_explanation">Bitrate video</string>
     <string name="bitrate_explanation_text">Il bitrate controlla la quantità di dati utilizzati per ogni secondo di video. Un bitrate più alto produce video di qualità superiore ma file più grandi.</string>
     <string name="universal_enter_number">Inserisci numero</string>
-    <string name="universal_min_value">Min: %1$s</string>
-    <string name="universal_max_value">Max: %1$s</string>
     <string name="universal_ok">OK</string>
     <string name="universal_enable">Abilita</string>
     <string name="universal_disable">Disabilita</string>

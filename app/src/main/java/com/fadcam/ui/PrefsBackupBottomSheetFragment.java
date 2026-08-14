@@ -121,6 +121,8 @@ public class PrefsBackupBottomSheetFragment extends BottomSheetDialogFragment {
             listContainer.addView(buildDivider());
             // Reset
             listContainer.addView(buildActionRow(R.drawable.ic_delete, getString(R.string.prefs_reset_label), getString(R.string.prefs_reset_subtitle), v->promptResetDialog()));
+            // Canonical settings-row press-scale (grow 1.03).
+            com.fadcam.Utils.attachPressScaleToClickableRows(listContainer);
         }
     }
 

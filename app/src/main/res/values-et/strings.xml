@@ -776,9 +776,20 @@
     <string name="maximum_recording_duration_custom_hint">Tunnid · Minutid · Sekundid</string>
 
     <string name="duration_picker_hours">Tunnid</string>
+    <string name="duration_picker_helper_hint">Puudutage väärtust, et see sisestada · 0:00:00 = Ilma taimerita</string>
     <string name="duration_picker_minutes">Minutid</string>
     <string name="duration_picker_seconds">Sekundid</string>
     <string name="duration_picker_ok">OK</string>
+    <string name="seek_amount_footer">Mitu sekundit hüppab otsingu nupp edasi või tagasi.</string>
+    <string name="controls_hide_delay_footer">Kui kaua jäävad taasesituse juhtelemendid nähtavaks pärast ekraani puudutamise lõpetamist.</string>
+    <string name="background_playback_timer_footer">Peatab taustal taasesituse pärast valitud kestust.</string>
+    <string name="video_split_unit_mb">Megabaiti (MB)</string>
+    <string name="video_split_unit_gb">Gigabaiti (GB)</string>
+    <string name="video_split_custom_footer">Määrab faili suuruse, mille juures salvestis jagatakse uueks failiks.</string>
+    <string name="debug_log_max_lines_footer">Mida rohkem logiridu kogutakse, seda suurem on logifail. Vaikeväärtus on 5000.</string>
+    <string name="audio_bitrate_footer">Suurem bitikiirus tähendab paremat videokvaliteeti ja suuremaid faile</string>
+    <string name="number_input_selected_caption">Valitud väärtus</string>
+    <string name="duration_picker_tap_hint">Puudutage väärtust sisestamiseks</string>
     <string name="duration_picker_cancel">Tühista</string>
     <string name="quick_timer_label">Taimer</string>
     <string name="quick_timer_desc">Määra maksimaalne salvestuse kestus</string>
@@ -945,8 +956,6 @@
     <string name="timer_hours_short">%1$d t</string>
     <string name="timer_custom_label">Kohandatud...</string>
     <string name="timer_custom_title">Kohandatud taustal taimer</string>
-    <string name="number_input_default_helper">Sisesta number ja vajuta OK salvestamiseks.</string>
-    <string name="number_input_ok_helper">Tundub hea — vajuta OK salvestamiseks.</string>
     <string name="timer_custom_low_hint">Väga lühikesed taimerid võivad esitamise oodatust kiiremini peatada.</string>
     <string name="timer_custom_high_hint">Väga pikad taimerid võivad pikka aega aktiivsena püsida. Maksimaalselt 24 tundi.</string>
     <string name="timer_custom_description">Sisesta minutite arv. Näited: 5 = 5 minutit (300 sekundit). Taimer peatab esitamise pärast seda palju minuteid.</string>
@@ -1280,8 +1289,6 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="bitrate_explanation">Mis on bitikiirus?</string>
     <string name="bitrate_explanation_text">Bitikiirus on andmehulk, mida kasutatakse video iga sekundi jaoks. Kõrgem bitikiirus tähendab paremat kvaliteeti, kuid suuremaid faile. Liiga kõrge või madal võib põhjustada probleeme. Vaikimisi väärtused põhinevad professionaalsete kaamerate standarditel.</string>
     <string name="universal_enter_number">Sisesta number</string>
-    <string name="universal_min_value">Min %1$d</string>
-    <string name="universal_max_value">Maks %1$d</string>
     <string name="universal_ok">OK</string>
     <string name="universal_enable">Luba</string>
     <string name="universal_disable">Keela</string>

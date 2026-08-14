@@ -95,56 +95,62 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
         currentMatchColor = resolveAccentColor();
 
         View preview = buildPreviewArea();
-        list.addView(preview);
-
+        // The log preview gets its OWN card (clipped) placed ABOVE the
+        // settings card. The settings card may then be unclipped for the
+        // row press-scale growth without the logs escaping their border.
         LinearLayout mainCard = view.findViewById(R.id.picker_card_container);
-        if (mainCard != null) {
-            ViewGroup scrollContent = (ViewGroup) mainCard.getParent();
-            if (scrollContent != null) {
-                LinearLayout optionsCard = new LinearLayout(requireContext());
-                optionsCard.setOrientation(LinearLayout.VERTICAL);
-                optionsCard.setBackgroundResource(R.drawable.settings_group_card_bg);
-                optionsCard.setPadding(dp(12), dp(4), dp(12), dp(4));
+        ViewGroup scrollContent = (ViewGroup) mainCard.getParent();
+        LinearLayout previewCard = new LinearLayout(requireContext());
+        previewCard.setOrientation(LinearLayout.VERTICAL);
+        previewCard.setBackgroundResource(R.drawable.settings_group_card_bg);
+        previewCard.setPadding(dp(12), dp(8), dp(12), dp(8));
+        previewCard.addView(preview);
+        int mainIndex = scrollContent.indexOfChild(mainCard);
+        scrollContent.addView(previewCard, mainIndex);
+        ViewGroup.MarginLayoutParams pLp = (ViewGroup.MarginLayoutParams) previewCard.getLayoutParams();
+        pLp.bottomMargin = dp(10);
+        previewCard.setLayoutParams(pLp);
 
-                optionsCard.addView(buildToggleRow());
-                optionsCard.addView(makeDivider());
+        // Build the settings rows directly into the sheet's standard card
+        // (picker_card_container) — same structure as every other bottom
+        // sheet. The card holds only rows (no scrollables), so it may be
+        // unclipped for the press-scale growth.
+        mainCard.addView(buildToggleRow());
+        mainCard.addView(makeDivider());
 
-                LinearLayout maxLinesRow = buildMaxLinesRow();
-                optionsCard.addView(maxLinesRow);
-                optionsCard.addView(makeDivider());
+        LinearLayout maxLinesRow = buildMaxLinesRow();
+        mainCard.addView(maxLinesRow);
+        mainCard.addView(makeDivider());
 
-                LinearLayout shareRow = buildActionRow(android.R.drawable.ic_menu_share,
-                        getString(R.string.debug_log_share_title),
-                        getString(R.string.debug_log_share_subtitle));
-                shareRow.setOnClickListener(v -> onShare());
-                optionsCard.addView(shareRow);
-                optionsCard.addView(makeDivider());
+        LinearLayout shareRow = buildActionRow(android.R.drawable.ic_menu_share,
+                getString(R.string.debug_log_share_title),
+                getString(R.string.debug_log_share_subtitle));
+        shareRow.setOnClickListener(v -> onShare());
+        mainCard.addView(shareRow);
+        mainCard.addView(makeDivider());
 
-                LinearLayout deleteRow = buildActionRow(R.drawable.ic_delete,
-                        getString(R.string.debug_log_delete_title),
-                        getString(R.string.debug_log_delete_subtitle));
-                deleteRow.setOnClickListener(v -> onDeleteWithConfirm());
-                optionsCard.addView(deleteRow);
-                optionsCard.addView(makeDivider());
+        LinearLayout deleteRow = buildActionRow(R.drawable.ic_delete,
+                getString(R.string.debug_log_delete_title),
+                getString(R.string.debug_log_delete_subtitle));
+        deleteRow.setOnClickListener(v -> onDeleteWithConfirm());
+        mainCard.addView(deleteRow);
+        mainCard.addView(makeDivider());
 
-                LinearLayout openRow = buildActionRow(R.drawable.ic_info,
-                        getString(R.string.debug_log_open_title),
-                        getString(R.string.debug_log_open_subtitle));
-                openRow.setOnClickListener(v -> onOpenExternal());
-                optionsCard.addView(openRow);
+        LinearLayout openRow = buildActionRow(R.drawable.ic_info,
+                getString(R.string.debug_log_open_title),
+                getString(R.string.debug_log_open_subtitle));
+        openRow.setOnClickListener(v -> onOpenExternal());
+        mainCard.addView(openRow);
 
-                int mainIndex = scrollContent.indexOfChild(mainCard);
-                scrollContent.addView(optionsCard, mainIndex + 1);
-                ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) optionsCard.getLayoutParams();
-                lp.topMargin = dp(12);
-                optionsCard.setLayoutParams(lp);
+        boolean hasContent = hasLogContent();
+        setRowEnabled(shareRow, hasContent);
+        setRowEnabled(openRow, hasContent);
+        setRowEnabled(deleteRow, hasContent);
 
-                boolean hasContent = hasLogContent();
-                setRowEnabled(shareRow, hasContent);
-                setRowEnabled(openRow, hasContent);
-                setRowEnabled(deleteRow, hasContent);
-            }
-        }
+        // Canonical press-scale used by settings rows: clickable rows GROW
+        // (1.03) with selective ancestor unclipping; rows hosting a toggle
+        // are skipped automatically (the toggle is their feedback).
+        com.fadcam.Utils.attachPressScaleToClickableRows(mainCard);
     }
 
     private View buildPreviewArea() {
@@ -169,10 +175,14 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
         searchEdit.setMaxLines(1);
         searchEdit.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI);
         LinearLayout.LayoutParams searchLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        // Breathing room between the input and the up/down nav buttons.
+        searchLp.setMarginEnd(dp(8));
         searchRow.addView(searchEdit, searchLp);
         View btnUp = makeNavButton(true);
         View btnDown = makeNavButton(false);
-        searchRow.addView(btnUp, new LinearLayout.LayoutParams(dp(40), ViewGroup.LayoutParams.MATCH_PARENT));
+        LinearLayout.LayoutParams btnUpLp = new LinearLayout.LayoutParams(dp(40), ViewGroup.LayoutParams.MATCH_PARENT);
+        btnUpLp.setMarginEnd(dp(6)); // breathing room between the nav buttons
+        searchRow.addView(btnUp, btnUpLp);
         searchRow.addView(btnDown, new LinearLayout.LayoutParams(dp(40), ViewGroup.LayoutParams.MATCH_PARENT));
         container.addView(searchRow);
 
@@ -269,11 +279,14 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
     private LinearLayout buildActionRow(int iconRes, String title, String subtitle){
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)));
+        // Same metrics as every other bottom-sheet row (options sheet):
+        // 52dp min height, 14/12/12/12 gutters.
+        row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        row.setMinimumHeight(dp(52));
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
         // 14dp start / 12dp end gutters, light vertical padding
-        row.setPadding(dp(14), dp(6), dp(12), dp(6));
+        row.setPadding(dp(14), dp(12), dp(12), dp(12));
         android.widget.ImageView icon = new android.widget.ImageView(requireContext());
         LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dp(24), dp(24));
         iconLp.setMarginEnd(dp(16));
@@ -308,10 +321,12 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
     private LinearLayout buildToggleRow(){
         LinearLayout row = new LinearLayout(requireContext());
         row.setOrientation(LinearLayout.HORIZONTAL);
+        // Same metrics as every other bottom-sheet row.
         row.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        row.setMinimumHeight(dp(52));
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         row.setBackgroundResource(R.drawable.settings_home_row_bg);
-        row.setPadding(dp(14), dp(10), dp(12), dp(10));
+        row.setPadding(dp(14), dp(12), dp(12), dp(12));
         TextView label = new TextView(requireContext());
         label.setText(getString(R.string.setting_debug_title));
         label.setTypeface(label.getTypeface(), android.graphics.Typeface.BOLD);
@@ -347,9 +362,18 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
                     100, 50000, current,
                     getString(R.string.debug_log_max_lines_desc),
                     0, 0, null, null, MAX_LINES_RESULT_KEY);
+            sheet.getArguments().putString(
+                    MaterialNumberPickerBottomSheetFragment.ARG_FOOTER,
+                    getString(R.string.debug_log_max_lines_footer));
+            sheet.getArguments().putBoolean(
+                    MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET, true);
+            sheet.getArguments().putInt(
+                    MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE, 5000);
             sheet.show(getParentFragmentManager(), MAX_LINES_RESULT_KEY);
         });
-        getChildFragmentManager().setFragmentResultListener(MAX_LINES_RESULT_KEY, this, (requestKey, result) -> {
+        // Listener must live on the SAME FragmentManager the picker delivers
+        // its result to (the picker is shown via getParentFragmentManager()).
+        getParentFragmentManager().setFragmentResultListener(MAX_LINES_RESULT_KEY, this, (requestKey, result) -> {
             int val = result.getInt(MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER, current);
             if (val >= 100 && val <= 50000) {
                 prefs.sharedPreferences.edit().putInt(Constants.PREF_DEBUG_MAX_LINES, val).apply();

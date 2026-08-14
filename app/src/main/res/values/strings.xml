@@ -786,8 +786,18 @@
     <string name="duration_picker_minutes">Minutes</string>
     <string name="duration_picker_seconds">Seconds</string>
     <string name="duration_picker_ok">OK</string>
+    <string name="seek_amount_footer">How many seconds the seek button jumps forward or back.</string>
+    <string name="controls_hide_delay_footer">How long playback controls stay visible after you stop touching the screen.</string>
+    <string name="background_playback_timer_footer">Stops background playback after the selected duration.</string>
+    <string name="video_split_unit_mb">Megabytes (MB)</string>
+    <string name="video_split_unit_gb">Gigabytes (GB)</string>
+    <string name="video_split_custom_footer">Sets the file size at which a recording splits into a new file.</string>
+    <string name="debug_log_max_lines_footer">The more log lines captured, the larger the log file. 5000 is the default.</string>
+    <string name="audio_bitrate_footer">Higher bitrate means better video quality and larger files.</string>
+    <string name="number_input_selected_caption">Selected value</string>
+    <string name="duration_picker_tap_hint">Tap the value to type it</string>
     <string name="duration_picker_cancel">Cancel</string>
-    <string name="duration_picker_helper_hint">0:00:00 = No timer</string>
+    <string name="duration_picker_helper_hint">Tap a value to type it · 0:00:00 = No timer</string>
     <string name="duration_picker_selected_caption">Selected duration</string>
     <string name="duration_picker_reset_hours">Reset hours</string>
     <string name="duration_picker_reset_minutes">Reset minutes</string>
@@ -971,8 +981,6 @@
     <string name="timer_hours_short">%1$dh</string>
     <string name="timer_custom_label">Custom...</string>
     <string name="timer_custom_title">Custom background timer</string>
-    <string name="number_input_default_helper">Enter a number and press OK to save.</string>
-    <string name="number_input_ok_helper">Looks good — press OK to save.</string>
     <string name="timer_custom_low_hint">Very short timers may stop playback sooner than expected.</string>
     <string name="timer_custom_high_hint">Very long timers may remain active for a long time. Max 24 hours.</string>
     <string name="timer_custom_description">Enter number of minutes. Examples: 5 = 5 minutes (300 seconds). The timer will stop playback after this many minutes.</string>
@@ -1331,8 +1339,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="bitrate_explanation_text">Bitrate is the amount of data used per second of video. Higher bitrate means better quality but larger files. Too high or too low can cause problems. Default values are based on professional camera standards.</string>
     <!-- Added helper utility strings for numeric input bottom sheet -->
     <string name="universal_enter_number">Enter a number</string>
-    <string name="universal_min_value">Min %1$d</string>
-    <string name="universal_max_value">Max %1$d</string>
     <string name="universal_ok">OK</string>
     <string name="universal_enable">Enable</string>
     <string name="universal_disable">Disable</string>

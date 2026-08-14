@@ -1195,9 +1195,20 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="maximum_recording_duration_custom_hint">Stunden · Minuten · Sekunden</string>
 
     <string name="duration_picker_hours">Stunden</string>
+    <string name="duration_picker_helper_hint">Tippe auf einen Wert, um ihn einzugeben · 0:00:00 = Kein Timer</string>
     <string name="duration_picker_minutes">Minuten</string>
     <string name="duration_picker_seconds">Sekunden</string>
     <string name="duration_picker_ok">OK</string>
+    <string name="seek_amount_footer">Wie viele Sekunden der Such-Button vor- oder zurückspringt.</string>
+    <string name="controls_hide_delay_footer">Wie lange die Wiedergabesteuerung sichtbar bleibt, nachdem Sie den Bildschirm nicht mehr berühren.</string>
+    <string name="background_playback_timer_footer">Beendet die Wiedergabe im Hintergrund nach der gewählten Dauer.</string>
+    <string name="video_split_unit_mb">Megabyte (MB)</string>
+    <string name="video_split_unit_gb">Gigabyte (GB)</string>
+    <string name="video_split_custom_footer">Legt die Dateigröße fest, bei der eine Aufnahme in eine neue Datei geteilt wird.</string>
+    <string name="debug_log_max_lines_footer">Je mehr Logzeilen erfasst werden, desto größer die Logdatei. 5000 ist der Standardwert.</string>
+    <string name="audio_bitrate_footer">Höhere Bitrate bedeutet bessere Videoqualität und größere Dateien</string>
+    <string name="number_input_selected_caption">Ausgewählter Wert</string>
+    <string name="duration_picker_tap_hint">Tippe auf den Wert, um ihn einzugeben</string>
     <string name="duration_picker_cancel">Abbrechen</string>
     <string name="quick_timer_label">Timer</string>
     <string name="quick_timer_desc">Maximale Aufnahmedauer festlegen</string>
@@ -1342,8 +1353,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="timer_hours_short">%1$dh</string>
     <string name="timer_custom_label">Benutzerdefiniert …</string>
     <string name="timer_custom_title">Benutzerdefinierter Hintergrund-Timer</string>
-    <string name="number_input_default_helper">Gib eine Zahl ein und drücke OK zum Speichern.</string>
-    <string name="number_input_ok_helper">Sieht gut aus – drücke OK zum Speichern.</string>
     <string name="timer_custom_low_hint">Sehr kurze Timer können die Wiedergabe früher als erwartet stoppen.</string>
     <string name="timer_custom_high_hint">Sehr lange Timer können für sehr lange Zeit aktiv bleiben. Maximal 24 Stunden.</string>
     <string name="timer_custom_description">Gib die Anzahl der Minuten ein. Beispiele: 5 = 5 Minuten (300 Sekunden). Der Timer stoppt die Wiedergabe nach dieser Anzahl Minuten.</string>
@@ -2261,8 +2270,6 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="universal_enable">Aktivieren</string>
     <string name="universal_enabled">Aktiviert</string>
     <string name="universal_enter_number">Gib eine Zahl ein</string>
-    <string name="universal_max_value">Max %1$d</string>
-    <string name="universal_min_value">Min %1$d</string>
     <string name="universal_pause">Pause</string>
     <string name="universal_paused">Pausiert</string>
     <string name="universal_play">Abspielen</string>

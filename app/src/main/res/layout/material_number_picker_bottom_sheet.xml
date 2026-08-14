@@ -10,34 +10,37 @@
     android:paddingBottom="14dp"
     android:background="@drawable/picker_bottom_sheet_gradient_bg_dynamic">
 
-    <!-- Handle + header: back chevron with a left-aligned title -->
+    <!-- Drag handle — the ONLY draggable area; swiping elsewhere won't dismiss -->
     <View
-        android:layout_width="32dp"
-        android:layout_height="4dp"
+        android:id="@+id/picker_drag_handle"
+        android:layout_width="44dp"
+        android:layout_height="6dp"
         android:layout_marginBottom="10dp"
         android:layout_gravity="center_horizontal"
         android:background="@drawable/bottom_sheet_handle_bg"/>
 
+    <!-- Header: close button + left-aligned title (consistent with every sheet) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingStart="2dp"
-        android:paddingEnd="2dp">
+        android:paddingEnd="2dp"
+        android:paddingBottom="6dp">
 
         <ImageView
-            android:id="@+id/picker_back_btn"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:id="@+id/picker_close_btn"
+            android:layout_width="31dp"
+            android:layout_height="31dp"
             android:padding="8dp"
-            android:src="@drawable/ic_arrow_back"
+            android:src="@drawable/ic_close"
             android:scaleType="centerInside"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true"
-            android:tint="?attr/pickerIconTint"
-            android:contentDescription="@string/back"/>
+            android:tint="?attr/pickerTextSecondary"
+            android:contentDescription="@string/close"/>
 
         <TextView
             android:id="@+id/picker_title"
@@ -54,20 +57,10 @@
     <com.google.android.material.divider.MaterialDivider
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="10dp"
         app:dividerColor="#26FFFFFF"
         app:dividerInsetStart="0dp"
         app:dividerInsetEnd="0dp"/>
-
-    <!-- Optional description (INT mode / informational) -->
-    <TextView
-        android:id="@+id/picker_description"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:textSize="13sp"
-        android:textColor="?attr/homeRailTextSecondary"
-        android:visibility="gone"/>
 
     <!-- ── TIME mode: wheels ─────────────────────────────────────────────
          Row 1 holds the three wheels with ":" separators centered against
@@ -100,53 +93,21 @@
                 android:paddingStart="4dp"
                 android:paddingEnd="4dp">
 
-                <!-- Row 1: wheels with ":" separators; each column shows a
-                     tappable rounded value pill (theme accent) that opens
-                     typed input for that column. -->
+                <!-- Row 1: wheels with ":" separators. The center cell is drawn
+                     INSIDE each wheel (background band): digits scroll through
+                     it and the selected value always sits in the highlighted
+                     cell. Tapping the center row opens the type-in dialog. -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center">
 
-                    <FrameLayout
+                    <NumberPicker
+                        android:id="@+id/np_duration_hours"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center">
-
-                        <NumberPicker
-                            android:id="@+id/np_duration_hours"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"/>
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/picker_pill_hours"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackgroundBorderless"
-                            app:cardBackgroundColor="?attr/pickerButtonBackground"
-                            app:cardCornerRadius="10dp"
-                            app:cardElevation="0dp">
-
-                            <TextView
-                                android:id="@+id/picker_pill_value_hours"
-                                android:layout_width="52dp"
-                                android:layout_height="wrap_content"
-                                android:gravity="center"
-                                android:paddingTop="6dp"
-                                android:paddingBottom="6dp"
-                                android:textSize="20sp"
-                                android:textStyle="bold"
-                                android:fontFamily="sans-serif-medium"
-                                android:textColor="?attr/pickerButtonText"
-                                android:contentDescription="@string/duration_picker_hours"
-                                android:text="00"/>
-                        </com.google.android.material.card.MaterialCardView>
-                    </FrameLayout>
+                        android:layout_weight="1"/>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -154,46 +115,14 @@
                         android:text=":"
                         android:textSize="28sp"
                         android:textStyle="bold"
+                        android:includeFontPadding="false"
                         android:textColor="?attr/colorHeading"/>
 
-                    <FrameLayout
+                    <NumberPicker
+                        android:id="@+id/np_duration_minutes"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center">
-
-                        <NumberPicker
-                            android:id="@+id/np_duration_minutes"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"/>
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/picker_pill_minutes"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackgroundBorderless"
-                            app:cardBackgroundColor="?attr/pickerButtonBackground"
-                            app:cardCornerRadius="10dp"
-                            app:cardElevation="0dp">
-
-                            <TextView
-                                android:id="@+id/picker_pill_value_minutes"
-                                android:layout_width="52dp"
-                                android:layout_height="wrap_content"
-                                android:gravity="center"
-                                android:paddingTop="6dp"
-                                android:paddingBottom="6dp"
-                                android:textSize="20sp"
-                                android:textStyle="bold"
-                                android:fontFamily="sans-serif-medium"
-                                android:textColor="?attr/pickerButtonText"
-                                android:contentDescription="@string/duration_picker_minutes"
-                                android:text="00"/>
-                        </com.google.android.material.card.MaterialCardView>
-                    </FrameLayout>
+                        android:layout_weight="1"/>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -201,46 +130,14 @@
                         android:text=":"
                         android:textSize="28sp"
                         android:textStyle="bold"
+                        android:includeFontPadding="false"
                         android:textColor="?attr/colorHeading"/>
 
-                    <FrameLayout
+                    <NumberPicker
+                        android:id="@+id/np_duration_seconds"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center">
-
-                        <NumberPicker
-                            android:id="@+id/np_duration_seconds"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"/>
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:id="@+id/picker_pill_seconds"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackgroundBorderless"
-                            app:cardBackgroundColor="?attr/pickerButtonBackground"
-                            app:cardCornerRadius="10dp"
-                            app:cardElevation="0dp">
-
-                            <TextView
-                                android:id="@+id/picker_pill_value_seconds"
-                                android:layout_width="52dp"
-                                android:layout_height="wrap_content"
-                                android:gravity="center"
-                                android:paddingTop="6dp"
-                                android:paddingBottom="6dp"
-                                android:textSize="20sp"
-                                android:textStyle="bold"
-                                android:fontFamily="sans-serif-medium"
-                                android:textColor="?attr/pickerButtonText"
-                                android:contentDescription="@string/duration_picker_seconds"
-                                android:text="00"/>
-                        </com.google.android.material.card.MaterialCardView>
-                    </FrameLayout>
+                        android:layout_weight="1"/>
                 </LinearLayout>
 
                 <!-- Row 2: labels + overlaid per-column reset icons -->
@@ -283,6 +180,7 @@
                         android:text=":"
                         android:textSize="28sp"
                         android:textStyle="bold"
+                        android:includeFontPadding="false"
                         android:visibility="invisible"/>
 
                     <FrameLayout
@@ -317,6 +215,7 @@
                         android:text=":"
                         android:textSize="28sp"
                         android:textStyle="bold"
+                        android:includeFontPadding="false"
                         android:visibility="invisible"/>
 
                     <FrameLayout
@@ -347,72 +246,176 @@
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <!-- Caption: labels the value being chosen -->
-        <TextView
-            android:id="@+id/picker_summary_caption"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:gravity="center"
-            android:text="@string/duration_picker_selected_caption"
-            android:textSize="12sp"
-            android:textColor="?attr/homeRailTextSecondary"
-            android:visibility="gone"/>
-
-        <!-- Selected-time hero (display only; per-column pills accept typing) -->
-        <TextView
-            android:id="@+id/picker_summary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textSize="30sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorHeading"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.02"/>
     </LinearLayout>
 
-    <!-- ── INT mode: single wheel ──────────────────────────────────────── -->
+    <!-- ── INT mode: single wheel in the same card container ───────────── -->
     <LinearLayout
         android:id="@+id/picker_int_wheel_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center"
-        android:paddingTop="10dp">
+        android:visibility="gone">
 
-        <NumberPicker
-            android:id="@+id/np_picker_single"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="?attr/homeRailCardSurface"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:strokeColor="?attr/homeRailCardBorder"
+            app:strokeWidth="1dp">
+
+            <NumberPicker
+                android:id="@+id/np_picker_single"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 
-    <!-- Editable field (INT mode only): rounded input box that invites direct
-         typing — the raw number is validated live and echoed to the wheel.
-         TIME mode uses the per-column value pills instead. -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/picker_edit_container"
+    <!-- ── MB/GB mode: two wheels side by side (video split size) ─────── -->
+    <LinearLayout
+        android:id="@+id/picker_mbgb_wheel_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="?attr/homeRailCardSurface"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:strokeColor="?attr/homeRailCardBorder"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="2dp"
+                android:paddingBottom="4dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                    <NumberPicker
+                        android:id="@+id/np_gb"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"/>
+
+                    <NumberPicker
+                        android:id="@+id/np_mb"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginTop="-6dp">
+
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="@string/video_split_unit_gb"
+                            android:textSize="12sp"
+                            android:textColor="?attr/homeRailTextSecondary"
+                            android:textStyle="bold"/>
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:text="@string/video_split_unit_mb"
+                            android:textSize="12sp"
+                            android:textColor="?attr/homeRailTextSecondary"
+                            android:textStyle="bold"/>
+                    </FrameLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+
+    <!-- Summary card (shared by both modes): what's selected + interaction hint -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/picker_summary_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
-        app:boxCornerRadiusBottomEnd="14dp"
-        app:boxCornerRadiusBottomStart="14dp"
-        app:boxCornerRadiusTopEnd="14dp"
-        app:boxCornerRadiusTopStart="14dp">
+        app:cardBackgroundColor="?attr/homeRailCardSurface"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="0dp"
+        app:strokeColor="?attr/homeRailCardBorder"
+        app:strokeWidth="1dp">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/picker_edit_field"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="number"
-            android:imeOptions="actionDone"
-            android:maxLines="1"
-            android:textSize="16sp"/>
-    </com.google.android.material.textfield.TextInputLayout>
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <TextView
+                android:id="@+id/picker_summary_caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/duration_picker_selected_caption"
+                android:textSize="12sp"
+                android:textColor="?attr/homeRailTextSecondary"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/picker_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorHeading"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.02"/>
+
+            <TextView
+                android:id="@+id/picker_time_helper"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/duration_picker_helper_hint"
+                android:textSize="12sp"
+                android:textColor="?attr/homeRailTextSecondary"
+                android:visibility="gone"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Validation / helper line -->
     <TextView
@@ -434,6 +437,7 @@
         android:textColor="?attr/homeRailTextSecondary"
         android:paddingTop="2dp"
         android:paddingBottom="4dp"
+        android:layout_marginTop="12dp"
         android:visibility="gone"/>
 
     <!-- Reset (INT mode) + actions -->
@@ -450,6 +454,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="start"
+            app:icon="@drawable/undo_24px"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/pickerIconTint"
             android:text="@string/universal_reset"
             android:visibility="gone"/>
 

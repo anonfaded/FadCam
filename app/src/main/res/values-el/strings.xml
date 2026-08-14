@@ -737,9 +737,20 @@
     <string name="maximum_recording_duration_custom_hint">Ώρες · Λεπτά · Δευτερόλεπτα</string>
 
     <string name="duration_picker_hours">Ώρες</string>
+    <string name="duration_picker_helper_hint">Πατήστε μια τιμή για να την πληκτρολογήσετε · 0:00:00 = Χωρίς χρονοδιακόπτη</string>
     <string name="duration_picker_minutes">Λεπτά</string>
     <string name="duration_picker_seconds">Δευτερόλεπτα</string>
     <string name="duration_picker_ok">ΟΚ</string>
+    <string name="seek_amount_footer">Πόσα δευτερόλεπτα πηδά το κουμπί αναζήτησης μπροστά ή πίσω.</string>
+    <string name="controls_hide_delay_footer">Πόσο καιρό παραμένουν ορατά τα χειριστήρια αναπαραγωγής αφού σταματήσετε να αγγίζετε την οθόνη.</string>
+    <string name="background_playback_timer_footer">Διακόπτει την αναπαραγωγή στο παρασκήνιο μετά την επιλεγμένη διάρκεια.</string>
+    <string name="video_split_unit_mb">Μεγαμπάιτ (MB)</string>
+    <string name="video_split_unit_gb">Γιγαμπάιτ (GB)</string>
+    <string name="video_split_custom_footer">Καθορίζει το μέγεθος αρχείου στο οποίο η εγγραφή χωρίζεται σε νέο αρχείο.</string>
+    <string name="debug_log_max_lines_footer">Όσο περισσότερες γραμμές καταγραφής συλλέγονται, τόσο μεγαλύτερο είναι το αρχείο καταγραφής. 5000 είναι η προεπιλογή.</string>
+    <string name="audio_bitrate_footer">Υψηλότερο bitrate σημαίνει καλύτερη ποιότητα βίντεο και μεγαλύτερα αρχεία</string>
+    <string name="number_input_selected_caption">Επιλεγμένη τιμή</string>
+    <string name="duration_picker_tap_hint">Πατήστε την τιμή για να την πληκτρολογήσετε</string>
     <string name="duration_picker_cancel">Ακύρωση</string>
     <string name="quick_timer_label">Χρονοδιακόπτης</string>
     <string name="quick_timer_desc">Ορισμός μέγιστης διάρκειας εγγραφής</string>
@@ -922,8 +933,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="timer_hours_short">%1$dh</string>
     <string name="timer_custom_label">Προσαρμοσμένο…</string>
     <string name="timer_custom_title">Προσαρμοσμένος χρονοδιακόπτης παρασκηνίου</string>
-    <string name="number_input_default_helper">Εισαγάγετε έναν αριθμό και πατήστε OK για αποθήκευση.</string>
-    <string name="number_input_ok_helper">Φαίνεται σωστό — πατήστε OK για αποθήκευση.</string>
     <string name="timer_custom_low_hint">Πολύ σύντομοι χρονοδιακόπτες μπορεί να σταματήσουν την αναπαραγωγή νωρίτερα.</string>
     <string name="timer_custom_high_hint">Πολύ μεγάλοι χρονοδιακόπτες μπορεί να παραμείνουν ενεργοί για πολλή ώρα. Μέγιστο 24 ώρες.</string>
     <string name="timer_custom_description">Εισαγάγετε αριθμό λεπτών. Ο χρονοδιακόπτης θα σταματήσει την αναπαραγωγή μετά από τόσα λεπτά.</string>
@@ -1268,8 +1277,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="bitrate_explanation_text">Ο ρυθμός μετάδοσης είναι η ποσότητα δεδομένων ανά δευτερόλεπτο βίντεο.</string>
     <!-- Added helper utility strings for numeric input bottom sheet -->
     <string name="universal_enter_number">Εισαγάγετε έναν αριθμό</string>
-    <string name="universal_min_value">Ελάχ. %1$d</string>
-    <string name="universal_max_value">Μέγ. %1$d</string>
     <string name="universal_ok">OK</string>
     <string name="universal_enable">Ενεργοποίηση</string>
     <string name="universal_disable">Απενεργοποίηση</string>

@@ -1578,9 +1578,20 @@
     <string name="maximum_recording_duration_custom_hint">ساعات · دقائق · ثوانٍ</string>
 
     <string name="duration_picker_hours">ساعات</string>
+    <string name="duration_picker_helper_hint">اضغط على القيمة لكتابتها · 0:00:00 = بدون مؤقت</string>
     <string name="duration_picker_minutes">دقائق</string>
     <string name="duration_picker_seconds">ثوانٍ</string>
     <string name="duration_picker_ok">موافق</string>
+    <string name="seek_amount_footer">كم ثانية يقفز زر التقديم للأمام أو للخلف</string>
+    <string name="controls_hide_delay_footer">المدة التي تبقى فيها أزرار التحكم ظاهرة بعد التوقف عن لمس الشاشة</string>
+    <string name="background_playback_timer_footer">يوقف التشغيل في الخلفية بعد المدة المحددة</string>
+    <string name="video_split_unit_mb">ميغابايت (MB)</string>
+    <string name="video_split_unit_gb">غيغابايت (GB)</string>
+    <string name="video_split_custom_footer">يحدد حجم الملف الذي يتم عنده تقسيم التسجيل إلى ملف جديد</string>
+    <string name="debug_log_max_lines_footer">كلما زاد عدد أسطر السجل، زاد حجم ملف السجل. 5000 هو الافتراضي.</string>
+    <string name="audio_bitrate_footer">معدل البت الأعلى يعني جودة فيديو أفضل وملفات أكبر</string>
+    <string name="number_input_selected_caption">القيمة المحددة</string>
+    <string name="duration_picker_tap_hint">اضغط على القيمة لكتابتها</string>
     <string name="duration_picker_cancel">إلغاء</string>
     <string name="quick_timer_label">مؤقّت</string>
     <string name="quick_timer_desc">تعيين الحد الأقصى لمدة التسجيل</string>
@@ -1887,10 +1898,6 @@
     <string name="timer_custom_label">مخصص...</string>
 
     <string name="timer_custom_title">مؤقت الخلفية المخصص</string>
-
-    <string name="number_input_default_helper">أدخل رقمًا واضغط حسنًا للحفظ.</string>
-
-    <string name="number_input_ok_helper">يبدو جيدًا — اضغط حسنًا للحفظ.</string>
 
     <string name="timer_custom_low_hint">المؤقتات القصيرة جدًا قد توقف التشغيل أسرع من المتوقع.</string>
 
@@ -2412,10 +2419,6 @@
     <string name="helper_watermark_option">اختر محتوى التراكب: الطابع الزمني + العلامة التجارية، الطابع الزمني فقط، أو لا شيء.</string>
 
     <string name="universal_enter_number">أدخل رقمًا</string>
-
-    <string name="universal_min_value">الحد الأدنى %1$d</string>
-
-    <string name="universal_max_value">الحد الأقصى %1$d</string>
 
     <string name="universal_ok">حسنًا</string>
 

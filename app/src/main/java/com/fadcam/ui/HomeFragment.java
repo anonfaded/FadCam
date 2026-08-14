@@ -5140,7 +5140,8 @@ public class HomeFragment extends BaseFragment {
         Utils.attachPressScale(buttonStartStop);
         Utils.attachPressScale(buttonPauseResume);
         Utils.attachPressScale(buttonCamSwitch);
-        Utils.attachPressScale(buttonMirrorSwitch);
+        // Mirror switch: its status label scales in sync with the button.
+        Utils.attachPressScaleWithCompanions(buttonMirrorSwitch, 1.06f, mirrorStatusLabel);
 
         // Initialize debounced runnables for start/stop actions to prevent rapid clicking
         if (debouncedStartRecording == null) {
@@ -8140,10 +8141,12 @@ public class HomeFragment extends BaseFragment {
                         sharedPreferencesManager.getSavedExposureCompensation() * step));
             }
 
-            // Pill-style tap animations for the AF/exposure/zoom tiles.
-            Utils.attachPressScale(tileAfToggle);
-            Utils.attachPressScale(tileExp);
-            Utils.attachPressScale(tileZoom);
+            // Pill-style tap animations for the AF/exposure/zoom tiles — the
+            // value label overlays scale in sync with their button so the
+            // whole control moves as one unit.
+            Utils.attachPressScaleWithCompanions(tileAfToggle, 1.06f, tileAfStatusIcon);
+            Utils.attachPressScaleWithCompanions(tileExp, 1.06f, tileExpLabel);
+            Utils.attachPressScaleWithCompanions(tileZoom, 1.06f, tileZoomLabel);
 
             // Initialize AF tile icon from saved afMode and apply Material Icons typeface
             try {
@@ -9475,7 +9478,8 @@ public class HomeFragment extends BaseFragment {
         }
 
         // Pill-style tap animation for the torch control.
-        Utils.attachPressScale(buttonTorchSwitch);
+        // Torch: its status label scales in sync with the button.
+        Utils.attachPressScaleWithCompanions(buttonTorchSwitch, 1.06f, torchStatusLabel);
 
         // Initial state update
         // updateTorchButtonState(isTorchOn); // This might be called too early,

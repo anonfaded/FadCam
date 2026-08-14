@@ -781,9 +781,20 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="maximum_recording_duration_custom_hint">Jam · Menit · Detik</string>
 
     <string name="duration_picker_hours">Jam</string>
+    <string name="duration_picker_helper_hint">Ketuk nilai untuk mengetiknya · 0:00:00 = Tanpa pengatur waktu</string>
     <string name="duration_picker_minutes">Menit</string>
     <string name="duration_picker_seconds">Detik</string>
     <string name="duration_picker_ok">OK</string>
+    <string name="seek_amount_footer">Berapa detik tombol cari melompat maju atau mundur.</string>
+    <string name="controls_hide_delay_footer">Berapa lama kontrol pemutaran tetap terlihat setelah berhenti menyentuh layar.</string>
+    <string name="background_playback_timer_footer">Menghentikan pemutaran latar belakang setelah durasi yang dipilih.</string>
+    <string name="video_split_unit_mb">Megabyte (MB)</string>
+    <string name="video_split_unit_gb">Gigabyte (GB)</string>
+    <string name="video_split_custom_footer">Menetapkan ukuran file saat rekaman dipecah menjadi file baru.</string>
+    <string name="debug_log_max_lines_footer">Semakin banyak baris log yang ditangkap, semakin besar file log. 5000 adalah nilai default.</string>
+    <string name="audio_bitrate_footer">Bitrate lebih tinggi berarti kualitas video lebih baik dan file lebih besar</string>
+    <string name="number_input_selected_caption">Nilai yang dipilih</string>
+    <string name="duration_picker_tap_hint">Ketuk nilai untuk mengetiknya</string>
     <string name="duration_picker_cancel">Batal</string>
     <string name="quick_timer_label">Timer</string>
     <string name="quick_timer_desc">Atur durasi perekaman maksimum</string>
@@ -966,8 +977,6 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="timer_hours_short">%1$dj</string>
     <string name="timer_custom_label">Kustom...</string>
     <string name="timer_custom_title">Timer latar belakang kustom</string>
-    <string name="number_input_default_helper">Masukkan angka dan tekan OK untuk menyimpan.</string>
-    <string name="number_input_ok_helper">Terlihat bagus — tekan OK untuk menyimpan.</string>
     <string name="timer_custom_low_hint">Timer yang sangat singkat mungkin menghentikan pemutaran lebih cepat dari yang diharapkan.</string>
     <string name="timer_custom_high_hint">Timer yang sangat lama mungkin tetap aktif dalam waktu lama. Maksimal 24 jam.</string>
     <string name="timer_custom_description">Masukkan jumlah menit. Contoh: 5 = 5 menit (300 detik). Timer akan menghentikan pemutaran setelah sekian menit.</string>
@@ -1321,8 +1330,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="bitrate_explanation_text">Bitrate adalah jumlah data yang digunakan per detik video. Bitrate lebih tinggi berarti kualitas lebih baik tapi file lebih besar. Terlalu tinggi atau terlalu rendah dapat menyebabkan masalah. Nilai default didasarkan pada standar kamera profesional.</string>
     <!-- Added helper utility strings for numeric input bottom sheet -->
     <string name="universal_enter_number">Masukkan angka</string>
-    <string name="universal_min_value">Min %1$d</string>
-    <string name="universal_max_value">Maks %1$d</string>
     <string name="universal_ok">OK</string>
     <string name="universal_enable">Aktifkan</string>
     <string name="universal_disable">Nonaktifkan</string>

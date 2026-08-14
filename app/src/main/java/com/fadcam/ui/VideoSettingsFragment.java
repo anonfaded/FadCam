@@ -1799,6 +1799,9 @@ public class VideoSettingsFragment extends Fragment {
 
     private void showCustomSplitSizeBottomSheet() {
         // method(showCustomSplitSizeBottomSheet)-----------
+        // Two-column MB | GB wheel — the same pattern as the timer's H:M:S
+        // picker. The result is combined to total MB, so the rest of the
+        // system is untouched.
         int current = prefs.getVideoSplitSizeMb();
         if (current == 500 || current == 1024 || current == 2048 || current == 4096)
             current = 2048; // default for custom
@@ -1810,10 +1813,20 @@ public class VideoSettingsFragment extends Fragment {
                 refreshAllValues();
             }
         });
-        com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment sheet = com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment
-                .newInstance(
-                        getString(R.string.video_split_custom_title), 10, 102400, current, "10 - 102400", 0, 0,
-                        null, null, resultKey);
+        com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment
+                        .newMbGbInstance(
+                                getString(R.string.video_split_custom_title),
+                                current, resultKey);
+        if (sheet.getArguments() != null) {
+            sheet.getArguments().putBoolean(
+                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET, true);
+            sheet.getArguments().putInt(
+                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE, 2048);
+            sheet.getArguments().putString(
+                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_FOOTER,
+                    getString(R.string.video_split_custom_footer));
+        }
         sheet.show(getParentFragmentManager(), "video_split_custom_input");
         // method(showCustomSplitSizeBottomSheet)-----------
     }

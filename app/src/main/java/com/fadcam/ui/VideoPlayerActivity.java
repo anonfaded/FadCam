@@ -2207,6 +2207,18 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                             com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_ENABLE_TIMER_CALC,
                                             true
                                         );
+                                        _b.putBoolean(
+                                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET,
+                                            true
+                                        );
+                                        _b.putInt(
+                                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE,
+                                            60
+                                        );
+                                        _b.putString(
+                                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_FOOTER,
+                                            getString(R.string.background_playback_timer_footer)
+                                        );
                                         num.setArguments(_b);
                                         // Add seek-specific description
                                         android.os.Bundle _nb =
@@ -2388,6 +2400,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             if ("c_custom".equals(s)) {
                                 final String RK_NUM = "rk_vps_controller_timeout_custom";
                                 com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment num = com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.newInstance(getString(R.string.timer_custom_title), 1, 86400, 1, getString(R.string.universal_enter_number), 5, 60, getString(R.string.timer_custom_low_hint), getString(R.string.timer_custom_high_hint), RK_NUM);
+                                if (num.getArguments() != null) {
+                                    num.getArguments().putBoolean(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET, true);
+                                    num.getArguments().putInt(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE, 1);
+                                    num.getArguments().putString(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_FOOTER, getString(R.string.controls_hide_delay_footer));
+                                }
                                 android.os.Bundle _b = num.getArguments() != null ? num.getArguments() : new android.os.Bundle();
                                 _b.putString(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.controls_hide_delay_helper));
                                 num.setArguments(_b);
@@ -2571,6 +2588,17 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                                 ),
                                                 RK_NUM
                                             );
+                                        if (num.getArguments() != null) {
+                                            num.getArguments().putBoolean(
+                                                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET,
+                                                    true);
+                                            num.getArguments().putInt(
+                                                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE,
+                                                    10);
+                                            num.getArguments().putString(
+                                                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_FOOTER,
+                                                    getString(R.string.seek_amount_footer));
+                                        }
                                         try {
                                             getSupportFragmentManager().clearFragmentResultListener(
                                                 RK_NUM

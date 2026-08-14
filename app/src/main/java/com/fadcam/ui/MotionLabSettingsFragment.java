@@ -284,6 +284,14 @@ public class MotionLabSettingsFragment extends Fragment {
                 helper,
                 inputResultKey
             );
+            if (inputSheet.getArguments() != null) {
+                inputSheet.getArguments().putBoolean(
+                        MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET, true);
+                inputSheet.getArguments().putInt(
+                        MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE, initial);
+                inputSheet.getArguments().putString(
+                        MaterialNumberPickerBottomSheetFragment.ARG_FOOTER, helper);
+            }
             getParentFragmentManager().setFragmentResultListener(inputResultKey, this, (inputKey, inputBundle) -> {
                 int value = inputBundle.getInt(MaterialNumberPickerBottomSheetFragment.RESULT_NUMBER, initial);
                 consumer.accept(value);

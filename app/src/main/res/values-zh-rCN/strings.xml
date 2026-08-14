@@ -575,9 +575,20 @@
     <string name="maximum_recording_duration_custom_hint">小时 · 分钟 · 秒</string>
 
     <string name="duration_picker_hours">小时</string>
+    <string name="duration_picker_helper_hint">点按数值进行输入 · 0:00:00 = 无计时器</string>
     <string name="duration_picker_minutes">分钟</string>
     <string name="duration_picker_seconds">秒</string>
     <string name="duration_picker_ok">确定</string>
+    <string name="seek_amount_footer">快进/快退按钮跳过的秒数。</string>
+    <string name="controls_hide_delay_footer">停止触摸屏幕后，播放控件保持可见的时长。</string>
+    <string name="background_playback_timer_footer">在所选时长后停止后台播放。</string>
+    <string name="video_split_unit_mb">兆字节 (MB)</string>
+    <string name="video_split_unit_gb">吉字节 (GB)</string>
+    <string name="video_split_custom_footer">设置录像分割为新文件时的文件大小。</string>
+    <string name="debug_log_max_lines_footer">捕获的日志行越多，日志文件越大。默认值为 5000。</string>
+    <string name="audio_bitrate_footer">码率越高，视频质量越好，文件越大</string>
+    <string name="number_input_selected_caption">选中的数值</string>
+    <string name="duration_picker_tap_hint">点按数值进行输入</string>
     <string name="duration_picker_cancel">取消</string>
     <string name="quick_timer_label">计时器</string>
     <string name="quick_timer_desc">设置最长录制时长</string>
@@ -709,8 +720,6 @@
     <string name="timer_hours_short">%1$d小时</string>
     <string name="timer_custom_label">自定义...</string>
     <string name="timer_custom_title">自定义后台计时器</string>
-    <string name="number_input_default_helper">输入数字并按“确定”保存。</string>
-    <string name="number_input_ok_helper">确认无误后，按“确定”保存。</string>
     <string name="timer_custom_low_hint">计时过短可能导致播放提前停止。</string>
     <string name="timer_custom_high_hint">计时过长将导致功能长时间处于活动状态。最长24小时。</string>
     <string name="timer_custom_description">输入分钟数。示例：5 = 5分钟 (300秒)。计时器将在此指定时间后停止播放。</string>
@@ -767,8 +776,6 @@
     <string name="video_setting_location_embed_enabled">已启用</string>
     <string name="video_setting_location_embed_disabled">已禁用</string>
     <string name="helper_watermark_option">选择叠加内容：时间戳+品牌、仅时间戳或无</string>
-    <string name="universal_min_value">最低 %1$d</string>
-    <string name="universal_max_value">最大 %1$d</string>
     <string name="universal_ok">确定</string>
     <string name="universal_enable">启用</string>
     <string name="universal_disable">禁用</string>

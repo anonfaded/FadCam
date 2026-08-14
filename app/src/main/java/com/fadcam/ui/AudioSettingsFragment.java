@@ -370,6 +370,7 @@ public class AudioSettingsFragment extends Fragment {
         sheet.getArguments().putBoolean(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET, true);
         sheet.getArguments().putInt(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE, 192000);
     sheet.getArguments().putString(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DESCRIPTION, getString(R.string.helper_audio_bitrate_detail) + "\n" + getString(R.string.audio_bitrate_recommended_line));
+    sheet.getArguments().putString(com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_FOOTER, getString(R.string.audio_bitrate_footer));
     }
         sheet.show(getParentFragmentManager(), "audio_bitrate_input");
     }

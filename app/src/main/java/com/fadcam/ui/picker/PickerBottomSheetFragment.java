@@ -1269,7 +1269,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                             160
                         );
                     }
-                }); } // end if (!infoMode)
+                }); 
+                } // end if (!infoMode)
                 containerLayout.addView(row);
                 // Add divider between rows replicating settings group style
                 if (index < last) {
@@ -1293,6 +1294,9 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                 }
                 index++;
             }
+            // Canonical settings-row press-scale: clickable rows grow (1.03),
+            // toggle rows skipped automatically.
+            com.fadcam.Utils.attachPressScaleToClickableRows(containerLayout);
         }
         // Only show helper if the caller explicitly provided one
         if (helperView != null && helperText != null && !helperText.isEmpty()) {

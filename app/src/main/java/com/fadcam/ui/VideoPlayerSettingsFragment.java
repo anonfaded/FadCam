@@ -397,6 +397,18 @@ public class VideoPlayerSettingsFragment extends Fragment {
                             com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DESCRIPTION,
                             getString(R.string.controls_hide_delay_helper)
                         );
+                        _b.putBoolean(
+                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET,
+                            true
+                        );
+                        _b.putInt(
+                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE,
+                            1
+                        );
+                        _b.putString(
+                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_FOOTER,
+                            getString(R.string.controls_hide_delay_footer)
+                        );
                         num.setArguments(_b);
                         getParentFragmentManager().setFragmentResultListener(
                                 RK_NUM,
@@ -831,6 +843,18 @@ public class VideoPlayerSettingsFragment extends Fragment {
                         _b.putBoolean(
                             com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_ENABLE_TIMER_CALC,
                             true
+                        );
+                        _b.putBoolean(
+                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET,
+                            true
+                        );
+                        _b.putInt(
+                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE,
+                            60
+                        );
+                        _b.putString(
+                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_FOOTER,
+                            getString(R.string.background_playback_timer_footer)
                         );
                         num.setArguments(_b);
                         getParentFragmentManager().setFragmentResultListener(
@@ -1326,6 +1350,24 @@ public class VideoPlayerSettingsFragment extends Fragment {
                                 .putString(
                                     com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DESCRIPTION,
                                     getString(R.string.seek_amount_helper)
+                                );
+                            num
+                                .getArguments()
+                                .putBoolean(
+                                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET,
+                                    true
+                                );
+                            num
+                                .getArguments()
+                                .putInt(
+                                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE,
+                                    10
+                                );
+                            num
+                                .getArguments()
+                                .putString(
+                                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_FOOTER,
+                                    getString(R.string.seek_amount_footer)
                                 );
                         }
                         getParentFragmentManager().setFragmentResultListener(

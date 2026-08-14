@@ -226,41 +226,27 @@ public class Utils {
     }
 
     /**
-     * Press-scale for settings ROWS: unclips ancestors so the expansion stays
-     * visible, and RAISES the row's z on press so it draws above BOTH sibling
-     * dividers — the top and bottom divider hide together symmetrically
-     * (without the z-raise, only the divider above gets covered because of
-     * child draw order, which looks inconsistent).
+     * Press feedback for ROWS: a clean press effect — the row dims slightly
+     * while pressed and the native masked ripple (from the row background)
+     * provides the tactile highlight. NO scale animation and NO clipping
+     * changes: scale on wide rows required unclipping containers, which made
+     * scrollable content (carousels, log previews) paint over borders. A
+     * dim + ripple reads as a proper material press with zero side effects.
      */
     public static void attachPressScaleRow(final android.view.View v, final float scale) {
         if (v == null) return;
-        try {
-            android.view.ViewParent p = v.getParent();
-            while (p instanceof android.view.ViewGroup) {
-                android.view.ViewGroup g = (android.view.ViewGroup) p;
-                g.setClipChildren(false);
-                g.setClipToPadding(false);
-                p = p.getParent();
-            }
-        } catch (Exception ignored) {
-        }
-        final float zDp = 4f * v.getResources().getDisplayMetrics().density;
         v.setOnTouchListener((view, event) -> {
             switch (event.getActionMasked()) {
                 case android.view.MotionEvent.ACTION_DOWN:
-                    view.setTranslationZ(zDp);
-                    view.animate().scaleX(scale).scaleY(scale)
-                            .setDuration(90)
-                            .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                            .start();
+                    view.animate().cancel();
+                    view.animate().alpha(0.65f).setDuration(80L).start();
                     break;
                 case android.view.MotionEvent.ACTION_UP:
                 case android.view.MotionEvent.ACTION_CANCEL:
-                    view.setTranslationZ(0f);
-                    view.animate().scaleX(1f).scaleY(1f)
-                            .setDuration(180)
-                            .setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator())
-                            .start();
+                    view.animate().cancel();
+                    view.animate().alpha(1f).setDuration(150L).start();
+                    break;
+                default:
                     break;
             }
             return false; // never consume — clicks/long-clicks still fire
@@ -268,10 +254,10 @@ public class Utils {
     }
 
     /**
-     * Recursively attaches the pill press-scale (subtle 1.03, no spring — wide
-     * rows) to every clickable row in a settings screen. Skips compound widgets
-     * (switches, sliders, checkboxes) that manage their own touch feedback.
-     * Idempotent via a tag, so it is safe to call from any fragment.
+     * Recursively attaches the row press effect (dim + native ripple) to every
+     * clickable row in a settings screen. Skips compound widgets (switches,
+     * sliders, checkboxes) that manage their own touch feedback. Idempotent
+     * via a tag, so it is safe to call from any fragment.
      */
     public static void attachPressScaleToClickableRows(final android.view.View root) {
         if (root == null) return;
@@ -279,12 +265,11 @@ public class Utils {
                 || root instanceof android.widget.SeekBar
                 || root instanceof android.widget.RatingBar;
         // Rows hosting a toggle (custom avatar switch / compound widget) must NOT
-        // scale — the toggle is the feedback there, scaling looks wrong.
+        // get the press effect — the toggle is the feedback there.
         boolean containsToggle = root instanceof android.view.ViewGroup
                 && containsToggleDescendant((android.view.ViewGroup) root);
         if (!isCompound && !containsToggle && root.isClickable()
                 && root.getTag(R.id.press_scale_attached) == null) {
-            // Row variant: visible expansion + z-raise so both dividers hide together.
             attachPressScaleRow(root, 1.03f);
             root.setTag(R.id.press_scale_attached, Boolean.TRUE);
         }
@@ -325,20 +310,123 @@ public class Utils {
      *               single-motion settle (wide rows — the overshoot would read
      *               as a visible "bubble" on large surfaces)
      */
-    public static void attachPressScale(final android.view.View v, final float scale, final boolean spring) {
-        if (v == null) return;
-        // Unclip every ancestor so the scaled button never gets cut off
-        // mid-animation (same treatment as the mode pill).
+    /**
+     * Pill-style tap animation for BUTTONS: press scales the view up slightly,
+     * release settles it back. Matches the mode pill's press nudge + overshoot
+     * settle so all home controls feel consistent. The button's containers are
+     * unclipped up to the first scrollable ancestor so the growth shows
+     * (buttons are small contained views — unlike wide rows, this never leaks
+     * into scrollable content; rows use the press effect instead).
+     *
+     * @param v the view to animate
+     * @param scale the scale while pressed (e.g. 1.06f)
+     * @param spring true = overshoot bounce on release (buttons), false = smooth
+     *               single-motion settle
+     */
+    private static boolean isScrollable(android.view.View v) {
+        return v instanceof android.widget.ScrollView
+                || v instanceof android.widget.HorizontalScrollView
+                || v instanceof androidx.core.widget.NestedScrollView
+                || v instanceof android.widget.AbsListView
+                || v instanceof androidx.recyclerview.widget.RecyclerView;
+    }
+
+    private static void unclipAncestorsForScale(final android.view.View v) {
         try {
             android.view.ViewParent p = v.getParent();
             while (p instanceof android.view.ViewGroup) {
                 android.view.ViewGroup g = (android.view.ViewGroup) p;
+                if (isScrollable(g)) {
+                    break; // never unclip scroll containers or anything above
+                }
                 g.setClipChildren(false);
                 g.setClipToPadding(false);
                 p = p.getParent();
             }
         } catch (Exception ignored) {
         }
+    }
+
+    /**
+     * Press-scale for a touch target that animates its COMPANION views in
+     * sync (e.g., a home tile button + its value label overlay). The label
+     * scales and settles together with the button so the whole control feels
+     * like one unit. Uses the same bounded unclipping as the button variant.
+     * Touches are never consumed.
+     *
+     * @param touchTarget the view that receives the touch
+     * @param scale the scale while pressed (e.g. 1.06f)
+     * @param companions extra views (labels, badges) animated in sync
+     */
+    public static void attachPressScaleWithCompanions(
+            final android.view.View touchTarget, final float scale,
+            final android.view.View... companions) {
+        if (touchTarget == null) {
+            return;
+        }
+        unclipAncestorsForScale(touchTarget);
+        touchTarget.setOnTouchListener((view, event) -> {
+            switch (event.getActionMasked()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    animateScaleSync(view, scale, companions);
+                    break;
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    animateRestoreSync(view, companions);
+                    break;
+                default:
+                    break;
+            }
+            return false; // never consume — clicks/long-clicks still fire
+        });
+    }
+
+    private static void animateScaleSync(android.view.View v, float scale,
+            android.view.View[] companions) {
+        v.animate().cancel();
+        v.animate().scaleX(scale).scaleY(scale).setDuration(90)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .start();
+        if (companions != null) {
+            // Companions (small value labels, e.g. 6.5sp) need a STRONGER
+            // scale to grow visibly — scaling a tiny label by 1.06 is
+            // imperceptible. Amplify the growth so the label pops together
+            // with its button.
+            float companionScale = 1f + (scale - 1f) * 3.5f;
+            for (android.view.View c : companions) {
+                if (c == null) {
+                    continue;
+                }
+                c.animate().cancel();
+                c.animate().scaleX(companionScale).scaleY(companionScale).setDuration(90)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                        .start();
+            }
+        }
+    }
+
+    private static void animateRestoreSync(android.view.View v,
+            android.view.View[] companions) {
+        v.animate().cancel();
+        v.animate().scaleX(1f).scaleY(1f).setDuration(220)
+                .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
+                .start();
+        if (companions != null) {
+            for (android.view.View c : companions) {
+                if (c == null) {
+                    continue;
+                }
+                c.animate().cancel();
+                c.animate().scaleX(1f).scaleY(1f).setDuration(220)
+                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.4f))
+                        .start();
+            }
+        }
+    }
+
+    public static void attachPressScale(final android.view.View v, final float scale, final boolean spring) {
+        if (v == null) return;
+        unclipAncestorsForScale(v);
         v.setOnTouchListener((view, event) -> {
             switch (event.getActionMasked()) {
                 case android.view.MotionEvent.ACTION_DOWN:

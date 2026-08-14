@@ -1551,9 +1551,20 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="maximum_recording_duration_custom_hint">Heures · Minutes · Secondes</string>
 
     <string name="duration_picker_hours">Heures</string>
+    <string name="duration_picker_helper_hint">Touchez une valeur pour la saisir · 0:00:00 = Pas de minuteur</string>
     <string name="duration_picker_minutes">Minutes</string>
     <string name="duration_picker_seconds">Secondes</string>
     <string name="duration_picker_ok">OK</string>
+    <string name="seek_amount_footer">Combien de secondes le bouton de recherche avance ou recule.</string>
+    <string name="controls_hide_delay_footer">Combien de temps les commandes restent visibles après avoir arrêté de toucher l\'écran.</string>
+    <string name="background_playback_timer_footer">Arrête la lecture en arrière-plan après la durée sélectionnée.</string>
+    <string name="video_split_unit_mb">Mégaoctets (Mo)</string>
+    <string name="video_split_unit_gb">Gigaoctets (Go)</string>
+    <string name="video_split_custom_footer">Définit la taille de fichier à laquelle un enregistrement est divisé en un nouveau fichier.</string>
+    <string name="debug_log_max_lines_footer">Plus le nombre de lignes de journal est élevé, plus le fichier de journal est volumineux. 5000 est la valeur par défaut.</string>
+    <string name="audio_bitrate_footer">Un débit plus élevé signifie une meilleure qualité vidéo et des fichiers plus volumineux</string>
+    <string name="number_input_selected_caption">Valeur sélectionnée</string>
+    <string name="duration_picker_tap_hint">Touchez la valeur pour la saisir</string>
     <string name="duration_picker_cancel">Annuler</string>
     <string name="quick_timer_label">Minuteur</string>
     <string name="quick_timer_desc">Définir la durée d\'enregistrement maximale</string>
@@ -1842,10 +1853,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="timer_custom_label">Custom...</string>
 
 <string name="timer_custom_title">Custom background timer</string>
-
-<string name="number_input_default_helper">Enter a number and press OK to save.</string>
-
-<string name="number_input_ok_helper">Looks good — press OK to save.</string>
 
 <string name="timer_custom_low_hint">Very short timers may stop playback sooner than expected.</string>
 
@@ -2367,10 +2374,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="helper_watermark_option">Choose overlay content: timestamp + brand, timestamp only, or none.</string>
 
 <string name="universal_enter_number">Enter a number</string>
-
-<string name="universal_min_value">Min %1$d</string>
-
-<string name="universal_max_value">Max %1$d</string>
 
 <string name="universal_ok">OK</string>
 

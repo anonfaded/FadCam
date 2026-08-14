@@ -42,6 +42,7 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
     public static final String ARG_MODE = "mode";
     public static final int MODE_INT = 0;
     public static final int MODE_TIME_HMS = 1;
+    public static final int MODE_MBGB = 2; // two-column MB | GB (video split size)
 
     public static final String ARG_TITLE = "title";
     public static final String ARG_MIN = "min";
@@ -99,6 +100,20 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
         return f;
     }
 
+    // ── MB/GB-mode factory (video split size) ────────────────────────────
+    public static MaterialNumberPickerBottomSheetFragment newMbGbInstance(
+            String title, int initialTotalMb, String resultKey) {
+        MaterialNumberPickerBottomSheetFragment f =
+                new MaterialNumberPickerBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putInt(ARG_MODE, MODE_MBGB);
+        b.putString(ARG_TITLE, title);
+        b.putInt(ARG_VALUE, Math.max(0, initialTotalMb));
+        b.putString(ARG_RESULT_KEY, resultKey);
+        f.setArguments(b);
+        return f;
+    }
+
     private int mode;
     private String title, hint, lowMsg, highMsg, resultKey;
     private int min, max, value, lowTh, highTh, defaultValue;
@@ -109,18 +124,13 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
     private NumberPicker npHours;
     private NumberPicker npMinutes;
     private NumberPicker npSeconds;
+    private NumberPicker npMb;
+    private NumberPicker npGb;
     private TextView summaryView;
     private TextView helperView;
-    private TextView descriptionView;
     private TextView footerView;
     private MaterialButton resetButton;
     private MaterialButton okButton;
-    private com.google.android.material.textfield.TextInputLayout editContainer;
-    private com.google.android.material.textfield.TextInputEditText editField;
-    private boolean syncingField; // guards wheel↔field echo
-    private TextView pillHours;
-    private TextView pillMinutes;
-    private TextView pillSeconds;
 
     @Override
     public int getTheme() {
@@ -135,6 +145,13 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
                 .findViewById(com.google.android.material.R.id.design_bottom_sheet);
             if (bottomSheet != null) {
                 bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic);
+                // Swipe-anywhere dismiss off — the top handle is the only
+                // draggable area (avoids accidental dismiss mid-scroll).
+                try {
+                    com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet)
+                            .setDraggable(false);
+                } catch (Exception ignored) {
+                }
             }
         });
         if (dialog.getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -228,42 +245,79 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
         TextView titleView = view.findViewById(R.id.picker_title);
         if (titleView != null) titleView.setText(title);
 
-        descriptionView = view.findViewById(R.id.picker_description);
-        if (descriptionView != null) {
-            if (descriptionText != null && !descriptionText.isEmpty()) {
-                descriptionView.setText(descriptionText);
-                descriptionView.setVisibility(View.VISIBLE);
-            } else {
-                descriptionView.setVisibility(View.GONE);
-            }
-        }
-
         summaryView = view.findViewById(R.id.picker_summary);
         helperView = view.findViewById(R.id.picker_helper);
         footerView = view.findViewById(R.id.picker_footer);
         okButton = view.findViewById(R.id.btn_picker_ok);
         MaterialButton cancelButton = view.findViewById(R.id.btn_picker_cancel);
         resetButton = view.findViewById(R.id.btn_picker_reset);
-        editContainer = view.findViewById(R.id.picker_edit_container);
-        editField = view.findViewById(R.id.picker_edit_field);
 
         View intWheels = view.findViewById(R.id.picker_int_wheel_container);
         View timeWheels = view.findViewById(R.id.picker_time_wheel_container);
+        View mbgbWheels = view.findViewById(R.id.picker_mbgb_wheel_container);
 
         npSingle = view.findViewById(R.id.np_picker_single);
         npHours = view.findViewById(R.id.np_duration_hours);
         npMinutes = view.findViewById(R.id.np_duration_minutes);
         npSeconds = view.findViewById(R.id.np_duration_seconds);
+        npMb = view.findViewById(R.id.np_mb);
+        npGb = view.findViewById(R.id.np_gb);
 
-        pillHours = view.findViewById(R.id.picker_pill_value_hours);
-        pillMinutes = view.findViewById(R.id.picker_pill_value_minutes);
-        pillSeconds = view.findViewById(R.id.picker_pill_value_seconds);
+        // Close button: consistent with every other bottom sheet (X icon).
+        View closeBtn = view.findViewById(R.id.picker_close_btn);
+        if (closeBtn != null) {
+            closeBtn.setOnClickListener(v -> dismiss());
+        }
 
-        // Back chevron: consistent with the options sheet — dismiss returns
-        // to the previous sheet.
-        View backBtn = view.findViewById(R.id.picker_back_btn);
-        if (backBtn != null) {
-            backBtn.setOnClickListener(v -> dismiss());
+        // Handle-only drag: translate the sheet while dragging the top handle;
+        // release past 25% height dismisses, otherwise it springs back.
+        try {
+            final android.view.View sheetView =
+                    ((com.google.android.material.bottomsheet.BottomSheetDialog) getDialog())
+                            .findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            View dragHandle = view.findViewById(R.id.picker_drag_handle);
+            if (dragHandle != null && sheetView != null) {
+                dragHandle.setOnTouchListener(new View.OnTouchListener() {
+                    private float startRawY;
+                    private float startTranslation;
+
+                    @Override
+                    public boolean onTouch(View v, android.view.MotionEvent event) {
+                        switch (event.getActionMasked()) {
+                            case android.view.MotionEvent.ACTION_DOWN:
+                                startRawY = event.getRawY();
+                                startTranslation = sheetView.getTranslationY();
+                                return true;
+                            case android.view.MotionEvent.ACTION_MOVE: {
+                                float dy = event.getRawY() - startRawY;
+                                if (dy > 0f) {
+                                    sheetView.setTranslationY(startTranslation + dy);
+                                }
+                                return true;
+                            }
+                            case android.view.MotionEvent.ACTION_UP:
+                            case android.view.MotionEvent.ACTION_CANCEL: {
+                                float dy = event.getRawY() - startRawY;
+                                int height = sheetView.getHeight();
+                                if (dy > 0f && height > 0 && dy > height * 0.25f) {
+                                    sheetView.animate().translationY(height)
+                                            .setDuration(180L)
+                                            .withEndAction(() -> dismiss())
+                                            .start();
+                                } else {
+                                    sheetView.animate().translationY(0f)
+                                            .setDuration(150L)
+                                            .start();
+                                }
+                                return true;
+                            }
+                            default:
+                                return false;
+                        }
+                    }
+                });
+            }
+        } catch (Exception ignored) {
         }
 
         int dividerColor = 0x40FFFFFF;
@@ -318,38 +372,83 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
             }
             refreshResetIconVisibility();
 
-            if (helperView != null) {
-                helperView.setText(hint != null && !hint.isEmpty()
+            // INT-mode helper is replaced by the hint inside the summary card.
+            if (helperView != null) helperView.setVisibility(View.GONE);
+            TextView timeHelper = view.findViewById(R.id.picker_time_helper);
+            if (timeHelper != null) {
+                timeHelper.setText(hint != null && !hint.isEmpty()
                         ? hint : getString(R.string.duration_picker_helper_hint));
+                timeHelper.setVisibility(View.VISIBLE);
             }
+            View summaryCard = view.findViewById(R.id.picker_summary_card);
+            if (summaryCard != null) summaryCard.setVisibility(View.VISIBLE);
             if (resetButton != null) resetButton.setVisibility(View.GONE);
 
-            // TIME mode uses per-column pills for typed input; the shared
-            // field below is INT-mode only.
-            if (editContainer != null) editContainer.setVisibility(View.GONE);
-
-            // Rounded, accent-colored value pills: tap one to type a value
-            // for that column (hours 0..24, minutes/seconds 0..59).
-            bindPill(view, R.id.picker_pill_hours, npHours, 24, R.string.duration_picker_hours);
-            bindPill(view, R.id.picker_pill_minutes, npMinutes, 59, R.string.duration_picker_minutes);
-            bindPill(view, R.id.picker_pill_seconds, npSeconds, 59, R.string.duration_picker_seconds);
-            updatePillValues();
+            // Center-cell band drawn INSIDE each wheel (background): digits
+            // scroll through it and the selected value sits in the highlighted
+            // cell in real time. Tap the center row → type-in dialog.
+            styleCenterCellPicker(npHours, 0, 24, getString(R.string.duration_picker_hours));
+            styleCenterCellPicker(npMinutes, 0, 59, getString(R.string.duration_picker_minutes));
+            styleCenterCellPicker(npSeconds, 0, 59, getString(R.string.duration_picker_seconds));
 
             // Caption above the hero summary: labels what is being chosen.
             TextView caption = view.findViewById(R.id.picker_summary_caption);
             if (caption != null) caption.setVisibility(View.VISIBLE);
 
-            // Optional footer (e.g. "Auto-stops & saves…") — subtle info line.
-            String footer = a.getString(ARG_FOOTER, null);
-            if (footerView != null) {
-                if (footer != null && !footer.isEmpty()) {
-                    footerView.setText(footer);
-                    footerView.setVisibility(View.VISIBLE);
+            updateTimeSummary();
+        } else if (mode == MODE_MBGB) {
+            if (intWheels != null) intWheels.setVisibility(View.GONE);
+            if (timeWheels != null) timeWheels.setVisibility(View.GONE);
+            if (mbgbWheels != null) mbgbWheels.setVisibility(View.VISIBLE);
+
+            int totalMb = Math.max(0, value);
+            setupWheel(npMb, 0, 1023, totalMb % 1024, dividerColor, selectedColor);
+            setupWheel(npGb, 0, 100, totalMb / 1024, dividerColor, selectedColor);
+            npMb.setOnValueChangedListener((p, o, n) -> {
+                tickHaptic();
+                updateMbGbSummary();
+            });
+            npGb.setOnValueChangedListener((p, o, n) -> {
+                tickHaptic();
+                updateMbGbSummary();
+            });
+            // Same center-cell design as TIME mode: tap to type, drags scroll.
+            styleCenterCellPicker(npMb, 0, 1023, getString(R.string.video_split_unit_mb));
+            styleCenterCellPicker(npGb, 0, 100, getString(R.string.video_split_unit_gb));
+
+            // Summary card: short heading, combined hero (e.g. "2 GB 500 MB"),
+            // tap hint; the caller's description goes to the footer.
+            View summaryCard = view.findViewById(R.id.picker_summary_card);
+            if (summaryCard != null) summaryCard.setVisibility(View.VISIBLE);
+            TextView caption = view.findViewById(R.id.picker_summary_caption);
+            if (caption != null) {
+                caption.setText(getString(R.string.number_input_selected_caption));
+                caption.setVisibility(View.VISIBLE);
+            }
+            TextView timeHelper = view.findViewById(R.id.picker_time_helper);
+            if (timeHelper != null) {
+                timeHelper.setText(getString(R.string.duration_picker_tap_hint));
+                timeHelper.setVisibility(View.VISIBLE);
+            }
+            if (summaryView != null) summaryView.setVisibility(View.VISIBLE);
+            updateMbGbSummary();
+
+            // Reset → ARG_DEFAULT_VALUE (e.g. 2048 MB = 2 GB).
+            if (resetButton != null) {
+                if (showReset) {
+                    resetButton.setVisibility(View.VISIBLE);
+                    resetButton.setOnClickListener(v -> {
+                        int def = Math.max(0, defaultValue);
+                        npMb.setValue(def % 1024);
+                        npGb.setValue(def / 1024);
+                        updateMbGbSummary();
+                        confirmHaptic();
+                    });
                 } else {
-                    footerView.setVisibility(View.GONE);
+                    resetButton.setVisibility(View.GONE);
                 }
             }
-            updateTimeSummary();
+            if (helperView != null) helperView.setVisibility(View.GONE);
         } else {
             if (timeWheels != null) timeWheels.setVisibility(View.GONE);
             if (intWheels != null) intWheels.setVisibility(View.VISIBLE);
@@ -357,48 +456,37 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
             setupWheel(npSingle, min, max, value, dividerColor, selectedColor);
             npSingle.setOnValueChangedListener((p, o, n) -> {
                 tickHaptic();
-                syncFieldFromWheel();
+                updateIntSummary();
                 validate();
             });
-            // Editable field: typing is validated live and echoed to the wheel
-            // (clamped), so large ranges (e.g. debug lines) don't need wheel scrolling.
-            if (editContainer != null && editField != null) {
-                editField.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-                editField.setText(String.valueOf(value));
-                editField.addTextChangedListener(new android.text.TextWatcher() {
-                    @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
-                    @Override public void onTextChanged(CharSequence s, int a, int b, int c) {
-                        if (syncingField) return;
-                        int parsed = parseFieldText();
-                        if (parsed >= 0) {
-                            syncingField = true;
-                            npSingle.setValue(Math.max(min, Math.min(max, parsed)));
-                            syncingField = false;
-                        }
-                        validate();
-                    }
-                    @Override public void afterTextChanged(android.text.Editable s) {}
-                });
-                editField.setOnEditorActionListener((v, actionId, event) -> {
-                    if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
-                        editContainer.setError(null);
-                        v.clearFocus();
-                        android.view.inputmethod.InputMethodManager imm =
-                                (android.view.inputmethod.InputMethodManager) requireContext()
-                                        .getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
-                        if (imm != null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
-                        deliverResult();
-                        return true;
-                    }
-                    return false;
-                });
+            // Same center-cell design as TIME mode: highlighted middle row,
+            // tap to type, drags scroll.
+            styleCenterCellPicker(npSingle, min, max, title);
+
+            // Summary card, INT flavour: short heading, hero value, tap hint.
+            // The caller's description (if any) goes to the FOOTER, never the
+            // caption — same as TIME mode's "Selected duration" heading.
+            View summaryCard = view.findViewById(R.id.picker_summary_card);
+            if (summaryCard != null) summaryCard.setVisibility(View.VISIBLE);
+            TextView caption = view.findViewById(R.id.picker_summary_caption);
+            if (caption != null) {
+                caption.setText(getString(R.string.number_input_selected_caption));
+                caption.setVisibility(View.VISIBLE);
             }
+            TextView timeHelper = view.findViewById(R.id.picker_time_helper);
+            if (timeHelper != null) {
+                timeHelper.setText(getString(R.string.duration_picker_tap_hint));
+                timeHelper.setVisibility(View.VISIBLE);
+            }
+            if (summaryView != null) summaryView.setVisibility(View.VISIBLE);
+            updateIntSummary();
+
             if (resetButton != null) {
                 if (showReset) {
                     resetButton.setVisibility(View.VISIBLE);
                     resetButton.setOnClickListener(v -> {
                         npSingle.setValue(defaultValue);
-                        syncFieldFromWheel();
+                        updateIntSummary();
                         validate();
                         confirmHaptic();
                     });
@@ -406,13 +494,25 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
                     resetButton.setVisibility(View.GONE);
                 }
             }
-            if (summaryView != null) summaryView.setVisibility(View.GONE);
-            TextView caption = view.findViewById(R.id.picker_summary_caption);
-            if (caption != null) caption.setVisibility(View.GONE);
-            if (helperView != null) {
-                helperView.setText(getString(R.string.number_input_default_helper));
-            }
+            // The old colored helper messages are gone — INT validation is
+            // enforced by the wheel and the input dialog's range.
+            if (helperView != null) helperView.setVisibility(View.GONE);
             validate();
+        }
+
+        // Footer ("photo text"): the caller's description wins (it explains
+        // what the option does), then an explicit ARG_FOOTER, else hidden.
+        String footer = a.getString(ARG_FOOTER, null);
+        if (descriptionText != null && !descriptionText.isEmpty()) {
+            footer = descriptionText;
+        }
+        if (footerView != null) {
+            if (footer == null || footer.isEmpty()) {
+                footerView.setVisibility(View.GONE);
+            } else {
+                footerView.setText(footer);
+                footerView.setVisibility(View.VISIBLE);
+            }
         }
 
         if (cancelButton != null) cancelButton.setOnClickListener(v -> dismiss());
@@ -420,24 +520,6 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
             confirmHaptic();
             deliverResult();
         });
-    }
-
-    private int parseFieldText() {
-        try {
-            String t = editField != null && editField.getText() != null
-                    ? editField.getText().toString().trim() : "";
-            return t.isEmpty() ? -1 : Integer.parseInt(t);
-        } catch (Exception e) {
-            return -1;
-        }
-    }
-
-    private void syncFieldFromWheel() {
-        if (editField == null) return;
-        syncingField = true;
-        editField.setText(String.valueOf(npSingle.getValue()));
-        editField.setSelection(editField.getText().length());
-        syncingField = false;
     }
 
     private void refreshResetIconVisibility() {
@@ -482,6 +564,8 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
                 total = MaximumRecordingDuration.MAX_CUSTOM_SECONDS;
             }
             result.putInt(RESULT_DURATION_SECONDS, total);
+        } else if (mode == MODE_MBGB) {
+            result.putInt(RESULT_NUMBER, npGb.getValue() * 1024 + npMb.getValue());
         } else {
             result.putInt(RESULT_NUMBER, npSingle.getValue());
         }
@@ -490,8 +574,11 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
     }
 
     private void updateTimeSummary() {
+        // TIME-mode only (npHours/npMinutes/npSeconds are null in INT mode).
+        if (mode != MODE_TIME_HMS) {
+            return;
+        }
         refreshResetIconVisibility();
-        updatePillValues();
         if (summaryView == null) return;
         int total = MaximumRecordingDuration.combineFromHms(
                 npHours.getValue(), npMinutes.getValue(), npSeconds.getValue());
@@ -514,92 +601,173 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
                 : text);
     }
 
-    /** Wires a column's value pill: tap opens a type-in dialog for that column. */
-    private void bindPill(View root, int pillId, final NumberPicker wheel,
-            final int maxValue, int titleRes) {
-        View pill = root.findViewById(pillId);
-        if (pill != null) {
-            pill.setOnClickListener(v -> showColumnInputDialog(wheel, maxValue, titleRes));
+    /**
+     * Styles a wheel's center cell: a translucent accent band drawn as the
+     * wheel's background at the middle row, so the wheel's own digits render
+     * on top and scroll THROUGH the band in real time (fully integrated —
+     * no overlay text). A clean CLICK on the center cell flashes a ripple
+     * inside the rounded cell and opens the type-in dialog; drags scroll
+     * natively and never show press feedback.
+     */
+    private void styleCenterCellPicker(final NumberPicker picker,
+            final int minValue, final int maxValue, final String titleText) {
+        final float density = getResources().getDisplayMetrics().density;
+        final android.util.TypedValue tv = new android.util.TypedValue();
+        int accent = 0xFF000000;
+        if (getContext() != null && getContext().getTheme()
+                .resolveAttribute(R.attr.pickerButtonBackground, tv, true)) {
+            accent = tv.data;
         }
+        final int bandColor = (accent & 0x00FFFFFF) | 0x73000000; // ~45% accent
+        final com.fadcam.ui.picker.CenterCellBandDrawable band =
+                new com.fadcam.ui.picker.CenterCellBandDrawable(bandColor,
+                        8f * density, 12f * density);
+        band.setRowCount(Math.max(3, picker.getChildCount()));
+        picker.setBackground(band);
+
+        // Tap the center cell → flash + type dialog; drags fall through.
+        final int slop = android.view.ViewConfiguration.get(requireContext())
+                .getScaledTouchSlop();
+        final float[] down = new float[2];
+        final boolean[] dragged = {false};
+        picker.setOnTouchListener((v, ev) -> {
+            switch (ev.getActionMasked()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    down[0] = ev.getX();
+                    down[1] = ev.getY();
+                    dragged[0] = false;
+                    return false;
+                case android.view.MotionEvent.ACTION_MOVE:
+                    if (Math.abs(ev.getX() - down[0]) > slop
+                            || Math.abs(ev.getY() - down[1]) > slop) {
+                        dragged[0] = true;
+                    }
+                    return false;
+                case android.view.MotionEvent.ACTION_UP: {
+                    int h = picker.getHeight();
+                    int rows = Math.max(3, picker.getChildCount());
+                    if (!dragged[0] && h > 0) {
+                        float top = (rows - 1) / 2f * h / rows;
+                        float bottom = ((rows - 1) / 2f + 1f) * h / rows;
+                        if (ev.getY() >= top && ev.getY() <= bottom) {
+                            // Single clean press flash (ripple-like) inside the
+                            // cell, then open the dialog.
+                            picker.setPressed(false);
+                            band.press(true);
+                            v.postDelayed(() -> {
+                                band.press(false);
+                                showColumnInputDialog(picker, minValue, maxValue, titleText);
+                            }, 90L);
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    return false;
+                default:
+                    return false;
+            }
+        });
     }
 
-    /** Echoes the wheel values into the per-column pills (padded, e.g. "05"). */
-    private void updatePillValues() {
-        if (pillHours != null) {
-            pillHours.setText(String.format(java.util.Locale.US, "%02d", npHours.getValue()));
-        }
-        if (pillMinutes != null) {
-            pillMinutes.setText(String.format(java.util.Locale.US, "%02d", npMinutes.getValue()));
-        }
-        if (pillSeconds != null) {
-            pillSeconds.setText(String.format(java.util.Locale.US, "%02d", npSeconds.getValue()));
-        }
-    }
-
-    /** Type-in dialog for a single column (hours 0..24, minutes/seconds 0..59). */
+    /** Type-in dialog for a single column, using the official Material dialog
+     * (themed with the app) and the same range forcing as the wheels:
+     * hours 0..24, minutes/seconds 0..59 — out-of-range input shows an error
+     * and is clamped on OK.
+     */
     private void showColumnInputDialog(final NumberPicker wheel,
-            final int maxValue, int titleRes) {
-        final android.widget.EditText input = new android.widget.EditText(requireContext());
-        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        input.setText(String.valueOf(wheel.getValue()));
-        input.setSelection(input.getText().length());
-        input.setSingleLine(true);
-        new android.app.AlertDialog.Builder(requireContext())
-                .setTitle(titleRes)
-                .setView(input)
+            final int minValue, final int maxValue, String titleText) {
+        final View content = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_column_input, null);
+        final com.google.android.material.textfield.TextInputLayout inputLayout =
+                content.findViewById(R.id.column_input_layout);
+        final com.google.android.material.textfield.TextInputEditText inputField =
+                content.findViewById(R.id.column_input_field);
+        final String rangeText = minValue + " – " + maxValue;
+
+        inputField.setText(String.valueOf(wheel.getValue()));
+        inputField.setSelection(inputField.getText().length());
+        inputLayout.setHelperText(rangeText);
+        // Live range check: error state while the typed value is out of range.
+        inputField.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) {
+                int v = parseColumnInput(s);
+                inputLayout.setError((v < minValue || v > maxValue) ? rangeText : null);
+            }
+            @Override public void afterTextChanged(android.text.Editable s) {}
+        });
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(titleText)
+                .setView(content)
                 .setNegativeButton(R.string.duration_picker_cancel, null)
                 .setPositiveButton(R.string.duration_picker_ok, (d, w) -> {
-                    try {
-                        int v = Integer.parseInt(input.getText().toString().trim());
-                        v = Math.max(0, Math.min(maxValue, v));
-                        wheel.setValue(v);
-                        // 24h is the max — nothing can follow it.
-                        if (wheel == npHours && v >= 24) {
-                            npMinutes.setValue(0);
-                            npSeconds.setValue(0);
-                        }
-                        confirmHaptic();
-                        updateTimeSummary();
-                    } catch (Exception ignored) {
+                    int v = parseColumnInput(inputField.getText());
+                    if (v < 0) {
+                        v = minValue;
                     }
+                    v = Math.max(minValue, Math.min(maxValue, v));
+                    wheel.setValue(v);
+                    // 24h is the max — nothing can follow it.
+                    if (wheel == npHours && v >= 24) {
+                        npMinutes.setValue(0);
+                        npSeconds.setValue(0);
+                    }
+                    confirmHaptic();
+                    updateTimeSummary();
+                    validate();
                 })
                 .show();
     }
 
-    private void validate() {
-        if (npSingle == null || helperView == null || okButton == null) return;
-        int val = npSingle.getValue();
-        if (val < min) {
-            helperView.setText(getString(R.string.universal_min_value, min));
-            helperView.setTextColor(getResources().getColor(
-                    android.R.color.holo_red_light, requireContext().getTheme()));
-            okButton.setEnabled(false);
+    /** Parses dialog input; -1 for empty or non-numeric. */
+    private static int parseColumnInput(CharSequence s) {
+        if (s == null) {
+            return -1;
+        }
+        String t = s.toString().trim();
+        if (t.isEmpty()) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(t);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    /** Echoes the single wheel's value into the summary card (INT mode). */
+    private void updateIntSummary() {
+        if (mode != MODE_INT || summaryView == null) {
             return;
         }
-        if (val > max) {
-            helperView.setText(getString(R.string.universal_max_value, max));
-            helperView.setTextColor(getResources().getColor(
-                    android.R.color.holo_red_light, requireContext().getTheme()));
-            okButton.setEnabled(false);
+        summaryView.setText(String.valueOf(npSingle.getValue()));
+    }
+
+    /** Combines MB + GB wheels into the summary hero (MB/GB mode). */
+    private void updateMbGbSummary() {
+        if (mode != MODE_MBGB || summaryView == null) {
             return;
         }
-        if (lowTh > 0 && val < lowTh && !lowMsg.isEmpty()) {
-            helperView.setText(lowMsg);
-            helperView.setTextColor(getResources().getColor(
-                    android.R.color.holo_orange_light, requireContext().getTheme()));
-        } else if (highTh > 0 && val > highTh && !highMsg.isEmpty()) {
-            helperView.setText(highMsg);
-            helperView.setTextColor(getResources().getColor(
-                    android.R.color.holo_red_light, requireContext().getTheme()));
+        int gb = npGb.getValue();
+        int mb = npMb.getValue();
+        if (gb > 0) {
+            summaryView.setText(gb + " GB" + (mb > 0 ? " " + mb + " MB" : ""));
         } else {
-            helperView.setText(getString(R.string.number_input_ok_helper));
-            helperView.setTextColor(getResources().getColor(
-                    android.R.color.holo_green_light, requireContext().getTheme()));
+            summaryView.setText(mb + " MB");
         }
-        okButton.setEnabled(true);
-        // Clear any stale field error once valid.
-        if (editContainer != null) {
-            editContainer.setError(null);
+    }
+
+    /**
+     * INT-mode validation: the wheel and the input dialog already enforce
+     * [min, max], so OK is always enabled. Legacy colored helper messages
+     * ("looks good, press OK…") were removed for design consistency.
+     */
+    private void validate() {
+        if (okButton != null) {
+            okButton.setEnabled(true);
         }
     }
 

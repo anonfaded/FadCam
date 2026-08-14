@@ -778,9 +778,20 @@
     <string name="maximum_recording_duration_custom_hint">Horas · Minutos · Segundos</string>
 
     <string name="duration_picker_hours">Horas</string>
+    <string name="duration_picker_helper_hint">Toca un valor para escribirlo · 0:00:00 = Sin temporizador</string>
     <string name="duration_picker_minutes">Minutos</string>
     <string name="duration_picker_seconds">Segundos</string>
     <string name="duration_picker_ok">Aceptar</string>
+    <string name="seek_amount_footer">Cuántos segundos salta el botón de avance hacia delante o hacia atrás.</string>
+    <string name="controls_hide_delay_footer">Cuánto tiempo permanecen visibles los controles tras dejar de tocar la pantalla.</string>
+    <string name="background_playback_timer_footer">Detiene la reproducción en segundo plano tras la duración seleccionada.</string>
+    <string name="video_split_unit_mb">Megabytes (MB)</string>
+    <string name="video_split_unit_gb">Gigabytes (GB)</string>
+    <string name="video_split_custom_footer">Establece el tamaño de archivo en el que la grabación se divide en un archivo nuevo.</string>
+    <string name="debug_log_max_lines_footer">Cuantas más líneas de registro se capturen, mayor será el archivo de registro. 5000 es el valor predeterminado.</string>
+    <string name="audio_bitrate_footer">Una tasa de bits más alta significa mejor calidad de video y archivos más grandes</string>
+    <string name="number_input_selected_caption">Valor seleccionado</string>
+    <string name="duration_picker_tap_hint">Toca el valor para escribirlo</string>
     <string name="duration_picker_cancel">Cancelar</string>
     <string name="quick_timer_label">Temporizador</string>
     <string name="quick_timer_desc">Establecer duración máxima de grabación</string>
@@ -959,8 +970,6 @@
     <string name="timer_hours_short">%1$dh</string>
     <string name="timer_custom_label">Personalizado...</string>
     <string name="timer_custom_title">Temporizador personalizado en segundo plano</string>
-    <string name="number_input_default_helper">Ingresa un número y presiona Aceptar para guardar.</string>
-    <string name="number_input_ok_helper">Parece bien — presiona Aceptar para guardar.</string>
     <string name="timer_custom_low_hint">Temporizadores muy cortos pueden detener la reproducción antes de lo esperado.</string>
     <string name="timer_custom_high_hint">Temporizadores muy largos pueden permanecer activos por mucho tiempo. Máximo 24 horas.</string>
     <string name="timer_custom_description">Ingresa número de minutos. Ejemplos: 5 = 5 minutos (300 segundos). El temporizador detendrá la reproducción después de esta cantidad de minutos.</string>
@@ -1309,8 +1318,6 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="bitrate_explanation">¿Qué es la tasa de bits?</string>
     <string name="bitrate_explanation_text">La tasa de bits es la cantidad de datos usados por segundo de video. Mayor tasa de bits significa mejor calidad pero archivos más grandes. Demasiado alto o demasiado bajo puede causar problemas. Los valores predeterminados se basan en estándares de cámaras profesionales.</string>
     <string name="universal_enter_number">Ingresa un número</string>
-    <string name="universal_min_value">Mín %1$d</string>
-    <string name="universal_max_value">Máx %1$d</string>
     <string name="universal_ok">Aceptar</string>
     <string name="universal_enable">Habilitar</string>
     <string name="universal_disable">Desactivar</string>

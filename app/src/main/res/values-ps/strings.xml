@@ -1439,8 +1439,6 @@ Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programm
     <string name="notification_stop_button_row_title">Bandawalo Button</string>
     <string name="notification_stop_button_visible">Zaher</string>
     <string name="notification_style_row_title">Da Notification Style</string>
-    <string name="number_input_default_helper">Yo numra dakhil ka aw save kolo dapara OK dab ka.</string>
-    <string name="number_input_ok_helper">Sa day — OK dab ka to save.</string>
     <string name="onboarding_human_checkbox3">Za da Privacy Policy sara mutafiq yam</string>
     <string name="onboarding_intro_line4">open-source. ad-free. yours.</string>
     <string name="pattern_morse_desc">Morse code pattern for advanced signaling</string>
@@ -1792,9 +1790,20 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="maximum_recording_duration_custom_hint">ساعتونه · دقیقې · ثانیې</string>
 
     <string name="duration_picker_hours">ساعتونه</string>
+    <string name="duration_picker_helper_hint">پر ارزښت باندې ټایپ وکړئ تر څو یې ولیکئ · 0:00:00 = پرته له ټایمر</string>
     <string name="duration_picker_minutes">دقیقې</string>
     <string name="duration_picker_seconds">ثانیې</string>
     <string name="duration_picker_ok">ښه</string>
+    <string name="seek_amount_footer">د لټون تڼۍ څومره ثانیې مخکې یا شاته ځي.</string>
+    <string name="controls_hide_delay_footer">د سکرین له لمس وروسته د پلے بیک کنټرولونه څومره وخت ښکاره پاتې کیږي.</string>
+    <string name="background_playback_timer_footer">د ټاکل شوې مودې وروسته شالید پلے بیک بندوي.</string>
+    <string name="video_split_unit_mb">میګابایټ (MB)</string>
+    <string name="video_split_unit_gb">ګیګابایټ (GB)</string>
+    <string name="video_split_custom_footer">د فایل اندازه ټاکي چې په هغه کې ثبتونه په نوي فایل ویشل کیږي.</string>
+    <string name="debug_log_max_lines_footer">څومره چې د لاګ کرښې نیول کیږي، هومره د لاګ فایل لوی وي. 5000 تړل شوی ارزښت دی.</string>
+    <string name="audio_bitrate_footer">لوړ بټریټ د غوره ویډیو کیفیت او لوی فایلونو معنی لري</string>
+    <string name="number_input_selected_caption">ټاکل شوی ارزښت</string>
+    <string name="duration_picker_tap_hint">پر ارزښت ټایپ کړئ تر څو یې ولیکئ</string>
     <string name="duration_picker_cancel">لغوه کول</string>
     <string name="quick_timer_label">ټایمر</string>
     <string name="quick_timer_desc">د ثبت اعظمي موده وټاکئ</string>
@@ -2114,8 +2123,6 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="universal_enable">Faal Ka</string>
     <string name="universal_enabled">Faal de</string>
     <string name="universal_enter_number">Yo numra dakhil ka</string>
-    <string name="universal_max_value">Max %1$d</string>
-    <string name="universal_min_value">Min %1$d</string>
     <string name="universal_ok">OK</string>
     <string name="universal_pause">Lag Odrawa</string>
     <string name="universal_paused">Paused</string>

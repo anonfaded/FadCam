@@ -739,8 +739,6 @@
     <string name="helper_location_embed">GPS koordinatlarını video meta verilerine (coğrafi etiket) yerleştirir.</string>
     <string name="helper_watermark_option">Katman içeriğini seçin: zaman damgası + marka, sadece zaman damgası veya hiçbiri.</string>
     <string name="universal_enter_number">Bir sayı girin</string>
-    <string name="universal_min_value">Min %1$d</string>
-    <string name="universal_max_value">Maks %1$d</string>
     <string name="universal_ok">OK</string>
     <string name="universal_enable">Etkinleştir</string>
     <string name="universal_disable">Devre Dışı Bırak</string>
@@ -1630,9 +1628,20 @@
     <string name="maximum_recording_duration_custom_hint">Saat · Dakika · Saniye</string>
 
     <string name="duration_picker_hours">Saat</string>
+    <string name="duration_picker_helper_hint">Değere dokunup yazın · 0:00:00 = Zamanlayıcı yok</string>
     <string name="duration_picker_minutes">Dakika</string>
     <string name="duration_picker_seconds">Saniye</string>
     <string name="duration_picker_ok">Tamam</string>
+    <string name="seek_amount_footer">Arama düğmesi kaç saniye ileri veya geri atlar.</string>
+    <string name="controls_hide_delay_footer">Ekrana dokunmayı bıraktıktan sonra oynatma kontrolleri ne kadar süre görünür kalır.</string>
+    <string name="background_playback_timer_footer">Seçilen sürenin ardından arka plan oynatmayı durdurur.</string>
+    <string name="video_split_unit_mb">Megabayt (MB)</string>
+    <string name="video_split_unit_gb">Gigabayt (GB)</string>
+    <string name="video_split_custom_footer">Kaydın yeni bir dosyaya bölündüğü dosya boyutunu ayarlar.</string>
+    <string name="debug_log_max_lines_footer">Ne kadar çok günlük satırı kaydedilirse, günlük dosyası o kadar büyük olur. Varsayılan değer 5000\'dir.</string>
+    <string name="audio_bitrate_footer">Daha yüksek bit hızı, daha iyi video kalitesi ve daha büyük dosyalar demektir</string>
+    <string name="number_input_selected_caption">Seçilen değer</string>
+    <string name="duration_picker_tap_hint">Yazmak için değere dokunun</string>
     <string name="duration_picker_cancel">İptal</string>
     <string name="quick_timer_label">Zamanlayıcı</string>
     <string name="quick_timer_desc">Maksimum kayıt süresini ayarla</string>
@@ -1709,8 +1718,6 @@
 <string name="background_playback_timer_title">Arka plan oynatma zamanlayıcısı</string>
 <string name="background_playback_timer_title_short">Oynatma zamanlayıcısı</string>
 <string name="background_playback_timer_helper">Oynatmanın otomatik olarak durmadan önce arka planda ne kadar devam edeceğini seçin. Devre dışı bırakmak için Kapalı\'yı seçin.</string>
-<string name="number_input_default_helper">Bir sayı girin ve kaydetmek için Tamam\'a basın.</string>
-<string name="number_input_ok_helper">İyi görünüyor — kaydetmek için Tamam\'a basın.</string>
 <string name="timer_disabled_hint">Arka plan oynatma devre dışı — zamanlayıcıyı kullanmak için "Arka planda oynat"ı etkinleştirin.</string>
 <string name="shortcuts_choose_icon_title">Kısayol simgesini değiştir</string>
 <string name="shortcuts_choose_icon_desc">Bu kısayol için bir simge seçin. Uygulamanın simge setinden veya galerinizden bir görsel seçebilirsiniz.</string>

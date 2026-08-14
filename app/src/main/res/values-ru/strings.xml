@@ -415,9 +415,20 @@
     <string name="maximum_recording_duration_custom_hint">Часы · Минуты · Секунды</string>
 
     <string name="duration_picker_hours">Часы</string>
+    <string name="duration_picker_helper_hint">Нажмите на значение, чтобы ввести его · 0:00:00 = Без таймера</string>
     <string name="duration_picker_minutes">Минуты</string>
     <string name="duration_picker_seconds">Секунды</string>
     <string name="duration_picker_ok">ОК</string>
+    <string name="seek_amount_footer">На сколько секунд кнопка перемотки перепрыгивает вперёд или назад.</string>
+    <string name="controls_hide_delay_footer">Как долго элементы управления остаются видимыми после того, как вы перестали касаться экрана.</string>
+    <string name="background_playback_timer_footer">Останавливает фоновое воспроизведение через выбранный промежуток времени.</string>
+    <string name="video_split_unit_mb">Мегабайты (МБ)</string>
+    <string name="video_split_unit_gb">Гигабайты (ГБ)</string>
+    <string name="video_split_custom_footer">Задаёт размер файла, при котором запись разбивается на новый файл.</string>
+    <string name="debug_log_max_lines_footer">Чем больше строк лога записывается, тем больше файл лога. По умолчанию — 5000.</string>
+    <string name="audio_bitrate_footer">Более высокая скорость потока означает лучшее качество видео и больший размер файлов</string>
+    <string name="number_input_selected_caption">Выбранное значение</string>
+    <string name="duration_picker_tap_hint">Нажмите на значение, чтобы ввести его</string>
     <string name="duration_picker_cancel">Отмена</string>
     <string name="quick_timer_label">Таймер</string>
     <string name="quick_timer_desc">Задать максимальную длительность записи</string>
@@ -594,8 +605,6 @@
     <string name="timer_hours_short">%1$dh</string>
     <string name="timer_custom_label">Пользовательский...</string>
     <string name="timer_custom_title">Пользовательский таймер фона</string>
-    <string name="number_input_default_helper">Введите число и нажмите OK для сохранения.</string>
-    <string name="number_input_ok_helper">Выглядит хорошо — нажмите OK для сохранения.</string>
     <string name="timer_custom_low_hint">Очень короткие таймеры могут остановить воспроизведение раньше, чем ожидалось.</string>
     <string name="timer_custom_high_hint">Очень длинные таймеры могут оставаться активными долго. Макс 24 часа.</string>
     <string name="timer_custom_description">Введите количество минут. Примеры: 5 = 5 минут (300 секунд). Таймер остановит воспроизведение через столько минут.</string>
@@ -755,8 +764,6 @@
     <string name="bitrate_explanation_text">Битрейт — это количество данных, используемых за секунду видео. Более высокий битрейт означает лучшее качество, но большие файлы. Слишком высокий или низкий может вызвать проблемы. Значения по умолчанию основаны на профессиональных стандартах камер.</string>
     <!-- Added helper utility strings for numeric input bottom sheet -->
     <string name="universal_enter_number">Введите число</string>
-    <string name="universal_min_value">Мин %1$d</string>
-    <string name="universal_max_value">Макс %1$d</string>
     <string name="universal_ok">OK</string>
     <string name="universal_enable">Включить</string>
     <string name="universal_disable">Отключить</string>
