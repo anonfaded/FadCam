@@ -1903,22 +1903,22 @@ public class GLRecordingPipeline {
                                 mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                                 
                                 videoSamplesWritten++;
-                                if (videoSamplesWritten == 1) {
-                                    FLog.i(TAG, "[AVC-CSD] First video sample written OK — muxer header built, samples flowing");
-                                    // Bounded AVCC corruption trace: head of the first encoded video
-                                    // sample as fed to the muxer. Annex-B start codes (00 00 00 01)
-                                    // indicate the converter did not run; AVCC length prefixes
-                                    // (e.g. 00 00 00 16 67...) are expected here.
-                                    try {
-                                        StringBuilder hex = new StringBuilder();
-                                        int shown = Math.min(16, bufferInfo.size);
-                                        for (int i = 0; i < shown; i++) {
-                                            hex.append(String.format("%02X ",
-                                                    encodedData.get(bufferInfo.offset + i)));
-                                        }
-                                        FLog.i(TAG, "[AVC-DIAG] Extraction-source sample #1 size="
-                                                + bufferInfo.size + " head=" + hex.toString().trim());
-                                    } catch (Exception ignored) {}
+                                if (videoSamplesWritten <= 5) {
+                                    // Full AVC framing trace: flags + head bytes of the raw
+                                    // encoder sample as fed to the muxer, classified as
+                                    // Annex-B (start code) or AVCC (length prefix). Mixed
+                                    // framing across samples would be visible here.
+                                    String framing = classifySampleFraming(encodedData,
+                                            bufferInfo.offset, bufferInfo.size);
+                                    FLog.i(TAG, "[AVC-TRACE] sample#" + videoSamplesWritten
+                                            + " flags=0x" + Integer.toHexString(bufferInfo.flags)
+                                            + " size=" + bufferInfo.size
+                                            + " framing=" + framing
+                                            + " head=" + hexHead(encodedData,
+                                            bufferInfo.offset, bufferInfo.size, 32));
+                                    if (videoSamplesWritten == 1) {
+                                        FLog.i(TAG, "[AVC-CSD] First video sample written OK — muxer header built, samples flowing");
+                                    }
                                 }
                                 lastVideoPts = bufferInfo.presentationTimeUs;
                                 
@@ -1957,6 +1957,13 @@ public class GLRecordingPipeline {
                                     byte[][] spsPps = extractAvcCsdFromBitstream(encodedData, bufferInfo.offset, bufferInfo.size);
                                     if (spsPps != null) {
                                         FLog.i(TAG, "[AVC-CSD] Extracted SPS/PPS from keyframe bitstream (" + spsPps[0].length + "+" + spsPps[1].length + " bytes) — CODEC_CONFIG buffer never arrived");
+                                        // Full SPS/PPS dump: catches start-code-like patterns
+                                        // inside the SPS payload that could trip the NAL scanner,
+                                        // and validates the SPS header (profile/level).
+                                        FLog.i(TAG, "[AVC-CSD] SPS full=" + fullHex(spsPps[0])
+                                                + " | profile=" + avcProfileFromSps(spsPps[0])
+                                                + " | level=" + avcLevelFromSps(spsPps[0]));
+                                        FLog.i(TAG, "[AVC-CSD] PPS full=" + fullHex(spsPps[1]));
                                         pendingAvcFormat.setByteBuffer("csd-0", ByteBuffer.wrap(spsPps[0]));
                                         pendingAvcFormat.setByteBuffer("csd-1", ByteBuffer.wrap(spsPps[1]));
                                         videoTrackIndex = mediaMuxer.addTrack(pendingAvcFormat);
@@ -2246,13 +2253,96 @@ public class GLRecordingPipeline {
             b.position(0);
             int len = b.remaining();
             StringBuilder hex = new StringBuilder();
-            int shown = Math.min(4, len);
+            int shown = Math.min(8, len);
             for (int i = 0; i < shown; i++) {
                 hex.append(String.format("%02X ", b.get(i)));
             }
             return "len=" + len + " head=" + hex.toString().trim();
         } catch (Exception e) {
             return "len=? unreadable";
+        }
+    }
+
+    /** Full hex dump of a small byte array (SPS/PPS are tiny — diagnostics). */
+    private String fullHex(byte[] data) {
+        try {
+            StringBuilder hex = new StringBuilder();
+            for (byte b : data) {
+                hex.append(String.format("%02X ", b));
+            }
+            return hex.toString().trim();
+        } catch (Exception e) {
+            return "unreadable";
+        }
+    }
+
+    /**
+     * AVC profile_idc from an SPS byte array (Annex-B: [start code][NAL header][profile...]).
+     * Returns -1 when the layout is unexpected — the SPS would then be invalid for avcC.
+     */
+    private int avcProfileFromSps(byte[] sps) {
+        try {
+            int nalStart = (sps.length > 4 && sps[0] == 0 && sps[1] == 0 && sps[2] == 0 && sps[3] == 1)
+                    ? 4 : (sps.length > 3 && sps[0] == 0 && sps[1] == 0 && sps[2] == 1) ? 3 : 0;
+            // NAL header (1) + profile_idc (1) + constraints (1) + level_idc (1)
+            if (nalStart + 4 <= sps.length) {
+                return sps[nalStart + 1] & 0xFF;
+            }
+        } catch (Exception ignored) {
+        }
+        return -1;
+    }
+
+    private int avcLevelFromSps(byte[] sps) {
+        try {
+            int nalStart = (sps.length > 4 && sps[0] == 0 && sps[1] == 0 && sps[2] == 0 && sps[3] == 1)
+                    ? 4 : (sps.length > 3 && sps[0] == 0 && sps[1] == 0 && sps[2] == 1) ? 3 : 0;
+            if (nalStart + 4 <= sps.length) {
+                return sps[nalStart + 3] & 0xFF;
+            }
+        } catch (Exception ignored) {
+        }
+        return -1;
+    }
+
+    /** Hex of the first {@code maxBytes} bytes of a sample (diagnostics). */
+    private String hexHead(ByteBuffer data, int offset, int size, int maxBytes) {
+        try {
+            StringBuilder hex = new StringBuilder();
+            int shown = Math.min(maxBytes, Math.max(0, size));
+            for (int i = 0; i < shown; i++) {
+                hex.append(String.format("%02X ", data.get(offset + i)));
+            }
+            return hex.toString().trim();
+        } catch (Exception e) {
+            return "unreadable";
+        }
+    }
+
+    /**
+     * Classifies a sample's NAL framing (diagnostics): "ANNEX_B" when it starts
+     * with a start code (00 00 01 / 00 00 00 01), "LENGTH_PREFIXED" when it starts
+     * with a plausible 4-byte NAL length, else "UNKNOWN". Mixed framing across
+     * samples from one encoder is a red flag for the Annex-B→AVCC converter.
+     */
+    private String classifySampleFraming(ByteBuffer data, int offset, int size) {
+        try {
+            if (size < 3) return "UNKNOWN(short)";
+            int b0 = data.get(offset) & 0xFF;
+            int b1 = data.get(offset + 1) & 0xFF;
+            int b2 = data.get(offset + 2) & 0xFF;
+            boolean startCode3 = b0 == 0 && b1 == 0 && b2 == 1;
+            boolean startCode4 = size >= 4 && b0 == 0 && b1 == 0 && b2 == 0
+                    && (data.get(offset + 3) & 0xFF) == 1;
+            if (startCode3 || startCode4) return "ANNEX_B";
+            if (size >= 5 && b0 == 0 && b1 == 0 && b2 == 0) {
+                int len = data.get(offset + 3) & 0xFF;
+                int nalHeader = data.get(offset + 4) & 0xFF;
+                if (len > 0 && len < 250 && (nalHeader & 0x80) != 0) return "LENGTH_PREFIXED";
+            }
+            return "UNKNOWN";
+        } catch (Exception e) {
+            return "UNKNOWN(err)";
         }
     }
 

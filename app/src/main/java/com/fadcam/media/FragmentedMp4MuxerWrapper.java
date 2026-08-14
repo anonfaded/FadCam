@@ -799,6 +799,20 @@ public class FragmentedMp4MuxerWrapper {
             logFileState("after finalization (original channel)");
             FLog.i(TAG, "Hybrid MP4 finalization succeeded (original channel)");
             lastFinalizeOutcome = "OK (original channel)";
+            // ── Post-finalize self-audit: read back the FIRST VIDEO sample from
+            // the file as written and report its framing. This observes the actual
+            // file content (Annex-B vs AVCC vs truncated), so a "successful"
+            // finalization with structurally broken samples is visible in logs
+            // instead of guessed.
+            try {
+                java.nio.channels.FileChannel auditChannel = fileOutputStream.getChannel();
+                auditChannel.position(0);
+                String audit = androidx.media3.muxer.FragmentedMp4Muxer
+                        .auditFirstVideoSample(auditChannel);
+                FLog.i(TAG, "[AVC-AUDIT] first video sample in FILE: " + audit);
+            } catch (Exception auditEx) {
+                FLog.w(TAG, "[AVC-AUDIT] audit failed: " + auditEx);
+            }
             return;
         } catch (Exception e) {
             FLog.w(TAG, "Hybrid finalization failed on original channel (" + e.getMessage()
