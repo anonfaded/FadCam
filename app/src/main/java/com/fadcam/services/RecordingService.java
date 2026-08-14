@@ -1215,6 +1215,27 @@ public class RecordingService extends Service {
     private static final java.util.concurrent.atomic.AtomicBoolean scanRerunRequested =
             new java.util.concurrent.atomic.AtomicBoolean(false);
 
+    /**
+     * URIs whose files are currently being finalized by an in-flight
+     * stopRecording. The self-healing scan must NEVER touch these: a file can
+     * be mid-finalize while isRecordingInProgress() is already false (the flag
+     * is cleared at the start of the stop sequence, finalization runs later on
+     * the stop thread). Scanning it then would double-finalize and falsely
+     * report a repair (banner) for a manually stopped recording.
+     */
+    private static final java.util.Set<String> IN_FLIGHT_FINALIZATIONS =
+            java.util.Collections.synchronizedSet(new java.util.HashSet<String>());
+
+    private static void addInFlightFinalization(String uriString) {
+        if (uriString == null || uriString.isEmpty()) return;
+        IN_FLIGHT_FINALIZATIONS.add(uriString);
+    }
+
+    private static void removeInFlightFinalization(String uriString) {
+        if (uriString == null || uriString.isEmpty()) return;
+        IN_FLIGHT_FINALIZATIONS.remove(uriString);
+    }
+
     /** Broadcast after a self-healing scan finishes (may have repaired a file). */
     public static final String ACTION_SELF_HEAL_REPAIRED =
             "com.fadcam.action.SELF_HEAL_REPAIRED";
@@ -1251,6 +1272,12 @@ public class RecordingService extends Service {
                     final long retryAfter = now + REPAIR_RETRY_DELAY_MS;
                     for (String uriString : pending) {
                         try {
+                            // Never touch a file the service is still finalizing
+                            // (manual stop in progress) — scanning it would
+                            // double-finalize and raise a false repair banner.
+                            if (IN_FLIGHT_FINALIZATIONS.contains(uriString)) {
+                                continue;
+                            }
                             android.net.Uri uri = android.net.Uri.parse(uriString);
                             String scheme = uri.getScheme();
                             int result;
@@ -2142,6 +2169,9 @@ public class RecordingService extends Service {
     @Override
     public void onDestroy() {
         FLog.d(TAG, "onDestroy: Service being destroyed...");
+        // Safety net: drop any in-flight finalization guard (the process is
+        // going away; a stale entry would block future repairs of this file).
+        IN_FLIGHT_FINALIZATIONS.clear();
         releaseDurationLimitController();
 
         // Stop any active reconnection attempts
@@ -2237,6 +2267,11 @@ public class RecordingService extends Service {
         if (durationLimitController != null && durationLimitController.stopSession()) {
             FLog.d(TAG, "Cancelled maximum recording duration for current session");
         }
+        // The session file is about to be finalized asynchronously on the stop
+        // thread — guard it from the self-healing scan until finalization is
+        // done (see IN_FLIGHT_FINALIZATIONS).
+        final String inFlightUri = getCurrentRecordingMediaUri();
+        addInFlightFinalization(inFlightUri);
         if (isStopping) {
             FLog.w(TAG, "stopRecording: Already in stopping process, ignoring duplicate call");
             return;
@@ -2511,9 +2546,11 @@ public class RecordingService extends Service {
                     }
 
                     FLog.d(TAG, "stopRecording sequence completed successfully");
+                    removeInFlightFinalization(inFlightUri);
                     finalizeJustStoppedRecording();
                 });            } catch (Exception e) {
                 FLog.e(TAG, "Error in stopRecording cleanup thread", e);
+                removeInFlightFinalization(inFlightUri);
                 mainHandler.post(() -> {
                     isStopping = false;
                     pendingStartRecording = false;
