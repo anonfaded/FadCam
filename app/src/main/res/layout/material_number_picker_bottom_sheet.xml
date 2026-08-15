@@ -440,13 +440,24 @@
         android:layout_marginTop="12dp"
         android:visibility="gone"/>
 
-    <!-- Reset (INT mode) + actions -->
+    <!-- Reset (INT mode) + preview + actions -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingTop="10dp">
+
+        <ImageView
+            android:id="@+id/btn_picker_preview"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="6dp"
+            android:src="@drawable/ic_play_arrow_24"
+            android:tint="?attr/pickerIconTint"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/duration_picker_preview"
+            android:visibility="gone"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_picker_reset"

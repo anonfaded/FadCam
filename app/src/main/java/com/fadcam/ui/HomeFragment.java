@@ -2430,12 +2430,9 @@ public class HomeFragment extends BaseFragment {
                     // Call the main UI state updater
                     handleServiceStateUpdate(RecordingState.IN_PROGRESS);
 
-                    // Handle the toast
-                    if (isAdded() && getContext() != null) {
-                        vibrateTouch();
-                        // Toast.makeText(getContext(), R.string.video_recording_started,
-                        // Toast.LENGTH_SHORT).show();
-                    }
+                    // Note: start vibration is fired by the RecordingService itself
+                    // (works for widgets/tiles/shortcuts too) — not here, to avoid
+                    // a double vibration.
                 }
             };
             FLog.d(
@@ -2616,7 +2613,7 @@ public class HomeFragment extends BaseFragment {
                     if (getContext() != null) {
                         Utils.showQuickToast(requireContext(), R.string.dual_recording_started);
                     }
-                    vibrateTouch();
+                    // Start vibration is fired by DualCameraRecordingService.
                 }
             };
         }
@@ -3823,7 +3820,10 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void performHapticFeedback() {
-        if (vibrator != null && vibrator.hasVibrator()) {
+        if (vibrator != null && vibrator.hasVibrator()
+                && sharedPreferencesManager != null
+                && sharedPreferencesManager.isHapticFeedbackEnabled()
+                && sharedPreferencesManager.isHapticUiEnabled()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(
                     VibrationEffect.createOneShot(
@@ -3844,22 +3844,34 @@ public class HomeFragment extends BaseFragment {
 
     // function to use haptic feedbacks
     private void vibrateTouch() {
+        if (sharedPreferencesManager != null
+                && (!sharedPreferencesManager.isHapticFeedbackEnabled()
+                    || !sharedPreferencesManager.isHapticUiEnabled())) {
+            return;
+        }
         // Haptic Feedback
         Vibrator vibrator = (Vibrator) requireContext().getSystemService(
             Context.VIBRATOR_SERVICE
         );
         if (vibrator != null && vibrator.hasVibrator()) {
-            VibrationEffect effect = null;
-            if (
-                android.os.Build.VERSION.SDK_INT >=
-                android.os.Build.VERSION_CODES.Q
-            ) {
-                effect = VibrationEffect.createPredefined(
-                    VibrationEffect.EFFECT_CLICK
-                );
-            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                VibrationEffect effect = null;
+                if (
+                    android.os.Build.VERSION.SDK_INT >=
+                    android.os.Build.VERSION_CODES.Q
+                ) {
+                    effect = VibrationEffect.createPredefined(
+                        VibrationEffect.EFFECT_CLICK
+                    );
+                } else {
+                    effect = VibrationEffect.createOneShot(
+                        50,
+                        VibrationEffect.DEFAULT_AMPLITUDE
+                    );
+                }
                 vibrator.vibrate(effect);
+            } else {
+                vibrator.vibrate(50);
             }
         }
     }
@@ -5494,7 +5506,8 @@ public class HomeFragment extends BaseFragment {
             FLog.w(TAG, "startRecording blocked: required recording hardware missing");
             return;
         }
-        performHapticFeedback();
+        // Start vibration is fired by the recording service / start receivers —
+        // not here, to avoid a double vibration.
         // Permission checks removed; handled by onboarding
 
         // ── Dual Camera path ──────────────────────────────────────────
@@ -5627,10 +5640,9 @@ public class HomeFragment extends BaseFragment {
             FLog.i(TAG, "Sent STOP_DUAL intent.");
         } catch (Exception e) {
             FLog.e(TAG, "Error sending STOP_DUAL intent: ", e);
-            Toast.makeText(getContext(), "Error stopping dual recording", Toast.LENGTH_SHORT).show();
             resetUIButtonsToIdleState();
         }
-        vibrateTouch();
+        // Stop vibration is fired by DualCameraRecordingService.
     }
 
     /**
@@ -10952,7 +10964,9 @@ public class HomeFragment extends BaseFragment {
         if (btnQuickTimer == null) return;
         btnQuickTimer.setOnClickListener(v -> {
             try {
-                v.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+                if (com.fadcam.Utils.hapticsAllowedForUi(v.getContext())) {
+                    v.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+                }
             } catch (Exception ignored) {
             }
             showQuickTimerDurationPicker();
@@ -11359,7 +11373,9 @@ public class HomeFragment extends BaseFragment {
                     // standard drag-and-release affordance.
                     pressView.animate().scaleX(1.12f).scaleY(1.12f).setDuration(150).start();
                     pressView.setTranslationZ(10f * getResources().getDisplayMetrics().density);
-                    pressView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                    if (com.fadcam.Utils.hapticsAllowedForUi(pressView.getContext())) {
+                        pressView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+                    }
                     showQuickSnapMarkers();
                     FLog.d("QuickActions", "long-press armed: " + quickActionIdToToken(pressView.getId())
                             + " slot=" + quickSlotMap.get(pressView) + " getX=" + pressView.getX());
@@ -11391,7 +11407,9 @@ public class HomeFragment extends BaseFragment {
                         }
                         quickHighlightedSlot = slot;
                         // Subtle tick when the highlighted slot changes.
-                        drag.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
+                        if (com.fadcam.Utils.hapticsAllowedForUi(drag.getContext())) {
+                            drag.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
+                        }
                         FLog.d("QuickActions", "drag: token=" + quickActionIdToToken(drag.getId())
                                 + " baseX=" + quickDragBaseX + " dx=" + dx + " tx=" + tx
                                 + " getX=" + drag.getX() + " highlightSlot=" + slot);
@@ -11448,7 +11466,9 @@ public class HomeFragment extends BaseFragment {
                     // Settle back to normal size/elevation and confirm the snap.
                     drag.animate().scaleX(1f).scaleY(1f).setDuration(160).start();
                     drag.setTranslationZ(0f);
-                    drag.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+                    if (com.fadcam.Utils.hapticsAllowedForUi(drag.getContext())) {
+                        drag.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+                    }
                     drag.setPressed(false);
                     drag.setHovered(false);
                     drag.jumpDrawablesToCurrentState();

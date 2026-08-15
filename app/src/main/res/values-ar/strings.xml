@@ -1548,6 +1548,39 @@
     <string name="settings_watermark_title">العلامة المائية</string>
 
     <string name="settings_advanced_title">متقدم</string>
+    <string name="settings_haptics_stop_subtitle">نبضة أطول عند انتهاء التسجيل</string>
+    <string name="duration_picker_preview">معاينة</string>
+    <string name="settings_haptics_stop_helper">نبضة أطول عند انتهاء التسجيل. الافتراضي: 300 مللي ثانية.</string>
+    <string name="settings_haptics_start_helper">نبضة قصيرة عند بدء التسجيل. الافتراضي: 100 مللي ثانية.</string>
+    <string name="settings_haptics_reset_confirm_message">استعادة كل إعدادات الاهتزاز إلى الافتراضي؟</string>
+    <string name="settings_haptics_no_vibrator">هذا الجهاز لا يحتوي على محرك اهتزاز، لذا التغذية اللمسية غير متاحة.</string>
+    <string name="settings_haptics_reset_confirm_title">إعادة ضبط الاهتزازات؟</string>
+    <string name="settings_haptics_torch_preset_helper">اختر قوة نبض الفلاش. وهو نبض مزدوج (نبض القلب)، يختلف عن نبضات التسجيل.</string>
+    <string name="settings_haptics_torch_subtitle">نبضتان عند تشغيل الفلاش</string>
+    <string name="settings_haptics_torch_title">اختصار الفلاش</string>
+    <string name="settings_haptics_ui_title">الأزرار وعناصر التحكم</string>
+    <string name="settings_haptics_ui_subtitle">الفلاش، تبديل الكاميرا، إيقاف مؤقت/استئناف، ضغط مطوّل ولمسات البطاقات</string>
+    <string name="settings_haptics_picker_title">منتقي الأرقام</string>
+    <string name="settings_haptics_picker_subtitle">نقرات عند تمرير عجلة الأرقام وتأكيد قيمة</string>
+    <string name="settings_haptics_reset">إعادة الضبط إلى الافتراضي</string>
+    <string name="settings_haptics_footer">المفتاح في الشريط العلوي يفعّل أو يعلّق كل الاهتزازات والتغذية اللمسية في التطبيق. عندما يكون متوقفاً، يُعطَّل كل ما هو أدناه.</string>
+    <string name="settings_haptics_preset_off">إيقاف</string>
+    <string name="settings_haptics_preset_soft">ناعم</string>
+    <string name="settings_haptics_preset_default">افتراضي</string>
+    <string name="settings_haptics_preset_strong">قوي</string>
+    <string name="settings_haptics_preset_custom">مخصص…</string>
+    <string name="settings_haptics_section_recording">أحداث التسجيل</string>
+    <string name="settings_haptics_section_interface">تغذية راجعة للواجهة</string>
+    <string name="settings_haptics_value_format">%1$s · %2$d مللي ثانية</string>
+    <string name="settings_haptics_custom_title">مدة مخصصة</string>
+    <string name="settings_haptics_custom_hint">مللي ثانية (0 – 10000)</string>
+    <string name="settings_haptics_custom_start_footer">نبضة قصيرة عند بدء التسجيل. الافتراضي 100 مللي ثانية.</string>
+    <string name="settings_haptics_custom_stop_footer">نبضة أطول عند انتهاء التسجيل. الافتراضي 300 مللي ثانية.</string>
+    <string name="settings_haptics_stop_title">اهتزاز عند إيقاف التسجيل</string>
+    <string name="settings_haptics_start_subtitle">نبضة قصيرة عند بدء التسجيل</string>
+    <string name="settings_haptics_start_title">اهتزاز عند بدء التسجيل</string>
+    <string name="settings_haptics_title">التغذية اللمسية</string>
+    <string name="settings_haptics_subtitle">تحكم في الاهتزاز والتغذية اللمسية في جميع أنحاء التطبيق.</string>
 
     <string name="row_camera_title">الكاميرا</string>
 

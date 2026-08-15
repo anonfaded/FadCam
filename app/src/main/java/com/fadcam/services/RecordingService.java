@@ -5405,6 +5405,10 @@ public class RecordingService extends Service {
     }
 
     private void broadcastOnRecordingStopped() {
+        // Tactile confirmation that recording stopped — fired at the earliest
+        // stop-confirmed point (before any heavy cleanup that could throw), so
+        // it works for widgets, tiles, shortcuts and background stops too.
+        com.fadcam.Utils.vibrateRecordingStop(this);
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STOPPED);
         sendBroadcast(broadcastIntent);
     }
@@ -6719,6 +6723,11 @@ public class RecordingService extends Service {
 
                 persistRecordingTimelineState();
                 startDurationLimitSession();
+
+                // Tactile confirmation that recording actually started — fired
+                // from the SERVICE so it works for widgets, tiles, shortcuts and
+                // background starts too (gated by the Haptic feedback setting).
+                com.fadcam.Utils.vibrateRecordingStart(this);
 
                 // Setup notification
                 setupRecordingInProgressNotification();

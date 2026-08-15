@@ -401,6 +401,9 @@ public class SettingsHomeFragment extends Fragment {
 
     /** Wire click handlers for all settings rows. */
     private void setupRowHandlers(View root) {
+        bindRow(root, R.id.row_haptics_settings,
+                () -> openSubFragment(new HapticsSettingsFragment()));
+
         bindRow(root, R.id.group_appearance, () -> openSubFragment(new AppearanceSettingsFragment()));
         bindRow(root, R.id.group_video_quick, () -> openSubFragment(new VideoSettingsFragment()));
         bindRow(root, R.id.group_video_player_settings, () -> openSubFragment(new VideoPlayerSettingsFragment()));

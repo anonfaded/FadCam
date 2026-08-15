@@ -4907,6 +4907,8 @@ public class RecordsFragment extends BaseFragment implements
         Context context = getContext();
         if (context == null)
             return;
+        if (!com.fadcam.Utils.hapticsAllowedForUi(context))
+            return;
         Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator != null && vibrator.hasVibrator()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

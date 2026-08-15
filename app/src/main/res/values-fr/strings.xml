@@ -1521,6 +1521,39 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="settings_watermark_title">Watermark</string>
 
 <string name="settings_advanced_title">Advanced</string>
+    <string name="settings_haptics_stop_subtitle">Impulsion plus longue à la fin d\'un enregistrement</string>
+    <string name="duration_picker_preview">Aperçu</string>
+    <string name="settings_haptics_stop_helper">Impulsion plus longue à la fin d\'un enregistrement. Par défaut : 300 ms.</string>
+    <string name="settings_haptics_start_helper">Impulsion courte au début d\'un enregistrement. Par défaut : 100 ms.</string>
+    <string name="settings_haptics_reset_confirm_message">Restaurer tous les réglages de vibration par défaut ?</string>
+    <string name="settings_haptics_no_vibrator">Cet appareil n\'a pas de moteur de vibration, le retour haptique n\'est donc pas disponible.</string>
+    <string name="settings_haptics_reset_confirm_title">Réinitialiser les haptiques ?</string>
+    <string name="settings_haptics_torch_preset_helper">Choisissez l\'intensité de l\'impulsion de la lampe. C\'est une double impulsion (battement), différente des impulsions d\'enregistrement.</string>
+    <string name="settings_haptics_torch_subtitle">Double impulsion quand la lampe s\'allume</string>
+    <string name="settings_haptics_torch_title">Raccourci lampe torche</string>
+    <string name="settings_haptics_ui_title">Boutons et commandes</string>
+    <string name="settings_haptics_ui_subtitle">Lampe torche, changement de caméra, pause/reprise, appuis longs et touches de cartes</string>
+    <string name="settings_haptics_picker_title">Sélecteur de nombres</string>
+    <string name="settings_haptics_picker_subtitle">Tics lors du défilement d\'une molette de nombres et de la confirmation</string>
+    <string name="settings_haptics_reset">Rétablir les valeurs par défaut</string>
+    <string name="settings_haptics_footer">L\'interrupteur en haut active ou désactive TOUTES les vibrations et le retour haptique de l\'application. S\'il est éteint, tout le reste est désactivé.</string>
+    <string name="settings_haptics_preset_off">Désactivé</string>
+    <string name="settings_haptics_preset_soft">Doux</string>
+    <string name="settings_haptics_preset_default">Par défaut</string>
+    <string name="settings_haptics_preset_strong">Fort</string>
+    <string name="settings_haptics_preset_custom">Personnalisé…</string>
+    <string name="settings_haptics_section_recording">Événements d\'enregistrement</string>
+    <string name="settings_haptics_section_interface">Retour d\'interface</string>
+    <string name="settings_haptics_value_format">%1$s · %2$d ms</string>
+    <string name="settings_haptics_custom_title">Durée personnalisée</string>
+    <string name="settings_haptics_custom_hint">Millisecondes (0 – 10000)</string>
+    <string name="settings_haptics_custom_start_footer">Impulsion courte au début d\'un enregistrement. 100 ms par défaut.</string>
+    <string name="settings_haptics_custom_stop_footer">Impulsion plus longue à la fin d\'un enregistrement. 300 ms par défaut.</string>
+    <string name="settings_haptics_stop_title">Vibrer à l\'arrêt de l\'enregistrement</string>
+    <string name="settings_haptics_start_subtitle">Impulsion courte au début d\'un enregistrement</string>
+    <string name="settings_haptics_start_title">Vibrer au démarrage de l\'enregistrement</string>
+    <string name="settings_haptics_title">Retour haptique</string>
+    <string name="settings_haptics_subtitle">Contrôlez la vibration et le retour haptique dans toute l\'application.</string>
 
 <string name="row_camera_title">Camera</string>
 

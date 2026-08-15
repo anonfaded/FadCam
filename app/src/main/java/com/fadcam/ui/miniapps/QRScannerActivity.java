@@ -275,7 +275,7 @@ public class QRScannerActivity extends AppCompatActivity {
     private void showScanResult(String text, String format) {
         // Haptic feedback
         View root = findViewById(android.R.id.content);
-        if (root != null) root.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+        if (root != null && com.fadcam.Utils.hapticsAllowedForUi(root.getContext())) root.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
         
         // Play beep
         try {

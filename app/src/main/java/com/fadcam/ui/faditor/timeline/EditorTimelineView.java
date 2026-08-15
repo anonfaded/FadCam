@@ -233,7 +233,9 @@ public class EditorTimelineView extends View {
         public void run() {
             if (activeDrag == Drag.NONE && downSegIndex >= 0 && segments.size() > 1) {
                 longPressTriggered = true;
-                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                if (com.fadcam.Utils.hapticsAllowedForUi(EditorTimelineView.this.getContext())) {
+                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                }
                 enterReorderMode();
             }
         }
@@ -249,7 +251,9 @@ public class EditorTimelineView extends View {
                 float scrolledX = downX + scrollOffsetPx;
                 dragAudioStartX = scrolledX;
                 dragAudioStartOffsetMs = audioClips.get(dragAudioIndex).getOffsetMs();
-                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                if (com.fadcam.Utils.hapticsAllowedForUi(EditorTimelineView.this.getContext())) {
+                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                }
                 getParent().requestDisallowInterceptTouchEvent(true);
                 invalidate();
             }
@@ -1632,7 +1636,9 @@ public class EditorTimelineView extends View {
                         reorderDragIdx = i;
                         reorderDragCenterX = bx + reorderBlockSize / 2f;
                         reorderDragCenterY = by + reorderBlockSize / 2f;
-                        performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                        if (com.fadcam.Utils.hapticsAllowedForUi(EditorTimelineView.this.getContext())) {
+                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                }
                         invalidate();
                         return true;
                     }

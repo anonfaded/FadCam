@@ -87,7 +87,7 @@ public class LayerPanelOverlay {
                         return true;
                     }
                     isDraggingOverlay = true;
-                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                    if (com.fadcam.Utils.hapticsAllowedForUi(view.getContext())) view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                 }
 
                 layoutParams.x = overlayInitialX + deltaX;
@@ -557,7 +557,7 @@ public class LayerPanelOverlay {
         if (listener != null) {
             listener.onLayerReorderGestureStarted(layerId);
         }
-        layerView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+        if (com.fadcam.Utils.hapticsAllowedForUi(layerView.getContext())) layerView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
         layerView.animate().scaleX(1.03f).scaleY(1.03f).alpha(0.75f).setDuration(150).start();
         ViewCompat.setElevation(layerView, dpToPx(8f));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

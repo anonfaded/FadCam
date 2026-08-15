@@ -569,8 +569,10 @@ public class ModeSwitcherComponent {
                         }
                         if (seg != dragHighlightedSegment) {
                             dragHighlightedSegment = seg;
-                            activeIndicator.performHapticFeedback(
-                                    android.view.HapticFeedbackConstants.CLOCK_TICK);
+                            if (com.fadcam.Utils.hapticsAllowedForUi(activeIndicator.getContext())) {
+                                activeIndicator.performHapticFeedback(
+                                        android.view.HapticFeedbackConstants.CLOCK_TICK);
+                            }
                         }
                         return true;
                     }
@@ -633,7 +635,9 @@ public class ModeSwitcherComponent {
         dragHighlightedSegment = nearestSegment(dragBaseX);
         // Pick-up: scale up like the quick-action reorder.
         activeIndicator.animate().scaleX(1.15f).scaleY(1.15f).setDuration(150).start();
-        activeIndicator.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+        if (com.fadcam.Utils.hapticsAllowedForUi(activeIndicator.getContext())) {
+            activeIndicator.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+        }
         setPillDragGate(true);
     }
 
@@ -728,7 +732,9 @@ public class ModeSwitcherComponent {
                     if (activeIndicator != null) activeIndicator.setX(targetLeft);
                 })
                 .start();
-        activeIndicator.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+        if (com.fadcam.Utils.hapticsAllowedForUi(activeIndicator.getContext())) {
+            activeIndicator.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+        }
     }
 
     /**

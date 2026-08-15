@@ -233,6 +233,121 @@ public class Utils {
      * scrollable content (carousels, log previews) paint over borders. A
      * dim + ripple reads as a proper material press with zero side effects.
      */
+    /** Shared vibrate implementation; short pulses for start, longer for stop. */
+    private static void vibrateEvent(android.content.Context context, long durationMs) {
+        try {
+            android.os.Vibrator vibrator = (android.os.Vibrator)
+                    context.getSystemService(android.content.Context.VIBRATOR_SERVICE);
+            if (vibrator == null || !vibrator.hasVibrator()) {
+                return;
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(android.os.VibrationEffect.createOneShot(
+                        durationMs, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(durationMs);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Short vibration when a recording STARTS. Uses the Vibrator API directly
+     * (not View.performHapticFeedback) so it works from services, shortcuts,
+     * widgets and tiles — and regardless of the ringer mode or the system
+     * "touch vibrations" setting. Duration is user-configurable (preset or
+     * custom ms); gated by the master Haptic feedback toggle.
+     */
+    public static void vibrateRecordingStart(android.content.Context context) {
+        try {
+            com.fadcam.SharedPreferencesManager prefs =
+                    com.fadcam.SharedPreferencesManager.getInstance(context);
+            if (!prefs.isHapticFeedbackEnabled()) {
+                return;
+            }
+            long ms = prefs.getHapticStartDurationMs();
+            if (ms > 0L) {
+                vibrateEvent(context, ms);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Longer vibration when a recording STOPS (distinct from the start pulse).
+     * Duration is user-configurable; gated by the master toggle.
+     */
+    public static void vibrateRecordingStop(android.content.Context context) {
+        try {
+            com.fadcam.SharedPreferencesManager prefs =
+                    com.fadcam.SharedPreferencesManager.getInstance(context);
+            if (!prefs.isHapticFeedbackEnabled()) {
+                return;
+            }
+            long ms = prefs.getHapticStopDurationMs();
+            if (ms > 0L) {
+                vibrateEvent(context, ms);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Whether UI-touch haptics are allowed: master toggle AND the
+     * "Buttons & controls" group toggle (both default ON).
+     */
+    public static boolean hapticsAllowedForUi(android.content.Context context) {
+        try {
+            com.fadcam.SharedPreferencesManager prefs =
+                    com.fadcam.SharedPreferencesManager.getInstance(context);
+            return prefs.isHapticFeedbackEnabled() && prefs.isHapticUiEnabled();
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /**
+     * Double-pulse ("heartbeat") vibration for the TORCH SHORTCUT — deliberately
+     * different from the single recording pulses. Intensity comes from the
+     * user's preset (soft/default/strong map to amplitude). Gated by the master
+     * toggle and the torch preset (Off disables).
+     */
+    public static void vibrateTorchShortcut(android.content.Context context) {
+        try {
+            com.fadcam.SharedPreferencesManager prefs =
+                    com.fadcam.SharedPreferencesManager.getInstance(context);
+            if (!prefs.isHapticFeedbackEnabled()) {
+                return;
+            }
+            String preset = prefs.getHapticTorchPreset();
+            if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_OFF.equals(preset)) {
+                return;
+            }
+            int amplitude;
+            if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_SOFT.equals(preset)) {
+                amplitude = 64;
+            } else if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_STRONG.equals(preset)) {
+                amplitude = 255;
+            } else {
+                amplitude = android.os.VibrationEffect.DEFAULT_AMPLITUDE;
+            }
+            android.os.Vibrator vibrator = (android.os.Vibrator)
+                    context.getSystemService(android.content.Context.VIBRATOR_SERVICE);
+            if (vibrator == null || !vibrator.hasVibrator()) {
+                return;
+            }
+            // Two pulses: wait 60ms, buzz 60ms, wait 90ms, buzz 60ms.
+            long[] pattern = new long[]{0L, 60L, 90L, 60L};
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(android.os.VibrationEffect.createWaveform(
+                        pattern, new int[]{0, amplitude, 0, amplitude}, /* repeat= */ -1));
+            } else {
+                vibrator.vibrate(pattern, /* repeat= */ -1);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
     public static void attachPressScaleRow(final android.view.View v, final float scale) {
         if (v == null) return;
         v.setOnTouchListener((view, event) -> {

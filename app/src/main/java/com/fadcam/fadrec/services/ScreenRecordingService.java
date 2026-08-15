@@ -682,6 +682,9 @@ public class ScreenRecordingService extends Service {
             // NOW start recording pipeline with correct internal state
             recordingPipeline.startRecording();
             recordingStartTime = SystemClock.elapsedRealtime();
+            // Tactile confirmation that screen recording started (service-side,
+            // gated by the Haptic feedback setting).
+            com.fadcam.Utils.vibrateRecordingStart(this);
             
             // Reset pause tracking for new recording
             pauseStartTime = 0;
@@ -909,6 +912,9 @@ public class ScreenRecordingService extends Service {
             // Calculate duration
             long duration = SystemClock.elapsedRealtime() - recordingStartTime;
             FLog.i(TAG, String.format("Recording stopped. Duration: %.1f seconds", duration / 1000.0));
+            // Tactile confirmation that screen recording stopped (service-side,
+            // gated by the Haptic feedback setting).
+            com.fadcam.Utils.vibrateRecordingStop(this);
 
             // STREAM_ONLY: delete the temporary recording file so it is never kept on disk.
             // Only do this when he session was started with an active server in STREAM_ONLY mode

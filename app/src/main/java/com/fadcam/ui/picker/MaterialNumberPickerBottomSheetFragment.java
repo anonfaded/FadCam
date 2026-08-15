@@ -59,6 +59,7 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
     public static final String ARG_DEFAULT_VALUE = "default_value";
     public static final String ARG_SHOW_RESET = "show_reset";
     public static final String ARG_ENABLE_TIMER_CALC = "enable_timer_calc";
+    public static final String ARG_SHOW_PREVIEW = "show_preview";
 
     public static final String RESULT_NUMBER = "number_value";
     public static final String RESULT_DURATION_SECONDS = "duration_seconds";
@@ -118,6 +119,7 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
     private String title, hint, lowMsg, highMsg, resultKey;
     private int min, max, value, lowTh, highTh, defaultValue;
     private boolean showReset, enableTimerCalc;
+    private boolean showPreview;
     private String descriptionText;
 
     private NumberPicker npSingle;
@@ -239,6 +241,7 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
         resultKey = a.getString(ARG_RESULT_KEY, "number_input_result");
         defaultValue = a.getInt(ARG_DEFAULT_VALUE, value);
         showReset = a.getBoolean(ARG_SHOW_RESET, false);
+        showPreview = a.getBoolean(ARG_SHOW_PREVIEW, false);
         enableTimerCalc = a.getBoolean(ARG_ENABLE_TIMER_CALC, false);
         descriptionText = a.getString(ARG_DESCRIPTION, null);
 
@@ -494,6 +497,36 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
                     resetButton.setVisibility(View.GONE);
                 }
             }
+            // Optional live preview: vibrate the currently selected value so the
+            // user can feel the duration before committing (used by haptics settings).
+            View previewBtn = view.findViewById(R.id.btn_picker_preview);
+            if (previewBtn != null) {
+                if (showPreview) {
+                    previewBtn.setVisibility(View.VISIBLE);
+                    previewBtn.setOnClickListener(v -> {
+                        try {
+                            android.os.Vibrator vibrator = (android.os.Vibrator)
+                                    requireContext().getSystemService(
+                                            android.content.Context.VIBRATOR_SERVICE);
+                            if (vibrator == null || !vibrator.hasVibrator()) {
+                                return;
+                            }
+                            long ms = Math.max(0L, npSingle.getValue());
+                            if (ms > 0L) {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                    vibrator.vibrate(android.os.VibrationEffect.createOneShot(
+                                            ms, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
+                                } else {
+                                    vibrator.vibrate(ms);
+                                }
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    });
+                } else {
+                    previewBtn.setVisibility(View.GONE);
+                }
+            }
             // The old colored helper messages are gone — INT validation is
             // enforced by the wheel and the input dialog's range.
             if (helperView != null) helperView.setVisibility(View.GONE);
@@ -536,7 +569,7 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
 
     private void tickHaptic() {
         try {
-            if (getView() != null) {
+            if (getView() != null && hapticsEnabled()) {
                 getView().performHapticFeedback(
                         android.view.HapticFeedbackConstants.CLOCK_TICK);
             }
@@ -546,11 +579,22 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
 
     private void confirmHaptic() {
         try {
-            if (getView() != null) {
+            if (getView() != null && hapticsEnabled()) {
                 getView().performHapticFeedback(
                         android.view.HapticFeedbackConstants.CONFIRM);
             }
         } catch (Exception ignored) {
+        }
+    }
+
+    /** Whether the app's Haptic feedback + picker haptics toggles are on (default ON). */
+    private boolean hapticsEnabled() {
+        try {
+            com.fadcam.SharedPreferencesManager prefs =
+                    com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+            return prefs.isHapticFeedbackEnabled() && prefs.isHapticPickerEnabled();
+        } catch (Exception e) {
+            return true;
         }
     }
 

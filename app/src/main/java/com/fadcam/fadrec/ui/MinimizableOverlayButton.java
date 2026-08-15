@@ -291,7 +291,7 @@ public class MinimizableOverlayButton {
 
                 if (distance < dpToPx(10)) {
                     // Click - toggle expanded state
-                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                    if (com.fadcam.Utils.hapticsAllowedForUi(view.getContext())) view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                     if (listener != null) {
                         if (isExpanded) {
                             listener.onMinimizeRequested();

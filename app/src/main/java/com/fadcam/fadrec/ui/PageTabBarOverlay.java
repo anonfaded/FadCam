@@ -80,7 +80,7 @@ public class PageTabBarOverlay {
                         return true;
                     }
                     isDraggingOverlay = true;
-                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                    if (com.fadcam.Utils.hapticsAllowedForUi(view.getContext())) view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                 }
 
                 layoutParams.x = overlayInitialX + deltaX;
@@ -426,7 +426,7 @@ public class PageTabBarOverlay {
         if (listener != null) {
             listener.onPageDragGestureStarted(index);
         }
-        tabView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+        if (com.fadcam.Utils.hapticsAllowedForUi(tabView.getContext())) tabView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
         tabView.animate().scaleX(1.04f).scaleY(1.04f).alpha(0.85f).setDuration(150).start();
         ViewCompat.setElevation(tabView, dpToPx(8f));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

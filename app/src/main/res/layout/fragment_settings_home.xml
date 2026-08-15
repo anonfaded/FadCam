@@ -645,6 +645,46 @@ app:layout_constraintTop_toTopOf="parent"
 >
 
             <LinearLayout
+                android:id="@+id/row_haptics_settings"
+                style="@style/SettingsGroupRow">
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:fontFamily="@font/materialicons"
+                    android:gravity="center"
+                    android:text="vibration"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="22sp"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_haptics_title"
+                        android:textColor="?attr/colorHeading"
+                        android:textStyle="bold"
+                        android:textSize="15sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_haptics_subtitle"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+            <View style="@style/SettingsDivider" />
+
+            <LinearLayout
                 android:id="@+id/group_motion_lab"
                 style="@style/SettingsGroupRow">
                 <ImageView

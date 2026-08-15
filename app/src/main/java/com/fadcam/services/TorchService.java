@@ -68,6 +68,12 @@ public class TorchService extends Service {
             // Get the new torch state (opposite of current state)
             boolean newState = !isTorchOn.get();
             FLog.d(TAG, "Attempting to set torch to: " + newState);
+            // Distinct double-pulse ("heartbeat") confirmation when the torch
+            // turns ON via a shortcut/tile — different from the recording
+            // pulses; gated by the master toggle + torch preset.
+            if (newState) {
+                com.fadcam.Utils.vibrateTorchShortcut(this);
+            }
 
             // Check if "both torches" option is enabled
             boolean bothTorchesEnabled = sharedPreferences.getBoolean(Constants.PREF_BOTH_TORCHES_ENABLED, false);

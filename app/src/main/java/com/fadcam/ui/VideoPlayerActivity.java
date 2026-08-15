@@ -517,9 +517,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
                             android.os.Build.VERSION.SDK_INT >=
                             android.os.Build.VERSION_CODES.R
                         ) {
-                            playerView.performHapticFeedback(
-                                android.view.HapticFeedbackConstants.GESTURE_START
-                            );
+                            if (com.fadcam.Utils.hapticsAllowedForUi(playerView.getContext())) {
+                                playerView.performHapticFeedback(
+                                        android.view.HapticFeedbackConstants.GESTURE_START);
+                            }
                         }
                     } catch (Exception ignored) {}
 

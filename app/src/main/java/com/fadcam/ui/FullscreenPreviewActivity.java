@@ -662,7 +662,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             return;
         }
         if (textureView != null) {
-            textureView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+            if (com.fadcam.Utils.hapticsAllowedForUi(textureView.getContext())) {
+                textureView.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS);
+            }
         }
 
         if (isRecordingActive || isRecordingPaused) {
