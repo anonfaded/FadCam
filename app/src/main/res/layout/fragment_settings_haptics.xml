@@ -242,51 +242,7 @@
                 android:layout_marginTop="0dp"
                 android:orientation="vertical"
                 android:background="@drawable/settings_group_card_bg">
-
-                <LinearLayout
-                    android:id="@+id/row_haptics_ui"
-                    style="@style/SettingsGroupRow"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp">
-                    <TextView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="16dp"
-                        android:fontFamily="@font/materialicons"
-                        android:gravity="center"
-                        android:text="vibration"
-                        android:textColor="@android:color/darker_gray"
-                        android:textSize="22sp"/>
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/settings_haptics_ui_title"
-                            android:textStyle="bold"
-                            android:textSize="15sp"
-                            android:textColor="?attr/colorHeading"
-                            android:textAlignment="viewStart"/>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/settings_haptics_ui_subtitle"
-                            android:textColor="@android:color/darker_gray"
-                            android:textSize="12sp"
-                            android:textAlignment="viewStart"/>
-                    </LinearLayout>
-                    <com.fadcam.ui.AvatarToggleView
-                        android:id="@+id/toggle_haptics_ui"
-                        android:layout_width="52dp"
-                        android:layout_height="52dp"/>
-                </LinearLayout>
-
-                <View style="@style/SettingsDivider" />
-
-                <LinearLayout
+<LinearLayout
                     android:id="@+id/row_haptics_torch"
                     style="@style/SettingsGroupRow"
                     android:paddingStart="16dp"
@@ -339,6 +295,52 @@
                         android:src="@drawable/ic_arrow_right"
                         android:tint="@android:color/darker_gray"/>
                 </LinearLayout>
+                <View style="@style/SettingsDivider" />
+
+                <LinearLayout
+                    android:id="@+id/row_haptics_ui"
+                    style="@style/SettingsGroupRow"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp">
+                    <TextView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:text="vibration"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="22sp"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/settings_haptics_ui_title"
+                            android:textStyle="bold"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorHeading"
+                            android:textAlignment="viewStart"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/settings_haptics_ui_subtitle"
+                            android:textColor="@android:color/darker_gray"
+                            android:textSize="12sp"
+                            android:textAlignment="viewStart"/>
+                    </LinearLayout>
+                    <com.fadcam.ui.AvatarToggleView
+                        android:id="@+id/toggle_haptics_ui"
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"/>
+                </LinearLayout>
+
+                <View style="@style/SettingsDivider" />
+
+                
 
                 <LinearLayout
                     android:id="@+id/row_haptics_picker"

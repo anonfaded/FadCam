@@ -1528,7 +1528,12 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="settings_haptics_reset_confirm_message">Restaurer tous les réglages de vibration par défaut ?</string>
     <string name="settings_haptics_no_vibrator">Cet appareil n\'a pas de moteur de vibration, le retour haptique n\'est donc pas disponible.</string>
     <string name="settings_haptics_reset_confirm_title">Réinitialiser les haptiques ?</string>
-    <string name="settings_haptics_torch_preset_helper">Choisissez l\'intensité de l\'impulsion de la lampe. C\'est une double impulsion (battement), différente des impulsions d\'enregistrement.</string>
+    <string name="settings_haptics_torch_preset_helper">Double impulsion à l\'allumage/extinction de la lampe — forte d\'abord à l\'allumage, douce d\'abord à l\'extinction. Ou choisissez une durée personnalisée.</string>
+    <string name="settings_haptics_torch_custom_footer">Longueur de chaque impulsion. Par défaut : 90 et 70 ms.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d · %2$d ms</string>
+    <string name="settings_haptics_torch_beat2">2e battement (ms)</string>
+    <string name="settings_haptics_torch_beat1">1er battement (ms)</string>
+    <string name="settings_haptics_torch_custom_title">Durées d\'impulsion de la lampe</string>
     <string name="settings_haptics_torch_subtitle">Double impulsion quand la lampe s\'allume</string>
     <string name="settings_haptics_torch_title">Raccourci lampe torche</string>
     <string name="settings_haptics_ui_title">Boutons et commandes</string>
@@ -1547,8 +1552,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="settings_haptics_value_format">%1$s · %2$d ms</string>
     <string name="settings_haptics_custom_title">Durée personnalisée</string>
     <string name="settings_haptics_custom_hint">Millisecondes (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">Impulsion courte au début d\'un enregistrement. 100 ms par défaut.</string>
-    <string name="settings_haptics_custom_stop_footer">Impulsion plus longue à la fin d\'un enregistrement. 300 ms par défaut.</string>
+    <string name="settings_haptics_custom_start_footer">Impulsion courte au début d\'un enregistrement. 100 ms par défaut. Appuyez sur le bouton d\'aperçu pour la ressentir.</string>
+    <string name="settings_haptics_custom_stop_footer">Impulsion plus longue à la fin d\'un enregistrement. 300 ms par défaut. Appuyez sur le bouton d\'aperçu pour la ressentir.</string>
     <string name="settings_haptics_stop_title">Vibrer à l\'arrêt de l\'enregistrement</string>
     <string name="settings_haptics_start_subtitle">Impulsion courte au début d\'un enregistrement</string>
     <string name="settings_haptics_start_title">Vibrer au démarrage de l\'enregistrement</string>
@@ -3167,7 +3172,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
 
-<string name="fadcam_pro_header_button">Pro</string>
+<string name="fadcam_pro_header_button">Obtenir Pro</string>
 
 <string name="player_info_title">About the Video Player</string>
 

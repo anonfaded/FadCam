@@ -6401,9 +6401,15 @@ public class HomeFragment extends BaseFragment {
             long limitMs = sharedPreferencesManager.getMaximumRecordingDurationMs();
             boolean sessionActive = isRecording() || isPaused() || quickCountdownSessionActive;
             if (!sessionActive || limitMs <= 0L) {
+                boolean wasActive = quickCountdownSessionActive;
                 quickCountdownSessionActive = false;
-                // Idle or no limit: static configured value (or "Off").
-                refreshQuickTimerValue();
+                // Repaint the static label only when LEAVING a countdown session.
+                // Idle ticks skip it entirely — the label is refreshed by the
+                // picker result listeners and the prefs change listener, so a
+                // per-second repaint here would be pure wasted work.
+                if (wasActive) {
+                    refreshQuickTimerValue();
+                }
                 return;
             }
 
@@ -9638,6 +9644,14 @@ public class HomeFragment extends BaseFragment {
                 .putBoolean(Constants.PREF_TORCH_STATE, isTorchOn)
                 .apply();
 
+            // Same heartbeat haptic as the torch shortcut intent, for consistency.
+            try {
+                if (isAdded() && getContext() != null) {
+                    com.fadcam.Utils.vibrateTorchShortcut(requireContext(), isTorchOn);
+                }
+            } catch (Exception ignored) {
+            }
+
             FLog.d(
                 TAG,
                 "Torch toggled directly via CameraManager. New state: " +
@@ -9690,6 +9704,14 @@ public class HomeFragment extends BaseFragment {
             prefs.edit()
                 .putBoolean(Constants.PREF_TORCH_STATE, isTorchOn)
                 .apply();
+
+            // Same heartbeat haptic as the torch shortcut intent, for consistency.
+            try {
+                if (isAdded() && getContext() != null) {
+                    com.fadcam.Utils.vibrateTorchShortcut(requireContext(), isTorchOn);
+                }
+            } catch (Exception ignored) {
+            }
 
             FLog.d(TAG, "Both torches toggled. New state: " + isTorchOn);
             updateTorchUI(isTorchOn);
@@ -10494,6 +10516,12 @@ public class HomeFragment extends BaseFragment {
         setupQuickTimerButton();
         setupQuickActionsReorder();
         setupPreviewZoomHud();
+        // Press haptics for the quick-action buttons (mute / fadshot / full /
+        // timer) — the central gated tick lives in Utils.attachPressScale.
+        Utils.attachPressScale(btnQuickTimer, 1.06f);
+        Utils.attachPressScale(btnQuickMuteAudio, 1.06f);
+        Utils.attachPressScale(btnCaptureShotPreview, 1.06f);
+        Utils.attachPressScale(btnFullscreenPreview, 1.06f);
         vibrator = (Vibrator) requireActivity().getSystemService(
             Context.VIBRATOR_SERVICE
         );

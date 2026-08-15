@@ -766,7 +766,12 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="settings_haptics_reset_confirm_message">Kembalikan semua pengaturan getaran ke default?</string>
     <string name="settings_haptics_no_vibrator">Perangkat ini tidak memiliki motor getaran, jadi umpan balik haptik tidak tersedia.</string>
     <string name="settings_haptics_reset_confirm_title">Atur ulang haptik?</string>
-    <string name="settings_haptics_torch_preset_helper">Pilih kekuatan denyut senter. Ini denyut ganda (detak jantung), berbeda dari denyut rekaman.</string>
+    <string name="settings_haptics_torch_preset_helper">Denyut ganda saat senter menyala/mati — kuat dulu saat menyala, lembut dulu saat mati. Atau pilih panjang denyut kustom.</string>
+    <string name="settings_haptics_torch_custom_footer">Panjang setiap denyut. Default: 90 dan 70 ms.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d · %2$d ms</string>
+    <string name="settings_haptics_torch_beat2">Detak ke-2 (ms)</string>
+    <string name="settings_haptics_torch_beat1">Detak ke-1 (ms)</string>
+    <string name="settings_haptics_torch_custom_title">Panjang denyut senter</string>
     <string name="settings_haptics_torch_subtitle">Denyut ganda saat senter menyala</string>
     <string name="settings_haptics_torch_title">Pintasan senter</string>
     <string name="settings_haptics_ui_title">Tombol &amp; kontrol</string>
@@ -785,8 +790,8 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="settings_haptics_value_format">%1$s · %2$d ms</string>
     <string name="settings_haptics_custom_title">Durasi kustom</string>
     <string name="settings_haptics_custom_hint">Milidetik (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">Denyut pendek saat rekaman dimulai. Default 100 ms.</string>
-    <string name="settings_haptics_custom_stop_footer">Denyut lebih panjang saat rekaman berakhir. Default 300 ms.</string>
+    <string name="settings_haptics_custom_start_footer">Denyut pendek saat rekaman dimulai. Default 100 ms. Tekan tombol pratinjau untuk merasakannya.</string>
+    <string name="settings_haptics_custom_stop_footer">Denyut lebih panjang saat rekaman berakhir. Default 300 ms. Tekan tombol pratinjau untuk merasakannya.</string>
     <string name="settings_haptics_stop_title">Bergetar saat rekaman berhenti</string>
     <string name="settings_haptics_start_subtitle">Denyut pendek saat rekaman dimulai</string>
     <string name="settings_haptics_start_title">Bergetar saat rekaman dimulai</string>
@@ -2071,7 +2076,7 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="fadcam_pro_feature_user_icon">Ikon yang Diunggah Pengguna</string>
     <string name="fadcam_pro_feature_app_name">Nama Aplikasi Kustom</string>
     <string name="fadcam_pro_feature_faddrive">Sinkronisasi Cloud FadDrive</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_header_button">Dapatkan Pro</string>
 
     <!-- Video Player Info Bottom Sheet -->
     <string name="player_info_title">Tentang Pemutar Video</string>

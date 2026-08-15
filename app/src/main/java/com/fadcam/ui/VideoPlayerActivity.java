@@ -399,6 +399,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
                 @Override
                 public void onValueChange(com.google.android.material.slider.Slider slider, float value, boolean fromUser) {
                     if (!fromUser || player == null) return;
+                    // Seek haptics only at the ends of the timeline (start/end).
+                    if (value <= slider.getValueFrom() || value >= slider.getValueTo()) {
+                        com.fadcam.Utils.vibrateSliderTick(VideoPlayerActivity.this);
+                    }
                     long now = android.os.SystemClock.uptimeMillis();
                     if (now - lastSeekUptime < 50) return; // throttle ~20fps
                     lastSeekUptime = now;

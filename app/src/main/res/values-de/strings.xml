@@ -1180,7 +1180,12 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="settings_haptics_reset_confirm_message">Alle Vibrations-Einstellungen auf die Standardwerte zurücksetzen?</string>
     <string name="settings_haptics_no_vibrator">Dieses Gerät hat keinen Vibrationsmotor — haptisches Feedback ist nicht verfügbar.</string>
     <string name="settings_haptics_reset_confirm_title">Haptik zurücksetzen?</string>
-    <string name="settings_haptics_torch_preset_helper">Wählen Sie die Stärke des Taschenlampen-Pulses. Es ist ein Doppelpuls (Herzschlag), anders als die Aufnahme-Pulse.</string>
+    <string name="settings_haptics_torch_preset_helper">Doppelpuls beim Ein-/Ausschalten der Taschenlampe — beim Einschalten zuerst stark, beim Ausschalten zuerst sanft. Oder wählen Sie eine eigene Pulslänge.</string>
+    <string name="settings_haptics_torch_custom_footer">Länge jedes Pulses. Standard: 90 ms und 70 ms.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d ms · %2$d ms</string>
+    <string name="settings_haptics_torch_beat2">2. Puls (ms)</string>
+    <string name="settings_haptics_torch_beat1">1. Puls (ms)</string>
+    <string name="settings_haptics_torch_custom_title">Taschenlampen-Pulslängen</string>
     <string name="settings_haptics_torch_subtitle">Doppelpuls, wenn die Taschenlampe angeht</string>
     <string name="settings_haptics_torch_title">Taschenlampen-Verknüpfung</string>
     <string name="settings_haptics_ui_title">Tasten &amp; Bedienelemente</string>
@@ -1199,8 +1204,8 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="settings_haptics_value_format">%1$s · %2$d ms</string>
     <string name="settings_haptics_custom_title">Eigene Dauer</string>
     <string name="settings_haptics_custom_hint">Millisekunden (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">Kurzer Impuls beim Start der Aufnahme. Standard: 100 ms.</string>
-    <string name="settings_haptics_custom_stop_footer">Längerer Impuls beim Ende der Aufnahme. Standard: 300 ms.</string>
+    <string name="settings_haptics_custom_start_footer">Kurzer Impuls beim Start der Aufnahme. Standard: 100 ms. Drücken Sie die Vorschau-Taste, um ihn zu spüren.</string>
+    <string name="settings_haptics_custom_stop_footer">Längerer Impuls beim Ende der Aufnahme. Standard: 300 ms. Drücken Sie die Vorschau-Taste, um ihn zu spüren.</string>
     <string name="settings_haptics_stop_title">Bei Aufnahmestopp vibrieren</string>
     <string name="settings_haptics_start_subtitle">Kurzer Impuls beim Start der Aufnahme</string>
     <string name="settings_haptics_start_title">Bei Aufnahmestart vibrieren</string>
@@ -1549,7 +1554,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="fadcam_pro_feature_user_icon">Vom Benutzer hochgeladenes Symbol</string>
     <string name="fadcam_pro_free">Kostenlos</string>
     <string name="fadcam_pro_get_button">FadCam Pro holen</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_header_button">Pro holen</string>
     <string name="fadcam_pro_lab_label">Lab</string>
     <string name="fadcam_pro_paid_offer">Nach dem 23. Dezember 2025 lebenslangen Zugang für 15 $ erhalten – einmalige Zahlung, für immer Updates.</string>
     <string name="fadcam_pro_plus_label">Pro</string>

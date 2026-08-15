@@ -761,7 +761,12 @@
     <string name="settings_haptics_reset_confirm_message">Restore all vibration settings to their defaults?</string>
     <string name="settings_haptics_no_vibrator">This device does not have a vibration motor, so haptic feedback is not available.</string>
     <string name="settings_haptics_reset_confirm_title">Reset haptics?</string>
-    <string name="settings_haptics_torch_preset_helper">Choose the torch pulse strength. It is a double pulse (heartbeat), different from the recording pulses.</string>
+    <string name="settings_haptics_torch_preset_helper">Double pulse when the torch turns on or off — strong first when turning on, soft first when turning off. Or pick a custom pulse length.</string>
+    <string name="settings_haptics_torch_custom_footer">Length of each beat. Defaults: 90 ms and 70 ms.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d ms · %2$d ms</string>
+    <string name="settings_haptics_torch_beat2">2nd beat (ms)</string>
+    <string name="settings_haptics_torch_beat1">1st beat (ms)</string>
+    <string name="settings_haptics_torch_custom_title">Torch pulse lengths</string>
     <string name="settings_haptics_torch_subtitle">Double pulse when the torch turns on</string>
     <string name="settings_haptics_torch_title">Torch shortcut</string>
     <string name="settings_haptics_ui_title">Buttons &amp; controls</string>
@@ -780,8 +785,8 @@
     <string name="settings_haptics_value_format">%1$s · %2$d ms</string>
     <string name="settings_haptics_custom_title">Custom duration</string>
     <string name="settings_haptics_custom_hint">Milliseconds (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">Short pulse when a recording starts. 100 ms is the default.</string>
-    <string name="settings_haptics_custom_stop_footer">Longer pulse when a recording ends. 300 ms is the default.</string>
+    <string name="settings_haptics_custom_start_footer">Short pulse when a recording starts. 100 ms is the default. Press the preview button to feel it.</string>
+    <string name="settings_haptics_custom_stop_footer">Longer pulse when a recording ends. 300 ms is the default. Press the preview button to feel it.</string>
     <string name="settings_haptics_stop_title">Vibrate on recording stop</string>
     <string name="settings_haptics_start_subtitle">Short pulse when a recording begins</string>
     <string name="settings_haptics_start_title">Vibrate on recording start</string>
@@ -2075,7 +2080,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="fadcam_pro_feature_user_icon">User Uploaded Icon</string>
     <string name="fadcam_pro_feature_app_name">Custom App Name</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_header_button">Get Pro</string>
 
     <!-- Video Player Info Bottom Sheet -->
     <string name="player_info_title">About the Video Player</string>

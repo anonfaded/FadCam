@@ -332,6 +332,7 @@
                         android:layout_weight="1"
                         android:gravity="center">
                         <TextView
+                            android:id="@+id/np_label_value2"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
@@ -347,6 +348,7 @@
                         android:layout_weight="1"
                         android:gravity="center">
                         <TextView
+                            android:id="@+id/np_label_value1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
@@ -448,15 +450,15 @@
         android:gravity="center_vertical"
         android:paddingTop="10dp">
 
-        <ImageView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_picker_preview"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:padding="6dp"
-            android:src="@drawable/ic_play_arrow_24"
-            android:tint="?attr/pickerIconTint"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/duration_picker_preview"
+            style="@style/PickerCancelButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/ic_play_arrow_24"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/pickerIconTint"
+            android:text="@string/duration_picker_preview"
             android:visibility="gone"/>
 
         <com.google.android.material.button.MaterialButton

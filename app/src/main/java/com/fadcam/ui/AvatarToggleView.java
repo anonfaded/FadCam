@@ -239,6 +239,21 @@ public class AvatarToggleView extends FrameLayout {
     }
 
     /**
+     * Whether the OFF (sleep) state should dim the icon via the breathing
+     * alpha animation (default true). Header switches that must stay crisp
+     * (e.g. the haptics master toggle) can disable the dim — the closed-eye
+     * icon and floating z's still mark the OFF state.
+     */
+    public void setDimWhenOff(boolean dim) {
+        this.dimWhenOff = dim;
+        if (!dim && !checked) {
+            stopBreathing();
+        }
+    }
+
+    private boolean dimWhenOff = true;
+
+    /**
      * Sets the checked state programmatically (instant, no animation, listener NOT fired).
      * No-op if the state is already equal — prevents cancelling an in-progress animation
      * when a ViewModel re-render observes the same state that was just set by the user.
@@ -275,6 +290,14 @@ public class AvatarToggleView extends FrameLayout {
      */
     @Override
     public boolean performClick() {
+        // Gated tick for every avatar-toggle on/off across the app (master +
+        // Buttons & controls). performClick is the user-initiated path only.
+        try {
+            if (com.fadcam.Utils.hapticsAllowedForUi(getContext())) {
+                performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
+            }
+        } catch (Exception ignored) {
+        }
         performToggle();
         return super.performClick();
     }
@@ -326,16 +349,21 @@ public class AvatarToggleView extends FrameLayout {
             // Status label → "OFF" (red).
             showStatusLabel("OFF", 0xFFE57373, animate);
 
-            if (animate) {
-                startAvd(resolveDrawable(RES_SLEEP), SLEEP_AVD_DURATION_MS, () -> {
-                    ivAvatar.setImageResource(R.drawable.toggle_off);
-                    startBreathing();
-                    showZzz(true);
-                });
-            } else {
+            Runnable settle = () -> {
                 ivAvatar.setImageResource(R.drawable.toggle_off);
-                startBreathing();
-                showZzz(false);
+                if (dimWhenOff) {
+                    startBreathing();
+                } else {
+                    // No dim: keep the icon at full alpha, but the floating
+                    // z's (sleeping indicator) stay — only the dimming is off.
+                    stopBreathing();
+                }
+                showZzz(animate);
+            };
+            if (animate) {
+                startAvd(resolveDrawable(RES_SLEEP), SLEEP_AVD_DURATION_MS, settle);
+            } else {
+                settle.run();
             }
         }
     }

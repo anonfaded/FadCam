@@ -106,6 +106,10 @@ public class WatchVideoPlayerActivity extends AppCompatActivity {
             seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    // Seek haptics only when the thumb hits the start or end.
+                    if (fromUser && (progress == 0 || progress == seekBar.getMax())) {
+                        com.fadcam.Utils.vibrateSliderTick(WatchVideoPlayerActivity.this);
+                    }
                     if (fromUser && player != null) {
                         final long dur = player.getDuration();
                         if (dur > 0) {

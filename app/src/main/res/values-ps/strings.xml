@@ -801,7 +801,7 @@ Would you like to switch to H.264 and start recording?</string>
     <string name="fadcam_pro_feature_user_icon">User Uploaded Icon</string>
     <string name="fadcam_pro_free">Free</string>
     <string name="fadcam_pro_get_button">Get FadCam Pro</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_header_button">پرو ترلاسه کړئ</string>
     <string name="fadcam_pro_lab_label">Lab</string>
     <string name="fadcam_pro_paid_offer">December 23, 2025 na pas, $15 ki Lifetime Access hasil ka — yo wari payment, hamesha updates.</string>
     <string name="fadcam_pro_plus_label">Pro</string>
@@ -1861,7 +1861,12 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="settings_haptics_reset_confirm_message">ټول وایبریشن تنظیمات تیړل شویو ارزښتونو ته بېرته راوګرځوئ؟</string>
     <string name="settings_haptics_no_vibrator">دا وسیله د وایبریشن موټور نه لري، نو لمسي فیډبیک شتون نلري.</string>
     <string name="settings_haptics_reset_confirm_title">لمس بیا تنظیم کړئ؟</string>
-    <string name="settings_haptics_torch_preset_helper">د ټارچ د پلس ځواک غوره کړئ. دا دوه ځله پلس (د زړه وهل) دی، د ثبتولو له پلسونو څخه توپیر لري.</string>
+    <string name="settings_haptics_torch_preset_helper">کله چې ټارچ روښانه یا بندیږي دوه ځله پلس — په روښانه کېدو کې لومړی قوي، په بندیدو کې لومړی نرم. یا خپله د پلس موده وټاکئ.</string>
+    <string name="settings_haptics_torch_custom_footer">د هر پلس اوږدوالی. تیړل شوی: 90 او 70 ms.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d · %2$d ms</string>
+    <string name="settings_haptics_torch_beat2">دوهم پلس (ms)</string>
+    <string name="settings_haptics_torch_beat1">لومړی پلس (ms)</string>
+    <string name="settings_haptics_torch_custom_title">د ټارچ د پلس اوږدوالی</string>
     <string name="settings_haptics_torch_subtitle">کله چې ټارچ روښانه شي دوه ځله پلس</string>
     <string name="settings_haptics_torch_title">د ټارچ شارټ کټ</string>
     <string name="settings_haptics_ui_title">تڼۍ او کنټرولونه</string>
@@ -1880,8 +1885,8 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="settings_haptics_value_format">%1$s · %2$d ms</string>
     <string name="settings_haptics_custom_title">ځانګړې موده</string>
     <string name="settings_haptics_custom_hint">ملی ثانیې (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">د ثبتولو په پیل کې لنډ پلس. تیړل شوی 100 ms.</string>
-    <string name="settings_haptics_custom_stop_footer">د ثبتولو په پای کې اوږد پلس. تیړل شوی 300 ms.</string>
+    <string name="settings_haptics_custom_start_footer">د ثبتولو په پیل کې لنډ پلس. تیړل شوی 100 ms. د مخکتنې تڼۍ فشار کړئ تر څو یې احساس کړئ.</string>
+    <string name="settings_haptics_custom_stop_footer">د ثبتولو په پای کې اوږد پلس. تیړل شوی 300 ms. د مخکتنې تڼۍ فشار کړئ تر څو یې احساس کړئ.</string>
     <string name="settings_haptics_stop_title">د ثبتولو په بند سره وایبریټ</string>
     <string name="settings_haptics_start_subtitle">د ثبتولو په پیل کې لنډ پلس</string>
     <string name="settings_haptics_start_title">د ثبتولو په پیل سره وایبریټ</string>

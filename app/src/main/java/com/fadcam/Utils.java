@@ -307,12 +307,13 @@ public class Utils {
     }
 
     /**
-     * Double-pulse ("heartbeat") vibration for the TORCH SHORTCUT — deliberately
-     * different from the single recording pulses. Intensity comes from the
-     * user's preset (soft/default/strong map to amplitude). Gated by the master
-     * toggle and the torch preset (Off disables).
+     * Double-pulse ("heartbeat") vibration for the TORCH — deliberately
+     * different from the single recording pulses, and ASYMMETRIC so on/off is
+     * memorable: turning ON beats strong-then-soft, turning OFF beats
+     * soft-then-strong. Intensity comes from the user's preset; "custom" uses
+     * the user's pulse length. Gated by the master toggle + torch preset.
      */
-    public static void vibrateTorchShortcut(android.content.Context context) {
+    public static void vibrateTorchShortcut(android.content.Context context, boolean turningOn) {
         try {
             com.fadcam.SharedPreferencesManager prefs =
                     com.fadcam.SharedPreferencesManager.getInstance(context);
@@ -323,26 +324,125 @@ public class Utils {
             if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_OFF.equals(preset)) {
                 return;
             }
-            int amplitude;
+            int strong;
+            int soft;
             if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_SOFT.equals(preset)) {
-                amplitude = 64;
+                strong = 96;
+                soft = 48;
             } else if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_STRONG.equals(preset)) {
-                amplitude = 255;
+                strong = 255;
+                soft = 128;
             } else {
-                amplitude = android.os.VibrationEffect.DEFAULT_AMPLITUDE;
+                strong = 192;
+                soft = 96;
+            }
+            long p1 = 90L;
+            long p2 = 70L;
+            if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_CUSTOM.equals(preset)) {
+                p1 = Math.max(10L, Math.min(10_000L, prefs.getHapticTorchPulse1Ms()));
+                p2 = Math.max(10L, Math.min(10_000L, prefs.getHapticTorchPulse2Ms()));
+            }
+            vibrateTorchPulses(context, p1, p2, turningOn, strong, soft);
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Heartbeat vibration with EXPLICIT pulse lengths (used by the torch pulse
+     * picker preview). Amplitudes follow the user's preset; gated by the master
+     * toggle + torch preset (OFF suppresses the pattern).
+     */
+    public static void vibrateTorchPulses(android.content.Context context,
+            long pulse1Ms, long pulse2Ms, boolean turningOn, int strong, int soft) {
+        try {
+            com.fadcam.SharedPreferencesManager prefs =
+                    com.fadcam.SharedPreferencesManager.getInstance(context);
+            if (!prefs.isHapticFeedbackEnabled()) {
+                return;
+            }
+            String preset = prefs.getHapticTorchPreset();
+            if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_OFF.equals(preset)) {
+                return;
+            }
+            long p1 = Math.max(10L, Math.min(10_000L, pulse1Ms));
+            long p2 = Math.max(10L, Math.min(10_000L, pulse2Ms));
+            int amp1 = turningOn ? strong : soft;
+            int amp2 = turningOn ? soft : strong;
+            android.os.Vibrator vibrator = (android.os.Vibrator)
+                    context.getSystemService(android.content.Context.VIBRATOR_SERVICE);
+            if (vibrator == null || !vibrator.hasVibrator()) {
+                return;
+            }
+            // Two pulses: [gap, p1, gap, p2] — the leading beat is the louder one.
+            long[] pattern = new long[]{0L, p1, 130L, p2};
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(android.os.VibrationEffect.createWaveform(
+                        pattern, new int[]{0, amp1, 0, amp2}, /* repeat= */ -1));
+            } else {
+                vibrator.vibrate(pattern, /* repeat= */ -1);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Short tick for the final 10 seconds of the recording countdown. Subtle
+     * (30 ms) while time remains, escalating to a firmer 70 ms pulse for the
+     * last three seconds. Gated by the master toggle + "Buttons & controls".
+     */
+    public static void vibrateCountdownTick(android.content.Context context, int remainingSeconds) {
+        try {
+            if (!hapticsAllowedForUi(context)) {
+                return;
             }
             android.os.Vibrator vibrator = (android.os.Vibrator)
                     context.getSystemService(android.content.Context.VIBRATOR_SERVICE);
             if (vibrator == null || !vibrator.hasVibrator()) {
                 return;
             }
-            // Two pulses: wait 60ms, buzz 60ms, wait 90ms, buzz 60ms.
-            long[] pattern = new long[]{0L, 60L, 90L, 60L};
+            long ms = remainingSeconds <= 3 ? 70L : 30L;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                vibrator.vibrate(android.os.VibrationEffect.createWaveform(
-                        pattern, new int[]{0, amplitude, 0, amplitude}, /* repeat= */ -1));
+                vibrator.vibrate(android.os.VibrationEffect.createOneShot(
+                        ms, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
             } else {
-                vibrator.vibrate(pattern, /* repeat= */ -1);
+                vibrator.vibrate(ms);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Subtle CLOCK-TICK haptic for slider drags (EV, zoom, volume, speed, font
+     * size, opacity…), matching the quick-actions reorder feel. One tick per
+     * discrete step, throttled so fast sweeps don't buzz. Gated by the master
+     * toggle + "Buttons & controls".
+     */
+    private static long lastSliderTickAtMs = 0L;
+
+    public static void vibrateSliderTick(android.content.Context context) {
+        try {
+            if (!hapticsAllowedForUi(context)) {
+                return;
+            }
+            long now = android.os.SystemClock.elapsedRealtime();
+            if (now - lastSliderTickAtMs < 40L) {
+                return;
+            }
+            lastSliderTickAtMs = now;
+            android.os.Vibrator vibrator = (android.os.Vibrator)
+                    context.getSystemService(android.content.Context.VIBRATOR_SERVICE);
+            if (vibrator == null || !vibrator.hasVibrator()) {
+                return;
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                // Same effect as HapticFeedbackConstants.CLOCK_TICK.
+                vibrator.vibrate(android.os.VibrationEffect.createPredefined(
+                        android.os.VibrationEffect.EFFECT_TICK));
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(android.os.VibrationEffect.createOneShot(
+                        12L, android.os.VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(12L);
             }
         } catch (Exception ignored) {
         }
@@ -483,6 +583,7 @@ public class Utils {
         touchTarget.setOnTouchListener((view, event) -> {
             switch (event.getActionMasked()) {
                 case android.view.MotionEvent.ACTION_DOWN:
+                    pressTick(view); // central gated press haptic for all controls
                     animateScaleSync(view, scale, companions);
                     break;
                 case android.view.MotionEvent.ACTION_UP:
@@ -494,6 +595,16 @@ public class Utils {
             }
             return false; // never consume — clicks/long-clicks still fire
         });
+    }
+
+    /** Gated press tick for buttons/controls (master + Buttons & controls). */
+    private static void pressTick(android.view.View view) {
+        try {
+            if (hapticsAllowedForUi(view.getContext())) {
+                view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private static void animateScaleSync(android.view.View v, float scale,
@@ -545,6 +656,9 @@ public class Utils {
         v.setOnTouchListener((view, event) -> {
             switch (event.getActionMasked()) {
                 case android.view.MotionEvent.ACTION_DOWN:
+                    // Central press haptic: every button/tile using the press-scale
+                    // helper gets the same gated tick (master + Buttons & controls).
+                    pressTick(view);
                     view.animate().scaleX(scale).scaleY(scale)
                             .setDuration(90)
                             .setInterpolator(new android.view.animation.DecelerateInterpolator())

@@ -763,7 +763,12 @@
     <string name="settings_haptics_reset_confirm_message">¿Restaurar todos los ajustes de vibración a sus valores predeterminados?</string>
     <string name="settings_haptics_no_vibrator">Este dispositivo no tiene motor de vibración, por lo que la retroalimentación háptica no está disponible.</string>
     <string name="settings_haptics_reset_confirm_title">¿Restablecer hápticos?</string>
-    <string name="settings_haptics_torch_preset_helper">Elige la intensidad del pulso de la linterna. Es un doble pulso (latido), distinto de los pulsos de grabación.</string>
+    <string name="settings_haptics_torch_preset_helper">Doble pulso al encender/apagar la linterna — fuerte primero al encender, suave primero al apagar. O elige una duración personalizada.</string>
+    <string name="settings_haptics_torch_custom_footer">Longitud de cada pulso. Predeterminado: 90 y 70 ms.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d · %2$d ms</string>
+    <string name="settings_haptics_torch_beat2">2º latido (ms)</string>
+    <string name="settings_haptics_torch_beat1">1er latido (ms)</string>
+    <string name="settings_haptics_torch_custom_title">Duraciones del pulso de la linterna</string>
     <string name="settings_haptics_torch_subtitle">Doble pulso al encender la linterna</string>
     <string name="settings_haptics_torch_title">Acceso directo de linterna</string>
     <string name="settings_haptics_ui_title">Botones y controles</string>
@@ -782,8 +787,8 @@
     <string name="settings_haptics_value_format">%1$s · %2$d ms</string>
     <string name="settings_haptics_custom_title">Duración personalizada</string>
     <string name="settings_haptics_custom_hint">Milisegundos (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">Pulso corto al iniciar una grabación. 100 ms por defecto.</string>
-    <string name="settings_haptics_custom_stop_footer">Pulso más largo al terminar una grabación. 300 ms por defecto.</string>
+    <string name="settings_haptics_custom_start_footer">Pulso corto al iniciar una grabación. 100 ms por defecto. Pulsa el botón de vista previa para sentirlo.</string>
+    <string name="settings_haptics_custom_stop_footer">Pulso más largo al terminar una grabación. 300 ms por defecto. Pulsa el botón de vista previa para sentirlo.</string>
     <string name="settings_haptics_stop_title">Vibrar al detener la grabación</string>
     <string name="settings_haptics_start_subtitle">Pulso corto al comenzar una grabación</string>
     <string name="settings_haptics_start_title">Vibrar al iniciar la grabación</string>
@@ -2020,7 +2025,7 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="fadcam_pro_feature_user_icon">Ícono subido por usuario</string>
     <string name="fadcam_pro_feature_app_name">Nombre de app personalizado</string>
     <string name="fadcam_pro_feature_faddrive">Sincronización en la nube FadDrive</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_header_button">Obtén Pro</string>
 
     <!-- Video Player Info Bottom Sheet -->
     <string name="player_info_title">Acerca del reproductor de video</string>

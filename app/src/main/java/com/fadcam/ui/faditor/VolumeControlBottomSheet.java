@@ -225,6 +225,7 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
 
         slider.addOnChangeListener((sl, value, fromUser) -> {
             if (!fromUser) return;
+            com.fadcam.Utils.vibrateSliderTick(requireContext());
             float vol = value / 100f;
             currentVolume = vol;
             if (currentMuted && vol > 0) {

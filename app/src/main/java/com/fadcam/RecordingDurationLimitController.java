@@ -20,10 +20,19 @@ public final class RecordingDurationLimitController {
         long getLimitMs();
     }
 
+    /** Fires once per second while 1..10 seconds remain before the limit. */
+    public interface RemainingTickListener {
+        void onRemainingSecond(int remainingSeconds);
+    }
+
+    private static final long REMAINING_TICK_WINDOW_MS = 10_000L;
+
     private final Scheduler scheduler;
     private final LimitProvider limitProvider;
     private final Runnable onLimitReached;
 
+    private RemainingTickListener remainingTickListener;
+    private Runnable scheduledTick;
     private boolean sessionActive;
     private boolean counting;
     private long sessionGeneration;
@@ -50,6 +59,11 @@ public final class RecordingDurationLimitController {
         accumulatedRecordingMs = 0L;
         countingStartedAtMs = scheduler.elapsedRealtime();
         return scheduleLocked();
+    }
+
+    /** Sets the listener that observes the final seconds of the countdown. */
+    public synchronized void setRemainingTickListener(RemainingTickListener listener) {
+        this.remainingTickListener = listener;
     }
 
     /** Stops the current session and invalidates its pending callback. */
@@ -126,7 +140,52 @@ public final class RecordingDurationLimitController {
         Runnable callback = () -> handleTimeout(expectedSession, expectedSchedule);
         scheduledCallback = callback;
         scheduler.postDelayed(callback, remainingMs);
+        if (remainingMs > 0L && remainingMs <= REMAINING_TICK_WINDOW_MS) {
+            scheduleRemainingTicksLocked(remainingMs, expectedSession, expectedSchedule);
+        }
         return limitMs;
+    }
+
+    /**
+     * Schedules per-second ticks for the final 10 seconds. The first tick fires
+     * after {@code remainingMs % 1000} so the tick coincides with a whole-second
+     * boundary, then every second until the limit callback takes over.
+     */
+    private void scheduleRemainingTicksLocked(
+            long remainingMs, long expectedSession, long expectedSchedule) {
+        if (remainingTickListener == null) {
+            return;
+        }
+        long firstDelayMs = remainingMs % 1000L;
+        int[] remainingSeconds = {(int) ((remainingMs + 999L) / 1000L)};
+        Runnable tick = new Runnable() {
+            @Override
+            public void run() {
+                boolean reschedule = false;
+                synchronized (RecordingDurationLimitController.this) {
+                    if (!sessionActive
+                            || !counting
+                            || expectedSession != sessionGeneration
+                            || expectedSchedule != scheduleGeneration) {
+                        return;
+                    }
+                    scheduledTick = null;
+                    if (remainingTickListener != null) {
+                        remainingTickListener.onRemainingSecond(remainingSeconds[0]);
+                    }
+                    if (remainingSeconds[0] > 1) {
+                        remainingSeconds[0]--;
+                        reschedule = true;
+                        scheduledTick = this;
+                    }
+                }
+                if (reschedule) {
+                    scheduler.postDelayed(this, 1000L);
+                }
+            }
+        };
+        scheduledTick = tick;
+        scheduler.postDelayed(tick, firstDelayMs);
     }
 
     private void handleTimeout(long expectedSession, long expectedSchedule) {
@@ -184,6 +243,10 @@ public final class RecordingDurationLimitController {
         if (scheduledCallback != null) {
             scheduler.removeCallbacks(scheduledCallback);
             scheduledCallback = null;
+        }
+        if (scheduledTick != null) {
+            scheduler.removeCallbacks(scheduledTick);
+            scheduledTick = null;
         }
     }
 }

@@ -605,7 +605,12 @@
     <string name="settings_haptics_reset_confirm_message">Tüm titreşim ayarları varsayılanlara döndürülsün mü?</string>
     <string name="settings_haptics_no_vibrator">Bu cihazda titreşim motoru yok, bu yüzden dokunsal geri bildirim kullanılamıyor.</string>
     <string name="settings_haptics_reset_confirm_title">Haptikler sıfırlansın mı?</string>
-    <string name="settings_haptics_torch_preset_helper">El feneri darbesinin gücünü seçin. Çift darbedir (kalp atışı), kayıt darbelerinden farklıdır.</string>
+    <string name="settings_haptics_torch_preset_helper">El feneri açılıp kapanırken çift darbe — açılırken önce güçlü, kapanırken önce yumuşak. Veya özel bir darbe süresi seçin.</string>
+    <string name="settings_haptics_torch_custom_footer">Her darbenin uzunluğu. Varsayılan: 90 ve 70 ms.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d · %2$d ms</string>
+    <string name="settings_haptics_torch_beat2">2. atış (ms)</string>
+    <string name="settings_haptics_torch_beat1">1. atış (ms)</string>
+    <string name="settings_haptics_torch_custom_title">El feneri darbe süreleri</string>
     <string name="settings_haptics_torch_subtitle">El feneri yandığında çift darbe</string>
     <string name="settings_haptics_torch_title">El feneri kısayolu</string>
     <string name="settings_haptics_ui_title">Düğmeler ve kontroller</string>
@@ -624,8 +629,8 @@
     <string name="settings_haptics_value_format">%1$s · %2$d ms</string>
     <string name="settings_haptics_custom_title">Özel süre</string>
     <string name="settings_haptics_custom_hint">Milisaniye (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">Kayıt başlarken kısa darbe. Varsayılan 100 ms.</string>
-    <string name="settings_haptics_custom_stop_footer">Kayıt bittiğinde daha uzun darbe. Varsayılan 300 ms.</string>
+    <string name="settings_haptics_custom_start_footer">Kayıt başlarken kısa darbe. Varsayılan 100 ms. Hissetmek için önizleme düğmesine basın.</string>
+    <string name="settings_haptics_custom_stop_footer">Kayıt bittiğinde daha uzun darbe. Varsayılan 300 ms. Hissetmek için önizleme düğmesine basın.</string>
     <string name="settings_haptics_stop_title">Kayıt dururken titreş</string>
     <string name="settings_haptics_start_subtitle">Kayıt başladığında kısa darbe</string>
     <string name="settings_haptics_start_title">Kayıt başlarken titreş</string>
@@ -2259,7 +2264,7 @@
     <string name="fadcam_pro_feature_user_icon">Kullanıcı Yüklemeli Simge</string>
     <string name="fadcam_pro_feature_app_name">Özel Uygulama Adı</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive Bulut Senkronizasyonu</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_header_button">Pro\'yu Al</string>
     <string name="player_info_title">Video Oynatıcı Hakkında</string>
     <string name="player_info_content"><![CDATA[
 <b>Parçalı MP4 Formatı</b><br/><br/>

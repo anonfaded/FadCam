@@ -400,7 +400,12 @@
     <string name="settings_haptics_reset_confirm_message">Восстановить все настройки вибрации по умолчанию?</string>
     <string name="settings_haptics_no_vibrator">На этом устройстве нет вибромотора, поэтому тактильная обратная связь недоступна.</string>
     <string name="settings_haptics_reset_confirm_title">Сбросить тактильные настройки?</string>
-    <string name="settings_haptics_torch_preset_helper">Выберите силу импульса фонарика. Это двойной импульс (сердцебиение), в отличие от импульсов записи.</string>
+    <string name="settings_haptics_torch_preset_helper">Двойной импульс при включении/выключении фонарика — сначала сильный при включении, сначала мягкий при выключении. Или выберите свою длину импульса.</string>
+    <string name="settings_haptics_torch_custom_footer">Длина каждого импульса. По умолчанию: 90 и 70 мс.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d · %2$d мс</string>
+    <string name="settings_haptics_torch_beat2">2-й импульс (мс)</string>
+    <string name="settings_haptics_torch_beat1">1-й импульс (мс)</string>
+    <string name="settings_haptics_torch_custom_title">Длины импульса фонарика</string>
     <string name="settings_haptics_torch_subtitle">Двойной импульс при включении фонарика</string>
     <string name="settings_haptics_torch_title">Быстрая команда фонарика</string>
     <string name="settings_haptics_ui_title">Кнопки и элементы управления</string>
@@ -419,8 +424,8 @@
     <string name="settings_haptics_value_format">%1$s · %2$d мс</string>
     <string name="settings_haptics_custom_title">Своя длительность</string>
     <string name="settings_haptics_custom_hint">Миллисекунды (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">Короткий импульс при старте записи. По умолчанию 100 мс.</string>
-    <string name="settings_haptics_custom_stop_footer">Более длинный импульс при остановке записи. По умолчанию 300 мс.</string>
+    <string name="settings_haptics_custom_start_footer">Короткий импульс при старте записи. По умолчанию 100 мс. Нажмите кнопку предпросмотра, чтобы почувствовать.</string>
+    <string name="settings_haptics_custom_stop_footer">Более длинный импульс при остановке записи. По умолчанию 300 мс. Нажмите кнопку предпросмотра, чтобы почувствовать.</string>
     <string name="settings_haptics_stop_title">Вибрация при остановке записи</string>
     <string name="settings_haptics_start_subtitle">Короткий импульс при начале записи</string>
     <string name="settings_haptics_start_title">Вибрация при начале записи</string>
@@ -1310,7 +1315,7 @@
     <string name="fadcam_pro_feature_user_icon">Пользовательская загруженная иконка</string>
     <string name="fadcam_pro_feature_app_name">Пользовательское имя приложения</string>
     <string name="fadcam_pro_feature_faddrive">Облачный синк FadDrive</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_header_button">Получить Pro</string>
 
     <!-- Video Player Info Bottom Sheet -->
     <string name="player_info_title">О видеоплеере</string>

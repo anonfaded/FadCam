@@ -1517,6 +1517,15 @@ public class DualCameraRecordingService extends Service {
                     handleStopDualRecording();
                 });
 
+        // Haptic tick for the final 10 seconds of the countdown (gated by the
+        // master + "Buttons & controls" toggles inside Utils).
+        durationLimitController.setRemainingTickListener(remainingSeconds -> {
+            try {
+                com.fadcam.Utils.vibrateCountdownTick(DualCameraRecordingService.this, remainingSeconds);
+            } catch (Exception ignored) {
+            }
+        });
+
         durationPreferenceListener = (preferences, key) -> {
             boolean customValueKey =
                     SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES.equals(key)

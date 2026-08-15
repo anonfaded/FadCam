@@ -761,7 +761,12 @@
     <string name="settings_haptics_reset_confirm_message">Taastada kõik vibratsiooniseaded vaikeväärtustele?</string>
     <string name="settings_haptics_no_vibrator">Sellel seadmel puudub vibratsioonimootor, seega haptiline tagasiside pole saadaval.</string>
     <string name="settings_haptics_reset_confirm_title">Lähtestada haptika?</string>
-    <string name="settings_haptics_torch_preset_helper">Valige taskulambi impulsi tugevus. See on topeltimpulss (südamelöök), erinev salvestuse impulssidest.</string>
+    <string name="settings_haptics_torch_preset_helper">Topeltimpulss taskulambi sisse-/väljalülitamisel — sisselülitamisel esmalt tugev, väljalülitamisel esmalt pehme. Või valige oma impulsi pikkus.</string>
+    <string name="settings_haptics_torch_custom_footer">Iga impulsi pikkus. Vaikimisi: 90 ja 70 ms.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d · %2$d ms</string>
+    <string name="settings_haptics_torch_beat2">2. impulss (ms)</string>
+    <string name="settings_haptics_torch_beat1">1. impulss (ms)</string>
+    <string name="settings_haptics_torch_custom_title">Taskulambi impulsi pikkused</string>
     <string name="settings_haptics_torch_subtitle">Topeltimpulss, kui taskulamp süttib</string>
     <string name="settings_haptics_torch_title">Taskulambi otsetee</string>
     <string name="settings_haptics_ui_title">Nupud ja juhtelemendid</string>
@@ -780,8 +785,8 @@
     <string name="settings_haptics_value_format">%1$s · %2$d ms</string>
     <string name="settings_haptics_custom_title">Kohandatud kestus</string>
     <string name="settings_haptics_custom_hint">Millisekundid (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">Lühike impulss salvestamise alguses. Vaikimisi 100 ms.</string>
-    <string name="settings_haptics_custom_stop_footer">Pikem impulss salvestamise lõpus. Vaikimisi 300 ms.</string>
+    <string name="settings_haptics_custom_start_footer">Lühike impulss salvestamise alguses. Vaikimisi: 100 ms. Vajutage eelvaate nuppu, et seda tunda.</string>
+    <string name="settings_haptics_custom_stop_footer">Pikem impulss salvestamise lõpus. Vaikimisi: 300 ms. Vajutage eelvaate nuppu, et seda tunda.</string>
     <string name="settings_haptics_stop_title">Vibreeri salvestamise lõpetamisel</string>
     <string name="settings_haptics_start_subtitle">Lühike impulss salvestamise alguses</string>
     <string name="settings_haptics_start_title">Vibreeri salvestamise alustamisel</string>
@@ -1915,7 +1920,7 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="fadcam_pro_feature_user_icon">Kasutaja üleslaaditud ikoon</string>
     <string name="fadcam_pro_feature_app_name">Kohandatud rakenduse nimi</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive pilve sünkroonimine</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_header_button">Hangi Pro</string>
     <string name="player_info_title">Videoesitaja teave</string>
     <string name="player_info_content"><![CDATA[
 <b>Killustatud MP4 vorming</b><br/><br/>

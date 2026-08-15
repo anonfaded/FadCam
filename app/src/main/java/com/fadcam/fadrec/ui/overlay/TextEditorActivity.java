@@ -189,6 +189,7 @@ public class TextEditorActivity extends BaseTransparentEditorActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
+                    com.fadcam.Utils.vibrateSliderTick(TextEditorActivity.this);
                     selectedFontSize = 16 + progress;
                     editText.setTextSize(selectedFontSize);
                 }

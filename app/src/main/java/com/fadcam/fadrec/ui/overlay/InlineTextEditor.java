@@ -226,6 +226,7 @@ public class InlineTextEditor extends BaseEditorOverlay {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser && editText != null) {
+                    com.fadcam.Utils.vibrateSliderTick(context);
                     // Map progress 0-32 to fontSize 16-48
                     selectedFontSize = 16 + progress;
                     editText.setTextSize(selectedFontSize);

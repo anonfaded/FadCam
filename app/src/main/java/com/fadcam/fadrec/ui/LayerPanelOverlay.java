@@ -469,6 +469,9 @@ public class LayerPanelOverlay {
         seekOpacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    com.fadcam.Utils.vibrateSliderTick(context);
+                }
                 txtOpacity.setText(progress + "%");
                 if (fromUser && listener != null) {
                     listener.onLayerOpacityChanged(layerId, progress / 100f);

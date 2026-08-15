@@ -57,12 +57,28 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
     public static final String ARG_DESCRIPTION = "description";
     public static final String ARG_FOOTER = "footer";
     public static final String ARG_DEFAULT_VALUE = "default_value";
+    public static final String ARG_DEFAULT_VALUE_2 = "default_value_2";
     public static final String ARG_SHOW_RESET = "show_reset";
     public static final String ARG_ENABLE_TIMER_CALC = "enable_timer_calc";
     public static final String ARG_SHOW_PREVIEW = "show_preview";
+    // ── Two-value (MB|GB, torch beats…) configuration ─────────────────────
+    public static final String ARG_TWO_LABEL1 = "two_label1";
+    public static final String ARG_TWO_LABEL2 = "two_label2";
+    public static final String ARG_TWO_MIN1 = "two_min1";
+    public static final String ARG_TWO_MAX1 = "two_max1";
+    public static final String ARG_TWO_MIN2 = "two_min2";
+    public static final String ARG_TWO_MAX2 = "two_max2";
+    public static final String ARG_TWO_VALUE1 = "two_value1";
+    public static final String ARG_TWO_VALUE2 = "two_value2";
+    public static final String ARG_TWO_SEPARATE_FORMAT = "two_separate_format";
+    /** When true, the FIRST value's column is moved to the LEFT (GB/MB layout
+     *  keeps GB first by default; torch pulses put beat 1 on the left). */
+    public static final String ARG_TWO_SWAP_ORDER = "two_swap_order";
 
     public static final String RESULT_NUMBER = "number_value";
     public static final String RESULT_DURATION_SECONDS = "duration_seconds";
+    public static final String RESULT_VALUE_A = "two_value_a";
+    public static final String RESULT_VALUE_B = "two_value_b";
 
     // ── INT-mode factory (legacy-compatible) ────────────────────────────────
     public static MaterialNumberPickerBottomSheetFragment newInstance(
@@ -111,6 +127,34 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
         b.putString(ARG_TITLE, title);
         b.putInt(ARG_VALUE, Math.max(0, initialTotalMb));
         b.putString(ARG_RESULT_KEY, resultKey);
+        f.setArguments(b);
+        return f;
+    }
+
+    // ── Generic two-wheel factory (torch heartbeat pulses…) ─────────────
+    /** Both values are editable together; results arrive as {@link #RESULT_VALUE_A}
+     *  and {@link #RESULT_VALUE_B} (RESULT_NUMBER keeps the MB/GB combination). */
+    public static MaterialNumberPickerBottomSheetFragment newTwoValueInstance(
+            String title, String label1, String label2,
+            int value1, int min1, int max1,
+            int value2, int min2, int max2,
+            String resultKey) {
+        MaterialNumberPickerBottomSheetFragment f =
+                new MaterialNumberPickerBottomSheetFragment();
+        Bundle b = new Bundle();
+        b.putInt(ARG_MODE, MODE_MBGB);
+        b.putString(ARG_TITLE, title);
+        b.putString(ARG_RESULT_KEY, resultKey);
+        b.putString(ARG_TWO_LABEL1, label1);
+        b.putString(ARG_TWO_LABEL2, label2);
+        b.putInt(ARG_TWO_MIN1, min1);
+        b.putInt(ARG_TWO_MAX1, max1);
+        b.putInt(ARG_TWO_MIN2, min2);
+        b.putInt(ARG_TWO_MAX2, max2);
+        b.putInt(ARG_TWO_VALUE1, value1);
+        b.putInt(ARG_TWO_VALUE2, value2);
+        b.putBoolean(ARG_TWO_SEPARATE_FORMAT, true);
+        b.putBoolean(ARG_TWO_SWAP_ORDER, true);
         f.setArguments(b);
         return f;
     }
@@ -404,9 +448,27 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
             if (timeWheels != null) timeWheels.setVisibility(View.GONE);
             if (mbgbWheels != null) mbgbWheels.setVisibility(View.VISIBLE);
 
-            int totalMb = Math.max(0, value);
-            setupWheel(npMb, 0, 1023, totalMb % 1024, dividerColor, selectedColor);
-            setupWheel(npGb, 0, 100, totalMb / 1024, dividerColor, selectedColor);
+            // Two-value mode: MB/GB by default (video split), or caller-provided
+            // labels/ranges (e.g. torch heartbeat pulses).
+            String label1 = a.getString(ARG_TWO_LABEL1, getString(R.string.video_split_unit_mb));
+            String label2 = a.getString(ARG_TWO_LABEL2, getString(R.string.video_split_unit_gb));
+            int min1 = a.getInt(ARG_TWO_MIN1, 0);
+            int max1 = a.getInt(ARG_TWO_MAX1, 1023);
+            int min2 = a.getInt(ARG_TWO_MIN2, 0);
+            int max2 = a.getInt(ARG_TWO_MAX2, 100);
+
+            int v1;
+            int v2;
+            if (a.containsKey(ARG_TWO_VALUE1)) {
+                v1 = a.getInt(ARG_TWO_VALUE1);
+                v2 = a.getInt(ARG_TWO_VALUE2);
+            } else {
+                int totalMb = Math.max(0, value);
+                v1 = totalMb % 1024;
+                v2 = totalMb / 1024;
+            }
+            setupWheel(npMb, min1, max1, v1, dividerColor, selectedColor);
+            setupWheel(npGb, min2, max2, v2, dividerColor, selectedColor);
             npMb.setOnValueChangedListener((p, o, n) -> {
                 tickHaptic();
                 updateMbGbSummary();
@@ -416,34 +478,89 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
                 updateMbGbSummary();
             });
             // Same center-cell design as TIME mode: tap to type, drags scroll.
-            styleCenterCellPicker(npMb, 0, 1023, getString(R.string.video_split_unit_mb));
-            styleCenterCellPicker(npGb, 0, 100, getString(R.string.video_split_unit_gb));
+            styleCenterCellPicker(npMb, min1, max1, label1);
+            styleCenterCellPicker(npGb, min2, max2, label2);
 
-            // Summary card: short heading, combined hero (e.g. "2 GB 500 MB"),
-            // tap hint; the caller's description goes to the footer.
+            // Column labels from the caller (MB/GB by default).
+            TextView labelView1 = view.findViewById(R.id.np_label_value1);
+            if (labelView1 != null) labelView1.setText(label1);
+            TextView labelView2 = view.findViewById(R.id.np_label_value2);
+            if (labelView2 != null) labelView2.setText(label2);
+
+            // Optional column order swap: the caller can request the FIRST
+            // value's column on the LEFT (torch: beat 1 | beat 2), while the
+            // default layout keeps GB | MB for the video-split sheet.
+            if (getArguments() != null
+                    && getArguments().getBoolean(ARG_TWO_SWAP_ORDER, false)) {
+                reorderColumnsToLeft(view);
+            }
+
+            // Summary card: compact single-line hero. The column labels already
+            // explain each wheel, so the caption + tap hint are suppressed here
+            // (they belong to the TIME/INT sheets); the caller's description
+            // goes to the footer.
             View summaryCard = view.findViewById(R.id.picker_summary_card);
             if (summaryCard != null) summaryCard.setVisibility(View.VISIBLE);
             TextView caption = view.findViewById(R.id.picker_summary_caption);
-            if (caption != null) {
-                caption.setText(getString(R.string.number_input_selected_caption));
-                caption.setVisibility(View.VISIBLE);
-            }
+            if (caption != null) caption.setVisibility(View.GONE);
             TextView timeHelper = view.findViewById(R.id.picker_time_helper);
-            if (timeHelper != null) {
-                timeHelper.setText(getString(R.string.duration_picker_tap_hint));
-                timeHelper.setVisibility(View.VISIBLE);
+            if (timeHelper != null) timeHelper.setVisibility(View.GONE);
+            if (summaryView != null) {
+                summaryView.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 20f);
+                summaryView.setVisibility(View.VISIBLE);
             }
-            if (summaryView != null) summaryView.setVisibility(View.VISIBLE);
             updateMbGbSummary();
 
-            // Reset → ARG_DEFAULT_VALUE (e.g. 2048 MB = 2 GB).
+            // Optional live preview: play the REAL heartbeat with the currently
+            // selected pulse lengths (1st beat = left wheel, 2nd = right).
+            View previewBtn = view.findViewById(R.id.btn_picker_preview);
+            if (previewBtn != null) {
+                if (showPreview) {
+                    previewBtn.setVisibility(View.VISIBLE);
+                    previewBtn.setOnClickListener(v -> {
+                        int strong;
+                        int soft;
+                        try {
+                            com.fadcam.SharedPreferencesManager prefs =
+                                    com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+                            String preset = prefs.getHapticTorchPreset();
+                            if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_SOFT.equals(preset)) {
+                                strong = 96;
+                                soft = 48;
+                            } else if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_STRONG.equals(preset)) {
+                                strong = 255;
+                                soft = 128;
+                            } else {
+                                strong = 192;
+                                soft = 96;
+                            }
+                        } catch (Exception e) {
+                            strong = 192;
+                            soft = 96;
+                        }
+                        com.fadcam.Utils.vibrateTorchPulses(
+                                requireContext(), npMb.getValue(), npGb.getValue(), true, strong, soft);
+                    });
+                } else {
+                    previewBtn.setVisibility(View.GONE);
+                }
+            }
+
+            // Reset → ARG_DEFAULT_VALUE (MB/GB: e.g. 2048 MB = 2 GB) or, in
+            // separate mode, ARG_DEFAULT_VALUE_2 for the second wheel.
             if (resetButton != null) {
                 if (showReset) {
                     resetButton.setVisibility(View.VISIBLE);
                     resetButton.setOnClickListener(v -> {
                         int def = Math.max(0, defaultValue);
-                        npMb.setValue(def % 1024);
-                        npGb.setValue(def / 1024);
+                        if (getArguments() != null
+                                && getArguments().getBoolean(ARG_TWO_SEPARATE_FORMAT, false)) {
+                            npMb.setValue(def);
+                            npGb.setValue(Math.max(0, a.getInt(ARG_DEFAULT_VALUE_2, 0)));
+                        } else {
+                            npMb.setValue(def % 1024);
+                            npGb.setValue(def / 1024);
+                        }
                         updateMbGbSummary();
                         confirmHaptic();
                     });
@@ -610,6 +727,8 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
             result.putInt(RESULT_DURATION_SECONDS, total);
         } else if (mode == MODE_MBGB) {
             result.putInt(RESULT_NUMBER, npGb.getValue() * 1024 + npMb.getValue());
+            result.putInt(RESULT_VALUE_A, npMb.getValue());
+            result.putInt(RESULT_VALUE_B, npGb.getValue());
         } else {
             result.putInt(RESULT_NUMBER, npSingle.getValue());
         }
@@ -795,6 +914,19 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
         if (mode != MODE_MBGB || summaryView == null) {
             return;
         }
+        boolean separate = getArguments() != null
+                && getArguments().getBoolean(ARG_TWO_SEPARATE_FORMAT, false);
+        String label1 = getArguments() != null
+                ? getArguments().getString(ARG_TWO_LABEL1, getString(R.string.video_split_unit_mb))
+                : getString(R.string.video_split_unit_mb);
+        String label2 = getArguments() != null
+                ? getArguments().getString(ARG_TWO_LABEL2, getString(R.string.video_split_unit_gb))
+                : getString(R.string.video_split_unit_gb);
+        if (separate) {
+            summaryView.setText(npMb.getValue() + " " + label1 + " · "
+                    + npGb.getValue() + " " + label2);
+            return;
+        }
         int gb = npGb.getValue();
         int mb = npMb.getValue();
         if (gb > 0) {
@@ -812,6 +944,33 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
     private void validate() {
         if (okButton != null) {
             okButton.setEnabled(true);
+        }
+    }
+
+    /** Moves the FIRST value's column (wheel + its label column) to the leftmost
+     *  position, without touching any value logic (all reads/writes go through
+     *  the picker ids). Labels live inside FrameLayout wrappers, so the whole
+     *  wrapper column is moved — not just the TextView. */
+    private void reorderColumnsToLeft(View view) {
+        try {
+            android.view.ViewGroup pickerRow = (android.view.ViewGroup) npMb.getParent();
+            if (pickerRow != null && pickerRow.indexOfChild(npMb) != 0) {
+                pickerRow.removeView(npMb);
+                pickerRow.addView(npMb, 0);
+            }
+            TextView labelA = view.findViewById(R.id.np_label_value1);
+            if (labelA != null) {
+                android.view.View labelColumn = labelA.getParent() instanceof android.view.ViewGroup
+                        ? (android.view.View) labelA.getParent()
+                        : labelA;
+                android.view.ViewGroup labelRow =
+                        (android.view.ViewGroup) labelColumn.getParent();
+                if (labelRow != null && labelRow.indexOfChild(labelColumn) != 0) {
+                    labelRow.removeView(labelColumn);
+                    labelRow.addView(labelColumn, 0);
+                }
+            }
+        } catch (Exception ignored) {
         }
     }
 

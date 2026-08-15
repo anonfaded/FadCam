@@ -121,7 +121,7 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_marginTop="36dp"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="8dp"
                 android:layout_marginEnd="16dp"
                 android:layout_marginBottom="10dp">
 
@@ -130,12 +130,8 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/mini_app_torch_patterns_title"
-                    android:textColor="?attr/colorHeading"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.12"
-                    android:textAllCaps="true"
-                    android:alpha="0.55" />
+                    android:textColor="?attr/sectionHeaderColor"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/pattern_info_btn"

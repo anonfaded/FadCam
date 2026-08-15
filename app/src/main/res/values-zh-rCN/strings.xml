@@ -562,7 +562,12 @@
     <string name="settings_haptics_reset_confirm_message">将所有振动设置恢复为默认值？</string>
     <string name="settings_haptics_no_vibrator">此设备没有振动马达，因此触觉反馈不可用。</string>
     <string name="settings_haptics_reset_confirm_title">重置触觉反馈？</string>
-    <string name="settings_haptics_torch_preset_helper">选择手电筒脉冲强度。它是双脉冲（心跳），与录像脉冲不同。</string>
+    <string name="settings_haptics_torch_preset_helper">手电筒开启/关闭时的双脉冲——开启时先强后弱，关闭时先弱后强。也可选择自定义脉冲长度。</string>
+    <string name="settings_haptics_torch_custom_footer">每个脉冲的长度。默认：90 和 70 毫秒。</string>
+    <string name="settings_haptics_torch_custom_value">%1$d · %2$d 毫秒</string>
+    <string name="settings_haptics_torch_beat2">第 2 拍（毫秒）</string>
+    <string name="settings_haptics_torch_beat1">第 1 拍（毫秒）</string>
+    <string name="settings_haptics_torch_custom_title">手电筒脉冲长度</string>
     <string name="settings_haptics_torch_subtitle">手电筒开启时双脉冲</string>
     <string name="settings_haptics_torch_title">手电筒快捷方式</string>
     <string name="settings_haptics_ui_title">按钮与控制</string>
@@ -581,8 +586,8 @@
     <string name="settings_haptics_value_format">%1$s · %2$d 毫秒</string>
     <string name="settings_haptics_custom_title">自定义时长</string>
     <string name="settings_haptics_custom_hint">毫秒（0 – 10000）</string>
-    <string name="settings_haptics_custom_start_footer">录像开始时的短脉冲。默认 100 毫秒。</string>
-    <string name="settings_haptics_custom_stop_footer">录像结束时的较长脉冲。默认 300 毫秒。</string>
+    <string name="settings_haptics_custom_start_footer">录像开始时的短脉冲。默认 100 毫秒。按预览按钮感受效果。</string>
+    <string name="settings_haptics_custom_stop_footer">录像结束时的较长脉冲。默认 300 毫秒。按预览按钮感受效果。</string>
     <string name="settings_haptics_stop_title">停止录像时振动</string>
     <string name="settings_haptics_start_subtitle">录像开始时短脉冲</string>
     <string name="settings_haptics_start_title">开始录像时振动</string>
@@ -1636,7 +1641,7 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="fadcam_pro_column_label">专业版</string>
 
 <!-- fadcam_pro_header_button -->
-<string name="fadcam_pro_header_button">专业版</string>
+<string name="fadcam_pro_header_button">获取 Pro</string>
 
 <!-- fadcam_pro_plus_label -->
 <string name="fadcam_pro_plus_label">专业版</string>

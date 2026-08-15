@@ -2355,6 +2355,10 @@ public class SharedPreferencesManager {
         "haptic_picker_enabled";
     private static final String PREF_KEY_HAPTIC_TORCH_PRESET =
         "haptic_torch_preset";
+    private static final String PREF_KEY_HAPTIC_TORCH_PULSE1_MS =
+        "haptic_torch_pulse1_ms";
+    private static final String PREF_KEY_HAPTIC_TORCH_PULSE2_MS =
+        "haptic_torch_pulse2_ms";
 
     /** Vibration strength presets per event. */
     public static final String HAPTIC_PRESET_OFF = "off";
@@ -2459,6 +2463,28 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    public int getHapticTorchPulse1Ms() {
+        return sharedPreferences.getInt(PREF_KEY_HAPTIC_TORCH_PULSE1_MS, 90);
+    }
+
+    public void setHapticTorchPulse1Ms(int ms) {
+        sharedPreferences
+            .edit()
+            .putInt(PREF_KEY_HAPTIC_TORCH_PULSE1_MS, ms)
+            .apply();
+    }
+
+    public int getHapticTorchPulse2Ms() {
+        return sharedPreferences.getInt(PREF_KEY_HAPTIC_TORCH_PULSE2_MS, 70);
+    }
+
+    public void setHapticTorchPulse2Ms(int ms) {
+        sharedPreferences
+            .edit()
+            .putInt(PREF_KEY_HAPTIC_TORCH_PULSE2_MS, ms)
+            .apply();
+    }
+
     /** Resolves a per-event vibration duration (0 = off) from its preset + custom ms. */
     public long resolveHapticDurationMs(String preset, int customMs, long defaultMs) {
         if (HAPTIC_PRESET_OFF.equals(preset)) return 0L;
@@ -2492,6 +2518,8 @@ public class SharedPreferencesManager {
             .putBoolean(PREF_KEY_HAPTIC_UI_ENABLED, true)
             .putBoolean(PREF_KEY_HAPTIC_PICKER_ENABLED, true)
             .putString(PREF_KEY_HAPTIC_TORCH_PRESET, HAPTIC_PRESET_DEFAULT)
+            .putInt(PREF_KEY_HAPTIC_TORCH_PULSE1_MS, 90)
+            .putInt(PREF_KEY_HAPTIC_TORCH_PULSE2_MS, 70)
             .apply();
     }
 

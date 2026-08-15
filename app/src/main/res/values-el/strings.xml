@@ -722,7 +722,12 @@
     <string name="settings_haptics_reset_confirm_message">Επαναφορά όλων των ρυθμίσεων δόνησης στις προεπιλογές;</string>
     <string name="settings_haptics_no_vibrator">Αυτή η συσκευή δεν έχει μοτέρ δόνησης, οπότε η απτική ανάδραση δεν είναι διαθέσιμη.</string>
     <string name="settings_haptics_reset_confirm_title">Επαναφορά απτικής;</string>
-    <string name="settings_haptics_torch_preset_helper">Επιλέξτε την ένταση του παλμού φακού. Είναι διπλός παλμός (καρδιακός), διαφορετικός από τους παλμούς εγγραφής.</string>
+    <string name="settings_haptics_torch_preset_helper">Διπλός παλμός όταν ανάβει/σβήνει ο φακός — πρώτα δυνατά όταν ανάβει, πρώτα απαλά όταν σβήνει. Ή επιλέξτε δική σας διάρκεια παλμού.</string>
+    <string name="settings_haptics_torch_custom_footer">Μήκος κάθε παλμού. Προεπιλογή: 90 και 70 ms.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d · %2$d ms</string>
+    <string name="settings_haptics_torch_beat2">2ος παλμός (ms)</string>
+    <string name="settings_haptics_torch_beat1">1ος παλμός (ms)</string>
+    <string name="settings_haptics_torch_custom_title">Διάρκειες παλμού φακού</string>
     <string name="settings_haptics_torch_subtitle">Διπλός παλμός όταν ανάβει ο φακός</string>
     <string name="settings_haptics_torch_title">Συντόμευση φακού</string>
     <string name="settings_haptics_ui_title">Κουμπιά και χειριστήρια</string>
@@ -741,8 +746,8 @@
     <string name="settings_haptics_value_format">%1$s · %2$d ms</string>
     <string name="settings_haptics_custom_title">Προσαρμοσμένη διάρκεια</string>
     <string name="settings_haptics_custom_hint">Χιλιοστά δευτερολέπτου (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">Σύντομος παλμός κατά την έναρξη εγγραφής. Προεπιλογή: 100 ms.</string>
-    <string name="settings_haptics_custom_stop_footer">Μεγαλύτερος παλμός κατά τη λήξη εγγραφής. Προεπιλογή: 300 ms.</string>
+    <string name="settings_haptics_custom_start_footer">Σύντομος παλμός κατά την έναρξη εγγραφής. Προεπιλογή: 100 ms. Πατήστε το κουμπί προεπισκόπησης για να το νιώσετε.</string>
+    <string name="settings_haptics_custom_stop_footer">Μεγαλύτερος παλμός κατά τη λήξη εγγραφής. Προεπιλογή: 300 ms. Πατήστε το κουμπί προεπισκόπησης για να το νιώσετε.</string>
     <string name="settings_haptics_stop_title">Δόνηση κατά τη διακοπή εγγραφής</string>
     <string name="settings_haptics_start_subtitle">Σύντομος παλμός κατά την έναρξη εγγραφής</string>
     <string name="settings_haptics_start_title">Δόνηση κατά την έναρξη εγγραφής</string>
@@ -1966,7 +1971,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="fadcam_pro_feature_user_icon">Εικονίδιο Χρήστη</string>
     <string name="fadcam_pro_feature_app_name">Προσαρμοσμένο Όνομα</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_header_button">Απόκτησε το Pro</string>
     <!-- Video Player Info Bottom Sheet -->
     <string name="player_info_title">Σχετικά με τον Αναπαραγωγέα Βίντεο</string>
     <string name="player_info_content"><![CDATA[

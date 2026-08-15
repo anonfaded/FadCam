@@ -700,6 +700,10 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                             fromUser
                         );
                         int intVal = sliderMin + Math.round(value) * sliderStep;
+                        // Step tick haptics (master + "Buttons & controls" gated).
+                        if (fromUser) {
+                            com.fadcam.Utils.vibrateSliderTick(requireContext());
+                        }
                         FLog.d(
                             "PickerBottomSheet",
                             "Calculated intVal=" +
@@ -773,6 +777,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     if (minus != null) {
                         minus.setOnClickListener(v -> {
                             if (!sliderInteractionsEnabled) return;
+                            // Clock-tick haptic, same feel as dragging one step.
+                            com.fadcam.Utils.vibrateSliderTick(requireContext());
                             pendingProgrammaticSliderDispatches++;
                             slider.setValue(
                                 Math.max(0f, slider.getValue() - 1f)
@@ -782,6 +788,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     if (plus != null) {
                         plus.setOnClickListener(v -> {
                             if (!sliderInteractionsEnabled) return;
+                            // Clock-tick haptic, same feel as dragging one step.
+                            com.fadcam.Utils.vibrateSliderTick(requireContext());
                             pendingProgrammaticSliderDispatches++;
                             slider.setValue(
                                 Math.min(
@@ -794,6 +802,15 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
                     if (reset != null) {
                         reset.setOnClickListener(v -> {
                             if (!sliderInteractionsEnabled) return;
+                            // Confirm haptic, same as the number-picker resets.
+                            try {
+                                if (com.fadcam.Utils.hapticsAllowedForUi(
+                                        v.getContext())) {
+                                    v.performHapticFeedback(
+                                        android.view.HapticFeedbackConstants.CONFIRM);
+                                }
+                            } catch (Exception ignored) {
+                            }
                             float resetPos;
                             if (sliderZoomMode && zoomRatios != null) {
                                 // For zoom mode, reset to 1.0x

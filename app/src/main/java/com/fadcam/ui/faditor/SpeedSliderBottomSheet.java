@@ -263,6 +263,7 @@ public class SpeedSliderBottomSheet extends BottomSheetDialogFragment {
         // ── Slider listener ──────────────────────────────────────────
         slider.addOnChangeListener((sl, value, fromUser) -> {
             if (!fromUser) return;
+            com.fadcam.Utils.vibrateSliderTick(requireContext());
             float speed = value / 100f;
             currentSpeed = speed;
             updateSpeedDisplay(speedDisplay, speed);

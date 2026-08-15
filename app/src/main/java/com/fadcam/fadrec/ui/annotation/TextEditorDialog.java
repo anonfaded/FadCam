@@ -133,6 +133,9 @@ public class TextEditorDialog extends Dialog {
         seekBarFontSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    com.fadcam.Utils.vibrateSliderTick(getContext());
+                }
                 fontSize = 12 + progress; // Min 12sp, max 92sp
                 txtFontSizeValue.setText(((int)fontSize) + "sp");
                 updatePreview();

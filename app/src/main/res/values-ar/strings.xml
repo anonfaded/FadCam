@@ -1555,7 +1555,12 @@
     <string name="settings_haptics_reset_confirm_message">استعادة كل إعدادات الاهتزاز إلى الافتراضي؟</string>
     <string name="settings_haptics_no_vibrator">هذا الجهاز لا يحتوي على محرك اهتزاز، لذا التغذية اللمسية غير متاحة.</string>
     <string name="settings_haptics_reset_confirm_title">إعادة ضبط الاهتزازات؟</string>
-    <string name="settings_haptics_torch_preset_helper">اختر قوة نبض الفلاش. وهو نبض مزدوج (نبض القلب)، يختلف عن نبضات التسجيل.</string>
+    <string name="settings_haptics_torch_preset_helper">نبضتان عند تشغيل الفلاش أو إيقافه — قوية أولاً عند التشغيل، ناعمة أولاً عند الإيقاف. أو اختر طول نبضة مخصصاً.</string>
+    <string name="settings_haptics_torch_custom_footer">طول كل نبضة. الافتراضي: 90 و 70 مللي ثانية.</string>
+    <string name="settings_haptics_torch_custom_value">%1$d · %2$d مللي ثانية</string>
+    <string name="settings_haptics_torch_beat2">النبضة الثانية (مللي ثانية)</string>
+    <string name="settings_haptics_torch_beat1">النبضة الأولى (مللي ثانية)</string>
+    <string name="settings_haptics_torch_custom_title">أطوال نبض الفلاش</string>
     <string name="settings_haptics_torch_subtitle">نبضتان عند تشغيل الفلاش</string>
     <string name="settings_haptics_torch_title">اختصار الفلاش</string>
     <string name="settings_haptics_ui_title">الأزرار وعناصر التحكم</string>
@@ -1574,8 +1579,8 @@
     <string name="settings_haptics_value_format">%1$s · %2$d مللي ثانية</string>
     <string name="settings_haptics_custom_title">مدة مخصصة</string>
     <string name="settings_haptics_custom_hint">مللي ثانية (0 – 10000)</string>
-    <string name="settings_haptics_custom_start_footer">نبضة قصيرة عند بدء التسجيل. الافتراضي 100 مللي ثانية.</string>
-    <string name="settings_haptics_custom_stop_footer">نبضة أطول عند انتهاء التسجيل. الافتراضي 300 مللي ثانية.</string>
+    <string name="settings_haptics_custom_start_footer">نبضة قصيرة عند بدء التسجيل. الافتراضي 100 مللي ثانية. اضغط زر المعاينة لتشعر بها.</string>
+    <string name="settings_haptics_custom_stop_footer">نبضة أطول عند انتهاء التسجيل. الافتراضي 300 مللي ثانية. اضغط زر المعاينة لتشعر بها.</string>
     <string name="settings_haptics_stop_title">اهتزاز عند إيقاف التسجيل</string>
     <string name="settings_haptics_start_subtitle">نبضة قصيرة عند بدء التسجيل</string>
     <string name="settings_haptics_start_title">اهتزاز عند بدء التسجيل</string>
@@ -3230,7 +3235,7 @@
 
     <string name="fadcam_pro_feature_faddrive">مزامنة سحابة FadDrive</string>
 
-    <string name="fadcam_pro_header_button">Pro</string>
+    <string name="fadcam_pro_header_button">احصل على برو</string>
 
     <string name="player_info_title">حول مشغل الفيديو</string>
 

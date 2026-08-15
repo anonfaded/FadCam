@@ -123,6 +123,9 @@ public class LayerManagementBottomSheet extends BottomSheetDialogFragment {
             holder.seekOpacity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    if (fromUser) {
+                        com.fadcam.Utils.vibrateSliderTick(requireContext());
+                    }
                     holder.txtOpacity.setText(progress + "%");
                     if (fromUser && listener != null) {
                         listener.onLayerOpacityChanged(position, progress / 100f);

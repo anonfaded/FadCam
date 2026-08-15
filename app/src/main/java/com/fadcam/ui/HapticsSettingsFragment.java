@@ -66,6 +66,9 @@ public class HapticsSettingsFragment extends Fragment {
             // so the banner + dimmed rows tell the whole story.
             master.setEnabled(hasVibrator);
             master.setAlpha(hasVibrator ? 1.0f : 0.45f);
+            // Header switch stays crisp when OFF — no breathing-dim (the closed
+            // eyes already communicate the disabled state).
+            master.setDimWhenOff(false);
             master.setChecked(prefs.isHapticFeedbackEnabled());
             master.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 prefs.setHapticFeedbackEnabled(isChecked);
@@ -177,10 +180,29 @@ public class HapticsSettingsFragment extends Fragment {
             String selected = result.getString(
                     com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
             if (selected == null) return;
+            if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_CUSTOM.equals(selected)) {
+                openTorchCustomMsSheet();
+                return;
+            }
             prefs.setHapticTorchPreset(selected);
             refreshValues(view);
             previewTorch();
         });
+        // Torch custom pulse lengths result (two wheels: 1st + 2nd beat).
+        getParentFragmentManager().setFragmentResultListener(
+                CUSTOM_RESULT_PREFIX + "torch", this, (key, result) -> {
+                    if (result.containsKey(
+                            com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.RESULT_VALUE_A)) {
+                        prefs.setHapticTorchPulse1Ms(result.getInt(
+                                com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.RESULT_VALUE_A));
+                        prefs.setHapticTorchPulse2Ms(result.getInt(
+                                com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.RESULT_VALUE_B));
+                        prefs.setHapticTorchPreset(
+                                com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_CUSTOM);
+                        refreshValues(view);
+                        previewTorch();
+                    }
+                });
         view.findViewById(R.id.row_haptics_torch).setOnClickListener(v -> {
             if (!prefs.isHapticFeedbackEnabled()) return;
             openTorchPresetSheet();
@@ -246,11 +268,11 @@ public class HapticsSettingsFragment extends Fragment {
         }
         TextView torchValue = view.findViewById(R.id.torch_value);
         if (torchValue != null) {
-            torchValue.setText(describePresetOnly(prefs.getHapticTorchPreset()));
+            torchValue.setText(describeTorch(prefs.getHapticTorchPreset()));
         }
     }
 
-    private String describePresetOnly(String preset) {
+    private String describeTorch(String preset) {
         if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_OFF.equals(preset)) {
             return getString(R.string.settings_haptics_preset_off);
         }
@@ -259,6 +281,10 @@ public class HapticsSettingsFragment extends Fragment {
         }
         if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_STRONG.equals(preset)) {
             return getString(R.string.settings_haptics_preset_strong);
+        }
+        if (com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_CUSTOM.equals(preset)) {
+            return getString(R.string.settings_haptics_torch_custom_value,
+                    prefs.getHapticTorchPulse1Ms(), prefs.getHapticTorchPulse2Ms());
         }
         return getString(R.string.settings_haptics_preset_default);
     }
@@ -327,6 +353,9 @@ public class HapticsSettingsFragment extends Fragment {
         items.add(com.fadcam.ui.picker.OptionItem.withLigature(
                 com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_STRONG,
                 getString(R.string.settings_haptics_preset_strong), "surround_sound"));
+        items.add(com.fadcam.ui.picker.OptionItem.withLigature(
+                com.fadcam.SharedPreferencesManager.HAPTIC_PRESET_CUSTOM,
+                getString(R.string.settings_haptics_preset_custom), "tune"));
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
                 com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
                         title, items, prefs.getHapticTorchPreset(), resultKey,
@@ -365,7 +394,37 @@ public class HapticsSettingsFragment extends Fragment {
 
     /** Replays the current torch double-pulse so the user feels the selection. */
     private void previewTorch() {
-        com.fadcam.Utils.vibrateTorchShortcut(requireContext());
+        com.fadcam.Utils.vibrateTorchShortcut(requireContext(), true);
+    }
+
+    /**
+     * Custom pulse lengths for the torch heartbeat — a two-wheel sheet
+     * (1st beat | 2nd beat) so both values are edited together.
+     */
+    private void openTorchCustomMsSheet() {
+        final String resultKey = CUSTOM_RESULT_PREFIX + "torch";
+        com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.newTwoValueInstance(
+                        getString(R.string.settings_haptics_torch_custom_title),
+                        getString(R.string.settings_haptics_torch_beat1),
+                        getString(R.string.settings_haptics_torch_beat2),
+                        prefs.getHapticTorchPulse1Ms(), 0, 10000,
+                        prefs.getHapticTorchPulse2Ms(), 0, 10000,
+                        resultKey);
+        if (sheet.getArguments() != null) {
+            sheet.getArguments().putBoolean(
+                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_RESET, true);
+            sheet.getArguments().putInt(
+                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE, 90);
+            sheet.getArguments().putInt(
+                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_DEFAULT_VALUE_2, 70);
+            sheet.getArguments().putString(
+                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_FOOTER,
+                    getString(R.string.settings_haptics_torch_custom_footer));
+            sheet.getArguments().putBoolean(
+                    com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment.ARG_SHOW_PREVIEW, true);
+        }
+        sheet.show(getParentFragmentManager(), resultKey);
     }
 
     /** Replays the current start vibration so the user feels the selection. */

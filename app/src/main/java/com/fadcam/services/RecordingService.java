@@ -352,6 +352,15 @@ public class RecordingService extends Service {
                     stopRecording();
                 });
 
+        // Haptic tick for the final 10 seconds of the countdown (gated by the
+        // master + "Buttons & controls" toggles inside Utils).
+        durationLimitController.setRemainingTickListener(remainingSeconds -> {
+            try {
+                com.fadcam.Utils.vibrateCountdownTick(RecordingService.this, remainingSeconds);
+            } catch (Exception ignored) {
+            }
+        });
+
         durationPreferenceListener = (preferences, key) -> {
             boolean customValueKey =
                     SharedPreferencesManager.PREF_MAX_RECORDING_DURATION_CUSTOM_MINUTES.equals(key)
@@ -5812,6 +5821,12 @@ public class RecordingService extends Service {
                     prefs.edit()
                         .putBoolean(Constants.PREF_TORCH_STATE, isRecordingTorchEnabled)
                         .apply();
+
+                    // Same heartbeat haptic as the torch shortcut intent, for consistency.
+                    try {
+                        com.fadcam.Utils.vibrateTorchShortcut(this, isRecordingTorchEnabled);
+                    } catch (Exception ignored) {
+                    }
 
                 } catch (CameraAccessException e) {
                     FLog.e(TAG, "Could not toggle recording torch via CaptureRequest: " + e.getMessage());

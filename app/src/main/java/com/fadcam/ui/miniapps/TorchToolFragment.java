@@ -155,6 +155,12 @@ public class TorchToolFragment extends BaseFragment {
                 if (isUpdatingToggle) return; // Ignore programmatic setChecked calls
                 FLog.d("TorchToggle", "Toggle clicked: " + isChecked + " (was: " + torchManager.isTorchOn() + ")");
                 torchManager.setTorchEnabled(isChecked);
+                // Same heartbeat haptic as the home torch button / shortcut,
+                // so the mini-app feels identical (gated inside Utils).
+                try {
+                    com.fadcam.Utils.vibrateTorchShortcut(requireContext(), isChecked);
+                } catch (Exception ignored) {
+                }
             });
         }
 
@@ -205,7 +211,13 @@ public class TorchToolFragment extends BaseFragment {
     // ── Torch toggle ─────────────────────────────────────────────────────────
 
     private void toggleTorch() {
-        torchManager.setTorchEnabled(!torchManager.isTorchOn());
+        boolean next = !torchManager.isTorchOn();
+        torchManager.setTorchEnabled(next);
+        // Same heartbeat haptic as the home torch button / shortcut.
+        try {
+            com.fadcam.Utils.vibrateTorchShortcut(requireContext(), next);
+        } catch (Exception ignored) {
+        }
     }
 
     // ── State update ──────────────────────────────────────────────────────────
@@ -420,6 +432,9 @@ public class TorchToolFragment extends BaseFragment {
             slider.setValueTo(1.0f);
             slider.setValue(savedBrightness);
             slider.addOnChangeListener((s, value, fromUser) -> {
+                if (fromUser) {
+                    com.fadcam.Utils.vibrateSliderTick(getContext());
+                }
                 if (fromUser && screenLightDialog != null && screenLightDialog.getWindow() != null) {
                     WindowManager.LayoutParams attrs = screenLightDialog.getWindow().getAttributes();
                     attrs.screenBrightness = value;
