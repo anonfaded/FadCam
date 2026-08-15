@@ -2489,6 +2489,19 @@ Catatan: Setidaknya satu metode keluar harus tetap diaktifkan untuk mencegah ter
     <string name="mini_apps_title">Aplikasi Mini</string>
     <string name="mini_apps_subtitle">Utilitas dan alat cepat</string>
     <string name="mini_app_coming_soon">Segera</string>
+    <string name="sidebar_see_all_mini_apps">Lihat semua aplikasi mini</string>
+    <string name="sidebar_see_all_mini_apps_desc">Buka bagian aplikasi mini lengkap di Pengaturan</string>
+    <string name="desc_mini_apps_edit">Edit aplikasi mini</string>
+    <string name="mini_apps_customize_title">Sesuaikan aplikasi mini</string>
+    <string name="mini_apps_show_count">Tampilkan di sidebar</string>
+    <string name="mini_apps_show_count_desc">Aplikasi yang ditampilkan di sidebar beranda</string>
+    <string name="mini_apps_hidden">Tersembunyi</string>
+    <string name="desc_mini_apps_count_minus">Kurangi jumlah aplikasi mini</string>
+    <string name="desc_mini_apps_count_plus">Tambah jumlah aplikasi mini</string>
+    <string name="desc_mini_apps_move_up">Pindahkan ke atas</string>
+    <string name="desc_mini_apps_move_down">Pindahkan ke bawah</string>
+    <string name="desc_mini_apps_drag">Seret untuk mengurutkan ulang</string>
+    <string name="mini_apps_reorder_footer">Tahan gagangnya dan seret untuk mengurutkan ulang. Gunakan −/+ untuk memilih berapa banyak aplikasi yang tampil di sidebar beranda. Perubahan berlaku seketika.</string>
     <string name="mini_app_coming_soon_desc">Fitur ini akan tersedia di masa mendatang</string>
 
     <!-- Torch Tool -->

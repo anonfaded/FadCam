@@ -3811,6 +3811,32 @@ For the smoothest playback experience, you can use an external player like VLC. 
 
 <string name="mini_app_coming_soon">Bientôt</string>
 
+
+<string name="sidebar_see_all_mini_apps">Voir toutes les mini-applications</string>
+
+<string name="sidebar_see_all_mini_apps_desc">Ouvre la section complète des mini-applications dans les paramètres</string>
+
+<string name="desc_mini_apps_edit">Modifier les mini-applications</string>
+
+<string name="mini_apps_customize_title">Personnaliser les mini-applications</string>
+
+<string name="mini_apps_show_count">Afficher dans la barre latérale</string>
+
+<string name="mini_apps_show_count_desc">Applications affichées dans la barre latérale d\'accueil</string>
+
+<string name="mini_apps_hidden">Masqué</string>
+
+<string name="desc_mini_apps_count_minus">Réduire le nombre de mini-applications</string>
+
+<string name="desc_mini_apps_count_plus">Augmenter le nombre de mini-applications</string>
+
+<string name="desc_mini_apps_move_up">Monter</string>
+
+<string name="desc_mini_apps_move_down">Descendre</string>
+
+<string name="desc_mini_apps_drag">Faites glisser pour réorganiser</string>
+
+<string name="mini_apps_reorder_footer">Maintenez la poignée et faites glisser pour réorganiser. Utilisez −/+ pour choisir combien d\'applications apparaissent dans la barre latérale d\'accueil. Les modifications s\'appliquent instantanément.</string>
 <string name="mini_app_coming_soon_desc">Cette fonctionnalité sera disponible prochainement</string>
 
 <string name="mini_app_torch_title">Lampe torche</string>

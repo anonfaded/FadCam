@@ -32,6 +32,9 @@ import com.fadcam.FLog;
  */
 public class SettingsHomeFragment extends Fragment {
 
+    /** Set by the home sidebar "See all mini apps" row; consumed on next show to scroll to the Mini Apps section. */
+    public static volatile boolean sScrollToMiniApps = false;
+
     public enum SettingsMode { ALL, FADCAM, FADREC }
 
     private SettingsMode currentMode = SettingsMode.ALL;
@@ -107,6 +110,35 @@ public class SettingsHomeFragment extends Fragment {
                     prefManager.isShowTrashInSettings() ? View.VISIBLE : View.GONE);
             }
         }
+        if (!hidden) {
+            maybeScrollToMiniApps();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        maybeScrollToMiniApps();
+    }
+
+    /** Scrolls the settings content to the Mini Apps section when requested by the home sidebar. */
+    private void maybeScrollToMiniApps() {
+        if (!sScrollToMiniApps) return;
+        sScrollToMiniApps = false;
+        View view = getView();
+        if (view == null) return;
+        androidx.core.widget.NestedScrollView scroll = view.findViewById(R.id.content_scroll);
+        View header = view.findViewById(R.id.header_mini_apps);
+        if (scroll == null || header == null) return;
+        // Post so the layout is measured before scrolling (fresh fragment attach case)
+        view.post(() -> {
+            if (getView() == null) return;
+            androidx.core.widget.NestedScrollView s = getView().findViewById(R.id.content_scroll);
+            View h = getView().findViewById(R.id.header_mini_apps);
+            if (s != null && h != null) {
+                s.smoothScrollTo(0, h.getTop());
+            }
+        });
     }
 
     @Override

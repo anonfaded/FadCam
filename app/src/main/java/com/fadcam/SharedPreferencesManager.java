@@ -440,6 +440,36 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    /** Sidebar mini apps order as pipe-separated ids (e.g. "torch|qr_scanner|compass|..."). */
+    public String getSidebarMiniAppsOrder() {
+        return sharedPreferences.getString(
+            Constants.PREF_SIDEBAR_MINI_APPS_ORDER,
+            Constants.DEFAULT_SIDEBAR_MINI_APPS_ORDER
+        );
+    }
+
+    public void setSidebarMiniAppsOrder(String order) {
+        sharedPreferences
+            .edit()
+            .putString(Constants.PREF_SIDEBAR_MINI_APPS_ORDER, order)
+            .apply();
+    }
+
+    /** How many of the top of the sidebar mini apps order are shown (1..11). */
+    public int getSidebarMiniAppsCount() {
+        return sharedPreferences.getInt(
+            Constants.PREF_SIDEBAR_MINI_APPS_COUNT,
+            Constants.DEFAULT_SIDEBAR_MINI_APPS_COUNT
+        );
+    }
+
+    public void setSidebarMiniAppsCount(int count) {
+        sharedPreferences
+            .edit()
+            .putInt(Constants.PREF_SIDEBAR_MINI_APPS_COUNT, count)
+            .apply();
+    }
+
     public Size getCameraResolution() {
         return new Size(
             sharedPreferences.getInt(

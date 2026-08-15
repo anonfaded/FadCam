@@ -2337,6 +2337,19 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="mini_apps_title">Mini Apps</string>
     <string name="mini_apps_subtitle">Γρήγορα βοηθήματα και εργαλεία</string>
     <string name="mini_app_coming_soon">Σύντομα</string>
+    <string name="sidebar_see_all_mini_apps">Δείτε όλες τις μίνι εφαρμογές</string>
+    <string name="sidebar_see_all_mini_apps_desc">Ανοίξτε την πλήρη ενότητα μίνι εφαρμογών στις Ρυθμίσεις</string>
+    <string name="desc_mini_apps_edit">Επεξεργασία μίνι εφαρμογών</string>
+    <string name="mini_apps_customize_title">Προσαρμογή μίνι εφαρμογών</string>
+    <string name="mini_apps_show_count">Εμφάνιση στην πλαϊνή γραμμή</string>
+    <string name="mini_apps_show_count_desc">Εφαρμογές που εμφανίζονται στην αρχική πλαϊνή γραμμή</string>
+    <string name="mini_apps_hidden">Κρυφό</string>
+    <string name="desc_mini_apps_count_minus">Μείωση του αριθμού των μίνι εφαρμογών</string>
+    <string name="desc_mini_apps_count_plus">Αύξηση του αριθμού των μίνι εφαρμογών</string>
+    <string name="desc_mini_apps_move_up">Μετακίνηση πάνω</string>
+    <string name="desc_mini_apps_move_down">Μετακίνηση κάτω</string>
+    <string name="desc_mini_apps_drag">Σύρετε για αναδιάταξη</string>
+    <string name="mini_apps_reorder_footer">Κρατήστε τη λαβή και σύρετε για αναδιάταξη. Χρησιμοποιήστε −/+ για να επιλέξετε πόσες εφαρμογές εμφανίζονται στην αρχική πλαϊνή γραμμή. Οι αλλαγές εφαρμόζονται άμεσα.</string>
     <string name="mini_app_coming_soon_desc">Αυτή η λειτουργία θα είναι διαθέσιμη στο μέλλον</string>
     <!-- Torch Tool -->
     <string name="mini_app_torch_title">Φακός</string>

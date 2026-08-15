@@ -2500,6 +2500,19 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="mini_apps_subtitle">Quick utilities and tools</string>
     <string name="mini_app_coming_soon">Soon</string>
     <string name="mini_app_coming_soon_desc">This feature will be available in the future</string>
+    <string name="sidebar_see_all_mini_apps">See all mini apps</string>
+    <string name="sidebar_see_all_mini_apps_desc">Open the full Mini Apps section in Settings</string>
+    <string name="desc_mini_apps_edit">Edit mini apps</string>
+    <string name="mini_apps_customize_title">Customize Mini Apps</string>
+    <string name="mini_apps_show_count">Show in sidebar</string>
+    <string name="mini_apps_show_count_desc">Apps shown in the home sidebar</string>
+    <string name="mini_apps_hidden">Hidden</string>
+    <string name="desc_mini_apps_count_minus">Decrease mini apps count</string>
+    <string name="desc_mini_apps_count_plus">Increase mini apps count</string>
+    <string name="desc_mini_apps_move_up">Move up</string>
+    <string name="desc_mini_apps_move_down">Move down</string>
+    <string name="desc_mini_apps_drag">Drag to reorder</string>
+    <string name="mini_apps_reorder_footer">Hold the handle and drag to reorder. Use −/+ to choose how many apps appear in the home sidebar. Changes apply instantly.</string>
 
     <!-- Torch Tool -->
     <string name="mini_app_torch_title">Torch</string>

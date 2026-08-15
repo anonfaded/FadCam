@@ -423,6 +423,14 @@ public abstract class Constants {
     // v2 so polluted positions saved by earlier broken drag builds are discarded.
     public static final String PREF_QUICK_ACTIONS_ORDER = "pref_quick_actions_slots_v2";
     public static final String DEFAULT_QUICK_ACTIONS_ORDER = "timer,mute,full,fadshot";
+    // Sidebar mini apps: pipe-separated order of ALL mini app ids (user-reorderable)
+    // + how many of the top of that order are shown in the home sidebar (default 3).
+    // Count key bumped to v2 so early test builds' stored values are discarded.
+    public static final String PREF_SIDEBAR_MINI_APPS_ORDER = "sidebar_mini_apps_order";
+    public static final String PREF_SIDEBAR_MINI_APPS_COUNT = "sidebar_mini_apps_count_v2";
+    public static final int DEFAULT_SIDEBAR_MINI_APPS_COUNT = 3;
+    public static final String DEFAULT_SIDEBAR_MINI_APPS_ORDER =
+        "torch|qr_scanner|compass|sound_meter|sensor_dashboard|speedometer|clinometer|pedometer|metal_detector|parking_marker|qr_generator";
     /** Pan offset Y for zoom: float -1.0 (full top) to +1.0 (full bottom), 0.0 = centre */
     public static final String EXTRA_PAN_Y = "com.fadcam.EXTRA_PAN_Y"; // float
     public static final String INTENT_ACTION_PAUSE_RECORDING =

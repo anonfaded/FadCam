@@ -2836,6 +2836,19 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <!-- mini_app_coming_soon -->
 <string name="mini_app_coming_soon">即将推出</string>
 
+<string name="sidebar_see_all_mini_apps">查看所有迷你应用</string>
+<string name="sidebar_see_all_mini_apps_desc">在设置中打开完整的迷你应用部分</string>
+<string name="desc_mini_apps_edit">编辑迷你应用</string>
+<string name="mini_apps_customize_title">自定义迷你应用</string>
+<string name="mini_apps_show_count">在侧边栏中显示</string>
+<string name="mini_apps_show_count_desc">显示在主屏幕侧边栏中的应用</string>
+<string name="mini_apps_hidden">已隐藏</string>
+<string name="desc_mini_apps_count_minus">减少迷你应用数量</string>
+<string name="desc_mini_apps_count_plus">增加迷你应用数量</string>
+<string name="desc_mini_apps_move_up">上移</string>
+<string name="desc_mini_apps_move_down">下移</string>
+<string name="desc_mini_apps_drag">拖动以重新排序</string>
+<string name="mini_apps_reorder_footer">按住手柄并拖动以重新排序。使用 −/+ 选择主屏幕侧边栏中显示的应用数量。更改立即生效。</string>
 <!-- mini_app_coming_soon_desc -->
 <string name="mini_app_coming_soon_desc">此功能将在未来推出</string>
 

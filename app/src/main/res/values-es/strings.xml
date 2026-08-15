@@ -2399,6 +2399,19 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <string name="mini_apps_title">Mini Apps</string>
     <string name="mini_apps_subtitle">Utilidades y herramientas rápidas</string>
     <string name="mini_app_coming_soon">Próximamente</string>
+    <string name="sidebar_see_all_mini_apps">Ver todas las mini apps</string>
+    <string name="sidebar_see_all_mini_apps_desc">Abre la sección completa de mini apps en Ajustes</string>
+    <string name="desc_mini_apps_edit">Editar mini apps</string>
+    <string name="mini_apps_customize_title">Personalizar mini apps</string>
+    <string name="mini_apps_show_count">Mostrar en la barra lateral</string>
+    <string name="mini_apps_show_count_desc">Apps que se muestran en la barra lateral de inicio</string>
+    <string name="mini_apps_hidden">Oculto</string>
+    <string name="desc_mini_apps_count_minus">Reducir el número de mini apps</string>
+    <string name="desc_mini_apps_count_plus">Aumentar el número de mini apps</string>
+    <string name="desc_mini_apps_move_up">Subir</string>
+    <string name="desc_mini_apps_move_down">Bajar</string>
+    <string name="desc_mini_apps_drag">Arrastra para reordenar</string>
+    <string name="mini_apps_reorder_footer">Mantén presionado el control y arrastra para reordenar. Usa −/+ para elegir cuántas apps aparecen en la barra lateral de inicio. Los cambios se aplican al instante.</string>
     <string name="mini_app_coming_soon_desc">Esta función estará disponible en el futuro</string>
 
     <!-- Torch Tool -->

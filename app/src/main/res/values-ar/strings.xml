@@ -3877,6 +3877,32 @@
 
     <string name="mini_app_coming_soon">قريبًا</string>
 
+
+    <string name="sidebar_see_all_mini_apps">عرض كل التطبيقات المصغرة</string>
+
+    <string name="sidebar_see_all_mini_apps_desc">افتح قسم التطبيقات المصغرة الكامل في الإعدادات</string>
+
+    <string name="desc_mini_apps_edit">تحرير التطبيقات المصغرة</string>
+
+    <string name="mini_apps_customize_title">تخصيص التطبيقات المصغرة</string>
+
+    <string name="mini_apps_show_count">العرض في الشريط الجانبي</string>
+
+    <string name="mini_apps_show_count_desc">التطبيقات المعروضة في الشريط الجانبي الرئيسي</string>
+
+    <string name="mini_apps_hidden">مخفي</string>
+
+    <string name="desc_mini_apps_count_minus">تقليل عدد التطبيقات المصغرة</string>
+
+    <string name="desc_mini_apps_count_plus">زيادة عدد التطبيقات المصغرة</string>
+
+    <string name="desc_mini_apps_move_up">تحريك لأعلى</string>
+
+    <string name="desc_mini_apps_move_down">تحريك لأسفل</string>
+
+    <string name="desc_mini_apps_drag">اسحب لإعادة الترتيب</string>
+
+    <string name="mini_apps_reorder_footer">اضغط مع الاستمرار على المقبض واسحب لإعادة الترتيب. استخدم −/+ لاختيار عدد التطبيقات المعروضة في الشريط الجانبي الرئيسي. تُطبَّق التغييرات فورًا.</string>
     <string name="mini_app_coming_soon_desc">ستتوفر هذه الميزة في المستقبل</string>
 
     <string name="mini_app_torch_title">الفلاش</string>

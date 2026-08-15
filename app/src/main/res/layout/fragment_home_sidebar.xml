@@ -536,10 +536,27 @@
                 android:focusable="true"
                 android:contentDescription="@string/desc_mini_apps_info" />
 
+            <TextView
+                android:id="@+id/btn_mini_apps_edit"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="12dp"
+                android:padding="2dp"
+                android:fontFamily="@font/materialicons"
+                android:text="edit"
+                android:textColor="?attr/colorHeading"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/desc_mini_apps_edit" />
+
         </LinearLayout>
 
         <!-- Mini apps group card wrapper -->
         <LinearLayout
+            android:id="@+id/mini_apps_list_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -607,7 +624,8 @@
             </LinearLayout>
 
             <!-- Divider between mini apps -->
-            <com.google.android.material.divider.MaterialDivider
+<com.google.android.material.divider.MaterialDivider
+                android:id="@+id/divider_mini_app_1"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginStart="0dp"
@@ -671,7 +689,8 @@
             </LinearLayout>
 
             <!-- Divider between mini apps -->
-            <com.google.android.material.divider.MaterialDivider
+<com.google.android.material.divider.MaterialDivider
+                android:id="@+id/divider_mini_app_2"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginStart="0dp"
@@ -763,7 +782,8 @@
             </LinearLayout>
 
             <!-- Divider between mini apps -->
-            <com.google.android.material.divider.MaterialDivider
+<com.google.android.material.divider.MaterialDivider
+                android:id="@+id/divider_mini_app_3"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginStart="0dp"
@@ -855,7 +875,8 @@
             </LinearLayout>
 
             <!-- Divider between mini apps -->
-            <com.google.android.material.divider.MaterialDivider
+<com.google.android.material.divider.MaterialDivider
+                android:id="@+id/divider_mini_app_4"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginStart="0dp"
@@ -946,7 +967,7 @@
 
             </LinearLayout>
 
-            <View style="@style/SettingsDivider" />
+            <View android:id="@+id/divider_mini_app_5" style="@style/SettingsDivider" />
 
             <!-- Speedometer Mini App -->
             <LinearLayout
@@ -999,7 +1020,7 @@
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
-            <View style="@style/SettingsDivider" />
+            <View android:id="@+id/divider_mini_app_6" style="@style/SettingsDivider" />
 
             <!-- Clinometer Mini App -->
             <LinearLayout
@@ -1052,7 +1073,7 @@
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
-            <View style="@style/SettingsDivider" />
+            <View android:id="@+id/divider_mini_app_7" style="@style/SettingsDivider" />
 
             <!-- Pedometer Mini App -->
             <LinearLayout
@@ -1105,7 +1126,7 @@
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
-            <View style="@style/SettingsDivider" />
+            <View android:id="@+id/divider_mini_app_8" style="@style/SettingsDivider" />
 
             <!-- Metal Detector Mini App -->
             <LinearLayout
@@ -1158,7 +1179,7 @@
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
-            <View style="@style/SettingsDivider" />
+            <View android:id="@+id/divider_mini_app_9" style="@style/SettingsDivider" />
 
             <!-- Parking Marker Mini App -->
             <LinearLayout
@@ -1211,7 +1232,7 @@
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
-            <View style="@style/SettingsDivider" />
+            <View android:id="@+id/divider_mini_app_10" style="@style/SettingsDivider" />
 
             <!-- QR Generator Mini App -->
             <LinearLayout
@@ -1263,6 +1284,63 @@
                     android:layout_height="14dp"
                     android:src="@drawable/ic_arrow_right"
                     android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+            <View android:id="@+id/divider_mini_app_see_all" style="@style/SettingsDivider" />
+
+            <!-- See all mini apps -->
+            <LinearLayout
+                android:id="@+id/row_mini_apps_see_all"
+                style="@style/SettingsGroupRow"
+                android:layout_height="wrap_content"
+                android:minHeight="52dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:fontFamily="@font/materialicons"
+                    android:text="apps"
+                    android:textColor="?attr/colorHeading"
+                    android:textSize="18sp"
+                    android:gravity="center" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sidebar_see_all_mini_apps"
+                        android:textColor="?attr/colorHeading"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textAlignment="viewStart" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sidebar_see_all_mini_apps_desc"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="11sp"
+                        android:textAlignment="viewStart" />
+
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_gravity="center_vertical"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray" />
+
             </LinearLayout>
 
         </LinearLayout>

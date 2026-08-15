@@ -12,12 +12,14 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import java.util.ArrayList;
+import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import com.fadcam.ui.AvatarToggleView;
 import androidx.fragment.app.DialogFragment;
 import com.fadcam.R;
+import com.fadcam.MainActivity;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
@@ -33,6 +35,35 @@ import com.google.android.material.sidesheet.SideSheetDialog;
 public class HomeSidebarFragment extends DialogFragment {
 
     private String resultKey = "home_sidebar_result";
+
+    /** Currently open sidebar instance, so the reorder sheet can refresh it directly. */
+    private static HomeSidebarFragment sActiveInstance;
+
+    /**
+     * Cached mini app views. Captured once from the first inflated view; the
+     * references stay valid even when rows are detached/re-attached during
+     * reordering (findViewById cannot find detached views, so we must cache).
+     */
+    private View[] miniAppRows;
+    private View[] miniAppDividers;
+    private View miniAppSeeAllDivider;
+    private View miniAppSeeAllRow;
+
+    /**
+     * Re-applies mini app visibility on the currently open sidebar in real time.
+     * Called by MiniAppsReorderBottomSheet when it closes (direct call — no
+     * FragmentResult lifecycle subtleties).
+     */
+    public static void refreshMiniApps() {
+        HomeSidebarFragment f = sActiveInstance;
+        if (f == null) return;
+        try {
+            View v = f.getView();
+            if (v != null) f.applyMiniAppVisibility(v);
+        } catch (Exception e) {
+            FLog.w("HomeSidebar", "Failed to refresh mini apps", e);
+        }
+    }
 
     public static HomeSidebarFragment newInstance() {
         return new HomeSidebarFragment();
@@ -111,6 +142,7 @@ public class HomeSidebarFragment extends DialogFragment {
         @Nullable Bundle savedInstanceState
     ) {
         super.onViewCreated(view, savedInstanceState);
+        sActiveInstance = this;
 
         // Handle close button
         ImageView closeButton = view.findViewById(R.id.home_sidebar_close_btn);
@@ -287,11 +319,50 @@ public class HomeSidebarFragment extends DialogFragment {
                 infoBS.show(getParentFragmentManager(), "mini_apps_info");
             });
         }
+
+        // Mini Apps Edit/Reorder Button
+        View btnMiniAppsEdit = view.findViewById(R.id.btn_mini_apps_edit);
+        if (btnMiniAppsEdit != null) {
+            com.fadcam.Utils.attachPressScale(btnMiniAppsEdit, 1.15f);
+            btnMiniAppsEdit.setOnClickListener(v -> {
+                MiniAppsReorderBottomSheet reorderBS = MiniAppsReorderBottomSheet.newInstance();
+                reorderBS.show(getParentFragmentManager(), "mini_apps_reorder");
+            });
+        }
+
+        // Re-apply mini app visibility in real time when the reorder sheet closes
+        getParentFragmentManager().setFragmentResultListener(
+                MiniAppsReorderBottomSheet.RESULT_KEY, this, (key, bundle) -> {
+                    View v = getView();
+                    if (v != null) applyMiniAppVisibility(v);
+                });
+
+        // See all mini apps -> Settings tab, scrolled to the Mini Apps section
+        View seeAllRow = view.findViewById(R.id.row_mini_apps_see_all);
+        if (seeAllRow != null) {
+            seeAllRow.setOnClickListener(v -> {
+                try {
+                    SettingsHomeFragment.sScrollToMiniApps = true;
+                    dismiss();
+                    if (getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).switchFragment(4, true);
+                    }
+                } catch (Exception e) {
+                    FLog.w("HomeSidebar", "Failed to open mini apps section", e);
+                }
+            });
+        }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (sActiveInstance == this) sActiveInstance = null;
+        // Drop cached mini app views — they belong to the destroyed view
+        miniAppRows = null;
+        miniAppDividers = null;
+        miniAppSeeAllDivider = null;
+        miniAppSeeAllRow = null;
         // AvatarToggleView handles its own animation cleanup via onDetachedFromWindow().
     }
 
@@ -358,7 +429,91 @@ public class HomeSidebarFragment extends DialogFragment {
         View qrGeneratorRow = view.findViewById(R.id.row_mini_app_qr_generator);
         if (qrGeneratorRow != null) qrGeneratorRow.setOnClickListener(v -> showMiniAppComingSoon(this, "qr_generator"));
 
+        applyMiniAppVisibility(view);
+
         setupUpdateCards(view);
+    }
+
+    /**
+     * Shows only the top-N mini apps (per user prefs) in the sidebar, in the
+     * user's saved order. Rows are physically reordered inside the container so
+     * the sidebar matches the reorder sheet exactly; a divider follows every
+     * visible row (the last one sits above the "See all" row).
+     */
+    private void applyMiniAppVisibility(View view) {
+        try {
+            SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
+            String orderStr = prefs.getSidebarMiniAppsOrder();
+            int count = prefs.getSidebarMiniAppsCount();
+
+            // Parse stored order, dedupe, keep only known ids
+            List<String> order = new ArrayList<>();
+            if (orderStr != null) {
+                for (String id : orderStr.split("\\|")) {
+                    if (!id.isEmpty() && !order.contains(id)) order.add(id);
+                }
+            }
+            // Safety: append any known ids missing from the stored order
+            for (String id : MiniAppsReorderBottomSheet.ALL_MINI_APP_IDS) {
+                if (!order.contains(id)) order.add(id);
+            }
+            // Clamp count to [1, total apps]
+            count = Math.max(1, Math.min(count, order.size()));
+
+            int[] rowIds = {
+                R.id.row_mini_app_torch, R.id.row_mini_app_qr_scanner,
+                R.id.row_mini_app_compass, R.id.row_mini_app_sound_meter,
+                R.id.row_mini_app_sensor_dashboard, R.id.row_mini_app_speedometer,
+                R.id.row_mini_app_clinometer, R.id.row_mini_app_pedometer,
+                R.id.row_mini_app_metal_detector, R.id.row_mini_app_parking_marker,
+                R.id.row_mini_app_qr_generator
+            };
+            int[] dividerIds = {
+                R.id.divider_mini_app_1, R.id.divider_mini_app_2,
+                R.id.divider_mini_app_3, R.id.divider_mini_app_4,
+                R.id.divider_mini_app_5, R.id.divider_mini_app_6,
+                R.id.divider_mini_app_7, R.id.divider_mini_app_8,
+                R.id.divider_mini_app_9, R.id.divider_mini_app_10
+            };
+
+            android.widget.LinearLayout container = view.findViewById(R.id.mini_apps_list_container);
+            if (container == null) return;
+
+            // Capture views once — cached references stay valid even when rows
+            // are detached/re-attached (findViewById cannot find detached views).
+            if (miniAppRows == null) {
+                miniAppRows = new View[rowIds.length];
+                for (int i = 0; i < rowIds.length; i++) miniAppRows[i] = view.findViewById(rowIds[i]);
+                miniAppDividers = new View[dividerIds.length];
+                for (int i = 0; i < dividerIds.length; i++) miniAppDividers[i] = view.findViewById(dividerIds[i]);
+                miniAppSeeAllDivider = view.findViewById(R.id.divider_mini_app_see_all);
+                miniAppSeeAllRow = view.findViewById(R.id.row_mini_apps_see_all);
+            }
+
+            // Rebuild: top-N rows in saved order, a divider after every row
+            // (the 10 row dividers first, then the see-all divider after the last row)
+            container.removeAllViews();
+            int dividerCursor = 0;
+            for (int i = 0; i < count && i < order.size(); i++) {
+                String appId = order.get(i);
+                int rowIndex = -1;
+                for (int j = 0; j < MiniAppsReorderBottomSheet.ALL_MINI_APP_IDS.length; j++) {
+                    if (MiniAppsReorderBottomSheet.ALL_MINI_APP_IDS[j].equals(appId)) {
+                        rowIndex = j;
+                        break;
+                    }
+                }
+                if (rowIndex < 0 || miniAppRows[rowIndex] == null) continue;
+                container.addView(miniAppRows[rowIndex]);
+                View divider = dividerCursor < miniAppDividers.length ? miniAppDividers[dividerCursor] : miniAppSeeAllDivider;
+                if (divider != null) container.addView(divider);
+                dividerCursor++;
+            }
+            // "See all" row always sits at the bottom of the mini apps group
+            if (miniAppSeeAllRow != null) container.addView(miniAppSeeAllRow);
+        } catch (Exception e) {
+            FLog.w("HomeSidebar", "Failed to apply mini app visibility", e);
+        }
     }
 
     private void showProfilesComingSoon() {

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/reorder_row_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:minHeight="52dp"
+    android:background="@drawable/reorder_row_bg"
+    android:paddingStart="4dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <TextView
+        android:id="@+id/reorder_row_drag_handle"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:fontFamily="@font/materialicons"
+        android:text="drag_indicator"
+        android:textSize="18sp"
+        android:textColor="?attr/colorHeading"
+        android:gravity="center"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/desc_mini_apps_drag" />
+
+    <TextView
+        android:id="@+id/reorder_row_number"
+        android:layout_width="22dp"
+        android:layout_height="wrap_content"
+        android:text="1"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:gravity="center" />
+
+    <TextView
+        android:id="@+id/reorder_row_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="14dp"
+        android:fontFamily="@font/materialicons"
+        android:text="apps"
+        android:textColor="?attr/colorHeading"
+        android:textSize="18sp"
+        android:gravity="center" />
+
+    <TextView
+        android:id="@+id/reorder_row_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="App"
+        android:textColor="?attr/colorHeading"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textAlignment="viewStart" />
+
+    <TextView
+        android:id="@+id/reorder_row_soon_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/bg_coming_soon_badge"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:text="@string/mini_app_coming_soon"
+        android:textColor="#FFFFFF"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/reorder_row_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/bg_coming_soon_badge"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:text="@string/mini_apps_hidden"
+        android:textColor="#FFFFFF"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/reorder_row_up"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:fontFamily="@font/materialicons"
+        android:text="arrow_upward"
+        android:textSize="18sp"
+        android:textColor="?attr/colorHeading"
+        android:gravity="center"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/desc_mini_apps_move_up" />
+
+    <TextView
+        android:id="@+id/reorder_row_down"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:fontFamily="@font/materialicons"
+        android:text="arrow_downward"
+        android:textSize="18sp"
+        android:textColor="?attr/colorHeading"
+        android:gravity="center"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:contentDescription="@string/desc_mini_apps_move_down" />
+
+</LinearLayout>
