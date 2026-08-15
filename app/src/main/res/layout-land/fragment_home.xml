@@ -70,6 +70,7 @@
                 android:paddingHorizontal="8dp"
                 android:background="@drawable/bg_golden_header_button"
                 android:text="@string/fadcam_pro_header_button"
+                android:textAllCaps="true"
                 android:textColor="#1A1A1A"
                 android:textSize="11sp"
                 android:textStyle="bold"
