@@ -799,17 +799,27 @@ public class FragmentedMp4MuxerWrapper {
             logFileState("after finalization (original channel)");
             FLog.i(TAG, "Hybrid MP4 finalization succeeded (original channel)");
             lastFinalizeOutcome = "OK (original channel)";
-            // ── Post-finalize self-audit: read back the FIRST VIDEO sample from
-            // the file as written and report its framing. This observes the actual
-            // file content (Annex-B vs AVCC vs truncated), so a "successful"
-            // finalization with structurally broken samples is visible in logs
-            // instead of guessed.
+            // ── Post-finalize self-audit: read back the FIRST VIDEO sample of
+            // each fragment from the file as written and report its framing.
+            // This observes the actual file content (Annex-B vs AVCC vs
+            // truncated), so a "successful" finalization with structurally
+            // broken samples is visible in logs instead of guessed.
+            // The original output channel is write-only ("w" fd) — reopen a
+            // READABLE channel ("rw" via SAF re-opener or RandomAccessFile).
             try {
-                java.nio.channels.FileChannel auditChannel = fileOutputStream.getChannel();
-                auditChannel.position(0);
-                String audit = androidx.media3.muxer.FragmentedMp4Muxer
-                        .auditFirstVideoSample(auditChannel);
-                FLog.i(TAG, "[AVC-AUDIT] first video sample in FILE: " + audit);
+                java.nio.channels.FileChannel auditChannel = reopenChannel();
+                if (auditChannel == null) {
+                    FLog.w(TAG, "[AVC-AUDIT] audit skipped: no readable re-open channel");
+                } else {
+                    try {
+                        auditChannel.position(0);
+                        String audit = androidx.media3.muxer.FragmentedMp4Muxer
+                                .auditFirstVideoSample(auditChannel);
+                        FLog.i(TAG, "[AVC-AUDIT] first video sample in FILE: " + audit);
+                    } finally {
+                        closeQuietly(auditChannel);
+                    }
+                }
             } catch (Exception auditEx) {
                 FLog.w(TAG, "[AVC-AUDIT] audit failed: " + auditEx);
             }

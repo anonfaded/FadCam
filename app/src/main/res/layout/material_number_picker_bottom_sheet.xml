@@ -10,14 +10,19 @@
     android:paddingBottom="14dp"
     android:background="@drawable/picker_bottom_sheet_gradient_bg_dynamic">
 
-    <!-- Drag handle — the ONLY draggable area; swiping elsewhere won't dismiss -->
-    <View
+    <!-- Drag handle — full-width touch strip (the ONLY draggable area):
+         drag up expands the sheet, drag down dismisses. The pill is visual. -->
+    <FrameLayout
         android:id="@+id/picker_drag_handle"
-        android:layout_width="44dp"
-        android:layout_height="6dp"
-        android:layout_marginBottom="10dp"
-        android:layout_gravity="center_horizontal"
-        android:background="@drawable/bottom_sheet_handle_bg"/>
+        android:layout_width="match_parent"
+        android:layout_height="32dp">
+
+        <View
+            android:layout_width="44dp"
+            android:layout_height="6dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bottom_sheet_handle_bg"/>
+    </FrameLayout>
 
     <!-- Header: close button + left-aligned title (consistent with every sheet) -->
     <LinearLayout
@@ -442,13 +447,27 @@
         android:layout_marginTop="12dp"
         android:visibility="gone"/>
 
-    <!-- Reset (INT mode) + preview + actions -->
-    <LinearLayout
+    <!-- Responsive actions: right-aligned flow — buttons share one line when
+         they fit and wrap onto extra lines on narrow/zoomed screens instead
+         of overflowing the window. GONE buttons are skipped by Flow. -->
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:paddingTop="10dp">
+
+        <androidx.constraintlayout.helper.widget.Flow
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:constraint_referenced_ids="btn_picker_preview,btn_picker_reset,btn_picker_cancel,btn_picker_ok"
+            app:flow_wrapMode="aligned"
+            app:flow_horizontalAlign="end"
+            app:flow_verticalAlign="center"
+            app:flow_horizontalGap="10dp"
+            app:flow_verticalGap="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_picker_preview"
@@ -466,17 +485,11 @@
             style="@style/PickerCancelButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="start"
             app:icon="@drawable/undo_24px"
             app:iconGravity="textStart"
             app:iconTint="?attr/pickerIconTint"
             android:text="@string/universal_reset"
             android:visibility="gone"/>
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_picker_cancel"
@@ -490,7 +503,6 @@
             style="@style/PickerActionButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
             android:text="@string/duration_picker_ok"/>
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </LinearLayout>
