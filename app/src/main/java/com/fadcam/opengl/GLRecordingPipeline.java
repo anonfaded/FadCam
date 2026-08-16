@@ -1324,6 +1324,23 @@ public class GLRecordingPipeline {
             configureBasicEncoder(format);
 
             videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
+            // QCOM OMX AVC quirk (S20 FE SM-G780G, Android 13): with
+            // KEY_PREPEND_HEADER_TO_SYNC_FRAMES=1 this encoder family omits
+            // csd-0/csd-1 from the output format and its inline-prepended
+            // SPS/PPS at IDR frames corrupts the Annex-B→AVCC conversion
+            // mid-file ("Invalid NAL length" on playback). Disabling the
+            // prepend makes QCOM expose csd in the format — the exact
+            // configuration that works on Android 10 QCOM devices and every
+            // other encoder family (Exynos/MTK/Unisoc). HEVC keeps prepend.
+            if (MediaFormat.MIMETYPE_VIDEO_AVC.equals(currentMimeType)) {
+                try {
+                    String codecName = videoEncoder.getCanonicalName();
+                    if (codecName != null && codecName.contains("qcom")) {
+                        format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 0);
+                        FLog.i(TAG, "[ENCODER] QCOM AVC: prepend-sps-pps-to-idr disabled so csd is exposed in the output format (S20 FE AVC fix)");
+                    }
+                } catch (Exception ignored) {}
+            }
             videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             // Encoder identity — critical for OEM-specific CSD bugs (Samsung C2 vs Google C2 etc.)
             try {
@@ -1353,6 +1370,16 @@ public class GLRecordingPipeline {
                 configureBasicEncoder(format);
 
                 videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
+                // Same QCOM AVC prepend-sps-pps quirk as Strategy 1 — see above.
+                if (MediaFormat.MIMETYPE_VIDEO_AVC.equals(currentMimeType)) {
+                    try {
+                        String codecName = videoEncoder.getCanonicalName();
+                        if (codecName != null && codecName.contains("qcom")) {
+                            format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 0);
+                            FLog.i(TAG, "[ENCODER] QCOM AVC: prepend-sps-pps-to-idr disabled so csd is exposed in the output format (S20 FE AVC fix)");
+                        }
+                    } catch (Exception ignored) {}
+                }
                 videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
                 try {
                     FLog.i(TAG, "[ENCODER] Video encoder (H.264 fallback): " + videoEncoder.getCanonicalName()
