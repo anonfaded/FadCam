@@ -10516,12 +10516,10 @@ public class HomeFragment extends BaseFragment {
         setupQuickTimerButton();
         setupQuickActionsReorder();
         setupPreviewZoomHud();
-        // Press haptics for the quick-action buttons (mute / fadshot / full /
-        // timer) — the central gated tick lives in Utils.attachPressScale.
-        Utils.attachPressScale(btnQuickTimer, 1.06f);
-        Utils.attachPressScale(btnQuickMuteAudio, 1.06f);
-        Utils.attachPressScale(btnCaptureShotPreview, 1.06f);
-        Utils.attachPressScale(btnFullscreenPreview, 1.06f);
+        // NOTE: quick-action press haptics live inside the reorder gesture's
+        // ACTION_DOWN (handleQuickActionGesture) — attaching a second
+        // OnTouchListener here would REPLACE the reorder gesture listener and
+        // kill long-press rearrange mode entirely (S20 FE report).
         vibrator = (Vibrator) requireActivity().getSystemService(
             Context.VIBRATOR_SERVICE
         );
@@ -11374,6 +11372,9 @@ public class HomeFragment extends BaseFragment {
     private boolean handleQuickActionGesture(View v, android.view.MotionEvent event) {
         switch (event.getActionMasked()) {
             case android.view.MotionEvent.ACTION_DOWN:
+                // Central gated press haptic — this listener owns the touch
+                // stream (a second OnTouchListener would replace it).
+                com.fadcam.Utils.pressTick(v);
                 // Pill-style press nudge (superseded by the 1.12 pick-up on long-press).
                 v.animate().scaleX(1.06f).scaleY(1.06f)
                         .setDuration(90)

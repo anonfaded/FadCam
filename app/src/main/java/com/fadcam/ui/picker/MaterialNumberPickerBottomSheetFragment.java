@@ -172,8 +172,6 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
     private NumberPicker npSeconds;
     private NumberPicker npMb;
     private NumberPicker npGb;
-
-    private int measuredContentHeightPx;
     private TextView summaryView;
     private TextView helperView;
     private TextView footerView;
@@ -193,28 +191,15 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
                 .findViewById(com.google.android.material.R.id.design_bottom_sheet);
             if (bottomSheet != null) {
                 bottomSheet.setBackgroundResource(R.drawable.picker_bottom_sheet_gradient_bg_dynamic);
-                // Native sheet navigation: the sheet follows the finger and
-                // settles by velocity. Collapsed peek mirrors the natural
-                // content height (capped at 60% of the screen so zoomed
-                // phones still get a drag-to-expand sheet); expanded stops
-                // 8% short of the top so it never looks like a full-screen
-                // takeover. NumberPicker wheels opt out of parent
-                // interception so wheel scrolling never moves the sheet.
-                try {
-                    com.google.android.material.bottomsheet.BottomSheetBehavior<View> behavior =
-                            com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet);
-                    int screenHeightPx = bottomSheet.getResources()
-                            .getDisplayMetrics().heightPixels;
-                    int peek = measuredContentHeightPx > 0
-                            ? Math.min(measuredContentHeightPx, (int) (screenHeightPx * 0.6f))
-                            : (int) (screenHeightPx * 0.6f);
-                    behavior.setFitToContents(false);
-                    behavior.setSkipCollapsed(false);
-                    behavior.setHideable(true);
-                    behavior.setPeekHeight(peek);
-                    behavior.setExpandedOffset((int) (screenHeightPx * 0.08f));
-                } catch (Exception ignored) {
-                }
+                // Native fitToContents behavior (the dialog default): the
+                // sheet is exactly as tall as its content, bottom-anchored,
+                // fully visible at rest, follows the finger, and dismisses on
+                // drag-down. No peekHeight/expandedOffset — forcing state
+                // heights made the sheet shorter than its content and left a
+                // tall empty area when expanded (the "floating at the top"
+                // look). NumberPicker wheels opt out of parent interception
+                // (styleCenterCellPicker) so wheel scrolling never moves the
+                // sheet.
             }
         });
         if (dialog.getWindow() != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -279,14 +264,8 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.material_number_picker_bottom_sheet,
+        return inflater.inflate(R.layout.material_number_picker_bottom_sheet,
                 container, false);
-        // Measure the sheet's natural (unconstrained) height so the collapsed
-        // peek can mirror wrap-content on normal phones.
-        view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-        measuredContentHeightPx = view.getMeasuredHeight();
-        return view;
     }
 
     @Override
@@ -341,14 +320,9 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
 
         // Native sheet dragging handles the handle strip + empty areas (drag
         // up expands, drag down dismisses, sheet follows the finger). The
-        // wheels opt out of parent interception so scrolling them never
-        // moves the sheet.
-        protectWheelFromSheetDrag(npSingle);
-        protectWheelFromSheetDrag(npHours);
-        protectWheelFromSheetDrag(npMinutes);
-        protectWheelFromSheetDrag(npSeconds);
-        protectWheelFromSheetDrag(npMb);
-        protectWheelFromSheetDrag(npGb);
+        // wheels opt out of parent interception inside styleCenterCellPicker
+        // (their one and only touch listener) so scrolling them never moves
+        // the sheet.
 
         int dividerColor = 0x40FFFFFF;
         int selectedColor = 0xFFFFFFFF;
@@ -782,6 +756,12 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
                     down[0] = ev.getX();
                     down[1] = ev.getY();
                     dragged[0] = false;
+                    // Opt the wheel out of the sheet's native drag
+                    // interception — scrolling a wheel must never move or
+                    // dismiss the bottom sheet. This listener is the ONLY
+                    // touch listener on the picker, so the protection must
+                    // live here (a second listener would replace this one).
+                    v.getParent().requestDisallowInterceptTouchEvent(true);
                     return false;
                 case android.view.MotionEvent.ACTION_MOVE:
                     if (Math.abs(ev.getX() - down[0]) > slop
@@ -958,21 +938,10 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
     }
 
     /**
-     * Opts a wheel out of the sheet's native drag interception: once the
-     * wheel receives the down event, the BottomSheetBehavior cannot steal
-     * the gesture, so scrolling a wheel never moves/dismisses the sheet.
-     * Returns false so the picker keeps its own click/scroll handling.
+     * Wheel scrolls never move/dismiss the sheet: the disallow-intercept
+     * protection lives inside styleCenterCellPicker's ACTION_DOWN (the
+     * wheel's single touch listener) — see that method.
      */
-    private void protectWheelFromSheetDrag(NumberPicker picker) {
-        if (picker == null) return;
-        picker.setOnTouchListener((v, e) -> {
-            if (e.getActionMasked() == android.view.MotionEvent.ACTION_DOWN) {
-                v.getParent().requestDisallowInterceptTouchEvent(true);
-            }
-            return false;
-        });
-    }
-
     private void setupWheel(NumberPicker picker, int minV, int maxV, int init,
             int dividerColor, int selectedColor) {
         picker.setMinValue(minV);

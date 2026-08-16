@@ -598,7 +598,7 @@ public class Utils {
     }
 
     /** Gated press tick for buttons/controls (master + Buttons & controls). */
-    private static void pressTick(android.view.View view) {
+    public static void pressTick(android.view.View view) {
         try {
             if (hapticsAllowedForUi(view.getContext())) {
                 view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK);
