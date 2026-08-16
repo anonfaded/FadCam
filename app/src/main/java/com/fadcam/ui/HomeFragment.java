@@ -11288,17 +11288,43 @@ public class HomeFragment extends BaseFragment {
             }
         }
 
-        // Default: right-packed in preference order (timer leftmost of the group).
+        // Legacy migration: the OLD default packed all four buttons together
+        // on the right (timer first of the group). If the saved order still
+        // matches that pattern exactly, re-default the timer to the very left
+        // slot so existing users get the new organized layout.
+        if (hasExplicitSlots && quickSlotMap.size() == 4) {
+            int minSlot = Integer.MAX_VALUE;
+            int maxSlot = -1;
+            for (int s : quickSlotMap.values()) {
+                minSlot = Math.min(minSlot, s);
+                maxSlot = Math.max(maxSlot, s);
+            }
+            if (btnQuickTimer != null && quickSlotMap.containsKey(btnQuickTimer)
+                    && minSlot == quickSlotCount - 4 && maxSlot == quickSlotCount - 1
+                    && quickSlotMap.get(btnQuickTimer) == minSlot) {
+                quickSlotMap.remove(btnQuickTimer);
+            }
+        }
+
+        // Default layout: the timer is pinned to the very left available slot,
+        // and the remaining buttons stay right-packed together (mute, full,
+        // fadshot) so the row looks organized instead of cluttered.
         // Any button missing from the saved slots (corrupt/outdated data) is
-        // right-packed into the first free slot so the layout is never broken.
+        // placed into the default position so the layout is never broken.
         View[] buttons = { btnQuickTimer, btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
-        int nextSlot = quickSlotCount - buttons.length;
+        int nextSlot = quickSlotCount - (buttons.length - 1);
         for (View b : buttons) {
             if (b == null) continue;
             if (!quickSlotMap.containsKey(b)) {
-                while (quickSlotMap.containsValue(nextSlot)) nextSlot++;
-                quickSlotMap.put(b, Math.min(nextSlot, quickSlotCount - 1));
-                nextSlot++;
+                int slot;
+                if (b == btnQuickTimer) {
+                    slot = 0; // timer: the very left slot
+                } else {
+                    while (quickSlotMap.containsValue(nextSlot)) nextSlot++;
+                    slot = Math.min(nextSlot, quickSlotCount - 1);
+                    nextSlot++;
+                }
+                quickSlotMap.put(b, slot);
             } else {
                 // Clamp any out-of-range saved slot.
                 int clamped = Math.max(0, Math.min(quickSlotCount - 1, quickSlotMap.get(b)));
