@@ -5393,6 +5393,10 @@ public class RecordingService extends Service {
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
         sendBroadcast(broadcastIntent);
+        // Ask SystemUI to put the QS tile into listening state so its icon
+        // flips to ACTIVE instantly (Android 13+; may be throttled by the
+        // system — onStartListening refresh remains the guaranteed fallback).
+        com.fadcam.services.RecordingTileService.requestTileRefresh(this);
     }
 
     private void broadcastOnRecordingResumed() {
@@ -5420,6 +5424,8 @@ public class RecordingService extends Service {
         com.fadcam.Utils.vibrateRecordingStop(this);
         Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_RECORDING_STOPPED);
         sendBroadcast(broadcastIntent);
+        // QS tile: flip back to INACTIVE instantly (see broadcastOnRecordingStarted).
+        com.fadcam.services.RecordingTileService.requestTileRefresh(this);
     }
 
     private void broadcastOnPreviewOnlyStarted() {

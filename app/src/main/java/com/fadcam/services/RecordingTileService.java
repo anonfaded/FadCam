@@ -124,6 +124,27 @@ public class RecordingTileService extends TileService {
         handler.postDelayed(clickRunnable, DOUBLE_TAP_WINDOW_MS);
     }
 
+    /**
+     * Requests that SystemUI bring this tile into the listening state so a
+     * pending state change is applied IMMEDIATELY, even when the tile isn't
+     * currently visible/listening. Called by RecordingService on every
+     * start/stop transition. Available from Android 13 (Tiramisu); on older
+     * versions the tile refreshes through onStartListening when the shade
+     * opens. The system may throttle or delay the request — the guaranteed
+     * fallback remains the onStartListening refresh.
+     */
+    public static void requestTileRefresh(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            try {
+                TileService.requestListeningState(
+                        context,
+                        new android.content.ComponentName(context, RecordingTileService.class));
+            } catch (Exception e) {
+                FLog.w(TAG, "requestListeningState failed", e);
+            }
+        }
+    }
+
     private void startRecording() {
         FLog.i(TAG, "Launching RecordingStartActivity to start recording safely");
         Intent intent = new Intent(this, RecordingStartActivity.class);
@@ -201,10 +222,10 @@ public class RecordingTileService extends TileService {
         tile.setState(Tile.STATE_INACTIVE);
         if (target == CameraType.FRONT) {
             tile.setLabel(getString(R.string.front));
-            tile.setIcon(Icon.createWithResource(this, R.drawable.start_front_shortcut));
+            tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_videocam_front));
         } else {
             tile.setLabel(getString(R.string.back));
-            tile.setIcon(Icon.createWithResource(this, R.drawable.start_back_shortcut));
+            tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_videocam_back));
         }
         tile.updateTile();
 
@@ -266,18 +287,18 @@ public class RecordingTileService extends TileService {
         tile.setState(active ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
         if (active) {
             tile.setLabel(getString(R.string.stop_recording));
-            tile.setIcon(Icon.createWithResource(this, R.drawable.stop_shortcut));
+            tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_stop));
         } else {
             CameraType camera = SharedPreferencesManager.getInstance(this).getCameraSelection();
             if (camera == CameraType.FRONT) {
                 tile.setLabel(getString(R.string.shortcut_start_front));
-                tile.setIcon(Icon.createWithResource(this, R.drawable.start_front_shortcut));
+                tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_videocam_front));
             } else if (camera == CameraType.DUAL_PIP) {
                 tile.setLabel(getString(R.string.shortcut_start_dual));
-                tile.setIcon(Icon.createWithResource(this, R.drawable.start_dual_shortcut));
+                tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_videocam_dual));
             } else {
                 tile.setLabel(getString(R.string.shortcut_start_back));
-                tile.setIcon(Icon.createWithResource(this, R.drawable.start_back_shortcut));
+                tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_videocam_back));
             }
         }
         tile.updateTile();
