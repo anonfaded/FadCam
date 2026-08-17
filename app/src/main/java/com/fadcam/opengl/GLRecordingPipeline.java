@@ -1455,14 +1455,25 @@ public class GLRecordingPipeline {
         try {
             if (currentOutputFd != null && outputUri != null) {
                 final String uri = outputUri;
-                mediaMuxer.setFileReopener(() -> {
-                    if (reopenPfd != null) {
-                        try { reopenPfd.close(); } catch (Exception ignored) {}
+                mediaMuxer.setFileReopener(new com.fadcam.media.FragmentedMp4MuxerWrapper.FileReopener() {
+                    @Override
+                    public java.io.FileOutputStream reopen() throws IOException {
+                        if (reopenPfd != null) {
+                            try { reopenPfd.close(); } catch (Exception ignored) {}
+                        }
+                        reopenPfd = context.getContentResolver().openFileDescriptor(
+                                android.net.Uri.parse(uri), "rw");
+                        if (reopenPfd == null) return null;
+                        return new java.io.FileOutputStream(reopenPfd.getFileDescriptor());
                     }
-                    reopenPfd = context.getContentResolver().openFileDescriptor(
-                            android.net.Uri.parse(uri), "rw");
-                    if (reopenPfd == null) return null;
-                    return new java.io.FileOutputStream(reopenPfd.getFileDescriptor());
+
+                    @Override
+                    public java.io.FileInputStream reopenRead() throws IOException {
+                        android.os.ParcelFileDescriptor readPfd = context.getContentResolver()
+                                .openFileDescriptor(android.net.Uri.parse(uri), "r");
+                        if (readPfd == null) return null;
+                        return new java.io.FileInputStream(readPfd.getFileDescriptor());
+                    }
                 });
                 FLog.d(TAG, "[STORAGE] SAF re-opener registered for finalization: " + uri);
             }

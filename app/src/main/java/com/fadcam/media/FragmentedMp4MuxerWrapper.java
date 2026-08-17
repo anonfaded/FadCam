@@ -686,26 +686,42 @@ public class FragmentedMp4MuxerWrapper {
      */
     private void patchMvhdDuration(java.nio.channels.FileChannel channel) throws IOException {
         if (initSegmentData == null || initSegmentFilePosition < 0) return;
-        // Parse ftyp size from init segment (bytes 0-3, big-endian)
+        // Init segment layout: [ftyp][free(16)][moov[mvhd]]. Locate the mvhd
+        // box by WALKING the boxes instead of a hardcoded offset — a hardcoded
+        // ftypSize+32 landed inside mvhd.creation_time (byte-audited), leaving
+        // the real duration field 0 and corrupting creation_time.
         int ftypSize = ((initSegmentData[0] & 0xFF) << 24)
                      | ((initSegmentData[1] & 0xFF) << 16)
                      | ((initSegmentData[2] & 0xFF) << 8)
                      |  (initSegmentData[3] & 0xFF);
-        // mvhd is first child of moov; duration field is at byte 24 within mvhd
-        // mvhd starts at ftypSize + 8 (moov header), so duration is at:
-        long durationOffset = initSegmentFilePosition + ftypSize + 8 + 24;
-
-        // Compute duration in mvhd timescale units (timescale = 10000)
-        int durationVu = (int)(cumulativeDurationUs * 10000L / 1_000_000L);
-
-        java.nio.ByteBuffer patch = java.nio.ByteBuffer.allocate(4);
-        patch.putInt(durationVu);
-        patch.flip();
-
-        channel.position(durationOffset);
-        channel.write(patch);
-        FLog.i(TAG, "Patched mvhd.duration at offset " + durationOffset
-                + " to " + cumulativeDurationUs + "us (" + (cumulativeDurationUs / 1000000.0) + "s)");
+        int pos = ftypSize;
+        int end = initSegmentData.length;
+        while (pos + 8 <= end) {
+            int s = readIntBE(initSegmentData, pos);
+            int t = readIntBE(initSegmentData, pos + 4);
+            if (s < 8 || pos + s > end) break;
+            if (t == 0x6D6F6F76) { // 'moov'
+                // mvhd is the first child of moov; duration sits at byte 24
+                // inside mvhd (version 0) or 32 (version 1).
+                int mvhdPos = pos + 8;
+                int ver = initSegmentData[mvhdPos + 8] & 0xFF;
+                long durationOffset = initSegmentFilePosition + mvhdPos + 24L
+                        + (ver == 1 ? 4L : 0L);
+                // Compute duration in mvhd timescale units (timescale = 10000)
+                int durationVu = (int)(cumulativeDurationUs * 10000L / 1_000_000L);
+                java.nio.ByteBuffer patch = java.nio.ByteBuffer.allocate(4);
+                patch.putInt(durationVu);
+                patch.flip();
+                channel.position(durationOffset);
+                channel.write(patch);
+                FLog.i(TAG, "Patched mvhd.duration at offset " + durationOffset
+                        + " (ver=" + ver + ") to " + cumulativeDurationUs + "us ("
+                        + (cumulativeDurationUs / 1000000.0) + "s)");
+                return;
+            }
+            pos += s;
+        }
+        FLog.w(TAG, "mvhd duration patch skipped: moov not found in init segment");
     }
 
     /**
@@ -804,12 +820,13 @@ public class FragmentedMp4MuxerWrapper {
             // This observes the actual file content (Annex-B vs AVCC vs
             // truncated), so a "successful" finalization with structurally
             // broken samples is visible in logs instead of guessed.
-            // The original output channel is write-only ("w" fd) — reopen a
-            // READABLE channel ("rw" via SAF re-opener or RandomAccessFile).
+            // The original output channel is write-only ("w" fd), and
+            // FileOutputStream.getChannel() is write-only by CONTRACT — use a
+            // dedicated read channel (SAF "r" mode or RandomAccessFile).
             try {
-                java.nio.channels.FileChannel auditChannel = reopenChannel();
+                java.nio.channels.FileChannel auditChannel = reopenReadChannel();
                 if (auditChannel == null) {
-                    FLog.w(TAG, "[AVC-AUDIT] audit skipped: no readable re-open channel");
+                    FLog.w(TAG, "[AVC-AUDIT] audit skipped: no readable channel");
                 } else {
                     try {
                         auditChannel.position(0);
@@ -870,34 +887,24 @@ public class FragmentedMp4MuxerWrapper {
         int moovSize = moov.remaining();
         ch.position(moovPos);
         ch.write(moov);
-        // Overwrite free box with mdat header
+        // Overwrite the 16-byte free box with a 16-byte mdat header
+        // (size=1 + 64-bit largesize — valid for ANY file size). Writing the
+        // full 16 bytes is critical: an 8-byte 32-bit header used to leave the
+        // free box's 8 zero padding bytes dangling at the START of the mdat
+        // payload, which strict container walkers could choke on.
         int ftypSize = readIntBE(initSegmentData, 0);
         long freePos = initSegmentFilePosition + ftypSize;
         long mdatEnd = moovPos;
-        long mdatStart = freePos + 16;
-        // Patch free box with mdat header.
-        // mdat total size = from header start to moov start
         long mdatSize = mdatEnd - freePos;
-        if (mdatSize <= Integer.MAX_VALUE) {
-            java.nio.ByteBuffer hdr = java.nio.ByteBuffer.allocate(8);
-            hdr.putInt((int) mdatSize);
-            hdr.putInt(0x6D646174); // 'mdat'
-            hdr.flip();
-            ch.position(freePos);
-            ch.write(hdr);
-            FLog.i(TAG, "Hybrid MP4 finalized: " + fragmentPositions.size()
-                    + " fragments, moov=" + moovSize + "B, mdat(32bit)=" + mdatSize + "B");
-        } else {
-            java.nio.ByteBuffer hdr = java.nio.ByteBuffer.allocate(16);
-            hdr.putInt(1);                    // size = 1 (extended)
-            hdr.putInt(0x6D646174);           // type = 'mdat'
-            hdr.putLong(mdatEnd - mdatStart + 16);  // largesize
-            hdr.flip();
-            ch.position(freePos);
-            ch.write(hdr);
-            FLog.i(TAG, "Hybrid MP4 finalized: " + fragmentPositions.size()
-                    + " fragments, moov=" + moovSize + "B, mdat(64bit)=" + mdatSize + "B");
-        }
+        java.nio.ByteBuffer hdr = java.nio.ByteBuffer.allocate(16);
+        hdr.putInt(1);                       // size = 1 (extended)
+        hdr.putInt(0x6D646174);              // type = 'mdat'
+        hdr.putLong(mdatSize);               // largesize = full box size
+        hdr.flip();
+        ch.position(freePos);
+        ch.write(hdr);
+        FLog.i(TAG, "Hybrid MP4 finalized: " + fragmentPositions.size()
+                + " fragments, moov=" + moovSize + "B, mdat(64bit)=" + mdatSize + "B");
     }
 
     /**
@@ -908,6 +915,8 @@ public class FragmentedMp4MuxerWrapper {
      */
     public interface FileReopener {
         java.io.FileOutputStream reopen() throws IOException;
+        /** Readable stream to the SAME file — for the post-finalize audit. */
+        java.io.FileInputStream reopenRead() throws IOException;
     }
     private FileReopener fileReopener;
     public void setFileReopener(FileReopener reopener) { this.fileReopener = reopener; }
@@ -948,9 +957,35 @@ public class FragmentedMp4MuxerWrapper {
         return fresh;
     }
 
+    /** Fresh READABLE channel for the post-finalize audit. */
+    private java.nio.channels.FileChannel reopenReadChannel() {
+        // 1) Explicit re-opener with read access (SAF/fd mode).
+        if (fileReopener != null) {
+            try {
+                java.io.FileInputStream in = fileReopener.reopenRead();
+                if (in != null) {
+                    return in.getChannel();
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "FileReopener (read) failed", e);
+            }
+        }
+        // 2) Path-based read (internal storage mode).
+        if (outputPath != null) {
+            try {
+                java.io.File f = new java.io.File(outputPath);
+                if (f.exists()) {
+                    return new java.io.RandomAccessFile(f, "r").getChannel();
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "Read re-open by path failed", e);
+            }
+        }
+        return null;
+    }
+
     /** Fresh positionable channel for finalization. */
-    private java.nio.channels.FileChannel reopenChannel() {
-        // 1) Explicit re-opener (SAF/fd mode: re-resolves the content URI).
+    private java.nio.channels.FileChannel reopenChannel() {        // 1) Explicit re-opener (SAF/fd mode: re-resolves the content URI).
         if (fileReopener != null) {
             try {
                 java.io.FileOutputStream s = fileReopener.reopen();
