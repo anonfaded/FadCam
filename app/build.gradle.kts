@@ -166,6 +166,18 @@ android {
         }
     }
 
+    // Dynamic APK output names: FadCam_<flavor>_v<versionName><suffix>-<abi>.apk
+    // (default flavor has no <flavor> part; universal APK gets the literal "-universal")
+    applicationVariants.all {
+        val versionName = "${defaultConfig.versionName}${buildType.versionNameSuffix.orEmpty()}"
+        val flavor = if (flavorName != "default") "${flavorName}_" else ""
+        outputs.all {
+            val abiType = filters.firstOrNull { it.filterType == com.android.build.OutputFile.ABI }?.identifier ?: "universal"
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
+                "FadCam_${flavor}v${versionName}-${abiType}.apk"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
