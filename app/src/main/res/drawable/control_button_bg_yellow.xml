@@ -3,7 +3,7 @@
     android:color="#33FFFFFF">
     <item>
         <shape android:shape="rectangle">
-            <corners android:radius="15dp" />
+            <corners android:radius="@dimen/home_control_corner" />
             <gradient
                 android:angle="90"
                 android:startColor="#8A000000"

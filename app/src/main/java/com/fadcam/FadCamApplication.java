@@ -14,7 +14,11 @@ public class FadCamApplication extends Application implements LifecycleObserver 
     public void onCreate() {
         super.onCreate();
         ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
-        registerSelfHealingScanObserver();
+        // Room DB open + invalidation observer registration is deferred off the
+        // main thread: cold start must not block on SQLite open. The observer
+        // still catches post-kill index writes (invocation is on Room's own
+        // background invalidation thread either way).
+        new Thread(this::registerSelfHealingScanObserver, "selfheal-observer").start();
     }
 
     /**

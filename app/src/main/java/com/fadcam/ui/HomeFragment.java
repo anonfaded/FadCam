@@ -1341,7 +1341,6 @@ public class HomeFragment extends BaseFragment {
         recordingPauseStartedAt = 0L;
         recordingAccumulatedPausedDurationMs = 0L;
         latestElapsedDisplay = buildElapsedDisplayText(0L);
-        FLog.d(TAG, "resetTimers: Cleared elapsed timer state");
         updateStorageInfo();
     }
 
@@ -3733,9 +3732,6 @@ public class HomeFragment extends BaseFragment {
         @Nullable Bundle savedInstanceState
     ) {
         FLog.d(TAG, "[FragmentLifecycle] onCreateView: Inflating layout, container=" + (container == null ? "null" : "exists"));
-        
-        // Debug recording time issue
-        debugRecordingTimeVariables();
 
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         FLog.d(TAG, "[FragmentLifecycle] onCreateView: Layout inflated successfully");
@@ -3748,6 +3744,19 @@ public class HomeFragment extends BaseFragment {
                 FLog.d(TAG, "D-pad support: Focus requested on hamburger menu button");
             }
         });
+
+        // The fragment spans the full screen, so the home root must reserve the
+        // dock's exact height as bottom padding: layoutControls then seats just
+        // above the dock with its own 2dp margin on EVERY device. The pad is
+        // simply the dock's built height (rootBottom − dockTop == dockHeight,
+        // a constant), so set it statically from the dimen BEFORE the first
+        // draw — no listener, no post-layout correction, no flicker frame.
+        view.setPadding(
+            view.getPaddingLeft(),
+            view.getPaddingTop(),
+            view.getPaddingRight(),
+            (int) getResources().getDimension(R.dimen.home_dock_height)
+        );
         
         return view;
     }
@@ -3807,7 +3816,7 @@ public class HomeFragment extends BaseFragment {
         FLog.d(TAG, "Restoring fragment state after orientation change");
     }
 
-    // Debug method to help diagnose recording time issue
+    // Debug method kept for on-demand diagnosis of recording time issues
     private void debugRecordingTimeVariables() {
         FLog.d(TAG, "======== DEBUG RECORDING TIME ========");
         FLog.d(TAG, "recordingStartTime = " + recordingStartTime);
@@ -3994,20 +4003,9 @@ public class HomeFragment extends BaseFragment {
 
         // Fragment result listeners for pickers
         FLog.d(
-            "HomeFragment",
-            "REGISTERING fragment result listener for exposure compensation"
-        );
-        FLog.d(
             TAG,
             "Registering fragment result listener for exposure compensation with key: " +
             Constants.RK_EXPOSURE_COMPENSATION
-        );
-        FLog.d(
-            "HomeFragment",
-            "Using FragmentManager: " +
-            getParentFragmentManager() +
-            ", this fragment: " +
-            this
         );
         getParentFragmentManager().setFragmentResultListener(
                 Constants.RK_EXPOSURE_COMPENSATION,
@@ -4579,16 +4577,20 @@ public class HomeFragment extends BaseFragment {
         }
 
         resetTimers();
-        copyFontToInternalStorage();
-        updateStorageInfo();
-        // Initial stats update
-        FLog.d(TAG, "onViewCreated: Triggering initial stats update.");
-        updateStats();
+        updateClock();
+        // Defer non-essential I/O/DB work until after the first frame so the
+        // cold-start frame is not blocked (cache-hit paths make these no-ops
+        // on subsequent launches).
+        view.post(() -> {
+            if (!isAdded()) return;
+            copyFontToInternalStorage();
+            updateStorageInfo();
+            // Initial stats update
+            FLog.d(TAG, "onViewCreated: Triggering initial stats update.");
+            updateStats();
+        });
         // NOTE: Clock update is started in onStart(), not here, to avoid duplicate handlers
         // startUpdatingClock(); // Removed - handled in onStart()
-
-        // Update clock and date initially
-        updateClock();
 
         // updateTip(); // Duplicate call? Check if startTipsAnimation is sufficient
         setupButtonListeners();
@@ -4678,7 +4680,7 @@ public class HomeFragment extends BaseFragment {
 
             // Create focus indicator (simple circle animation)
             View focusIndicator = new View(requireContext());
-            int size = (int) (80 * getResources().getDisplayMetrics().density); // 80dp - larger and more visible
+            int size = (int) getResources().getDimension(R.dimen.home_focus_indicator_size);
             android.widget.FrameLayout.LayoutParams params =
                 new android.widget.FrameLayout.LayoutParams(size, size);
             params.leftMargin = (int) (x - size / 2f);
@@ -4791,24 +4793,12 @@ public class HomeFragment extends BaseFragment {
         gridOverlay = view.findViewById(R.id.grid_overlay);
         updateGridOverlayVisibility();
 
-        FLog.d(
-            TAG,
-            "setupTextureView: TextureView found: " + (textureView != null)
-        );
+        FLog.d(TAG, "setupTextureView: found=" + (textureView != null)
+                + " dims=" + (textureView == null ? "-" : textureView.getWidth() + "x" + textureView.getHeight()));
         if (textureView != null) {
-            FLog.d(
-                TAG,
-                "TextureView dimensions: " +
-                textureView.getWidth() +
-                "x" +
-                textureView.getHeight()
-            );
-            FLog.d(
-                TAG,
-                "TextureView visibility: " + textureView.getVisibility()
-            );
-            FLog.d(TAG, "TextureView clickable: " + textureView.isClickable());
-            FLog.d(TAG, "TextureView enabled: " + textureView.isEnabled());
+            FLog.d(TAG, "setupTextureView: vis=" + textureView.getVisibility()
+                    + " clickable=" + textureView.isClickable()
+                    + " enabled=" + textureView.isEnabled());
         }
 
         // Check if the placeholder TextView is interfering
@@ -4816,16 +4806,9 @@ public class HomeFragment extends BaseFragment {
             R.id.tvPreviewPlaceholder
         );
         if (tvPreviewPlaceholder != null) {
-            FLog.d(
-                TAG,
-                "Preview placeholder visibility: " +
-                tvPreviewPlaceholder.getVisibility()
-            );
-            FLog.d(
-                TAG,
-                "Preview placeholder clickable: " +
-                tvPreviewPlaceholder.isClickable()
-            );
+            FLog.d(TAG, "Setup preview placeholder: vis="
+                    + tvPreviewPlaceholder.getVisibility()
+                    + " clickable=" + tvPreviewPlaceholder.isClickable());
 
             // Make sure placeholder doesn't intercept touches
             tvPreviewPlaceholder.setClickable(false);
@@ -8177,9 +8160,9 @@ public class HomeFragment extends BaseFragment {
                     }
                     tileAfToggle.setTypeface(materialIconsTypeface);
                     tileAfToggle.setTextSize(
-                        android.util.TypedValue.COMPLEX_UNIT_SP,
-                        24
-                    ); // Match zoom icon size
+                        android.util.TypedValue.COMPLEX_UNIT_PX,
+                        getResources().getDimension(R.dimen.home_tile_icon_size)
+                    );
                     tileAfToggle.setText(
                         afMode ==
                             android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO
@@ -8326,8 +8309,8 @@ public class HomeFragment extends BaseFragment {
                     tileZoom.setTypeface(materialIconsTypeface);
                     tileZoom.setText(getString(R.string.icon_zoom_in_ligature));
                     tileZoom.setTextSize(
-                        android.util.TypedValue.COMPLEX_UNIT_SP,
-                        24
+                        android.util.TypedValue.COMPLEX_UNIT_PX,
+                        getResources().getDimension(R.dimen.home_tile_icon_size)
                     );
 
                     // theme)-----------
@@ -9237,6 +9220,11 @@ public class HomeFragment extends BaseFragment {
                 requireContext().getFilesDir(),
                 "ubuntu_regular.ttf"
             );
+            // One-time copy: skip when the internal file already matches the
+            // asset size, so startup does no I/O on later launches.
+            if (outFile.exists() && outFile.length() == in.available()) {
+                return;
+            }
             out = new FileOutputStream(outFile);
             copyFile(in, out);
             FLog.d(TAG, "Font copied to internal storage.");
@@ -10341,7 +10329,6 @@ public class HomeFragment extends BaseFragment {
     }
 
     private void initializeViews(View view) {
-        FLog.d(TAG, "initializeViews: Finding UI elements.");
         homeRootLayout = (view instanceof ConstraintLayout) ? (ConstraintLayout) view : null;
         tvCameraTitle = view.findViewById(R.id.tvCameraTitle);
         tvCameraSubtitle = view.findViewById(R.id.tvCameraSubtitle);
@@ -11211,9 +11198,9 @@ public class HomeFragment extends BaseFragment {
             }
         } catch (Exception ignored) {
         }
-        applyQuickActionSlotsSoon();
-        // Re-apply instantly once layout is known so the buttons never show a
-        // frame stacked at the left edge on slow devices.
+        // Re-apply when layout is known so the buttons never show a frame
+        // stacked at the left edge on slow devices. The first layout event
+        // fires the single initial pass; the width gate skips duplicates.
         quickActionsRow.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
             int w = v.getWidth();
             if (w > 0 && w != quickLastRowWidth) {
@@ -11251,9 +11238,9 @@ public class HomeFragment extends BaseFragment {
             return;
         }
         float density = getResources().getDisplayMetrics().density;
-        // 40dp slots: tighter grid so the quick icons don't feel spread out
-        // (44dp left big gaps on smaller/lower-dpi screens).
-        quickSlotWidth = Math.round(40f * density);
+        // Slot width mirrors the quick-action button width (dimen-driven so the
+        // skeletons and positions stay aligned with the real icon size).
+        quickSlotWidth = Math.round(getResources().getDimension(R.dimen.home_quick_slot_w));
         int padL = quickActionsRow.getPaddingLeft();
         int padR = quickActionsRow.getPaddingRight();
         int contentW = rowW - padL - padR;
@@ -11329,6 +11316,31 @@ public class HomeFragment extends BaseFragment {
                 // Clamp any out-of-range saved slot.
                 int clamped = Math.max(0, Math.min(quickSlotCount - 1, quickSlotMap.get(b)));
                 quickSlotMap.put(b, clamped);
+            }
+        }
+
+        // Right-pack migration: if the widest used slot leaves empty trailing
+        // slots (e.g. slot width changed after a bucket switch, or older data
+        // was saved against a narrower grid), shift every NON-TIMER button
+        // right so the group stays flush against the right edge — no orphan
+        // empty slot. The timer stays pinned to slot 0 (very left), so moving
+        // it is never needed and would create an empty slot to its left.
+        int maxUsed = -1;
+        for (int s : quickSlotMap.values()) maxUsed = Math.max(maxUsed, s);
+        if (maxUsed < quickSlotCount - 1) {
+            int delta = quickSlotCount - 1 - maxUsed;
+            for (java.util.Map.Entry<View, Integer> e : new java.util.ArrayList<>(quickSlotMap.entrySet())) {
+                if (e.getKey() == btnQuickTimer) continue;
+                quickSlotMap.put(e.getKey(), e.getValue() + delta);
+            }
+        }
+        // Self-heal: if the timer ended up off the left edge (e.g. a previous
+        // migration shifted it, or legacy data), pin it back to slot 0 when
+        // that slot is free — the timer is defined as the very-left button.
+        if (btnQuickTimer != null && quickSlotMap.containsKey(btnQuickTimer)) {
+            int timerSlot = quickSlotMap.get(btnQuickTimer);
+            if (timerSlot > 0 && !quickSlotMap.containsValue(0)) {
+                quickSlotMap.put(btnQuickTimer, 0);
             }
         }
 
@@ -11564,7 +11576,7 @@ public class HomeFragment extends BaseFragment {
         int rowW = quickActionsRow.getWidth();
         if (rowW <= 0) return;
         float density = getResources().getDisplayMetrics().density;
-        quickSlotWidth = Math.round(40f * density);
+        quickSlotWidth = Math.round(getResources().getDimension(R.dimen.home_quick_slot_w));
         // MUST mirror applyQuickActionSlots() exactly: count from the PADDED
         // content width and equally-spaced step, or the snap points overflow
         // past paddingRight (too close to the screen edge) while the icons
@@ -11574,10 +11586,10 @@ public class HomeFragment extends BaseFragment {
         int contentW = rowW - padL - padR;
         quickSlotCount = Math.max(4, contentW / quickSlotWidth); // min 4 slots (mute, full, fadshot, timer)
         quickSlotStep = contentW / (float) quickSlotCount;
-        int outlineSize = Math.round(36f * density);
-        // Label ghost sized like the 9sp bold label (e.g. "Mute"/"Full").
-        int barW = Math.round(26f * density);
-        int barH = Math.round(12f * density);
+        // Skeleton mirrors the real button: icon-shaped ghost + label bar ghost.
+        int outlineSize = Math.round(getResources().getDimension(R.dimen.home_quick_icon_size));
+        int barW = Math.round(getResources().getDimension(R.dimen.home_quick_slot_bar_w));
+        int barH = Math.round(getResources().getDimension(R.dimen.home_quick_slot_bar_h));
         for (int i = 0; i < quickSlotCount; i++) {
             // Skeleton mirrors the real button exactly: 44dp wide container,
             // 36dp icon-shaped ghost at the top, 2dp gap, then a label-shaped
@@ -13866,13 +13878,14 @@ public class HomeFragment extends BaseFragment {
         String size = sharedPreferencesManager.sharedPreferences.getString(
                 Constants.PREF_HOME_ELAPSED_SIZE,
                 ELAPSED_SIZE_MEDIUM);
+        boolean compactElapsed = getResources().getConfiguration().smallestScreenWidthDp < 400;
         float textSizeSp;
         if (ELAPSED_SIZE_SMALL.equals(size)) {
-            textSizeSp = isLandscapeMode() ? 16f : 18f;
+            textSizeSp = isLandscapeMode() ? 16f : (compactElapsed ? 20f : 18f);
         } else if (ELAPSED_SIZE_LARGE.equals(size)) {
             textSizeSp = isLandscapeMode() ? 26f : 29f;
         } else {
-            textSizeSp = isLandscapeMode() ? 21f : 23f;
+            textSizeSp = isLandscapeMode() ? 21f : (compactElapsed ? 24f : 23f);
         }
 
         CharSequence currentText = isElapsedDigitalDisplayMode()

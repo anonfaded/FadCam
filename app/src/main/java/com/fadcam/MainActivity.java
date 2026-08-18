@@ -412,8 +412,6 @@ public class MainActivity extends AppCompatActivity {
         // Check for onboarding BEFORE applying theme or language
         boolean completedOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.COMPLETED_ONBOARDING_KEY, false);
         boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
-        FLog.d("MainActivity", "DEBUG - COMPLETED_ONBOARDING_KEY raw value: " + completedOnboarding);
-        FLog.d("MainActivity", "DEBUG - isShowOnboarding() result: " + showOnboarding);
         FLog.d("MainActivity", "Should show onboarding: " + showOnboarding);
 
         if (showOnboarding) {
