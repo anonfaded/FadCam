@@ -50,7 +50,11 @@ public class RecordingToggleActivity extends Activity {
     }
 
     void finishWithoutUi() {
-        moveTaskToBack(true);
+        // Do NOT moveTaskToBack() here: it backgrounds the whole task in the same
+        // synchronous block that launched the chained start/stop activity, so that
+        // activity's onCreate (which dispatches the service command) gets aborted
+        // and the press does nothing. The chained activity backgrounds the task
+        // itself AFTER dispatching, via its own moveTaskToBack() in finally.
         finish();
     }
 }
