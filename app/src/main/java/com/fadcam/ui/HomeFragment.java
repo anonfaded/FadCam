@@ -129,6 +129,7 @@ import java.util.concurrent.Executors;
 public class HomeFragment extends BaseFragment {
 
     private static final String TAG = "HomeFragment";
+    private static final long UPDATE_CHECK_INTERVAL_MS = 60L * 60L * 1000L;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private static final String ELAPSED_ALIGNMENT_RESULT_KEY = "home_elapsed_alignment_picker";
     private static final String ELAPSED_DISPLAY_RESULT_KEY = "home_elapsed_display_picker";
@@ -1496,6 +1497,14 @@ public class HomeFragment extends BaseFragment {
                     Executors.newSingleThreadExecutor();
                 updateExecutor.execute(() -> {
                     try {
+                        // Rate-limit: GitHub feed is re-fetched at most once an
+                        // hour (epoch-ms timestamp persisted at each check).
+                        long now = System.currentTimeMillis();
+                        if (now - sharedPreferencesManager.getLong(
+                                Constants.LAST_UPDATE_CHECK_KEY, 0L)
+                                < UPDATE_CHECK_INTERVAL_MS) {
+                            return;
+                        }
                         String currentVersion = getAppVersionForUpdates();
                         com.fadcam.services.UpdateCheckService.UpdateCheckResult result =
                             com.fadcam.services.UpdateCheckService.checkForUpdate(currentVersion);
@@ -1504,6 +1513,8 @@ public class HomeFragment extends BaseFragment {
                             FLog.w(TAG, "Update check returned error, skipping UI");
                             return;
                         }
+                        sharedPreferencesManager.putLong(
+                            Constants.LAST_UPDATE_CHECK_KEY, System.currentTimeMillis());
 
                         // Auto-popup on app open:
                         //  - BETA app (package com.fadcam.beta): show the BETA update

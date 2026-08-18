@@ -10,6 +10,8 @@ public abstract class Constants {
         "pref_completed_onboarding";
     public static final String FIRST_INSTALL_CHECKED_KEY =
         "first_install_checked";
+    public static final String LAST_UPDATE_CHECK_KEY =
+        "last_update_check_ms";
 
     public static final String PREF_VIDEO_RESOLUTION_WIDTH =
         "video_resolution_width";
