@@ -3757,16 +3757,21 @@ public class HomeFragment extends BaseFragment {
         });
 
         // The fragment spans the full screen, so the home root must reserve the
-        // dock's exact height as bottom padding: layoutControls then seats just
-        // above the dock with its own 2dp margin on EVERY device. The pad is
-        // simply the dock's built height (rootBottom − dockTop == dockHeight,
-        // a constant), so set it statically from the dimen BEFORE the first
-        // draw — no listener, no post-layout correction, no flicker frame.
+        // dock's exact laid-out height as bottom padding: layoutControls then
+        // seats just above the dock with its own 2dp margin on EVERY device.
+        // Laid-out dock = home_dock_height + nav_container's own bottom padding
+        // (home_dock_padding); any nav-bar inset the dock consumes internally
+        // cancels against the same inset MainActivity pads the container by.
+        // So the pad is a pure dimen constant — set BEFORE the first draw:
+        // frame-1 correct, zero relayouts, zero flicker, identical gap on
+        // every screen (verified: 4dp short when padding was omitted; over by
+        // the inset when live-measured).
         view.setPadding(
             view.getPaddingLeft(),
             view.getPaddingTop(),
             view.getPaddingRight(),
-            (int) getResources().getDimension(R.dimen.home_dock_height)
+            (int) (getResources().getDimension(R.dimen.home_dock_height)
+                    + getResources().getDimension(R.dimen.home_dock_padding))
         );
         
         return view;
