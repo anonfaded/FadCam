@@ -793,6 +793,60 @@
                         android:shadowRadius="1"/>
                 </LinearLayout>
 
+                <!-- Bookmark button: marks the current moment while recording. -->
+                <LinearLayout
+                    android:id="@+id/btnQuickBookmark"
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"
+                    android:background="?attr/selectableItemBackgroundBorderless" android:clipChildren="false" android:clipToPadding="false">
+
+                    <TextView
+                        android:id="@+id/ivQuickBookmarkIcon"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/fullscreen_icon_bg_gradient"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:text="bookmark_add"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/white"
+                        android:contentDescription="@string/quick_bookmark_desc" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/quick_bookmark_label"
+                        android:textColor="@android:color/white"
+                        android:textSize="9sp"
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:gravity="center"
+                        android:layout_marginTop="2dp"
+                        android:shadowColor="#BB000000"
+                        android:shadowDx="1"
+                        android:shadowDy="1"
+                        android:shadowRadius="1"/>
+
+                    <com.fadcam.ui.utils.AnimatedTextView
+                        android:id="@+id/tvQuickBookmarkCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="#FFD54F"
+                        android:textSize="8sp"
+                        android:fontFamily="monospace"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:gravity="center"
+                        android:layout_marginTop="1dp"
+                        android:includeFontPadding="false"/>
+                </LinearLayout>
+
             </FrameLayout>
 
                 <LinearLayout

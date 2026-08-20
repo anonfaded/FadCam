@@ -70,6 +70,7 @@ import java.util.Collections;
  *   <li>{@link Constants#INTENT_ACTION_RESUME_DUAL_RECORDING}</li>
  *   <li>{@link Constants#INTENT_ACTION_SWAP_DUAL_CAMERAS}</li>
  *   <li>{@link Constants#INTENT_ACTION_UPDATE_PIP_CONFIG}</li>
+ *   <li>{@link Constants#INTENT_ACTION_ADD_BOOKMARK}</li>
  * </ul>
  *
  * <h3>Broadcasts</h3>
@@ -259,6 +260,10 @@ public class DualCameraRecordingService extends Service {
 
             case Constants.INTENT_ACTION_CAPTURE_PHOTO:
                 handleCapturePhoto();
+                break;
+
+            case Constants.INTENT_ACTION_ADD_BOOKMARK:
+                addBookmarkAtCurrentPosition();
                 break;
 
             default:
@@ -1761,6 +1766,60 @@ public class DualCameraRecordingService extends Service {
             .remove(Constants.PREF_RECORDING_ACCUMULATED_PAUSED_DURATION)
             .apply();
         FLog.d(TAG, "Cleared dual recording timeline state");
+    }
+
+    // ── Bookmarks ─────────────────────────────────────────────────────
+
+    /** Milliseconds recorded so far, with paused stretches taken out. */
+    private long getEffectiveTimelineMs() {
+        if (recordingStartTime <= 0L) {
+            return 0L;
+        }
+        long anchor = (state == DualCameraState.PAUSED && pauseStartedAt > 0L)
+                ? pauseStartedAt
+                : SystemClock.elapsedRealtime();
+        return Math.max(0L, anchor - recordingStartTime - accumulatedPausedDurationMs);
+    }
+
+    /**
+     * Stores a bookmark for the moment currently being recorded.
+     *
+     * <p>Dual recording never splits into segments, so the session timeline is
+     * already the offset inside the output file. Ignored when nothing is being
+     * recorded, because there would be no file to attach the mark to.</p>
+     */
+    private void addBookmarkAtCurrentPosition() {
+        if (state != DualCameraState.RECORDING && state != DualCameraState.PAUSED) {
+            FLog.w(TAG, "addBookmarkAtCurrentPosition: ignored — no active dual recording");
+            return;
+        }
+        if (lastRecordingUriString == null || lastRecordingUriString.isEmpty()) {
+            FLog.w(TAG, "addBookmarkAtCurrentPosition: ignored — no output file yet");
+            return;
+        }
+        try {
+            String mediaName = com.fadcam.bookmarks.BookmarkRepository
+                    .resolveMediaName(this, Uri.parse(lastRecordingUriString));
+            if (mediaName == null) {
+                FLog.w(TAG, "addBookmarkAtCurrentPosition: could not resolve a name for "
+                        + lastRecordingUriString);
+                return;
+            }
+            long positionMs = getEffectiveTimelineMs();
+            int total = com.fadcam.bookmarks.BookmarkRepository.getInstance(this)
+                    .add(mediaName, positionMs);
+            broadcastOnBookmarkAdded(positionMs, total);
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to add bookmark for " + lastRecordingUriString, e);
+        }
+    }
+
+    /** Tells the UI that a bookmark landed, so it can confirm it to the user. */
+    private void broadcastOnBookmarkAdded(long positionMs, int total) {
+        Intent intent = new Intent(Constants.BROADCAST_ON_BOOKMARK_ADDED);
+        intent.putExtra(Constants.EXTRA_BOOKMARK_POSITION_MS, positionMs);
+        intent.putExtra(Constants.EXTRA_BOOKMARK_COUNT, total);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     // ── Broadcasting ──────────────────────────────────────────────────

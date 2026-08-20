@@ -116,6 +116,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private MaterialButton btnTapFocusToggle;
     private View containerFullscreenMirror;
     private View containerFullscreenShot;
+    private View containerFullscreenBookmark;
+    private TextView btnFullscreenBookmark;
+    private TextView tvFullscreenBookmarkCount;
     private TextView labelFullscreenMirror;
     private TextView labelFullscreenShot;
     private View containerZoomHud;
@@ -158,6 +161,13 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private boolean isPreviewOnlyActive = false;
     private boolean isPreviewAttachedInRecording = true;
     private boolean tapToFocusEnabled = true;
+    /**
+     * Bookmarks confirmed by the recording service while this screen was open.
+     * -1 means "not known yet" — the badge stays hidden rather than claiming a
+     * count this screen has not been told, since the recording may already carry
+     * marks placed from the home preview.
+     */
+    private int knownBookmarkCount = -1;
     private float pinchZoomRatio = 1.0f;
     private long lastZoomDispatchMs = 0L;
     private float lastDispatchedZoomRatio = -1f;
@@ -206,6 +216,17 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         }
     };
 
+    private boolean bookmarkReceiverRegistered = false;
+    private final BroadcastReceiver bookmarkReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent == null) return;
+            onBookmarkAdded(
+                    intent.getLongExtra(Constants.EXTRA_BOOKMARK_POSITION_MS, 0L),
+                    intent.getIntExtra(Constants.EXTRA_BOOKMARK_COUNT, Math.max(0, knownBookmarkCount) + 1));
+        }
+    };
+
     private boolean recordingStateReceiverRegistered = false;
     private final BroadcastReceiver recordingStateReceiver = new BroadcastReceiver() {
         @Override
@@ -218,7 +239,14 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 isRecordingActive = true;
             } else if (Constants.BROADCAST_ON_RECORDING_RESUMED.equals(action)
                     || Constants.BROADCAST_ON_RECORDING_STARTED.equals(action)
-                    || Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED.equals(action)) {
+                    || Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED.equals(action)
+                    || Constants.BROADCAST_ON_DUAL_RECORDING_STARTED.equals(action)) {
+                if (Constants.BROADCAST_ON_RECORDING_STARTED.equals(action)
+                        || Constants.BROADCAST_ON_DUAL_RECORDING_STARTED.equals(action)) {
+                    // Fresh session — the badge starts from "not known yet" again.
+                    knownBookmarkCount = -1;
+                    updateBookmarkUi();
+                }
                 isRecordingPaused = false;
                 isRecordingActive = true;
                 isPreviewAttachedInRecording = true;
@@ -230,6 +258,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                 isRecordingPaused = false;
                 isRecordingActive = false;
                 isPreviewOnlyActive = false;
+                knownBookmarkCount = -1;
+                updateBookmarkUi();
             } else if (Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK.equals(action)) {
                 try {
                     RecordingState state = (RecordingState) intent.getSerializableExtra(
@@ -253,7 +283,10 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                         isRecordingPaused = false;
                         isRecordingActive = true;
                         isPreviewAttachedInRecording = true;
-                    } else {
+                    } else if (!isDualRecordingRunning()) {
+                        // The single-camera service answers even while dual camera
+                        // owns the recording; taking its idle state at face value
+                        // would make the controls look idle mid-recording.
                         isRecordingPaused = false;
                         isRecordingActive = false;
                     }
@@ -281,6 +314,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
             updatePauseResumeButton();
             updateMirrorButtonVisibilityAndState();
+            updateBookmarkButtonVisibility();
             updatePreviewHintVisibility();
         }
     };
@@ -318,6 +352,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         setupMirrorButton();
         setupPauseResumeButton();
         setupCaptureShotButton();
+        setupBookmarkButton();
         setupZoomHud();
         setupSystemInsets();
         setupBackPressedHandler();
@@ -326,7 +361,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         applyFullscreenAvatarState(false, false);
         registerTorchReceiver();
         registerRecordingStateReceiver();
+        registerBookmarkReceiver();
         requestRecordingStateSync();
+        syncDualRecordingState();
         scheduleAutoHide();
     }
 
@@ -340,6 +377,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         syncZoomUiStateFromPrefs(false);
         updatePreviewHintVisibility();
         requestRecordingStateSync();
+        syncDualRecordingState();
+        updateBookmarkButtonVisibility();
         syncPreviewWithPreference();
         if (previewSurface != null && textureView != null && textureView.isAvailable()) {
             sendSurfaceToService(previewSurface,
@@ -364,6 +403,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         autoHideHandler.removeCallbacks(autoHideRunnable);
         unregisterTorchReceiver();
         unregisterRecordingStateReceiver();
+        unregisterBookmarkReceiver();
         // Release local surface only — do NOT send null to service.
         // HomeFragment will immediately push its own surface when it resumes,
         // avoiding the race condition that causes "stuck preview" frames.
@@ -432,6 +472,9 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         labelFullscreenMirror = findViewById(R.id.labelFullscreenMirror);
         containerFullscreenShot = findViewById(R.id.containerFullscreenShot);
         labelFullscreenShot = findViewById(R.id.labelFullscreenShot);
+        containerFullscreenBookmark = findViewById(R.id.containerFullscreenBookmark);
+        btnFullscreenBookmark = findViewById(R.id.btnFullscreenBookmark);
+        tvFullscreenBookmarkCount = findViewById(R.id.tvFullscreenBookmarkCount);
         containerZoomHud = findViewById(R.id.containerZoomHud);
         textZoomHud = findViewById(R.id.textZoomHud);
         btnZoomReset = findViewById(R.id.btnZoomReset);
@@ -460,6 +503,93 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             startService(intent);
             scheduleAutoHide();
         });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Bookmark — mark the moment being recorded, without leaving fullscreen
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void setupBookmarkButton() {
+        if (btnFullscreenBookmark == null) return;
+        btnFullscreenBookmark.setOnClickListener(v -> {
+            if (!isRecordingSessionActive()) return;
+            try {
+                if (com.fadcam.Utils.hapticsAllowedForUi(this)) {
+                    v.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+                }
+            } catch (Exception ignored) { }
+            Intent intent = new Intent(this, getTargetServiceClass());
+            intent.setAction(Constants.INTENT_ACTION_ADD_BOOKMARK);
+            startService(intent);
+            scheduleAutoHide();
+        });
+        updateBookmarkUi();
+        updateBookmarkButtonVisibility();
+    }
+
+    /** Confirms a stored bookmark: shows the running total and where it landed. */
+    private void onBookmarkAdded(long positionMs, int total) {
+        knownBookmarkCount = total;
+        updateBookmarkUi();
+        Toast.makeText(this,
+                getString(R.string.quick_bookmark_added_toast,
+                        com.fadcam.ui.faditor.util.TimeFormatter.formatAuto(positionMs)),
+                Toast.LENGTH_SHORT).show();
+    }
+
+    /** Reflects the known bookmark count on the icon and the badge under it. */
+    private void updateBookmarkUi() {
+        if (btnFullscreenBookmark != null) {
+            btnFullscreenBookmark.setText(knownBookmarkCount > 0 ? "bookmark_added" : "bookmark_add");
+        }
+        if (tvFullscreenBookmarkCount != null) {
+            tvFullscreenBookmarkCount.setVisibility(knownBookmarkCount >= 0 ? View.VISIBLE : View.GONE);
+            if (knownBookmarkCount >= 0) {
+                tvFullscreenBookmarkCount.setText(String.valueOf(knownBookmarkCount));
+            }
+        }
+    }
+
+    /**
+     * Bookmarking needs a file to attach the mark to, so the button only shows
+     * while a recording — single or dual camera — is running or paused, and it
+     * follows the same auto-hide as the rest of the controls.
+     */
+    private void updateBookmarkButtonVisibility() {
+        if (containerFullscreenBookmark == null) return;
+        boolean show = isRecordingSessionActive() && controlsVisible;
+        containerFullscreenBookmark.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * Whether something is being recorded right now. Dual recording is read off
+     * the running service: it broadcasts state changes but, unlike the
+     * single-camera service, answers no state request, so a dual session that
+     * began before this screen opened would otherwise go unnoticed.
+     */
+    private boolean isRecordingSessionActive() {
+        return isRecordingActive || isRecordingPaused || isDualRecordingRunning();
+    }
+
+    private void registerBookmarkReceiver() {
+        if (bookmarkReceiverRegistered) return;
+        try {
+            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
+                    .registerReceiver(bookmarkReceiver,
+                            new IntentFilter(Constants.BROADCAST_ON_BOOKMARK_ADDED));
+            bookmarkReceiverRegistered = true;
+        } catch (Exception e) {
+            FLog.e(TAG, "Error registering bookmark receiver", e);
+        }
+    }
+
+    private void unregisterBookmarkReceiver() {
+        if (!bookmarkReceiverRegistered) return;
+        try {
+            androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
+                    .unregisterReceiver(bookmarkReceiver);
+        } catch (Exception ignored) { }
+        bookmarkReceiverRegistered = false;
     }
 
     private void setupTextureView() {
@@ -969,6 +1099,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         filter.addAction(Constants.BROADCAST_ON_RECORDING_STATE_CALLBACK);
         filter.addAction(Constants.BROADCAST_ON_PREVIEW_ONLY_STARTED);
         filter.addAction(Constants.BROADCAST_ON_PREVIEW_ONLY_STOPPED);
+        filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_STARTED);
         filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED);
         filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_PAUSED);
         filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_STOPPED);
@@ -990,6 +1121,27 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             unregisterReceiver(recordingStateReceiver);
         } catch (Exception ignored) { }
         recordingStateReceiverRegistered = false;
+    }
+
+    /**
+     * Adopts an already-running dual recording.
+     *
+     * <p>The dual service broadcasts its state changes but answers no state
+     * request, so a session that began before this screen opened would leave the
+     * controls looking idle — the dock would offer "Start" mid-recording, and the
+     * bookmark button would stay hidden.</p>
+     */
+    private void syncDualRecordingState() {
+        if (isRecordingActive || !isDualRecordingRunning()) {
+            return;
+        }
+        isRecordingActive = true;
+        isRecordingPaused = prefs.sharedPreferences
+                .getLong(Constants.PREF_RECORDING_PAUSE_STARTED_AT, 0L) > 0L;
+        isPreviewAttachedInRecording = true;
+        updatePauseResumeButton();
+        updateBookmarkButtonVisibility();
+        updatePreviewHintVisibility();
     }
 
     private void requestRecordingStateSync() {
@@ -1816,6 +1968,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         animateBar(topBar, true);
         animateBar(bottomBar, true);
         animateBar(containerFullscreenShot, true);
+        animateBar(containerFullscreenBookmark, isRecordingSessionActive());
         animateBar(containerFullscreenMirror, prefs.getCameraSelection() == CameraType.FRONT);
     }
 
@@ -1825,6 +1978,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         animateBar(topBar, false);
         animateBar(bottomBar, false);
         animateBar(containerFullscreenShot, false);
+        animateBar(containerFullscreenBookmark, false);
         animateBar(containerFullscreenMirror, false);
     }
 

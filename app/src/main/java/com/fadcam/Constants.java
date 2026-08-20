@@ -424,7 +424,7 @@ public abstract class Constants {
     // Quick-action button slots (comma-separated "token:slot" pairs). Key bumped to
     // v2 so polluted positions saved by earlier broken drag builds are discarded.
     public static final String PREF_QUICK_ACTIONS_ORDER = "pref_quick_actions_slots_v2";
-    public static final String DEFAULT_QUICK_ACTIONS_ORDER = "timer,mute,full,fadshot";
+    public static final String DEFAULT_QUICK_ACTIONS_ORDER = "timer,mute,full,fadshot,bookmark";
     // Sidebar mini apps: pipe-separated order of ALL mini app ids (user-reorderable)
     // + how many of the top of that order are shown in the home sidebar (default 3).
     // Count key bumped to v2 so early test builds' stored values are discarded.
@@ -515,6 +515,24 @@ public abstract class Constants {
         "com.fadcam.TOGGLE_RECORDING_TORCH";
     public static final String INTENT_ACTION_CAPTURE_PHOTO =
         "com.fadcam.CAPTURE_PHOTO";
+
+    // -------------- Recording bookmarks Start --------------
+    /**
+     * Asks the recording service to bookmark the moment the user is currently
+     * recording. Handled only while a recording is running or paused.
+     */
+    public static final String INTENT_ACTION_ADD_BOOKMARK =
+        "com.fadcam.ADD_BOOKMARK";
+    /** Sent back once a bookmark has been stored for the active segment. */
+    public static final String BROADCAST_ON_BOOKMARK_ADDED =
+        "ON_BOOKMARK_ADDED";
+    /** Extra (long): the bookmarked offset inside the active segment, in ms. */
+    public static final String EXTRA_BOOKMARK_POSITION_MS =
+        "com.fadcam.EXTRA_BOOKMARK_POSITION_MS";
+    /** Extra (int): how many bookmarks the active segment now has. */
+    public static final String EXTRA_BOOKMARK_COUNT =
+        "com.fadcam.EXTRA_BOOKMARK_COUNT";
+    // -------------- Recording bookmarks End --------------
     // Broadcast action sent by RecordingService when video processing is done
     public static final String ACTION_RECORDING_COMPLETE =
         "com.fadcam.RECORDING_COMPLETE";
