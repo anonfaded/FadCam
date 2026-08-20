@@ -1679,6 +1679,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         Uri videoUri = videoItem.uri;
         boolean renameSuccess = false;
         Uri newUri = null;
+        // The name the file actually ended up with: collision handling can append a
+        // suffix, and anything keyed by display name (bookmarks) must follow the file.
+        String effectiveName = newFullName;
 
         try {
             FLog.d(TAG, "Attempting rename. URI: " + videoUri + ", Scheme: " + videoUri.getScheme() + ", New Name: "
@@ -1699,6 +1702,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 if (oldFile.renameTo(newFile)) {
                     renameSuccess = true;
                     newUri = Uri.fromFile(newFile);
+                    effectiveName = uniqueName;
                     FLog.i(TAG, "Renamed file system file successfully to: " + uniqueName);
                 } else {
                     FLog.e(TAG, "File.renameTo() failed for " + oldFile.getPath());
@@ -1722,6 +1726,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 newUri = DocumentsContract.renameDocument(context.getContentResolver(), videoUri, finalName);
                 if (newUri != null) {
                     renameSuccess = true;
+                    effectiveName = finalName;
                     FLog.i(TAG, "Renamed SAF document successfully to: " + finalName + ", New URI: " + newUri);
                 } else {
                     FLog.w(TAG, "DocumentsContract.renameDocument returned null for: " + videoUri + " to '" + finalName
@@ -1735,6 +1740,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         FLog.w(TAG, "Rename check: File with new name exists under original URI. Assuming success.");
                         newUri = checkDoc.getUri();
                         renameSuccess = true;
+                        effectiveName = finalName;
                     } else { // Check if a new file with the new name exists in the parent
                         DocumentFile parent = checkDoc != null ? checkDoc.getParentFile() : null;
                         if (parent != null) {
@@ -1743,6 +1749,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                                 FLog.w(TAG, "Rename check: File with new name exists in parent. Assuming success.");
                                 newUri = renamedFile.getUri();
                                 renameSuccess = true;
+                                effectiveName = finalName;
                             }
                         }
                     }
@@ -1755,11 +1762,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 // Bookmarks are keyed by display name — re-key them so the marks
                 // stay attached to the recording the user just renamed.
                 com.fadcam.bookmarks.BookmarkRepository.getInstance(context)
-                        .move(videoItem.displayName, newFullName);
+                        .move(videoItem.displayName, effectiveName);
                 final Uri finalNewUri = newUri; // Create an effectively final variable
                 VideoItem updatedItem = new VideoItem(
                         finalNewUri,
-                        newFullName,
+                        effectiveName,
                         videoItem.size,
                         System.currentTimeMillis(),
                         videoItem.category,

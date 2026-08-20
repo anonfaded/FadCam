@@ -147,11 +147,14 @@ public final class BookmarkRepository {
     /**
      * Reads every bookmark stored for a media file.
      *
+     * <p>Unreadable data is dropped in place, so this read can mutate the store —
+     * hence the lock and the synchronous commit shared with the write path.</p>
+     *
      * @param mediaName the media's display name
      * @return a modifiable list ordered by position; empty when nothing is stored
      */
     @NonNull
-    public List<Bookmark> getAll(@Nullable String mediaName) {
+    public synchronized List<Bookmark> getAll(@Nullable String mediaName) {
         List<Bookmark> bookmarks = new ArrayList<>();
         if (mediaName == null || mediaName.isEmpty()) {
             return bookmarks;
@@ -171,7 +174,7 @@ public final class BookmarkRepository {
             Collections.sort(bookmarks);
         } catch (Exception e) {
             FLog.w(TAG, "Corrupt bookmark data for " + mediaName + ", dropping it: " + e.getMessage());
-            preferences.edit().remove(KEY_PREFIX + mediaName).apply();
+            preferences.edit().remove(KEY_PREFIX + mediaName).commit();
             bookmarks.clear();
         }
         return bookmarks;
