@@ -2629,6 +2629,9 @@ public class HomeFragment extends BaseFragment {
                     isDualRecordingActive = true;
                     recordingState = RecordingState.IN_PROGRESS;
                     applyRecordingTimelineFromIntent(i);
+                    // Fresh session — the bookmark badge starts from zero again.
+                    sessionBookmarkCount = 0;
+                    updateQuickBookmarkUi();
                     setUIForRecordingActive();
                     if (getContext() != null) {
                         Utils.showQuickToast(requireContext(), R.string.dual_recording_started);
@@ -11244,7 +11247,8 @@ public class HomeFragment extends BaseFragment {
             } catch (Exception ignored) {
             }
             try {
-                Intent intent = new Intent(requireContext(), RecordingService.class);
+                Intent intent = new Intent(requireContext(),
+                        isDualRecordingActive ? DualCameraRecordingService.class : RecordingService.class);
                 intent.setAction(Constants.INTENT_ACTION_ADD_BOOKMARK);
                 requireContext().startService(intent);
             } catch (Exception e) {
@@ -12025,10 +12029,9 @@ public class HomeFragment extends BaseFragment {
             btnQuickMuteAudio.setVisibility((show && audioEnabled) ? View.VISIBLE : View.GONE);
         }
         // Bookmarking needs a file to attach the mark to, so it only appears
-        // while a normal recording is running or paused.
+        // while a recording is running or paused — single or dual camera alike.
         if (btnQuickBookmark != null) {
-            boolean canBookmark = isRecordingOrPaused() && !isDualRecordingActive;
-            btnQuickBookmark.setVisibility(canBookmark ? View.VISIBLE : View.GONE);
+            btnQuickBookmark.setVisibility(isRecordingOrPaused() ? View.VISIBLE : View.GONE);
             updateQuickBookmarkUi();
         }
         // Keep the preview hint clear of the icon row whenever it appears/disappears.
