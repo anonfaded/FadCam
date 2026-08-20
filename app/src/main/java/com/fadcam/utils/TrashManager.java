@@ -510,6 +510,11 @@ public class TrashManager {
                         + item.getTrashFileName());
             }
 
+            // The recording is gone for good — drop the bookmarks that pointed
+            // into it so they never resurface on a same-named future recording.
+            com.fadcam.bookmarks.BookmarkRepository.getInstance(context)
+                    .clear(item.getOriginalDisplayName());
+
             // Remove from metadata regardless of file deletion success,
             // as the intent is to remove it from the trash list.
             // If file deletion failed, it's an orphaned file, but metadata should be clean.
@@ -550,6 +555,15 @@ public class TrashManager {
             // Clear metadata anyway, in case it's out of sync
             saveTrashMetadata(context, new ArrayList<>());
             return true;
+        }
+
+        // Everything in the trash is about to go — drop their bookmarks too.
+        com.fadcam.bookmarks.BookmarkRepository bookmarkRepository =
+                com.fadcam.bookmarks.BookmarkRepository.getInstance(context);
+        for (TrashItem item : loadTrashMetadata(context)) {
+            if (item != null) {
+                bookmarkRepository.clear(item.getOriginalDisplayName());
+            }
         }
 
         boolean allFilesDeleted = true;

@@ -1752,6 +1752,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             }
 
             if (renameSuccess && newUri != null) {
+                // Bookmarks are keyed by display name — re-key them so the marks
+                // stay attached to the recording the user just renamed.
+                com.fadcam.bookmarks.BookmarkRepository.getInstance(context)
+                        .move(videoItem.displayName, newFullName);
                 final Uri finalNewUri = newUri; // Create an effectively final variable
                 VideoItem updatedItem = new VideoItem(
                         finalNewUri,

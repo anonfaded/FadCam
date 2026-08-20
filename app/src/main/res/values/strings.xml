@@ -1102,6 +1102,16 @@
     <string name="quick_countdown_label">Countdown</string>
     <string name="quick_countdown_desc">Start recording after a countdown</string>
     <string name="quick_unmute_label">Unmute</string>
+    <!-- Recording bookmarks -->
+    <string name="quick_bookmark_label">Mark</string>
+    <string name="quick_bookmark_desc">Bookmark this moment</string>
+    <string name="quick_bookmark_added_toast">Bookmarked at %1$s</string>
+    <string name="bookmarks_title">Bookmarks</string>
+    <string name="bookmarks_desc">Jump to a bookmarked moment</string>
+    <string name="bookmarks_empty">No bookmarks in this recording yet.</string>
+    <string name="bookmarks_item_label">Mark %1$d</string>
+    <string name="bookmarks_delete_desc">Delete bookmark</string>
+    <string name="bookmarks_clear_all">Clear all bookmarks</string>
     <string name="grid_lines_subtitle">Rule-of-thirds overlay on the preview</string>
     <string name="preview_quick_actions_state_always">Always visible (idle + recording)</string>
     <string name="preview_quick_actions_state_recording_only">Visible only while recording</string>

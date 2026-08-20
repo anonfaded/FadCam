@@ -323,6 +323,11 @@ public class HomeFragment extends BaseFragment {
     private View btnCaptureShotPreview;
     private View btnQuickMuteAudio;
     private View btnQuickTimer;
+    private View btnQuickBookmark;
+    private android.widget.TextView ivQuickBookmarkIcon;
+    private com.fadcam.ui.utils.AnimatedTextView tvQuickBookmarkCount;
+    /** Bookmarks taken in the running recording — resets with every session. */
+    private int sessionBookmarkCount = 0;
     private TextView tvQuickTimerValue;
     private TextView ivQuickMuteIcon;
     private TextView tvQuickMuteLabel;
@@ -477,6 +482,7 @@ public class HomeFragment extends BaseFragment {
     private BroadcastReceiver broadcastOnMirrorChanged;
     private BroadcastReceiver broadcastOnZoomChanged;
     private BroadcastReceiver broadcastOnExposureChanged;
+    private BroadcastReceiver broadcastOnBookmarkAdded;
     private volatile boolean isCameraSwitchInProgress = false;
     private volatile long lastCameraSwitchCompleteTime = 0; // Debounce duplicate toasts
     private volatile long lastCameraSwitchTime = 0; // Track when switch completed to prevent button disable
@@ -2433,6 +2439,10 @@ public class HomeFragment extends BaseFragment {
                     // Get timestamp from the service with current time as fallback
                     applyRecordingTimelineFromIntent(i);
 
+                    // Fresh session — the bookmark badge starts from zero again.
+                    sessionBookmarkCount = 0;
+                    updateQuickBookmarkUi();
+
                     // Perform non-UI actions previously in onRecordingStarted(true)
                     // WakeLock moved to service
                     setVideoBitrate();
@@ -3371,6 +3381,17 @@ public class HomeFragment extends BaseFragment {
             }
         };
 
+        // Receiver: a bookmark was stored for the running recording
+        broadcastOnBookmarkAdded = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (!isAdded() || intent == null) return;
+                onBookmarkAdded(
+                        intent.getLongExtra(Constants.EXTRA_BOOKMARK_POSITION_MS, 0L),
+                        intent.getIntExtra(Constants.EXTRA_BOOKMARK_COUNT, sessionBookmarkCount + 1));
+            }
+        };
+
         // Receiver: mirror state changed from web dashboard
         broadcastOnMirrorChanged = new BroadcastReceiver() {
             @Override
@@ -3431,7 +3452,8 @@ public class HomeFragment extends BaseFragment {
     private void registerCameraSwitchReceivers(Context context) {
         if (broadcastOnCameraSwitchStarted == null 
                 || broadcastOnCameraSwitchComplete == null 
-                || broadcastOnCameraSwitchFailed == null) {
+                || broadcastOnCameraSwitchFailed == null
+                || broadcastOnBookmarkAdded == null) {
             initializeCameraSwitchReceivers();
         }
 
@@ -3442,6 +3464,7 @@ public class HomeFragment extends BaseFragment {
             IntentFilter mirrorFilter = new IntentFilter(Constants.BROADCAST_ON_MIRROR_CHANGED);
             IntentFilter zoomFilter = new IntentFilter(Constants.BROADCAST_ON_ZOOM_CHANGED);
             IntentFilter exposureFilter = new IntentFilter(Constants.BROADCAST_ON_EXPOSURE_CHANGED);
+            IntentFilter bookmarkFilter = new IntentFilter(Constants.BROADCAST_ON_BOOKMARK_ADDED);
 
             androidx.localbroadcastmanager.content.LocalBroadcastManager lbm =
                     androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context);
@@ -3451,6 +3474,7 @@ public class HomeFragment extends BaseFragment {
             lbm.registerReceiver(broadcastOnMirrorChanged, mirrorFilter);
             lbm.registerReceiver(broadcastOnZoomChanged, zoomFilter);
             lbm.registerReceiver(broadcastOnExposureChanged, exposureFilter);
+            lbm.registerReceiver(broadcastOnBookmarkAdded, bookmarkFilter);
             FLog.d(TAG, "Camera switch + control receivers registered successfully");
         } catch (Exception e) {
             FLog.e(TAG, "Error registering camera switch receivers", e);
@@ -3479,6 +3503,9 @@ public class HomeFragment extends BaseFragment {
             }
             if (broadcastOnExposureChanged != null) {
                 androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastOnExposureChanged);
+            }
+            if (broadcastOnBookmarkAdded != null) {
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(context).unregisterReceiver(broadcastOnBookmarkAdded);
             }
             FLog.d(TAG, "Camera switch + control receivers unregistered");
         } catch (Exception e) {
@@ -10504,6 +10531,9 @@ public class HomeFragment extends BaseFragment {
         btnCaptureShotPreview = view.findViewById(R.id.btnCaptureShotPreview);
         btnQuickMuteAudio = view.findViewById(R.id.btnQuickMuteAudio);
         btnQuickTimer = view.findViewById(R.id.btnQuickTimer);
+        btnQuickBookmark = view.findViewById(R.id.btnQuickBookmark);
+        ivQuickBookmarkIcon = view.findViewById(R.id.ivQuickBookmarkIcon);
+        tvQuickBookmarkCount = view.findViewById(R.id.tvQuickBookmarkCount);
         tvQuickTimerValue = view.findViewById(R.id.tvQuickTimerValue);
         ivQuickMuteIcon = view.findViewById(R.id.ivQuickMuteIcon);
         tvQuickMuteLabel = view.findViewById(R.id.tvQuickMuteLabel);
@@ -10517,6 +10547,7 @@ public class HomeFragment extends BaseFragment {
         setupCaptureShotButton();
         setupQuickMuteButton();
         setupQuickTimerButton();
+        setupQuickBookmarkButton();
         setupQuickActionsReorder();
         setupPreviewZoomHud();
         // NOTE: quick-action press haptics live inside the reorder gesture's
@@ -11193,6 +11224,63 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    // ─── Bookmark quick action ────────────────────────────────────────────
+
+    /**
+     * Wires the bookmark quick-action. A tap asks the recording service to mark
+     * the moment currently being recorded; the service answers with a broadcast
+     * carrying the running total, which drives the small count under the icon.
+     */
+    private void setupQuickBookmarkButton() {
+        if (btnQuickBookmark == null) return;
+        btnQuickBookmark.setOnClickListener(v -> {
+            if (!isRecordingOrPaused()) {
+                return;
+            }
+            try {
+                if (com.fadcam.Utils.hapticsAllowedForUi(v.getContext())) {
+                    v.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+                }
+            } catch (Exception ignored) {
+            }
+            try {
+                Intent intent = new Intent(requireContext(), RecordingService.class);
+                intent.setAction(Constants.INTENT_ACTION_ADD_BOOKMARK);
+                requireContext().startService(intent);
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed to dispatch bookmark request: " + e.getMessage());
+            }
+        });
+        updateQuickBookmarkUi();
+    }
+
+    /**
+     * Confirms a stored bookmark: refreshes the count badge and tells the user
+     * where the mark landed.
+     *
+     * @param positionMs offset the bookmark was stored at, in milliseconds
+     * @param total      how many bookmarks the active recording now has
+     */
+    private void onBookmarkAdded(long positionMs, int total) {
+        sessionBookmarkCount = total;
+        updateQuickBookmarkUi();
+        if (!isAdded() || getContext() == null) return;
+        Toast.makeText(requireContext(),
+                getString(R.string.quick_bookmark_added_toast,
+                        com.fadcam.ui.faditor.util.TimeFormatter.formatAuto(positionMs)),
+                Toast.LENGTH_SHORT).show();
+    }
+
+    /** Reflects the session bookmark count on the quick-action badge. */
+    private void updateQuickBookmarkUi() {
+        if (tvQuickBookmarkCount != null) {
+            tvQuickBookmarkCount.setText(String.valueOf(sessionBookmarkCount));
+        }
+        if (ivQuickBookmarkIcon != null) {
+            ivQuickBookmarkIcon.setText(sessionBookmarkCount > 0 ? "bookmark_added" : "bookmark_add");
+        }
+    }
+
     // ─── Quick-actions rearrange (hold → drag → release) ───────────────────
 
     /**
@@ -11225,7 +11313,7 @@ public class HomeFragment extends BaseFragment {
             }
         });
 
-        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview, btnQuickTimer };
+        View[] buttons = quickActionButtons();
         for (final View b : buttons) {
             if (b == null) continue;
             b.setOnTouchListener((v, event) -> handleQuickActionGesture(v, event));
@@ -11260,7 +11348,7 @@ public class HomeFragment extends BaseFragment {
         int padL = quickActionsRow.getPaddingLeft();
         int padR = quickActionsRow.getPaddingRight();
         int contentW = rowW - padL - padR;
-        quickSlotCount = Math.max(4, contentW / quickSlotWidth); // min 4 slots (mute, full, fadshot, timer)
+        quickSlotCount = Math.max(5, contentW / quickSlotWidth); // min 5 slots (timer, mute, full, fadshot, bookmark)
         // Equal spacing across the padded content area — symmetric on both sides.
         quickSlotStep = contentW / (float) quickSlotCount;
         quickSlotMap.clear();
@@ -11314,7 +11402,7 @@ public class HomeFragment extends BaseFragment {
         // fadshot) so the row looks organized instead of cluttered.
         // Any button missing from the saved slots (corrupt/outdated data) is
         // placed into the default position so the layout is never broken.
-        View[] buttons = { btnQuickTimer, btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview };
+        View[] buttons = { btnQuickTimer, btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview, btnQuickBookmark };
         int nextSlot = quickSlotCount - (buttons.length - 1);
         for (View b : buttons) {
             if (b == null) continue;
@@ -11600,7 +11688,7 @@ public class HomeFragment extends BaseFragment {
         int padL = quickActionsRow.getPaddingLeft();
         int padR = quickActionsRow.getPaddingRight();
         int contentW = rowW - padL - padR;
-        quickSlotCount = Math.max(4, contentW / quickSlotWidth); // min 4 slots (mute, full, fadshot, timer)
+        quickSlotCount = Math.max(5, contentW / quickSlotWidth); // min 5 slots (timer, mute, full, fadshot, bookmark)
         quickSlotStep = contentW / (float) quickSlotCount;
         // Skeleton mirrors the real button: icon-shaped ghost + label bar ghost.
         int outlineSize = Math.round(getResources().getDimension(R.dimen.home_quick_icon_size));
@@ -11702,6 +11790,7 @@ public class HomeFragment extends BaseFragment {
         if ("full".equals(token)) return R.id.btnFullscreenPreview;
         if ("fadshot".equals(token)) return R.id.btnCaptureShotPreview;
         if ("timer".equals(token)) return R.id.btnQuickTimer;
+        if ("bookmark".equals(token)) return R.id.btnQuickBookmark;
         return 0;
     }
 
@@ -11710,7 +11799,20 @@ public class HomeFragment extends BaseFragment {
         if (id == R.id.btnFullscreenPreview) return "full";
         if (id == R.id.btnCaptureShotPreview) return "fadshot";
         if (id == R.id.btnQuickTimer) return "timer";
+        if (id == R.id.btnQuickBookmark) return "bookmark";
         return null;
+    }
+
+    /**
+     * Every quick-action button, in no particular order. Single source of truth
+     * for the gesture wiring, the jiggle animation and the slot bookkeeping.
+     *
+     * @return the quick-action button views (entries may be {@code null} before
+     *         the view hierarchy is bound)
+     */
+    private View[] quickActionButtons() {
+        return new View[] { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview,
+                btnQuickTimer, btnQuickBookmark };
     }
 
     private void setQuickActionsEditMode(boolean edit) {
@@ -11802,7 +11904,7 @@ public class HomeFragment extends BaseFragment {
 
     private void startQuickActionJiggle(View exclude) {
         stopQuickActionJiggle();
-        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview, btnQuickTimer };
+        View[] buttons = quickActionButtons();
         java.util.Random r = new java.util.Random();
         for (View b : buttons) {
             if (b == null || b == exclude) continue;
@@ -11825,7 +11927,7 @@ public class HomeFragment extends BaseFragment {
             if (a != null) a.cancel();
         }
         quickJiggleAnimators.clear();
-        View[] buttons = { btnQuickMuteAudio, btnFullscreenPreview, btnCaptureShotPreview, btnQuickTimer };
+        View[] buttons = quickActionButtons();
         for (View b : buttons) {
             if (b != null) b.setRotation(0f);
         }
@@ -11921,6 +12023,13 @@ public class HomeFragment extends BaseFragment {
             } catch (Exception ignored) {
             }
             btnQuickMuteAudio.setVisibility((show && audioEnabled) ? View.VISIBLE : View.GONE);
+        }
+        // Bookmarking needs a file to attach the mark to, so it only appears
+        // while a normal recording is running or paused.
+        if (btnQuickBookmark != null) {
+            boolean canBookmark = isRecordingOrPaused() && !isDualRecordingActive;
+            btnQuickBookmark.setVisibility(canBookmark ? View.VISIBLE : View.GONE);
+            updateQuickBookmarkUi();
         }
         // Keep the preview hint clear of the icon row whenever it appears/disappears.
         updatePreviewHintPosition();

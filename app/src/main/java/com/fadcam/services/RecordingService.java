@@ -166,6 +166,14 @@ public class RecordingService extends Service {
     private long pauseStartedAt;
     private long accumulatedPausedDurationMs;
 
+    /**
+     * Session timeline offset (see {@link #getEffectiveTimelineMs()}) at which the
+     * segment currently being written started. Split recordings produce one file
+     * per segment, so bookmarks must be stored relative to this offset to line up
+     * with the playback position inside that file.
+     */
+    private volatile long currentSegmentStartTimelineMs;
+
     private SharedPreferencesManager sharedPreferencesManager; // Your settings manager
 
     private boolean isRolloverClosingOldSession = false; // Flag to manage state during segment rollover when the old
@@ -1960,6 +1968,9 @@ public class RecordingService extends Service {
         } else if (Constants.INTENT_ACTION_CAPTURE_PHOTO.equals(action)) {
             capturePhotoFromRecording();
             return START_STICKY;
+        } else if (Constants.INTENT_ACTION_ADD_BOOKMARK.equals(action)) {
+            addBookmarkAtCurrentPosition();
+            return START_STICKY;
         }
 
         else if (Constants.INTENT_ACTION_REINITIALIZE_LOCATION.equals(action)) {
@@ -2354,6 +2365,7 @@ public class RecordingService extends Service {
         recordingStartTime = 0L;
         pauseStartedAt = 0L;
         accumulatedPausedDurationMs = 0L;
+        currentSegmentStartTimelineMs = 0L;
         clearRecordingTimelineState();
 
         // Stop foreground service and cancel notification early to improve
@@ -5383,6 +5395,48 @@ public class RecordingService extends Service {
         return Math.max(0L, anchor - recordingStartTime - accumulatedPausedDurationMs);
     }
 
+    /**
+     * Stores a bookmark for the moment currently being recorded.
+     *
+     * <p>The position is taken relative to the <em>active segment</em> so it can be
+     * used directly as a seek target when that file is played back. Ignored when no
+     * recording is running, because there would be no file to attach it to.</p>
+     */
+    private void addBookmarkAtCurrentPosition() {
+        if (recordingState != RecordingState.IN_PROGRESS && recordingState != RecordingState.PAUSED) {
+            FLog.w(TAG, "addBookmarkAtCurrentPosition: ignored — no active recording");
+            return;
+        }
+        String mediaUri = getCurrentRecordingMediaUri();
+        if (mediaUri == null) {
+            FLog.w(TAG, "addBookmarkAtCurrentPosition: ignored — no active segment");
+            return;
+        }
+        try {
+            String mediaName = com.fadcam.bookmarks.BookmarkRepository
+                    .resolveMediaName(this, Uri.parse(mediaUri));
+            if (mediaName == null) {
+                FLog.w(TAG, "addBookmarkAtCurrentPosition: could not resolve a name for " + mediaUri);
+                return;
+            }
+            long positionMs = Math.max(0L, getEffectiveTimelineMs() - currentSegmentStartTimelineMs);
+            int total = com.fadcam.bookmarks.BookmarkRepository.getInstance(this)
+                    .add(mediaName, positionMs);
+            broadcastOnBookmarkAdded(positionMs, total);
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to add bookmark for " + mediaUri, e);
+        }
+    }
+
+    /** Tells the UI that a bookmark landed, so it can confirm it to the user. */
+    private void broadcastOnBookmarkAdded(long positionMs, int total) {
+        Intent broadcastIntent = new Intent(Constants.BROADCAST_ON_BOOKMARK_ADDED);
+        broadcastIntent.putExtra(Constants.EXTRA_BOOKMARK_POSITION_MS, positionMs);
+        broadcastIntent.putExtra(Constants.EXTRA_BOOKMARK_COUNT, total);
+        androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
+                .sendBroadcast(broadcastIntent);
+    }
+
     // --- End Helper Methods ---
 
     // --- Broadcasts ---
@@ -6741,6 +6795,7 @@ public class RecordingService extends Service {
                 recordingStartTime = SystemClock.elapsedRealtime();
                 pauseStartedAt = 0L;
                 accumulatedPausedDurationMs = 0L;
+                currentSegmentStartTimelineMs = 0L;
 
                 persistRecordingTimelineState();
                 startDurationLimitSession();
@@ -6949,6 +7004,9 @@ public class RecordingService extends Service {
         @Override
         public void onSegmentRollover(int nextSegmentNumber) {
             FLog.d(TAG, "GLSegmentCallback.onSegmentRollover called for segment " + nextSegmentNumber);
+            // Anchor the new segment on the session timeline so bookmarks taken
+            // after this point are stored relative to the new file, not the session.
+            currentSegmentStartTimelineMs = getEffectiveTimelineMs();
             String storageMode = sharedPreferencesManager.getStorageMode();
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
