@@ -2938,6 +2938,7 @@ public class RecordingService extends Service {
         broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_FROM, fromType.toString());
         broadcastIntent.putExtra(Constants.BROADCAST_EXTRA_CAMERA_TYPE_TO, toType.toString());
         androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+        RecordingTileService.requestTileRefresh(this);
         FLog.d(TAG, "Broadcast: CAMERA_SWITCH_COMPLETE (" + fromType + " → " + toType + ")");
     }
 

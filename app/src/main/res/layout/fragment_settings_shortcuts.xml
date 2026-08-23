@@ -538,6 +538,137 @@ app:layout_constraintTop_toTopOf="parent"
         android:linksClickable="true"
         android:text="@string/shortcuts_macrodroid_template"/>
 
+    <!-- Quick Settings Section Title -->
+    <TextView
+        android:id="@+id/heading_qs_tile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="6dp"
+        android:text="@string/qs_tile_category_title"
+        android:textColor="?attr/colorHeading"
+        android:textStyle="bold" />
+
+    <!-- Quick Settings group card -->
+    <LinearLayout
+        android:id="@+id/qs_tile_group_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/settings_group_card_bg">
+
+        <LinearLayout
+            android:id="@+id/row_qs_tile_mode"
+            style="@style/SettingsGroupRow">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="16dp"
+                android:src="@drawable/ic_qs_tile_videocam_back"
+                android:tint="?attr/colorHeading"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/qs_tile_mode_row_title"
+                    android:textStyle="bold"
+                    android:textSize="15sp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:textColor="?attr/colorHeading"/>
+                <TextView
+                    android:id="@+id/subtitle_qs_tile_mode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/qs_tile_mode_row_subtitle"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:layout_marginTop="2dp"/>
+            </LinearLayout>
+            <TextView
+                android:id="@+id/value_qs_tile_mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/qs_tile_mode_universal"
+                android:textColor="@android:color/darker_gray"
+                android:textSize="13sp"
+                android:singleLine="true"/>
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="12dp"
+                android:src="@drawable/ic_arrow_right"
+                android:tint="@android:color/darker_gray"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            android:layout_marginStart="56dp"
+            android:layout_marginEnd="16dp"
+            android:alpha="0.2"/>
+
+        <LinearLayout
+            android:id="@+id/row_qs_tile_add"
+            style="@style/SettingsGroupRow">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="16dp"
+                android:src="@drawable/ic_open_in_new"
+                android:tint="?attr/colorHeading"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/qs_tile_add_to_qs_title"
+                    android:textStyle="bold"
+                    android:textSize="15sp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:textColor="?attr/colorHeading"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/qs_tile_add_to_qs_desc"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:layout_marginTop="2dp"/>
+            </LinearLayout>
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="12dp"
+                android:src="@drawable/ic_arrow_right"
+                android:tint="@android:color/darker_gray"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/qs_tile_helper"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="12sp"
+        android:text="@string/qs_tile_mode_helper"/>
+
     <!-- Widgets Section Title -->
     <TextView
         android:id="@+id/heading_widgets"

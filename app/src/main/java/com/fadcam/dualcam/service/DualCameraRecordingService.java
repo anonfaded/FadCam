@@ -450,6 +450,7 @@ public class DualCameraRecordingService extends Service {
         broadcastRecordingComplete(true);
         lastRecordingUriString = null;
         broadcastAction(Constants.BROADCAST_ON_DUAL_RECORDING_STOPPED);
+        com.fadcam.services.RecordingTileService.requestTileRefresh(this);
         stopSelf();
     }
 
@@ -1383,6 +1384,7 @@ public class DualCameraRecordingService extends Service {
             persistRecordingTimelineState();
             startDurationLimitSession();
             broadcastActionWithTiming(Constants.BROADCAST_ON_DUAL_RECORDING_STARTED);
+            com.fadcam.services.RecordingTileService.requestTileRefresh(this);
             FLog.i(TAG, "✅ Dual camera recording started");
         } catch (Exception e) {
             FLog.e(TAG, "Failed to start pipeline encoding", e);
@@ -1594,6 +1596,8 @@ public class DualCameraRecordingService extends Service {
         releaseAllResources();
         prefs.setRecordingInProgress(false);
         releaseWakeLock();
+        broadcastAction(Constants.BROADCAST_ON_DUAL_RECORDING_STOPPED);
+        com.fadcam.services.RecordingTileService.requestTileRefresh(this);
         stopSelf();
     }
 

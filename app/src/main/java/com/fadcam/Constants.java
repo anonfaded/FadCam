@@ -742,4 +742,9 @@ public abstract class Constants {
     public static final String ACTION_TRIGGER_FADREC_SCREENSHOT =
         "com.fadcam.ACTION_TRIGGER_FADREC_SCREENSHOT";
     // ── End Dual Camera Constants ──────────────────────────────────────────
+
+    // ── Quick Settings Tile Mode Constants ──────────────────────────────────
+    public static final String PREF_QS_TILE_MODE = "pref_qs_tile_mode";
+    public static final String QS_TILE_MODE_UNIVERSAL = "universal";
+    public static final String QS_TILE_MODE_SEPARATE = "separate";
 }

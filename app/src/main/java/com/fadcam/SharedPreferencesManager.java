@@ -1439,6 +1439,17 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    public String getQsTileMode() {
+        return sharedPreferences.getString(Constants.PREF_QS_TILE_MODE, Constants.QS_TILE_MODE_UNIVERSAL);
+    }
+
+    public void setQsTileMode(String mode) {
+        sharedPreferences
+            .edit()
+            .putString(Constants.PREF_QS_TILE_MODE, mode)
+            .apply();
+    }
+
     public boolean isRecordAudioEnabled() {
         return sharedPreferences.getBoolean(
             Constants.PREF_RECORD_AUDIO,

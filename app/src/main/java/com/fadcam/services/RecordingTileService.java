@@ -19,6 +19,9 @@ import com.fadcam.R;
 import com.fadcam.RecordingStartActivity;
 import com.fadcam.RecordingStopActivity;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.dualcam.service.DualCameraRecordingService;
+import com.fadcam.utils.ServiceUtils;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 /**
  * RecordingTileService: Quick Settings Tile for start/stop recording control.
@@ -41,6 +44,7 @@ public class RecordingTileService extends TileService {
     // Handler on main looper for processing double-tap gesture delays
     private final Handler handler = new Handler(Looper.getMainLooper());
     private BroadcastReceiver stateReceiver;
+    private BroadcastReceiver localStateReceiver;
     private long lastClickAt = 0L;
     private Runnable clickRunnable;
     private Runnable restoreActiveStateRunnable;
@@ -67,9 +71,29 @@ public class RecordingTileService extends TileService {
         cleanupPendingCallbacks();
     }
 
+    protected CameraType getDedicatedMode() {
+        return null;
+    }
+
     @Override
     public void onClick() {
         super.onClick();
+
+        CameraType dedicated = getDedicatedMode();
+        if (dedicated != null) {
+            // Dedicated tiles trigger start/stop directly without double-tap delay
+            SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(this);
+            boolean thisTileActive = isTileActive(prefs);
+            boolean hasActiveSession = hasActiveRecordingSession(prefs);
+            FLog.i(TAG, "Dedicated tile (" + dedicated + ") clicked. Active: " + thisTileActive + ", hasSession: " + hasActiveSession);
+            if (thisTileActive) {
+                stopRecording();
+            } else if (!hasActiveSession) {
+                startRecording();
+            }
+            return;
+        }
+
         long now = System.currentTimeMillis();
         boolean isDoubleTap = (now - lastClickAt) <= DOUBLE_TAP_WINDOW_MS;
         lastClickAt = now;
@@ -125,30 +149,99 @@ public class RecordingTileService extends TileService {
     }
 
     /**
-     * Requests that SystemUI bring this tile into the listening state so a
+     * Requests that SystemUI bring active tiles into the listening state so a
      * pending state change is applied IMMEDIATELY, even when the tile isn't
-     * currently visible/listening. Called by RecordingService on every
-     * start/stop transition. Available from Android 13 (Tiramisu); on older
-     * versions the tile refreshes through onStartListening when the shade
-     * opens. The system may throttle or delay the request — the guaranteed
-     * fallback remains the onStartListening refresh.
+     * currently visible/listening. Called on start/stop transitions.
      */
     public static void requestTileRefresh(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestListeningStateFor(context, RecordingTileService.class);
+            requestListeningStateFor(context, Back.class);
+            requestListeningStateFor(context, Front.class);
+            requestListeningStateFor(context, Dual.class);
+        }
+    }
+
+    private static void requestListeningStateFor(Context context, Class<?> serviceClass) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             try {
                 TileService.requestListeningState(
                         context,
-                        new android.content.ComponentName(context, RecordingTileService.class));
+                        new android.content.ComponentName(context, serviceClass));
             } catch (Exception e) {
-                FLog.w(TAG, "requestListeningState failed", e);
+                FLog.w(TAG, "requestListeningState failed for " + serviceClass.getSimpleName(), e);
             }
         }
     }
 
+    /**
+     * Enables or disables Quick Settings tile components based on selected mode.
+     */
+    public static void applyTileMode(Context context, String mode) {
+        android.content.pm.PackageManager pm = context.getPackageManager();
+        boolean separate = Constants.QS_TILE_MODE_SEPARATE.equals(mode);
+
+        setComponentEnabled(pm, context, RecordingTileService.class, !separate);
+        setComponentEnabled(pm, context, Back.class, separate);
+        setComponentEnabled(pm, context, Front.class, separate);
+        setComponentEnabled(pm, context, Dual.class, separate);
+
+        requestTileRefresh(context);
+    }
+
+    private static void setComponentEnabled(android.content.pm.PackageManager pm, Context context, Class<?> cls, boolean enabled) {
+        try {
+            android.content.ComponentName component = new android.content.ComponentName(context, cls);
+            int newState = enabled
+                    ? android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                    : android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+            pm.setComponentEnabledSetting(component, newState, android.content.pm.PackageManager.DONT_KILL_APP);
+        } catch (Exception e) {
+            FLog.e(TAG, "Error updating component enabled state for " + cls.getSimpleName(), e);
+        }
+    }
+
+    /**
+     * Prompts the system on Android 13+ (API 33+) to add the tile directly to the Quick Settings shade.
+     */
+    public static void requestAddTileToShade(Context context, Class<?> tileClass, CharSequence label, int iconRes) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            android.app.StatusBarManager statusBarManager = context.getSystemService(android.app.StatusBarManager.class);
+            if (statusBarManager != null) {
+                android.content.ComponentName componentName = new android.content.ComponentName(context, tileClass);
+                android.graphics.drawable.Icon icon = android.graphics.drawable.Icon.createWithResource(context, iconRes);
+                statusBarManager.requestAddTileService(
+                        componentName,
+                        label,
+                        icon,
+                        context.getMainExecutor(),
+                        resultCode -> {
+                            if (resultCode == android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED) {
+                                android.widget.Toast.makeText(context, R.string.qs_tile_already_added, android.widget.Toast.LENGTH_SHORT).show();
+                            } else if (resultCode == android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED) {
+                                android.widget.Toast.makeText(context, R.string.qs_tile_added_success, android.widget.Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                );
+                return;
+            }
+        }
+        android.widget.Toast.makeText(context, R.string.qs_tile_manual_add_instructions, android.widget.Toast.LENGTH_LONG).show();
+    }
+
     private void startRecording() {
-        FLog.i(TAG, "Launching RecordingStartActivity to start recording safely");
+        CameraType dedicated = getDedicatedMode();
+        FLog.i(TAG, "Launching RecordingStartActivity to start recording safely (dedicated: " + dedicated + ")");
         Intent intent = new Intent(this, RecordingStartActivity.class);
-        intent.putExtra(RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE, RecordingStartActivity.CAMERA_MODE_CURRENT);
+        if (dedicated == CameraType.BACK) {
+            intent.putExtra(RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE, RecordingStartActivity.CAMERA_MODE_BACK);
+        } else if (dedicated == CameraType.FRONT) {
+            intent.putExtra(RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE, RecordingStartActivity.CAMERA_MODE_FRONT);
+        } else if (dedicated == CameraType.DUAL_PIP) {
+            intent.putExtra(RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE, RecordingStartActivity.CAMERA_MODE_DUAL);
+        } else {
+            intent.putExtra(RecordingStartActivity.EXTRA_SHORTCUT_CAMERA_MODE, RecordingStartActivity.CAMERA_MODE_CURRENT);
+        }
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         launchActivitySafely(intent);
     }
@@ -194,7 +287,22 @@ public class RecordingTileService extends TileService {
             FLog.w(TAG, "switchCamera ignored: camera switching is not supported during active Dual recording");
             return;
         }
-        CameraType target = (current == CameraType.FRONT) ? CameraType.BACK : CameraType.FRONT;
+
+        CameraType target;
+        if (recording) {
+            // Live switch during active single-camera recording toggles between front and back
+            target = (current == CameraType.FRONT) ? CameraType.BACK : CameraType.FRONT;
+        } else {
+            // Idle switch: cycle BACK -> FRONT -> DUAL_PIP -> BACK
+            if (current == CameraType.BACK) {
+                target = CameraType.FRONT;
+            } else if (current == CameraType.FRONT) {
+                target = CameraType.DUAL_PIP;
+            } else {
+                target = CameraType.BACK;
+            }
+        }
+
         FLog.i(TAG, "switchCamera requested: " + current + " -> " + target + " (Recording active: " + recording + ")");
 
         // Only switch live if recording is active and we are in a single-camera mode
@@ -206,7 +314,7 @@ public class RecordingTileService extends TileService {
             startService(switchIntent);
             showSwitchingFeedback(target);
         } else {
-            // Idle switch (or during dual-recording): Save selection to preferences immediately
+            // Idle switch: Save selection to preferences immediately
             prefs.sharedPreferences.edit()
                     .putString(Constants.PREF_CAMERA_SELECTION, target.name())
                     .apply();
@@ -223,6 +331,9 @@ public class RecordingTileService extends TileService {
         if (target == CameraType.FRONT) {
             tile.setLabel(getString(R.string.front));
             tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_videocam_front));
+        } else if (target == CameraType.DUAL_PIP) {
+            tile.setLabel(getString(R.string.shortcut_start_dual));
+            tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_videocam_dual));
         } else {
             tile.setLabel(getString(R.string.back));
             tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_videocam_back));
@@ -235,9 +346,10 @@ public class RecordingTileService extends TileService {
         restoreActiveStateRunnable = new Runnable() {
             @Override
             public void run() {
-                boolean recording = SharedPreferencesManager.getInstance(RecordingTileService.this).isRecordingInProgress();
-                FLog.d(TAG, "Reverting switching feedback. Active recording status: " + recording);
-                setTileState(recording);
+                SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(RecordingTileService.this);
+                boolean active = isTileActive(prefs);
+                FLog.d(TAG, "Reverting switching feedback. Active status: " + active);
+                setTileState(active);
                 restoreActiveStateRunnable = null;
             }
         };
@@ -245,37 +357,93 @@ public class RecordingTileService extends TileService {
     }
 
     private void registerStateReceiver() {
-        if (stateReceiver != null) return;
-        stateReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                FLog.d(TAG, "State receiver received action: " + intent.getAction() + ". Refreshing tile.");
-                refreshTile();
+        if (stateReceiver == null) {
+            stateReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    FLog.d(TAG, "State receiver received action: " + intent.getAction() + ". Refreshing tile.");
+                    refreshTile();
+                }
+            };
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Constants.BROADCAST_ON_RECORDING_STARTED);
+            filter.addAction(Constants.BROADCAST_ON_RECORDING_STOPPED);
+            filter.addAction(Constants.BROADCAST_ON_RECORDING_PAUSED);
+            filter.addAction(Constants.BROADCAST_ON_RECORDING_RESUMED);
+            filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_STARTED);
+            filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_STOPPED);
+            filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_PAUSED);
+            filter.addAction(Constants.BROADCAST_ON_DUAL_RECORDING_RESUMED);
+            filter.addAction(Constants.BROADCAST_ON_DUAL_CAMERAS_SWAPPED);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(stateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                registerReceiver(stateReceiver, filter);
             }
-        };
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Constants.BROADCAST_ON_RECORDING_STARTED);
-        filter.addAction(Constants.BROADCAST_ON_RECORDING_STOPPED);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(stateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(stateReceiver, filter);
+        }
+
+        if (localStateReceiver == null) {
+            localStateReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    FLog.d(TAG, "Local state receiver received action: " + intent.getAction() + ". Refreshing tile.");
+                    refreshTile();
+                }
+            };
+            IntentFilter localFilter = new IntentFilter();
+            localFilter.addAction(Constants.BROADCAST_ON_CAMERA_SWITCH_COMPLETE);
+            LocalBroadcastManager.getInstance(this).registerReceiver(localStateReceiver, localFilter);
         }
     }
 
     private void unregisterStateReceiver() {
-        if (stateReceiver == null) return;
-        try {
-            unregisterReceiver(stateReceiver);
-        } catch (IllegalArgumentException ignored) {
+        if (stateReceiver != null) {
+            try {
+                unregisterReceiver(stateReceiver);
+            } catch (IllegalArgumentException ignored) {
+            }
+            stateReceiver = null;
         }
-        stateReceiver = null;
+        if (localStateReceiver != null) {
+            try {
+                LocalBroadcastManager.getInstance(this).unregisterReceiver(localStateReceiver);
+            } catch (IllegalArgumentException ignored) {
+            }
+            localStateReceiver = null;
+        }
+    }
+
+    private boolean hasActiveRecordingSession(SharedPreferencesManager prefs) {
+        return prefs.isRecordingInProgress()
+                || ServiceUtils.isServiceRunning(this, RecordingService.class)
+                || ServiceUtils.isServiceRunning(this, DualCameraRecordingService.class);
+    }
+
+    private boolean isTileActive(SharedPreferencesManager prefs) {
+        if (!hasActiveRecordingSession(prefs)) {
+            return false;
+        }
+        CameraType dedicated = getDedicatedMode();
+        if (dedicated == null) {
+            // Universal tile reflects any recording state
+            return true;
+        }
+        boolean isDualRunning = ServiceUtils.isServiceRunning(this, DualCameraRecordingService.class);
+        if (dedicated == CameraType.DUAL_PIP) {
+            return isDualRunning;
+        }
+        if (isDualRunning) {
+            return false;
+        }
+        CameraType activeCamera = prefs.getCameraSelection();
+        return activeCamera == dedicated;
     }
 
     private void refreshTile() {
-        boolean recording = SharedPreferencesManager.getInstance(this).isRecordingInProgress();
-        FLog.d(TAG, "refreshTile - Active recording: " + recording);
-        setTileState(recording);
+        SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(this);
+        boolean active = isTileActive(prefs);
+        FLog.d(TAG, "refreshTile - Active status for tile (" + getDedicatedMode() + "): " + active);
+        setTileState(active);
     }
 
     private void setTileState(boolean active) {
@@ -289,7 +457,9 @@ public class RecordingTileService extends TileService {
             tile.setLabel(getString(R.string.stop_recording));
             tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_stop));
         } else {
-            CameraType camera = SharedPreferencesManager.getInstance(this).getCameraSelection();
+            CameraType camera = getDedicatedMode() != null
+                    ? getDedicatedMode()
+                    : SharedPreferencesManager.getInstance(this).getCameraSelection();
             if (camera == CameraType.FRONT) {
                 tile.setLabel(getString(R.string.shortcut_start_front));
                 tile.setIcon(Icon.createWithResource(this, R.drawable.ic_qs_tile_videocam_front));
@@ -321,5 +491,31 @@ public class RecordingTileService extends TileService {
     private void cleanupPendingCallbacks() {
         cancelClickRunnable();
         cancelRestoreRunnable();
+    }
+
+    // ── Dedicated Sub-Tiles (reusing all base logic) ──
+
+    /** Dedicated Back Camera Quick Settings Tile */
+    public static class Back extends RecordingTileService {
+        @Override
+        protected CameraType getDedicatedMode() {
+            return CameraType.BACK;
+        }
+    }
+
+    /** Dedicated Front Camera Quick Settings Tile */
+    public static class Front extends RecordingTileService {
+        @Override
+        protected CameraType getDedicatedMode() {
+            return CameraType.FRONT;
+        }
+    }
+
+    /** Dedicated Dual PiP Camera Quick Settings Tile */
+    public static class Dual extends RecordingTileService {
+        @Override
+        protected CameraType getDedicatedMode() {
+            return CameraType.DUAL_PIP;
+        }
     }
 }

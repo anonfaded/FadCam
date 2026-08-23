@@ -400,6 +400,43 @@
             </intent-filter>
         </service>
 
+        <!-- Dedicated Quick Settings tiles (reusing RecordingTileService logic) -->
+        <service
+            android:name=".services.RecordingTileService$Back"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_qs_tile_videocam_back"
+            android:label="@string/shortcut_start_back"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".services.RecordingTileService$Front"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_qs_tile_videocam_front"
+            android:label="@string/shortcut_start_front"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".services.RecordingTileService$Dual"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_qs_tile_videocam_dual"
+            android:label="@string/shortcut_start_dual"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- Dual Camera Recording Service for PiP dual camera recording -->
         <service android:name=".dualcam.service.DualCameraRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="camera|microphone" />
 

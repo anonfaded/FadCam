@@ -23,9 +23,14 @@ import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.fragment.app.Fragment;
 
+import com.fadcam.Constants;
 import com.fadcam.R;
+import com.fadcam.SharedPreferencesManager;
+import com.fadcam.services.RecordingTileService;
 import com.fadcam.shortcuts.ShortcutsManager;
 import com.fadcam.shortcuts.ShortcutsPreferences;
+import com.fadcam.ui.picker.OptionItem;
+import com.fadcam.ui.picker.PickerBottomSheetFragment;
 
 import org.json.JSONObject;
 
@@ -131,6 +136,17 @@ public class ShortcutsSettingsFragment extends Fragment {
         View.OnClickListener widgetClick = v -> showClockWidgetSheet();
         if (widgetCell != null)
             widgetCell.setOnClickListener(widgetClick);
+
+        // Quick Settings Tile mode row
+        View qsTileRow = view.findViewById(R.id.row_qs_tile_mode);
+        if (qsTileRow != null) {
+            qsTileRow.setOnClickListener(v -> showQsTileModePicker());
+        }
+        View qsTileAddRow = view.findViewById(R.id.row_qs_tile_add);
+        if (qsTileAddRow != null) {
+            qsTileAddRow.setOnClickListener(v -> requestAddQsTile());
+        }
+        refreshQsTileModeUI(view);
 
         // Initialize preview with current preferences
         updatePreview();
@@ -1027,5 +1043,127 @@ public class ShortcutsSettingsFragment extends Fragment {
             android.widget.Toast.makeText(ctx, R.string.widgets_pin_unsupported, android.widget.Toast.LENGTH_LONG)
                     .show();
         }
+    }
+
+    private void refreshQsTileModeUI(View root) {
+        if (root == null) return;
+        TextView valueView = root.findViewById(R.id.value_qs_tile_mode);
+        String mode = SharedPreferencesManager.getInstance(requireContext()).getQsTileMode();
+        boolean isSeparate = Constants.QS_TILE_MODE_SEPARATE.equals(mode);
+
+        if (valueView != null) {
+            valueView.setText(isSeparate ? R.string.qs_tile_mode_separate : R.string.qs_tile_mode_universal);
+        }
+    }
+
+    private void showQsTileModePicker() {
+        java.util.ArrayList<OptionItem> items = new java.util.ArrayList<>();
+        items.add(new OptionItem(
+                Constants.QS_TILE_MODE_UNIVERSAL,
+                getString(R.string.qs_tile_mode_universal_title),
+                getString(R.string.qs_tile_mode_universal_desc)));
+        items.add(new OptionItem(
+                Constants.QS_TILE_MODE_SEPARATE,
+                getString(R.string.qs_tile_mode_separate_title),
+                getString(R.string.qs_tile_mode_separate_desc)));
+
+        String current = SharedPreferencesManager.getInstance(requireContext()).getQsTileMode();
+        String resultKey = "qs_tile_mode_result";
+
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
+            if (b.containsKey(PickerBottomSheetFragment.BUNDLE_SELECTED_ID)) {
+                String selectedId = b.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                if (selectedId != null) {
+                    Context ctx = getContext();
+                    if (ctx != null) {
+                        SharedPreferencesManager.getInstance(ctx).setQsTileMode(selectedId);
+                        RecordingTileService.applyTileMode(ctx, selectedId);
+                    }
+                    if (getView() != null) {
+                        refreshQsTileModeUI(getView());
+                    }
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        if (isAdded() && getContext() != null) {
+                            requestAddQsTile();
+                        }
+                    }, 200L);
+                }
+            }
+        });
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
+                getString(R.string.qs_tile_mode_picker_title),
+                items,
+                current,
+                resultKey,
+                getString(R.string.qs_tile_mode_helper)
+        );
+        sheet.show(getParentFragmentManager(), "qs_tile_mode_sheet");
+    }
+
+    private void requestAddQsTile() {
+        String mode = SharedPreferencesManager.getInstance(requireContext()).getQsTileMode();
+        if (Constants.QS_TILE_MODE_SEPARATE.equals(mode)) {
+            showAddDedicatedTilePicker();
+        } else {
+            RecordingTileService.requestAddTileToShade(
+                    requireContext(),
+                    RecordingTileService.class,
+                    getString(R.string.shortcut_start_back),
+                    R.drawable.ic_qs_tile_videocam_back
+            );
+        }
+    }
+
+    private void showAddDedicatedTilePicker() {
+        java.util.ArrayList<OptionItem> items = new java.util.ArrayList<>();
+        items.add(new OptionItem("back", getString(R.string.shortcut_start_back), null, null, R.drawable.ic_qs_tile_videocam_back, R.drawable.ic_open_in_new));
+        items.add(new OptionItem("front", getString(R.string.shortcut_start_front), null, null, R.drawable.ic_qs_tile_videocam_front, R.drawable.ic_open_in_new));
+        items.add(new OptionItem("dual", getString(R.string.shortcut_start_dual), null, null, R.drawable.ic_qs_tile_videocam_dual, R.drawable.ic_open_in_new));
+
+        String resultKey = "add_dedicated_tile_result";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (k, b) -> {
+            if (b.containsKey(PickerBottomSheetFragment.BUNDLE_SELECTED_ID)) {
+                String id = b.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+                final Class<?> targetClass;
+                final String targetLabel;
+                final int targetIcon;
+                if ("front".equals(id)) {
+                    targetClass = RecordingTileService.Front.class;
+                    targetLabel = getString(R.string.shortcut_start_front);
+                    targetIcon = R.drawable.ic_qs_tile_videocam_front;
+                } else if ("dual".equals(id)) {
+                    targetClass = RecordingTileService.Dual.class;
+                    targetLabel = getString(R.string.shortcut_start_dual);
+                    targetIcon = R.drawable.ic_qs_tile_videocam_dual;
+                } else {
+                    targetClass = RecordingTileService.Back.class;
+                    targetLabel = getString(R.string.shortcut_start_back);
+                    targetIcon = R.drawable.ic_qs_tile_videocam_back;
+                }
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    if (isAdded() && getContext() != null) {
+                        RecordingTileService.requestAddTileToShade(
+                                requireContext(),
+                                targetClass,
+                                targetLabel,
+                                targetIcon
+                        );
+                    }
+                }, 200L);
+            }
+        });
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
+                getString(R.string.qs_tile_add_to_qs_title),
+                items,
+                null,
+                resultKey,
+                getString(R.string.qs_tile_add_to_qs_desc)
+        );
+        if (sheet.getArguments() != null) {
+            sheet.getArguments().putBoolean(PickerBottomSheetFragment.ARG_HIDE_CHECK, true);
+        }
+        sheet.show(getParentFragmentManager(), "add_dedicated_tile_sheet");
     }
 }
