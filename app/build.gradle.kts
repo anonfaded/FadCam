@@ -279,6 +279,7 @@ dependencies {
     implementation(libs.media3.muxer)
     implementation(libs.media3.common)
     implementation(libs.media3.container)
+    implementation(libs.nanohttpd.core)
     implementation("com.googlecode.mp4parser:isoparser:1.1.22")
     annotationProcessor(libs.compiler)
     annotationProcessor(libs.room.compiler)
