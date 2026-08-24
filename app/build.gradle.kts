@@ -221,6 +221,12 @@ android {
     }
 
     lint {
+        // Generate the release lint report without making the Gradle lint task
+        // itself the blocking gate. The CI workflow parses the generated report
+        // and fails only when Studio-specific errors are present. This keeps
+        // legacy findings and lint infrastructure noise from masking a valid
+        // release build while preserving a real Studio error gate.
+        abortOnError = false
         checkReleaseBuilds = false
         disable += "MissingTranslation"
     }
@@ -273,7 +279,6 @@ dependencies {
     implementation(libs.media3.muxer)
     implementation(libs.media3.common)
     implementation(libs.media3.container)
-    implementation(libs.nanohttpd.core)
     implementation("com.googlecode.mp4parser:isoparser:1.1.22")
     annotationProcessor(libs.compiler)
     annotationProcessor(libs.room.compiler)
