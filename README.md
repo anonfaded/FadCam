@@ -22,12 +22,14 @@ The publication gate verifies:
 - APK ZIP/container integrity
 - AndroidManifest.xml and classes.dex presence
 - Package ID: `com.fadcam`
-- APK signature verification
+- Release signature verification
+- Rejection of the Android debug certificate
 - 16 KB ZIP alignment
+- Removal of legacy high-risk declarations from the Studio release manifest
 - Debug-package marker absence
 - SHA-256 checksum generation
 
-> **Signing note:** CI currently has a temporary release-signing fallback so the verified APK can be produced for device testing when the protected production keystore is not configured. Before public distribution or Play Store submission, configure a protected release keystore and remove the CI fallback.
+> **CI signing note:** device-verification builds use a dedicated non-debug release key generated only on the ephemeral GitHub runner. That key is not stored in the repository. Before public distribution or Play Store submission, configure a protected production signing key and use Google Play App Signing where appropriate.
 
 ## 🎬 Studio capabilities
 
@@ -54,7 +56,7 @@ Use the RTMPS server URL and stream key supplied by the selected platform's live
 
 ## 🧪 Verification-first development
 
-Every production change is gated by `.github/workflows/build-debug-apk.yml`. Verification runs are intentionally not cancelled by later pushes. A failed unit test, Studio lint audit, build, APK integrity check, package check, signature check or alignment check blocks APK publication.
+Every production change is gated by `.github/workflows/build-debug-apk.yml`. Verification runs are isolated by run ID so a burst of pushes cannot cancel the exact commit being verified. A failed unit test, Studio lint audit, build, APK integrity check, package check, release-signature check or alignment check blocks APK publication.
 
 The current verification process isolates legacy project-wide lint debt from the Studio-specific gate; existing legacy findings are not allowed to hide Studio errors.
 
@@ -69,11 +71,13 @@ git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-
 ./gradlew :app:assembleDefaultRelease
 ```
 
+For a local release APK, provide `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, and `KEY_PASSWORD` in `local.properties`. The release build no longer falls back to the Android debug keystore.
+
 ## ⚠️ Installation / Play Protect
 
-The previous Studio download was a debug/beta APK. The new delivery pipeline produces a **non-debuggable release APK** instead. Play Protect still performs its own independent scan of sideloaded applications and can block apps it considers risky, especially when they request sensitive permissions. Google recommends using only permissions necessary for the app's core functionality and distributing through a trusted channel such as Google Play for production releases.
+The previous Studio download was a debug/beta APK. The new delivery pipeline produces a **non-debuggable release APK** and no longer signs the release with the Android debug keystore. The Studio release manifest also removes the legacy accessibility screenshot service, broad storage/battery special access, and the system-wide overlay permission because those are not required by the Studio production room.
 
-The Studio release manifest removes the legacy accessibility screenshot service plus broad storage and battery special-access declarations from the Studio APK. Camera, microphone, networking and required foreground-service capabilities remain because they are core to recording and live production.
+Play Protect still performs its own independent scan of sideloaded applications and may block an app downloaded from a browser or file manager if it classifies the app as unverified and sensitive. Google recommends trusted distribution such as Google Play for production releases. citeturn2search0turn2search5
 
 ## License
 
