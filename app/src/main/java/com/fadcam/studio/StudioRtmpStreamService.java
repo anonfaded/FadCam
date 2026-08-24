@@ -211,7 +211,9 @@ public class StudioRtmpStreamService extends Service {
 
     private Notification notification(String text) {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
+                // Reuse the application's launcher icon; there is no separate
+                // ic_notification drawable in this project.
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("FadCam Studio RTMP")
                 .setContentText(text)
                 .setOngoing(true)
