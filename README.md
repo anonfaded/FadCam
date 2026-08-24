@@ -10,6 +10,8 @@ FadCam Studio extends the FadCam camera engine with a broadcast-style production
 
 This is the permanent README download location for the latest **verified Studio APK**. GitHub Actions publishes the APK only after the verification pipeline passes. **APK only — not a ZIP.**
 
+**Verification status:** the latest master verification pipeline must pass all blocking gates before `studio-latest` is published.
+
 The publication gate verifies:
 
 - JVM unit tests
@@ -49,7 +51,7 @@ Use the RTMPS server URL and stream key supplied by the selected platform's live
 
 Every production change is gated by `.github/workflows/build-debug-apk.yml`. Verification runs are intentionally not cancelled by later pushes. A failed unit test, Studio lint audit, build, APK integrity check, package check, signature check or alignment check blocks APK publication.
 
-The current verification process is fixing legacy project-wide lint debt separately from the Studio-specific gate; existing legacy findings are not allowed to hide Studio errors.
+The current verification process isolates legacy project-wide lint debt from the Studio-specific gate; existing legacy findings are not allowed to hide Studio errors.
 
 ## 🛠️ Build locally
 
