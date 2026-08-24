@@ -1,1 +1,0 @@
-CI verification for the current Studio implementation.
