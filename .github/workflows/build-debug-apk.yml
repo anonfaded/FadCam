@@ -10,10 +10,11 @@ on:
 permissions:
   contents: write
 
-# One Studio publisher per ref. A running verification finishes; only the
-# newest queued run for the same ref is retained, avoiding stale races.
+# Every commit under verification gets its own run. GitHub keeps only one
+# pending run inside a shared concurrency group, so grouping by ref can cancel
+# the exact verification run we need to inspect.
 concurrency:
-  group: fadcam-studio-apk-${{ github.workflow }}-${{ github.ref }}
+  group: fadcam-studio-apk-${{ github.workflow }}-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -76,28 +77,44 @@ jobs:
           test -f ./gradlew
           chmod +x ./gradlew
           ./gradlew --version
+          ./gradlew :app:tasks --all --no-daemon --no-watch-fs --no-configuration-cache >/tmp/fadcam-gradle-tasks.txt
+          grep -Eq '^assembleDefaultRelease([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
+          grep -Eq '^testDefaultReleaseUnitTest([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
+          grep -Eq '^lintDefaultRelease([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
 
-      # Keep all blocking Gradle build/test work in one invocation. This avoids
-      # repeated daemon/configuration state and removes the failure mode that
-      # previously appeared between consecutive wrapper invocations.
+      # Release/R8 builds are substantially heavier than the old debug build.
+      # Keep all blocking Gradle compilation/test work in one invocation and
+      # give the hosted runner enough heap to avoid false OOM failures.
       - name: Build and test Studio release in one clean Gradle invocation
         shell: bash
         run: |
-          set -euo pipefail
+          set +e
           ./gradlew \
             :app:testDefaultReleaseUnitTest \
             :app:assembleDefaultRelease \
             --stacktrace \
             --no-daemon \
             --no-watch-fs \
-            --no-configuration-cache
+            --no-configuration-cache \
+            --max-workers=2 \
+            2>&1 | tee /tmp/fadcam-studio-release-gradle.log
+          gradle_exit=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$gradle_exit" -ne 0 ]; then
+            echo '===== STUDIO RELEASE GRADLE FAILURE SUMMARY ====='
+            grep -E 'FAILURE:|What went wrong:|Execution failed for task|Caused by:|OutOfMemory|Java heap space|Manifest merger failed|Duplicate class|R8:' \
+              /tmp/fadcam-studio-release-gradle.log | tail -n 120 || true
+            echo '===== END FAILURE SUMMARY ====='
+            exit "$gradle_exit"
+          fi
 
       - name: Run Studio release lint audit
         shell: bash
         run: |
           set +e
-          ./gradlew :app:lintDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache
-          lint_exit=$?
+          ./gradlew :app:lintDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2 2>&1 | tee /tmp/fadcam-studio-release-lint.log
+          lint_exit=${PIPESTATUS[0]}
           set -e
 
           mapfile -t reports < <(find app/build -type f \( \
@@ -108,6 +125,7 @@ jobs:
 
           if [ "${#reports[@]}" -eq 0 ]; then
             echo "ERROR: lint did not produce a defaultRelease report."
+            grep -E 'FAILURE:|What went wrong:|Execution failed for task|Caused by:' /tmp/fadcam-studio-release-lint.log | tail -n 80 || true
             exit 1
           fi
 
@@ -198,6 +216,24 @@ jobs:
           "$BUILD_TOOLS/aapt" dump xmltree "$apk" AndroidManifest.xml > /tmp/manifest.xml
           ! grep -q 'FadRecScreenshotAccessibilityService' /tmp/manifest.xml
           ! "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q 'com.fadcam.beta'
+
+      # Preserve the logs even when a later verification gate fails so the next
+      # diagnosis has the exact Gradle/R8/lint evidence instead of a generic exit 1.
+      - name: Upload Studio CI diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: FadCam-Studio-CI-diagnostics-${{ github.run_id }}
+          path: |
+            /tmp/fadcam-studio-release-gradle.log
+            /tmp/fadcam-studio-release-lint.log
+            /tmp/fadcam-gradle-tasks.txt
+            /tmp/aapt-badging.txt
+            /tmp/apk-certs.txt
+            /tmp/apk-permissions.txt
+            /tmp/manifest.xml
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload verified APK artifact
         uses: actions/upload-artifact@v7
