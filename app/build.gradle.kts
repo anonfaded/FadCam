@@ -55,7 +55,6 @@ android {
     }
 
     val releaseSigningConfigValid = signingConfigs.getByName("release").storeFile != null
-    val ciReleaseSigningFallback = providers.environmentVariable("FADCAM_CI_RELEASE_SIGNING").orNull == "true"
 
     buildTypes {
         debug {
@@ -73,14 +72,10 @@ android {
                 "proguard-rules.pro"
             )
             isDebuggable = false
-            // CI may use the Android debug keystore only as a temporary test-release
-            // fallback when the protected production keystore is not available.
-            // Local/production builds continue to require the configured release key.
-            signingConfig = when {
-                releaseSigningConfigValid -> signingConfigs.getByName("release")
-                ciReleaseSigningFallback -> signingConfigs.getByName("debug")
-                else -> signingConfigs.getByName("release")
-            }
+            // Release builds always use the explicit release signing configuration.
+            // CI creates a dedicated non-debug key on the ephemeral runner; local
+            // and production builds must provide their own protected release key.
+            signingConfig = signingConfigs.getByName("release")
         }
 
         create("pro") {
