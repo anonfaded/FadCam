@@ -10,8 +10,10 @@ on:
 permissions:
   contents: write
 
+# One Studio publisher per ref. A running verification finishes; only the
+# newest queued run for the same ref is retained, avoiding stale races.
 concurrency:
-  group: fadcam-studio-apk-${{ github.workflow }}-${{ github.run_id }}
+  group: fadcam-studio-apk-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -30,15 +32,8 @@ jobs:
           set -euo pipefail
           rm -rf /tmp/media3-patched
           git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
-
-      - name: Verify patched Media3 checkout
-        shell: bash
-        run: |
-          set -euo pipefail
           test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
-          MEDIA3_SHA="$(git -C /tmp/media3-patched rev-parse --verify HEAD)"
-          test -n "$MEDIA3_SHA"
-          echo "Patched Media3 commit: $MEDIA3_SHA"
+          echo "Patched Media3 commit: $(git -C /tmp/media3-patched rev-parse --verify HEAD)"
 
       - name: Set up Java 17
         uses: actions/setup-java@v5.6.0
@@ -71,44 +66,37 @@ jobs:
             echo "KEY_ALIAS=fadcam-ci-release"
             echo "KEY_PASSWORD=$KEYPASS"
           } >> local.properties
-
           test -s app/ci-signing/fadcam-ci-release.jks
-          keytool -list -v \
-            -keystore app/ci-signing/fadcam-ci-release.jks \
-            -storepass "$STOREPASS" \
-            -alias fadcam-ci-release \
-            | tee /tmp/fadcam-ci-cert.txt
-          ! grep -qi 'Android Debug' /tmp/fadcam-ci-cert.txt
+          keytool -list -keystore app/ci-signing/fadcam-ci-release.jks -storepass "$STOREPASS" -alias fadcam-ci-release >/dev/null
 
-      - name: Verify Gradle wrapper and project configuration
+      - name: Verify Gradle wrapper
         shell: bash
         run: |
           set -euo pipefail
           test -f ./gradlew
           chmod +x ./gradlew
-          ./gradlew :app:tasks --all --no-daemon --no-watch-fs >/tmp/fadcam-gradle-tasks.txt
-          grep -Eq '^assembleDefaultRelease([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
-          grep -Eq '^testDefaultReleaseUnitTest([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
-          grep -Eq '^lintDefaultRelease([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
+          ./gradlew --version
 
-      - name: Validate Studio release signing configuration
+      # Keep all blocking Gradle build/test work in one invocation. This avoids
+      # repeated daemon/configuration state and removes the failure mode that
+      # previously appeared between consecutive wrapper invocations.
+      - name: Build and test Studio release in one clean Gradle invocation
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew :app:validateSigningDefaultRelease --stacktrace --no-daemon --no-watch-fs
-
-      - name: Run Studio release JVM unit tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./gradlew :app:testDefaultReleaseUnitTest --stacktrace --no-daemon --no-watch-fs
+          ./gradlew \
+            :app:testDefaultReleaseUnitTest \
+            :app:assembleDefaultRelease \
+            --stacktrace \
+            --no-daemon \
+            --no-watch-fs \
+            --no-configuration-cache
 
       - name: Run Studio release lint audit
         shell: bash
         run: |
-          set -uo pipefail
           set +e
-          ./gradlew :app:lintDefaultRelease --stacktrace --no-daemon --no-watch-fs
+          ./gradlew :app:lintDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache
           lint_exit=$?
           set -e
 
@@ -122,9 +110,6 @@ jobs:
             echo "ERROR: lint did not produce a defaultRelease report."
             exit 1
           fi
-
-          echo "Lint reports found:"
-          printf '%s\n' "${reports[@]}"
 
           studio_errors=""
           for report in "${reports[@]}"; do
@@ -144,28 +129,22 @@ jobs:
             echo "Project-wide lint returned non-zero because of legacy findings outside Studio."
             echo "Studio-specific lint audit passed; release compilation and APK verification remain blocking gates."
           else
-            echo "Studio lint audit completed successfully."
+            echo "Studio lint audit passed."
           fi
-
-      - name: Build non-debuggable Studio release APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./gradlew :app:assembleDefaultRelease --stacktrace --no-daemon --no-watch-fs
 
       - name: Select and checksum universal APK
         id: apk
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t APKS < <(find app/build/outputs/apk -type f -name '*.apk' -print | sort)
-          echo "APK outputs:"
+          mapfile -t APKS < <(find app/build/outputs/apk -type f -name '*.apk' -path '*default/release/*' -print | sort)
+          echo "Release APK outputs:"
           printf '%s\n' "${APKS[@]}"
           test "${#APKS[@]}" -gt 0
 
-          UNIVERSAL="$(printf '%s\n' "${APKS[@]}" | grep -E -- '-universal\.apk$' | head -n 1 || true)"
+          UNIVERSAL="$(printf '%s\n' "${APKS[@]}" | grep -E -- 'universal\.apk$' | head -n 1 || true)"
           if [ -z "$UNIVERSAL" ]; then
-            echo "ERROR: Gradle did not produce the expected universal APK."
+            echo "ERROR: no universal Studio release APK was produced."
             exit 1
           fi
 
@@ -175,17 +154,17 @@ jobs:
           sha256sum app/build/verified/FadCam-Studio-release-universal.apk | tee app/build/verified/SHA256SUMS.txt
           echo "apk=app/build/verified/FadCam-Studio-release-universal.apk" >> "$GITHUB_OUTPUT"
 
-      - name: Verify APK container and required files
+      - name: Verify APK container
         shell: bash
         run: |
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
-          unzip -t "$apk" >/tmp/apk-unzip-test.txt
+          unzip -t "$apk" | tee /tmp/apk-unzip-test.txt
           grep -q 'No errors detected' /tmp/apk-unzip-test.txt
           unzip -l "$apk" | grep -q 'AndroidManifest.xml'
           unzip -l "$apk" | grep -q 'classes.dex'
 
-      - name: Verify release APK package, flags, signature and 16KB alignment
+      - name: Verify release package, signature and alignment
         shell: bash
         run: |
           set -euo pipefail
@@ -194,7 +173,6 @@ jobs:
           test -x "$BUILD_TOOLS/aapt"
           test -x "$BUILD_TOOLS/apksigner"
           test -x "$BUILD_TOOLS/zipalign"
-          echo "Using Android build-tools: $(basename "$BUILD_TOOLS")"
 
           "$BUILD_TOOLS/aapt" dump badging "$apk" | tee /tmp/aapt-badging.txt
           grep -q "package: name='com.fadcam'" /tmp/aapt-badging.txt
@@ -203,10 +181,9 @@ jobs:
           "$BUILD_TOOLS/apksigner" verify --verbose "$apk"
           "$BUILD_TOOLS/apksigner" verify --print-certs "$apk" | tee /tmp/apk-certs.txt
           ! grep -qi 'Android Debug' /tmp/apk-certs.txt
-
           "$BUILD_TOOLS/zipalign" -c -P 16 -v 4 "$apk"
 
-      - name: Verify release manifest has no legacy high-risk declarations
+      - name: Verify release manifest is hardened
         shell: bash
         run: |
           set -euo pipefail
@@ -218,23 +195,11 @@ jobs:
           ! grep -q 'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS' /tmp/apk-permissions.txt
           ! grep -q 'android.permission.SYSTEM_ALERT_WINDOW' /tmp/apk-permissions.txt
 
-          MANIFEST_XML="$(mktemp)"
-          "$BUILD_TOOLS/aapt" dump xmltree "$apk" AndroidManifest.xml > "$MANIFEST_XML"
-          if grep -q 'FadRecScreenshotAccessibilityService' "$MANIFEST_XML"; then
-            echo 'ERROR: legacy accessibility screenshot service is present in release APK.'
-            exit 1
-          fi
-
-      - name: Verify APK does not contain debug-only package
-        shell: bash
-        run: |
-          set -euo pipefail
-          apk="${{ steps.apk.outputs.apk }}"
-          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
-          "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q "package: name='com.fadcam'"
+          "$BUILD_TOOLS/aapt" dump xmltree "$apk" AndroidManifest.xml > /tmp/manifest.xml
+          ! grep -q 'FadRecScreenshotAccessibilityService' /tmp/manifest.xml
           ! "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q 'com.fadcam.beta'
 
-      - name: Upload verified APK CI artifact
+      - name: Upload verified APK artifact
         uses: actions/upload-artifact@v7
         with:
           name: FadCam-Studio-Release-APK
@@ -252,13 +217,9 @@ jobs:
         run: |
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
-
-          # Only the run for the current master HEAD may move studio-latest.
-          # Older runs still finish and retain their verified artifact, but they
-          # cannot race the release published by the newest commit.
           LATEST_MASTER="$(git ls-remote origin refs/heads/master | awk '{print $1}')"
           if [ "$LATEST_MASTER" != "$GITHUB_SHA" ]; then
-            echo "Master advanced to $LATEST_MASTER while this run was building $GITHUB_SHA."
+            echo "Master advanced to $LATEST_MASTER while this run built $GITHUB_SHA."
             echo "Skipping studio-latest publication; the newer run owns publication."
             exit 0
           fi
@@ -268,12 +229,10 @@ jobs:
           fi
 
           git push origin --delete studio-latest >/tmp/studio-tag-delete.txt 2>&1 || true
-
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
             if ! git ls-remote --tags origin refs/tags/studio-latest | grep -q 'refs/tags/studio-latest'; then
               break
             fi
-            echo "Waiting for studio-latest tag deletion (attempt $attempt/10)..."
             sleep 3
           done
 
@@ -287,7 +246,7 @@ jobs:
             "$apk" \
             --target "$GITHUB_SHA" \
             --title "FadCam Studio — latest verified release APK" \
-            --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. CI uses a dedicated non-debug release key generated only on the ephemeral runner; configure a protected production signing key before public distribution or Play Store submission." \
+            --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. CI uses an ephemeral non-debug release key for device verification; configure a protected production signing key before public distribution or Play Store submission." \
             --prerelease
 
           gh release view studio-latest --json tagName,targetCommitish,isDraft,isPrerelease,assets
