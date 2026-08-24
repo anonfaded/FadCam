@@ -86,30 +86,29 @@ jobs:
           set -euo pipefail
           test -f ./gradlew
           chmod +x ./gradlew
-          ./gradlew --version
-          ./gradlew :app:tasks --all --no-daemon >/tmp/fadcam-gradle-tasks.txt
-          grep -q ':app:assembleDefaultRelease' /tmp/fadcam-gradle-tasks.txt
-          grep -q ':app:testDefaultReleaseUnitTest' /tmp/fadcam-gradle-tasks.txt
-          grep -q ':app:lintDefaultRelease' /tmp/fadcam-gradle-tasks.txt
+          ./gradlew :app:tasks --all --no-daemon --no-watch-fs >/tmp/fadcam-gradle-tasks.txt
+          grep -Eq '^assembleDefaultRelease([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
+          grep -Eq '^testDefaultReleaseUnitTest([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
+          grep -Eq '^lintDefaultRelease([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
 
       - name: Validate Studio release signing configuration
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew :app:validateSigningDefaultRelease --stacktrace --no-daemon
+          ./gradlew :app:validateSigningDefaultRelease --stacktrace --no-daemon --no-watch-fs
 
       - name: Run Studio release JVM unit tests
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew :app:testDefaultReleaseUnitTest --stacktrace --no-daemon
+          ./gradlew :app:testDefaultReleaseUnitTest --stacktrace --no-daemon --no-watch-fs
 
       - name: Run Studio release lint audit
         shell: bash
         run: |
           set -uo pipefail
           set +e
-          ./gradlew :app:lintDefaultRelease --stacktrace --no-daemon
+          ./gradlew :app:lintDefaultRelease --stacktrace --no-daemon --no-watch-fs
           lint_exit=$?
           set -e
 
@@ -152,7 +151,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew :app:assembleDefaultRelease --stacktrace --no-daemon
+          ./gradlew :app:assembleDefaultRelease --stacktrace --no-daemon --no-watch-fs
 
       - name: Select and checksum universal APK
         id: apk
