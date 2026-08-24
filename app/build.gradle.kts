@@ -13,8 +13,6 @@ android {
 
     splits {
         abi {
-            // For pro builds: enable splits but only arm64-v8a (no universal)
-            // For main builds: arm64-v8a + armeabi-v7a with universal APK
             isEnable = !isBundle
             reset()
             if (isProBuild) {
@@ -35,9 +33,6 @@ android {
         versionCode = 52
         versionName = "4.0.0"
         vectorDrawables.useSupportLibrary = true
-        
-        // Fix 16KB native library alignment for Android 15
-        // Generate full native debug symbols so they can be uploaded to Play Console
         ndk {
             debugSymbolLevel = "FULL"
         }
@@ -50,7 +45,6 @@ android {
                 stream?.let { props.load(it) }
             }
             val keystoreFile = props.getProperty("KEYSTORE_FILE", "")
-            // Only set storeFile if keystore file path is provided and exists
             if (keystoreFile.isNotEmpty() && file(keystoreFile).exists()) {
                 storeFile = file(keystoreFile)
                 storePassword = props.getProperty("KEYSTORE_PASSWORD", "")
@@ -59,18 +53,18 @@ android {
             }
         }
     }
-    
-    // Helper: check if release signing config is valid
+
     val releaseSigningConfigValid = signingConfigs.getByName("release").storeFile != null
+    val ciReleaseSigningFallback = providers.environmentVariable("FADCAM_CI_RELEASE_SIGNING").orNull == "true"
 
     buildTypes {
         debug {
             applicationIdSuffix = ".beta"
             isDebuggable = true
-            versionNameSuffix = "-beta10.6" // Increment the beta version suffix for each release. Use `beta1` for the first beta release, then `beta2`, etc.
+            versionNameSuffix = "-beta10.6"
             resValue("string", "app_name", "FadCam Beta")
         }
-        
+
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -79,9 +73,16 @@ android {
                 "proguard-rules.pro"
             )
             isDebuggable = false
-            signingConfig = signingConfigs.getByName("release")
+            // CI may use the Android debug keystore only as a temporary test-release
+            // fallback when the protected production keystore is not available.
+            // Local/production builds continue to require the configured release key.
+            signingConfig = when {
+                releaseSigningConfigValid -> signingConfigs.getByName("release")
+                ciReleaseSigningFallback -> signingConfigs.getByName("debug")
+                else -> signingConfigs.getByName("release")
+            }
         }
-        
+
         create("pro") {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -96,7 +97,7 @@ android {
             }
             versionNameSuffix = "-Pro"
         }
-        
+
         create("proPlus") {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -110,7 +111,6 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             versionNameSuffix = "-Pro+"
-            // Custom app name via gradle property
             val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro+"
             resValue("string", "app_name", customAppName)
         }
@@ -136,29 +136,19 @@ android {
         }
         create("default") {
             dimension = "pro"
-            // Default for proPlus builds
         }
     }
 
-// ./gradlew assembleNotesProRelease - Notes Pro variant
-// ./gradlew assembleCalcProRelease - Calculator Pro variant
-// ./gradlew assembleWeatherProRelease - Weather Pro variant
-// ./gradlew assembleDefaultProPlusRelease -PcustomAppName="Custom Name" - Pro+ custom build (standalone)
-
-    // Variant filter: only build specific variants (modern API — the old
-    // variantFilter{} is deprecated since AGP 8.x).
     androidComponents {
         beforeVariants { variant ->
             val isPreBuiltFlavor = variant.name.contains("notesPro") || variant.name.contains("calcPro") || variant.name.contains("weatherPro")
             val isDefaultFlavor = variant.name.contains("default")
 
             if (isPreBuiltFlavor) {
-                // Pre-built flavors: only 'release' build type
                 if (!variant.name.endsWith("Release")) {
                     variant.enable = false
                 }
             } else if (isDefaultFlavor) {
-                // Default flavor: allow 'debug', 'release', and 'proPlus' build types
                 if (variant.name.endsWith("Pro") && !variant.name.endsWith("ProPlus")) {
                     variant.enable = false
                 }
@@ -166,8 +156,6 @@ android {
         }
     }
 
-    // Dynamic APK output names: FadCam_<flavor>_v<versionName><suffix>-<abi>.apk
-    // (default flavor has no <flavor> part; universal APK gets the literal "-universal")
     applicationVariants.all {
         val versionName = "${defaultConfig.versionName}${buildType.versionNameSuffix.orEmpty()}"
         val flavor = if (flavorName != "default") "${flavorName}_" else ""
@@ -193,11 +181,6 @@ android {
             java.srcDir("libs/AppLockLibrary/src/main/java")
             res.srcDir("libs/AppLockLibrary/src/main/res")
         }
-        // NOTE: Removed setSrcDirs(emptyList()) to enable test source detection
-        // getByName("test").java.setSrcDirs(emptyList<String>())
-        // getByName("androidTest").java.setSrcDirs(emptyList<String>())
-        
-        // Flavor-specific resources (icons override main icons)
         getByName("notesPro") {
             res.srcDir("src/notesPro/res")
         }
@@ -212,9 +195,7 @@ android {
     packaging {
         jniLibs {
             excludes += listOf("**/x86/**", "**/x86_64/**", "**/mips/**", "**/mips64/**")
-            // OpenCV and ffmpeg-kit both bundle libc++_shared.so. Keep one copy.
             pickFirsts += listOf("**/libc++_shared.so")
-            // Enable 16KB page size alignment for Android 15 compatibility
             useLegacyPackaging = false
         }
         resources {
@@ -230,7 +211,7 @@ android {
                 "**/*.kotlin_metadata",
                 "**/*.kotlin_builtins",
                 "**/*.proto",
-                "assets/PSDs/**"  // Exclude PSD source files from release APK
+                "assets/PSDs/**"
             )
         }
     }
@@ -264,14 +245,11 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.gridlayout)
     implementation(libs.core.ktx)
-    // Media3 ExoPlayer for playback (replacing deprecated exoplayer2)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
     implementation(libs.media3.session)
-    // Media3 Transformer + Effect for Faditor Mini video editing
     implementation(libs.media3.transformer)
     implementation(libs.media3.effect)
-    // AndroidX Media for MediaStyle notifications
     implementation(libs.media)
     implementation(libs.glide)
     implementation(libs.gson)
@@ -297,32 +275,20 @@ dependencies {
     implementation(libs.documentfile)
     implementation(libs.localbroadcastmanager)
     implementation(libs.room.runtime)
-    
-    // Media3 for fragmented MP4 muxing (patched for live streaming via composite build)
     implementation(libs.media3.muxer)
     implementation(libs.media3.common)
     implementation(libs.media3.container)
-    
-    // NanoHTTPD for HTTP streaming server
     implementation(libs.nanohttpd.core)
-    
-    // MP4Parser for reliable MP4 box structure parsing
     implementation("com.googlecode.mp4parser:isoparser:1.1.22")
-
     annotationProcessor(libs.compiler)
     annotationProcessor(libs.room.compiler)
-
     implementation(mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar"))
     implementation(libs.smart.exception.java)
     implementation(fileTree(mapOf("dir" to "libs/aar", "include" to listOf("*.aar"))))
-
-    // Unit Testing Dependencies (Local JVM tests - fast, no device needed)
     testImplementation(libs.junit)
     testImplementation("org.mockito:mockito-core:5.2.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
     testImplementation("org.json:json:20240303")
-    
-    // Android Instrumented Testing (runs on device/emulator)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }
