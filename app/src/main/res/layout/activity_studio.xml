@@ -11,13 +11,7 @@
         android:orientation="vertical"
         android:padding="12dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:gravity="center_vertical"
-            android:background="#0C1118"
-            android:paddingStart="16dp"
-            android:paddingEnd="10dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical" android:background="#0C1118" android:paddingStart="16dp" android:paddingEnd="10dp">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="FadCam" android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:text="STUDIO" android:textColor="#E53935" android:textSize="12sp" android:textStyle="bold" />
             <TextView android:id="@+id/studio_live_status" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginStart="18dp" android:gravity="center" android:paddingStart="12dp" android:paddingEnd="12dp" android:text="CAMERA STARTING" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" android:background="#B71C1C" />
@@ -70,7 +64,7 @@
             </LinearLayout>
             <LinearLayout android:layout_width="0dp" android:layout_height="110dp" android:layout_weight="1" android:layout_marginStart="10dp" android:padding="10dp" android:orientation="vertical" android:background="#0C1118">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="GRAPHICS / TITLES" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
-                <TextView android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="8dp" android:gravity="center_vertical" android:text="LOWER THIRD • TITLE • LOGO" android:textColor="#9AA6B5" android:textSize="9sp" />
+                <TextView android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="8dp" android:gravity="center_vertical" android:text="ENCODED GL LOWER THIRD / TITLE" android:textColor="#9AA6B5" android:textSize="9sp" />
                 <Button android:id="@+id/studio_graphics_button" android:layout_width="match_parent" android:layout_height="38dp" android:text="EDIT GRAPHIC" android:textSize="9sp" />
             </LinearLayout>
             <LinearLayout android:layout_width="0dp" android:layout_height="110dp" android:layout_weight="1" android:layout_marginStart="10dp" android:padding="10dp" android:orientation="vertical" android:background="#0C1118">
@@ -87,6 +81,11 @@
                 <TextView android:id="@+id/studio_stream_status" android:layout_width="match_parent" android:layout_height="24dp" android:text="○ STREAM • IDLE" android:textColor="#62D17A" android:textSize="10sp" />
             </LinearLayout>
             <LinearLayout android:layout_width="0dp" android:layout_height="100dp" android:layout_weight="1" android:layout_marginStart="10dp" android:padding="10dp" android:orientation="vertical" android:background="#0C1118">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="RTMP DESTINATION" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
+                <TextView android:id="@+id/studio_rtmp_status" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="6dp" android:text="RTMP • READY" android:textColor="#62D17A" android:textSize="9sp" />
+                <Button android:id="@+id/studio_rtmp_config_button" android:layout_width="match_parent" android:layout_height="38dp" android:text="CONFIGURE RTMP" android:textSize="9sp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="100dp" android:layout_weight="1" android:layout_marginStart="10dp" android:padding="10dp" android:orientation="vertical" android:background="#0C1118">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PRODUCTION STATUS" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
                 <TextView android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="8dp" android:gravity="center_vertical" android:text="PROGRAM • AUDIO • GRAPHICS • REPLAY" android:textColor="#9AA6B5" android:textSize="9sp" android:background="#111923" android:padding="10dp" />
             </LinearLayout>
@@ -94,7 +93,7 @@
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
             <Button android:id="@+id/studio_record_button" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:text="● RECORD" />
-            <Button android:id="@+id/studio_stream_button" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:layout_marginStart="8dp" android:text="● STREAM" />
+            <Button android:id="@+id/studio_stream_button" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:layout_marginStart="8dp" android:text="● RTMP STREAM" />
             <Button android:id="@+id/studio_remote_button" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:layout_marginStart="8dp" android:text="REMOTE CONTROL" />
             <Button android:id="@+id/studio_back_to_camera" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:layout_marginStart="8dp" android:text="CAMERA APP" />
         </LinearLayout>
