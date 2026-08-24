@@ -34,19 +34,14 @@ import androidx.core.content.ContextCompat;
 import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.streaming.RemoteStreamService;
 
-import java.net.Inet4Address;
-import java.net.NetworkInterface;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 
 /**
  * Professional FadCam production-room dashboard.
  *
- * This activity is intentionally an orchestration surface: the existing
- * RecordingService remains the authoritative camera/encoding engine, while the
- * existing RemoteStreamService remains the authoritative HLS streaming engine.
- * The Studio never invents a camera, recording, or streaming state.
+ * The Studio is an orchestration layer over FadCam's existing production
+ * engines. It never invents camera, recording, or streaming state.
  */
 public class StudioActivity extends AppCompatActivity {
 
@@ -60,6 +55,7 @@ public class StudioActivity extends AppCompatActivity {
     private TextView activeCameraLabel;
     private TextView transitionLabel;
     private TextView graphicsOverlay;
+    private TextView programGraphics;
     private TextView audioStatus;
     private TextView replayStatus;
 
@@ -105,6 +101,7 @@ public class StudioActivity extends AppCompatActivity {
         activeCameraLabel = findViewById(R.id.studio_active_camera);
         transitionLabel = findViewById(R.id.studio_transition_label);
         graphicsOverlay = findViewById(R.id.studio_graphics_overlay);
+        programGraphics = findViewById(R.id.studio_program_graphics);
         audioStatus = findViewById(R.id.studio_audio_status);
         replayStatus = findViewById(R.id.studio_replay_status);
 
@@ -158,7 +155,6 @@ public class StudioActivity extends AppCompatActivity {
             View tile = findViewById(ids[i]);
             if (tile != null) tile.setOnClickListener(v -> selectCamera(cameraNumber));
         }
-
         findViewById(R.id.studio_cut).setOnClickListener(v -> takeProgramLive("CUT"));
         findViewById(R.id.studio_fade).setOnClickListener(v -> takeProgramLive("FADE"));
         findViewById(R.id.studio_mix).setOnClickListener(v -> takeProgramLive("MIX"));
@@ -182,7 +178,7 @@ public class StudioActivity extends AppCompatActivity {
         }
     }
 
-    /** Makes the currently previewed camera the real program source. */
+    /** Takes the current real preview frame to program with a real transition. */
     private void takeProgramLive(String transition) {
         if (programSnapshot == null || previewView == null) return;
         Bitmap bitmap = previewView.getBitmap();
@@ -217,7 +213,7 @@ public class StudioActivity extends AppCompatActivity {
         });
     }
 
-    /** Connects Studio RECORD directly to the existing production RecordingService. */
+    /** Connects Studio RECORD directly to FadCam's existing RecordingService. */
     private void toggleRecording() {
         if (!hasCapturePermissions()) {
             ActivityCompat.requestPermissions(this,
@@ -264,9 +260,8 @@ public class StudioActivity extends AppCompatActivity {
 
     private void refreshEngineState() {
         try {
-            boolean serviceRecording = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
+            recording = getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE)
                     .getBoolean(Constants.PREF_IS_RECORDING_IN_PROGRESS, recording);
-            recording = serviceRecording;
         } catch (Exception ignored) {
         }
         try {
@@ -283,10 +278,9 @@ public class StudioActivity extends AppCompatActivity {
     }
 
     private void configureGraphics() {
-        if (graphicsOverlay != null) {
-            graphicsOverlay.setText(graphicsText);
-            findViewById(R.id.studio_graphics_button).setOnClickListener(v -> editGraphics());
-        }
+        graphicsOverlay.setText(graphicsText);
+        programGraphics.setText(graphicsText);
+        findViewById(R.id.studio_graphics_button).setOnClickListener(v -> editGraphics());
     }
 
     private void editGraphics() {
@@ -296,18 +290,19 @@ public class StudioActivity extends AppCompatActivity {
         input.setSelectAllOnFocus(true);
         new AlertDialog.Builder(this)
                 .setTitle("Program Graphic")
-                .setMessage("Text is rendered over the Studio program/preview surface.")
+                .setMessage("This title is applied to the Studio preview and program surfaces.")
                 .setView(input)
                 .setPositiveButton("APPLY", (dialog, which) -> {
                     graphicsText = input.getText().toString().trim();
                     if (graphicsText.isEmpty()) graphicsText = "FADCAM • LIVE";
                     graphicsOverlay.setText(graphicsText);
+                    programGraphics.setText(graphicsText);
                 })
                 .setNegativeButton("CANCEL", null)
                 .show();
     }
 
-    /** Uses Android's real connected audio-device inventory and preferred communication route. */
+    /** Uses Android's real connected audio-device inventory and routing API. */
     private void configureAudioRouting() {
         findViewById(R.id.studio_audio_button).setOnClickListener(v -> showAudioDevices());
     }
@@ -382,10 +377,11 @@ public class StudioActivity extends AppCompatActivity {
         replayStatus.setText("REPLAY • NO RECORDINGS");
     }
 
+    /** Opens FadCam's existing authenticated Remote tab for remote control. */
     private void configureRemoteControl() {
         findViewById(R.id.studio_remote_button).setOnClickListener(v -> {
             Intent intent = new Intent(this, MainActivity.class);
-            intent.putExtra(MainActivity.EXTRA_OPEN_REMOTE, true);
+            intent.putExtra("navigate_to_tab", 2);
             startActivity(intent);
         });
     }
