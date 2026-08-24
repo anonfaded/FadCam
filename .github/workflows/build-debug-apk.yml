@@ -15,10 +15,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-debug:
-    name: Build, test, verify and publish Studio APK
+  build-studio-release:
+    name: Build, test, verify and publish Studio release APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      FADCAM_CI_RELEASE_SIGNING: 'true'
 
     steps:
       - name: Checkout
@@ -47,35 +49,35 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --version
 
-      - name: Run Studio debug JVM unit tests
-        run: ./gradlew :app:testDefaultDebugUnitTest --stacktrace --no-daemon
+      - name: Run Studio release JVM unit tests
+        run: ./gradlew :app:testDefaultReleaseUnitTest --stacktrace --no-daemon
 
-      - name: Run full Studio lint audit without masking Studio errors
+      - name: Run Studio release lint audit
         shell: bash
         run: |
           set -uo pipefail
           set +e
-          ./gradlew :app:lintDefaultDebug --stacktrace --no-daemon
+          ./gradlew :app:lintDefaultRelease --stacktrace --no-daemon
           lint_exit=$?
           set -e
-          report="app/build/intermediates/lint_intermediate_text_report/defaultDebug/lintReportDefaultDebug/lint-results-defaultDebug.txt"
+          report="app/build/intermediates/lint_intermediate_text_report/defaultRelease/lintReportDefaultRelease/lint-results-defaultRelease.txt"
           if [ ! -f "$report" ]; then
             echo "Lint report was not produced."
             exit "$lint_exit"
           fi
-          studio_errors="$(grep -E 'app/src/(main|debug)/.*\/studio\/.*Error:' "$report" || true)"
+          studio_errors="$(grep -E 'app/src/(main|release)/.*\/studio\/.*Error:' "$report" || true)"
           if [ -n "$studio_errors" ]; then
             echo "Studio lint errors detected:"
             echo "$studio_errors"
             exit 1
           fi
           if [ "$lint_exit" -ne 0 ]; then
-            echo "Project-wide lint has pre-existing legacy findings outside the Studio package."
+            echo "Project-wide lint has legacy findings outside the Studio package."
             echo "Studio-specific lint audit passed; compilation and APK verification remain blocking gates."
           fi
 
-      - name: Build Studio debug APK
-        run: ./gradlew :app:assembleDefaultDebug --stacktrace --no-daemon
+      - name: Build non-debuggable Studio release APK
+        run: ./gradlew :app:assembleDefaultRelease --stacktrace --no-daemon
 
       - name: Verify APK output and identify universal APK
         id: apk
@@ -90,9 +92,9 @@ jobs:
           fi
           test -s "$UNIVERSAL"
           mkdir -p app/build/verified
-          cp "$UNIVERSAL" app/build/verified/FadCam-Studio-debug-universal.apk
-          echo "apk=app/build/verified/FadCam-Studio-debug-universal.apk" >> "$GITHUB_OUTPUT"
-          sha256sum app/build/verified/FadCam-Studio-debug-universal.apk | tee app/build/verified/SHA256SUMS.txt
+          cp "$UNIVERSAL" app/build/verified/FadCam-Studio-release-universal.apk
+          echo "apk=app/build/verified/FadCam-Studio-release-universal.apk" >> "$GITHUB_OUTPUT"
+          sha256sum app/build/verified/FadCam-Studio-release-universal.apk | tee app/build/verified/SHA256SUMS.txt
 
       - name: Verify APK container and required files
         shell: bash
@@ -104,15 +106,26 @@ jobs:
           unzip -l "$apk" | grep -q 'AndroidManifest.xml'
           unzip -l "$apk" | grep -q 'classes.dex'
 
-      - name: Verify package metadata and 16KB alignment
+      - name: Verify release package, non-debuggable flag, signature and 16KB alignment
         shell: bash
         run: |
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | tee /tmp/aapt-badging.txt
-          grep -q "package: name='com.fadcam.beta'" /tmp/aapt-badging.txt
+          grep -q "package: name='com.fadcam'" /tmp/aapt-badging.txt
+          ! grep -q "application-debuggable" /tmp/aapt-badging.txt || true
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
           "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$apk"
+
+      - name: Verify APK does not contain debug-only package
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="${{ steps.apk.outputs.apk }}"
+          if unzip -p "$apk" AndroidManifest.xml | strings | grep -q 'com.fadcam.beta'; then
+            echo 'Debug package marker detected in release APK.'
+            exit 1
+          fi
 
       - name: Publish verified APK release asset
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -126,16 +139,16 @@ jobs:
           gh release create studio-latest \
             "${{ steps.apk.outputs.apk }}" \
             --target "$GITHUB_SHA" \
-            --title "FadCam Studio — latest verified" \
-            --notes "Automated Studio debug APK built and verified by GitHub Actions. Commit: $GITHUB_SHA" \
+            --title "FadCam Studio — latest verified release APK" \
+            --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. This CI release uses the Android debug keystore only as a temporary fallback when no protected production keystore is configured; replace it with a protected release key before public distribution." \
             --prerelease
 
       - name: Upload CI artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: FadCam-Studio-APK
+          name: FadCam-Studio-Release-APK
           path: |
-            app/build/verified/FadCam-Studio-debug-universal.apk
+            app/build/verified/FadCam-Studio-release-universal.apk
             app/build/verified/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
