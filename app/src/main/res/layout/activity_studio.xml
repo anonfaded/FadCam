@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#05070A"
@@ -19,209 +18,41 @@
             android:background="#0C1118"
             android:paddingStart="16dp"
             android:paddingEnd="10dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="FadCam"
-                android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:text="STUDIO"
-                android:textColor="#E53935"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/studio_live_status"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_marginStart="18dp"
-                android:gravity="center"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:text="CAMERA STARTING"
-                android:textColor="#FFFFFF"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:background="#B71C1C" />
-
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="1080p • 60"
-                android:textColor="#AAB4C2"
-                android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/studio_active_camera"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:text="CAM 1 • BACK"
-                android:textColor="#62D17A"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="FadCam" android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:text="STUDIO" android:textColor="#E53935" android:textSize="12sp" android:textStyle="bold" />
+            <TextView android:id="@+id/studio_live_status" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginStart="18dp" android:gravity="center" android:paddingStart="12dp" android:paddingEnd="12dp" android:text="CAMERA STARTING" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" android:background="#B71C1C" />
+            <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1080p • 60" android:textColor="#AAB4C2" android:textSize="12sp" />
+            <TextView android:id="@+id/studio_active_camera" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="14dp" android:text="CAM 1 • BACK" android:textColor="#62D17A" android:textSize="12sp" android:textStyle="bold" />
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="PREVIEW"
-                    android:textColor="#42A5F5"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="220dp"
-                    android:layout_marginTop="5dp"
-                    android:background="#101721">
-
-                    <androidx.camera.view.PreviewView
-                        android:id="@+id/studio_preview"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="28dp"
-                        android:layout_gravity="bottom|start"
-                        android:layout_margin="10dp"
-                        android:gravity="center"
-                        android:paddingStart="10dp"
-                        android:paddingEnd="10dp"
-                        android:text="FADCAM • LIVE"
-                        android:textColor="#FFFFFF"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:background="#7B1FA2" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PREVIEW" android:textColor="#42A5F5" android:textSize="11sp" android:textStyle="bold" />
+                <FrameLayout android:layout_width="match_parent" android:layout_height="220dp" android:layout_marginTop="5dp" android:background="#101721">
+                    <androidx.camera.view.PreviewView android:id="@+id/studio_preview" android:layout_width="match_parent" android:layout_height="match_parent" />
+                    <TextView android:id="@+id/studio_graphics_overlay" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|start" android:layout_margin="10dp" android:gravity="center" android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingTop="6dp" android:paddingBottom="6dp" android:text="FADCAM • LIVE" android:textColor="#FFFFFF" android:textSize="10sp" android:textStyle="bold" android:background="#7B1FA2" />
                 </FrameLayout>
             </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="10dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="PROGRAM"
-                    android:textColor="#EF5350"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="220dp"
-                    android:layout_marginTop="5dp"
-                    android:background="#101721">
-
-                    <ImageView
-                        android:id="@+id/studio_program_snapshot"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:scaleType="centerCrop"
-                        android:contentDescription="Program output" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="top|end"
-                        android:layout_margin="10dp"
-                        android:text="PROGRAM"
-                        android:textColor="#FFFFFF"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
-                        android:background="#C62828"
-                        android:padding="7dp" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="10dp" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PROGRAM" android:textColor="#EF5350" android:textSize="11sp" android:textStyle="bold" />
+                <FrameLayout android:layout_width="match_parent" android:layout_height="220dp" android:layout_marginTop="5dp" android:background="#101721">
+                    <ImageView android:id="@+id/studio_program_snapshot" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:contentDescription="Program output" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="top|end" android:layout_margin="10dp" android:text="PROGRAM" android:textColor="#FFFFFF" android:textSize="10sp" android:textStyle="bold" android:background="#C62828" android:padding="7dp" />
+                    <TextView android:id="@+id/studio_program_graphics" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|start" android:layout_margin="10dp" android:text="FADCAM • LIVE" android:textColor="#FFFFFF" android:textSize="10sp" android:textStyle="bold" android:background="#7B1FA2" android:padding="7dp" />
                 </FrameLayout>
             </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="86dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/studio_transition_label"
-                    android:layout_width="match_parent"
-                    android:layout_height="34dp"
-                    android:gravity="center"
-                    android:text="FADE READY"
-                    android:textColor="#FFFFFF"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:background="#17202B" />
-
-                <Button
-                    android:id="@+id/studio_cut"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="6dp"
-                    android:text="CUT"
-                    android:textSize="10sp" />
-
-                <Button
-                    android:id="@+id/studio_fade"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="FADE"
-                    android:textSize="10sp" />
-
-                <Button
-                    android:id="@+id/studio_mix"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="MIX"
-                    android:textSize="10sp" />
+            <LinearLayout android:layout_width="86dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:orientation="vertical">
+                <TextView android:id="@+id/studio_transition_label" android:layout_width="match_parent" android:layout_height="34dp" android:gravity="center" android:text="CUT READY" android:textColor="#FFFFFF" android:textSize="10sp" android:textStyle="bold" android:background="#17202B" />
+                <Button android:id="@+id/studio_cut" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="6dp" android:text="CUT" android:textSize="10sp" />
+                <Button android:id="@+id/studio_fade" android:layout_width="match_parent" android:layout_height="48dp" android:text="FADE" android:textSize="10sp" />
+                <Button android:id="@+id/studio_mix" android:layout_width="match_parent" android:layout_height="48dp" android:text="MIX" android:textSize="10sp" />
             </LinearLayout>
         </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="CAMERA SWITCHER"
-            android:textColor="#AAB4C2"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <GridLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:columnCount="4"
-            android:rowCount="2"
-            android:useDefaultMargins="true">
-
-            <TextView android:id="@+id/studio_cam1" android:layout_width="0dp" android:layout_height="90dp" android:layout_columnWeight="1" android:gravity="center" android:text="1\nCAM 1\nLIVE" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" android:background="#163D2B" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="CAMERA SWITCHER" android:textColor="#AAB4C2" android:textSize="11sp" android:textStyle="bold" />
+        <GridLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:columnCount="4" android:rowCount="2" android:useDefaultMargins="true">
+            <TextView android:id="@+id/studio_cam1" android:layout_width="0dp" android:layout_height="90dp" android:layout_columnWeight="1" android:gravity="center" android:text="1\nCAM 1\nBACK" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" android:background="#163D2B" />
             <TextView android:id="@+id/studio_cam2" android:layout_width="0dp" android:layout_height="90dp" android:layout_columnWeight="1" android:gravity="center" android:text="2\nCAM 2\nFRONT" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" android:background="#182B3D" />
             <TextView android:id="@+id/studio_cam3" android:layout_width="0dp" android:layout_height="90dp" android:layout_columnWeight="1" android:gravity="center" android:text="3\nCAM 3\nDISCONNECTED" android:textColor="#8E9AAA" android:textSize="10sp" android:background="#0D131B" />
             <TextView android:id="@+id/studio_cam4" android:layout_width="0dp" android:layout_height="90dp" android:layout_columnWeight="1" android:gravity="center" android:text="4\nCAM 4\nDISCONNECTED" android:textColor="#8E9AAA" android:textSize="10sp" android:background="#0D131B" />
@@ -231,57 +62,40 @@
             <TextView android:id="@+id/studio_cam8" android:layout_width="0dp" android:layout_height="90dp" android:layout_columnWeight="1" android:gravity="center" android:text="8\nCAM 8\nDISCONNECTED" android:textColor="#8E9AAA" android:textSize="10sp" android:background="#0D131B" />
         </GridLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="100dp"
-                android:layout_weight="1"
-                android:padding="10dp"
-                android:orientation="vertical"
-                android:background="#0C1118">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="AUDIO MIXER" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
-                <SeekBar android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:progress="70" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MASTER • CAM 1 • MIC 1 • MUSIC" android:textColor="#7E8A98" android:textSize="9sp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+            <LinearLayout android:layout_width="0dp" android:layout_height="110dp" android:layout_weight="1" android:padding="10dp" android:orientation="vertical" android:background="#0C1118">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="AUDIO ROUTING" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
+                <TextView android:id="@+id/studio_audio_status" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="8dp" android:gravity="center_vertical" android:text="AUDIO • DEFAULT MIC" android:textColor="#62D17A" android:textSize="9sp" />
+                <Button android:id="@+id/studio_audio_button" android:layout_width="match_parent" android:layout_height="38dp" android:text="SELECT INPUT" android:textSize="9sp" />
             </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="100dp"
-                android:layout_weight="1"
-                android:layout_marginStart="10dp"
-                android:padding="10dp"
-                android:orientation="vertical"
-                android:background="#0C1118">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="GRAPHICS • TITLES • PLAYLISTS" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
-                <TextView android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="8dp" android:gravity="center_vertical" android:text="LOWER THIRD     TITLE     COUNTDOWN     LOGO" android:textColor="#9AA6B5" android:textSize="9sp" android:background="#111923" android:padding="10dp" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="110dp" android:layout_weight="1" android:layout_marginStart="10dp" android:padding="10dp" android:orientation="vertical" android:background="#0C1118">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="GRAPHICS / TITLES" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="8dp" android:gravity="center_vertical" android:text="LOWER THIRD • TITLE • LOGO" android:textColor="#9AA6B5" android:textSize="9sp" />
+                <Button android:id="@+id/studio_graphics_button" android:layout_width="match_parent" android:layout_height="38dp" android:text="EDIT GRAPHIC" android:textSize="9sp" />
             </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="110dp" android:layout_weight="1" android:layout_marginStart="10dp" android:padding="10dp" android:orientation="vertical" android:background="#0C1118">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="REPLAY" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
+                <TextView android:id="@+id/studio_replay_status" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="8dp" android:text="REPLAY • READY" android:textColor="#AAB4C2" android:textSize="9sp" />
+                <Button android:id="@+id/studio_replay_button" android:layout_width="match_parent" android:layout_height="38dp" android:text="OPEN LATEST" android:textSize="9sp" />
+            </LinearLayout>
+        </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="100dp"
-                android:layout_weight="1"
-                android:layout_marginStart="10dp"
-                android:padding="10dp"
-                android:orientation="vertical"
-                android:background="#0C1118">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+            <LinearLayout android:layout_width="0dp" android:layout_height="100dp" android:layout_weight="1" android:padding="10dp" android:orientation="vertical" android:background="#0C1118">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="RECORD / STREAM" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
                 <TextView android:id="@+id/studio_record_status" android:layout_width="match_parent" android:layout_height="24dp" android:layout_marginTop="6dp" android:text="○ REC • IDLE" android:textColor="#EF5350" android:textSize="10sp" />
                 <TextView android:id="@+id/studio_stream_status" android:layout_width="match_parent" android:layout_height="24dp" android:text="○ STREAM • IDLE" android:textColor="#62D17A" android:textSize="10sp" />
             </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="100dp" android:layout_weight="1" android:layout_marginStart="10dp" android:padding="10dp" android:orientation="vertical" android:background="#0C1118">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PRODUCTION STATUS" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="8dp" android:gravity="center_vertical" android:text="PROGRAM • AUDIO • GRAPHICS • REPLAY" android:textColor="#9AA6B5" android:textSize="9sp" android:background="#111923" android:padding="10dp" />
+            </LinearLayout>
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
             <Button android:id="@+id/studio_record_button" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:text="● RECORD" />
             <Button android:id="@+id/studio_stream_button" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:layout_marginStart="8dp" android:text="● STREAM" />
+            <Button android:id="@+id/studio_remote_button" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:layout_marginStart="8dp" android:text="REMOTE CONTROL" />
             <Button android:id="@+id/studio_back_to_camera" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:layout_marginStart="8dp" android:text="CAMERA APP" />
         </LinearLayout>
     </LinearLayout>
