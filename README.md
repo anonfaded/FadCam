@@ -77,7 +77,7 @@ For a local release APK, provide `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIA
 
 The previous Studio download was a debug/beta APK. The new delivery pipeline produces a **non-debuggable release APK** and no longer signs the release with the Android debug keystore. The Studio release manifest also removes the legacy accessibility screenshot service, broad storage/battery special access, and the system-wide overlay permission because those are not required by the Studio production room.
 
-Play Protect still performs its own independent scan of sideloaded applications and may block an app downloaded from a browser or file manager if it classifies the app as unverified and sensitive. Google recommends trusted distribution such as Google Play for production releases. citeturn2search0turn2search5
+Play Protect still performs its own independent scan of sideloaded applications and may block an app downloaded from a browser or file manager if it classifies the app as unverified and sensitive. For production distribution, use a trusted channel such as Google Play and a protected production signing key.
 
 ## License
 
