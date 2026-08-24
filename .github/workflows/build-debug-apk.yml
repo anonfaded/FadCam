@@ -44,6 +44,9 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --version
 
+      - name: Run Android unit tests
+        run: ./gradlew test --stacktrace --no-daemon
+
       - name: Build Studio debug APK
         run: ./gradlew :app:assembleDefaultDebug --stacktrace --no-daemon
 
