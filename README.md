@@ -8,12 +8,12 @@ FadCam Studio extends the FadCam camera engine with a broadcast-style production
 
 ### [⬇️ Download FadCam Studio APK](https://github.com/Trendyzima/FadCamvideo/releases/download/studio-latest/FadCam-Studio-debug-universal.apk)
 
-The link above points to the latest **verified Studio APK** published by GitHub Actions. **APK only — not a ZIP.**
+This is the permanent README download location for the latest **verified Studio APK**. GitHub Actions publishes the APK only after the verification pipeline passes. **APK only — not a ZIP.**
 
 The publication gate verifies:
 
 - JVM unit tests
-- Studio debug lint
+- Studio-specific lint audit
 - Debug APK compilation
 - APK ZIP/container integrity
 - AndroidManifest.xml and classes.dex presence
@@ -47,7 +47,9 @@ Use the RTMPS server URL and stream key supplied by the selected platform's live
 
 ## 🧪 Verification-first development
 
-Every production change is gated by `.github/workflows/build-debug-apk.yml`. Verification runs are intentionally not cancelled by later pushes. A failed test, lint check, build, APK integrity check, package check, signature check or alignment check blocks APK publication.
+Every production change is gated by `.github/workflows/build-debug-apk.yml`. Verification runs are intentionally not cancelled by later pushes. A failed unit test, Studio lint audit, build, APK integrity check, package check, signature check or alignment check blocks APK publication.
+
+The current verification process is fixing legacy project-wide lint debt separately from the Studio-specific gate; existing legacy findings are not allowed to hide Studio errors.
 
 ## 🛠️ Build locally
 
