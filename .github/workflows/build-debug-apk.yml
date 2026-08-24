@@ -3,6 +3,8 @@ name: Build FadCam Debug APK
 on:
   workflow_dispatch:
   push:
+    branches: [ master, studio-dashboard ]
+  pull_request:
     branches: [ master ]
 
 permissions:
@@ -38,7 +40,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FadCam-debug-apk
+          name: FadCam-studio-debug-apk
           path: app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 7

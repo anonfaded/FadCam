@@ -1,6 +1,7 @@
 package com.fadcam;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -23,11 +24,9 @@ import androidx.core.content.ContextCompat;
 /**
  * Professional FadCam production-room dashboard.
  *
- * This first studio milestone deliberately keeps the broadcast surface honest:
- * CAM 1 is a real CameraX preview, CAM 2 can switch to the front camera, and
- * disconnected sources are clearly marked instead of showing fake video.
- * Recording/streaming engines remain owned by the existing production services
- * and will be connected in the next implementation milestone.
+ * CAM 1 is a real CameraX preview, CAM 2 can use the front camera, and sources
+ * without a connected feed are explicitly marked disconnected rather than
+ * pretending that a camera exists.
  */
 public class StudioActivity extends AppCompatActivity {
 
@@ -41,7 +40,7 @@ public class StudioActivity extends AppCompatActivity {
     private TextView activeCameraLabel;
     private LifecycleCameraController cameraController;
     private final Handler snapshotHandler = new Handler(Looper.getMainLooper());
-    private boolean frontCamera = false;
+    private boolean frontCamera;
 
     private final Runnable snapshotRunnable = new Runnable() {
         @Override
@@ -85,14 +84,13 @@ public class StudioActivity extends AppCompatActivity {
     private void startCamera() {
         cameraController = new LifecycleCameraController(this);
         cameraController.setEnabledUseCases(CameraController.IMAGE_CAPTURE);
-        cameraController.bindToLifecycle(this);
         cameraController.setCameraSelector(frontCamera
                 ? CameraSelector.DEFAULT_FRONT_CAMERA
                 : CameraSelector.DEFAULT_BACK_CAMERA);
+        cameraController.bindToLifecycle(this);
         previewView.setController(cameraController);
         previewView.setScaleType(PreviewView.ScaleType.FILL_CENTER);
-        liveStatus.setText("LIVE • CAM 1");
-        activeCameraLabel.setText(frontCamera ? "CAM 2 • FRONT" : "CAM 1 • BACK");
+        updateCameraLabels();
         snapshotHandler.removeCallbacks(snapshotRunnable);
         snapshotHandler.post(snapshotRunnable);
     }
@@ -109,7 +107,6 @@ public class StudioActivity extends AppCompatActivity {
                 tile.setOnClickListener(v -> selectCamera(cameraNumber));
             }
         }
-
         findViewById(R.id.studio_cut).setOnClickListener(v -> showTransition("CUT"));
         findViewById(R.id.studio_fade).setOnClickListener(v -> showTransition("FADE"));
         findViewById(R.id.studio_mix).setOnClickListener(v -> showTransition("MIX"));
@@ -119,15 +116,25 @@ public class StudioActivity extends AppCompatActivity {
         if (cameraNumber == 1 || cameraNumber == 2) {
             frontCamera = cameraNumber == 2;
             if (cameraController != null) {
-                cameraController.setCameraSelector(frontCamera
-                        ? CameraSelector.DEFAULT_FRONT_CAMERA
-                        : CameraSelector.DEFAULT_BACK_CAMERA);
+                try {
+                    cameraController.setCameraSelector(frontCamera
+                            ? CameraSelector.DEFAULT_FRONT_CAMERA
+                            : CameraSelector.DEFAULT_BACK_CAMERA);
+                } catch (IllegalStateException e) {
+                    Toast.makeText(this, "Selected camera is unavailable", Toast.LENGTH_SHORT).show();
+                    return;
+                }
             }
-            activeCameraLabel.setText(frontCamera ? "CAM 2 • FRONT" : "CAM 1 • BACK");
-            liveStatus.setText("LIVE • CAM " + cameraNumber);
+            updateCameraLabels();
         } else {
             Toast.makeText(this, "CAM " + cameraNumber + " is not connected yet", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void updateCameraLabels() {
+        int number = frontCamera ? 2 : 1;
+        liveStatus.setText("LIVE • CAM " + number);
+        activeCameraLabel.setText(frontCamera ? "CAM 2 • FRONT" : "CAM 1 • BACK");
     }
 
     private void showTransition(String transition) {
@@ -138,16 +145,16 @@ public class StudioActivity extends AppCompatActivity {
     private void configureProductionControls() {
         findViewById(R.id.studio_record_button).setOnClickListener(v -> {
             recordingStatus.setText("● REC • READY FOR ENGINE LINK");
-            Toast.makeText(this, "Recording engine connection is the next milestone", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Recording engine integration is the next milestone", Toast.LENGTH_SHORT).show();
         });
 
         findViewById(R.id.studio_stream_button).setOnClickListener(v -> {
             streamStatus.setText("● STREAM • READY");
-            Toast.makeText(this, "Streaming destinations are ready for service integration", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Streaming destination integration is the next milestone", Toast.LENGTH_SHORT).show();
         });
 
         findViewById(R.id.studio_back_to_camera).setOnClickListener(v -> {
-            startActivity(new android.content.Intent(this, MainActivity.class));
+            startActivity(new Intent(this, MainActivity.class));
             finish();
         });
     }
