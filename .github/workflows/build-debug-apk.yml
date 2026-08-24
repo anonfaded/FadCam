@@ -10,9 +10,11 @@ on:
 permissions:
   contents: read
 
+# Verification runs must finish independently. Cancelling an older run on every
+# push makes it impossible to prove that a specific commit was actually tested.
 concurrency:
   group: fadcam-studio-apk-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-debug:
