@@ -63,6 +63,7 @@ public class StudioActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean frontCamera;
     private boolean programIsFront;
+    private boolean programFrozen;
     private boolean recording;
     private boolean streaming;
     private String graphicsText = "FADCAM • LIVE";
@@ -70,7 +71,9 @@ public class StudioActivity extends AppCompatActivity {
     private final Runnable snapshotRunnable = new Runnable() {
         @Override
         public void run() {
-            if (previewView != null && programSnapshot != null) {
+            // Before the first TAKE, preview and program mirror the real camera.
+            // After TAKE, the program frame remains frozen until the next transition.
+            if (!programFrozen && previewView != null && programSnapshot != null) {
                 Bitmap bitmap = previewView.getBitmap();
                 if (bitmap != null && !bitmap.isRecycled()) {
                     programSnapshot.setImageBitmap(bitmap);
@@ -186,6 +189,7 @@ public class StudioActivity extends AppCompatActivity {
             Toast.makeText(this, "Program frame is not ready", Toast.LENGTH_SHORT).show();
             return;
         }
+        programFrozen = true;
         if ("FADE".equals(transition)) {
             programSnapshot.animate().alpha(0f).setDuration(160).withEndAction(() -> {
                 programSnapshot.setImageBitmap(bitmap);
@@ -202,6 +206,7 @@ public class StudioActivity extends AppCompatActivity {
         programIsFront = frontCamera;
         transitionLabel.setText(transition + " • PROGRAM CAM " + (programIsFront ? "2" : "1"));
         graphicsOverlay.bringToFront();
+        programGraphics.bringToFront();
     }
 
     private void configureProductionControls() {
@@ -250,7 +255,6 @@ public class StudioActivity extends AppCompatActivity {
         } else {
             try {
                 stopService(new Intent(this, RemoteStreamService.class));
-                RemoteStreamManager.getInstance().setStreamingEnabled(false);
             } catch (Exception ignored) {
             }
             streaming = false;
@@ -302,7 +306,7 @@ public class StudioActivity extends AppCompatActivity {
                 .show();
     }
 
-    /** Uses Android's real connected audio-device inventory and routing API. */
+    /** Uses Android's real connected audio-device inventory for production input selection. */
     private void configureAudioRouting() {
         findViewById(R.id.studio_audio_button).setOnClickListener(v -> showAudioDevices());
     }
@@ -325,23 +329,19 @@ public class StudioActivity extends AppCompatActivity {
         for (int i = 0; i < devices.size(); i++) labels[i] = audioDeviceName(devices.get(i));
         new AlertDialog.Builder(this)
                 .setTitle("Audio Input Routing")
-                .setItems(labels, (dialog, which) -> selectAudioDevice(audioManager, devices.get(which)))
+                .setItems(labels, (dialog, which) -> selectAudioDevice(devices.get(which)))
                 .setNegativeButton("CANCEL", null)
                 .show();
     }
 
-    private void selectAudioDevice(AudioManager audioManager, AudioDeviceInfo device) {
-        boolean applied = false;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            try {
-                applied = audioManager.setCommunicationDevice(device);
-            } catch (Exception ignored) {
-            }
-        }
+    private void selectAudioDevice(AudioDeviceInfo device) {
+        // Persist the selected physical input for the recording engine/settings layer.
+        // MediaRecorder's input routing is device/OEM controlled; we do not falsely
+        // claim that an input route was applied when Android exposes no such setter.
         getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE).edit()
                 .putString(Constants.PREF_AUDIO_INPUT_DEVICE_NAME, audioDeviceName(device))
                 .apply();
-        audioStatus.setText("AUDIO • " + audioDeviceName(device) + (applied ? " • ROUTED" : " • SELECTED"));
+        audioStatus.setText("AUDIO • " + audioDeviceName(device) + " • SELECTED");
     }
 
     private String audioDeviceName(AudioDeviceInfo device) {
