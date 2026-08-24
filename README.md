@@ -6,23 +6,28 @@ FadCam Studio extends the FadCam camera engine with a broadcast-style production
 
 ## 📱 Verified Studio APK
 
-### [⬇️ Download FadCam Studio APK](https://github.com/Trendyzima/FadCamvideo/releases/download/studio-latest/FadCam-Studio-debug-universal.apk)
+### [⬇️ Download FadCam Studio APK](https://github.com/Trendyzima/FadCamvideo/releases/download/studio-latest/FadCam-Studio-release-universal.apk)
 
-This is the permanent README download location for the latest **verified Studio APK**. GitHub Actions publishes the APK only after the verification pipeline passes. **APK only — not a ZIP.**
+This is the permanent README download location for the latest **verified Studio release APK**. GitHub Actions publishes it only after the verification pipeline passes. **APK only — not a ZIP.**
 
-**Verification status:** the latest master verification pipeline must pass all blocking gates before `studio-latest` is published.
+The delivery build is **non-debuggable** and uses the normal `com.fadcam` application ID. This replaces the previous `com.fadcam.beta` debug package.
+
+### Verification gates
 
 The publication gate verifies:
 
 - JVM unit tests
 - Studio-specific lint audit
-- Debug APK compilation
+- Release APK compilation
 - APK ZIP/container integrity
 - AndroidManifest.xml and classes.dex presence
-- Package ID: `com.fadcam.beta`
+- Package ID: `com.fadcam`
 - APK signature verification
 - 16 KB ZIP alignment
+- Debug-package marker absence
 - SHA-256 checksum generation
+
+> **Signing note:** CI currently has a temporary release-signing fallback so the verified APK can be produced for device testing when the protected production keystore is not configured. Before public distribution or Play Store submission, configure a protected release keystore and remove the CI fallback.
 
 ## 🎬 Studio capabilities
 
@@ -60,13 +65,15 @@ git clone https://github.com/Trendyzima/FadCamvideo.git
 cd FadCamvideo
 git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
 ./gradlew test
-./gradlew :app:lintDefaultDebug
-./gradlew :app:assembleDefaultDebug
+./gradlew :app:lintDefaultRelease
+./gradlew :app:assembleDefaultRelease
 ```
 
-## ⚠️ Debug APK notice
+## ⚠️ Installation / Play Protect
 
-The Studio download is a debug/beta build for testing the production-room implementation. Android/Play Protect may apply additional checks to sideloaded debug applications. Do not disable device security protections merely to install an APK.
+The previous Studio download was a debug/beta APK. The new delivery pipeline produces a **non-debuggable release APK** instead. Play Protect still performs its own independent scan of sideloaded applications and can block apps it considers risky, especially when they request sensitive permissions. Google recommends using only permissions necessary for the app's core functionality and distributing through a trusted channel such as Google Play for production releases.
+
+The Studio release manifest removes the legacy accessibility screenshot service plus broad storage and battery special-access declarations from the Studio APK. Camera, microphone, networking and required foreground-service capabilities remain because they are core to recording and live production.
 
 ## License
 
