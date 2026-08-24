@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        Release-only privacy hardening for sideloaded Studio builds.
+        The main app contains legacy FadRec features, including an accessibility
+        screenshot service and broad storage/battery special access. Those are not
+        required by the Studio production room and are especially sensitive for
+        Play Protect. Keep them out of the release Studio APK while preserving the
+        legacy debug build for existing FadRec development/testing.
+    -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+        tools:node="remove" />
+
+    <application>
+        <service
+            android:name=".service.FadRecScreenshotAccessibilityService"
+            tools:node="remove" />
+    </application>
+
+</manifest>
