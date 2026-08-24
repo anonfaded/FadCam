@@ -158,7 +158,8 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions "$apk" | tee /tmp/apk-permissions.txt
           ! grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE' /tmp/apk-permissions.txt
           ! grep -q 'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS' /tmp/apk-permissions.txt
-          ! grep -q 'FadRecScreenshotAccessibilityService' /tmp/aapt-badging.txt
+          ! grep -q 'android.permission.SYSTEM_ALERT_WINDOW' /tmp/apk-permissions.txt
+          ! "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree "$apk" AndroidManifest.xml | grep -q 'FadRecScreenshotAccessibilityService'
 
       - name: Verify APK does not contain debug-only package
         shell: bash
