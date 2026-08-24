@@ -235,8 +235,6 @@ jobs:
           "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q "package: name='com.fadcam'"
           ! "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q 'com.fadcam.beta'
 
-      # Upload the verified APK before release publication so a GitHub release/tag
-      # failure can never hide the already-verified binary from the run artifacts.
       - name: Upload verified APK CI artifact
         uses: actions/upload-artifact@v7
         with:
@@ -255,6 +253,16 @@ jobs:
         run: |
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
+
+          # Only the run for the current master HEAD may move studio-latest.
+          # Older runs still finish and retain their verified artifact, but they
+          # cannot race the release published by the newest commit.
+          LATEST_MASTER="$(git ls-remote origin refs/heads/master | awk '{print $1}')"
+          if [ "$LATEST_MASTER" != "$GITHUB_SHA" ]; then
+            echo "Master advanced to $LATEST_MASTER while this run was building $GITHUB_SHA."
+            echo "Skipping studio-latest publication; the newer run owns publication."
+            exit 0
+          fi
 
           if gh release view studio-latest >/dev/null 2>&1; then
             gh release delete studio-latest --yes --cleanup-tag
