@@ -8,11 +8,13 @@ FadCam Studio extends the FadCam camera engine with a broadcast-style production
 
 ### ⬇️ Get the latest verified FadCam Studio APK
 
-**[Open the latest verified release](https://github.com/Trendyzima/FadCamvideo/releases)**
+**[Download the latest verified Studio APK](https://github.com/Trendyzima/FadCamvideo/releases/download/studio-latest/FadCam-Studio-release-universal.apk)**
+
+**[Download the SHA-256 checksum](https://github.com/Trendyzima/FadCamvideo/releases/download/studio-latest/SHA256SUMS.txt)**
 
 **[Open GitHub Actions verification](https://github.com/Trendyzima/FadCamvideo/actions/workflows/build-debug-apk.yml)**
 
-The APK is published as a GitHub Release **only after every verification gate passes**. If the release list is temporarily empty, do **not** install an older debug/beta APK; open the Actions page and wait for the latest `Build and Verify FadCam Studio APK` run to finish successfully. The verified APK is published immediately after the green verification run.
+The APK link above is populated only after the `Build and Verify FadCam Studio APK` workflow completes every blocking gate successfully. The rolling `studio-latest` release is replaced only by a verified build from the current `master` commit.
 
 The delivery build is **non-debuggable** and uses the normal `com.fadcam` application ID. This replaces the previous `com.fadcam.beta` debug package.
 
