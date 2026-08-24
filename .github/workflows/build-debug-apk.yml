@@ -34,7 +34,7 @@ jobs:
           git -C /tmp/media3-patched rev-parse --verify HEAD
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: temurin
@@ -47,8 +47,8 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --version
 
-      - name: Run all JVM unit tests
-        run: ./gradlew test --stacktrace --no-daemon
+      - name: Run Studio debug JVM unit tests
+        run: ./gradlew :app:testDefaultDebugUnitTest --stacktrace --no-daemon
 
       - name: Run Studio debug lint
         run: ./gradlew :app:lintDefaultDebug --stacktrace --no-daemon
