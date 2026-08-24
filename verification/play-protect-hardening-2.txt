@@ -1,0 +1,1 @@
+Verification marker for Play Protect permission hardening.
