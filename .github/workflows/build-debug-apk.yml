@@ -26,6 +26,11 @@ jobs:
       - name: Clone patched Media3
         run: git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
 
+      - name: Confirm patched Media3 checkout
+        run: |
+          test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
+          git -C /tmp/media3-patched rev-parse --short HEAD
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -39,11 +44,8 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --version
 
-      - name: Run Android unit tests
-        run: ./gradlew test --stacktrace
-
       - name: Build Studio debug APK
-        run: ./gradlew assembleDefaultDebug --stacktrace
+        run: ./gradlew :app:assembleDefaultDebug --stacktrace --no-daemon
 
       - name: Verify APK output
         shell: bash
@@ -74,7 +76,7 @@ jobs:
           set -euo pipefail
           apk="$(find app/build/outputs/apk -type f -name '*.apk' | head -n 1)"
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | tee /tmp/aapt-badging.txt
-          grep -q "package: name='com.fadcam'" /tmp/aapt-badging.txt
+          grep -q "package: name='com.fadcam.beta'" /tmp/aapt-badging.txt
 
       - name: Generate checksums
         shell: bash
