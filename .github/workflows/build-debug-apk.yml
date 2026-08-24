@@ -10,8 +10,6 @@ on:
 permissions:
   contents: write
 
-# Every run gets its own concurrency key. This prevents a newer push from
-# cancelling the exact commit that is being audited.
 concurrency:
   group: fadcam-studio-apk-${{ github.workflow }}-${{ github.run_id }}
   cancel-in-progress: false
@@ -237,6 +235,18 @@ jobs:
           "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q "package: name='com.fadcam'"
           ! "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q 'com.fadcam.beta'
 
+      # Upload the verified APK before release publication so a GitHub release/tag
+      # failure can never hide the already-verified binary from the run artifacts.
+      - name: Upload verified APK CI artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: FadCam-Studio-Release-APK
+          path: |
+            app/build/verified/FadCam-Studio-release-universal.apk
+            app/build/verified/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Publish verified APK release asset
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         env:
@@ -246,13 +256,10 @@ jobs:
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
 
-          # Remove the previous rolling release if it exists.
           if gh release view studio-latest >/dev/null 2>&1; then
             gh release delete studio-latest --yes --cleanup-tag
           fi
 
-          # Explicitly remove a leftover tag as well. This avoids a stale tag
-          # surviving release deletion and making the next create fail.
           git push origin --delete studio-latest >/tmp/studio-tag-delete.txt 2>&1 || true
 
           for attempt in 1 2 3 4 5 6 7 8 9 10; do
@@ -277,13 +284,3 @@ jobs:
             --prerelease
 
           gh release view studio-latest --json tagName,targetCommitish,isDraft,isPrerelease,assets
-
-      - name: Upload CI artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: FadCam-Studio-Release-APK
-          path: |
-            app/build/verified/FadCam-Studio-release-universal.apk
-            app/build/verified/SHA256SUMS.txt
-          if-no-files-found: error
-          retention-days: 14
