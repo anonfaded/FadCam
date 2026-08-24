@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<lint>
-    <!-- Studio's RTMP credentials dialog is intentionally phone/tablet-only.
-         StudioActivity is not part of the Wear OS camera UI. -->
-    <issue id="WearPasswordInput">
-        <ignore path="**/StudioActivity.java" />
-    </issue>
-</lint>
