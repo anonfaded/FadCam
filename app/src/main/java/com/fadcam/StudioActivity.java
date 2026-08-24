@@ -17,6 +17,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.text.InputType;
+import android.text.method.PasswordTransformationMethod;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -338,7 +339,8 @@ public class StudioActivity extends AppCompatActivity {
         EditText key = new EditText(this);
         key.setHint("Stream key");
         key.setSingleLine(true);
-        key.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        key.setInputType(InputType.TYPE_CLASS_TEXT);
+        key.setTransformationMethod(PasswordTransformationMethod.getInstance());
 
         String savedPlatform = getSharedPreferences("FadCamPrefs", MODE_PRIVATE)
                 .getString(StudioRtmpConfig.PREF_PLATFORM, StudioRtmpConfig.PLATFORM_YOUTUBE);
