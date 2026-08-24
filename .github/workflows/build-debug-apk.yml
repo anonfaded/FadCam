@@ -10,8 +10,11 @@ on:
 permissions:
   contents: write
 
+# Each commit gets its own verification run. Do not put verification runs in a
+# shared concurrency group: GitHub keeps only one pending run in a group, so a
+# burst of pushes can otherwise cancel the exact run we need to inspect.
 concurrency:
-  group: fadcam-studio-apk-${{ github.ref }}
+  group: fadcam-studio-apk-${{ github.workflow }}-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -19,8 +22,6 @@ jobs:
     name: Build, test, verify and publish Studio release APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    env:
-      FADCAM_CI_RELEASE_SIGNING: 'true'
 
     steps:
       - name: Checkout
@@ -41,6 +42,37 @@ jobs:
           java-version: '17'
           distribution: temurin
           cache: gradle
+
+      - name: Create isolated CI release signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/ci-signing
+          STOREPASS="$(openssl rand -hex 24)"
+          KEYPASS="$(openssl rand -hex 24)"
+          keytool -genkeypair \
+            -keystore app/ci-signing/fadcam-ci-release.jks \
+            -storetype JKS \
+            -storepass "$STOREPASS" \
+            -keypass "$KEYPASS" \
+            -alias fadcam-ci-release \
+            -keyalg RSA \
+            -keysize 4096 \
+            -validity 10000 \
+            -dname "CN=FadCam CI Release, OU=FadCam, O=Trendyzima, L=CI, ST=CI, C=KE" \
+            -noprompt
+          {
+            echo "KEYSTORE_FILE=ci-signing/fadcam-ci-release.jks"
+            echo "KEYSTORE_PASSWORD=$STOREPASS"
+            echo "KEY_ALIAS=fadcam-ci-release"
+            echo "KEY_PASSWORD=$KEYPASS"
+          } >> local.properties
+          keytool -list -v \
+            -keystore app/ci-signing/fadcam-ci-release.jks \
+            -storepass "$STOREPASS" \
+            -alias fadcam-ci-release \
+            | tee /tmp/fadcam-ci-cert.txt
+          ! grep -qi 'Android Debug' /tmp/fadcam-ci-cert.txt
 
       - name: Verify Gradle wrapper
         run: |
@@ -113,19 +145,28 @@ jobs:
           apk="${{ steps.apk.outputs.apk }}"
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | tee /tmp/aapt-badging.txt
           grep -q "package: name='com.fadcam'" /tmp/aapt-badging.txt
-          ! grep -q "application-debuggable" /tmp/aapt-badging.txt || true
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk" | tee /tmp/apk-certs.txt
+          ! grep -qi 'Android Debug' /tmp/apk-certs.txt
           "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$apk"
+
+      - name: Verify release manifest has no legacy high-risk declarations
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="${{ steps.apk.outputs.apk }}"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions "$apk" | tee /tmp/apk-permissions.txt
+          ! grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE' /tmp/apk-permissions.txt
+          ! grep -q 'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS' /tmp/apk-permissions.txt
+          ! grep -q 'FadRecScreenshotAccessibilityService' /tmp/aapt-badging.txt
 
       - name: Verify APK does not contain debug-only package
         shell: bash
         run: |
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
-          if unzip -p "$apk" AndroidManifest.xml | strings | grep -q 'com.fadcam.beta'; then
-            echo 'Debug package marker detected in release APK.'
-            exit 1
-          fi
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | grep -q "package: name='com.fadcam'"
+          ! "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | grep -q 'com.fadcam.beta'
 
       - name: Publish verified APK release asset
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -140,7 +181,7 @@ jobs:
             "${{ steps.apk.outputs.apk }}" \
             --target "$GITHUB_SHA" \
             --title "FadCam Studio — latest verified release APK" \
-            --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. This CI release uses the Android debug keystore only as a temporary fallback when no protected production keystore is configured; replace it with a protected release key before public distribution." \
+            --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. CI uses a dedicated non-debug release key generated only on the ephemeral runner; configure a protected production signing key before public distribution or Play Store submission." \
             --prerelease
 
       - name: Upload CI artifacts
