@@ -10,8 +10,8 @@ on:
 permissions:
   contents: write
 
-# Give every commit its own queue slot. GitHub otherwise keeps only one
-# pending run in a shared concurrency group, which can hide the run we need.
+# Every run gets its own concurrency key. This prevents a newer push from
+# cancelling the exact commit that is being audited.
 concurrency:
   group: fadcam-studio-apk-${{ github.workflow }}-${{ github.run_id }}
   cancel-in-progress: false
@@ -24,20 +24,26 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Clone patched Media3
-        run: git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
 
       - name: Verify patched Media3 checkout
         shell: bash
         run: |
           set -euo pipefail
           test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
-          git -C /tmp/media3-patched rev-parse --verify HEAD
+          MEDIA3_SHA="$(git -C /tmp/media3-patched rev-parse --verify HEAD)"
+          test -n "$MEDIA3_SHA"
+          echo "Patched Media3 commit: $MEDIA3_SHA"
 
       - name: Set up Java 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v5.6.0
         with:
           java-version: '17'
           distribution: temurin
@@ -67,6 +73,8 @@ jobs:
             echo "KEY_ALIAS=fadcam-ci-release"
             echo "KEY_PASSWORD=$KEYPASS"
           } >> local.properties
+
+          test -s app/ci-signing/fadcam-ci-release.jks
           keytool -list -v \
             -keystore app/ci-signing/fadcam-ci-release.jks \
             -storepass "$STOREPASS" \
@@ -74,13 +82,23 @@ jobs:
             | tee /tmp/fadcam-ci-cert.txt
           ! grep -qi 'Android Debug' /tmp/fadcam-ci-cert.txt
 
-      - name: Verify Gradle wrapper
+      - name: Verify Gradle wrapper and project configuration
         shell: bash
         run: |
           set -euo pipefail
           test -f ./gradlew
           chmod +x ./gradlew
           ./gradlew --version
+          ./gradlew :app:tasks --all --no-daemon >/tmp/fadcam-gradle-tasks.txt
+          grep -q ':app:assembleDefaultRelease' /tmp/fadcam-gradle-tasks.txt
+          grep -q ':app:testDefaultReleaseUnitTest' /tmp/fadcam-gradle-tasks.txt
+          grep -q ':app:lintDefaultRelease' /tmp/fadcam-gradle-tasks.txt
+
+      - name: Validate Studio release signing configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew :app:validateSigningDefaultRelease --stacktrace --no-daemon
 
       - name: Run Studio release JVM unit tests
         shell: bash
@@ -97,8 +115,6 @@ jobs:
           lint_exit=$?
           set -e
 
-          # AGP has changed the exact lint report directory across releases.
-          # Locate the generated report instead of depending on one hard-coded path.
           mapfile -t reports < <(find app/build -type f \( \
             -name 'lint-results-defaultRelease.txt' -o \
             -name 'lint-results-defaultRelease.xml' -o \
@@ -115,7 +131,7 @@ jobs:
 
           studio_errors=""
           for report in "${reports[@]}"; do
-            matches="$(grep -E 'app/src/(main|release)/.*studio.*Error:' "$report" 2>/dev/null || true)"
+            matches="$(grep -Ei 'app/src/(main|release)/.*studio.*Error:' "$report" 2>/dev/null || true)"
             if [ -n "$matches" ]; then
               studio_errors="$studio_errors$matches\n"
             fi
@@ -129,7 +145,7 @@ jobs:
 
           if [ "$lint_exit" -ne 0 ]; then
             echo "Project-wide lint returned non-zero because of legacy findings outside Studio."
-            echo "Studio-specific lint audit passed; the release compilation and APK verification gates remain blocking."
+            echo "Studio-specific lint audit passed; release compilation and APK verification remain blocking gates."
           else
             echo "Studio lint audit completed successfully."
           fi
@@ -140,7 +156,7 @@ jobs:
           set -euo pipefail
           ./gradlew :app:assembleDefaultRelease --stacktrace --no-daemon
 
-      - name: Verify APK output and identify universal APK
+      - name: Select and checksum universal APK
         id: apk
         shell: bash
         run: |
@@ -152,14 +168,15 @@ jobs:
 
           UNIVERSAL="$(printf '%s\n' "${APKS[@]}" | grep -E -- '-universal\.apk$' | head -n 1 || true)"
           if [ -z "$UNIVERSAL" ]; then
-            UNIVERSAL="${APKS[0]}"
+            echo "ERROR: Gradle did not produce the expected universal APK."
+            exit 1
           fi
 
           test -s "$UNIVERSAL"
           mkdir -p app/build/verified
           cp "$UNIVERSAL" app/build/verified/FadCam-Studio-release-universal.apk
-          echo "apk=app/build/verified/FadCam-Studio-release-universal.apk" >> "$GITHUB_OUTPUT"
           sha256sum app/build/verified/FadCam-Studio-release-universal.apk | tee app/build/verified/SHA256SUMS.txt
+          echo "apk=app/build/verified/FadCam-Studio-release-universal.apk" >> "$GITHUB_OUTPUT"
 
       - name: Verify APK container and required files
         shell: bash
@@ -171,37 +188,54 @@ jobs:
           unzip -l "$apk" | grep -q 'AndroidManifest.xml'
           unzip -l "$apk" | grep -q 'classes.dex'
 
-      - name: Verify release package, non-debuggable flag, signature and 16KB alignment
+      - name: Verify release APK package, flags, signature and 16KB alignment
         shell: bash
         run: |
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | tee /tmp/aapt-badging.txt
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -x "$BUILD_TOOLS/aapt"
+          test -x "$BUILD_TOOLS/apksigner"
+          test -x "$BUILD_TOOLS/zipalign"
+          echo "Using Android build-tools: $(basename "$BUILD_TOOLS")"
+
+          "$BUILD_TOOLS/aapt" dump badging "$apk" | tee /tmp/aapt-badging.txt
           grep -q "package: name='com.fadcam'" /tmp/aapt-badging.txt
           ! grep -q 'application-debuggable' /tmp/aapt-badging.txt
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk" | tee /tmp/apk-certs.txt
+
+          "$BUILD_TOOLS/apksigner" verify --verbose "$apk"
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$apk" | tee /tmp/apk-certs.txt
           ! grep -qi 'Android Debug' /tmp/apk-certs.txt
-          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$apk"
+
+          "$BUILD_TOOLS/zipalign" -c -P 16 -v 4 "$apk"
 
       - name: Verify release manifest has no legacy high-risk declarations
         shell: bash
         run: |
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions "$apk" | tee /tmp/apk-permissions.txt
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+
+          "$BUILD_TOOLS/aapt" dump permissions "$apk" | tee /tmp/apk-permissions.txt
           ! grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE' /tmp/apk-permissions.txt
           ! grep -q 'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS' /tmp/apk-permissions.txt
           ! grep -q 'android.permission.SYSTEM_ALERT_WINDOW' /tmp/apk-permissions.txt
-          ! "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree "$apk" AndroidManifest.xml | grep -q 'FadRecScreenshotAccessibilityService'
+
+          MANIFEST_XML="$(mktemp)"
+          "$BUILD_TOOLS/aapt" dump xmltree "$apk" AndroidManifest.xml > "$MANIFEST_XML"
+          if grep -q 'FadRecScreenshotAccessibilityService' "$MANIFEST_XML"; then
+            echo 'ERROR: legacy accessibility screenshot service is present in release APK.'
+            exit 1
+          fi
 
       - name: Verify APK does not contain debug-only package
         shell: bash
         run: |
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | grep -q "package: name='com.fadcam'"
-          ! "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | grep -q 'com.fadcam.beta'
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q "package: name='com.fadcam'"
+          ! "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q 'com.fadcam.beta'
 
       - name: Publish verified APK release asset
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -212,15 +246,26 @@ jobs:
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
 
-          # Replace the rolling release cleanly. If an old release exists, remove
-          # it and its tag before creating the new release at this exact commit.
+          # Remove the previous rolling release if it exists.
           if gh release view studio-latest >/dev/null 2>&1; then
             gh release delete studio-latest --yes --cleanup-tag
           fi
 
-          # Fail early with a useful message if GitHub has not removed the old tag.
+          # Explicitly remove a leftover tag as well. This avoids a stale tag
+          # surviving release deletion and making the next create fail.
+          git push origin --delete studio-latest >/tmp/studio-tag-delete.txt 2>&1 || true
+
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if ! git ls-remote --tags origin refs/tags/studio-latest | grep -q 'refs/tags/studio-latest'; then
+              break
+            fi
+            echo "Waiting for studio-latest tag deletion (attempt $attempt/10)..."
+            sleep 3
+          done
+
           if git ls-remote --tags origin refs/tags/studio-latest | grep -q 'refs/tags/studio-latest'; then
-            echo 'ERROR: studio-latest tag still exists after release cleanup.'
+            echo 'ERROR: studio-latest tag still exists after cleanup.'
+            cat /tmp/studio-tag-delete.txt || true
             exit 1
           fi
 
@@ -231,10 +276,10 @@ jobs:
             --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. CI uses a dedicated non-debug release key generated only on the ephemeral runner; configure a protected production signing key before public distribution or Play Store submission." \
             --prerelease
 
-          gh release view studio-latest --json tagName,targetCommitish,isDraft,isPrerelease
+          gh release view studio-latest --json tagName,targetCommitish,isDraft,isPrerelease,assets
 
       - name: Upload CI artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: FadCam-Studio-Release-APK
           path: |
