@@ -1,4 +1,4 @@
-name: Build FadCam Debug APK
+name: Build and Verify FadCam Studio APK
 
 on:
   workflow_dispatch:
@@ -10,8 +10,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: fadcam-studio-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-debug:
+    name: Build, verify and package Studio APK
     runs-on: ubuntu-latest
 
     steps:
@@ -28,19 +33,62 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Build debug APK
+      - name: Verify Gradle wrapper
         run: |
+          test -f ./gradlew
           chmod +x ./gradlew
-          ./gradlew assembleDefaultDebug --stacktrace
+          ./gradlew --version
 
-      - name: Locate APK
+      - name: Run Android unit tests
+        run: ./gradlew test --stacktrace
+
+      - name: Build Studio debug APK
+        run: ./gradlew assembleDefaultDebug --stacktrace
+
+      - name: Verify APK output
+        shell: bash
         run: |
-          find app/build/outputs/apk -type f -name '*.apk' -print
+          set -euo pipefail
+          mapfile -t APKS < <(find app/build/outputs/apk -type f -name '*.apk' -print | sort)
+          test "${#APKS[@]}" -gt 0
+          printf '%s\n' "${APKS[@]}"
+          for apk in "${APKS[@]}"; do
+            test -s "$apk"
+            file "$apk"
+            sha256sum "$apk"
+          done
 
-      - name: Upload APK
+      - name: Verify APK is a valid ZIP/APK container
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$(find app/build/outputs/apk -type f -name '*.apk' | head -n 1)"
+          unzip -t "$apk" >/tmp/apk-unzip-test.txt
+          grep -q 'No errors detected' /tmp/apk-unzip-test.txt
+          unzip -l "$apk" | grep -q 'AndroidManifest.xml'
+          unzip -l "$apk" | grep -q 'classes.dex'
+
+      - name: Verify Studio APK package metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$(find app/build/outputs/apk -type f -name '*.apk' | head -n 1)"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$apk" | tee /tmp/aapt-badging.txt
+          grep -q "package: name='com.fadcam'" /tmp/aapt-badging.txt
+
+      - name: Generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          find app/build/outputs/apk -type f -name '*.apk' -print0 | xargs -0 sha256sum > app/build/outputs/apk/SHA256SUMS.txt
+          cat app/build/outputs/apk/SHA256SUMS.txt
+
+      - name: Upload APK files
         uses: actions/upload-artifact@v4
         with:
-          name: FadCam-studio-debug-apk
-          path: app/build/outputs/apk/**/*.apk
+          name: FadCam-Studio-APK
+          path: |
+            app/build/outputs/apk/**/*.apk
+            app/build/outputs/apk/SHA256SUMS.txt
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
