@@ -3,14 +3,17 @@ package com.fadcam.utils;
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.Context;
+import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 import androidx.documentfile.provider.DocumentFile;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
 
 import java.io.File;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
 
 /**
  * Utility class for caching storage information to improve performance
@@ -18,149 +21,113 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class StorageInfoCache {
     private static final String TAG = "StorageInfoCache";
-    private static final long CACHE_VALIDITY_MS = 30_000; // 30 seconds
-    
-    // Cache storage data
+    private static final long CACHE_VALIDITY_MS = 30_000;
+
     private static long lastCacheTime = 0;
     private static long cachedAvailableBytes = -1;
     private static long cachedTotalBytes = -1;
     private static boolean cachedUsingCustomStorage = false;
     private static boolean cachedCustomIsOnPrimary = true;
-    
-    // Thread-safe access
+
     private static final Object cacheLock = new Object();
-    
+
     public static class StorageInfo {
         public final long availableBytes;
         public final long totalBytes;
         public final boolean usingCustomStorage;
         public final boolean customIsOnPrimary;
-        
-        public StorageInfo(long availableBytes, long totalBytes, 
+
+        public StorageInfo(long availableBytes, long totalBytes,
                           boolean usingCustomStorage, boolean customIsOnPrimary) {
             this.availableBytes = availableBytes;
             this.totalBytes = totalBytes;
             this.usingCustomStorage = usingCustomStorage;
             this.customIsOnPrimary = customIsOnPrimary;
         }
-        
+
         public double getAvailableGB() {
             return availableBytes / (1024.0 * 1024.0 * 1024.0);
         }
-        
+
         public double getTotalGB() {
             return totalBytes / (1024.0 * 1024.0 * 1024.0);
         }
     }
-    
-    /**
-     * Get cached storage info if valid, otherwise null
-     */
+
     public static StorageInfo getCachedStorageInfo() {
         synchronized (cacheLock) {
             if (isCacheValid()) {
-                return new StorageInfo(cachedAvailableBytes, cachedTotalBytes, 
-                                     cachedUsingCustomStorage, cachedCustomIsOnPrimary);
+                return new StorageInfo(cachedAvailableBytes, cachedTotalBytes,
+                        cachedUsingCustomStorage, cachedCustomIsOnPrimary);
             }
             return null;
         }
     }
-    
-    /**
-     * Calculate and cache storage information
-     */
-    public static StorageInfo calculateAndCacheStorageInfo(Context context, 
+
+    public static StorageInfo calculateAndCacheStorageInfo(Context context,
                                                           SharedPreferencesManager prefsManager) {
-        
-        // Default to internal external storage stats
         StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
         long bytesAvailable = stat.getAvailableBytes();
         long bytesTotal = stat.getTotalBytes();
-        
-        // Check if using custom storage
+
         String storageMode = prefsManager.getStorageMode();
         String customUriString = prefsManager.getCustomStorageUri();
-        boolean usingCustomStorage = SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode) 
-                                   && customUriString != null;
+        boolean usingCustomStorage = SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)
+                && customUriString != null;
         boolean customIsOnPrimary = true;
-        
+
         if (usingCustomStorage) {
             try {
                 android.net.Uri treeUri = android.net.Uri.parse(customUriString);
-                
-                // Heuristics for determining if custom storage is on primary volume
+                String docId = null;
                 try {
-                    String docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
-                    if (docId != null) {
-                        if (docId.startsWith("primary:")) {
-                            customIsOnPrimary = true;
-                        } else if (docId.startsWith("raw:")) {
-                            String rawPath = docId.substring("raw:".length());
-                            customIsOnPrimary = rawPath.startsWith(
-                                Environment.getExternalStorageDirectory().getAbsolutePath());
-                        } else if (docId.contains(":")) {
-                            String volumeId = docId.split(":", 2)[0];
-                            customIsOnPrimary = "primary".equalsIgnoreCase(volumeId);
-                        }
-                    }
-                } catch (Exception ignore) {
-                    // best-effort only
+                    docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
+                } catch (Exception ignored) {
                 }
-                
-                // Try to get actual storage stats for custom storage
-                if (hasSafPermission(context, treeUri)) {
-                    java.io.File probe = Utils.getFileFromSafUriIfPossible(context, treeUri);
-                    if (probe != null && probe.exists()) {
-                        StatFs customStat = new StatFs(probe.getAbsolutePath());
-                        bytesAvailable = customStat.getAvailableBytes();
-                        bytesTotal = customStat.getTotalBytes();
-                    } else {
-                        String docId = null;
-                        try {
-                            docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
-                        } catch (Exception ignored) {
-                        }
-                        File resolvedVolumePath = resolvePathFromTreeDocId(context, docId);
-                        if (resolvedVolumePath != null && resolvedVolumePath.exists()) {
-                            StatFs customStat = new StatFs(resolvedVolumePath.getAbsolutePath());
-                            bytesAvailable = customStat.getAvailableBytes();
-                            bytesTotal = customStat.getTotalBytes();
-                        }
+
+                customIsOnPrimary = isPrimaryDocumentId(docId);
+
+                File customPath = resolveStoragePath(context, docId);
+                if (customPath != null && customPath.exists()) {
+                    StatFs customStat = new StatFs(customPath.getAbsolutePath());
+                    bytesAvailable = customStat.getAvailableBytes();
+                    bytesTotal = customStat.getTotalBytes();
+                } else if (hasSafPermission(context, treeUri)) {
+                    // Some providers expose no real filesystem path. Keep the
+                    // internal stats rather than fabricating capacity values.
+                    DocumentFile tree = DocumentFile.fromTreeUri(context, treeUri);
+                    if (tree == null || !tree.exists() || !tree.canWrite()) {
+                        usingCustomStorage = false;
                     }
                 }
             } catch (Exception e) {
                 FLog.e(TAG, "Error probing custom storage", e);
             }
         }
-        
-        // Cache the results
+
         synchronized (cacheLock) {
             cachedAvailableBytes = bytesAvailable;
             cachedTotalBytes = bytesTotal;
             cachedUsingCustomStorage = usingCustomStorage;
             cachedCustomIsOnPrimary = customIsOnPrimary;
             lastCacheTime = System.currentTimeMillis();
-            
-            FLog.d(TAG, "Storage info cached - Available: " + (bytesAvailable / (1024.0 * 1024.0 * 1024.0)) 
-                      + " GB, Total: " + (bytesTotal / (1024.0 * 1024.0 * 1024.0)) + " GB");
+
+            FLog.d(TAG, "Storage info cached - Available: "
+                    + (bytesAvailable / (1024.0 * 1024.0 * 1024.0))
+                    + " GB, Total: "
+                    + (bytesTotal / (1024.0 * 1024.0 * 1024.0)) + " GB");
         }
-        
+
         return new StorageInfo(bytesAvailable, bytesTotal, usingCustomStorage, customIsOnPrimary);
     }
-    
-    /**
-     * Check if current cache is still valid
-     */
+
     public static boolean isCacheValid() {
         synchronized (cacheLock) {
-            return (System.currentTimeMillis() - lastCacheTime) < CACHE_VALIDITY_MS 
-                   && cachedAvailableBytes >= 0;
+            return (System.currentTimeMillis() - lastCacheTime) < CACHE_VALIDITY_MS
+                    && cachedAvailableBytes >= 0;
         }
     }
-    
-    /**
-     * Clear the cache to force recalculation
-     */
+
     public static void clearCache() {
         synchronized (cacheLock) {
             lastCacheTime = 0;
@@ -168,13 +135,11 @@ public class StorageInfoCache {
             cachedTotalBytes = -1;
         }
     }
-    
-    /**
-     * Check if we have SAF permission for the given URI
-     */
+
     private static boolean hasSafPermission(Context context, android.net.Uri treeUri) {
         try {
-            for (android.content.UriPermission permission : context.getContentResolver().getPersistedUriPermissions()) {
+            for (android.content.UriPermission permission
+                    : context.getContentResolver().getPersistedUriPermissions()) {
                 if (permission.getUri().equals(treeUri) && permission.isWritePermission()) {
                     return true;
                 }
@@ -185,7 +150,16 @@ public class StorageInfoCache {
         return false;
     }
 
-    private static File resolvePathFromTreeDocId(Context context, String docId) {
+    private static boolean isPrimaryDocumentId(String docId) {
+        return docId != null && docId.toLowerCase(java.util.Locale.ROOT).startsWith("primary:");
+    }
+
+    /**
+     * Resolve a SAF tree document ID to the backing volume when Android exposes
+     * the volume directory. This is what makes the home storage card follow an
+     * SD/USB destination instead of continuing to show phone capacity.
+     */
+    private static File resolveStoragePath(Context context, String docId) {
         if (docId == null || !docId.contains(":")) return null;
         String[] parts = docId.split(":", 2);
         if (parts.length < 2) return null;
@@ -195,6 +169,27 @@ public class StorageInfoCache {
         if ("primary".equalsIgnoreCase(volumeId)) {
             File root = Environment.getExternalStorageDirectory();
             return relative.isEmpty() ? root : new File(root, relative);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            StorageManager manager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+            if (manager != null) {
+                try {
+                    List<StorageVolume> volumes = manager.getStorageVolumes();
+                    for (StorageVolume volume : volumes) {
+                        if (volume == null) continue;
+                        String uuid = volume.getUuid();
+                        if (uuid != null && uuid.equalsIgnoreCase(volumeId)) {
+                            File root = volume.getDirectory();
+                            if (root != null) {
+                                return relative.isEmpty() ? root : new File(root, relative);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    FLog.w(TAG, "Unable to resolve StorageVolume directory", e);
+                }
+            }
         }
 
         File[] externalDirs = context.getExternalFilesDirs(null);
