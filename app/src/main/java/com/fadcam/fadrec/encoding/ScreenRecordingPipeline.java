@@ -26,6 +26,7 @@ import com.fadcam.Constants;
 import com.fadcam.VideoCodec;
 import com.fadcam.media.FragmentedMp4MuxerWrapper;
 import com.fadcam.opengl.WatermarkInfoProvider;
+import com.fadcam.production.ProductionAudioDuckingBus;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -825,6 +826,9 @@ public class ScreenRecordingPipeline {
         if (enableAudio && audioEncoder != null) {
             audioEncoder.start();
             audioRecord.startRecording();
+            if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
+                ProductionAudioDuckingBus.publishCaptureState(true);
+            }
         }
         
         // Create VirtualDisplay
@@ -1037,6 +1041,10 @@ public class ScreenRecordingPipeline {
                 if (bytesRead > 0) {
                     readCount++;
                     audioBytesCaptured += bytesRead;
+                    int rms = computeRms(audioBuffer, bytesRead);
+                    if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
+                        ProductionAudioDuckingBus.publishRms(rms);
+                    }
                     // Diagnostics: log the first reads and a periodic health
                     // sample (RMS + device dB) so a silent capture is visible
                     // in logs from the very first chunk.
@@ -1060,6 +1068,9 @@ public class ScreenRecordingPipeline {
                             + " (chunk#" + readCount + ")");
                 }
             }
+            if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {
+                ProductionAudioDuckingBus.publishCaptureState(false);
+            }
             FLog.i(TAG, "FadRec audio loop ended: chunks=" + readCount
                     + " bytes=" + audioBytesCaptured
                     + " droppedInput=" + audioChunksDropped
@@ -1068,17 +1079,21 @@ public class ScreenRecordingPipeline {
         audioRecordingThread.start();
     }
 
-    /** Lightweight RMS of the first 512 samples — detects zero-capture immediately. */
+    /** Lightweight little-endian PCM RMS used by diagnostics and voice ducking. */
     private static int computeRms(ByteBuffer buffer, int bytes) {
         int samples = Math.min(bytes / 2, 512);
         if (samples <= 0) return 0;
         long sumSq = 0;
         for (int i = 0; i < samples; i++) {
-            short s = buffer.getShort(i * 2);
-            sumSq += (long) s * s;
+            int lo = buffer.get(i * 2) & 0xFF;
+            int hi = buffer.get(i * 2 + 1);
+            short sample = (short) (lo | (hi << 8));
+            sumSq += (long) sample * sample;
         }
         return (int) Math.sqrt((double) sumSq / samples);
     }
+
+    // PRODUCTION_AUDIO_DUCKING_WIRED_V1
 
     private void zeroAudioBuffer(ByteBuffer buffer, int size) {
         for (int i = 0; i < size; i++) {
