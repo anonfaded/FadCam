@@ -14,7 +14,9 @@ FadCam Studio extends the FadCam camera engine with a broadcast-style production
 
 **[Open GitHub Actions verification](https://github.com/Trendyzima/FadCamvideo/actions/workflows/build-debug-apk.yml)**
 
-The APK link above is a rolling release: it is replaced only after the current `master` commit passes the complete release verification workflow. The delivery APK is non-debuggable and uses the normal `com.fadcam` application ID.
+The APK link above is a rolling release. It is replaced only after the current `master` commit passes the complete release verification workflow, including unit tests, release compilation, Studio lint audit, APK integrity, package/signature/alignment and manifest-hardening checks. The delivery APK is non-debuggable and uses the normal `com.fadcam` application ID.
+
+**Current delivery status:** the README points only to the CI-published `studio-latest` asset; a new APK is published automatically from `master` after the verification gate is green.
 
 ## 🎬 Studio capabilities
 
@@ -34,7 +36,7 @@ The APK link above is a rolling release: it is replaced only after the current `
 
 ## 🎛️ Producer Cockpit — hidden broadcast drawer
 
-The production room now contains a subtle **⋮ cockpit control** in the header. Tap it when the producer needs the deeper control surface; the cockpit opens as a right-side drawer so the normal production UI stays clean.
+The production room contains a subtle **⋮ cockpit control** in the header. Tap it when the producer needs the deeper control surface; the cockpit opens as a right-side drawer so the normal production UI stays clean.
 
 The cockpit provides:
 
