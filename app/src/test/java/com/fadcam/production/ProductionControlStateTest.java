@@ -14,10 +14,12 @@ public class ProductionControlStateTest {
     }
 
     @Test
-    public void takeSwapsPreviewAndProgram() {
+    public void takePromotesPreviewAndKeepsOldProgramAsPreview() {
         ProductionControlState state = new ProductionControlState(
                 ProductionScene.CAMERA,
                 ProductionScene.VIDEO,
+                2,
+                4,
                 ProductionControlState.Transition.DISSOLVE,
                 750);
 
@@ -25,6 +27,8 @@ public class ProductionControlStateTest {
 
         assertEquals(ProductionScene.VIDEO, taken.getPreviewScene());
         assertEquals(ProductionScene.CAMERA, taken.getProgramScene());
+        assertEquals(4, taken.getPreviewCameraSlot());
+        assertEquals(2, taken.getProgramCameraSlot());
         assertEquals(ProductionControlState.Transition.DISSOLVE, taken.getTransition());
         assertEquals(750, taken.getTransitionDurationMs());
     }
@@ -32,14 +36,31 @@ public class ProductionControlStateTest {
     @Test
     public void invalidConstructorValuesFallBackSafely() {
         ProductionControlState state = new ProductionControlState(
-                null,
-                null,
-                null,
-                99999);
+                null, null, 99, -10, null, 99999);
 
         assertEquals(ProductionScene.DUET_PIP, state.getPreviewScene());
         assertEquals(ProductionScene.DUET_PIP, state.getProgramScene());
+        assertEquals(6, state.getPreviewCameraSlot());
+        assertEquals(1, state.getProgramCameraSlot());
         assertEquals(ProductionControlState.Transition.CUT, state.getTransition());
         assertEquals(3000, state.getTransitionDurationMs());
+    }
+
+    @Test
+    public void selectingPreviewCameraDoesNotChangeProgram() {
+        ProductionControlState state = new ProductionControlState(
+                ProductionScene.VIDEO,
+                ProductionScene.DUET_PIP,
+                1,
+                3,
+                ProductionControlState.Transition.CUT,
+                500);
+
+        ProductionControlState selected = state.withPreviewCameraSlot(5);
+
+        assertEquals(ProductionScene.CAMERA, selected.getPreviewScene());
+        assertEquals(5, selected.getPreviewCameraSlot());
+        assertEquals(ProductionScene.DUET_PIP, selected.getProgramScene());
+        assertEquals(3, selected.getProgramCameraSlot());
     }
 }
