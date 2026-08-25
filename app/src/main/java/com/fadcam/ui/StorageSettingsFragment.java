@@ -2,9 +2,13 @@ package com.fadcam.ui;
 
 import com.fadcam.Log;
 import com.fadcam.FLog;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,16 +22,16 @@ import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.Constants;
-import com.fadcam.MainActivity;
-import com.fadcam.ui.OverlayNavUtil;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 
 /**
- * StorageSettingsFragment
- * Modular extraction of storage location logic from legacy SettingsFragment.
- * Provides single row summary + dialogs keeping same preference semantics &
- * broadcast.
+ * Storage settings for production recording.
+ *
+ * <p>Internal storage remains the default. A SAF tree can be selected for a
+ * removable SD card or another writable external folder. The selected tree is
+ * persisted, validated on every visit, and the recording service already uses
+ * the same preference to create its video segments through DocumentFile.</p>
  */
 public class StorageSettingsFragment extends Fragment {
 
@@ -35,7 +39,6 @@ public class StorageSettingsFragment extends Fragment {
 
     private SharedPreferencesManager prefs;
     private TextView valueStorageMode;
-
     private ActivityResultLauncher<Uri> openDocumentTreeLauncher;
 
     @Nullable
@@ -50,53 +53,48 @@ public class StorageSettingsFragment extends Fragment {
         super.onCreate(savedInstanceState);
         prefs = SharedPreferencesManager.getInstance(requireContext());
         openDocumentTreeLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(), uri -> {
-            if (uri != null) {
-                boolean success = false;
-                try {
-                    final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
-                    requireContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
-                    prefs.setCustomStorageUri(uri.toString());
-                    prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_CUSTOM);
-                    success = true;
-                    sendStorageChangedBroadcast();
-                } catch (Exception e) {
-                    FLog.e(TAG, "Failed to persist custom storage URI", e);
-                    prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
-                    prefs.setCustomStorageUri(null);
-                }
+            if (uri == null) {
                 refreshValue();
-            } else {
-                // Revert if user cancelled selection when switching
-                if (!SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(prefs.getStorageMode())) {
-                    prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
-                }
-                refreshValue();
+                return;
             }
+            if (!persistAndValidateTree(uri)) {
+                prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+                prefs.setCustomStorageUri(null);
+                FLog.w(TAG, "Selected storage tree is not writable; keeping internal storage");
+                refreshValue();
+                return;
+            }
+            prefs.setCustomStorageUri(uri.toString());
+            prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_CUSTOM);
+            sendStorageChangedBroadcast();
+            refreshValue();
         });
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         super.onViewCreated(view, savedInstanceState);
+        com.fadcam.Utils.attachPressScaleToClickableRows(view);
         valueStorageMode = view.findViewById(R.id.value_storage_mode);
         view.findViewById(R.id.row_storage_mode).setOnClickListener(v -> showStorageOptionsSheet());
         View back = view.findViewById(R.id.back_button);
-        if (back != null) {
-            back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
-        }
+        if (back != null) back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity()));
         refreshValue();
     }
-
-    // Removed duplicate manual back handling; centralized via OverlayNavUtil
 
     private void refreshValue() {
         String mode = prefs.getStorageMode();
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(mode)) {
             String uri = prefs.getCustomStorageUri();
+            if (!isPersistedTreeWritable(uri)) {
+                prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
+                prefs.setCustomStorageUri(null);
+                valueStorageMode.setText(getString(R.string.storage_value_internal));
+                return;
+            }
             String label = buildDisplayPath(uri);
-            valueStorageMode.setText(getString(R.string.storage_value_custom_prefix) + " " + label);
+            String prefix = isRemovableStorageUri(uri) ? "SD card / external" : "External folder";
+            valueStorageMode.setText(prefix + ": " + label);
         } else {
             valueStorageMode.setText(getString(R.string.storage_value_internal));
         }
@@ -106,10 +104,8 @@ public class StorageSettingsFragment extends Fragment {
         final String rk = "picker_result_storage";
         getParentFragmentManager().setFragmentResultListener(rk, this, (k, b) -> {
             String sel = b.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-            if (sel == null)
-                return;
+            if (sel == null) return;
             String mode = prefs.getStorageMode();
-            boolean custom = SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(mode);
             switch (sel) {
                 case "use_internal":
                 case "switch_internal":
@@ -122,7 +118,7 @@ public class StorageSettingsFragment extends Fragment {
                 case "select_custom":
                 case "change_custom":
                     launchDirectoryPicker();
-                    return; // wait for result
+                    return;
                 case "clear_custom":
                     prefs.setCustomStorageUri(null);
                     prefs.setStorageMode(SharedPreferencesManager.STORAGE_MODE_INTERNAL);
@@ -131,38 +127,35 @@ public class StorageSettingsFragment extends Fragment {
             }
             refreshValue();
         });
+
         String mode = prefs.getStorageMode();
         boolean custom = SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(mode);
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
-        String selectedId = null;
+        String selectedId;
         if (custom) {
-            items.add(new com.fadcam.ui.picker.OptionItem("switch_internal",
-                    getString(R.string.storage_option_switch_internal)));
-            items.add(new com.fadcam.ui.picker.OptionItem("change_custom",
-                    getString(R.string.storage_option_change_custom)));
-            items.add(new com.fadcam.ui.picker.OptionItem("clear_custom",
-                    getString(R.string.storage_option_clear_custom)));
-            selectedId = "change_custom"; // highlight change option as current mode indicator
+            items.add(new com.fadcam.ui.picker.OptionItem("switch_internal", "Use internal storage"));
+            items.add(new com.fadcam.ui.picker.OptionItem("change_custom", "Change SD card / external folder"));
+            items.add(new com.fadcam.ui.picker.OptionItem("clear_custom", "Remove external storage"));
+            selectedId = "change_custom";
         } else {
-            items.add(new com.fadcam.ui.picker.OptionItem("use_internal",
-                    getString(R.string.storage_option_use_internal)));
-            items.add(new com.fadcam.ui.picker.OptionItem("select_custom",
-                    getString(R.string.storage_option_select_custom)));
+            items.add(new com.fadcam.ui.picker.OptionItem("use_internal", "Use internal storage"));
+            items.add(new com.fadcam.ui.picker.OptionItem("select_custom", "Choose SD card / external folder"));
             selectedId = "use_internal";
         }
-        String helper = getString(R.string.storage_helper_primary) + "\n" + getString(R.string.storage_helper_security);
+
+        String helper = "Production recordings use the selected storage until you stop them or that storage runs out of writable space.\n\n"
+                + "For large productions, choose a writable SD card folder from the Android picker. FadCam will persist the permission and create its camera folders there.\n\n"
+                + getString(R.string.storage_helper_security);
         if (custom) {
             String uri = prefs.getCustomStorageUri();
-            String displayName = buildDisplayPath(uri);
-            if (uri != null) {
-                helper += "\n\n" + getString(R.string.storage_helper_current_custom_prefix) + " " + displayName;
-                helper += "\n" + getString(R.string.storage_helper_current_custom_uri_prefix) + " "
-                        + decodeTreeUriToReadablePath(uri);
-            }
+            helper += "\n\nCurrent destination: " + buildDisplayPath(uri);
+            String readable = decodeTreeUriToReadablePath(uri);
+            if (!readable.isEmpty()) helper += "\n" + readable;
         }
-        com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
-                .newInstance(
-                        getString(R.string.storage_sheet_title), items, selectedId, rk, helper);
+
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                        "Recording storage", items, selectedId, rk, helper);
         sheet.show(getParentFragmentManager(), "storage_picker");
     }
 
@@ -170,21 +163,58 @@ public class StorageSettingsFragment extends Fragment {
         try {
             openDocumentTreeLauncher.launch(null);
         } catch (Exception e) {
-            FLog.e(TAG, "Error launching directory picker", e);
+            FLog.e(TAG, "Error launching storage directory picker", e);
         }
     }
 
-    private String buildDisplayPath(String uriString) {
-        if (uriString == null)
-            return getString(R.string.storage_value_none);
+    private boolean persistAndValidateTree(@NonNull Uri uri) {
+        try {
+            int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+            requireContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
+            return isPersistedTreeWritable(uri.toString());
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to persist storage tree permission", e);
+            return false;
+        }
+    }
+
+    private boolean isPersistedTreeWritable(@Nullable String uriString) {
+        if (uriString == null || uriString.isEmpty()) return false;
+        try {
+            DocumentFile tree = DocumentFile.fromTreeUri(requireContext(), Uri.parse(uriString));
+            return tree != null && tree.exists() && tree.isDirectory() && tree.canWrite();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isRemovableStorageUri(@Nullable String uriString) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || uriString == null || uriString.isEmpty()) return false;
         try {
             Uri treeUri = Uri.parse(uriString);
-            DocumentFile pickedDir = DocumentFile.fromTreeUri(requireContext(), treeUri);
+            String documentId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
+            if (documentId == null) return false;
+            String volumeId = documentId.contains(":") ? documentId.substring(0, documentId.indexOf(':')) : documentId;
+            StorageManager storageManager = (StorageManager) requireContext().getSystemService(Context.STORAGE_SERVICE);
+            if (storageManager == null) return false;
+            for (StorageVolume volume : storageManager.getStorageVolumes()) {
+                String uuid = volume.getUuid();
+                if (uuid != null && uuid.equalsIgnoreCase(volumeId)) return volume.isRemovable();
+                if ("primary".equalsIgnoreCase(volumeId) && volume.isPrimary()) return volume.isRemovable();
+            }
+        } catch (Exception e) {
+            FLog.d(TAG, "Could not classify storage URI as removable", e);
+        }
+        return false;
+    }
+
+    private String buildDisplayPath(String uriString) {
+        if (uriString == null) return getString(R.string.storage_value_none);
+        try {
+            DocumentFile pickedDir = DocumentFile.fromTreeUri(requireContext(), Uri.parse(uriString));
             if (pickedDir != null) {
                 String name = pickedDir.getName();
-                if (name != null && !name.isEmpty())
-                    return name;
-                return getString(R.string.storage_value_selected_folder);
+                if (name != null && !name.isEmpty()) return name;
             }
         } catch (Exception e) {
             FLog.e(TAG, "buildDisplayPath error", e);
@@ -193,134 +223,57 @@ public class StorageSettingsFragment extends Fragment {
     }
 
     private String decodeTreeUriToReadablePath(String uriString) {
-        // method(decodeTreeUriToReadablePath)-----------
-        if (uriString == null)
-            return "";
+        if (uriString == null) return "";
         try {
-            // Typical SAF tree URI:
-            // content://com.android.externalstorage.documents/tree/primary%3ADownload%2FFadCam
             int idx = uriString.indexOf("tree/");
             if (idx >= 0) {
-                String after = uriString.substring(idx + 5); // skip 'tree/'
-                // Decode percent encodings
+                String after = uriString.substring(idx + 5);
                 String decoded = java.net.URLDecoder.decode(after, "UTF-8");
-                // Map primary: to /storage/emulated/0/
-                if (decoded.startsWith("primary:")) {
-                    decoded = decoded.replaceFirst("primary:", "/storage/emulated/0/");
-                }
-                // Ensure leading slash if not present
-                if (!decoded.startsWith("/"))
-                    decoded = "/" + decoded;
+                if (decoded.startsWith("primary:")) decoded = decoded.replaceFirst("primary:", "/storage/emulated/0/");
+                if (!decoded.startsWith("/")) decoded = "/" + decoded;
                 return decoded;
             }
         } catch (Exception e) {
             FLog.e(TAG, "decodeTreeUriToReadablePath error", e);
         }
         return uriString;
-        // method(decodeTreeUriToReadablePath)-----------
     }
 
     private void sendStorageChangedBroadcast() {
-        // method(sendStorageChangedBroadcast)-----------
-        if (getContext() == null)
-            return;
+        if (getContext() == null) return;
         try {
-            Intent intent = new Intent(Constants.ACTION_STORAGE_LOCATION_CHANGED);
-            requireContext().sendBroadcast(intent);
-            FLog.i(TAG, "Successfully sent ACTION_STORAGE_LOCATION_CHANGED broadcast.");
-
-            // Also try a direct refresh approach as fallback
+            requireContext().sendBroadcast(new Intent(Constants.ACTION_STORAGE_LOCATION_CHANGED));
             refreshRecordsFragmentDirect();
         } catch (Exception e) {
-            FLog.e(TAG, "Broadcast error", e);
+            FLog.e(TAG, "Storage change broadcast failed", e);
         }
-        // method(sendStorageChangedBroadcast)-----------
     }
 
-    /**
-     * Direct method to refresh RecordsFragment when storage location changes
-     */
     private void refreshRecordsFragmentDirect() {
         try {
-            // Add a small delay to ensure storage change is processed
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                if (getActivity() instanceof com.fadcam.MainActivity) {
-                    com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) getActivity();
-
-                    // Try to find RecordsFragment
-                    String[] possibleTags = { "f0", "f1", "f2" };
-                    boolean refreshSuccess = false;
-
-                    for (String tag : possibleTags) {
-                        androidx.fragment.app.Fragment fragment = mainActivity.getSupportFragmentManager()
-                                .findFragmentByTag(tag);
-                        if (fragment instanceof com.fadcam.ui.RecordsFragment) {
-                            ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
-                            FLog.i(TAG, "Successfully refreshed RecordsFragment after storage change with tag: " + tag);
-                            refreshSuccess = true;
-                            break;
-                        }
-                    }
-
-                    // Try iteration if tag method failed
-                    if (!refreshSuccess) {
-                        for (androidx.fragment.app.Fragment fragment : mainActivity.getSupportFragmentManager()
-                                .getFragments()) {
-                            if (fragment instanceof com.fadcam.ui.RecordsFragment) {
-                                ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
-                                FLog.i(TAG, "Successfully refreshed RecordsFragment after storage change by iteration.");
-                                refreshSuccess = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!refreshSuccess) {
-                        FLog.w(TAG, "Could not find RecordsFragment to refresh after storage change.");
-                    }
-                    
-                    // Also refresh HomeFragment stats
-                    refreshHomeFragmentStats(mainActivity);
-                }
-            }, 200); // 200ms delay to ensure storage change is processed
-        } catch (Exception e) {
-            FLog.e(TAG, "Failed to refresh RecordsFragment directly after storage change", e);
-        }
-    }
-
-    /**
-     * Refreshes the HomeFragment stats widget after storage location changes
-     */
-    private void refreshHomeFragmentStats(com.fadcam.MainActivity mainActivity) {
-        try {
-            // Try to find HomeFragment
-            String[] possibleTags = {"f0", "f1", "f2"}; // Home could be at different positions
-            boolean refreshSuccess = false;
-            
-            for (String tag : possibleTags) {
-                androidx.fragment.app.Fragment fragment = mainActivity.getSupportFragmentManager().findFragmentByTag(tag);
-                if (fragment instanceof com.fadcam.ui.HomeFragment) {
-                    ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
-                    FLog.i(TAG, "Successfully refreshed HomeFragment stats with tag: " + tag);
-                    refreshSuccess = true;
-                    break;
-                }
-            }
-            
-            // Try iteration if tag method failed
-            if (!refreshSuccess) {
+                if (!(getActivity() instanceof com.fadcam.MainActivity)) return;
+                com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) getActivity();
                 for (androidx.fragment.app.Fragment fragment : mainActivity.getSupportFragmentManager().getFragments()) {
-                    if (fragment instanceof com.fadcam.ui.HomeFragment) {
-                        ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
-                        FLog.i(TAG, "Successfully refreshed HomeFragment stats by iteration.");
-                        refreshSuccess = true;
+                    if (fragment instanceof com.fadcam.ui.RecordsFragment) {
+                        ((com.fadcam.ui.RecordsFragment) fragment).refreshList();
                         break;
                     }
                 }
-            }
-            
-            if (!refreshSuccess) {
-                FLog.w(TAG, "Could not find HomeFragment to refresh stats after storage change.");
+                refreshHomeFragmentStats(mainActivity);
+            }, 200);
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to refresh RecordsFragment after storage change", e);
+        }
+    }
+
+    private void refreshHomeFragmentStats(com.fadcam.MainActivity mainActivity) {
+        try {
+            for (androidx.fragment.app.Fragment fragment : mainActivity.getSupportFragmentManager().getFragments()) {
+                if (fragment instanceof com.fadcam.ui.HomeFragment) {
+                    ((com.fadcam.ui.HomeFragment) fragment).refreshStats();
+                    break;
+                }
             }
         } catch (Exception e) {
             FLog.e(TAG, "Failed to refresh HomeFragment stats", e);

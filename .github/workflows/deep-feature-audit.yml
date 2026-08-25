@@ -1,0 +1,51 @@
+name: Deep feature root-cause audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/unlimited-recording-sd-storage]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Audit time-limit implementation
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo '=== duration-related source ==='
+          grep -Rni --exclude-dir=.git -E 'MaximumRecordingDuration|RecordingDurationLimit|time[[:space:]]*left|Time left|max.*duration|duration.*limit' app/src/main/java app/src/main/res 2>/dev/null | head -300 || true
+          echo '=== duration constants/defaults ==='
+          grep -Rni --exclude-dir=.git -E '6.?[0-9]{2}|21600000|14400|MAX.*DURATION|NO.?LIMIT|UNLIMITED' app/src/main/java app/src/main/res 2>/dev/null | head -200 || true
+
+      - name: Audit coming-soon gates and feature implementations
+        shell: bash
+        run: |
+          set -euxo pipefail
+          for term in 'Thermal Guardian' 'Audio Vision' 'Scheduled Recording' 'Profiles' 'Sound Meter' 'Sensor Dashboard' 'Speedometer' 'Clinometer' 'Compass' 'Pedometer' 'Metal Detector' 'Parking Marker' 'QR Generator' 'Coming Soon' 'Soon'; do
+            echo "=== $term ==="
+            grep -Rni --exclude-dir=.git -F "$term" app/src/main/java app/src/main/res 2>/dev/null | head -100 || true
+          done
+
+      - name: Audit click handlers and activities
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo '=== likely feature classes/activities ==='
+          find app/src/main/java -type f | grep -Ei 'thermal|audio|vision|schedule|profile|sound|sensor|speed|clino|compass|pedom|metal|parking|qr' | sort || true
+          echo '=== Android activities/services ==='
+          grep -Rni --exclude-dir=.git -E '<activity|<service' app/src/main/AndroidManifest.xml | head -250 || true
+
+      - name: Audit storage routing
+        shell: bash
+        run: |
+          set -euxo pipefail
+          grep -Rni --exclude-dir=.git -E 'RecordingStoragePaths|Storage Access Framework|ACTION_OPEN_DOCUMENT_TREE|treeUri|persistedUri|secondary|sd.?card|external' app/src/main/java app/src/main/res 2>/dev/null | head -300 || true

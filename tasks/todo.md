@@ -25,3 +25,24 @@
 - [ ] Confirm README APK URL resolves to the newly verified asset
 - [ ] Install the verified APK on a physical Android device
 - [ ] Verify Studio recording, graphics encoding, and RTMP output on device
+
+## Pro / Pro+ / Lab — unlocked implementation
+- [x] Remove the payment/coming-soon gate from the feature center
+- [x] Implement persistent custom app name for activity titles
+- [x] Implement private local storage for user-uploaded branding icon
+- [x] Implement a supported home-screen shortcut using the uploaded icon and custom name
+- [x] Never persist the cloud password
+- [x] Implement FadDrive connection test over WebDAV
+- [x] Implement FadDrive bulk video upload with progress callbacks
+- [x] Accept existing WebDAV FadCam collections (HTTP 405/409)
+- [x] Reject unsafe WebDAV URLs containing embedded credentials, query strings, or fragments
+- [x] Add unit tests for branding sanitization
+- [x] Add unit tests for WebDAV URL/path validation
+- [ ] Run clean release build and unit tests
+- [ ] Inspect release lint/R8 diagnostics
+- [ ] Verify APK contains the new branding and FadDrive classes
+- [ ] Install on a physical device and test custom icon/name, shortcut, WebDAV connection, and a real upload
+- [ ] Publish only after all blocking CI gates are green
+
+## Scope note
+Android does not allow a packaged application's manifest launcher icon or application label to be replaced arbitrarily at runtime. The unlocked custom-branding implementation therefore uses persistent in-app activity naming plus an Android-supported dynamic home-screen shortcut for arbitrary uploaded icon art. This is verified behavior rather than a fake runtime manifest change.
