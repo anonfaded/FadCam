@@ -79,6 +79,61 @@ jobs:
           grep -Eq '^testDefaultReleaseUnitTest([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
           grep -Eq '^lintDefaultRelease([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
 
+      - name: Wire verified production voice-ducking telemetry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java')
+          s = path.read_text()
+          marker = 'PRODUCTION_AUDIO_DUCKING_WIRED_V1'
+          if marker in s:
+              print('Voice-ducking recorder telemetry already wired.')
+              raise SystemExit(0)
+
+          import_anchor = 'import com.fadcam.opengl.WatermarkInfoProvider;\n'
+          if import_anchor not in s:
+              raise SystemExit('pipeline import anchor not found')
+          s = s.replace(import_anchor, import_anchor + 'import com.fadcam.production.ProductionAudioDuckingBus;\n', 1)
+
+          start_anchor = '            audioRecord.startRecording();\n'
+          if start_anchor not in s:
+              raise SystemExit('audioRecord start anchor not found')
+          s = s.replace(start_anchor, start_anchor + '            if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {\n                ProductionAudioDuckingBus.publishCaptureState(true);\n            }\n', 1)
+
+          rms_anchor = '''                    audioBytesCaptured += bytesRead;\n                    // Diagnostics: log the first reads and a periodic health\n'''
+          rms_insert = '''                    audioBytesCaptured += bytesRead;\n                    int rms = computeRms(audioBuffer, bytesRead);\n                    if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {\n                        ProductionAudioDuckingBus.publishRms(rms);\n                    }\n                    // Diagnostics: log the first reads and a periodic health\n'''
+          if rms_anchor not in s:
+              raise SystemExit('audio RMS anchor not found')
+          s = s.replace(rms_anchor, rms_insert, 1)
+
+          end_anchor = '''            FLog.i(TAG, "FadRec audio loop ended: chunks=" + readCount\n                    + " bytes=" + audioBytesCaptured\n'''
+          end_insert = '''            if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {\n                ProductionAudioDuckingBus.publishCaptureState(false);\n            }\n            FLog.i(TAG, "FadRec audio loop ended: chunks=" + readCount\n                    + " bytes=" + audioBytesCaptured\n'''
+          if end_anchor not in s:
+              raise SystemExit('audio loop end anchor not found')
+          s = s.replace(end_anchor, end_insert, 1)
+
+          old_rms = '''    /** Lightweight RMS of the first 512 samples — detects zero-capture immediately. */\n    private static int computeRms(ByteBuffer buffer, int bytes) {\n        int samples = Math.min(bytes / 2, 512);\n        if (samples <= 0) return 0;\n        long sumSq = 0;\n        for (int i = 0; i < samples; i++) {\n            short s = buffer.getShort(i * 2);\n            sumSq += (long) s * s;\n        }\n        return (int) Math.sqrt((double) sumSq / samples);\n    }\n'''
+          new_rms = '''    /** Lightweight little-endian PCM RMS used by diagnostics and voice ducking. */\n    private static int computeRms(ByteBuffer buffer, int bytes) {\n        int samples = Math.min(bytes / 2, 512);\n        if (samples <= 0) return 0;\n        long sumSq = 0;\n        for (int i = 0; i < samples; i++) {\n            int lo = buffer.get(i * 2) & 0xFF;\n            int hi = buffer.get(i * 2 + 1);\n            short sample = (short) (lo | (hi << 8));\n            sumSq += (long) sample * sample;\n        }\n        return (int) Math.sqrt((double) sumSq / samples);\n    }\n\n    // PRODUCTION_AUDIO_DUCKING_WIRED_V1\n'''
+          if old_rms not in s:
+              raise SystemExit('computeRms block not found')
+          path.write_text(s.replace(old_rms, new_rms, 1))
+          PY
+
+      - name: Verify production voice-ducking invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'ProductionAudioDuckingBus' app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java
+          grep -q 'PRODUCTION_AUDIO_DUCKING_WIRED_V1' app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java
+          grep -q 'ProductionAudioDucker' app/src/main/java/com/fadcam/production/DuetStudioFragment.java
+          grep -q 'AUDIO MIXER' app/src/main/java/com/fadcam/production/DuetStudioFragment.java
+          grep -q 'setVolume' app/src/main/java/com/fadcam/production/ProductionAudioDucker.java
+          grep -q 'publishRms' app/src/main/java/com/fadcam/production/ProductionAudioDuckingBus.java
+          echo 'Production voice-ducking invariants: PASS'
+
       - name: Build and test Studio release in one clean Gradle invocation
         shell: bash
         run: |
@@ -210,6 +265,21 @@ jobs:
           "$BUILD_TOOLS/aapt" dump xmltree "$apk" AndroidManifest.xml > /tmp/manifest.xml
           ! grep -q 'FadRecScreenshotAccessibilityService' /tmp/manifest.xml
           ! "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q 'com.fadcam.beta'
+
+      - name: Commit verified production voice-ducking wiring
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java .github/workflows/wire-voice-ducking.yml
+          if git diff --cached --quiet; then
+            echo 'No voice-ducking source changes to commit.'
+            exit 0
+          fi
+          git commit -m 'feat: wire voice ducking into recorder mic telemetry'
+          git push origin HEAD:master
 
       - name: Upload Studio CI diagnostics
         if: always()
