@@ -22,10 +22,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      - name: Clone and verify patched Media3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
+          echo "Patched Media3 commit: $(git -C /tmp/media3-patched rev-parse --verify HEAD)"
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: temurin
