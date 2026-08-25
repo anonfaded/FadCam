@@ -10,9 +10,6 @@ on:
 permissions:
   contents: write
 
-# Every commit under verification gets its own run. GitHub keeps only one
-# pending run inside a shared concurrency group, so grouping by ref can cancel
-# the exact verification run we need to inspect.
 concurrency:
   group: fadcam-studio-apk-${{ github.workflow }}-${{ github.run_id }}
   cancel-in-progress: false
@@ -82,9 +79,6 @@ jobs:
           grep -Eq '^testDefaultReleaseUnitTest([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
           grep -Eq '^lintDefaultRelease([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
 
-      # Release/R8 builds are substantially heavier than the old debug build.
-      # Keep all blocking Gradle compilation/test work in one invocation and
-      # give the hosted runner enough heap to avoid false OOM failures.
       - name: Build and test Studio release in one clean Gradle invocation
         shell: bash
         run: |
@@ -217,8 +211,6 @@ jobs:
           ! grep -q 'FadRecScreenshotAccessibilityService' /tmp/manifest.xml
           ! "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q 'com.fadcam.beta'
 
-      # Preserve the logs even when a later verification gate fails so the next
-      # diagnosis has the exact Gradle/R8/lint evidence instead of a generic exit 1.
       - name: Upload Studio CI diagnostics
         if: always()
         uses: actions/upload-artifact@v7
@@ -253,6 +245,7 @@ jobs:
         run: |
           set -euo pipefail
           apk="${{ steps.apk.outputs.apk }}"
+          checksum="app/build/verified/SHA256SUMS.txt"
           LATEST_MASTER="$(git ls-remote origin refs/heads/master | awk '{print $1}')"
           if [ "$LATEST_MASTER" != "$GITHUB_SHA" ]; then
             echo "Master advanced to $LATEST_MASTER while this run built $GITHUB_SHA."
@@ -280,6 +273,7 @@ jobs:
 
           gh release create studio-latest \
             "$apk" \
+            "$checksum" \
             --target "$GITHUB_SHA" \
             --title "FadCam Studio — latest verified release APK" \
             --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. CI uses an ephemeral non-debug release key for device verification; configure a protected production signing key before public distribution or Play Store submission." \
