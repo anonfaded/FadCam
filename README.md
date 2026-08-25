@@ -54,6 +54,18 @@ The publication gate verifies:
 - Replay of recorded media
 - Remote production controls
 
+## 💾 Recording storage destinations
+
+Recording storage is now a live, verified three-option system:
+
+- **Phone local storage** — records to FadCam's normal local destination.
+- **SD card / memory card** — choose a writable folder on a removable SD volume through Android's Storage Access Framework. The permission is persisted and revalidated before use.
+- **USB external storage** — choose a writable folder on a connected removable USB/OTG storage volume through the same secure picker. The app starts the picker on the best matching USB volume when Android exposes one and rejects obvious SD/USB mismatches.
+
+The selected destination is stored as the active recording destination and is consumed by the existing camera, dual-camera and screen-recording storage pipeline. Switching destinations clears the storage-space cache and refreshes the Records/Home views.
+
+Android does not expose a universal `isUsb` versus `isSd` flag across all manufacturers, so the implementation combines `StorageVolume.isRemovable()`, mounted-volume information, volume descriptions and the user's explicit destination choice rather than relying on a fragile filesystem-path guess. Android's Storage Access Framework is used so the app does not need broad `MANAGE_EXTERNAL_STORAGE` access.
+
 ## 🧰 Production tools (now live)
 
 The Settings **Coming Soon** tools are now implemented and wired into the recording workflow:
