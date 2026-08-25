@@ -12,17 +12,20 @@ FadCam Studio extends the FadCam camera engine with a broadcast-style production
 
 **[Download the SHA-256 checksum](https://github.com/Trendyzima/FadCamvideo/releases/download/studio-latest/SHA256SUMS.txt)**
 
+**[Open the verified Studio release page](https://github.com/Trendyzima/FadCamvideo/releases/tag/studio-latest)**
+
 **[Open GitHub Actions verification](https://github.com/Trendyzima/FadCamvideo/actions/workflows/build-debug-apk.yml)**
 
-The APK link above is a rolling release. It is replaced only after the current `master` commit passes the complete release verification workflow, including unit tests, release compilation, Studio lint audit, APK integrity, package/signature/alignment and manifest-hardening checks. The delivery APK is non-debuggable and uses the normal `com.fadcam` application ID.
+The APK link above is a rolling verified release. It is replaced only after the current `master` commit passes the complete release verification workflow, including unit tests, release compilation, Studio lint audit, APK integrity, package/signature/alignment and manifest-hardening checks. The delivery APK is non-debuggable and uses the normal `com.fadcam` application ID.
 
 **Verified delivery currently published:**
 - Release tag: `studio-latest`
-- Verified code target: `4735028c1e6ad93ce5ccff7fe61363e2b9b81d84`
-- APK SHA-256: `fa15b4847611d20303c3e24b3af9c4cf7476ee5ecc67853d317c17d7f191b1cb`
+- Verified code target: `b00f9900eecbb51d9c253a7622ae245afe63df0c`
+- APK SHA-256: `35505de7d521c24bb4bdf3045879e1c69e9ba006f99a9ecf9c789d2d600faef0`
 - APK: `FadCam-Studio-release-universal.apk`
+- Release status: **Verified prerelease**
 
-The latest README refresh is documentation-only and does not change the APK code. The download link above therefore remains the verified Studio build containing the TV production cockpit, streaming review and social-destination features.
+This build contains the cleaned and verified duet voice-ducking detector with RMS smoothing, adaptive noise-floor tracking, speech hysteresis and lifecycle resets. The release workflow also verifies the production audio-ducking wiring before publishing the APK.
 
 ## 🎬 Studio capabilities
 
