@@ -15,3 +15,9 @@
 - Clamp persisted timing values and treat invalid persisted enum values as recoverable state corruption rather than crashing the production UI.
 - Verify layout math for program-control rows separately from build correctness; weighted spacer views can silently distort a phone-sized switcher even when the APK compiles.
 - Do not add fake Coming Soon controls while the production engine is being stabilized. Add each future subsystem only when its backing behavior is implemented and verified.
+
+## 2026-08-25 — APK delivery / CI correction
+- When a release workflow has already produced a verified APK for the exact master code, update README provenance from the actual release asset rather than inventing a new APK path or checksum.
+- Verify the release target commit and APK SHA-256 directly from the GitHub release metadata before documenting them.
+- A GitHub Contents API commit is not sufficient evidence that a new Actions run was triggered; check the actual workflow run/release state before claiming a new APK was built.
+- Keep documentation-only commits explicitly separate from APK code provenance so the README never implies that an unverified build was published.
