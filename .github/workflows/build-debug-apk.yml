@@ -3,7 +3,7 @@ name: Build and Verify FadCam Studio APK
 on:
   workflow_dispatch:
   push:
-    branches: [ master, studio-dashboard ]
+    branches: [ master, studio-dashboard, feat/storage-destinations-sd-usb-local ]
   pull_request:
     branches: [ master ]
 
