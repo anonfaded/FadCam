@@ -101,6 +101,12 @@ public final class ProductionControlRoomDialog extends Dialog {
         streamButton.setOnClickListener(v -> showStreamingPanel());
         header.addView(streamButton, new LinearLayout.LayoutParams(dp(70), dp(46)));
 
+        MaterialButton cockpit = button("⋮", false);
+        cockpit.setTextSize(22);
+        cockpit.setContentDescription("Open producer cockpit drawer");
+        cockpit.setOnClickListener(v -> showCockpitPanel());
+        header.addView(cockpit, new LinearLayout.LayoutParams(dp(48), dp(46)));
+
         TextView live = text("● LIVE CONTROL", 10, ACCENT);
         live.setGravity(Gravity.CENTER);
         header.addView(live, new LinearLayout.LayoutParams(dp(92), dp(46)));
@@ -192,7 +198,7 @@ public final class ProductionControlRoomDialog extends Dialog {
         durationRow.addView(duration, new LinearLayout.LayoutParams(0, dp(40), 1));
         root.addView(durationRow);
 
-        TextView hint = text("Select a scene to PREVIEW it. CUT/TAKE makes PREVIEW the live PROGRAM. AUTO respects the selected duration. LIVE opens the social output panel.", 9, MUTED);
+        TextView hint = text("Select a scene to PREVIEW it. CUT/TAKE makes PREVIEW the live PROGRAM. AUTO respects the selected duration. LIVE opens social output; ⋮ opens the producer cockpit drawer.", 9, MUTED);
         hint.setPadding(dp(6), dp(6), dp(6), dp(2));
         root.addView(hint);
 
@@ -203,6 +209,10 @@ public final class ProductionControlRoomDialog extends Dialog {
     private void showStreamingPanel() {
         ProductionStreamingDialog dialog = new ProductionStreamingDialog(getContext(), () -> refreshStreamingState());
         dialog.show();
+    }
+
+    private void showCockpitPanel() {
+        new ProductionCockpitDialog(getContext()).show();
     }
 
     private void refreshStreamingState() {
