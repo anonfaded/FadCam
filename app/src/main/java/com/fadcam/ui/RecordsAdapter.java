@@ -1307,8 +1307,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 "drive_file_rename_outline"));
         items.add(OptionItem.withLigature("action_info", ctx.getString(R.string.video_menu_info), "info"));
         if (!isImage) {
-            items.add(OptionItem.withLigature("action_upload_youtube", ctx.getString(R.string.video_menu_upload_youtube),
-                    "play_circle"));
+            items.add(OptionItem.withLigature("action_social_publish", ctx.getString(R.string.video_menu_social_publish),
+                    "public"));
             items.add(OptionItem.withLigature("action_upload_drive", ctx.getString(R.string.video_menu_upload_drive),
                     "cloud_upload"));
             items.add(OptionItem.withLigature("action_open_with", ctx.getString(R.string.video_menu_open_with),
@@ -1363,8 +1363,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     if (actionListener != null)
                         actionListener.onDeleteVideo(videoItem);
                     break;
-                case "action_upload_youtube":
-                    openVideoInYouTube(videoItem);
+                case "action_social_publish":
+                    openSocialPublishSheet(ctx, videoItem);
                     break;
                 case "action_upload_drive":
                     openVideoInGoogleDrive(videoItem);
@@ -1567,7 +1567,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     actionListener.onDeleteVideo(videoItem);
                 return true;
             } else if (id == R.id.action_upload_youtube) {
-                openVideoInYouTube(videoItem);
+                openSocialPublishSheet(context, videoItem);
                 return true;
             } else if (id == R.id.action_upload_drive) {
                 openVideoInGoogleDrive(videoItem);
@@ -2033,6 +2033,17 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             FLog.e(TAG, "Failed to launch Faditor Mini", e);
             Toast.makeText(ctx, ctx.getString(R.string.records_cannot_open_editor), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /** Opens the recording publishing hub for social destinations. */
+    private void openSocialPublishSheet(Context ctx, VideoItem videoItem) {
+        if (ctx == null || videoItem == null || videoItem.uri == null) return;
+        if (ctx instanceof FragmentActivity) {
+            SocialPublishBottomSheet.show((FragmentActivity) ctx, videoItem.uri, videoItem.displayName);
+            return;
+        }
+        // Non-activity fallback keeps the existing YouTube-compatible share path alive.
+        openVideoInYouTube(videoItem);
     }
 
     /**
