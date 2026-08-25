@@ -1,6 +1,5 @@
 package com.fadcam.utils;
 
-import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.Context;
 import android.os.Build;
@@ -10,7 +9,6 @@ import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import androidx.documentfile.provider.DocumentFile;
 import com.fadcam.SharedPreferencesManager;
-import com.fadcam.Utils;
 
 import java.io.File;
 import java.util.List;
@@ -92,16 +90,22 @@ public class StorageInfoCache {
                     StatFs customStat = new StatFs(customPath.getAbsolutePath());
                     bytesAvailable = customStat.getAvailableBytes();
                     bytesTotal = customStat.getTotalBytes();
-                } else if (hasSafPermission(context, treeUri)) {
-                    // Some providers expose no real filesystem path. Keep the
-                    // internal stats rather than fabricating capacity values.
+                } else if (!hasSafPermission(context, treeUri)) {
+                    // A stale custom URI must never be reported as the active
+                    // storage destination after its persisted grant disappears.
+                    usingCustomStorage = false;
+                    customIsOnPrimary = true;
+                } else {
                     DocumentFile tree = DocumentFile.fromTreeUri(context, treeUri);
                     if (tree == null || !tree.exists() || !tree.canWrite()) {
                         usingCustomStorage = false;
+                        customIsOnPrimary = true;
                     }
                 }
             } catch (Exception e) {
                 FLog.e(TAG, "Error probing custom storage", e);
+                usingCustomStorage = false;
+                customIsOnPrimary = true;
             }
         }
 
@@ -156,7 +160,7 @@ public class StorageInfoCache {
 
     /**
      * Resolve a SAF tree document ID to the backing volume when Android exposes
-     * the volume directory. This is what makes the home storage card follow an
+     * the volume directory. This makes the home storage card follow an
      * SD/USB destination instead of continuing to show phone capacity.
      */
     private static File resolveStoragePath(Context context, String docId) {
@@ -198,8 +202,7 @@ public class StorageInfoCache {
             if (dir == null) continue;
             String path = dir.getAbsolutePath();
             String marker = "/storage/" + volumeId + "/";
-            int idx = path.indexOf(marker);
-            if (idx >= 0) {
+            if (path.contains(marker)) {
                 File root = new File("/storage/" + volumeId);
                 return relative.isEmpty() ? root : new File(root, relative);
             }
