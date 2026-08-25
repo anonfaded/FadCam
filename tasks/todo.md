@@ -44,5 +44,26 @@
 - [ ] Install on a physical device and test custom icon/name, shortcut, WebDAV connection, and a real upload
 - [ ] Publish only after all blocking CI gates are green
 
+## Production Control Room — staged implementation
+- [x] Create an isolated feature branch from current `master`
+- [x] Inspect the existing TV Production canvas, navigation overlay, scene state and verification workflow before changing code
+- [x] Add the hidden expandable Production Control Room entry on the existing TV Production page
+- [x] Implement V1 Preview/Program switcher and multiview control surface
+- [x] Wire CUT/AUTO and transition state to the existing scene engine
+- [x] Add focused unit tests for production-control state persistence and validation
+- [x] Run static/source verification and the master-targeted Studio build workflow
+- [x] Inspect every changed file and CI diagnostics before merge
+- [ ] Merge to `master` only after all blocking verification passes
+
+## Review
+- V1 implementation verified on the PR head before merge.
+- Studio release build and unit tests: PASS.
+- Studio lint audit: PASS.
+- Universal APK selection/container verification: PASS.
+- Release package/signature/16 KB alignment checks: PASS.
+- Release manifest hardening checks: PASS.
+- Verified APK artifact: `FadCam-Studio-Release-APK`.
+- Physical-device UI validation remains a separate gate after merge.
+
 ## Scope note
 Android does not allow a packaged application's manifest launcher icon or application label to be replaced arbitrarily at runtime. The unlocked custom-branding implementation therefore uses persistent in-app activity naming plus an Android-supported dynamic home-screen shortcut for arbitrary uploaded icon art. This is verified behavior rather than a fake runtime manifest change.

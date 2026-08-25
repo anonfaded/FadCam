@@ -63,6 +63,7 @@ public class DuetStudioFragment extends Fragment {
     private Preview cameraUseCase;
     private ProcessCameraProvider cameraProvider;
     private ProductionScene scene = ProductionScene.DUET_PIP;
+    private ProductionControlState controlState;
     private boolean recording;
     private boolean live;
 
@@ -97,7 +98,8 @@ public class DuetStudioFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        scene = ProductionSceneManager.getScene(requireContext());
+        controlState = ProductionControlState.load(requireContext());
+        scene = controlState.getProgramScene();
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                     if (!isAdded()) return;
@@ -205,20 +207,29 @@ public class DuetStudioFragment extends Fragment {
         showStatus("VIDEO LOADED • " + scene.getTitle());
     }
 
+    /** Opens the hidden expandable control room from the existing SCENES entry. */
     private void showScenes() {
-        ProductionScene[] values = ProductionScene.values();
-        String[] labels = new String[values.length];
-        for (int i = 0; i < values.length; i++) labels[i] = values[i].getTitle();
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("TV Production Scene")
-                .setSingleChoiceItems(labels, scene.ordinal(), (dialog, which) -> {
-                    scene = values[which];
+        controlState = ProductionControlState.load(requireContext()).withProgram(scene);
+        ProductionControlRoomDialog dialog = new ProductionControlRoomDialog(
+                requireContext(), controlState, new ProductionControlRoomDialog.Listener() {
+            @Override
+            public void onStateChanged(@NonNull ProductionControlState state, boolean applyToProgram) {
+                controlState = state;
+                if (applyToProgram) {
+                    scene = state.getProgramScene();
                     ProductionSceneManager.setScene(requireContext(), scene);
                     applyScene();
-                    dialog.dismiss();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+                }
+                showStatus("PROGRAM • " + state.getProgramScene().getTitle()
+                        + " • PREVIEW • " + state.getPreviewScene().getTitle());
+            }
+
+            @Override
+            public void onCloseRequested() {
+                showStatus("READY • " + scene.getTitle());
+            }
+        });
+        dialog.show();
     }
 
     private void editLowerThird() {

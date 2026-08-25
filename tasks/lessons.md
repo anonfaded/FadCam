@@ -8,3 +8,10 @@
 - Do not hard-code one Android build-tools patch version when the runner can expose a newer compatible version; select the installed version and verify the required tools exist.
 - Rolling GitHub releases can fail if an old tag survives release deletion; explicitly delete the tag and poll for remote disappearance before creating the replacement release.
 - Upgrade GitHub Actions to Node 24-compatible releases rather than accepting deprecation warnings as harmless. GitHub moved Actions runners to Node 24 by default in June 2026.
+
+## 2026-08-25 — Production control room V1
+- Keep the existing SCENES entry point stable and replace only its implementation so the new control room does not introduce another navigation surface.
+- Treat Preview and Program as separate persistent state; selecting a scene must not silently take it live.
+- Clamp persisted timing values and treat invalid persisted enum values as recoverable state corruption rather than crashing the production UI.
+- Verify layout math for program-control rows separately from build correctness; weighted spacer views can silently distort a phone-sized switcher even when the APK compiles.
+- Do not add fake Coming Soon controls while the production engine is being stabilized. Add each future subsystem only when its backing behavior is implemented and verified.
