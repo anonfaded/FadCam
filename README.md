@@ -16,7 +16,13 @@ FadCam Studio extends the FadCam camera engine with a broadcast-style production
 
 The APK link above is a rolling release. It is replaced only after the current `master` commit passes the complete release verification workflow, including unit tests, release compilation, Studio lint audit, APK integrity, package/signature/alignment and manifest-hardening checks. The delivery APK is non-debuggable and uses the normal `com.fadcam` application ID.
 
-**Current delivery status:** the README points only to the CI-published `studio-latest` asset; a new APK is published automatically from `master` after the verification gate is green.
+**Verified delivery currently published:**
+- Release tag: `studio-latest`
+- Verified code target: `4735028c1e6ad93ce5ccff7fe61363e2b9b81d84`
+- APK SHA-256: `fa15b4847611d20303c3e24b3af9c4cf7476ee5ecc67853d317c17d7f191b1cb`
+- APK: `FadCam-Studio-release-universal.apk`
+
+The latest README refresh is documentation-only and does not change the APK code. The download link above therefore remains the verified Studio build containing the TV production cockpit, streaming review and social-destination features.
 
 ## 🎬 Studio capabilities
 
