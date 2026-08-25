@@ -54,6 +54,26 @@ The publication gate verifies:
 - Replay of recorded media
 - Remote production controls
 
+## 🧰 Production tools (now live)
+
+The Settings **Coming Soon** tools are now implemented and wired into the recording workflow:
+
+- Thermal Guardian — live battery-temperature monitoring with a configurable recording safety cutoff
+- Audio Vision — microphone threshold detection with automatic recording start
+- Scheduled Recording — one-shot exact alarms with automatic recording stop
+- Profiles — save/load/delete producer recording presets
+- Sound Meter — live microphone dB meter
+- Sensor Dashboard — accelerometer, magnetometer, gyroscope and step-sensor availability
+- Speedometer — GPS speed in km/h
+- Clinometer — live device tilt angle
+- Compass — sensor-fused heading
+- Pedometer — hardware step counter
+- Metal Detector — magnetic-field strength meter
+- Parking Marker — save the current GPS position and open navigation
+- QR Generator — generate production links/text as QR codes
+
+The rolling APK link above is updated only by the verification workflow after the release build, tests, APK integrity, signature and alignment gates pass.
+
 ## 🌐 Streaming
 
 The Studio uses FadCam's local HLS production path and an FFmpeg RTMP/RTMPS bridge for external destinations. Stream keys are protected with Android Keystore storage.
