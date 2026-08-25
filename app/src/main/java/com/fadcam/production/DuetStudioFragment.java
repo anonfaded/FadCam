@@ -64,6 +64,7 @@ public class DuetStudioFragment extends Fragment {
     private ProcessCameraProvider cameraProvider;
     private ProductionScene scene = ProductionScene.DUET_PIP;
     private ProductionControlState controlState;
+    private ProductionAudioDucker audioDucker;
     private boolean recording;
     private boolean live;
 
@@ -100,6 +101,8 @@ public class DuetStudioFragment extends Fragment {
         super.onCreate(savedInstanceState);
         controlState = ProductionControlState.load(requireContext());
         scene = controlState.getProgramScene();
+        audioDucker = new ProductionAudioDucker();
+        audioDucker.start();
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                     if (!isAdded()) return;
@@ -168,10 +171,12 @@ public class DuetStudioFragment extends Fragment {
         controls.setGravity(Gravity.CENTER_VERTICAL);
         controls.setBackgroundColor(Color.rgb(24, 24, 24));
         MaterialButton record = action("● RECORD");
-        MaterialButton liveButton = action("LIVE + RECORD");
+        MaterialButton liveButton = action("LIVE + REC");
+        MaterialButton mixer = action("AUDIO MIXER");
         MaterialButton brand = action("LOWER THIRD");
         controls.addView(record, new LinearLayout.LayoutParams(0, dp(50), 1));
         controls.addView(liveButton, new LinearLayout.LayoutParams(0, dp(50), 1));
+        controls.addView(mixer, new LinearLayout.LayoutParams(0, dp(50), 1));
         controls.addView(brand, new LinearLayout.LayoutParams(0, dp(50), 1));
         root.addView(controls);
 
@@ -183,6 +188,7 @@ public class DuetStudioFragment extends Fragment {
         scenes.setOnClickListener(v -> showScenes());
         close.setOnClickListener(v -> closeOverlay());
         brand.setOnClickListener(v -> editLowerThird());
+        mixer.setOnClickListener(v -> showAudioMixer());
         record.setOnClickListener(v -> requestRecord(false));
         liveButton.setOnClickListener(v -> requestRecord(true));
 
@@ -198,13 +204,20 @@ public class DuetStudioFragment extends Fragment {
     }
 
     private void loadVideo(android.net.Uri uri) {
+        if (audioDucker != null) audioDucker.detachPlayer();
         if (player != null) player.release();
         player = new ExoPlayer.Builder(requireContext()).build();
         player.setMediaItem(MediaItem.fromUri(uri));
         player.prepare();
         player.setPlayWhenReady(true);
         playerView.setPlayer(player);
-        showStatus("VIDEO LOADED • " + scene.getTitle());
+        if (audioDucker != null) audioDucker.attach(player);
+        showStatus("VIDEO LOADED • " + scene.getTitle() + " • VOICE DUCKING READY");
+    }
+
+    private void showAudioMixer() {
+        if (audioDucker == null) return;
+        ProductionAudioMixerDialog.show(requireContext(), audioDucker);
     }
 
     /** Opens the hidden expandable control room from the existing SCENES entry. */
@@ -406,6 +419,10 @@ public class DuetStudioFragment extends Fragment {
     @Override
     public void onDestroyView() {
         if (recording) stopRecording();
+        if (audioDucker != null) {
+            audioDucker.stop();
+            audioDucker.detachPlayer();
+        }
         if (cameraProvider != null && cameraUseCase != null) {
             try { cameraProvider.unbind(cameraUseCase); } catch (Exception ignored) {}
         }
