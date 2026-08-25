@@ -1,0 +1,54 @@
+name: Verify guest camera links
+
+on:
+  push:
+    branches:
+      - feat/one-time-guest-camera-links
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # FragmentedMp4MuxerWrapper depends on the project's patched Media3
+      # extension. The normal AndroidX artifact does not expose ProcessedSegment.
+      # Keep this verification environment identical to the repository's APK build.
+      - name: Clone patched Media3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
+          echo "Patched Media3 commit: $(git -C /tmp/media3-patched rev-parse --verify HEAD)"
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+
+      - name: Verify guest camera source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f app/src/main/java/com/fadcam/production/ProductionCameraSlot.java
+          test -f app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          test -f app/src/main/java/com/fadcam/production/ProductionGuestWebView.java
+          grep -q 'maxconnections=1' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'markConsumed' app/src/main/java/com/fadcam/production/ProductionGuestWebView.java
+          grep -q 'NEW INVITE + SHARE' app/src/main/java/com/fadcam/production/ProductionControlRoomDialog.java
+
+      - name: Unit tests and release compile
+        shell: bash
+        run: ./gradlew :app:testDefaultReleaseUnitTest :app:compileDefaultReleaseJavaWithJavac --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2
