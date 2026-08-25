@@ -100,14 +100,12 @@ jobs:
           UNIVERSAL="$(printf '%s\n' "${APKS[@]}" | grep -E -- 'universal\.apk$' | head -n 1 || true)"
           test -n "$UNIVERSAL"
           test -s "$UNIVERSAL"
-
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           "$BUILD_TOOLS/aapt" dump badging "$UNIVERSAL" | tee /tmp/aapt-badging.txt
           grep -q "package: name='com.fadcam'" /tmp/aapt-badging.txt
           ! grep -q 'application-debuggable' /tmp/aapt-badging.txt
           "$BUILD_TOOLS/apksigner" verify --verbose "$UNIVERSAL"
           "$BUILD_TOOLS/zipalign" -c -P 16 -v 4 "$UNIVERSAL"
-
           mkdir -p artifacts
           cp "$UNIVERSAL" artifacts/FadCam-Studio-release-universal.apk
           sha256sum artifacts/FadCam-Studio-release-universal.apk | tee artifacts/SHA256SUMS.txt
@@ -120,11 +118,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add artifacts/FadCam-Studio-release-universal.apk artifacts/SHA256SUMS.txt
-          if git diff --cached --quiet; then
-            echo 'No APK changes to push.'
-            exit 0
-          fi
+          git add -f artifacts/FadCam-Studio-release-universal.apk artifacts/SHA256SUMS.txt
           git commit -m 'build: publish verified Studio release APK'
           git push origin HEAD:master
 
