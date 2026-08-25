@@ -45,10 +45,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Mobile TV-production canvas. It composes a loaded video and live front camera
- * as one visible program feed. The existing MediaProjection/FadRec pipeline can
- * then capture that exact composite and, when Live is enabled, the existing
- * fragmented-MP4 streaming bridge publishes the same session.
+ * Mobile TV-production canvas. The same canvas is used by the production room's
+ * PROGRAM monitor, so the producer is always looking at the actual output.
  */
 @OptIn(markerClass = UnstableApi.class)
 public class DuetStudioFragment extends Fragment {
@@ -56,10 +54,12 @@ public class DuetStudioFragment extends Fragment {
 
     private FrameLayout canvas;
     private PlayerView playerView;
+    private PlayerView remotePlayerView;
     private PreviewView cameraPreview;
     private TextView lowerThird;
     private TextView status;
     private ExoPlayer player;
+    private ExoPlayer remotePlayer;
     private Preview cameraUseCase;
     private ProcessCameraProvider cameraProvider;
     private ProductionScene scene = ProductionScene.DUET_PIP;
@@ -72,7 +72,6 @@ public class DuetStudioFragment extends Fragment {
     private ActivityResultLauncher<String> videoPicker;
     private ActivityResultLauncher<Intent> projectionLauncher;
 
-    /** Adds the TV-production entry point to the existing recording quick-actions row. */
     public static void installEntryButton(@Nullable ViewGroup quickActionsRow, @NonNull Fragment host) {
         if (quickActionsRow == null || !host.isAdded()) return;
         if (quickActionsRow.findViewWithTag(TAG) != null) return;
@@ -103,6 +102,7 @@ public class DuetStudioFragment extends Fragment {
         scene = controlState.getProgramScene();
         audioDucker = new ProductionAudioDucker();
         audioDucker.start();
+
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                     if (!isAdded()) return;
@@ -127,7 +127,9 @@ public class DuetStudioFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle state) {
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle state) {
         LinearLayout root = new LinearLayout(requireContext());
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.BLACK);
@@ -153,9 +155,16 @@ public class DuetStudioFragment extends Fragment {
         playerView = new PlayerView(requireContext());
         playerView.setUseController(true);
         playerView.setShutterBackgroundColor(Color.BLACK);
+
+        remotePlayerView = new PlayerView(requireContext());
+        remotePlayerView.setUseController(false);
+        remotePlayerView.setShutterBackgroundColor(Color.BLACK);
+        remotePlayerView.setVisibility(View.GONE);
+
         cameraPreview = new PreviewView(requireContext());
         cameraPreview.setScaleType(PreviewView.ScaleType.FILL_CENTER);
         canvas.addView(playerView, match());
+        canvas.addView(remotePlayerView, match());
         canvas.addView(cameraPreview, pipParams());
 
         lowerThird = label("", 15, Color.WHITE);
@@ -180,7 +189,7 @@ public class DuetStudioFragment extends Fragment {
         controls.addView(brand, new LinearLayout.LayoutParams(0, dp(50), 1));
         root.addView(controls);
 
-        status = label("READY • Load a video to begin a duet", 12, Color.LTGRAY);
+        status = label("READY • Select a scene or load a video", 12, Color.LTGRAY);
         status.setPadding(dp(10), dp(4), dp(10), dp(7));
         root.addView(status);
 
@@ -220,29 +229,55 @@ public class DuetStudioFragment extends Fragment {
         ProductionAudioMixerDialog.show(requireContext(), audioDucker);
     }
 
-    /** Opens the hidden expandable control room from the existing SCENES entry. */
     private void showScenes() {
         controlState = ProductionControlState.load(requireContext()).withProgram(scene);
-        ProductionControlRoomDialog dialog = new ProductionControlRoomDialog(
-                requireContext(), controlState, new ProductionControlRoomDialog.Listener() {
-            @Override
-            public void onStateChanged(@NonNull ProductionControlState state, boolean applyToProgram) {
-                controlState = state;
-                if (applyToProgram) {
-                    scene = state.getProgramScene();
-                    ProductionSceneManager.setScene(requireContext(), scene);
-                    applyScene();
-                }
-                showStatus("PROGRAM • " + state.getProgramScene().getTitle()
-                        + " • PREVIEW • " + state.getPreviewScene().getTitle());
-            }
+        ViewGroup parent = canvas == null || !(canvas.getParent() instanceof ViewGroup)
+                ? null : (ViewGroup) canvas.getParent();
 
-            @Override
-            public void onCloseRequested() {
-                showStatus("READY • " + scene.getTitle());
-            }
-        });
+        ProductionControlRoomDialog dialog = new ProductionControlRoomDialog(
+                requireContext(), controlState, canvas, parent,
+                new ProductionControlRoomDialog.Listener() {
+                    @Override
+                    public void onStateChanged(@NonNull ProductionControlState state,
+                                               boolean applyToProgram) {
+                        controlState = state;
+                        if (applyToProgram) {
+                            scene = state.getProgramScene();
+                            ProductionSceneManager.setScene(requireContext(), scene);
+                            connectRemoteCamera(state.getProgramCameraSlot());
+                            applySceneWithTransition(state.getTransition(), state.getTransitionDurationMs());
+                        }
+                        showStatus("PROGRAM • " + programLabel(state)
+                                + " • PREVIEW • " + previewLabel(state));
+                    }
+
+                    @Override
+                    public void onCameraSlotChanged(int slot, @NonNull String streamUrl) {
+                        connectRemoteCamera(slot, streamUrl);
+                        if (controlState.getProgramScene() == ProductionScene.CAMERA
+                                && controlState.getProgramCameraSlot() == slot) {
+                            applyScene();
+                        }
+                    }
+
+                    @Override
+                    public void onCloseRequested() {
+                        showStatus("READY • " + scene.getTitle());
+                    }
+                });
         dialog.show();
+    }
+
+    private String programLabel(@NonNull ProductionControlState state) {
+        return state.getProgramScene() == ProductionScene.CAMERA
+                ? "Camera " + state.getProgramCameraSlot()
+                : state.getProgramScene().getTitle();
+    }
+
+    private String previewLabel(@NonNull ProductionControlState state) {
+        return state.getPreviewScene() == ProductionScene.CAMERA
+                ? "Camera " + state.getPreviewCameraSlot()
+                : state.getPreviewScene().getTitle();
     }
 
     private void editLowerThird() {
@@ -271,43 +306,135 @@ public class DuetStudioFragment extends Fragment {
         lowerThird.setVisibility(text.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
+    private void applySceneWithTransition(@NonNull ProductionControlState.Transition transition,
+                                          int durationMs) {
+        if (canvas == null || transition == ProductionControlState.Transition.CUT) {
+            applyScene();
+            return;
+        }
+        canvas.animate().cancel();
+        int duration = ProductionControlState.clampDuration(durationMs);
+        if (transition == ProductionControlState.Transition.WIPE) {
+            float width = Math.max(canvas.getWidth(), 1);
+            canvas.setTranslationX(0f);
+            canvas.animate().translationX(-width * 0.18f).setDuration(duration / 2L)
+                    .withEndAction(() -> {
+                        applyScene();
+                        canvas.setTranslationX(width * 0.18f);
+                        canvas.animate().translationX(0f).setDuration(duration / 2L).start();
+                    }).start();
+            return;
+        }
+
+        canvas.setAlpha(1f);
+        canvas.animate().alpha(0f).setDuration(duration / 2L).withEndAction(() -> {
+            applyScene();
+            canvas.animate().alpha(1f).setDuration(duration / 2L).start();
+        }).start();
+    }
+
     private void applyScene() {
-        if (canvas == null || playerView == null || cameraPreview == null) return;
+        if (canvas == null || playerView == null || cameraPreview == null || remotePlayerView == null) return;
+
+        int programSlot = controlState == null ? 1 : controlState.getProgramCameraSlot();
+        ProductionCameraSlot slot = ProductionCameraSlotManager.get(requireContext(), programSlot);
+        boolean cameraLayout = scene == ProductionScene.CAMERA
+                || scene == ProductionScene.DUET_PIP
+                || scene == ProductionScene.DUET_SPLIT
+                || scene == ProductionScene.COMMENTARY
+                || scene == ProductionScene.INTERVIEW;
+        boolean useRemote = cameraLayout && !slot.getStreamUrl().isEmpty();
+        if (useRemote) connectRemoteCamera(slot.getSlot());
+
         FrameLayout.LayoutParams playerLp = match();
         FrameLayout.LayoutParams cameraLp;
+        FrameLayout.LayoutParams remoteLp;
         playerView.setVisibility(View.VISIBLE);
         cameraPreview.setVisibility(View.VISIBLE);
+        remotePlayerView.setVisibility(useRemote ? View.VISIBLE : View.GONE);
+
         switch (scene) {
             case CAMERA:
                 playerView.setVisibility(View.GONE);
+                cameraPreview.setVisibility(useRemote ? View.GONE : View.VISIBLE);
                 cameraLp = match();
+                remoteLp = match();
                 break;
             case VIDEO:
                 cameraPreview.setVisibility(View.GONE);
+                remotePlayerView.setVisibility(View.GONE);
                 cameraLp = pipParams();
+                remoteLp = pipParams();
                 break;
             case DUET_SPLIT:
-                int half = getResources().getDisplayMetrics().widthPixels / 2;
+                int half = Math.max(1, canvas.getWidth() / 2);
                 playerLp = new FrameLayout.LayoutParams(half, -1, Gravity.START);
                 cameraLp = new FrameLayout.LayoutParams(half, -1, Gravity.END);
+                remoteLp = new FrameLayout.LayoutParams(half, -1, Gravity.END);
                 break;
             case COMMENTARY:
                 cameraLp = new FrameLayout.LayoutParams(dp(190), dp(270), Gravity.TOP | Gravity.END);
                 cameraLp.setMargins(0, dp(16), dp(16), 0);
+                remoteLp = new FrameLayout.LayoutParams(dp(190), dp(270), Gravity.TOP | Gravity.END);
+                remoteLp.setMargins(0, dp(16), dp(16), 0);
                 break;
             case INTERVIEW:
                 cameraLp = new FrameLayout.LayoutParams(dp(230), dp(310), Gravity.BOTTOM | Gravity.END);
                 cameraLp.setMargins(0, 0, dp(16), dp(70));
+                remoteLp = new FrameLayout.LayoutParams(dp(230), dp(310), Gravity.BOTTOM | Gravity.END);
+                remoteLp.setMargins(0, 0, dp(16), dp(70));
                 break;
             case DUET_PIP:
             default:
                 cameraLp = pipParams();
+                remoteLp = pipParams();
                 break;
         }
+
         playerView.setLayoutParams(playerLp);
         cameraPreview.setLayoutParams(cameraLp);
+        remotePlayerView.setLayoutParams(remoteLp);
+        if (useRemote) {
+            cameraPreview.setVisibility(View.GONE);
+            remotePlayerView.setVisibility(View.VISIBLE);
+        }
         applyLowerThird();
-        showStatus("SCENE • " + scene.getTitle() + " • " + scene.getDescription());
+        showStatus("PROGRAM • " + programLabel(controlState == null
+                ? ProductionControlState.load(requireContext()) : controlState));
+    }
+
+    private void connectRemoteCamera(int slot) {
+        ProductionCameraSlot camera = ProductionCameraSlotManager.get(requireContext(), slot);
+        connectRemoteCamera(slot, camera.getStreamUrl());
+    }
+
+    private void connectRemoteCamera(int slot, @NonNull String streamUrl) {
+        String url = streamUrl.trim();
+        if (url.isEmpty()) {
+            if (remotePlayer != null) {
+                remotePlayer.release();
+                remotePlayer = null;
+            }
+            remotePlayerView.setPlayer(null);
+            return;
+        }
+        if (remotePlayer != null) {
+            remotePlayer.release();
+            remotePlayer = null;
+        }
+        try {
+            remotePlayer = new ExoPlayer.Builder(requireContext()).build();
+            remotePlayer.setMediaItem(MediaItem.fromUri(android.net.Uri.parse(url)));
+            remotePlayer.prepare();
+            remotePlayer.setPlayWhenReady(true);
+            remotePlayerView.setPlayer(remotePlayer);
+            showStatus("CAMERA " + slot + " • REMOTE STREAM CONNECTING");
+        } catch (Exception e) {
+            if (remotePlayer != null) remotePlayer.release();
+            remotePlayer = null;
+            remotePlayerView.setPlayer(null);
+            showStatus("CAMERA " + slot + " • INVALID STREAM URL");
+        }
     }
 
     private void requestRecord(boolean requestLive) {
@@ -319,13 +446,15 @@ public class DuetStudioFragment extends Fragment {
             permissionLauncher.launch(new String[]{Manifest.permission.CAMERA});
             return;
         }
-        if (requestLive && player == null) {
-            Toast.makeText(requireContext(), "Load the video before going live.", Toast.LENGTH_SHORT).show();
+        if (requestLive && player == null && remotePlayer == null) {
+            Toast.makeText(requireContext(), "Load a video or connect a camera source before going live.",
+                    Toast.LENGTH_SHORT).show();
             return;
         }
         live = requestLive;
         android.media.projection.MediaProjectionManager manager =
-                (android.media.projection.MediaProjectionManager) requireContext().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                (android.media.projection.MediaProjectionManager) requireContext()
+                        .getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         if (manager == null) {
             showStatus("MEDIA PROJECTION IS NOT AVAILABLE");
             return;
@@ -339,8 +468,10 @@ public class DuetStudioFragment extends Fragment {
         if (live) {
             RemoteStreamManager manager = RemoteStreamManager.getInstance();
             manager.setContext(requireContext());
-            manager.setStreamingMode(SharedPreferencesManager.getInstance(requireContext()).getStreamingMode());
-            ContextCompat.startForegroundService(requireContext(), new Intent(requireContext(), RemoteStreamService.class));
+            manager.setStreamingMode(
+                    SharedPreferencesManager.getInstance(requireContext()).getStreamingMode());
+            ContextCompat.startForegroundService(requireContext(),
+                    new Intent(requireContext(), RemoteStreamService.class));
         }
         Intent record = new Intent(requireContext(), ScreenRecordingService.class);
         record.setAction(Constants.INTENT_ACTION_START_SCREEN_RECORDING);
@@ -348,7 +479,8 @@ public class DuetStudioFragment extends Fragment {
         record.putExtra("permissionData", permissionData);
         record.putExtra(Constants.EXTRA_SCREEN_RECORDING_FORCE_NO_AUDIO, false);
         ContextCompat.startForegroundService(requireContext(), record);
-        showStatus(live ? "ON AIR • LIVE + RECORDING • " + scene.getTitle() : "RECORDING • " + scene.getTitle());
+        showStatus(live ? "ON AIR • LIVE + RECORDING • " + scene.getTitle()
+                : "RECORDING • " + scene.getTitle());
     }
 
     private void stopRecording() {
@@ -363,7 +495,9 @@ public class DuetStudioFragment extends Fragment {
     }
 
     private boolean hasCameraPermission() {
-        return isAdded() && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+        return isAdded()
+                && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED;
     }
 
     private void startCamera() {
@@ -373,9 +507,7 @@ public class DuetStudioFragment extends Fragment {
             if (!isAdded() || target != cameraPreview || cameraPreview == null) return;
             try {
                 cameraProvider = ProcessCameraProvider.getInstance(requireContext()).get();
-                if (cameraUseCase != null) {
-                    cameraProvider.unbind(cameraUseCase);
-                }
+                if (cameraUseCase != null) cameraProvider.unbind(cameraUseCase);
                 cameraUseCase = new Preview.Builder().build();
                 cameraUseCase.setSurfaceProvider(cameraPreview.getSurfaceProvider());
                 cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, cameraUseCase);
@@ -387,10 +519,15 @@ public class DuetStudioFragment extends Fragment {
 
     private void closeOverlay() {
         if (recording) stopRecording();
-        if (getParentFragmentManager().getBackStackEntryCount() > 0) getParentFragmentManager().popBackStack();
+        if (getParentFragmentManager().getBackStackEntryCount() > 0) {
+            getParentFragmentManager().popBackStack();
+        }
     }
 
-    private void showStatus(String text) { if (status != null) status.setText(text); }
+    private void showStatus(String text) {
+        if (status != null) status.setText(text);
+    }
+
     private MaterialButton action(String text) {
         MaterialButton b = new MaterialButton(requireContext());
         b.setText(text);
@@ -400,6 +537,7 @@ public class DuetStudioFragment extends Fragment {
         b.setMinHeight(0);
         return b;
     }
+
     private TextView label(String text, float size, int color) {
         TextView v = new TextView(requireContext());
         v.setText(text);
@@ -407,14 +545,23 @@ public class DuetStudioFragment extends Fragment {
         v.setTextColor(color);
         return v;
     }
+
     private FrameLayout.LayoutParams match() { return new FrameLayout.LayoutParams(-1, -1); }
+
     private FrameLayout.LayoutParams pipParams() {
-        FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(dp(190), dp(270), Gravity.BOTTOM | Gravity.END);
+        FrameLayout.LayoutParams p = new FrameLayout.LayoutParams(
+                dp(190), dp(270), Gravity.BOTTOM | Gravity.END);
         p.setMargins(0, 0, dp(16), dp(16));
         return p;
     }
-    private LinearLayout.LayoutParams wrap() { return new LinearLayout.LayoutParams(-2, dp(48)); }
-    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+
+    private LinearLayout.LayoutParams wrap() {
+        return new LinearLayout.LayoutParams(-2, dp(48));
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
 
     @Override
     public void onDestroyView() {
@@ -430,6 +577,8 @@ public class DuetStudioFragment extends Fragment {
         cameraProvider = null;
         if (player != null) player.release();
         player = null;
+        if (remotePlayer != null) remotePlayer.release();
+        remotePlayer = null;
         super.onDestroyView();
     }
 }
