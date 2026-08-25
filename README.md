@@ -16,6 +16,8 @@ FadCam Studio extends the FadCam camera engine with a broadcast-style production
 
 The APK link above is populated only after the `Build and Verify FadCam Studio APK` workflow completes every blocking gate successfully. The rolling `studio-latest` release is replaced only by a verified build from the current `master` commit.
 
+**Current production-room release:** the master branch now includes the verified TV production switcher refinements, **STREAMING REVIEW** program-monitor workflow, YouTube/Facebook/Twitch/Custom RTMP destinations, protected stream keys, RTMP/RTMPS validation, recording safety gates and GO LIVE/STOP LIVE controls. The APK link above is intentionally rolling so the next successful master verification automatically becomes the downloadable release.
+
 The delivery build is **non-debuggable** and uses the normal `com.fadcam` application ID. This replaces the previous `com.fadcam.beta` debug package.
 
 ### Verification gates
@@ -127,7 +129,3 @@ For a local release APK, provide `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIA
 The previous Studio download was a debug/beta APK. The delivery pipeline now produces a **non-debuggable release APK** and no longer signs the release with the Android debug keystore. The Studio release manifest also removes the legacy accessibility screenshot service, broad storage/battery special access, and the system-wide overlay permission because those are not required by the Studio production room.
 
 Play Protect still performs its own independent scan of sideloaded applications and may block an app downloaded from a browser or file manager if it classifies the app as unverified and sensitive. For production distribution, use a trusted channel such as Google Play and a protected production signing key.
-
-## License
-
-See `LICENSE` for the project's license.
