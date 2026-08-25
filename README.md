@@ -39,17 +39,26 @@ The publication gate verifies:
 
 ## 🎬 Studio capabilities
 
-- Preview / Program production workflow
+- Hidden, expandable TV production control room opened from the existing SCENES entry
+- Persistent Preview / Program production workflow
+- Multiview source bank for cameras, video, graphics, program and preview
 - Camera 1 rear-camera input
 - Camera 2 front-camera input
 - Expandable multi-camera switcher architecture
-- CUT / FADE / MIX transitions
+- CUT / TAKE / AUTO switching with persisted transition duration
+- CUT / DISSOLVE / FADE / WIPE transition selection
 - Recording through FadCam's recording engine
 - Graphics and lower-third workflow bridged into the recording pipeline
 - Local HLS production output
 - RTMP / RTMPS output architecture
-- YouTube, Facebook, Twitch and custom RTMP destinations
+- Dedicated LIVE OUTPUT panel inside the production control room
+- Dedicated **STREAMING REVIEW** panel that previews the actual local HLS PROGRAM feed used by the RTMP bridge before GO LIVE
+- Preflight checks for recording state, RTMP/RTMPS destination validity and protected stream-key readiness
+- YouTube, Facebook, Twitch and Custom RTMP destinations
+- Other RTMP-compatible destinations through a custom server URL
 - Android Keystore protected stream keys
+- GO LIVE / STOP LIVE controls with a recording safety gate
+- RTMP/RTMPS server URL validation before saving a destination
 - Audio input selection
 - Replay of recorded media
 - Remote production controls
@@ -66,9 +75,7 @@ The selected destination is stored as the active recording destination and is co
 
 Android does not expose a universal `isUsb` versus `isSd` flag across all manufacturers, so the implementation combines `StorageVolume.isRemovable()`, mounted-volume information, volume descriptions and the user's explicit destination choice rather than relying on a fragile filesystem-path guess. Android's Storage Access Framework is used so the app does not need broad `MANAGE_EXTERNAL_STORAGE` access.
 
-## 🧰 Production tools (now live)
-
-The Settings **Coming Soon** tools are now implemented and wired into the recording workflow:
+## 🧰 Production tools
 
 - Thermal Guardian — live battery-temperature monitoring with a configurable recording safety cutoff
 - Audio Vision — microphone threshold detection with automatic recording start
@@ -84,19 +91,23 @@ The Settings **Coming Soon** tools are now implemented and wired into the record
 - Parking Marker — save the current GPS position and open navigation
 - QR Generator — generate production links/text as QR codes
 
-The rolling APK link above is updated only by the verification workflow after the release build, tests, APK integrity, signature and alignment gates pass.
+The rolling APK link above is updated only by the verification workflow after the release build, tests, lint, integrity, signature and alignment gates pass.
 
 ## 🌐 Streaming
 
 The Studio uses FadCam's local HLS production path and an FFmpeg RTMP/RTMPS bridge for external destinations. Stream keys are protected with Android Keystore storage.
 
-Use the RTMPS server URL and stream key supplied by the selected platform's live-control page.
+From the hidden production room, tap **LIVE / STREAM** to open **LIVE OUTPUT • SOCIAL DESTINATIONS**. Select YouTube, Facebook, Twitch or Custom RTMP, confirm the RTMP/RTMPS server URL, enter the platform stream key, save the destination, then start RECORD.
+
+Before **GO LIVE**, use **STREAMING REVIEW → REVIEW PROGRAM**. This starts the local HLS production output and displays the same PROGRAM feed that the RTMP bridge will consume. The panel also shows a preflight checklist for recording, destination URL and protected stream-key readiness. Only after the producer has reviewed the program should **GO LIVE** be pressed. **STOP LIVE** terminates the RTMP bridge and cleans up the review pipeline.
+
+Use the RTMPS server URL and stream key supplied by the selected platform's live-control page. Never commit or share stream keys. The built-in presets configure the server URL; they do not pretend to perform platform-specific API authentication.
 
 ## 🧪 Verification-first development
 
 Every production change is gated by `.github/workflows/build-debug-apk.yml`. A failed unit test, Studio lint audit, build, APK integrity check, package check, release-signature check or alignment check blocks APK publication.
 
-Verification is serialized per branch so stale builds cannot overwrite the rolling verified release.
+The production streaming controller has unit coverage for RTMP/RTMPS destination validation. The Studio release workflow also compiles the streaming review UI and runs the full release/lint/package/signature/alignment gates. Verification is serialized per branch so stale builds cannot overwrite the rolling verified release.
 
 ## 🛠️ Build locally
 

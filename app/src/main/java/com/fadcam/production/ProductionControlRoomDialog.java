@@ -22,11 +22,7 @@ import androidx.annotation.Nullable;
 
 import com.google.android.material.button.MaterialButton;
 
-/**
- * Expandable V1 production-room surface. It deliberately contains only controls
- * backed by real state; future audio/graphics/replay modules will be added as
- * separate verified stages instead of fake Coming Soon buttons.
- */
+/** Expandable professional TV production control room. */
 public final class ProductionControlRoomDialog extends Dialog {
     public interface Listener {
         void onStateChanged(@NonNull ProductionControlState state, boolean applyToProgram);
@@ -50,6 +46,7 @@ public final class ProductionControlRoomDialog extends Dialog {
     private TextView onAirValue;
     private MaterialButton takeButton;
     private MaterialButton autoButton;
+    private MaterialButton streamButton;
 
     public ProductionControlRoomDialog(@NonNull Context context,
                                        @NonNull ProductionControlState initialState,
@@ -64,6 +61,12 @@ public final class ProductionControlRoomDialog extends Dialog {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(buildContent());
+        setCanceledOnTouchOutside(false);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         Window window = getWindow();
         if (window != null) {
             window.setBackgroundDrawableResource(android.R.color.transparent);
@@ -71,7 +74,12 @@ public final class ProductionControlRoomDialog extends Dialog {
             window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
             window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
         }
-        setCanceledOnTouchOutside(false);
+    }
+
+    @Override
+    protected void onStop() {
+        handler.removeCallbacksAndMessages(null);
+        super.onStop();
     }
 
     private View buildContent() {
@@ -87,9 +95,16 @@ public final class ProductionControlRoomDialog extends Dialog {
         TextView title = text("PRODUCTION CONTROL ROOM", 17, TEXT);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         header.addView(title, new LinearLayout.LayoutParams(0, dp(46), 1));
+
+        streamButton = button("LIVE", ProductionStreamingController.isLive(getContext()));
+        streamButton.setContentDescription("Open live streaming destinations");
+        streamButton.setOnClickListener(v -> showStreamingPanel());
+        header.addView(streamButton, new LinearLayout.LayoutParams(dp(70), dp(46)));
+
         TextView live = text("● LIVE CONTROL", 10, ACCENT);
         live.setGravity(Gravity.CENTER);
         header.addView(live, new LinearLayout.LayoutParams(dp(92), dp(46)));
+
         MaterialButton close = button("×", false);
         close.setContentDescription("Close production control room");
         close.setOnClickListener(v -> {
@@ -104,9 +119,10 @@ public final class ProductionControlRoomDialog extends Dialog {
         status.setBackground(round(PANEL, 12));
         onAirValue = text("ON AIR • " + state.getProgramScene().getTitle(), 11, TEXT);
         status.addView(onAirValue, new LinearLayout.LayoutParams(0, dp(34), 1));
-        TextView ready = text("READY", 10, Color.rgb(90, 220, 120));
+        TextView ready = text(ProductionStreamingController.isLive(getContext()) ? "STREAMING" : "READY", 10,
+                ProductionStreamingController.isLive(getContext()) ? Color.rgb(100, 230, 130) : Color.rgb(90, 220, 120));
         ready.setGravity(Gravity.CENTER);
-        status.addView(ready, new LinearLayout.LayoutParams(dp(64), dp(34)));
+        status.addView(ready, new LinearLayout.LayoutParams(dp(78), dp(34)));
         root.addView(status, new LinearLayout.LayoutParams(-1, dp(46)));
 
         LinearLayout monitorRow = row();
@@ -176,12 +192,26 @@ public final class ProductionControlRoomDialog extends Dialog {
         durationRow.addView(duration, new LinearLayout.LayoutParams(0, dp(40), 1));
         root.addView(durationRow);
 
-        TextView hint = text("Select a scene to PREVIEW it. CUT/TAKE makes PREVIEW the live PROGRAM. AUTO respects the selected duration.", 9, MUTED);
+        TextView hint = text("Select a scene to PREVIEW it. CUT/TAKE makes PREVIEW the live PROGRAM. AUTO respects the selected duration. LIVE opens the social output panel.", 9, MUTED);
         hint.setPadding(dp(6), dp(6), dp(6), dp(2));
         root.addView(hint);
 
         scroll.addView(root);
         return scroll;
+    }
+
+    private void showStreamingPanel() {
+        ProductionStreamingDialog dialog = new ProductionStreamingDialog(getContext(), () -> refreshStreamingState());
+        dialog.show();
+    }
+
+    private void refreshStreamingState() {
+        boolean live = ProductionStreamingController.isLive(getContext());
+        if (streamButton != null) {
+            streamButton.setText(live ? "LIVE" : "STREAM");
+            streamButton.setBackground(live ? round(Color.rgb(25, 90, 45), 12) : round(ACCENT, 12));
+        }
+        listener.onStateChanged(state, false);
     }
 
     private View monitorCard(String label, boolean program) {
@@ -204,10 +234,7 @@ public final class ProductionControlRoomDialog extends Dialog {
         GridLayout grid = new GridLayout(getContext());
         grid.setColumnCount(3);
         grid.setRowCount(2);
-        String[] names = {
-                "CAMERA 1", "CAMERA 2", "VIDEO",
-                "GRAPHICS", "PROGRAM", "PREVIEW"
-        };
+        String[] names = {"CAMERA 1", "CAMERA 2", "VIDEO", "GRAPHICS", "PROGRAM", "PREVIEW"};
         for (String name : names) {
             TextView tile = text(name, 9, TEXT);
             tile.setGravity(Gravity.CENTER);
@@ -245,7 +272,7 @@ public final class ProductionControlRoomDialog extends Dialog {
 
     private void takeNow() {
         handler.removeCallbacksAndMessages(null);
-        state = state.withProgram(state.getPreviewScene()).withPreview(state.getProgramScene());
+        state = state.take();
         state.save(getContext());
         listener.onStateChanged(state, true);
         refreshValues();
