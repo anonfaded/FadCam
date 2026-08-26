@@ -47,7 +47,8 @@ public final class ProductionCameraSlotManager {
         int s = ProductionControlState.clampCameraSlot(slot);
         SharedPreferences p = prefs(context);
         if (!p.getString(key(s, "active_stream_id"), "").isEmpty()) return get(context, s);
-        String token = newToken();
+        String token = p.getString(key(s, "token"), "");
+        if (token.isEmpty()) token = newToken();
         p.edit().putString(key(s, "token"), token)
                 .putString(key(s, "name"), guestName == null ? "" : guestName.trim())
                 .putBoolean(key(s, "waiting"), true)
@@ -55,7 +56,7 @@ public final class ProductionCameraSlotManager {
         return get(context, s);
     }
 
-    /** Backwards-compatible alias used by existing producer controls. */
+    /** Marks a slot as waiting without rotating its current invitation. */
     @NonNull public static ProductionCameraSlot markInvited(Context context, int slot, String guestName) {
         return createInvite(context, slot, guestName);
     }
@@ -102,10 +103,13 @@ public final class ProductionCameraSlotManager {
                 .putBoolean(key(s, "waiting"), false).apply();
     }
 
-    /** App-to-app invitation. The random token is the VDO.Ninja stream ID and is rotated after use. */
+    /** Android app-to-app link. The component uses the installed FadCam variant package. */
     @NonNull public static String inviteLink(Context context, int slot) {
         ProductionCameraSlot c = get(context, slot);
-        return String.format(Locale.US, "fadcam://guest-camera?slot=%d&token=%s", c.getSlot(), c.getInviteToken());
+        String component = context.getPackageName() + "/.TorchToggleActivity";
+        return String.format(Locale.US,
+                "intent://guest-camera?slot=%d&token=%s#Intent;scheme=fadcam;action=android.intent.action.VIEW;component=%s;end",
+                c.getSlot(), c.getInviteToken(), component);
     }
 
     @NonNull public static String vdoPushLink(Context context, int slot) {
