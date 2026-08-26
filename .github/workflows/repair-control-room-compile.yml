@@ -1,0 +1,39 @@
+name: Repair control room compile error
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, 'fix: repair control room monitor label type') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Apply verified Java type fix and remove repair workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('app/src/main/java/com/fadcam/production/ProductionControlRoomDialog.java')
+          source = path.read_text()
+          old = '    private TextView monitorLabel(String label,boolean program){'
+          new = '    private View monitorLabel(String label,boolean program){'
+          if old not in source:
+              raise SystemExit('Expected monitorLabel signature was not found; refusing to make an unsafe edit.')
+          path.write_text(source.replace(old, new, 1))
+          PY
+
+          grep -q 'private View monitorLabel' app/src/main/java/com/fadcam/production/ProductionControlRoomDialog.java
+          git rm .github/workflows/repair-control-room-compile.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/fadcam/production/ProductionControlRoomDialog.java
+          git commit -m 'fix: repair control room monitor label type'
+          git push origin HEAD:master
