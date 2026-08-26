@@ -60,6 +60,34 @@ jobs:
           distribution: temurin
           cache: gradle
 
+      - name: Prepare isolated CI release signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/ci-signing
+          STOREPASS="$(openssl rand -hex 24)"
+          KEYPASS="$(openssl rand -hex 24)"
+          keytool -genkeypair \
+            -keystore app/ci-signing/fadcam-ci-release.jks \
+            -storetype JKS \
+            -storepass "$STOREPASS" \
+            -keypass "$KEYPASS" \
+            -alias fadcam-ci-release \
+            -keyalg RSA \
+            -keysize 4096 \
+            -validity 10000 \
+            -dname "CN=FadCam CI Release, OU=FadCam, O=Trendyzima, L=CI, ST=CI, C=KE" \
+            -noprompt
+          {
+            echo "KEYSTORE_FILE=ci-signing/fadcam-ci-release.jks"
+            echo "KEYSTORE_PASSWORD=$STOREPASS"
+            echo "KEY_ALIAS=fadcam-ci-release"
+            echo "KEY_PASSWORD=$KEYPASS"
+          } >> local.properties
+          test -s app/ci-signing/fadcam-ci-release.jks
+          keytool -list -keystore app/ci-signing/fadcam-ci-release.jks \
+            -storepass "$STOREPASS" -alias fadcam-ci-release >/dev/null
+
       - name: Verify Gradle tasks
         shell: bash
         run: |
@@ -85,11 +113,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          apk="$(find app/build/outputs/apk -type f -name '*.apk' -path '*default/release/*' -print -quit)"
+          apk="$(find app/build/outputs/apk -type f -name '*.apk' -path '*default/release/*' -print | grep -E 'universal\.apk$' | head -n 1 || true)"
           test -n "$apk"
           test -s "$apk"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$BUILD_TOOLS/aapt" dump badging "$apk" | tee /tmp/aapt-badging.txt
+          grep -q "package: name='com.fadcam'" /tmp/aapt-badging.txt
+          ! grep -q 'application-debuggable' /tmp/aapt-badging.txt
+          "$BUILD_TOOLS/apksigner" verify --verbose "$apk"
+          "$BUILD_TOOLS/zipalign" -c -P 16 -v 4 "$apk"
           unzip -t "$apk" >/tmp/apk-integrity.txt
-          unzip -l "$apk" | grep -q 'AndroidManifest.xml'
           unzip -l "$apk" | grep -q 'classes.dex'
           sha256sum "$apk" | tee /tmp/apk.sha256
           echo "Verified APK: $apk"
