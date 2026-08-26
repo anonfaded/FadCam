@@ -50,8 +50,10 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf /tmp/media3-patched
-          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
-          test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          git -C /tmp/media3-patched sparse-checkout set settings.gradle libraries/common libraries/container libraries/muxer
+          test -f /tmp/media3-patched/settings.gradle
+          test -f /tmp/media3-patched/libraries/muxer/src/main/java/androidx/media3/muxer/ProcessedSegment.java
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
