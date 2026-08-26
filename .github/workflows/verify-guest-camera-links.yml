@@ -3,6 +3,7 @@ name: Verify guest camera links
 on:
   push:
     branches:
+      - feat/online-tv-media-production
       - feat/one-time-guest-camera-links
   pull_request:
     branches:
@@ -11,6 +12,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: guest-camera-links-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,37 +23,46 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-      # FragmentedMp4MuxerWrapper depends on the project's patched Media3
-      # extension. The normal AndroidX artifact does not expose ProcessedSegment.
-      # Keep this verification environment identical to the repository's APK build.
       - name: Clone patched Media3
         shell: bash
         run: |
           set -euo pipefail
           rm -rf /tmp/media3-patched
-          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
-          test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
-          echo "Patched Media3 commit: $(git -C /tmp/media3-patched rev-parse --verify HEAD)"
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          git -C /tmp/media3-patched sparse-checkout set --skip-checks settings.gradle libraries/common libraries/container libraries/muxer
+          test -f /tmp/media3-patched/settings.gradle
+          test -f /tmp/media3-patched/libraries/muxer/src/main/java/androidx/media3/muxer/ProcessedSegment.java
 
       - name: Set up Java 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: temurin
           cache: gradle
 
-      - name: Verify guest camera source
+      - name: Verify guest camera source invariants
         shell: bash
         run: |
           set -euo pipefail
           test -f app/src/main/java/com/fadcam/production/ProductionCameraSlot.java
           test -f app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
           test -f app/src/main/java/com/fadcam/production/ProductionGuestWebView.java
-          grep -q 'maxconnections=1' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
-          grep -q 'markConsumed' app/src/main/java/com/fadcam/production/ProductionGuestWebView.java
-          grep -q 'NEW INVITE + SHARE' app/src/main/java/com/fadcam/production/ProductionControlRoomDialog.java
+          grep -q 'private static final int SLOT_COUNT = 6' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'markConsumed' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'isInviteActive' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'One-use FadCam app link' app/src/main/java/com/fadcam/production/ProductionControlRoomDialog.java
+          grep -q 'intent://guest-camera?slot=' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'VDO_BASE' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'push=' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          echo 'Guest camera source invariants: PASS'
 
-      - name: Unit tests and release compile
+      - name: Run guest camera unit tests and release compile
         shell: bash
-        run: ./gradlew :app:testDefaultReleaseUnitTest :app:compileDefaultReleaseJavaWithJavac --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2
+        run: |
+          set -euo pipefail
+          ./gradlew :app:testDefaultReleaseUnitTest :app:compileDefaultReleaseJavaWithJavac \
+            --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2
+          echo 'Guest camera tests + release Java compile: PASS'

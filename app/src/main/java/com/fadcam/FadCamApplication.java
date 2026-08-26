@@ -14,6 +14,7 @@ import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.fadcam.ui.BrandingManager;
 import com.fadcam.ui.ProductionFeatureUnlocker;
+import com.fadcam.production.ProductionOnlineTvInstaller;
 
 public class FadCamApplication extends Application implements LifecycleObserver {
     @Override
@@ -21,6 +22,7 @@ public class FadCamApplication extends Application implements LifecycleObserver 
         super.onCreate();
         ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
         registerBrandingLifecycle();
+        ProductionOnlineTvInstaller.register(this);
         new Thread(this::registerSelfHealingScanObserver, "selfheal-observer").start();
     }
 

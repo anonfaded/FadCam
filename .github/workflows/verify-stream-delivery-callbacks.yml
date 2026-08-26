@@ -1,0 +1,122 @@
+name: Verify streaming delivery callbacks
+
+on:
+  push:
+    branches:
+      - fix/streaming-media-delivery-v2
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  verify-callbacks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone patched Media3
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Patch relay ACK callback bridge
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java')
+          s = p.read_text()
+          if 'pendingSegmentCallbacks' in s:
+              print('Callback bridge already present')
+              raise SystemExit(0)
+
+          import_marker = 'import java.util.concurrent.ExecutorService;\n'
+          if import_marker not in s:
+              raise SystemExit('executor import marker missing')
+          s = s.replace(import_marker, import_marker + 'import java.util.concurrent.ConcurrentHashMap;\nimport java.util.Map;\n', 1)
+
+          field_marker = '    private final HlsSegmentDeliveryQueue deliveryQueue;\n'
+          if field_marker not in s:
+              raise SystemExit('delivery queue field missing')
+          s = s.replace(field_marker, field_marker + '    private final Map<Integer, UploadCallback> pendingSegmentCallbacks = new ConcurrentHashMap<>();\n    private volatile UploadCallback pendingInitCallback;\n', 1)
+
+          init_old = '''        getDeliveryQueue().offerInit(initData);\n        // Enqueueing is not a relay ACK; the queue's transport completion owns delivery state.\n'''
+          init_new = '''        pendingInitCallback = callback;\n        getDeliveryQueue().offerInit(initData);\n        // The callback is completed only after the relay ACK reaches the queue transport.\n'''
+          if init_old not in s:
+              raise SystemExit('init wrapper marker missing')
+          s = s.replace(init_old, init_new, 1)
+
+          seg_old = '''        getDeliveryQueue().offerSegment(sequenceNumber, segmentData);\n        // The queue advances only after CloudStreamUploader reports a successful relay upload.\n'''
+          seg_new = '''        if (callback != null) {\n            pendingSegmentCallbacks.put(sequenceNumber, callback);\n        } else {\n            pendingSegmentCallbacks.remove(sequenceNumber);\n        }\n        getDeliveryQueue().offerSegment(sequenceNumber, segmentData);\n        // The callback is completed only after the encrypted relay upload is ACKed.\n'''
+          if seg_old not in s:
+              raise SystemExit('segment wrapper marker missing')
+          s = s.replace(seg_old, seg_new, 1)
+
+          init_transport_old = '''                    @Override public void onSuccess() { completion.success(); }\n                    @Override public void onError(String error) { completion.failure(error); }\n'''
+          init_transport_new = '''                    @Override public void onSuccess() {\n                        UploadCallback userCallback = pendingInitCallback;\n                        pendingInitCallback = null;\n                        try {\n                            if (userCallback != null) userCallback.onSuccess();\n                        } finally {\n                            completion.success();\n                        }\n                    }\n                    @Override public void onError(String error) {\n                        UploadCallback userCallback = pendingInitCallback;\n                        pendingInitCallback = null;\n                        try {\n                            if (userCallback != null) userCallback.onError(error);\n                        } finally {\n                            completion.failure(error);\n                        }\n                    }\n'''
+          if s.count(init_transport_old) < 2:
+              raise SystemExit('expected transport callback blocks missing')
+          s = s.replace(init_transport_old, init_transport_new, 1)
+
+          seg_transport_new = '''                    @Override public void onSuccess() {\n                        UploadCallback userCallback = pendingSegmentCallbacks.remove(sequence);\n                        try {\n                            if (userCallback != null) userCallback.onSuccess();\n                        } finally {\n                            completion.success();\n                        }\n                    }\n                    @Override public void onError(String error) {\n                        UploadCallback userCallback = pendingSegmentCallbacks.remove(sequence);\n                        try {\n                            if (userCallback != null) userCallback.onError(error);\n                        } finally {\n                            completion.failure(error);\n                        }\n                    }\n'''
+          if init_transport_old not in s:
+              raise SystemExit('segment transport callback block missing')
+          s = s.replace(init_transport_old, seg_transport_new, 1)
+
+          reset_marker = '            deliveryQueue.reset();\n            cachedUserUuid = null;'
+          if reset_marker not in s:
+              raise SystemExit('reset lifecycle marker missing')
+          s = s.replace(reset_marker, '            deliveryQueue.reset();\n            pendingSegmentCallbacks.clear();\n            pendingInitCallback = null;\n            cachedUserUuid = null;', 1)
+
+          stop_marker = '''        } else {\n            deliveryQueue.stop();\n            FLog.i(TAG, "Cloud streaming disabled");\n        }'''
+          if stop_marker not in s:
+              raise SystemExit('stop lifecycle marker missing')
+          s = s.replace(stop_marker, '''        } else {\n            deliveryQueue.stop();\n            pendingSegmentCallbacks.clear();\n            pendingInitCallback = null;\n            FLog.i(TAG, "Cloud streaming disabled");\n        }''', 1)
+
+          p.write_text(s)
+          print('ACK callback bridge written')
+          PY
+
+      - name: Verify callback invariants
+        run: |
+          set -euo pipefail
+          grep -q 'pendingSegmentCallbacks' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'pendingInitCallback' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'completion.success()' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'completion.failure(error)' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          ! grep -q 'getDeliveryQueue().offerSegment(sequenceNumber, segmentData);[[:space:]]*//.*enqueue' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+
+      - name: Unit tests and debug build
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2
+
+      - name: Commit verified callback bridge
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Callback bridge already committed; nothing to push.'
+            exit 0
+          fi
+          git diff --cached -- app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          git commit -m "fix: preserve relay ACK callbacks through HLS queue [skip ci]"
+          git push origin HEAD:fix/streaming-media-delivery-v2

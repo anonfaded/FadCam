@@ -33,17 +33,13 @@ android {
         versionCode = 52
         versionName = "4.0.0"
         vectorDrawables.useSupportLibrary = true
-        ndk {
-            debugSymbolLevel = "FULL"
-        }
+        ndk { debugSymbolLevel = "FULL" }
     }
 
     signingConfigs {
         create("release") {
             val props = Properties()
-            rootProject.file("local.properties").takeIf { it.exists() }?.inputStream().use { stream ->
-                stream?.let { props.load(it) }
-            }
+            rootProject.file("local.properties").takeIf { it.exists() }?.inputStream().use { stream -> stream?.let { props.load(it) } }
             val keystoreFile = props.getProperty("KEYSTORE_FILE", "")
             if (keystoreFile.isNotEmpty() && file(keystoreFile).exists()) {
                 storeFile = file(keystoreFile)
@@ -58,53 +54,25 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".beta"
-            isDebuggable = true
-            versionNameSuffix = "-beta10.6"
-            resValue("string", "app_name", "FadCam Beta")
+            applicationIdSuffix = ".beta"; isDebuggable = true; versionNameSuffix = "-beta10.6"; resValue("string", "app_name", "FadCam Beta")
         }
-
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            isDebuggable = false
-            // Release builds always use the explicit release signing configuration.
-            // CI creates a dedicated non-debug key on the ephemeral runner; local
-            // and production builds must provide their own protected release key.
-            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true; isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isDebuggable = false; signingConfig = signingConfigs.getByName("release")
         }
-
         create("pro") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            applicationIdSuffix = ".pro"
-            isDebuggable = false
-            if (releaseSigningConfigValid) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            isMinifyEnabled = true; isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            applicationIdSuffix = ".pro"; isDebuggable = false
+            if (releaseSigningConfigValid) signingConfig = signingConfigs.getByName("release")
             versionNameSuffix = "-Pro"
         }
-
         create("proPlus") {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            applicationIdSuffix = ".proplus"
-            isDebuggable = false
-            if (releaseSigningConfigValid) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            isMinifyEnabled = true; isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            applicationIdSuffix = ".proplus"; isDebuggable = false
+            if (releaseSigningConfigValid) signingConfig = signingConfigs.getByName("release")
             versionNameSuffix = "-Pro+"
             val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro+"
             resValue("string", "app_name", customAppName)
@@ -112,42 +80,19 @@ android {
     }
 
     flavorDimensions += "pro"
-
     productFlavors {
-        create("notesPro") {
-            dimension = "pro"
-            applicationIdSuffix = ".notes"
-            resValue("string", "app_name", "Notes")
-        }
-        create("calcPro") {
-            dimension = "pro"
-            applicationIdSuffix = ".calc"
-            resValue("string", "app_name", "Calculator")
-        }
-        create("weatherPro") {
-            dimension = "pro"
-            applicationIdSuffix = ".weather"
-            resValue("string", "app_name", "Weather")
-        }
-        create("default") {
-            dimension = "pro"
-        }
+        create("notesPro") { dimension = "pro"; applicationIdSuffix = ".notes"; resValue("string", "app_name", "Notes") }
+        create("calcPro") { dimension = "pro"; applicationIdSuffix = ".calc"; resValue("string", "app_name", "Calculator") }
+        create("weatherPro") { dimension = "pro"; applicationIdSuffix = ".weather"; resValue("string", "app_name", "Weather") }
+        create("default") { dimension = "pro" }
     }
 
     androidComponents {
         beforeVariants { variant ->
             val isPreBuiltFlavor = variant.name.contains("notesPro") || variant.name.contains("calcPro") || variant.name.contains("weatherPro")
             val isDefaultFlavor = variant.name.contains("default")
-
-            if (isPreBuiltFlavor) {
-                if (!variant.name.endsWith("Release")) {
-                    variant.enable = false
-                }
-            } else if (isDefaultFlavor) {
-                if (variant.name.endsWith("Pro") && !variant.name.endsWith("ProPlus")) {
-                    variant.enable = false
-                }
-            }
+            if (isPreBuiltFlavor) { if (!variant.name.endsWith("Release")) variant.enable = false }
+            else if (isDefaultFlavor) { if (variant.name.endsWith("Pro") && !variant.name.endsWith("ProPlus")) variant.enable = false }
         }
     }
 
@@ -156,80 +101,25 @@ android {
         val flavor = if (flavorName != "default") "${flavorName}_" else ""
         outputs.all {
             val abiType = filters.firstOrNull { it.filterType == com.android.build.OutputFile.ABI }?.identifier ?: "universal"
-            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-                "FadCam_${flavor}v${versionName}-${abiType}.apk"
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName = "FadCam_${flavor}v${versionName}-${abiType}.apk"
         }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    dependenciesInfo {
-        includeInApk = false
-        includeInBundle = false
-    }
-
+    compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+    dependenciesInfo { includeInApk = false; includeInBundle = false }
     sourceSets {
-        getByName("main") {
-            java.srcDir("libs/AppLockLibrary/src/main/java")
-            res.srcDir("libs/AppLockLibrary/src/main/res")
-        }
-        getByName("notesPro") {
-            res.srcDir("src/notesPro/res")
-        }
-        getByName("calcPro") {
-            res.srcDir("src/calcPro/res")
-        }
-        getByName("weatherPro") {
-            res.srcDir("src/weatherPro/res")
-        }
+        getByName("main") { java.srcDir("libs/AppLockLibrary/src/main/java"); res.srcDir("libs/AppLockLibrary/src/main/res") }
+        getByName("notesPro") { res.srcDir("src/notesPro/res") }
+        getByName("calcPro") { res.srcDir("src/calcPro/res") }
+        getByName("weatherPro") { res.srcDir("src/weatherPro/res") }
     }
-
     packaging {
-        jniLibs {
-            excludes += listOf("**/x86/**", "**/x86_64/**", "**/mips/**", "**/mips64/**")
-            pickFirsts += listOf("**/libc++_shared.so")
-            useLegacyPackaging = false
-        }
-        resources {
-            excludes += listOf(
-                "META-INF/LICENSE",
-                "META-INF/LICENSE.txt",
-                "META-INF/NOTICE",
-                "META-INF/NOTICE.txt",
-                "META-INF/DEPENDENCIES",
-                "META-INF/*.kotlin_module",
-                "META-INF/AL2.0",
-                "META-INF/LGPL2.1",
-                "**/*.kotlin_metadata",
-                "**/*.kotlin_builtins",
-                "**/*.proto",
-                "assets/PSDs/**"
-            )
-        }
+        jniLibs { excludes += listOf("**/x86/**","**/x86_64/**","**/mips/**","**/mips64/**"); pickFirsts += listOf("**/libc++_shared.so"); useLegacyPackaging = false }
+        resources { excludes += listOf("META-INF/LICENSE","META-INF/LICENSE.txt","META-INF/NOTICE","META-INF/NOTICE.txt","META-INF/DEPENDENCIES","META-INF/*.kotlin_module","META-INF/AL2.0","META-INF/LGPL2.1","**/*.kotlin_metadata","**/*.kotlin_builtins","**/*.proto","assets/PSDs/**") }
     }
-
-    androidResources {
-        noCompress.add("xml")
-        additionalParameters.add("--no-version-vectors")
-    }
-
-    buildFeatures {
-        buildConfig = true
-    }
-
-    lint {
-        // Generate the release lint report without making the Gradle lint task
-        // itself the blocking gate. The CI workflow parses the generated report
-        // and fails only when Studio-specific errors are present. This keeps
-        // legacy findings and lint infrastructure noise from masking a valid
-        // release build while preserving a real Studio error gate.
-        abortOnError = false
-        checkReleaseBuilds = false
-        disable += "MissingTranslation"
-    }
+    androidResources { noCompress.add("xml"); additionalParameters.add("--no-version-vectors") }
+    buildFeatures { buildConfig = true }
+    lint { abortOnError = false; checkReleaseBuilds = false; disable += "MissingTranslation" }
 }
 
 dependencies {
@@ -247,6 +137,7 @@ dependencies {
     implementation(libs.gridlayout)
     implementation(libs.core.ktx)
     implementation(libs.media3.exoplayer)
+    implementation(libs.media3.exoplayer.hls)
     implementation(libs.media3.ui)
     implementation(libs.media3.session)
     implementation(libs.media3.transformer)
@@ -260,9 +151,7 @@ dependencies {
     implementation(libs.navigation.ui.ktx)
     implementation(libs.okhttp)
     implementation(libs.tensorflow.lite)
-    implementation(libs.tensorflow.lite.task.vision) {
-        exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
-    }
+    implementation(libs.tensorflow.lite.task.vision) { exclude(group = "org.tensorflow", module = "tensorflow-lite-api") }
     implementation(libs.opencv.android)
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)

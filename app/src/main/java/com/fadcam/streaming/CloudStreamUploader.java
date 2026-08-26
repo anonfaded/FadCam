@@ -22,6 +22,8 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -76,6 +78,9 @@ public class CloudStreamUploader {
     private final OkHttpClient httpClient;
     private final CloudAuthManager authManager;
     private final ExecutorService uploadExecutor;
+    private final HlsSegmentDeliveryQueue deliveryQueue;
+    private final Map<Integer, UploadCallback> pendingSegmentCallbacks = new ConcurrentHashMap<>();
+    private volatile UploadCallback pendingInitCallback;
     
     // Cached user UUID (extracted from JWT)
     private String cachedUserUuid = null;
@@ -100,6 +105,51 @@ public class CloudStreamUploader {
         
         // Executor for segment uploads via HttpURLConnection (2 threads for parallel uploads)
         this.uploadExecutor = Executors.newFixedThreadPool(2);
+        this.deliveryQueue = new HlsSegmentDeliveryQueue(new HlsSegmentDeliveryQueue.Transport() {
+            @Override public void uploadInit(@NonNull byte[] initData, @NonNull HlsSegmentDeliveryQueue.Completion completion) {
+                uploadInitSegmentDirect(initData, new UploadCallback() {
+                    @Override public void onSuccess() {
+                        UploadCallback userCallback = pendingInitCallback;
+                        pendingInitCallback = null;
+                        try {
+                            if (userCallback != null) userCallback.onSuccess();
+                        } finally {
+                            completion.success();
+                        }
+                    }
+                    @Override public void onError(String error) {
+                        UploadCallback userCallback = pendingInitCallback;
+                        pendingInitCallback = null;
+                        try {
+                            if (userCallback != null) userCallback.onError(error);
+                        } finally {
+                            completion.failure(error);
+                        }
+                    }
+                });
+            }
+
+            @Override public void uploadSegment(int sequence, @NonNull byte[] data, @NonNull HlsSegmentDeliveryQueue.Completion completion) {
+                uploadSegmentDirect(sequence, data, new UploadCallback() {
+                    @Override public void onSuccess() {
+                        UploadCallback userCallback = pendingSegmentCallbacks.remove(sequence);
+                        try {
+                            if (userCallback != null) userCallback.onSuccess();
+                        } finally {
+                            completion.success();
+                        }
+                    }
+                    @Override public void onError(String error) {
+                        UploadCallback userCallback = pendingSegmentCallbacks.remove(sequence);
+                        try {
+                            if (userCallback != null) userCallback.onError(error);
+                        } finally {
+                            completion.failure(error);
+                        }
+                    }
+                });
+            }
+        });
         
         // Configure OkHttp with generous timeouts for poor mobile connections
         // NOTE: OkHttp is kept for legacy command API methods only.
@@ -139,12 +189,18 @@ public class CloudStreamUploader {
         if (enabled) {
             // Reset state for new stream session
             initSegmentUploaded = false;
+            deliveryQueue.reset();
+            pendingSegmentCallbacks.clear();
+            pendingInitCallback = null;
             cachedUserUuid = null;
             // Reset auth failure tracking (fresh start)
             consecutive401Count = 0;
             authBackoffActive = false;
             FLog.i(TAG, "Cloud streaming enabled");
         } else {
+            deliveryQueue.stop();
+            pendingSegmentCallbacks.clear();
+            pendingInitCallback = null;
             FLog.i(TAG, "Cloud streaming disabled");
         }
     }
@@ -156,6 +212,11 @@ public class CloudStreamUploader {
         return isEnabled;
     }
     
+
+    private HlsSegmentDeliveryQueue getDeliveryQueue() {
+        return deliveryQueue;
+    }
+
     /**
      * Get user UUID from the JWT token.
      * JWT format: header.payload.signature (each base64 encoded)
@@ -221,6 +282,16 @@ public class CloudStreamUploader {
             FLog.d(TAG, "Cloud streaming disabled, skipping init upload");
             return;
         }
+        pendingInitCallback = callback;
+        getDeliveryQueue().offerInit(initData);
+        // The callback is completed only after the relay ACK reaches the queue transport.
+    }
+
+    private void uploadInitSegmentDirect(byte[] initData, @Nullable UploadCallback callback) {
+        if (!isEnabled) {
+            FLog.d(TAG, "Cloud streaming disabled, skipping init upload");
+            return;
+        }
         
         String url = buildUploadUrl("init.mp4");
         if (url == null) {
@@ -261,9 +332,17 @@ public class CloudStreamUploader {
         if (!isEnabled) {
             return;
         }
+        if (callback != null) {
+            pendingSegmentCallbacks.put(sequenceNumber, callback);
+        } else {
+            pendingSegmentCallbacks.remove(sequenceNumber);
+        }
+        getDeliveryQueue().offerSegment(sequenceNumber, segmentData);
+        // The callback is completed only after the encrypted relay upload is ACKed.
+    }
 
-        if (!initSegmentUploaded) {
-            FLog.w(TAG, "Init segment not uploaded yet, skipping segment " + sequenceNumber);
+    private void uploadSegmentDirect(int sequenceNumber, byte[] segmentData, @Nullable UploadCallback callback) {
+        if (!isEnabled) {
             return;
         }
 
