@@ -114,15 +114,30 @@ jobs:
           unzip -t artifacts/FadCam-Studio-release-universal.apk | grep -q 'No errors detected'
           unzip -l artifacts/FadCam-Studio-release-universal.apk | grep -q 'classes.dex'
 
-      - name: Push verified APK to GitHub
+      - name: Publish verified APK release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -f artifacts/FadCam-Studio-release-universal.apk artifacts/SHA256SUMS.txt
-          git commit -m 'build: publish verified Studio release APK'
-          git push origin HEAD:master
+          TAG="studio-latest"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" \
+              --target "$GITHUB_SHA" \
+              --title "FadCam Studio — latest verified release APK" \
+              --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. CI uses an ephemeral non-production release key for device verification."
+          else
+            gh release create "$TAG" \
+              --target "$GITHUB_SHA" \
+              --prerelease \
+              --title "FadCam Studio — latest verified release APK" \
+              --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. CI uses an ephemeral non-production release key for device verification."
+          fi
+          gh release upload "$TAG" \
+            artifacts/FadCam-Studio-release-universal.apk \
+            artifacts/SHA256SUMS.txt \
+            --clobber
+          gh release view "$TAG" --json tagName,targetCommitish,isDraft,isPrerelease,url
 
       - name: Upload APK as CI artifact too
         uses: actions/upload-artifact@v4
