@@ -14,7 +14,7 @@ public class ProductionControlStateTest {
     }
 
     @Test
-    public void takePromotesPreviewAndKeepsOldProgramAsPreview() {
+    public void takePromotesPreviewAndKeepsPreviewSelected() {
         ProductionControlState state = new ProductionControlState(
                 ProductionScene.CAMERA,
                 ProductionScene.VIDEO,
@@ -25,9 +25,9 @@ public class ProductionControlStateTest {
 
         ProductionControlState taken = state.take();
 
-        assertEquals(ProductionScene.VIDEO, taken.getPreviewScene());
+        assertEquals(ProductionScene.CAMERA, taken.getPreviewScene());
         assertEquals(ProductionScene.CAMERA, taken.getProgramScene());
-        assertEquals(4, taken.getPreviewCameraSlot());
+        assertEquals(2, taken.getPreviewCameraSlot());
         assertEquals(2, taken.getProgramCameraSlot());
         assertEquals(ProductionControlState.Transition.DISSOLVE, taken.getTransition());
         assertEquals(750, taken.getTransitionDurationMs());
