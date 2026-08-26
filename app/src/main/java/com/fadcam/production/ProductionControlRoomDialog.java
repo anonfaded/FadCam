@@ -39,7 +39,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/** Professional producer switcher using the real production canvas and real source transports. */
+/**
+ * Professional producer switcher. The dialog owns only its own preview surface;
+ * it never re-parents or takes ownership of the Fragment's live production canvas.
+ */
 public final class ProductionControlRoomDialog extends Dialog {
     public interface Listener {
         void onStateChanged(@NonNull ProductionControlState state, boolean applyToProgram);
@@ -53,31 +56,30 @@ public final class ProductionControlRoomDialog extends Dialog {
 
     private final Listener listener;
     private ProductionControlState state;
-    private final FrameLayout liveCanvas;
-    private final ViewGroup originalParent;
-    private final ViewGroup.LayoutParams originalLayoutParams;
-    private final int originalIndex;
     private FrameLayout liveMonitor;
-    private ProductionGuestWebView guestReceiver;
-    private ExoPlayer videoPlayer;
+    private PlayerView previewPlayerView;
     private ProductionAudioDucker videoDucker;
-    private boolean canvasAttached;
+    private ExoPlayer videoPlayer;
     private TextView previewValue, previewDetail, tallyValue, transitionValue, durationValue;
     private MaterialButton autoButton, takeButton, liveButton;
 
+    /**
+     * The canvas arguments are retained for source compatibility with older callers,
+     * but are deliberately ignored. The control room must never move a live Fragment view.
+     */
     public ProductionControlRoomDialog(@NonNull Context context, @NonNull ProductionControlState initialState,
-                                       @Nullable FrameLayout liveCanvas, @Nullable ViewGroup originalParent,
+                                       @Nullable FrameLayout ignoredLiveCanvas, @Nullable ViewGroup ignoredOriginalParent,
                                        @NonNull Listener listener) {
         super(context);
-        this.state=initialState; this.liveCanvas=liveCanvas; this.originalParent=originalParent;
-        this.originalLayoutParams=liveCanvas==null?null:liveCanvas.getLayoutParams();
-        this.originalIndex=originalParent==null||liveCanvas==null?-1:originalParent.indexOfChild(liveCanvas);
+        this.state=initialState;
         this.listener=listener;
     }
 
     @Override protected void onCreate(@Nullable android.os.Bundle saved) {
-        super.onCreate(saved); requestWindowFeature(Window.FEATURE_NO_TITLE); setContentView(buildContent());
-        setCanceledOnTouchOutside(false); attachLiveCanvas(); syncGuestReceiver();
+        super.onCreate(saved);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setContentView(buildContent());
+        setCanceledOnTouchOutside(false);
     }
 
     @Override protected void onStart() {
@@ -102,7 +104,9 @@ public final class ProductionControlRoomDialog extends Dialog {
         TextView ready=text(ProductionStreamingController.isLive(getContext())?"LIVE":"READY",10,ProductionStreamingController.isLive(getContext())?RED:GREEN); ready.setGravity(Gravity.CENTER); status.addView(ready,new LinearLayout.LayoutParams(dp(58),dp(36))); root.addView(status,new LinearLayout.LayoutParams(-1,dp(46)));
 
         root.addView(section("PROGRAM / PREVIEW"));
-        liveMonitor=new FrameLayout(getContext()); liveMonitor.setContentDescription("Live Program monitor"); liveMonitor.setBackground(round(Color.BLACK,10));
+        liveMonitor=new FrameLayout(getContext()); liveMonitor.setContentDescription("Control room program preview"); liveMonitor.setBackground(round(Color.BLACK,10));
+        previewPlayerView=new PlayerView(getContext()); previewPlayerView.setUseController(true); previewPlayerView.setShutterBackgroundColor(Color.BLACK);
+        liveMonitor.addView(previewPlayerView,new FrameLayout.LayoutParams(-1,-1));
         root.addView(liveMonitor,new LinearLayout.LayoutParams(-1,dp(220)));
         LinearLayout labels=row(); labels.addView(monitorLabel("PROGRAM • TALLY",true),new LinearLayout.LayoutParams(0,dp(70),1)); labels.addView(space(dp(8)),new LinearLayout.LayoutParams(dp(8),1)); labels.addView(monitorLabel("PREVIEW • READY",false),new LinearLayout.LayoutParams(0,dp(70),1)); root.addView(labels);
 
@@ -116,7 +120,7 @@ public final class ProductionControlRoomDialog extends Dialog {
         LinearLayout tr=row(); transitionValue=text("TRANSITION • "+state.getTransition().getTitle(),9,TEXT); tr.addView(transitionValue,new LinearLayout.LayoutParams(0,dp(38),1));
         for(ProductionControlState.Transition t:ProductionControlState.Transition.values()){MaterialButton b=button(t.getTitle().toUpperCase(Locale.US),t==state.getTransition());b.setTextSize(8);b.setOnClickListener(v->{state=state.withTransition(t);state.save(getContext());transitionValue.setText("TRANSITION • "+t.getTitle());});tr.addView(b,new LinearLayout.LayoutParams(dp(72),dp(38)));} root.addView(tr);
         LinearLayout dur=row(); durationValue=text("AUTO DURATION • "+state.getTransitionDurationMs()+" ms",9,MUTED);dur.addView(durationValue,new LinearLayout.LayoutParams(dp(132),dp(40)));SeekBar bar=new SeekBar(getContext());bar.setMax(2900);bar.setProgress(Math.max(0,state.getTransitionDurationMs()-100));bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean u){int ms=ProductionControlState.clampDuration(p+100);state=state.withDuration(ms);durationValue.setText("AUTO DURATION • "+ms+" ms");}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){state.save(getContext());}});dur.addView(bar,new LinearLayout.LayoutParams(0,dp(40),1));root.addView(dur);
-        TextView hint=text("Preview never changes Program. Camera invites are unique and one-use. VIDEO loads real storage media and is ready for CUT/TAKE/AUTO.",8,MUTED);hint.setPadding(dp(6),dp(7),dp(6),0);root.addView(hint);
+        TextView hint=text("Preview never changes Program. Camera invites are unique and one-use. VIDEO loads into the control-room preview and is ready for CUT/TAKE/AUTO.",8,MUTED);hint.setPadding(dp(6),dp(7),dp(6),0);root.addView(hint);
         scroll.addView(root); return scroll;
     }
 
@@ -146,14 +150,31 @@ public final class ProductionControlRoomDialog extends Dialog {
 
     private void showVideoPicker(){Uri collection=MediaStore.Video.Media.EXTERNAL_CONTENT_URI;String[] p={MediaStore.Video.Media._ID,MediaStore.Video.Media.DISPLAY_NAME,MediaStore.Video.Media.DURATION};List<Uri> uris=new ArrayList<>();List<String> labels=new ArrayList<>();try(Cursor c=getContext().getContentResolver().query(collection,p,null,null,MediaStore.Video.Media.DATE_ADDED+" DESC")){if(c!=null){int n=0;while(c.moveToNext()&&n++<30){long id=c.getLong(c.getColumnIndexOrThrow(MediaStore.Video.Media._ID));String name=c.getString(c.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME));long ms=c.getLong(c.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION));uris.add(Uri.withAppendedPath(collection,String.valueOf(id)));labels.add(name+" • "+formatDuration(ms));}}}catch(Exception e){Toast.makeText(getContext(),"Unable to read device videos",Toast.LENGTH_LONG).show();return;}if(uris.isEmpty()){Toast.makeText(getContext(),"No videos found in storage",Toast.LENGTH_SHORT).show();return;}new MaterialAlertDialogBuilder(getContext()).setTitle("LOAD VIDEO • STORAGE").setItems(labels.toArray(new String[0]),(d,w)->loadVideo(uris.get(w))).setNegativeButton("CANCEL",null).show();}
 
-    private void loadVideo(@NonNull Uri uri){PlayerView pv=findPlayerView(liveCanvas);if(pv==null){Toast.makeText(getContext(),"Production player is unavailable",Toast.LENGTH_LONG).show();return;}if(videoPlayer!=null)videoPlayer.release();videoPlayer=new ExoPlayer.Builder(getContext()).build();videoPlayer.setMediaItem(MediaItem.fromUri(uri));videoPlayer.prepare();videoPlayer.setPlayWhenReady(true);pv.setPlayer(videoPlayer);if(videoDucker==null)videoDucker=new ProductionAudioDucker();videoDucker.start();videoDucker.attach(videoPlayer);state=state.withPreview(ProductionScene.VIDEO);state.save(getContext());refreshValues();Toast.makeText(getContext(),"VIDEO LOADED • READY FOR TAKE",Toast.LENGTH_SHORT).show();}
-    private PlayerView findPlayerView(View v){if(v instanceof PlayerView)return(PlayerView)v;if(!(v instanceof ViewGroup))return null;ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){PlayerView p=findPlayerView(g.getChildAt(i));if(p!=null)return p;}return null;}
+    private void loadVideo(@NonNull Uri uri){
+        if(previewPlayerView==null){Toast.makeText(getContext(),"Control-room preview is unavailable",Toast.LENGTH_LONG).show();return;}
+        releaseVideoPlayer();
+        try {
+            videoPlayer=new ExoPlayer.Builder(getContext()).build();
+            videoPlayer.setMediaItem(MediaItem.fromUri(uri));
+            videoPlayer.prepare();
+            videoPlayer.setPlayWhenReady(true);
+            previewPlayerView.setPlayer(videoPlayer);
+            if(videoDucker==null)videoDucker=new ProductionAudioDucker();
+            videoDucker.start();
+            videoDucker.attach(videoPlayer);
+            state=state.withPreview(ProductionScene.VIDEO);state.save(getContext());refreshValues();
+            Toast.makeText(getContext(),"VIDEO LOADED • CONTROL-ROOM PREVIEW • READY FOR TAKE",Toast.LENGTH_SHORT).show();
+        } catch(Exception e) {
+            releaseVideoPlayer();
+            Toast.makeText(getContext(),"Unable to load video",Toast.LENGTH_LONG).show();
+        }
+    }
+
     private String formatDuration(long ms){long s=Math.max(0,ms/1000);return String.format(Locale.US,"%02d:%02d",s/60,s%60);}
 
-    private void syncGuestReceiver(){if(liveCanvas==null)return;boolean needs=state.getProgramScene()!=ProductionScene.VIDEO;if(!needs){if(guestReceiver!=null)guestReceiver.hide();return;}if(guestReceiver==null)guestReceiver=ProductionGuestWebView.obtain(getContext(),liveCanvas);guestReceiver.applyScene(state.getProgramScene());guestReceiver.loadSlot(state.getProgramCameraSlot());}
     private void toggleLive(){try{if(ProductionStreamingController.isLive(getContext()))ProductionStreamingController.stop(getContext());else ProductionStreamingController.start(getContext());liveButton.setText(ProductionStreamingController.isLive(getContext())?"ON AIR":"LIVE");}catch(Exception e){Toast.makeText(getContext(),e.getMessage(),Toast.LENGTH_LONG).show();}}
-    private void cutNow(){state=state.take().withTransition(ProductionControlState.Transition.CUT);state.save(getContext());syncGuestReceiver();listener.onStateChanged(state,true);refreshValues();}
-    private void takeNow(){state=state.take();state.save(getContext());syncGuestReceiver();listener.onStateChanged(state,true);refreshValues();}
+    private void cutNow(){state=state.take().withTransition(ProductionControlState.Transition.CUT);state.save(getContext());listener.onStateChanged(state,true);refreshValues();}
+    private void takeNow(){state=state.take();state.save(getContext());listener.onStateChanged(state,true);refreshValues();}
     private void autoTake(){if(autoButton!=null)autoButton.setEnabled(false);if(takeButton!=null)takeButton.setEnabled(false);if(state.getTransition()==ProductionControlState.Transition.CUT){takeNow();reenable();return;}getWindow().getDecorView().postDelayed(()->{if(isShowing())takeNow();reenable();},state.getTransitionDurationMs());}
     private void reenable(){if(autoButton!=null)autoButton.setEnabled(true);if(takeButton!=null)takeButton.setEnabled(true);}
 
@@ -162,9 +183,13 @@ public final class ProductionControlRoomDialog extends Dialog {
     private String previewDetailLabel(){ProductionCameraSlot c=ProductionCameraSlotManager.get(getContext(),state.getPreviewCameraSlot());return state.getPreviewScene()==ProductionScene.CAMERA?c.getStatus().name()+" • "+(c.getGuestName().isEmpty()?"visitor slot":c.getGuestName()):state.getPreviewScene().getDescription();}
     private void refreshValues(){if(previewValue!=null)previewValue.setText(previewLabel());if(previewDetail!=null)previewDetail.setText(previewDetailLabel());if(tallyValue!=null)tallyValue.setText("ON AIR • "+programLabel());}
 
-    private void attachLiveCanvas(){if(liveCanvas==null||originalParent==null||liveCanvas.getParent()!=originalParent)return;View root=getWindow().getDecorView().findViewWithTag("fadcam-production-root");if(!(root instanceof ViewGroup))return;originalParent.removeView(liveCanvas);((ViewGroup)root).addView(liveCanvas,2,new LinearLayout.LayoutParams(-1,dp(220)));canvasAttached=true;}
-    @Override public void dismiss(){if(guestReceiver!=null)guestReceiver.hide();restoreLiveCanvas();super.dismiss();}
-    private void restoreLiveCanvas(){if(!canvasAttached||liveCanvas==null||originalParent==null)return;if(liveCanvas.getParent() instanceof ViewGroup)((ViewGroup)liveCanvas.getParent()).removeView(liveCanvas);int index=originalIndex<0?originalParent.getChildCount():Math.min(originalIndex,originalParent.getChildCount());originalParent.addView(liveCanvas,index,originalLayoutParams);canvasAttached=false;}
+    private void releaseVideoPlayer(){
+        if(videoDucker!=null)videoDucker.detachPlayer();
+        if(previewPlayerView!=null)previewPlayerView.setPlayer(null);
+        if(videoPlayer!=null){try{videoPlayer.release();}catch(Exception ignored){}videoPlayer=null;}
+    }
+
+    @Override public void dismiss(){releaseVideoPlayer();if(videoDucker!=null)videoDucker.stop();super.dismiss();}
 
     private LinearLayout row(){LinearLayout v=new LinearLayout(getContext());v.setOrientation(LinearLayout.HORIZONTAL);v.setGravity(Gravity.CENTER_VERTICAL);return v;}
     private LinearLayout column(){return column(Color.TRANSPARENT);}
