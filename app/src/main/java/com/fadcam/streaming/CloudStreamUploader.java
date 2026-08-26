@@ -22,6 +22,8 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -64,6 +66,11 @@ public class CloudStreamUploader {
     // Retry limits to prevent infinite loops and excessive auth requests
     private static final int MAX_401_RETRIES = 2;
     private static final long BACKOFF_AFTER_AUTH_FAILURE_MS = 30000; // 30s backoff after auth failure
+
+    // ONLINE_TV_RELAY_RETRY_V1: transient mobile-network failures must not
+    // silently drop live HLS segments. Retry init, media and playlist uploads.
+    private static final int MAX_UPLOAD_ATTEMPTS = 4;
+    private static final long UPLOAD_RETRY_BASE_DELAY_MS = 750;
     
     private static CloudStreamUploader instance;
     
@@ -71,6 +78,9 @@ public class CloudStreamUploader {
     private final OkHttpClient httpClient;
     private final CloudAuthManager authManager;
     private final ExecutorService uploadExecutor;
+    private final HlsSegmentDeliveryQueue deliveryQueue;
+    private final Map<Integer, UploadCallback> pendingSegmentCallbacks = new ConcurrentHashMap<>();
+    private volatile UploadCallback pendingInitCallback;
     
     // Cached user UUID (extracted from JWT)
     private String cachedUserUuid = null;
@@ -95,6 +105,51 @@ public class CloudStreamUploader {
         
         // Executor for segment uploads via HttpURLConnection (2 threads for parallel uploads)
         this.uploadExecutor = Executors.newFixedThreadPool(2);
+        this.deliveryQueue = new HlsSegmentDeliveryQueue(new HlsSegmentDeliveryQueue.Transport() {
+            @Override public void uploadInit(@NonNull byte[] initData, @NonNull HlsSegmentDeliveryQueue.Completion completion) {
+                uploadInitSegmentDirect(initData, new UploadCallback() {
+                    @Override public void onSuccess() {
+                        UploadCallback userCallback = pendingInitCallback;
+                        pendingInitCallback = null;
+                        try {
+                            if (userCallback != null) userCallback.onSuccess();
+                        } finally {
+                            completion.success();
+                        }
+                    }
+                    @Override public void onError(String error) {
+                        UploadCallback userCallback = pendingInitCallback;
+                        pendingInitCallback = null;
+                        try {
+                            if (userCallback != null) userCallback.onError(error);
+                        } finally {
+                            completion.failure(error);
+                        }
+                    }
+                });
+            }
+
+            @Override public void uploadSegment(int sequence, @NonNull byte[] data, @NonNull HlsSegmentDeliveryQueue.Completion completion) {
+                uploadSegmentDirect(sequence, data, new UploadCallback() {
+                    @Override public void onSuccess() {
+                        UploadCallback userCallback = pendingSegmentCallbacks.remove(sequence);
+                        try {
+                            if (userCallback != null) userCallback.onSuccess();
+                        } finally {
+                            completion.success();
+                        }
+                    }
+                    @Override public void onError(String error) {
+                        UploadCallback userCallback = pendingSegmentCallbacks.remove(sequence);
+                        try {
+                            if (userCallback != null) userCallback.onError(error);
+                        } finally {
+                            completion.failure(error);
+                        }
+                    }
+                });
+            }
+        });
         
         // Configure OkHttp with generous timeouts for poor mobile connections
         // NOTE: OkHttp is kept for legacy command API methods only.
@@ -134,12 +189,18 @@ public class CloudStreamUploader {
         if (enabled) {
             // Reset state for new stream session
             initSegmentUploaded = false;
+            deliveryQueue.reset();
+            pendingSegmentCallbacks.clear();
+            pendingInitCallback = null;
             cachedUserUuid = null;
             // Reset auth failure tracking (fresh start)
             consecutive401Count = 0;
             authBackoffActive = false;
             FLog.i(TAG, "Cloud streaming enabled");
         } else {
+            deliveryQueue.stop();
+            pendingSegmentCallbacks.clear();
+            pendingInitCallback = null;
             FLog.i(TAG, "Cloud streaming disabled");
         }
     }
@@ -151,6 +212,11 @@ public class CloudStreamUploader {
         return isEnabled;
     }
     
+
+    private HlsSegmentDeliveryQueue getDeliveryQueue() {
+        return deliveryQueue;
+    }
+
     /**
      * Get user UUID from the JWT token.
      * JWT format: header.payload.signature (each base64 encoded)
@@ -216,6 +282,16 @@ public class CloudStreamUploader {
             FLog.d(TAG, "Cloud streaming disabled, skipping init upload");
             return;
         }
+        pendingInitCallback = callback;
+        getDeliveryQueue().offerInit(initData);
+        // The callback is completed only after the relay ACK reaches the queue transport.
+    }
+
+    private void uploadInitSegmentDirect(byte[] initData, @Nullable UploadCallback callback) {
+        if (!isEnabled) {
+            FLog.d(TAG, "Cloud streaming disabled, skipping init upload");
+            return;
+        }
         
         String url = buildUploadUrl("init.mp4");
         if (url == null) {
@@ -256,9 +332,17 @@ public class CloudStreamUploader {
         if (!isEnabled) {
             return;
         }
+        if (callback != null) {
+            pendingSegmentCallbacks.put(sequenceNumber, callback);
+        } else {
+            pendingSegmentCallbacks.remove(sequenceNumber);
+        }
+        getDeliveryQueue().offerSegment(sequenceNumber, segmentData);
+        // The callback is completed only after the encrypted relay upload is ACKed.
+    }
 
-        if (!initSegmentUploaded) {
-            FLog.w(TAG, "Init segment not uploaded yet, skipping segment " + sequenceNumber);
+    private void uploadSegmentDirect(int sequenceNumber, byte[] segmentData, @Nullable UploadCallback callback) {
+        if (!isEnabled) {
             return;
         }
 
@@ -334,32 +418,75 @@ public class CloudStreamUploader {
      * Will fetch a new stream token if needed.
      */
     private void uploadBytes(String url, byte[] data, MediaType mediaType, @Nullable UploadCallback callback) {
-        // Check if we have a valid stream token
+        uploadBytesAttempt(url, data, mediaType, callback, 0);
+    }
+
+    private void uploadBytesAttempt(String url, byte[] data, MediaType mediaType,
+                                    @Nullable UploadCallback callback, int attempt) {
+        if (!isEnabled) {
+            return;
+        }
+
         String streamToken = authManager.getStreamToken();
-        
         if (streamToken == null || authManager.isStreamTokenNearExpiry()) {
-            // Need to fetch stream token first
             FLog.i(TAG, "Stream token missing or near expiry, fetching...");
             authManager.getValidStreamTokenAsync(new CloudAuthManager.StreamTokenListener() {
                 @Override
                 public void onSuccess(String newStreamToken) {
-                    // Now perform the upload with the new token
-                    doUploadWithToken(url, data, mediaType, newStreamToken, callback);
+                    doUploadWithToken(url, data, mediaType, newStreamToken,
+                            retryAwareCallback(url, data, mediaType, callback, attempt));
                 }
-                
+
                 @Override
                 public void onError(String error) {
-                    FLog.e(TAG, "Failed to get stream token: " + error);
-                    failedUploads++;
-                    if (callback != null) callback.onError("Stream token error: " + error);
+                    retryOrFail(url, data, mediaType, callback, attempt, "Stream token error: " + error);
                 }
             });
         } else {
-            // Have a valid stream token, upload directly
-            doUploadWithToken(url, data, mediaType, streamToken, callback);
+            doUploadWithToken(url, data, mediaType, streamToken,
+                    retryAwareCallback(url, data, mediaType, callback, attempt));
         }
     }
-    
+
+    private UploadCallback retryAwareCallback(String url, byte[] data, MediaType mediaType,
+                                               @Nullable UploadCallback finalCallback, int attempt) {
+        return new UploadCallback() {
+            @Override
+            public void onSuccess() {
+                if (finalCallback != null) finalCallback.onSuccess();
+            }
+
+            @Override
+            public void onError(String error) {
+                retryOrFail(url, data, mediaType, finalCallback, attempt, error);
+            }
+        };
+    }
+
+    private void retryOrFail(String url, byte[] data, MediaType mediaType,
+                             @Nullable UploadCallback callback, int attempt, String error) {
+        if (!isEnabled) return;
+        if (attempt + 1 >= MAX_UPLOAD_ATTEMPTS) {
+            FLog.e(TAG, "❌ Relay upload exhausted retries: " + error);
+            if (callback != null) callback.onError(error);
+            return;
+        }
+        final int nextAttempt = attempt + 1;
+        final long delay = UPLOAD_RETRY_BASE_DELAY_MS << attempt;
+        FLog.w(TAG, "⚠️ Relay upload retry " + nextAttempt + "/" + MAX_UPLOAD_ATTEMPTS
+                + " in " + delay + "ms: " + error);
+        uploadExecutor.execute(() -> {
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                if (callback != null) callback.onError("Upload retry interrupted");
+                return;
+            }
+            uploadBytesAttempt(url, data, mediaType, callback, nextAttempt);
+        });
+    }
+
     /**
      * Actually perform the HTTP upload with the provided stream token.
      *
@@ -493,6 +620,23 @@ public class CloudStreamUploader {
         });
     }
     
+    /**
+     * Public online-TV base URL used by the FadSec web player.
+     * The dashboard exposes the same /stream/{deviceId}/ route.
+     */
+    @Nullable
+    public String getPublicStreamUrl() {
+        String deviceId = authManager.getDeviceId();
+        if (deviceId == null || deviceId.trim().isEmpty()) return null;
+        return "https://fadcam.fadseclab.com/stream/" + deviceId + "/";
+    }
+
+    @Nullable
+    public String getPublicHlsUrl() {
+        String base = getPublicStreamUrl();
+        return base == null ? null : base + "live.m3u8";
+    }
+
     /**
      * Get upload statistics
      */

@@ -1,0 +1,68 @@
+name: Verify guest camera links
+
+on:
+  push:
+    branches:
+      - feat/online-tv-media-production
+      - feat/one-time-guest-camera-links
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guest-camera-links-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Clone patched Media3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          git -C /tmp/media3-patched sparse-checkout set --skip-checks settings.gradle libraries/common libraries/container libraries/muxer
+          test -f /tmp/media3-patched/settings.gradle
+          test -f /tmp/media3-patched/libraries/muxer/src/main/java/androidx/media3/muxer/ProcessedSegment.java
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+
+      - name: Verify guest camera source invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f app/src/main/java/com/fadcam/production/ProductionCameraSlot.java
+          test -f app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          test -f app/src/main/java/com/fadcam/production/ProductionGuestWebView.java
+          grep -q 'private static final int SLOT_COUNT = 6' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'markConsumed' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'isInviteActive' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'One-use FadCam app link' app/src/main/java/com/fadcam/production/ProductionControlRoomDialog.java
+          grep -q 'intent://guest-camera?slot=' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'VDO_BASE' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          grep -q 'push=' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          echo 'Guest camera source invariants: PASS'
+
+      - name: Run guest camera unit tests and release compile
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew :app:testDefaultReleaseUnitTest :app:compileDefaultReleaseJavaWithJavac \
+            --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2
+          echo 'Guest camera tests + release Java compile: PASS'

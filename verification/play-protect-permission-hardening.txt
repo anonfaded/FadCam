@@ -1,0 +1,1 @@
+Verification marker: rebuild the debug Studio APK after removing high-risk legacy permissions from the debug manifest. No runtime behavior is intended by this marker.

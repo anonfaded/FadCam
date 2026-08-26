@@ -1,0 +1,85 @@
+name: Verify producer watermark branding
+
+on:
+  push:
+    branches:
+      - feat/unlimited-recording-sd-storage
+
+permissions:
+  contents: write
+
+jobs:
+  patch-build-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feat/unlimited-recording-sd-storage
+
+      - name: Apply producer watermark implementation
+        run: python3 tools/patch_producer_watermark.py
+
+      - name: Verify source invariants
+        run: |
+          set -euo pipefail
+          grep -q 'PREF_WATERMARK_LOGO_URI' app/src/main/java/com/fadcam/Constants.java
+          grep -q 'getWatermarkLogoUri' app/src/main/java/com/fadcam/SharedPreferencesManager.java
+          grep -q 'getWatermarkLogoUri' app/src/main/java/com/fadcam/watermark/WatermarkManager.java
+          grep -q '<CUSTOM_LOGO>' app/src/main/java/com/fadcam/watermark/WatermarkManager.java
+          grep -q 'setCustomLogoUri' app/src/main/java/com/fadcam/opengl/GLRecordingPipeline.java
+          grep -q 'getCustomLogoBitmap' app/src/main/java/com/fadcam/opengl/GLWatermarkRenderer.java
+          grep -q 'row_producer_logo' app/src/main/res/layout/fragment_settings_watermark.xml
+          grep -q 'watermark_producer_logo_title' app/src/main/res/values/strings.xml
+          echo 'Producer watermark source invariants: PASS'
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+
+      - name: Verify exact release tasks
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:tasks --all --no-daemon --no-watch-fs --no-configuration-cache >/tmp/tasks.txt
+          grep -Eq '^assembleDefaultRelease([[:space:]]|$)' /tmp/tasks.txt
+          grep -Eq '^testDefaultReleaseUnitTest([[:space:]]|$)' /tmp/tasks.txt
+
+      - name: Build and test exact Studio release
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDefaultReleaseUnitTest :app:assembleDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2 | tee /tmp/producer-watermark-build.log
+
+      - name: Verify APK exists
+        run: |
+          set -euo pipefail
+          apk="$(find app/build/outputs/apk -type f -name '*.apk' -path '*default/release/*' -print -quit)"
+          test -n "$apk"
+          test -s "$apk"
+          echo "Verified Studio release APK: $apk"
+
+      - name: Commit verified implementation and remove patch tooling
+        run: |
+          set -euo pipefail
+          git config user.name 'Trendyzima'
+          git config user.email 'momanyitrendy@gmail.com'
+          rm -f tools/patch_producer_watermark.py .github/workflows/verify-producer-watermark.yml
+          git add app/src/main/java/com/fadcam/Constants.java \
+                  app/src/main/java/com/fadcam/SharedPreferencesManager.java \
+                  app/src/main/java/com/fadcam/opengl/WatermarkInfoProvider.java \
+                  app/src/main/java/com/fadcam/opengl/GLRecordingPipeline.java \
+                  app/src/main/java/com/fadcam/opengl/GLWatermarkRenderer.java \
+                  app/src/main/java/com/fadcam/watermark/WatermarkManager.java \
+                  app/src/main/java/com/fadcam/ui/WatermarkSettingsFragment.java \
+                  app/src/main/res/layout/fragment_settings_watermark.xml \
+                  app/src/main/res/values/strings.xml \
+                  tools/patch_producer_watermark.py \
+                  .github/workflows/verify-producer-watermark.yml
+          git diff --cached --check
+          git commit -m 'feat: add producer watermark logo branding'
+          git push origin HEAD:feat/unlimited-recording-sd-storage

@@ -1,0 +1,86 @@
+name: Verify public streaming implementation
+
+on:
+  push:
+    branches:
+      - feat/unlimited-recording-sd-storage
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feat/unlimited-recording-sd-storage
+
+      - name: Clone patched Media3
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
+
+      - name: Apply implementation
+        run: python3 tools/patch_public_streaming.py
+
+      - name: Verify source invariants
+        run: |
+          set -euo pipefail
+          grep -q 'class PublicStreamController' app/src/main/java/com/fadcam/streaming/PublicStreamController.java
+          grep -q 'setPublicOnline' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q '!isEnabled || !publicOnline' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'publicOnline' app/src/main/java/com/fadcam/streaming/RemoteStreamManager.java
+          grep -q 'Internet publication' app/src/main/java/com/fadcam/ui/RemoteFragment.java
+          grep -q '/health' app/src/main/java/com/fadcam/streaming/LiveM3U8Server.java
+          echo 'Public streaming source invariants: PASS'
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+
+      - name: Verify exact release tasks
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:tasks --all --no-daemon --no-watch-fs --no-configuration-cache >/tmp/tasks.txt
+          grep -Eq '^assembleDefaultRelease([[:space:]]|$)' /tmp/tasks.txt
+          grep -Eq '^testDefaultReleaseUnitTest([[:space:]]|$)' /tmp/tasks.txt
+
+      - name: Build and test exact Studio release
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDefaultReleaseUnitTest :app:assembleDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2 | tee /tmp/public-stream-build.log
+
+      - name: Verify APK
+        run: |
+          set -euo pipefail
+          apk="$(find app/build/outputs/apk -type f -name '*.apk' -path '*default/release/*' -print -quit)"
+          test -n "$apk"
+          test -s "$apk"
+          echo "Verified Studio release APK: $apk"
+
+      - name: Commit verified implementation and remove patch tooling
+        run: |
+          set -euo pipefail
+          git config user.name 'Trendyzima'
+          git config user.email 'momanyitrendy@gmail.com'
+          rm -f tools/patch_public_streaming.py .github/workflows/verify-public-streaming.yml
+          git add app/src/main/java/com/fadcam/streaming/PublicStreamController.java \
+                  app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java \
+                  app/src/main/java/com/fadcam/streaming/RemoteStreamManager.java \
+                  app/src/main/java/com/fadcam/streaming/LiveM3U8Server.java \
+                  app/src/main/java/com/fadcam/ui/RemoteFragment.java \
+                  app/src/test/java/com/fadcam/streaming/PublicStreamControllerTest.java \
+                  tools/patch_public_streaming.py \
+                  .github/workflows/verify-public-streaming.yml
+          git commit -m 'feat: add producer-controlled public streaming'
+          git push origin HEAD:feat/unlimited-recording-sd-storage

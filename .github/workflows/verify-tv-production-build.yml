@@ -1,0 +1,93 @@
+name: Verify TV production build
+
+on:
+  push:
+    branches:
+      - feat/tv-production-scenes-duet-studio
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tv-production-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feat/tv-production-scenes-duet-studio
+      - name: Clone patched Media3
+        run: git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+      - name: Create ephemeral CI release signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ci-signing
+          STOREPASS="$(openssl rand -hex 24)"
+          KEYPASS="$(openssl rand -hex 24)"
+          keytool -genkeypair -v \
+            -keystore ci-signing/fadcam-ci-release.jks \
+            -storetype JKS \
+            -storepass "$STOREPASS" \
+            -keypass "$KEYPASS" \
+            -alias fadcam-ci-release \
+            -keyalg RSA \
+            -keysize 4096 \
+            -validity 1 \
+            -dname "CN=FadCam CI Release, OU=FadCam, O=Trendyzima, C=KE" \
+            -noprompt
+          {
+            echo "KEYSTORE_FILE=ci-signing/fadcam-ci-release.jks"
+            echo "KEYSTORE_PASSWORD=$STOREPASS"
+            echo "KEY_ALIAS=fadcam-ci-release"
+            echo "KEY_PASSWORD=$KEYPASS"
+          } >> local.properties
+      - name: Verify TV production source invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f app/src/main/java/com/fadcam/production/ProductionScene.java
+          test -f app/src/main/java/com/fadcam/production/ProductionSceneManager.java
+          test -f app/src/main/java/com/fadcam/production/DuetStudioFragment.java
+          grep -q 'DUET_PIP' app/src/main/java/com/fadcam/production/ProductionScene.java
+          grep -q 'LIVE + RECORD' app/src/main/java/com/fadcam/production/DuetStudioFragment.java
+          grep -q 'RemoteStreamService' app/src/main/java/com/fadcam/production/DuetStudioFragment.java
+          grep -q 'ScreenRecordingService' app/src/main/java/com/fadcam/production/DuetStudioFragment.java
+          grep -q 'cameraProvider.unbind(cameraUseCase)' app/src/main/java/com/fadcam/production/DuetStudioFragment.java
+          grep -q 'installEntryButton' app/src/main/java/com/fadcam/ui/HomeFragment.java
+          echo 'TV production source invariants: PASS'
+      - name: Build and test exact Studio release
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDefaultReleaseUnitTest :app:assembleDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2 | tee /tmp/tv-production-release.log
+      - name: Verify APK output
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$(find app/build/outputs/apk -type f -name '*.apk' -path '*default/release/*' -print -quit)"
+          test -n "$apk"
+          test -s "$apk"
+          echo "Verified TV production release APK: $apk"
+      - name: Commit verification cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f .github/workflows/verify-tv-production-build.yml
+          git add .github/workflows/verify-tv-production-build.yml
+          git commit -m 'chore: remove temporary TV production verification workflow'
+          git push origin HEAD:feat/tv-production-scenes-duet-studio

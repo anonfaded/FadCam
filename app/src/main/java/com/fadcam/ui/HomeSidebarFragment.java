@@ -518,6 +518,12 @@ public class HomeSidebarFragment extends DialogFragment {
 
     private void showProfilesComingSoon() {
         try {
+            OverlayNavUtil.show(requireActivity(), ProductionToolsFragment.newInstance("profiles"), "production_tool_profiles");
+            return;
+        } catch (Exception e) {
+            FLog.w("HomeSidebar", "Failed to open Profiles", e);
+        }
+        try {
             ArrayList<OptionItem> items = new ArrayList<>();
             items.add(new OptionItem("profiles",
                     "Set up multiple profiles with different configurations and switch between them instantly.\n\n"
@@ -536,6 +542,21 @@ public class HomeSidebarFragment extends DialogFragment {
     }
 
     public static void showMiniAppComingSoon(Fragment fragment, String appId) {
+        // PRODUCTION_TOOLS_WIRED_V1
+        if ("compass".equals(appId) || "sound_meter".equals(appId) ||
+                "sensor_dashboard".equals(appId) || "speedometer".equals(appId) ||
+                "clinometer".equals(appId) || "pedometer".equals(appId) ||
+                "metal_detector".equals(appId) || "parking_marker".equals(appId) ||
+                "qr_generator".equals(appId)) {
+            try {
+                OverlayNavUtil.show(fragment.requireActivity(),
+                        ProductionToolsFragment.newInstance(appId),
+                        "production_tool_" + appId);
+                return;
+            } catch (Exception e) {
+                FLog.w("HomeSidebar", "Failed to open production tool: " + appId, e);
+            }
+        }
         try {
             String title = null;
             String desc = null;

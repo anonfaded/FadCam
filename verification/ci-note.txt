@@ -1,0 +1,1 @@
+Build verification should confirm the debug APK manifest no longer contains MANAGE_EXTERNAL_STORAGE, SYSTEM_ALERT_WINDOW, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, location, Bluetooth, special-use, media-projection, or biometric permissions.

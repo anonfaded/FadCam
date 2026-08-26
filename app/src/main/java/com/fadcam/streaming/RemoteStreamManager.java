@@ -19,8 +19,10 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -102,6 +104,13 @@ public class RemoteStreamManager {
     // Tracks the timestamp of the last successfully uploaded segment to the cloud relay.
     // Used by the dashboard to detect when the relay stream has gone stale/dead.
     private volatile long lastRelayUploadMs = 0;
+
+    // ONLINE_TV_RELAY_DELIVERY_V1: only publish HLS playlists containing
+    // fragments that the relay has positively acknowledged. A session id
+    // prevents late callbacks from an old recording from contaminating a
+    // newly-started online TV stream.
+    private final Set<Integer> relayUploadedSequences = new HashSet<>();
+    private long relayStreamSessionId = 0;
     
     /**
      * Streaming mode options.
@@ -411,6 +420,8 @@ public class RemoteStreamManager {
             fragmentSequence = 0;
             oldestSequence = 1;
             bufferHead = 0;
+            relayStreamSessionId++;
+            relayUploadedSequences.clear();
             
             if (clearedCount > 0) {
             }
@@ -494,25 +505,35 @@ public class RemoteStreamManager {
             if (context != null) {
                 CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
                 if (uploader.isEnabled() && uploader.isReady()) {
-                    // Capture playlist now (while we have the lock) but upload after segment succeeds
-                    final String playlist = generateCloudPlaylist();
-                    
-                    // Upload segment with callback - playlist uploaded only after segment succeeds
+                    final long uploadSessionId = relayStreamSessionId;
+                    // Never publish a playlist before the referenced segment has been
+                    // acknowledged by the relay. The playlist is generated AFTER the
+                    // acknowledgement so it can also exclude older failed fragments.
                     uploader.uploadSegment(sequenceNumber, fragmentData, new CloudStreamUploader.UploadCallback() {
                         @Override
                         public void onSuccess() {
-                            // Segment uploaded successfully - update relay freshness timestamp
-                            lastRelayUploadMs = System.currentTimeMillis();
-                            // NOW upload the playlist
-                            if (playlist != null) {
-                                uploader.uploadPlaylist(playlist, null);
+                            if (uploadSessionId != relayStreamSessionId) {
+                                FLog.w(TAG, "Ignoring late relay ACK for old stream session: " + sequenceNumber);
+                                return;
+                            }
+                            bufferLock.writeLock().lock();
+                            try {
+                                relayUploadedSequences.add(sequenceNumber);
+                                relayUploadedSequences.removeIf(seq -> seq < oldestSequence);
+                                lastRelayUploadMs = System.currentTimeMillis();
+                                String playlist = generateCloudPlaylist();
+                                if (playlist != null) {
+                                    uploader.uploadPlaylist(playlist, null);
+                                }
+                            } finally {
+                                bufferLock.writeLock().unlock();
                             }
                         }
-                        
+
                         @Override
                         public void onError(String error) {
-                            // Segment failed - don't update playlist (viewers won't see missing segment)
-                            FLog.w(TAG, "⚠️ Segment " + sequenceNumber + " upload failed, skipping playlist update: " + error);
+                            FLog.w(TAG, "⚠️ Relay delivery failed for segment " + sequenceNumber
+                                    + "; playlist will not advertise it: " + error);
                         }
                     });
                 }
@@ -664,50 +685,55 @@ public class RemoteStreamManager {
     private String generateCloudPlaylist() {
         bufferLock.readLock().lock();
         try {
-            // Get buffered fragments
             List<FragmentData> fragments = new ArrayList<>();
             int validRangeStart = Math.max(1, fragmentSequence - BUFFER_SIZE + 1);
-            
+
             for (FragmentData fragment : fragmentBuffer) {
-                if (fragment != null && fragment.sequenceNumber >= validRangeStart && fragment.sequenceNumber <= fragmentSequence) {
+                if (fragment != null
+                        && fragment.sequenceNumber >= validRangeStart
+                        && fragment.sequenceNumber <= fragmentSequence
+                        && relayUploadedSequences.contains(fragment.sequenceNumber)) {
                     fragments.add(fragment);
                 }
             }
-            
-            // Need at least 2 fragments for HLS
+
+            fragments.sort((a, b) -> Integer.compare(a.sequenceNumber, b.sequenceNumber));
             if (fragments.size() < 2 || initializationSegment == null) {
                 return null;
             }
-            
-            // Sort by sequence number
-            fragments.sort((a, b) -> Integer.compare(a.sequenceNumber, b.sequenceNumber));
-            
-            // Get live edge (last 8 fragments for sliding window)
-            // Apple HLS spec requires minimum 6 segments, we use 8 for more buffer room
-            int LIVE_WINDOW_SIZE = 8;
-            List<FragmentData> liveEdge = new ArrayList<>();
-            int startIdx = Math.max(0, fragments.size() - LIVE_WINDOW_SIZE);
-            for (int i = startIdx; i < fragments.size(); i++) {
-                liveEdge.add(fragments.get(i));
+
+            // Only publish a contiguous acknowledged suffix. If segment N-1 is
+            // missing at the relay, segment N must not be advertised yet.
+            List<FragmentData> contiguous = new ArrayList<>();
+            int expected = fragments.get(fragments.size() - 1).sequenceNumber;
+            for (int i = fragments.size() - 1; i >= 0; i--) {
+                FragmentData fragment = fragments.get(i);
+                if (fragment.sequenceNumber != expected) {
+                    break;
+                }
+                contiguous.add(0, fragment);
+                expected--;
             }
-            
-            // Build M3U8 playlist
+            if (contiguous.size() < 2) {
+                return null;
+            }
+
+            int startIdx = Math.max(0, contiguous.size() - 8);
+            List<FragmentData> liveEdge = new ArrayList<>(contiguous.subList(startIdx, contiguous.size()));
+
             StringBuilder m3u8 = new StringBuilder();
             m3u8.append("#EXTM3U\n");
-            m3u8.append("#EXT-X-VERSION:7\n"); // fMP4 requires version 7
+            m3u8.append("#EXT-X-VERSION:7\n");
             m3u8.append("#EXT-X-INDEPENDENT-SEGMENTS\n");
             m3u8.append("#EXT-X-TARGETDURATION:").append(getTargetDurationSeconds(liveEdge)).append("\n");
             m3u8.append("#EXT-X-MEDIA-SEQUENCE:").append(liveEdge.get(0).sequenceNumber).append("\n");
-            
-            // Init segment - relative path for cloud (same directory)
             m3u8.append("#EXT-X-MAP:URI=\"init.mp4\"\n");
-            
-            // Add fragments - use relative paths (seg-N.m4s, not /seg-N.m4s)
             for (FragmentData fragment : liveEdge) {
-                m3u8.append("#EXTINF:").append(String.format(java.util.Locale.US, "%.3f", fragment.getDurationSeconds())).append(",\n");
+                m3u8.append("#EXTINF:")
+                    .append(String.format(java.util.Locale.US, "%.3f", fragment.getDurationSeconds()))
+                    .append(",\n");
                 m3u8.append("seg-").append(fragment.sequenceNumber).append(".m4s\n");
             }
-            
             return m3u8.toString();
         } finally {
             bufferLock.readLock().unlock();

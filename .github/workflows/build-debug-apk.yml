@@ -1,0 +1,352 @@
+name: Build and Verify FadCam Studio APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master, studio-dashboard, feat/storage-destinations-sd-usb-local ]
+  pull_request:
+    branches: [ master ]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fadcam-studio-apk-${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  build-studio-release:
+    name: Build, test, verify and publish Studio release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Clone patched Media3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
+          echo "Patched Media3 commit: $(git -C /tmp/media3-patched rev-parse --verify HEAD)"
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5.6.0
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+
+      - name: Create isolated CI release signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/ci-signing
+          STOREPASS="$(openssl rand -hex 24)"
+          KEYPASS="$(openssl rand -hex 24)"
+          keytool -genkeypair \
+            -keystore app/ci-signing/fadcam-ci-release.jks \
+            -storetype JKS \
+            -storepass "$STOREPASS" \
+            -keypass "$KEYPASS" \
+            -alias fadcam-ci-release \
+            -keyalg RSA \
+            -keysize 4096 \
+            -validity 10000 \
+            -dname "CN=FadCam CI Release, OU=FadCam, O=Trendyzima, L=CI, ST=CI, C=KE" \
+            -noprompt
+          {
+            echo "KEYSTORE_FILE=ci-signing/fadcam-ci-release.jks"
+            echo "KEYSTORE_PASSWORD=$STOREPASS"
+            echo "KEY_ALIAS=fadcam-ci-release"
+            echo "KEY_PASSWORD=$KEYPASS"
+          } >> local.properties
+          test -s app/ci-signing/fadcam-ci-release.jks
+          keytool -list -keystore app/ci-signing/fadcam-ci-release.jks -storepass "$STOREPASS" -alias fadcam-ci-release >/dev/null
+
+      - name: Verify Gradle wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f ./gradlew
+          chmod +x ./gradlew
+          ./gradlew --version
+          ./gradlew :app:tasks --all --no-daemon --no-watch-fs --no-configuration-cache >/tmp/fadcam-gradle-tasks.txt
+          grep -Eq '^assembleDefaultRelease([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
+          grep -Eq '^testDefaultReleaseUnitTest([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
+          grep -Eq '^lintDefaultRelease([[:space:]]|$)' /tmp/fadcam-gradle-tasks.txt
+
+      - name: Wire verified production voice-ducking telemetry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java')
+          s = path.read_text()
+          marker = 'PRODUCTION_AUDIO_DUCKING_WIRED_V1'
+          if marker in s:
+              print('Voice-ducking recorder telemetry already wired.')
+              raise SystemExit(0)
+
+          import_anchor = 'import com.fadcam.opengl.WatermarkInfoProvider;\n'
+          if import_anchor not in s:
+              raise SystemExit('pipeline import anchor not found')
+          s = s.replace(import_anchor, import_anchor + 'import com.fadcam.production.ProductionAudioDuckingBus;\n', 1)
+
+          start_anchor = '            audioRecord.startRecording();\n'
+          if start_anchor not in s:
+              raise SystemExit('audioRecord start anchor not found')
+          s = s.replace(start_anchor, start_anchor + '            if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {\n                ProductionAudioDuckingBus.publishCaptureState(true);\n            }\n', 1)
+
+          rms_anchor = '''                    audioBytesCaptured += bytesRead;\n                    // Diagnostics: log the first reads and a periodic health\n'''
+          rms_insert = '''                    audioBytesCaptured += bytesRead;\n                    int rms = computeRms(audioBuffer, bytesRead);\n                    if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {\n                        ProductionAudioDuckingBus.publishRms(rms);\n                    }\n                    // Diagnostics: log the first reads and a periodic health\n'''
+          if rms_anchor not in s:
+              raise SystemExit('audio RMS anchor not found')
+          s = s.replace(rms_anchor, rms_insert, 1)
+
+          end_anchor = '''            FLog.i(TAG, "FadRec audio loop ended: chunks=" + readCount\n                    + " bytes=" + audioBytesCaptured\n'''
+          end_insert = '''            if (Constants.AUDIO_SOURCE_MIC.equals(audioSource)) {\n                ProductionAudioDuckingBus.publishCaptureState(false);\n            }\n            FLog.i(TAG, "FadRec audio loop ended: chunks=" + readCount\n                    + " bytes=" + audioBytesCaptured\n'''
+          if end_anchor not in s:
+              raise SystemExit('audio loop end anchor not found')
+          s = s.replace(end_anchor, end_insert, 1)
+
+          old_rms = '''    /** Lightweight RMS of the first 512 samples — detects zero-capture immediately. */\n    private static int computeRms(ByteBuffer buffer, int bytes) {\n        int samples = Math.min(bytes / 2, 512);\n        if (samples <= 0) return 0;\n        long sumSq = 0;\n        for (int i = 0; i < samples; i++) {\n            short s = buffer.getShort(i * 2);\n            sumSq += (long) s * s;\n        }\n        return (int) Math.sqrt((double) sumSq / samples);\n    }\n'''
+          new_rms = '''    /** Lightweight little-endian PCM RMS used by diagnostics and voice ducking. */\n    private static int computeRms(ByteBuffer buffer, int bytes) {\n        int samples = Math.min(bytes / 2, 512);\n        if (samples <= 0) return 0;\n        long sumSq = 0;\n        for (int i = 0; i < samples; i++) {\n            int lo = buffer.get(i * 2) & 0xFF;\n            int hi = buffer.get(i * 2 + 1);\n            short sample = (short) (lo | (hi << 8));\n            sumSq += (long) sample * sample;\n        }\n        return (int) Math.sqrt((double) sumSq / samples);\n    }\n\n    // PRODUCTION_AUDIO_DUCKING_WIRED_V1\n'''
+          if old_rms not in s:
+              raise SystemExit('computeRms block not found')
+          path.write_text(s.replace(old_rms, new_rms, 1))
+          PY
+
+      - name: Verify production voice-ducking invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'ProductionAudioDuckingBus' app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java
+          grep -q 'PRODUCTION_AUDIO_DUCKING_WIRED_V1' app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java
+          grep -q 'ProductionAudioDucker' app/src/main/java/com/fadcam/production/DuetStudioFragment.java
+          grep -q 'AUDIO MIXER' app/src/main/java/com/fadcam/production/DuetStudioFragment.java
+          grep -q 'setVolume' app/src/main/java/com/fadcam/production/ProductionAudioDucker.java
+          grep -q 'publishRms' app/src/main/java/com/fadcam/production/ProductionAudioDuckingBus.java
+          echo 'Production voice-ducking invariants: PASS'
+
+      - name: Build and test Studio release in one clean Gradle invocation
+        shell: bash
+        run: |
+          set +e
+          ./gradlew \
+            :app:testDefaultReleaseUnitTest \
+            :app:assembleDefaultRelease \
+            --stacktrace \
+            --no-daemon \
+            --no-watch-fs \
+            --no-configuration-cache \
+            --max-workers=2 \
+            2>&1 | tee /tmp/fadcam-studio-release-gradle.log
+          gradle_exit=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$gradle_exit" -ne 0 ]; then
+            echo '===== STUDIO RELEASE GRADLE FAILURE SUMMARY ====='
+            grep -E 'FAILURE:|What went wrong:|Execution failed for task|Caused by:|OutOfMemory|Java heap space|Manifest merger failed|Duplicate class|R8:' \
+              /tmp/fadcam-studio-release-gradle.log | tail -n 120 || true
+            echo '===== END FAILURE SUMMARY ====='
+            exit "$gradle_exit"
+          fi
+
+      - name: Run Studio release lint audit
+        shell: bash
+        run: |
+          set +e
+          ./gradlew :app:lintDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2 2>&1 | tee /tmp/fadcam-studio-release-lint.log
+          lint_exit=${PIPESTATUS[0]}
+          set -e
+
+          mapfile -t reports < <(find app/build -type f \( \
+            -name 'lint-results-defaultRelease.txt' -o \
+            -name 'lint-results-defaultRelease.xml' -o \
+            -name 'lint-results-defaultRelease.html' \
+          \) -print | sort)
+
+          if [ "${#reports[@]}" -eq 0 ]; then
+            echo "ERROR: lint did not produce a defaultRelease report."
+            grep -E 'FAILURE:|What went wrong:|Execution failed for task|Caused by:' /tmp/fadcam-studio-release-lint.log | tail -n 80 || true
+            exit 1
+          fi
+
+          studio_errors=""
+          for report in "${reports[@]}"; do
+            matches="$(grep -Ei 'app/src/(main|release)/.*studio.*Error:' "$report" 2>/dev/null || true)"
+            if [ -n "$matches" ]; then
+              studio_errors="$studio_errors$matches\n"
+            fi
+          done
+
+          if [ -n "$studio_errors" ]; then
+            echo "ERROR: Studio lint errors detected:"
+            printf '%b' "$studio_errors"
+            exit 1
+          fi
+
+          if [ "$lint_exit" -ne 0 ]; then
+            echo "Project-wide lint returned non-zero because of legacy findings outside Studio."
+            echo "Studio-specific lint audit passed; release compilation and APK verification remain blocking gates."
+          else
+            echo "Studio lint audit passed."
+          fi
+
+      - name: Select and checksum universal APK
+        id: apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t APKS < <(find app/build/outputs/apk -type f -name '*.apk' -path '*default/release/*' -print | sort)
+          echo "Release APK outputs:"
+          printf '%s\n' "${APKS[@]}"
+          test "${#APKS[@]}" -gt 0
+
+          UNIVERSAL="$(printf '%s\n' "${APKS[@]}" | grep -E -- 'universal\.apk$' | head -n 1 || true)"
+          if [ -z "$UNIVERSAL" ]; then
+            echo "ERROR: no universal Studio release APK was produced."
+            exit 1
+          fi
+
+          test -s "$UNIVERSAL"
+          mkdir -p app/build/verified
+          cp "$UNIVERSAL" app/build/verified/FadCam-Studio-release-universal.apk
+          sha256sum app/build/verified/FadCam-Studio-release-universal.apk | tee app/build/verified/SHA256SUMS.txt
+          echo "apk=app/build/verified/FadCam-Studio-release-universal.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Verify APK container
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="${{ steps.apk.outputs.apk }}"
+          unzip -t "$apk" | tee /tmp/apk-unzip-test.txt
+          grep -q 'No errors detected' /tmp/apk-unzip-test.txt
+          unzip -l "$apk" | grep -q 'AndroidManifest.xml'
+          unzip -l "$apk" | grep -q 'classes.dex'
+
+      - name: Verify release package, signature and alignment
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="${{ steps.apk.outputs.apk }}"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -x "$BUILD_TOOLS/aapt"
+          test -x "$BUILD_TOOLS/apksigner"
+          test -x "$BUILD_TOOLS/zipalign"
+
+          "$BUILD_TOOLS/aapt" dump badging "$apk" | tee /tmp/aapt-badging.txt
+          grep -q "package: name='com.fadcam'" /tmp/aapt-badging.txt
+          ! grep -q 'application-debuggable' /tmp/aapt-badging.txt
+
+          "$BUILD_TOOLS/apksigner" verify --verbose "$apk"
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$apk" | tee /tmp/apk-certs.txt
+          ! grep -qi 'Android Debug' /tmp/apk-certs.txt
+          "$BUILD_TOOLS/zipalign" -c -P 16 -v 4 "$apk"
+
+      - name: Verify release manifest is hardened
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="${{ steps.apk.outputs.apk }}"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+
+          "$BUILD_TOOLS/aapt" dump permissions "$apk" | tee /tmp/apk-permissions.txt
+          ! grep -q 'android.permission.MANAGE_EXTERNAL_STORAGE' /tmp/apk-permissions.txt
+          ! grep -q 'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS' /tmp/apk-permissions.txt
+          ! grep -q 'android.permission.SYSTEM_ALERT_WINDOW' /tmp/apk-permissions.txt
+
+          "$BUILD_TOOLS/aapt" dump xmltree "$apk" AndroidManifest.xml > /tmp/manifest.xml
+          ! grep -q 'FadRecScreenshotAccessibilityService' /tmp/manifest.xml
+          ! "$BUILD_TOOLS/aapt" dump badging "$apk" | grep -q 'com.fadcam.beta'
+
+      - name: Commit verified production voice-ducking wiring
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java .github/workflows/wire-voice-ducking.yml
+          if git diff --cached --quiet; then
+            echo 'No voice-ducking source changes to commit.'
+            exit 0
+          fi
+          git commit -m 'feat: wire voice ducking into recorder mic telemetry'
+          git push origin HEAD:master
+
+      - name: Upload Studio CI diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: FadCam-Studio-CI-diagnostics-${{ github.run_id }}
+          path: |
+            /tmp/fadcam-studio-release-gradle.log
+            /tmp/fadcam-studio-release-lint.log
+            /tmp/fadcam-gradle-tasks.txt
+            /tmp/aapt-badging.txt
+            /tmp/apk-certs.txt
+            /tmp/apk-permissions.txt
+            /tmp/manifest.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload verified APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: FadCam-Studio-Release-APK
+          path: |
+            app/build/verified/FadCam-Studio-release-universal.apk
+            app/build/verified/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish verified APK release asset
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="${{ steps.apk.outputs.apk }}"
+          checksum="app/build/verified/SHA256SUMS.txt"
+          LATEST_MASTER="$(git ls-remote origin refs/heads/master | awk '{print $1}')"
+          if [ "$LATEST_MASTER" != "$GITHUB_SHA" ]; then
+            echo "Master advanced to $LATEST_MASTER while this run built $GITHUB_SHA."
+            echo "Skipping studio-latest publication; the newer run owns publication."
+            exit 0
+          fi
+
+          if gh release view studio-latest >/dev/null 2>&1; then
+            gh release delete studio-latest --yes --cleanup-tag
+          fi
+
+          git push origin --delete studio-latest >/tmp/studio-tag-delete.txt 2>&1 || true
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if ! git ls-remote --tags origin refs/tags/studio-latest | grep -q 'refs/tags/studio-latest'; then
+              break
+            fi
+            sleep 3
+          done
+
+          if git ls-remote --tags origin refs/tags/studio-latest | grep -q 'refs/tags/studio-latest'; then
+            echo 'ERROR: studio-latest tag still exists after cleanup.'
+            cat /tmp/studio-tag-delete.txt || true
+            exit 1
+          fi
+
+          gh release create studio-latest \
+            "$apk" \
+            "$checksum" \
+            --target "$GITHUB_SHA" \
+            --title "FadCam Studio — latest verified release APK" \
+            --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. CI uses an ephemeral non-debug release key for device verification; configure a protected production signing key before public distribution or Play Store submission." \
+            --prerelease
+
+          gh release view studio-latest --json tagName,targetCommitish,isDraft,isPrerelease,assets

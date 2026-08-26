@@ -1,18 +1,17 @@
 package com.fadcam;
 
 /**
- * Session-scoped elapsed-realtime countdown for a foreground recording service.
+ * Session-scoped recording-duration controller.
  *
- * <p>The controller deliberately has no Activity or platform alarm dependency. A
- * monotonically increasing session generation prevents a removed or delayed callback
- * from affecting a later recording.</p>
+ * <p>Production recording is intentionally not stopped by a wall-clock
+ * duration. A recording may continue until the operator stops it or the
+ * selected storage cannot accept more data. This compatibility boundary is
+ * retained so older callers and settings do not break.</p>
  */
 public final class RecordingDurationLimitController {
     public interface Scheduler {
         long elapsedRealtime();
-
         void postDelayed(Runnable runnable, long delayMs);
-
         void removeCallbacks(Runnable runnable);
     }
 
@@ -20,26 +19,20 @@ public final class RecordingDurationLimitController {
         long getLimitMs();
     }
 
-    /** Fires once per second while 1..10 seconds remain before the limit. */
+    /** Compatibility listener; no countdown ticks are emitted in unlimited mode. */
     public interface RemainingTickListener {
         void onRemainingSecond(int remainingSeconds);
     }
 
-    private static final long REMAINING_TICK_WINDOW_MS = 10_000L;
-
+    @SuppressWarnings("unused")
     private final Scheduler scheduler;
+    @SuppressWarnings("unused")
     private final LimitProvider limitProvider;
+    @SuppressWarnings("unused")
     private final Runnable onLimitReached;
-
+    @SuppressWarnings("unused")
     private RemainingTickListener remainingTickListener;
-    private Runnable scheduledTick;
     private boolean sessionActive;
-    private boolean counting;
-    private long sessionGeneration;
-    private long scheduleGeneration;
-    private long accumulatedRecordingMs;
-    private long countingStartedAtMs;
-    private Runnable scheduledCallback;
 
     public RecordingDurationLimitController(
             Scheduler scheduler,
@@ -50,203 +43,36 @@ public final class RecordingDurationLimitController {
         this.onLimitReached = onLimitReached;
     }
 
-    /** Starts a new recording session and invalidates every callback from an older one. */
+    /** Starts a recording session without installing any duration timeout. */
     public synchronized long startSession() {
-        invalidateScheduleLocked();
-        sessionGeneration++;
         sessionActive = true;
-        counting = true;
-        accumulatedRecordingMs = 0L;
-        countingStartedAtMs = scheduler.elapsedRealtime();
-        return scheduleLocked();
+        return 0L;
     }
 
-    /** Sets the listener that observes the final seconds of the countdown. */
+    /** Compatibility hook; intentionally never schedules a countdown. */
     public synchronized void setRemainingTickListener(RemainingTickListener listener) {
         this.remainingTickListener = listener;
     }
 
-    /** Stops the current session and invalidates its pending callback. */
+    /** Stops this controller session; it does not stop the recording. */
     public synchronized boolean stopSession() {
-        boolean hadSession = sessionActive || scheduledCallback != null;
+        boolean hadSession = sessionActive;
         sessionActive = false;
-        counting = false;
-        accumulatedRecordingMs = 0L;
-        sessionGeneration++;
-        invalidateScheduleLocked();
         return hadSession;
     }
 
-    /** Pauses the countdown so the limit follows recorded media time, not paused time. */
+    /** Pausing never consumes a duration budget. */
     public synchronized boolean pauseSession() {
-        if (!sessionActive || !counting) {
-            return false;
-        }
-        accumulatedRecordingMs = getElapsedRecordingMsLocked();
-        counting = false;
-        invalidateScheduleLocked();
-        return true;
+        return sessionActive;
     }
 
-    /** Resumes a paused session without resetting its accumulated recording time. */
+    /** Resuming never reinstalls a duration timeout. */
     public synchronized boolean resumeSession() {
-        if (!sessionActive || counting) {
-            return false;
-        }
-        counting = true;
-        countingStartedAtMs = scheduler.elapsedRealtime();
-        scheduleLocked();
-        return true;
+        return sessionActive;
     }
 
-    /** Re-evaluates the current session after the user changes the configured limit. */
-    public boolean onLimitChanged() {
-        boolean notifyLimitReached = false;
-        synchronized (this) {
-            if (!sessionActive) {
-                return false;
-            }
-
-            invalidateScheduleLocked();
-            long limitMs = Math.max(0L, limitProvider.getLimitMs());
-            if (limitMs != 0L) {
-                long elapsedMs = getElapsedRecordingMsLocked();
-                if (elapsedMs >= limitMs) {
-                    completeSessionLocked();
-                    notifyLimitReached = true;
-                } else if (counting) {
-                    scheduleLocked();
-                }
-            }
-        }
-
-        if (notifyLimitReached) {
-            onLimitReached.run();
-        }
-        return true;
-    }
-
-    private long scheduleLocked() {
-        invalidateScheduleLocked();
-        long limitMs = Math.max(0L, limitProvider.getLimitMs());
-        if (!sessionActive || !counting || limitMs == 0L) {
-            return limitMs;
-        }
-
-        long elapsedMs = getElapsedRecordingMsLocked();
-        long remainingMs = elapsedMs >= limitMs ? 0L : limitMs - elapsedMs;
-        long expectedSession = sessionGeneration;
-        long expectedSchedule = scheduleGeneration;
-        Runnable callback = () -> handleTimeout(expectedSession, expectedSchedule);
-        scheduledCallback = callback;
-        scheduler.postDelayed(callback, remainingMs);
-        if (remainingMs > 0L && remainingMs <= REMAINING_TICK_WINDOW_MS) {
-            scheduleRemainingTicksLocked(remainingMs, expectedSession, expectedSchedule);
-        }
-        return limitMs;
-    }
-
-    /**
-     * Schedules per-second ticks for the final 10 seconds. The first tick fires
-     * after {@code remainingMs % 1000} so the tick coincides with a whole-second
-     * boundary, then every second until the limit callback takes over.
-     */
-    private void scheduleRemainingTicksLocked(
-            long remainingMs, long expectedSession, long expectedSchedule) {
-        if (remainingTickListener == null) {
-            return;
-        }
-        long firstDelayMs = remainingMs % 1000L;
-        int[] remainingSeconds = {(int) ((remainingMs + 999L) / 1000L)};
-        Runnable tick = new Runnable() {
-            @Override
-            public void run() {
-                boolean reschedule = false;
-                synchronized (RecordingDurationLimitController.this) {
-                    if (!sessionActive
-                            || !counting
-                            || expectedSession != sessionGeneration
-                            || expectedSchedule != scheduleGeneration) {
-                        return;
-                    }
-                    scheduledTick = null;
-                    if (remainingTickListener != null) {
-                        remainingTickListener.onRemainingSecond(remainingSeconds[0]);
-                    }
-                    if (remainingSeconds[0] > 1) {
-                        remainingSeconds[0]--;
-                        reschedule = true;
-                        scheduledTick = this;
-                    }
-                }
-                if (reschedule) {
-                    scheduler.postDelayed(this, 1000L);
-                }
-            }
-        };
-        scheduledTick = tick;
-        scheduler.postDelayed(tick, firstDelayMs);
-    }
-
-    private void handleTimeout(long expectedSession, long expectedSchedule) {
-        boolean notifyLimitReached = false;
-        synchronized (this) {
-            if (!sessionActive
-                    || !counting
-                    || expectedSession != sessionGeneration
-                    || expectedSchedule != scheduleGeneration) {
-                return;
-            }
-
-            scheduledCallback = null;
-            long limitMs = Math.max(0L, limitProvider.getLimitMs());
-            if (limitMs == 0L) {
-                return;
-            }
-
-            long elapsedMs = getElapsedRecordingMsLocked();
-            if (elapsedMs < limitMs) {
-                scheduleLocked();
-                return;
-            }
-
-            completeSessionLocked();
-            notifyLimitReached = true;
-        }
-
-        if (notifyLimitReached) {
-            onLimitReached.run();
-        }
-    }
-
-    private long getElapsedRecordingMsLocked() {
-        if (!counting) {
-            return accumulatedRecordingMs;
-        }
-        long nowMs = scheduler.elapsedRealtime();
-        long deltaMs = nowMs >= countingStartedAtMs ? nowMs - countingStartedAtMs : 0L;
-        if (Long.MAX_VALUE - accumulatedRecordingMs < deltaMs) {
-            return Long.MAX_VALUE;
-        }
-        return accumulatedRecordingMs + deltaMs;
-    }
-
-    private void completeSessionLocked() {
-        sessionActive = false;
-        counting = false;
-        sessionGeneration++;
-        scheduleGeneration++;
-    }
-
-    private void invalidateScheduleLocked() {
-        scheduleGeneration++;
-        if (scheduledCallback != null) {
-            scheduler.removeCallbacks(scheduledCallback);
-            scheduledCallback = null;
-        }
-        if (scheduledTick != null) {
-            scheduler.removeCallbacks(scheduledTick);
-            scheduledTick = null;
-        }
+    /** Duration preferences no longer control whether a production recording stops. */
+    public synchronized boolean onLimitChanged() {
+        return sessionActive;
     }
 }

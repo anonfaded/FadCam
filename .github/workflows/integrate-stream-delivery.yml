@@ -1,0 +1,60 @@
+name: Integrate reliable streaming delivery
+
+on:
+  push:
+    branches:
+      - fix/streaming-media-delivery-v2
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  verify-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone patched Media3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Verify reliable delivery wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          test -f app/src/main/java/com/fadcam/streaming/HlsSegmentDeliveryQueue.java
+          grep -q 'private final HlsSegmentDeliveryQueue deliveryQueue;' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'getDeliveryQueue().offerInit(initData)' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'getDeliveryQueue().offerSegment(sequenceNumber, segmentData)' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'uploadSegmentDirect(sequence, data' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'pendingSegmentCallbacks' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'pendingInitCallback' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'deliveryQueue.reset()' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'deliveryQueue.stop()' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          ! grep -q 'Init segment not uploaded yet, skipping segment' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          echo 'Reliable HLS delivery wiring: PASS'
+
+      - name: Unit tests and debug build
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2

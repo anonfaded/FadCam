@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        Release-only privacy hardening for sideloaded Studio builds.
+        Legacy FadRec-only capabilities are kept out of the Studio delivery APK.
+        The production room does not need broad storage, battery special access,
+        accessibility capture, or system-wide application overlays.
+    -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.SYSTEM_ALERT_WINDOW"
+        tools:node="remove" />
+
+    <application>
+        <service
+            android:name=".service.FadRecScreenshotAccessibilityService"
+            tools:node="remove" />
+    </application>
+
+</manifest>

@@ -1,0 +1,148 @@
+name: Build and Push Studio APK
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - 'artifacts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-studio-apk
+  cancel-in-progress: true
+
+jobs:
+  build-and-push-apk:
+    name: Build, verify and push Studio APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Prepare patched Media3 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -f /tmp/media3-patched/settings.gradle
+          test -f /tmp/media3-patched/libraries/muxer/src/main/java/androidx/media3/muxer/ProcessedSegment.java
+          MEDIA3_HEAD="$(git -C /tmp/media3-patched rev-parse HEAD)"
+          echo "Patched Media3 HEAD: $MEDIA3_HEAD"
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+
+      - name: Prepare isolated CI release signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/ci-signing
+          STOREPASS="$(openssl rand -hex 24)"
+          KEYPASS="$(openssl rand -hex 24)"
+          keytool -genkeypair \
+            -keystore app/ci-signing/fadcam-ci-release.jks \
+            -storetype JKS \
+            -storepass "$STOREPASS" \
+            -keypass "$KEYPASS" \
+            -alias fadcam-ci-release \
+            -keyalg RSA \
+            -keysize 4096 \
+            -validity 10000 \
+            -dname "CN=FadCam CI Release, OU=FadCam, O=Trendyzima, L=CI, ST=CI, C=KE" \
+            -noprompt
+          {
+            echo "KEYSTORE_FILE=ci-signing/fadcam-ci-release.jks"
+            echo "KEYSTORE_PASSWORD=$STOREPASS"
+            echo "KEY_ALIAS=fadcam-ci-release"
+            echo "KEY_PASSWORD=$KEYPASS"
+          } >> local.properties
+          test -s app/ci-signing/fadcam-ci-release.jks
+
+      - name: Verify Gradle wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f ./gradlew
+          chmod +x ./gradlew
+          ./gradlew --version
+          ./gradlew :app:tasks --all --no-daemon --no-watch-fs --no-configuration-cache | tee /tmp/gradle-tasks.txt
+          grep -Eq '^assembleDefaultRelease([[:space:]]|$)' /tmp/gradle-tasks.txt
+          grep -Eq '^testDefaultReleaseUnitTest([[:space:]]|$)' /tmp/gradle-tasks.txt
+
+      - name: Build and test release
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew \
+            :app:testDefaultReleaseUnitTest \
+            :app:assembleDefaultRelease \
+            --stacktrace \
+            --no-daemon \
+            --no-watch-fs \
+            --no-configuration-cache \
+            --max-workers=2
+
+      - name: Select and verify universal APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t APKS < <(find app/build/outputs/apk -type f -name '*.apk' -path '*default/release/*' -print | sort)
+          printf '%s\n' "${APKS[@]}"
+          test "${#APKS[@]}" -gt 0
+          UNIVERSAL="$(printf '%s\n' "${APKS[@]}" | grep -E -- 'universal\.apk$' | head -n 1 || true)"
+          test -n "$UNIVERSAL"
+          test -s "$UNIVERSAL"
+          BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$BUILD_TOOLS/aapt" dump badging "$UNIVERSAL" | tee /tmp/aapt-badging.txt
+          grep -q "package: name='com.fadcam'" /tmp/aapt-badging.txt
+          ! grep -q 'application-debuggable' /tmp/aapt-badging.txt
+          "$BUILD_TOOLS/apksigner" verify --verbose "$UNIVERSAL"
+          "$BUILD_TOOLS/zipalign" -c -P 16 -v 4 "$UNIVERSAL"
+          mkdir -p artifacts
+          cp "$UNIVERSAL" artifacts/FadCam-Studio-release-universal.apk
+          sha256sum artifacts/FadCam-Studio-release-universal.apk | tee artifacts/SHA256SUMS.txt
+          unzip -t artifacts/FadCam-Studio-release-universal.apk | grep -q 'No errors detected'
+          unzip -l artifacts/FadCam-Studio-release-universal.apk | grep -q 'classes.dex'
+
+      - name: Publish verified APK release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="studio-latest"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" \
+              --target "$GITHUB_SHA" \
+              --title "FadCam Studio — latest verified release APK" \
+              --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. CI uses an ephemeral non-production release key for device verification."
+          else
+            gh release create "$TAG" \
+              --target "$GITHUB_SHA" \
+              --prerelease \
+              --title "FadCam Studio — latest verified release APK" \
+              --notes "Non-debuggable FadCam Studio APK built and verified by GitHub Actions. Commit: $GITHUB_SHA. CI uses an ephemeral non-production release key for device verification."
+          fi
+          gh release upload "$TAG" \
+            artifacts/FadCam-Studio-release-universal.apk \
+            artifacts/SHA256SUMS.txt \
+            --clobber
+          gh release view "$TAG" --json tagName,targetCommitish,isDraft,isPrerelease,url
+
+      - name: Upload APK as CI artifact too
+        uses: actions/upload-artifact@v4
+        with:
+          name: FadCam-Studio-release-${{ github.run_id }}
+          path: |
+            artifacts/FadCam-Studio-release-universal.apk
+            artifacts/SHA256SUMS.txt

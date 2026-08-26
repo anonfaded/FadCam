@@ -1,0 +1,106 @@
+name: Apply and verify production tools
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-verify:
+    if: github.event.pull_request.head.ref == 'feat/unlimited-recording-sd-storage'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feat/unlimited-recording-sd-storage
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+      - name: Clone patched Media3
+        run: git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+      - name: Patch existing UI and manifest
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          settings = Path('app/src/main/java/com/fadcam/ui/SettingsHomeFragment.java')
+          s = settings.read_text()
+          anchor = '        manageBadgeVisibility(root);\n'
+          call = '        com.fadcam.ui.ProductionFeatureUnlocker.install(root);\n'
+          if call not in s:
+              if anchor not in s: raise SystemExit('SettingsHomeFragment anchor not found')
+              settings.write_text(s.replace(anchor, anchor + call, 1))
+
+          home = Path('app/src/main/java/com/fadcam/ui/HomeFragment.java')
+          s = home.read_text()
+          old = 'getString(R.string.recording_time_left)'
+          new = 'getString(R.string.recording_storage_time_left)'
+          if old in s and new not in s: home.write_text(s.replace(old, new, 1))
+
+          strings = Path('app/src/main/res/values/strings.xml')
+          s = strings.read_text()
+          entry = '    <string name="recording_storage_time_left">Storage time available</string>\n'
+          if 'name="recording_storage_time_left"' not in s:
+              strings.write_text(s.replace('</resources>', entry + '</resources>', 1))
+
+          hub = Path('app/src/main/java/com/fadcam/ui/ProductionFeatureHubActivity.java')
+          s = hub.read_text()
+          if 'private LinearLayout contentRoot;' not in s:
+              s = s.replace('    private String currentFeature;\n', '    private String currentFeature;\n    private LinearLayout contentRoot;\n', 1)
+          s = s.replace('        LinearLayout root = new LinearLayout(this);\n        root.setOrientation(LinearLayout.VERTICAL);', '        LinearLayout root = new LinearLayout(this);\n        contentRoot = root;\n        root.setOrientation(LinearLayout.VERTICAL);', 1)
+          old = '    private void addTransient(View v) { ((LinearLayout)((ScrollView)findViewById(android.R.id.content)).getChildAt(0)).addView(v, lp(0, -2)); }'
+          new = '    private void addTransient(View v) { if (contentRoot != null) contentRoot.addView(v, lp(0, -2)); }'
+          if old in s: s = s.replace(old, new, 1)
+          hub.write_text(s)
+
+          manifest = Path('app/src/main/AndroidManifest.xml')
+          s = manifest.read_text()
+          if 'android:name=".ui.ProductionFeatureHubActivity"' not in s:
+              s = s.replace('    </application>', '        <activity android:name=".ui.ProductionFeatureHubActivity" android:theme="@style/Base.Theme.FadCam" android:exported="false" />\n        <receiver android:name=".ui.ScheduledRecordingReceiver" android:exported="false" />\n    </application>', 1)
+              manifest.write_text(s)
+
+          print('Production tool source patch: PASS')
+          PY
+      - name: Verify source invariants
+        run: |
+          set -euo pipefail
+          grep -q 'ProductionFeatureUnlocker.install(root)' app/src/main/java/com/fadcam/ui/SettingsHomeFragment.java
+          grep -q 'recording_storage_time_left' app/src/main/java/com/fadcam/ui/HomeFragment.java
+          grep -q 'name="recording_storage_time_left"' app/src/main/res/values/strings.xml
+          grep -q 'ProductionFeatureHubActivity' app/src/main/AndroidManifest.xml
+          grep -q 'ScheduledRecordingReceiver' app/src/main/AndroidManifest.xml
+          grep -q 'com.journeyapps.barcodescanner.BarcodeEncoder' app/src/main/java/com/fadcam/ui/ProductionFeatureHubActivity.java
+          grep -q 'Constants.INTENT_ACTION_START_RECORDING' app/src/main/java/com/fadcam/ui/ScheduledRecordingReceiver.java
+          echo 'Source invariants: PASS'
+      - name: Build and unit-test the exact release variant
+        shell: bash
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:testDefaultReleaseUnitTest :app:assembleDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2
+      - name: Commit only verified source changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Trendyzima'
+          git config user.email 'momanyitrendy@gmail.com'
+          git add app/src/main/java/com/fadcam/ui/SettingsHomeFragment.java \
+                  app/src/main/java/com/fadcam/ui/HomeFragment.java \
+                  app/src/main/java/com/fadcam/ui/ProductionFeatureHubActivity.java \
+                  app/src/main/java/com/fadcam/ui/ProductionFeatureUnlocker.java \
+                  app/src/main/java/com/fadcam/ui/ScheduledRecordingReceiver.java \
+                  app/src/main/res/values/strings.xml \
+                  app/src/main/AndroidManifest.xml
+          if git diff --cached --quiet; then
+            echo 'No uncommitted patch remains; verification is already applied.'
+            exit 0
+          fi
+          git commit -m 'feat: wire production tools into settings'
+          git push origin HEAD:feat/unlimited-recording-sd-storage

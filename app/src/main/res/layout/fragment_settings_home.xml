@@ -832,7 +832,8 @@ app:layout_constraintTop_toTopOf="parent"
                             android:textColor="#FFFFFF"
                             android:textSize="8sp"
                             android:textStyle="bold"
-                            android:background="@drawable/bg_coming_soon_badge"/>
+                            android:background="@drawable/bg_coming_soon_badge"
+                            android:visibility="gone"/>
                     </LinearLayout>
                     <TextView
                         android:layout_width="wrap_content"
@@ -887,7 +888,8 @@ app:layout_constraintTop_toTopOf="parent"
                             android:textColor="#FFFFFF"
                             android:textSize="8sp"
                             android:textStyle="bold"
-                            android:background="@drawable/bg_coming_soon_badge"/>
+                            android:background="@drawable/bg_coming_soon_badge"
+                            android:visibility="gone"/>
                     </LinearLayout>
                     <TextView
                         android:layout_width="wrap_content"
@@ -942,7 +944,8 @@ app:layout_constraintTop_toTopOf="parent"
                             android:textColor="#FFFFFF"
                             android:textSize="8sp"
                             android:textStyle="bold"
-                            android:background="@drawable/bg_coming_soon_badge"/>
+                            android:background="@drawable/bg_coming_soon_badge"
+                            android:visibility="gone"/>
                     </LinearLayout>
                     <TextView
                         android:layout_width="wrap_content"
@@ -997,7 +1000,8 @@ app:layout_constraintTop_toTopOf="parent"
                             android:textColor="#FFFFFF"
                             android:textSize="8sp"
                             android:textStyle="bold"
-                            android:background="@drawable/bg_coming_soon_badge"/>
+                            android:background="@drawable/bg_coming_soon_badge"
+                            android:visibility="gone"/>
                     </LinearLayout>
                     <TextView
                         android:layout_width="wrap_content"

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The red duration shown on Home is calculated from writable storage and bitrate.
+         It is not a hard recording-stop timer in the unlimited production build. -->
+    <string name="recording_time_left">Storage capacity (not a time limit)</string>
+    <string name="recording_remaining_time">Storage capacity remaining</string>
+</resources>

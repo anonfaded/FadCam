@@ -84,6 +84,7 @@ import com.fadcam.CameraType;
 import com.fadcam.MainActivity;
 import com.fadcam.Constants;
 import com.fadcam.FLog;
+import com.fadcam.production.DuetStudioFragment;
 import com.fadcam.R;
 import com.fadcam.RecordingControlIntents;
 import com.fadcam.RecordingState;
@@ -4016,6 +4017,8 @@ public class HomeFragment extends BaseFragment {
         // Initialize UI components using helper
         fragmentHelper = new HomeFragmentHelper(this);
         fragmentHelper.initializeComponents(view);
+
+        DuetStudioFragment.installEntryButton(quickActionsRow, this);
 
         // Fragment result listeners for pickers
         FLog.d(
