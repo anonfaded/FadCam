@@ -120,7 +120,7 @@ public final class ProductionControlRoomDialog extends Dialog {
         scroll.addView(root); return scroll;
     }
 
-    private TextView monitorLabel(String label,boolean program){
+    private View monitorLabel(String label,boolean program){
         LinearLayout card=column();card.setPadding(dp(9),dp(7),dp(9),dp(7));card.setBackground(round(program?DARK_RED:ALT,12));card.addView(text(label,8,program?RED:BLUE));
         TextView value=text(program?programLabel():previewLabel(),15,TEXT);value.setTypeface(Typeface.DEFAULT,Typeface.BOLD);if(program)tallyValue=value;else previewValue=value;card.addView(value,new LinearLayout.LayoutParams(-1,0,1));
         if(!program){previewDetail=text(previewDetailLabel(),8,MUTED);card.addView(previewDetail);}return card;
