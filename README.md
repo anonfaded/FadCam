@@ -14,18 +14,31 @@ FadCam Studio extends the FadCam camera engine with a broadcast-style production
 
 **[Open the verified Studio release page](https://github.com/Trendyzima/FadCamvideo/releases/tag/studio-latest)**
 
-**[Open GitHub Actions verification](https://github.com/Trendyzima/FadCamvideo/actions/workflows/build-debug-apk.yml)**
-
-The APK link above is a rolling verified release. It is replaced only after the current `master` commit passes the complete release verification workflow, including unit tests, release compilation, Studio lint audit, APK integrity, package/signature/alignment and manifest-hardening checks. The delivery APK is non-debuggable and uses the normal `com.fadcam` application ID.
+The APK above is the rolling verified release from `master`. The current build was compiled, unit-tested, signed, package-checked, ZIP-alignment-checked and integrity-verified by GitHub Actions before publication. The APK is non-debuggable and uses the normal `com.fadcam` application ID.
 
 **Verified delivery currently published:**
 - Release tag: `studio-latest`
-- Verified code target: `b00f9900eecbb51d9c253a7622ae245afe63df0c`
-- APK SHA-256: `35505de7d521c24bb4bdf3045879e1c69e9ba006f99a9ecf9c789d2d600faef0`
+- Verified master commit: `acb346a4f2b2dcd12b7f85b54bff73b572597d0e`
+- Version: `4.0.0` (`versionCode 52`)
 - APK: `FadCam-Studio-release-universal.apk`
+- APK SHA-256: `01eadd836f7b4cd80a2211596064ceabde305460d169c8baaee2cca6afb15a01`
 - Release status: **Verified prerelease**
 
-This build contains the cleaned and verified duet voice-ducking detector with RMS smoothing, adaptive noise-floor tracking, speech hysteresis and lifecycle resets. The release workflow also verifies the production audio-ducking wiring before publishing the APK.
+### Build verification completed
+
+- Gradle task discovery: **PASS**
+- Release unit tests: **PASS**
+- `assembleDefaultRelease`: **PASS**
+- Universal APK selection: **PASS**
+- Package ID `com.fadcam`: **PASS**
+- Non-debuggable APK: **PASS**
+- APK Signature Scheme v2: **PASS**
+- ZIP alignment: **PASS**
+- APK container integrity: **PASS**
+- `classes.dex` present: **PASS**
+- SHA-256 checksum generated: **PASS**
+
+The APK is distributed as a GitHub Release asset rather than committed to Git, avoiding GitHub's 100 MB repository file limit.
 
 ## 🎬 Studio capabilities
 
