@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -23,9 +25,25 @@ public final class ProductionGuestWebView {
     public static synchronized ProductionGuestWebView obtain(@NonNull Context context, @NonNull FrameLayout canvas) {
         ProductionGuestWebView existing = INSTANCES.get(canvas);
         if (existing != null) return existing;
+        dockCanvasIntoProgramMonitor(canvas);
         ProductionGuestWebView created = new ProductionGuestWebView(context, canvas);
         INSTANCES.put(canvas, created);
         return created;
+    }
+
+    private static void dockCanvasIntoProgramMonitor(@NonNull FrameLayout canvas) {
+        if (!(canvas.getParent() instanceof ViewGroup)) return;
+        ViewGroup parent = (ViewGroup) canvas.getParent();
+        for (int i = 0; i < parent.getChildCount(); i++) {
+            View child = parent.getChildAt(i);
+            if (child instanceof FrameLayout && "Live Program monitor".contentEquals(child.getContentDescription())) {
+                if (canvas.getParent() != child) {
+                    parent.removeView(canvas);
+                    ((FrameLayout) child).addView(canvas, new FrameLayout.LayoutParams(-1, -1));
+                }
+                return;
+            }
+        }
     }
 
     private final Context context;
@@ -77,21 +95,15 @@ public final class ProductionGuestWebView {
         FrameLayout.LayoutParams lp;
         switch (scene) {
             case DUET_SPLIT:
-                lp = new FrameLayout.LayoutParams(Math.max(1, canvas.getWidth() / 2), -1, Gravity.END);
-                break;
+                lp = new FrameLayout.LayoutParams(Math.max(1, canvas.getWidth() / 2), -1, Gravity.END); break;
             case COMMENTARY:
-                lp = new FrameLayout.LayoutParams(dp(190), dp(270), Gravity.TOP | Gravity.END);
-                lp.setMargins(0, dp(16), dp(16), 0);
-                break;
+                lp = new FrameLayout.LayoutParams(dp(190), dp(270), Gravity.TOP | Gravity.END); lp.setMargins(0, dp(16), dp(16), 0); break;
             case INTERVIEW:
-                lp = new FrameLayout.LayoutParams(dp(230), dp(310), Gravity.BOTTOM | Gravity.END);
-                lp.setMargins(0, 0, dp(16), dp(70));
-                break;
+                lp = new FrameLayout.LayoutParams(dp(230), dp(310), Gravity.BOTTOM | Gravity.END); lp.setMargins(0, 0, dp(16), dp(70)); break;
             case DUET_PIP:
             case CAMERA:
             default:
-                lp = new FrameLayout.LayoutParams(-1, -1, Gravity.CENTER);
-                break;
+                lp = new FrameLayout.LayoutParams(-1, -1, Gravity.CENTER); break;
         }
         webView.setLayoutParams(lp);
     }
@@ -106,31 +118,12 @@ public final class ProductionGuestWebView {
 
     private void pollForMedia(final int attempt) {
         if (webView.getVisibility() != WebView.VISIBLE || attempt > 3600) return;
-        webView.evaluateJavascript(
-                "(function(){var v=[].slice.call(document.querySelectorAll('video'));" +
-                "return v.some(function(x){return x.readyState>=2 && !x.paused && x.videoWidth>0});})()",
-                value -> {
-                    boolean hasMedia = "true".equals(value);
-                    if (hasMedia) {
-                        missingMediaPolls = 0;
-                        if (!mediaSeen) {
-                            mediaSeen = true;
-                            ProductionCameraSlotManager.markConsumed(context, slot);
-                        }
-                    } else if (mediaSeen) {
-                        missingMediaPolls++;
-                        if (missingMediaPolls >= DISCONNECT_POLLS) {
-                            ProductionCameraSlotManager.markDisconnected(context, slot);
-                            mediaSeen = false;
-                            missingMediaPolls = 0;
-                            webView.loadUrl(ProductionCameraSlotManager.viewerLink(context, slot));
-                        }
-                    }
-                    handler.postDelayed(() -> pollForMedia(attempt + 1), POLL_MS);
-                });
+        webView.evaluateJavascript("(function(){var v=[].slice.call(document.querySelectorAll('video'));return v.some(function(x){return x.readyState>=2&&!x.paused&&x.videoWidth>0});})()", value -> {
+            boolean hasMedia="true".equals(value);
+            if(hasMedia){missingMediaPolls=0;if(!mediaSeen){mediaSeen=true;ProductionCameraSlotManager.markConsumed(context,slot);}}
+            else if(mediaSeen){missingMediaPolls++;if(missingMediaPolls>=DISCONNECT_POLLS){ProductionCameraSlotManager.markDisconnected(context,slot);mediaSeen=false;missingMediaPolls=0;webView.loadUrl(ProductionCameraSlotManager.viewerLink(context,slot));}}
+            handler.postDelayed(()->pollForMedia(attempt+1),POLL_MS);
+        });
     }
-
-    private int dp(int value) {
-        return Math.round(value * context.getResources().getDisplayMetrics().density);
-    }
+    private int dp(int value){return Math.round(value*context.getResources().getDisplayMetrics().density);}
 }
