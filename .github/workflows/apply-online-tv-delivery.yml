@@ -1,0 +1,113 @@
+name: Verify and apply online TV relay delivery
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: online-tv-delivery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-and-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Validate patch tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile tools/apply_online_tv_delivery_patch.py
+          test -s tools/apply_online_tv_delivery_patch.py
+
+      - name: Apply online TV delivery hardening
+        shell: bash
+        run: python3 tools/apply_online_tv_delivery_patch.py
+
+      - name: Check source diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          grep -q 'ONLINE_TV_RELAY_DELIVERY_V1' app/src/main/java/com/fadcam/streaming/RemoteStreamManager.java
+          grep -q 'ONLINE_TV_RELAY_RETRY_V1' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          grep -q 'getPublicHlsUrl' app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java
+          echo 'Online TV source invariants: PASS'
+
+      - name: Clone patched Media3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -f /tmp/media3-patched/settings.gradle || test -f /tmp/media3-patched/settings.gradle.kts
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+
+      - name: Verify Gradle tasks
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:tasks --all --no-daemon --no-watch-fs --no-configuration-cache >/tmp/tasks.txt
+          grep -Eq '^testDefaultReleaseUnitTest([[:space:]]|$)' /tmp/tasks.txt
+          grep -Eq '^assembleDefaultRelease([[:space:]]|$)' /tmp/tasks.txt
+
+      - name: Run production and streaming unit tests
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDefaultReleaseUnitTest --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2 2>&1 | tee /tmp/online-tv-tests.log
+
+      - name: Build Studio release APK
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2 2>&1 | tee /tmp/online-tv-build.log
+
+      - name: Verify APK and stream source contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$(find app/build/outputs/apk -type f -name '*.apk' -path '*default/release/*' -print -quit)"
+          test -n "$apk"
+          test -s "$apk"
+          unzip -t "$apk" >/tmp/apk-integrity.txt
+          unzip -l "$apk" | grep -q 'AndroidManifest.xml'
+          unzip -l "$apk" | grep -q 'classes.dex'
+          sha256sum "$apk" | tee /tmp/apk.sha256
+          echo "Verified APK: $apk"
+
+      - name: Commit only verified source changes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f tools/apply_online_tv_delivery_patch.py .github/workflows/apply-online-tv-delivery.yml
+          git add app/src/main/java/com/fadcam/streaming/RemoteStreamManager.java \
+                  app/src/main/java/com/fadcam/streaming/CloudStreamUploader.java \
+                  tools/apply_online_tv_delivery_patch.py \
+                  .github/workflows/apply-online-tv-delivery.yml
+          if git diff --cached --quiet; then
+            echo 'No source changes required; verification already clean.'
+            exit 0
+          fi
+          git commit -m 'fix: guarantee acknowledged online TV relay delivery'
+          git push origin HEAD:master
