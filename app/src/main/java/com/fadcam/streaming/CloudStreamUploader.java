@@ -64,6 +64,11 @@ public class CloudStreamUploader {
     // Retry limits to prevent infinite loops and excessive auth requests
     private static final int MAX_401_RETRIES = 2;
     private static final long BACKOFF_AFTER_AUTH_FAILURE_MS = 30000; // 30s backoff after auth failure
+
+    // ONLINE_TV_RELAY_RETRY_V1: transient mobile-network failures must not
+    // silently drop live HLS segments. Retry init, media and playlist uploads.
+    private static final int MAX_UPLOAD_ATTEMPTS = 4;
+    private static final long UPLOAD_RETRY_BASE_DELAY_MS = 750;
     
     private static CloudStreamUploader instance;
     
@@ -334,32 +339,75 @@ public class CloudStreamUploader {
      * Will fetch a new stream token if needed.
      */
     private void uploadBytes(String url, byte[] data, MediaType mediaType, @Nullable UploadCallback callback) {
-        // Check if we have a valid stream token
+        uploadBytesAttempt(url, data, mediaType, callback, 0);
+    }
+
+    private void uploadBytesAttempt(String url, byte[] data, MediaType mediaType,
+                                    @Nullable UploadCallback callback, int attempt) {
+        if (!isEnabled) {
+            return;
+        }
+
         String streamToken = authManager.getStreamToken();
-        
         if (streamToken == null || authManager.isStreamTokenNearExpiry()) {
-            // Need to fetch stream token first
             FLog.i(TAG, "Stream token missing or near expiry, fetching...");
             authManager.getValidStreamTokenAsync(new CloudAuthManager.StreamTokenListener() {
                 @Override
                 public void onSuccess(String newStreamToken) {
-                    // Now perform the upload with the new token
-                    doUploadWithToken(url, data, mediaType, newStreamToken, callback);
+                    doUploadWithToken(url, data, mediaType, newStreamToken,
+                            retryAwareCallback(url, data, mediaType, callback, attempt));
                 }
-                
+
                 @Override
                 public void onError(String error) {
-                    FLog.e(TAG, "Failed to get stream token: " + error);
-                    failedUploads++;
-                    if (callback != null) callback.onError("Stream token error: " + error);
+                    retryOrFail(url, data, mediaType, callback, attempt, "Stream token error: " + error);
                 }
             });
         } else {
-            // Have a valid stream token, upload directly
-            doUploadWithToken(url, data, mediaType, streamToken, callback);
+            doUploadWithToken(url, data, mediaType, streamToken,
+                    retryAwareCallback(url, data, mediaType, callback, attempt));
         }
     }
-    
+
+    private UploadCallback retryAwareCallback(String url, byte[] data, MediaType mediaType,
+                                               @Nullable UploadCallback finalCallback, int attempt) {
+        return new UploadCallback() {
+            @Override
+            public void onSuccess() {
+                if (finalCallback != null) finalCallback.onSuccess();
+            }
+
+            @Override
+            public void onError(String error) {
+                retryOrFail(url, data, mediaType, finalCallback, attempt, error);
+            }
+        };
+    }
+
+    private void retryOrFail(String url, byte[] data, MediaType mediaType,
+                             @Nullable UploadCallback callback, int attempt, String error) {
+        if (!isEnabled) return;
+        if (attempt + 1 >= MAX_UPLOAD_ATTEMPTS) {
+            FLog.e(TAG, "❌ Relay upload exhausted retries: " + error);
+            if (callback != null) callback.onError(error);
+            return;
+        }
+        final int nextAttempt = attempt + 1;
+        final long delay = UPLOAD_RETRY_BASE_DELAY_MS << attempt;
+        FLog.w(TAG, "⚠️ Relay upload retry " + nextAttempt + "/" + MAX_UPLOAD_ATTEMPTS
+                + " in " + delay + "ms: " + error);
+        uploadExecutor.execute(() -> {
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                if (callback != null) callback.onError("Upload retry interrupted");
+                return;
+            }
+            uploadBytesAttempt(url, data, mediaType, callback, nextAttempt);
+        });
+    }
+
     /**
      * Actually perform the HTTP upload with the provided stream token.
      *
@@ -493,6 +541,23 @@ public class CloudStreamUploader {
         });
     }
     
+    /**
+     * Public online-TV base URL used by the FadSec web player.
+     * The dashboard exposes the same /stream/{deviceId}/ route.
+     */
+    @Nullable
+    public String getPublicStreamUrl() {
+        String deviceId = authManager.getDeviceId();
+        if (deviceId == null || deviceId.trim().isEmpty()) return null;
+        return "https://fadcam.fadseclab.com/stream/" + deviceId + "/";
+    }
+
+    @Nullable
+    public String getPublicHlsUrl() {
+        String base = getPublicStreamUrl();
+        return base == null ? null : base + "live.m3u8";
+    }
+
     /**
      * Get upload statistics
      */
