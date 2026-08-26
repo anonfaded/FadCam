@@ -8,13 +8,14 @@ import androidx.annotation.NonNull;
 import androidx.media3.exoplayer.ExoPlayer;
 
 /**
- * Broadcast-style voice ducking for the duet player.
+ * Broadcast-style voice ducking for the duet/media player.
  *
  * The microphone level comes from the same AudioRecord that is already writing
  * the final recording. This avoids opening a competing microphone capture.
  * The detector smooths the RMS level, adapts to the local noise floor, and uses
  * separate enter/exit hysteresis so background noise does not make the video
- * pump up and down between syllables.
+ * pump up and down between syllables. Playback gain is then passed through the
+ * production audio mix bus so MEDIA and MASTER faders remain functional.
  */
 public final class ProductionAudioDucker implements ProductionAudioDuckingBus.Listener {
     public static final float DEFAULT_NORMAL_VOLUME = 1.0f;
@@ -139,11 +140,6 @@ public final class ProductionAudioDucker implements ProductionAudioDuckingBus.Li
         });
     }
 
-    /**
-     * Converts raw RMS telemetry into a stable speech state. The noise floor only
-     * follows quiet samples, so sustained speech cannot teach the detector that
-     * speech is noise. Enter and exit thresholds are intentionally different.
-     */
     private void updateSpeechState(float level) {
         smoothedLevel += (level - smoothedLevel) * LEVEL_SMOOTHING;
 
@@ -211,7 +207,9 @@ public final class ProductionAudioDucker implements ProductionAudioDuckingBus.Li
 
     private void applyVolume(float volume) {
         ExoPlayer p = player;
-        if (p != null) p.setVolume(clamp(volume));
+        if (p != null) {
+            p.setVolume(clamp(volume * ProductionAudioMixBus.getMediaGain()));
+        }
     }
 
     private static float clamp(float value) {
