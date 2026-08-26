@@ -41,7 +41,6 @@ public final class ProductionControlState {
     private final Transition transition;
     private final int transitionDurationMs;
 
-    /** Backwards-compatible constructor used by existing callers/tests. */
     public ProductionControlState(ProductionScene previewScene,
                                   ProductionScene programScene,
                                   Transition transition,
@@ -122,12 +121,16 @@ public final class ProductionControlState {
                 transition, durationMs);
     }
 
-    /** Promote Preview to Program and keep the old Program as Preview. */
+    /**
+     * Promote Preview to Program while keeping Preview selected for the next shot.
+     * This mirrors a real production switcher: TAKE changes the Program bus but
+     * does not unexpectedly replace the producer's next-shot selection.
+     */
     public ProductionControlState take() {
         return new ProductionControlState(
-                programScene,
                 previewScene,
-                programCameraSlot,
+                previewScene,
+                previewCameraSlot,
                 previewCameraSlot,
                 transition,
                 transitionDurationMs);
