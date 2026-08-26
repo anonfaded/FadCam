@@ -1,5 +1,7 @@
 name: Verify and apply online TV relay delivery
 
+# Online-TV relay gate: apply, build, test, verify, then commit only verified source.
+
 on:
   push:
     branches: [master]
