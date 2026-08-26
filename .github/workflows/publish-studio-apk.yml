@@ -24,12 +24,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Verify patched Media3 is reachable
+      - name: Prepare patched Media3 source
         shell: bash
         run: |
           set -euo pipefail
-          MEDIA3_HEAD="$(git ls-remote https://github.com/anonfaded/media3-patched.git HEAD | awk '{print $1}')"
-          test -n "$MEDIA3_HEAD"
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -f /tmp/media3-patched/settings.gradle
+          test -f /tmp/media3-patched/libraries/muxer/src/main/java/androidx/media3/muxer/ProcessedSegment.java
+          MEDIA3_HEAD="$(git -C /tmp/media3-patched rev-parse HEAD)"
           echo "Patched Media3 HEAD: $MEDIA3_HEAD"
 
       - name: Set up Java 17
