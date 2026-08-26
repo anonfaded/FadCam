@@ -1,0 +1,56 @@
+name: Final production build verification
+on:
+  push:
+    branches: [feat/pro-production-final-fusion]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone patched Media3 release
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 --branch release --single-branch https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -s /tmp/media3-patched/libraries/muxer/src/main/java/androidx/media3/muxer/ProcessedSegment.java
+          grep -q 'Consumer<ProcessedSegment>' /tmp/media3-patched/libraries/muxer/src/main/java/androidx/media3/muxer/FragmentedMp4Muxer.java
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: gradle
+      - name: Verify production source invariants
+        run: |
+          set -euo pipefail
+          grep -q 'ProductionScene.VIDEO' app/src/main/java/com/fadcam/production/ProductionControlState.java
+          grep -q 'ACTION_PROGRAM_PUBLISHED' app/src/main/java/com/fadcam/production/ProductionControlState.java
+          grep -q 'getVideoUri' app/src/main/java/com/fadcam/production/ProductionControlState.java
+          grep -q 'ProductionCockpitState' app/src/main/java/com/fadcam/production/ProductionCockpitDialog.java
+          grep -q 'ProductionAudioMixBus' app/src/main/java/com/fadcam/production/ProductionCockpitDialog.java
+          grep -q 'active_stream_id' app/src/main/java/com/fadcam/production/ProductionCameraSlotManager.java
+          test -f app/src/main/java/com/fadcam/production/ProductionGuestWebView.java
+          echo 'SOURCE INVARIANTS: PASS'
+      - name: Unit tests and exact release APK
+        run: |
+          set -o pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:testDefaultReleaseUnitTest :app:assembleDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2 2>&1 | tee /tmp/final-production-build.log
+      - name: Release lint
+        run: ./gradlew :app:lintDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2
+      - name: Verify APK
+        run: |
+          set -euo pipefail
+          apk="$(find app/build/outputs/apk -type f -name '*.apk' -path '*default/release/*' -print -quit)"
+          test -s "$apk"
+          unzip -t "$apk" >/dev/null
+          echo "VERIFIED APK: $apk"
+          sha256sum "$apk"
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FadCam-final-production
+          path: app/build/outputs/apk/**/*universal.apk
