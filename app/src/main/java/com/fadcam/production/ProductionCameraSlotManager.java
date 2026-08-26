@@ -42,26 +42,35 @@ public final class ProductionCameraSlotManager {
         return result;
     }
 
-    /** Creates a fresh invitation while preserving an already-connected guest. */
+    /** Creates a fresh invitation for an idle slot; connected guests are never interrupted. */
     @NonNull public static ProductionCameraSlot createInvite(Context context, int slot, String guestName) {
         int s = ProductionControlState.clampCameraSlot(slot);
         SharedPreferences p = prefs(context);
         if (!p.getString(key(s, "active_stream_id"), "").isEmpty()) return get(context, s);
-        String token = p.getString(key(s, "token"), "");
-        if (token.isEmpty()) token = newToken();
+        String token = newToken();
         p.edit().putString(key(s, "token"), token)
                 .putString(key(s, "name"), guestName == null ? "" : guestName.trim())
                 .putBoolean(key(s, "waiting"), true)
-                .putBoolean(key(s, "consumed"), false).apply();
+                .putBoolean(key(s, "consumed"), false)
+                .apply();
         return get(context, s);
     }
 
-    /** Marks a slot as waiting without rotating its current invitation. */
+    /** Marks a slot as waiting and rotates the invitation token. */
     @NonNull public static ProductionCameraSlot markInvited(Context context, int slot, String guestName) {
         return createInvite(context, slot, guestName);
     }
 
-    /** Moves the current one-use invite into the active state and rotates the next invite. */
+    /** Validates the currently issued one-use invitation without consuming it. */
+    public static boolean isInviteActive(Context context, int slot, String token) {
+        if (token == null || token.trim().isEmpty()) return false;
+        ProductionCameraSlot current = get(context, slot);
+        return token.equals(current.getInviteToken())
+                && !current.isInviteConsumed()
+                && current.getActiveStreamId().isEmpty();
+    }
+
+    /** Moves the current invite into active state and immediately rotates the next token. */
     @NonNull public static ProductionCameraSlot markConsumed(Context context, int slot) {
         int s = ProductionControlState.clampCameraSlot(slot);
         SharedPreferences p = prefs(context);
@@ -72,17 +81,31 @@ public final class ProductionCameraSlotManager {
         p.edit().putString(key(s, "active_stream_id"), active)
                 .putString(key(s, "token"), newToken())
                 .putBoolean(key(s, "consumed"), true)
-                .putBoolean(key(s, "waiting"), false).apply();
+                .putBoolean(key(s, "waiting"), false)
+                .apply();
         return get(context, s);
     }
 
-    /** Ends the active guest and leaves the already-rotated invite ready for the next guest. */
+    /** Revokes an idle invitation without disturbing a connected guest. */
+    public static void revokeInvite(Context context, int slot) {
+        int s = ProductionControlState.clampCameraSlot(slot);
+        SharedPreferences p = prefs(context);
+        if (!p.getString(key(s, "active_stream_id"), "").isEmpty()) return;
+        p.edit().putString(key(s, "token"), newToken())
+                .putBoolean(key(s, "waiting"), false)
+                .putBoolean(key(s, "consumed"), false)
+                .apply();
+    }
+
+    /** Ends the active guest and leaves a fresh invite ready for the next guest. */
     public static void markDisconnected(Context context, int slot) {
         int s = ProductionControlState.clampCameraSlot(slot);
         prefs(context).edit().remove(key(s, "active_stream_id"))
                 .remove(key(s, "url"))
+                .putString(key(s, "token"), newToken())
                 .putBoolean(key(s, "waiting"), false)
-                .putBoolean(key(s, "consumed"), false).apply();
+                .putBoolean(key(s, "consumed"), false)
+                .apply();
     }
 
     @NonNull public static ProductionCameraSlot connect(Context context, int slot, String streamUrl) {
@@ -103,13 +126,13 @@ public final class ProductionCameraSlotManager {
                 .putBoolean(key(s, "waiting"), false).apply();
     }
 
-    /** Android app-to-app link. The component uses the installed FadCam variant package. */
+    /** Android app-to-app link for the installed FadCam package. */
     @NonNull public static String inviteLink(Context context, int slot) {
         ProductionCameraSlot c = get(context, slot);
         String component = context.getPackageName() + "/.TorchToggleActivity";
         return String.format(Locale.US,
-                "intent://guest-camera?slot=%d&token=%s#Intent;scheme=fadcam;action=android.intent.action.VIEW;component=%s;end",
-                c.getSlot(), c.getInviteToken(), component);
+                "intent://guest-camera?slot=%d&token=%s#Intent;scheme=fadcam;action=android.intent.action.VIEW;component=%s;package=%s;end",
+                c.getSlot(), c.getInviteToken(), component, context.getPackageName());
     }
 
     @NonNull public static String vdoPushLink(Context context, int slot) {
@@ -128,8 +151,10 @@ public final class ProductionCameraSlotManager {
     private static SharedPreferences prefs(Context context) {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
+
     private static String key(int slot, String suffix) { return "slot_" + slot + "_" + suffix; }
     private static String newToken() { return randomHex(18); }
+
     private static String randomHex(int bytes) {
         byte[] data = new byte[bytes];
         RANDOM.nextBytes(data);
