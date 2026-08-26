@@ -1,8 +1,10 @@
 name: Wire and verify voice ducking
 
+# This is a one-shot maintenance workflow. It is intentionally manual so it
+# cannot rewrite master on every production commit and cancel the real Studio
+# build while the switcher is being developed.
 on:
-  push:
-    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,12 +19,14 @@ jobs:
           fetch-depth: 0
           ref: master
 
-      - name: Skip if recorder wiring is already present
+      - name: Check recorder wiring
         id: state
         shell: bash
         run: |
+          set -euo pipefail
           if grep -q 'PRODUCTION_AUDIO_DUCKING_WIRED_V1' app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java; then
             echo 'wired=true' >> "$GITHUB_OUTPUT"
+            echo 'Voice ducking recorder telemetry is already wired; no source mutation needed.'
           else
             echo 'wired=false' >> "$GITHUB_OUTPUT"
           fi
@@ -67,7 +71,6 @@ jobs:
           PY
 
       - name: Verify source invariants
-        if: steps.state.outputs.wired != 'true'
         run: |
           set -euo pipefail
           grep -q 'ProductionAudioDuckingBus' app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java
@@ -78,19 +81,19 @@ jobs:
           echo 'Voice ducking source invariants: PASS'
 
       - name: Build and unit-test exact release variant
-        if: steps.state.outputs.wired != 'true'
         shell: bash
         run: |
+          set -euo pipefail
           chmod +x ./gradlew
           ./gradlew :app:testDefaultReleaseUnitTest :app:assembleDefaultRelease --stacktrace --no-daemon --no-watch-fs --no-configuration-cache --max-workers=2
 
-      - name: Commit verified wiring and remove one-shot workflow
+      - name: Commit verified wiring only when a mutation was required
         if: steps.state.outputs.wired != 'true'
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'Trendyzima'
           git config user.email 'momanyitrendy@gmail.com'
-          git add app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java .github/workflows/wire-voice-ducking.yml
+          git add app/src/main/java/com/fadcam/fadrec/encoding/ScreenRecordingPipeline.java
           git commit -m 'feat: wire voice ducking into recorder mic telemetry'
           git push origin HEAD:master
