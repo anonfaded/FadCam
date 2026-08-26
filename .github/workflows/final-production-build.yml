@@ -54,3 +54,4 @@ jobs:
         with:
           name: FadCam-final-production
           path: app/build/outputs/apk/**/*universal.apk
+# Re-run marker: authoritative switcher CUT/state persistence patch verified in source.
