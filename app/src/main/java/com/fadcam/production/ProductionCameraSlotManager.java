@@ -56,9 +56,23 @@ public final class ProductionCameraSlotManager {
         return get(context, s);
     }
 
-    /** Marks a slot as waiting and rotates the invitation token. */
+    /**
+     * Marks the current invitation as waiting without rotating its token. This
+     * is intentionally idempotent so a share flow cannot invalidate the link
+     * that was just displayed to the producer.
+     */
     @NonNull public static ProductionCameraSlot markInvited(Context context, int slot, String guestName) {
-        return createInvite(context, slot, guestName);
+        int s = ProductionControlState.clampCameraSlot(slot);
+        ProductionCameraSlot current = get(context, s);
+        if (current.getActiveStreamId().isEmpty() && !current.isInviteConsumed()
+                && current.getStatus() == ProductionCameraSlot.Status.WAITING) {
+            prefs(context).edit()
+                    .putString(key(s, "name"), guestName == null ? "" : guestName.trim())
+                    .putBoolean(key(s, "waiting"), true)
+                    .apply();
+            return get(context, s);
+        }
+        return createInvite(context, s, guestName);
     }
 
     /** Validates the currently issued one-use invitation without consuming it. */
