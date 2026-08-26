@@ -28,7 +28,8 @@ import com.google.android.material.button.MaterialButton;
  * The cockpit is deliberately a control surface, not a fake broadcast engine:
  * PROGRAM/PREVIEW are backed by ProductionControlState, output is backed by
  * the verified RTMP service, and the microphone meter is fed by the existing
- * recorder-owned AudioRecord through ProductionAudioDuckingBus.
+ * recorder-owned AudioRecord through ProductionAudioDuckingBus. Media/master
+ * faders also feed the playback-side ProductionAudioMixBus.
  */
 public final class ProductionCockpitDialog extends Dialog {
     private static final int BG = Color.rgb(8, 9, 10);
@@ -231,10 +232,10 @@ public final class ProductionCockpitDialog extends Dialog {
         root.addView(speed, new LinearLayout.LayoutParams(-1, dp(38)));
 
         root.addView(section("VIRTUAL AUDIO MIXER"));
-        root.addView(mixerRow("CAM 1", cockpit.getCamera1(), 0));
-        root.addView(mixerRow("CAM 2", cockpit.getCamera2(), 1));
-        root.addView(mixerRow("MEDIA", cockpit.getMedia(), 2));
-        root.addView(mixerRow("MASTER", cockpit.getMaster(), 3));
+        root.addView(mixerRow("CAM 1", cockpit.getCamera1(), ProductionAudioMixBus.CAMERA_1));
+        root.addView(mixerRow("CAM 2", cockpit.getCamera2(), ProductionAudioMixBus.CAMERA_2));
+        root.addView(mixerRow("MEDIA", cockpit.getMedia(), ProductionAudioMixBus.MEDIA));
+        root.addView(mixerRow("MASTER", cockpit.getMaster(), ProductionAudioMixBus.MASTER));
 
         LinearLayout voice = row();
         voice.setPadding(dp(8), dp(5), dp(8), dp(5));
@@ -386,7 +387,11 @@ public final class ProductionCockpitDialog extends Dialog {
             @Override public void onProgressChanged(SeekBar b, int p, boolean fromUser) {
                 value.setText(p + "%");
                 int c1 = cockpit.getCamera1(), c2 = cockpit.getCamera2(), media = cockpit.getMedia(), master = cockpit.getMaster();
-                if (channel == 0) c1 = p; else if (channel == 1) c2 = p; else if (channel == 2) media = p; else master = p;
+                if (channel == ProductionAudioMixBus.CAMERA_1) c1 = p;
+                else if (channel == ProductionAudioMixBus.CAMERA_2) c2 = p;
+                else if (channel == ProductionAudioMixBus.MEDIA) media = p;
+                else master = p;
+                ProductionAudioMixBus.setLevel(channel, p);
                 cockpit = cockpit.levels(c1, c2, media, master);
                 if (fromUser && !muted[channel]) restoreLevels[channel] = p;
             }
