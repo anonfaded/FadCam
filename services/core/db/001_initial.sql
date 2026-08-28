@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY, email TEXT NOT NULL UNIQUE, password_hash TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS organizations (id UUID PRIMARY KEY, name TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS channels (id UUID PRIMARY KEY, organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE, name TEXT NOT NULL, slug TEXT NOT NULL UNIQUE, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS cameras (id UUID PRIMARY KEY, organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE, name TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'offline', created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS streams (id UUID PRIMARY KEY, camera_id UUID REFERENCES cameras(id) ON DELETE SET NULL, channel_id UUID REFERENCES channels(id) ON DELETE SET NULL, name TEXT NOT NULL UNIQUE, source TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'registered', created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS media (id UUID PRIMARY KEY, stream_id UUID REFERENCES streams(id) ON DELETE SET NULL, object_key TEXT NOT NULL, content_type TEXT, size_bytes BIGINT NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS productions (id UUID PRIMARY KEY, organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE, name TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'draft', created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS permissions (user_id UUID REFERENCES users(id) ON DELETE CASCADE, organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE, role TEXT NOT NULL, PRIMARY KEY(user_id, organization_id));
+CREATE INDEX IF NOT EXISTS streams_channel_idx ON streams(channel_id);
+CREATE INDEX IF NOT EXISTS media_stream_idx ON media(stream_id);
