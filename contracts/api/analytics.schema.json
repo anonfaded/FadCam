@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Fad Analytics Event",
+  "type":"object",
+  "required":["eventId","type","occurredAt"],
+  "properties":{
+    "eventId":{"type":"string"},
+    "type":{"type":"string"},
+    "userId":{"type":["string","null"]},
+    "channelId":{"type":["string","null"]},
+    "mediaId":{"type":["string","null"]},
+    "occurredAt":{"type":"string","format":"date-time"},
+    "metadata":{"type":"object"}
+  },
+  "additionalProperties":false
+}
