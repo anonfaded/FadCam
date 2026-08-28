@@ -1,0 +1,1 @@
+{"name":"@fad/production","private":true,"type":"module","scripts":{"start":"node src/server.mjs"},"dependencies":{"@hono/node-server":"^1.19.6","hono":"^4.11.3"}}
