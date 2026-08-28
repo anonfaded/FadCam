@@ -1,0 +1,1 @@
+import http from 'node:http'; const port=Number(process.env.PORT||8090); http.createServer((req,res)=>{res.setHeader('content-type','application/json'); if(req.url==='/health') return res.end(JSON.stringify({app:'fadplay-web',status:'ok'})); res.end(JSON.stringify({app:'fadplay-web',message:'viewer application foundation'}));}).listen(port,'0.0.0.0');
