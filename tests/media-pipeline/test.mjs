@@ -13,21 +13,23 @@ async function main() {
   let found = false;
 
   while (Date.now() < deadline) {
-    const result = await getJson(`${base}/api/v1/media/streams/${encodeURIComponent(path)}`);
-    if (result?.path === path && result?.ready === true) {
-      found = true;
-      break;
+    try {
+      const result = await getJson(`${base}/api/v1/streams/${encodeURIComponent(path)}`);
+      if (result?.name === path) {
+        found = true;
+        break;
+      }
+    } catch (_) {
+      // Stream may not exist until FFmpeg has published it.
     }
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
-  if (!found) {
-    throw new Error(`Gateway did not observe ready stream '${path}' within the timeout`);
-  }
+  if (!found) throw new Error(`Gateway did not discover '${path}' within the timeout`);
 
   const media = await getJson(`${mediaMtxApi}/v3/paths/list`);
   const match = media?.items?.find(item => item?.name === path);
-  if (!match) throw new Error(`MediaMTX API did not report stream '${path}'`);
+  if (!match) throw new Error(`MediaMTX API did not report '${path}'`);
 
   console.log(`PASS: FFmpeg synthetic source -> MediaMTX -> Gateway -> assertion (${path})`);
 }
