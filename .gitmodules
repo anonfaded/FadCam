@@ -2,3 +2,21 @@
 	path = docs/FadCam.wiki
 	url = https://github.com/anonfaded/FadCam.wiki.git
 	branch = master
+
+# Fad TV fused media infrastructure
+[submodule "platform/mediamtx"]
+	path = platform/mediamtx
+	url = https://github.com/Trendyzima/mediamtx.git
+	branch = main
+[submodule "platform/ffmpeg"]
+	path = platform/ffmpeg
+	url = https://github.com/Trendyzima/FFmpeg.git
+	branch = master
+[submodule "platform/minio"]
+	path = platform/minio
+	url = https://github.com/Trendyzima/minio.git
+	branch = master
+[submodule "platform/peertube"]
+	path = platform/peertube
+	url = https://github.com/Trendyzima/PeerTube.git
+	branch = develop
