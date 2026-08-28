@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info:
+  title: Fad Core API
+  version: 0.2.0
+paths:
+  /api/v1/health:
+    get:
+      responses:
+        '200': {description: Core and database healthy}
+  /api/v1/streams:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StreamRegistration'}
+      responses:
+        '201': {description: Stream persisted}
+  /api/v1/streams/{id}:
+    get:
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200': {description: Stream}
+        '404': {description: Not found}
+components:
+  schemas:
+    StreamRegistration:
+      type: object
+      required: [id, name]
+      properties:
+        id: {type: string}
+        name: {type: string}
+        source: {type: string, enum: [fadcam, studio, external]}
+        channelId: {type: string, nullable: true}
