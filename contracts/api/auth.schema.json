@@ -1,0 +1,11 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Fad Device Authentication",
+  "type":"object",
+  "required":["deviceKey","deviceSecret"],
+  "properties":{
+    "deviceKey":{"type":"string","minLength":16,"maxLength":256},
+    "deviceSecret":{"type":"string","minLength":32,"maxLength":512}
+  },
+  "additionalProperties":false
+}
