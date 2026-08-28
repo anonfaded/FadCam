@@ -1,0 +1,11 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Fad Playout Schedule",
+  "type":"object",
+  "required":["channelId","items"],
+  "properties":{
+    "channelId":{"type":"string","minLength":1},
+    "items":{"type":"array","items":{"type":"object","required":["mediaId","startAt"],"properties":{"mediaId":{"type":"string"},"startAt":{"type":"string","format":"date-time"},"durationMs":{"type":"integer","minimum":0},"live":{"type":"boolean"}},"additionalProperties":false}}
+  },
+  "additionalProperties":false
+}
