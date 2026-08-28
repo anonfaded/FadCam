@@ -13,14 +13,28 @@ services:
       timeout: 3s
       retries: 20
 
+  migrate:
+    image: postgres:16-alpine
+    volumes:
+      - ../services/core/migrations:/migrations:ro
+    environment:
+      PGPASSWORD: fad-dev-password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >-
+      sh -c "psql -h postgres -U fad -d fad -v ON_ERROR_STOP=1
+      -f /migrations/001_initial_schema.sql"
+    restart: "no"
+
   core:
     build: ../services/core
     environment:
       PORT: 8080
       DATABASE_URL: postgres://fad:fad-dev-password@postgres:5432/fad
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports: ["8080:8080"]
 
   gateway:
