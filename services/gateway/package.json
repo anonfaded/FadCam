@@ -1,0 +1,9 @@
+{
+  "name": "@fad/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node src/server.mjs", "test": "node --test" },
+  "dependencies": { "@hono/node-server": "^1.19.2", "hono": "^4.9.8" }
+}
