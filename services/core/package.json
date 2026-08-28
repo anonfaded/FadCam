@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node src/server.js"
   },
-  "engines": {
-    "node": ">=20"
+  "engines": {"node": ">=20"},
+  "dependencies": {
+    "@hono/node-server": "^1.19.0",
+    "hono": "^4.9.0",
+    "pg": "^8.16.3"
   }
 }
