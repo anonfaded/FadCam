@@ -1,0 +1,34 @@
+services:
+  core:
+    build:
+      context: ../../services/core
+    environment:
+      FAD_ENV: development
+    ports:
+      - "8080:8080"
+    profiles: [core]
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    ports:
+      - "8554:8554"
+      - "8888:8888"
+      - "8889:8889"
+      - "1935:1935"
+    profiles: [media]
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: fad-dev
+      MINIO_ROOT_PASSWORD: fad-dev-password-change-me
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    profiles: [storage]
+
+volumes:
+  minio_data:
