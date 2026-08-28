@@ -9,6 +9,18 @@ services:
       - "8080:8080"
     profiles: [core]
 
+  gateway:
+    build:
+      context: ../services/gateway
+    environment:
+      PORT: 8081
+      MEDIAMTX_API_URL: http://mediamtx:9997
+    depends_on:
+      - mediamtx
+    ports:
+      - "8081:8081"
+    profiles: [media]
+
   mediamtx:
     image: bluenviron/mediamtx:latest
     ports:
@@ -16,6 +28,7 @@ services:
       - "8888:8888"
       - "8889:8889"
       - "1935:1935"
+      - "9997:9997"
     profiles: [media]
 
   minio:
