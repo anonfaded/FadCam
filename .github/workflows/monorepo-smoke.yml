@@ -1,0 +1,29 @@
+name: Monorepo Smoke
+on:
+  push:
+    branches: [fused-tv-foundation]
+  pull_request:
+    branches: [fused-tv-foundation]
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {submodules: recursive}
+      - name: Validate compose
+        run: docker compose -f deployment/docker-compose.yml config
+      - name: Build orchestrated services
+        run: docker compose -f deployment/docker-compose.yml build core gateway production playout epg monetization analytics
+      - name: Start control plane
+        run: docker compose -f deployment/docker-compose.yml up -d postgres core gateway production playout epg monetization analytics
+      - name: Health check
+        run: |
+          set -eu
+          for port in 8080 8081 8082 8083 8084 8085 8086; do
+            for i in $(seq 1 30); do curl -fsS http://localhost:$port/health >/dev/null && break; sleep 2; done
+            curl -fsS http://localhost:$port/health >/dev/null
+          done
+      - name: Tear down
+        if: always()
+        run: docker compose -f deployment/docker-compose.yml down -v
