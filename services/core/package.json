@@ -1,15 +1,9 @@
 {
   "name": "@fad/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "scripts": {
-    "start": "node src/server.js"
-  },
-  "engines": {"node": ">=20"},
-  "dependencies": {
-    "@hono/node-server": "^1.19.0",
-    "hono": "^4.9.0",
-    "pg": "^8.16.3"
-  }
+  "scripts": { "start": "node src/server.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": { "pg": "^8.16.3" }
 }
