@@ -1,0 +1,39 @@
+services:
+  mediamtx:
+    build:
+      context: ../platform/mediamtx
+    ports:
+      - "1935:1935"
+      - "9997:9997"
+
+  gateway:
+    build:
+      context: ../services/gateway
+    environment:
+      PORT: 8081
+      MEDIAMTX_API_URL: http://mediamtx:9997
+    depends_on:
+      - mediamtx
+    ports:
+      - "8081:8081"
+
+  minio:
+    build:
+      context: ../platform/minio
+    environment:
+      MINIO_ROOT_USER: fad-e2e
+      MINIO_ROOT_PASSWORD: fad-e2e-password
+    command: server /data --console-address :9001
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  ffmpeg-publisher:
+    image: jrottenberg/ffmpeg:6.0-ubuntu
+    depends_on:
+      - mediamtx
+    command: >-
+      -re -f lavfi -i testsrc=size=640x360:rate=10
+      -f lavfi -i sine=frequency=1000:sample_rate=48000
+      -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p
+      -c:a aac -f flv rtmp://mediamtx:1935/e2e-test
