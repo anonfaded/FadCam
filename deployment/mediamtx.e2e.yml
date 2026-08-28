@@ -1,0 +1,12 @@
+logLevel: info
+api: true
+apiAddress: :9997
+rtmp: true
+rtmpAddress: :1935
+hls: false
+record: true
+recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+recordFormat: fmp4
+recordPartDuration: 1s
+recordSegmentDuration: 10s
+recordDeleteAfter: 1h
