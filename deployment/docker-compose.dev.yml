@@ -1,9 +1,10 @@
 services:
   core:
     build:
-      context: ../../services/core
+      context: ../services/core
     environment:
       FAD_ENV: development
+      PORT: 8080
     ports:
       - "8080:8080"
     profiles: [core]
