@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fad Stream Registration",
+  "type": "object",
+  "required": ["id", "name"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "name": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$", "minLength": 1, "maxLength": 128 },
+    "channelId": { "type": ["string", "null"], "maxLength": 128 },
+    "source": { "type": "string", "enum": ["fadcam", "studio", "external"] }
+  },
+  "additionalProperties": false
+}
