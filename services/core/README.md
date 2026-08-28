@@ -1,28 +1,32 @@
 # Fad Core
 
-Fad Core is the control-plane service for the fused Fad TV platform.
+Central control-plane service for the fused Fad TV platform.
 
 ## Responsibilities
 
 - platform identity and organizations
-- channels and permissions
+- users, roles, and permissions
+- channels and content ownership
 - production and media metadata
 - programme and schedule metadata
+- stream registration and lifecycle metadata
 - service health and integration contracts
 
-Media bytes do not belong here. Store media in MinIO and keep live transport in MediaMTX.
-
-## Initial API contract
-
-The first implementation will expose a versioned `/api/v1` API. Authentication, database persistence, and channel management will be added incrementally with integration tests.
+Fad Core owns application metadata and orchestration. It does **not** store large media objects or perform video transcoding.
 
 ## Integration boundary
 
 ```text
-FadCam -> Media Gateway -> MediaMTX
-                       -> FFmpeg
-                       -> MinIO
-                       -> PeerTube
+FadCam -> Gateway -> MediaMTX -> FFmpeg -> MinIO
+                         |                    |
+                         +--------------------+-> PeerTube
 
-             Fad Core owns metadata and orchestration.
+                 Fad Core owns metadata,
+                 identity, and orchestration.
 ```
+
+## API contract
+
+All externally consumed Fad Core APIs will be versioned under `/api/v1` and described in `contracts/api/`.
+
+Authentication, database persistence, channel management, and event publishing are added incrementally with integration tests. Services must communicate through explicit contracts rather than reaching into another service's implementation.
