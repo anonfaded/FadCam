@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Fad Media Recorded Event",
+  "type":"object",
+  "required":["eventId","streamId","bucket","objectKey","sizeBytes","createdAt"],
+  "properties":{
+    "eventId":{"type":"string","minLength":1},
+    "streamId":{"type":"string","minLength":1},
+    "bucket":{"type":"string","minLength":1},
+    "objectKey":{"type":"string","minLength":1},
+    "sizeBytes":{"type":"integer","minimum":1},
+    "durationMs":{"type":"integer","minimum":0},
+    "createdAt":{"type":"string","format":"date-time"}
+  },
+  "additionalProperties":false
+}
