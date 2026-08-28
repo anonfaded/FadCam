@@ -1,0 +1,14 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Fad Production Session",
+  "type":"object",
+  "required":["id","name"],
+  "properties":{
+    "id":{"type":"string","minLength":1},
+    "name":{"type":"string","minLength":1,"maxLength":200},
+    "channelId":{"type":["string","null"]},
+    "status":{"type":"string","enum":["draft","ready","live","ended"]},
+    "sceneIds":{"type":"array","items":{"type":"string"}}
+  },
+  "additionalProperties":false
+}
