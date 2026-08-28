@@ -1,0 +1,14 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Fad Monetization Entitlement",
+  "type":"object",
+  "required":["id","type","status"],
+  "properties":{
+    "id":{"type":"string"},
+    "type":{"type":"string","enum":["subscription","ppv","ad-supported"]},
+    "status":{"type":"string","enum":["active","pending","expired","cancelled"]},
+    "channelId":{"type":["string","null"]},
+    "expiresAt":{"type":["string","null"],"format":"date-time"}
+  },
+  "additionalProperties":false
+}
