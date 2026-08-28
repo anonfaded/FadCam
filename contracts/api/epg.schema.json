@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Fad EPG Programme",
+  "type":"object",
+  "required":["id","channelId","title","startAt","endAt"],
+  "properties":{
+    "id":{"type":"string"},
+    "channelId":{"type":"string"},
+    "title":{"type":"string","minLength":1},
+    "description":{"type":"string"},
+    "startAt":{"type":"string","format":"date-time"},
+    "endAt":{"type":"string","format":"date-time"},
+    "mediaId":{"type":["string","null"]}
+  },
+  "additionalProperties":false
+}
