@@ -1,0 +1,34 @@
+openapi: 3.0.3
+info:
+  title: Fad Core API
+  version: 1.0.0
+  description: Control-plane API contract for the fused Fad TV platform.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Service health
+      responses:
+        '200':
+          description: Healthy service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, service, version]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        service:
+          type: string
+          example: fad-core
+        version:
+          type: string
+          example: 0.1.0
