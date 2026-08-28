@@ -1,3 +1,5 @@
+import crypto from 'node:crypto'
+
 const sessions = new Map()
 
 export function createProduction(input) {
