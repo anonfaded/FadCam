@@ -16,35 +16,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Build and start media stack
-        run: docker compose -f deployment/docker-compose.e2e.yml up -d --build mediamtx gateway minio
+      - name: Install test dependencies
+        run: node --version
 
-      - name: Start FFmpeg synthetic publisher
-        run: docker compose -f deployment/docker-compose.e2e.yml up -d ffmpeg-publisher
-
-      - name: Wait for services
-        run: |
-          for i in {1..30}; do
-            if curl -fsS http://localhost:8081/health >/dev/null && curl -fsS http://localhost:9997/v3/paths/list >/dev/null && curl -fsS http://localhost:9000/minio/health/live >/dev/null; then
-              exit 0
-            fi
-            sleep 2
-          done
-          docker compose -f deployment/docker-compose.e2e.yml ps
-          docker compose -f deployment/docker-compose.e2e.yml logs --no-color
-          exit 1
-
-      - name: Assert FFmpeg -> MediaMTX -> Gateway
-        working-directory: tests/media-pipeline
-        run: node test.mjs
-        env:
-          GATEWAY_URL: http://localhost:8081
-          MEDIAMTX_API: http://localhost:9997
-          TEST_STREAM_PATH: e2e-test
-          E2E_TIMEOUT_MS: 30000
-
-      - name: Assert MinIO is reachable
-        run: curl -fsS http://localhost:9000/minio/health/live
+      - name: Run full media and storage E2E
+        run: bash tests/media-pipeline/run-storage-e2e.sh
 
       - name: Collect logs
         if: always()
@@ -52,4 +28,4 @@ jobs:
 
       - name: Tear down
         if: always()
-        run: docker compose -f deployment/docker-compose.e2e.yml down -v
+        run: docker compose -f deployment/docker-compose.e2e.yml down -v --remove-orphans
