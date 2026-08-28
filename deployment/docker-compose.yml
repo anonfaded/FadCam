@@ -1,0 +1,85 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: fad
+      POSTGRES_USER: fad
+      POSTGRES_PASSWORD: fad-dev-password
+    volumes:
+      - fad-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fad -d fad"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  core:
+    build: ../services/core
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://fad:fad-dev-password@postgres:5432/fad
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports: ["8080:8080"]
+
+  gateway:
+    build: ../services/gateway
+    environment:
+      PORT: 8081
+      CORE_API_URL: http://core:8080
+      MEDIAMTX_API_URL: http://mediamtx:9997
+    depends_on: [core, mediamtx]
+    ports: ["8081:8081"]
+
+  mediamtx:
+    build: ../platform/mediamtx
+    ports: ["1935:1935", "9997:9997"]
+
+  minio:
+    build: ../platform/minio
+    environment:
+      MINIO_ROOT_USER: fad-dev
+      MINIO_ROOT_PASSWORD: fad-dev-password
+    command: server /data --console-address :9001
+    ports: ["9000:9000", "9001:9001"]
+
+  production:
+    build: ../services/production
+    environment:
+      CORE_API_URL: http://core:8080
+      GATEWAY_API_URL: http://gateway:8081
+    depends_on: [core, gateway]
+    ports: ["8082:8082"]
+
+  playout:
+    build: ../services/playout
+    environment:
+      CORE_API_URL: http://core:8080
+      GATEWAY_API_URL: http://gateway:8081
+    depends_on: [core, gateway]
+    ports: ["8083:8083"]
+
+  epg:
+    build: ../services/epg
+    environment:
+      CORE_API_URL: http://core:8080
+    depends_on: [core]
+    ports: ["8084:8084"]
+
+  monetization:
+    build: ../services/monetization
+    environment:
+      CORE_API_URL: http://core:8080
+    depends_on: [core]
+    ports: ["8085:8085"]
+
+  analytics:
+    build: ../services/analytics
+    environment:
+      CORE_API_URL: http://core:8080
+    depends_on: [core]
+    ports: ["8086:8086"]
+
+volumes:
+  fad-postgres:
