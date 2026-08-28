@@ -1,0 +1,1 @@
+import {serve} from '@hono/node-server'; import {Hono} from 'hono'; const app=new Hono(); const port=Number(process.env.PORT||8084); app.get('/health',c=>c.json({service:'fad-epg',status:'ok'})); app.get('/api/v1/epg',c=>c.json({items:[]})); serve({fetch:app.fetch,port});
