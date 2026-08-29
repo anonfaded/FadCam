@@ -42,7 +42,7 @@ trap cleanup EXIT INT TERM
 
 require_commands() {
   local command_name
-  for command_name in ffmpeg ffprobe curl awk grep sed; do
+  for command_name in ffmpeg ffprobe curl awk grep sed timeout; do
     command -v "${command_name}" >/dev/null 2>&1 || fail "${command_name} is required."
   done
 }
@@ -68,12 +68,12 @@ media_mtx_running() {
 }
 
 wait_for_tcp() {
-  local host="$1" port="$2" timeout="$3"
+  local host="$1" port="$2" timeout_seconds="$3"
   local attempt
 
-  for ((attempt=1; attempt<=timeout; attempt++)); do
-    # Do not write bytes to RTMP. A /dev/tcp echo probe is itself an RTMP
-    # client and produces misleading "invalid rtmp version" entries in logs.
+  for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
+    # Open and immediately close the socket without writing an RTMP payload.
+    # A /dev/tcp echo probe sends invalid RTMP bytes and pollutes MediaMTX logs.
     if timeout 2 bash -c "exec 3<>/dev/tcp/${host}/${port}" >/dev/null 2>&1; then
       log "PASS: MediaMTX RTMP listener ready after ${attempt}s."
       return 0
@@ -82,7 +82,7 @@ wait_for_tcp() {
     sleep 1
   done
 
-  fail "MediaMTX RTMP listener did not become ready within ${timeout}s."
+  fail "MediaMTX RTMP listener did not become ready within ${timeout_seconds}s."
 }
 
 http_get_hls() {
@@ -99,11 +99,11 @@ playlist_has_media() {
 }
 
 wait_for_rtmp_ingest() {
-  local timeout=20
+  local timeout_seconds=20
   local attempt
   log "Waiting for RTMP ingest..."
 
-  for ((attempt=1; attempt<=timeout; attempt++)); do
+  for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
     assert_publisher_alive
     if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "is publishing to path '${PATH_NAME}'"; then
       log "PASS: RTMP path online and publisher ingest confirmed."
@@ -112,15 +112,15 @@ wait_for_rtmp_ingest() {
     sleep 1
   done
 
-  fail "MediaMTX did not confirm RTMP publisher ingest within ${timeout}s."
+  fail "MediaMTX did not confirm RTMP publisher ingest within ${timeout_seconds}s."
 }
 
 wait_for_hls_playlist() {
-  local timeout=30
+  local timeout_seconds=30
   local attempt
   log "Waiting for HLS playlist..."
 
-  for ((attempt=1; attempt<=timeout; attempt++)); do
+  for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
     assert_publisher_alive
     if http_get_hls 2>/dev/null && grep -q '^#EXTM3U' "${HLS_FILE}"; then
       log "PASS: HLS playlist available after ${attempt}s."
@@ -129,7 +129,7 @@ wait_for_hls_playlist() {
     sleep 1
   done
 
-  fail "HLS playlist was not available within ${timeout}s."
+  fail "HLS playlist was not available within ${timeout_seconds}s."
 }
 
 first_media_uri() {
@@ -158,11 +158,11 @@ fetch_first_media_object() {
 }
 
 wait_for_media_object() {
-  local timeout=20
+  local timeout_seconds=20
   local attempt
   log "Waiting for HLS media object..."
 
-  for ((attempt=1; attempt<=timeout; attempt++)); do
+  for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
     assert_publisher_alive
     if fetch_first_media_object; then
       log "PASS: HLS media object is readable after ${attempt}s."
@@ -175,44 +175,57 @@ wait_for_media_object() {
   fail "HLS playlist exists, but no readable HLS media object was produced."
 }
 
-cookie_header_for_ffprobe() {
+cookie_header_for_tools() {
   awk 'BEGIN{ORS=""} $0 !~ /^#/ && NF>=7 { printf "%s=%s; ", $6, $7 }' "${HLS_COOKIE_JAR}"
 }
 
 verify_codecs_and_decode() {
   local cookie_header
-  cookie_header="$(cookie_header_for_ffprobe)"
-  log "Verifying H.264 + AAC by decoding the live HLS stream with ffprobe..."
+  cookie_header="$(cookie_header_for_tools)"
+  log "Verifying H.264 + AAC by probing and decoding the live HLS stream..."
 
-  local probe_output
-  probe_output="$(mktemp)"
-  if ! ffprobe -v error \
-      -rw_timeout 5000000 \
+  # Do not depend on ffprobe's column ordering. The previous gate requested
+  # multiple fields and then assumed codec_type,codec_name ordering, but ffprobe
+  # emitted codec_name,profile,codec_type,... on Ubuntu's FFmpeg 6.1. That made
+  # a known-good stream (aac,LC,audio / h264,Constrained Baseline,video,...) fail.
+  local video_codec audio_codec
+  video_codec="$(ffprobe -v error -rw_timeout 5000000 \
+    -headers "Cookie: ${cookie_header}\r\n" \
+    -select_streams v:0 -show_entries stream=codec_name \
+    -of default=nw=1:nk=1 "${HLS_URL}" 2>"${HLS_FILE}.video.err" | head -n 1 || true)"
+  audio_codec="$(ffprobe -v error -rw_timeout 5000000 \
+    -headers "Cookie: ${cookie_header}\r\n" \
+    -select_streams a:0 -show_entries stream=codec_name \
+    -of default=nw=1:nk=1 "${HLS_URL}" 2>"${HLS_FILE}.audio.err" | head -n 1 || true)"
+
+  [[ "${video_codec}" == "h264" ]] || {
+    log "ffprobe video codec: ${video_codec:-<none>}"
+    cat "${HLS_FILE}.video.err" >&2 2>/dev/null || true
+    fail "HLS video codec is not H.264."
+  }
+  [[ "${audio_codec}" == "aac" ]] || {
+    log "ffprobe audio codec: ${audio_codec:-<none>}"
+    cat "${HLS_FILE}.audio.err" >&2 2>/dev/null || true
+    fail "HLS audio codec is not AAC."
+  }
+
+  log "PASS: H.264 track identified."
+  log "PASS: AAC track identified."
+
+  # ffprobe establishes stream metadata; ffmpeg -f null establishes that the
+  # actual HLS media can be decoded rather than merely described successfully.
+  local decode_err="${HLS_FILE}.decode.err"
+  if ! timeout 12 ffmpeg -hide_banner -loglevel error \
       -headers "Cookie: ${cookie_header}\r\n" \
-      -read_intervals '%+3' \
-      -show_entries stream=codec_type,codec_name,width,height,profile \
-      -of csv=p=0 \
-      "${HLS_URL}" >"${probe_output}" 2>"${probe_output}.err"; then
-    log "ffprobe stderr:"
-    cat "${probe_output}.err" >&2 || true
-    rm -f "${probe_output}" "${probe_output}.err"
-    fail "ffprobe could not read/decode the HLS stream."
+      -i "${HLS_URL}" -t 3 -map 0:v:0 -map 0:a:0 -f null - \
+      >/dev/null 2>"${decode_err}"; then
+    cat "${decode_err}" >&2 || true
+    rm -f "${HLS_FILE}.video.err" "${HLS_FILE}.audio.err" "${decode_err}"
+    fail "HLS media could not be decoded as H.264 video + AAC audio."
   fi
 
-  cat "${probe_output}"
-  grep -Eq '^video,h264,' "${probe_output}" || {
-    cat "${probe_output}.err" >&2 2>/dev/null || true
-    rm -f "${probe_output}" "${probe_output}.err"
-    fail "Decoded HLS stream does not contain H.264 video."
-  }
-  grep -Eq '^audio,aac,' "${probe_output}" || {
-    rm -f "${probe_output}" "${probe_output}.err"
-    fail "Decoded HLS stream does not contain AAC audio."
-  }
-
-  log "PASS: H.264 video decoded."
-  log "PASS: AAC audio decoded."
-  rm -f "${probe_output}" "${probe_output}.err"
+  log "PASS: HLS media decoded successfully."
+  rm -f "${HLS_FILE}.video.err" "${HLS_FILE}.audio.err" "${decode_err}"
 }
 
 verify_sustained_stream() {
@@ -232,7 +245,7 @@ verify_sustained_stream() {
 }
 
 verify_cleanup() {
-  local timeout=12
+  local timeout_seconds=12
   local attempt
   log "Stopping publisher deliberately..."
 
@@ -249,11 +262,7 @@ verify_cleanup() {
   log "PASS: publisher stopped deliberately (exit ${rc})."
 
   log "Waiting for MediaMTX to remove the HLS muxer..."
-  for ((attempt=1; attempt<=timeout; attempt++)); do
-    if ! "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "muxer ${PATH_NAME}"; then
-      log "PASS: MediaMTX muxer cleanup confirmed."
-      return 0
-    fi
+  for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
     if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "muxer ${PATH_NAME}] destroyed"; then
       log "PASS: MediaMTX muxer cleanup confirmed."
       return 0
@@ -261,7 +270,7 @@ verify_cleanup() {
     sleep 1
   done
 
-  fail "MediaMTX did not report HLS muxer cleanup within ${timeout}s."
+  fail "MediaMTX did not report HLS muxer cleanup within ${timeout_seconds}s."
 }
 
 require_commands
