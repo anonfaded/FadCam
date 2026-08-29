@@ -1,0 +1,36 @@
+logLevel: info
+authMethod: internal
+api: true
+apiAddress: :9997
+rtmp: true
+rtmpAddress: :1935
+hls: false
+
+authInternalUsers:
+  - user: publisher
+    pass: publisher-pass
+    ips:
+      - 0.0.0.0/0
+      - ::/0
+    permissions:
+      - action: publish
+
+  - user: gateway-dev
+    pass: gateway-dev-password
+    ips:
+      - 0.0.0.0/0
+      - ::/0
+    permissions:
+      - action: api
+
+pathDefaults:
+  record: true
+  recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+  recordFormat: fmp4
+  recordPartDuration: 1s
+  recordSegmentDuration: 10s
+  recordDeleteAfter: 1h
+
+paths:
+  all_others:
+    source: publisher
