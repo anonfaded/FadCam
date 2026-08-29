@@ -62,3 +62,23 @@ jobs:
 
       - name: Validate Compose configuration
         run: docker compose --env-file server/.env.example -f server/docker-compose.yml config --quiet
+
+  rtmp-e2e:
+    name: RTMP -> MediaMTX -> HLS end-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout streaming test harness
+        uses: actions/checkout@v5
+        with:
+          submodules: false
+          fetch-depth: 1
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Run deterministic RTMP -> MediaMTX -> HLS smoke test
+        run: |
+          chmod +x server/tests/rtmp-e2e-smoke.sh
+          ./server/tests/rtmp-e2e-smoke.sh
