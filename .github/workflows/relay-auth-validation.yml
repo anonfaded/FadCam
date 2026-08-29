@@ -7,9 +7,6 @@ on:
     branches: [master]
   workflow_dispatch:
 
-authorizations:
-  contents: read
-
 permissions:
   contents: read
 
