@@ -1,0 +1,18 @@
+services:
+  ersatztv:
+    image: ghcr.io/ersatztv/legacy:latest
+    container_name: fadcam-ersatztv
+    environment:
+      TZ: ${TZ:-UTC}
+    ports:
+      - "8409:8409"
+    volumes:
+      - ./data/ersatztv/config:/config
+      - ./data/media:/media:ro
+    tmpfs:
+      - /transcode
+    restart: unless-stopped
+
+  # MediaMTX remains the streaming transport layer. Keep it in the existing
+  # FadCam deployment and connect the generated TV channels to it using the
+  # supported IPTV/streaming URLs.
