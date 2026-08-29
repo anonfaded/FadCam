@@ -127,9 +127,6 @@ resolve_hls_uri() {
   esac
 }
 
-# MediaMTX emits child playlists both as bare URI lines and as URI attributes
-# on EXT-X-MEDIA/EXT-X-STREAM-INF records. Extract the attribute value instead
-# of passing the whole EXT-X-MEDIA record to curl.
 first_child_playlist_uri() {
   awk '
     /\.m3u8/ {
@@ -246,12 +243,25 @@ stop_publisher_and_verify_cleanup() {
   log "Stopping deterministic publisher deliberately..."
   publisher_alive || fail "Publisher was not alive before deliberate shutdown."
   kill -TERM "${PUBLISHER_PID}" >/dev/null 2>&1 || true
+
+  # Do not treat FFmpeg's signal-derived wait status as a test failure. The
+  # invariant is process termination plus MediaMTX cleanup. Polling first also
+  # avoids relying on runner-specific wait behavior (143/255/-1 have all been
+  # observed for deliberately terminated publishers).
+  local timeout_seconds=12 attempt
+  for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
+    if ! publisher_alive; then
+      break
+    fi
+    sleep 1
+  done
+  publisher_alive && fail "Deterministic publisher did not terminate within ${timeout_seconds}s."
+
   local rc=0
   wait "${PUBLISHER_PID}" || rc=$?
   PUBLISHER_PID=""
   log "PASS: Publisher stopped deliberately (wait status ${rc})."
 
-  local timeout_seconds=12 attempt
   log "Waiting for MediaMTX HLS muxer cleanup..."
   for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
     if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "muxer ${PATH_NAME}] destroyed"; then
