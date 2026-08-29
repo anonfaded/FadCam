@@ -1,4 +1,4 @@
-FROM debian:trixie-slim
+FROM debian:trixie-20260824-slim
 
 ARG FFPLAYOUT_VERSION=2.2.1
 ARG TARGETARCH
