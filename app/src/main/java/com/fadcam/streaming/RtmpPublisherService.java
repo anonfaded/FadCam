@@ -241,7 +241,6 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
 
     @Override public IBinder onBind(Intent intent) { return null; }
 
-    public void onConnecting() { updateNotification("Connecting to live stream…"); }
     @Override public void onConnected() { reconnectPolicy.reset(); cancelReconnect(); updateNotification("Live — publishing camera + audio"); }
     @Override public void onBitrateChanged(long bitrate) { updateNotification("Live — " + Math.round(bitrate / 1000f) + " kbps"); }
     @Override public void onFailed(String reason) { scheduleReconnect(); }
