@@ -7,15 +7,13 @@ on:
     branches: [master]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   android:
     name: Android debug APK
     runs-on: ubuntu-latest
     steps:
-      # Server integrations are deployment-time dependencies and must not block
-      # the Android checkout/build.
       - name: Checkout Android source
         uses: actions/checkout@v5
         with:
@@ -165,6 +163,74 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  publish-latest-apks:
+    name: Publish public latest APKs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [android, android-release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download debug APK artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: fadcam-default-debug-apk
+          path: public-apks/debug
+
+      - name: Download release APK artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: fadcam-default-release-apk
+          path: public-apks/release
+
+      - name: Prepare public APK filenames
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          debug=(public-apks/debug/*.apk)
+          release=(public-apks/release/*.apk)
+          test "${#debug[@]}" -gt 0
+          test "${#release[@]}" -gt 0
+          cp "${debug[0]}" public-apks/FadCam-debug.apk
+          cp "${release[0]}" public-apks/FadCam-release.apk
+          sha256sum public-apks/FadCam-debug.apk public-apks/FadCam-release.apk | tee public-apks/SHA256SUMS.txt
+
+      - name: Create or update public latest CI release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gh release view latest-ci >/dev/null 2>&1; then
+            gh release create latest-ci \
+              --target "$GITHUB_SHA" \
+              --title "FadCam Latest CI Build" \
+              --prerelease \
+              --notes "Automatically published from the latest successful master validation run. Commit: $GITHUB_SHA"
+          else
+            gh release edit latest-ci \
+              --title "FadCam Latest CI Build" \
+              --notes "Automatically updated from the latest successful master validation run. Commit: $GITHUB_SHA" \
+              --prerelease
+          fi
+          gh release upload latest-ci \
+            public-apks/FadCam-debug.apk \
+            public-apks/FadCam-release.apk \
+            public-apks/SHA256SUMS.txt \
+            --clobber
+
+      - name: Verify public release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh release view latest-ci --json assets --jq '.assets[].name' | grep -Fx 'FadCam-debug.apk'
+          gh release view latest-ci --json assets --jq '.assets[].name' | grep -Fx 'FadCam-release.apk'
+          gh release view latest-ci --json assets --jq '.assets[].name' | grep -Fx 'SHA256SUMS.txt'
+
   integration-tests:
     name: Existing JVM integration/test suite
     runs-on: ubuntu-latest
@@ -211,8 +277,6 @@ jobs:
     name: Validate server Compose configuration
     runs-on: ubuntu-latest
     steps:
-      # Compose validation only needs the tracked deployment manifests. It does
-      # not need to materialize upstream source repositories.
       - name: Checkout deployment manifests
         uses: actions/checkout@v5
         with:
