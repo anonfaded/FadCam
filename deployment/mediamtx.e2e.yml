@@ -9,19 +9,22 @@ hls: false
 authInternalUsers:
   - user: publisher
     pass: publisher-pass
-    ips: []
+    ips:
+      - 0.0.0.0/0
+      - ::/0
     permissions:
       - action: publish
-        path:
-  # E2E Control API is intentionally open to any HTTP Basic username/password
-  # on the isolated CI network. The gateway/test still send their configured
-  # credentials, while MediaMTX does not depend on a brittle named API user.
-  - user: any
-    pass:
-    ips: []
+
+  # The E2E gateway and test use these credentials for the Control API.
+  # Keep this as a real named user: an `any` user with an empty password does
+  # not authenticate requests that send api-e2e/api-e2e-pass.
+  - user: api-e2e
+    pass: api-e2e-pass
+    ips:
+      - 0.0.0.0/0
+      - ::/0
     permissions:
       - action: api
-        path:
 
 # MediaMTX 1.12+ requires an explicit path rule for dynamically-created
 # publisher paths. Keep recording defaults here and allow any stream name.
