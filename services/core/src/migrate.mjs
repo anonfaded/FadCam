@@ -4,11 +4,15 @@ import crypto from 'node:crypto'
 import pg from 'pg'
 
 const { Client } = pg
+const MIGRATION_LOCK_KEY = 874321
 
 export async function migrate(connectionString, directory = path.resolve(process.cwd(), 'db')) {
   const client = new Client({ connectionString })
   await client.connect()
+  let locked = false
   try {
+    await client.query('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK_KEY])
+    locked = true
     await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
       version TEXT PRIMARY KEY,
       checksum TEXT NOT NULL,
@@ -18,6 +22,13 @@ export async function migrate(connectionString, directory = path.resolve(process
     const files = (await fs.readdir(directory))
       .filter(name => /^\d+_.+\.sql$/.test(name))
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+
+    const versions = new Set()
+    for (const file of files) {
+      const version = file.split('_', 1)[0]
+      if (versions.has(version)) throw new Error(`duplicate migration version ${version}`)
+      versions.add(version)
+    }
 
     for (const file of files) {
       const version = file.split('_', 1)[0]
@@ -40,6 +51,9 @@ export async function migrate(connectionString, directory = path.resolve(process
       }
     }
   } finally {
+    if (locked) {
+      try { await client.query('SELECT pg_advisory_unlock($1)', [MIGRATION_LOCK_KEY]) } catch {}
+    }
     await client.end()
   }
 }
