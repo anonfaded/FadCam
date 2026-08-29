@@ -26,6 +26,8 @@ public final class RtmpCredentialVault {
     private static final String PREFIX = "credential_";
     private static final String IV_SUFFIX = "_iv";
     private static final String VALUE_SUFFIX = "_value";
+    private static final String DESTINATION_SUFFIX = "_destination";
+    private static final String ACTIVE_ALIAS = "active_alias";
     private static final int GCM_TAG_BITS = 128;
 
     private final SharedPreferences preferences;
@@ -48,12 +50,13 @@ public final class RtmpCredentialVault {
             byte[] plaintext = (serverUrl.trim() + "\n" + streamKey.trim()).getBytes(StandardCharsets.UTF_8);
             byte[] ciphertext = cipher.doFinal(plaintext);
             String prefix = PREFIX + normalizedAlias;
-            boolean committed = preferences.edit()
+            if (!preferences.edit()
                     .putString(prefix + VALUE_SUFFIX, Base64.encodeToString(ciphertext, Base64.NO_WRAP))
                     .putString(prefix + IV_SUFFIX, Base64.encodeToString(iv, Base64.NO_WRAP))
-                    .putString(prefix + "destination", destination.name())
-                    .commit();
-            if (!committed) throw new IllegalStateException("Unable to persist RTMP credentials");
+                    .putString(prefix + DESTINATION_SUFFIX, destination.name())
+                    .commit()) {
+                throw new IllegalStateException("Unable to persist RTMP credentials");
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Unable to encrypt RTMP credentials", e);
         }
@@ -64,7 +67,7 @@ public final class RtmpCredentialVault {
         String prefix = PREFIX + normalizeAlias(alias);
         String value = preferences.getString(prefix + VALUE_SUFFIX, null);
         String ivEncoded = preferences.getString(prefix + IV_SUFFIX, null);
-        String destinationName = preferences.getString(prefix + "destination", null);
+        String destinationName = preferences.getString(prefix + DESTINATION_SUFFIX, null);
         if (value == null || ivEncoded == null || destinationName == null) return null;
         try {
             RtmpDestination destination = RtmpDestination.valueOf(destinationName);
@@ -83,12 +86,21 @@ public final class RtmpCredentialVault {
     public void remove(@NonNull String alias) {
         String prefix = PREFIX + normalizeAlias(alias);
         preferences.edit().remove(prefix + VALUE_SUFFIX).remove(prefix + IV_SUFFIX)
-                .remove(prefix + "destination").apply();
+                .remove(prefix + DESTINATION_SUFFIX).apply();
+        if (alias.trim().equals(getActiveAlias())) clearActiveAlias();
     }
 
     public boolean contains(@NonNull String alias) {
         return preferences.contains(PREFIX + normalizeAlias(alias) + VALUE_SUFFIX);
     }
+
+    /** Stores only the non-secret profile name used to recover an active session after process restart. */
+    public void setActiveAlias(@NonNull String alias) {
+        preferences.edit().putString(ACTIVE_ALIAS, normalizeAlias(alias)).apply();
+    }
+
+    @Nullable public String getActiveAlias() { return preferences.getString(ACTIVE_ALIAS, null); }
+    public void clearActiveAlias() { preferences.edit().remove(ACTIVE_ALIAS).apply(); }
 
     private static String normalizeAlias(String alias) {
         String value = alias.trim();
@@ -99,9 +111,7 @@ public final class RtmpCredentialVault {
     private static SecretKey getOrCreateKey() throws Exception {
         KeyStore store = KeyStore.getInstance(KEYSTORE);
         store.load(null);
-        if (store.containsAlias(KEY_ALIAS)) {
-            return ((KeyStore.SecretKeyEntry) store.getEntry(KEY_ALIAS, null)).getSecretKey();
-        }
+        if (store.containsAlias(KEY_ALIAS)) return ((KeyStore.SecretKeyEntry) store.getEntry(KEY_ALIAS, null)).getSecretKey();
         KeyGenerator generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE);
         generator.init(new KeyGenParameterSpec.Builder(KEY_ALIAS,
                 KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
