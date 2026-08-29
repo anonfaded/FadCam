@@ -87,7 +87,7 @@ public final class RtmpPublisher implements ConnectChecker {
         } catch (IllegalArgumentException error) {
             prepared = false;
             activeProfile = null;
-            notifyFailure(error.getMessage() == null ? "Invalid AAC configuration" : error.getMessage());
+            notifyFailure("Invalid AAC configuration");
             return false;
         }
     }
@@ -112,7 +112,7 @@ public final class RtmpPublisher implements ConnectChecker {
         } catch (IllegalArgumentException error) {
             prepared = false;
             activeProfile = null;
-            notifyFailure(error.getMessage() == null ? "Invalid encoder configuration" : error.getMessage());
+            notifyFailure("Invalid encoder configuration");
             return false;
         }
     }
@@ -123,17 +123,13 @@ public final class RtmpPublisher implements ConnectChecker {
         return activeProfile;
     }
 
+    /** Constructs the credential-bearing endpoint only at the RTMP client boundary. */
     public synchronized void start(@NonNull RtmpDestination destination,
                                     @NonNull String serverUrl,
                                     @NonNull String streamKey) {
-        start(destination.buildEndpoint(serverUrl, streamKey));
-    }
-
-    /** Start publishing to an endpoint held only in process memory. */
-    public synchronized void start(@NonNull String endpoint) {
         if (!prepared && !prepare()) throw new IllegalStateException("RTMP encoder is not prepared");
         if (stream.isStreaming()) return;
-        stream.startStream(endpoint);
+        stream.startStream(destination.buildEndpoint(serverUrl, streamKey));
     }
 
     public synchronized void stop() {
@@ -150,13 +146,12 @@ public final class RtmpPublisher implements ConnectChecker {
         activeProfile = null;
     }
 
-    private void notifyFailure(@NonNull String reason) {
-        if (listener != null) listener.onFailed(reason);
+    private void notifyFailure(@NonNull String ignoredReason) {
+        if (listener != null) listener.onFailed("RTMP publication failed");
     }
 
     @Override public void onConnectionStarted(@NonNull String url) {
         // Deliberately do not forward the endpoint or a connection-start callback.
-        // The endpoint is credential-bearing and must remain inside this process.
     }
 
     @Override public void onConnectionSuccess() {
@@ -168,7 +163,8 @@ public final class RtmpPublisher implements ConnectChecker {
     }
 
     @Override public void onConnectionFailed(@NonNull String reason) {
-        if (listener != null) listener.onFailed(reason);
+        // Library failure strings can contain URLs or transport details. Never forward them.
+        notifyFailure("RTMP connection failed");
     }
 
     @Override public void onDisconnect() {
