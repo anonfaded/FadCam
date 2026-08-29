@@ -14,7 +14,6 @@ import com.pedro.library.rtmp.RtmpStream;
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 public final class RtmpPublisher implements ConnectChecker {
     public interface Listener {
-        void onConnecting();
         void onConnected();
         void onBitrateChanged(long bitrate);
         void onFailed(@NonNull String reason);
@@ -134,7 +133,6 @@ public final class RtmpPublisher implements ConnectChecker {
     public synchronized void start(@NonNull String endpoint) {
         if (!prepared && !prepare()) throw new IllegalStateException("RTMP encoder is not prepared");
         if (stream.isStreaming()) return;
-        if (listener != null) listener.onConnecting();
         stream.startStream(endpoint);
     }
 
@@ -157,7 +155,8 @@ public final class RtmpPublisher implements ConnectChecker {
     }
 
     @Override public void onConnectionStarted(@NonNull String url) {
-        if (listener != null) listener.onConnecting();
+        // Deliberately do not forward the endpoint or a connection-start callback.
+        // The endpoint is credential-bearing and must remain inside this process.
     }
 
     @Override public void onConnectionSuccess() {
