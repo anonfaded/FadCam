@@ -1,0 +1,47 @@
+name: FadCam Android + Platform Validation
+
+on:
+  push:
+    branches: [master, feat/platform-services-android-safe]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with pinned submodules
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Assemble default debug APK
+        run: ./gradlew assembleDefaultDebug --stacktrace --no-daemon
+
+  server-config:
+    name: Validate server Compose configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with pinned submodules
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Validate Compose configuration
+        run: docker compose --env-file server/.env.example -f server/docker-compose.yml config --quiet

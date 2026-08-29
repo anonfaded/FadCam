@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  # MediaMTX exposes Prometheus metrics on its metrics listener when enabled.
+  # If MediaMTX is deployed outside this Compose network, replace the target
+  # with its reachable hostname/IP and metrics port.
+  - job_name: mediamtx
+    static_configs:
+      - targets: ["mediamtx:9998"]
+
+  - job_name: keycloak
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["keycloak:8080"]

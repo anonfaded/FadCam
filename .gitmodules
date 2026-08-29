@@ -4,3 +4,21 @@
 [submodule "server/ffplayout"]
 	path = server/ffplayout
 	url = https://github.com/ffplayout/ffplayout.git
+[submodule "third_party/media3-patched"]
+	path = third_party/media3-patched
+	url = https://github.com/anonfaded/media3-patched.git
+[submodule "server/upstream/prometheus"]
+	path = server/upstream/prometheus
+	url = https://github.com/prometheus/prometheus.git
+[submodule "server/upstream/grafana"]
+	path = server/upstream/grafana
+	url = https://github.com/grafana/grafana.git
+[submodule "server/upstream/minio"]
+	path = server/upstream/minio
+	url = https://github.com/minio/minio.git
+[submodule "server/upstream/keycloak"]
+	path = server/upstream/keycloak
+	url = https://github.com/keycloak/keycloak.git
+[submodule "server/upstream/jellyfin"]
+	path = server/upstream/jellyfin
+	url = https://github.com/jellyfin/jellyfin.git
