@@ -42,7 +42,7 @@ services:
       -re -f lavfi -i testsrc=size=640x360:rate=10
       -f lavfi -i sine=frequency=1000:sample_rate=48000
       -t 60 -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p
-      -c:a aac -f flv rtmp://publisher:publisher-pass@mediamtx:1935/e2e-test
+      -c:a aac -f flv "rtmp://mediamtx:1935/e2e-test?user=publisher&pass=publisher-pass"
 
   recording-inspector:
     image: alpine:3.22
