@@ -9,13 +9,14 @@ on:
 permissions:
   contents: read
 
+env:
+  MEDIA3_PATCHED_SHA: 6d498560637d273dcb754727c9dcdce97548e621
+
 jobs:
   android:
-    name: Android debug APK
+    name: Android debug + release APKs
     runs-on: ubuntu-latest
     steps:
-      # Server integrations are deployment-time dependencies and must not block
-      # the Android checkout/build.
       - name: Checkout Android source
         uses: actions/checkout@v5
         with:
@@ -29,15 +30,18 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Prepare patched Media3
+      - name: Prepare pinned patched Media3
         shell: bash
         run: |
           set -euo pipefail
           rm -rf /tmp/media3-patched
-          git clone --depth 1 --branch release https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
-          test -d /tmp/media3-patched/libraries/muxer
-          test -d /tmp/media3-patched/libraries/common
-          test -d /tmp/media3-patched/libraries/container
+          git clone https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          cd /tmp/media3-patched
+          git checkout --detach "${MEDIA3_PATCHED_SHA}"
+          test "$(git rev-parse HEAD)" = "${MEDIA3_PATCHED_SHA}"
+          test -d libraries/muxer
+          test -d libraries/common
+          test -d libraries/container
 
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
@@ -48,12 +52,13 @@ jobs:
       - name: Assemble default debug APK
         run: ./gradlew assembleDefaultDebug --stacktrace --no-daemon
 
+      - name: Assemble default release APK
+        run: ./gradlew assembleDefaultRelease --stacktrace --no-daemon
+
   server-config:
     name: Validate server Compose configuration
     runs-on: ubuntu-latest
     steps:
-      # Compose validation only needs the tracked deployment manifests. It does
-      # not need to materialize upstream source repositories.
       - name: Checkout deployment manifests
         uses: actions/checkout@v5
         with:
