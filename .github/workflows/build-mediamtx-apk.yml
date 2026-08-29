@@ -25,26 +25,23 @@ jobs:
           go-version: '1.26.x'
           cache: false
 
-      - name: Build MediaMTX for Android ABIs
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build MediaMTX for Android arm64
         shell: bash
         run: |
           set -euo pipefail
           rm -rf .ci/mediamtx
           git clone --depth 1 https://github.com/bluenviron/mediamtx.git .ci/mediamtx
-          mkdir -p app/src/main/jniLibs/arm64-v8a app/src/main/jniLibs/armeabi-v7a
+          mkdir -p app/src/main/jniLibs/arm64-v8a
           pushd .ci/mediamtx
-
-          # MediaMTX requires generated embedded assets before compilation.
           go generate ./...
-
-          # anet uses go:linkname for Android network compatibility. Go 1.23+
-          # requires this explicit opt-out of linkname validation.
-          ANDROID_LDFLAGS='-s -w -checklinkname=0'
-
-          CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags="$ANDROID_LDFLAGS" -o "$GITHUB_WORKSPACE/app/src/main/jniLibs/arm64-v8a/libmediamtx.so" .
-          CGO_ENABLED=0 GOOS=android GOARCH=arm GOARM=7 go build -trimpath -ldflags="$ANDROID_LDFLAGS" -o "$GITHUB_WORKSPACE/app/src/main/jniLibs/armeabi-v7a/libmediamtx.so" .
+          export CGO_ENABLED=1
+          export CC="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang"
+          GOOS=android GOARCH=arm64 go build -trimpath -ldflags='-s -w -checklinkname=0' -o "$GITHUB_WORKSPACE/app/src/main/jniLibs/arm64-v8a/libmediamtx.so" .
           popd
-          chmod 755 app/src/main/jniLibs/arm64-v8a/libmediamtx.so app/src/main/jniLibs/armeabi-v7a/libmediamtx.so
+          chmod 755 app/src/main/jniLibs/arm64-v8a/libmediamtx.so
 
       - name: Build debug APK
         run: ./gradlew assembleDefaultDebug --stacktrace
