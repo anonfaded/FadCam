@@ -14,10 +14,6 @@ authInternalUsers:
         path:
       - action: read
         path:
-  - user: any
-    pass:
-    ips: []
-    permissions:
       - action: api
         path:
 
