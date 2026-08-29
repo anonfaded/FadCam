@@ -40,8 +40,12 @@ jobs:
           grep -F 'agp = "8.13.1"' gradle/libs.versions.toml
           grep -F 'compileSdk = 36' app/build.gradle.kts
           grep -F 'targetSdk = 36' app/build.gradle.kts
-          if grep -RIn --exclude-dir=.git --exclude='baseline-recovery.yml' 'FADCAM_RELEASE_KEYSTORE_BASE64\|RELEASE_KEYSTORE\|KEYSTORE_BASE64' .; then
-            echo 'ERROR: permanent/encoded release signing configuration detected in source tree'
+          # Scan tracked project files only. Do not scan this workflow, whose guardrail
+          # must necessarily contain the forbidden identifier patterns.
+          forbidden_files=$(git ls-files -z | grep -z -Ev '^\.github/workflows/baseline-recovery\.yml$' | xargs -0 grep -IlE 'FADCAM_RELEASE_KEYSTORE_BASE64|RELEASE_KEYSTORE|KEYSTORE_BASE64' || true)
+          if [ -n "$forbidden_files" ]; then
+            echo 'ERROR: permanent/encoded release signing configuration detected in source tree:'
+            printf '%s\n' "$forbidden_files"
             exit 1
           fi
           if git ls-files --error-unmatch local.properties >/dev/null 2>&1; then
