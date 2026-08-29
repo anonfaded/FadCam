@@ -5,6 +5,9 @@ COMPOSE=(docker compose -f deployment/docker-compose.e2e.yml)
 STREAM=e2e-test
 BUCKET=fad-e2e
 OBJECT=recordings/${STREAM}/processed.mp4
+API_USER=api-e2e
+API_PASSWORD=api-e2e-pass
+API_URL=http://localhost:9997
 
 collect_logs() {
   echo '--- container status ---'
@@ -33,7 +36,7 @@ trap cleanup EXIT
 ready=0
 for i in {1..60}; do
   if curl -fsS http://localhost:8081/health >/dev/null \
-    && curl -fsS -u 'api:api-pass' http://localhost:9997/v3/paths/list >/dev/null \
+    && curl -fsS -u "${API_USER}:${API_PASSWORD}" "${API_URL}/v3/paths/list" >/dev/null \
     && curl -fsS http://localhost:9000/minio/health/live >/dev/null; then
     ready=1
     break
@@ -43,6 +46,7 @@ done
 
 if [[ $ready != 1 ]]; then
   echo 'FAIL: media stack did not become ready'
+  echo 'FAIL: MediaMTX API authentication or service health did not succeed'
   collect_logs
   exit 1
 fi
@@ -54,7 +58,7 @@ fi
 # contract and prevents a transient GET 404 from masking a healthy stream.
 stream_ready=0
 for i in {1..45}; do
-  if curl -fsS -u 'api:api-pass' http://localhost:9997/v3/paths/list \
+  if curl -fsS -u "${API_USER}:${API_PASSWORD}" "${API_URL}/v3/paths/list" \
     | node -e 'let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s); process.exit(j.items?.some(x=>x?.name==="e2e-test")?0:1)})'; then
     stream_ready=1
     break
