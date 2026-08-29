@@ -41,8 +41,6 @@ public final class RtmpPublisherLauncher {
     }
 
     public static void stop(@NonNull Context context) {
-        Intent intent = new Intent(context, RtmpPublisherService.class)
-                .setAction(RtmpPublisherService.ACTION_STOP);
-        context.startService(intent);
+        context.stopService(new Intent(context, RtmpPublisherService.class));
     }
 }
