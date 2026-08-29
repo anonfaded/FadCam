@@ -1,17 +1,25 @@
 import crypto from 'node:crypto'
 
-const devices = new Map()
+const TOKEN_BYTES = 32
 
-export function registerDevice({ deviceId, name, userId }) {
-  const token = crypto.randomBytes(32).toString('hex')
-  const device = { deviceId, name: name ?? deviceId, userId: userId ?? null, tokenHash: hash(token), createdAt: new Date().toISOString() }
-  devices.set(deviceId, device)
-  return { deviceId, token }
+export function generateToken() {
+  return crypto.randomBytes(TOKEN_BYTES).toString('base64url')
 }
 
-export function authenticateDevice(deviceId, token) {
-  const device = devices.get(deviceId)
-  return Boolean(device && token && hash(token) === device.tokenHash)
+export function hashToken(token) {
+  if (typeof token !== 'string' || token.length < 20) return null
+  return crypto.createHash('sha256').update(token, 'utf8').digest('hex')
 }
 
-function hash(value) { return crypto.createHash('sha256').update(value).digest('hex') }
+export function safeEqualHex(left, right) {
+  if (typeof left !== 'string' || typeof right !== 'string') return false
+  const a = Buffer.from(left, 'hex')
+  const b = Buffer.from(right, 'hex')
+  return a.length === b.length && a.length > 0 && crypto.timingSafeEqual(a, b)
+}
+
+export function tokenFromAuthorization(header) {
+  if (typeof header !== 'string') return null
+  const match = header.match(/^Bearer\s+(.+)$/i)
+  return match?.[1] ?? null
+}
