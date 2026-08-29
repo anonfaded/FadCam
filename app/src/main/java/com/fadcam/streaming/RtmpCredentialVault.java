@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
+import android.util.Base64;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -11,17 +12,13 @@ import androidx.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.SecureRandom;
-import java.util.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
-/**
- * Small Android Keystore-backed vault for RTMP destination secrets.
- * Only ciphertext, IVs and non-secret destination metadata are persisted.
- */
+/** Android Keystore-backed vault for RTMP destination secrets. */
 public final class RtmpCredentialVault {
     private static final String PREFS = "fadcam_rtmp_credentials_v1";
     private static final String KEYSTORE = "AndroidKeyStore";
@@ -42,7 +39,6 @@ public final class RtmpCredentialVault {
         String normalizedAlias = normalizeAlias(alias);
         if (serverUrl.trim().isEmpty()) throw new IllegalArgumentException("RTMP server URL is required");
         if (streamKey.trim().isEmpty()) throw new IllegalArgumentException("RTMP stream key is required");
-        // Validate protocol without ever persisting the plaintext endpoint.
         destination.buildEndpoint(serverUrl, streamKey);
         try {
             byte[] iv = new byte[12];
@@ -53,8 +49,8 @@ public final class RtmpCredentialVault {
             byte[] ciphertext = cipher.doFinal(plaintext);
             String prefix = PREFIX + normalizedAlias;
             boolean committed = preferences.edit()
-                    .putString(prefix + VALUE_SUFFIX, Base64.getEncoder().encodeToString(ciphertext))
-                    .putString(prefix + IV_SUFFIX, Base64.getEncoder().encodeToString(iv))
+                    .putString(prefix + VALUE_SUFFIX, Base64.encodeToString(ciphertext, Base64.NO_WRAP))
+                    .putString(prefix + IV_SUFFIX, Base64.encodeToString(iv, Base64.NO_WRAP))
                     .putString(prefix + "destination", destination.name())
                     .commit();
             if (!committed) throw new IllegalStateException("Unable to persist RTMP credentials");
@@ -72,8 +68,8 @@ public final class RtmpCredentialVault {
         if (value == null || ivEncoded == null || destinationName == null) return null;
         try {
             RtmpDestination destination = RtmpDestination.valueOf(destinationName);
-            byte[] iv = Base64.getDecoder().decode(ivEncoded);
-            byte[] ciphertext = Base64.getDecoder().decode(value);
+            byte[] iv = Base64.decode(ivEncoded, Base64.DEFAULT);
+            byte[] ciphertext = Base64.decode(value, Base64.DEFAULT);
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), new GCMParameterSpec(GCM_TAG_BITS, iv));
             String[] parts = new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8).split("\\n", 2);
@@ -103,7 +99,9 @@ public final class RtmpCredentialVault {
     private static SecretKey getOrCreateKey() throws Exception {
         KeyStore store = KeyStore.getInstance(KEYSTORE);
         store.load(null);
-        if (store.containsAlias(KEY_ALIAS)) return ((KeyStore.SecretKeyEntry) store.getEntry(KEY_ALIAS, null)).getSecretKey();
+        if (store.containsAlias(KEY_ALIAS)) {
+            return ((KeyStore.SecretKeyEntry) store.getEntry(KEY_ALIAS, null)).getSecretKey();
+        }
         KeyGenerator generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE);
         generator.init(new KeyGenParameterSpec.Builder(KEY_ALIAS,
                 KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
@@ -118,13 +116,11 @@ public final class RtmpCredentialVault {
         private final RtmpDestination destination;
         private final String serverUrl;
         private final String streamKey;
-
         private RtmpCredential(RtmpDestination destination, String serverUrl, String streamKey) {
             this.destination = destination;
             this.serverUrl = serverUrl;
             this.streamKey = streamKey;
         }
-
         @NonNull public RtmpDestination getDestination() { return destination; }
         @NonNull public String getServerUrl() { return serverUrl; }
         @NonNull public String getStreamKey() { return streamKey; }
