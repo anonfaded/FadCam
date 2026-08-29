@@ -31,6 +31,24 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Verify baseline build contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(java -version 2>&1 | sed -n 's/.*version \"\([0-9]*\).*/\1/p' | head -1)" = "17"
+          grep -F 'distributionUrl=https\\://services.gradle.org/distributions/gradle-8.13-bin.zip' gradle/wrapper/gradle-wrapper.properties
+          grep -F 'agp = "8.13.1"' gradle/libs.versions.toml
+          grep -F 'compileSdk = 36' app/build.gradle.kts
+          grep -F 'targetSdk = 36' app/build.gradle.kts
+          if grep -RIn --exclude-dir=.git 'FADCAM_RELEASE_KEYSTORE_BASE64\|RELEASE_KEYSTORE\|KEYSTORE_BASE64' .; then
+            echo 'ERROR: permanent/encoded release signing configuration detected in source tree'
+            exit 1
+          fi
+          if git ls-files --error-unmatch local.properties >/dev/null 2>&1; then
+            echo 'ERROR: local.properties must never be tracked'
+            exit 1
+          fi
+
       - name: Prepare patched Media3
         shell: bash
         run: |
@@ -91,6 +109,8 @@ jobs:
             unzip -tq "$apk" >/dev/null
           done
           build_tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+          test -x "$build_tools/zipalign"
+          test -x "$build_tools/apksigner"
           for apk in "${release[@]}"; do
             "$build_tools/zipalign" -c -P 16 -v 4 "$apk"
             "$build_tools/apksigner" verify --verbose "$apk"
