@@ -43,8 +43,12 @@ services:
       -c:a aac -f flv rtmp://mediamtx:1935/e2e-test
 
   minio-uploader:
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     depends_on:
       - minio
     volumes:
       - recordings:/recordings:ro
+
+volumes:
+  recordings:
+    name: fad-e2e-recordings
