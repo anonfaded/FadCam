@@ -8,6 +8,12 @@ OBJECT=recordings/${STREAM}/processed.mp4
 API_USER=api-e2e
 API_PASSWORD=api-e2e-pass
 API_URL=http://localhost:9997
+MINIO_HOST=http://fad-e2e:fad-e2e-password@minio:9000
+
+mc() {
+  "${COMPOSE[@]}" run --rm -T -e "MC_HOST_e2e=${MINIO_HOST}" \
+    --entrypoint mc minio-uploader "$@"
+}
 
 collect_logs() {
   echo '--- container status ---'
@@ -37,7 +43,8 @@ ready=0
 for i in {1..60}; do
   if curl -fsS http://localhost:8081/health >/dev/null \
     && curl -fsS -u "${API_USER}:${API_PASSWORD}" "${API_URL}/v3/paths/list" >/dev/null \
-    && curl -fsS http://localhost:9000/minio/health/live >/dev/null; then
+    && curl -fsS http://localhost:9000/minio/health/live >/dev/null \
+    && mc ls e2e >/dev/null 2>&1; then
     ready=1
     break
   fi
@@ -46,7 +53,7 @@ done
 
 if [[ $ready != 1 ]]; then
   echo 'FAIL: media stack did not become ready'
-  echo 'FAIL: MediaMTX API authentication or service health did not succeed'
+  echo 'FAIL: MediaMTX API authentication, Gateway, or MinIO S3 readiness did not succeed'
   collect_logs
   exit 1
 fi
@@ -96,15 +103,10 @@ echo "Recorded source: $REC_PATH"
 "${COMPOSE[@]}" run --rm -T --entrypoint ffmpeg ffmpeg-publisher \
   -y -i "$REC_PATH" -c:v libx264 -preset ultrafast -c:a aac /recordings/processed.mp4
 
-"${COMPOSE[@]}" run --rm -T --entrypoint mc minio-uploader \
-  alias set local http://minio:9000 fad-e2e fad-e2e-password
-"${COMPOSE[@]}" run --rm -T --entrypoint mc minio-uploader \
-  mb --ignore-existing local/$BUCKET
-"${COMPOSE[@]}" run --rm -T --entrypoint mc minio-uploader \
-  cp /recordings/processed.mp4 local/$BUCKET/$OBJECT
+mc mb --ignore-existing "e2e/${BUCKET}"
+mc cp /recordings/processed.mp4 "e2e/${BUCKET}/${OBJECT}"
 
-STATS=$("${COMPOSE[@]}" run --rm -T --entrypoint mc minio-uploader \
-  stat --json local/$BUCKET/$OBJECT)
+STATS=$(mc stat --json "e2e/${BUCKET}/${OBJECT}")
 echo "$STATS"
 node -e 'const s=JSON.parse(process.argv[1]); if (!s.size || s.size <= 0) process.exit(1); console.log(`PASS: MinIO object size=${s.size}`)' "$STATS"
 
