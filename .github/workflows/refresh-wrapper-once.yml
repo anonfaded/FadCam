@@ -1,0 +1,38 @@
+name: Refresh Gradle 8.13 Wrapper Once
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install official Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Regenerate and verify Gradle 8.13 Wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle --version
+          gradle wrapper --gradle-version 8.13 --distribution-type bin --no-daemon
+          expected='81a82aaea5abcc8ff68b3dfcb58b3c3c429378efd98e7433460610fecd7ae45f'
+          actual="$(sha256sum gradle/wrapper/gradle-wrapper.jar | awk '{print $1}')"
+          echo "Wrapper SHA-256: $actual"
+          test "$actual" = "$expected"
+
+      - name: Commit wrapper replacement and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/refresh-wrapper-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add gradle/wrapper/gradle-wrapper.jar gradle/wrapper/gradle-wrapper.properties .github/workflows/refresh-wrapper-once.yml
+          git commit -m 'build: refresh Gradle 8.13 wrapper'
+          git push origin HEAD:master
