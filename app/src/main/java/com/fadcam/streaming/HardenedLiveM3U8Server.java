@@ -60,7 +60,7 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
         RemoteAuthManager authManager = RemoteAuthManager.getInstance(appContext);
         if (authManager.isAuthEnabled()) {
             String header = session.getHeaders().get("authorization");
-            if (header == null || !header.startsWith("Bearer ")) return false;
+            if (header == null || !header.regionMatches(true, 0, "Bearer ", 0, 7)) return false;
             String token = header.substring(7).trim();
             if (token.isEmpty()) return false;
             com.fadcam.streaming.model.SessionToken sessionToken = authManager.validateToken(token);
