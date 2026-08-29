@@ -49,12 +49,10 @@ print_forensics() {
 cleanup() {
   [[ "${CLEANING_UP}" == true ]] && return 0
   CLEANING_UP=true
-
   if [[ -n "${PUBLISHER_PID}" ]] && publisher_alive; then
     kill -TERM "${PUBLISHER_PID}" >/dev/null 2>&1 || true
     wait "${PUBLISHER_PID}" >/dev/null 2>&1 || true
   fi
-
   print_forensics
   rm -f "${PUBLISHER_LOG}" "${PLAYLIST_FILE}" "${SEGMENT_FILE}" "${PROBE_LOG}" "${DECODE_LOG}" 2>/dev/null || true
   "${COMPOSE[@]}" down --remove-orphans >/dev/null 2>&1 || true
@@ -107,8 +105,8 @@ wait_for_rtmp_ingest() {
 }
 
 fetch_playlist_once() {
-  # Deliberately one request only. Repeated curl polling creates a new MediaMTX
-  # HLS session for every request and obscures the real failure mode.
+  # One playlist request only. Repeated polling creates a new MediaMTX HLS
+  # session per request and hides the actual protocol failure.
   curl --connect-timeout 3 --max-time 10 -fsS -L "${HLS_URL}" -o "${PLAYLIST_FILE}"
 }
 
@@ -147,7 +145,7 @@ verify_codecs() {
   : >"${PROBE_LOG}"
   local streams video audio
   streams="$(timeout 15 ffprobe -v error -rw_timeout 10000000 \
-    -select_streams v:0,a:0 -show_entries stream=codec_type,codec_name \
+    -show_entries stream=codec_type,codec_name \
     -of csv=p=0 "${HLS_URL}" 2>"${PROBE_LOG}" || true)"
   video="$(printf '%s\n' "${streams}" | grep '^video,' | head -n1 | cut -d, -f2 || true)"
   audio="$(printf '%s\n' "${streams}" | grep '^audio,' | head -n1 | cut -d, -f2 || true)"
@@ -203,11 +201,6 @@ stop_publisher_and_verify_cleanup() {
   local rc
   rc="$(publisher_exit_code)"
   PUBLISHER_PID=""
-
-  # Live FLV/RTMP termination can legitimately return 255 and cannot rewrite
-  # duration/filesize on a non-seekable network output. The stream assertions
-  # have already passed, so this is a deliberate lifecycle shutdown, not a
-  # publishing failure.
   if [[ "${rc}" -eq 255 || "${rc}" -eq 143 || "${rc}" -eq 0 ]]; then
     log "PASS: Publisher stopped deliberately (exit ${rc})."
   else
