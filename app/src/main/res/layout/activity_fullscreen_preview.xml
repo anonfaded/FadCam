@@ -616,4 +616,53 @@
             android:textSize="10sp" />
     </LinearLayout>
 
+    <!-- Bookmark the moment being recorded. Kept on the free side of the screen
+         so it never sits over the dual-camera PiP overlay, and only shown while a
+         recording (single or dual) is running or paused. -->
+    <LinearLayout
+        android:id="@+id/containerFullscreenBookmark"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="204dp"
+        android:elevation="12dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/btnFullscreenBookmark"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="@drawable/fullscreen_icon_bg_gradient"
+            android:clickable="true"
+            android:contentDescription="@string/quick_bookmark_desc"
+            android:focusable="true"
+            android:fontFamily="@font/materialicons"
+            android:gravity="center"
+            android:text="bookmark_add"
+            android:textColor="@android:color/white"
+            android:textSize="24sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/quick_bookmark_label"
+            android:textColor="#B3FFFFFF"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/tvFullscreenBookmarkCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:text="0"
+            android:visibility="gone"
+            android:textColor="#FFD54F"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
 </FrameLayout>

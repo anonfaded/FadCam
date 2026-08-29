@@ -12,6 +12,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
@@ -32,7 +33,8 @@ import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.provider.Settings;
 
-public class VideoPlayerActivity extends AppCompatActivity {
+public class VideoPlayerActivity extends AppCompatActivity
+    implements com.fadcam.bookmarks.ui.BookmarksBottomSheet.Listener {
 
     private static final String TAG = "VideoPlayerActivity";
 
@@ -61,6 +63,10 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private com.fadcam.ui.custom.AudioWaveformView audioWaveformView;
     private android.net.Uri currentVideoUri;
     private com.google.android.material.slider.Slider timeSlider;
+    private com.fadcam.bookmarks.ui.BookmarkMarkersView bookmarkMarkersView;
+    private android.widget.TextView bookmarkButton;
+    /** Storage key of the video being played; {@code null} until it is resolved. */
+    private String bookmarkMediaName;
     // Cached duration for fragmented MP4s where player.getDuration() returns TIME_UNSET
     private long cachedDurationMs = C.TIME_UNSET;
     // Gesture/interaction helpers
@@ -266,6 +272,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
             setupQuickSpeedSettings();
             setupResetZoomButton();
             setupPressAndHoldFor2x();
+            setupBookmarks(videoUri);
         } else {
             // Log error and finish if URI is missing
             FLog.e(
@@ -1514,6 +1521,7 @@ public class VideoPlayerActivity extends AppCompatActivity {
                                     FLog.w(TAG, "Duration still unknown: player=" + player.getDuration() + ", cached=" + cachedDurationMs);
                                 }
                             }
+                            syncBookmarkMarkerGeometry();
                         } catch (Exception e) {
                             FLog.e(TAG, "Error in periodic slider update", e);
                         }
@@ -1681,6 +1689,104 @@ public class VideoPlayerActivity extends AppCompatActivity {
             if (timeBar != null) return timeBar.getVisibility() == View.VISIBLE;
         } catch (Exception ignored) {}
         return false;
+    }
+
+    // --- Recording bookmarks ---
+
+    /**
+     * Wires the bookmark UI for the video being played: the markers drawn over
+     * the time slider and the control-bar button that opens the jump list.
+     *
+     * @param videoUri the media being played
+     */
+    private void setupBookmarks(@NonNull Uri videoUri) {
+        try {
+            bookmarkMediaName = com.fadcam.bookmarks.BookmarkRepository
+                    .resolveMediaName(this, videoUri);
+            if (playerView != null) {
+                bookmarkMarkersView = playerView.findViewById(R.id.bookmark_markers);
+                bookmarkButton = playerView.findViewById(R.id.bookmark_button);
+            }
+            if (bookmarkButton != null) {
+                bookmarkButton.setOnClickListener(v -> showBookmarksSheet());
+            }
+            refreshBookmarks();
+        } catch (Exception e) {
+            FLog.w(TAG, "Could not set up bookmarks for " + videoUri, e);
+        }
+    }
+
+    /** Reloads the stored bookmarks and refreshes the markers and the button. */
+    private void refreshBookmarks() {
+        if (bookmarkMediaName == null) {
+            return;
+        }
+        java.util.List<com.fadcam.bookmarks.Bookmark> bookmarks =
+                com.fadcam.bookmarks.BookmarkRepository.getInstance(this).getAll(bookmarkMediaName);
+        if (bookmarkMarkersView != null) {
+            bookmarkMarkersView.setBookmarks(bookmarks);
+            syncBookmarkMarkerGeometry();
+        }
+        if (bookmarkButton != null) {
+            bookmarkButton.setVisibility(bookmarks.isEmpty() ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    /**
+     * Copies the slider's track geometry and the current duration onto the marker
+     * overlay so every marker stays aligned with the position it refers to.
+     */
+    private void syncBookmarkMarkerGeometry() {
+        if (bookmarkMarkersView == null || timeSlider == null) {
+            return;
+        }
+        try {
+            bookmarkMarkersView.setTrackGeometry(
+                    timeSlider.getLeft() + timeSlider.getTrackSidePadding(),
+                    timeSlider.getTrackWidth());
+            // The slider still carries its layout placeholder (100) until the real
+            // duration arrives; mapping against it would bunch every marker at the
+            // right edge for a frame, so wait for a plausible duration first.
+            float sliderMax = timeSlider.getValueTo();
+            if (sliderMax > 100f) {
+                bookmarkMarkersView.setDurationMs((long) sliderMax);
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Could not sync bookmark marker geometry", e);
+        }
+    }
+
+    /** Opens the sheet listing the bookmarks of the current video. */
+    private void showBookmarksSheet() {
+        if (bookmarkMediaName == null || isFinishing()) {
+            return;
+        }
+        try {
+            com.fadcam.bookmarks.ui.BookmarksBottomSheet
+                    .newInstance(bookmarkMediaName)
+                    .show(getSupportFragmentManager(), "bookmarks");
+        } catch (Exception e) {
+            FLog.w(TAG, "Could not open the bookmarks sheet", e);
+        }
+    }
+
+    @Override
+    public void onBookmarkSelected(long positionMs) {
+        try {
+            com.fadcam.playback.PlayerHolder.getInstance().seekToPosition(positionMs);
+            lastSeekPositionMs = positionMs;
+            if (timeSlider != null) {
+                timeSlider.setValue(Math.min(timeSlider.getValueTo(),
+                        Math.max(timeSlider.getValueFrom(), (float) positionMs)));
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Could not seek to bookmark at " + positionMs + "ms", e);
+        }
+    }
+
+    @Override
+    public void onBookmarksChanged() {
+        refreshBookmarks();
     }
 
     private void setupBackButton() {

@@ -65,6 +65,15 @@
                     app:labelBehavior="gone"
                     />
 
+                <!-- Bookmark markers. Drawn last so they sit above the track, and
+                     never clickable so scrubbing still reaches the slider. -->
+                <com.fadcam.bookmarks.ui.BookmarkMarkersView
+                    android:id="@+id/bookmark_markers"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clickable="false"
+                    android:focusable="false" />
+
             </FrameLayout>
 
             <LinearLayout
@@ -101,6 +110,21 @@
                     <ImageButton android:id="@id/exo_shuffle" style="@style/ExoStyledControls.Button.Bottom.Shuffle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
                     <ImageButton android:id="@id/exo_repeat_toggle" style="@style/ExoStyledControls.Button.Bottom.RepeatToggle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
                     <ImageButton android:id="@id/exo_subtitle" style="@style/ExoStyledControls.Button.Bottom.CC" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
+
+                    <!-- Bookmarks: shown only when the video has marked moments -->
+                    <TextView android:id="@+id/bookmark_button"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:fontFamily="@font/materialicons"
+                        android:gravity="center"
+                        android:text="bookmarks"
+                        android:textSize="20sp"
+                        android:textColor="@android:color/white"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:visibility="gone"
+                        android:contentDescription="@string/bookmarks_title"/>
 
                     <!-- Use a clear settings/tune glyph for playback settings -->
                     <ImageButton android:id="@id/exo_settings"
