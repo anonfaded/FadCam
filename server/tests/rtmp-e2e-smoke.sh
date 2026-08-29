@@ -5,7 +5,6 @@ COMPOSE=(docker compose --env-file server/.env.example -f server/docker-compose.
 PATH_NAME="fadcam"
 RTMP_URL="rtmp://127.0.0.1:1935/${PATH_NAME}"
 HLS_URL="http://127.0.0.1:8888/${PATH_NAME}/index.m3u8"
-API_URL="http://127.0.0.1:9997/v3/paths/list"
 PUBLISHER_PID=""
 HLS_FILE=""
 
@@ -20,28 +19,46 @@ cleanup() {
 }
 trap cleanup EXIT
 
+wait_for_tcp() {
+  local host="$1"
+  local port="$2"
+  local timeout_seconds="$3"
+
+  for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
+    if (echo >/dev/tcp/${host}/${port}) >/dev/null 2>&1; then
+      echo "TCP ${host}:${port} is ready after ${attempt}s."
+      return 0
+    fi
+
+    if ! "${COMPOSE[@]}" ps --status running --services | grep -qx 'mediamtx'; then
+      echo "ERROR: MediaMTX container stopped while waiting for ${host}:${port}." >&2
+      "${COMPOSE[@]}" ps >&2 || true
+      "${COMPOSE[@]}" logs --no-color mediamtx >&2 || true
+      return 1
+    fi
+
+    sleep 1
+  done
+
+  echo "ERROR: TCP ${host}:${port} did not become ready within ${timeout_seconds} seconds." >&2
+  "${COMPOSE[@]}" ps >&2 || true
+  "${COMPOSE[@]}" logs --no-color mediamtx >&2 || true
+  return 1
+}
+
 echo "Starting MediaMTX..."
 "${COMPOSE[@]}" --profile tv up -d mediamtx
 
-echo "Waiting for MediaMTX API readiness..."
-ready=false
-for attempt in {1..60}; do
-  if curl --connect-timeout 1 --max-time 2 -fsS "${API_URL}" >/dev/null 2>&1; then
-    ready=true
-    echo "MediaMTX API ready after ${attempt}s."
-    break
-  fi
-  sleep 1
-done
+# Do not use the MediaMTX Control API as the container readiness gate.
+# The official image intentionally has no shell/curl/wget, and its default
+# API authorization is localhost-scoped from inside the container. A request
+# from the Docker bridge can therefore be rejected even when the API listener
+# is healthy. The actual media listener is the meaningful readiness signal for
+# this E2E test.
+echo "Waiting for MediaMTX RTMP listener readiness..."
+wait_for_tcp 127.0.0.1 1935 60
 
-if [[ "${ready}" != true ]]; then
-  echo "ERROR: MediaMTX API did not become ready within 60 seconds." >&2
-  echo "Container status:" >&2
-  "${COMPOSE[@]}" ps >&2 || true
-  echo "MediaMTX logs:" >&2
-  "${COMPOSE[@]}" logs --no-color mediamtx >&2 || true
-  exit 1
-fi
+echo "MediaMTX RTMP listener ready."
 
 if ! command -v ffmpeg >/dev/null 2>&1; then
   echo "ffmpeg is required for the deterministic publisher test" >&2
@@ -64,27 +81,21 @@ ffmpeg -hide_banner -loglevel error \
   -f flv "${RTMP_URL}" &
 PUBLISHER_PID=$!
 
-echo "Waiting for MediaMTX to expose the RTMP path..."
-stream_seen=false
-for _ in {1..20}; do
-  if curl --connect-timeout 1 --max-time 2 -fsS "${API_URL}" | grep -q '"name":"fadcam"'; then
-    stream_seen=true
-    break
-  fi
-  sleep 1
-done
-
-if [[ "${stream_seen}" != true ]]; then
-  echo "ERROR: MediaMTX did not expose the published RTMP path." >&2
-  exit 1
-fi
-
-echo "RTMP ingest confirmed. Waiting for HLS output..."
+echo "Waiting for MediaMTX to expose HLS output from the RTMP publisher..."
 HLS_FILE="$(mktemp)"
 hls_ready=false
-for _ in {1..20}; do
-  if curl --connect-timeout 1 --max-time 3 -fsS "${HLS_URL}" -o "${HLS_FILE}" 2>/dev/null && grep -q "#EXTM3U" "${HLS_FILE}"; then
+for attempt in {1..30}; do
+  if ! kill -0 "${PUBLISHER_PID}" >/dev/null 2>&1; then
+    wait "${PUBLISHER_PID}" || {
+      echo "ERROR: deterministic RTMP publisher exited before HLS became available." >&2
+      exit 1
+    }
+  fi
+
+  if curl --connect-timeout 1 --max-time 3 -fsS "${HLS_URL}" -o "${HLS_FILE}" 2>/dev/null \
+      && grep -q "#EXTM3U" "${HLS_FILE}"; then
     hls_ready=true
+    echo "HLS output ready after ${attempt}s."
     break
   fi
   sleep 1
@@ -95,11 +106,14 @@ if [[ "${hls_ready}" != true ]]; then
   exit 1
 fi
 
+echo "RTMP ingest -> HLS output confirmed. Verifying codecs..."
+STREAM_FILE="$(mktemp)"
 ffprobe -v error -read_intervals %+5 -i "${HLS_URL}" \
   -show_entries stream=codec_type,codec_name \
-  -of csv=p=0 | tee /tmp/fadcam-e2e-streams.txt
+  -of csv=p=0 | tee "${STREAM_FILE}"
 
-grep -q '^video,h264$' /tmp/fadcam-e2e-streams.txt
-grep -q '^audio,aac$' /tmp/fadcam-e2e-streams.txt
+grep -q '^video,h264$' "${STREAM_FILE}"
+grep -q '^audio,aac$' "${STREAM_FILE}"
 
+rm -f "${STREAM_FILE}"
 echo "PASS: RTMP ingest -> MediaMTX -> HLS contains H.264 video and AAC audio."
