@@ -28,14 +28,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Start infrastructure before the finite publisher. Do not start the publisher
-# until the gateway, MediaMTX API and MinIO health endpoints are reachable.
 "${COMPOSE[@]}" up -d --build mediamtx gateway minio
 
 ready=0
 for i in {1..60}; do
   if curl -fsS http://localhost:8081/health >/dev/null \
-    && curl -fsS -u 'any:' http://localhost:9997/v3/paths/list >/dev/null \
+    && curl -fsS -u 'api:api-pass' http://localhost:9997/v3/paths/list >/dev/null \
     && curl -fsS http://localhost:9000/minio/health/live >/dev/null; then
     ready=1
     break
@@ -49,14 +47,15 @@ if [[ $ready != 1 ]]; then
   exit 1
 fi
 
-# Keep the source alive long enough for discovery and diagnostics.
 "${COMPOSE[@]}" up -d ffmpeg-publisher
 
-# Verify MediaMTX sees the publisher before testing the gateway proxy. This
-# separates RTMP/publisher failures from gateway-discovery failures.
+# Verify the live publisher through the same path-list endpoint used by the
+# gateway. This avoids treating the per-path GET endpoint as the discovery
+# contract and prevents a transient GET 404 from masking a healthy stream.
 stream_ready=0
 for i in {1..45}; do
-  if curl -fsS -u 'any:' "http://localhost:9997/v3/paths/get/${STREAM}" >/tmp/mediamtx-stream.json 2>/dev/null; then
+  if curl -fsS -u 'api:api-pass' http://localhost:9997/v3/paths/list \
+    | node -e 'let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s); process.exit(j.items?.some(x=>x?.name==="e2e-test")?0:1)})'; then
     stream_ready=1
     break
   fi
@@ -71,8 +70,6 @@ fi
 
 node tests/media-pipeline/test.mjs
 
-# Alpine is the filesystem inspection helper. The MinIO mc image is a client
-# image and must not be assumed to contain /bin/sh, find, or head.
 REC_PATH=''
 for i in {1..120}; do
   REC_PATH=$("${COMPOSE[@]}" run --rm -T recording-inspector 2>/dev/null \
@@ -92,12 +89,9 @@ echo "Recorded source: $REC_PATH"
 
 "${COMPOSE[@]}" stop ffmpeg-publisher
 
-# Use the FFmpeg container only as an FFmpeg executable; override its entrypoint
-# to avoid relying on a shell in the image.
 "${COMPOSE[@]}" run --rm -T --entrypoint ffmpeg ffmpeg-publisher \
   -y -i "$REC_PATH" -c:v libx264 -preset ultrafast -c:a aac /recordings/processed.mp4
 
-# The mc image provides the mc executable directly; no shell is required.
 "${COMPOSE[@]}" run --rm -T --entrypoint mc minio-uploader \
   alias set local http://minio:9000 fad-e2e fad-e2e-password
 "${COMPOSE[@]}" run --rm -T --entrypoint mc minio-uploader \
