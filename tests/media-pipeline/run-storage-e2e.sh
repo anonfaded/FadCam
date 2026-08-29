@@ -26,9 +26,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Start the infrastructure first. The publisher is deliberately started only
+# after every dependency is reachable, eliminating a startup race that could
+# consume the short synthetic stream before the test begins discovery.
 "${COMPOSE[@]}" up -d --build mediamtx gateway minio
-sleep 3
-"${COMPOSE[@]}" up -d ffmpeg-publisher
 
 ready=0
 for i in {1..45}; do
@@ -47,12 +48,15 @@ if [[ $ready != 1 ]]; then
   exit 1
 fi
 
+# Keep the source alive long enough for service discovery and diagnostics.
+"${COMPOSE[@]}" up -d ffmpeg-publisher
+
 node tests/media-pipeline/test.mjs
 
 # MediaMTX's official image is intentionally minimal and has no shell/find utility.
 # Inspect the shared recording volume from the MinIO helper container.
 REC_PATH=''
-for i in {1..60}; do
+for i in {1..120}; do
   REC_PATH=$("${COMPOSE[@]}" run --rm -T --entrypoint /bin/sh minio-uploader -c \
     'find /recordings/e2e-test -type f -name "*.mp4" | head -n 1' 2>/dev/null | tr -d '\r' | head -n 1 || true)
   if [[ -n "$REC_PATH" ]]; then break; fi
@@ -66,6 +70,9 @@ if [[ -z "$REC_PATH" ]]; then
 fi
 
 echo "Recorded source: $REC_PATH"
+
+# Stop the finite publisher so MediaMTX finalizes the current recording segment.
+"${COMPOSE[@]}" stop ffmpeg-publisher
 
 # Process the real MediaMTX recording with FFmpeg into a deterministic artifact.
 "${COMPOSE[@]}" run --rm -T --entrypoint sh ffmpeg-publisher -c \
