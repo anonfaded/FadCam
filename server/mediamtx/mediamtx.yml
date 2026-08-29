@@ -1,0 +1,25 @@
+logLevel: info
+
+# FadCam TV transport defaults. Keep authentication and TLS configuration
+# in deployment-specific secrets/environment rather than committing secrets.
+api: yes
+apiAddress: :9997
+
+metrics: yes
+metricsAddress: :9998
+
+rtsp: yes
+rtspAddress: :8554
+
+rtmp: yes
+rtmpAddress: :1935
+
+hls: yes
+hlsAddress: :8888
+
+webrtc: yes
+webrtcAddress: :8889
+
+paths:
+  all_others:
+    source: publisher
