@@ -8,11 +8,16 @@ import java.net.InetAddress;
 import fi.iki.elonen.NanoHTTPD;
 
 /**
- * Security boundary around the local/remote dashboard HTTP server.
+ * Security boundary around the device-side HTTP server.
  *
- * HLS media remains readable without authentication so standard players can consume it.
- * Control, status, and sensitive dashboard APIs require authentication for remote clients;
- * when remote authentication is disabled, those operations are limited to loopback.
+ * The phone is never the Internet-facing trust boundary. Cloud/relay access is
+ * authenticated separately. This server therefore fails closed for control and
+ * state endpoints: loopback is allowed without a bearer session, while any
+ * non-loopback request requires an in-memory authenticated session.
+ *
+ * HLS media/static assets remain intentionally public to a caller that can reach
+ * the device-side socket; the public delivery path is the authenticated relay,
+ * not this server.
  */
 public final class HardenedLiveM3U8Server extends LiveM3U8Server {
     private final Context appContext;
@@ -24,68 +29,91 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
 
     @Override
     public Response serve(IHTTPSession session) {
-        String uri = session.getUri();
-        Method method = session.getMethod();
+        final String uri = session.getUri();
+        final Method method = session.getMethod();
+        final boolean loopback = isLoopback(session.getRemoteIpAddress());
 
+        // Never allow a browser-origin preflight to become an authentication bypass.
+        // CORS is only useful to explicitly trusted same-device clients; remote web
+        // clients must use the relay instead of reaching the phone directly.
         if (Method.OPTIONS.equals(method)) {
-            Response response = newFixedLengthResponse(Response.Status.OK, MIME_PLAINTEXT, "");
+            Response response = newFixedLengthResponse(Response.Status.NO_CONTENT, MIME_PLAINTEXT, "");
             addSecurityHeaders(response);
-            addCorsHeaders(response);
+            if (loopback) addLocalCorsHeaders(response);
             return response;
         }
 
-        if (isProtectedEndpoint(uri, method) && !isAuthorized(session)) {
-            Response response = newFixedLengthResponse(
-                    Response.Status.UNAUTHORIZED,
-                    "application/json; charset=utf-8",
-                    "{\"status\":\"unauthorized\",\"message\":\"Authentication required\"}");
-            response.addHeader("Cache-Control", "no-store");
-            response.addHeader("WWW-Authenticate", "Bearer realm=FadCam");
-            addSecurityHeaders(response);
-            addCorsHeaders(response);
-            return response;
+        if (isControlOrStateEndpoint(uri, method) && !isAuthorized(session, loopback)) {
+            return unauthorizedResponse();
         }
 
         Response response = super.serve(session);
         addSecurityHeaders(response);
+        if (loopback) addLocalCorsHeaders(response);
         return response;
     }
 
-    private boolean isProtectedEndpoint(String uri, Method method) {
-        // Login/check are the unauthenticated discovery surface. Logout is harmless but
-        // remains public so a client can always discard a session. Password changes are
-        // protected once authentication is enabled to prevent remote account takeover.
+    private boolean isControlOrStateEndpoint(String uri, Method method) {
+        // Authentication discovery endpoints are intentionally public. They do not
+        // return bearer credentials and login is the only endpoint allowed to create one.
         if ("/auth/login".equals(uri) || "/auth/logout".equals(uri) || "/auth/check".equals(uri)) {
             return false;
         }
+
         if ("/auth/changePassword".equals(uri)) {
-            return Method.POST.equals(method) && RemoteAuthManager.getInstance(appContext).isAuthEnabled();
+            return Method.POST.equals(method);
         }
 
-        // These GET endpoints expose device state or act as control/data APIs even though
-        // they are not POST requests. Keep HLS media and static assets public.
-        if ("/status".equals(uri)
-                || "/audio/volume".equals(uri)
-                || "/api/notifications".equals(uri)
-                || "/api/github/notification".equals(uri)) {
+        // Live media and static assets are delivery resources, not control APIs.
+        if (isPublicMediaOrStatic(uri, method)) {
+            return false;
+        }
+
+        // Device state and every mutating API are protected. This deliberately includes
+        // GET endpoints such as /status and /audio/volume because they expose or change
+        // sensitive device state.
+        return Method.GET.equals(method) || Method.POST.equals(method);
+    }
+
+    private boolean isPublicMediaOrStatic(String uri, Method method) {
+        if (!Method.GET.equals(method)) return false;
+        return "/live.m3u8".equals(uri)
+                || "/stream.m3u8".equals(uri)
+                || "/init.mp4".equals(uri)
+                || (uri.startsWith("/seg-") && uri.endsWith(".m4s"))
+                || uri.startsWith("/css/")
+                || uri.startsWith("/js/")
+                || uri.startsWith("/assets/")
+                || uri.startsWith("/fadex/");
+    }
+
+    private boolean isAuthorized(IHTTPSession session, boolean loopback) {
+        // Localhost remains usable for the app's own command bridge without requiring
+        // a bearer token. No remote address receives this bypass.
+        if (loopback && !RemoteAuthManager.getInstance(appContext).isAuthEnabled()) {
             return true;
         }
 
-        // Every mutating endpoint is protected.
-        return Method.POST.equals(method);
+        String header = session.getHeaders().get("authorization");
+        if (header == null || !header.regionMatches(true, 0, "Bearer ", 0, 7)) return false;
+
+        String token = header.substring(7).trim();
+        if (token.isEmpty()) return false;
+
+        com.fadcam.streaming.model.SessionToken sessionToken =
+                RemoteAuthManager.getInstance(appContext).validateToken(token);
+        return sessionToken != null && sessionToken.isValid();
     }
 
-    private boolean isAuthorized(IHTTPSession session) {
-        RemoteAuthManager authManager = RemoteAuthManager.getInstance(appContext);
-        if (authManager.isAuthEnabled()) {
-            String header = session.getHeaders().get("authorization");
-            if (header == null || !header.regionMatches(true, 0, "Bearer ", 0, 7)) return false;
-            String token = header.substring(7).trim();
-            if (token.isEmpty()) return false;
-            com.fadcam.streaming.model.SessionToken sessionToken = authManager.validateToken(token);
-            return sessionToken != null && sessionToken.isValid();
-        }
-        return isLoopback(session.getRemoteIpAddress());
+    private Response unauthorizedResponse() {
+        Response response = newFixedLengthResponse(
+                Response.Status.UNAUTHORIZED,
+                "application/json; charset=utf-8",
+                "{\"status\":\"unauthorized\",\"message\":\"Authentication required\"}");
+        response.addHeader("Cache-Control", "no-store");
+        response.addHeader("WWW-Authenticate", "Bearer realm=FadCam");
+        addSecurityHeaders(response);
+        return response;
     }
 
     private boolean isLoopback(String address) {
@@ -103,13 +131,16 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
         response.addHeader("Referrer-Policy", "no-referrer");
         response.addHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
         response.addHeader("Cache-Control", "no-store");
+        response.addHeader("Pragma", "no-cache");
     }
 
-    private void addCorsHeaders(Response response) {
-        response.addHeader("Access-Control-Allow-Origin", "*");
+    private void addLocalCorsHeaders(Response response) {
+        // Do not advertise wildcard CORS. A wildcard policy on an authenticated
+        // control surface would unnecessarily broaden browser-origin access.
+        response.addHeader("Access-Control-Allow-Origin", "null");
         response.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         response.addHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Cache-Control, Pragma");
-        response.addHeader("Access-Control-Max-Age", "600");
+        response.addHeader("Access-Control-Max-Age", "300");
         response.addHeader("Vary", "Origin");
     }
 }
