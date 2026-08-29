@@ -1,9 +1,9 @@
 {
   "name": "@fad/core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node src/server.js" },
+  "scripts": { "start": "node src/server.js", "test": "node --test" },
   "engines": { "node": ">=20" },
   "dependencies": { "pg": "^8.16.3" }
 }
