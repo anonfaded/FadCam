@@ -14,6 +14,7 @@ MEDIA_PLAYLIST=""
 SEGMENT_FILE=""
 PROBE_LOG=""
 DECODE_LOG=""
+HLS_COOKIE_JAR=""
 CLEANING_UP=false
 
 log() { printf '%s\n' "$*"; }
@@ -56,7 +57,7 @@ cleanup() {
     wait "${PUBLISHER_PID}" >/dev/null 2>&1 || true
   fi
   print_forensics
-  rm -f "${PUBLISHER_LOG}" "${MASTER_PLAYLIST}" "${MEDIA_PLAYLIST}" "${SEGMENT_FILE}" "${PROBE_LOG}" "${DECODE_LOG}" 2>/dev/null || true
+  rm -f "${PUBLISHER_LOG}" "${MASTER_PLAYLIST}" "${MEDIA_PLAYLIST}" "${SEGMENT_FILE}" "${PROBE_LOG}" "${DECODE_LOG}" "${HLS_COOKIE_JAR}" 2>/dev/null || true
   "${COMPOSE[@]}" down --remove-orphans >/dev/null 2>&1 || true
 }
 trap cleanup EXIT INT TERM
@@ -108,8 +109,13 @@ wait_for_rtmp_ingest() {
 
 fetch_hls_once() {
   local url="$1" output="$2"
-  # Each HLS client is intentional and bounded; there is no polling loop.
-  curl --connect-timeout 3 --max-time 10 -fsS -L "${url}" -o "${output}"
+  # MediaMTX 1.18+ associates HLS playlist/segment requests with a reader
+  # session cookie. Keep one cookie jar for the complete master -> child ->
+  # media-object transaction; the session query parameter in child URIs is not
+  # a substitute for the HTTP cookie.
+  curl --connect-timeout 3 --max-time 10 -fsS -L \
+    -c "${HLS_COOKIE_JAR}" -b "${HLS_COOKIE_JAR}" \
+    "${url}" -o "${output}"
 }
 
 resolve_hls_uri() {
@@ -168,7 +174,7 @@ verify_hls_playlist_and_media_object() {
   [[ -n "${uri}" ]] || fail "HLS media playlist contains no media object URI."
   url="$(resolve_hls_uri "${uri}")"
   log "Fetching first HLS media object: ${uri}"
-  curl --connect-timeout 3 --max-time 10 -fsS -L "${url}" -o "${SEGMENT_FILE}" \
+  fetch_hls_once "${url}" "${SEGMENT_FILE}" \
     || fail "Referenced HLS media object could not be fetched."
   [[ -s "${SEGMENT_FILE}" ]] || fail "Referenced HLS media object is empty."
   log "PASS: HLS media object exists and is non-empty."
@@ -182,8 +188,6 @@ verify_codecs() {
     -show_entries stream=codec_type,codec_name \
     -of csv=p=0 "${HLS_URL}" 2>"${PROBE_LOG}" || true)"
 
-  # FFmpeg is free to emit the requested fields in stream-defined order, so
-  # validate the codec/type pairs independently instead of assuming column order.
   printf '%s\n' "${streams}" | grep -Eq '(^|,)h264(,|$)' || {
     log "ffprobe streams: ${streams:-<none>}" >&2
     cat "${PROBE_LOG}" >&2 || true
@@ -242,12 +246,6 @@ stop_publisher_and_verify_cleanup() {
   log "Stopping deterministic publisher deliberately..."
   publisher_alive || fail "Publisher was not alive before deliberate shutdown."
   kill -TERM "${PUBLISHER_PID}" >/dev/null 2>&1 || true
-
-  # The signal is deliberate, so the exact wait status is runner/shell
-  # dependent (observed values include 143, 255 and -1). The invariant we care
-  # about here is that the publisher actually terminates and MediaMTX cleans
-  # up its HLS state; unexpected publisher failures are caught by the earlier
-  # sustained-stream assertions.
   local rc=0
   wait "${PUBLISHER_PID}" || rc=$?
   PUBLISHER_PID=""
@@ -277,6 +275,8 @@ MEDIA_PLAYLIST="$(mktemp)"
 SEGMENT_FILE="$(mktemp)"
 PROBE_LOG="$(mktemp)"
 DECODE_LOG="$(mktemp)"
+HLS_COOKIE_JAR="$(mktemp)"
+: >"${HLS_COOKIE_JAR}"
 
 log "Starting long-lived deterministic H.264/AAC RTMP publisher..."
 ffmpeg -hide_banner -loglevel warning \
