@@ -1,8 +1,8 @@
 const base = process.env.GATEWAY_URL ?? 'http://localhost:8081'
 const path = process.env.TEST_STREAM_PATH ?? 'e2e-test'
 const mediaMtxApi = process.env.MEDIAMTX_API ?? 'http://localhost:9997'
-const mediaMtxUser = process.env.MEDIAMTX_API_USER ?? 'any'
-const mediaMtxPassword = process.env.MEDIAMTX_API_PASSWORD ?? ''
+const mediaMtxUser = process.env.MEDIAMTX_API_USER ?? 'api'
+const mediaMtxPassword = process.env.MEDIAMTX_API_PASSWORD ?? 'api-pass'
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 const mediaHeaders = { Authorization: `Basic ${Buffer.from(`${mediaMtxUser}:${mediaMtxPassword}`).toString('base64')}` }
@@ -29,7 +29,8 @@ async function waitForMediaMtx() {
 }
 
 async function main() {
-  await waitForMediaMtx()
+  const media = await waitForMediaMtx()
+  if (media.name !== path) throw new Error(`MediaMTX returned unexpected stream: ${JSON.stringify(media)}`)
 
   const deadline = Date.now() + Number(process.env.E2E_TIMEOUT_MS ?? 45000)
   let lastError = 'no response'
@@ -37,7 +38,7 @@ async function main() {
     try {
       const result = await getJson(`${base}/api/v1/streams/${encodeURIComponent(path)}`)
       if (result?.name === path) {
-        console.log(`PASS: FFmpeg synthetic source -> MediaMTX -> Gateway -> assertion (${path})`)
+        console.log(`PASS: authenticated FFmpeg publisher -> MediaMTX -> Gateway (${path})`)
         return
       }
       lastError = `Gateway returned unexpected path payload: ${JSON.stringify(result)}`
