@@ -11,30 +11,17 @@ services:
       timeout: 3s
       retries: 30
 
-  migrate:
-    image: postgres:16-alpine
-    environment:
-      PGPASSWORD: fad-e2e-password
-    volumes:
-      - ../services/core/migrations:/migrations:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-    command: >-
-      sh -c "psql -h postgres -U fad -d fad -v ON_ERROR_STOP=1
-      -f /migrations/001_initial_schema.sql
-      -f /migrations/002_auth_and_audit.sql"
-    restart: "no"
-
   core:
     build:
       context: ../services/core
     environment:
       PORT: 8080
       DATABASE_URL: postgres://fad:fad-e2e-password@postgres:5432/fad
+      CORE_SERVICE_TOKEN: e2e-core-service-token-0123456789
+      AUTH_BOOTSTRAP_SECRET: e2e-device-bootstrap-secret-0123456789
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     ports:
       - "8080:8080"
 
@@ -54,9 +41,11 @@ services:
     environment:
       PORT: 8081
       CORE_API_URL: http://core:8080
+      CORE_SERVICE_TOKEN: e2e-core-service-token-0123456789
       MEDIAMTX_API_URL: http://mediamtx:9997
       MEDIAMTX_API_USER: api-e2e
       MEDIAMTX_API_PASSWORD: api-e2e-pass
+      UPSTREAM_TIMEOUT_MS: 5000
     depends_on:
       - core
       - mediamtx
