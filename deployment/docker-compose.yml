@@ -47,11 +47,11 @@ services:
     ports: ["8081:8081"]
 
   mediamtx:
-    build: ../platform/mediamtx
+    image: bluenviron/mediamtx:1
     ports: ["1935:1935", "9997:9997"]
 
   minio:
-    build: ../platform/minio
+    image: quay.io/minio/aistor/minio:RELEASE.2026-08-07T18-34-35Z
     environment:
       MINIO_ROOT_USER: fad-dev
       MINIO_ROOT_PASSWORD: fad-dev-password
