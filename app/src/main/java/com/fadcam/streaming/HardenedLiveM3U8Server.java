@@ -12,13 +12,14 @@ import fi.iki.elonen.NanoHTTPD;
  *
  * HLS media remains readable without authentication so standard players can consume it.
  * Mutating controls and status are protected: authenticated remote clients are allowed,
- * while unauthenticated control is limited to loopback. This prevents a device on the
- * same Wi-Fi/hotspot from toggling the camera, torch, alarms, recording, or configuration
- * merely because remote authentication has not been configured.
+ * while unauthenticated control is limited to loopback.
  */
 public final class HardenedLiveM3U8Server extends LiveM3U8Server {
+    private final Context appContext;
+
     public HardenedLiveM3U8Server(Context context, int port) throws IOException {
         super(context, port);
+        this.appContext = context.getApplicationContext();
     }
 
     @Override
@@ -38,6 +39,7 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
                     "application/json; charset=utf-8",
                     "{\"status\":\"unauthorized\",\"message\":\"Authentication required\"}");
             response.addHeader("Cache-Control", "no-store");
+            response.addHeader("WWW-Authenticate", "Bearer realm=FadCam");
             addCorsHeaders(response);
             return response;
         }
@@ -50,16 +52,12 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
                 || "/auth/check".equals(uri) || "/auth/changePassword".equals(uri)) {
             return false;
         }
-
-        // Protect device status because it exposes operational state to remote callers.
         if ("/status".equals(uri)) return true;
-
-        // Every mutating HTTP endpoint is protected. HLS GET/static resources remain public.
         return Method.POST.equals(method);
     }
 
     private boolean isAuthorized(IHTTPSession session) {
-        RemoteAuthManager authManager = RemoteAuthManager.getInstance(getContext());
+        RemoteAuthManager authManager = RemoteAuthManager.getInstance(appContext);
         if (authManager.isAuthEnabled()) {
             String header = session.getHeaders().get("authorization");
             if (header == null || !header.startsWith("Bearer ")) return false;
@@ -68,8 +66,6 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
             com.fadcam.streaming.model.SessionToken sessionToken = authManager.validateToken(token);
             return sessionToken != null && sessionToken.isValid();
         }
-
-        // When authentication is deliberately disabled, only the local device may control itself.
         return isLoopback(session.getRemoteIpAddress());
     }
 
@@ -88,9 +84,5 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
         response.addHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Cache-Control, Pragma");
         response.addHeader("Access-Control-Max-Age", "600");
         response.addHeader("Vary", "Origin");
-    }
-
-    private Context getContext() {
-        return getApplicationContext();
     }
 }
