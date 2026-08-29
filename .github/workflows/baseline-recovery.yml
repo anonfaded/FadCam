@@ -1,0 +1,131 @@
+name: FadCam Baseline Recovery
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fadcam-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    name: Baseline Android recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact baseline source
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          submodules: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Prepare patched Media3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 --branch release https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -d /tmp/media3-patched/libraries/muxer
+          test -d /tmp/media3-patched/libraries/common
+          test -d /tmp/media3-patched/libraries/container
+
+      - name: Verify Gradle wrapper and Android build contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew --version
+          ./gradlew :app:tasks --all --stacktrace --no-daemon >/dev/null
+
+      - name: Run default JVM unit tests
+        run: ./gradlew :app:testDefaultDebugUnitTest :app:testDefaultReleaseUnitTest --stacktrace --no-daemon
+
+      - name: Assemble default debug APK
+        run: ./gradlew assembleDefaultDebug --stacktrace --no-daemon
+
+      - name: Assemble default release APK with ephemeral CI signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          keytool -genkeypair -v \
+            -keystore "$RUNNER_TEMP/fadcam-ci-release.keystore" \
+            -storetype PKCS12 \
+            -alias fadcam-ci \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 2 \
+            -storepass changeit \
+            -keypass changeit \
+            -dname "CN=FadCam CI,O=FadCam,C=US"
+          {
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/fadcam-ci-release.keystore"
+            echo "KEYSTORE_PASSWORD=changeit"
+            echo "KEY_ALIAS=fadcam-ci"
+            echo "KEY_PASSWORD=changeit"
+          } >> local.properties
+          ./gradlew assembleDefaultRelease --stacktrace --no-daemon
+
+      - name: Validate APK outputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          debug=(app/build/outputs/apk/default/debug/*.apk)
+          release=(app/build/outputs/apk/default/release/*.apk)
+          test "${#debug[@]}" -gt 0
+          test "${#release[@]}" -gt 0
+          for apk in "${debug[@]}" "${release[@]}"; do
+            test -s "$apk"
+            unzip -tq "$apk" >/dev/null
+          done
+          build_tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+          for apk in "${release[@]}"; do
+            "$build_tools/zipalign" -c -P 16 -v 4 "$apk"
+            "$build_tools/apksigner" verify --verbose "$apk"
+          done
+
+      - name: Upload verified baseline APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: fadcam-baseline-apks
+          path: |
+            app/build/outputs/apk/default/debug/*.apk
+            app/build/outputs/apk/default/release/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  server:
+    name: Baseline server and streaming validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact baseline source
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          submodules: false
+
+      - name: Validate Compose configuration
+        run: docker compose --env-file server/.env.example -f server/docker-compose.yml config --quiet
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Run RTMP to MediaMTX to HLS smoke test
+        run: |
+          chmod +x server/tests/rtmp-e2e-smoke.sh
+          ./server/tests/rtmp-e2e-smoke.sh
