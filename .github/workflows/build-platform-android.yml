@@ -2,7 +2,7 @@ name: FadCam Android + Platform Validation
 
 on:
   push:
-    branches: [master, feat/platform-services-android-safe]
+    branches: [master, feat/platform-services-android-safe, feature/reliable-rtmp-publishing]
   pull_request:
     branches: [master]
 
