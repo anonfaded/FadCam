@@ -17,6 +17,7 @@ services:
   ffplayout:
     build:
       context: ./ffplayout
+      dockerfile: docker/static.Dockerfile
     container_name: fadcam-ffplayout
     profiles: [tv]
     restart: unless-stopped
