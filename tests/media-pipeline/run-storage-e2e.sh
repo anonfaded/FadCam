@@ -49,6 +49,15 @@ DEVICE3_KEY=e2e-device-003
 TOKEN3=$(curl -fsS -X POST "${CORE_URL}/api/v1/auth/device/token" -H "x-bootstrap-secret: ${BOOTSTRAP_SECRET}" -H 'content-type: application/json' -d "{\"deviceKey\":\"${DEVICE3_KEY}\",\"name\":\"E2E Camera 3\"}" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).token))')
 curl -fsS -X POST "${CORE_URL}/api/v1/auth/device/revoke" -H "Authorization: Bearer ${TOKEN3}" >/dev/null
 if curl -sS -o /dev/null -w '%{http_code}' "${GATEWAY_URL}/api/v1/registry/e2e-registry" -H "Authorization: Bearer ${TOKEN3}" | grep -qx '401'; then echo 'PASS: revoked token rejected'; else echo 'FAIL: revoked token accepted'; exit 1; fi
+ORG4_ID=55555555-5555-5555-5555-555555555555
+CAMERA4_ID=66666666-6666-6666-6666-666666666666
+DEVICE4_KEY=e2e-device-004
+"${COMPOSE[@]}" exec -T postgres psql -U fad -d fad -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO organizations(id,name) VALUES ('${ORG4_ID}','Other Organization') ON CONFLICT (id) DO NOTHING;
+INSERT INTO cameras(id,organization_id,name,device_key,status) VALUES ('${CAMERA4_ID}','${ORG4_ID}','Other Camera','${DEVICE4_KEY}','offline') ON CONFLICT (id) DO UPDATE SET organization_id=EXCLUDED.organization_id,revoked_at=NULL,status='offline';
+SQL
+TOKEN4=$(curl -fsS -X POST "${CORE_URL}/api/v1/auth/device/token" -H "x-bootstrap-secret: ${BOOTSTRAP_SECRET}" -H 'content-type: application/json' -d "{\"deviceKey\":\"${DEVICE4_KEY}\",\"name\":\"Other Camera\"}" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).token))')
+if curl -sS -o /dev/null -w '%{http_code}' "${GATEWAY_URL}/api/v1/registry/e2e-registry" -H "Authorization: Bearer ${TOKEN4}" | grep -qx '404'; then echo 'PASS: organization isolation'; else echo 'FAIL: cross-organization access'; exit 1; fi
 "${COMPOSE[@]}" up -d ffmpeg-publisher
 stream_ready=0
 for i in {1..45}; do if curl -fsS -u "${API_USER}:${API_PASSWORD}" "${API_URL}/v3/paths/list" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);process.exit(j.items?.some(x=>x?.name==="e2e-test")?0:1)})'; then stream_ready=1; break; fi; sleep 1; done
@@ -65,4 +74,9 @@ mc cp /recordings/processed.mp4 "e2e/${BUCKET}/${OBJECT}"
 STATS=$(mc stat --json "e2e/${BUCKET}/${OBJECT}")
 echo "$STATS"
 node -e 'const s=JSON.parse(process.argv[1]); if (!s.size || s.size <= 0) process.exit(1); console.log(`PASS: MinIO object size=${s.size}`)' "$STATS"
-echo 'PASS: persistent auth -> authorization -> Gateway -> MediaMTX -> recording -> FFmpeg -> MinIO'
+# Fail-closed migration check: changing an applied migration checksum must prevent Core startup.
+"${COMPOSE[@]}" exec -T core sh -c "printf '\\n-- tamper-test\\n' >> /app/db/002_auth_and_audit.sql"
+"${COMPOSE[@]}" restart core >/dev/null
+sleep 3
+if curl --max-time 5 -sS "${CORE_URL}/api/v1/health" >/dev/null 2>&1; then echo 'FAIL: Core started after migration checksum tampering'; exit 1; else echo 'PASS: migration checksum tampering fails closed'; fi
+echo 'PASS: persistent auth -> authorization -> ownership -> Gateway -> MediaMTX -> recording -> FFmpeg -> MinIO'
