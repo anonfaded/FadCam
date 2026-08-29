@@ -20,10 +20,22 @@ jobs:
       - name: Health check
         run: |
           set -eu
-          for port in 8080 8081 8082 8083 8084 8085 8086; do
-            for i in $(seq 1 30); do curl -fsS http://localhost:$port/health >/dev/null && break; sleep 2; done
-            curl -fsS http://localhost:$port/health >/dev/null
-          done
+          check() {
+            local url="$1"
+            for i in $(seq 1 30); do
+              if curl -fsS "$url" >/dev/null; then return 0; fi
+              sleep 2
+            done
+            echo "Health check failed: $url"
+            return 1
+          }
+          check http://localhost:8080/api/v1/health
+          check http://localhost:8081/health
+          check http://localhost:8082/health
+          check http://localhost:8083/health
+          check http://localhost:8084/health
+          check http://localhost:8085/health
+          check http://localhost:8086/health
       - name: Tear down
         if: always()
         run: docker compose -f deployment/docker-compose.yml down -v
