@@ -40,11 +40,14 @@ services:
       start_period: 20s
     depends_on:
       mediamtx:
-        condition: service_healthy
+        condition: service_started
     networks: [tv]
 
   # Streaming transport and public fan-out. ffplayout publishes RTMP to
   # rtmp://mediamtx:1935/fadcam; viewers consume HLS/WebRTC from this service.
+  # The official MediaMTX image is scratch-based and intentionally contains
+  # no shell, curl, wget or other diagnostic utilities. Readiness is therefore
+  # verified from the host by the E2E smoke test through the exposed API.
   mediamtx:
     image: bluenviron/mediamtx:1
     container_name: fadcam-mediamtx
@@ -62,12 +65,6 @@ services:
     volumes:
       - ./mediamtx/mediamtx.yml:/mediamtx.yml:ro
       - ./data/mediamtx/recordings:/recordings
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9997/v3/paths/list"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 10s
     networks: [tv]
 
   # Observability. These services are server-side only and have no Gradle/Android dependency.
