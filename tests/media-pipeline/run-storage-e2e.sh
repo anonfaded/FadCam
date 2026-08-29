@@ -20,7 +20,9 @@ collect_logs() {
 }
 
 cleanup() {
-  if [[ ${KEEP_E2E_STACK:-0} != 1 ]]; then
+  # In CI the workflow's dedicated Collect logs step must inspect the live
+  # containers after a failure. Local runs still clean up automatically.
+  if [[ ${KEEP_E2E_STACK:-0} != 1 && ${E2E_CI:-0} != 1 ]]; then
     "${COMPOSE[@]}" down -v --remove-orphans || true
   fi
 }
