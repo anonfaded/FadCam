@@ -23,7 +23,7 @@ jobs:
           GATEWAY_URL: http://gateway:8081
         run: docker compose -f deployment/docker-compose.yml exec -T core env GATEWAY_URL="$GATEWAY_URL" npm test
       - name: Migration ledger assertion
-        run: docker compose -f deployment/docker-compose.yml exec -T postgres psql -U fad -d fad -tAc "SELECT count(*) FROM schema_migrations" | grep -qx '2'
+        run: docker compose -f deployment/docker-compose.yml exec -T postgres psql -U fad -d fad -tAc "SELECT count(*) FROM schema_migrations" | grep -qx '3'
       - name: Health check
         run: |
           set -eu
