@@ -13,9 +13,13 @@ import com.pedro.library.rtmp.RtmpStream;
 /**
  * Generic Android RTMP/RTMPS publisher used by FadCam.
  *
- * <p>RootEncoder owns camera/audio capture and MediaCodec encoding. This class
- * deliberately knows nothing about a social platform: destinations only
- * provide an ingest server and a stream key.</p>
+ * <p>RootEncoder owns the physical Camera2 camera, microphone and MediaCodec
+ * encoders. This class deliberately knows nothing about a social platform:
+ * destinations only provide an ingest server and stream key.</p>
+ *
+ * <p>The publisher uses a bounded capability ladder. It tries 4K first, then
+ * 1080p, then 720p. A device that cannot encode a requested profile is not
+ * treated as a fatal streaming-core failure; the next valid profile is tried.</p>
  */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 public final class RtmpPublisher implements ConnectChecker {
@@ -30,47 +34,131 @@ public final class RtmpPublisher implements ConnectChecker {
         void onAuthSuccess();
     }
 
-    private static final int DEFAULT_WIDTH = 1280;
-    private static final int DEFAULT_HEIGHT = 720;
-    private static final int DEFAULT_VIDEO_BITRATE = 4_000_000;
-    private static final int DEFAULT_FPS = 30;
-    private static final int DEFAULT_AUDIO_SAMPLE_RATE = 44_100;
-    private static final int DEFAULT_AUDIO_BITRATE = 128_000;
+    public static final class VideoProfile {
+        public final int width;
+        public final int height;
+        public final int fps;
+        public final int bitrate;
+
+        VideoProfile(int width, int height, int fps, int bitrate) {
+            this.width = width;
+            this.height = height;
+            this.fps = fps;
+            this.bitrate = bitrate;
+        }
+
+        @NonNull
+        public String toString() {
+            return width + "x" + height + "@" + fps + " " + bitrate + "bps";
+        }
+    }
+
+    private static final VideoProfile[] VIDEO_LADDER = new VideoProfile[] {
+            new VideoProfile(3840, 2160, 30, 16_000_000),
+            new VideoProfile(1920, 1080, 30, 8_000_000),
+            new VideoProfile(1280, 720, 30, 4_000_000)
+    };
+
+    private static final int AUDIO_SAMPLE_RATE = 48_000;
+    private static final int AUDIO_BITRATE = 128_000;
 
     private final RtmpStream stream;
     @Nullable private final Listener listener;
+    @Nullable private VideoProfile activeProfile;
     private boolean prepared;
 
     public RtmpPublisher(@NonNull Context context, @Nullable Listener listener) {
         this.listener = listener;
+        // RtmpStream's default video source is the physical Camera2 source and
+        // its default audio source is the device microphone. This is the actual
+        // Android capture path, not the deterministic CI FFmpeg source.
         stream = new RtmpStream(context.getApplicationContext(), this);
+        stream.getStreamClient().setReTries(3);
     }
 
-    /** Prepare H.264/AAC using settings suitable for mainstream live platforms. */
+    /** Prepare the highest profile accepted by the device's Camera2/MediaCodec stack. */
     public synchronized boolean prepare() {
-        return prepare(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_VIDEO_BITRATE, DEFAULT_FPS,
-                DEFAULT_AUDIO_SAMPLE_RATE, true, DEFAULT_AUDIO_BITRATE);
+        if (prepared && activeProfile != null) return true;
+
+        prepared = false;
+        activeProfile = null;
+
+        for (VideoProfile profile : VIDEO_LADDER) {
+            if (tryPrepareVideo(profile)) {
+                activeProfile = profile;
+                prepared = true;
+                break;
+            }
+        }
+
+        if (!prepared) {
+            notifyFailure("No supported H.264 camera profile (4K/1080p/720p)");
+            return false;
+        }
+
+        try {
+            boolean audioPrepared = stream.prepareAudio(
+                    AUDIO_SAMPLE_RATE,
+                    true,
+                    AUDIO_BITRATE,
+                    true,
+                    true);
+            if (!audioPrepared) {
+                prepared = false;
+                activeProfile = null;
+                notifyFailure("AAC microphone encoder preparation failed");
+                return false;
+            }
+            return true;
+        } catch (IllegalArgumentException error) {
+            prepared = false;
+            activeProfile = null;
+            notifyFailure(error.getMessage() == null ? "Invalid AAC configuration" : error.getMessage());
+            return false;
+        }
     }
 
+    private boolean tryPrepareVideo(@NonNull VideoProfile profile) {
+        try {
+            return stream.prepareVideo(
+                    profile.width,
+                    profile.height,
+                    profile.bitrate,
+                    profile.fps,
+                    0);
+        } catch (IllegalArgumentException error) {
+            return false;
+        }
+    }
+
+    /** Explicit profile preparation for deterministic device tests. */
     public synchronized boolean prepare(int width, int height, int videoBitrate, int fps,
                                         int audioSampleRate, boolean stereo, int audioBitrate) {
         if (stream.isStreaming()) return true;
         try {
             prepared = stream.prepareVideo(width, height, videoBitrate, fps, 0)
                     && stream.prepareAudio(audioSampleRate, stereo, audioBitrate);
+            if (prepared) activeProfile = new VideoProfile(width, height, fps, videoBitrate);
+            else activeProfile = null;
             return prepared;
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException error) {
             prepared = false;
-            if (listener != null) listener.onFailed(e.getMessage() == null ? "Invalid encoder configuration" : e.getMessage());
+            activeProfile = null;
+            notifyFailure(error.getMessage() == null ? "Invalid encoder configuration" : error.getMessage());
             return false;
         }
+    }
+
+    @NonNull
+    public synchronized VideoProfile getActiveProfile() {
+        if (activeProfile == null) throw new IllegalStateException("Publisher is not prepared");
+        return activeProfile;
     }
 
     public synchronized void start(@NonNull RtmpDestination destination,
                                    @NonNull String serverUrl,
                                    @NonNull String streamKey) {
-        String endpoint = destination.buildEndpoint(serverUrl, streamKey);
-        start(endpoint);
+        start(destination.buildEndpoint(serverUrl, streamKey));
     }
 
     /** Start publishing to an already constructed RTMP/RTMPS endpoint. */
@@ -94,6 +182,11 @@ public final class RtmpPublisher implements ConnectChecker {
     public synchronized void release() {
         stream.release();
         prepared = false;
+        activeProfile = null;
+    }
+
+    private void notifyFailure(@NonNull String reason) {
+        if (listener != null) listener.onFailed(reason);
     }
 
     @Override public void onConnectionStarted(@NonNull String url) {
