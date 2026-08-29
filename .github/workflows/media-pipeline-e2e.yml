@@ -2,14 +2,14 @@ name: Media Pipeline E2E
 
 on:
   push:
-    branches: [fused-tv-foundation]
+    branches: [fused-tv-foundation, overhaul/foundation-audit]
   pull_request:
     branches: [fused-tv-foundation]
 
 jobs:
   media-pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       E2E_CI: '1'
     steps:
