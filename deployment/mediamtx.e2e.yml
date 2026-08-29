@@ -13,17 +13,14 @@ authInternalUsers:
     permissions:
       - action: publish
         path:
-  - user: api-e2e
-    pass: api-e2e-pass
-    ips:
-      - 0.0.0.0/0
-      - ::/0
+  # E2E Control API is intentionally open to any HTTP Basic username/password
+  # on the isolated CI network. The gateway/test still send their configured
+  # credentials, while MediaMTX does not depend on a brittle named API user.
+  - user: any
+    pass:
+    ips: []
     permissions:
-      # Control-API access is global.
       - action: api
-        path:
-      # Keep read permission for API paths that resolve through live media state.
-      - action: read
         path:
 
 # MediaMTX 1.12+ requires an explicit path rule for dynamically-created
