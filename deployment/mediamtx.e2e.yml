@@ -17,10 +17,8 @@ authInternalUsers:
     pass: api-e2e-pass
     ips: []
     permissions:
+      # Control-API access is global; do not attach a path restriction to it.
       - action: api
-        path:
-      - action: read
-        path:
 
 # MediaMTX 1.12+ requires an explicit path rule for dynamically-created
 # publisher paths. Keep recording defaults here and allow any stream name.
