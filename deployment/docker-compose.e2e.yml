@@ -15,8 +15,8 @@ services:
     environment:
       PORT: 8081
       MEDIAMTX_API_URL: http://mediamtx:9997
-      MEDIAMTX_API_USER: api
-      MEDIAMTX_API_PASSWORD: api-pass
+      MEDIAMTX_API_USER: api-e2e
+      MEDIAMTX_API_PASSWORD: api-e2e-pass
     depends_on:
       - mediamtx
     ports:
