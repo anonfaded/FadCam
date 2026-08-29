@@ -36,7 +36,6 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final RtmpReconnectPolicy reconnectPolicy = new RtmpReconnectPolicy();
     private String credentialAlias;
-    private String endpoint;
     private boolean sessionActive;
     private boolean reconnectPending;
     private boolean authenticationFailed;
@@ -99,15 +98,15 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
             return;
         }
 
-        endpoint = credential.getDestination().buildEndpoint(
-                credential.getServerUrl(), credential.getStreamKey());
         try {
             if (!publisher.prepare()) {
                 scheduleReconnect();
                 return;
             }
             if (publisher.isStreaming()) return;
-            publisher.start(endpoint);
+            // The service never stores or forwards the endpoint. The publisher constructs
+            // it only at the point of handing it to the RTMP client.
+            publisher.start(credential.getDestination(), credential.getServerUrl(), credential.getStreamKey());
         } catch (RuntimeException error) {
             scheduleReconnect();
         }
@@ -184,8 +183,6 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
         cancelReconnect();
         if (vault != null) vault.clearActiveAlias();
         if (publisher != null) publisher.stop();
-        endpoint = null;
-        credentialAlias = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) stopForeground(STOP_FOREGROUND_REMOVE);
         else stopForeground(true);
         stopSelf();
@@ -234,7 +231,6 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
             publisher.release();
             publisher = null;
         }
-        endpoint = null;
         credentialAlias = null;
         super.onDestroy();
     }
