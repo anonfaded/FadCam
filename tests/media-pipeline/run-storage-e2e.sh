@@ -26,10 +26,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Start infrastructure before the finite publisher. Do not start the publisher
+# until the gateway, MediaMTX API and MinIO health endpoints are reachable.
 "${COMPOSE[@]}" up -d --build mediamtx gateway minio
 
 ready=0
-for i in {1..45}; do
+for i in {1..60}; do
   if curl -fsS http://localhost:8081/health >/dev/null \
     && curl -fsS -u 'any:' http://localhost:9997/v3/paths/list >/dev/null \
     && curl -fsS http://localhost:9000/minio/health/live >/dev/null; then
@@ -45,11 +47,30 @@ if [[ $ready != 1 ]]; then
   exit 1
 fi
 
+# Keep the source alive long enough for discovery and diagnostics.
 "${COMPOSE[@]}" up -d ffmpeg-publisher
+
+# Verify MediaMTX sees the publisher before testing the gateway proxy. This
+# separates RTMP/publisher failures from gateway-discovery failures.
+stream_ready=0
+for i in {1..45}; do
+  if curl -fsS -u 'any:' "http://localhost:9997/v3/paths/get/${STREAM}" >/tmp/mediamtx-stream.json 2>/dev/null; then
+    stream_ready=1
+    break
+  fi
+  sleep 1
+done
+
+if [[ $stream_ready != 1 ]]; then
+  echo "FAIL: MediaMTX did not expose '${STREAM}' after publisher startup"
+  collect_logs
+  exit 1
+fi
+
 node tests/media-pipeline/test.mjs
 
-# Alpine is the filesystem inspection helper. The MinIO mc image is intentionally
-# a client image and must not be assumed to contain /bin/sh, find, or head.
+# Alpine is the filesystem inspection helper. The MinIO mc image is a client
+# image and must not be assumed to contain /bin/sh, find, or head.
 REC_PATH=''
 for i in {1..120}; do
   REC_PATH=$("${COMPOSE[@]}" run --rm -T recording-inspector 2>/dev/null \
