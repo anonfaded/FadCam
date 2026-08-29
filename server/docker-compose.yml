@@ -16,14 +16,28 @@ services:
   # 24/7 playout engine. Kept server-side; never included in the Android APK.
   ffplayout:
     build:
-      context: ./ffplayout
-      dockerfile: docker/static.Dockerfile
+      context: ./ffplayout-runtime
+      dockerfile: Dockerfile
     container_name: fadcam-ffplayout
     profiles: [tv]
     restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      HOME: /var/lib/ffplayout
+      XDG_CONFIG_HOME: /config
+      XDG_DATA_HOME: /var/lib/ffplayout
     volumes:
       - ./data/media:/media:ro
-      - ./data/ffplayout:/config
+      - ./data/ffplayout/config:/config
+      - ./data/ffplayout/state:/var/lib/ffplayout
+      - ./data/ffplayout/log:/var/log/ffplayout
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8787/ >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
     depends_on:
       mediamtx:
         condition: service_healthy
