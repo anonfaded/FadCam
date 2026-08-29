@@ -21,7 +21,7 @@ jobs:
       - name: Core API contract matrix
         run: docker compose -f deployment/docker-compose.yml run --rm core-test
       - name: Migration ledger assertion
-        run: docker compose -f deployment/docker-compose.yml exec -T postgres psql -U fad -d fad -tAc "SELECT count(*) FROM schema_migrations" | grep -qx '3'
+        run: docker compose -f deployment/docker-compose.yml exec -T postgres psql -U fad -d fad -tAc "SELECT count(*) FROM schema_migrations" | grep -qx '5'
       - name: Health check
         run: |
           set -eu
