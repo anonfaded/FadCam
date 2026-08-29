@@ -1,11 +1,11 @@
 services:
   ersatztv:
-    image: ghcr.io/ersatztv/legacy:latest
+    image: ghcr.io/ersatztv/legacy:v26.7.0
     container_name: fadcam-ersatztv
     environment:
       TZ: ${TZ:-UTC}
     ports:
-      - "8409:8409"
+      - "127.0.0.1:8409:8409"
     volumes:
       - ./data/ersatztv/config:/config
       - ./data/media:/media:ro
@@ -22,7 +22,7 @@ services:
     profiles: [tv]
     restart: unless-stopped
     ports:
-      - "8787:8787"
+      - "127.0.0.1:8787:8787"
     environment:
       HOME: /var/lib/ffplayout
       XDG_CONFIG_HOME: /config
@@ -49,7 +49,7 @@ services:
   # no shell, curl, wget or other diagnostic utilities. Readiness is therefore
   # verified from the host by the E2E smoke test through the exposed API.
   mediamtx:
-    image: bluenviron/mediamtx:1
+    image: bluenviron/mediamtx:1.16.0
     container_name: fadcam-mediamtx
     profiles: [tv]
     restart: unless-stopped
@@ -60,8 +60,8 @@ services:
       - "8889:8889"
       - "8890:8890/udp"
       - "8189:8189/udp"
-      - "9997:9997"
-      - "9998:9998"
+      - "127.0.0.1:9997:9997"
+      - "127.0.0.1:9998:9998"
     volumes:
       - ./mediamtx/mediamtx.yml:/mediamtx.yml:ro
       - ./data/mediamtx/recordings:/recordings
@@ -69,12 +69,12 @@ services:
 
   # Observability. These services are server-side only and have no Gradle/Android dependency.
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.14.0
     container_name: fadcam-prometheus
     profiles: [platform]
     restart: unless-stopped
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -85,14 +85,14 @@ services:
     networks: [platform]
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.1.2
     container_name: fadcam-grafana
     profiles: [platform]
     restart: unless-stopped
     depends_on:
       - prometheus
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
@@ -102,13 +102,13 @@ services:
     networks: [platform]
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-10-15T17-29-55Z
     container_name: fadcam-minio
     profiles: [storage]
     restart: unless-stopped
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     volumes:
       - minio-data:/data
     environment:
@@ -118,7 +118,7 @@ services:
     networks: [platform]
 
   keycloak-db:
-    image: postgres:17-alpine
+    image: postgres:17.11-alpine3.24
     container_name: fadcam-keycloak-db
     profiles: [auth]
     restart: unless-stopped
@@ -131,14 +131,14 @@ services:
     networks: [platform]
 
   keycloak:
-    image: quay.io/keycloak/keycloak:latest
+    image: quay.io/keycloak/keycloak:26.7.2
     container_name: fadcam-keycloak
     profiles: [auth]
     restart: unless-stopped
     depends_on:
       - keycloak-db
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
@@ -148,17 +148,19 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD in .env}
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
-    command: start-dev
+    # Local-only development/auth profile: do not expose this service beyond the host.
+    # Production deployments must use TLS and a production Keycloak configuration.
+    command: start --hostname=localhost --http-enabled=true --http-port=8080
     networks: [platform]
 
   # Optional viewer/media library. This is deliberately isolated from the Android module.
   jellyfin:
-    image: jellyfin/jellyfin:latest
+    image: jellyfin/jellyfin:10.11.11
     container_name: fadcam-jellyfin
     profiles: [viewer]
     restart: unless-stopped
     ports:
-      - "8096:8096"
+      - "127.0.0.1:8096:8096"
     volumes:
       - jellyfin-config:/config
       - jellyfin-cache:/cache
