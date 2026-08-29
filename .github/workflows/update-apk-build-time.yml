@@ -1,0 +1,114 @@
+name: Update README APK generation time
+
+on:
+  workflow_run:
+    workflows: ["FadCam Android + Platform Validation"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  update-readme:
+    name: Publish latest APK generation timestamp
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout validated commit
+        uses: actions/checkout@v5
+        with:
+          ref: master
+          fetch-depth: 1
+
+      - name: Read APK artifact creation timestamps
+        id: apk-time
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifacts="$(gh api --paginate "repos/${GH_REPO}/actions/artifacts?per_page=100")"
+
+          debug_utc="$(printf '%s' "$artifacts" | jq -r --arg run "$RUN_ID" '.artifacts[] | select((.workflow_run.id|tostring) == $run and .name == "fadcam-default-debug-apk") | .created_at' | head -n1)"
+          release_utc="$(printf '%s' "$artifacts" | jq -r --arg run "$RUN_ID" '.artifacts[] | select((.workflow_run.id|tostring) == $run and .name == "fadcam-default-release-apk") | .created_at' | head -n1)"
+
+          if [ -z "$debug_utc" ] || [ "$debug_utc" = "null" ]; then
+            echo "ERROR: debug APK artifact timestamp was not found for run $RUN_ID"
+            exit 1
+          fi
+          if [ -z "$release_utc" ] || [ "$release_utc" = "null" ]; then
+            echo "ERROR: release APK artifact timestamp was not found for run $RUN_ID"
+            exit 1
+          fi
+
+          debug_eat="$(TZ=Africa/Nairobi date -d "$debug_utc" '+%Y-%m-%d %H:%M:%S EAT')"
+          release_eat="$(TZ=Africa/Nairobi date -d "$release_utc" '+%Y-%m-%d %H:%M:%S EAT')"
+
+          {
+            echo "debug_utc=$debug_utc"
+            echo "release_utc=$release_utc"
+            echo "debug_eat=$debug_eat"
+            echo "release_eat=$release_eat"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update README latest-build panel
+        env:
+          DEBUG_UTC: ${{ steps.apk-time.outputs.debug_utc }}
+          RELEASE_UTC: ${{ steps.apk-time.outputs.release_utc }}
+          DEBUG_EAT: ${{ steps.apk-time.outputs.debug_eat }}
+          RELEASE_EAT: ${{ steps.apk-time.outputs.release_eat }}
+          RUN_NUMBER: ${{ github.event.workflow_run.run_number }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          path = Path("README.md")
+          text = path.read_text(encoding="utf-8")
+
+          block = f'''<!-- APK_BUILD_TIME_START -->
+          > 🕒 **Latest APK generation**
+          >
+          > | APK | Generated (EAT) | Generated (UTC) |
+          > | --- | --- | --- |
+          > | 🟢 Debug | **{os.environ['DEBUG_EAT']}** | `{os.environ['DEBUG_UTC']}` |
+          > | 🔵 Release | **{os.environ['RELEASE_EAT']}** | `{os.environ['RELEASE_UTC']}` |
+          >
+          > **CI run:** [#{os.environ['RUN_NUMBER']}](https://github.com/Trendyzima/FadCam/actions/runs/{os.environ['RUN_NUMBER']}) · **Commit:** `{os.environ['COMMIT_SHA'][:12]}`
+          >
+          > Timestamps come from the GitHub Actions APK artifacts created by the successful validation run. This panel is updated automatically after every successful `master` build.
+          <!-- APK_BUILD_TIME_END -->'''
+
+          pattern = re.compile(r'<!-- APK_BUILD_TIME_START -->.*?<!-- APK_BUILD_TIME_END -->', re.S)
+          if pattern.search(text):
+              text = pattern.sub(block, text, count=1)
+          else:
+              marker = "### 🔐 Current public build\n"
+              if marker not in text:
+                  raise SystemExit("README marker heading not found")
+              text = text.replace(marker, marker + "\n" + block + "\n", 1)
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Commit README timestamp
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- README.md; then
+            echo "README already contains the latest APK generation timestamp."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: record latest APK generation time [skip ci]"
+          git push origin HEAD:master
