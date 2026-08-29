@@ -13,29 +13,17 @@ services:
       timeout: 3s
       retries: 20
 
-  migrate:
-    image: postgres:16-alpine
-    volumes:
-      - ../services/core/migrations:/migrations:ro
-    environment:
-      PGPASSWORD: fad-dev-password
-    depends_on:
-      postgres:
-        condition: service_healthy
-    command: >-
-      sh -c "psql -h postgres -U fad -d fad -v ON_ERROR_STOP=1
-      -f /migrations/001_initial_schema.sql"
-    restart: "no"
-
   core:
     build: ../services/core
     environment:
       PORT: 8080
       DATABASE_URL: postgres://fad:fad-dev-password@postgres:5432/fad
       MAX_BODY_BYTES: 1048576
+      CORE_SERVICE_TOKEN: dev-core-service-token-change-me
+      AUTH_BOOTSTRAP_SECRET: dev-device-bootstrap-secret-change-me
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     ports: ["8080:8080"]
 
   gateway:
@@ -43,6 +31,7 @@ services:
     environment:
       PORT: 8081
       CORE_API_URL: http://core:8080
+      CORE_SERVICE_TOKEN: dev-core-service-token-change-me
       MEDIAMTX_API_URL: http://mediamtx:9997
       MEDIAMTX_API_USER: gateway-dev
       MEDIAMTX_API_PASSWORD: gateway-dev-password
