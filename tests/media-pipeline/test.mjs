@@ -1,8 +1,8 @@
 const base = process.env.GATEWAY_URL ?? 'http://localhost:8081'
 const path = process.env.TEST_STREAM_PATH ?? 'e2e-test'
 const mediaMtxApi = process.env.MEDIAMTX_API ?? 'http://localhost:9997'
-const mediaMtxUser = process.env.MEDIAMTX_API_USER ?? 'api'
-const mediaMtxPassword = process.env.MEDIAMTX_API_PASSWORD ?? 'api-pass'
+const mediaMtxUser = process.env.MEDIAMTX_API_USER ?? 'api-e2e'
+const mediaMtxPassword = process.env.MEDIAMTX_API_PASSWORD ?? 'api-e2e-pass'
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 const mediaHeaders = { Authorization: `Basic ${Buffer.from(`${mediaMtxUser}:${mediaMtxPassword}`).toString('base64')}` }
