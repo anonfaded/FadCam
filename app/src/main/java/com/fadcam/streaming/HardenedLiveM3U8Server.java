@@ -4,7 +4,6 @@ import android.content.Context;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Locale;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -102,7 +101,7 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
         response.addHeader("X-Content-Type-Options", "nosniff");
         response.addHeader("X-Frame-Options", "DENY");
         response.addHeader("Referrer-Policy", "no-referrer");
-        response.addHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=() ");
+        response.addHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
         response.addHeader("Cache-Control", "no-store");
     }
 
