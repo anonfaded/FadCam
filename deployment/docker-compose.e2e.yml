@@ -1,4 +1,43 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: fad
+      POSTGRES_USER: fad
+      POSTGRES_PASSWORD: fad-e2e-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fad -d fad"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    image: postgres:16-alpine
+    environment:
+      PGPASSWORD: fad-e2e-password
+    volumes:
+      - ../services/core/migrations:/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >-
+      sh -c "psql -h postgres -U fad -d fad -v ON_ERROR_STOP=1
+      -f /migrations/001_initial_schema.sql
+      -f /migrations/002_auth_and_audit.sql"
+    restart: "no"
+
+  core:
+    build:
+      context: ../services/core
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://fad:fad-e2e-password@postgres:5432/fad
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+
   mediamtx:
     image: bluenviron/mediamtx:1
     command: ["/mediamtx.yml"]
@@ -14,10 +53,12 @@ services:
       context: ../services/gateway
     environment:
       PORT: 8081
+      CORE_API_URL: http://core:8080
       MEDIAMTX_API_URL: http://mediamtx:9997
       MEDIAMTX_API_USER: api-e2e
       MEDIAMTX_API_PASSWORD: api-e2e-pass
     depends_on:
+      - core
       - mediamtx
     ports:
       - "8081:8081"
