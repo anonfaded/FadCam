@@ -4,15 +4,19 @@ set -Eeuo pipefail
 COMPOSE=(docker compose --env-file server/.env.example -f server/docker-compose.yml)
 PATH_NAME="fadcam"
 RTMP_URL="rtmp://127.0.0.1:1935/${PATH_NAME}"
-HLS_PAGE_URL="http://127.0.0.1:8888/${PATH_NAME}"
-HLS_URL="${HLS_PAGE_URL}/index.m3u8"
-HLS_COOKIE_JAR=""
-PUBLISHER_PID=""
+HLS_BASE_URL="http://127.0.0.1:8888/${PATH_NAME}"
+HLS_URL="${HLS_BASE_URL}/index.m3u8"
+
 HLS_FILE=""
-STREAM_FILE=""
-SEGMENT_FILE=""
+HLS_HEADERS=""
+HLS_COOKIE_JAR=""
 PUBLISHER_LOG=""
+PUBLISHER_PID=""
+SEGMENT_FILE=""
 CLEANING_UP=false
+
+log() { printf '%s\n' "$*"; }
+fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
 cleanup() {
   [[ "${CLEANING_UP}" == true ]] && return 0
@@ -24,183 +28,255 @@ cleanup() {
   fi
 
   if [[ -n "${PUBLISHER_LOG}" && -s "${PUBLISHER_LOG}" ]]; then
-    echo "Publisher log:" >&2
-    tail -n 120 "${PUBLISHER_LOG}" >&2 || true
+    log "Publisher log:"
+    tail -n 160 "${PUBLISHER_LOG}" >&2 || true
   fi
 
-  echo "MediaMTX logs:" >&2
-  "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | tail -n 200 >&2 || true
+  log "MediaMTX logs:"
+  "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | tail -n 240 >&2 || true
 
-  rm -f "${HLS_FILE}" "${STREAM_FILE}" "${SEGMENT_FILE}" "${PUBLISHER_LOG}" "${HLS_COOKIE_JAR}" 2>/dev/null || true
+  rm -f "${HLS_FILE}" "${HLS_HEADERS}" "${HLS_COOKIE_JAR}" "${PUBLISHER_LOG}" "${SEGMENT_FILE}" 2>/dev/null || true
   "${COMPOSE[@]}" down --remove-orphans >/dev/null 2>&1 || true
 }
 trap cleanup EXIT INT TERM
 
-fail() {
-  echo "ERROR: $*" >&2
-  exit 1
+require_commands() {
+  local command_name
+  for command_name in ffmpeg ffprobe curl awk grep sed; do
+    command -v "${command_name}" >/dev/null 2>&1 || fail "${command_name} is required."
+  done
+}
+
+publisher_alive() {
+  [[ -n "${PUBLISHER_PID}" ]] && kill -0 "${PUBLISHER_PID}" >/dev/null 2>&1
 }
 
 assert_publisher_alive() {
-  [[ -n "${PUBLISHER_PID}" ]] || fail "Publisher PID is not set."
-  if ! kill -0 "${PUBLISHER_PID}" >/dev/null 2>&1; then
-    local rc=0
-    wait "${PUBLISHER_PID}" || rc=$?
-    if [[ -s "${PUBLISHER_LOG}" ]]; then
-      echo "Publisher log:" >&2
-      tail -n 120 "${PUBLISHER_LOG}" >&2 || true
-    fi
-    fail "Deterministic RTMP publisher is no longer alive (exit code ${rc})."
+  if publisher_alive; then
+    return 0
   fi
+
+  local rc=0
+  if [[ -n "${PUBLISHER_PID}" ]]; then
+    wait "${PUBLISHER_PID}" || rc=$?
+  fi
+  fail "Deterministic RTMP publisher exited before validation completed (exit ${rc})."
+}
+
+media_mtx_running() {
+  "${COMPOSE[@]}" ps --status running --services 2>/dev/null | grep -qx 'mediamtx'
 }
 
 wait_for_tcp() {
-  local host="$1" port="$2" timeout_seconds="$3"
-  for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
-    if (echo >/dev/tcp/${host}/${port}) >/dev/null 2>&1; then
-      echo "TCP ${host}:${port} is ready after ${attempt}s."
+  local host="$1" port="$2" timeout="$3"
+  local attempt
+
+  for ((attempt=1; attempt<=timeout; attempt++)); do
+    # Do not write bytes to RTMP. A /dev/tcp echo probe is itself an RTMP
+    # client and produces misleading "invalid rtmp version" entries in logs.
+    if timeout 2 bash -c "exec 3<>/dev/tcp/${host}/${port}" >/dev/null 2>&1; then
+      log "PASS: MediaMTX RTMP listener ready after ${attempt}s."
       return 0
     fi
-    if ! "${COMPOSE[@]}" ps --status running --services | grep -qx 'mediamtx'; then
-      "${COMPOSE[@]}" ps >&2 || true
-      "${COMPOSE[@]}" logs --no-color mediamtx >&2 || true
-      fail "MediaMTX container stopped while waiting for ${host}:${port}."
-    fi
+    media_mtx_running || fail "MediaMTX stopped while waiting for RTMP listener."
     sleep 1
   done
-  fail "TCP ${host}:${port} did not become ready within ${timeout_seconds} seconds."
+
+  fail "MediaMTX RTMP listener did not become ready within ${timeout}s."
 }
 
-fetch_hls_playlist() {
-  # MediaMTX's cookieCheck flow is a stateful redirect. Follow redirects and
-  # persist the cookie instead of creating a fresh HLS session on every poll.
-  curl --connect-timeout 2 --max-time 5 -fsSL \
+http_get_hls() {
+  # One stateful HLS client: follow the cookie-check redirect and retain its
+  # cookie for every subsequent playlist/media request.
+  curl --connect-timeout 2 --max-time 5 -fsS -L \
+    -D "${HLS_HEADERS}" \
     -c "${HLS_COOKIE_JAR}" -b "${HLS_COOKIE_JAR}" \
     "${HLS_URL}?cookieCheck=1" -o "${HLS_FILE}"
 }
 
-wait_for_hls_playlist() {
-  local timeout_seconds="$1"
-  for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
+playlist_has_media() {
+  grep -Eq '^[^#[:space:]]+$' "${HLS_FILE}"
+}
+
+wait_for_rtmp_ingest() {
+  local timeout=20
+  local attempt
+  log "Waiting for RTMP ingest..."
+
+  for ((attempt=1; attempt<=timeout; attempt++)); do
     assert_publisher_alive
-    if fetch_hls_playlist 2>/dev/null && grep -q '^#EXTM3U' "${HLS_FILE}"; then
-      echo "HLS playlist ready after ${attempt}s."
+    if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "is publishing to path '${PATH_NAME}'"; then
+      log "PASS: RTMP path online and publisher ingest confirmed."
       return 0
     fi
     sleep 1
   done
-  fail "MediaMTX did not expose a valid HLS playlist within ${timeout_seconds}s."
+
+  fail "MediaMTX did not confirm RTMP publisher ingest within ${timeout}s."
 }
 
-resolve_segment_url() {
-  local segment="$1"
-  if [[ "${segment}" =~ ^https?:// ]]; then
-    printf '%s\n' "${segment}"
-  elif [[ "${segment}" == /* ]]; then
-    printf 'http://127.0.0.1:8888%s\n' "${segment}"
-  else
-    printf '%s/%s\n' "${HLS_PAGE_URL}" "${segment#./}"
-  fi
+wait_for_hls_playlist() {
+  local timeout=30
+  local attempt
+  log "Waiting for HLS playlist..."
+
+  for ((attempt=1; attempt<=timeout; attempt++)); do
+    assert_publisher_alive
+    if http_get_hls 2>/dev/null && grep -q '^#EXTM3U' "${HLS_FILE}"; then
+      log "PASS: HLS playlist available after ${attempt}s."
+      return 0
+    fi
+    sleep 1
+  done
+
+  fail "HLS playlist was not available within ${timeout}s."
 }
 
-fetch_first_hls_media_object() {
-  local object_url
-  object_url="$(awk '
-    /^[^#[:space:]]/ { print; exit }
-  ' "${HLS_FILE}" || true)"
+first_media_uri() {
+  awk '/^[^#[:space:]]+$/ { print; exit }' "${HLS_FILE}"
+}
 
-  [[ -n "${object_url}" ]] || return 1
-  object_url="$(resolve_segment_url "${object_url}")"
+resolve_media_url() {
+  local uri="$1"
+  case "${uri}" in
+    http://*|https://*) printf '%s\n' "${uri}" ;;
+    /*) printf 'http://127.0.0.1:8888%s\n' "${uri}" ;;
+    *) printf '%s/%s\n' "${HLS_BASE_URL}" "${uri#./}" ;;
+  esac
+}
 
-  curl --connect-timeout 2 --max-time 5 -fsSL \
+fetch_first_media_object() {
+  local uri url
+  uri="$(first_media_uri || true)"
+  [[ -n "${uri}" ]] || return 1
+  url="$(resolve_media_url "${uri}")"
+
+  curl --connect-timeout 2 --max-time 5 -fsS -L \
     -c "${HLS_COOKIE_JAR}" -b "${HLS_COOKIE_JAR}" \
-    "${object_url}" -o "${SEGMENT_FILE}" \
+    "${url}" -o "${SEGMENT_FILE}" \
     && [[ -s "${SEGMENT_FILE}" ]]
 }
 
-wait_for_hls_media_object() {
-  local timeout_seconds="$1"
-  for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
+wait_for_media_object() {
+  local timeout=20
+  local attempt
+  log "Waiting for HLS media object..."
+
+  for ((attempt=1; attempt<=timeout; attempt++)); do
     assert_publisher_alive
-    if fetch_first_hls_media_object; then
-      echo "HLS media object is readable after ${attempt}s."
+    if fetch_first_media_object; then
+      log "PASS: HLS media object is readable after ${attempt}s."
       return 0
     fi
+    http_get_hls 2>/dev/null || true
     sleep 1
-    fetch_hls_playlist 2>/dev/null || true
   done
-  fail "HLS playlist was available, but no readable HLS media object was produced."
+
+  fail "HLS playlist exists, but no readable HLS media object was produced."
 }
 
-verify_stream_codecs() {
-  local probe_input="${HLS_URL}?cookieCheck=1"
-  echo "Verifying H.264 + AAC through ffprobe..."
+cookie_header_for_ffprobe() {
+  awk 'BEGIN{ORS=""} $0 !~ /^#/ && NF>=7 { printf "%s=%s; ", $6, $7 }' "${HLS_COOKIE_JAR}"
+}
 
-  if ! curl --connect-timeout 2 --max-time 5 -fsSL \
-      -c "${HLS_COOKIE_JAR}" -b "${HLS_COOKIE_JAR}" \
-      "${probe_input}" -o "${HLS_FILE}"; then
-    fail "Unable to refresh HLS playlist before codec verification."
+verify_codecs_and_decode() {
+  local cookie_header
+  cookie_header="$(cookie_header_for_ffprobe)"
+  log "Verifying H.264 + AAC by decoding the live HLS stream with ffprobe..."
+
+  local probe_output
+  probe_output="$(mktemp)"
+  if ! ffprobe -v error \
+      -rw_timeout 5000000 \
+      -headers "Cookie: ${cookie_header}\r\n" \
+      -read_intervals '%+3' \
+      -show_entries stream=codec_type,codec_name,width,height,profile \
+      -of csv=p=0 \
+      "${HLS_URL}" >"${probe_output}" 2>"${probe_output}.err"; then
+    log "ffprobe stderr:"
+    cat "${probe_output}.err" >&2 || true
+    rm -f "${probe_output}" "${probe_output}.err"
+    fail "ffprobe could not read/decode the HLS stream."
   fi
 
-  if ! ffprobe -v error -read_intervals %+3 \
-      -i "${probe_input}" \
-      -show_entries stream=codec_type,codec_name \
-      -of csv=p=0 | tee "${STREAM_FILE}"; then
-    fail "ffprobe could not decode the HLS stream."
-  fi
+  cat "${probe_output}"
+  grep -Eq '^video,h264,' "${probe_output}" || {
+    cat "${probe_output}.err" >&2 2>/dev/null || true
+    rm -f "${probe_output}" "${probe_output}.err"
+    fail "Decoded HLS stream does not contain H.264 video."
+  }
+  grep -Eq '^audio,aac,' "${probe_output}" || {
+    rm -f "${probe_output}" "${probe_output}.err"
+    fail "Decoded HLS stream does not contain AAC audio."
+  }
 
-  grep -q '^video,h264$' "${STREAM_FILE}" || fail "HLS output does not contain H.264 video."
-  grep -q '^audio,aac$' "${STREAM_FILE}" || fail "HLS output does not contain AAC audio."
-  echo "PASS: H.264 video track confirmed."
-  echo "PASS: AAC audio track confirmed."
+  log "PASS: H.264 video decoded."
+  log "PASS: AAC audio decoded."
+  rm -f "${probe_output}" "${probe_output}.err"
 }
 
 verify_sustained_stream() {
-  echo "Verifying stream remains online for 5 seconds..."
-  for _ in 1 2 3 4 5; do
+  local seconds=5
+  local attempt
+  log "Verifying sustained publishing for ${seconds}s..."
+
+  for ((attempt=1; attempt<=seconds; attempt++)); do
     assert_publisher_alive
-    fetch_hls_playlist || fail "HLS playlist stopped responding while publisher was alive."
+    http_get_hls >/dev/null 2>&1 || fail "HLS stopped responding while publisher remained alive (second ${attempt})."
     grep -q '^#EXTM3U' "${HLS_FILE}" || fail "HLS playlist became invalid during sustained-stream check."
     sleep 1
   done
-  echo "PASS: publisher remains alive during validation."
-  echo "PASS: HLS output remains available during sustained publishing."
+
+  log "PASS: publisher remained alive during sustained validation."
+  log "PASS: HLS remained available during sustained publishing."
 }
 
-verify_media_cleanup() {
-  echo "Waiting for MediaMTX to clean up after publisher shutdown..."
-  for _ in 1 2 3 4 5 6 7 8 9 10; do
-    if ! curl --connect-timeout 1 --max-time 2 -fsSL \
-        -c "${HLS_COOKIE_JAR}" -b "${HLS_COOKIE_JAR}" \
-        "${HLS_URL}?cookieCheck=1" -o "${HLS_FILE}" 2>/dev/null; then
-      echo "PASS: HLS output is no longer available after publisher stopped."
+verify_cleanup() {
+  local timeout=12
+  local attempt
+  log "Stopping publisher deliberately..."
+
+  assert_publisher_alive
+  kill -TERM "${PUBLISHER_PID}" >/dev/null 2>&1 || true
+
+  local rc=0
+  wait "${PUBLISHER_PID}" || rc=$?
+  PUBLISHER_PID=""
+
+  if [[ "${rc}" -ne 0 && "${rc}" -ne 143 ]]; then
+    fail "Publisher failed during deliberate shutdown (exit ${rc})."
+  fi
+  log "PASS: publisher stopped deliberately (exit ${rc})."
+
+  log "Waiting for MediaMTX to remove the HLS muxer..."
+  for ((attempt=1; attempt<=timeout; attempt++)); do
+    if ! "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "muxer ${PATH_NAME}"; then
+      log "PASS: MediaMTX muxer cleanup confirmed."
+      return 0
+    fi
+    if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "muxer ${PATH_NAME}] destroyed"; then
+      log "PASS: MediaMTX muxer cleanup confirmed."
       return 0
     fi
     sleep 1
   done
-  fail "HLS output remained available after publisher shutdown; MediaMTX cleanup did not complete."
+
+  fail "MediaMTX did not report HLS muxer cleanup within ${timeout}s."
 }
 
-echo "Starting MediaMTX..."
+require_commands
+
+log "Starting MediaMTX..."
 "${COMPOSE[@]}" --profile tv up -d mediamtx
-
-echo "Waiting for MediaMTX RTMP listener readiness..."
 wait_for_tcp 127.0.0.1 1935 60
-echo "MediaMTX RTMP listener ready."
-
-afor required_command in ffmpeg ffprobe curl; do
-  command -v "${required_command}" >/dev/null 2>&1 || fail "${required_command} is required for the deterministic publisher test."
-done
 
 HLS_FILE="$(mktemp)"
-STREAM_FILE="$(mktemp)"
-SEGMENT_FILE="$(mktemp)"
-PUBLISHER_LOG="$(mktemp)"
+HLS_HEADERS="$(mktemp)"
 HLS_COOKIE_JAR="$(mktemp)"
+PUBLISHER_LOG="$(mktemp)"
+SEGMENT_FILE="$(mktemp)"
 
-# Keep the synthetic source alive long enough for all assertions. The test is
-# intentionally stopped later; it must never end naturally during validation.
-echo "Starting long-lived deterministic H.264/AAC RTMP publisher..."
+log "Starting long-lived deterministic H.264/AAC RTMP publisher..."
 ffmpeg -hide_banner -loglevel warning \
   -re -f lavfi -i "testsrc2=size=640x360:rate=15" \
   -re -f lavfi -i "sine=frequency=1000:sample_rate=48000" \
@@ -211,38 +287,14 @@ ffmpeg -hide_banner -loglevel warning \
   -f flv "${RTMP_URL}" >"${PUBLISHER_LOG}" 2>&1 &
 PUBLISHER_PID=$!
 
-echo "Waiting for RTMP ingest..."
-for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-  assert_publisher_alive
-  if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "is publishing to path '${PATH_NAME}'"; then
-    echo "PASS: RTMP connection and publisher ingest confirmed."
-    break
-  fi
-  sleep 1
-done
-"${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "is publishing to path '${PATH_NAME}'" \
-  || fail "MediaMTX did not confirm RTMP publisher ingest within 15s."
-
-wait_for_hls_playlist 30
-wait_for_hls_media_object 15
-verify_stream_codecs
-verify_sustained_stream
-
-echo "Stopping deterministic publisher deliberately..."
+wait_for_rtmp_ingest
 assert_publisher_alive
-kill -TERM "${PUBLISHER_PID}" >/dev/null 2>&1 || true
-publisher_rc=0
-wait "${PUBLISHER_PID}" || publisher_rc=$?
-PUBLISHER_PID=""
+log "PASS: FFmpeg publisher process alive."
 
-# FFmpeg commonly exits 143 after SIGTERM; some builds return 0 during normal
-# protocol shutdown. Any other result is an actual publisher failure.
-if [[ "${publisher_rc}" -ne 0 && "${publisher_rc}" -ne 143 ]]; then
-  fail "publisher exited unexpectedly with code ${publisher_rc}."
-fi
-echo "PASS: publisher stopped deliberately (exit ${publisher_rc})."
+wait_for_hls_playlist
+wait_for_media_object
+verify_codecs_and_decode
+verify_sustained_stream
+verify_cleanup
 
-verify_media_cleanup
-
-echo "PASS: MediaMTX cleanup confirmed."
-echo "PASS: RTMP -> MediaMTX -> HLS end-to-end gate completed."
+log "PASS: RTMP -> MediaMTX -> HLS end-to-end gate completed."
