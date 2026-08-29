@@ -153,26 +153,27 @@ public class RecordingStartActivity extends Activity {
     }
 
     private void startRtmpPublisher(@NonNull Intent incoming) {
-        String endpoint = incoming.getStringExtra(RtmpPublisherService.EXTRA_ENDPOINT);
-        if (endpoint == null || !endpoint.startsWith("rtmp")) {
-            Toast.makeText(this, "A valid RTMP/RTMPS endpoint is required", Toast.LENGTH_LONG).show();
+        // Only a non-secret credential alias may cross the Activity boundary.
+        String alias = incoming.getStringExtra(RtmpPublisherService.EXTRA_CREDENTIAL_ALIAS);
+        if (alias == null || alias.trim().isEmpty()) {
+            Toast.makeText(this, "A valid RTMP credential profile is required", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
 
+        Intent safeIntent = new Intent(RtmpPublisherService.ACTION_START)
+                .setClass(this, RtmpPublisherService.class)
+                .putExtra(RtmpPublisherService.EXTRA_CREDENTIAL_ALIAS, alias.trim());
+
         if (!hasCapturePermissions()) {
-            pendingRtmpIntent = new Intent(incoming);
+            // Keep only the allow-listed, non-secret extra while waiting for permissions.
+            pendingRtmpIntent = safeIntent;
             requestCapturePermissionsWithContext(REQUEST_RTMP_CAPTURE_PERMISSIONS, false);
             return;
         }
 
-        Intent serviceIntent = new Intent(this, RtmpPublisherService.class)
-                .setAction(RtmpPublisherService.ACTION_START)
-                .putExtra(RtmpPublisherService.EXTRA_ENDPOINT, endpoint);
-        ContextCompat.startForegroundService(this, serviceIntent);
+        startCaptureService(safeIntent);
         Toast.makeText(this, "FadCam RTMP publisher starting", Toast.LENGTH_SHORT).show();
-        moveTaskToBack(true);
-        finish();
     }
 
     @Override
