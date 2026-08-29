@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS cameras (
   organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   device_key TEXT NOT NULL UNIQUE,
+  device_token_hash TEXT,
+  token_created_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ,
   status TEXT NOT NULL DEFAULT 'offline' CHECK (status IN ('offline','online','revoked')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -76,3 +79,4 @@ CREATE INDEX IF NOT EXISTS streams_camera_idx ON streams(camera_id);
 CREATE INDEX IF NOT EXISTS media_stream_idx ON media(stream_id);
 CREATE INDEX IF NOT EXISTS productions_channel_idx ON productions(channel_id);
 CREATE INDEX IF NOT EXISTS permissions_user_idx ON permissions(user_id);
+CREATE INDEX IF NOT EXISTS cameras_device_key_idx ON cameras(device_key);
