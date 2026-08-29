@@ -28,8 +28,11 @@ assert_denied() {
       --request "$method" --max-time 15 "$url")"
   fi
 
+  # 405 is also a definitive rejection: the request was not accepted. A
+  # reverse proxy/router may reject an unsupported method before auth middleware.
   case "$code" in
     401|403) echo "PASS: $label rejected unauthenticated request (HTTP $code)" ;;
+    405) echo "PASS: $label rejected unsupported unauthenticated method (HTTP 405)" ;;
     *) fail "$label accepted or ambiguously handled unauthenticated request (HTTP $code)" ;;
   esac
 }
