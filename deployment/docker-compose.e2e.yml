@@ -15,15 +15,15 @@ services:
     environment:
       PORT: 8081
       MEDIAMTX_API_URL: http://mediamtx:9997
-      MEDIAMTX_API_USER: api-e2e
-      MEDIAMTX_API_PASSWORD: api-e2e-pass
+      MEDIAMTX_API_USER: api
+      MEDIAMTX_API_PASSWORD: api-pass
     depends_on:
       - mediamtx
     ports:
       - "8081:8081"
 
   minio:
-    image: quay.io/minio/aistor/minio:RELEASE.2026-08-07T18-34-35Z
+    image: minio/minio:latest
     environment:
       MINIO_ROOT_USER: fad-e2e
       MINIO_ROOT_PASSWORD: fad-e2e-password
