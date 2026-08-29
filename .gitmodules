@@ -1,4 +1,3 @@
-[submodule "docs/FadCam.wiki"]
-	path = docs/FadCam.wiki
-	url = https://github.com/anonfaded/FadCam.wiki.git
-	branch = master
+[submodule "server/ersatztv"]
+	path = server/ersatztv
+	url = https://github.com/ErsatzTV/legacy.git
