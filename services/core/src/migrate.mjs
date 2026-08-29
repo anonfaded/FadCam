@@ -5,8 +5,9 @@ import pg from 'pg'
 
 const { Client } = pg
 const MIGRATION_LOCK_KEY = 874321
+const DEFAULT_MIGRATION_DIRECTORY = path.resolve(process.cwd(), 'migrations')
 
-export async function migrate(connectionString, directory = path.resolve(process.cwd(), 'db')) {
+export async function migrate(connectionString, directory = DEFAULT_MIGRATION_DIRECTORY) {
   const client = new Client({ connectionString })
   await client.connect()
   let locked = false
@@ -22,6 +23,8 @@ export async function migrate(connectionString, directory = path.resolve(process
     const files = (await fs.readdir(directory))
       .filter(name => /^\d+_.+\.sql$/.test(name))
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+
+    if (!files.length) throw new Error(`no migrations found in ${directory}`)
 
     const versions = new Set()
     for (const file of files) {
