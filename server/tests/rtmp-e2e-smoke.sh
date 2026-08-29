@@ -256,10 +256,19 @@ verify_cleanup() {
   wait "${PUBLISHER_PID}" || rc=$?
   PUBLISHER_PID=""
 
-  if [[ "${rc}" -ne 0 && "${rc}" -ne 143 ]]; then
+  # FFmpeg's FLV muxer can return 255 when a network RTMP output is deliberately
+  # terminated with SIGTERM. It may also report that it could not rewrite the
+  # FLV duration/filesize footer because an RTMP socket is not seekable. Those
+  # messages are expected for this intentional shutdown and are not a streaming
+  # failure. All functional streaming assertions have already passed above.
+  if [[ "${rc}" -ne 0 && "${rc}" -ne 143 && "${rc}" -ne 255 ]]; then
     fail "Publisher failed during deliberate shutdown (exit ${rc})."
   fi
-  log "PASS: publisher stopped deliberately (exit ${rc})."
+  if [[ "${rc}" -eq 255 ]]; then
+    log "PASS: publisher stopped deliberately (FFmpeg network-output exit 255 accepted)."
+  else
+    log "PASS: publisher stopped deliberately (exit ${rc})."
+  fi
 
   log "Waiting for MediaMTX to remove the HLS muxer..."
   for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
