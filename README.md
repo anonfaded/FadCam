@@ -1,467 +1,383 @@
-<div align="center">
-    
-<!-- <img src="https://github.com/user-attachments/assets/9c1c7f9e-8798-4baa-b803-fa82cf1a6bd7" style="width: 700px; height: auto;" >  this is the old banner -->
+# FadCam
 
-<img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/tvBanner.jpg" style="width: 900px; height: auto;" >
+**Privacy-focused Android multimedia suite for background video recording, dashcam/bodycam use, screen recording, live streaming, and remote camera control — ad-free and open-source.**
 
-<!-- https://github.com/user-attachments/assets/c9eeaf74-6649-4810-b420-e2c4ad4bd365 -->
+[![Android CI](https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml/badge.svg)](https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml)
 
+FadCam is built around privacy, reliability, and practical mobile multimedia workflows. It can turn an Android device into a flexible recorder, streaming source, or remotely controlled camera while keeping the project open-source and free of advertising.
 
-<br>
-</div>
-
-> [!Tip]
-> This project is part of the [FadSec Lab suite](https://github.com/fadsec-lab). <br> Discover our focus on ad-free, privacy-first applications and stay updated on future releases!
-
-> [!Note]
-> Unlock FadCam Pro with lifetime access: Visit the [Shop](https://www.patreon.com/cw/Fadedx/shop) <br> FadCam for Desktop is planned! 
-
+> [!WARNING]
+> **Responsible use:** only record, monitor, stream, or remotely control devices and people when you have the necessary permission and when doing so complies with applicable law. FadCam does not support unauthorized surveillance or privacy violations.
 
 ---
 
-<div align="center">
-    
-<img src="https://github.com/anonfaded/FadCam/assets/124708903/d6f99201-65c7-4c93-bf13-d4a0d65172ac" style="width: 100px; height: auto;" >
+## Contents
 
-# `>_` FadCam
-
-**Privacy-focused Android multimedia suite: background video recording, dashcam, screen recorder, live streaming & remote control - ad-free & open-source.**
-
-<a href="https://trendshift.io/repositories/12830" target="_blank"><img src="https://trendshift.io/api/badge/repositories/12830" alt="anonfaded%2FFadCam | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-
-[![GitHub all releases](https://img.shields.io/github/downloads/anonfaded/FadCam/total?label=Downloads&logo=github)](https://github.com/anonfaded/FadCam/releases/)
-[![SourceForge Downloads](https://img.shields.io/sourceforge/dt/fadcam.svg?label=SourceForge%20Downloads&color=red)](https://sourceforge.net/projects/fadcam/files/latest/download)
-[<img src="https://shields.rbtlog.dev/simple/com.fadcam" alt="badge">](https://shields.rbtlog.dev/com.fadcam)
-
-[![ko-fi badge](https://img.shields.io/badge/buy_me_a-coffee-red)](https://ko-fi.com/D1D510FNSV)
-[![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3DFadedx%26type%3Dpatrons%26suffix%3Dpatrons%2520%257C%2520Shop&style=social)](https://www.patreon.com/cw/Fadedx/shop)
-<!-- [![Patreon](https://img.shields.io/badge/Patreon-orange?logo=patreon&label=Patreon)](https://www.patreon.com/cw/Fadedx/shop) -->
-<br>
-<sub>Scan to visit Patreon shop:</sub>
-<br>
-<img src="app/src/main/assets/QRCodes/QRCode_patreon_shop.png" alt="Scan to visit Patreon shop" style="width: 150px; height: auto;" >
-<br>
-
-[![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
-
-<!-- <img alt="Discord" src="https://img.shields.io/discord/1263384048194027520?style=social&logo=discord&label=Join%20chat&color=red"> -->
-
-
-
-<br>
-<br>
-
-<!--
-<a href="https://play.google.com/store/apps/details?id=com.fadcam">
-    <img src="https://github.com/anonfaded/FadCam/blob/a75be2fe8e6fca539c18af8e0a208508ff1ad4ed/app/src/main/assets/PreRegisterOnGooglePlay_Badge.png"
-    alt="Pre-Register on Google Play"
-    height="50"></a>
--->
-<br>
-    
-<a href="https://apt.izzysoft.de/packages/com.fadcam">
-    <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
-    alt="Get it on IoD"
-    height="70"></a>
-
-<a href="https://apps.apple.com/us/app/fadcam-dashcam-bodycam/id6778121848?itscg=30200&itsct=apps_box_badge&mttnsubad=6778121848" style="display: inline-block;">
-    <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1782345600" alt="Download on the App Store" style="width: auto; height: 60px; vertical-align: middle; object-fit: contain;" /></a>
-
-<a href="https://f-droid.org/packages/com.fadcam">
-    <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-    alt="Get it on F-Droid"
-    height="70"></a>
-    
-<br>
-
-<!--
-[![Pre-Register on Google Play](https://github.com/anonfaded/FadCam/blob/a75be2fe8e6fca539c18af8e0a208508ff1ad4ed/app/src/main/assets/PreRegisterOnGooglePlay_Badge.png)](https://play.google.com/store/apps/details?id=com.fadcam)
-
-[![Get it on Google Play](https://github.com/anonfaded/FadCam/blob/a75be2fe8e6fca539c18af8e0a208508ff1ad4ed/app/src/main/assets/GetItOnGooglePlay_Badge.png)](https://play.google.com/store/apps/details?id=com.fadcam)
--->
-
-| ⭐ |<img src="https://github.com/user-attachments/assets/c730eda3-5887-458d-8df1-971a74807b73" style="width: 100px; height: auto;" > | *New app from FadSec-Lab suite:🎉* <br> Also, check out our new Windows app! Visit here: [FadCrypt](https://github.com/anonfaded/FadCrypt)  |
-|--|-------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-
-
-<br>
-</div>
-
-<p align="center">
-        <img src="https://raw.githubusercontent.com/bornmay/bornmay/Update/svg/Bottom.svg" alt="Github Stats" />
-</p>
-
----
-
-<details>
-    <summary>Expand Table of Contents</summary>
-    
-<br>
-        
-- [Purpose](#purpose)
-- [Screenshots](#-screenshots)
-- [Featured on](#featured-on)
-- [Download](https://github.com/anonfaded/FadCam#-download)
-- [Features](#features)
-- [Upcoming Features](#upcoming-features)
-- [Join Community](#join-community)
+- [What FadCam does](#what-fadcam-does)
+- [CI and release-grade validation](#ci-and-release-grade-validation)
+- [Where to get APK artifacts](#where-to-get-apk-artifacts)
+- [Getting released builds](#getting-released-builds)
+- [Building locally](#building-locally)
+- [Streaming validation](#streaming-validation)
+- [Project structure](#project-structure)
+- [Development workflow](#development-workflow)
+- [Contributing](#contributing)
 - [Support](#support)
-- [Contributions](#contributions)
-- [Credits](#credits)
-
-</details>
+- [License](#license)
 
 ---
 
-## `>_` Purpose
+## What FadCam does
 
-FadCam is developed with the goal of providing a powerful, privacy-focused multimedia suite for Android devices. This comprehensive app includes dashcam functionality, screen recording with annotations, live streaming over local networks, and remote camera control — all designed for **ethical use** only.
+FadCam is a privacy-focused Android multimedia application with support for:
 
-**Ethical Use Cases Include:**
-- **Personal Security:** Use as a dashcam while driving, CCTV at home with remote monitoring, or recording proof in situations where needed for yourself
-- **Content Creation:** Screen recording with professional annotation tools
-- **Remote Monitoring:** Live streaming and remote control for security purposes
-- **Research and Documentation:** Multi-purpose recording tools for various needs
+- Background video recording.
+- Dashcam/bodycam-style recording workflows.
+- Screen recording and annotation.
+- Live streaming over supported networks.
+- RTMP publishing and MediaMTX/HLS integration.
+- Remote camera control and monitoring workflows.
+- Ad-free, open-source development.
 
-> [!Caution]
-> **Misuse Disclaimer:** <br>
-> The developers of FadCam do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized surveillance or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
+The project is intended for legitimate recording, documentation, personal security, content creation, testing, and other authorized uses.
 
-## `>_` 📱 Screenshots
+---
+
+## CI and release-grade validation
+
+The repository uses the **FadCam Android + Platform Validation** GitHub Actions workflow as the main release-oriented validation pipeline.
+
+[Open the FadCam Android + Platform Validation workflow](https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml)
+
+Pull requests targeting `master` and pushes to the configured validation branches run the relevant platform gates.
+
+### Validation gates
+
+| Gate | Purpose |
+| --- | --- |
+| **Android debug APK** | Runs the default debug unit tests and assembles a debug APK. |
+| **Android default release APK** | Assembles the default release APK and verifies its structure, alignment, and signature. |
+| **Existing JVM integration/test suite** | Runs the supported default debug and release JVM test suites explicitly. |
+| **Server Compose configuration** | Validates `server/docker-compose.yml` with `server/.env.example`. |
+| **RTMP → MediaMTX → HLS E2E** | Exercises the deterministic streaming path with the repository smoke-test harness. |
+
+The CI pipeline intentionally targets the project's supported **default** variants instead of invoking an unrestricted Gradle `test` task that could select an unsupported flavor/build-type combination.
+
+### Release APK validation
+
+The release job:
+
+1. Uses Java 17.
+2. Prepares the patched Media3 dependency tree used by the project.
+3. Generates an **ephemeral CI-only signing key**.
+4. Builds `assembleDefaultRelease`.
+5. Checks that APK files exist and are structurally valid.
+6. Runs `zipalign` validation.
+7. Runs `apksigner verify`.
+8. Uploads the validated APK as a GitHub Actions artifact.
+
+> [!NOTE]
+> The CI release APK is signed with a temporary validation key. It is **not** the production signing identity and should not be confused with a formally published release APK.
+
+### Why the integration gate is explicit
+
+The JVM integration/test gate runs:
+
+```bash
+./gradlew :app:testDefaultDebugUnitTest :app:testDefaultReleaseUnitTest --stacktrace --no-daemon
+```
+
+This keeps CI aligned with the supported Android variants and avoids accidental resolution of unsupported configurations.
+
+The workflow also reports whether an Android `androidTest` source set exists. Device-backed instrumentation is not fabricated when the repository does not currently provide executable instrumentation fixtures.
+
+---
+
+## Where to get APK artifacts
+
+### ⭐ Your normal CI APK location
+
+For APKs produced by the engineering/release-validation pipeline, the usual place to get them is **GitHub Actions**:
+
+**GitHub → FadCam → Actions → FadCam Android + Platform Validation → open a successful run → Artifacts**
+
+[Open GitHub Actions](https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml)
+
+The workflow publishes these artifact packages:
+
+| Artifact | Build | Use |
+| --- | --- | --- |
+| `fadcam-default-debug-apk` | Default Debug | Development and testing installs. |
+| `fadcam-default-release-apk` | Default Release | Release-build validation and testing. |
+
+### How to download one
+
+1. Open the [FadCam Actions workflow](https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml).
+2. Open the successful run for the commit you want.
+3. Scroll to the **Artifacts** section.
+4. Download `fadcam-default-debug-apk` or `fadcam-default-release-apk`.
+5. Extract the ZIP and install the APK on your compatible Android test device/emulator.
+
+### Artifact retention
+
+The current CI workflow retains these APK artifacts for **7 days**. They are therefore intended for short-lived CI validation, not permanent distribution.
+
+If you need a binary that should remain available to users, publish it as a **GitHub Release** instead of relying on an Actions artifact.
+
+### Actions artifacts vs Releases
+
+**Actions artifact**
+
+- Tied to a specific CI run.
+- Best for testing a commit or pull request.
+- Automatically retained for the configured retention period.
+- The CI release APK uses an ephemeral validation signing key.
+
+**GitHub Release asset**
+
+- Intended for permanent user-facing distribution.
+- Associated with a version/tag.
+- Should use the project's proper production release-signing process.
+
+This distinction is important: **the APK you normally download during development comes from Actions; the APK you distribute permanently should come from a formal release.**
+
+---
+
+## Getting released builds
+
+### GitHub Releases
+
+For permanent, versioned releases:
+
+https://github.com/Trendyzima/FadCam/releases
+
+### F-Droid
+
+https://f-droid.org/packages/com.fadcam/
+
+### IzzyOnDroid
+
+https://apt.izzysoft.de/packages/com.fadcam
+
+### SourceForge
+
+https://sourceforge.net/projects/fadcam/files/
+
+Use official distribution channels whenever possible and verify the origin of any APK before installation.
+
+---
+
+## Building locally
+
+### Requirements
+
+The current Android build environment expects:
+
+- Java 17.
+- Android SDK configured for the project.
+- Git.
+- A compatible Android/Gradle development environment.
+
+### Clone
+
+```bash
+git clone https://github.com/Trendyzima/FadCam.git
+cd FadCam
+chmod +x ./gradlew
+```
+
+### Run default debug unit tests
+
+```bash
+./gradlew :app:testDefaultDebugUnitTest
+```
+
+### Build the default debug APK
+
+```bash
+./gradlew assembleDefaultDebug
+```
+
+Output:
+
+```text
+app/build/outputs/apk/default/debug/
+```
+
+### Build the default release APK
+
+```bash
+./gradlew assembleDefaultRelease
+```
+
+Output:
+
+```text
+app/build/outputs/apk/default/release/
+```
+
+For a production release, use the project's real release-signing configuration. Do not reuse the temporary signing setup used by CI validation.
+
+### Run the supported JVM test suites
+
+```bash
+./gradlew :app:testDefaultDebugUnitTest :app:testDefaultReleaseUnitTest
+```
+
+---
+
+## Streaming validation
+
+FadCam's platform validation includes a deterministic RTMP → MediaMTX → HLS path:
+
+```text
+FadCam / RTMP publisher
+          │
+          ▼
+       MediaMTX
+          │
+          ▼
+          HLS
+          │
+          ▼
+     HLS probe/client
+```
+
+The server-side configuration lives under `server/`, with the deterministic smoke test at:
+
+```text
+server/tests/rtmp-e2e-smoke.sh
+```
+
+### Validate Compose locally
+
+```bash
+docker compose --env-file server/.env.example -f server/docker-compose.yml config --quiet
+```
+
+### Run the RTMP → HLS smoke test
+
+```bash
+chmod +x server/tests/rtmp-e2e-smoke.sh
+./server/tests/rtmp-e2e-smoke.sh
+```
+
+This validates the streaming infrastructure without requiring a physical Android device.
+
+---
+
+## Project structure
+
+```text
+FadCam/
+├── app/                              # Android application
+├── server/                           # Server/deployment configuration
+│   └── tests/                        # Streaming integration/smoke tests
+├── .github/
+│   └── workflows/                    # GitHub Actions validation
+├── gradle/                           # Gradle support
+├── gradlew                           # Gradle wrapper
+├── build.gradle.kts                  # Root Gradle configuration
+├── CHANGELOG.md                      # Project change history
+├── PRIVACY.md                        # Privacy information
+├── LICENSE                           # License
+└── README.md                         # Project documentation
+```
+
+The exact tree evolves as the project grows.
+
+---
+
+## Development workflow
+
+When making changes, validate them in the same order as the release pipeline whenever practical:
+
+1. Run the relevant unit tests.
+2. Build the default debug APK.
+3. Run the supported debug/release JVM test suites.
+4. Validate Docker Compose when server configuration changes.
+5. Run the RTMP → MediaMTX → HLS smoke test when streaming code/infrastructure changes.
+6. Build and inspect the default release APK for release-related changes.
+7. Push the change and let GitHub Actions validate the complete pipeline.
+
+### Android variants
+
+Do not assume every flavor/build-type combination is supported. The release-grade CI pipeline deliberately uses the explicit default variants that match the project's dependency graph.
+
+### Patched Media3
+
+CI prepares the patched Media3 source tree from:
+
+https://github.com/anonfaded/media3-patched
+
+Changes affecting Media3 integration should be tested against the same patched dependency setup used by CI.
+
+---
+
+## Responsible use and privacy
+
+FadCam can access sensitive device capabilities such as the camera, microphone, screen, storage, and network. Users should review Android permissions and use the application responsibly.
+
+Do not use FadCam for unauthorized recording, surveillance, interception, or privacy violations. Local laws and consent requirements vary by jurisdiction.
+
+For the project's privacy documentation, see [`PRIVACY.md`](PRIVACY.md).
+
+---
+
+## Contributing
+
+Contributions are welcome, including:
+
+- Android fixes and improvements.
+- Streaming and MediaMTX improvements.
+- CI/release engineering.
+- Test coverage.
+- Documentation.
+- Performance and reliability work.
+
+Before opening a pull request:
+
+- Keep changes focused.
+- Never commit secrets, private credentials, or production signing keys.
+- Run the relevant tests locally.
+- Validate server configuration for server changes.
+- Run the streaming smoke test for RTMP/MediaMTX/HLS changes.
+- Update documentation when developer or user workflows change.
+- Treat privacy and responsible use as first-class requirements.
+
+Pull requests targeting `master` are checked by the release-oriented validation workflow.
+
+---
+
+## Support
+
+- **Repository:** https://github.com/Trendyzima/FadCam
+- **Issues:** https://github.com/Trendyzima/FadCam/issues
+- **Pull requests:** https://github.com/Trendyzima/FadCam/pulls
+- **Actions / CI:** https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml
+
+For project discussion and community support, use the official project channels listed in the repository.
+
+---
+
+## Credits
+
+FadCam uses open-source projects and libraries throughout its Android and streaming stack. See the repository dependency manifests and source attributions for the authoritative third-party component list.
+
+Patched Media3:
+
+https://github.com/anonfaded/media3-patched
+
+---
+
+## License
+
+See [`LICENSE`](LICENSE) for the authoritative license terms.
+
+---
 
 <div align="center">
-<!--     <img src="https://github.com/anonfaded/FadCam/assets/124708903/4a93c111-fc67-4d75-94b1-fa4e01822998" style="width: 50px; height: auto;" >
-    <br>
-    <em>apk icon</em> -->
-    <br><br>
-    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" style="width: 200px; height: auto;" >
-    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" style="width: 200px; height: auto;" >
-    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" style="width: 200px; height: auto;" >
-    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpg" style="width: 200px; height: auto;" >
-    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpg" style="width: 200px; height: auto;" >
-    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/6.jpg" style="width: 200px; height: auto;" >
-    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/7.jpg" style="width: 200px; height: auto;" >
-    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/8.jpg" style="width: 200px; height: auto;" >
-    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/9.jpg" style="width: 200px; height: auto;" >
-    <img src="https://github.com/anonfaded/FadCam/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/10.jpg" style="width: 200px; height: auto;" >
- <br>
 
-<!--     <br> -->
-<!--     <em>UI</em> -->
-   
+**FadCam — privacy-focused multimedia tools for Android.**
+
 </div>
-<!--     <details>
-        <summary><strong>More Screenshots</strong></summary>
-        <img src="/img/3.png" style="width: 700px; height: auto;" >
-        <br>
-        <img src="/img/4.png" style="width: 700px; height: auto;" >
-        <br>
-        <img src="/img/5.png" style="width: 700px; height: auto;" >
-    </details> -->
-
-## `>_` Featured On
-
-<details>
-<summary><strong>Expand Featured Content</strong></summary>
-
-### `>_` Featured Audio Podcast
-- [closednetwork.io](https://closednetwork.io/podcast/episode-42-deepseek-ai-oh-my/) at `1:15:22` timestamp
-
-### `>_` Featured Videos
-- [HowToMen on YouTube](https://youtu.be/gU9ddvtqL3E?si=6GpPO2fKQxT6RWKz&t=297)
-- [HowToMen 2nd feature :) ](https://youtu.be/3pOoU5JjfnE?si=JMwoHfGyocXuvkC7&t=520)
-- [Xtream Droid on YouTube](https://youtu.be/PImJehUqOC0?si=kQKrwk7kdHJT0_-8&t=238)
-- [Xtream Droid once again in Hindi](https://www.youtube.com/watch?v=smCMKih759I)
-- [Tech Quirk on YouTube](https://www.youtube.com/shorts/4cQ2RpWHess)
-- [TechyNoob on YouTube](https://youtu.be/ahUmOhOc_cI?si=P5_MK5B7KiJV_2Ip)
-- [Luca Crocco on TikTok](https://www.tiktok.com/@lucacrocco96/video/7400823097613503777)
-- [TipTopTech on YouTube](https://youtu.be/SXHT25dNCrM?si=csEav5ZBYniJWT3J&t=177)
-- [Adhip Pandey on YouTube](https://www.youtube.com/watch?v=ud0bu8U08Ic)
-- [Daniel Bueno - Tecnología on YouTube](https://www.youtube.com/watch?v=TuZBXJVPfOU)
-- [degeregi on TikTok](https://www.tiktok.com/@degereji/video/7403781470180920581)
-- [Anurag - The Geek](https://youtu.be/uXDQhGgjhDU?si=dgYo_wMAxiCM77R5&t=166)
-- [@ALHATEFALDHAKI on YouTube](https://www.youtube.com/watch?v=jOqnfL3mRks)
-- [@techtricks306 on YouTube](https://www.youtube.com/watch?v=3C2XM4YnlDY)
-- [Samfans VN on YouTube](https://www.youtube.com/watch?v=LSYKu51ibeI)
-- [Sam Beckman on YouTube](https://youtu.be/GujW6qMdVGg?si=WLQ5PyneHkUQvyB7)
-- [Sam Beckman 2nd Feature](https://youtu.be/E4Row0mFbfk?si=QLjgWyv5p3gO1giM&t=518)
-- [Tech In Hand on YouTube](https://youtu.be/OjuSXf5Dj8E?si=Ng6C7Ic_HZbzxWo5)
-- [AWAk3N on YouTube](https://youtu.be/B38XqQBT398?si=p7-jNVu-LxSXkNaF)
-- [Toped de Gama plus on YouTube](https://youtu.be/Vhg3IvyGXWE?si=EC_rSt6gcB-1AyRT&t=361)
-- [Learn Freelancing with Tusher on YouTube](https://youtu.be/bgfTJsbXjLw?si=XJ6P8WF_KA4usLd6)
-- [iamrooney_ on TikTok](https://www.tiktok.com/@iamrooney_/video/7476628538636913925)
-- [Brandulox](https://youtu.be/yWg-quQIX1Y?si=-Wq_ZAV9WwAEV592)
-- [brandulox on TikTok](https://www.tiktok.com/@brandulox/video/7481545146144673030)
-- [El Androide Feliz on YouTube](https://youtu.be/H02x9pnJh_g?si=dXCmNLaDm9Hrra2C&t=669)
-- [ODORIZZI on YouTube](https://www.youtube.com/watch?v=e2IFJJgjKRg)
-- [Tech OverWatch on TikTok](https://www.tiktok.com/@tech_overwatch/video/7506821012655181062)
-- [tech_overwatch on Insta](https://www.instagram.com/reel/DJ6Nn5uNHxq/)
-- [Wuincy Tran on YouTube](https://youtu.be/gLY1SstSwgo?si=_h3eyb0Zh3oo14jK)
-- [El Androide Feliz on YouTube](https://youtu.be/5SCl5X_miTc?si=E44ej0ZfPGTz3HfR)
-- [msn.com](https://www.msn.com/es-es/noticias/tecnologia/esta-app-convierte-tu-m%C3%B3vil-en-una-c%C3%A1mara-discreta-graba-v%C3%ADdeo-sin-encender-la-pantalla/ar-AA1Hf4dR)
-- [RivollPlay Tech on YouTube](https://youtu.be/v0grlqT_qOw?si=PRdB2oLhJLXiXBU_)
-- [softonic on X](https://x.com/softonic/status/1939598582643830840)
-<!-- - [Someone in comments mentioned about fadcam, on TikTok](https://www.tiktok.com/@unijpeg/video/7438464230807948600) -->
-<!-- - [Tech Knowing](https://youtu.be/5ZqjensX_XQ?si=iXIY4tMf1iBW9zoR) -->
-<!-- - [EI Tech - Emanuele Iafulla on YouTube](https://youtu.be/n8k9J4GnoCY?si=D6RVGSD832jOFhiQ) -->
-<!-- [Police recording with FadCam](https://www.facebook.com/joseph.anthony.emaikwu/videos/fadcam/3206531569486276/) -->
-
-### `>_` Articles and Listings
-- [fmhy.net](https://fmhy.net/android-iosguide#camera-tools)
-- [discuss.privacyguides.net](https://discuss.privacyguides.net/t/fadcam-open-source-cam-background-video-recording-even-when-the-screen-is-off/19823)
-- [appteka.com](https://appteka.store/app/bcdr185175)
-- [discuss.grapheneos.org](https://discuss.grapheneos.org/d/11667-what-featureapp-do-you-use-that-the-majority-never-talk-about/69)
-- [fmhy.net](https://fmhy.net/android-iosguide#camera-tools)
-- [offa repo](https://github.com/offa/android-foss#-camera)
-- [geeky-gadgets.com](https://www.geeky-gadgets.com/awesome-android-apps-to-try-out-in-august/)
-- [GrowingGit repo](https://github.com/GrowingGit/GitHub-English-Top-Charts/blob/main/content/charts/new_repo/software/Java.md)
-- [openapk.net](https://www.openapk.net/fadcam/com.fadcam/)
-- [popMODS on Telegram](https://t.me/popmodschat/447936)
-- [VPN Club on Telegram](https://t.me/wbnet/99735)
-- [Mobile Applications on Telegram](https://t.me/appCentre/18006)
-- [phonenovo.com](https://phonenovo.com/new-android-apps-for-august-enhance-your-mobile-experience/)
-- [dailymobile.ir](https://www.dailymobile.ir/89140/fadcam-android/)
-- [roonby.com](https://roonby.com/2024/08/01/10-best-android-apps-to-use-these-months-august-2024/)
-- [en.xiaomitoday.it](https://en.xiaomitoday.it/fadcam-con-questa-app-diventi-un-agente-segreto.html)
-- [alternativeto.net](https://alternativeto.net/software/fadcam/about/)
-- [misa7atech.com](https://www.misa7atech.com/2024/08/BestPhoneApps13Aug24.html)
-- [mounirtech.com](https://www.mounirtech.com/2024/08/Best-new-apps-august-2024.html)
-- [androidtr.es](https://androidtr.es/las-8-mejores-aplicaciones-ocultas-de-codigo-abierto-para-android-y-hacks-secretos-que-te-dejaran-boquiabierto-2/)
-- [gadgetstouse.com](https://gadgetstouse.com/blog/2024/08/22/record-video-with-screen-off-on-android/)
-- [summarize.tech](https://www.summarize.tech/www.youtube.com/watch?v=gU9ddvtqL3E)
-- [phcorner.net](https://phcorner.net/threads/fadcam-open-source-seamless-background-video-recorder-for-android.2069335/)
-- [danielbuenotecnologia.com](https://danielbuenotecnologia.com/2024/09/13/protege-tu-vida-con-la-app-fad-cam/)
-- [nothingforum.com](https://nothingforum.com/konu/fadcam-video-kaydi-icin-guvenli-bir-cozum.1982/)
-- [manualdousuario.net](https://manualdousuario.net/fadcam-videos-android-tela-desligada/)
-- [techwiser.com](https://techwiser.com/how-to-secretly-record-a-video-with-screen-off-on-android/)
-- [geeky-gadgets.com (2nd feature)](https://www.geeky-gadgets.com/15-foss-android-apps-that-are-not-on-the-google-play-store/)
-- [iiktshf.com](https://iiktshf.com/fadcam/)
-- [androidfreeware.net](https://www.androidfreeware.net/download-fadcam-apk.html)
-- [computer-wd.com](https://www.computer-wd.com/2024/08/new-mobile-apps.html)
-- [computer-wd.com (2nd feature)](https://www.computer-wd.com/2024/11/secretly-record-video-on-android.html)
-- [computer-wd.com (3rd feature)](https://www.computer-wd.com/2024/12/best-android-apps-2024.html)
-- [thetechboy.org](https://www.thetechboy.org/2024/11/undercover-recording-no-ads.html)
-- [tz887.com](https://www.tz887.com/app/311291.html)
-- [news.ycombinator.com](https://news.ycombinator.com/item?id=42802171)
-- [archivecan.info](https://archivecan.info/android-ios/)
-- [purepc.pl](https://www.purepc.pl/darmowe-aplikacje-na-telefon-z-androidem-stycze%C5%84-2025)
-- [aqweeb.com](https://www.aqweeb.com/2025/02/10-new-apps-android-and-ios-pt9.html)
-- [nomiapk.website](https://nomiapk.website/xscamera-smart-secure-video-recorder/)
-- [apkhubs.com](https://apkhubs.com/en/fadcam-apk)
-- [malavida.com](https://www.malavida.com/br/soft/fadcam/android/)
-- [apkclone.com](https://apkclone.com/ja/fadcam-apk)
-- [diyiyou.com](https://www.diyiyou.com/soft/1768.html)
-- [zxki.cn](https://zxki.cn/syrj/18967.html)
-- [xmk8.com](https://www.xmk8.com/119603/.html)
-- [aukbbs.com](https://aukbbs.com/t-30218-1-1.html)
-- [blog.csdn.net](https://blog.csdn.net/gitblog_00782/article/details/146972336)
-- [lealternative.net](https://www.lealternative.net/2025/04/15/fadcam-fotocamera-sempre-attiva-per-la-tua-sicurezza/)
-- [uptodown.com](https://fadcam.en.uptodown.com/android)
-- [buzzspot.net](https://www.buzzspot.net/2025/05/open-source-android-apps.html?m=1)
-- [ababtools.com](https://ababtools.com/?post=5528)
-- [0714.com](http://www.0714.com/soft/59753.htm)
-- [yeeach.com](https://yeeach.com/1685/%E5%BC%80%E6%BA%90android%E5%90%8E%E5%8F%B0%E5%BD%95%E9%9F%B3-%E5%BD%95%E5%83%8F%E5%B7%A5%E5%85%B7%E6%B1%87%E6%80%BB/)
-- [codegith.com](https://codegith.com/fadcam-open-source-background-video-recorder-for-android/)
-- [52pojie.cn](https://www.52pojie.cn/thread-2038164-1-1.html)
-- [anfensi.com](https://www.anfensi.com/down/429430.html)
-- [fy6b.com](https://www.fy6b.com/fadcam.html)
-- [xatakandroid.com](https://www.xatakandroid.com/aplicaciones-android/esta-app-convierte-tu-movil-camara-discreta-graba-video-encender-pantalla)
-- [blog.csdn.net](https://blog.csdn.net/2501_91832086/article/details/148797756)
-- [lewz.cn](https://www.lewz.cn/jprj/10448.html)
-- [ruanyazyk.com](https://ruanyazyk.com/tools/media/imageProduction.html#fadcam)
-- [centrum.cz](https://www.centrum.cz/chytre-nahravani-aplikace-fadcam-toci-video-i-s-vypnutou-obrazovkou-89fff656-54ab-5ff0-9d30-5c26e9bd9a3a)
-- [meta.appinn.net](https://meta.appinn.net/t/topic/72853/2)
-<!-- - https://www.cityrumors.it/tecnologia/il-trucco-per-fare-video-di-nascosto-con-il-tuo-smartphone-tutti-lo-stanno-provando.html -->
-
-</details>
-
-
-
-## `>_` ⬇️ Download
-
-Download the latest `apk` file directly from the [releases page](https://github.com/anonfaded/FadCam/releases).
-
-[<img src="https://raw.githubusercontent.com/vadret/android/master/assets/get-github.png" alt="Get it on GitHub" height="70">](https://github.com/anonfaded/FadCam/releases)
-
-Or:
-
-<!--
-<a href="https://play.google.com/store/apps/details?id=com.fadcam">
-    <img src="https://github.com/anonfaded/FadCam/blob/a75be2fe8e6fca539c18af8e0a208508ff1ad4ed/app/src/main/assets/PreRegisterOnGooglePlay_Badge.png"
-    alt="Pre-Register on Google Play"
-    height="50"></a>
--->
-
-<br>
-
-<a href="https://apt.izzysoft.de/packages/com.fadcam">
-    <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png"
-    alt="Get it on F-Droid"
-    height="70"></a>
-<a href="https://f-droid.org/packages/com.fadcam">
-    <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
-    alt="Get it on F-Droid"
-    height="70"></a>
-
-<a href="http://www.amazon.com/gp/product/B0CZKWZ8PG/ref=mas_pm_FadCam">
-    <img src="https://github.com/anonfaded/FadCam/assets/124708903/43550ba6-dcf2-46cb-8aa5-2a882968c529"
-    alt="Get it on Amazon appstore"
-    height="47"></a>
-
-
-
-<!-- **Downloads logs:**
-- 5k -> 10 Jul 2024 (1st month)
-- 10k -> 21 Aug 2024 (6th week)
-- 15k -> 8 Sep 2024 (9th week) -->
-
-## `>_` Features:
-
-<details>
-<summary><strong>🎬 FadRec Screen Recorder</strong></summary>
-
-- Full-featured screen recording with annotation tools (pen, eraser, text, shapes)
-- Multi-layer editing with version control and unlimited undo/redo
-- Automatic project saving with full recovery options
-- Sidebar overlay menu for quick-access recording controls
-</details>
-
-<details>
-<summary><strong>🏠 FadCam Remote</strong></summary>
-
-- Live stream camera feed over local network with beautiful web interface
-- Remote control features: start/stop recording, adjust settings, toggle torch
-- Real-time monitoring: battery level, storage status, recording status
-- Perfect for security monitoring and remote access
-</details>
-
-<details>
-<summary><strong>📸 Dashcam & Background Recording</strong></summary>
-
-- Background video recording with screen off capability
-- **Custom hybrid MP4 output** — FadCam's recording engine is built on a custom-patched version of the Media3 library that streams recordings as a fragmented MP4 while recording (zero corruption risk, instant recovery), then finalizes them into a universally playable MP4 on stop. This hybrid format is specific to FadCam and not part of the stock Media3 library
-- **Auto-repair of interrupted recordings** — if the process is killed mid-recording (aggressive OEM background management, crashes, battery optimization), the file is automatically detected and repaired on the next app launch
-- **Repair notifications** — a banner in the Records tab tells you when an interrupted recording was successfully recovered
-- Auto-splitting large files with customizable size limits
-- Wide-angle camera detection and support
-</details>
-
-<details>
-<summary><strong>🎥 Video & Audio Controls</strong></summary>
-
-- Multiple resolutions and 60/90fps support
-- Orientation control and quality options
-- Audio recording with customizable bitrate and sample rate
-- Custom watermark text overlays
-- Geotagging with location data embedding
-</details>
-
-<details>
-<summary><strong>🎨 User Interface & Experience</strong></summary>
-
-- Clean Material Design with bottom sheet actions
-- 7+ app themes including AMOLED, Light, and System themes
-- 15+ customizable app icons
-- In-app "What's New" page for feature discovery
-- Standalone beta installation without conflicts
-</details>
-
-<details>
-<summary><strong>📁 File Management & Playback</strong></summary>
-
-- Enhanced thumbnails with index, duration, and file size
-- Sorting & filtering by date, size, and more
-- Trash bin with restore and auto-delete options
-- Inbuilt video player using ExoPlayer
-- Video info view with resolution, size, and duration details
-- Direct video renaming in-app
-</details>
-
-<details>
-<summary><strong>🔧 Advanced Features</strong></summary>
-
-- Storage indicator with real-time space and estimated record time
-- Clock widget with customizable date/time and colors
-- Custom notification presets and descriptions
-- Audio input source selection (phone mic, wired/Bluetooth)
-- Dynamic watermarks with timestamp, logo, and GPS options
- - App Shortcuts: Three quick actions are available (Start Recording, Stop Recording, Toggle Torch). These shortcuts can be triggered without opening the app and can be mapped with key-mapping apps (e.g. MacroDroid) to hardware buttons (like volume buttons) for convenient control.
-- Quick Settings Tile: Adds a notification shade Quick Settings tile. Single-tap to start/stop recording, double-tap to switch between Front/Rear camera (even live during recording), with secure keyguard lockscreen authentication.
-</details>
-
-<details>
-<summary><strong>🌐 Localization & Privacy</strong></summary>
-
-- Multiple language support (Italian, and more coming)
-- 100% ad-free and open-source
-- No data collection or tracking
-- Hide from recent apps for privacy
-- Ethical use guidelines and disclaimer
-</details>
-
-## `>_` Upcoming Features:
-- **Scheduled Recording:** Automatically start/stop recordings at set times.
-- **In-App Video Editor:** Quick trim/edit with Faditor Mini (coming soon).
-- **Enhanced Remote Features:** Additional remote control capabilities.
-
-
-
-<details>
-<summary><strong>🛡️ How Recording Reliability Works</strong></summary>
-
-FadCam writes recordings in a **hybrid MP4 format** that balances crash safety with universal compatibility. This format is implemented through a custom patch of the Media3 library — the hybrid finalization and self-healing repair described below are FadCam-specific features, not part of the stock library:
-
-1. **While recording**, the file is streamed as a *fragmented MP4* — data is appended in small fragments with the metadata kept at the front. If the app or process dies at any moment, nothing already written is ever lost or corrupted.
-2. **On a clean stop**, the file is finalized into a *standard MP4* (a single `moov` metadata block + one `mdat` container) that plays everywhere — gallery, WhatsApp, Instagram, VLC, PC players.
-3. **If the process is killed mid-recording** (background kill by the OS, crash, battery optimization), the file is left as a valid fragmented MP4. On the next app launch, FadCam's **self-healing scan**:
-   - Detects the interrupted file automatically
-   - Rebuilds the metadata directly from the file's fragments
-   - Converts it into a playable standard MP4 — often byte-identical to a clean stop
-   - Shows a **repair banner** in the Records tab so you know the recording was recovered
-
-The scan is database-driven and runs once per file — it only ever examines recordings that were never verified as finalized, so it adds no overhead to normal use. Files that cannot be recovered are left untouched and marked so they are never retried.
-
-This means **no more lost recordings** from background kills — the worst case is a recovered file, not a corrupted one.
-</details>
-
-
-
-## `>_` Join Community
-Join our [Discord server](https://discord.gg/kvAZvdkuuN) to share ideas, seek help, or connect with other users. Your feedback and contributions are welcome!
-
-[![Discord](https://img.shields.io/discord/1263384048194027520?label=Join%20Us%20on%20Discord&logo=discord)](https://discord.gg/kvAZvdkuuN )
-
-
-## `>_` Support & Shop
-
-Buy FadCam Pro (lifetime access) from my Patreon shop. Your purchases help fund development and maintenance.
-
-[![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3DFadedx%26type%3Dpatrons%26suffix%3Dpatrons%2520%257C%2520Shop&style=for-the-badge)](https://www.patreon.com/cw/Fadedx/shop)
-
-<br>
-<sub>Scan to visit Patreon shop:</sub><br>
-<img src="app/src/main/assets/QRCodes/QRCode_patreon_shop.png" alt="Scan to visit Patreon shop" style="width: 150px; height: auto;" >
-
-
-## `>_` Contributions
-
-We welcome any contributions to improve this project! Whether it's bug fixes or new features, your help is appreciated.
-
-### `>_` How to Contribute
-1. **Open an Issue First**: Before starting any work, please open an [issue](https://github.com/anonfaded/FadCam/issues) to discuss your proposed changes and get approval.
-2. **Fork the Repo**: Fork the repository to make your changes.
-3. **Submit a PR**: Create a pull request with a clear description of your changes.
-
-We look forward to your contributions!
-
-
-### `>_` 🙌 Contributions & Credits
-
-- 🖼️ App screenshots and banner design by [T010](https://ko-fi.com/t010nl)
-- The 3D text in icon is from <a href="https://www.textstudio.com/">Font generator</a>.
-- Icons used in app by <a target="_blank" href="https://icons8.com">Icons8</a> and <a target="_blank" href="https://www.flaticon.com/">Flaticon</a>.
-- Elapsed timer font option includes Doto by The Doto Project Authors (https://github.com/oliverlalan/Doto).
-- Location reverse geocoding powered by <a target="_blank" href="https://nominatim.org/">Nominatim</a> — free, open-source geocoding based on <a target="_blank" href="https://www.openstreetmap.org/">OpenStreetMap</a> data. Building-level precision (zoom=18) for accurate address watermarking.
-- QR codes generated using <a target="_blank" href="https://www.qrcodechimp.com">QRCodeChimp</a>.
-
-
