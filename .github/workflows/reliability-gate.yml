@@ -20,11 +20,11 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - name: Clone patched Media3 dependency
-        run: git clone --depth 1 https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
-      - name: Android unit tests and debug build
+      - name: Verify Gradle toolchain
         run: |
           chmod +x ./gradlew
-          ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace --no-daemon
+          ./gradlew --version
+      - name: Android unit tests and debug build
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace --no-daemon
       - name: Verify debug APK
         run: find app/build/outputs/apk -type f -name '*.apk' -print -quit | grep -q '\.apk$'
