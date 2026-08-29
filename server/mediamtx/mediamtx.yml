@@ -17,6 +17,9 @@ webrtcAddress: :8889
 srt: true
 srtAddress: :8890
 
+api: true
+apiAddress: :9997
+
 metrics: true
 metricsAddress: :9998
 
