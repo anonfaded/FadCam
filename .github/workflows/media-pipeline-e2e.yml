@@ -10,6 +10,8 @@ jobs:
   media-pipeline:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      E2E_CI: '1'
     steps:
       - name: Checkout
         uses: actions/checkout@v5
