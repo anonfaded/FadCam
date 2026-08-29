@@ -1,13 +1,14 @@
 name: Monorepo Smoke
 on:
   push:
-    branches: [fused-tv-foundation]
+    branches: [fused-tv-foundation, overhaul/foundation-audit]
   pull_request:
     branches: [fused-tv-foundation]
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
         with: {submodules: recursive}
@@ -17,7 +18,7 @@ jobs:
         run: docker compose -f deployment/docker-compose.yml build core gateway production playout epg monetization analytics
       - name: Start control plane
         run: docker compose -f deployment/docker-compose.yml up -d postgres core gateway production playout epg monetization analytics
-      - name: Core unit tests
+      - name: Core API contract matrix
         run: docker compose -f deployment/docker-compose.yml exec -T core npm test
       - name: Migration ledger assertion
         run: docker compose -f deployment/docker-compose.yml exec -T postgres psql -U fad -d fad -tAc "SELECT count(*) FROM schema_migrations" | grep -qx '2'
@@ -40,11 +41,13 @@ jobs:
           check http://localhost:8084/health
           check http://localhost:8085/health
           check http://localhost:8086/health
+      - name: Tear down smoke stack
+        if: always()
+        run: docker compose -f deployment/docker-compose.yml down -v
+      - name: Database reliability and migration recovery gate
+        run: bash tests/reliability/db-reliability.sh
       - name: Failure diagnostics
         if: failure()
         run: |
-          docker compose -f deployment/docker-compose.yml ps -a
+          docker compose -f deployment/docker-compose.yml ps -a || true
           docker compose -f deployment/docker-compose.yml logs --no-color --tail=250 core gateway production playout epg monetization analytics postgres mediamtx || true
-      - name: Tear down
-        if: always()
-        run: docker compose -f deployment/docker-compose.yml down -v
