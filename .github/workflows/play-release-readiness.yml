@@ -1,0 +1,134 @@
+name: FadCam Play-ready Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_github_asset:
+        description: "Publish the stable-signed APK/AAB as a GitHub release asset"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  play-ready:
+    name: Build and verify Play-ready release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Require stable release-signing secrets
+        env:
+          KEYSTORE_B64: ${{ secrets.FADCAM_RELEASE_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.FADCAM_RELEASE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.FADCAM_RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.FADCAM_RELEASE_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" || { echo "Missing FADCAM_RELEASE_KEYSTORE_B64"; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo "Missing FADCAM_RELEASE_STORE_PASSWORD"; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "Missing FADCAM_RELEASE_KEY_ALIAS"; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "Missing FADCAM_RELEASE_KEY_PASSWORD"; exit 1; }
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/fadcam-release.keystore"
+          test -s "$RUNNER_TEMP/fadcam-release.keystore"
+          {
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/fadcam-release.keystore"
+            echo "KEYSTORE_PASSWORD=$STORE_PASSWORD"
+            echo "KEY_ALIAS=$KEY_ALIAS"
+            echo "KEY_PASSWORD=$KEY_PASSWORD"
+          } >> local.properties
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Run release JVM tests
+        run: ./gradlew :app:testDefaultReleaseUnitTest --stacktrace --no-daemon
+
+      - name: Build Play App Bundle
+        run: ./gradlew bundleDefaultRelease --stacktrace --no-daemon
+
+      - name: Build installable release APK for direct-device verification
+        run: ./gradlew assembleDefaultRelease --stacktrace --no-daemon
+
+      - name: Verify release manifest and permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="$(find app/build/intermediates/merged_manifests -path '*defaultRelease/AndroidManifest.xml' -type f | head -1)"
+          test -n "$manifest"
+          echo "Merged manifest: $manifest"
+          if grep -q 'MANAGE_EXTERNAL_STORAGE' "$manifest"; then
+            echo "ERROR: public release still requests MANAGE_EXTERNAL_STORAGE"
+            exit 1
+          fi
+          if grep -q 'REQUEST_IGNORE_BATTERY_OPTIMIZATIONS' "$manifest"; then
+            echo "ERROR: public release still requests REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+            exit 1
+          fi
+          if grep -q 'android:debuggable="true"' "$manifest"; then
+            echo "ERROR: public release is debuggable"
+            exit 1
+          fi
+          echo "✓ Restricted broad-storage/battery permissions removed from release manifest"
+
+      - name: Verify APK signature, alignment and target SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+          shopt -s nullglob
+          apks=(app/build/outputs/apk/default/release/*.apk)
+          test "${#apks[@]}" -gt 0
+          for apk in "${apks[@]}"; do
+            "$build_tools/zipalign" -c -P 16 -v 4 "$apk"
+            "$build_tools/apksigner" verify --verbose "$apk"
+            "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest target-sdk "$apk" | grep -Fx '36'
+            if "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest debuggable "$apk" 2>/dev/null | grep -qi true; then
+              echo "ERROR: APK is debuggable"
+              exit 1
+            fi
+            echo "✓ Play-ready APK: $apk"
+          done
+
+      - name: Verify App Bundle exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          aab="app/build/outputs/bundle/defaultRelease/app-default-release.aab"
+          test -s "$aab"
+          jarsigner -verify -verbose -certs "$aab" >/tmp/jarsigner.txt 2>&1
+          grep -q 'jar verified' /tmp/jarsigner.txt
+          echo "✓ Signed AAB: $aab"
+
+      - name: Publish stable-signed GitHub release assets
+        if: ${{ inputs.publish_github_asset }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="play-ready"
+          aab="app/build/outputs/bundle/defaultRelease/app-default-release.aab"
+          apk="$(find app/build/outputs/apk/default/release -maxdepth 1 -type f -name '*.apk' | head -1)"
+          cp "$aab" FadCam-play-ready.aab
+          cp "$apk" FadCam-play-ready.apk
+          sha256sum FadCam-play-ready.aab FadCam-play-ready.apk > SHA256SUMS.txt
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --title "FadCam Play-ready build" --notes "Stable-signed Play-ready build from $GITHUB_SHA"
+          else
+            gh release create "$tag" --title "FadCam Play-ready build" --notes "Stable-signed Play-ready build from $GITHUB_SHA" --prerelease
+          fi
+          gh release upload "$tag" FadCam-play-ready.aab FadCam-play-ready.apk SHA256SUMS.txt --clobber
