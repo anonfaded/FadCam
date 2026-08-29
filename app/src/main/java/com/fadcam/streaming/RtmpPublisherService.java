@@ -24,10 +24,6 @@ import com.fadcam.R;
 public final class RtmpPublisherService extends Service implements RtmpPublisher.Listener {
     public static final String ACTION_START = "com.fadcam.streaming.START_RTMP";
     public static final String ACTION_STOP = "com.fadcam.streaming.STOP_RTMP";
-    public static final String EXTRA_DESTINATION = "com.fadcam.streaming.EXTRA_DESTINATION";
-    public static final String EXTRA_SERVER_URL = "com.fadcam.streaming.EXTRA_SERVER_URL";
-    public static final String EXTRA_STREAM_KEY = "com.fadcam.streaming.EXTRA_STREAM_KEY";
-    public static final String EXTRA_ENDPOINT = "com.fadcam.streaming.EXTRA_ENDPOINT";
     public static final String EXTRA_CREDENTIAL_ALIAS = "com.fadcam.streaming.EXTRA_CREDENTIAL_ALIAS";
 
     private static final String CHANNEL_ID = "fadcam_rtmp_streaming";
@@ -61,13 +57,12 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
         }
         if (intent != null && ACTION_START.equals(intent.getAction())) {
             String alias = intent.getStringExtra(EXTRA_CREDENTIAL_ALIAS);
-            if (alias != null && !alias.trim().isEmpty()) {
-                credentialAlias = alias.trim();
-                if (vault != null) vault.setActiveAlias(credentialAlias);
+            if (alias == null || alias.trim().isEmpty()) {
+                stopPublishing();
+                return START_NOT_STICKY;
             }
-            String direct = intent.getStringExtra(EXTRA_ENDPOINT);
-            if (direct != null && !direct.trim().isEmpty()) endpoint = direct.trim();
-            else if (credentialAlias == null) endpoint = resolveLegacyEndpoint(intent);
+            credentialAlias = alias.trim();
+            if (vault != null) vault.setActiveAlias(credentialAlias);
             sessionActive = true;
             authenticationFailed = false;
             reconnectPolicy.reset();
@@ -77,7 +72,7 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
             return START_STICKY;
         }
 
-        // START_STICKY restart: recover only the profile alias, never a persisted secret/endpoint.
+        // START_STICKY restart: recover only the non-secret profile alias.
         if (intent == null && vault != null) {
             credentialAlias = vault.getActiveAlias();
             if (credentialAlias != null && vault.contains(credentialAlias)) {
@@ -91,19 +86,6 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
         return START_NOT_STICKY;
     }
 
-    @Nullable private String resolveLegacyEndpoint(Intent intent) {
-        String serverUrl = intent.getStringExtra(EXTRA_SERVER_URL);
-        String streamKey = intent.getStringExtra(EXTRA_STREAM_KEY);
-        if (serverUrl == null || streamKey == null) return null;
-        RtmpDestination destination = RtmpDestination.CUSTOM;
-        String name = intent.getStringExtra(EXTRA_DESTINATION);
-        if (name != null) {
-            try { destination = RtmpDestination.valueOf(name.toUpperCase(java.util.Locale.US)); }
-            catch (IllegalArgumentException ignored) { return null; }
-        }
-        return destination.buildEndpoint(serverUrl, streamKey);
-    }
-
     private void startOrReconnect() {
         if (!sessionActive || authenticationFailed || publisher == null) return;
         if (!hasUsableNetwork()) {
@@ -112,25 +94,28 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
         }
         RtmpCredentialVault.RtmpCredential credential = null;
         if (credentialAlias != null && vault != null) credential = vault.get(credentialAlias);
-        if (credential != null) endpoint = credential.getDestination().buildEndpoint(credential.getServerUrl(), credential.getStreamKey());
-        if (endpoint == null || endpoint.trim().isEmpty()) {
+        if (credential == null) {
             updateNotification("RTMP credentials unavailable");
             stopPublishing();
             return;
         }
+
+        // Construct the endpoint only inside the process. It never crosses an Intent boundary.
+        endpoint = credential.getDestination().buildEndpoint(
+                credential.getServerUrl(), credential.getStreamKey());
         try {
             if (!publisher.prepare()) {
-                scheduleReconnect("Encoder unavailable");
+                scheduleReconnect();
                 return;
             }
             if (publisher.isStreaming()) return;
             publisher.start(endpoint);
         } catch (RuntimeException error) {
-            scheduleReconnect("Connection failed");
+            scheduleReconnect();
         }
     }
 
-    private void scheduleReconnect(String reason) {
+    private void scheduleReconnect() {
         if (!sessionActive || authenticationFailed || reconnectPending) return;
         long delay = reconnectPolicy.nextDelayMs();
         if (delay < 0) {
@@ -165,21 +150,21 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
                     updateNotification("Network lost — waiting for connection…");
                 });
             }
+
             @Override public void onAvailable(Network network) {
                 if (!sessionActive) return;
                 handler.post(() -> {
                     if (publisher != null && publisher.isStreaming()) return;
-                    scheduleReconnect("Network available");
+                    scheduleReconnect();
                 });
             }
+
             @Override public void onCapabilitiesChanged(Network network, NetworkCapabilities capabilities) {
                 if (!sessionActive || !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) return;
                 handler.post(() -> {
-                    // A validated network can be a new Wi-Fi/cellular route; restarting a stale
-                    // publisher is safer than maintaining a socket bound to the old route.
                     if (publisher != null && publisher.isStreaming()) {
                         publisher.stop();
-                        scheduleReconnect("Network route changed");
+                        scheduleReconnect();
                     }
                 });
             }
@@ -201,6 +186,8 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
         cancelReconnect();
         if (vault != null) vault.clearActiveAlias();
         if (publisher != null) publisher.stop();
+        endpoint = null;
+        credentialAlias = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) stopForeground(STOP_FOREGROUND_REMOVE);
         else stopForeground(true);
         stopSelf();
@@ -215,7 +202,8 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
 
     private void createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "FadCam live streaming", NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID, "FadCam live streaming", NotificationManager.IMPORTANCE_LOW);
             channel.setDescription("Keeps FadCam camera and microphone publishing active");
             getSystemService(NotificationManager.class).createNotificationChannel(channel);
         }
@@ -240,20 +228,26 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
         sessionActive = false;
         cancelReconnect();
         if (connectivityManager != null && networkCallback != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            try { connectivityManager.unregisterNetworkCallback(networkCallback); } catch (IllegalArgumentException ignored) { }
+            try { connectivityManager.unregisterNetworkCallback(networkCallback); }
+            catch (IllegalArgumentException ignored) { }
         }
         networkCallback = null;
-        if (publisher != null) { publisher.release(); publisher = null; }
+        if (publisher != null) {
+            publisher.release();
+            publisher = null;
+        }
+        endpoint = null;
+        credentialAlias = null;
         super.onDestroy();
     }
 
     @Override public IBinder onBind(Intent intent) { return null; }
 
-    @Override public void onConnecting(String endpoint) { updateNotification("Connecting to live stream…"); }
+    @Override public void onConnecting() { updateNotification("Connecting to live stream…"); }
     @Override public void onConnected() { reconnectPolicy.reset(); cancelReconnect(); updateNotification("Live — publishing camera + audio"); }
     @Override public void onBitrateChanged(long bitrate) { updateNotification("Live — " + Math.round(bitrate / 1000f) + " kbps"); }
-    @Override public void onFailed(String reason) { scheduleReconnect("Publisher failure"); }
-    @Override public void onDisconnected() { scheduleReconnect("Publisher disconnected"); }
+    @Override public void onFailed(String reason) { scheduleReconnect(); }
+    @Override public void onDisconnected() { scheduleReconnect(); }
     @Override public void onAuthError() { authenticationFailed = true; cancelReconnect(); updateNotification("Stream authentication failed"); }
     @Override public void onAuthSuccess() { authenticationFailed = false; reconnectPolicy.reset(); updateNotification("Authenticated — publishing"); }
 }
