@@ -19,7 +19,9 @@ jobs:
       - name: Start control plane
         run: docker compose -f deployment/docker-compose.yml up -d postgres core gateway production playout epg monetization analytics
       - name: Core API contract matrix
-        run: docker compose -f deployment/docker-compose.yml exec -T core npm test
+        env:
+          GATEWAY_URL: http://gateway:8081
+        run: docker compose -f deployment/docker-compose.yml exec -T core env GATEWAY_URL="$GATEWAY_URL" npm test
       - name: Migration ledger assertion
         run: docker compose -f deployment/docker-compose.yml exec -T postgres psql -U fad -d fad -tAc "SELECT count(*) FROM schema_migrations" | grep -qx '2'
       - name: Health check
