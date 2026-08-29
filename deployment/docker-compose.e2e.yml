@@ -41,7 +41,7 @@ services:
     command: >-
       -re -f lavfi -i testsrc=size=640x360:rate=10
       -f lavfi -i sine=frequency=1000:sample_rate=48000
-      -t 20 -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p
+      -t 60 -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p
       -c:a aac -f flv rtmp://mediamtx:1935/e2e-test
 
   minio-uploader:
