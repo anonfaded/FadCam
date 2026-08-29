@@ -4,6 +4,7 @@ import android.content.Context;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Locale;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -11,8 +12,8 @@ import fi.iki.elonen.NanoHTTPD;
  * Security boundary around the local/remote dashboard HTTP server.
  *
  * HLS media remains readable without authentication so standard players can consume it.
- * Mutating controls and status are protected: authenticated remote clients are allowed,
- * while unauthenticated control is limited to loopback.
+ * Control, status, and sensitive dashboard APIs require authentication for remote clients;
+ * when remote authentication is disabled, those operations are limited to loopback.
  */
 public final class HardenedLiveM3U8Server extends LiveM3U8Server {
     private final Context appContext;
@@ -29,6 +30,7 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
 
         if (Method.OPTIONS.equals(method)) {
             Response response = newFixedLengthResponse(Response.Status.OK, MIME_PLAINTEXT, "");
+            addSecurityHeaders(response);
             addCorsHeaders(response);
             return response;
         }
@@ -40,19 +42,37 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
                     "{\"status\":\"unauthorized\",\"message\":\"Authentication required\"}");
             response.addHeader("Cache-Control", "no-store");
             response.addHeader("WWW-Authenticate", "Bearer realm=FadCam");
+            addSecurityHeaders(response);
             addCorsHeaders(response);
             return response;
         }
 
-        return super.serve(session);
+        Response response = super.serve(session);
+        addSecurityHeaders(response);
+        return response;
     }
 
     private boolean isProtectedEndpoint(String uri, Method method) {
-        if ("/auth/login".equals(uri) || "/auth/logout".equals(uri)
-                || "/auth/check".equals(uri) || "/auth/changePassword".equals(uri)) {
+        // Login/check are the unauthenticated discovery surface. Logout is harmless but
+        // remains public so a client can always discard a session. Password changes are
+        // protected once authentication is enabled to prevent remote account takeover.
+        if ("/auth/login".equals(uri) || "/auth/logout".equals(uri) || "/auth/check".equals(uri)) {
             return false;
         }
-        if ("/status".equals(uri)) return true;
+        if ("/auth/changePassword".equals(uri)) {
+            return Method.POST.equals(method) && RemoteAuthManager.getInstance(appContext).isAuthEnabled();
+        }
+
+        // These GET endpoints expose device state or act as control/data APIs even though
+        // they are not POST requests. Keep HLS media and static assets public.
+        if ("/status".equals(uri)
+                || "/audio/volume".equals(uri)
+                || "/api/notifications".equals(uri)
+                || "/api/github/notification".equals(uri)) {
+            return true;
+        }
+
+        // Every mutating endpoint is protected.
         return Method.POST.equals(method);
     }
 
@@ -76,6 +96,14 @@ public final class HardenedLiveM3U8Server extends LiveM3U8Server {
         } catch (Exception ignored) {
             return "127.0.0.1".equals(address) || "::1".equals(address);
         }
+    }
+
+    private void addSecurityHeaders(Response response) {
+        response.addHeader("X-Content-Type-Options", "nosniff");
+        response.addHeader("X-Frame-Options", "DENY");
+        response.addHeader("Referrer-Policy", "no-referrer");
+        response.addHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=() ");
+        response.addHeader("Cache-Control", "no-store");
     }
 
     private void addCorsHeaders(Response response) {
