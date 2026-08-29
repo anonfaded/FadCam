@@ -1,7 +1,7 @@
 services:
   mediamtx:
     image: bluenviron/mediamtx:1
-    command: ["/mediamtx", "/mediamtx.yml"]
+    command: ["/mediamtx.yml"]
     volumes:
       - ./mediamtx.e2e.yml:/mediamtx.yml:ro
       - recordings:/recordings
