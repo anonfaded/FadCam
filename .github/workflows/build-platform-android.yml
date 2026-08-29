@@ -15,8 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Server integrations are deployment-time dependencies and must not block
-      # the Android checkout/build. This also prevents stale gitlinks in the
-      # repository history from breaking checkout.
+      # the Android checkout/build.
       - name: Checkout Android source
         uses: actions/checkout@v5
         with:
@@ -30,6 +29,16 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Prepare patched Media3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 --branch release https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -d /tmp/media3-patched/libraries/muxer
+          test -d /tmp/media3-patched/libraries/common
+          test -d /tmp/media3-patched/libraries/container
+
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
@@ -41,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Compose validation only needs the tracked deployment manifests. It does
-      # not need to materialize large upstream source repositories.
+      # not need to materialize upstream source repositories.
       - name: Checkout deployment manifests
         uses: actions/checkout@v5
         with:
