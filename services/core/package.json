@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node src/server.js", "test": "node --test" },
+  "scripts": { "start": "node src/server.js", "test": "node tests/contract.mjs" },
   "engines": { "node": ">=20" },
   "dependencies": { "pg": "^8.16.3" }
 }
