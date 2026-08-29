@@ -6,15 +6,19 @@ rtmpAddress: :1935
 hls: false
 
 authInternalUsers:
-  - user: any
-    pass:
+  - user: publisher
+    pass: publisher-pass
     ips: []
     permissions:
       - action: publish
         path:
-      - action: read
-        path:
+  - user: api
+    pass: api-pass
+    ips: []
+    permissions:
       - action: api
+        path:
+      - action: read
         path:
 
 record: true
