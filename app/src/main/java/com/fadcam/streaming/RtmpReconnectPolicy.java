@@ -1,6 +1,12 @@
 package com.fadcam.streaming;
 
-/** Bounded exponential backoff for transient RTMP failures. */
+/**
+ * Deterministic, bounded exponential backoff for transient RTMP failures.
+ *
+ * <p>{@code maxAttempts} is the number of reconnect attempts permitted. Each
+ * successful connection should call {@link #reset()} so a later outage gets a
+ * fresh retry budget. Delays are capped without overflowing {@code long}.</p>
+ */
 public final class RtmpReconnectPolicy {
     private final int maxAttempts;
     private final long initialDelayMs;
@@ -20,20 +26,46 @@ public final class RtmpReconnectPolicy {
         this.maxDelayMs = maxDelayMs;
     }
 
-    public synchronized void reset() { attempts = 0; }
+    /** Resets the retry budget after a successful connection or a new session. */
+    public synchronized void reset() {
+        attempts = 0;
+    }
 
-    /** Returns the next delay, or -1 after the retry budget is exhausted. */
+    /** Returns the delay for the next reconnect attempt, or -1 when exhausted. */
     public synchronized long nextDelayMs() {
         if (attempts >= maxAttempts) return -1L;
+
         long delay = initialDelayMs;
-        for (int i = 1; i < attempts; i++) {
-            if (delay >= maxDelayMs / 2L) { delay = maxDelayMs; break; }
+        for (int i = 0; i < attempts; i++) {
+            if (delay >= maxDelayMs) {
+                delay = maxDelayMs;
+                break;
+            }
+            // Avoid overflow while preserving the exponential sequence.
+            if (delay > maxDelayMs / 2L) {
+                delay = maxDelayMs;
+                break;
+            }
             delay *= 2L;
         }
+
         attempts++;
         return Math.min(delay, maxDelayMs);
     }
 
-    public synchronized int getAttempts() { return attempts; }
-    public int getMaxAttempts() { return maxAttempts; }
+    public synchronized int getAttempts() {
+        return attempts;
+    }
+
+    public int getMaxAttempts() {
+        return maxAttempts;
+    }
+
+    public long getInitialDelayMs() {
+        return initialDelayMs;
+    }
+
+    public long getMaxDelayMs() {
+        return maxDelayMs;
+    }
 }
