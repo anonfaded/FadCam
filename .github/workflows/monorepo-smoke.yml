@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: {submodules: recursive}
       - name: Validate compose
         run: docker compose -f deployment/docker-compose.yml config
@@ -40,6 +40,11 @@ jobs:
           check http://localhost:8084/health
           check http://localhost:8085/health
           check http://localhost:8086/health
+      - name: Failure diagnostics
+        if: failure()
+        run: |
+          docker compose -f deployment/docker-compose.yml ps -a
+          docker compose -f deployment/docker-compose.yml logs --no-color --tail=250 core gateway production playout epg monetization analytics postgres mediamtx || true
       - name: Tear down
         if: always()
         run: docker compose -f deployment/docker-compose.yml down -v
