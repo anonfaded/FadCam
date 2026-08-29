@@ -121,8 +121,25 @@ resolve_hls_uri() {
   esac
 }
 
+# MediaMTX's master playlist can contain EXT-X-MEDIA records whose URI points
+# to an audio/video media playlist. Those records are comments from an HLS
+# parser's perspective, so extracting the entire line produces an invalid URL.
+# Prefer the URI attribute from the first URI-bearing m3u8 record; fall back to
+# a bare child-playlist line for simpler master playlists.
 first_child_playlist_uri() {
-  awk '/\.m3u8([?#]|$)/ { print; exit }' "${MASTER_PLAYLIST}"
+  awk '
+    /\.m3u8([?#]|[\"])/ {
+      if (match($0, /URI="[^"]+\.m3u8([^"]*)"/)) {
+        value=substr($0, RSTART+5, RLENGTH-6)
+        print value
+        exit
+      }
+      if ($0 !~ /^#/) {
+        print $0
+        exit
+      }
+    }
+  ' "${MASTER_PLAYLIST}"
 }
 
 first_media_uri() {
