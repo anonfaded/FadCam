@@ -1,4 +1,5 @@
 logLevel: info
+authMethod: internal
 api: true
 apiAddress: :9997
 rtmp: true
@@ -8,13 +9,17 @@ hls: false
 authInternalUsers:
   - user: publisher
     pass: publisher-pass
-    ips: []
+    ips:
+      - 0.0.0.0/0
+      - ::/0
     permissions:
       - action: publish
         path:
   - user: api
     pass: api-pass
-    ips: []
+    ips:
+      - 0.0.0.0/0
+      - ::/0
     permissions:
       - action: api
         path:
