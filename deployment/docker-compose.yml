@@ -32,6 +32,7 @@ services:
     environment:
       PORT: 8080
       DATABASE_URL: postgres://fad:fad-dev-password@postgres:5432/fad
+      MAX_BODY_BYTES: 1048576
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -43,11 +44,16 @@ services:
       PORT: 8081
       CORE_API_URL: http://core:8080
       MEDIAMTX_API_URL: http://mediamtx:9997
+      MEDIAMTX_API_USER: gateway-dev
+      MEDIAMTX_API_PASSWORD: gateway-dev-password
+      UPSTREAM_TIMEOUT_MS: 5000
     depends_on: [core, mediamtx]
     ports: ["8081:8081"]
 
   mediamtx:
     image: bluenviron/mediamtx:1
+    volumes:
+      - ./mediamtx.dev.yml:/mediamtx.yml:ro
     ports: ["1935:1935", "9997:9997"]
 
   minio:
