@@ -27,11 +27,18 @@ app.post('/api/v1/streams', async (c) => {
 app.get('/api/v1/streams/:path', async (c) => {
   const path = c.req.param('path')
   if (!validPath(path)) return c.json({ error: 'invalid stream path' }, 400)
-  const response = await fetch(`${mediamtxApi}/v3/paths/list`, { headers: mediamtxHeaders() })
+
+  // Query the authoritative MediaMTX path endpoint instead of scanning the
+  // list endpoint. This avoids a race where a path is visible in the list but
+  // disappears between the list request and the gateway lookup.
+  const response = await fetch(`${mediamtxApi}/v3/paths/get/${encodeURIComponent(path)}`, {
+    headers: mediamtxHeaders(),
+  })
+  if (response.status === 404) return c.json({ error: 'stream not found', path }, 404)
   if (!response.ok) return c.json({ error: 'MediaMTX path discovery failed', status: response.status }, 502)
-  const payload = await response.json()
-  const item = Array.isArray(payload.items) ? payload.items.find((entry) => entry.name === path) : null
-  return item ? c.json(item) : c.json({ error: 'stream not found', path }, 404)
+
+  const item = await response.json()
+  return item?.name === path ? c.json(item) : c.json({ error: 'stream not found', path }, 404)
 })
 
 app.get('/api/v1/registry/:id', async (c) => {
