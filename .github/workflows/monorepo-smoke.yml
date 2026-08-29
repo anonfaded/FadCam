@@ -15,13 +15,11 @@ jobs:
       - name: Validate compose
         run: docker compose -f deployment/docker-compose.yml config
       - name: Build orchestrated services
-        run: docker compose -f deployment/docker-compose.yml build core gateway production playout epg monetization analytics
+        run: docker compose -f deployment/docker-compose.yml build core core-test gateway production playout epg monetization analytics
       - name: Start control plane
         run: docker compose -f deployment/docker-compose.yml up -d postgres core gateway production playout epg monetization analytics
       - name: Core API contract matrix
-        env:
-          GATEWAY_URL: http://gateway:8081
-        run: docker compose -f deployment/docker-compose.yml exec -T core env GATEWAY_URL="$GATEWAY_URL" npm test
+        run: docker compose -f deployment/docker-compose.yml run --rm core-test
       - name: Migration ledger assertion
         run: docker compose -f deployment/docker-compose.yml exec -T postgres psql -U fad -d fad -tAc "SELECT count(*) FROM schema_migrations" | grep -qx '3'
       - name: Health check
@@ -43,13 +41,13 @@ jobs:
           check http://localhost:8084/health
           check http://localhost:8085/health
           check http://localhost:8086/health
+      - name: Database reliability and migration recovery gate
+        run: bash tests/reliability/db-reliability.sh
       - name: Tear down smoke stack
         if: always()
         run: docker compose -f deployment/docker-compose.yml down -v
-      - name: Database reliability and migration recovery gate
-        run: bash tests/reliability/db-reliability.sh
       - name: Failure diagnostics
         if: failure()
         run: |
           docker compose -f deployment/docker-compose.yml ps -a || true
-          docker compose -f deployment/docker-compose.yml logs --no-color --tail=250 core gateway production playout epg monetization analytics postgres mediamtx || true
+          docker compose -f deployment/docker-compose.yml logs --no-color --tail=250 core core-test gateway production playout epg monetization analytics postgres mediamtx || true
