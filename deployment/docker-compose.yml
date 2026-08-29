@@ -26,6 +26,21 @@ services:
         condition: service_healthy
     ports: ["8080:8080"]
 
+  core-test:
+    build:
+      context: ../services/core
+      dockerfile: Dockerfile.test
+    environment:
+      DATABASE_URL: postgres://fad:fad-dev-password@postgres:5432/fad
+      GATEWAY_URL: http://gateway:8081
+      CORE_SERVICE_TOKEN: dev-core-service-token-change-me
+      AUTH_BOOTSTRAP_SECRET: dev-device-bootstrap-secret-change-me
+    depends_on:
+      core:
+        condition: service_started
+      gateway:
+        condition: service_started
+
   gateway:
     build: ../services/gateway
     environment:
