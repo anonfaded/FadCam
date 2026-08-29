@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(java -version 2>&1 | sed -n 's/.*version \"\([0-9]*\).*/\1/p' | head -1)" = "17"
-          grep -F 'distributionUrl=https\\://services.gradle.org/distributions/gradle-8.13-bin.zip' gradle/wrapper/gradle-wrapper.properties
+          grep -F 'distributionUrl=https\://services.gradle.org/distributions/gradle-8.13-bin.zip' gradle/wrapper/gradle-wrapper.properties
           grep -F 'agp = "8.13.1"' gradle/libs.versions.toml
           grep -F 'compileSdk = 36' app/build.gradle.kts
           grep -F 'targetSdk = 36' app/build.gradle.kts
