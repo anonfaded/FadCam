@@ -28,17 +28,26 @@ app.get('/api/v1/streams/:path', async (c) => {
   const path = c.req.param('path')
   if (!validPath(path)) return c.json({ error: 'invalid stream path' }, 400)
 
-  // Query the authoritative MediaMTX path endpoint instead of scanning the
-  // list endpoint. This avoids a race where a path is visible in the list but
-  // disappears between the list request and the gateway lookup.
-  const response = await fetch(`${mediamtxApi}/v3/paths/get/${encodeURIComponent(path)}`, {
-    headers: mediamtxHeaders(),
-  })
-  if (response.status === 404) return c.json({ error: 'stream not found', path }, 404)
-  if (!response.ok) return c.json({ error: 'MediaMTX path discovery failed', status: response.status }, 502)
+  // The live-path list is the authoritative discovery mechanism for this
+  // gateway. MediaMTX can expose an active publisher in /v3/paths/list while
+  // the per-path /get endpoint is transient during publisher state changes.
+  // Listing also matches the discovery contract used by the E2E test.
+  try {
+    const response = await fetch(`${mediamtxApi}/v3/paths/list`, {
+      headers: mediamtxHeaders(),
+    })
+    if (!response.ok) return c.json({ error: 'MediaMTX path discovery failed', status: response.status }, 502)
 
-  const item = await response.json()
-  return item?.name === path ? c.json(item) : c.json({ error: 'stream not found', path }, 404)
+    const payload = await response.json()
+    const item = Array.isArray(payload?.items)
+      ? payload.items.find(candidate => candidate?.name === path)
+      : null
+
+    if (item) return c.json(item)
+    return c.json({ error: 'stream not found', path }, 404)
+  } catch {
+    return c.json({ error: 'MediaMTX path discovery unavailable' }, 502)
+  }
 })
 
 app.get('/api/v1/registry/:id', async (c) => {
