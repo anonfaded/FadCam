@@ -1,3 +1,6 @@
 [submodule "server/ersatztv"]
 	path = server/ersatztv
 	url = https://github.com/ErsatzTV/legacy.git
+[submodule "server/ffplayout"]
+	path = server/ffplayout
+	url = https://github.com/ffplayout/ffplayout.git
