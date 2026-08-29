@@ -5,7 +5,12 @@ COMPOSE=(docker compose --env-file server/.env.example -f server/docker-compose.
 PATH_NAME="fadcam"
 RTMP_URL="rtmp://127.0.0.1:1935/${PATH_NAME}"
 HLS_PAGE_URL="http://127.0.0.1:8888/${PATH_NAME}"
-HLS_URL="${HLS_PAGE_URL}/index.m3u8"
+# MediaMTX v1.18+ protects HLS sessions with a cookie/query handshake. In
+# non-browser clients the server redirects the first playlist request to
+# ?cookieCheck=1. Request that session endpoint directly so CI does not depend
+# on browser cookie handling (the redirect sets a Secure cookie, which is not
+# appropriate for this plain-http localhost test).
+HLS_URL="${HLS_PAGE_URL}/index.m3u8?cookieCheck=1"
 PUBLISHER_PID=""
 HLS_FILE=""
 STREAM_FILE=""
@@ -58,10 +63,8 @@ echo "MediaMTX RTMP listener ready."
 
 command -v ffmpeg >/dev/null 2>&1 || { echo "ffmpeg is required for the deterministic publisher test" >&2; exit 1; }
 command -v ffprobe >/dev/null 2>&1 || { echo "ffprobe is required for HLS media verification" >&2; exit 1; }
+command -v curl >/dev/null 2>&1 || { echo "curl is required for HLS readiness verification" >&2; exit 1; }
 
-# Keep the source alive long enough for the HLS muxer to create its initial
-# init segment and media segments. HLS is segment based, so a very short
-# publisher can disappear before a reader ever gets a stable playlist.
 echo "Publishing deterministic H.264/AAC RTMP stream to ${RTMP_URL}..."
 ffmpeg -hide_banner -loglevel error \
   -re \
@@ -84,11 +87,12 @@ for attempt in {1..25}; do
     exit 1
   fi
 
-  # The HTML endpoint and playlist are both valid MediaMTX HLS read paths.
-  # Probe the page first because it proves the HLS server can route the path;
-  # then require the actual playlist used by FFmpeg/players.
-  if curl --connect-timeout 1 --max-time 3 -fsS "${HLS_PAGE_URL}" -o /dev/null 2>/dev/null \
-      && curl --connect-timeout 1 --max-time 3 -fsS "${HLS_URL}" -o "${HLS_FILE}" 2>/dev/null \
+  # MediaMTX's HLS endpoint intentionally performs a session handshake. The
+  # first request normally returns 302 -> index.m3u8?cookieCheck=1. Calling
+  # the cookieCheck endpoint explicitly is deterministic for curl/ffprobe and
+  # avoids relying on Secure-cookie behavior over the HTTP localhost test.
+  if curl --connect-timeout 1 --max-time 3 -fsS \
+      "${HLS_URL}" -o "${HLS_FILE}" 2>/dev/null \
       && grep -q '^#EXTM3U' "${HLS_FILE}"; then
     hls_ready=true
     echo "HLS playlist ready after ${attempt}s."
@@ -100,10 +104,10 @@ done
 
 if [[ "${hls_ready}" != true ]]; then
   echo "ERROR: MediaMTX did not expose a usable HLS playlist for the RTMP stream." >&2
-  echo "HLS page status/body:" >&2
-  curl -sS -D - --max-time 3 "${HLS_PAGE_URL}" -o /tmp/fadcam-hls-page.html >&2 || true
   echo "HLS playlist status/body:" >&2
   curl -sS -D - --max-time 3 "${HLS_URL}" -o /tmp/fadcam-hls-playlist.m3u8 >&2 || true
+  echo "HLS page status/body:" >&2
+  curl -sS -D - --max-time 3 "${HLS_PAGE_URL}" -o /tmp/fadcam-hls-page.html >&2 || true
   echo "MediaMTX status:" >&2
   "${COMPOSE[@]}" ps >&2 || true
   exit 1
