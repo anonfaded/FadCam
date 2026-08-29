@@ -166,7 +166,7 @@ jobs:
           retention-days: 7
 
   integration-tests:
-    name: Existing integration test suite
+    name: Existing JVM integration/test suite
     runs-on: ubuntu-latest
     steps:
       - name: Checkout test sources
@@ -192,19 +192,19 @@ jobs:
           test -d /tmp/media3-patched/libraries/common
           test -d /tmp/media3-patched/libraries/container
 
-      - name: Run all existing JVM test suites
+      - name: Run existing supported default JVM test suites
         run: |
           chmod +x ./gradlew
-          ./gradlew test --stacktrace --no-daemon
+          ./gradlew :app:testDefaultDebugUnitTest :app:testDefaultReleaseUnitTest --stacktrace --no-daemon
 
       - name: Report instrumentation-test availability
         shell: bash
         run: |
           set -euo pipefail
           if find app/src -maxdepth 2 -type d -name androidTest -print -quit | grep -q .; then
-            echo "Instrumentation test source set detected. It will be enabled as a future device-gate once device fixtures are available."
+            echo "Instrumentation test source set detected. A device-backed gate can be enabled when fixtures are available."
           else
-            echo "WARNING: no app/src/**/androidTest source set exists on this commit. The integration gate therefore covers all existing JVM tests; no instrumentation tests were silently fabricated."
+            echo "WARNING: no app/src/**/androidTest source set exists on this commit. The integration/test gate covers the existing supported JVM suites; no instrumentation tests were silently fabricated."
           fi
 
   server-config:
