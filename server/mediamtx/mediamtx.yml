@@ -1,25 +1,25 @@
-logLevel: info
+# FadCam broadcast transport
+# ffplayout publishes the programmed channel to RTMP; MediaMTX fans it out
+# to viewers through HLS, WebRTC, RTSP and SRT.
 
-# FadCam TV transport defaults. Keep authentication and TLS configuration
-# in deployment-specific secrets/environment rather than committing secrets.
-api: yes
-apiAddress: :9997
-
-metrics: yes
-metricsAddress: :9998
-
-rtsp: yes
-rtspAddress: :8554
-
-rtmp: yes
+rtmp: true
 rtmpAddress: :1935
 
-hls: yes
+hls: true
 hlsAddress: :8888
+hlsVariant: fmp4
+hlsAlwaysRemux: true
+hlsAllowOrigins: ["*"]
 
-webrtc: yes
+webrtc: true
 webrtcAddress: :8889
 
+srt: true
+srtAddress: :8890
+
+metrics: true
+metricsAddress: :9998
+
 paths:
-  all_others:
-    source: publisher
+  fadcam:
+    overridePublisher: true

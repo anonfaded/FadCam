@@ -24,6 +24,35 @@ services:
     volumes:
       - ./data/media:/media:ro
       - ./data/ffplayout:/config
+    depends_on:
+      mediamtx:
+        condition: service_healthy
+    networks: [tv]
+
+  # Streaming transport and public fan-out. ffplayout publishes RTMP to
+  # rtmp://mediamtx:1935/fadcam; viewers consume HLS/WebRTC from this service.
+  mediamtx:
+    image: bluenviron/mediamtx:1
+    container_name: fadcam-mediamtx
+    profiles: [tv]
+    restart: unless-stopped
+    ports:
+      - "8554:8554"
+      - "1935:1935"
+      - "8888:8888"
+      - "8889:8889"
+      - "8890:8890/udp"
+      - "8189:8189/udp"
+      - "9998:9998"
+    volumes:
+      - ./mediamtx/mediamtx.yml:/mediamtx.yml:ro
+      - ./data/mediamtx/recordings:/recordings
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9997/v3/paths/list"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
     networks: [tv]
 
   # Observability. These services are server-side only and have no Gradle/Android dependency.
@@ -137,7 +166,3 @@ volumes:
   keycloak-db-data:
   jellyfin-config:
   jellyfin-cache:
-
-# MediaMTX remains the streaming transport layer. Keep it in the existing
-# FadCam deployment and connect generated TV channels using supported URLs.
-# None of the server services above are Android/Gradle dependencies.
