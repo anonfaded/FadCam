@@ -72,7 +72,6 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
             return START_STICKY;
         }
 
-        // START_STICKY restart: recover only the non-secret profile alias.
         if (intent == null && vault != null) {
             credentialAlias = vault.getActiveAlias();
             if (credentialAlias != null && vault.contains(credentialAlias)) {
@@ -100,7 +99,6 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
             return;
         }
 
-        // Construct the endpoint only inside the process. It never crosses an Intent boundary.
         endpoint = credential.getDestination().buildEndpoint(
                 credential.getServerUrl(), credential.getStreamKey());
         try {
@@ -243,7 +241,7 @@ public final class RtmpPublisherService extends Service implements RtmpPublisher
 
     @Override public IBinder onBind(Intent intent) { return null; }
 
-    @Override public void onConnecting() { updateNotification("Connecting to live stream…"); }
+    public void onConnecting() { updateNotification("Connecting to live stream…"); }
     @Override public void onConnected() { reconnectPolicy.reset(); cancelReconnect(); updateNotification("Live — publishing camera + audio"); }
     @Override public void onBitrateChanged(long bitrate) { updateNotification("Live — " + Math.round(bitrate / 1000f) + " kbps"); }
     @Override public void onFailed(String reason) { scheduleReconnect(); }
