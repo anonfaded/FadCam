@@ -209,7 +209,8 @@ dependencies {
     implementation("com.googlecode.mp4parser:isoparser:1.1.22")
 
     // Generic RTMP/RTMPS camera + microphone publisher.
-    implementation("com.github.pedroSG94.RootEncoder:library:2.8.0")
+    // 2.7.5 keeps the RTMP API while remaining compatible with FadCam's compileSdk 36 / AGP 8.13.x baseline.
+    implementation("com.github.pedroSG94.RootEncoder:library:2.7.5")
 
     annotationProcessor(libs.compiler)
     annotationProcessor(libs.room.compiler)
