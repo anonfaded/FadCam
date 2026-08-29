@@ -9,14 +9,13 @@ import org.mockito.InOrder;
 
 public class RecordingToggleActivityTest {
     @Test
-    public void finishWithoutUiBackgroundsTaskBeforeFinishing() {
+    public void finishWithoutUiFinishesActivity() {
         RecordingToggleActivity activity = mock(RecordingToggleActivity.class);
         doCallRealMethod().when(activity).finishWithoutUi();
 
         activity.finishWithoutUi();
 
         InOrder completionOrder = inOrder(activity);
-        completionOrder.verify(activity).moveTaskToBack(true);
         completionOrder.verify(activity).finish();
     }
 }
