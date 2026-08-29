@@ -14,10 +14,13 @@ jobs:
     name: Android debug APK
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout with pinned submodules
+      # Server integrations are deployment-time dependencies and must not block
+      # the Android checkout/build. This also prevents stale gitlinks in the
+      # repository history from breaking checkout.
+      - name: Checkout Android source
         uses: actions/checkout@v5
         with:
-          submodules: recursive
+          submodules: false
           fetch-depth: 1
 
       - name: Set up Java 17
@@ -37,10 +40,12 @@ jobs:
     name: Validate server Compose configuration
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout with pinned submodules
+      # Compose validation only needs the tracked deployment manifests. It does
+      # not need to materialize large upstream source repositories.
+      - name: Checkout deployment manifests
         uses: actions/checkout@v5
         with:
-          submodules: recursive
+          submodules: false
           fetch-depth: 1
 
       - name: Validate Compose configuration
