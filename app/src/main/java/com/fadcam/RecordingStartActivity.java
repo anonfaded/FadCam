@@ -3,10 +3,13 @@ package com.fadcam;
 import com.fadcam.FLog;
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -40,7 +43,6 @@ public class RecordingStartActivity extends Activity {
             }
 
             SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-            // Check if recording is already in progress
             if (sharedPreferencesManager.isRecordingInProgress()) {
                 Utils.showQuickToast(this, R.string.video_recording_started);
                 finish();
@@ -83,7 +85,7 @@ public class RecordingStartActivity extends Activity {
 
             if (!hasCapturePermissions()) {
                 pendingRecordingIntent = startIntent;
-                requestCapturePermissions(REQUEST_RECORDING_CAPTURE_PERMISSIONS);
+                requestCapturePermissionsWithContext(REQUEST_RECORDING_CAPTURE_PERMISSIONS, false);
                 return;
             }
 
@@ -105,8 +107,36 @@ public class RecordingStartActivity extends Activity {
                 && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
     }
 
-    private void requestCapturePermissions(int requestCode) {
+    private void requestCapturePermissionsWithContext(int requestCode, boolean forceRequest) {
         permissionRequestInProgress = true;
+
+        boolean cameraRationale = shouldShowRequestPermissionRationale(Manifest.permission.CAMERA);
+        boolean microphoneRationale = shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO);
+
+        if (!forceRequest && (cameraRationale || microphoneRationale)) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Camera and microphone access")
+                    .setMessage(requestCode == REQUEST_RTMP_CAPTURE_PERMISSIONS
+                            ? "FadCam needs camera access to capture video and microphone access to include audio in your live stream. These permissions are used only for the live publishing action you started."
+                            : "FadCam needs camera access to record video and microphone access to record audio. These permissions are used only when you start recording.")
+                    .setNegativeButton("Not now", (dialog, which) -> {
+                        permissionRequestInProgress = false;
+                        Toast.makeText(this, "Recording was not started", Toast.LENGTH_SHORT).show();
+                        finish();
+                    })
+                    .setPositiveButton("Continue", (dialog, which) -> requestCapturePermissions(requestCode))
+                    .setOnCancelListener(dialog -> {
+                        permissionRequestInProgress = false;
+                        finish();
+                    })
+                    .show();
+            return;
+        }
+
+        requestCapturePermissions(requestCode);
+    }
+
+    private void requestCapturePermissions(int requestCode) {
         requestPermissions(
                 new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
                 requestCode);
@@ -132,7 +162,7 @@ public class RecordingStartActivity extends Activity {
 
         if (!hasCapturePermissions()) {
             pendingRtmpIntent = new Intent(incoming);
-            requestCapturePermissions(REQUEST_RTMP_CAPTURE_PERMISSIONS);
+            requestCapturePermissionsWithContext(REQUEST_RTMP_CAPTURE_PERMISSIONS, false);
             return;
         }
 
@@ -167,11 +197,33 @@ public class RecordingStartActivity extends Activity {
                 startCaptureService(retry);
             }
         } else {
+            boolean cameraPermanentlyDenied = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                    != PackageManager.PERMISSION_GRANTED
+                    && !shouldShowRequestPermissionRationale(Manifest.permission.CAMERA);
+            boolean microphonePermanentlyDenied = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                    != PackageManager.PERMISSION_GRANTED
+                    && !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO);
+
             String message = requestCode == REQUEST_RTMP_CAPTURE_PERMISSIONS
-                    ? "Camera and microphone permissions are required for live publishing"
-                    : "Camera and microphone permissions are required to record video";
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-            finish();
+                    ? "Camera and microphone permissions are required for live publishing."
+                    : "Camera and microphone permissions are required to record video.";
+
+            if (cameraPermanentlyDenied || microphonePermanentlyDenied) {
+                new AlertDialog.Builder(this)
+                        .setTitle("Permissions required")
+                        .setMessage(message + " Android is no longer showing the permission prompt. You can enable the permissions from FadCam's App info settings.")
+                        .setNegativeButton("Cancel", (dialog, which) -> finish())
+                        .setPositiveButton("Open settings", (dialog, which) -> {
+                            Intent settingsIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                    .setData(Uri.parse("package:" + getPackageName()));
+                            startActivity(settingsIntent);
+                            finish();
+                        })
+                        .show();
+            } else {
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                finish();
+            }
         }
     }
 
