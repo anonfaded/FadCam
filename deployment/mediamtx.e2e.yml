@@ -4,6 +4,23 @@ apiAddress: :9997
 rtmp: true
 rtmpAddress: :1935
 hls: false
+
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+        path:
+      - action: read
+        path:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: api
+        path:
+
 record: true
 recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
 recordFormat: fmp4
