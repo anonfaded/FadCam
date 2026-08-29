@@ -26,9 +26,16 @@ authInternalUsers:
       - action: read
         path:
 
-record: true
-recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
-recordFormat: fmp4
-recordPartDuration: 1s
-recordSegmentDuration: 10s
-recordDeleteAfter: 1h
+# MediaMTX 1.12+ requires an explicit path rule for dynamically-created
+# publisher paths. Keep recording defaults here and allow any stream name.
+pathDefaults:
+  record: true
+  recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+  recordFormat: fmp4
+  recordPartDuration: 1s
+  recordSegmentDuration: 10s
+  recordDeleteAfter: 1h
+
+paths:
+  all_others:
+    source: publisher
