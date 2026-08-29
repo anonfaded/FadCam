@@ -26,9 +26,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Start the infrastructure first. The publisher is deliberately started only
-# after every dependency is reachable, eliminating a startup race that could
-# consume the short synthetic stream before the test begins discovery.
 "${COMPOSE[@]}" up -d --build mediamtx gateway minio
 
 ready=0
@@ -48,17 +45,16 @@ if [[ $ready != 1 ]]; then
   exit 1
 fi
 
-# Keep the source alive long enough for service discovery and diagnostics.
 "${COMPOSE[@]}" up -d ffmpeg-publisher
-
 node tests/media-pipeline/test.mjs
 
-# MediaMTX's official image is intentionally minimal and has no shell/find utility.
-# Inspect the shared recording volume from the MinIO helper container.
+# Alpine is the filesystem inspection helper. The MinIO mc image is intentionally
+# a client image and must not be assumed to contain /bin/sh, find, or head.
 REC_PATH=''
 for i in {1..120}; do
-  REC_PATH=$("${COMPOSE[@]}" run --rm -T --entrypoint /bin/sh minio-uploader -c \
-    'find /recordings/e2e-test -type f -name "*.mp4" | head -n 1' 2>/dev/null | tr -d '\r' | head -n 1 || true)
+  REC_PATH=$("${COMPOSE[@]}" run --rm -T recording-inspector 2>/dev/null \
+    | awk -v stream="$STREAM" '$0 ~ ("/recordings/" stream "/") && $0 ~ /\.mp4$/ {print; exit}' \
+    | tr -d '\r' | head -n 1 || true)
   if [[ -n "$REC_PATH" ]]; then break; fi
   sleep 1
 done
@@ -71,20 +67,23 @@ fi
 
 echo "Recorded source: $REC_PATH"
 
-# Stop the finite publisher so MediaMTX finalizes the current recording segment.
 "${COMPOSE[@]}" stop ffmpeg-publisher
 
-# Process the real MediaMTX recording with FFmpeg into a deterministic artifact.
-"${COMPOSE[@]}" run --rm -T --entrypoint sh ffmpeg-publisher -c \
-  "ffmpeg -y -i '$REC_PATH' -c:v libx264 -preset ultrafast -c:a aac /recordings/processed.mp4"
+# Use the FFmpeg container only as an FFmpeg executable; override its entrypoint
+# to avoid relying on a shell in the image.
+"${COMPOSE[@]}" run --rm -T --entrypoint ffmpeg ffmpeg-publisher \
+  -y -i "$REC_PATH" -c:v libx264 -preset ultrafast -c:a aac /recordings/processed.mp4
 
-# Upload the processed artifact through the MinIO client on the Compose network.
-"${COMPOSE[@]}" run --rm -T --entrypoint /bin/sh minio-uploader -c \
-  "mc alias set local http://minio:9000 fad-e2e fad-e2e-password && mc mb --ignore-existing local/$BUCKET && mc cp /recordings/processed.mp4 local/$BUCKET/$OBJECT && mc stat local/$BUCKET/$OBJECT"
+# The mc image provides the mc executable directly; no shell is required.
+"${COMPOSE[@]}" run --rm -T --entrypoint mc minio-uploader \
+  alias set local http://minio:9000 fad-e2e fad-e2e-password
+"${COMPOSE[@]}" run --rm -T --entrypoint mc minio-uploader \
+  mb --ignore-existing local/$BUCKET
+"${COMPOSE[@]}" run --rm -T --entrypoint mc minio-uploader \
+  cp /recordings/processed.mp4 local/$BUCKET/$OBJECT
 
-# Verify the object through MinIO's client, including a non-zero size.
-STATS=$("${COMPOSE[@]}" run --rm -T --entrypoint /bin/sh minio-uploader -c \
-  "mc stat --json local/$BUCKET/$OBJECT")
+STATS=$("${COMPOSE[@]}" run --rm -T --entrypoint mc minio-uploader \
+  stat --json local/$BUCKET/$OBJECT)
 echo "$STATS"
 node -e 'const s=JSON.parse(process.argv[1]); if (!s.size || s.size <= 0) process.exit(1); console.log(`PASS: MinIO object size=${s.size}`)' "$STATS"
 
