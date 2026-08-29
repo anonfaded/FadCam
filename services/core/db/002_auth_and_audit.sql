@@ -13,6 +13,17 @@ CREATE TABLE IF NOT EXISTS auth_tokens (
 CREATE INDEX IF NOT EXISTS auth_tokens_camera_idx ON auth_tokens(camera_id);
 CREATE INDEX IF NOT EXISTS auth_tokens_active_idx ON auth_tokens(token_hash) WHERE revoked_at IS NULL;
 
+CREATE TABLE IF NOT EXISTS camera_permissions (
+  id UUID PRIMARY KEY,
+  camera_id UUID NOT NULL REFERENCES cameras(id) ON DELETE CASCADE,
+  resource_type TEXT NOT NULL,
+  resource_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  UNIQUE(camera_id, resource_type, resource_id, action)
+);
+
+CREATE INDEX IF NOT EXISTS camera_permissions_lookup_idx ON camera_permissions(camera_id, resource_type, resource_id, action);
+
 CREATE TABLE IF NOT EXISTS audit_events (
   id BIGSERIAL PRIMARY KEY,
   organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL,
