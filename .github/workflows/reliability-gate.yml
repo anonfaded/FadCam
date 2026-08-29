@@ -20,6 +20,11 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
+      - name: Provision patched Media3
+        run: |
+          set -eu
+          git clone --depth 1 --branch release https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -f /tmp/media3-patched/libraries/muxer/src/main/java/androidx/media3/muxer/ProcessedSegment.java
       - name: Verify Gradle toolchain
         run: |
           chmod +x ./gradlew
