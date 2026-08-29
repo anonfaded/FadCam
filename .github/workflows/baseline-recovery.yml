@@ -37,6 +37,7 @@ jobs:
           set -euo pipefail
           test "$(java -version 2>&1 | sed -n 's/.*version \"\([0-9]*\).*/\1/p' | head -1)" = "17"
           grep -F 'distributionUrl=https\://services.gradle.org/distributions/gradle-8.13-bin.zip' gradle/wrapper/gradle-wrapper.properties
+          grep -F 'distributionSha256Sum=20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78' gradle/wrapper/gradle-wrapper.properties
           grep -F 'agp = "8.13.1"' gradle/libs.versions.toml
           grep -F 'compileSdk = 36' app/build.gradle.kts
           grep -F 'targetSdk = 36' app/build.gradle.kts
@@ -52,6 +53,15 @@ jobs:
             echo 'ERROR: local.properties must never be tracked'
             exit 1
           fi
+
+      - name: Verify Gradle Wrapper integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_wrapper_sha256='81a82aaea5abcc8ff68b3dfcb58b3c3c429378efd98e7433460610fecd7ae45f'
+          actual_wrapper_sha256="$(sha256sum gradle/wrapper/gradle-wrapper.jar | awk '{print $1}')"
+          test "$actual_wrapper_sha256" = "$expected_wrapper_sha256"
+          echo "Gradle 8.13 wrapper JAR checksum verified: $actual_wrapper_sha256"
 
       - name: Prepare patched Media3
         shell: bash
