@@ -9,6 +9,8 @@ HLS_URL="${HLS_URL:-http://127.0.0.1:8888/fadcam/index.m3u8}"
 API_URL="http://127.0.0.1:9997/v3/paths/list"
 DEVICE_SERIAL="${ANDROID_SERIAL:-}"
 TIMEOUT_SECONDS="${ANDROID_RTMP_TIMEOUT:-60}"
+HLS_COOKIE_JAR="$(mktemp)"
+HLS_PLAYLIST="$(mktemp)"
 
 cleanup() {
   set +e
@@ -18,6 +20,7 @@ cleanup() {
   fi
   "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | tail -n 220 >&2 || true
   "${COMPOSE[@]}" down --remove-orphans >/dev/null 2>&1 || true
+  rm -f "${HLS_COOKIE_JAR}" "${HLS_PLAYLIST}"
 }
 trap cleanup EXIT INT TERM
 
@@ -31,7 +34,7 @@ adb_target() {
 
 require_commands() {
   local c
-  for c in adb curl ffprobe; do
+  for c in adb curl ffprobe ffmpeg timeout; do
     command -v "${c}" >/dev/null 2>&1 || { echo "ERROR: ${c} is required." >&2; exit 1; }
   done
 }
@@ -50,6 +53,20 @@ wait_for() {
   done
   echo "ERROR: ${description} did not become ready within ${TIMEOUT_SECONDS}s." >&2
   return 1
+}
+
+refresh_hls_session() {
+  # MediaMTX may redirect the first HLS request through its cookie-check
+  # endpoint. Establish one client session and reuse its cookie for every
+  # playlist/segment/ffprobe request instead of opening a new session per poll.
+  curl -fsSL --connect-timeout 3 --max-time 8 \
+    -c "${HLS_COOKIE_JAR}" -b "${HLS_COOKIE_JAR}" \
+    "${HLS_URL}?cookieCheck=1" -o "${HLS_PLAYLIST}"
+  grep -q '^#EXTM3U' "${HLS_PLAYLIST}"
+}
+
+cookie_header() {
+  awk 'BEGIN{ORS=""} $0 !~ /^#/ && NF>=7 { printf "%s=%s; ", $6, $7 }' "${HLS_COOKIE_JAR}"
 }
 
 require_commands
@@ -91,13 +108,15 @@ wait_for "MediaMTX RTMP path online" \
 wait_for "HLS muxer" \
   "curl -fsS 'http://127.0.0.1:9998/metrics?type=hls_muxers&path=fadcam' | grep -q 'hls_muxers'"
 
-wait_for "HLS playlist" \
-  "curl -fsS '${HLS_URL}' | grep -q '^#EXTM3U'"
+wait_for "HLS playlist" "refresh_hls_session"
+
+COOKIE="$(cookie_header)"
+[[ -n "${COOKIE}" ]] || { echo "ERROR: MediaMTX HLS cookie session was not established." >&2; exit 1; }
 
 # ffprobe is the authoritative media assertion: it must see both tracks from
 # the phone, not merely a syntactically valid playlist.
-VIDEO_CODEC="$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=nw=1:nk=1 "${HLS_URL}" | head -n 1)"
-AUDIO_CODEC="$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=nw=1:nk=1 "${HLS_URL}" | head -n 1)"
+VIDEO_CODEC="$(ffprobe -v error -headers "Cookie: ${COOKIE}\r\n" -select_streams v:0 -show_entries stream=codec_name -of default=nw=1:nk=1 "${HLS_URL}" 2>/dev/null | head -n 1)"
+AUDIO_CODEC="$(ffprobe -v error -headers "Cookie: ${COOKIE}\r\n" -select_streams a:0 -show_entries stream=codec_name -of default=nw=1:nk=1 "${HLS_URL}" 2>/dev/null | head -n 1)"
 [[ "${VIDEO_CODEC}" == "h264" ]] || { echo "ERROR: Android video codec was '${VIDEO_CODEC}', expected h264." >&2; exit 1; }
 [[ "${AUDIO_CODEC}" == "aac" ]] || { echo "ERROR: Android audio codec was '${AUDIO_CODEC}', expected aac." >&2; exit 1; }
 echo "PASS: physical Android camera produced H.264."
@@ -105,13 +124,15 @@ echo "PASS: physical Android microphone produced AAC."
 
 # Decode a short window from the actual phone stream. This proves the complete
 # camera -> encoder -> RTMP -> MediaMTX -> HLS -> decoder path.
-timeout 15 ffmpeg -hide_banner -loglevel error -i "${HLS_URL}" -t 5 \
-  -map 0:v:0 -map 0:a:0 -f null - >/dev/null
+timeout 15 ffmpeg -hide_banner -loglevel error \
+  -headers "Cookie: ${COOKIE}\r\n" \
+  -i "${HLS_URL}" -t 5 -map 0:v:0 -map 0:a:0 -f null - >/dev/null
 
 echo "PASS: physical Android H.264/AAC stream decoded through HLS."
 
-# Keep the phone publisher alive while validating a second HLS read.
+# Keep the phone publisher alive while validating a second playlist/media read.
 sleep 3
+refresh_hls_session
 curl -fsS "${API_URL}" | grep -q '"name":"fadcam"'
 echo "PASS: physical Android publisher remained online."
 
