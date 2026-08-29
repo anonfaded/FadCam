@@ -27,12 +27,13 @@ cleanup() {
 trap cleanup EXIT
 
 "${COMPOSE[@]}" up -d --build mediamtx gateway minio
+sleep 3
 "${COMPOSE[@]}" up -d ffmpeg-publisher
 
 ready=0
 for i in {1..45}; do
   if curl -fsS http://localhost:8081/health >/dev/null \
-    && curl -fsS http://localhost:9997/v3/paths/list >/dev/null \
+    && curl -fsS -u 'any:' http://localhost:9997/v3/paths/list >/dev/null \
     && curl -fsS http://localhost:9000/minio/health/live >/dev/null; then
     ready=1
     break
