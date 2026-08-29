@@ -20,7 +20,7 @@ import com.fadcam.R;
 import java.io.IOException;
 import java.net.ServerSocket;
 
-/** Foreground owner for FadCam's local/remote streaming HTTP server. */
+/** Foreground owner for FadCam's local HTTP server and streaming runtime. */
 public class RemoteStreamService extends Service {
     private static final String TAG = "RemoteStreamService";
     private static final String CHANNEL_ID = "remote_streaming_channel";
@@ -54,17 +54,17 @@ public class RemoteStreamService extends Service {
             return START_STICKY;
         }
 
-        startForeground(NOTIFICATION_ID, buildNotification("Ready. Start recording to begin streaming.", "http://..."));
-        boolean cloudMode = getSharedPreferences("FadCamCloudPrefs", MODE_PRIVATE).getInt("streaming_mode", 0) == 1;
-        if (!cloudMode) {
-            if (!startHttpServer()) {
-                stopSelf();
-                return START_NOT_STICKY;
-            }
-            getSharedPreferences("FadCamPrefs", MODE_PRIVATE).edit().putInt("stream_server_port", activePort).apply();
-        } else {
-            stopHttpServer();
+        startForeground(NOTIFICATION_ID, buildNotification("Starting local server…", "http://..."));
+
+        // The built-in Local Server is the canonical HTTP/control surface. Keep it
+        // running in BOTH local and cloud modes. Cloud mode is an additional delivery
+        // path; it must never disable the existing server or its Remote Control API.
+        if (!startHttpServer()) {
+            stopSelf();
+            return START_NOT_STICKY;
         }
+        getSharedPreferences("FadCamPrefs", MODE_PRIVATE).edit().putInt("stream_server_port", activePort).apply();
+
         RemoteStreamManager.getInstance().setStreamingEnabled(true);
         CloudStatusManager.getInstance(this).start();
         updateNotification();
@@ -81,11 +81,12 @@ public class RemoteStreamService extends Service {
         super.onDestroy();
     }
 
+    /**
+     * Reconcile the server with the selected delivery mode.
+     * The local server remains available regardless of whether cloud delivery is enabled.
+     */
     public void updateStreamingMode() {
-        boolean cloudMode = getSharedPreferences("FadCamCloudPrefs", MODE_PRIVATE).getInt("streaming_mode", 0) == 1;
-        if (cloudMode) {
-            stopHttpServer();
-        } else if (!isServerRunning()) {
+        if (!isServerRunning()) {
             if (startHttpServer()) {
                 getSharedPreferences("FadCamPrefs", MODE_PRIVATE).edit().putInt("stream_server_port", activePort).apply();
                 updateNotification();
@@ -102,7 +103,7 @@ public class RemoteStreamService extends Service {
             httpServer = new HardenedLiveM3U8Server(this, port);
             httpServer.start();
             activePort = port;
-            FLog.i(TAG, "HTTP streaming server started on port " + port + "; remote controls require authentication");
+            FLog.i(TAG, "HTTP streaming/control server started on port " + port + "; remote controls require authentication");
             return true;
         } catch (IOException e) {
             FLog.e(TAG, "Failed to start HTTP server", e);
