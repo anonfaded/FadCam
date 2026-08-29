@@ -21,13 +21,14 @@ done
 
 node tests/media-pipeline/test.mjs
 
-# Wait for the publisher to finish and for MediaMTX to finalize its fMP4 recording.
+# MediaMTX's official image is intentionally minimal and has no shell/find utility.
+# Inspect the shared recording volume from the helper container instead.
 for i in {1..45}; do
-  if "${COMPOSE[@]}" exec -T mediamtx sh -c 'find /recordings/e2e-test -type f -name "*.mp4" | head -n 1' 2>/dev/null | grep -q .; then break; fi
+  if "${COMPOSE[@]}" run --rm -T minio-uploader sh -c 'find /recordings/e2e-test -type f -name "*.mp4" | head -n 1' 2>/dev/null | grep -q .; then break; fi
   sleep 1
 done
 
-REC_PATH=$("${COMPOSE[@]}" exec -T mediamtx sh -c 'find /recordings/e2e-test -type f -name "*.mp4" | head -n 1' | tr -d '\r' | head -n 1)
+REC_PATH=$("${COMPOSE[@]}" run --rm -T minio-uploader sh -c 'find /recordings/e2e-test -type f -name "*.mp4" | head -n 1' | tr -d '\r' | head -n 1)
 if [[ -z "$REC_PATH" ]]; then
   echo "FAIL: MediaMTX did not finalize an fMP4 recording"
   "${COMPOSE[@]}" logs --no-color mediamtx ffmpeg-publisher
