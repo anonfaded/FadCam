@@ -10,22 +10,11 @@ import androidx.annotation.RequiresApi;
 import com.pedro.common.ConnectChecker;
 import com.pedro.library.rtmp.RtmpStream;
 
-/**
- * Generic Android RTMP/RTMPS publisher used by FadCam.
- *
- * <p>RootEncoder owns the physical Camera2 camera, microphone and MediaCodec
- * encoders. This class deliberately knows nothing about a social platform:
- * destinations only provide an ingest server and stream key.</p>
- *
- * <p>The publisher uses a bounded capability ladder. It tries 4K first, then
- * 1080p, then 720p. A device that cannot encode a requested profile is not
- * treated as a fatal streaming-core failure; the next valid profile is tried.</p>
- */
+/** Generic Android RTMP/RTMPS publisher used by FadCam. */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 public final class RtmpPublisher implements ConnectChecker {
-
     public interface Listener {
-        void onConnecting(@NonNull String endpoint);
+        void onConnecting();
         void onConnected();
         void onBitrateChanged(long bitrate);
         void onFailed(@NonNull String reason);
@@ -48,7 +37,7 @@ public final class RtmpPublisher implements ConnectChecker {
         }
 
         @NonNull
-        public String toString() {
+        @Override public String toString() {
             return width + "x" + height + "@" + fps + " " + bitrate + "bps";
         }
     }
@@ -58,7 +47,6 @@ public final class RtmpPublisher implements ConnectChecker {
             new VideoProfile(1920, 1080, 30, 8_000_000),
             new VideoProfile(1280, 720, 30, 4_000_000)
     };
-
     private static final int AUDIO_SAMPLE_RATE = 48_000;
     private static final int AUDIO_BITRATE = 128_000;
 
@@ -69,20 +57,14 @@ public final class RtmpPublisher implements ConnectChecker {
 
     public RtmpPublisher(@NonNull Context context, @Nullable Listener listener) {
         this.listener = listener;
-        // RtmpStream's default video source is the physical Camera2 source and
-        // its default audio source is the device microphone. This is the actual
-        // Android capture path, not the deterministic CI FFmpeg source.
         stream = new RtmpStream(context.getApplicationContext(), this);
         stream.getStreamClient().setReTries(3);
     }
 
-    /** Prepare the highest profile accepted by the device's Camera2/MediaCodec stack. */
     public synchronized boolean prepare() {
         if (prepared && activeProfile != null) return true;
-
         prepared = false;
         activeProfile = null;
-
         for (VideoProfile profile : VIDEO_LADDER) {
             if (tryPrepareVideo(profile)) {
                 activeProfile = profile;
@@ -90,19 +72,12 @@ public final class RtmpPublisher implements ConnectChecker {
                 break;
             }
         }
-
         if (!prepared) {
             notifyFailure("No supported H.264 camera profile (4K/1080p/720p)");
             return false;
         }
-
         try {
-            boolean audioPrepared = stream.prepareAudio(
-                    AUDIO_SAMPLE_RATE,
-                    true,
-                    AUDIO_BITRATE,
-                    true,
-                    true);
+            boolean audioPrepared = stream.prepareAudio(AUDIO_SAMPLE_RATE, true, AUDIO_BITRATE, true, true);
             if (!audioPrepared) {
                 prepared = false;
                 activeProfile = null;
@@ -120,18 +95,12 @@ public final class RtmpPublisher implements ConnectChecker {
 
     private boolean tryPrepareVideo(@NonNull VideoProfile profile) {
         try {
-            return stream.prepareVideo(
-                    profile.width,
-                    profile.height,
-                    profile.bitrate,
-                    profile.fps,
-                    0);
+            return stream.prepareVideo(profile.width, profile.height, profile.bitrate, profile.fps, 0);
         } catch (IllegalArgumentException error) {
             return false;
         }
     }
 
-    /** Explicit profile preparation for deterministic device tests. */
     public synchronized boolean prepare(int width, int height, int videoBitrate, int fps,
                                         int audioSampleRate, boolean stereo, int audioBitrate) {
         if (stream.isStreaming()) return true;
@@ -156,18 +125,16 @@ public final class RtmpPublisher implements ConnectChecker {
     }
 
     public synchronized void start(@NonNull RtmpDestination destination,
-                                   @NonNull String serverUrl,
-                                   @NonNull String streamKey) {
+                                    @NonNull String serverUrl,
+                                    @NonNull String streamKey) {
         start(destination.buildEndpoint(serverUrl, streamKey));
     }
 
-    /** Start publishing to an already constructed RTMP/RTMPS endpoint. */
+    /** Start publishing to an endpoint held only in process memory. */
     public synchronized void start(@NonNull String endpoint) {
-        if (!prepared && !prepare()) {
-            throw new IllegalStateException("RTMP encoder is not prepared");
-        }
+        if (!prepared && !prepare()) throw new IllegalStateException("RTMP encoder is not prepared");
         if (stream.isStreaming()) return;
-        if (listener != null) listener.onConnecting(endpoint);
+        if (listener != null) listener.onConnecting();
         stream.startStream(endpoint);
     }
 
@@ -190,7 +157,7 @@ public final class RtmpPublisher implements ConnectChecker {
     }
 
     @Override public void onConnectionStarted(@NonNull String url) {
-        if (listener != null) listener.onConnecting(url);
+        if (listener != null) listener.onConnecting();
     }
 
     @Override public void onConnectionSuccess() {
