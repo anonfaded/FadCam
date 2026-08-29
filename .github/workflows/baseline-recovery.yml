@@ -40,7 +40,7 @@ jobs:
           grep -F 'agp = "8.13.1"' gradle/libs.versions.toml
           grep -F 'compileSdk = 36' app/build.gradle.kts
           grep -F 'targetSdk = 36' app/build.gradle.kts
-          if grep -RIn --exclude-dir=.git 'FADCAM_RELEASE_KEYSTORE_BASE64\|RELEASE_KEYSTORE\|KEYSTORE_BASE64' .; then
+          if grep -RIn --exclude-dir=.git --exclude='baseline-recovery.yml' 'FADCAM_RELEASE_KEYSTORE_BASE64\|RELEASE_KEYSTORE\|KEYSTORE_BASE64' .; then
             echo 'ERROR: permanent/encoded release signing configuration detected in source tree'
             exit 1
           fi
