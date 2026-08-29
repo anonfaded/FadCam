@@ -4,11 +4,13 @@ set -Eeuo pipefail
 COMPOSE=(docker compose --env-file server/.env.example -f server/docker-compose.yml)
 PATH_NAME="fadcam"
 RTMP_URL="rtmp://127.0.0.1:1935/${PATH_NAME}"
-HLS_URL="http://127.0.0.1:8888/${PATH_NAME}/index.m3u8"
+HLS_ROOT_URL="http://127.0.0.1:8888/${PATH_NAME}/"
+HLS_URL="${HLS_ROOT_URL}index.m3u8"
 
 PUBLISHER_LOG=""
 PUBLISHER_PID=""
-PLAYLIST_FILE=""
+MASTER_PLAYLIST=""
+MEDIA_PLAYLIST=""
 SEGMENT_FILE=""
 PROBE_LOG=""
 DECODE_LOG=""
@@ -54,7 +56,7 @@ cleanup() {
     wait "${PUBLISHER_PID}" >/dev/null 2>&1 || true
   fi
   print_forensics
-  rm -f "${PUBLISHER_LOG}" "${PLAYLIST_FILE}" "${SEGMENT_FILE}" "${PROBE_LOG}" "${DECODE_LOG}" 2>/dev/null || true
+  rm -f "${PUBLISHER_LOG}" "${MASTER_PLAYLIST}" "${MEDIA_PLAYLIST}" "${SEGMENT_FILE}" "${PROBE_LOG}" "${DECODE_LOG}" 2>/dev/null || true
   "${COMPOSE[@]}" down --remove-orphans >/dev/null 2>&1 || true
 }
 trap cleanup EXIT INT TERM
@@ -104,35 +106,52 @@ wait_for_rtmp_ingest() {
   fail "MediaMTX did not confirm RTMP ingest within ${timeout_seconds}s."
 }
 
-fetch_playlist_once() {
-  # One playlist request only. Repeated polling creates a new MediaMTX HLS
-  # session per request and hides the actual protocol failure.
-  curl --connect-timeout 3 --max-time 10 -fsS -L "${HLS_URL}" -o "${PLAYLIST_FILE}"
+fetch_hls_once() {
+  local url="$1" output="$2"
+  # Each HLS client is intentional and bounded; there is no polling loop.
+  curl --connect-timeout 3 --max-time 10 -fsS -L "${url}" -o "${output}"
 }
 
-playlist_media_uri() {
-  awk '/^[^#[:space:]]+$/ { print; exit }' "${PLAYLIST_FILE}"
-}
-
-resolve_media_uri() {
+resolve_hls_uri() {
   local uri="$1"
   case "${uri}" in
     http://*|https://*) printf '%s\n' "${uri}" ;;
     /*) printf 'http://127.0.0.1:8888%s\n' "${uri}" ;;
-    *) printf 'http://127.0.0.1:8888/%s/%s\n' "${PATH_NAME}" "${uri#./}" ;;
+    *) printf '%s%s\n' "${HLS_ROOT_URL}" "${uri#./}" ;;
   esac
 }
 
-verify_playlist_and_media_object() {
-  log "Fetching HLS playlist once (no polling/session churn)..."
-  fetch_playlist_once || fail "HLS playlist request failed."
-  grep -q '^#EXTM3U' "${PLAYLIST_FILE}" || fail "HLS endpoint returned data, but not an HLS playlist."
-  log "PASS: HLS playlist exists."
+first_child_playlist_uri() {
+  awk '/\.m3u8([?#]|$)/ { print; exit }' "${MASTER_PLAYLIST}"
+}
+
+first_media_uri() {
+  awk '/^[^#[:space:]]+$/ { print; exit }' "${MEDIA_PLAYLIST}"
+}
+
+verify_hls_playlist_and_media_object() {
+  log "Fetching HLS master playlist once..."
+  fetch_hls_once "${HLS_URL}" "${MASTER_PLAYLIST}" \
+    || fail "HLS master playlist request failed."
+  grep -q '^#EXTM3U' "${MASTER_PLAYLIST}" \
+    || fail "HLS endpoint returned data, but not an HLS playlist."
+  log "PASS: HLS master playlist exists."
+
+  local child child_url
+  child="$(first_child_playlist_uri || true)"
+  [[ -n "${child}" ]] || fail "HLS master playlist contains no media playlist URI."
+  child_url="$(resolve_hls_uri "${child}")"
+  log "Fetching HLS media playlist once: ${child}"
+  fetch_hls_once "${child_url}" "${MEDIA_PLAYLIST}" \
+    || fail "Referenced HLS media playlist could not be fetched."
+  grep -q '^#EXTM3U' "${MEDIA_PLAYLIST}" \
+    || fail "Referenced HLS media playlist is invalid."
+  log "PASS: HLS media playlist exists."
 
   local uri url
-  uri="$(playlist_media_uri || true)"
-  [[ -n "${uri}" ]] || fail "HLS playlist contains no media object URI."
-  url="$(resolve_media_uri "${uri}")"
+  uri="$(first_media_uri || true)"
+  [[ -n "${uri}" ]] || fail "HLS media playlist contains no media object URI."
+  url="$(resolve_hls_uri "${uri}")"
   log "Fetching first HLS media object: ${uri}"
   curl --connect-timeout 3 --max-time 10 -fsS -L "${url}" -o "${SEGMENT_FILE}" \
     || fail "Referenced HLS media object could not be fetched."
@@ -143,22 +162,32 @@ verify_playlist_and_media_object() {
 verify_codecs() {
   log "Probing HLS stream codecs with ffprobe..."
   : >"${PROBE_LOG}"
-  local streams video audio
+  local streams
   streams="$(timeout 15 ffprobe -v error -rw_timeout 10000000 \
     -show_entries stream=codec_type,codec_name \
     -of csv=p=0 "${HLS_URL}" 2>"${PROBE_LOG}" || true)"
-  video="$(printf '%s\n' "${streams}" | grep '^video,' | head -n1 | cut -d, -f2 || true)"
-  audio="$(printf '%s\n' "${streams}" | grep '^audio,' | head -n1 | cut -d, -f2 || true)"
 
-  [[ "${video}" == "h264" ]] || {
+  # FFmpeg is free to emit the requested fields in stream-defined order, so
+  # validate the codec/type pairs independently instead of assuming column order.
+  printf '%s\n' "${streams}" | grep -Eq '(^|,)h264(,|$)' || {
     log "ffprobe streams: ${streams:-<none>}" >&2
     cat "${PROBE_LOG}" >&2 || true
-    fail "HLS video track is not H.264."
+    fail "HLS video codec H.264 was not found."
   }
-  [[ "${audio}" == "aac" ]] || {
+  printf '%s\n' "${streams}" | grep -Eq '(^|,)video(,|$)' || {
     log "ffprobe streams: ${streams:-<none>}" >&2
     cat "${PROBE_LOG}" >&2 || true
-    fail "HLS audio track is not AAC."
+    fail "HLS video track was not found."
+  }
+  printf '%s\n' "${streams}" | grep -Eq '(^|,)aac(,|$)' || {
+    log "ffprobe streams: ${streams:-<none>}" >&2
+    cat "${PROBE_LOG}" >&2 || true
+    fail "HLS audio codec AAC was not found."
+  }
+  printf '%s\n' "${streams}" | grep -Eq '(^|,)audio(,|$)' || {
+    log "ffprobe streams: ${streams:-<none>}" >&2
+    cat "${PROBE_LOG}" >&2 || true
+    fail "HLS audio track was not found."
   }
   log "PASS: H.264 track present."
   log "PASS: AAC track present."
@@ -226,7 +255,8 @@ log "Starting MediaMTX..."
 wait_for_tcp 127.0.0.1 1935 60
 
 PUBLISHER_LOG="$(mktemp)"
-PLAYLIST_FILE="$(mktemp)"
+MASTER_PLAYLIST="$(mktemp)"
+MEDIA_PLAYLIST="$(mktemp)"
 SEGMENT_FILE="$(mktemp)"
 PROBE_LOG="$(mktemp)"
 DECODE_LOG="$(mktemp)"
@@ -258,7 +288,7 @@ for ((i=1; i<=15; i++)); do
   sleep 1
 done
 
-verify_playlist_and_media_object
+verify_hls_playlist_and_media_object
 verify_codecs
 verify_decode_and_sustain
 stop_publisher_and_verify_cleanup
