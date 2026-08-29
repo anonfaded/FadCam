@@ -9,17 +9,13 @@ hls: false
 authInternalUsers:
   - user: publisher
     pass: publisher-pass
-    ips:
-      - 0.0.0.0/0
-      - ::/0
+    ips: []
     permissions:
       - action: publish
         path:
-  - user: api
-    pass: api-pass
-    ips:
-      - 0.0.0.0/0
-      - ::/0
+  - user: api-e2e
+    pass: api-e2e-pass
+    ips: []
     permissions:
       - action: api
         path:
