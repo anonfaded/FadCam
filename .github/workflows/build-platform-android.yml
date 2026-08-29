@@ -2,7 +2,7 @@ name: FadCam Android + Platform Validation
 
 on:
   push:
-    branches: [master, feat/platform-services-android-safe]
+    branches: [master, feat/platform-services-android-safe, feature/reliable-rtmp-publishing]
   pull_request:
     branches: [master]
 
@@ -41,6 +41,9 @@ jobs:
 
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
+
+      - name: Run Android unit tests
+        run: ./gradlew :app:testDefaultDebugUnitTest --stacktrace --no-daemon
 
       - name: Assemble default debug APK
         run: ./gradlew assembleDefaultDebug --stacktrace --no-daemon
