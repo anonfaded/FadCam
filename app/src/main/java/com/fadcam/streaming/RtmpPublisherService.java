@@ -13,14 +13,7 @@ import androidx.core.app.NotificationCompat;
 
 import com.fadcam.R;
 
-/**
- * Foreground host for an RTMP publication so Android can keep the publisher
- * alive while FadCam is backgrounded.
- *
- * <p>The service intentionally does not persist stream keys. The caller passes
- * a complete endpoint through the start intent and is responsible for secure
- * credential handling.</p>
- */
+/** Foreground host for an RTMP publication. */
 public class RtmpPublisherService extends Service implements RtmpPublisher.Listener {
 
     public static final String ACTION_START = "com.fadcam.streaming.START_RTMP";
@@ -43,14 +36,12 @@ public class RtmpPublisherService extends Service implements RtmpPublisher.Liste
             stopPublishing();
             return START_NOT_STICKY;
         }
-
         if (ACTION_START.equals(intent.getAction())) {
             String endpoint = intent.getStringExtra(EXTRA_ENDPOINT);
             if (endpoint == null || endpoint.trim().isEmpty()) {
                 stopSelf(startId);
                 return START_NOT_STICKY;
             }
-
             startForeground(NOTIFICATION_ID, buildNotification("Connecting to live stream…"));
             if (publisher == null || !publisher.prepare()) {
                 stopPublishing();
@@ -82,7 +73,7 @@ public class RtmpPublisherService extends Service implements RtmpPublisher.Liste
 
     private Notification buildNotification(String text) {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("FadCam live stream")
                 .setContentText(text)
                 .setOngoing(true)
@@ -98,35 +89,15 @@ public class RtmpPublisherService extends Service implements RtmpPublisher.Liste
         super.onDestroy();
     }
 
-    @Override public void onBind(Intent intent) { return null; }
+    @Override public IBinder onBind(Intent intent) { return null; }
 
-    @Override public void onConnecting(String endpoint) {
-        updateNotification("Connecting to live stream…");
-    }
-
-    @Override public void onConnected() {
-        updateNotification("Live — publishing");
-    }
-
-    @Override public void onBitrateChanged(long bitrate) {
-        updateNotification("Live — " + Math.round(bitrate / 1000f) + " kbps");
-    }
-
-    @Override public void onFailed(String reason) {
-        updateNotification("Stream failed — retry required");
-    }
-
-    @Override public void onDisconnected() {
-        updateNotification("Stream disconnected");
-    }
-
-    @Override public void onAuthError() {
-        updateNotification("Stream authentication failed");
-    }
-
-    @Override public void onAuthSuccess() {
-        updateNotification("Authenticated — publishing");
-    }
+    @Override public void onConnecting(String endpoint) { updateNotification("Connecting to live stream…"); }
+    @Override public void onConnected() { updateNotification("Live — publishing"); }
+    @Override public void onBitrateChanged(long bitrate) { updateNotification("Live — " + Math.round(bitrate / 1000f) + " kbps"); }
+    @Override public void onFailed(String reason) { updateNotification("Stream failed — retry required"); }
+    @Override public void onDisconnected() { updateNotification("Stream disconnected"); }
+    @Override public void onAuthError() { updateNotification("Stream authentication failed"); }
+    @Override public void onAuthSuccess() { updateNotification("Authenticated — publishing"); }
 
     private void updateNotification(String text) {
         NotificationManager manager = getSystemService(NotificationManager.class);
