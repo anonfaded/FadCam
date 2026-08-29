@@ -56,9 +56,8 @@ wait_for() {
 }
 
 refresh_hls_session() {
-  # MediaMTX may redirect the first HLS request through its cookie-check
-  # endpoint. Establish one client session and reuse its cookie for every
-  # playlist/segment/ffprobe request instead of opening a new session per poll.
+  # MediaMTX 1.18+ tracks HLS readers with a cookie. Establish one session and
+  # keep the jar for every playlist/probe/decode request in this gate.
   curl -fsSL --connect-timeout 3 --max-time 8 \
     -c "${HLS_COOKIE_JAR}" -b "${HLS_COOKIE_JAR}" \
     "${HLS_URL}?cookieCheck=1" -o "${HLS_PLAYLIST}"
@@ -66,7 +65,10 @@ refresh_hls_session() {
 }
 
 cookie_header() {
-  awk 'BEGIN{ORS=""} $0 !~ /^#/ && NF>=7 { printf "%s=%s; ", $6, $7 }' "${HLS_COOKIE_JAR}"
+  # curl writes HttpOnly cookies with a #HttpOnly_ prefix. That prefix is
+  # metadata, not a comment cookie; strip it before converting the Netscape
+  # jar into the Cookie request header consumed by FFmpeg.
+  awk 'BEGIN{ORS=""} /^#HttpOnly_/ { sub(/^#HttpOnly_/, "") } $0 !~ /^#/ && NF>=7 { printf "%s=%s; ", $6, $7 }' "${HLS_COOKIE_JAR}"
 }
 
 require_commands
@@ -78,22 +80,14 @@ echo "Starting MediaMTX..."
 "${COMPOSE[@]}" --profile tv up -d mediamtx
 wait_for "MediaMTX RTMP listener" "timeout 2 bash -c 'exec 3<>/dev/tcp/127.0.0.1/1935'"
 
-# Route the phone's loopback TCP port to the host MediaMTX instance. This makes
-# rtmp://127.0.0.1:1935/fadcam on the phone deterministic and requires no LAN setup.
 adb_target reverse tcp:1935 tcp:1935
 
-# Build and install the debug variant that registers RtmpPublisherService via
-# the debug manifest. The production manifest is intentionally untouched until
-# the physical-device gate proves the publisher lifecycle.
 echo "Building debug APK..."
 (cd "${ROOT_DIR}" && ./gradlew :app:assembleDefaultDebug)
 APK="$(find "${ROOT_DIR}/app/build/outputs/apk" -type f -name '*.apk' | sort | tail -n 1)"
 [[ -n "${APK}" ]] || { echo "ERROR: debug APK was not produced." >&2; exit 1; }
 adb_target install -r "${APK}" >/dev/null
 
-# Debuggable builds allow the local device gate to grant the two capture
-# permissions non-interactively. The service is still started from the visible
-# RecordingStartActivity, satisfying Android's while-in-use FGS restriction.
 adb_target shell pm grant "${PACKAGE}" android.permission.CAMERA || true
 adb_target shell pm grant "${PACKAGE}" android.permission.RECORD_AUDIO || true
 
@@ -112,25 +106,30 @@ wait_for "HLS playlist" "refresh_hls_session"
 
 COOKIE="$(cookie_header)"
 [[ -n "${COOKIE}" ]] || { echo "ERROR: MediaMTX HLS cookie session was not established." >&2; exit 1; }
+echo "PASS: MediaMTX HLS cookie session established."
 
-# ffprobe is the authoritative media assertion: it must see both tracks from
-# the phone, not merely a syntactically valid playlist.
-VIDEO_CODEC="$(ffprobe -v error -headers "Cookie: ${COOKIE}\r\n" -select_streams v:0 -show_entries stream=codec_name -of default=nw=1:nk=1 "${HLS_URL}" 2>/dev/null | head -n 1)"
-AUDIO_CODEC="$(ffprobe -v error -headers "Cookie: ${COOKIE}\r\n" -select_streams a:0 -show_entries stream=codec_name -of default=nw=1:nk=1 "${HLS_URL}" 2>/dev/null | head -n 1)"
+# Use FFmpeg's cookie option rather than a generic HTTP header. The HLS demuxer
+# can issue additional playlist/segment requests; -cookies is explicitly
+# propagated to those HTTP requests, preserving the same MediaMTX session.
+VIDEO_CODEC="$(ffprobe -v error -rw_timeout 5000000 \
+  -cookies "${COOKIE}" \
+  -select_streams v:0 -show_entries stream=codec_name \
+  -of default=nw=1:nk=1 "${HLS_URL}" 2>/dev/null | head -n 1 || true)"
+AUDIO_CODEC="$(ffprobe -v error -rw_timeout 5000000 \
+  -cookies "${COOKIE}" \
+  -select_streams a:0 -show_entries stream=codec_name \
+  -of default=nw=1:nk=1 "${HLS_URL}" 2>/dev/null | head -n 1 || true)"
 [[ "${VIDEO_CODEC}" == "h264" ]] || { echo "ERROR: Android video codec was '${VIDEO_CODEC}', expected h264." >&2; exit 1; }
 [[ "${AUDIO_CODEC}" == "aac" ]] || { echo "ERROR: Android audio codec was '${AUDIO_CODEC}', expected aac." >&2; exit 1; }
 echo "PASS: physical Android camera produced H.264."
 echo "PASS: physical Android microphone produced AAC."
 
-# Decode a short window from the actual phone stream. This proves the complete
-# camera -> encoder -> RTMP -> MediaMTX -> HLS -> decoder path.
 timeout 15 ffmpeg -hide_banner -loglevel error \
-  -headers "Cookie: ${COOKIE}\r\n" \
+  -cookies "${COOKIE}" \
   -i "${HLS_URL}" -t 5 -map 0:v:0 -map 0:a:0 -f null - >/dev/null
 
 echo "PASS: physical Android H.264/AAC stream decoded through HLS."
 
-# Keep the phone publisher alive while validating a second playlist/media read.
 sleep 3
 refresh_hls_session
 curl -fsS "${API_URL}" | grep -q '"name":"fadcam"'
