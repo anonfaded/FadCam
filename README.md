@@ -2,6 +2,57 @@
 
 **Privacy-focused Android multimedia suite for background video recording, dashcam/bodycam use, screen recording, live streaming, and remote camera control — ad-free and open-source.**
 
+## 📦 APK DOWNLOAD CENTER
+
+> **Looking for an APK? Start here.** Every CI build is published from the release-grade Android validation pipeline, and permanent user builds belong in GitHub Releases.
+
+| Build | Best for | Download |
+| --- | --- | --- |
+| 🟢 **Latest Debug APK** | Development, smoke testing, device testing | [**Open latest CI build →**](https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml) |
+| 🔵 **Latest Release APK** | Release-build validation | [**Open latest CI build →**](https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml) |
+| 🚀 **Permanent Release APK** | Normal user installation | [**Open Releases →**](https://github.com/Trendyzima/FadCam/releases) |
+
+### ⚡ Fastest way to get the newest APK
+
+**CI / development build:**
+
+[![Open latest CI build](https://img.shields.io/badge/Download-Latest%20CI%20APK-2ea44f?logo=android&logoColor=white)](https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml)
+
+Open the workflow, choose the **latest successful run**, then download one of these artifacts from the run's **Artifacts** section:
+
+```text
+fadcam-default-debug-apk
+fadcam-default-release-apk
+```
+
+**Permanent user release:**
+
+[![Open releases](https://img.shields.io/badge/Download-Permanent%20Release%20APK-0969da?logo=github&logoColor=white)](https://github.com/Trendyzima/FadCam/releases)
+
+Use GitHub Releases for APKs intended to remain available as versioned user downloads. CI artifacts are temporary validation outputs.
+
+### 🧭 APK map
+
+```text
+                         FadCam APKs
+                              │
+             ┌────────────────┴────────────────┐
+             │                                 │
+        🧪 CI BUILDS                      🚀 RELEASES
+             │                                 │
+     ┌───────┴───────┐                  Versioned APKs
+     │               │                  Permanent distribution
+  Debug           Release
+     │               │
+     └───────┬───────┘
+             │
+       GitHub Actions
+       7-day artifact
+       retention
+```
+
+> **Important:** GitHub Actions artifacts are attached to individual workflow runs and are temporary. Always verify the **commit SHA and run** before using an APK for testing. The CI Release APK uses an ephemeral validation signing key and is **not** the production signing identity.
+
 [![Android CI](https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml/badge.svg)](https://github.com/Trendyzima/FadCam/actions/workflows/build-platform-android.yml)
 
 FadCam is built around privacy, reliability, and practical mobile multimedia workflows. It can turn an Android device into a flexible recorder, streaming source, or remotely controlled camera while keeping the project open-source and free of advertising.
@@ -13,6 +64,7 @@ FadCam is built around privacy, reliability, and practical mobile multimedia wor
 
 ## Contents
 
+- [📦 APK Download Center](#-apk-download-center)
 - [What FadCam does](#what-fadcam-does)
 - [CI and release-grade validation](#ci-and-release-grade-validation)
 - [APK build archive](#apk-build-archive)
