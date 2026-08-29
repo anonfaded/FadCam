@@ -4,3 +4,6 @@
 [submodule "server/ffplayout"]
 	path = server/ffplayout
 	url = https://github.com/ffplayout/ffplayout.git
+[submodule "third_party/media3-patched"]
+	path = third_party/media3-patched
+	url = https://github.com/anonfaded/media3-patched.git
