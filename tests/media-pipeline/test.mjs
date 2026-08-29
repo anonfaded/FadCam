@@ -3,6 +3,7 @@ const path = process.env.TEST_STREAM_PATH ?? 'e2e-test'
 const mediaMtxApi = process.env.MEDIAMTX_API ?? 'http://localhost:9997'
 const mediaMtxUser = process.env.MEDIAMTX_API_USER ?? 'api-e2e'
 const mediaMtxPassword = process.env.MEDIAMTX_API_PASSWORD ?? 'api-e2e-pass'
+const deviceToken = process.env.DEVICE_TOKEN
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 const mediaHeaders = { Authorization: `Basic ${Buffer.from(`${mediaMtxUser}:${mediaMtxPassword}`).toString('base64')}` }
@@ -29,6 +30,7 @@ async function waitForMediaMtx() {
 }
 
 async function main() {
+  if (!deviceToken) throw new Error('DEVICE_TOKEN is required for authenticated E2E')
   const media = await waitForMediaMtx()
   if (media.name !== path) throw new Error(`MediaMTX returned unexpected stream: ${JSON.stringify(media)}`)
 
@@ -36,9 +38,9 @@ async function main() {
   let lastError = 'no response'
   while (Date.now() < deadline) {
     try {
-      const result = await getJson(`${base}/api/v1/streams/${encodeURIComponent(path)}`)
+      const result = await getJson(`${base}/api/v1/streams/${encodeURIComponent(path)}`, { headers: { Authorization: `Bearer ${deviceToken}` } })
       if (result?.name === path) {
-        console.log(`PASS: authenticated FFmpeg publisher -> MediaMTX -> Gateway (${path})`)
+        console.log(`PASS: device auth -> Gateway -> MediaMTX (${path})`)
         return
       }
       lastError = `Gateway returned unexpected path payload: ${JSON.stringify(result)}`
@@ -46,10 +48,7 @@ async function main() {
     await sleep(1000)
   }
 
-  throw new Error(`Gateway did not discover '${path}' after MediaMTX reported it live: ${lastError}`)
+  throw new Error(`Gateway did not authorize/discover '${path}' after MediaMTX reported it live: ${lastError}`)
 }
 
-main().catch(error => {
-  console.error(`FAIL: ${error.message}`)
-  process.exit(1)
-})
+main().catch(error => { console.error(`FAIL: ${error.message}`); process.exit(1) })
