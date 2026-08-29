@@ -215,11 +215,19 @@ jobs:
               --notes "Automatically updated from the latest successful master validation run. Commit: $GITHUB_SHA" \
               --prerelease
           fi
+
+          # GitHub release assets are immutable by name. Explicitly remove the
+          # previous CI assets before uploading the freshly validated APKs so
+          # repeated master runs remain idempotent even when --clobber cannot
+          # replace an existing asset in the current API response path.
+          for asset in FadCam-debug.apk FadCam-release.apk SHA256SUMS.txt; do
+            gh release delete-asset latest-ci "$asset" --yes >/dev/null 2>&1 || true
+          done
+
           gh release upload latest-ci \
             public-apks/FadCam-debug.apk \
             public-apks/FadCam-release.apk \
-            public-apks/SHA256SUMS.txt \
-            --clobber
+            public-apks/SHA256SUMS.txt
 
       - name: Verify public release assets
         env:
