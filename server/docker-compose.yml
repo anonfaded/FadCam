@@ -13,6 +13,130 @@ services:
       - /transcode
     restart: unless-stopped
 
-  # MediaMTX remains the streaming transport layer. Keep it in the existing
-  # FadCam deployment and connect the generated TV channels to it using the
-  # supported IPTV/streaming URLs.
+  # 24/7 playout engine. Kept server-side; never included in the Android APK.
+  ffplayout:
+    build:
+      context: ./ffplayout
+    container_name: fadcam-ffplayout
+    profiles: [tv]
+    restart: unless-stopped
+    volumes:
+      - ./data/media:/media:ro
+      - ./data/ffplayout:/config
+    networks: [tv]
+
+  # Observability. These services are server-side only and have no Gradle/Android dependency.
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: fadcam-prometheus
+    profiles: [platform]
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    networks: [platform]
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: fadcam-grafana
+    profiles: [platform]
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+    networks: [platform]
+
+  minio:
+    image: minio/minio:latest
+    container_name: fadcam-minio
+    profiles: [storage]
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+    command: server /data --console-address ":9001"
+    networks: [platform]
+
+  keycloak-db:
+    image: postgres:17-alpine
+    container_name: fadcam-keycloak-db
+    profiles: [auth]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: ${KEYCLOAK_DB_USER:-keycloak}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?Set KEYCLOAK_DB_PASSWORD in .env}
+    volumes:
+      - keycloak-db-data:/var/lib/postgresql/data
+    networks: [platform]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: fadcam-keycloak
+    profiles: [auth]
+    restart: unless-stopped
+    depends_on:
+      - keycloak-db
+    ports:
+      - "8080:8080"
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?Set KEYCLOAK_DB_PASSWORD in .env}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD in .env}
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    command: start-dev
+    networks: [platform]
+
+  # Optional viewer/media library. This is deliberately isolated from the Android module.
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: fadcam-jellyfin
+    profiles: [viewer]
+    restart: unless-stopped
+    ports:
+      - "8096:8096"
+    volumes:
+      - jellyfin-config:/config
+      - jellyfin-cache:/cache
+      - ./data/media:/media:ro
+    networks: [platform]
+
+networks:
+  platform:
+    name: fadcam-platform
+  tv:
+    name: fadcam-tv
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  minio-data:
+  keycloak-db-data:
+  jellyfin-config:
+  jellyfin-cache:
+
+# MediaMTX remains the streaming transport layer. Keep it in the existing
+# FadCam deployment and connect generated TV channels using supported URLs.
+# None of the server services above are Android/Gradle dependencies.
