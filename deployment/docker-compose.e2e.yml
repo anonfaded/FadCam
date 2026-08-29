@@ -1,10 +1,9 @@
 services:
   mediamtx:
-    build:
-      context: ../platform/mediamtx
-    command: ["/mediamtx", "/config/mediamtx.yml"]
+    image: bluenviron/mediamtx:1
+    command: ["/mediamtx", "/mediamtx.yml"]
     volumes:
-      - ./mediamtx.e2e.yml:/config/mediamtx.yml:ro
+      - ./mediamtx.e2e.yml:/mediamtx.yml:ro
       - recordings:/recordings
     ports:
       - "1935:1935"
@@ -22,8 +21,7 @@ services:
       - "8081:8081"
 
   minio:
-    build:
-      context: ../platform/minio
+    image: quay.io/minio/aistor/minio:RELEASE.2026-08-07T18-34-35Z
     environment:
       MINIO_ROOT_USER: fad-e2e
       MINIO_ROOT_PASSWORD: fad-e2e-password
