@@ -18,7 +18,7 @@ public final class RtmpPublisherLauncher {
         new RtmpCredentialVault(context).put(alias, destination, serverUrl, streamKey);
     }
 
-    /** Starts a publication using credentials loaded from the Keystore-backed vault. */
+    /** Starts a publication using only a non-secret credential alias across the Intent boundary. */
     public static void start(@NonNull Context context, @NonNull String credentialAlias) {
         if (credentialAlias.trim().isEmpty()) throw new IllegalArgumentException("Credential alias is required");
         Intent intent = new Intent(context, RtmpPublisherService.class)
@@ -31,10 +31,7 @@ public final class RtmpPublisherLauncher {
         }
     }
 
-    /**
-     * Legacy convenience overload. New callers should use saveCredentials()+start(alias)
-     * so stream keys never cross an Intent boundary.
-     */
+    /** Compatibility convenience: persist first, then send only the alias through the Intent. */
     public static void start(@NonNull Context context,
                              @NonNull RtmpDestination destination,
                              @NonNull String serverUrl,
@@ -42,19 +39,6 @@ public final class RtmpPublisherLauncher {
         String alias = "default_" + destination.name().toLowerCase(java.util.Locale.US);
         saveCredentials(context, alias, destination, serverUrl, streamKey);
         start(context, alias);
-    }
-
-    /** Starts a direct endpoint for trusted internal callers; endpoints are not persisted. */
-    public static void startEndpoint(@NonNull Context context, @NonNull String endpoint) {
-        if (endpoint.trim().isEmpty()) throw new IllegalArgumentException("RTMP endpoint is required");
-        Intent intent = new Intent(context, RtmpPublisherService.class)
-                .setAction(RtmpPublisherService.ACTION_START)
-                .putExtra(RtmpPublisherService.EXTRA_ENDPOINT, endpoint.trim());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            ContextCompat.startForegroundService(context, intent);
-        } else {
-            context.startService(intent);
-        }
     }
 
     public static void stop(@NonNull Context context) {
