@@ -1,0 +1,36 @@
+name: FadCam Native Security Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  native-audit:
+    name: Native dependency and ABI audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Run source-level native dependency audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/security/audit-native-dependencies.sh
+          scripts/security/audit-native-dependencies.sh native-dependency-audit.txt
+
+      - name: Upload native audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: fadcam-native-security-audit
+          path: native-dependency-audit.txt
+          if-no-files-found: error
+          retention-days: 14
