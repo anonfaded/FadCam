@@ -44,6 +44,13 @@ services:
       -t 60 -c:v libx264 -preset ultrafast -tune zerolatency -pix_fmt yuv420p
       -c:a aac -f flv rtmp://mediamtx:1935/e2e-test
 
+  recording-inspector:
+    image: alpine:3.22
+    volumes:
+      - recordings:/recordings:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["find /recordings -type f -print"]
+
   minio-uploader:
     image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     depends_on:
