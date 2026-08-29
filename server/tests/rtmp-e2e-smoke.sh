@@ -98,7 +98,7 @@ wait_for_rtmp_ingest() {
       rc="$(publisher_exit_code)"
       fail "Deterministic publisher exited before RTMP ingest (exit ${rc})."
     }
-    if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "is publishing to path '${PATH_NAME}'"; then
+    if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -F "is publishing to path '${PATH_NAME}'" >/dev/null; then
       log "PASS: RTMP connection/path online."
       return 0
     fi
@@ -221,7 +221,7 @@ verify_decode_and_sustain() {
     cat "${DECODE_LOG}" >&2 || true
     fail "Publisher stopped during sustained HLS validation."
   }
-  if ! "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "is publishing to path '${PATH_NAME}'"; then
+  if ! "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -F "is publishing to path '${PATH_NAME}'" >/dev/null; then
     cat "${DECODE_LOG}" >&2 || true
     fail "MediaMTX no longer reports the RTMP publisher online during sustained validation."
   fi
@@ -260,7 +260,7 @@ stop_publisher_and_verify_cleanup() {
 
   log "Waiting for MediaMTX HLS muxer cleanup..."
   for ((attempt=1; attempt<=timeout_seconds; attempt++)); do
-    if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "muxer ${PATH_NAME}] destroyed"; then
+    if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -F "muxer ${PATH_NAME}] destroyed" >/dev/null; then
       log "PASS: MediaMTX cleanup confirmed."
       return 0
     fi
@@ -302,7 +302,7 @@ log "PASS: FFmpeg process alive."
 
 log "Waiting for HLS muxer to be created by MediaMTX..."
 for ((i=1; i<=15; i++)); do
-  if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -q "muxer ${PATH_NAME}] created automatically"; then
+  if "${COMPOSE[@]}" logs --no-color mediamtx 2>/dev/null | grep -F "muxer ${PATH_NAME}] created automatically" >/dev/null; then
     log "PASS: HLS muxer created."
     break
   fi
