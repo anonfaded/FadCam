@@ -1,0 +1,35 @@
+name: FadCam Authenticated Relay Validation
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+authorizations:
+  contents: read
+
+permissions:
+  contents: read
+
+jobs:
+  relay-auth-boundary:
+    name: Authenticated relay security boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout validation harness
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          submodules: false
+
+      - name: Validate relay authorization boundary
+        env:
+          FADCAM_RELAY_BASE_URL: https://live.fadseclab.com:8443
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x server/tests/relay-auth-boundary.sh
+          ./server/tests/relay-auth-boundary.sh
