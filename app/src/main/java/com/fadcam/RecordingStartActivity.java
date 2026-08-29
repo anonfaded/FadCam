@@ -17,11 +17,16 @@ import com.fadcam.streaming.RtmpPublisherService;
 public class RecordingStartActivity extends Activity {
     private static final String TAG = "RecordingStartActivity";
     private static final int REQUEST_RTMP_CAPTURE_PERMISSIONS = 7402;
+    private static final int REQUEST_RECORDING_CAPTURE_PERMISSIONS = 7403;
     public static final String EXTRA_SHORTCUT_CAMERA_MODE = "shortcut_camera_mode";
     public static final String CAMERA_MODE_BACK = "back";
     public static final String CAMERA_MODE_FRONT = "front";
     public static final String CAMERA_MODE_CURRENT = "current";
     public static final String CAMERA_MODE_DUAL = "dual";
+
+    private Intent pendingRtmpIntent;
+    private Intent pendingRecordingIntent;
+    private boolean permissionRequestInProgress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,31 +72,54 @@ public class RecordingStartActivity extends Activity {
                     && selectedCamera != null
                     && selectedCamera.isDual());
 
+            Intent startIntent;
             if (shouldStartDual) {
-                Intent startDualIntent = new Intent(this, DualCameraRecordingService.class);
-                startDualIntent.setAction(Constants.INTENT_ACTION_START_DUAL_RECORDING);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    ContextCompat.startForegroundService(this, startDualIntent);
-                } else {
-                    startService(startDualIntent);
-                }
+                startIntent = new Intent(this, DualCameraRecordingService.class);
+                startIntent.setAction(Constants.INTENT_ACTION_START_DUAL_RECORDING);
             } else {
-                Intent startIntent = new Intent(this, RecordingService.class);
+                startIntent = new Intent(this, RecordingService.class);
                 startIntent.setAction(Constants.INTENT_ACTION_START_RECORDING);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    ContextCompat.startForegroundService(this, startIntent);
-                } else {
-                    startService(startIntent);
-                }
             }
+
+            if (!hasCapturePermissions()) {
+                pendingRecordingIntent = startIntent;
+                requestCapturePermissions(REQUEST_RECORDING_CAPTURE_PERMISSIONS);
+                return;
+            }
+
+            startCaptureService(startIntent);
 
         } catch (Exception e) {
             FLog.e(TAG, "Error starting recording via shortcut", e);
             Toast.makeText(this, "Failed to start recording", Toast.LENGTH_SHORT).show();
         } finally {
-            moveTaskToBack(true);
-            finish();
+            if (!permissionRequestInProgress) {
+                moveTaskToBack(true);
+                finish();
+            }
         }
+    }
+
+    private boolean hasCapturePermissions() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestCapturePermissions(int requestCode) {
+        permissionRequestInProgress = true;
+        requestPermissions(
+                new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
+                requestCode);
+    }
+
+    private void startCaptureService(@NonNull Intent serviceIntent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ContextCompat.startForegroundService(this, serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+        moveTaskToBack(true);
+        finish();
     }
 
     private void startRtmpPublisher(@NonNull Intent incoming) {
@@ -102,10 +130,9 @@ public class RecordingStartActivity extends Activity {
             return;
         }
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+        if (!hasCapturePermissions()) {
             pendingRtmpIntent = new Intent(incoming);
-            requestPermissions(new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, REQUEST_RTMP_CAPTURE_PERMISSIONS);
+            requestCapturePermissions(REQUEST_RTMP_CAPTURE_PERMISSIONS);
             return;
         }
 
@@ -118,21 +145,32 @@ public class RecordingStartActivity extends Activity {
         finish();
     }
 
-    private Intent pendingRtmpIntent;
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != REQUEST_RTMP_CAPTURE_PERMISSIONS) return;
-        if (grantResults.length >= 2
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED
-                && grantResults[1] == PackageManager.PERMISSION_GRANTED
-                && pendingRtmpIntent != null) {
-            Intent retry = pendingRtmpIntent;
-            pendingRtmpIntent = null;
-            startRtmpPublisher(retry);
+        if (requestCode != REQUEST_RTMP_CAPTURE_PERMISSIONS
+                && requestCode != REQUEST_RECORDING_CAPTURE_PERMISSIONS) {
+            return;
+        }
+
+        permissionRequestInProgress = false;
+        boolean granted = hasCapturePermissions();
+
+        if (granted) {
+            if (requestCode == REQUEST_RTMP_CAPTURE_PERMISSIONS && pendingRtmpIntent != null) {
+                Intent retry = pendingRtmpIntent;
+                pendingRtmpIntent = null;
+                startRtmpPublisher(retry);
+            } else if (requestCode == REQUEST_RECORDING_CAPTURE_PERMISSIONS && pendingRecordingIntent != null) {
+                Intent retry = pendingRecordingIntent;
+                pendingRecordingIntent = null;
+                startCaptureService(retry);
+            }
         } else {
-            Toast.makeText(this, "Camera and microphone permissions are required for live publishing", Toast.LENGTH_LONG).show();
+            String message = requestCode == REQUEST_RTMP_CAPTURE_PERMISSIONS
+                    ? "Camera and microphone permissions are required for live publishing"
+                    : "Camera and microphone permissions are required to record video";
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
             finish();
         }
     }
@@ -140,12 +178,16 @@ public class RecordingStartActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
-        finish();
+        if (!permissionRequestInProgress) {
+            finish();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        moveTaskToBack(true);
+        if (!permissionRequestInProgress) {
+            moveTaskToBack(true);
+        }
     }
 }
