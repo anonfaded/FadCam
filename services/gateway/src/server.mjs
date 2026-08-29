@@ -4,9 +4,14 @@ import { Hono } from 'hono'
 const app = new Hono()
 const port = Number(process.env.PORT || 8081)
 const mediamtxApi = process.env.MEDIAMTX_API_URL || 'http://mediamtx:9997'
+const mediamtxUser = process.env.MEDIAMTX_API_USER || 'any'
+const mediamtxPass = process.env.MEDIAMTX_API_PASSWORD || ''
 const coreApi = process.env.CORE_API_URL || 'http://core:8080'
 
 function validPath(path) { return Boolean(path) && !path.includes('..') && !path.includes('/') }
+function mediamtxHeaders() {
+  return { Authorization: `Basic ${Buffer.from(`${mediamtxUser}:${mediamtxPass}`).toString('base64')}` }
+}
 
 app.get('/health', (c) => c.json({ service: 'fad-gateway', status: 'ok' }))
 app.get('/api/v1/health', async (c) => {
@@ -24,8 +29,8 @@ app.post('/api/v1/streams', async (c) => {
 app.get('/api/v1/streams/:path', async (c) => {
   const path = c.req.param('path')
   if (!validPath(path)) return c.json({ error: 'invalid stream path' }, 400)
-  const response = await fetch(`${mediamtxApi}/v3/paths/get/${encodeURIComponent(path)}`)
-  if (!response.ok) return c.json({ error: 'stream not found' }, 404)
+  const response = await fetch(`${mediamtxApi}/v3/paths/get/${encodeURIComponent(path)}`, { headers: mediamtxHeaders() })
+  if (!response.ok) return c.json({ error: 'stream not found' }, response.status === 401 || response.status === 403 ? 502 : 404)
   return c.json(await response.json())
 })
 
