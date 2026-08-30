@@ -1,6 +1,7 @@
 package com.fadcam.relay;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
@@ -25,20 +26,22 @@ public class TransportControllerTest {
     }
 
     @Test
-    public void failoverUsesRelayAndOnlyThenBecomesRelaying() throws Exception {
+    public void failoverUsesRelayAndDisconnectsDirectBeforeBecomingRelaying() throws Exception {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         TransportController controller = new TransportController(direct, relay);
+        controller.connect();
 
         controller.failoverToRelay();
 
         assertEquals(TransportController.State.RELAYING, controller.getState());
         assertEquals(1, relay.connectCalls);
-        assertEquals(0, direct.connectCalls);
+        assertEquals(1, direct.disconnectCalls);
+        assertFalse(direct.connected);
     }
 
     @Test
-    public void failedRelayBecomesOfflineAndNeverFallsThroughToDirect() {
+    public void failedRelayWithoutDirectBecomesOfflineAndNeverFallsThroughToDirect() {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         relay.connectResult = false;
@@ -49,6 +52,22 @@ public class TransportControllerTest {
         assertEquals(0, direct.connectCalls);
         assertThrows(IllegalStateException.class,
                 () -> controller.sendFragment(1, new byte[] {1}, 2000));
+    }
+
+    @Test
+    public void failedRelayPreservesExistingDirectAuthority() throws Exception {
+        FakeTransport direct = new FakeTransport();
+        FakeTransport relay = new FakeTransport();
+        relay.connectResult = false;
+        TransportController controller = new TransportController(direct, relay);
+        controller.connect();
+
+        assertThrows(Exception.class, controller::failoverToRelay);
+
+        assertEquals(TransportController.State.DIRECT, controller.getState());
+        assertEquals(1, direct.connectCalls);
+        assertEquals(1, relay.disconnectCalls);
+        assertEquals(0, direct.disconnectCalls);
     }
 
     @Test
