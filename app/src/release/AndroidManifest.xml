@@ -38,14 +38,11 @@
         tools:node="remove" />
 
     <!-- Remove the experimental accessibility screenshot service from release. -->
-    <application>
+    <application
+        android:requestLegacyExternalStorage="false"
+        tools:replace="android:requestLegacyExternalStorage">
         <service
             android:name=".service.FadRecScreenshotAccessibilityService"
             tools:node="remove" />
     </application>
-
-    <!-- Modern Android scoped-storage behavior. -->
-    <application
-        android:requestLegacyExternalStorage="false"
-        tools:replace="android:requestLegacyExternalStorage" />
 </manifest>
