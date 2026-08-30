@@ -32,14 +32,17 @@ public class TransportControllerTest {
     }
 
     @Test
-    public void failedRelayDoesNotPretendToBeRelaying() {
+    public void failedRelayBecomesOfflineAndNeverFallsThroughToDirect() {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         relay.connectResult = false;
         TransportController controller = new TransportController(direct, relay);
 
         assertThrows(Exception.class, controller::failoverToRelay);
-        assertEquals(TransportController.State.DIRECT, controller.getState());
+        assertEquals(TransportController.State.OFFLINE, controller.getState());
+        assertEquals(0, direct.connectCalls);
+        assertThrows(IllegalStateException.class,
+                () -> controller.sendFragment(1, new byte[] {1}, 2000));
     }
 
     @Test
@@ -53,6 +56,8 @@ public class TransportControllerTest {
 
         assertEquals(TransportController.State.RECONNECTING, controller.getState());
         assertEquals(1, relay.disconnectCalls);
+        assertThrows(IllegalStateException.class,
+                () -> controller.sendFragment(1, new byte[] {1}, 2000));
     }
 
     @Test
@@ -80,6 +85,8 @@ public class TransportControllerTest {
 
         assertThrows(Exception.class, controller::recoverToDirect);
         assertEquals(TransportController.State.RECONNECTING, controller.getState());
+        assertThrows(IllegalStateException.class,
+                () -> controller.sendFragment(1, new byte[] {1}, 2000));
     }
 
     private static final class FakeTransport implements TransportController.Transport {
