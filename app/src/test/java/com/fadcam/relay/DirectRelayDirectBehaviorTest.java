@@ -18,17 +18,15 @@ public class DirectRelayDirectBehaviorTest {
                 "device-1", "auth-token", relaySessionTransport(relay), () -> 1_000,
                 30_000, 3);
 
-        // Camera/media session is started once and is independent of transport selection.
         media.start();
         controller.useDirect();
         String logicalSession = "logical-media-session-1";
 
-        // Direct network failure: move only the transport, not the media session.
         controller.failoverToRelay();
         relaySession.connect();
+        String relaySessionId = relaySession.getSessionId();
         media.recordFrame("frame-1", logicalSession);
 
-        // Network restoration: authenticate the same relay session, then make DIRECT authoritative.
         relaySession.markHeartbeatTimeout();
         controller.recoverToDirect();
         media.recordFrame("frame-2", logicalSession);
@@ -38,13 +36,13 @@ public class DirectRelayDirectBehaviorTest {
         assertEquals(logicalSession, media.frames.get(0).sessionId);
         assertEquals(logicalSession, media.frames.get(1).sessionId);
         assertEquals(TransportController.State.DIRECT, controller.getState());
-        assertEquals(relaySession.getSessionId(), relaySession.getSessionId());
+        assertEquals(relaySessionId, relaySession.getSessionId());
         assertTrue(relay.disconnectCalls >= 1);
     }
 
     private static RelaySessionController.SessionTransport relaySessionTransport(FakeTransport transport) {
         return new RelaySessionController.SessionTransport() {
-            @Override public void connect() throws Exception { transport.connect(); }
+            @Override public void connect() { transport.connect(); }
             @Override public void disconnect() { transport.disconnect(); }
             @Override public boolean isConnected() { return transport.isConnected(); }
             @Override public void send(RelaySessionProtocol.Request request) { transport.requests.add(request); }
