@@ -6,11 +6,12 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Adapter boundary for remote Server Room media relay.
  *
- * <p>This class deliberately does not own, replace, or modify the local
- * Server Room media implementation. It only defines the lifecycle and the
- * transport-to-media handoff boundary that later relay polling can use.</p>
+ * <p>The agent is the single relay-side transport adapter used by
+ * {@link TransportController}. It does not own or replace the existing local
+ * Server Room media implementation; media crosses the explicit
+ * {@link RelayMediaSink} boundary.</p>
  */
-public final class ServerRoomRelayAgent {
+public final class ServerRoomRelayAgent implements TransportController.Transport {
 
     public enum Mode {
         DIRECT,
@@ -40,15 +41,33 @@ public final class ServerRoomRelayAgent {
 
     /**
      * Starts the relay boundary in DIRECT mode. No network connection is
-     * opened until the caller explicitly requests relay mode.
+     * opened until TransportController selects relay mode.
      */
     public void start() {
         mode.set(Mode.DIRECT);
     }
 
+    /** TransportController relay contract. */
+    @Override
+    public void connect() throws Exception {
+        enterRelayMode();
+    }
+
+    /** TransportController relay contract. */
+    @Override
+    public void disconnect() {
+        leaveRelayMode();
+    }
+
+    /** TransportController relay contract. */
+    @Override
+    public boolean isConnected() {
+        return mode.get() == Mode.RELAY && transport.isConnected();
+    }
+
     /**
      * Requests relay mode. The existing local media path remains owned by the
-     * caller through {@link RelayMediaSink}; this class does not reimplement it.
+     * caller through RelayMediaSink.
      */
     public void enterRelayMode() throws Exception {
         transport.connect();
@@ -69,7 +88,6 @@ public final class ServerRoomRelayAgent {
 
     /**
      * Delivers a relay payload across the existing media boundary.
-     * Polling and authentication are intentionally separate stages.
      */
     public void deliverRelayMedia(byte[] payload) {
         if (mode.get() != Mode.RELAY) {
@@ -84,7 +102,6 @@ public final class ServerRoomRelayAgent {
     }
 
     public void stop() {
-        transport.disconnect();
-        mode.set(Mode.DIRECT);
+        disconnect();
     }
 }
