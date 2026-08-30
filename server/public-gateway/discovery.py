@@ -16,21 +16,14 @@ SCAN_PORTS = range(
 )
 RESCAN = int(os.getenv("DISCOVERY_INTERVAL_SECONDS", "10"))
 TIMEOUT = float(os.getenv("DISCOVERY_TIMEOUT_SECONDS", "0.5"))
+RELAY = os.getenv("RELAY_FALLBACK_URL", "http://127.0.0.1:18443").rstrip("/")
 TARGET = None
 LOCK = threading.Lock()
 
-# Server Room media only. Never proxy arbitrary HTTP paths from the phone.
 MEDIA_RE = re.compile(r"^/.+\.(?:m3u8|m4s|mp4|ts|aac|webm)(?:\?.*)?$", re.IGNORECASE)
 
 
 def _local_interface_networks():
-    """Return small networks actually attached to the gateway host.
-
-    We intentionally do not scan whole RFC1918 /16 or /8 ranges. When a host
-    is on a large subnet, discover only the /24 containing each local address.
-    Explicit DISCOVERY_SUBNETS remains available for environments where the
-    Server Room lives on another routed private subnet.
-    """
     networks = set()
     try:
         output = subprocess.check_output(
@@ -51,9 +44,7 @@ def _local_interface_networks():
                 if interface_network.is_private:
                     if interface_network.prefixlen < 24:
                         address = ipaddress.ip_interface(field).ip
-                        interface_network = ipaddress.ip_network(
-                            f"{address}/24", strict=False
-                        )
+                        interface_network = ipaddress.ip_network(f"{address}/24", strict=False)
                     networks.add(interface_network)
                 break
     except Exception:
@@ -69,13 +60,9 @@ def subnets():
             for value in configured.split(",")
             if value.strip()
         ]
-
     networks = _local_interface_networks()
     if networks:
         return sorted(networks, key=lambda network: (network.version, int(network.network_address)))
-
-    # Last-resort small probes only. Never fall back to an entire /8, /12, or
-    # /16 because that would turn a local discovery feature into a broad scan.
     return [
         ipaddress.ip_network("192.168.1.0/24"),
         ipaddress.ip_network("192.168.0.0/24"),
@@ -87,10 +74,7 @@ def subnets():
 def probe(host, port):
     base = f"http://{host}:{port}"
     try:
-        request = Request(
-            base + "/auth/check",
-            headers={"User-Agent": "FadCam-ServerRoom-Discovery/1"},
-        )
+        request = Request(base + "/auth/check", headers={"User-Agent": "FadCam-ServerRoom-Discovery/1"})
         with urlopen(request, timeout=TIMEOUT) as response:
             if response.status != 200:
                 return None
@@ -106,18 +90,11 @@ def probe(host, port):
 def discover():
     hosts = set()
     for network in subnets():
-        # Safety invariant: automatic discovery never scans more than 4096
-        # addresses from one configured network.
         if network.num_addresses > 4096:
             continue
         hosts.update(str(host) for host in network.hosts())
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
-        futures = [
-            executor.submit(probe, host, port)
-            for host in hosts
-            for port in SCAN_PORTS
-        ]
+        futures = [executor.submit(probe, host, port) for host in hosts for port in SCAN_PORTS]
         for future in concurrent.futures.as_completed(futures):
             result = future.result()
             if result:
@@ -142,17 +119,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split("?", 1)[0]
-
         if path == "/healthz":
             with LOCK:
                 target = TARGET
             status = 200 if target else 503
-            payload = json.dumps(
-                {
-                    "status": "ok" if target else "discovering",
-                    "server_room": target,
-                }
-            ).encode()
+            payload = json.dumps({"status": "ok" if target else "discovering", "server_room": target}).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Cache-Control", "no-store")
@@ -167,27 +138,18 @@ class Handler(BaseHTTPRequestHandler):
 
         with LOCK:
             target = TARGET
-        if not target:
-            self.send_error(503, "Server Room not discovered")
-            return
-
+        upstream_base = target or RELAY
         try:
             request = Request(
-                target + self.path,
+                upstream_base + self.path,
                 headers={"User-Agent": "FadCam-Public-Gateway/1"},
             )
-            with urlopen(request, timeout=5) as upstream:
+            with urlopen(request, timeout=20 if not target else 5) as upstream:
                 self.send_response(upstream.status)
                 for key, value in upstream.headers.items():
-                    if key.lower() in {
-                        "content-length",
-                        "content-type",
-                        "cache-control",
-                        "etag",
-                        "last-modified",
-                    }:
+                    if key.lower() in {"content-length", "content-type", "cache-control", "etag", "last-modified"}:
                         self.send_header(key, value)
-                self.send_header("X-FadCam-Server-Room", "discovered")
+                self.send_header("X-FadCam-Route", "direct" if target else "relay")
                 self.end_headers()
                 while True:
                     chunk = upstream.read(64 * 1024)
