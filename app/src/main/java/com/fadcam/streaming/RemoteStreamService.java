@@ -19,7 +19,6 @@ import com.fadcam.MainActivity;
 import com.fadcam.R;
 import com.fadcam.relay.HttpRelaySessionTransport;
 import com.fadcam.relay.LocalDirectMediaTransport;
-import com.fadcam.relay.MediaTransport;
 import com.fadcam.relay.RelaySessionController;
 import com.fadcam.relay.ServerRoomRelayAgent;
 import com.fadcam.relay.TransportController;
@@ -68,6 +67,7 @@ public class RemoteStreamService extends Service {
         if (transportGraphCreated) return;
 
         directMediaTransport = new LocalDirectMediaTransport();
+        ServerRoomRelayAgent.RelayMediaSink inboundSink = payload -> { /* uplink graph has no inbound media consumer */ };
 
         String endpoint = getSharedPreferences(PREFS, MODE_PRIVATE)
                 .getString(PREF_RELAY_ENDPOINT, null);
@@ -91,7 +91,7 @@ public class RemoteStreamService extends Service {
                         RELAY_REQUEST_TIMEOUT_MS,
                         RELAY_MAX_REQUEST_AGE_MS,
                         RELAY_MAX_RECONNECT_ATTEMPTS);
-                relayAgent = new ServerRoomRelayAgent(relaySessionController);
+                relayAgent = new ServerRoomRelayAgent(relaySessionController, inboundSink);
             } catch (RuntimeException configurationError) {
                 FLog.e(TAG, "Relay configuration is invalid; local transport remains available", configurationError);
                 relaySessionController = null;
@@ -99,9 +99,7 @@ public class RemoteStreamService extends Service {
             }
         }
 
-        // A relay endpoint is optional. The controller still owns the complete
-        // runtime graph; an unavailable relay is represented by a closed transport
-        // rather than a fake connected state.
+        // No endpoint means relay is unavailable, never falsely connected.
         if (relayAgent == null) {
             relayAgent = new ServerRoomRelayAgent(new ServerRoomRelayAgent.RelayTransport() {
                 @Override public void connect() { throw new IllegalStateException("relay endpoint is not configured"); }
@@ -109,7 +107,7 @@ public class RemoteStreamService extends Service {
                 @Override public boolean isConnected() { return false; }
                 @Override public void sendInitializationSegment(byte[] payload) { throw new IllegalStateException("relay endpoint is not configured"); }
                 @Override public void sendMedia(int sequenceNumber, byte[] payload, long durationMs) { throw new IllegalStateException("relay endpoint is not configured"); }
-            });
+            }, inboundSink);
         }
 
         transportController = new TransportController(directMediaTransport, relayAgent);
@@ -129,7 +127,6 @@ public class RemoteStreamService extends Service {
         }
 
         startForeground(NOTIFICATION_ID, buildNotification("Starting local server…", "http://..."));
-
         if (!startHttpServer()) {
             stopSelf();
             return START_NOT_STICKY;
@@ -137,9 +134,7 @@ public class RemoteStreamService extends Service {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt("stream_server_port", activePort).apply();
 
         try {
-            if (transportController != null && !transportController.isConnected()) {
-                transportController.connect();
-            }
+            if (transportController != null && !transportController.isConnected()) transportController.connect();
         } catch (Exception e) {
             FLog.e(TAG, "Failed to establish direct media transport", e);
             stopSelf();
@@ -209,9 +204,7 @@ public class RemoteStreamService extends Service {
     }
 
     private int findFreePort(int startPort) {
-        for (int port = startPort; port < startPort + PORT_SCAN_RANGE; port++) {
-            if (isPortAvailable(port)) return port;
-        }
+        for (int port = startPort; port < startPort + PORT_SCAN_RANGE; port++) if (isPortAvailable(port)) return port;
         return -1;
     }
 
@@ -244,17 +237,13 @@ public class RemoteStreamService extends Service {
 
     private Notification buildNotification(String contentText, String streamUrl) {
         Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent,
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         Intent copyIntent = new Intent(this, RemoteStreamService.class).setAction("com.fadcam.COPY_STREAM_URL");
         copyIntent.putExtra("stream_url", streamUrl);
-        PendingIntent copyPendingIntent = PendingIntent.getService(this, 1, copyIntent,
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent copyPendingIntent = PendingIntent.getService(this, 1, copyIntent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Remote Streaming Active")
-                .setContentText(contentText)
-                .setSmallIcon(R.drawable.ic_broadcast_on_personal_24)
-                .setContentIntent(pendingIntent)
+                .setContentTitle("Remote Streaming Active").setContentText(contentText)
+                .setSmallIcon(R.drawable.ic_broadcast_on_personal_24).setContentIntent(pendingIntent)
                 .addAction(android.R.drawable.ic_menu_view, "Copy Link", copyPendingIntent)
                 .setOngoing(true).setShowWhen(false).setPriority(NotificationCompat.PRIORITY_LOW).build();
     }
@@ -282,17 +271,13 @@ public class RemoteStreamService extends Service {
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Remote Streaming", NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription("Shows when remote streaming is active");
-            channel.setShowBadge(false);
+            channel.setDescription("Shows when remote streaming is active"); channel.setShowBadge(false);
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) manager.createNotificationChannel(channel);
         }
     }
 
-    public String getStreamUrl() {
-        return activePort == -1 ? null : "http://" + getLocalIpAddress() + ":" + activePort + "/";
-    }
-
+    public String getStreamUrl() { return activePort == -1 ? null : "http://" + getLocalIpAddress() + ":" + activePort + "/"; }
     public String getDeviceIpWithPort() { return activePort == -1 ? null : getLocalIpAddress() + ":" + activePort; }
     public int getActivePort() { return activePort; }
     @Nullable @Override public IBinder onBind(Intent intent) { return binder; }
