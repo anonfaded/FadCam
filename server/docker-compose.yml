@@ -13,7 +13,6 @@ services:
       - /transcode
     restart: unless-stopped
 
-  # 24/7 playout engine. Kept server-side; never included in the Android APK.
   ffplayout:
     build:
       context: ./ffplayout-runtime
@@ -43,11 +42,6 @@ services:
         condition: service_started
     networks: [tv]
 
-  # Streaming transport and public fan-out. ffplayout publishes RTMP to
-  # rtmp://mediamtx:1935/fadcam; viewers consume HLS/WebRTC from this service.
-  # The official MediaMTX image is scratch-based and intentionally contains
-  # no shell, curl, wget or other diagnostic utilities. Readiness is therefore
-  # verified from the host by the E2E smoke test through the exposed API.
   mediamtx:
     image: bluenviron/mediamtx:1.16.0
     container_name: fadcam-mediamtx
@@ -67,7 +61,70 @@ services:
       - ./data/mediamtx/recordings:/recordings
     networks: [tv]
 
-  # Observability. These services are server-side only and have no Gradle/Android dependency.
+  # Public edge for FadCam Remote / Server Room. The Android Server Room is
+  # untouched: this profile discovers its existing LAN endpoint automatically.
+  # No SERVER_ROOM_URL is required.
+  server-room-discovery:
+    build:
+      context: ./public-gateway
+      dockerfile: Dockerfile
+    container_name: fadcam-server-room-discovery
+    profiles: [public]
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      DISCOVERY_PORT: 18080
+      SERVER_ROOM_PORT_START: ${SERVER_ROOM_PORT_START:-8080}
+      SERVER_ROOM_PORT_END: ${SERVER_ROOM_PORT_END:-8089}
+      DISCOVERY_INTERVAL_SECONDS: ${DISCOVERY_INTERVAL_SECONDS:-10}
+      DISCOVERY_TIMEOUT_SECONDS: ${DISCOVERY_TIMEOUT_SECONDS:-0.5}
+      DISCOVERY_SUBNETS: ${DISCOVERY_SUBNETS:-}
+      RELAY_FALLBACK_URL: ${RELAY_FALLBACK_URL:-http://127.0.0.1:18443}
+
+  # CGNAT fallback. The phone initiates the connection outbound; this service
+  # never dials into the phone. Media is held in memory only while a request
+  # is being served and is never written to object storage.
+  server-room-relay:
+    build:
+      context: ./public-gateway
+      dockerfile: Dockerfile
+    container_name: fadcam-server-room-relay
+    profiles: [public]
+    restart: unless-stopped
+    network_mode: host
+    command: ["python", "/app/relay.py"]
+    environment:
+      RELAY_PORT: 18443
+      RELAY_SESSION_TTL_SECONDS: ${RELAY_SESSION_TTL_SECONDS:-600}
+      RELAY_REQUEST_TTL_SECONDS: ${RELAY_REQUEST_TTL_SECONDS:-20}
+      RELAY_MAX_RESPONSE_BYTES: ${RELAY_MAX_RESPONSE_BYTES:-8388608}
+      RELAY_PUBLIC_BASE: ${RELAY_PUBLIC_BASE:-}
+      # Empty by default is intentionally fail-closed: no device can register
+      # until an operator provisions a per-device secret at deployment time.
+      RELAY_DEVICE_TOKENS: ${RELAY_DEVICE_TOKENS:-{}}
+
+  server-room-gateway:
+    image: caddy:2.10.2-alpine
+    container_name: fadcam-server-room-gateway
+    profiles: [public]
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - server-room-discovery
+      - server-room-relay
+    environment:
+      PUBLIC_HOSTNAME: ${PUBLIC_HOSTNAME:-:80}
+    volumes:
+      - ./public-gateway/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
   prometheus:
     image: prom/prometheus:v3.14.0
     container_name: fadcam-prometheus
@@ -94,8 +151,8 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
-      - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
@@ -148,12 +205,9 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Set KEYCLOAK_ADMIN_PASSWORD in .env}
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
-    # Local-only development/auth profile: do not expose this service beyond the host.
-    # Production deployments must use TLS and a production Keycloak configuration.
     command: start --hostname=localhost --http-enabled=true --http-port=8080
     networks: [platform]
 
-  # Optional viewer/media library. This is deliberately isolated from the Android module.
   jellyfin:
     image: jellyfin/jellyfin:10.11.11
     container_name: fadcam-jellyfin
@@ -178,5 +232,7 @@ volumes:
   grafana-data:
   minio-data:
   keycloak-db-data:
+  caddy-data:
+  caddy-config:
   jellyfin-config:
   jellyfin-cache:
