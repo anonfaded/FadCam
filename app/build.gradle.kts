@@ -205,14 +205,10 @@ dependencies {
     implementation(libs.localbroadcastmanager)
     implementation(libs.room.runtime)
     implementation(libs.nanohttpd.core)
+    implementation(libs.zxing.android.embedded)
+    implementation("com.google.zxing:core:4.3.0")
     implementation("com.googlecode.mp4parser:isoparser:1.1.22")
-
-    // Generic RTMP/RTMPS camera + microphone publisher.
-    // 2.7.5 keeps the RTMP API while remaining compatible with FadCam's compileSdk 36 / AGP 8.13.x baseline.
     implementation("com.github.pedroSG94.RootEncoder:library:2.7.5")
-
-    // Maintained drop-in replacement for the retired FFmpegKit 6.0-2.LTS AAR.
-    // Keeps the com.arthenica.ffmpegkit API while receiving current native/security updates.
     implementation("dev.ffmpegkit-maintained:ffmpeg-kit-full:8.1.7")
     annotationProcessor(libs.compiler)
     annotationProcessor(libs.room.compiler)
