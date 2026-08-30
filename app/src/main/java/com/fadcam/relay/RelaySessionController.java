@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /** Deterministic relay session lifecycle with bounded reconnects. */
-public final class RelaySessionController {
+public final class RelaySessionController implements ServerRoomRelayAgent.RelayTransport {
     public enum State {
         DISCONNECTED, CONNECTING, AUTHENTICATING, REGISTERING,
         CONNECTED, DEGRADED, RECONNECTING, OFFLINE, CLOSED
@@ -53,6 +53,7 @@ public final class RelaySessionController {
     public synchronized long getSequence() { return sequence; }
     public synchronized long getLastHeartbeatMillis() { return lastHeartbeatMillis; }
 
+    @Override
     public synchronized void connect() throws Exception {
         ensureNotClosed();
         if (state == State.CONNECTED) return;
@@ -94,6 +95,27 @@ public final class RelaySessionController {
         send(RelaySessionProtocol.Operation.RENEW);
     }
 
+    public synchronized void sendInitializationSegment(byte[] payload) throws Exception {
+        sendMediaFrame(0, payload, 1, "video/mp4");
+    }
+
+    @Override
+    public synchronized void sendMedia(int sequenceNumber, byte[] payload, long durationMs) throws Exception {
+        sendMediaFrame(sequenceNumber, payload, durationMs, "video/iso.segment");
+    }
+
+    private void sendMediaFrame(int mediaSequence, byte[] payload, long durationMs, String mediaType) throws Exception {
+        requireState(State.CONNECTED);
+        Objects.requireNonNull(payload, "payload");
+        if (durationMs <= 0) throw new IllegalArgumentException("durationMs must be positive");
+        long now = clock.nowMillis();
+        RelaySessionProtocol.Request request = RelaySessionProtocol.Request.media(
+                deviceId, sessionId, now, requestTimeoutMillis, ++sequence, authentication,
+                now, durationMs, mediaType, payload);
+        replayGuard.accept(request, now);
+        transport.send(request);
+    }
+
     public synchronized void markHeartbeatTimeout() {
         if (state == State.CONNECTED) state = State.DEGRADED;
     }
@@ -123,13 +145,30 @@ public final class RelaySessionController {
     }
 
     /** Explicitly closes the logical session; only this operation clears its ID. */
+    @Override
+    public synchronized void disconnect() {
+        try {
+            close();
+        } catch (Exception ignored) {
+            transport.disconnect();
+            sessionId = null;
+            state = State.CLOSED;
+        }
+    }
+
     public synchronized void close() throws Exception {
+        if (state == State.CLOSED) return;
         if (sessionId != null && transport.isConnected()) send(RelaySessionProtocol.Operation.CLOSE);
         transport.disconnect();
         sessionId = null;
         sequence = 0;
         reconnectAttempts = 0;
         state = State.CLOSED;
+    }
+
+    @Override
+    public synchronized boolean isConnected() {
+        return state == State.CONNECTED && transport.isConnected();
     }
 
     private void send(RelaySessionProtocol.Operation operation) throws Exception {
