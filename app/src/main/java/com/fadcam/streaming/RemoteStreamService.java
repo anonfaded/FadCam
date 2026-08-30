@@ -22,8 +22,14 @@ import com.fadcam.relay.LocalDirectMediaTransport;
 import com.fadcam.relay.RelaySessionController;
 import com.fadcam.relay.ServerRoomRelayAgent;
 import com.fadcam.relay.TransportController;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.ServerSocket;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 /** Foreground owner for FadCam's local HTTP server and streaming runtime. */
 public class RemoteStreamService extends Service {
@@ -32,6 +38,7 @@ public class RemoteStreamService extends Service {
     private static final int NOTIFICATION_ID = 2001;
     private static final int DEFAULT_PORT = 8080;
     private static final int PORT_SCAN_RANGE = 10;
+    private static final int RELAY_LOCAL_RESPONSE_MAX_BYTES = 8 * 1024 * 1024;
     private static final String PREFS = "FadCamPrefs";
     private static final String PREF_RELAY_ENDPOINT = "relay_session_endpoint";
     private static final String PREF_RELAY_AUTHENTICATION = "relay_authentication";
@@ -67,14 +74,13 @@ public class RemoteStreamService extends Service {
         if (transportGraphCreated) return;
 
         directMediaTransport = new LocalDirectMediaTransport();
-        ServerRoomRelayAgent.RelayMediaSink inboundSink = payload -> { /* uplink graph has no inbound media consumer */ };
+        ServerRoomRelayAgent.RelayMediaSink inboundSink = payload -> { /* tunnel is viewer-pull based */ };
 
-        String endpoint = getSharedPreferences(PREF_RELAY_ENDPOINT, MODE_PRIVATE)
-                .getString(PREF_RELAY_ENDPOINT, null);
-        String authentication = getSharedPreferences(PREF_RELAY_AUTHENTICATION, MODE_PRIVATE)
-                .getString(PREF_RELAY_AUTHENTICATION, null);
+        android.content.SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        String endpoint = prefs.getString(PREF_RELAY_ENDPOINT, CloudAuthManager.RELAY_BASE_URL);
+        String authentication = prefs.getString(PREF_RELAY_AUTHENTICATION, null);
         if (authentication == null || authentication.trim().isEmpty()) {
-            authentication = CloudAuthManager.getInstance(this).getJwtToken();
+            authentication = CloudAuthManager.getInstance(this).getStreamKey();
         }
 
         if (endpoint != null && !endpoint.trim().isEmpty()
@@ -87,7 +93,13 @@ public class RemoteStreamService extends Service {
                         deviceId, authentication, sessionTransport, System::currentTimeMillis,
                         RELAY_REQUEST_TIMEOUT_MS, RELAY_MAX_REQUEST_AGE_MS,
                         RELAY_MAX_RECONNECT_ATTEMPTS);
-                relayAgent = new ServerRoomRelayAgent(relaySessionController, inboundSink);
+                relayAgent = new ServerRoomRelayAgent(
+                        relaySessionController,
+                        inboundSink,
+                        this::handleRelayRequest,
+                        () -> {
+                            if (transportController != null) transportController.markRelayFailure();
+                        });
             } catch (RuntimeException configurationError) {
                 FLog.e(TAG, "Relay configuration is invalid; local transport remains available", configurationError);
                 relaySessionController = null;
@@ -108,7 +120,82 @@ public class RemoteStreamService extends Service {
         transportController = new TransportController(directMediaTransport, relayAgent);
         manager.setMediaTransport(transportController);
         transportGraphCreated = true;
-        FLog.i(TAG, "Transport graph created exactly once for service lifecycle");
+        FLog.i(TAG, "Transport graph created: RemoteStreamManager -> TransportController -> DIRECT/RELAY");
+    }
+
+    private RelaySessionController.TunnelResponse handleRelayRequest(RelaySessionController.TunnelRequest request) throws Exception {
+        if (!"GET".equalsIgnoreCase(request.getMethod())) {
+            return new RelaySessionController.TunnelResponse(request.getId(), 405, singletonHeader("Content-Type", "text/plain"), new byte[0]);
+        }
+
+        String path = request.getPath();
+        if (path == null || !path.startsWith("/") || path.contains("..") || !isRelayMediaPath(path)) {
+            return new RelaySessionController.TunnelResponse(request.getId(), 404, singletonHeader("Content-Type", "text/plain"), new byte[0]);
+        }
+
+        int port = activePort;
+        if (port < 0) {
+            return new RelaySessionController.TunnelResponse(request.getId(), 503, singletonHeader("Content-Type", "text/plain"), new byte[0]);
+        }
+
+        StringBuilder target = new StringBuilder("http://127.0.0.1:").append(port).append(path);
+        if (request.getQuery() != null && !request.getQuery().isEmpty()) target.append('?').append(request.getQuery());
+
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) new URL(target.toString()).openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(RELAY_REQUEST_TIMEOUT_MS > Integer.MAX_VALUE ? 30000 : (int) RELAY_REQUEST_TIMEOUT_MS);
+            connection.setUseCaches(false);
+            connection.setRequestProperty("Accept-Encoding", "identity");
+            if (request.getHeaders().containsKey("Accept")) {
+                connection.setRequestProperty("Accept", request.getHeaders().get("Accept"));
+            }
+
+            int status = connection.getResponseCode();
+            InputStream input = status >= 200 && status < 400 ? connection.getInputStream() : connection.getErrorStream();
+            byte[] body = input == null ? new byte[0] : readBounded(input, RELAY_LOCAL_RESPONSE_MAX_BYTES);
+            Map<String, String> headers = new HashMap<>();
+            copyResponseHeader(connection, headers, "Content-Type");
+            copyResponseHeader(connection, headers, "Cache-Control");
+            copyResponseHeader(connection, headers, "ETag");
+            copyResponseHeader(connection, headers, "Last-Modified");
+            return new RelaySessionController.TunnelResponse(request.getId(), status, headers, body);
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
+
+    private static boolean isRelayMediaPath(String path) {
+        String lower = path.toLowerCase(java.util.Locale.US);
+        return lower.endsWith(".m3u8") || lower.endsWith(".m4s") || lower.endsWith(".mp4")
+                || lower.endsWith(".ts") || lower.endsWith(".aac") || lower.endsWith(".webm");
+    }
+
+    private static Map<String, String> singletonHeader(String key, String value) {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(key, value);
+        return headers;
+    }
+
+    private static void copyResponseHeader(HttpURLConnection connection, Map<String, String> headers, String name) {
+        String value = connection.getHeaderField(name);
+        if (value != null && !value.isEmpty()) headers.put(name, value);
+    }
+
+    private static byte[] readBounded(InputStream input, int maxBytes) throws IOException {
+        try (InputStream stream = input; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int total = 0;
+            int read;
+            while ((read = stream.read(buffer)) != -1) {
+                total += read;
+                if (total > maxBytes) throw new IOException("relay response exceeds maximum size");
+                output.write(buffer, 0, read);
+            }
+            return output.toByteArray();
+        }
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
