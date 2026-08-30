@@ -1,0 +1,12 @@
+{$PUBLIC_HOSTNAME} {
+    @media path_regexp media \\.(m3u8|m4s|mp4|ts|aac|webm)$
+    handle @media {
+        reverse_proxy {$SERVER_ROOM_URL}
+    }
+
+    handle /healthz {
+        respond 200
+    }
+
+    respond 404
+}
