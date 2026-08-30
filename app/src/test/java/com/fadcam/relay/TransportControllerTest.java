@@ -15,16 +15,21 @@ public class TransportControllerTest {
         FakeTransport relay = new FakeTransport();
         TransportController controller = new TransportController(direct, relay);
 
-        assertEquals(TransportController.State.OFFLINE, controller.getState());
-        assertThrows(IllegalStateException.class,
-                () -> controller.sendFragment(1, new byte[] {1}, 2000));
+        try {
+            assertEquals(TransportController.State.OFFLINE, controller.getState());
+            assertThrows(IllegalStateException.class,
+                    () -> controller.sendFragment(1, new byte[] {1}, 2000));
 
-        controller.connect();
+            controller.connect();
 
-        assertEquals(1, direct.connectCalls);
-        awaitState(controller, TransportController.State.RELAYING);
-        assertTrue(relay.connected);
-        assertFalse(direct.connected);
+            assertEquals(TransportController.State.DIRECT, controller.getState());
+            assertTrue(direct.connected);
+            awaitState(controller, TransportController.State.RELAYING);
+            assertTrue(relay.connected);
+            assertFalse(direct.connected);
+        } finally {
+            controller.stop();
+        }
     }
 
     @Test
@@ -34,15 +39,17 @@ public class TransportControllerTest {
         relay.connectResult = false;
         TransportController controller = new TransportController(direct, relay);
 
-        controller.connect();
+        try {
+            controller.connect();
 
-        // Relay promotion is deliberately asynchronous. Wait for the worker to
-        // finish its attempted connection before asserting the steady state.
-        awaitRelayAttempt(relay);
-        assertEquals(TransportController.State.DIRECT, controller.getState());
-        assertEquals(1, relay.connectCalls);
-        assertEquals(1, direct.connectCalls);
-        assertTrue(direct.connected);
+            awaitRelayAttempt(relay);
+            assertEquals(TransportController.State.DIRECT, controller.getState());
+            assertEquals(1, relay.connectCalls);
+            assertEquals(1, direct.connectCalls);
+            assertTrue(direct.connected);
+        } finally {
+            controller.stop();
+        }
     }
 
     @Test
@@ -50,14 +57,18 @@ public class TransportControllerTest {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         TransportController controller = new TransportController(direct, relay);
-        controller.useDirect();
+        try {
+            controller.useDirect();
 
-        controller.failoverToRelay();
+            controller.failoverToRelay();
 
-        assertEquals(TransportController.State.RELAYING, controller.getState());
-        assertEquals(1, relay.connectCalls);
-        assertEquals(1, direct.disconnectCalls);
-        assertFalse(direct.connected);
+            assertEquals(TransportController.State.RELAYING, controller.getState());
+            assertEquals(1, relay.connectCalls);
+            assertEquals(1, direct.disconnectCalls);
+            assertFalse(direct.connected);
+        } finally {
+            controller.stop();
+        }
     }
 
     @Test
@@ -67,11 +78,15 @@ public class TransportControllerTest {
         relay.connectResult = false;
         TransportController controller = new TransportController(direct, relay);
 
-        assertThrows(Exception.class, controller::failoverToRelay);
-        assertEquals(TransportController.State.OFFLINE, controller.getState());
-        assertEquals(0, direct.connectCalls);
-        assertThrows(IllegalStateException.class,
-                () -> controller.sendFragment(1, new byte[] {1}, 2000));
+        try {
+            assertThrows(Exception.class, controller::failoverToRelay);
+            assertEquals(TransportController.State.OFFLINE, controller.getState());
+            assertEquals(0, direct.connectCalls);
+            assertThrows(IllegalStateException.class,
+                    () -> controller.sendFragment(1, new byte[] {1}, 2000));
+        } finally {
+            controller.stop();
+        }
     }
 
     @Test
@@ -80,14 +95,18 @@ public class TransportControllerTest {
         FakeTransport relay = new FakeTransport();
         relay.connectResult = false;
         TransportController controller = new TransportController(direct, relay);
-        controller.useDirect();
+        try {
+            controller.useDirect();
 
-        assertThrows(Exception.class, controller::failoverToRelay);
+            assertThrows(Exception.class, controller::failoverToRelay);
 
-        assertEquals(TransportController.State.DIRECT, controller.getState());
-        assertEquals(1, direct.connectCalls);
-        assertEquals(1, relay.disconnectCalls);
-        assertEquals(0, direct.disconnectCalls);
+            assertEquals(TransportController.State.DIRECT, controller.getState());
+            assertEquals(1, direct.connectCalls);
+            assertEquals(1, relay.disconnectCalls);
+            assertEquals(0, direct.disconnectCalls);
+        } finally {
+            controller.stop();
+        }
     }
 
     @Test
@@ -95,14 +114,18 @@ public class TransportControllerTest {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         TransportController controller = new TransportController(direct, relay);
-        controller.failoverToRelay();
+        try {
+            controller.failoverToRelay();
 
-        controller.markRelayFailure();
+            controller.markRelayFailure();
 
-        assertEquals(TransportController.State.RECONNECTING, controller.getState());
-        assertEquals(1, relay.disconnectCalls);
-        assertThrows(IllegalStateException.class,
-                () -> controller.sendFragment(1, new byte[] {1}, 2000));
+            assertEquals(TransportController.State.RECONNECTING, controller.getState());
+            assertEquals(1, relay.disconnectCalls);
+            assertThrows(IllegalStateException.class,
+                    () -> controller.sendFragment(1, new byte[] {1}, 2000));
+        } finally {
+            controller.stop();
+        }
     }
 
     @Test
@@ -110,13 +133,17 @@ public class TransportControllerTest {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         TransportController controller = new TransportController(direct, relay);
-        controller.failoverToRelay();
+        try {
+            controller.failoverToRelay();
 
-        controller.recoverToDirect();
+            controller.recoverToDirect();
 
-        assertEquals(TransportController.State.DIRECT, controller.getState());
-        assertEquals(1, direct.connectCalls);
-        assertEquals(1, relay.disconnectCalls);
+            assertEquals(TransportController.State.DIRECT, controller.getState());
+            assertEquals(1, direct.connectCalls);
+            assertEquals(1, relay.disconnectCalls);
+        } finally {
+            controller.stop();
+        }
     }
 
     @Test
@@ -124,14 +151,18 @@ public class TransportControllerTest {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         TransportController controller = new TransportController(direct, relay);
-        controller.failoverToRelay();
-        controller.markRelayFailure();
-        direct.connectResult = false;
+        try {
+            controller.failoverToRelay();
+            controller.markRelayFailure();
+            direct.connectResult = false;
 
-        assertThrows(Exception.class, controller::recoverToDirect);
-        assertEquals(TransportController.State.RECONNECTING, controller.getState());
-        assertThrows(IllegalStateException.class,
-                () -> controller.sendFragment(1, new byte[] {1}, 2000));
+            assertThrows(Exception.class, controller::recoverToDirect);
+            assertEquals(TransportController.State.RECONNECTING, controller.getState());
+            assertThrows(IllegalStateException.class,
+                    () -> controller.sendFragment(1, new byte[] {1}, 2000));
+        } finally {
+            controller.stop();
+        }
     }
 
     private static void awaitState(TransportController controller, TransportController.State expected)
