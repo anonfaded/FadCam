@@ -40,8 +40,6 @@ try:
     viewer = registration["viewer_url"]
     assert viewer.startswith("/stream/")
 
-    poll = urllib.request.Request(BASE + "/v1/tunnel/poll", method="GET", headers={"Authorization": f"Bearer {session}"})
-
     def fetch_viewer(path):
         result = {}
         def viewer_call():
@@ -51,10 +49,13 @@ try:
                 result["error"] = exc
         thread = threading.Thread(target=viewer_call)
         thread.start()
-        request = json.loads(urllib.request.urlopen(poll, timeout=7).read())
-        thread.request = request
-        thread.result = result
-        return thread
+        poll_request = urllib.request.Request(
+            BASE + "/v1/tunnel/poll",
+            method="GET",
+            headers={"Authorization": f"Bearer {session}"},
+        )
+        request = json.loads(urllib.request.urlopen(poll_request, timeout=7).read())
+        return thread, result, request
 
     def respond(request, payload, content_type):
         response_payload = json.dumps({
@@ -86,12 +87,12 @@ try:
         b"#EXT-X-MAP:URI=\"https://cdn.example.invalid/init.mp4\"\n"
         b"#EXT-X-ENDLIST\n"
     )
-    playlist_thread = fetch_viewer("/live.m3u8")
-    request = playlist_thread.request
-    assert request["path"] == "/live.m3u8"
-    respond(request, playlist, "application/vnd.apple.mpegurl")
+    playlist_thread, playlist_result, playlist_request = fetch_viewer("/live.m3u8")
+    assert playlist_request["path"] == "/live.m3u8"
+    respond(playlist_request, playlist, "application/vnd.apple.mpegurl")
     playlist_thread.join(timeout=3)
     assert not playlist_thread.is_alive()
+    assert "response" in playlist_result or "error" in playlist_result, f"viewer thread produced no result: {playlist_result!r}"
     expected_prefix = viewer
     expected_playlist = (
         b"#EXTM3U\n"
@@ -105,22 +106,25 @@ try:
         + b"#EXT-X-MAP:URI=\"https://cdn.example.invalid/init.mp4\"\n"
         + b"#EXT-X-ENDLIST\n"
     )
-    assert playlist_thread.result.get("response") == expected_playlist, playlist_thread.result.get("error")
+    assert playlist_result.get("response") == expected_playlist, (
+        f"playlist response mismatch: actual={playlist_result.get('response')!r}, "
+        f"error={playlist_result.get('error')!r}, expected={expected_playlist!r}"
+    )
 
     # Follow the rewritten playlist to the init segment and a media fragment.
-    init_thread = fetch_viewer("/init.mp4")
-    init_request = init_thread.request
+    init_thread, init_result, init_request = fetch_viewer("/init.mp4")
     assert init_request["path"] == "/init.mp4"
     respond(init_request, b"INIT-SEGMENT", "video/mp4")
     init_thread.join(timeout=3)
-    assert init_thread.result.get("response") == b"INIT-SEGMENT", init_thread.result.get("error")
+    assert not init_thread.is_alive()
+    assert init_result.get("response") == b"INIT-SEGMENT", init_result.get("error")
 
-    segment_thread = fetch_viewer("/seg-1.m4s")
-    segment_request = segment_thread.request
+    segment_thread, segment_result, segment_request = fetch_viewer("/seg-1.m4s")
     assert segment_request["path"] == "/seg-1.m4s"
     respond(segment_request, b"MEDIA-SEGMENT-1", "video/iso.segment")
     segment_thread.join(timeout=3)
-    assert segment_thread.result.get("response") == b"MEDIA-SEGMENT-1", segment_thread.result.get("error")
+    assert not segment_thread.is_alive()
+    assert segment_result.get("response") == b"MEDIA-SEGMENT-1", segment_result.get("error")
 
     unknown = urllib.request.Request(BASE + "/stream/not-a-real-key/live.m3u8")
     try:
