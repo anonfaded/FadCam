@@ -134,7 +134,6 @@ public final class TransportController implements MediaTransport {
     }
 
     private void requireMediaReady() {
-        authoritative().requirePayload(new byte[0]);
         if (!isConnected()) {
             throw new IllegalStateException("authoritative media transport is not connected in state " + state.get());
         }
