@@ -9,7 +9,13 @@ import java.util.Objects;
  * the direct path or the authenticated relay path. TransportController owns
  * that decision.</p>
  */
-public interface MediaTransport extends TransportController.Transport {
+public interface MediaTransport {
+
+    void connect() throws Exception;
+
+    void disconnect();
+
+    boolean isConnected();
 
     void sendInitializationSegment(byte[] payload) throws Exception;
 
