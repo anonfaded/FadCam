@@ -5,6 +5,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /** Adapter boundary for remote Server Room media relay. */
 public final class ServerRoomRelayAgent implements MediaTransport {
+    private static final int MAX_POLL_RECOVERY_ATTEMPTS = 3;
+    private static final long POLL_RECOVERY_BACKOFF_MS = 1000L;
+
     public enum Mode { DIRECT, RELAY }
 
     public interface RelayTransport {
@@ -21,7 +24,7 @@ public final class ServerRoomRelayAgent implements MediaTransport {
             throw new UnsupportedOperationException("relay tunnel polling is not configured");
         }
         default void respond(RelaySessionController.TunnelResponse response) throws Exception {
-            throw new UnsupportedOperationException("relay tunnel response is not configured");
+            throw new UnsupportedOperationException("relay tunnel responses are not configured");
         }
     }
 
@@ -104,13 +107,15 @@ public final class ServerRoomRelayAgent implements MediaTransport {
     public Mode getMode() { return mode.get(); }
     public void stop() { disconnect(); }
 
-    private void startPolling() {
+    private synchronized void startPolling() {
         if (requestHandler == null || polling) return;
         polling = true;
         pollThread = new Thread(() -> {
+            int recoveryAttempts = 0;
             while (polling && mode.get() == Mode.RELAY) {
                 try {
                     RelaySessionController.TunnelRequest request = transport.poll();
+                    recoveryAttempts = 0;
                     if (request == null) continue;
                     RelaySessionController.TunnelResponse response = requestHandler.handle(request);
                     transport.respond(response);
@@ -118,7 +123,8 @@ public final class ServerRoomRelayAgent implements MediaTransport {
                     Thread.currentThread().interrupt();
                     return;
                 } catch (Exception failure) {
-                    if (!polling) return;
+                    if (!polling || mode.get() != Mode.RELAY) return;
+                    if (recoverPollingTransport(++recoveryAttempts)) continue;
                     if (relayFailureHandler != null) relayFailureHandler.run();
                     return;
                 }
@@ -128,7 +134,24 @@ public final class ServerRoomRelayAgent implements MediaTransport {
         pollThread.start();
     }
 
-    private void stopPolling() {
+    private boolean recoverPollingTransport(int attempt) {
+        if (attempt > MAX_POLL_RECOVERY_ATTEMPTS) return false;
+        try {
+            transport.disconnect();
+            long delay = POLL_RECOVERY_BACKOFF_MS * attempt;
+            Thread.sleep(delay);
+            if (!polling || mode.get() != Mode.RELAY) return false;
+            transport.connect();
+            return transport.isConnected();
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private synchronized void stopPolling() {
         polling = false;
         Thread thread = pollThread;
         pollThread = null;
