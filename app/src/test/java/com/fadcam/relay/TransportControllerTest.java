@@ -5,6 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 
+import java.util.concurrent.CountDownLatch;
+
 import org.junit.Test;
 
 public class TransportControllerTest {
@@ -20,10 +22,15 @@ public class TransportControllerTest {
             assertThrows(IllegalStateException.class,
                     () -> controller.sendFragment(1, new byte[] {1}, 2000));
 
+            // Gate the asynchronous relay connection so the assertion immediately
+            // after connect() verifies the documented non-blocking DIRECT state
+            // rather than racing a fast fake relay worker.
+            relay.connectGate = new CountDownLatch(1);
             controller.connect();
 
             assertEquals(TransportController.State.DIRECT, controller.getState());
             assertTrue(direct.connected);
+            relay.allowConnect();
             awaitState(controller, TransportController.State.RELAYING);
             assertTrue(relay.connected);
             assertFalse(direct.connected);
@@ -189,10 +196,13 @@ public class TransportControllerTest {
         int disconnectCalls;
         boolean connected;
         boolean connectResult = true;
+        CountDownLatch connectGate;
 
         @Override
         public void connect() throws Exception {
             connectCalls++;
+            CountDownLatch gate = connectGate;
+            if (gate != null) gate.await();
             if (!connectResult) throw new Exception("connection failed");
             connected = true;
         }
@@ -201,6 +211,13 @@ public class TransportControllerTest {
         public void disconnect() {
             disconnectCalls++;
             connected = false;
+            CountDownLatch gate = connectGate;
+            if (gate != null) gate.countDown();
+        }
+
+        void allowConnect() {
+            CountDownLatch gate = connectGate;
+            if (gate != null) gate.countDown();
         }
 
         @Override
