@@ -3,28 +3,14 @@ package com.fadcam.relay;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Deterministic relay session lifecycle. A session has exactly one logical
- * identity and sequence space; reconnects either resume that session or
- * explicitly close it before a new session is created.
- */
+/** Deterministic relay session lifecycle with bounded reconnects. */
 public final class RelaySessionController {
-
     public enum State {
-        DISCONNECTED,
-        CONNECTING,
-        AUTHENTICATING,
-        REGISTERING,
-        CONNECTED,
-        DEGRADED,
-        RECONNECTING,
-        OFFLINE,
-        CLOSED
+        DISCONNECTED, CONNECTING, AUTHENTICATING, REGISTERING,
+        CONNECTED, DEGRADED, RECONNECTING, OFFLINE, CLOSED
     }
 
-    public interface Clock {
-        long nowMillis();
-    }
+    public interface Clock { long nowMillis(); }
 
     public interface SessionTransport {
         void connect() throws Exception;
@@ -38,7 +24,6 @@ public final class RelaySessionController {
     private final SessionTransport transport;
     private final Clock clock;
     private final long requestTimeoutMillis;
-    private final long maxRequestAgeMillis;
     private final int maxReconnectAttempts;
     private final RelaySessionProtocol.ReplayGuard replayGuard;
 
@@ -48,14 +33,10 @@ public final class RelaySessionController {
     private int reconnectAttempts;
     private long lastHeartbeatMillis;
 
-    public RelaySessionController(
-            String deviceId,
-            String authentication,
-            SessionTransport transport,
-            Clock clock,
-            long requestTimeoutMillis,
-            long maxRequestAgeMillis,
-            int maxReconnectAttempts) {
+    public RelaySessionController(String deviceId, String authentication,
+                                  SessionTransport transport, Clock clock,
+                                  long requestTimeoutMillis, long maxRequestAgeMillis,
+                                  int maxReconnectAttempts) {
         this.deviceId = require(deviceId, "deviceId");
         this.authentication = require(authentication, "authentication");
         this.transport = Objects.requireNonNull(transport, "transport");
@@ -63,7 +44,6 @@ public final class RelaySessionController {
         if (requestTimeoutMillis <= 0) throw new IllegalArgumentException("requestTimeoutMillis must be positive");
         if (maxReconnectAttempts < 1) throw new IllegalArgumentException("maxReconnectAttempts must be positive");
         this.requestTimeoutMillis = requestTimeoutMillis;
-        this.maxRequestAgeMillis = maxRequestAgeMillis;
         this.maxReconnectAttempts = maxReconnectAttempts;
         this.replayGuard = new RelaySessionProtocol.ReplayGuard(maxRequestAgeMillis);
     }
@@ -71,25 +51,22 @@ public final class RelaySessionController {
     public synchronized State getState() { return state; }
     public synchronized String getSessionId() { return sessionId; }
     public synchronized long getSequence() { return sequence; }
+    public synchronized long getLastHeartbeatMillis() { return lastHeartbeatMillis; }
 
     public synchronized void connect() throws Exception {
         ensureNotClosed();
         if (state == State.CONNECTED) return;
+        if (sessionId == null) sessionId = UUID.randomUUID().toString();
         state = State.CONNECTING;
         transport.connect();
         if (!transport.isConnected()) {
             state = State.OFFLINE;
             throw new IllegalStateException("relay transport did not connect");
         }
-
         state = State.AUTHENTICATING;
         send(RelaySessionProtocol.Operation.AUTHENTICATE);
-
         state = State.REGISTERING;
-        // Reuse an existing session when possible; otherwise create exactly one.
-        if (sessionId == null) sessionId = UUID.randomUUID().toString();
         send(RelaySessionProtocol.Operation.REGISTER_SESSION);
-
         reconnectAttempts = 0;
         lastHeartbeatMillis = clock.nowMillis();
         state = State.CONNECTED;
@@ -102,14 +79,26 @@ public final class RelaySessionController {
         state = State.CONNECTED;
     }
 
+    public synchronized void poll() throws Exception {
+        requireState(State.CONNECTED);
+        send(RelaySessionProtocol.Operation.POLL);
+    }
+
+    public synchronized void acknowledge() throws Exception {
+        requireState(State.CONNECTED);
+        send(RelaySessionProtocol.Operation.ACKNOWLEDGE);
+    }
+
+    public synchronized void renew() throws Exception {
+        requireState(State.CONNECTED);
+        send(RelaySessionProtocol.Operation.RENEW);
+    }
+
     public synchronized void markHeartbeatTimeout() {
         if (state == State.CONNECTED) state = State.DEGRADED;
     }
 
-    /**
-     * Performs bounded reconnect attempts. It never creates a second session:
-     * the current session ID is reused until explicitly closed.
-     */
+    /** Reconnects with a bounded retry count and the same logical session ID. */
     public synchronized boolean reconnect() {
         ensureNotClosed();
         if (state == State.CONNECTED) return true;
@@ -119,7 +108,6 @@ public final class RelaySessionController {
             try {
                 transport.connect();
                 if (!transport.isConnected()) continue;
-                if (sessionId == null) sessionId = UUID.randomUUID().toString();
                 send(RelaySessionProtocol.Operation.AUTHENTICATE);
                 send(RelaySessionProtocol.Operation.REGISTER_SESSION);
                 lastHeartbeatMillis = clock.nowMillis();
@@ -134,11 +122,9 @@ public final class RelaySessionController {
         return false;
     }
 
-    /** Explicitly terminates the current logical session. */
+    /** Explicitly closes the logical session; only this operation clears its ID. */
     public synchronized void close() throws Exception {
-        if (sessionId != null && transport.isConnected()) {
-            send(RelaySessionProtocol.Operation.CLOSE);
-        }
+        if (sessionId != null && transport.isConnected()) send(RelaySessionProtocol.Operation.CLOSE);
         transport.disconnect();
         sessionId = null;
         sequence = 0;
@@ -148,14 +134,10 @@ public final class RelaySessionController {
 
     private void send(RelaySessionProtocol.Operation operation) throws Exception {
         long now = clock.nowMillis();
-        long nextSequence = ++sequence;
         RelaySessionProtocol.Request request = new RelaySessionProtocol.Request(
-                deviceId, sessionId == null ? "pending" : sessionId,
-                now, nextSequence, authentication, operation);
+                deviceId, sessionId, now, requestTimeoutMillis, ++sequence,
+                authentication, operation);
         replayGuard.accept(request, now);
-        // Transport adapters enforce the actual timeout; the value is retained
-        // here as the protocol contract for adapters and tests.
-        if (requestTimeoutMillis <= 0) throw new IllegalStateException("invalid request timeout");
         transport.send(request);
     }
 
