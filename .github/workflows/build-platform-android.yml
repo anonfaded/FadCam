@@ -43,6 +43,9 @@ jobs:
       - name: Run Android unit tests
         run: ./gradlew :app:testDefaultDebugUnitTest --stacktrace --no-daemon
 
+      - name: Compile Android IPC instrumentation tests
+        run: ./gradlew :app:compileDefaultDebugAndroidTestJavaWithJavac --stacktrace --no-daemon
+
       - name: Assemble default debug APK
         run: ./gradlew assembleDefaultDebug --stacktrace --no-daemon
 
@@ -216,10 +219,6 @@ jobs:
               --prerelease
           fi
 
-          # GitHub release assets are immutable by name. Explicitly remove the
-          # previous CI assets before uploading the freshly validated APKs so
-          # repeated master runs remain idempotent even when --clobber cannot
-          # replace an existing asset in the current API response path.
           for asset in FadCam-debug.apk FadCam-release.apk SHA256SUMS.txt; do
             gh release delete-asset latest-ci "$asset" --yes >/dev/null 2>&1 || true
           done
@@ -276,9 +275,9 @@ jobs:
         run: |
           set -euo pipefail
           if find app/src -maxdepth 2 -type d -name androidTest -print -quit | grep -q .; then
-            echo "Instrumentation test source set detected. A device-backed gate can be enabled when fixtures are available."
+            echo "Instrumentation test source set detected. Device-backed execution remains a separate hardware gate."
           else
-            echo "WARNING: no app/src/**/androidTest source set exists on this commit. The integration/test gate covers the existing supported JVM suites; no instrumentation tests were silently fabricated."
+            echo "WARNING: no app/src/**/androidTest source set exists on this commit."
           fi
 
   server-config:
