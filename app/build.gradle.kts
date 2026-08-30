@@ -168,7 +168,6 @@ dependencies {
     implementation(libs.camerax.core)
     implementation(libs.camerax.extensions)
     implementation(libs.camerax.view)
-    implementation(libs.zxing.android.embedded)
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.video)
     implementation(libs.constraintlayout)
@@ -179,6 +178,9 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.media3.transformer)
     implementation(libs.media3.effect)
+    implementation(libs.media3.muxer)
+    implementation(libs.media3.common)
+    implementation(libs.media3.container)
     implementation(libs.media)
     implementation(libs.glide)
     implementation(libs.gson)
@@ -202,9 +204,7 @@ dependencies {
     implementation(libs.documentfile)
     implementation(libs.localbroadcastmanager)
     implementation(libs.room.runtime)
-    implementation(libs.media3.muxer)
-    implementation(libs.media3.common)
-    implementation(libs.media3.container)
+    implementation(libs.nanohttpd.core)
     implementation("com.googlecode.mp4parser:isoparser:1.1.22")
 
     // Generic RTMP/RTMPS camera + microphone publisher.
