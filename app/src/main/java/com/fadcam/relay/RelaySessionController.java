@@ -12,11 +12,64 @@ public final class RelaySessionController implements ServerRoomRelayAgent.RelayT
 
     public interface Clock { long nowMillis(); }
 
+    public static final class TunnelRequest {
+        private final String id;
+        private final String method;
+        private final String path;
+        private final String query;
+        private final java.util.Map<String, String> headers;
+
+        public TunnelRequest(String id, String method, String path, String query,
+                             java.util.Map<String, String> headers) {
+            this.id = require(id, "id");
+            this.method = require(method, "method");
+            this.path = require(path, "path");
+            this.query = query == null ? "" : query;
+            this.headers = headers == null
+                    ? java.util.Collections.emptyMap()
+                    : java.util.Collections.unmodifiableMap(new java.util.HashMap<>(headers));
+        }
+
+        public String getId() { return id; }
+        public String getMethod() { return method; }
+        public String getPath() { return path; }
+        public String getQuery() { return query; }
+        public java.util.Map<String, String> getHeaders() { return headers; }
+    }
+
+    public static final class TunnelResponse {
+        private final String id;
+        private final int status;
+        private final java.util.Map<String, String> headers;
+        private final byte[] body;
+
+        public TunnelResponse(String id, int status, java.util.Map<String, String> headers, byte[] body) {
+            this.id = require(id, "id");
+            if (status < 100 || status > 599) throw new IllegalArgumentException("invalid status");
+            this.status = status;
+            this.headers = headers == null
+                    ? java.util.Collections.emptyMap()
+                    : java.util.Collections.unmodifiableMap(new java.util.HashMap<>(headers));
+            this.body = Objects.requireNonNull(body, "body").clone();
+        }
+
+        public String getId() { return id; }
+        public int getStatus() { return status; }
+        public java.util.Map<String, String> getHeaders() { return headers; }
+        public byte[] getBody() { return body.clone(); }
+    }
+
     public interface SessionTransport {
         void connect() throws Exception;
         void disconnect();
         boolean isConnected();
         void send(RelaySessionProtocol.Request request) throws Exception;
+        default TunnelRequest poll() throws Exception {
+            throw new UnsupportedOperationException("relay tunnel polling is not configured");
+        }
+        default void respond(TunnelResponse response) throws Exception {
+            throw new UnsupportedOperationException("relay tunnel responses are not configured");
+        }
     }
 
     private final String deviceId;
@@ -80,9 +133,16 @@ public final class RelaySessionController implements ServerRoomRelayAgent.RelayT
         state = State.CONNECTED;
     }
 
-    public synchronized void poll() throws Exception {
+    @Override
+    public synchronized TunnelRequest poll() throws Exception {
         requireState(State.CONNECTED);
-        send(RelaySessionProtocol.Operation.POLL);
+        return transport.poll();
+    }
+
+    @Override
+    public synchronized void respond(TunnelResponse response) throws Exception {
+        requireState(State.CONNECTED);
+        transport.respond(Objects.requireNonNull(response, "response"));
     }
 
     public synchronized void acknowledge() throws Exception {
