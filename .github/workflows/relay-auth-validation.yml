@@ -64,7 +64,7 @@ jobs:
       - name: Validate relay authorization boundary
         env:
           FADCAM_RELAY_BASE_URL: https://localhost:8443
-          CURL_CA_BUNDLE: ${{ runner.temp }}/fadcam-relay/cert.pem
+          FADCAM_RELAY_CA_FILE: ${{ runner.temp }}/fadcam-relay/cert.pem
         shell: bash
         run: |
           set -euo pipefail
