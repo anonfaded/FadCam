@@ -11,48 +11,25 @@ import java.util.concurrent.atomic.AtomicReference;
  * is in progress or when no transport is available.</p>
  */
 public final class TransportController implements MediaTransport {
-
-    public enum State {
-        DIRECT,
-        RELAYING,
-        RECONNECTING,
-        OFFLINE
-    }
-
-    public interface Transport {
-        void connect() throws Exception;
-        void disconnect();
-        boolean isConnected();
-    }
+    public enum State { DIRECT, RELAYING, RECONNECTING, OFFLINE }
 
     private final MediaTransport directTransport;
     private final MediaTransport relayTransport;
-    private final AtomicReference<State> state = new AtomicReference<>(State.DIRECT);
+    private final AtomicReference<State> state = new AtomicReference<>(State.OFFLINE);
 
     public TransportController(MediaTransport directTransport, MediaTransport relayTransport) {
         this.directTransport = Objects.requireNonNull(directTransport, "directTransport");
         this.relayTransport = Objects.requireNonNull(relayTransport, "relayTransport");
     }
 
-    /** Compatibility constructor for callers that only need connectivity state. */
-    public TransportController(Transport directTransport, Transport relayTransport) {
-        this(asMediaTransport(directTransport), asMediaTransport(relayTransport));
-    }
+    public State getState() { return state.get(); }
 
-    public State getState() {
-        return state.get();
-    }
-
-    /** Direct becomes authoritative only after it is already connected. */
+    /** Direct becomes authoritative only after a complete successful connection. */
     public void useDirect() throws Exception {
         state.set(State.RECONNECTING);
         try {
-            if (!directTransport.isConnected()) {
-                directTransport.connect();
-            }
-            if (!directTransport.isConnected()) {
-                throw new IllegalStateException("Direct transport did not connect");
-            }
+            if (!directTransport.isConnected()) directTransport.connect();
+            if (!directTransport.isConnected()) throw new IllegalStateException("Direct transport did not connect");
             relayTransport.disconnect();
             state.set(State.DIRECT);
         } catch (Exception failure) {
@@ -66,9 +43,7 @@ public final class TransportController implements MediaTransport {
         state.set(State.RECONNECTING);
         try {
             relayTransport.connect();
-            if (!relayTransport.isConnected()) {
-                throw new IllegalStateException("Relay transport did not connect");
-            }
+            if (!relayTransport.isConnected()) throw new IllegalStateException("Relay transport did not connect");
             state.set(State.RELAYING);
         } catch (Exception failure) {
             relayTransport.disconnect();
@@ -83,19 +58,11 @@ public final class TransportController implements MediaTransport {
         state.set(State.RECONNECTING);
     }
 
-    public void recoverToDirect() throws Exception {
-        useDirect();
-    }
+    public void recoverToDirect() throws Exception { useDirect(); }
 
-    @Override
-    public void connect() throws Exception {
-        useDirect();
-    }
+    @Override public void connect() throws Exception { useDirect(); }
 
-    @Override
-    public void disconnect() {
-        stop();
-    }
+    @Override public void disconnect() { stop(); }
 
     @Override
     public boolean isConnected() {
@@ -105,14 +72,12 @@ public final class TransportController implements MediaTransport {
         return false;
     }
 
-    /** Routes the initialization segment through the authoritative transport. */
     @Override
     public void sendInitializationSegment(byte[] payload) throws Exception {
         requireMediaReady();
         authoritative().sendInitializationSegment(payload);
     }
 
-    /** Routes a media fragment through the authoritative transport. */
     @Override
     public void sendFragment(int sequenceNumber, byte[] payload, long durationMs) throws Exception {
         requireMediaReady();
@@ -136,19 +101,5 @@ public final class TransportController implements MediaTransport {
         if (!isConnected()) {
             throw new IllegalStateException("authoritative media transport is not connected in state " + state.get());
         }
-    }
-
-    private static MediaTransport asMediaTransport(final Transport transport) {
-        Objects.requireNonNull(transport, "transport");
-        if (transport instanceof MediaTransport) {
-            return (MediaTransport) transport;
-        }
-        return new MediaTransport() {
-            @Override public void connect() throws Exception { transport.connect(); }
-            @Override public void disconnect() { transport.disconnect(); }
-            @Override public boolean isConnected() { return transport.isConnected(); }
-            @Override public void sendInitializationSegment(byte[] payload) { requirePayload(payload); }
-            @Override public void sendFragment(int sequenceNumber, byte[] payload, long durationMs) { requirePayload(payload); }
-        };
     }
 }
