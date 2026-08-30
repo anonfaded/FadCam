@@ -5,13 +5,18 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Single owner of the DIRECT/RELAY transport state machine and media routing.
+ *
+ * <p>RECONNECTING and OFFLINE are intentionally non-authoritative states:
+ * media must never fall through to the direct transport while relay recovery
+ * is in progress or when no transport is available.</p>
  */
-public final class TransportController {
+public final class TransportController implements MediaTransport {
 
     public enum State {
         DIRECT,
         RELAYING,
-        RECONNECTING
+        RECONNECTING,
+        OFFLINE
     }
 
     public interface Transport {
@@ -34,6 +39,7 @@ public final class TransportController {
         this(asMediaTransport(directTransport), asMediaTransport(relayTransport));
     }
 
+    @Override
     public State getState() {
         return state.get();
     }
@@ -41,16 +47,22 @@ public final class TransportController {
     /** Direct becomes authoritative only after it is already connected. */
     public void useDirect() throws Exception {
         state.set(State.RECONNECTING);
-        if (!directTransport.isConnected()) {
-            directTransport.connect();
+        try {
+            if (!directTransport.isConnected()) {
+                directTransport.connect();
+            }
+            if (!directTransport.isConnected()) {
+                throw new IllegalStateException("Direct transport did not connect");
+            }
+            relayTransport.disconnect();
+            state.set(State.DIRECT);
+        } catch (Exception failure) {
+            state.set(State.RECONNECTING);
+            throw failure;
         }
-        if (!directTransport.isConnected()) {
-            throw new IllegalStateException("Direct transport did not connect");
-        }
-        relayTransport.disconnect();
-        state.set(State.DIRECT);
     }
 
+    /** Relay becomes authoritative only after a complete successful connection. */
     public void failoverToRelay() throws Exception {
         state.set(State.RECONNECTING);
         try {
@@ -60,11 +72,13 @@ public final class TransportController {
             }
             state.set(State.RELAYING);
         } catch (Exception failure) {
-            state.set(State.DIRECT);
+            relayTransport.disconnect();
+            state.set(State.OFFLINE);
             throw failure;
         }
     }
 
+    /** Invalidates relay immediately; no media path is authoritative afterwards. */
     public void markRelayFailure() {
         relayTransport.disconnect();
         state.set(State.RECONNECTING);
@@ -74,13 +88,33 @@ public final class TransportController {
         useDirect();
     }
 
+    @Override
+    public void connect() throws Exception {
+        useDirect();
+    }
+
+    @Override
+    public void disconnect() {
+        stop();
+    }
+
+    @Override
+    public boolean isConnected() {
+        State current = state.get();
+        if (current == State.DIRECT) return directTransport.isConnected();
+        if (current == State.RELAYING) return relayTransport.isConnected();
+        return false;
+    }
+
     /** Routes the initialization segment through the authoritative transport. */
+    @Override
     public void sendInitializationSegment(byte[] payload) throws Exception {
         requireMediaReady();
         authoritative().sendInitializationSegment(payload);
     }
 
     /** Routes a media fragment through the authoritative transport. */
+    @Override
     public void sendFragment(int sequenceNumber, byte[] payload, long durationMs) throws Exception {
         requireMediaReady();
         authoritative().sendFragment(sequenceNumber, payload, durationMs);
@@ -89,16 +123,20 @@ public final class TransportController {
     public void stop() {
         directTransport.disconnect();
         relayTransport.disconnect();
-        state.set(State.DIRECT);
+        state.set(State.OFFLINE);
     }
 
     private MediaTransport authoritative() {
-        return state.get() == State.RELAYING ? relayTransport : directTransport;
+        State current = state.get();
+        if (current == State.DIRECT) return directTransport;
+        if (current == State.RELAYING) return relayTransport;
+        throw new IllegalStateException("no authoritative media transport in state " + current);
     }
 
     private void requireMediaReady() {
-        if (!authoritative().isConnected()) {
-            throw new IllegalStateException("authoritative media transport is not connected");
+        authoritative().requirePayload(new byte[0]);
+        if (!isConnected()) {
+            throw new IllegalStateException("authoritative media transport is not connected in state " + state.get());
         }
     }
 
