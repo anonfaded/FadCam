@@ -144,18 +144,14 @@ public final class RelaySessionController implements ServerRoomRelayAgent.RelayT
         return false;
     }
 
-    /** Explicitly closes the logical session; only this operation clears its ID. */
+    /** Disconnects the physical transport without terminally closing the logical session. */
     @Override
     public synchronized void disconnect() {
-        try {
-            close();
-        } catch (Exception ignored) {
-            transport.disconnect();
-            sessionId = null;
-            state = State.CLOSED;
-        }
+        transport.disconnect();
+        if (state != State.CLOSED) state = State.DISCONNECTED;
     }
 
+    /** Explicitly terminates the logical session and releases its identity. */
     public synchronized void close() throws Exception {
         if (state == State.CLOSED) return;
         if (sessionId != null && transport.isConnected()) send(RelaySessionProtocol.Operation.CLOSE);
