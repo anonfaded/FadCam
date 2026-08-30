@@ -69,9 +69,9 @@ public class RemoteStreamService extends Service {
         directMediaTransport = new LocalDirectMediaTransport();
         ServerRoomRelayAgent.RelayMediaSink inboundSink = payload -> { /* uplink graph has no inbound media consumer */ };
 
-        String endpoint = getSharedPreferences(PREFS, MODE_PRIVATE)
+        String endpoint = getSharedPreferences(PREF_RELAY_ENDPOINT, MODE_PRIVATE)
                 .getString(PREF_RELAY_ENDPOINT, null);
-        String authentication = getSharedPreferences(PREFS, MODE_PRIVATE)
+        String authentication = getSharedPreferences(PREF_RELAY_AUTHENTICATION, MODE_PRIVATE)
                 .getString(PREF_RELAY_AUTHENTICATION, null);
         if (authentication == null || authentication.trim().isEmpty()) {
             authentication = CloudAuthManager.getInstance(this).getJwtToken();
@@ -84,12 +84,8 @@ public class RemoteStreamService extends Service {
                         new HttpRelaySessionTransport(endpoint, 10000, 30000);
                 String deviceId = CloudAuthManager.getInstance(this).getDeviceId();
                 relaySessionController = new RelaySessionController(
-                        deviceId,
-                        authentication,
-                        sessionTransport,
-                        System::currentTimeMillis,
-                        RELAY_REQUEST_TIMEOUT_MS,
-                        RELAY_MAX_REQUEST_AGE_MS,
+                        deviceId, authentication, sessionTransport, System::currentTimeMillis,
+                        RELAY_REQUEST_TIMEOUT_MS, RELAY_MAX_REQUEST_AGE_MS,
                         RELAY_MAX_RECONNECT_ATTEMPTS);
                 relayAgent = new ServerRoomRelayAgent(relaySessionController, inboundSink);
             } catch (RuntimeException configurationError) {
@@ -99,7 +95,6 @@ public class RemoteStreamService extends Service {
             }
         }
 
-        // No endpoint means relay is unavailable, never falsely connected.
         if (relayAgent == null) {
             relayAgent = new ServerRoomRelayAgent(new ServerRoomRelayAgent.RelayTransport() {
                 @Override public void connect() { throw new IllegalStateException("relay endpoint is not configured"); }
@@ -156,6 +151,13 @@ public class RemoteStreamService extends Service {
         if (transportController != null) {
             transportController.stop();
             transportController = null;
+        }
+        if (relaySessionController != null) {
+            try {
+                relaySessionController.close();
+            } catch (Exception e) {
+                FLog.e(TAG, "Failed to close relay session cleanly", e);
+            }
         }
         relayAgent = null;
         relaySessionController = null;
