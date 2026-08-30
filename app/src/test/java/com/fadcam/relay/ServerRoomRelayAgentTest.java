@@ -38,7 +38,7 @@ public class ServerRoomRelayAgentTest {
     }
 
     @Test
-    public void deliversA defensiveCopyAcrossMediaBoundary() throws Exception {
+    public void deliversADefensiveCopyAcrossMediaBoundary() throws Exception {
         FakeTransport transport = new FakeTransport();
         byte[][] received = new byte[1][];
         ServerRoomRelayAgent agent = new ServerRoomRelayAgent(transport, payload -> received[0] = payload);
