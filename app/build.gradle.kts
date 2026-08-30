@@ -56,10 +56,10 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".beta"
+            applicationIdSuffix = ".dev"
             isDebuggable = true
-            versionNameSuffix = "-beta10.6"
-            resValue("string", "app_name", "FadCam Beta")
+            versionNameSuffix = "-dev10.6"
+            resValue("string", "app_name", "FadCam Dev")
         }
         release {
             isMinifyEnabled = true
