@@ -24,6 +24,15 @@ jobs:
           fetch-depth: 1
           submodules: false
 
+      - name: Validate relay TLS endpoint
+        env:
+          FADCAM_RELAY_BASE_URL: https://live.fadseclab.com:8443
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x server/tests/relay-tls-preflight.sh
+          ./server/tests/relay-tls-preflight.sh
+
       - name: Validate relay authorization boundary
         env:
           FADCAM_RELAY_BASE_URL: https://live.fadseclab.com:8443
