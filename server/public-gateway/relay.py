@@ -8,11 +8,13 @@ import base64
 import hmac
 import json
 import os
+import posixpath
+import re
 import secrets
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit, urlunsplit
 
 LISTEN_HOST = os.getenv("RELAY_LISTEN_HOST", "0.0.0.0")
 LISTEN_PORT = int(os.getenv("RELAY_PORT", "18443"))
@@ -22,6 +24,7 @@ MAX_BODY = int(os.getenv("RELAY_MAX_RESPONSE_BYTES", str(8 * 1024 * 1024)))
 PUBLIC_BASE = os.getenv("RELAY_PUBLIC_BASE", "").rstrip("/")
 TOKENS = json.loads(os.getenv("RELAY_DEVICE_TOKENS", "{}"))
 MEDIA_SUFFIXES = (".m3u8", ".m4s", ".mp4", ".ts", ".aac", ".webm")
+HLS_URI_ATTRIBUTE = re.compile(r'(?P<prefix>URI=")(?P<uri>[^"]+)(?P<suffix>")', re.IGNORECASE)
 
 class Session:
     def __init__(self, device_id):
@@ -96,6 +99,80 @@ def cleanup():
 
 def public_url(session):
     return (PUBLIC_BASE + "/stream/" + session.viewer_key) if PUBLIC_BASE else ("/stream/" + session.viewer_key)
+
+
+def _public_media_uri(uri, viewer_prefix, playlist_path="/"):
+    """Map a local HLS URI into the authenticated viewer namespace.
+
+    Absolute HTTP(S), protocol-relative, data and fragment URIs are left alone.
+    Relative local URIs are resolved against the playlist directory so that
+    both `init.mp4` and `media/seg-1.m4s` preserve normal HLS resolution.
+    Existing `/stream/<key>/...` URLs are also left untouched to make rewriting
+    idempotent.
+    """
+    value = uri.strip()
+    if not value or value.startswith("#"):
+        return uri
+    parsed = urlsplit(value)
+    if parsed.scheme or parsed.netloc:
+        return uri
+
+    path = parsed.path
+    if not path:
+        return uri
+    if path.startswith(viewer_prefix + "/") or path == viewer_prefix:
+        return uri
+    if ".." in path.split("/"):
+        # The phone-side handler rejects traversal. Do not manufacture a public
+        # URL that would not be accepted by the tunnel.
+        return uri
+
+    base_dir = posixpath.dirname(urlsplit(playlist_path).path or "/")
+    if path.startswith("/"):
+        resolved_path = posixpath.normpath(path)
+    else:
+        resolved_path = posixpath.normpath(posixpath.join(base_dir, path))
+    if not resolved_path.startswith("/"):
+        resolved_path = "/" + resolved_path
+
+    # Only rewrite media resources. Non-media local URI attributes (for example
+    # keys or subtitles) are intentionally not broadened into the relay surface.
+    if not resolved_path.lower().endswith(MEDIA_SUFFIXES):
+        return uri
+    return urlunsplit(("", "", viewer_prefix + resolved_path, parsed.query, parsed.fragment))
+
+
+def rewrite_hls_playlist(body, viewer_prefix, playlist_path):
+    """Rewrite local HLS resource references into the viewer's public path."""
+    try:
+        text = body.decode("utf-8")
+    except UnicodeDecodeError:
+        return body
+
+    changed = False
+    lines = []
+    for line in text.splitlines(keepends=True):
+        newline = line
+        if not line.lstrip().startswith("#"):
+            stripped = line.strip()
+            if stripped:
+                rewritten = _public_media_uri(stripped, viewer_prefix, playlist_path)
+                if rewritten != stripped:
+                    start = line.find(stripped)
+                    newline = line[:start] + rewritten + line[start + len(stripped):]
+        else:
+            def replace_uri(match):
+                nonlocal changed
+                rewritten = _public_media_uri(match.group("uri"), viewer_prefix, playlist_path)
+                if rewritten != match.group("uri"):
+                    changed = True
+                return match.group("prefix") + rewritten + match.group("suffix")
+            newline = HLS_URI_ATTRIBUTE.sub(replace_uri, line)
+
+        if newline != line:
+            changed = True
+        lines.append(newline)
+    return "".join(lines).encode("utf-8") if changed else body
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -236,11 +313,15 @@ class Handler(BaseHTTPRequestHandler):
         if not response:
             self.send_error(504, "Server Room tunnel timeout")
             return
+
+        body = response["body"]
+        if parsed.path.lower().endswith(".m3u8") and 200 <= response["status"] < 300:
+            body = rewrite_hls_playlist(body, "/stream/" + viewer_key, parsed.path)
+
         self.send_response(response["status"])
         for key, value in response["headers"].items():
             if key.lower() in {"content-type", "cache-control", "etag", "last-modified"} and isinstance(value, str):
                 self.send_header(key, value)
-        body = response["body"]
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
