@@ -6,8 +6,11 @@ on:
   pull_request:
     branches: [master]
 
+# PR jobs execute repository-controlled build scripts. Keep the default token
+# read-only; release publication grants write permission only to its dedicated
+# master-only job below.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   android:

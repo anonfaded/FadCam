@@ -157,7 +157,7 @@ android {
     }
 
     buildFeatures { buildConfig = true }
-    lint { checkReleaseBuilds = false; disable += "MissingTranslation" }
+    lint { checkReleaseBuilds = true; disable += "MissingTranslation" }
 }
 
 dependencies {
@@ -168,7 +168,6 @@ dependencies {
     implementation(libs.camerax.core)
     implementation(libs.camerax.extensions)
     implementation(libs.camerax.view)
-    implementation(libs.zxing.android.embedded)
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.video)
     implementation(libs.constraintlayout)
@@ -179,6 +178,9 @@ dependencies {
     implementation(libs.media3.session)
     implementation(libs.media3.transformer)
     implementation(libs.media3.effect)
+    implementation(libs.media3.muxer)
+    implementation(libs.media3.common)
+    implementation(libs.media3.container)
     implementation(libs.media)
     implementation(libs.glide)
     implementation(libs.gson)
@@ -202,19 +204,14 @@ dependencies {
     implementation(libs.documentfile)
     implementation(libs.localbroadcastmanager)
     implementation(libs.room.runtime)
-    implementation(libs.media3.muxer)
-    implementation(libs.media3.common)
-    implementation(libs.media3.container)
     implementation(libs.nanohttpd.core)
+    implementation(libs.zxing.android.embedded)
+    implementation(libs.zxing.core)
     implementation("com.googlecode.mp4parser:isoparser:1.1.22")
-
-    // Generic RTMP/RTMPS camera + microphone publisher.
-    // 2.7.5 keeps the RTMP API while remaining compatible with FadCam's compileSdk 36 / AGP 8.13.x baseline.
     implementation("com.github.pedroSG94.RootEncoder:library:2.7.5")
-
+    implementation("dev.ffmpegkit-maintained:ffmpeg-kit-full:8.1.7")
     annotationProcessor(libs.compiler)
     annotationProcessor(libs.room.compiler)
-    implementation(mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar"))
     implementation(libs.smart.exception.java)
     implementation(fileTree(mapOf("dir" to "libs/aar", "include" to listOf("*.aar"))))
     testImplementation(libs.junit)

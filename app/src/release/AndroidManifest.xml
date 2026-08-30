@@ -32,26 +32,17 @@
         android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
         tools:node="remove" />
 
-    <!--
-      SYSTEM_ALERT_WINDOW is a special/restricted permission. The public build
-      must not request it. Release UI uses notifications/activities instead of
-      drawing over unrelated applications.
-    -->
+    <!-- SYSTEM_ALERT_WINDOW is not required by the public release. -->
     <uses-permission
         android:name="android.permission.SYSTEM_ALERT_WINDOW"
         tools:node="remove" />
 
-    <!--
-      AccessibilityService is not part of FadCam's core camera/recording
-      functionality. Keep the experimental screenshot shortcut out of the
-      public release so users are not asked to grant accessibility access.
-    -->
-    <service
-        android:name=".service.FadRecScreenshotAccessibilityService"
-        tools:node="remove" />
-
-    <!-- Modern Android scoped-storage behavior. -->
+    <!-- Remove the experimental accessibility screenshot service from release. -->
     <application
         android:requestLegacyExternalStorage="false"
-        tools:replace="android:requestLegacyExternalStorage" />
+        tools:replace="android:requestLegacyExternalStorage">
+        <service
+            android:name=".service.FadRecScreenshotAccessibilityService"
+            tools:node="remove" />
+    </application>
 </manifest>

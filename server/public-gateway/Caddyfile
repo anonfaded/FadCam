@@ -1,11 +1,20 @@
 {$PUBLIC_HOSTNAME} {
-    @media path_regexp media \\.(m3u8|m4s|mp4|ts|aac|webm)$
+    # Authenticated outbound tunnel control plane. The relay itself enforces
+    # device credentials; this route only makes it reachable over HTTPS.
+    handle /v1/tunnel/* {
+        reverse_proxy 127.0.0.1:18443
+    }
+
+    # Public live media. The discovery service chooses DIRECT when the phone
+    # is reachable locally and otherwise forwards the opaque /stream/<key>/...
+    # request to the outbound relay.
+    @media path_regexp media ^/stream/.+\.(m3u8|m4s|mp4|ts|aac|webm)$
     handle @media {
-        reverse_proxy {$SERVER_ROOM_URL}
+        reverse_proxy 127.0.0.1:18080
     }
 
     handle /healthz {
-        respond 200
+        reverse_proxy 127.0.0.1:18080
     }
 
     respond 404

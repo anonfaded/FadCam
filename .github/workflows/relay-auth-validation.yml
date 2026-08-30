@@ -24,11 +24,57 @@ jobs:
           fetch-depth: 1
           submodules: false
 
+      - name: Start isolated local relay
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/fadcam-relay"
+          openssl req -x509 -newkey rsa:2048 -sha256 -nodes \
+            -keyout "$RUNNER_TEMP/fadcam-relay/key.pem" \
+            -out "$RUNNER_TEMP/fadcam-relay/cert.pem" \
+            -days 1 \
+            -subj '/CN=localhost' \
+            -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1'
+          python3 server/relay/local-test-server.py &
+          echo $! > "$RUNNER_TEMP/fadcam-relay/pid"
+          for i in {1..30}; do
+            if curl --silent --show-error --fail --cacert "$RUNNER_TEMP/fadcam-relay/cert.pem" \
+              https://localhost:8443/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'ERROR: local relay did not become ready' >&2
+          exit 1
+        env:
+          RELAY_CERT_FILE: ${{ runner.temp }}/fadcam-relay/cert.pem
+          RELAY_KEY_FILE: ${{ runner.temp }}/fadcam-relay/key.pem
+          RELAY_PORT: 8443
+
+      - name: Validate relay TLS endpoint
+        env:
+          FADCAM_RELAY_BASE_URL: https://localhost:8443
+          FADCAM_RELAY_CA_FILE: ${{ runner.temp }}/fadcam-relay/cert.pem
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x server/tests/relay-tls-preflight.sh
+          ./server/tests/relay-tls-preflight.sh
+
       - name: Validate relay authorization boundary
         env:
-          FADCAM_RELAY_BASE_URL: https://live.fadseclab.com:8443
+          FADCAM_RELAY_BASE_URL: https://localhost:8443
+          FADCAM_RELAY_CA_FILE: ${{ runner.temp }}/fadcam-relay/cert.pem
         shell: bash
         run: |
           set -euo pipefail
           chmod +x server/tests/relay-auth-boundary.sh
           ./server/tests/relay-auth-boundary.sh
+
+      - name: Stop isolated local relay
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "$RUNNER_TEMP/fadcam-relay/pid" ]]; then
+            kill "$(cat "$RUNNER_TEMP/fadcam-relay/pid")" 2>/dev/null || true
+          fi
