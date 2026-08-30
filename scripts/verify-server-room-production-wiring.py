@@ -25,16 +25,16 @@ FILES = {
 }
 
 
+def fail(message):
+    print(f"FAIL: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
 def read(name):
     path = FILES[name]
     if not path.is_file():
         fail(f"missing required production file: {path}")
     return path.read_text(encoding="utf-8")
-
-
-def fail(message):
-    print(f"FAIL: {message}", file=sys.stderr)
-    sys.exit(1)
 
 
 def require(text, needle, label):
