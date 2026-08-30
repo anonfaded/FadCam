@@ -39,7 +39,6 @@ public final class TransportController implements MediaTransport {
         this(asMediaTransport(directTransport), asMediaTransport(relayTransport));
     }
 
-    @Override
     public State getState() {
         return state.get();
     }
