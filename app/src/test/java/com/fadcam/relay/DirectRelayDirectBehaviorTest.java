@@ -16,7 +16,7 @@ public class DirectRelayDirectBehaviorTest {
         FakeMediaSession media = new FakeMediaSession();
         RelaySessionController relaySession = new RelaySessionController(
                 "device-1", "auth-token", relaySessionTransport(relay), () -> 1_000,
-                30_000, 3);
+                30_000, 30_000, 3);
 
         media.start();
         controller.useDirect();
