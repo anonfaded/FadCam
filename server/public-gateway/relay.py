@@ -1,17 +1,10 @@
 """Outbound Server Room relay.
 
-This is the CGNAT fallback for the local-discovery gateway. The phone opens
-an authenticated outbound long-poll connection; the relay never initiates a
-connection to the phone. Live media is kept only in memory while a viewer
+The phone opens an authenticated outbound long-poll connection; the relay
+never dials into the phone. Live media is kept only in memory while a viewer
 request is being served.
-
-Device authentication is configured as JSON in RELAY_DEVICE_TOKENS, for
-example: {"device-a":"long-random-secret"}. Tokens are never returned by
-this service. Public viewer URLs use opaque, short-lived keys instead of
-user/device identifiers.
 """
 import base64
-import hashlib
 import hmac
 import json
 import os
@@ -19,7 +12,7 @@ import secrets
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 LISTEN_HOST = os.getenv("RELAY_LISTEN_HOST", "0.0.0.0")
 LISTEN_PORT = int(os.getenv("RELAY_PORT", "18443"))
@@ -28,7 +21,6 @@ REQUEST_TTL = int(os.getenv("RELAY_REQUEST_TTL_SECONDS", "20"))
 MAX_BODY = int(os.getenv("RELAY_MAX_RESPONSE_BYTES", str(8 * 1024 * 1024)))
 PUBLIC_BASE = os.getenv("RELAY_PUBLIC_BASE", "").rstrip("/")
 TOKENS = json.loads(os.getenv("RELAY_DEVICE_TOKENS", "{}"))
-
 MEDIA_SUFFIXES = (".m3u8", ".m4s", ".mp4", ".ts", ".aac", ".webm")
 
 class Session:
@@ -51,16 +43,12 @@ lock = threading.RLock()
 
 def token_ok(device_id, supplied):
     expected = TOKENS.get(device_id)
-    if not expected or not supplied:
-        return False
-    return hmac.compare_digest(str(expected), str(supplied))
+    return bool(expected and supplied and hmac.compare_digest(str(expected), str(supplied)))
 
 
 def auth_token(handler):
     value = handler.headers.get("Authorization", "")
-    if not value.startswith("Bearer "):
-        return None
-    return value[7:].strip()
+    return value[7:].strip() if value.startswith("Bearer ") else None
 
 
 def json_response(handler, status, payload):
@@ -73,8 +61,17 @@ def json_response(handler, status, payload):
     handler.wfile.write(data)
 
 
+def empty_response(handler, status):
+    handler.send_response(status)
+    handler.send_header("Content-Length", "0")
+    handler.end_headers()
+
+
 def read_json(handler):
-    length = int(handler.headers.get("Content-Length", "0"))
+    try:
+        length = int(handler.headers.get("Content-Length", "0"))
+    except ValueError:
+        return None
     if length <= 0 or length > MAX_BODY:
         return None
     try:
@@ -98,9 +95,7 @@ def cleanup():
 
 
 def public_url(session):
-    if not PUBLIC_BASE:
-        return "/stream/" + session.viewer_key
-    return PUBLIC_BASE + "/stream/" + session.viewer_key
+    return (PUBLIC_BASE + "/stream/" + session.viewer_key) if PUBLIC_BASE else ("/stream/" + session.viewer_key)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -112,36 +107,29 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         cleanup()
         parsed = urlparse(self.path)
-        path = parsed.path
-
-        if path == "/healthz":
+        if parsed.path == "/healthz":
             with lock:
                 active = sum(1 for s in sessions.values() if s.alive())
             json_response(self, 200, {"status": "ok", "active_tunnels": active})
             return
-
-        if path.startswith("/v1/tunnel/poll"):
-            self.poll(parsed)
+        if parsed.path.startswith("/v1/tunnel/poll"):
+            self.poll()
             return
-
-        if path.startswith("/stream/"):
+        if parsed.path.startswith("/stream/"):
             self.viewer_request(parsed)
             return
-
         self.send_error(404)
 
     def do_POST(self):
         cleanup()
         parsed = urlparse(self.path)
-        path = parsed.path
-
-        if path == "/v1/tunnel/register":
+        if parsed.path == "/v1/tunnel/register":
             self.register()
             return
-        if path == "/v1/tunnel/respond":
+        if parsed.path == "/v1/tunnel/respond":
             self.respond()
             return
-        if path == "/v1/tunnel/heartbeat":
+        if parsed.path == "/v1/tunnel/heartbeat":
             self.heartbeat()
             return
         self.send_error(404)
@@ -157,17 +145,13 @@ class Handler(BaseHTTPRequestHandler):
             return
         session = Session(device_id)
         with lock:
-            old = [s for s in sessions.values() if s.device_id == device_id]
-            for s in old:
-                sessions.pop(s.session_id, None)
-                viewer_index.pop(s.viewer_key, None)
+            for sid, old in list(sessions.items()):
+                if old.device_id == device_id:
+                    sessions.pop(sid, None)
+                    viewer_index.pop(old.viewer_key, None)
             sessions[session.session_id] = session
             viewer_index[session.viewer_key] = session.session_id
-        json_response(self, 201, {
-            "session": session.session_id,
-            "viewer_url": public_url(session),
-            "expires_in": SESSION_TTL,
-        })
+        json_response(self, 201, {"session": session.session_id, "viewer_url": public_url(session), "expires_in": SESSION_TTL})
 
     def _session(self):
         token = auth_token(self)
@@ -178,7 +162,7 @@ class Handler(BaseHTTPRequestHandler):
         session.last_seen = time.time()
         return session
 
-    def poll(self, parsed):
+    def poll(self):
         session = self._session()
         if not session:
             self.send_error(401)
@@ -188,7 +172,7 @@ class Handler(BaseHTTPRequestHandler):
             while not session.pending and session.alive() and time.time() < deadline:
                 session.condition.wait(timeout=min(2, deadline - time.time()))
             if not session.pending:
-                json_response(self, 204, {})
+                empty_response(self, 204)
                 return
             request_id, request = next(iter(session.pending.items()))
         json_response(self, 200, {"id": request_id, **request})
@@ -198,7 +182,8 @@ class Handler(BaseHTTPRequestHandler):
         if not session:
             self.send_error(401)
             return
-        json_response(self, 200, {"status": "ok", "expires_in": max(0, int(SESSION_TTL - (time.time() - session.created)))})
+        remaining = max(0, int(SESSION_TTL - (time.time() - session.created)))
+        json_response(self, 200, {"status": "ok", "expires_in": remaining})
 
     def respond(self):
         session = self._session()
@@ -209,9 +194,8 @@ class Handler(BaseHTTPRequestHandler):
         if not payload or not isinstance(payload.get("id"), str):
             self.send_error(400)
             return
-        raw = payload.get("body", "")
         try:
-            body = base64.b64decode(raw, validate=True) if raw else b""
+            body = base64.b64decode(payload.get("body", ""), validate=True)
         except Exception:
             self.send_error(400)
             return
@@ -223,11 +207,7 @@ class Handler(BaseHTTPRequestHandler):
             if request is None:
                 self.send_error(404)
                 return
-            request["response"] = {
-                "status": int(payload.get("status", 502)),
-                "headers": payload.get("headers", {}),
-                "body": body,
-            }
+            request["response"] = {"status": int(payload.get("status", 502)), "headers": payload.get("headers", {}), "body": body}
             session.condition.notify_all()
         json_response(self, 202, {"status": "accepted"})
 
@@ -244,12 +224,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404)
             return
         request_id = secrets.token_urlsafe(18)
-        request = {
-            "method": "GET",
-            "path": "/" + parts[3],
-            "query": parsed.query,
-            "headers": {"Accept": self.headers.get("Accept", "*/*")},
-        }
+        request = {"method": "GET", "path": "/" + parts[3], "query": parsed.query, "headers": {"Accept": self.headers.get("Accept", "*/*")}}
         with session.condition:
             session.pending[request_id] = request
             session.condition.notify_all()
@@ -262,9 +237,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(504, "Server Room tunnel timeout")
             return
         self.send_response(response["status"])
-        allowed = {"content-type", "cache-control", "etag", "last-modified"}
         for key, value in response["headers"].items():
-            if key.lower() in allowed and isinstance(value, str):
+            if key.lower() in {"content-type", "cache-control", "etag", "last-modified"} and isinstance(value, str):
                 self.send_header(key, value)
         body = response["body"]
         self.send_header("Cache-Control", "no-store")
