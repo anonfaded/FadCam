@@ -13,6 +13,13 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class TransportController implements MediaTransport {
     public enum State { DIRECT, RELAYING, RECONNECTING, OFFLINE }
 
+    /** Legacy connectivity-only contract retained for existing JVM callers. */
+    public interface Transport {
+        void connect() throws Exception;
+        void disconnect();
+        boolean isConnected();
+    }
+
     private final MediaTransport directTransport;
     private final MediaTransport relayTransport;
     private final AtomicReference<State> state = new AtomicReference<>(State.OFFLINE);
@@ -22,6 +29,11 @@ public final class TransportController implements MediaTransport {
         this.relayTransport = Objects.requireNonNull(relayTransport, "relayTransport");
     }
 
+    /** Compatibility constructor for connectivity-only transports. */
+    public TransportController(Transport directTransport, Transport relayTransport) {
+        this(asMediaTransport(directTransport), asMediaTransport(relayTransport));
+    }
+
     public State getState() { return state.get(); }
 
     /** Direct becomes authoritative only after a complete successful connection. */
@@ -29,7 +41,9 @@ public final class TransportController implements MediaTransport {
         state.set(State.RECONNECTING);
         try {
             if (!directTransport.isConnected()) directTransport.connect();
-            if (!directTransport.isConnected()) throw new IllegalStateException("Direct transport did not connect");
+            if (!directTransport.isConnected()) {
+                throw new IllegalStateException("Direct transport did not connect");
+            }
             relayTransport.disconnect();
             state.set(State.DIRECT);
         } catch (Exception failure) {
@@ -43,7 +57,9 @@ public final class TransportController implements MediaTransport {
         state.set(State.RECONNECTING);
         try {
             relayTransport.connect();
-            if (!relayTransport.isConnected()) throw new IllegalStateException("Relay transport did not connect");
+            if (!relayTransport.isConnected()) {
+                throw new IllegalStateException("Relay transport did not connect");
+            }
             state.set(State.RELAYING);
         } catch (Exception failure) {
             relayTransport.disconnect();
@@ -61,7 +77,6 @@ public final class TransportController implements MediaTransport {
     public void recoverToDirect() throws Exception { useDirect(); }
 
     @Override public void connect() throws Exception { useDirect(); }
-
     @Override public void disconnect() { stop(); }
 
     @Override
@@ -101,5 +116,23 @@ public final class TransportController implements MediaTransport {
         if (!isConnected()) {
             throw new IllegalStateException("authoritative media transport is not connected in state " + state.get());
         }
+    }
+
+    private static MediaTransport asMediaTransport(final Transport transport) {
+        Objects.requireNonNull(transport, "transport");
+        if (transport instanceof MediaTransport) return (MediaTransport) transport;
+        return new MediaTransport() {
+            @Override public void connect() throws Exception { transport.connect(); }
+            @Override public void disconnect() { transport.disconnect(); }
+            @Override public boolean isConnected() { return transport.isConnected(); }
+            @Override public void sendInitializationSegment(byte[] payload) throws Exception {
+                requirePayload(payload);
+                throw new UnsupportedOperationException("connectivity-only transport cannot send media");
+            }
+            @Override public void sendFragment(int sequenceNumber, byte[] payload, long durationMs) throws Exception {
+                requirePayload(payload);
+                throw new UnsupportedOperationException("connectivity-only transport cannot send media");
+            }
+        };
     }
 }
