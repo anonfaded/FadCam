@@ -29,11 +29,9 @@ public class TransportGraphWiringTest {
         controller.failoverToRelay();
         assertEquals(TransportController.State.RELAYING, controller.getState());
         assertTrue(sessionTransport.connected);
+        assertFalse(direct.isConnected());
         controller.sendInitializationSegment(new byte[] {5});
         controller.sendFragment(2, new byte[] {6, 7}, 2000);
-        // The deployed relay is pull-based: viewer requests are polled and the
-        // phone answers them from its existing local Server Room. Media is not
-        // duplicated as a second upload stream.
         assertEquals(0, sessionTransport.mediaRequests);
 
         controller.markRelayFailure();
