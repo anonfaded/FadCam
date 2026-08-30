@@ -23,6 +23,7 @@ public final class TransportController implements MediaTransport {
     private final MediaTransport directTransport;
     private final MediaTransport relayTransport;
     private final AtomicReference<State> state = new AtomicReference<>(State.OFFLINE);
+    private volatile Thread relayPromotionThread;
 
     public TransportController(MediaTransport directTransport, MediaTransport relayTransport) {
         this.directTransport = Objects.requireNonNull(directTransport, "directTransport");
@@ -37,37 +38,16 @@ public final class TransportController implements MediaTransport {
     public State getState() { return state.get(); }
 
     /**
-     * Establish the production streaming path.
-     *
-     * <p>The Server Room relay is attempted first. The local direct path is the
-     * deterministic fallback when the relay is unavailable or not configured.
-     * This makes the existing RemoteStreamService construction an actual
-     * Server-Room-capable production graph instead of a test-only boundary.</p>
+     * Establish the immediately available direct path, then asynchronously
+     * promote to the authenticated Server Room relay when it is configured and
+     * reachable. This is the production-safe construction path because
+     * RemoteStreamService invokes connect() from Android's service lifecycle;
+     * network authentication must never block that thread.
      */
     @Override
     public void connect() throws Exception {
-        state.set(State.RECONNECTING);
-        try {
-            relayTransport.connect();
-            if (relayTransport.isConnected()) {
-                directTransport.disconnect();
-                state.set(State.RELAYING);
-                return;
-            }
-        } catch (Exception ignoredRelayFailure) {
-            if (relayTransport.isConnected()) relayTransport.disconnect();
-        }
-
-        try {
-            if (!directTransport.isConnected()) directTransport.connect();
-            if (!directTransport.isConnected()) {
-                throw new IllegalStateException("Direct transport did not connect");
-            }
-            state.set(State.DIRECT);
-        } catch (Exception directFailure) {
-            state.set(State.OFFLINE);
-            throw directFailure;
-        }
+        useDirect();
+        startRelayPromotion();
     }
 
     /** Direct becomes authoritative only after a complete successful connection. */
@@ -134,10 +114,41 @@ public final class TransportController implements MediaTransport {
         authoritative().sendFragment(sequenceNumber, payload, durationMs);
     }
 
-    public void stop() {
+    public synchronized void stop() {
+        Thread promotion = relayPromotionThread;
+        relayPromotionThread = null;
+        if (promotion != null) promotion.interrupt();
         directTransport.disconnect();
         relayTransport.disconnect();
         state.set(State.OFFLINE);
+    }
+
+    private synchronized void startRelayPromotion() {
+        if (relayPromotionThread != null || state.get() != State.DIRECT) return;
+        Thread promotion = new Thread(() -> {
+            try {
+                if (state.get() != State.DIRECT) return;
+                relayTransport.connect();
+                if (!relayTransport.isConnected()) return;
+                if (state.compareAndSet(State.DIRECT, State.RELAYING)) {
+                    directTransport.disconnect();
+                } else {
+                    relayTransport.disconnect();
+                }
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                relayTransport.disconnect();
+            } catch (Exception ignored) {
+                relayTransport.disconnect();
+            } finally {
+                synchronized (this) {
+                    relayPromotionThread = null;
+                }
+            }
+        }, "FadCam-RelayPromotion");
+        promotion.setDaemon(true);
+        relayPromotionThread = promotion;
+        promotion.start();
     }
 
     private MediaTransport authoritative() {
