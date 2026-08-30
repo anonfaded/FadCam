@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.Tv49east.com"
+        applicationId = "com.tv49east.com"
         minSdk = 24
         targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
