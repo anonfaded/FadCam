@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.fadcam"
+        applicationId = "com.Tv49east.com"
         minSdk = 24
         targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -56,10 +56,10 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".beta"
+            applicationIdSuffix = ".dev"
             isDebuggable = true
-            versionNameSuffix = "-beta10.6"
-            resValue("string", "app_name", "FadCam Beta")
+            versionNameSuffix = "-dev10.6"
+            resValue("string", "app_name", "Tv 49 East Dev")
         }
         release {
             isMinifyEnabled = true
@@ -85,7 +85,7 @@ android {
             isDebuggable = false
             if (releaseSigningConfigValid) signingConfig = signingConfigs.getByName("release")
             versionNameSuffix = "-Pro+"
-            val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro+"
+            val customAppName = project.findProperty("customAppName")?.toString() ?: "Tv 49 East Pro+"
             resValue("string", "app_name", customAppName)
         }
     }
