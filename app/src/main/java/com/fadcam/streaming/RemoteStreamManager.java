@@ -13,6 +13,7 @@ import com.fadcam.streaming.model.ClientMetrics;
 import com.fadcam.streaming.model.NetworkHealth;
 import com.fadcam.streaming.model.StreamQuality;
 import com.fadcam.streaming.util.NetworkMonitor;
+import com.fadcam.relay.MediaTransport;
 
 import org.json.JSONObject;
 
@@ -46,6 +47,9 @@ public class RemoteStreamManager {
     private boolean streamingEnabled = false;
     private StreamingMode streamingMode = StreamingMode.STREAM_AND_SAVE;
     private android.content.Context context;
+    // Authoritative media transport injected by the long-lived streaming service.
+    // The manager never constructs connectivity/session objects itself.
+    private volatile MediaTransport mediaTransport;
     
     // Fragment buffer (circular)
     private final FragmentData[] fragmentBuffer = new FragmentData[BUFFER_SIZE];
@@ -239,6 +243,19 @@ public class RemoteStreamManager {
     }
     
     /**
+     * Inject the service-owned authoritative media transport.
+     * Passing null cleanly disables remote media delivery.
+     */
+    public void setMediaTransport(@Nullable MediaTransport transport) {
+        this.mediaTransport = transport;
+    }
+
+    @Nullable
+    public MediaTransport getMediaTransport() {
+        return mediaTransport;
+    }
+
+    /**
      * Initialize volume from AudioManager.
      */
     private void initializeVolume(android.content.Context ctx) {
@@ -416,9 +433,17 @@ public class RemoteStreamManager {
             }
             
             if (initData != null) {
-                
-                // Upload to cloud relay ONLY if streaming is actually enabled
-                if (streamingEnabled && context != null) {
+                // All remote media now crosses the service-owned transport boundary.
+                // The legacy uploader remains only as a compatibility fallback when
+                // no runtime transport has been injected (for tests/older callers).
+                MediaTransport transport = mediaTransport;
+                if (transport != null) {
+                    try {
+                        transport.sendInitializationSegment(initData);
+                    } catch (Exception e) {
+                        FLog.e(TAG, "❌ Media transport rejected initialization segment", e);
+                    }
+                } else if (streamingEnabled && context != null) {
                     CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
                     if (uploader.isEnabled() && uploader.isReady()) {
                         uploader.uploadInitSegment(initData, null);
@@ -488,31 +513,31 @@ public class RemoteStreamManager {
             
             //     (fragmentData.length / 1024) + " KB) [" + getBufferedCount() + "/" + BUFFER_SIZE + " slots] oldest=" + oldestSequence + ", head=" + bufferHead);
             
-            // Upload to cloud relay if enabled
-            // CRITICAL FIX: Upload playlist ONLY AFTER segment upload succeeds
-            // This prevents race condition where viewer gets playlist before segment is available
-            if (context != null) {
+            // Remote media is routed through the authoritative service-owned transport.
+            // This is deliberately inside the manager callback so every fMP4 fragment
+            // produced by the muxer follows exactly the same DIRECT/RELAY decision.
+            MediaTransport transport = mediaTransport;
+            if (transport != null) {
+                try {
+                    transport.sendFragment(sequenceNumber, fragmentData, durationMs);
+                    lastRelayUploadMs = System.currentTimeMillis();
+                } catch (Exception e) {
+                    FLog.e(TAG, "❌ Media transport rejected fragment #" + sequenceNumber, e);
+                }
+            } else if (context != null) {
+                // Compatibility fallback for callers that have not yet created the
+                // service-owned transport graph. Production RemoteStreamService always
+                // injects a transport before enabling streaming.
                 CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);
                 if (uploader.isEnabled() && uploader.isReady()) {
-                    // Capture playlist now (while we have the lock) but upload after segment succeeds
                     final String playlist = generateCloudPlaylist();
-                    
-                    // Upload segment with callback - playlist uploaded only after segment succeeds
                     uploader.uploadSegment(sequenceNumber, fragmentData, new CloudStreamUploader.UploadCallback() {
-                        @Override
-                        public void onSuccess() {
-                            // Segment uploaded successfully - update relay freshness timestamp
+                        @Override public void onSuccess() {
                             lastRelayUploadMs = System.currentTimeMillis();
-                            // NOW upload the playlist
-                            if (playlist != null) {
-                                uploader.uploadPlaylist(playlist, null);
-                            }
+                            if (playlist != null) uploader.uploadPlaylist(playlist, null);
                         }
-                        
-                        @Override
-                        public void onError(String error) {
-                            // Segment failed - don't update playlist (viewers won't see missing segment)
-                            FLog.w(TAG, "⚠️ Segment " + sequenceNumber + " upload failed, skipping playlist update: " + error);
+                        @Override public void onError(String error) {
+                            FLog.w(TAG, "⚠️ Segment " + sequenceNumber + " upload failed: " + error);
                         }
                     });
                 }
