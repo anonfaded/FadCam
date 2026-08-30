@@ -37,6 +37,9 @@ public class TransportControllerTest {
 
         controller.connect();
 
+        // Relay promotion is deliberately asynchronous. Wait for the worker to
+        // finish its attempted connection before asserting the steady state.
+        awaitRelayAttempt(relay);
         assertEquals(TransportController.State.DIRECT, controller.getState());
         assertEquals(1, relay.connectCalls);
         assertEquals(1, direct.connectCalls);
@@ -140,6 +143,15 @@ public class TransportControllerTest {
             Thread.sleep(10L);
         }
         assertEquals(expected, controller.getState());
+    }
+
+    private static void awaitRelayAttempt(FakeTransport relay) throws Exception {
+        long deadline = System.currentTimeMillis() + 2000L;
+        while (System.currentTimeMillis() < deadline) {
+            if (relay.connectCalls > 0) return;
+            Thread.sleep(10L);
+        }
+        assertEquals(1, relay.connectCalls);
     }
 
     private static final class FakeTransport implements TransportController.Transport {
