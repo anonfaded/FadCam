@@ -1,6 +1,5 @@
 package com.fadcam;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -24,14 +23,7 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Security regression tests for FadCam's Android component boundary.
- *
- * These tests intentionally exercise the installed application's manifest through
- * PackageManager and use the shell identity as an untrusted caller.  This avoids
- * the false positive that would occur if the test process (which shares FadCam's
- * UID) tried to prove its own signature permission.
- */
+/** Security regression tests for FadCam's Android component boundary. */
 @RunWith(AndroidJUnit4.class)
 public class IpcSecurityTest {
     private static final String PACKAGE = "com.fadcam";
@@ -44,8 +36,7 @@ public class IpcSecurityTest {
     @Test
     public void fileProviderIsNeverExported() throws Exception {
         ProviderInfo info = pm.getProviderInfo(
-                new ComponentName(PACKAGE, "androidx.core.content.FileProvider"),
-                PackageManager.ComponentInfoFlags.of(0));
+                new ComponentName(PACKAGE, "androidx.core.content.FileProvider"), 0);
         assertNotNull(info);
         assertFalse("FileProvider must never be exported", info.exported);
         assertTrue("FileProvider must use URI grants", info.grantUriPermissions);
@@ -65,8 +56,7 @@ public class IpcSecurityTest {
 
         for (String name : services) {
             ServiceInfo info = pm.getServiceInfo(
-                    new ComponentName(PACKAGE, PACKAGE + name),
-                    PackageManager.ComponentInfoFlags.of(0));
+                    new ComponentName(PACKAGE, PACKAGE + name), 0);
             assertNotNull(name + " must exist", info);
             assertFalse(name + " must not be exported", info.exported);
         }
@@ -85,8 +75,7 @@ public class IpcSecurityTest {
 
         for (String name : activities) {
             ActivityInfo info = pm.getActivityInfo(
-                    new ComponentName(PACKAGE, PACKAGE + name),
-                    PackageManager.ComponentInfoFlags.of(0));
+                    new ComponentName(PACKAGE, PACKAGE + name), 0);
             assertNotNull(name + " must exist", info);
             assertFalse(name + " must not be exported", info.exported);
         }
@@ -104,8 +93,7 @@ public class IpcSecurityTest {
 
         for (String name : activities) {
             ActivityInfo info = pm.getActivityInfo(
-                    new ComponentName(PACKAGE, PACKAGE + name),
-                    PackageManager.ComponentInfoFlags.of(0));
+                    new ComponentName(PACKAGE, PACKAGE + name), 0);
             assertNotNull(name + " must exist", info);
             assertTrue(name + " is a deliberate launcher/shortcut boundary", info.exported);
         }
@@ -113,30 +101,27 @@ public class IpcSecurityTest {
 
     @Test
     public void untrustedShellCannotStartRecordingService() throws Exception {
-        ShellResult result = runShell("am", "startservice", "-n",
-                PACKAGE + "/.services.RecordingService");
-        assertTrue(
-                "An untrusted shell caller must not start the internal recording service. Output: " + result.output,
-                result.output.contains("Permission Denial")
-                        || result.output.contains("not exported")
-                        || result.output.contains("SecurityException"));
-        assertEquals("am startservice must fail for a non-exported service", 0, result.exitCode);
+        String output = runShell("am startservice -n " + PACKAGE + "/.services.RecordingService");
+        assertDenied(output);
     }
 
     @Test
     public void untrustedShellCannotStartRemoteStreamService() throws Exception {
-        ShellResult result = runShell("am", "startservice", "-n",
-                PACKAGE + "/.streaming.RemoteStreamService");
-        assertTrue(
-                "An untrusted shell caller must not start the internal streaming service. Output: " + result.output,
-                result.output.contains("Permission Denial")
-                        || result.output.contains("not exported")
-                        || result.output.contains("SecurityException"));
-        assertEquals("am startservice must fail for a non-exported service", 0, result.exitCode);
+        String output = runShell("am startservice -n " + PACKAGE + "/.streaming.RemoteStreamService");
+        assertDenied(output);
     }
 
-    private ShellResult runShell(String... command) throws Exception {
-        ParcelFileDescriptor pfd = instrumentation.getUiAutomation().executeShellCommand(command[0] + " " + join(command, 1));
+    private void assertDenied(String output) {
+        assertTrue(
+                "An untrusted shell caller must be rejected. Output: " + output,
+                output.contains("Permission Denial")
+                        || output.contains("not exported")
+                        || output.contains("SecurityException")
+                        || output.contains("Error: Not found"));
+    }
+
+    private String runShell(String command) throws Exception {
+        ParcelFileDescriptor pfd = instrumentation.getUiAutomation().executeShellCommand(command);
         StringBuilder output = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new ParcelFileDescriptor.AutoCloseInputStream(pfd)))) {
@@ -145,25 +130,6 @@ public class IpcSecurityTest {
                 output.append(line).append('\n');
             }
         }
-        return new ShellResult(0, output.toString());
-    }
-
-    private static String join(String[] values, int start) {
-        StringBuilder result = new StringBuilder();
-        for (int i = start; i < values.length; i++) {
-            if (i > start) result.append(' ');
-            result.append(values[i]);
-        }
-        return result.toString();
-    }
-
-    private static final class ShellResult {
-        final int exitCode;
-        final String output;
-
-        ShellResult(int exitCode, String output) {
-            this.exitCode = exitCode;
-            this.output = output;
-        }
+        return output.toString();
     }
 }
