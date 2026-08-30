@@ -1,0 +1,89 @@
+name: Apply runtime transport wiring
+
+on:
+  push:
+    paths:
+      - '.github/workflows/_apply-runtime-wiring.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.ref == 'refs/heads/feat/server-room-relay-agent'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feat/server-room-relay-agent
+          fetch-depth: 0
+
+      - name: Patch RemoteStreamManager transport boundary
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('app/src/main/java/com/fadcam/streaming/RemoteStreamManager.java')
+          s = p.read_text()
+
+          if 'import com.fadcam.relay.MediaTransport;' not in s:
+              marker = 'import com.fadcam.streaming.util.NetworkMonitor;\n'
+              if marker not in s:
+                  raise SystemExit('RemoteStreamManager import marker not found')
+              s = s.replace(marker, marker + 'import com.fadcam.relay.MediaTransport;\n', 1)
+
+          field_marker = '    private android.content.Context context;\n'
+          field = ('    private android.content.Context context;\n'
+                   '    // Authoritative media transport injected by the long-lived streaming service.\n'
+                   '    // The manager never constructs connectivity/session objects itself.\n'
+                   '    private volatile MediaTransport mediaTransport;\n')
+          if 'private volatile MediaTransport mediaTransport;' not in s:
+              if field_marker not in s:
+                  raise SystemExit('RemoteStreamManager context field marker not found')
+              s = s.replace(field_marker, field, 1)
+
+          setter_marker = '    /**\n     * Initialize volume from AudioManager.\n     */\n'
+          setter = ('    /**\n'
+                    '     * Inject the service-owned authoritative media transport.\n'
+                    '     * Passing null cleanly disables remote media delivery.\n'
+                    '     */\n'
+                    '    public void setMediaTransport(@Nullable MediaTransport transport) {\n'
+                    '        this.mediaTransport = transport;\n'
+                    '    }\n\n'
+                    '    @Nullable\n'
+                    '    public MediaTransport getMediaTransport() {\n'
+                    '        return mediaTransport;\n'
+                    '    }\n\n' + setter_marker)
+          if 'public void setMediaTransport(@Nullable MediaTransport transport)' not in s:
+              if setter_marker not in s:
+                  raise SystemExit('RemoteStreamManager setter insertion marker not found')
+              s = s.replace(setter_marker, setter, 1)
+
+          old_init = '''            if (initData != null) {\n                \n                // Upload to cloud relay ONLY if streaming is actually enabled\n                if (streamingEnabled && context != null) {\n                    CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);\n                    if (uploader.isEnabled() && uploader.isReady()) {\n                        uploader.uploadInitSegment(initData, null);\n                    }\n                }\n            } else {'''
+          new_init = '''            if (initData != null) {\n                // All remote media now crosses the service-owned transport boundary.\n                // The legacy uploader remains only as a compatibility fallback when\n                // no runtime transport has been injected (for tests/older callers).\n                MediaTransport transport = mediaTransport;\n                if (transport != null) {\n                    try {\n                        transport.sendInitializationSegment(initData);\n                    } catch (Exception e) {\n                        FLog.e(TAG, "❌ Media transport rejected initialization segment", e);\n                    }\n                } else if (streamingEnabled && context != null) {\n                    CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);\n                    if (uploader.isEnabled() && uploader.isReady()) {\n                        uploader.uploadInitSegment(initData, null);\n                    }\n                }\n            } else {'''
+          if old_init in s:
+              s = s.replace(old_init, new_init, 1)
+          elif 'transport.sendInitializationSegment(initData);' not in s:
+              raise SystemExit('RemoteStreamManager initialization upload block not found')
+
+          start = s.find('            // Upload to cloud relay if enabled\n            // CRITICAL FIX: Upload playlist ONLY AFTER segment upload succeeds')
+          if start < 0:
+              raise SystemExit('RemoteStreamManager fragment upload block start not found')
+          end_marker = '            \n        } finally {\n            bufferLock.writeLock().unlock();\n        }\n    }\n    \n    /**\n     * Get initialization segment for HLS #EXT-X-MAP.'
+          end = s.find(end_marker, start)
+          if end < 0:
+              raise SystemExit('RemoteStreamManager fragment upload block end not found')
+          replacement = '''            // Remote media is routed through the authoritative service-owned transport.\n            // This is deliberately inside the manager callback so every fMP4 fragment\n            // produced by the muxer follows exactly the same DIRECT/RELAY decision.\n            MediaTransport transport = mediaTransport;\n            if (transport != null) {\n                try {\n                    transport.sendFragment(sequenceNumber, fragmentData, durationMs);\n                    lastRelayUploadMs = System.currentTimeMillis();\n                } catch (Exception e) {\n                    FLog.e(TAG, "❌ Media transport rejected fragment #" + sequenceNumber, e);\n                }\n            } else if (context != null) {\n                // Compatibility fallback for callers that have not yet created the\n                // service-owned transport graph. Production RemoteStreamService always\n                // injects a transport before enabling streaming.\n                CloudStreamUploader uploader = CloudStreamUploader.getInstance(context);\n                if (uploader.isEnabled() && uploader.isReady()) {\n                    final String playlist = generateCloudPlaylist();\n                    uploader.uploadSegment(sequenceNumber, fragmentData, new CloudStreamUploader.UploadCallback() {\n                        @Override public void onSuccess() {\n                            lastRelayUploadMs = System.currentTimeMillis();\n                            if (playlist != null) uploader.uploadPlaylist(playlist, null);\n                        }\n                        @Override public void onError(String error) {\n                            FLog.w(TAG, "⚠️ Segment " + sequenceNumber + " upload failed: " + error);\n                        }\n                    });\n                }\n            }\n'''
+          s = s[:start] + replacement + s[end:]
+
+          p.write_text(s)
+
+      - name: Remove temporary patch workflow and commit wiring
+        run: |
+          rm .github/workflows/_apply-runtime-wiring.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/fadcam/streaming/RemoteStreamManager.java .github/workflows/_apply-runtime-wiring.yml
+          git diff --cached --check
+          git commit -m 'feat(relay): inject authoritative media transport into stream manager'
+          git push origin HEAD:feat/server-room-relay-agent
