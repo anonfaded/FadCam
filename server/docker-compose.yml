@@ -67,6 +67,32 @@ services:
       - ./data/mediamtx/recordings:/recordings
     networks: [tv]
 
+  # Optional public edge for FadCam Remote / Server Room's existing HTTP stream.
+  # This service does not modify or expose the Server Room control surface.
+  # Set SERVER_ROOM_URL to the existing LAN URL of the phone's stream server.
+  # Only HLS/media objects are proxied; control/API paths are rejected.
+  server-room-gateway:
+    image: caddy:2.10.2-alpine
+    container_name: fadcam-server-room-gateway
+    profiles: [public]
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOSTNAME: ${PUBLIC_HOSTNAME:?Set PUBLIC_HOSTNAME in .env}
+      SERVER_ROOM_URL: ${SERVER_ROOM_URL:?Set SERVER_ROOM_URL in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./public-gateway/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
   # Observability. These services are server-side only and have no Gradle/Android dependency.
   prometheus:
     image: prom/prometheus:v3.14.0
@@ -178,5 +204,7 @@ volumes:
   grafana-data:
   minio-data:
   keycloak-db-data:
+  caddy-data:
+  caddy-config:
   jellyfin-config:
   jellyfin-cache:
