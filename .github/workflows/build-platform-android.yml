@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [master]
 
-# PR jobs execute repository-controlled build scripts. Keep the default token
-# read-only; release publication grants write permission only to its dedicated
-# master-only job below.
 permissions:
   contents: read
 
@@ -22,14 +19,12 @@ jobs:
         with:
           submodules: false
           fetch-depth: 1
-
       - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-
       - name: Prepare patched Media3
         shell: bash
         run: |
@@ -39,39 +34,26 @@ jobs:
           test -d /tmp/media3-patched/libraries/muxer
           test -d /tmp/media3-patched/libraries/common
           test -d /tmp/media3-patched/libraries/container
-
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
-
       - name: Run Android unit tests
         run: ./gradlew :app:testDefaultDebugUnitTest --stacktrace --no-daemon
-
       - name: Compile Android IPC instrumentation tests
         run: ./gradlew :app:compileDefaultDebugAndroidTestJavaWithJavac --stacktrace --no-daemon
-
       - name: Assemble default debug APK
         run: ./gradlew assembleDefaultDebug --stacktrace --no-daemon
-
       - name: Sanity-check debug APK
         shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
           apks=(app/build/outputs/apk/default/debug/*.apk)
-          if [ "${#apks[@]}" -eq 0 ]; then
-            echo "ERROR: no default debug APK was produced"
-            exit 1
-          fi
-          for apk in "${apks[@]}"; do
-            echo "Checking $apk"
-            test -s "$apk"
-            unzip -tq "$apk" >/dev/null
-          done
-
-      - name: Publish debug APK artifact
+          test "${#apks[@]}" -gt 0
+          for apk in "${apks[@]}"; do test -s "$apk"; unzip -tq "$apk" >/dev/null; done
+      - name: Publish development APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fadcam-default-debug-apk
+          name: fadcam-development-apk
           path: app/build/outputs/apk/default/debug/*.apk
           if-no-files-found: error
           retention-days: 7
@@ -85,14 +67,12 @@ jobs:
         with:
           submodules: false
           fetch-depth: 1
-
       - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-
       - name: Prepare patched Media3
         shell: bash
         run: |
@@ -102,7 +82,6 @@ jobs:
           test -d /tmp/media3-patched/libraries/muxer
           test -d /tmp/media3-patched/libraries/common
           test -d /tmp/media3-patched/libraries/container
-
       - name: Create ephemeral CI signing key
         shell: bash
         run: |
@@ -123,123 +102,36 @@ jobs:
             echo "KEY_ALIAS=fadcam-ci"
             echo "KEY_PASSWORD=changeit"
           } >> local.properties
-
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
-
       - name: Assemble default release APK
         run: ./gradlew assembleDefaultRelease --stacktrace --no-daemon
-
       - name: Verify release APKs are present and structurally valid
         shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
           apks=(app/build/outputs/apk/default/release/*.apk)
-          if [ "${#apks[@]}" -eq 0 ]; then
-            echo "ERROR: no default release APK was produced"
-            exit 1
-          fi
-          for apk in "${apks[@]}"; do
-            echo "Checking $apk"
-            test -s "$apk"
-            unzip -tq "$apk" >/dev/null
-          done
-
+          test "${#apks[@]}" -gt 0
+          for apk in "${apks[@]}"; do test -s "$apk"; unzip -tq "$apk" >/dev/null; done
       - name: Verify release APK alignment and signature
         shell: bash
         run: |
           set -euo pipefail
           build_tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
-          test -x "$build_tools/zipalign"
-          test -x "$build_tools/apksigner"
           shopt -s nullglob
           apks=(app/build/outputs/apk/default/release/*.apk)
           for apk in "${apks[@]}"; do
             "$build_tools/zipalign" -c -P 16 -v 4 "$apk"
             "$build_tools/apksigner" verify --verbose "$apk"
-            echo "✓ Signed and aligned: $apk"
           done
-
-      - name: Publish release APK artifacts
+      - name: Publish CI release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fadcam-default-release-apk
+          name: fadcam-ci-release-apk
           path: app/build/outputs/apk/default/release/*.apk
           if-no-files-found: error
           retention-days: 7
-
-  publish-latest-apks:
-    name: Publish public latest APKs
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    needs: [android, android-release]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download debug APK artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: fadcam-default-debug-apk
-          path: public-apks/debug
-
-      - name: Download release APK artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: fadcam-default-release-apk
-          path: public-apks/release
-
-      - name: Prepare public APK filenames
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          debug=(public-apks/debug/*.apk)
-          release=(public-apks/release/*.apk)
-          test "${#debug[@]}" -gt 0
-          test "${#release[@]}" -gt 0
-          cp "${debug[0]}" public-apks/FadCam-debug.apk
-          cp "${release[0]}" public-apks/FadCam-release.apk
-          sha256sum public-apks/FadCam-debug.apk public-apks/FadCam-release.apk | tee public-apks/SHA256SUMS.txt
-
-      - name: Create or update public latest CI release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! gh release view latest-ci >/dev/null 2>&1; then
-            gh release create latest-ci \
-              --target "$GITHUB_SHA" \
-              --title "FadCam Latest CI Build" \
-              --prerelease \
-              --notes "Automatically published from the latest successful master validation run. Commit: $GITHUB_SHA"
-          else
-            gh release edit latest-ci \
-              --title "FadCam Latest CI Build" \
-              --notes "Automatically updated from the latest successful master validation run. Commit: $GITHUB_SHA" \
-              --prerelease
-          fi
-
-          for asset in FadCam-debug.apk FadCam-release.apk SHA256SUMS.txt; do
-            gh release delete-asset latest-ci "$asset" --yes >/dev/null 2>&1 || true
-          done
-
-          gh release upload latest-ci \
-            public-apks/FadCam-debug.apk \
-            public-apks/FadCam-release.apk \
-            public-apks/SHA256SUMS.txt
-
-      - name: Verify public release assets
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          gh release view latest-ci --json assets --jq '.assets[].name' | grep -Fx 'FadCam-debug.apk'
-          gh release view latest-ci --json assets --jq '.assets[].name' | grep -Fx 'FadCam-release.apk'
-          gh release view latest-ci --json assets --jq '.assets[].name' | grep -Fx 'SHA256SUMS.txt'
 
   integration-tests:
     name: Existing JVM integration/test suite
@@ -250,14 +142,12 @@ jobs:
         with:
           submodules: false
           fetch-depth: 1
-
       - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-
       - name: Prepare patched Media3
         shell: bash
         run: |
@@ -267,12 +157,10 @@ jobs:
           test -d /tmp/media3-patched/libraries/muxer
           test -d /tmp/media3-patched/libraries/common
           test -d /tmp/media3-patched/libraries/container
-
       - name: Run existing supported default JVM test suites
         run: |
           chmod +x ./gradlew
           ./gradlew :app:testDefaultDebugUnitTest :app:testDefaultReleaseUnitTest --stacktrace --no-daemon
-
       - name: Report instrumentation-test availability
         shell: bash
         run: |
@@ -292,7 +180,6 @@ jobs:
         with:
           submodules: false
           fetch-depth: 1
-
       - name: Validate Compose configuration
         run: docker compose --env-file server/.env.example -f server/docker-compose.yml config --quiet
 
@@ -305,12 +192,10 @@ jobs:
         with:
           submodules: false
           fetch-depth: 1
-
       - name: Install FFmpeg
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-
       - name: Run deterministic RTMP -> MediaMTX -> HLS smoke test
         run: |
           chmod +x server/tests/rtmp-e2e-smoke.sh
