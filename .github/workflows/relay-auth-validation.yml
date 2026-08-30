@@ -71,6 +71,12 @@ jobs:
           chmod +x server/tests/relay-auth-boundary.sh
           ./server/tests/relay-auth-boundary.sh
 
+      - name: Validate continuous public HLS relay paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 server/tests/server-room-relay-smoke.py
+
       - name: Stop isolated local relay
         if: always()
         shell: bash

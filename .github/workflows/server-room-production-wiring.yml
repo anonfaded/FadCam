@@ -1,0 +1,61 @@
+name: FadCam Server Room Production Wiring
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'app/src/main/java/com/fadcam/ui/RemoteFragment.java'
+      - 'app/src/main/java/com/fadcam/streaming/**'
+      - 'app/src/main/java/com/fadcam/services/RecordingService.java'
+      - 'app/src/main/java/com/fadcam/media/FragmentedMp4MuxerWrapper.java'
+      - 'app/src/main/java/com/fadcam/relay/**'
+      - 'scripts/verify-server-room-production-wiring.py'
+      - '.github/workflows/server-room-production-wiring.yml'
+  push:
+    branches: [master, feat/server-room-relay-agent]
+    paths:
+      - 'app/src/main/java/com/fadcam/ui/RemoteFragment.java'
+      - 'app/src/main/java/com/fadcam/streaming/**'
+      - 'app/src/main/java/com/fadcam/services/RecordingService.java'
+      - 'app/src/main/java/com/fadcam/media/FragmentedMp4MuxerWrapper.java'
+      - 'app/src/main/java/com/fadcam/relay/**'
+      - 'scripts/verify-server-room-production-wiring.py'
+      - '.github/workflows/server-room-production-wiring.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  production-wiring:
+    name: Production Android -> Server Room wiring
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Run forensic production wiring contract
+        run: python3 scripts/verify-server-room-production-wiring.py
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Prepare patched Media3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 --branch release https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -d /tmp/media3-patched/libraries/muxer
+          test -d /tmp/media3-patched/libraries/common
+          test -d /tmp/media3-patched/libraries/container
+
+      - name: Run existing JVM integration/test suite
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:testDefaultDebugUnitTest --stacktrace --no-daemon
