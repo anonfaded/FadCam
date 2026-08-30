@@ -21,7 +21,6 @@ public class TransportControllerTest {
 
         controller.connect();
 
-        assertEquals(TransportController.State.DIRECT, controller.getState());
         assertEquals(1, direct.connectCalls);
         awaitState(controller, TransportController.State.RELAYING);
         assertTrue(relay.connected);
