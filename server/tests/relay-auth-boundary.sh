@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Auth boundary smoke test for the Internet-facing relay.
-# This deliberately sends NO real credentials. A secure relay must reject
-# device-token issuance and media uploads before inspecting application data.
-
-BASE_URL="${FADCAM_RELAY_BASE_URL:-https://live.fadseclab.com:8443}"
+# Auth boundary smoke test for the relay configured by the caller.
+# CI supplies an isolated local relay endpoint. Never silently fall back to an
+# Internet-facing service: that would make validation depend on external state.
+BASE_URL="${FADCAM_RELAY_BASE_URL:?FADCAM_RELAY_BASE_URL must be set}"
 BASE_URL="${BASE_URL%/}"
+
+CURL_ARGS=(--silent --show-error --max-time 15)
+if [[ -n "${FADCAM_RELAY_CA_FILE:-}" ]]; then
+  CURL_ARGS+=(--cacert "$FADCAM_RELAY_CA_FILE")
+fi
 
 fail() {
   echo "ERROR: $*" >&2
@@ -20,16 +24,14 @@ assert_denied() {
   local code
 
   if [[ "$method" == "PUT" ]]; then
-    code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+    code="$(curl "${CURL_ARGS[@]}" --output /dev/null --write-out '%{http_code}' \
       --request PUT --header 'Content-Type: application/octet-stream' \
-      --data-binary '' --max-time 15 "$url")"
+      --data-binary '' "$url")"
   else
-    code="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
-      --request "$method" --max-time 15 "$url")"
+    code="$(curl "${CURL_ARGS[@]}" --output /dev/null --write-out '%{http_code}' \
+      --request "$method" "$url")"
   fi
 
-  # 405 is also a definitive rejection: the request was not accepted. A
-  # reverse proxy/router may reject an unsupported method before auth middleware.
   case "$code" in
     401|403) echo "PASS: $label rejected unauthenticated request (HTTP $code)" ;;
     405) echo "PASS: $label rejected unsupported unauthenticated method (HTTP 405)" ;;
@@ -37,16 +39,10 @@ assert_denied() {
   esac
 }
 
-# The relay must never mint a device stream token without the device credential.
 assert_denied "stream-token issuance" "$BASE_URL/internal/get-stream-token" POST
-
-# Uploads must be bearer-authenticated. Use syntactically valid placeholder IDs
-# so a missing credential is the first authorization decision being tested.
 assert_denied "media upload" "$BASE_URL/upload/00000000-0000-0000-0000-000000000000/relay-auth-test/live.m3u8" PUT
 
-# Protected endpoints must not opt into wildcard browser access. A wildcard
-# CORS policy would make accidental credential exposure much easier.
-headers="$(curl --silent --show-error --dump-header - --output /dev/null --max-time 15 \
+headers="$(curl "${CURL_ARGS[@]}" --dump-header - --output /dev/null \
   "$BASE_URL/internal/get-stream-token" || true)"
 if grep -Eiq '^access-control-allow-origin:[[:space:]]*\*' <<<"$headers"; then
   fail "relay exposes wildcard CORS on protected authentication endpoint"
