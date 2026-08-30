@@ -65,7 +65,13 @@ public final class TransportController implements MediaTransport {
             directTransport.disconnect();
             state.set(State.RELAYING);
         } catch (Exception failure) {
-            relayTransport.disconnect();
+            // A failed connect attempt must not manufacture an additional
+            // disconnect when the relay was already disconnected. This is
+            // important because useDirect() intentionally disconnects relay
+            // before establishing direct authority. If the relay did partially
+            // connect before throwing, isConnected() still gives us a safe
+            // cleanup path.
+            if (relayTransport.isConnected()) relayTransport.disconnect();
             if (directTransport.isConnected()) state.set(State.DIRECT);
             else state.set(State.OFFLINE);
             throw failure;
