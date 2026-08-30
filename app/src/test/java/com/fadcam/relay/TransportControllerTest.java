@@ -10,7 +10,7 @@ import org.junit.Test;
 public class TransportControllerTest {
 
     @Test
-    public void startsOfflineUntilProductionTransportConnects() throws Exception {
+    public void startsDirectThenPromotesToRelayWithoutBlocking() throws Exception {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         TransportController controller = new TransportController(direct, relay);
@@ -21,14 +21,15 @@ public class TransportControllerTest {
 
         controller.connect();
 
-        assertEquals(TransportController.State.RELAYING, controller.getState());
-        assertEquals(1, relay.connectCalls);
-        assertEquals(1, direct.disconnectCalls);
+        assertEquals(TransportController.State.DIRECT, controller.getState());
+        assertEquals(1, direct.connectCalls);
+        awaitState(controller, TransportController.State.RELAYING);
         assertTrue(relay.connected);
+        assertFalse(direct.connected);
     }
 
     @Test
-    public void productionConnectFallsBackToDirectWhenRelayUnavailable() throws Exception {
+    public void productionConnectStaysDirectWhenRelayUnavailable() throws Exception {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         relay.connectResult = false;
@@ -129,6 +130,16 @@ public class TransportControllerTest {
         assertEquals(TransportController.State.RECONNECTING, controller.getState());
         assertThrows(IllegalStateException.class,
                 () -> controller.sendFragment(1, new byte[] {1}, 2000));
+    }
+
+    private static void awaitState(TransportController controller, TransportController.State expected)
+            throws Exception {
+        long deadline = System.currentTimeMillis() + 2000L;
+        while (System.currentTimeMillis() < deadline) {
+            if (controller.getState() == expected) return;
+            Thread.sleep(10L);
+        }
+        assertEquals(expected, controller.getState());
     }
 
     private static final class FakeTransport implements TransportController.Transport {
