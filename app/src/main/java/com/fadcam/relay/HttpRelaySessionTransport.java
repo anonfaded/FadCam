@@ -2,7 +2,6 @@ package com.fadcam.relay;
 
 import android.util.Base64;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.InputStream;
@@ -14,13 +13,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * HTTPS transport for the deployed outbound Server Room tunnel protocol.
- *
- * <p>Registration authenticates the device with its provisioned device stream
- * key and returns a short-lived opaque session token. Viewer requests are then
- * long-polled and answered through the existing Server Room HTTP surface.</p>
- */
+/** HTTPS transport for the deployed outbound Server Room tunnel protocol. */
 public final class HttpRelaySessionTransport implements RelaySessionController.SessionTransport {
     private final URI baseEndpoint;
     private final int connectTimeoutMs;
@@ -31,9 +24,7 @@ public final class HttpRelaySessionTransport implements RelaySessionController.S
     public HttpRelaySessionTransport(String endpoint, int connectTimeoutMs, int readTimeoutMs) {
         if (endpoint == null || endpoint.trim().isEmpty()) throw new IllegalArgumentException("endpoint must not be empty");
         URI parsed = URI.create(endpoint.trim());
-        if (!"https".equalsIgnoreCase(parsed.getScheme())) {
-            throw new IllegalArgumentException("relay session endpoint must use HTTPS");
-        }
+        if (!"https".equalsIgnoreCase(parsed.getScheme())) throw new IllegalArgumentException("relay session endpoint must use HTTPS");
         if (parsed.getPath() != null && !parsed.getPath().isEmpty() && !"/".equals(parsed.getPath())) {
             throw new IllegalArgumentException("relay endpoint must be the public HTTPS origin, not a tunnel path");
         }
@@ -43,31 +34,21 @@ public final class HttpRelaySessionTransport implements RelaySessionController.S
         this.readTimeoutMs = readTimeoutMs;
     }
 
-    @Override
-    public void connect() {
-        connected = true;
-    }
+    @Override public void connect() { connected = true; }
 
-    @Override
-    public void disconnect() {
+    @Override public void disconnect() {
         connected = false;
         sessionToken = null;
     }
 
-    @Override
-    public boolean isConnected() {
-        return connected && sessionToken != null && !sessionToken.isEmpty();
-    }
+    @Override public boolean isConnected() { return connected; }
 
     @Override
     public void send(RelaySessionProtocol.Request request) throws Exception {
         Objects.requireNonNull(request, "request");
         if (!connected) throw new IllegalStateException("relay HTTPS transport is disconnected");
-
         switch (request.getOperation()) {
             case AUTHENTICATE:
-                // Device authentication is performed atomically by /register using
-                // the device stream key. No separate bearer-auth handshake exists.
                 return;
             case REGISTER_SESSION:
                 register(request.getDeviceId(), request.getAuthentication());
@@ -82,8 +63,8 @@ public final class HttpRelaySessionTransport implements RelaySessionController.S
                 disconnect();
                 return;
             case MEDIA:
-                // The deployed relay is pull-based. Public viewers create tunnel
-                // requests; the phone responds with bytes from its local server.
+                // The deployed relay is pull-based. Viewer requests are polled and
+                // answered from the existing local Server Room HTTP surface.
                 return;
             case CONNECT:
             case POLL:
@@ -106,9 +87,7 @@ public final class HttpRelaySessionTransport implements RelaySessionController.S
                 sessionToken = null;
                 throw new SecurityException("relay session was rejected");
             }
-            if (status < 200 || status >= 300) {
-                throw new IllegalStateException("relay poll failed with HTTP " + status);
-            }
+            if (status < 200 || status >= 300) throw new IllegalStateException("relay poll failed with HTTP " + status);
             JSONObject json = new JSONObject(body);
             return new RelaySessionController.TunnelRequest(
                     json.getString("id"),
@@ -133,9 +112,7 @@ public final class HttpRelaySessionTransport implements RelaySessionController.S
     }
 
     private void register(String deviceId, String deviceSecret) throws Exception {
-        if (deviceSecret == null || deviceSecret.trim().isEmpty()) {
-            throw new SecurityException("relay device credential is missing");
-        }
+        if (deviceSecret == null || deviceSecret.trim().isEmpty()) throw new SecurityException("relay device credential is missing");
         JSONObject body = new JSONObject();
         body.put("device_id", deviceId);
         JSONObject response = requestJson("/v1/tunnel/register", "POST", body, false, deviceSecret);
@@ -154,17 +131,14 @@ public final class HttpRelaySessionTransport implements RelaySessionController.S
         return requestJson(path, method, body, sessionAuth, null);
     }
 
-    private JSONObject requestJson(String path, String method, JSONObject body,
-                                   boolean sessionAuth, String deviceSecret) throws Exception {
+    private JSONObject requestJson(String path, String method, JSONObject body, boolean sessionAuth, String deviceSecret) throws Exception {
         HttpURLConnection connection = open(path, method, sessionAuth);
         if (deviceSecret != null) connection.setRequestProperty("Authorization", "Bearer " + deviceSecret);
         try {
             connection.setDoOutput(true);
             byte[] bytes = body.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
             connection.setFixedLengthStreamingMode(bytes.length);
-            try (OutputStream output = connection.getOutputStream()) {
-                output.write(bytes);
-            }
+            try (OutputStream output = connection.getOutputStream()) { output.write(bytes); }
             int status = connection.getResponseCode();
             String response = readBody(connection, status);
             if (status == 401 || status == 403) {
@@ -172,9 +146,7 @@ public final class HttpRelaySessionTransport implements RelaySessionController.S
                 sessionToken = null;
                 throw new SecurityException("relay request rejected with HTTP " + status);
             }
-            if (status < 200 || status >= 300) {
-                throw new IllegalStateException("relay request failed with HTTP " + status);
-            }
+            if (status < 200 || status >= 300) throw new IllegalStateException("relay request failed with HTTP " + status);
             return response.isEmpty() ? new JSONObject() : new JSONObject(response);
         } finally {
             connection.disconnect();
@@ -198,14 +170,11 @@ public final class HttpRelaySessionTransport implements RelaySessionController.S
     }
 
     private void requireSession() {
-        if (!connected || sessionToken == null || sessionToken.isEmpty()) {
-            throw new IllegalStateException("relay session is not registered");
-        }
+        if (!connected || sessionToken == null || sessionToken.isEmpty()) throw new IllegalStateException("relay session is not registered");
     }
 
     private static String readBody(HttpURLConnection connection, int status) throws Exception {
-        InputStream input = status >= 200 && status < 400
-                ? connection.getInputStream() : connection.getErrorStream();
+        InputStream input = status >= 200 && status < 400 ? connection.getInputStream() : connection.getErrorStream();
         if (input == null) return "";
         try (InputStream stream = input) {
             byte[] buffer = new byte[4096];
