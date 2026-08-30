@@ -10,28 +10,21 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.request import Request, urlopen
 
 PORT = int(os.getenv("DISCOVERY_PORT", "18080"))
-SCAN_PORTS = range(
-    int(os.getenv("SERVER_ROOM_PORT_START", "8080")),
-    int(os.getenv("SERVER_ROOM_PORT_END", "8089")) + 1,
-)
+SCAN_PORTS = range(int(os.getenv("SERVER_ROOM_PORT_START", "8080")), int(os.getenv("SERVER_ROOM_PORT_END", "8089")) + 1)
 RESCAN = int(os.getenv("DISCOVERY_INTERVAL_SECONDS", "10"))
 TIMEOUT = float(os.getenv("DISCOVERY_TIMEOUT_SECONDS", "0.5"))
 RELAY = os.getenv("RELAY_FALLBACK_URL", "http://127.0.0.1:18443").rstrip("/")
 TARGET = None
 LOCK = threading.Lock()
 
-MEDIA_RE = re.compile(r"^/.+\.(?:m3u8|m4s|mp4|ts|aac|webm)(?:\?.*)?$", re.IGNORECASE)
+MEDIA_RE = re.compile(r"^/stream/[A-Za-z0-9_-]+/.+\.(?:m3u8|m4s|mp4|ts|aac|webm)(?:\?.*)?$", re.IGNORECASE)
+STREAM_PREFIX_RE = re.compile(r"^/stream/[A-Za-z0-9_-]+(?P<media>/.*)$")
 
 
 def _local_interface_networks():
     networks = set()
     try:
-        output = subprocess.check_output(
-            ["ip", "-4", "-o", "addr", "show", "scope", "global"],
-            text=True,
-            stderr=subprocess.DEVNULL,
-            timeout=2,
-        )
+        output = subprocess.check_output(["ip", "-4", "-o", "addr", "show", "scope", "global"], text=True, stderr=subprocess.DEVNULL, timeout=2)
         for line in output.splitlines():
             fields = line.split()
             for field in fields:
@@ -55,20 +48,11 @@ def _local_interface_networks():
 def subnets():
     configured = os.getenv("DISCOVERY_SUBNETS", "").strip()
     if configured:
-        return [
-            ipaddress.ip_network(value.strip(), strict=False)
-            for value in configured.split(",")
-            if value.strip()
-        ]
+        return [ipaddress.ip_network(value.strip(), strict=False) for value in configured.split(",") if value.strip()]
     networks = _local_interface_networks()
     if networks:
         return sorted(networks, key=lambda network: (network.version, int(network.network_address)))
-    return [
-        ipaddress.ip_network("192.168.1.0/24"),
-        ipaddress.ip_network("192.168.0.0/24"),
-        ipaddress.ip_network("10.0.0.0/24"),
-        ipaddress.ip_network("172.16.0.0/24"),
-    ]
+    return [ipaddress.ip_network("192.168.1.0/24"), ipaddress.ip_network("192.168.0.0/24"), ipaddress.ip_network("10.0.0.0/24"), ipaddress.ip_network("172.16.0.0/24")]
 
 
 def probe(host, port):
@@ -123,7 +107,7 @@ class Handler(BaseHTTPRequestHandler):
             with LOCK:
                 target = TARGET
             status = 200 if target else 503
-            payload = json.dumps({"status": "ok" if target else "discovering", "server_room": target}).encode()
+            payload = json.dumps({"status": "ok" if target else "discovering", "server_room": target, "route": "direct" if target else "relay"}).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Cache-Control", "no-store")
@@ -138,12 +122,19 @@ class Handler(BaseHTTPRequestHandler):
 
         with LOCK:
             target = TARGET
+
+        # The opaque stream key is a public-routing identifier, not a phone
+        # endpoint. In direct mode it must be stripped before touching the
+        # existing Server Room HTTP service.
+        direct_path = self.path
+        match = STREAM_PREFIX_RE.match(self.path)
+        if target and match:
+            query = self.path.split("?", 1)[1] if "?" in self.path else ""
+            direct_path = match.group("media") + (("?" + query) if query else "")
+
         upstream_base = target or RELAY
         try:
-            request = Request(
-                upstream_base + self.path,
-                headers={"User-Agent": "FadCam-Public-Gateway/1"},
-            )
+            request = Request(upstream_base + (direct_path if target else self.path), headers={"User-Agent": "FadCam-Public-Gateway/1"})
             with urlopen(request, timeout=20 if not target else 5) as upstream:
                 self.send_response(upstream.status)
                 for key, value in upstream.headers.items():
