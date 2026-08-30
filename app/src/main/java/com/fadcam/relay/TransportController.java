@@ -40,11 +40,11 @@ public final class TransportController implements MediaTransport {
     public void useDirect() throws Exception {
         state.set(State.RECONNECTING);
         try {
+            relayTransport.disconnect();
             if (!directTransport.isConnected()) directTransport.connect();
             if (!directTransport.isConnected()) {
                 throw new IllegalStateException("Direct transport did not connect");
             }
-            relayTransport.disconnect();
             state.set(State.DIRECT);
         } catch (Exception failure) {
             state.set(State.RECONNECTING);
@@ -60,10 +60,14 @@ public final class TransportController implements MediaTransport {
             if (!relayTransport.isConnected()) {
                 throw new IllegalStateException("Relay transport did not connect");
             }
+            // Exactly one physical path is authoritative at a time. If relay
+            // activation fails, the existing direct path remains usable.
+            directTransport.disconnect();
             state.set(State.RELAYING);
         } catch (Exception failure) {
             relayTransport.disconnect();
-            state.set(State.OFFLINE);
+            if (directTransport.isConnected()) state.set(State.DIRECT);
+            else state.set(State.OFFLINE);
             throw failure;
         }
     }
