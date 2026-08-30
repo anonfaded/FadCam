@@ -17,6 +17,12 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import com.fadcam.MainActivity;
 import com.fadcam.R;
+import com.fadcam.relay.HttpRelaySessionTransport;
+import com.fadcam.relay.LocalDirectMediaTransport;
+import com.fadcam.relay.MediaTransport;
+import com.fadcam.relay.RelaySessionController;
+import com.fadcam.relay.ServerRoomRelayAgent;
+import com.fadcam.relay.TransportController;
 import java.io.IOException;
 import java.net.ServerSocket;
 
@@ -27,12 +33,24 @@ public class RemoteStreamService extends Service {
     private static final int NOTIFICATION_ID = 2001;
     private static final int DEFAULT_PORT = 8080;
     private static final int PORT_SCAN_RANGE = 10;
+    private static final String PREFS = "FadCamPrefs";
+    private static final String PREF_RELAY_ENDPOINT = "relay_session_endpoint";
+    private static final String PREF_RELAY_AUTHENTICATION = "relay_authentication";
+    private static final long RELAY_REQUEST_TIMEOUT_MS = 15000L;
+    private static final long RELAY_MAX_REQUEST_AGE_MS = 30000L;
+    private static final int RELAY_MAX_RECONNECT_ATTEMPTS = 3;
 
     private HardenedLiveM3U8Server httpServer;
     private int activePort = -1;
     private Handler notificationHandler;
     private Runnable notificationUpdateRunnable;
     private final IBinder binder = new LocalBinder();
+
+    private TransportController transportController;
+    private LocalDirectMediaTransport directMediaTransport;
+    private RelaySessionController relaySessionController;
+    private ServerRoomRelayAgent relayAgent;
+    private boolean transportGraphCreated;
 
     public class LocalBinder extends Binder {
         public RemoteStreamService getService() { return RemoteStreamService.this; }
@@ -41,7 +59,63 @@ public class RemoteStreamService extends Service {
     @Override public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        RemoteStreamManager.getInstance().setContext(this);
+        RemoteStreamManager manager = RemoteStreamManager.getInstance();
+        manager.setContext(this);
+        createTransportGraph(manager);
+    }
+
+    private synchronized void createTransportGraph(RemoteStreamManager manager) {
+        if (transportGraphCreated) return;
+
+        directMediaTransport = new LocalDirectMediaTransport();
+
+        String endpoint = getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getString(PREF_RELAY_ENDPOINT, null);
+        String authentication = getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getString(PREF_RELAY_AUTHENTICATION, null);
+        if (authentication == null || authentication.trim().isEmpty()) {
+            authentication = CloudAuthManager.getInstance(this).getJwtToken();
+        }
+
+        if (endpoint != null && !endpoint.trim().isEmpty()
+                && authentication != null && !authentication.trim().isEmpty()) {
+            try {
+                HttpRelaySessionTransport sessionTransport =
+                        new HttpRelaySessionTransport(endpoint, 10000, 30000);
+                String deviceId = CloudAuthManager.getInstance(this).getDeviceId();
+                relaySessionController = new RelaySessionController(
+                        deviceId,
+                        authentication,
+                        sessionTransport,
+                        System::currentTimeMillis,
+                        RELAY_REQUEST_TIMEOUT_MS,
+                        RELAY_MAX_REQUEST_AGE_MS,
+                        RELAY_MAX_RECONNECT_ATTEMPTS);
+                relayAgent = new ServerRoomRelayAgent(relaySessionController);
+            } catch (RuntimeException configurationError) {
+                FLog.e(TAG, "Relay configuration is invalid; local transport remains available", configurationError);
+                relaySessionController = null;
+                relayAgent = null;
+            }
+        }
+
+        // A relay endpoint is optional. The controller still owns the complete
+        // runtime graph; an unavailable relay is represented by a closed transport
+        // rather than a fake connected state.
+        if (relayAgent == null) {
+            relayAgent = new ServerRoomRelayAgent(new ServerRoomRelayAgent.RelayTransport() {
+                @Override public void connect() { throw new IllegalStateException("relay endpoint is not configured"); }
+                @Override public void disconnect() { }
+                @Override public boolean isConnected() { return false; }
+                @Override public void sendInitializationSegment(byte[] payload) { throw new IllegalStateException("relay endpoint is not configured"); }
+                @Override public void sendMedia(int sequenceNumber, byte[] payload, long durationMs) { throw new IllegalStateException("relay endpoint is not configured"); }
+            });
+        }
+
+        transportController = new TransportController(directMediaTransport, relayAgent);
+        manager.setMediaTransport(transportController);
+        transportGraphCreated = true;
+        FLog.i(TAG, "Transport graph created exactly once for service lifecycle");
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
@@ -56,14 +130,21 @@ public class RemoteStreamService extends Service {
 
         startForeground(NOTIFICATION_ID, buildNotification("Starting local server…", "http://..."));
 
-        // The built-in Local Server is the canonical HTTP/control surface. Keep it
-        // running in BOTH local and cloud modes. Cloud mode is an additional delivery
-        // path; it must never disable the existing server or its Remote Control API.
         if (!startHttpServer()) {
             stopSelf();
             return START_NOT_STICKY;
         }
-        getSharedPreferences("FadCamPrefs", MODE_PRIVATE).edit().putInt("stream_server_port", activePort).apply();
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt("stream_server_port", activePort).apply();
+
+        try {
+            if (transportController != null && !transportController.isConnected()) {
+                transportController.connect();
+            }
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to establish direct media transport", e);
+            stopSelf();
+            return START_NOT_STICKY;
+        }
 
         RemoteStreamManager.getInstance().setStreamingEnabled(true);
         CloudStatusManager.getInstance(this).start();
@@ -73,22 +154,30 @@ public class RemoteStreamService extends Service {
     }
 
     @Override public void onDestroy() {
+        RemoteStreamManager manager = RemoteStreamManager.getInstance();
+        manager.setMediaTransport(null);
+        manager.setStreamingEnabled(false);
+
+        if (transportController != null) {
+            transportController.stop();
+            transportController = null;
+        }
+        relayAgent = null;
+        relaySessionController = null;
+        directMediaTransport = null;
+        transportGraphCreated = false;
+
         CloudStatusManager.getInstance(this).stop();
         stopNotificationUpdates();
         stopHttpServer();
-        RemoteStreamManager.getInstance().setStreamingEnabled(false);
         stopForeground(true);
         super.onDestroy();
     }
 
-    /**
-     * Reconcile the server with the selected delivery mode.
-     * The local server remains available regardless of whether cloud delivery is enabled.
-     */
     public void updateStreamingMode() {
         if (!isServerRunning()) {
             if (startHttpServer()) {
-                getSharedPreferences("FadCamPrefs", MODE_PRIVATE).edit().putInt("stream_server_port", activePort).apply();
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt("stream_server_port", activePort).apply();
                 updateNotification();
             }
         }
