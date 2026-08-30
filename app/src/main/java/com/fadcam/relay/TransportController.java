@@ -36,6 +36,40 @@ public final class TransportController implements MediaTransport {
 
     public State getState() { return state.get(); }
 
+    /**
+     * Establish the production streaming path.
+     *
+     * <p>The Server Room relay is attempted first. The local direct path is the
+     * deterministic fallback when the relay is unavailable or not configured.
+     * This makes the existing RemoteStreamService construction an actual
+     * Server-Room-capable production graph instead of a test-only boundary.</p>
+     */
+    @Override
+    public void connect() throws Exception {
+        state.set(State.RECONNECTING);
+        try {
+            relayTransport.connect();
+            if (relayTransport.isConnected()) {
+                directTransport.disconnect();
+                state.set(State.RELAYING);
+                return;
+            }
+        } catch (Exception ignoredRelayFailure) {
+            if (relayTransport.isConnected()) relayTransport.disconnect();
+        }
+
+        try {
+            if (!directTransport.isConnected()) directTransport.connect();
+            if (!directTransport.isConnected()) {
+                throw new IllegalStateException("Direct transport did not connect");
+            }
+            state.set(State.DIRECT);
+        } catch (Exception directFailure) {
+            state.set(State.OFFLINE);
+            throw directFailure;
+        }
+    }
+
     /** Direct becomes authoritative only after a complete successful connection. */
     public void useDirect() throws Exception {
         state.set(State.RECONNECTING);
@@ -60,17 +94,9 @@ public final class TransportController implements MediaTransport {
             if (!relayTransport.isConnected()) {
                 throw new IllegalStateException("Relay transport did not connect");
             }
-            // Exactly one physical path is authoritative at a time. If relay
-            // activation fails, the existing direct path remains usable.
             directTransport.disconnect();
             state.set(State.RELAYING);
         } catch (Exception failure) {
-            // A failed connect attempt must not manufacture an additional
-            // disconnect when the relay was already disconnected. This is
-            // important because useDirect() intentionally disconnects relay
-            // before establishing direct authority. If the relay did partially
-            // connect before throwing, isConnected() still gives us a safe
-            // cleanup path.
             if (relayTransport.isConnected()) relayTransport.disconnect();
             if (directTransport.isConnected()) state.set(State.DIRECT);
             else state.set(State.OFFLINE);
@@ -86,7 +112,6 @@ public final class TransportController implements MediaTransport {
 
     public void recoverToDirect() throws Exception { useDirect(); }
 
-    @Override public void connect() throws Exception { useDirect(); }
     @Override public void disconnect() { stop(); }
 
     @Override
