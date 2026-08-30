@@ -105,7 +105,7 @@ def _public_media_uri(uri, viewer_prefix, playlist_path="/"):
     """Map a local HLS URI into the authenticated viewer namespace.
 
     Absolute HTTP(S), protocol-relative, data and fragment URIs are left alone.
-    Relative local URIs are resolved against the playlist directory so that
+    Relative local URIs are resolved against the upstream playlist directory so
     both `init.mp4` and `media/seg-1.m4s` preserve normal HLS resolution.
     Existing `/stream/<key>/...` URLs are also left untouched to make rewriting
     idempotent.
@@ -316,7 +316,9 @@ class Handler(BaseHTTPRequestHandler):
 
         body = response["body"]
         if parsed.path.lower().endswith(".m3u8") and 200 <= response["status"] < 300:
-            body = rewrite_hls_playlist(body, "/stream/" + viewer_key, parsed.path)
+            # Resolve relative references against the upstream path the phone
+            # actually served, not the public `/stream/<viewer-key>/...` path.
+            body = rewrite_hls_playlist(body, "/stream/" + viewer_key, request["path"])
 
         self.send_response(response["status"])
         for key, value in response["headers"].items():
