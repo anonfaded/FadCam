@@ -8,13 +8,19 @@ import org.junit.Test;
 public class TransportControllerTest {
 
     @Test
-    public void startsInDirectState() {
+    public void startsOfflineUntilDirectTransportConnects() throws Exception {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         TransportController controller = new TransportController(direct, relay);
 
+        assertEquals(TransportController.State.OFFLINE, controller.getState());
+        assertThrows(IllegalStateException.class,
+                () -> controller.sendFragment(1, new byte[] {1}, 2000));
+
+        controller.connect();
+
         assertEquals(TransportController.State.DIRECT, controller.getState());
-        assertEquals(0, direct.connectCalls);
+        assertEquals(1, direct.connectCalls);
         assertEquals(0, relay.connectCalls);
     }
 
@@ -98,9 +104,7 @@ public class TransportControllerTest {
         @Override
         public void connect() throws Exception {
             connectCalls++;
-            if (!connectResult) {
-                throw new Exception("connection failed");
-            }
+            if (!connectResult) throw new Exception("connection failed");
             connected = true;
         }
 
