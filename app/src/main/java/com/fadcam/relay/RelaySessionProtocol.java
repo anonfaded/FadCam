@@ -2,10 +2,7 @@ package com.fadcam.relay;
 
 import java.util.Objects;
 
-/**
- * Wire-level contract for a relay session request. HTTP/WebSocket/etc.
- * adapters serialize this same contract without changing session semantics.
- */
+/** Wire-level contract for an authenticated relay session and media frame. */
 public final class RelaySessionProtocol {
     private RelaySessionProtocol() { }
 
@@ -22,10 +19,22 @@ public final class RelaySessionProtocol {
         private final long sequence;
         private final String authentication;
         private final Operation operation;
+        private final long mediaTimestampMillis;
+        private final long mediaDurationMillis;
+        private final String mediaType;
+        private final byte[] mediaPayload;
 
         public Request(String deviceId, String sessionId, long timestampMillis,
                        long timeoutMillis, long sequence, String authentication,
                        Operation operation) {
+            this(deviceId, sessionId, timestampMillis, timeoutMillis, sequence,
+                    authentication, operation, 0, 0, null, null);
+        }
+
+        private Request(String deviceId, String sessionId, long timestampMillis,
+                        long timeoutMillis, long sequence, String authentication,
+                        Operation operation, long mediaTimestampMillis,
+                        long mediaDurationMillis, String mediaType, byte[] mediaPayload) {
             this.deviceId = require(deviceId, "deviceId");
             this.sessionId = require(sessionId, "sessionId");
             if (timestampMillis <= 0) throw new IllegalArgumentException("timestampMillis must be positive");
@@ -36,6 +45,27 @@ public final class RelaySessionProtocol {
             this.sequence = sequence;
             this.authentication = require(authentication, "authentication");
             this.operation = Objects.requireNonNull(operation, "operation");
+            if (operation == Operation.MEDIA) {
+                if (mediaDurationMillis <= 0) throw new IllegalArgumentException("mediaDurationMillis must be positive");
+                this.mediaTimestampMillis = mediaTimestampMillis;
+                this.mediaDurationMillis = mediaDurationMillis;
+                this.mediaType = require(mediaType, "mediaType");
+                this.mediaPayload = Objects.requireNonNull(mediaPayload, "mediaPayload").clone();
+            } else {
+                this.mediaTimestampMillis = 0;
+                this.mediaDurationMillis = 0;
+                this.mediaType = null;
+                this.mediaPayload = null;
+            }
+        }
+
+        public static Request media(String deviceId, String sessionId, long timestampMillis,
+                                    long timeoutMillis, long sequence, String authentication,
+                                    long mediaTimestampMillis, long mediaDurationMillis,
+                                    String mediaType, byte[] payload) {
+            return new Request(deviceId, sessionId, timestampMillis, timeoutMillis, sequence,
+                    authentication, Operation.MEDIA, mediaTimestampMillis, mediaDurationMillis,
+                    mediaType, payload);
         }
 
         public String getDeviceId() { return deviceId; }
@@ -45,6 +75,10 @@ public final class RelaySessionProtocol {
         public long getSequence() { return sequence; }
         public String getAuthentication() { return authentication; }
         public Operation getOperation() { return operation; }
+        public long getMediaTimestampMillis() { return mediaTimestampMillis; }
+        public long getMediaDurationMillis() { return mediaDurationMillis; }
+        public String getMediaType() { return mediaType; }
+        public byte[] getMediaPayload() { return mediaPayload == null ? null : mediaPayload.clone(); }
 
         public boolean isExpired(long nowMillis) {
             return nowMillis - timestampMillis > timeoutMillis;
