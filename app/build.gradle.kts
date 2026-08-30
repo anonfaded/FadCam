@@ -206,7 +206,7 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.nanohttpd.core)
     implementation(libs.zxing.android.embedded)
-    implementation("com.google.zxing:core:4.3.0")
+    implementation(libs.zxing.core)
     implementation("com.googlecode.mp4parser:isoparser:1.1.22")
     implementation("com.github.pedroSG94.RootEncoder:library:2.7.5")
     implementation("dev.ffmpegkit-maintained:ffmpeg-kit-full:8.1.7")
