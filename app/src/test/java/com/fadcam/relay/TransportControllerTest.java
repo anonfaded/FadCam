@@ -2,6 +2,7 @@ package com.fadcam.relay;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
@@ -9,7 +10,7 @@ import org.junit.Test;
 public class TransportControllerTest {
 
     @Test
-    public void startsOfflineUntilDirectTransportConnects() throws Exception {
+    public void startsOfflineUntilProductionTransportConnects() throws Exception {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         TransportController controller = new TransportController(direct, relay);
@@ -20,9 +21,25 @@ public class TransportControllerTest {
 
         controller.connect();
 
+        assertEquals(TransportController.State.RELAYING, controller.getState());
+        assertEquals(1, relay.connectCalls);
+        assertEquals(1, direct.disconnectCalls);
+        assertTrue(relay.connected);
+    }
+
+    @Test
+    public void productionConnectFallsBackToDirectWhenRelayUnavailable() throws Exception {
+        FakeTransport direct = new FakeTransport();
+        FakeTransport relay = new FakeTransport();
+        relay.connectResult = false;
+        TransportController controller = new TransportController(direct, relay);
+
+        controller.connect();
+
         assertEquals(TransportController.State.DIRECT, controller.getState());
+        assertEquals(1, relay.connectCalls);
         assertEquals(1, direct.connectCalls);
-        assertEquals(0, relay.connectCalls);
+        assertTrue(direct.connected);
     }
 
     @Test
@@ -30,7 +47,7 @@ public class TransportControllerTest {
         FakeTransport direct = new FakeTransport();
         FakeTransport relay = new FakeTransport();
         TransportController controller = new TransportController(direct, relay);
-        controller.connect();
+        controller.useDirect();
 
         controller.failoverToRelay();
 
@@ -60,7 +77,7 @@ public class TransportControllerTest {
         FakeTransport relay = new FakeTransport();
         relay.connectResult = false;
         TransportController controller = new TransportController(direct, relay);
-        controller.connect();
+        controller.useDirect();
 
         assertThrows(Exception.class, controller::failoverToRelay);
 
