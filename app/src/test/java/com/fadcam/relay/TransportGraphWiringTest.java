@@ -5,6 +5,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.Test;
 
 public class TransportGraphWiringTest {
@@ -26,7 +30,11 @@ public class TransportGraphWiringTest {
         controller.sendInitializationSegment(new byte[] {1, 2});
         controller.sendFragment(1, new byte[] {3, 4}, 2000);
 
-        controller.failoverToRelay();
+        // connect() promotes to relay asynchronously. Hold the fake relay's
+        // first connection until the direct-path assertions above are complete,
+        // then explicitly wait for the promotion instead of racing the worker.
+        sessionTransport.allowFirstConnect();
+        assertTrue(sessionTransport.awaitConnected(2, TimeUnit.SECONDS));
         assertEquals(TransportController.State.RELAYING, controller.getState());
         assertTrue(sessionTransport.connected);
         assertFalse(direct.isConnected());
@@ -53,10 +61,25 @@ public class TransportGraphWiringTest {
     private static final class FakeSessionTransport implements RelaySessionController.SessionTransport {
         boolean connected;
         int mediaRequests;
+        private final AtomicInteger connectCalls = new AtomicInteger();
+        private final CountDownLatch firstConnectGate = new CountDownLatch(1);
+        private final CountDownLatch connectedLatch = new CountDownLatch(1);
 
-        @Override public void connect() { connected = true; }
+        @Override
+        public void connect() throws InterruptedException {
+            if (connectCalls.incrementAndGet() == 1) firstConnectGate.await();
+            connected = true;
+            connectedLatch.countDown();
+        }
+
         @Override public void disconnect() { connected = false; }
         @Override public boolean isConnected() { return connected; }
+
+        void allowFirstConnect() { firstConnectGate.countDown(); }
+
+        boolean awaitConnected(long timeout, TimeUnit unit) throws InterruptedException {
+            return connectedLatch.await(timeout, unit);
+        }
 
         @Override
         public void send(RelaySessionProtocol.Request request) {
