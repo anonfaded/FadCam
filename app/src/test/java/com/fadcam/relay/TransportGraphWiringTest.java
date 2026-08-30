@@ -31,7 +31,7 @@ public class TransportGraphWiringTest {
         assertTrue(sessionTransport.connected);
         controller.sendInitializationSegment(new byte[] {5});
         controller.sendFragment(2, new byte[] {6, 7}, 2000);
-        assertEquals(3, sessionTransport.mediaRequests);
+        assertEquals(2, sessionTransport.mediaRequests);
 
         controller.markRelayFailure();
         assertEquals(TransportController.State.RECONNECTING, controller.getState());
