@@ -1,0 +1,109 @@
+name: FadCam Production Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  production-release:
+    name: Build signed production APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+        with:
+          submodules: false
+          fetch-depth: 1
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Prepare patched Media3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/media3-patched
+          git clone --depth 1 --branch release https://github.com/anonfaded/media3-patched.git /tmp/media3-patched
+          test -d /tmp/media3-patched/libraries/muxer
+          test -d /tmp/media3-patched/libraries/common
+          test -d /tmp/media3-patched/libraries/container
+
+      - name: Validate production signing secrets
+        env:
+          KEYSTORE_B64: ${{ secrets.FADCAM_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.FADCAM_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.FADCAM_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.FADCAM_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64"
+          test -n "$KEYSTORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/fadcam-production.keystore"
+          test -s "$RUNNER_TEMP/fadcam-production.keystore"
+          {
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/fadcam-production.keystore"
+            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+            echo "KEY_ALIAS=$KEY_ALIAS"
+            echo "KEY_PASSWORD=$KEY_PASSWORD"
+          } >> local.properties
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Run release unit tests
+        run: ./gradlew :app:testDefaultReleaseUnitTest --stacktrace --no-daemon
+
+      - name: Assemble production APK
+        run: ./gradlew assembleDefaultRelease --stacktrace --no-daemon
+
+      - name: Verify production APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_tools="$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 -type d | sort -V | tail -1)"
+          shopt -s nullglob
+          apks=(app/build/outputs/apk/default/release/*.apk)
+          test "${#apks[@]}" -gt 0
+          test "${#apks[@]}" -eq 1
+          apk="${apks[0]}"
+          test -s "$apk"
+          unzip -tq "$apk" >/dev/null
+          "$build_tools/zipalign" -c -P 16 -v 4 "$apk"
+          "$build_tools/apksigner" verify --verbose "$apk"
+          cp "$apk" FadCam.apk
+          sha256sum FadCam.apk | tee FadCam.apk.sha256
+
+      - name: Publish production GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$GITHUB_REF_NAME" \
+            FadCam.apk FadCam.apk.sha256 \
+            --title "FadCam $GITHUB_REF_NAME" \
+            --notes "Signed production APK built from $GITHUB_SHA."
+
+      - name: Upload production APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fadcam-production-apk
+          path: |
+            FadCam.apk
+            FadCam.apk.sha256
+          if-no-files-found: error
+          retention-days: 30
