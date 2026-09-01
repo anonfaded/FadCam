@@ -7,7 +7,6 @@ coreKtx = "1.18.0"
 coreSplashscreen = "1.2.0"
 documentfile = "1.1.0"
 localbroadcastmanager = "1.1.0"
-exoplayerCore = "2.19.1"
 media3 = "1.8.0"
 nanohttpd = "2.3.1"
 glide = "5.0.5"
@@ -48,8 +47,6 @@ compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
-exoplayer-core = { module = "com.google.android.exoplayer:exoplayer-core", version.ref = "exoplayerCore" }
-exoplayer-ui = { module = "com.google.android.exoplayer:exoplayer-ui", version.ref = "exoplayerCore" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
