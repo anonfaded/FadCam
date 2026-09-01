@@ -5,9 +5,9 @@ import android.media.Image;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Scalar;
+import org.opencv.geometry.Geometry;
+import org.opencv.geometry.Moments;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.imgproc.Moments;
 import org.opencv.video.BackgroundSubtractorMOG2;
 import org.opencv.video.Video;
 
@@ -45,8 +45,8 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
     private boolean lastGlobalMotionSuppressed = false;
 
     public OpenCvMog2MotionDetector() {
-        @SuppressWarnings("deprecation") // OpenCVLoader.initDebug() is deprecated; initLocal is the successor but debug init still works
-        boolean inited = OpenCVLoader.initDebug();
+        // Load OpenCV's bundled native libs from the APK (no OpenCV Manager dependency).
+        boolean inited = OpenCVLoader.initLocal();
         if (!inited) {
             throw new IllegalStateException("OpenCV native runtime not available");
         }
@@ -111,7 +111,7 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
         lastChangedAreaRatio = changedPixels / (float) current.length;
         lastBackgroundDelta = (float) org.opencv.core.Core.mean(fgMask).val[0] / 255f;
         if (changedPixels > 0) {
-            Moments m = Imgproc.moments(fgMask, true);
+            Moments m = Geometry.moments(fgMask);
             if (m.m00 > 0d) {
                 lastMotionCenterX = clamp01((float) (m.m10 / m.m00) / SAMPLE_W);
                 lastMotionCenterY = clamp01((float) (m.m01 / m.m00) / SAMPLE_H);
