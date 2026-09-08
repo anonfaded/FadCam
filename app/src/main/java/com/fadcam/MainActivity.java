@@ -1006,36 +1006,35 @@ public class MainActivity extends AppCompatActivity {
 
         View navContainer = findViewById(R.id.nav_container);
         if (navContainer != null && isDescendantOf(touchedView, navContainer)) {
-            return true;
+            FLog.d("TabSwipe","excl "+touchedView.getClass().getSimpleName()+" #"+touchedView.getId()); return true;
         }
 
         ViewParent parent = touchedView.getParent();
         View current = touchedView;
         while (current != null) {
-            if (current instanceof HorizontalScrollView) return true;
-            if (current.getId() == R.id.tutorial_scroll) return true;
-            // The mode switcher is included with <include id="mode_switcher">,
-            // which REPLACES the layout's own root id — check both.
-            if (current.getId() == R.id.mode_switcher || current.getId() == R.id.mode_switcher_root) return true;
-            if (current instanceof com.fadcam.ui.GalleryFastScroller) return true;
-            if (current instanceof com.google.android.material.chip.Chip) return true;
-            if (current instanceof com.google.android.material.chip.ChipGroup) return true;
-            if (current instanceof BottomNavigationView) return true;
-            if (current.getId() == R.id.textureView || current.getId() == R.id.fullscreenTextureView) return true;
-            if (current.getId() == R.id.cardPreview) {
-                // Home camera preview container: while the live preview is showing,
-                // swipes must not change tabs or open the sidebar. Overlays (preview
-                // hint, zoom HUD, grid) sit ON TOP of the TextureView, so a touch that
-                // starts on them never reaches the textureView check above — gate on
-                // the whole container instead.
-                View previewTexture = findViewById(R.id.textureView);
-                if (previewTexture != null && previewTexture.getVisibility() == View.VISIBLE) {
-                    return true;
+            if (current.getId() == R.id.nav_container) return true;
+            // Interactive surfaces only exist on the HOME tab (quick-actions reorder,
+            // mode pill, tutorial, preview, fast-scroll). On other tabs (Records body)
+            // horizontal swipes must switch tabs, not be swallowed by the list.
+            if (currentFragmentPosition == 0) {
+                if (current instanceof HorizontalScrollView) return true;
+                if (current.getId() == R.id.tutorial_scroll) return true;
+                if (current.getId() == R.id.mode_switcher || current.getId() == R.id.mode_switcher_root) return true;
+                if (current instanceof com.fadcam.ui.GalleryFastScroller) return true;
+                if (current instanceof com.google.android.material.chip.Chip) return true;
+                if (current instanceof com.google.android.material.chip.ChipGroup) return true;
+                if (current instanceof com.google.android.material.bottomnavigation.BottomNavigationView) return true;
+                if (current.getId() == R.id.textureView || current.getId() == R.id.fullscreenTextureView) return true;
+                if (current.getId() == R.id.cardPreview) {
+                    View previewTexture = findViewById(R.id.textureView);
+                    if (previewTexture != null && previewTexture.getVisibility() == View.VISIBLE) {
+                        return true;
+                    }
                 }
-            }
-            if (current instanceof RecyclerView) {
-                RecyclerView rv = (RecyclerView) current;
-                if (rv.canScrollHorizontally(-1) || rv.canScrollHorizontally(1)) return true;
+                if (current instanceof RecyclerView) {
+                    RecyclerView rv = (RecyclerView) current;
+                    if (rv.canScrollHorizontally(-1) || rv.canScrollHorizontally(1)) return true;
+                }
             }
             if (!(parent instanceof View)) break;
             current = (View) parent;
