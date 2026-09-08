@@ -168,6 +168,13 @@ android {
     val liteProVersionName = "0.0.0"
     val liteProRepo = "FadCam-LitePro"    // Lite Pro (secondary) update feed
 
+    // ── Release-time workflow (simple, per-line) ────────────────────────
+    // Lite line:  bump `liteVersionCode` + `liteVersionName` (and `litePro*`
+    //             for the Lite Pro disguises) right above. One edit per line.
+    // Full line:  bump `defaultConfig.versionCode` + `versionName` below.
+    // Debug builds share the "-beta10.6" suffix (build-type level, can't differ
+    // per flavor); release APKs carry the exact per-line version above.
+
     productFlavors {
         create("notesPro") {
             dimension = "pro"
@@ -292,10 +299,9 @@ android {
     // Dynamic APK output names: FadCam_<flavor>_v<versionName><suffix>-<abi>.apk
     // (default flavor has no <flavor> part; universal APK gets the literal "-universal")
     applicationVariants.all {
-        // Lite line has its own version track; debug gets a lite-specific beta suffix
-        if (flavorName.startsWith("lite") && buildType.name == "debug") {
-            versionName = liteVersionName + "-beta1"
-        }
+        // Output-name version = the variant's real versionName (per-flavor 0.0.0 /
+        // 4.0.0 + buildType suffix). AGP doesn't allow per-flavor debug suffixes, so
+        // Lite debug carries the same "-beta10.6" suffix as Full debug.
         val displayVersion = versionName
         val flavor = if (flavorName != "default") "${flavorName}_" else ""
         outputs.all {
