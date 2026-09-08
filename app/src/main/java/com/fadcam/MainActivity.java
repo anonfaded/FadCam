@@ -534,6 +534,42 @@ public class MainActivity extends AppCompatActivity {
                     R.string.nav_home).setIcon(R.drawable.pilot_steering_white);
             liteMenu.add(android.view.Menu.NONE, R.id.navigation_settings, 2,
                     R.string.nav_settings).setIcon(R.drawable.ic_nav_settings);
+            // Compact dock: real nav stays as the invisible engine; a styled duplicate
+            // renders the 3 buttons with stable colors/shadows/animations.
+            android.view.View scrim = findViewById(R.id.dock_focus_gradient_scrim);
+            if (scrim != null) scrim.setVisibility(android.view.View.GONE);
+            android.widget.FrameLayout.LayoutParams navLp =
+                    (android.widget.FrameLayout.LayoutParams) bottomNavigationView.getLayoutParams();
+            navLp.height = 0;
+            bottomNavigationView.setLayoutParams(navLp);
+            bottomNavigationView.setVisibility(android.view.View.INVISIBLE);
+
+            final android.view.View dock = findViewById(R.id.lite_dock);
+            if (dock != null) {
+                // Same background color as the stable bar (theme attr), rounded into a pill
+                android.util.TypedValue tv = new android.util.TypedValue();
+                int color = 0xFF1E1E1E;
+                if (getTheme().resolveAttribute(com.fadcam.R.attr.colorBottomNav, tv, true)) {
+                    color = tv.data;
+                }
+                float radius = getResources().getDisplayMetrics().density * 28f;
+                android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
+                pill.setColor(color);
+                pill.setCornerRadius(radius);
+                dock.setBackground(pill);
+                dock.setVisibility(android.view.View.VISIBLE);
+                bindLiteDockItem(dock, R.id.lite_dock_item_records, R.id.navigation_records);
+                bindLiteDockItem(dock, R.id.lite_dock_item_home, R.id.navigation_home);
+                bindLiteDockItem(dock, R.id.lite_dock_item_settings, R.id.navigation_settings);
+                android.view.View dockHome = dock.findViewById(R.id.lite_dock_item_home);
+                if (dockHome != null) {
+                    dockHome.setOnLongClickListener(v -> {
+                        showHomeIconPicker();
+                        return true;
+                    });
+                }
+                dock.post(() -> updateLiteDockSelection());
+            }
         }
         if (bottomNavigationView != null) {
             // Prevent Material from applying its own window insets to the nav view.
@@ -689,6 +725,7 @@ public class MainActivity extends AppCompatActivity {
                 // Always use instant switch with fade animation
                 switchFragment(targetPosition, true);
             }
+            updateLiteDockSelection();
             return true;
         });
 
@@ -888,6 +925,46 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return super.dispatchTouchEvent(ev);
+    }
+
+    /** Wires a compact-dock button to the hidden nav engine. */
+    private void bindLiteDockItem(android.view.View dock, int dockItemId, final int navItemId) {
+        android.view.View item = dock.findViewById(dockItemId);
+        if (item == null) return;
+        item.setOnClickListener(v -> {
+            if (bottomNavigationView != null) {
+                bottomNavigationView.setSelectedItemId(navItemId);
+            }
+        });
+    }
+
+    /** Highlights the selected Lite dock button; animates the label like Material. */
+    private void updateLiteDockSelection() {
+        android.view.View dock = findViewById(R.id.lite_dock);
+        if (dock == null || dock.getVisibility() != android.view.View.VISIBLE) return;
+        int selectedId = getNavItemIdForPosition(currentFragmentPosition);
+        applyLiteDockItemState(dock, R.id.lite_dock_item_records, R.id.lite_dock_icon_records,
+                R.id.lite_dock_label_records, selectedId == R.id.navigation_records);
+        applyLiteDockItemState(dock, R.id.lite_dock_item_home, R.id.lite_dock_icon_home,
+                R.id.lite_dock_label_home, selectedId == R.id.navigation_home);
+        applyLiteDockItemState(dock, R.id.lite_dock_item_settings, R.id.lite_dock_icon_settings,
+                R.id.lite_dock_label_settings, selectedId == R.id.navigation_settings);
+    }
+
+    private void applyLiteDockItemState(android.view.View dock, int itemId, int iconId, int labelId,
+                                        boolean selected) {
+        android.widget.ImageView icon = dock.findViewById(iconId);
+        android.widget.TextView label = dock.findViewById(labelId);
+        if (icon != null) {
+            icon.setColorFilter(selected ? 0xFFFFFFFF : 0x66FFFFFF,
+                    android.graphics.PorterDuff.Mode.SRC_IN);
+        }
+        if (label != null) {
+            // GONE when inactive = icon fully centered (no reserved gap);
+            // VISIBLE when active = icon rises and label appears (animateLayoutChanges
+            // on the item animates the icon movement like the stable dock).
+            label.setVisibility(selected ? android.view.View.VISIBLE : android.view.View.GONE);
+        }
     }
 
     /** Visible tab ids in display order (menu order = what the user sees). */
@@ -2059,6 +2136,8 @@ public class MainActivity extends AppCompatActivity {
             }
             android.view.MenuItem home = bottomNavigationView.getMenu().findItem(R.id.navigation_home);
             if (home != null) home.setIcon(res);
+            android.widget.ImageView dockHomeIcon = findViewById(R.id.lite_dock_icon_home);
+            if (dockHomeIcon != null) dockHomeIcon.setImageResource(res);
         } catch (Exception e) {
             FLog.w("MainActivity", "applyHomeNavIcon failed: " + e.getMessage());
         }
@@ -2288,6 +2367,7 @@ public class MainActivity extends AppCompatActivity {
         if (navItemId != -1) {
             bottomNavigationView.setSelectedItemId(navItemId);
         }
+        updateLiteDockSelection();
         
         // Restore correct bar colors for the selected tab
         restoreBarColorsForCurrentTab();
