@@ -57,6 +57,19 @@ public class SettingsHomeFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_settings_home, container, false);
+        configureLiteHides(root);
+        android.view.View fullPromo = root.findViewById(R.id.group_full_promo);
+        if (fullPromo != null) {
+            fullPromo.setOnClickListener(v -> {
+                try {
+                    android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://github.com/anonfaded/FadCam"));
+                    startActivity(i);
+                } catch (Exception e) {
+                    FLog.w("SettingsHome", "Failed to open GitHub link", e);
+                }
+            });
+        }
 
         setupModeSelector(root);
         setupRowHandlers(root);
@@ -550,6 +563,45 @@ public class SettingsHomeFragment extends Fragment {
                 android.net.Uri.parse(url)));
         } catch (Exception e) {
             FLog.w("SettingsHome", "Could not open URL", e);
+        }
+    }
+
+    /** Hides Full-only settings surfaces in the Lite edition. */
+    private void configureLiteHides(View root) {
+        if (!com.fadcam.BuildConfig.LITE_EDITION) return;
+        // The screen-recording row can be re-shown by the settings-mode animation later
+        root.post(() -> {
+            android.view.View screenRec = root.findViewById(R.id.group_screen_recording);
+            if (screenRec != null) screenRec.setVisibility(android.view.View.GONE);
+        });
+        int[] ids = {R.id.mode_selector_btn, R.id.group_screen_recording, R.id.group_digital_forensics,
+                R.id.header_advanced, R.id.group_card_advanced_nav, R.id.header_mini_apps,
+                R.id.group_mini_torch, R.id.group_mini_compass, R.id.group_mini_sound_meter,
+                R.id.group_mini_sensor, R.id.group_mini_speedometer, R.id.group_mini_clinometer,
+                R.id.group_mini_qr_scanner, R.id.group_mini_pedometer, R.id.group_mini_metal_detector,
+                R.id.group_mini_parking_marker, R.id.group_mini_qr_generator};
+        int[] miniIds = {R.id.group_mini_torch, R.id.group_mini_compass, R.id.group_mini_sound_meter,
+                R.id.group_mini_sensor, R.id.group_mini_speedometer, R.id.group_mini_clinometer,
+                R.id.group_mini_qr_scanner, R.id.group_mini_pedometer, R.id.group_mini_metal_detector,
+                R.id.group_mini_parking_marker, R.id.group_mini_qr_generator};
+        java.util.Set<android.view.View> miniParents = new java.util.HashSet<>();
+        for (int id : ids) {
+            android.view.View v = root.findViewById(id);
+            if (v == null) continue;
+            v.setVisibility(android.view.View.GONE);
+        }
+        // Only mini-app CARD includes hide their row container (so no empty boxes remain);
+        // regular rows just hide themselves to avoid collapsing larger sections.
+        for (int id : miniIds) {
+            android.view.View v = root.findViewById(id);
+            if (v == null) continue;
+            android.view.ViewParent p = v.getParent();
+            if (p instanceof android.view.ViewGroup) {
+                miniParents.add((android.view.View) p);
+            }
+        }
+        for (android.view.View p : miniParents) {
+            p.setVisibility(android.view.View.GONE);
         }
     }
 

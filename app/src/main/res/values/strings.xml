@@ -3104,4 +3104,9 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="toast_failed_open_file">Failed to open file for writing</string>
     <string name="toast_cannot_write_custom_dir">Cannot write to selected custom directory</string>
     <string name="toast_failed_create_file">Failed to create file for writing</string>
+    <string name="fadcam_full_title">FadCam Power User</string>
+    <string name="fadcam_full_subtitle">Remote control, motion recording, forensics and more. Try the full version.</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="github_get_on">Get it on</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

@@ -2921,4 +2921,9 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Näita Seadetes</string>
     <string name="trash_show_in_settings_desc">Lisab prügikasti rea Seadete lehele kiireks juurdepääsuks</string>
+    <string name="fadcam_full_title">FadCam Power User</string>
+    <string name="fadcam_full_subtitle">Kaugjuhtimine, liikumissalvestus, forensika ja palju muud. Proovi täisversiooni.</string>
+    <string name="github_get_on">Hangi</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

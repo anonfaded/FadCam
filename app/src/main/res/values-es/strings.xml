@@ -3026,4 +3026,9 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Mostrar en Ajustes</string>
     <string name="trash_show_in_settings_desc">Añade una fila de Papelera a la página de Ajustes para acceso rápido</string>
+    <string name="fadcam_full_title">FadCam Power User</string>
+    <string name="fadcam_full_subtitle">Control remoto, grabación por movimiento, análisis forense y más. Prueba la versión completa.</string>
+    <string name="github_get_on">Disponible en</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>
