@@ -63,7 +63,7 @@ import com.fadcam.utils.PhotoStorageHelper;
 import com.fadcam.utils.RecordingStoragePaths;
 import com.fadcam.utils.RuntimeCompat;
 import com.fadcam.utils.ServiceStartPolicy;
-import com.fadcam.forensics.service.DigitalForensicsEventRecorder;
+import com.fadcam.service.ForensicsRecorder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -231,7 +231,7 @@ public class RecordingService extends Service {
     private volatile boolean motionDetectorWarmupScheduled = false;
     private volatile boolean motionDetectorWarmupCompleted = false;
     private java.util.concurrent.ExecutorService motionDetectorWarmupExecutor;
-    private DigitalForensicsEventRecorder digitalForensicsEventRecorder;
+    private com.fadcam.service.ForensicsRecorder digitalForensicsEventRecorder;
     private boolean motionLastPersonDetected = false;
     private float motionLastPersonConfidence = 0f;
     private float motionLastScore = 0f;
@@ -320,7 +320,8 @@ public class RecordingService extends Service {
         android.os.PowerManager powerManager = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         recordingWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "FadCam:RecordingService");
         try {
-            digitalForensicsEventRecorder = new DigitalForensicsEventRecorder(getApplicationContext());
+            digitalForensicsEventRecorder = com.fadcam.FeatureRegistry.features()
+                    .createForensicsRecorder(getApplicationContext());
         } catch (Exception e) {
             FLog.w(TAG, "Digital forensics event recorder init failed", e);
             digitalForensicsEventRecorder = null;

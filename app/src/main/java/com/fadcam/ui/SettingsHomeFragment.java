@@ -459,7 +459,16 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_storage, () -> openSubFragment(new StorageSettingsFragment()));
         bindRow(root, R.id.group_security, () -> openSubFragment(new SecuritySettingsFragment()));
         bindRow(root, R.id.group_motion_lab, () -> openSubFragment(new MotionLabSettingsFragment()));
-        bindRow(root, R.id.group_digital_forensics, () -> openSubFragment(new DigitalForensicsSettingsFragment()));
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            android.view.View forensicsRow = root.findViewById(R.id.group_digital_forensics);
+            if (forensicsRow != null) forensicsRow.setVisibility(android.view.View.GONE);
+        } else {
+            bindRow(root, R.id.group_digital_forensics, () -> {
+                androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()
+                        .createForensicsSettingsFragment();
+                if (f != null) openSubFragment(f);
+            });
+        }
         bindRow(root, R.id.group_thermal_guardian, () -> {
             android.widget.Toast.makeText(requireContext(), R.string.mini_app_coming_soon_desc, android.widget.Toast.LENGTH_SHORT).show();
         });

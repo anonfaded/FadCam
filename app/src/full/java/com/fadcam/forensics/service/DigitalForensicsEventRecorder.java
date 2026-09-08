@@ -49,7 +49,7 @@ import android.text.TextUtils;
 /**
  * Real-time forensics event writer: multi-event, snapshot-first, no stop-only dependency.
  */
-public class DigitalForensicsEventRecorder {
+public class DigitalForensicsEventRecorder implements com.fadcam.service.ForensicsRecorder {
 
     private static final String TAG = "ForensicsEventRecorder";
     private static final long EVENT_STALE_GAP_MS = 1800L;

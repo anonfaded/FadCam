@@ -29,7 +29,6 @@ import com.bumptech.glide.request.target.Target;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
-import com.fadcam.forensics.ui.ForensicsEvidenceInfoBottomSheet;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -298,16 +297,11 @@ public class ImageViewerActivity extends AppCompatActivity {
                     .show(getSupportFragmentManager(), "scan_info");
             return;
         }
-        ForensicsEvidenceInfoBottomSheet.newInstance(
-                className,
-                eventType,
-                confidence,
-                capturedAt,
-                openAtMs,
-                sourceLabel,
-                sourceVideoUri != null ? sourceVideoUri.toString() : null,
-                snapshotUri.toString()
-        ).show(getSupportFragmentManager(), "ForensicsEvidenceInfoBottomSheet");
+        // Forensics evidence sheet is Full-only (src/full)
+        com.fadcam.FeatureRegistry.features().showForensicsEvidenceSheet(
+                this, className, eventType, confidence, capturedAt, openAtMs,
+                sourceLabel, sourceVideoUri != null ? sourceVideoUri.toString() : null,
+                snapshotUri.toString());
     }
 
 }

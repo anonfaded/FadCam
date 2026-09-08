@@ -39,8 +39,8 @@ import java.util.concurrent.Executors;
 
 public class ForensicsEventsFragment extends Fragment implements ForensicsEventsAdapter.Listener {
 
-    public static final String EXTRA_OPEN_AT_MS = "com.fadcam.extra.OPEN_AT_MS";
-    public static final String EXTRA_OPEN_PAUSED = "com.fadcam.extra.OPEN_PAUSED";
+    public static final String EXTRA_OPEN_AT_MS = com.fadcam.ForensicsConstants.EXTRA_OPEN_AT_MS;
+    public static final String EXTRA_OPEN_PAUSED = com.fadcam.ForensicsConstants.EXTRA_OPEN_PAUSED;
     private static final String ARG_EMBEDDED = "arg_embedded";
 
     private RecyclerView recycler;

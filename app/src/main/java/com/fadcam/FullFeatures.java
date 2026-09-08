@@ -46,4 +46,25 @@ public interface FullFeatures {
     /** Screen-recording settings fragment — Full-only; null in Lite. */
     @Nullable
     Fragment createScreenRecordingSettingsFragment();
+
+    /** Forensic event recorder (Full-only); null in Lite. */
+    @Nullable
+    com.fadcam.service.ForensicsRecorder createForensicsRecorder(Context ctx);
+
+    /** Forensics Lab tab fragment — Full-only; null in Lite. */
+    @Nullable
+    Fragment createLabFragment();
+
+    /** Forensics settings fragment — Full-only; null in Lite. */
+    @Nullable
+    Fragment createForensicsSettingsFragment();
+
+    /** Shows the forensics evidence sheet (Full-only); false in Lite. */
+    boolean showForensicsEvidenceSheet(FragmentActivity activity, @Nullable String className,
+                                       @Nullable String eventType, float confidence, long capturedAt,
+                                       long timelineMs, @Nullable String sourceLabel,
+                                       @Nullable String sourceVideoUri, @Nullable String snapshotUri);
+
+    /** Queues forensic indexing of records (Full-only); no-op in Lite. */
+    void enqueueForensicsIndex(Context ctx, java.util.List<com.fadcam.ui.VideoItem> items);
 }

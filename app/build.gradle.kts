@@ -9,12 +9,12 @@ android {
     compileSdk = 36
 
     val isBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
-    // arm64-only ABI policy applies to Pro-tier builds: Full 'pro'/'proPlus' and the
-    // disguise flavors. Full disguises carry "pro" in their task names; the Lite
-    // disguise tasks (liteNotes/liteCalc/liteWeather) do not, so match them explicitly.
+    // arm64-only ABI policy applies to Full Pro-tier builds only ('pro'/'proPlus' task names).
+    // The LITE line ships UNIVERSAL (all ABIs + universal APK) so every device can install —
+    // Lite has ~no native code, so universal costs ~0 MB extra.
     val isProBuild = gradle.startParameter.taskNames.any {
         val t = it.lowercase()
-        t.contains("pro") || t.contains("litenotes") || t.contains("litecalc") || t.contains("liteweather")
+        t.contains("pro") && !t.contains("lite")
     }
 
     splits {

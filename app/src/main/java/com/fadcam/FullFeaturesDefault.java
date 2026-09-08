@@ -53,4 +53,32 @@ public final class FullFeaturesDefault implements FullFeatures {
     public androidx.fragment.app.Fragment createScreenRecordingSettingsFragment() {
         return null;
     }
+
+    @Override
+    public com.fadcam.service.ForensicsRecorder createForensicsRecorder(android.content.Context ctx) {
+        return null;
+    }
+
+    @Override
+    public androidx.fragment.app.Fragment createLabFragment() {
+        return null;
+    }
+
+    @Override
+    public androidx.fragment.app.Fragment createForensicsSettingsFragment() {
+        return null;
+    }
+
+    @Override
+    public boolean showForensicsEvidenceSheet(androidx.fragment.app.FragmentActivity activity,
+                                              String className, String eventType, float confidence,
+                                              long capturedAt, long timelineMs, String sourceLabel,
+                                              String sourceVideoUri, String snapshotUri) {
+        return false;
+    }
+
+    @Override
+    public void enqueueForensicsIndex(android.content.Context ctx,
+                                      java.util.List<com.fadcam.ui.VideoItem> items) {
+    }
 }

@@ -95,4 +95,57 @@ public final class FullFeaturesImpl implements FullFeatures {
             return null;
         }
     }
+
+    @Override
+    public com.fadcam.service.ForensicsRecorder createForensicsRecorder(Context ctx) {
+        try {
+            return new com.fadcam.forensics.service.DigitalForensicsEventRecorder(ctx);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    @Override
+    public Fragment createLabFragment() {
+        try {
+            return new com.fadcam.forensics.ui.ForensicIntelligenceFragment();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    @Override
+    public Fragment createForensicsSettingsFragment() {
+        try {
+            return new com.fadcam.ui.DigitalForensicsSettingsFragment();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    @Override
+    public boolean showForensicsEvidenceSheet(FragmentActivity activity, String className,
+                                              String eventType, float confidence, long capturedAt,
+                                              long timelineMs, String sourceLabel,
+                                              String sourceVideoUri, String snapshotUri) {
+        try {
+            com.fadcam.forensics.ui.ForensicsEvidenceInfoBottomSheet.newInstance(
+                    className, eventType, confidence, capturedAt, timelineMs,
+                    sourceLabel, sourceVideoUri, snapshotUri
+            ).show(activity.getSupportFragmentManager(), "ForensicsEvidenceInfoBottomSheet");
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    @Override
+    public void enqueueForensicsIndex(Context ctx, java.util.List<com.fadcam.ui.VideoItem> items) {
+        try {
+            com.fadcam.forensics.service.DigitalForensicsIndexCoordinator.getInstance(ctx)
+                    .enqueueIndex(items);
+        } catch (Throwable t) {
+            // Non-fatal: indexing is best-effort
+        }
+    }
 }

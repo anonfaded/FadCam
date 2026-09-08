@@ -33,7 +33,6 @@ import com.fadcam.ui.RemoteFragment;
 import com.fadcam.ui.HomeFragment;
 import com.fadcam.FeatureRegistry;
 import com.fadcam.ui.SettingsHomeFragment;
-import com.fadcam.forensics.ui.ForensicIntelligenceFragment;
 import com.fadcam.ui.utils.NewFeatureManager;
 import com.fadcam.utils.RuntimeCompat;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -2220,7 +2219,9 @@ public class MainActivity extends AppCompatActivity {
                 newFragment = new com.fadcam.ui.SettingsHomeFragment();
                 break;
             case 5:
-                newFragment = new com.fadcam.forensics.ui.ForensicIntelligenceFragment();
+                // Forensics Lab is Full-only (src/full); fall back to Home in Lite
+                Fragment labFragment = FeatureRegistry.features().createLabFragment();
+                newFragment = labFragment != null ? labFragment : new com.fadcam.ui.HomeFragment();
                 break;
             default:
                 newFragment = new com.fadcam.ui.HomeFragment();
