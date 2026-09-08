@@ -3,6 +3,7 @@
 - Never uses fake, hardcoded, or fallback data — including synthesized/fabricated sensor values or coords-only "manual" locations; show real data or an honest 0/error instead. Confidence: 0.98
 - Does not leave TODOs; expects complete, working, single-solution implementations and removal of old junk. Confidence: 0.95
 - Follows industry standards and best practices. Confidence: 0.85
+- Explicitly demands DRY + clean architecture: no duplication of anything — shared behavior must live in one place behind interfaces (typed provider interfaces with no-op defaults for lighter variants) rather than being copied or per-call reflected; wants proper dependency injection (seams + a single composition root) for wiring shared vs. variant-specific code. Confidence: 0.9
 - Avoids Supabase edge functions for live/hot-path logic to protect free-tier limits; prefers scalable non-edge-function architecture (e.g., the Redis/worker approach used for viewer tracking). Confidence: 0.9
 - Treats security as non-negotiable; validates and verifies rather than assuming. Confidence: 0.85
 - Maintains a zero-log privacy policy for cloud streaming: never process or store real user IP addresses (local-network private IPs are acceptable). Confidence: 0.9

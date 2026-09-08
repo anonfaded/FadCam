@@ -1,59 +1,60 @@
 package com.fadcam;
 
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
+import com.fadcam.service.BatchFfmpegOps;
 
 /**
- * Seam between shared (main) code and Full-only features that live in src/full/
- * (Faditor, ffmpeg, motion detection). main code never references Full-only classes
- * at compile time — presence is discovered reflectively at runtime, so Lite variants
- * (which do not compile src/full/) simply report the feature as unavailable.
- * Full variants behave exactly as before; Lite callers decide their own UX.
+ * Single lookup point for build-scoped feature implementations.
+ * <p>
+ * Full builds carry the real implementations in src/full/ (FullFeaturesImpl,
+ * BatchFfmpegOpsImpl); Lite builds compile the no-op defaults instead, so shared
+ * code always gets a non-null, typed implementation. This is manual dependency
+ * injection with a tiny composition root — see FADCAM_DI_PLAN.md for the future
+ * framework migration.
  */
 public final class FeatureRegistry {
+
+    private static volatile FullFeatures fullFeatures;
+    private static volatile BatchFfmpegOps batchFfmpegOps;
 
     private FeatureRegistry() {
     }
 
-    public static boolean hasFaditor() {
-        return classExists("com.fadcam.ui.FaditorMiniFragment");
-    }
-
-    @Nullable
-    public static Fragment createFaditorFragment() {
-        try {
-            return (Fragment) Class.forName("com.fadcam.ui.FaditorMiniFragment")
-                    .getDeclaredConstructor()
-                    .newInstance();
-        } catch (Throwable t) {
-            return null;
+    public static FullFeatures features() {
+        FullFeatures f = fullFeatures;
+        if (f == null) {
+            synchronized (FeatureRegistry.class) {
+                f = fullFeatures;
+                if (f == null) {
+                    f = loadOr("com.fadcam.full.FullFeaturesImpl", FullFeatures.class,
+                            new FullFeaturesDefault());
+                    fullFeatures = f;
+                }
+            }
         }
+        return f;
     }
 
-    /** Starts Faditor's editor on the given video. Returns false when unavailable (Lite). */
-    public static boolean launchFaditorEditor(Context ctx, Uri videoUri) {
-        try {
-            Class<?> editorClass = Class.forName("com.fadcam.ui.faditor.FaditorEditorActivity");
-            Intent intent = new Intent(ctx, editorClass);
-            intent.setData(videoUri);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            ctx.startActivity(intent);
-            return true;
-        } catch (Throwable t) {
-            return false;
+    public static BatchFfmpegOps batchFfmpeg() {
+        BatchFfmpegOps ops = batchFfmpegOps;
+        if (ops == null) {
+            synchronized (FeatureRegistry.class) {
+                ops = batchFfmpegOps;
+                if (ops == null) {
+                    ops = loadOr("com.fadcam.service.BatchFfmpegOpsImpl", BatchFfmpegOps.class,
+                            new com.fadcam.service.BatchFfmpegOpsDefault());
+                    batchFfmpegOps = ops;
+                }
+            }
         }
+        return ops;
     }
 
-    private static boolean classExists(String className) {
+    private static <T> T loadOr(String implClassName, Class<T> type, T fallback) {
         try {
-            Class.forName(className);
-            return true;
+            T impl = type.cast(Class.forName(implClassName).getDeclaredConstructor().newInstance());
+            return impl != null ? impl : fallback;
         } catch (Throwable t) {
-            return false;
+            return fallback;
         }
     }
 }

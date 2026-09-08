@@ -9,7 +9,13 @@ android {
     compileSdk = 36
 
     val isBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
-    val isProBuild = gradle.startParameter.taskNames.any { it.lowercase().contains("pro") }
+    // arm64-only ABI policy applies to Pro-tier builds: Full 'pro'/'proPlus' and the
+    // disguise flavors. Full disguises carry "pro" in their task names; the Lite
+    // disguise tasks (liteNotes/liteCalc/liteWeather) do not, so match them explicitly.
+    val isProBuild = gradle.startParameter.taskNames.any {
+        val t = it.lowercase()
+        t.contains("pro") || t.contains("litenotes") || t.contains("litecalc") || t.contains("liteweather")
+    }
 
     splits {
         abi {
@@ -34,6 +40,9 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         versionCode = 52
         versionName = "4.0.0"
+        // Launcher label per variant: defaultConfig is the base, flavors/build types override,
+        // onVariants() below sets the per-variant debug labels (Full beta vs Lite beta).
+        manifestPlaceholders["appLabel"] = "FadCam"
         vectorDrawables.useSupportLibrary = true
         
         // Fix 16KB native library alignment for Android 15
@@ -113,9 +122,27 @@ android {
             // Custom app name via gradle property
             val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro+"
             resValue("string", "app_name", customAppName)
+            manifestPlaceholders["appLabel"] = customAppName
         }
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // Product structure (ONE flavor dimension "pro"; single shared codebase):
+    //
+    //   FULL line (main FadCam app):
+    //     default         → com.fadcam              Free (debug/release; proPlus build type → com.fadcam.proplus)
+    //     notesPro/calcPro/weatherPro → com.fadcam.notes/.calc/.weather
+    //                       discreet whitelabel disguises (release only)
+    //
+    //   LITE line (same main code — Lite reskin/UI + size work lands in src/lite* later):
+    //     lite            → com.fadcam.lite          FadCam Lite Free (debug gets .beta → com.fadcam.lite.beta)
+    //     liteNotes/liteCalc/liteWeather → com.fadcam.lite.notes/.lite.calc/.lite.weather
+    //                       Lite Pro discreet disguises: SAME launcher icon + app name as the
+    //                       Full disguises (icons reused from src/notesPro|calcPro|weatherPro/res)
+    //
+    //   The 'pro' / 'proPlus' BUILD TYPES belong to the Full line only — Lite tiers are their
+    //   own flavors. The variant filter below decides which (flavor × build type) combos exist.
+    // ──────────────────────────────────────────────────────────────────────────
     flavorDimensions += "pro"
 
     productFlavors {
@@ -123,16 +150,47 @@ android {
             dimension = "pro"
             applicationIdSuffix = ".notes"
             resValue("string", "app_name", "Notes")
+            manifestPlaceholders["appLabel"] = "Notes"
         }
         create("calcPro") {
             dimension = "pro"
             applicationIdSuffix = ".calc"
             resValue("string", "app_name", "Calculator")
+            manifestPlaceholders["appLabel"] = "Calculator"
         }
         create("weatherPro") {
             dimension = "pro"
             applicationIdSuffix = ".weather"
             resValue("string", "app_name", "Weather")
+            manifestPlaceholders["appLabel"] = "Weather"
+        }
+        // Lite line: Free = debug + release; Lite Pro disguises = release only.
+        // Lite tiers are flavors of their own — Full's 'pro'/'proPlus' build types
+        // stay on the default flavor and do not apply to the Lite line.
+        create("lite") {
+            dimension = "pro"
+            applicationIdSuffix = ".lite"
+            resValue("string", "app_name", "FadCam Lite")
+            manifestPlaceholders["appLabel"] = "FadCam Lite"
+        }
+        // Lite Pro discreet disguises (same icon/app name as the Full disguises, see sourceSets)
+        create("liteNotes") {
+            dimension = "pro"
+            applicationIdSuffix = ".lite.notes"
+            resValue("string", "app_name", "Notes")
+            manifestPlaceholders["appLabel"] = "Notes"
+        }
+        create("liteCalc") {
+            dimension = "pro"
+            applicationIdSuffix = ".lite.calc"
+            resValue("string", "app_name", "Calculator")
+            manifestPlaceholders["appLabel"] = "Calculator"
+        }
+        create("liteWeather") {
+            dimension = "pro"
+            applicationIdSuffix = ".lite.weather"
+            resValue("string", "app_name", "Weather")
+            manifestPlaceholders["appLabel"] = "Weather"
         }
         create("default") {
             dimension = "pro"
@@ -144,6 +202,11 @@ android {
 // ./gradlew assembleCalcProRelease - Calculator Pro variant
 // ./gradlew assembleWeatherProRelease - Weather Pro variant
 // ./gradlew assembleDefaultProPlusRelease -PcustomAppName="Custom Name" - Pro+ custom build (standalone)
+// ./gradlew installLiteDebug - FadCam Lite Free (debug beta, com.fadcam.lite.beta)
+// ./gradlew assembleLiteRelease - FadCam Lite Free (com.fadcam.lite)
+// ./gradlew assembleLiteNotesRelease - Lite Pro disguise: Notes (com.fadcam.lite.notes)
+// ./gradlew assembleLiteCalcRelease - Lite Pro disguise: Calculator (com.fadcam.lite.calc)
+// ./gradlew assembleLiteWeatherRelease - Lite Pro disguise: Weather (com.fadcam.lite.weather)
 
     // Variant filter: only build specific variants (modern API — the old
     // variantFilter{} is deprecated since AGP 8.x).
@@ -151,6 +214,7 @@ android {
         beforeVariants { variant ->
             val isPreBuiltFlavor = variant.name.contains("notesPro") || variant.name.contains("calcPro") || variant.name.contains("weatherPro")
             val isDefaultFlavor = variant.name.contains("default")
+            val isLiteFlavor = variant.name.startsWith("lite")
 
             if (isPreBuiltFlavor) {
                 // Pre-built flavors: only 'release' build type
@@ -162,6 +226,22 @@ android {
                 if (variant.name.endsWith("Pro") && !variant.name.endsWith("ProPlus")) {
                     variant.enable = false
                 }
+            } else if (isLiteFlavor) {
+                // Lite line: Free = debug + release; Lite Pro disguises = release only
+                val allowed = setOf("liteDebug", "liteRelease", "liteNotesRelease", "liteCalcRelease", "liteWeatherRelease")
+                if (variant.name !in allowed) {
+                    variant.enable = false
+                }
+            }
+        }
+
+        // Per-variant launcher label for the debug channel: Full debug = "FadCam Beta",
+        // Lite debug = "FadCam Lite Beta". Runs after flavor/buildType merges, so it only
+        // touches the debug variants — all release variants keep their flavor appLabel.
+        onVariants { variant ->
+            if (variant.buildType == "debug") {
+                val label = if (variant.name.startsWith("lite")) "FadCam Lite Beta" else "FadCam Beta"
+                variant.manifestPlaceholders.put("appLabel", label)
             }
         }
     }
@@ -218,6 +298,24 @@ android {
         getByName("weatherPro") {
             res.srcDir("src/weatherPro/res")
         }
+        // Lite Pro disguises reuse the SAME launcher icons as their Full counterparts
+        getByName("liteNotes") {
+            res.srcDir("src/notesPro/res")
+        }
+        getByName("liteCalc") {
+            res.srcDir("src/calcPro/res")
+        }
+        getByName("liteWeather") {
+            res.srcDir("src/weatherPro/res")
+        }
+        // Full-only source dir: heavy/native features that Lite must not package
+        // (Faditor/ffmpeg, motion detection/OpenCV/TFLite, forensics). Shared by ALL
+        // Full flavors; Lite flavors (lite + disguises) never compile this code.
+        val fullOnlyDirs = listOf("default", "notesPro", "calcPro", "weatherPro")
+        fullOnlyDirs.forEach { flavor ->
+            getByName(flavor).java.srcDir("src/full/java")
+            getByName(flavor).assets.srcDir("src/full/assets")
+        }
     }
 
     packaging {
@@ -261,6 +359,14 @@ android {
     }
 }
 
+// tensorflow-lite-api is excluded for task-vision on ALL Full flavor configurations
+configurations {
+    listOf("defaultImplementation", "notesProImplementation", "calcProImplementation", "weatherProImplementation")
+        .forEach { name ->
+            getByName(name).exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
+        }
+}
+
 dependencies {
     implementation(libs.activity)
     implementation(libs.appintro.v631)
@@ -291,11 +397,14 @@ dependencies {
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
     implementation(libs.okhttp)
-    implementation(libs.tensorflow.lite)
-    implementation(libs.tensorflow.lite.task.vision) {
-        exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
+    // TensorFlow Lite (AI object detection) + OpenCV (MOG2 motion): FULL flavors only —
+    // detectors live in src/full, Lite keeps the pure-Java FrameDiff fallback.
+    val fullFlavors = listOf("default", "notesPro", "calcPro", "weatherPro")
+    fullFlavors.forEach { flavor ->
+        add("${flavor}Implementation", libs.tensorflow.lite)
+        add("${flavor}Implementation", libs.tensorflow.lite.task.vision)
+        add("${flavor}Implementation", libs.opencv.android)
     }
-    implementation(libs.opencv.android)
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)
     implementation(libs.swiperefreshlayout)
@@ -323,7 +432,14 @@ dependencies {
     annotationProcessor(libs.compiler)
     annotationProcessor(libs.room.compiler)
 
-    implementation(mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar"))
+    // ffmpeg-kit: FULL flavors only (src/full code: Faditor, remux, batch export/merge,
+    // duration probe, fix-video). Lite flavors never compile ffmpeg code, so the AAR is
+    // scoped per Full flavor instead of global — this is the biggest Lite APK size win.
+    val ffmpegAar = mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar")
+    add("defaultImplementation", ffmpegAar)
+    add("notesProImplementation", ffmpegAar)
+    add("calcProImplementation", ffmpegAar)
+    add("weatherProImplementation", ffmpegAar)
     implementation(libs.smart.exception.java)
     implementation(fileTree(mapOf("dir" to "libs/aar", "include" to listOf("*.aar"))))
 

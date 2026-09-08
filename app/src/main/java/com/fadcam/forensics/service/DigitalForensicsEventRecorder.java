@@ -19,7 +19,7 @@ import com.fadcam.forensics.data.local.entity.AiEventEntity;
 import com.fadcam.forensics.data.local.entity.AiEventSnapshotEntity;
 import com.fadcam.forensics.data.local.entity.MediaAssetEntity;
 import com.fadcam.forensics.domain.fingerprint.ForensicsMetadataUtils;
-import com.fadcam.motion.domain.detector.EfficientDetLite1Detector;
+import com.fadcam.motion.domain.detector.AiObjectDetector;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -127,7 +127,7 @@ public class DigitalForensicsEventRecorder {
     public void onDetections(
             String mediaUri,
             long timelineMs,
-            @Nullable List<EfficientDetLite1Detector.DetectionResult> detections,
+            @Nullable List<AiObjectDetector.DetectionResult> detections,
             @Nullable byte[] snapshotJpeg,
             boolean frontCamera,
             int sensorOrientationDegrees,
@@ -142,7 +142,7 @@ public class DigitalForensicsEventRecorder {
         }
         String captureScope = prefs.getDfCaptureScope();
         float frameBestPerson = 0f;
-        for (EfficientDetLite1Detector.DetectionResult detection : detections) {
+        for (AiObjectDetector.DetectionResult detection : detections) {
             if (detection == null) {
                 continue;
             }
@@ -150,8 +150,8 @@ public class DigitalForensicsEventRecorder {
                 frameBestPerson = Math.max(frameBestPerson, detection.confidence);
             }
         }
-        List<EfficientDetLite1Detector.DetectionResult> stable = new ArrayList<>();
-        for (EfficientDetLite1Detector.DetectionResult detection : detections) {
+        List<AiObjectDetector.DetectionResult> stable = new ArrayList<>();
+        for (AiObjectDetector.DetectionResult detection : detections) {
             filterSeenCount++;
             if (detection == null || detection.confidence < 0.28f) {
                 continue;
@@ -206,7 +206,7 @@ public class DigitalForensicsEventRecorder {
     private void handleDetections(
             String mediaUri,
             long timelineMs,
-            List<EfficientDetLite1Detector.DetectionResult> detections,
+            List<AiObjectDetector.DetectionResult> detections,
             @Nullable byte[] snapshotJpeg,
             boolean frontCamera,
             int sensorOrientationDegrees,
@@ -221,7 +221,7 @@ public class DigitalForensicsEventRecorder {
         long nowEpoch = System.currentTimeMillis();
         closeStaleEvents(timelineMs, false);
 
-        for (EfficientDetLite1Detector.DetectionResult detection : detections) {
+        for (AiObjectDetector.DetectionResult detection : detections) {
             String eventType = normalizeEventType(detection.coarseType);
             String className = normalizeClassName(detection.className);
             String key = buildActiveKey(
@@ -326,7 +326,7 @@ public class DigitalForensicsEventRecorder {
 
     private boolean shouldPersistSnapshot(
             @NonNull ActiveEvent event,
-            @NonNull EfficientDetLite1Detector.DetectionResult detection,
+            @NonNull AiObjectDetector.DetectionResult detection,
             long newPHash,
             long timelineMs
     ) {
@@ -527,7 +527,7 @@ public class DigitalForensicsEventRecorder {
     @Nullable
     private SnapshotPayload buildDetectionSnapshot(
             @NonNull byte[] fullJpeg,
-            @NonNull EfficientDetLite1Detector.DetectionResult detection,
+            @NonNull AiObjectDetector.DetectionResult detection,
             boolean frontCamera,
             int sensorOrientationDegrees,
             @Nullable String recordingOrientation,
@@ -733,7 +733,7 @@ public class DigitalForensicsEventRecorder {
 
     private boolean shouldSuppressLikelyFacePet(
             @NonNull String eventType,
-            @NonNull EfficientDetLite1Detector.DetectionResult detection,
+            @NonNull AiObjectDetector.DetectionResult detection,
             float frameBestPerson
     ) {
         if (!"PET".equals(eventType)) {

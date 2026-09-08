@@ -157,6 +157,8 @@
 # FeatureRegistry loads Full-only classes (src/full) reflectively — keep them reachable
 -keep class com.fadcam.ui.FaditorMiniFragment { public <init>(); }
 -keep class com.fadcam.ui.faditor.FaditorEditorActivity { public <init>(); }
+-keep class com.fadcam.full.FullFeaturesImpl { public <init>(); }
+-keep class com.fadcam.service.BatchFfmpegOpsImpl { public <init>(); }
 
 # Specifically keep FadCam's MainActivity and its inner classes (for aliases)
 -keep public class com.fadcam.MainActivity { *; }

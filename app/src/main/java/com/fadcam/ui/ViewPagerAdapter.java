@@ -37,7 +37,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
                 return new RemoteFragment();
             case 3:
                 // Faditor tab is a Full-only feature (src/full); fall back to Home in Lite
-                Fragment faditor = FeatureRegistry.createFaditorFragment();
+                Fragment faditor = FeatureRegistry.features().createFaditorFragment();
                 return faditor != null ? faditor : new HomeFragment();
             case 4:
                 // Phase 1: Use new SettingsHomeFragment (legacy fragment accessible from inside)

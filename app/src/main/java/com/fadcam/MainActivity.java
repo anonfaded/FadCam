@@ -2200,7 +2200,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case 3:
                 // Faditor tab is a Full-only feature (src/full); fall back to Home in Lite
-                Fragment faditor = FeatureRegistry.createFaditorFragment();
+                Fragment faditor = FeatureRegistry.features().createFaditorFragment();
                 newFragment = faditor != null ? faditor : new com.fadcam.ui.HomeFragment();
                 break;
             case 4:
