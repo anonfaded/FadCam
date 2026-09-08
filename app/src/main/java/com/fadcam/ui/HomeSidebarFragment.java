@@ -309,6 +309,73 @@ public class HomeSidebarFragment extends DialogFragment {
             });
         }
 
+        // App info footer: package + version name + version code (long-press to copy)
+        android.widget.TextView tvAppInfo = view.findViewById(R.id.tv_app_info);
+        android.view.View rowAppInfo = view.findViewById(R.id.row_app_info);
+        if (tvAppInfo != null && rowAppInfo != null) {
+            String pkg = "";
+            String ver = "";
+            long code = 0L;
+            try {
+                android.content.pm.PackageManager pm = requireContext().getPackageManager();
+                String packageName = requireContext().getPackageName();
+                android.content.pm.PackageInfo pi = pm.getPackageInfo(packageName, 0);
+                pkg = packageName;
+                ver = pi.versionName != null ? pi.versionName : "";
+                code = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P
+                        ? pi.getLongVersionCode() : pi.versionCode;
+            } catch (Exception e) {
+                FLog.w("HomeSidebar", "Failed to read app info", e);
+            }
+            final String infoText = pkg + "\nv" + ver + " (" + code + ")";
+            tvAppInfo.setText(infoText);
+            rowAppInfo.setOnLongClickListener(v -> {
+                try {
+                    android.content.ClipboardManager cm =
+                            (android.content.ClipboardManager) requireContext()
+                                    .getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("FadCam app info", infoText));
+                    }
+                    android.widget.Toast.makeText(requireContext(), "Copied", android.widget.Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    FLog.w("HomeSidebar", "Copy failed", e);
+                }
+                return true;
+            });
+        }
+
+        // Copyright: prefix + year on separate lines
+        android.widget.TextView tvCopyLine1 = view.findViewById(R.id.tv_copyright_line1);
+        android.widget.TextView tvCopyYear = view.findViewById(R.id.tv_copyright_year);
+        if (tvCopyLine1 != null && tvCopyYear != null) {
+            String copyright = getString(R.string.home_sidebar_copyright);
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("([^0-9]*)(20\\d{2}\\s*–\\s*20\\d{2}|20\\d{4}).*")
+                    .matcher(copyright);
+            if (m.matches()) {
+                tvCopyLine1.setText(m.group(1).trim());
+                tvCopyYear.setText(m.group(2).trim());
+            } else {
+                tvCopyLine1.setText(copyright);
+                tvCopyYear.setText("");
+            }
+        }
+
+        // Website link (red, no underline, opens in browser)
+        android.widget.TextView tvWebsite = view.findViewById(R.id.tv_fadseclab_link);
+        if (tvWebsite != null) {
+            tvWebsite.setOnClickListener(v -> {
+                try {
+                    android.content.Intent intent = new android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://fadseclab.com"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    FLog.w("HomeSidebar", "Failed to open website", e);
+                }
+            });
+        }
+
         // Mini Apps Section
         setupMiniAppRows(view);
 
