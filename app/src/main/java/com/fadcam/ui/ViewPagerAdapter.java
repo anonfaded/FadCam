@@ -6,6 +6,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.fadcam.Constants;
+import com.fadcam.FeatureRegistry;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.fadrec.ui.FadRecHomeFragment;
 import com.fadcam.forensics.ui.ForensicIntelligenceFragment;
@@ -35,7 +36,9 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
             case 2:
                 return new RemoteFragment();
             case 3:
-                return new FaditorMiniFragment();
+                // Faditor tab is a Full-only feature (src/full); fall back to Home in Lite
+                Fragment faditor = FeatureRegistry.createFaditorFragment();
+                return faditor != null ? faditor : new HomeFragment();
             case 4:
                 // Phase 1: Use new SettingsHomeFragment (legacy fragment accessible from inside)
                 return new SettingsHomeFragment();

@@ -2,6 +2,7 @@ package com.fadcam.ui;
 
 import com.fadcam.Log;
 import com.fadcam.FLog;
+import com.fadcam.FeatureRegistry;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -2026,13 +2027,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
      */
     private void launchFaditorMini(@NonNull Context ctx, @NonNull VideoItem videoItem) {
         if (videoItem.uri == null) return;
-        try {
-            Intent intent = new Intent(ctx, com.fadcam.ui.faditor.FaditorEditorActivity.class);
-            intent.setData(videoItem.uri);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            ctx.startActivity(intent);
-        } catch (Exception e) {
-            FLog.e(TAG, "Failed to launch Faditor Mini", e);
+        if (!FeatureRegistry.launchFaditorEditor(ctx, videoItem.uri)) {
             Toast.makeText(ctx, ctx.getString(R.string.records_cannot_open_editor), Toast.LENGTH_SHORT).show();
         }
     }
