@@ -12,6 +12,7 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
     @Override
     public void onCreate() {
         super.onCreate();
+        com.fadcam.services.UpdateCheckService.init(this);
         ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
         // Room DB open + invalidation observer registration is deferred off the
         // main thread: cold start must not block on SQLite open. The observer

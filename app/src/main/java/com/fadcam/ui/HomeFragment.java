@@ -1495,17 +1495,20 @@ public class HomeFragment extends BaseFragment {
                     Executors.newSingleThreadExecutor();
                 updateExecutor.execute(() -> {
                     try {
-                        // Rate-limit: GitHub feed is re-fetched at most once an
-                        // hour (epoch-ms timestamp persisted at each check).
+                        // Rate-limit: GitHub feeds are re-fetched at most once an hour
+                        // (timestamp persisted at each check). Inside the window we still
+                        // USE the cached last result so the UI keeps showing updates.
                         long now = System.currentTimeMillis();
+                        String currentVersion = getAppVersionForUpdates();
+                        com.fadcam.services.UpdateCheckService.UpdateCheckResult result;
                         if (now - sharedPreferencesManager.getLong(
                                 Constants.LAST_UPDATE_CHECK_KEY, 0L)
                                 < UPDATE_CHECK_INTERVAL_MS) {
-                            return;
+                            result = com.fadcam.services.UpdateCheckService.getLastResult();
+                            if (result == null) return;
+                        } else {
+                            result = com.fadcam.services.UpdateCheckService.checkForUpdate(currentVersion);
                         }
-                        String currentVersion = getAppVersionForUpdates();
-                        com.fadcam.services.UpdateCheckService.UpdateCheckResult result =
-                            com.fadcam.services.UpdateCheckService.checkForUpdate(currentVersion);
 
                         if (result.errorOccurred) {
                             FLog.w(TAG, "Update check returned error, skipping UI");

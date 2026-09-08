@@ -378,6 +378,7 @@ public class HomeSidebarFragment extends DialogFragment {
 
         // Mini Apps Section
         setupMiniAppRows(view);
+        setupUpdateCards(view);
 
         // Mini Apps Info Button
         View btnMiniAppsInfo = view.findViewById(R.id.btn_mini_apps_info);
@@ -510,8 +511,6 @@ public class HomeSidebarFragment extends DialogFragment {
         if (qrGeneratorRow != null) qrGeneratorRow.setOnClickListener(v -> showMiniAppComingSoon(this, "qr_generator"));
 
         applyMiniAppVisibility(view);
-
-        setupUpdateCards(view);
     }
 
     /**
@@ -744,7 +743,26 @@ public class HomeSidebarFragment extends DialogFragment {
         if (section == null) return;
         com.fadcam.services.UpdateCheckService.UpdateCheckResult r =
                 com.fadcam.services.UpdateCheckService.getLastResult();
-        if (r == null || !r.hasAnyUpdate()) { section.setVisibility(View.GONE); return; }
+        FLog.d("UpdateSidebar", "setupUpdateCards r=" + (r == null ? "null"
+                : ("stable=" + r.hasStable + " beta=" + r.hasBeta + " pro=" + r.hasPro)));
+        if (r == null) {
+            // Fresh process / check not run yet: run it now (off UI thread) and rebuild.
+            section.setVisibility(View.GONE);
+            new Thread(() -> {
+                try {
+                    com.fadcam.services.UpdateCheckService.checkForUpdate(getAppVersion());
+                } catch (Exception e) {
+                    FLog.w("UpdateSidebar", "fallback check failed", e);
+                }
+                if (getView() != null) {
+                    getView().post(() -> {
+                        if (getView() != null) setupUpdateCards(getView());
+                    });
+                }
+            }).start();
+            return;
+        }
+        if (!r.hasAnyUpdate()) { section.setVisibility(View.GONE); return; }
         section.setVisibility(View.VISIBLE);
 
         String cur = getAppVersion();

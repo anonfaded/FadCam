@@ -41,6 +41,9 @@ android {
         versionCode = 52
         versionName = "4.0.0"
         buildConfigField("boolean", "LITE_EDITION", "false")
+        buildConfigField("String", "UPDATE_ORG", "\"anonfaded\"")
+        buildConfigField("String", "UPDATE_REPO", "\"FadCam\"")
+        buildConfigField("String", "UPDATE_PRO_REPO", "\"FadCamPro\"")
         // Launcher label per variant: defaultConfig is the base, flavors/build types override,
         // onVariants() below sets the per-variant debug labels (Full beta vs Lite beta).
         manifestPlaceholders["appLabel"] = "FadCam"
@@ -146,6 +149,25 @@ android {
     // ──────────────────────────────────────────────────────────────────────────
     flavorDimensions += "pro"
 
+    // ── Lite versioning (single place to edit) ──────────────────────────
+    // Lite Free only ever builds the 'lite' flavor; Lite Pro builds the three
+    // disguise flavors (liteNotes/liteCalc/liteWeather) which share one track.
+    //
+    // Update-check repo mapping (by design — mirrors Full):
+    //   Full  -> UPDATE_REPO=FadCam (stable+beta), UPDATE_PRO_REPO=FadCamPro (pro)
+    //   Lite Free -> UPDATE_REPO=FadCam-Lite (stable+beta), UPDATE_PRO_REPO=FadCam-LitePro (pro)
+    //   Lite Pro  -> UPDATE_REPO=FadCam-LitePro, UPDATE_PRO_REPO=FadCam-LitePro (own repo)
+    // Each build reads ITS line's repos; the home sidebar renders a card per
+    // available update (Lite stable / Lite beta / Lite Pro from the respective repo).
+    // Current values are 0.0.0 / code 1 so the fresh v0.1.0 tags on the Lite repos
+    // are detected as updates during testing.
+    val liteVersionCode = 1
+    val liteVersionName = "0.0.0"
+    val liteRepo = "FadCam-Lite"          // Lite (primary/stable) update feed
+    val liteProVersionCode = 1
+    val liteProVersionName = "0.0.0"
+    val liteProRepo = "FadCam-LitePro"    // Lite Pro (secondary) update feed
+
     productFlavors {
         create("notesPro") {
             dimension = "pro"
@@ -170,6 +192,10 @@ android {
         // stay on the default flavor and do not apply to the Lite line.
         create("lite") {
             dimension = "pro"
+            versionCode = liteVersionCode
+            versionName = liteVersionName
+            buildConfigField("String", "UPDATE_REPO", "\"$liteRepo\"")
+            buildConfigField("String", "UPDATE_PRO_REPO", "\"$liteProRepo\"")
             applicationIdSuffix = ".lite"
             resValue("string", "app_name", "FadCam Lite")
             manifestPlaceholders["appLabel"] = "FadCam Lite"
@@ -178,6 +204,10 @@ android {
         // Lite Pro discreet disguises (same icon/app name as the Full disguises, see sourceSets)
         create("liteNotes") {
             dimension = "pro"
+            versionCode = liteProVersionCode
+            versionName = liteProVersionName
+            buildConfigField("String", "UPDATE_REPO", "\"$liteProRepo\"")
+            buildConfigField("String", "UPDATE_PRO_REPO", "\"$liteProRepo\"")
             applicationIdSuffix = ".lite.notes"
             resValue("string", "app_name", "Notes")
             manifestPlaceholders["appLabel"] = "Notes"
@@ -185,6 +215,10 @@ android {
         }
         create("liteCalc") {
             dimension = "pro"
+            versionCode = liteProVersionCode
+            versionName = liteProVersionName
+            buildConfigField("String", "UPDATE_REPO", "\"$liteProRepo\"")
+            buildConfigField("String", "UPDATE_PRO_REPO", "\"$liteProRepo\"")
             applicationIdSuffix = ".lite.calc"
             resValue("string", "app_name", "Calculator")
             manifestPlaceholders["appLabel"] = "Calculator"
@@ -192,6 +226,10 @@ android {
         }
         create("liteWeather") {
             dimension = "pro"
+            versionCode = liteProVersionCode
+            versionName = liteProVersionName
+            buildConfigField("String", "UPDATE_REPO", "\"$liteProRepo\"")
+            buildConfigField("String", "UPDATE_PRO_REPO", "\"$liteProRepo\"")
             applicationIdSuffix = ".lite.weather"
             resValue("string", "app_name", "Weather")
             manifestPlaceholders["appLabel"] = "Weather"
@@ -254,7 +292,11 @@ android {
     // Dynamic APK output names: FadCam_<flavor>_v<versionName><suffix>-<abi>.apk
     // (default flavor has no <flavor> part; universal APK gets the literal "-universal")
     applicationVariants.all {
-        val versionName = "${defaultConfig.versionName}${buildType.versionNameSuffix.orEmpty()}"
+        // Lite line has its own version track; debug gets a lite-specific beta suffix
+        if (flavorName.startsWith("lite") && buildType.name == "debug") {
+            versionName = liteVersionName + "-beta1"
+        }
+        val displayVersion = versionName
         val flavor = if (flavorName != "default") "${flavorName}_" else ""
         outputs.all {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
@@ -263,7 +305,7 @@ android {
                 ?.identifier
                 ?: "universal"
             output.outputFileName =
-                "FadCam_${flavor}v${versionName}-${abiType}.apk"
+                "FadCam_${flavor}v${displayVersion}-${abiType}.apk"
         }
     }
 
