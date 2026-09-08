@@ -43,4 +43,14 @@ public final class FullFeaturesDefault implements FullFeatures {
     public com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector() {
         return null;
     }
+
+    @Override
+    public androidx.fragment.app.Fragment createFadRecHomeFragment() {
+        return null;
+    }
+
+    @Override
+    public androidx.fragment.app.Fragment createScreenRecordingSettingsFragment() {
+        return null;
+    }
 }

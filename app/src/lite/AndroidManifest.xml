@@ -4,6 +4,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Screen recording (FadRec) permissions not needed in Lite -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
+        tools:node="remove" />
+
     <application>
         <activity
             android:name="com.fadcam.ui.faditor.FaditorEditorActivity"
@@ -17,6 +25,31 @@
             tools:node="remove" />
         <service
             android:name="com.fadcam.services.AlarmService"
+            tools:node="remove" />
+        <!-- Screen recording (FadRec) is Full-only -->
+        <activity
+            android:name="com.fadcam.fadrec.ui.overlay.TextEditorActivity"
+            tools:node="remove" />
+        <activity
+            android:name="com.fadcam.fadrec.ui.TransparentPermissionActivity"
+            tools:node="remove" />
+        <service
+            android:name="com.fadcam.fadrec.services.ScreenRecordingService"
+            tools:node="remove" />
+        <service
+            android:name="com.fadcam.fadrec.ui.FloatingControlsService"
+            tools:node="remove" />
+        <service
+            android:name="com.fadcam.fadrec.ui.AnnotationService"
+            tools:node="remove" />
+        <activity
+            android:name="com.fadcam.fadrec.ui.ColorPickerDialogActivity"
+            tools:node="remove" />
+        <activity
+            android:name="com.fadcam.fadrec.ui.ProjectNamingDialogActivity"
+            tools:node="remove" />
+        <activity
+            android:name="com.fadcam.fadrec.ui.ProjectSelectionDialogActivity"
             tools:node="remove" />
     </application>
 </manifest>

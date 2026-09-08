@@ -38,4 +38,12 @@ public interface FullFeatures {
     /** OpenCV MOG2 motion detector (Full-only); null in Lite (FrameDiff fallback stays). */
     @Nullable
     com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector();
+
+    /** Screen-recording home fragment (FadRec mode) — Full-only; null in Lite. */
+    @Nullable
+    Fragment createFadRecHomeFragment();
+
+    /** Screen-recording settings fragment — Full-only; null in Lite. */
+    @Nullable
+    Fragment createScreenRecordingSettingsFragment();
 }

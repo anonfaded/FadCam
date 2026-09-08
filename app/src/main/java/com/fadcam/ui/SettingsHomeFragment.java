@@ -192,13 +192,18 @@ public class SettingsHomeFragment extends Fragment {
             updateModeSelectorUI();
             applyModeFilter(currentMode);
         });
-        popupView.findViewById(R.id.mode_fadrec).setOnClickListener(v -> {
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            android.view.View fadRecOption = popupView.findViewById(R.id.mode_fadrec);
+            if (fadRecOption != null) fadRecOption.setVisibility(android.view.View.GONE);
+        } else {
+            popupView.findViewById(R.id.mode_fadrec).setOnClickListener(v -> {
             currentMode = SettingsMode.FADREC;
             updatePopupChecks(popupView, currentMode);
             animatePopupDismiss(popup, popupView);
             updateModeSelectorUI();
             applyModeFilter(currentMode);
         });
+        }
 
         // Position popup below the anchor button
         int[] anchorPos = new int[2];
@@ -440,7 +445,17 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_video_quick, () -> openSubFragment(new VideoSettingsFragment()));
         bindRow(root, R.id.group_video_player_settings, () -> openSubFragment(new VideoPlayerSettingsFragment()));
         bindRow(root, R.id.group_audio_quick, () -> openSubFragment(new AudioSettingsFragment()));
-        bindRow(root, R.id.group_screen_recording, () -> openSubFragment(new com.fadcam.fadrec.ui.ScreenRecordingSettingsFragment()));
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            // Screen recording (FadRec) is Full-only in Lite
+            android.view.View screenRecRow = root.findViewById(R.id.group_screen_recording);
+            if (screenRecRow != null) screenRecRow.setVisibility(android.view.View.GONE);
+        } else {
+            bindRow(root, R.id.group_screen_recording, () -> {
+                androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()
+                        .createScreenRecordingSettingsFragment();
+                if (f != null) openSubFragment(f);
+            });
+        }
         bindRow(root, R.id.group_storage, () -> openSubFragment(new StorageSettingsFragment()));
         bindRow(root, R.id.group_security, () -> openSubFragment(new SecuritySettingsFragment()));
         bindRow(root, R.id.group_motion_lab, () -> openSubFragment(new MotionLabSettingsFragment()));

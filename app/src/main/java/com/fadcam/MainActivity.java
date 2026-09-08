@@ -2196,10 +2196,11 @@ public class MainActivity extends AppCompatActivity {
         Fragment newFragment;
         switch (position) {
             case 0:
-                // Home tab - check current mode
+                // Home tab - check current mode (FadRec is Full-only; Lite always uses FadCam)
                 String currentMode = sharedPreferencesManager.getCurrentRecordingMode();
-                if (com.fadcam.Constants.MODE_FADREC.equals(currentMode)) {
-                    newFragment = com.fadcam.fadrec.ui.FadRecHomeFragment.newInstance();
+                Fragment fadRecHome = com.fadcam.FeatureRegistry.features().createFadRecHomeFragment();
+                if (com.fadcam.Constants.MODE_FADREC.equals(currentMode) && fadRecHome != null) {
+                    newFragment = fadRecHome;
                 } else {
                     newFragment = new com.fadcam.ui.HomeFragment();
                 }

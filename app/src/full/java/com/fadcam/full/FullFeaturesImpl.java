@@ -77,4 +77,22 @@ public final class FullFeaturesImpl implements FullFeatures {
             return null;
         }
     }
+
+    @Override
+    public Fragment createFadRecHomeFragment() {
+        try {
+            return com.fadcam.fadrec.ui.FadRecHomeFragment.newInstance();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    @Override
+    public Fragment createScreenRecordingSettingsFragment() {
+        try {
+            return new com.fadcam.fadrec.ui.ScreenRecordingSettingsFragment();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
 }
