@@ -23,7 +23,6 @@ import com.fadcam.MainActivity;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
-import com.fadcam.ui.miniapps.TorchToolFragment;
 import com.fadcam.ui.OverlayNavUtil;
 import com.google.android.material.sidesheet.SideSheetDialog;
 
@@ -152,13 +151,17 @@ public class HomeSidebarFragment extends DialogFragment {
             closeButton.setOnClickListener(v -> dismiss());
         }
 
-        // Profiles row
+        // Profiles row (coming soon) — hidden in Lite edition
         View profilesRow = view.findViewById(R.id.row_profiles);
         if (profilesRow != null) {
-            profilesRow.setOnClickListener(v -> {
-                showProfilesComingSoon();
-                dismiss();
-            });
+            if (com.fadcam.BuildConfig.LITE_EDITION) {
+                profilesRow.setVisibility(android.view.View.GONE);
+            } else {
+                profilesRow.setOnClickListener(v -> {
+                    showProfilesComingSoon();
+                    dismiss();
+                });
+            }
         }
 
         // What's New row
@@ -367,14 +370,24 @@ public class HomeSidebarFragment extends DialogFragment {
     }
 
     private void setupMiniAppRows(View view) {
+        // Mini apps are Full-only in Lite — hide the whole section (title + container)
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            int[] miniAppViews = {R.id.mini_apps_group_title, R.id.btn_mini_apps_info,
+                    R.id.btn_mini_apps_edit, R.id.mini_apps_list_container};
+            for (int id : miniAppViews) {
+                View v = view.findViewById(id);
+                if (v != null) v.setVisibility(android.view.View.GONE);
+            }
+            return;
+        }
         // Torch Mini App - open full screen tool
         View torchRow = view.findViewById(R.id.row_mini_app_torch);
         if (torchRow != null) {
             torchRow.setOnClickListener(v -> {
                 try {
-                    TorchToolFragment torchTool = TorchToolFragment.newInstance();
-                    OverlayNavUtil.show(requireActivity(), torchTool, "torch_tool");
-                    dismiss();
+                    if (com.fadcam.FeatureRegistry.features().openTorchTool(requireActivity())) {
+                        dismiss();
+                    }
                 } catch (Exception e) {
                     FLog.w("HomeSidebar", "Failed to open torch tool", e);
                 }
@@ -413,9 +426,9 @@ public class HomeSidebarFragment extends DialogFragment {
         // QR Scanner Mini App - ready to use
         View qrScannerRow = view.findViewById(R.id.row_mini_app_qr_scanner);
         if (qrScannerRow != null) qrScannerRow.setOnClickListener(v -> {
-            Intent intent = new Intent(getContext(), com.fadcam.ui.miniapps.QRScannerActivity.class);
-            startActivity(intent);
-            dismiss();
+            if (com.fadcam.FeatureRegistry.features().openQrScanner(getContext())) {
+                dismiss();
+            }
         });
         // Pedometer Mini App - Coming Soon
         View pedometerRow = view.findViewById(R.id.row_mini_app_pedometer);

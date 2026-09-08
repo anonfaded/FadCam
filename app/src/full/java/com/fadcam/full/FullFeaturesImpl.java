@@ -88,6 +88,15 @@ public final class FullFeaturesImpl implements FullFeatures {
     }
 
     @Override
+    public Fragment createWatchRemoteFragment() {
+        try {
+            return new com.fadcam.ui.WatchRemoteFragment();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    @Override
     public Fragment createRemoteFragment() {
         try {
             return new com.fadcam.ui.RemoteFragment();
@@ -106,8 +115,26 @@ public final class FullFeaturesImpl implements FullFeatures {
     }
 
     @Override
-    public Class<?> watchMainActivityClass() {
-        return com.fadcam.ui.WatchMainActivity.class;
+    public boolean openTorchTool(FragmentActivity activity) {
+        try {
+            com.fadcam.ui.OverlayNavUtil.show(
+                    activity,
+                    com.fadcam.ui.miniapps.TorchToolFragment.newInstance(),
+                    "torch_tool");
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean openQrScanner(Context ctx) {
+        try {
+            ctx.startActivity(new android.content.Intent(ctx, com.fadcam.ui.miniapps.QRScannerActivity.class));
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     @Override

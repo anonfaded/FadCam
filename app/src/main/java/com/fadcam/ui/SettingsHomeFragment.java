@@ -554,11 +554,23 @@ public class SettingsHomeFragment extends Fragment {
     }
 
     private void setupMiniAppCards(View root) {
+        // Mini apps are Full-only in Lite
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            android.view.View header = root.findViewById(R.id.header_mini_apps);
+            if (header != null) header.setVisibility(android.view.View.GONE);
+            int[] miniCardIds = {R.id.group_mini_torch, R.id.group_mini_compass, R.id.group_mini_sound_meter,
+                    R.id.group_mini_sensor, R.id.group_mini_speedometer, R.id.group_mini_clinometer,
+                    R.id.group_mini_qr_scanner, R.id.group_mini_pedometer, R.id.group_mini_metal_detector};
+            for (int id : miniCardIds) {
+                android.view.View card = root.findViewById(id);
+                if (card != null) card.setVisibility(android.view.View.GONE);
+            }
+            return;
+        }
         setupMiniCard(root, R.id.group_mini_torch, R.string.mini_app_torch_title,
                 R.string.mini_app_torch_desc, "flashlight_on", 0, () -> {
             try {
-                com.fadcam.ui.miniapps.TorchToolFragment torchTool = com.fadcam.ui.miniapps.TorchToolFragment.newInstance();
-                OverlayNavUtil.show(requireActivity(), torchTool, "torch_tool");
+                com.fadcam.FeatureRegistry.features().openTorchTool(requireActivity());
             } catch (Exception e) {
                 FLog.w("SettingsHome", "Failed to open torch", e);
             }
@@ -581,8 +593,7 @@ public class SettingsHomeFragment extends Fragment {
         setupMiniCard(root, R.id.group_mini_qr_scanner, R.string.mini_app_qr_scanner_title,
                 R.string.mini_app_qr_scanner_desc, "qr_code_scanner", 0, // no "Soon" badge — it's ready
                 () -> {
-                    Intent intent = new Intent(requireContext(), com.fadcam.ui.miniapps.QRScannerActivity.class);
-                    startActivity(intent);
+                    com.fadcam.FeatureRegistry.features().openQrScanner(requireContext());
                 });
         setupMiniCard(root, R.id.group_mini_pedometer, R.string.mini_app_pedometer_title,
                 R.string.mini_app_pedometer_desc, "directions_walk", R.string.mini_app_coming_soon,

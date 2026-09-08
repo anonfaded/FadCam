@@ -843,21 +843,37 @@ public class MainActivity extends AppCompatActivity {
                     boolean isRtl = getWindow().getDecorView().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
                     boolean isSwipeBack = isRtl ? (dx < 0) : (dx > 0);
                     
-                    // Swipe "back" from home tab opens sidebar instead of navigating
-                    if (isSwipeBack && currentFragmentPosition == 0) {
-                        openHomeSidebarFromSwipe();
-                        swipeHandled = true;
-                        swipeCandidate = false;
-                        return true;
+                    // Navigate by the VISIBLE menu order (Lite has fewer tabs and a
+                    // different order than Full — internal positions must not drive swipes).
+                    java.util.List<Integer> visibleIds = visibleTabIds();
+                    int curIdx = -1;
+                    int curId = getNavItemIdForPosition(currentFragmentPosition);
+                    for (int i = 0; i < visibleIds.size(); i++) {
+                        if (visibleIds.get(i) == curId) {
+                            curIdx = i;
+                            break;
+                        }
                     }
-                    // RTL-aware tab navigation: reverse direction in RTL layout
-                    int direction = isRtl ? (dx > 0 ? 1 : -1) : (dx < 0 ? 1 : -1);
-                    int target = currentFragmentPosition + direction;
-                    if (target >= 0 && target <= 5) {
-                        switchFragment(target, true);
-                        swipeHandled = true;
-                        swipeCandidate = false;
-                        return true;
+                    if (curIdx >= 0) {
+                        // Swipe "back" from the FIRST (leftmost) home tab opens the sidebar
+                        if (isSwipeBack && curIdx == 0 && curId == R.id.navigation_home) {
+                            openHomeSidebarFromSwipe();
+                            swipeHandled = true;
+                            swipeCandidate = false;
+                            return true;
+                        }
+                        // RTL-aware tab navigation: reverse direction in RTL layout
+                        int direction = isRtl ? (dx > 0 ? 1 : -1) : (dx < 0 ? 1 : -1);
+                        int targetIdx = curIdx + direction;
+                        if (targetIdx >= 0 && targetIdx < visibleIds.size()) {
+                            int targetPos = internalPositionForItemId(visibleIds.get(targetIdx));
+                            if (targetPos >= 0) {
+                                switchFragment(targetPos, true);
+                                swipeHandled = true;
+                                swipeCandidate = false;
+                                return true;
+                            }
+                        }
                     }
                 }
                 swipeCandidate = false;
@@ -872,6 +888,27 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return super.dispatchTouchEvent(ev);
+    }
+
+    /** Visible tab ids in display order (menu order = what the user sees). */
+    private java.util.List<Integer> visibleTabIds() {
+        java.util.ArrayList<Integer> ids = new java.util.ArrayList<>();
+        if (bottomNavigationView == null) return ids;
+        for (int i = 0; i < bottomNavigationView.getMenu().size(); i++) {
+            ids.add(bottomNavigationView.getMenu().getItem(i).getItemId());
+        }
+        return ids;
+    }
+
+    /** Internal fragment position for a menu item id (matches the nav listener). */
+    private int internalPositionForItemId(int itemId) {
+        if (itemId == R.id.navigation_home) return 0;
+        if (itemId == R.id.navigation_records) return 1;
+        if (itemId == R.id.navigation_remote) return 2;
+        if (itemId == R.id.navigation_faditor_mini) return 3;
+        if (itemId == R.id.navigation_settings) return 4;
+        if (itemId == R.id.navigation_lab) return 5;
+        return -1;
     }
 
     /** Opens the home sidebar when the user swipes left from the home tab. */
@@ -2029,6 +2066,8 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Long-press the home nav item to pick which icon it shows.
+     * Locates the Home item by its menu id — NOT by position — because the
+     * Lite edition reorders the menu (Records first).
      */
     private void setupHomeIconCustomization() {
         if (bottomNavigationView == null) return;
@@ -2039,7 +2078,15 @@ public class MainActivity extends AppCompatActivity {
                 if (!(menuView instanceof ViewGroup)) return;
                 ViewGroup group = (ViewGroup) menuView;
                 if (group.getChildCount() == 0) return;
-                View homeItem = group.getChildAt(0); // menu order: home is first
+                int homeIndex = -1;
+                for (int i = 0; i < bottomNavigationView.getMenu().size(); i++) {
+                    if (bottomNavigationView.getMenu().getItem(i).getItemId() == R.id.navigation_home) {
+                        homeIndex = i;
+                        break;
+                    }
+                }
+                if (homeIndex < 0 || homeIndex >= group.getChildCount()) return;
+                View homeItem = group.getChildAt(homeIndex);
                 if (homeItem != null) {
                     homeItem.setOnLongClickListener(v -> {
                         showHomeIconPicker();

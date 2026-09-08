@@ -43,6 +43,10 @@ public interface FullFeatures {
     @Nullable
     Fragment createFadRecHomeFragment();
 
+    /** Watch remote tab fragment — Full-only (needs streaming); null in Lite. */
+    @Nullable
+    Fragment createWatchRemoteFragment();
+
     /** Remote streaming tab fragment — Full-only; null in Lite. */
     @Nullable
     Fragment createRemoteFragment();
@@ -58,6 +62,12 @@ public interface FullFeatures {
     /** Forensics Lab tab fragment — Full-only; null in Lite. */
     @Nullable
     Fragment createLabFragment();
+
+    /** Opens the torch tool (Full-only mini app); false in Lite. */
+    boolean openTorchTool(FragmentActivity activity);
+
+    /** Opens the QR scanner (Full-only mini app); false in Lite. */
+    boolean openQrScanner(Context ctx);
 
     /** Forensics settings fragment — Full-only; null in Lite. */
     @Nullable

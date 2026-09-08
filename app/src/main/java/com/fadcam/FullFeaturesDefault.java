@@ -50,6 +50,11 @@ public final class FullFeaturesDefault implements FullFeatures {
     }
 
     @Override
+    public androidx.fragment.app.Fragment createWatchRemoteFragment() {
+        return null;
+    }
+
+    @Override
     public androidx.fragment.app.Fragment createRemoteFragment() {
         return null;
     }
@@ -57,6 +62,16 @@ public final class FullFeaturesDefault implements FullFeatures {
     @Override
     public androidx.fragment.app.Fragment createScreenRecordingSettingsFragment() {
         return null;
+    }
+
+    @Override
+    public boolean openTorchTool(androidx.fragment.app.FragmentActivity activity) {
+        return false;
+    }
+
+    @Override
+    public boolean openQrScanner(android.content.Context ctx) {
+        return false;
     }
 
     @Override
