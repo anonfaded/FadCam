@@ -1,5 +1,7 @@
 package com.fadcam.streaming;
 
+import com.fadcam.StreamingMode;
+
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.os.Handler;
@@ -106,10 +108,6 @@ public class RemoteStreamManager {
     /**
      * Streaming mode options.
      */
-    public enum StreamingMode {
-        STREAM_ONLY,     // Don't save to disk after streaming
-        STREAM_AND_SAVE  // Keep recording on disk
-    }
     
     /**
      * Represents a single fMP4 fragment (moof + mdat).

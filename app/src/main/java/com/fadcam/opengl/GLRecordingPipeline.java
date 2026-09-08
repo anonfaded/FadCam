@@ -476,7 +476,7 @@ public class GLRecordingPipeline {
     // ════════════════════════════════════════════════════════════════════
 
     private int getEffectiveVideoBitrate(Context context) {
-        boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        boolean isStreaming = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
         if (isStreaming) {
             android.content.SharedPreferences fadcamPrefs =
                     context.getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
@@ -1190,7 +1190,7 @@ public class GLRecordingPipeline {
         // ESSENTIAL: Bitrate mode — CBR for streaming (hard bandwidth cap), VBR for local recording (quality)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             try {
-                boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+                boolean isStreaming = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
                 int bitrateMode = isStreaming
                     ? MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR
                     : MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR;
@@ -1273,7 +1273,7 @@ public class GLRecordingPipeline {
         // Set bitrate mode — CBR for streaming (hard bandwidth cap), VBR for local recording (quality)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             try {
-                boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+                boolean isStreaming = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
                 int bitrateMode = isStreaming
                     ? MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR
                     : MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR;

@@ -834,11 +834,11 @@ public class CloudStatusManager {
                 if (command.has("params")) {
                     org.json.JSONObject params = command.getJSONObject("params");
                     String mode = params.optString("mode", "");
-                    RemoteStreamManager.StreamingMode streamingMode;
+                    com.fadcam.StreamingMode streamingMode;
                     if ("stream_only".equals(mode)) {
-                        streamingMode = RemoteStreamManager.StreamingMode.STREAM_ONLY;
+                        streamingMode = com.fadcam.StreamingMode.STREAM_ONLY;
                     } else if ("stream_and_save".equals(mode)) {
-                        streamingMode = RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+                        streamingMode = com.fadcam.StreamingMode.STREAM_AND_SAVE;
                     } else {
                         FLog.w(TAG, "☁️ config_recordingMode: invalid mode: " + mode);
                         deleteCommand(cmdId);

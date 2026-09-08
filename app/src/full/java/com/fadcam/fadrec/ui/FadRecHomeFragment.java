@@ -1913,10 +1913,10 @@ public class FadRecHomeFragment extends HomeFragment {
                 // behave like STREAM_AND_SAVE so the UI stays accurate.
                 boolean serverActive =
                     com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode mode =
+                com.fadcam.StreamingMode mode =
                     sharedPreferencesManager.getStreamingMode();
                 isStreamOnlyMode = serverActive &&
-                    (mode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                    (mode == com.fadcam.StreamingMode.STREAM_ONLY);
             } catch (Exception e) {
                 FLog.e(TAG, "Error checking streaming mode", e);
             }

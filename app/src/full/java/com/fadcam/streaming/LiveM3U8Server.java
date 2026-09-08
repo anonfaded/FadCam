@@ -801,11 +801,11 @@ import fi.iki.elonen.NanoHTTPD;
             }
             
             // Convert mode string to StreamingMode enum
-            RemoteStreamManager.StreamingMode streamingMode;
+            com.fadcam.StreamingMode streamingMode;
             if ("stream_only".equals(mode)) {
-                streamingMode = RemoteStreamManager.StreamingMode.STREAM_ONLY;
+                streamingMode = com.fadcam.StreamingMode.STREAM_ONLY;
             } else if ("stream_and_save".equals(mode)) {
-                streamingMode = RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+                streamingMode = com.fadcam.StreamingMode.STREAM_AND_SAVE;
             } else {
                 return newFixedLengthResponse(Response.Status.BAD_REQUEST, "application/json; charset=utf-8", 
                     "{\"error\": \"Invalid mode. Use 'stream_only' or 'stream_and_save'\"}");

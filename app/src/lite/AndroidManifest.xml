@@ -13,6 +13,47 @@
         tools:node="remove" />
 
     <application>
+        <!-- Lite keeps only the useful disguise identities (Notes/Calculator/Weather/Clock);
+             exotic launcher aliases + their icon sets are dropped from Lite -->
+        <activity-alias
+            android:name=".MainActivity.AlternativeIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.FadedIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.PalestineIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.PakistanIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.FadSecLabIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.NooristicIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.BatIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.RedBinaryIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.FootballIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.CarIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.JetIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.MinimalIcon"
+            tools:node="remove" />
+        <activity-alias
+            android:name=".MainActivity.BlackIcon"
+            tools:node="remove" />
         <activity
             android:name="com.fadcam.ui.faditor.FaditorEditorActivity"
             tools:node="remove" />

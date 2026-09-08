@@ -16,7 +16,6 @@ import androidx.media3.muxer.FragmentedMp4Muxer;
 import androidx.media3.muxer.MuxerException;
 import androidx.media3.muxer.ProcessedSegment;
 
-import com.fadcam.streaming.RemoteStreamManager;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -71,8 +70,6 @@ public class FragmentedMp4MuxerWrapper {
     private final android.util.SparseArray<Integer> trackSampleLogs = new android.util.SparseArray<>();
 
     // Cached streaming manager reference to avoid repeated getInstance() calls
-    private RemoteStreamManager cachedStreamManager;
-    private boolean streamManagerChecked = false;
 
     // --- mvhd duration patching ---
     // Gallery apps (Instagram, etc.) read mvhd.duration from the moov atom
@@ -1119,26 +1116,20 @@ public class FragmentedMp4MuxerWrapper {
             byte[] data = new byte[payload.remaining()];
             payload.get(data);
             
-            // Lazy-init cached streaming state.  Callback runs on the library's
-            // writer thread — never block it with heavy init.
-            if (!streamManagerChecked && cachedStreamManager == null) {
-                cachedStreamManager = RemoteStreamManager.getInstance();
-                streamManagerChecked = true;
-            }
-            boolean serverActive = cachedStreamManager != null && cachedStreamManager.isStreamingEnabled();
-            RemoteStreamManager.StreamingMode streamingMode = serverActive
-                ? cachedStreamManager.getStreamingMode()
-                : RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+            boolean serverActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+            com.fadcam.StreamingMode streamingMode = serverActive
+                ? com.fadcam.FeatureRegistry.streaming().getStreamingMode()
+                : com.fadcam.StreamingMode.STREAM_AND_SAVE;
             boolean shouldSaveToDisk = !serverActive
-                || (streamingMode == RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+                || (streamingMode == com.fadcam.StreamingMode.STREAM_AND_SAVE);
             
             if (segment.isInitSegment) {
                 // Initialization segment (ftyp + moov)
                 // SEGMENT init log removed
                 
-                // Send to RemoteStreamManager for HLS streaming ONLY when active
-                if (serverActive && cachedStreamManager != null) {
-                    cachedStreamManager.onInitializationSegment(data);
+                // Send to streaming bridge for HLS streaming ONLY when active
+                if (serverActive) {
+                    com.fadcam.FeatureRegistry.streaming().onInitializationSegment(data);
                 }
                 initSegmentSent = true;
                 
@@ -1151,10 +1142,10 @@ public class FragmentedMp4MuxerWrapper {
                 // Fragment info logged only at DEBUG level to avoid
                 // flooding logcat during long recordings.
                 
-                // Send to RemoteStreamManager for HLS streaming ONLY when active
-                if (serverActive && cachedStreamManager != null) {
+                // Send to streaming bridge for HLS streaming ONLY when active
+                if (serverActive) {
                     if (initSegmentSent) {
-                        cachedStreamManager.onFragmentComplete(segment.segmentNr, data, segment.durationMs);
+                        com.fadcam.FeatureRegistry.streaming().onFragmentComplete(segment.segmentNr, data, segment.durationMs);
                     } else {
                         FLog.w(TAG, "⚠️ Fragment #" + segment.segmentNr + 
                             " received before init segment - skipping stream upload");

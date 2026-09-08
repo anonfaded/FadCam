@@ -88,12 +88,26 @@ public final class FullFeaturesImpl implements FullFeatures {
     }
 
     @Override
+    public Fragment createRemoteFragment() {
+        try {
+            return new com.fadcam.ui.RemoteFragment();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    @Override
     public Fragment createScreenRecordingSettingsFragment() {
         try {
             return new com.fadcam.fadrec.ui.ScreenRecordingSettingsFragment();
         } catch (Throwable t) {
             return null;
         }
+    }
+
+    @Override
+    public Class<?> watchMainActivityClass() {
+        return com.fadcam.ui.WatchMainActivity.class;
     }
 
     @Override

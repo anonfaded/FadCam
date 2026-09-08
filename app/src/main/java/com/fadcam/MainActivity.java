@@ -29,7 +29,6 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.ui.RecordsFragment;
-import com.fadcam.ui.RemoteFragment;
 import com.fadcam.ui.HomeFragment;
 import com.fadcam.FeatureRegistry;
 import com.fadcam.ui.SettingsHomeFragment;
@@ -2208,7 +2207,9 @@ public class MainActivity extends AppCompatActivity {
                 newFragment = new RecordsFragment();
                 break;
             case 2:
-                newFragment = new RemoteFragment();
+                // Remote tab is Full-only (src/full); fall back to Home in Lite
+                Fragment remoteFragment = com.fadcam.FeatureRegistry.features().createRemoteFragment();
+                newFragment = remoteFragment != null ? remoteFragment : new com.fadcam.ui.HomeFragment();
                 break;
             case 3:
                 // Faditor tab is a Full-only feature (src/full); fall back to Home in Lite

@@ -695,10 +695,10 @@ public class ScreenRecordingService extends Service {
             // made without an active server.
             try {
                 boolean serverOn = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode sessionMode =
+                com.fadcam.StreamingMode sessionMode =
                     sharedPreferencesManager.getStreamingMode();
                 isStreamOnlySession = serverOn &&
-                    (sessionMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                    (sessionMode == com.fadcam.StreamingMode.STREAM_ONLY);
                 FLog.d(TAG, "Session stream-only flag: " + isStreamOnlySession
                     + " (serverOn=" + serverOn + ", mode=" + sessionMode + ")");
             } catch (Exception e) {

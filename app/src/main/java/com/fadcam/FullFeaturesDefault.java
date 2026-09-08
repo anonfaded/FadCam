@@ -50,6 +50,11 @@ public final class FullFeaturesDefault implements FullFeatures {
     }
 
     @Override
+    public androidx.fragment.app.Fragment createRemoteFragment() {
+        return null;
+    }
+
+    @Override
     public androidx.fragment.app.Fragment createScreenRecordingSettingsFragment() {
         return null;
     }

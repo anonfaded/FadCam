@@ -43,6 +43,10 @@ public interface FullFeatures {
     @Nullable
     Fragment createFadRecHomeFragment();
 
+    /** Remote streaming tab fragment — Full-only; null in Lite. */
+    @Nullable
+    Fragment createRemoteFragment();
+
     /** Screen-recording settings fragment — Full-only; null in Lite. */
     @Nullable
     Fragment createScreenRecordingSettingsFragment();

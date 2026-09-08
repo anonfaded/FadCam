@@ -15,6 +15,7 @@ public final class FeatureRegistry {
 
     private static volatile FullFeatures fullFeatures;
     private static volatile BatchFfmpegOps batchFfmpegOps;
+    private static volatile com.fadcam.service.StreamingBridge streamingBridge;
 
     private FeatureRegistry() {
     }
@@ -32,6 +33,21 @@ public final class FeatureRegistry {
             }
         }
         return f;
+    }
+
+    public static com.fadcam.service.StreamingBridge streaming() {
+        com.fadcam.service.StreamingBridge bridge = streamingBridge;
+        if (bridge == null) {
+            synchronized (FeatureRegistry.class) {
+                bridge = streamingBridge;
+                if (bridge == null) {
+                    bridge = loadOr("com.fadcam.full.StreamingBridgeImpl", com.fadcam.service.StreamingBridge.class,
+                            new com.fadcam.service.StreamingBridgeDefault());
+                    streamingBridge = bridge;
+                }
+            }
+        }
+        return bridge;
     }
 
     public static BatchFfmpegOps batchFfmpeg() {

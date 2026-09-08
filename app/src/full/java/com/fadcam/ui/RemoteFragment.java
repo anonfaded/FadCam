@@ -559,7 +559,7 @@ public class RemoteFragment extends BaseFragment {
     private void startStreaming() {
         FLog.i(TAG, "Starting streaming");
         
-        RemoteStreamManager.StreamingMode mode = prefsManager.getStreamingMode();
+        com.fadcam.StreamingMode mode = prefsManager.getStreamingMode();
         RemoteStreamManager.getInstance().setStreamingMode(mode);
         
         Intent intent = new Intent(requireContext(), RemoteStreamService.class);
@@ -595,22 +595,22 @@ public class RemoteFragment extends BaseFragment {
         updateUI();
     }
     
-    private void switchStreamingMode(RemoteStreamManager.StreamingMode newMode) {
+    private void switchStreamingMode(com.fadcam.StreamingMode newMode) {
         prefsManager.setStreamingMode(newMode);
         RemoteStreamManager.getInstance().setStreamingMode(newMode);
         updateModeDisplay();
         
         Toast.makeText(requireContext(), 
-            newMode == RemoteStreamManager.StreamingMode.STREAM_ONLY ? 
+            newMode == com.fadcam.StreamingMode.STREAM_ONLY ? 
                 "Stream Only mode" : "Stream & Save mode", 
             Toast.LENGTH_SHORT).show();
     }
     
     private void updateModeDisplay() {
-        RemoteStreamManager.StreamingMode mode = prefsManager.getStreamingMode();
-        String modeText = mode == RemoteStreamManager.StreamingMode.STREAM_ONLY ? 
+        com.fadcam.StreamingMode mode = prefsManager.getStreamingMode();
+        String modeText = mode == com.fadcam.StreamingMode.STREAM_ONLY ? 
             getString(R.string.stream_only) : getString(R.string.stream_and_save);
-        String descText = mode == RemoteStreamManager.StreamingMode.STREAM_ONLY ?
+        String descText = mode == com.fadcam.StreamingMode.STREAM_ONLY ?
             getString(R.string.stream_only_desc) : getString(R.string.stream_and_save_desc);
         recordingModeValue.setText(descText);
     }
@@ -917,8 +917,8 @@ public class RemoteFragment extends BaseFragment {
         items.add(new com.fadcam.ui.picker.OptionItem(
             "stream_and_save", getString(R.string.remote_mode_stream_save), getString(R.string.remote_mode_stream_save_desc), null));
         
-        RemoteStreamManager.StreamingMode currentMode = prefsManager.getStreamingMode();
-        String selectedId = currentMode == RemoteStreamManager.StreamingMode.STREAM_ONLY ? 
+        com.fadcam.StreamingMode currentMode = prefsManager.getStreamingMode();
+        String selectedId = currentMode == com.fadcam.StreamingMode.STREAM_ONLY ? 
             "stream_only" : "stream_and_save";
         
         com.fadcam.ui.picker.PickerBottomSheetFragment picker = 
@@ -929,10 +929,10 @@ public class RemoteFragment extends BaseFragment {
             getViewLifecycleOwner(), (requestKey, result) -> {
                 String newSelectedId = result.getString("selected_id");
                 if (newSelectedId != null) {
-                    RemoteStreamManager.StreamingMode newMode = 
+                    com.fadcam.StreamingMode newMode = 
                         "stream_only".equals(newSelectedId) ? 
-                        RemoteStreamManager.StreamingMode.STREAM_ONLY : 
-                        RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+                        com.fadcam.StreamingMode.STREAM_ONLY : 
+                        com.fadcam.StreamingMode.STREAM_AND_SAVE;
                     switchStreamingMode(newMode);
                 }
             });
