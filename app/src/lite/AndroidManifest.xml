@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lite flavor manifest: removes Full-only components declared in the shared
+     manifest (main manifest still supplies all permissions/activities/services). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+        <activity
+            android:name="com.fadcam.ui.faditor.FaditorEditorActivity"
+            tools:node="remove" />
+        <service
+            android:name="com.fadcam.ui.faditor.export.ExportService"
+            tools:node="remove" />
+        <!-- Remote/streaming is Full-only: never run these services in Lite -->
+        <service
+            android:name="com.fadcam.streaming.RemoteStreamService"
+            tools:node="remove" />
+        <service
+            android:name="com.fadcam.services.AlarmService"
+            tools:node="remove" />
+    </application>
+</manifest>

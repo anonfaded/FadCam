@@ -40,6 +40,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         versionCode = 52
         versionName = "4.0.0"
+        buildConfigField("boolean", "LITE_EDITION", "false")
         // Launcher label per variant: defaultConfig is the base, flavors/build types override,
         // onVariants() below sets the per-variant debug labels (Full beta vs Lite beta).
         manifestPlaceholders["appLabel"] = "FadCam"
@@ -172,6 +173,7 @@ android {
             applicationIdSuffix = ".lite"
             resValue("string", "app_name", "FadCam Lite")
             manifestPlaceholders["appLabel"] = "FadCam Lite"
+            buildConfigField("boolean", "LITE_EDITION", "true")
         }
         // Lite Pro discreet disguises (same icon/app name as the Full disguises, see sourceSets)
         create("liteNotes") {
@@ -179,18 +181,21 @@ android {
             applicationIdSuffix = ".lite.notes"
             resValue("string", "app_name", "Notes")
             manifestPlaceholders["appLabel"] = "Notes"
+            buildConfigField("boolean", "LITE_EDITION", "true")
         }
         create("liteCalc") {
             dimension = "pro"
             applicationIdSuffix = ".lite.calc"
             resValue("string", "app_name", "Calculator")
             manifestPlaceholders["appLabel"] = "Calculator"
+            buildConfigField("boolean", "LITE_EDITION", "true")
         }
         create("liteWeather") {
             dimension = "pro"
             applicationIdSuffix = ".lite.weather"
             resValue("string", "app_name", "Weather")
             manifestPlaceholders["appLabel"] = "Weather"
+            buildConfigField("boolean", "LITE_EDITION", "true")
         }
         create("default") {
             dimension = "pro"
@@ -301,12 +306,19 @@ android {
         // Lite Pro disguises reuse the SAME launcher icons as their Full counterparts
         getByName("liteNotes") {
             res.srcDir("src/notesPro/res")
+            manifest.srcFile("src/lite/AndroidManifest.xml")
         }
         getByName("liteCalc") {
             res.srcDir("src/calcPro/res")
+            manifest.srcFile("src/lite/AndroidManifest.xml")
         }
         getByName("liteWeather") {
             res.srcDir("src/weatherPro/res")
+            manifest.srcFile("src/lite/AndroidManifest.xml")
+        }
+        // Lite free: same component removals as the disguise flavors
+        getByName("lite") {
+            manifest.srcFile("src/lite/AndroidManifest.xml")
         }
         // Full-only source dir: heavy/native features that Lite must not package
         // (Faditor/ffmpeg, motion detection/OpenCV/TFLite, forensics). Shared by ALL
@@ -384,7 +396,6 @@ dependencies {
     // Media3 ExoPlayer for playback (replacing deprecated exoplayer2)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
-    implementation(libs.media3.session)
     // Media3 Transformer + Effect for Faditor Mini video editing
     implementation(libs.media3.transformer)
     implementation(libs.media3.effect)
@@ -425,9 +436,6 @@ dependencies {
     
     // NanoHTTPD for HTTP streaming server
     implementation(libs.nanohttpd.core)
-    
-    // MP4Parser for reliable MP4 box structure parsing
-    implementation("com.googlecode.mp4parser:isoparser:1.1.22")
 
     annotationProcessor(libs.compiler)
     annotationProcessor(libs.room.compiler)

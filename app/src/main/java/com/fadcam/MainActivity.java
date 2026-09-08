@@ -525,6 +525,18 @@ public class MainActivity extends AppCompatActivity {
 
         // Fragment container for tab navigation
         bottomNavigationView = findViewById(R.id.bottom_navigation);
+        if (bottomNavigationView != null && com.fadcam.BuildConfig.LITE_EDITION) {
+            // Lite edition: three tabs only — Records (left), Home (center), Settings (right).
+            // The internal position engine (0-5) is untouched; the menu is just a selector.
+            android.view.Menu liteMenu = bottomNavigationView.getMenu();
+            liteMenu.clear();
+            liteMenu.add(android.view.Menu.NONE, R.id.navigation_records, 0,
+                    R.string.nav_records).setIcon(R.drawable.ic_records_selector);
+            liteMenu.add(android.view.Menu.NONE, R.id.navigation_home, 1,
+                    R.string.nav_home).setIcon(R.drawable.pilot_steering_white);
+            liteMenu.add(android.view.Menu.NONE, R.id.navigation_settings, 2,
+                    R.string.nav_settings).setIcon(R.drawable.ic_nav_settings);
+        }
         if (bottomNavigationView != null) {
             // Prevent Material from applying its own window insets to the nav view.
             // The parent nav_container already handles insets; letting Material add its own

@@ -1051,6 +1051,11 @@ public class RemoteStreamManager {
      * Check if streaming is currently enabled.
      */
     public boolean isStreamingEnabled() {
+        // Lite edition has no Remote/streaming (feature + services removed); the
+        // per-frame recording checks read this and must always see false.
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            return false;
+        }
         return streamingEnabled;
     }
 
