@@ -958,7 +958,7 @@
         </FrameLayout>
 
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/cam_switch" app:iconSize="24dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="15dp"
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/cam_switch" app:iconTint="@color/white" app:iconSize="24dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="15dp"
             android:nextFocusUp="@+id/cardRailToggleLandscape"
             android:nextFocusDown="@+id/buttonMirrorSwitch" />
 

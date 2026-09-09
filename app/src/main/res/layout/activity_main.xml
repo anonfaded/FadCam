@@ -98,9 +98,9 @@
                 android:layout_width="@dimen/home_dock_side_width_wide"
                 android:layout_height="@dimen/home_dock_side_height"
                 android:orientation="vertical"
-                android:gravity="start|center_vertical"
-                android:paddingStart="14dp"
+                android:gravity="center"
                 android:animateLayoutChanges="true"
+                android:paddingEnd="@dimen/home_dock_side_inset"
                 android:layout_marginEnd="-34dp"
                 android:clickable="true"
                 android:focusable="true">
@@ -141,9 +141,9 @@
                 android:layout_width="@dimen/home_dock_side_width_wide"
                 android:layout_height="@dimen/home_dock_side_height"
                 android:orientation="vertical"
-                android:gravity="end|center_vertical"
-                android:paddingEnd="14dp"
+                android:gravity="center"
                 android:animateLayoutChanges="true"
+                android:paddingStart="@dimen/home_dock_side_inset"
                 android:layout_marginStart="-34dp"
                 android:clickable="true"
                 android:focusable="true">
