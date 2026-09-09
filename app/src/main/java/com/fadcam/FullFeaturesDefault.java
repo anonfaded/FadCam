@@ -28,9 +28,9 @@ public final class FullFeaturesDefault implements FullFeatures {
     }
 
     @Override
-    public boolean showVideoInfoSheet(androidx.fragment.app.FragmentActivity activity,
-                                      com.fadcam.ui.VideoItem videoItem) {
-        return false;
+    @androidx.annotation.NonNull
+    public com.fadcam.videoinfo.VideoInfoProbe createVideoInfoProbe() {
+        return uri -> null;
     }
 
     @Override

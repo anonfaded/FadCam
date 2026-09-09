@@ -3416,6 +3416,13 @@ public class RecordsFragment extends BaseFragment implements
 
     private void setupFilterUi() {
         styleFilterChips();
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            // Lite has no FadRec, Faditor, streaming or mini-apps recordings
+            if (chipFilterScreen != null) chipFilterScreen.setVisibility(View.GONE);
+            if (chipFilterFaditor != null) chipFilterFaditor.setVisibility(View.GONE);
+            if (chipFilterStream != null) chipFilterStream.setVisibility(View.GONE);
+            if (chipFilterMiniApps != null) chipFilterMiniApps.setVisibility(View.GONE);
+        }
         if (chipFilterAll != null) {
             chipFilterAll.setOnClickListener(v -> setActiveFilter(VideoItem.Category.ALL));
         }

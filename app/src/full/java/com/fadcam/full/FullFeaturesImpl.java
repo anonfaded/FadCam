@@ -50,14 +50,9 @@ public final class FullFeaturesImpl implements FullFeatures {
     }
 
     @Override
-    public boolean showVideoInfoSheet(FragmentActivity activity, VideoItem videoItem) {
-        try {
-            VideoInfoBottomSheet bottomSheet = VideoInfoBottomSheet.newInstance(videoItem);
-            bottomSheet.show(activity.getSupportFragmentManager(), "video_info_bottom_sheet");
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
+    @androidx.annotation.NonNull
+    public com.fadcam.videoinfo.VideoInfoProbe createVideoInfoProbe() {
+        return new com.fadcam.videoinfo.FullVideoInfoProbe();
     }
 
     @Override

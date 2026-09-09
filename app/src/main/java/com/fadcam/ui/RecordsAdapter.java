@@ -1320,8 +1320,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     ctx.getString(R.string.video_menu_upload_faddrive, "Upload to FadDrive"), "cloud",
                     ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
         }
-        // Edit with Faditor Mini
-        if (!isImage) {
+        // Edit with Faditor Mini (Full-only; Lite v1 hides the entry)
+        if (!isImage && !com.fadcam.BuildConfig.LITE_EDITION) {
             items.add(OptionItem.withLigature("action_edit_faditorx", ctx.getString(R.string.edit_with_faditorx),
                     "content_cut"));
         }
@@ -2002,10 +2002,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         try {
             FragmentActivity activity = (FragmentActivity) context;
-            if (!FeatureRegistry.features().showVideoInfoSheet(activity, videoItem)) {
-                // Lite: full ffprobe info sheet is not available — interim basic message
-                Toast.makeText(context, context.getString(R.string.records_error_video_info), Toast.LENGTH_SHORT).show();
-            }
+            VideoInfoBottomSheet bottomSheet = VideoInfoBottomSheet.newInstance(videoItem);
+            bottomSheet.show(activity.getSupportFragmentManager(), "video_info_bottom_sheet");
         } catch (Exception e) {
             FLog.e(TAG, "Error showing video info bottom sheet", e);
             Toast.makeText(context, context.getString(R.string.records_error_video_info), Toast.LENGTH_SHORT).show();

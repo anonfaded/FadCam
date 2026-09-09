@@ -28,8 +28,9 @@ public interface FullFeatures {
     /** FFprobe duration in ms; -1 when unavailable/failed (caller falls back to MMR). */
     long probeDurationMs(Context ctx, Uri videoUri);
 
-    /** Full ffprobe-backed video info sheet. */
-    boolean showVideoInfoSheet(FragmentActivity activity, VideoItem videoItem);
+    /** FFprobe metadata provider (Full-only); Lite receives a no-op probe. */
+    @androidx.annotation.NonNull
+    com.fadcam.videoinfo.VideoInfoProbe createVideoInfoProbe();
 
     /** TFLite AI object detector (Full-only); null in Lite. */
     @Nullable
