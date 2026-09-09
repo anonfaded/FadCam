@@ -93,13 +93,15 @@
             android:elevation="12dp"
             android:visibility="gone">
 
-            <LinearLayout
+<LinearLayout
                 android:id="@+id/lite_dock_item_records"
-                android:layout_width="72dp"
-                android:layout_height="match_parent"
+                android:layout_width="@dimen/home_dock_side_width_wide"
+                android:layout_height="@dimen/home_dock_side_height"
                 android:orientation="vertical"
-                android:gravity="center"
+                android:gravity="start|center_vertical"
+                android:paddingStart="14dp"
                 android:animateLayoutChanges="true"
+                android:layout_marginEnd="-34dp"
                 android:clickable="true"
                 android:focusable="true">
                 <ImageView
@@ -108,18 +110,12 @@
                     android:layout_height="@dimen/home_dock_icon"
                     android:src="@drawable/ic_records_selector"
                     android:contentDescription="@string/nav_records" />
-                <TextView
-                    android:id="@+id/lite_dock_label_records"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/nav_records"
-                    android:textColor="#FFFFFF" />
             </LinearLayout>
 
-            <LinearLayout
+<LinearLayout
                 android:id="@+id/lite_dock_item_home"
-                android:layout_width="72dp"
-                android:layout_height="match_parent"
+                android:layout_width="@dimen/home_dock_height"
+                android:layout_height="@dimen/home_dock_height"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:animateLayoutChanges="true"
@@ -133,19 +129,22 @@
                     android:contentDescription="@string/nav_home" />
                 <TextView
                     android:id="@+id/lite_dock_label_home"
+                    android:paddingTop="2dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/nav_home"
                     android:textColor="#FFFFFF" />
             </LinearLayout>
 
-            <LinearLayout
+<LinearLayout
                 android:id="@+id/lite_dock_item_settings"
-                android:layout_width="72dp"
-                android:layout_height="match_parent"
+                android:layout_width="@dimen/home_dock_side_width_wide"
+                android:layout_height="@dimen/home_dock_side_height"
                 android:orientation="vertical"
-                android:gravity="center"
+                android:gravity="end|center_vertical"
+                android:paddingEnd="14dp"
                 android:animateLayoutChanges="true"
+                android:layout_marginStart="-34dp"
                 android:clickable="true"
                 android:focusable="true">
                 <ImageView
@@ -154,14 +153,7 @@
                     android:layout_height="@dimen/home_dock_icon"
                     android:src="@drawable/ic_nav_settings"
                     android:contentDescription="@string/nav_settings" />
-                <TextView
-                    android:id="@+id/lite_dock_label_settings"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/nav_settings"
-                    android:textColor="#FFFFFF" />
-            </LinearLayout>
-        </LinearLayout>
+            </LinearLayout>        </LinearLayout>
 
         </FrameLayout>
 

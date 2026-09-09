@@ -536,8 +536,6 @@ public class MainActivity extends AppCompatActivity {
                     R.string.nav_settings).setIcon(R.drawable.ic_nav_settings);
             // Compact dock: real nav stays as the invisible engine; a styled duplicate
             // renders the 3 buttons with stable colors/shadows/animations.
-            android.view.View scrim = findViewById(R.id.dock_focus_gradient_scrim);
-            if (scrim != null) scrim.setVisibility(android.view.View.GONE);
             android.widget.FrameLayout.LayoutParams navLp =
                     (android.widget.FrameLayout.LayoutParams) bottomNavigationView.getLayoutParams();
             navLp.height = 0;
@@ -546,17 +544,48 @@ public class MainActivity extends AppCompatActivity {
 
             final android.view.View dock = findViewById(R.id.lite_dock);
             if (dock != null) {
-                // Same background color as the stable bar (theme attr), rounded into a pill
+                // Blob dock: side "tentacles" gradient from the bar color to black
+                // (black tucks into the circle) while the Home button keeps the bar color.
                 android.util.TypedValue tv = new android.util.TypedValue();
                 int color = 0xFF1E1E1E;
                 if (getTheme().resolveAttribute(com.fadcam.R.attr.colorBottomNav, tv, true)) {
                     color = tv.data;
                 }
-                float radius = getResources().getDisplayMetrics().density * 28f;
-                android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
-                pill.setColor(color);
-                pill.setCornerRadius(radius);
-                dock.setBackground(pill);
+                float d = getResources().getDisplayMetrics().density;
+                float homeH = getResources().getDimension(com.fadcam.R.dimen.home_dock_height);
+                // Premium palette: side buttons are one tone of the bar color (softly
+                // darkened) with FULL rounded ends (pill) — no sharp inner edges and no
+                // harsh black gradient; the Home circle is the bar color with a soft
+                // top-light and a hairline ring.
+                int sideColor = mix(color, 0xFF000000, 0.30f);
+                int light = mix(color, 0xFFFFFFFF, 0.08f);
+                float sideRadius = homeH * 0.45f;
+                android.graphics.drawable.GradientDrawable left = new android.graphics.drawable.GradientDrawable();
+                left.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+                left.setColor(sideColor);
+                left.setCornerRadii(new float[]{sideRadius, sideRadius, 0f, 0f,
+                        0f, 0f, sideRadius, sideRadius});
+                android.graphics.drawable.GradientDrawable right = new android.graphics.drawable.GradientDrawable();
+                right.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+                right.setColor(sideColor);
+                right.setCornerRadii(new float[]{0f, 0f, sideRadius, sideRadius,
+                        sideRadius, sideRadius, 0f, 0f});
+                android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
+                circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                circle.setGradientType(android.graphics.drawable.GradientDrawable.LINEAR_GRADIENT);
+                circle.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
+                circle.setColors(new int[]{light, mix(color, 0xFF000000, 0.10f)});
+                circle.setStroke((int) Math.max(1f, 1.2f * d), 0x22FFFFFF);
+                android.view.View records = dock.findViewById(R.id.lite_dock_item_records);
+                android.view.View settings = dock.findViewById(R.id.lite_dock_item_settings);
+                android.view.View home = dock.findViewById(R.id.lite_dock_item_home);
+                if (records != null) records.setBackground(left);
+                if (settings != null) settings.setBackground(right);
+                if (home != null) {
+                    home.setBackground(circle);
+                    home.setElevation(3f * d); // slight lift: circle floats above the tentacles
+                }
+                dock.setBackground(null);
                 dock.setVisibility(android.view.View.VISIBLE);
                 bindLiteDockItem(dock, R.id.lite_dock_item_records, R.id.navigation_records);
                 bindLiteDockItem(dock, R.id.lite_dock_item_home, R.id.navigation_home);
@@ -928,6 +957,33 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /** Wires a compact-dock button to the hidden nav engine. */
+    private static int mix(int base, int overlay, float t) {
+        int a = (base >>> 24) & 0xFF;
+        int r = (base >>> 16) & 0xFF;
+        int g = (base >>> 8) & 0xFF;
+        int b = base & 0xFF;
+        int ar = (overlay >>> 16) & 0xFF;
+        int ag = (overlay >>> 8) & 0xFF;
+        int ab = overlay & 0xFF;
+        return (a << 24) | ((int) (r + (ar - r) * t) << 16)
+                | ((int) (g + (ag - g) * t) << 8) | (int) (b + (ab - b) * t);
+    }
+
+    private void applyLiteDockSideAlignment(android.view.View records, android.view.View settings, android.view.View home) {
+        if (records == null || settings == null || home == null) return;
+        android.view.ViewGroup.LayoutParams rp = records.getLayoutParams();
+        android.view.ViewGroup.LayoutParams sp = settings.getLayoutParams();
+        android.view.ViewGroup.LayoutParams hp = home.getLayoutParams();
+        int circleBottom = hp.height; // home is square; container height == home height
+        int sideH = (int) getResources().getDimension(com.fadcam.R.dimen.home_dock_side_height);
+        rp.height = sideH;
+        sp.height = sideH;
+        ((android.view.ViewGroup.MarginLayoutParams) rp).topMargin = (circleBottom - sideH) / 2;
+        ((android.view.ViewGroup.MarginLayoutParams) sp).topMargin = (circleBottom - sideH) / 2;
+        records.setLayoutParams(rp);
+        settings.setLayoutParams(sp);
+    }
+
     private void bindLiteDockItem(android.view.View dock, int dockItemId, final int navItemId) {
         android.view.View item = dock.findViewById(dockItemId);
         if (item == null) return;
@@ -944,11 +1000,11 @@ public class MainActivity extends AppCompatActivity {
         if (dock == null || dock.getVisibility() != android.view.View.VISIBLE) return;
         int selectedId = getNavItemIdForPosition(currentFragmentPosition);
         applyLiteDockItemState(dock, R.id.lite_dock_item_records, R.id.lite_dock_icon_records,
-                R.id.lite_dock_label_records, selectedId == R.id.navigation_records);
+                0, selectedId == R.id.navigation_records);
         applyLiteDockItemState(dock, R.id.lite_dock_item_home, R.id.lite_dock_icon_home,
                 R.id.lite_dock_label_home, selectedId == R.id.navigation_home);
         applyLiteDockItemState(dock, R.id.lite_dock_item_settings, R.id.lite_dock_icon_settings,
-                R.id.lite_dock_label_settings, selectedId == R.id.navigation_settings);
+                0, selectedId == R.id.navigation_settings);
     }
 
     private void applyLiteDockItemState(android.view.View dock, int itemId, int iconId, int labelId,
@@ -1016,25 +1072,25 @@ public class MainActivity extends AppCompatActivity {
             // Interactive surfaces only exist on the HOME tab (quick-actions reorder,
             // mode pill, tutorial, preview, fast-scroll). On other tabs (Records body)
             // horizontal swipes must switch tabs, not be swallowed by the list.
-            if (currentFragmentPosition == 0) {
-                if (current instanceof HorizontalScrollView) return true;
-                if (current.getId() == R.id.tutorial_scroll) return true;
-                if (current.getId() == R.id.mode_switcher || current.getId() == R.id.mode_switcher_root) return true;
-                if (current instanceof com.fadcam.ui.GalleryFastScroller) return true;
-                if (current instanceof com.google.android.material.chip.Chip) return true;
-                if (current instanceof com.google.android.material.chip.ChipGroup) return true;
-                if (current instanceof com.google.android.material.bottomnavigation.BottomNavigationView) return true;
-                if (current.getId() == R.id.textureView || current.getId() == R.id.fullscreenTextureView) return true;
-                if (current.getId() == R.id.cardPreview) {
-                    View previewTexture = findViewById(R.id.textureView);
-                    if (previewTexture != null && previewTexture.getVisibility() == View.VISIBLE) {
-                        return true;
-                    }
+            if (current instanceof androidx.viewpager2.widget.ViewPager2) return true;
+            if (current instanceof androidx.viewpager.widget.ViewPager) return true;
+            if (current instanceof HorizontalScrollView) return true;
+            if (current.getId() == R.id.tutorial_scroll) return true;
+            if (current.getId() == R.id.mode_switcher || current.getId() == R.id.mode_switcher_root) return true;
+            if (current instanceof com.fadcam.ui.GalleryFastScroller) return true;
+            if (current instanceof com.google.android.material.chip.Chip) return true;
+            if (current instanceof com.google.android.material.chip.ChipGroup) return true;
+            if (current instanceof com.google.android.material.bottomnavigation.BottomNavigationView) return true;
+            if (current.getId() == R.id.textureView || current.getId() == R.id.fullscreenTextureView) return true;
+            if (current.getId() == R.id.cardPreview) {
+                View previewTexture = findViewById(R.id.textureView);
+                if (previewTexture != null && previewTexture.getVisibility() == View.VISIBLE) {
+                    return true;
                 }
-                if (current instanceof RecyclerView) {
-                    RecyclerView rv = (RecyclerView) current;
-                    if (rv.canScrollHorizontally(-1) || rv.canScrollHorizontally(1)) return true;
-                }
+            }
+            if (current instanceof RecyclerView) {
+                RecyclerView rv = (RecyclerView) current;
+                if (rv.canScrollHorizontally(-1) || rv.canScrollHorizontally(1)) return true;
             }
             if (!(parent instanceof View)) break;
             current = (View) parent;

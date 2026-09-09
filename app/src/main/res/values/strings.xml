@@ -25,7 +25,7 @@
     <string name="website_title">Website</string>
     <string name="readme_website_subtitle">Official site</string>
     <string name="privacy_information">Privacy Information</string>
-    <string name="copyright_info"> 2024-2025 https://fadcam.faded.dev\nLicensed under GPL-3.0</string>
+    <string name="copyright_info">© FadSec Lab  2024-2026\nhttps://fadcam.fadseclab.com\nLicensed under GPL-3.0</string>
     <string-array name="video_resolutions_keys">
         <item>7680x4320</item>        <!-- 8K -->
         <item>3840x2160</item>        <!-- 4K -->
