@@ -169,6 +169,20 @@ public class GLWatermarkRenderer {
     };
 
     private volatile boolean frameAvailable = false;
+
+    // Render perf counters (stop-time summary logged by GLRecordingPipeline)
+    private final java.util.concurrent.atomic.AtomicLong renderCount = new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong renderTotalMs = new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong renderMaxMs = new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong frameWaitTimeoutCount = new java.util.concurrent.atomic.AtomicLong();
+
+    public String getRenderStats() {
+        long c = renderCount.get();
+        return "frames=" + c
+                + " avgMs=" + (c > 0 ? (renderTotalMs.get() / c) : 0)
+                + " maxMs=" + renderMaxMs.get()
+                + " frameWaitTimeouts=" + frameWaitTimeoutCount.get();
+    }
     private final Object frameSyncObject = new Object();
     private final float[] latestTexMatrix = new float[16];
     private final float[] pipLatestTexMatrix = new float[16]; // Saved PiP matrix for full-screen draw when swapped
@@ -352,6 +366,9 @@ public class GLWatermarkRenderer {
             long encStart = System.nanoTime();
             renderToEncoderInternal(allowStaleFrame);
             long encMs = (System.nanoTime() - encStart) / 1_000_000L;
+            renderCount.incrementAndGet();
+            renderTotalMs.addAndGet(encMs);
+            if (encMs > renderMaxMs.get()) renderMaxMs.set(encMs);
             if (encMs > 80) {
                 long now = System.currentTimeMillis();
                 if (now - lastSlowRenderWarnMs > SLOW_RENDER_WARN_INTERVAL_MS) {
@@ -630,6 +647,7 @@ public class GLWatermarkRenderer {
                             try {
                                 frameSyncObject.wait(17); // one-frame budget at 60fps
                                 if (!frameAvailable) {
+                                    frameWaitTimeoutCount.incrementAndGet();
                                     FLog.w(TAG, "renderToEncoder: frame wait timed out");
                                     return;
                                 }

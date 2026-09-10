@@ -725,6 +725,7 @@ public class CloudStatusManager {
 
             } else if ("recording_toggle".equals(action)) {
                 // Start / stop / resume-if-paused – mirrors LiveM3U8Server.toggleRecording()
+                FLog.i(TAG, "[REMOTE] recording_toggle received from dashboard — remote start/stop path");
                 boolean isRecording = spManager.isRecordingInProgress();
                 boolean isPaused = manager.isPaused();
 

@@ -38,7 +38,7 @@ android {
         minSdk = 24
         targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 52
+        versionCode = 53
         versionName = "4.0.0"
         buildConfigField("boolean", "LITE_EDITION", "false")
         buildConfigField("String", "UPDATE_ORG", "\"anonfaded\"")
@@ -80,7 +80,7 @@ android {
         debug {
             applicationIdSuffix = ".beta"
             isDebuggable = true
-            versionNameSuffix = "-beta10.6" // Increment the beta version suffix for each release. Use `beta1` for the first beta release, then `beta2`, etc.
+            versionNameSuffix = "-beta10.7" // Increment the beta version suffix for each release. Use `beta1` for the first beta release, then `beta2`, etc.
             resValue("string", "app_name", "FadCam Beta")
         }
         

@@ -806,6 +806,15 @@ public class FragmentedMp4MuxerWrapper {
         }
         logFileState("before finalization");
 
+        // Per-track final sample totals (from fragment parsing) — 0 video
+        // samples here means video data never reached the mdat.
+        int totAudio = 0, totVideo = 0;
+        for (int c : fragmentAudioCounts) totAudio += c;
+        for (int c : fragmentVideoCounts) totVideo += c;
+        FLog.i(TAG, "[HYBRID] fragments=" + fragmentPositions.size()
+                + " | audio samples=" + totAudio
+                + " | video samples=" + totVideo);
+
         // Attempt 1: original (possibly stale) channel.
         try {
             finalizeWithChannel(fileOutputStream.getChannel());
@@ -1154,7 +1163,13 @@ public class FragmentedMp4MuxerWrapper {
                 
                 // Write to file — per-fragment flush for SAF visibility.
                 if (shouldSaveToDisk && fileOutputStream != null) {
+                    long wStart = System.nanoTime();
                     writeSegmentWithRecovery(data, false);
+                    long wMs = (System.nanoTime() - wStart) / 1_000_000L;
+                    if (wMs > 300) {
+                        FLog.w(TAG, "[SEG-WRITE] fragment #" + segment.segmentNr
+                                + " bytes=" + data.length + " took " + wMs + "ms (possible I/O stall)");
+                    }
                 }
                 
                 nextFragmentNumber++;
