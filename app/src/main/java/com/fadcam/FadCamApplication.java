@@ -12,6 +12,7 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
     @Override
     public void onCreate() {
         super.onCreate();
+        installCrashLogger();
         com.fadcam.services.UpdateCheckService.init(this);
         ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
         // Room DB open + invalidation observer registration is deferred off the
@@ -19,6 +20,35 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
         // still catches post-kill index writes (invocation is on Room's own
         // background invalidation thread either way).
         new Thread(this::registerSelfHealingScanObserver, "selfheal-observer").start();
+    }
+
+    /**
+     * Captures uncaught exceptions into the app's own log (FLog) and a cache
+     * file, then delegates to the platform handler so logcat still records the
+     * crash. This makes remote-tester crash reports visible in the in-app
+     * debug dossier instead of only in `adb logcat`.
+     */
+    private void installCrashLogger() {
+        final Thread.UncaughtExceptionHandler previous =
+                Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                throwable.printStackTrace(new java.io.PrintWriter(sw));
+                String stack = sw.toString();
+                FLog.e("CrashLogger", "FATAL EXCEPTION on thread '" + thread.getName()
+                        + "'\n" + stack);
+                java.io.File crashFile = new java.io.File(getCacheDir(), "last_crash.txt");
+                try (java.io.FileWriter fw = new java.io.FileWriter(crashFile, false)) {
+                    fw.write("Thread: " + thread.getName() + "\n\n" + stack);
+                } catch (Exception ignored) {
+                }
+            } catch (Exception ignored) {
+            }
+            if (previous != null) {
+                previous.uncaughtException(thread, throwable);
+            }
+        });
     }
 
     /**
