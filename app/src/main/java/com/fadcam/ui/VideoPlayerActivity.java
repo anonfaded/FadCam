@@ -237,11 +237,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
         Uri videoUri = getIntent().getData();
             this.currentVideoUri = videoUri; // Store for later use
             final long requestedSeekMs = getIntent().getLongExtra(
-                com.fadcam.forensics.ui.ForensicsEventsFragment.EXTRA_OPEN_AT_MS,
+                com.fadcam.ForensicsConstants.EXTRA_OPEN_AT_MS,
                 -1L
             );
             openPausedFromForensics = getIntent().getBooleanExtra(
-                com.fadcam.forensics.ui.ForensicsEventsFragment.EXTRA_OPEN_PAUSED,
+                com.fadcam.ForensicsConstants.EXTRA_OPEN_PAUSED,
                 false
             );
 

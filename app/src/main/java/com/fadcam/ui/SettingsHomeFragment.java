@@ -57,6 +57,19 @@ public class SettingsHomeFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_settings_home, container, false);
+        configureLiteHides(root);
+        android.view.View fullPromo = root.findViewById(R.id.group_full_promo);
+        if (fullPromo != null) {
+            fullPromo.setOnClickListener(v -> {
+                try {
+                    android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://github.com/anonfaded/FadCam"));
+                    startActivity(i);
+                } catch (Exception e) {
+                    FLog.w("SettingsHome", "Failed to open GitHub link", e);
+                }
+            });
+        }
 
         setupModeSelector(root);
         setupRowHandlers(root);
@@ -192,13 +205,18 @@ public class SettingsHomeFragment extends Fragment {
             updateModeSelectorUI();
             applyModeFilter(currentMode);
         });
-        popupView.findViewById(R.id.mode_fadrec).setOnClickListener(v -> {
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            android.view.View fadRecOption = popupView.findViewById(R.id.mode_fadrec);
+            if (fadRecOption != null) fadRecOption.setVisibility(android.view.View.GONE);
+        } else {
+            popupView.findViewById(R.id.mode_fadrec).setOnClickListener(v -> {
             currentMode = SettingsMode.FADREC;
             updatePopupChecks(popupView, currentMode);
             animatePopupDismiss(popup, popupView);
             updateModeSelectorUI();
             applyModeFilter(currentMode);
         });
+        }
 
         // Position popup below the anchor button
         int[] anchorPos = new int[2];
@@ -440,11 +458,30 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_video_quick, () -> openSubFragment(new VideoSettingsFragment()));
         bindRow(root, R.id.group_video_player_settings, () -> openSubFragment(new VideoPlayerSettingsFragment()));
         bindRow(root, R.id.group_audio_quick, () -> openSubFragment(new AudioSettingsFragment()));
-        bindRow(root, R.id.group_screen_recording, () -> openSubFragment(new com.fadcam.fadrec.ui.ScreenRecordingSettingsFragment()));
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            // Screen recording (FadRec) is Full-only in Lite
+            android.view.View screenRecRow = root.findViewById(R.id.group_screen_recording);
+            if (screenRecRow != null) screenRecRow.setVisibility(android.view.View.GONE);
+        } else {
+            bindRow(root, R.id.group_screen_recording, () -> {
+                androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()
+                        .createScreenRecordingSettingsFragment();
+                if (f != null) openSubFragment(f);
+            });
+        }
         bindRow(root, R.id.group_storage, () -> openSubFragment(new StorageSettingsFragment()));
         bindRow(root, R.id.group_security, () -> openSubFragment(new SecuritySettingsFragment()));
         bindRow(root, R.id.group_motion_lab, () -> openSubFragment(new MotionLabSettingsFragment()));
-        bindRow(root, R.id.group_digital_forensics, () -> openSubFragment(new DigitalForensicsSettingsFragment()));
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            android.view.View forensicsRow = root.findViewById(R.id.group_digital_forensics);
+            if (forensicsRow != null) forensicsRow.setVisibility(android.view.View.GONE);
+        } else {
+            bindRow(root, R.id.group_digital_forensics, () -> {
+                androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()
+                        .createForensicsSettingsFragment();
+                if (f != null) openSubFragment(f);
+            });
+        }
         bindRow(root, R.id.group_thermal_guardian, () -> {
             android.widget.Toast.makeText(requireContext(), R.string.mini_app_coming_soon_desc, android.widget.Toast.LENGTH_SHORT).show();
         });
@@ -529,12 +566,63 @@ public class SettingsHomeFragment extends Fragment {
         }
     }
 
+    /** Hides Full-only settings surfaces in the Lite edition. */
+    private void configureLiteHides(View root) {
+        if (!com.fadcam.BuildConfig.LITE_EDITION) return;
+        // The screen-recording row can be re-shown by the settings-mode animation later
+        root.post(() -> {
+            android.view.View screenRec = root.findViewById(R.id.group_screen_recording);
+            if (screenRec != null) screenRec.setVisibility(android.view.View.GONE);
+        });
+        int[] ids = {R.id.mode_selector_btn, R.id.group_screen_recording, R.id.group_digital_forensics,
+                R.id.header_advanced, R.id.group_card_advanced_nav, R.id.header_mini_apps,
+                R.id.group_mini_torch, R.id.group_mini_compass, R.id.group_mini_sound_meter,
+                R.id.group_mini_sensor, R.id.group_mini_speedometer, R.id.group_mini_clinometer,
+                R.id.group_mini_qr_scanner, R.id.group_mini_pedometer, R.id.group_mini_metal_detector,
+                R.id.group_mini_parking_marker, R.id.group_mini_qr_generator};
+        int[] miniIds = {R.id.group_mini_torch, R.id.group_mini_compass, R.id.group_mini_sound_meter,
+                R.id.group_mini_sensor, R.id.group_mini_speedometer, R.id.group_mini_clinometer,
+                R.id.group_mini_qr_scanner, R.id.group_mini_pedometer, R.id.group_mini_metal_detector,
+                R.id.group_mini_parking_marker, R.id.group_mini_qr_generator};
+        java.util.Set<android.view.View> miniParents = new java.util.HashSet<>();
+        for (int id : ids) {
+            android.view.View v = root.findViewById(id);
+            if (v == null) continue;
+            v.setVisibility(android.view.View.GONE);
+        }
+        // Only mini-app CARD includes hide their row container (so no empty boxes remain);
+        // regular rows just hide themselves to avoid collapsing larger sections.
+        for (int id : miniIds) {
+            android.view.View v = root.findViewById(id);
+            if (v == null) continue;
+            android.view.ViewParent p = v.getParent();
+            if (p instanceof android.view.ViewGroup) {
+                miniParents.add((android.view.View) p);
+            }
+        }
+        for (android.view.View p : miniParents) {
+            p.setVisibility(android.view.View.GONE);
+        }
+    }
+
     private void setupMiniAppCards(View root) {
+        // Mini apps are Full-only in Lite
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            android.view.View header = root.findViewById(R.id.header_mini_apps);
+            if (header != null) header.setVisibility(android.view.View.GONE);
+            int[] miniCardIds = {R.id.group_mini_torch, R.id.group_mini_compass, R.id.group_mini_sound_meter,
+                    R.id.group_mini_sensor, R.id.group_mini_speedometer, R.id.group_mini_clinometer,
+                    R.id.group_mini_qr_scanner, R.id.group_mini_pedometer, R.id.group_mini_metal_detector};
+            for (int id : miniCardIds) {
+                android.view.View card = root.findViewById(id);
+                if (card != null) card.setVisibility(android.view.View.GONE);
+            }
+            return;
+        }
         setupMiniCard(root, R.id.group_mini_torch, R.string.mini_app_torch_title,
                 R.string.mini_app_torch_desc, "flashlight_on", 0, () -> {
             try {
-                com.fadcam.ui.miniapps.TorchToolFragment torchTool = com.fadcam.ui.miniapps.TorchToolFragment.newInstance();
-                OverlayNavUtil.show(requireActivity(), torchTool, "torch_tool");
+                com.fadcam.FeatureRegistry.features().openTorchTool(requireActivity());
             } catch (Exception e) {
                 FLog.w("SettingsHome", "Failed to open torch", e);
             }
@@ -557,8 +645,7 @@ public class SettingsHomeFragment extends Fragment {
         setupMiniCard(root, R.id.group_mini_qr_scanner, R.string.mini_app_qr_scanner_title,
                 R.string.mini_app_qr_scanner_desc, "qr_code_scanner", 0, // no "Soon" badge — it's ready
                 () -> {
-                    Intent intent = new Intent(requireContext(), com.fadcam.ui.miniapps.QRScannerActivity.class);
-                    startActivity(intent);
+                    com.fadcam.FeatureRegistry.features().openQrScanner(requireContext());
                 });
         setupMiniCard(root, R.id.group_mini_pedometer, R.string.mini_app_pedometer_title,
                 R.string.mini_app_pedometer_desc, "directions_walk", R.string.mini_app_coming_soon,

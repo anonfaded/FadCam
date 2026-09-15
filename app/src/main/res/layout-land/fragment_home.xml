@@ -870,7 +870,7 @@
         </androidx.cardview.widget.CardView>
 
         <!-- Main Action Buttons -->
-        <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginBottom="72dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:gravity="center" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent">
+        <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginBottom="@dimen/home_controls_bottom_margin" android:paddingTop="4dp" android:paddingBottom="4dp" android:gravity="center" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent">
 
         <FrameLayout
             android:id="@+id/torch_btn_wrapper"
@@ -958,7 +958,7 @@
         </FrameLayout>
 
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/cam_switch" app:iconSize="24dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="15dp"
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="4dp" app:icon="@drawable/cam_switch" app:iconTint="@color/white" app:iconSize="24dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="15dp"
             android:nextFocusUp="@+id/cardRailToggleLandscape"
             android:nextFocusDown="@+id/buttonMirrorSwitch" />
 

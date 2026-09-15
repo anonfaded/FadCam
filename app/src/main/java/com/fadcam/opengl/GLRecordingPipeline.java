@@ -476,7 +476,7 @@ public class GLRecordingPipeline {
     // ════════════════════════════════════════════════════════════════════
 
     private int getEffectiveVideoBitrate(Context context) {
-        boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        boolean isStreaming = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
         if (isStreaming) {
             android.content.SharedPreferences fadcamPrefs =
                     context.getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
@@ -706,10 +706,38 @@ public class GLRecordingPipeline {
                 }
                 // Set up the frame listener to trigger rendering when new frames arrive
                 glRenderer.setOnFrameAvailableListener(new GLWatermarkRenderer.OnFrameAvailableListener() {
+                    long lastFrameNs = -1;
+                    int frameLogCount = 0;
                     @Override
                     public void onFrameAvailable() {
-                        if ((isRecording || previewOnlyRendering) && handler != null
-                                && renderRunnableQueued.compareAndSet(false, true)) {
+                        final long now = System.nanoTime();
+                        if (lastFrameNs > 0) {
+                            long deltaMs = (now - lastFrameNs) / 1_000_000L;
+                            // KEY diag: camera cadence — a ~2s gap here means the
+                            // camera session (not the muxer) stopped delivering frames.
+                            if (deltaMs > 500) {
+                                FLog.w(TAG, "[FRAME-GAP] camera frame gap of " + deltaMs
+                                        + "ms (frame#" + (frameLogCount + 1) + ")");
+                            }
+                        }
+                        lastFrameNs = now;
+                        frameLogCount++;
+                        if (frameLogCount <= 20 || frameLogCount % 300 == 0) {
+                            FLog.d(TAG, "[FRAME] camera frame #" + frameLogCount
+                                    + " at " + (now / 1_000_000L) + "ms");
+                        }
+                        if (isRecording || previewOnlyRendering) {
+                            if (handler == null) return;
+                            if (!renderRunnableQueued.compareAndSet(false, true)) {
+                                // Diag: if this fires constantly while render cadence is
+                                // ~1/2s, the render gate is stuck (runnable removed from
+                                // the GL handler queue before executing).
+                                if (frameLogCount <= 20 || frameLogCount % 300 == 0) {
+                                    FLog.d(TAG, "[FRAME] render gate busy — skipping post (frame#"
+                                            + frameLogCount + ")");
+                                }
+                                return;
+                            }
                             handler.post(renderRunnable);
                         }
                     }
@@ -1190,7 +1218,7 @@ public class GLRecordingPipeline {
         // ESSENTIAL: Bitrate mode — CBR for streaming (hard bandwidth cap), VBR for local recording (quality)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             try {
-                boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+                boolean isStreaming = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
                 int bitrateMode = isStreaming
                     ? MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR
                     : MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR;
@@ -1273,7 +1301,7 @@ public class GLRecordingPipeline {
         // Set bitrate mode — CBR for streaming (hard bandwidth cap), VBR for local recording (quality)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             try {
-                boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+                boolean isStreaming = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
                 int bitrateMode = isStreaming
                     ? MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR
                     : MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR;
@@ -1922,6 +1950,11 @@ public class GLRecordingPipeline {
                     }
 
                     if (bufferInfo.size > 0 && muxerStarted) {
+                        if (videoSamplesWritten % 60 == 0) {
+                            FLog.d(TAG, "[DRAIN] video sample#" + videoSamplesWritten
+                                    + " pts=" + (bufferInfo.presentationTimeUs / 1000L)
+                                    + "ms size=" + bufferInfo.size);
+                        }
                         // Ensure we have valid data in the buffer
                         if (encodedData.remaining() < bufferInfo.size) {
                             FLog.w(TAG, "Buffer size mismatch: remaining=" + encodedData.remaining() +
@@ -1942,20 +1975,22 @@ public class GLRecordingPipeline {
                                 
                                 videoSamplesWritten++;
                                 if (videoSamplesWritten <= 5) {
-                                    // Full AVC framing trace: flags + head bytes of the raw
-                                    // encoder sample as fed to the muxer, classified as
+                                    // Full framing trace (AVC + HEVC): flags + head bytes of the
+                                    // raw encoder sample as fed to the muxer, classified as
                                     // Annex-B (start code) or AVCC (length prefix). Mixed
                                     // framing across samples would be visible here.
                                     String framing = classifySampleFraming(encodedData,
                                             bufferInfo.offset, bufferInfo.size);
-                                    FLog.i(TAG, "[AVC-TRACE] sample#" + videoSamplesWritten
+                                    String traceTag = MediaFormat.MIMETYPE_VIDEO_HEVC.equals(
+                                            videoCodec.getMimeType()) ? "[HEVC-TRACE]" : "[AVC-TRACE]";
+                                    FLog.i(TAG, traceTag + " sample#" + videoSamplesWritten
                                             + " flags=0x" + Integer.toHexString(bufferInfo.flags)
                                             + " size=" + bufferInfo.size
                                             + " framing=" + framing
                                             + " head=" + hexHead(encodedData,
                                             bufferInfo.offset, bufferInfo.size, 32));
                                     if (videoSamplesWritten == 1) {
-                                        FLog.i(TAG, "[AVC-CSD] First video sample written OK — muxer header built, samples flowing");
+                                        FLog.i(TAG, "[" + (traceTag.contains("HEVC") ? "HEVC" : "AVC") + "-CSD] First video sample written OK — muxer header built, samples flowing");
                                     }
                                 }
                                 lastVideoPts = bufferInfo.presentationTimeUs;
@@ -2568,8 +2603,15 @@ public class GLRecordingPipeline {
         isRecording = false;
         previewOnlyRendering = false;
 
+        if (glRenderer != null) {
+            FLog.i(TAG, "[RENDER-STATS] " + glRenderer.getRenderStats());
+        }
+
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);
+            // Removing a posted-but-not-run renderRunnable leaves the CAS gate
+            // stuck true forever; frames then never post again. Reset it.
+            renderRunnableQueued.set(false);
         }
 
         // Proactively release preview EGL on the GL thread to ensure native disconnect

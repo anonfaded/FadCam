@@ -92,7 +92,6 @@ import com.fadcam.VideoCodec;
 import com.fadcam.services.RecordingService;
 import com.fadcam.services.TorchService;
 import com.fadcam.dualcam.service.DualCameraRecordingService;
-import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.ui.helpers.HomeFragmentHelper;
 import com.fadcam.ui.components.ModeSwitcherComponent;
 import com.fadcam.utils.DebouncedRunnable;
@@ -1496,17 +1495,20 @@ public class HomeFragment extends BaseFragment {
                     Executors.newSingleThreadExecutor();
                 updateExecutor.execute(() -> {
                     try {
-                        // Rate-limit: GitHub feed is re-fetched at most once an
-                        // hour (epoch-ms timestamp persisted at each check).
+                        // Rate-limit: GitHub feeds are re-fetched at most once an hour
+                        // (timestamp persisted at each check). Inside the window we still
+                        // USE the cached last result so the UI keeps showing updates.
                         long now = System.currentTimeMillis();
+                        String currentVersion = getAppVersionForUpdates();
+                        com.fadcam.services.UpdateCheckService.UpdateCheckResult result;
                         if (now - sharedPreferencesManager.getLong(
                                 Constants.LAST_UPDATE_CHECK_KEY, 0L)
                                 < UPDATE_CHECK_INTERVAL_MS) {
-                            return;
+                            result = com.fadcam.services.UpdateCheckService.getLastResult();
+                            if (result == null) return;
+                        } else {
+                            result = com.fadcam.services.UpdateCheckService.checkForUpdate(currentVersion);
                         }
-                        String currentVersion = getAppVersionForUpdates();
-                        com.fadcam.services.UpdateCheckService.UpdateCheckResult result =
-                            com.fadcam.services.UpdateCheckService.checkForUpdate(currentVersion);
 
                         if (result.errorOccurred) {
                             FLog.w(TAG, "Update check returned error, skipping UI");
@@ -5509,7 +5511,7 @@ public class HomeFragment extends BaseFragment {
 
         // Check if codec is HEVC - browsers don't support HEVC for HLS live streaming
         // Only validate if streaming is actually enabled (server running)
-        if (RemoteStreamManager.getInstance().isStreamingEnabled()) {
+        if (com.fadcam.FeatureRegistry.streaming().isStreamingEnabled()) {
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
             if (selectedCodec == VideoCodec.HEVC) {
                 // HEVC is not browser-compatible for HLS streaming
@@ -6680,11 +6682,11 @@ public class HomeFragment extends BaseFragment {
             // Check if streaming is active in STREAM_ONLY mode - if so, don't deduct estimated bytes
             boolean isStreamOnlyMode = false;
             try {
-                boolean serverActive = RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode mode =
+                boolean serverActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+                com.fadcam.StreamingMode mode =
                     sharedPreferencesManager.getStreamingMode();
                 isStreamOnlyMode = serverActive &&
-                    (mode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                    (mode == com.fadcam.StreamingMode.STREAM_ONLY);
             } catch (Exception e) {
                 FLog.e(TAG, "Error checking streaming mode for storage calculation", e);
             }
@@ -6844,11 +6846,11 @@ public class HomeFragment extends BaseFragment {
             // Check if streaming is active in STREAM_ONLY mode - if so, show "Unlimited"
             boolean isStreamOnlyMode = false;
             try {
-                boolean serverActive = RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode mode =
+                boolean serverActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+                com.fadcam.StreamingMode mode =
                     sharedPreferencesManager.getStreamingMode();
                 isStreamOnlyMode = serverActive &&
-                    (mode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                    (mode == com.fadcam.StreamingMode.STREAM_ONLY);
             } catch (Exception e) {
                 FLog.e(TAG, "Error checking streaming mode in camera recording UI", e);
             }
@@ -8795,7 +8797,9 @@ public class HomeFragment extends BaseFragment {
                 tvPreviewHint.setText(getPreviewEnableHintResId());
             }
             setHintVisibilityAnimated(true);
-            Toast.makeText(requireContext(), "Preview could not start. Try long-press again.", Toast.LENGTH_SHORT).show();
+            if (isVisible() && !isHidden()) {
+                Toast.makeText(requireContext(), "Preview could not start. Try long-press again.", Toast.LENGTH_SHORT).show();
+            }
         };
         previewOnlyStartHandler.postDelayed(
                 pendingPreviewOnlyStartTimeoutRunnable,

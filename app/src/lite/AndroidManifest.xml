@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lite flavor manifest: removes Full-only components declared in the shared
+     manifest (main manifest still supplies all permissions/activities/services). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Screen recording (FadRec) permissions not needed in Lite -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
+        tools:node="remove" />
+
+    <application>
+        <!-- NOTE: launcher-alias disguise icons are NOT removed in Lite — the app-icon
+             switcher must offer the full set, same as stable FadCam. -->
+        <activity
+            android:name="com.fadcam.ui.faditor.FaditorEditorActivity"
+            tools:node="remove" />
+        <!-- Cloud remote account UI is Full-only (watch support stays) -->
+        <activity
+            android:name=".ui.CloudAccountActivity"
+            tools:node="remove" />
+        <!-- Mini apps are Full-only in Lite -->
+        <activity
+            android:name=".ui.miniapps.QRScannerActivity"
+            tools:node="remove" />
+        <receiver
+            android:name=".ui.miniapps.TorchNotificationReceiver"
+            tools:node="remove" />
+        <service
+            android:name="com.fadcam.ui.faditor.export.ExportService"
+            tools:node="remove" />
+        <!-- Remote/streaming is Full-only: never run these services in Lite -->
+        <service
+            android:name="com.fadcam.streaming.RemoteStreamService"
+            tools:node="remove" />
+        <service
+            android:name="com.fadcam.services.AlarmService"
+            tools:node="remove" />
+        <!-- Screen recording (FadRec) is Full-only -->
+        <activity
+            android:name="com.fadcam.fadrec.ui.overlay.TextEditorActivity"
+            tools:node="remove" />
+        <activity
+            android:name="com.fadcam.fadrec.ui.TransparentPermissionActivity"
+            tools:node="remove" />
+        <service
+            android:name="com.fadcam.fadrec.services.ScreenRecordingService"
+            tools:node="remove" />
+        <service
+            android:name="com.fadcam.fadrec.ui.FloatingControlsService"
+            tools:node="remove" />
+        <service
+            android:name="com.fadcam.fadrec.ui.AnnotationService"
+            tools:node="remove" />
+        <activity
+            android:name="com.fadcam.fadrec.ui.ColorPickerDialogActivity"
+            tools:node="remove" />
+        <activity
+            android:name="com.fadcam.fadrec.ui.ProjectNamingDialogActivity"
+            tools:node="remove" />
+        <activity
+            android:name="com.fadcam.fadrec.ui.ProjectSelectionDialogActivity"
+            tools:node="remove" />
+    </application>
+</manifest>

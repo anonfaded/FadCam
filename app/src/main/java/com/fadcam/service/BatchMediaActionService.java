@@ -14,14 +14,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
-import com.arthenica.ffmpegkit.FFmpegKit;
-import com.arthenica.ffmpegkit.FFmpegSession;
-import com.arthenica.ffmpegkit.FFprobeKit;
-import com.arthenica.ffmpegkit.MediaInformation;
-import com.arthenica.ffmpegkit.MediaInformationSession;
-import com.arthenica.ffmpegkit.ReturnCode;
-import com.arthenica.ffmpegkit.StreamInformation;
 import com.fadcam.Constants;
+import com.fadcam.FeatureRegistry;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Utils;
@@ -116,7 +110,7 @@ public class BatchMediaActionService extends Service {
                             task.inputUris.size());
                     emitSessionUpdated(session);
 
-                    ProcessResult result = exportStandardMp4(inputUri, done, task);
+                    ProcessResult result = FeatureRegistry.batchFfmpeg().exportStandardMp4(this, inputUri, done, task);
                     if (result.success) {
                         completed++;
                         session.addCompletedItemUri(inputUri.toString());
@@ -147,7 +141,7 @@ public class BatchMediaActionService extends Service {
                 session.setState(BatchOperationSessionSnapshot.State.RUNNING);
                 emitSessionUpdated(session);
 
-                MergeResult merge = mergeVideos(task.inputUris, task, (copied, totalInputs) -> {
+                MergeResult merge = FeatureRegistry.batchFfmpeg().mergeVideos(this, task.inputUris, task, (copied, totalInputs) -> {
                     session.setCurrentItemIndex(copied);
                     String eta = buildEtaText(startedAtMs, copied, totalInputs + 2);
                     notificationManager.updateProgress(
@@ -231,151 +225,8 @@ public class BatchMediaActionService extends Service {
         return " • ETA " + remSec + "s";
     }
 
-    @NonNull
-    private ProcessResult exportStandardMp4(@NonNull Uri inputUri, int index, @NonNull BatchMediaActionTask task) {
-        InputPathHolder input = null;
-        OutputTarget outputTarget = null;
-        try {
-            input = resolveInputPath(inputUri);
-            if (input == null) return ProcessResult.failed();
-
-            String displayName = getDisplayName(inputUri);
-            String baseName = stripExtension(displayName == null ? ("video_" + index + ".mp4") : displayName);
-            String outputName = Constants.RECORDING_FILE_PREFIX_FADITOR_STANDARD
-                    + baseName
-                    + "_"
-                    + timestampSuffix()
-                    + ".mp4";
-
-            outputTarget = resolveOutputTarget(task, outputName);
-            if (outputTarget == null) return ProcessResult.failed();
-
-            String ffmpegCmd = String.format(
-                    Locale.US,
-                    "-i \"%s\" -c copy -movflags +faststart -y \"%s\"",
-                    input.path,
-                    outputTarget.processingPath
-            );
-            FFmpegSession session = FFmpegKit.execute(ffmpegCmd);
-            if (!ReturnCode.isSuccess(session.getReturnCode())) {
-                FLog.w(TAG, "Export FFmpeg failed: " + session.getOutput());
-                return ProcessResult.failed();
-            }
-
-            if (!finalizeOutput(outputTarget)) return ProcessResult.failed();
-            return ProcessResult.success();
-        } catch (Exception e) {
-            FLog.e(TAG, "Export failed for uri: " + inputUri, e);
-            return ProcessResult.failed();
-        } finally {
-            closeQuietly(input);
-            cleanupOutputTarget(outputTarget);
-        }
-    }
-
-    @NonNull
-    private MergeResult mergeVideos(
-            @NonNull List<Uri> inputUris,
-            @NonNull BatchMediaActionTask task,
-            @Nullable MergeProgressListener listener
-    ) {
-        if (inputUris.size() < 2) {
-            return new MergeResult(false, inputUris.size());
-        }
-
-        ArrayList<File> tempInputs = new ArrayList<>();
-        File concatFile = null;
-        OutputTarget outputTarget = null;
-        try {
-            int skippedCount = 0;
-            ArrayList<String> mergePaths = new ArrayList<>();
-            int sourceIndex = 0;
-            for (Uri uri : inputUris) {
-                sourceIndex++;
-                File tmp = copyUriToTempMergeFile(uri, sourceIndex);
-                if (tmp == null) {
-                    skippedCount++;
-                    continue;
-                }
-                tempInputs.add(tmp);
-                mergePaths.add(tmp.getAbsolutePath());
-                if (listener != null) listener.onInputsCopied(mergePaths.size(), inputUris.size());
-            }
-
-            if (mergePaths.size() < 2) {
-                return new MergeResult(false, skippedCount);
-            }
-
-            String outputName = Constants.RECORDING_FILE_PREFIX_FADITOR_MERGE
-                    + timestampSuffix()
-                    + ".mp4";
-            outputTarget = resolveOutputTarget(task, outputName);
-            if (outputTarget == null) return new MergeResult(false, skippedCount);
-
-            concatFile = new File(getCacheDir(), "faditor_batch_concat_" + System.currentTimeMillis() + ".txt");
-            try (FileOutputStream fos = new FileOutputStream(concatFile)) {
-                for (String path : mergePaths) {
-                    String escapedPath = path.replace("'", "'\\''");
-                    fos.write(("file '" + escapedPath + "'\n").getBytes());
-                }
-            }
-
-            String concatCopyCmd = String.format(
-                    Locale.US,
-                    "-f concat -safe 0 -i \"%s\" -c copy -movflags +faststart -y \"%s\"",
-                    concatFile.getAbsolutePath(),
-                    outputTarget.processingPath
-            );
-            FFmpegSession session = FFmpegKit.execute(concatCopyCmd);
-            if (!ReturnCode.isSuccess(session.getReturnCode())) {
-                FLog.w(TAG, "Merge copy mode failed, trying safe re-encode fallback");
-                StringBuilder inputArgs = new StringBuilder();
-                StringBuilder concatFilter = new StringBuilder();
-                int count = mergePaths.size();
-                for (int i = 0; i < count; i++) {
-                    inputArgs.append(" -i \"").append(mergePaths.get(i)).append("\"");
-                    concatFilter.append("[").append(i).append(":v:0]")
-                            .append("[").append(i).append(":a:0]");
-                }
-                String concatReencodeCmd = String.format(
-                        Locale.US,
-                        "%s -filter_complex \"%sconcat=n=%d:v=1:a=1[outv][outa]\" -map \"[outv]\" -map \"[outa]\" -c:v libx264 -preset veryfast -crf 20 -c:a aac -movflags +faststart -y \"%s\"",
-                        inputArgs.toString(),
-                        concatFilter.toString(),
-                        count,
-                        outputTarget.processingPath
-                );
-                FFmpegSession fallbackSession = FFmpegKit.execute(concatReencodeCmd);
-                if (!ReturnCode.isSuccess(fallbackSession.getReturnCode())) {
-                    FLog.w(TAG, "Merge fallback failed: " + fallbackSession.getOutput());
-                    return new MergeResult(false, skippedCount);
-                }
-            }
-
-            if (!finalizeOutput(outputTarget)) {
-                return new MergeResult(false, skippedCount);
-            }
-            return new MergeResult(true, skippedCount);
-        } catch (Exception e) {
-            FLog.e(TAG, "Merge failed", e);
-            return new MergeResult(false, inputUris.size());
-        } finally {
-            if (concatFile != null && concatFile.exists()) {
-                //noinspection ResultOfMethodCallIgnored
-                concatFile.delete();
-            }
-            for (File temp : tempInputs) {
-                if (temp != null && temp.exists()) {
-                    //noinspection ResultOfMethodCallIgnored
-                    temp.delete();
-                }
-            }
-            cleanupOutputTarget(outputTarget);
-        }
-    }
-
     @Nullable
-    private File copyUriToTempMergeFile(@NonNull Uri uri, int index) {
+    File copyUriToTempMergeFile(@NonNull Uri uri, int index) {
         File mergeDir = new File(getCacheDir(), "batch_merge_inputs");
         if (!mergeDir.exists() && !mergeDir.mkdirs()) {
             return null;
@@ -405,7 +256,7 @@ public class BatchMediaActionService extends Service {
     }
 
     @Nullable
-    private InputPathHolder resolveInputPath(@NonNull Uri uri) {
+    InputPathHolder resolveInputPath(@NonNull Uri uri) {
         try {
             if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
                 File f = new File(uri.getPath());
@@ -457,7 +308,7 @@ public class BatchMediaActionService extends Service {
     }
 
     @Nullable
-    private OutputTarget resolveOutputTarget(@NonNull BatchMediaActionTask task, @NonNull String fileName) {
+    OutputTarget resolveOutputTarget(@NonNull BatchMediaActionTask task, @NonNull String fileName) {
         try {
             if (task.outputMode == BatchMediaActionTask.OutputMode.CUSTOM_TREE_URI && task.customTreeUri != null) {
                 DocumentFile picked = DocumentFile.fromTreeUri(this, task.customTreeUri);
@@ -506,7 +357,7 @@ public class BatchMediaActionService extends Service {
         return null;
     }
 
-    private boolean finalizeOutput(@NonNull OutputTarget target) {
+    boolean finalizeOutput(@NonNull OutputTarget target) {
         if (!target.requiresSafCopy) {
             Utils.scanFileWithMediaStore(this, target.processingPath);
             return true;
@@ -530,42 +381,11 @@ public class BatchMediaActionService extends Service {
         }
     }
 
-    private void cleanupOutputTarget(@Nullable OutputTarget target) {
+    void cleanupOutputTarget(@Nullable OutputTarget target) {
         if (target == null) return;
         if (target.requiresSafCopy && target.tempFile != null && target.tempFile.exists()) {
             //noinspection ResultOfMethodCallIgnored
             target.tempFile.delete();
-        }
-    }
-
-    @Nullable
-    private MediaProfile extractProfile(@NonNull String inputPath) {
-        try {
-            MediaInformationSession session = FFprobeKit.getMediaInformation(inputPath);
-            MediaInformation info = session.getMediaInformation();
-            if (info == null || info.getStreams() == null) return null;
-
-            MediaProfile profile = new MediaProfile();
-            for (StreamInformation stream : info.getStreams()) {
-                if (stream == null) continue;
-                String type = stream.getType();
-                if ("video".equalsIgnoreCase(type) && !profile.hasVideo) {
-                    profile.hasVideo = true;
-                    profile.videoCodec = safe(stream.getCodec());
-                    profile.videoWidth = safe(stream.getWidth());
-                    profile.videoHeight = safe(stream.getHeight());
-                    profile.videoFps = safe(stream.getAverageFrameRate());
-                } else if ("audio".equalsIgnoreCase(type) && !profile.hasAudio) {
-                    profile.hasAudio = true;
-                    profile.audioCodec = safe(stream.getCodec());
-                    profile.audioChannels = "";
-                    profile.audioSampleRate = safe(stream.getSampleRate());
-                }
-            }
-            return profile;
-        } catch (Exception e) {
-            FLog.w(TAG, "Profile extraction failed for: " + inputPath, e);
-            return null;
         }
     }
 
@@ -596,7 +416,7 @@ public class BatchMediaActionService extends Service {
     }
 
     @Nullable
-    private String getDisplayName(@NonNull Uri uri) {
+    String getDisplayName(@NonNull Uri uri) {
         try (Cursor cursor = getContentResolver().query(uri,
                 new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null)) {
             if (cursor != null && cursor.moveToFirst()) {
@@ -609,7 +429,7 @@ public class BatchMediaActionService extends Service {
     }
 
     @NonNull
-    private String stripExtension(@NonNull String fileName) {
+    String stripExtension(@NonNull String fileName) {
         int dot = fileName.lastIndexOf('.');
         if (dot > 0) return fileName.substring(0, dot);
         return fileName;
@@ -623,7 +443,7 @@ public class BatchMediaActionService extends Service {
     }
 
     @NonNull
-    private String timestampSuffix() {
+    String timestampSuffix() {
         return new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
     }
 
@@ -643,7 +463,7 @@ public class BatchMediaActionService extends Service {
         sendBroadcast(intent);
     }
 
-    private void closeQuietly(@Nullable InputPathHolder holder) {
+    void closeQuietly(@Nullable InputPathHolder holder) {
         if (holder == null || holder.pfd == null) return;
         try {
             holder.pfd.close();
@@ -665,11 +485,7 @@ public class BatchMediaActionService extends Service {
         return null;
     }
 
-    private static String safe(@Nullable Object v) {
-        return v == null ? "" : String.valueOf(v);
-    }
-
-    private static final class ProcessResult {
+    static final class ProcessResult {
         final boolean success;
         final boolean skipped;
 
@@ -682,7 +498,7 @@ public class BatchMediaActionService extends Service {
         static ProcessResult failed() { return new ProcessResult(false, false); }
     }
 
-    private static final class MergeResult {
+    static final class MergeResult {
         final boolean success;
         final int skippedCount;
 
@@ -692,7 +508,7 @@ public class BatchMediaActionService extends Service {
         }
     }
 
-    private static final class InputPathHolder {
+    static final class InputPathHolder {
         final Uri uri;
         final String path;
         final ParcelFileDescriptor pfd;
@@ -704,7 +520,7 @@ public class BatchMediaActionService extends Service {
         }
     }
 
-    private static final class OutputTarget {
+    static final class OutputTarget {
         final String processingPath;
         final File tempFile;
         final DocumentFile safDestination;
@@ -718,35 +534,7 @@ public class BatchMediaActionService extends Service {
         }
     }
 
-    private static final class MediaProfile {
-        boolean hasVideo;
-        boolean hasAudio;
-        String videoCodec = "";
-        String videoWidth = "";
-        String videoHeight = "";
-        String videoFps = "";
-        String audioCodec = "";
-        String audioChannels = "";
-        String audioSampleRate = "";
-
-        boolean isCompatibleWith(@NonNull MediaProfile other) {
-            if (!hasVideo || !other.hasVideo) return false;
-            if (!videoCodec.equalsIgnoreCase(other.videoCodec)) return false;
-            if (!videoWidth.equals(other.videoWidth)) return false;
-            if (!videoHeight.equals(other.videoHeight)) return false;
-            if (!videoFps.equals(other.videoFps)) return false;
-
-            if (hasAudio != other.hasAudio) return false;
-            if (hasAudio) {
-                if (!audioCodec.equalsIgnoreCase(other.audioCodec)) return false;
-                if (!audioChannels.equals(other.audioChannels)) return false;
-                if (!audioSampleRate.equals(other.audioSampleRate)) return false;
-            }
-            return true;
-        }
-    }
-
-    private interface MergeProgressListener {
+    interface MergeProgressListener {
         void onInputsCopied(int copied, int totalInputs);
     }
 }

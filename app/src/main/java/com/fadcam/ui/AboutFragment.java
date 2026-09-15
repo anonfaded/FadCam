@@ -103,6 +103,38 @@ public class AboutFragment extends BaseFragment {
         ImageView ivFadSecLabLogo = view.findViewById(R.id.ivFadSecLabLogo);
         TextView tvAboutFooter = view.findViewById(R.id.tvAboutFooter);
 
+        // Copyright footer: make the https://fadcam.fadseclab.com part clickable (opens browser)
+        TextView tvCopyright = view.findViewById(R.id.tv_copyright_info);
+        if (tvCopyright != null) {
+            String copyright = tvCopyright.getText().toString();
+            int urlStart = copyright.indexOf("https://");
+            if (urlStart >= 0) {
+                int urlEnd = copyright.indexOf('\n', urlStart);
+                if (urlEnd == -1) urlEnd = copyright.length();
+                android.text.SpannableString sp = new android.text.SpannableString(copyright);
+                sp.setSpan(new android.text.style.ClickableSpan() {
+                    @Override
+                    public void onClick(@NonNull View widget) {
+                        try {
+                            widget.getContext().startActivity(new Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://fadcam.fadseclab.com")));
+                        } catch (Exception e) {
+                            FLog.w("About", "open website failed", e);
+                        }
+                    }
+                    @Override
+                    public void updateDrawState(android.text.TextPaint ds) {
+                        super.updateDrawState(ds);
+                        ds.setColor(Color.parseColor("#E43C3C"));
+                        ds.setUnderlineText(false);
+                    }
+                }, urlStart, urlEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                tvCopyright.setText(sp);
+                tvCopyright.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+            }
+        }
+
         int colorHeading = resolveThemeColor(R.attr.colorHeading);
         int colorButton = resolveThemeColor(R.attr.colorButton);
         int colorDialog = resolveThemeColor(R.attr.colorDialog);
@@ -136,7 +168,11 @@ public class AboutFragment extends BaseFragment {
         }
 
         appIcon.setImageResource(R.mipmap.ic_launcher);
-        appName.setText(getString(R.string.app_name));
+        String displayName = com.fadcam.BuildConfig.LITE_EDITION
+                ? (com.fadcam.BuildConfig.APPLICATION_ID.endsWith(".beta")
+                    ? "FadCam Lite Beta" : "FadCam Lite")
+                : getString(R.string.app_name);
+        appName.setText(displayName);
         // Set app name to theme color instead of default colorHeading
         appName.setTextColor(themeTextColor);
         
@@ -261,7 +297,7 @@ public class AboutFragment extends BaseFragment {
                 spannable.setSpan(new android.text.style.ClickableSpan() {
                     @Override
                     public void onClick(@NonNull View widget) {
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/fadsec-lab"));
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://fadcam.fadseclab.com"));
                         widget.getContext().startActivity(browserIntent);
                     }
                     @Override
