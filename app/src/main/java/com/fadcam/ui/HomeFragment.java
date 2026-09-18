@@ -1327,6 +1327,26 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    /**
+     * Clears the recording timeline (elapsed anchor + countdown latch) and repaints the
+     * quick-action timer badge.
+     *
+     * <p>Must be reached from BOTH ways the UI can learn that a recording ended:
+     * {@link #onRecordingStopped()} (stop broadcast, used by the in-app stop button) and
+     * {@link #handleServiceStateUpdate(RecordingState)} with {@code NONE} — the path taken when
+     * the app re-syncs with the service (e.g. a stop performed from the shortcut while the app was
+     * in the background). Missing the state-callback path left the elapsed anchor set and the
+     * countdown badge ticking after the recording had already stopped.
+     */
+    private void resetRecordingTimeline() {
+        quickCountdownSessionActive = false;
+        recordingStartTime = 0L;
+        recordingPauseStartedAt = 0L;
+        recordingAccumulatedPausedDurationMs = 0L;
+        latestElapsedDisplay = buildElapsedDisplayText(0L);
+        refreshQuickTimerValue();
+    }
+
     private void resetTimers() {
         // Avoid blindly resetting if we are in the middle of an existing recording.
         if (isRecording() || isPaused()) {
@@ -1824,13 +1844,8 @@ public class HomeFragment extends BaseFragment {
 
         // First update the recording state
         recordingState = RecordingState.NONE;
-        quickCountdownSessionActive = false;
-        
         // Reset timer (service will have cleared its value too)
-        recordingStartTime = 0;
-        recordingPauseStartedAt = 0L;
-        recordingAccumulatedPausedDurationMs = 0L;
-        latestElapsedDisplay = buildElapsedDisplayText(0L);
+        resetRecordingTimeline();
         // log removed
 
         // Release wake lock if it was acquired
@@ -2813,6 +2828,15 @@ public class HomeFragment extends BaseFragment {
                     }
                 }
                 resetUIButtonsToIdleState();
+                // The service is the source of truth: when it reports NONE the timeline must be
+                // cleared here too. A recording stopped from the shortcut while the app was in the
+                // background never delivers the stop broadcast, so this is the only place the UI
+                // learns about it — without this the elapsed anchor stayed set and the countdown
+                // badge kept ticking after the recording had ended.
+                if (previousState != RecordingState.NONE) {
+                    resetRecordingTimeline();
+                    Log.setRecordingActive(false);
+                }
                 break;
         }
     }
@@ -6391,7 +6415,10 @@ public class HomeFragment extends BaseFragment {
                 sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
             }
             long limitMs = sharedPreferencesManager.getMaximumRecordingDurationMs();
-            boolean sessionActive = isRecording() || isPaused() || quickCountdownSessionActive;
+            // NOTE: the latch must NOT keep itself alive. Including quickCountdownSessionActive
+            // here made the release branch unreachable once the latch was set, so the badge
+            // counted down forever after a recording ended.
+            boolean sessionActive = isRecording() || isPaused();
             if (!sessionActive || limitMs <= 0L) {
                 boolean wasActive = quickCountdownSessionActive;
                 quickCountdownSessionActive = false;

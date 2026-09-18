@@ -281,6 +281,9 @@ public class GLWatermarkRenderer {
 
     private int dynamicBitmapWidth = 0;
     private int dynamicBitmapHeight = 48;
+    /** Hard ceiling of the watermark texture; lines wider than this must wrap, not clip. */
+    private static final int WATERMARK_MAX_BITMAP_WIDTH = 2048;
+    private static final int WATERMARK_MAX_BITMAP_HEIGHT = 1024;
     private int watermarkLineCount = 1; // Fixed small height for dashcam style
     private int lastWatermarkVpW = -1;
     private int lastWatermarkVpH = -1;
@@ -1243,8 +1246,14 @@ public class GLWatermarkRenderer {
         // Ensures icons are visible while maintaining proper line spacing.
         float iconLineH = dynamicTextSize * 2.7f;
         
-        String[] lines = text.split("\n");
-        watermarkLineCount = lines.length;
+        // Wrap instead of clip: a long address (or any long line) used to be cut off at the
+        // texture edge because the bitmap width is capped. Lines wider than the cap are now flowed
+        // onto as many lines as needed, at word boundaries, and the texture grows in height.
+        float maxContentWidth = Math.max(64f, WATERMARK_MAX_BITMAP_WIDTH - (padding * 2f));
+        java.util.List<String> layoutLines = wrapWatermarkLines(text, maxContentWidth, iconLineH);
+        int lineCount = layoutLines.size();
+        watermarkLineCount = lineCount;
+        String[] lines = layoutLines.toArray(new String[0]);
 
         // Compute per-line heights: lines with icons need extra vertical
         // space (iconLineH ≈ 2.7× text height) while plain text lines use
@@ -1261,20 +1270,14 @@ public class GLWatermarkRenderer {
 
         float maxLineWidth = 0f;
         for (String line : lines) {
-            if (line == null) continue;
-            float lineW = watermarkPaint.measureText(line.replace("<ICON>", "").replace("<FADCAM_ICON>", ""));
-            if (line.contains("<ICON>")) {
-                lineW += measureIconWidth("fadrec", iconLineH) + (padding * 0.25f);
-            }
-            if (line.contains("<FADCAM_ICON>")) {
-                lineW += measureIconWidth("menu_icon_unknown", iconLineH) + (padding * 0.25f);
-            }
-            maxLineWidth = Math.max(maxLineWidth, lineW);
+            maxLineWidth = Math.max(maxLineWidth, measureWatermarkLineWidth(line, iconLineH, padding));
         }
         // Add top padding for vertical centering of watermark within its layout space
         float topPadding = Math.max(6f, padding * 0.5f);
-        dynamicBitmapWidth = Math.max(256, Math.min(2048, Math.round(maxLineWidth + (padding * 2f))));
-        dynamicBitmapHeight = Math.max(64, Math.min(1024, Math.round(totalTextHeight + topPadding + padding)));
+        dynamicBitmapWidth = Math.max(256, Math.min(WATERMARK_MAX_BITMAP_WIDTH,
+                Math.round(maxLineWidth + (padding * 2f))));
+        dynamicBitmapHeight = Math.max(64, Math.min(WATERMARK_MAX_BITMAP_HEIGHT,
+                Math.round(totalTextHeight + topPadding + padding)));
         if (watermarkBitmap == null || watermarkBitmap.getWidth() != dynamicBitmapWidth
                 || watermarkBitmap.getHeight() != dynamicBitmapHeight) {
             watermarkBitmap = Bitmap.createBitmap(dynamicBitmapWidth, dynamicBitmapHeight, Bitmap.Config.ARGB_8888);
@@ -1355,6 +1358,79 @@ public class GLWatermarkRenderer {
             return targetH * ((float) bmp.getWidth() / (float) bmp.getHeight());
         }
         return 0f;
+    }
+
+    /** Width of one laid-out line, accounting for inline icon placeholders. */
+    private float measureWatermarkLineWidth(String line, float iconLineH, int padding) {
+        if (line == null || line.isEmpty()) {
+            return 0f;
+        }
+        float width = watermarkPaint.measureText(
+                line.replace("<ICON>", "").replace("<FADCAM_ICON>", ""));
+        if (line.contains("<ICON>")) {
+            width += measureIconWidth("fadrec", iconLineH) + (padding * 0.25f);
+        }
+        if (line.contains("<FADCAM_ICON>")) {
+            width += measureIconWidth("menu_icon_unknown", iconLineH) + (padding * 0.25f);
+        }
+        return width;
+    }
+
+    /**
+     * Flows the watermark text into lines that fit {@code maxContentWidth}, breaking at word
+     * boundaries. Explicit newlines are honoured; tokens ({@code <ICON>}, {@code <FADCAM_ICON>})
+     * are never split. A single word wider than the limit is hard-wrapped by glyph so nothing is
+     * ever clipped.
+     */
+    private java.util.List<String> wrapWatermarkLines(String text, float maxContentWidth,
+                                                      float iconLineH) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        if (text == null || text.isEmpty()) {
+            return out;
+        }
+        for (String rawLine : text.split("\n")) {
+            String line = rawLine == null ? "" : rawLine.trim();
+            if (line.isEmpty()) {
+                out.add("");
+                continue;
+            }
+            if (measureWatermarkLineWidth(line, iconLineH, 0) <= maxContentWidth) {
+                out.add(line);
+                continue;
+            }
+            StringBuilder current = new StringBuilder();
+            for (String word : line.split(" ")) {
+                if (word.isEmpty()) {
+                    continue;
+                }
+                String candidate = current.length() == 0 ? word : current + " " + word;
+                if (measureWatermarkLineWidth(candidate, iconLineH, 0) <= maxContentWidth) {
+                    current.setLength(0);
+                    current.append(candidate);
+                    continue;
+                }
+                if (current.length() > 0) {
+                    out.add(current.toString());
+                    current.setLength(0);
+                }
+                // The word alone may still be too wide (long unbroken token) — split by glyphs
+                // so the bitmap never clips it.
+                String remainder = word;
+                while (measureWatermarkLineWidth(remainder, iconLineH, 0) > maxContentWidth) {
+                    int fit = watermarkPaint.breakText(remainder, true, maxContentWidth, null);
+                    if (fit <= 0 || fit >= remainder.length()) {
+                        break;
+                    }
+                    out.add(remainder.substring(0, fit));
+                    remainder = remainder.substring(fit);
+                }
+                current.append(remainder);
+            }
+            if (current.length() > 0) {
+                out.add(current.toString());
+            }
+        }
+        return out;
     }
 
     /**

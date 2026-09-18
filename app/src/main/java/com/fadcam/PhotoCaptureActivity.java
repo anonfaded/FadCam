@@ -315,7 +315,15 @@ public class PhotoCaptureActivity extends ComponentActivity {
                     sdp.updateLocation(rawFix);
                 }
                 try { Thread.sleep(400); } catch (InterruptedException ignored) {}
-                if (prefs.isSpeedEnabled()) { if (sb.length() > 0) sb.append("\n"); sb.append("Speed: ").append(String.format(java.util.Locale.US, "%.0f", sdp.getSpeedKmh())).append("km/h"); }
+                if (prefs.isSpeedEnabled()) {
+                    if (sb.length() > 0) sb.append("\n");
+                    sb.append("Speed: ");
+                    if (sdp.hasFreshFix()) {
+                        sb.append(String.format(java.util.Locale.US, "%.0f", sdp.getSpeedKmh())).append("km/h");
+                    } else {
+                        sb.append("--");
+                    }
+                }
                 if (prefs.isAltitudeEnabled()) { if (sb.length() > 0) sb.append("\n"); sb.append("Alt: ").append(String.format(java.util.Locale.US, "%.0f", sdp.getAltitude())).append("m"); }
                 if (prefs.isCompassEnabled()) { if (sb.length() > 0) sb.append("\n"); sb.append("Compass: ").append(sdp.getCompassDirection()); }
                 com.fadcam.sensors.SensorDataProvider.resetInstance();

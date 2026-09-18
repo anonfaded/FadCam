@@ -5277,10 +5277,14 @@ public class RecordingService extends Service {
             if (!cachedGpsProviderEnabled) {
                 FLog.d(TAG, "Extended: speed=GPS is off");
                 sb.append("\nSpeed: GPS is off");
-            } else {
+            } else if (sensorDataProvider.hasFreshFix()) {
                 float speed = sensorDataProvider.getSpeedKmh();
                 FLog.d(TAG, "Extended: speed=" + speed + " km/h");
                 sb.append("\nSpeed: ").append(String.format("%.0f", speed)).append(" km/h");
+            } else {
+                // No fresh fix: a held-over number would be a fabricated reading.
+                FLog.d(TAG, "Extended: speed=no fresh fix");
+                sb.append("\nSpeed: --");
             }
         }
 
@@ -5288,10 +5292,13 @@ public class RecordingService extends Service {
             if (!cachedGpsProviderEnabled) {
                 FLog.d(TAG, "Extended: altitude=GPS is off");
                 sb.append("\nAlt: GPS is off");
-            } else {
+            } else if (sensorDataProvider.hasFreshFix()) {
                 double alt = sensorDataProvider.getAltitude();
                 FLog.d(TAG, "Extended: altitude=" + alt + " m");
                 sb.append("\nAlt: ").append(String.format("%.0f", alt)).append("m");
+            } else {
+                FLog.d(TAG, "Extended: altitude=no fresh fix");
+                sb.append("\nAlt: --");
             }
         }
 
