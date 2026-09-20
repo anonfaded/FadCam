@@ -45,6 +45,8 @@ public class FragmentedMp4MuxerWrapper {
     // 0-byte split segments on some devices (Samsung SAF especially).
     private final Object ioLock = new Object();
     private int invalidFdLogCount = 0;
+    /** Rate limit for drain-thread stall warnings (they are rare and must stay readable). */
+    private long lastDrainStallWarnMs = 0L;
     private boolean started = false;
     private boolean released = false;
     private int orientationHint = 0;
@@ -346,7 +348,23 @@ public class FragmentedMp4MuxerWrapper {
             }
             // Else: buffer is already correctly positioned by caller, use as-is
 
+            // Drain-side stall watchdog. The encoder drain thread is the only thread that
+            // releases MediaCodec output buffers; if it blocks inside fragment finalization the
+            // encoder starves and the recording loses frames (worst case: ~1 frame per fragment).
+            // This must be visible in the in-app dossier (the library's own diagnostics only go
+            // to logcat), because that is the log a remote tester can send us.
+            long stallStartNs = System.nanoTime();
             muxer.writeSampleData(trackIndex, data, media3BufferInfo);
+            long stallMs = (System.nanoTime() - stallStartNs) / 1_000_000L;
+            if (stallMs > 120) {
+                long now = System.currentTimeMillis();
+                if (now - lastDrainStallWarnMs > 2000) {
+                    lastDrainStallWarnMs = now;
+                    FLog.w(TAG, "[DRAIN-STALL] video writeSampleData blocked " + stallMs
+                            + "ms (fragment finalization holding the drain thread — encoder starves;"
+                            + " track=" + trackIndex + ")");
+                }
+            }
             } catch (MuxerException e) {
                 FLog.e(TAG, "Failed to write sample data", e);
                 throw new RuntimeException("Failed to write sample data: " + e.getMessage(), e);
@@ -555,23 +573,43 @@ public class FragmentedMp4MuxerWrapper {
 
             // Handle CSD (Codec Specific Data)
             List<byte[]> initData = new ArrayList<>();
-            if (mediaFormat.containsKey("csd-0")) {
-                ByteBuffer csd0 = mediaFormat.getByteBuffer("csd-0");
-                if (csd0 != null) {
-                    byte[] csd0Bytes = new byte[csd0.remaining()];
-                    csd0.get(csd0Bytes);
-                    csd0.rewind();
-                    initData.add(csd0Bytes);
+            ByteBuffer csd0Buffer = mediaFormat.containsKey("csd-0")
+                    ? mediaFormat.getByteBuffer("csd-0") : null;
+            ByteBuffer csd1Buffer = mediaFormat.containsKey("csd-1")
+                    ? mediaFormat.getByteBuffer("csd-1") : null;
+            byte[] csd0Bytes = AvcCsdNormalizer.readBuffer(csd0Buffer);
+            byte[] csd1Bytes = AvcCsdNormalizer.readBuffer(csd1Buffer);
+
+            if (MimeTypes.VIDEO_H264.equals(mimeType)) {
+                // The muxer's avcC writer (ISO/IEC 14496-15 §5.3.3.1.2) requires csd-0 to hold
+                // exactly ONE Annex-B NAL (the SPS) and csd-1 the PPS. Encoders differ from that
+                // contract: the QCOM AVC family with prepend-sps-pps-to-idr returns SPS+PPS
+                // combined in csd-0, and C2 encoders have been observed returning
+                // length-prefixed (AVCC) config data. Fed verbatim, the first case trips
+                // "SPS data not found in csd0" and the second throws inside the NAL scan —
+                // both abort track registration, which is fatal to the recording. Normalise
+                // whatever the encoder gave us into the shape the box writer requires.
+                byte[][] normalized = AvcCsdNormalizer.normalize(csd0Bytes, csd1Bytes);
+                if (normalized != null) {
+                    initData.add(normalized[0]);
+                    initData.add(normalized[1]);
+                    FLog.i(TAG, "[AVC-CSD-NORM] csd-0=" + (csd0Bytes == null ? 0 : csd0Bytes.length)
+                            + "B csd-1=" + (csd1Bytes == null ? 0 : csd1Bytes.length)
+                            + "B -> SPS=" + normalized[0].length + "B PPS=" + normalized[1].length + "B");
+                } else {
+                    FLog.w(TAG, "[AVC-CSD-NORM] could not derive SPS/PPS from the encoder CSD —"
+                            + " passing it through unchanged (csd-0/csd-1 presence: "
+                            + (csd0Bytes != null) + "/" + (csd1Bytes != null) + ")");
+                    if (csd0Bytes != null) initData.add(csd0Bytes);
+                    if (csd1Bytes != null) initData.add(csd1Bytes);
                 }
-            } else if (MimeTypes.VIDEO_H265.equals(mimeType)) {
-                FLog.w(TAG, "[HEVC-CSD] HEVC video format missing csd-0 — MP4 header will fail without it");
-            }
-            if (mediaFormat.containsKey("csd-1")) {
-                ByteBuffer csd1 = mediaFormat.getByteBuffer("csd-1");
-                if (csd1 != null) {
-                    byte[] csd1Bytes = new byte[csd1.remaining()];
-                    csd1.get(csd1Bytes);
-                    csd1.rewind();
+            } else {
+                if (csd0Bytes != null) {
+                    initData.add(csd0Bytes);
+                } else if (MimeTypes.VIDEO_H265.equals(mimeType)) {
+                    FLog.w(TAG, "[HEVC-CSD] HEVC video format missing csd-0 — MP4 header will fail without it");
+                }
+                if (csd1Bytes != null) {
                     initData.add(csd1Bytes);
                 }
             }
@@ -1314,12 +1352,14 @@ public class FragmentedMp4MuxerWrapper {
         }
     }
 
+
     /**
      * Generates a proper AAC AudioSpecificConfig for the ESDS box.
      * This ensures VLC compatibility by creating clean configuration data.
-     * 
-     * Format: 5 bits audioObjectType (2=AAC-LC) + 4 bits samplingFrequencyIndex + 4 bits channelConfiguration
-     * 
+     *
+     * <p>Format: 5 bits audioObjectType (2=AAC-LC) + 4 bits samplingFrequencyIndex +
+     * 4 bits channelConfiguration.
+     *
      * @param sampleRate Sample rate in Hz (e.g., 48000)
      * @param channels Number of audio channels (1 or 2)
      * @return 2-byte AAC AudioSpecificConfig
