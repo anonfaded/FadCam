@@ -4646,4 +4646,9 @@
     <string name="trash_show_in_settings_title">إظهار في الإعدادات</string>
     <string name="trash_show_in_settings_desc">يضيف صف المهملات إلى صفحة الإعدادات للوصول السريع</string>
 
+    <string name="fadcam_full_title">FadCam للمستخدمين المحترفين</string>
+    <string name="fadcam_full_subtitle">التحكم عن بُعد، التسجيل عند الحركة، والتحليل الجنائي والمزيد. جرّب النسخة الكاملة.</string>
+    <string name="github_get_on">احصل عليه على</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

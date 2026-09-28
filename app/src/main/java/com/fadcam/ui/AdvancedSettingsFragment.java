@@ -42,11 +42,17 @@ public class AdvancedSettingsFragment extends Fragment {
         }
         View digitalForensics = view.findViewById(R.id.row_digital_forensics);
         if (digitalForensics != null) {
-            digitalForensics.setOnClickListener(v -> OverlayNavUtil.show(
-                requireActivity(),
-                new DigitalForensicsSettingsFragment(),
-                "DigitalForensicsSettingsFragment"
-            ));
+            if (com.fadcam.BuildConfig.LITE_EDITION) {
+                digitalForensics.setVisibility(android.view.View.GONE);
+            } else {
+                digitalForensics.setOnClickListener(v -> {
+                    androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()
+                            .createForensicsSettingsFragment();
+                    if (f != null) {
+                        OverlayNavUtil.show(requireActivity(), f, "DigitalForensicsSettingsFragment");
+                    }
+                });
+            }
         }
         View thermalGuardian = view.findViewById(R.id.row_thermal_guardian);
         if (thermalGuardian != null) {

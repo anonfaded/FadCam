@@ -2863,4 +2863,9 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">In Einstellungen anzeigen</string>
     <string name="trash_show_in_settings_desc">Fügt eine Papierkorb-Zeile zur Einstellungsseite hinzu für schnellen Zugriff</string>
+    <string name="fadcam_full_title">FadCam Power-User</string>
+    <string name="fadcam_full_subtitle">Fernsteuerung, Bewegungsaufzeichnung, Forensik und mehr. Teste die Vollversion.</string>
+    <string name="github_get_on">Jetzt bei</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

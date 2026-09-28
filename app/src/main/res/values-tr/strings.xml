@@ -2818,4 +2818,9 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Ayarlarda Göster</string>
     <string name="trash_show_in_settings_desc">Hızlı erişim için Ayarlar sayfasına bir Çöp satırı ekler</string>
+    <string name="fadcam_full_title">FadCam Güç Kullanıcısı</string>
+    <string name="fadcam_full_subtitle">Uzaktan kumanda, hareket kaydı, adli bilişim ve daha fazlası. Tam sürümü deneyin.</string>
+    <string name="github_get_on">Şuradan edinin</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

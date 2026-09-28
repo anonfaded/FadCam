@@ -184,7 +184,8 @@ public class WhatsNewActivity extends AppCompatActivity {
     private void loadOfflineChangelog() {
         new Thread(() -> {
             try {
-                String changelog = readAssetFile(this, "changelog/main.md");
+                String changelog = readAssetFile(this, com.fadcam.BuildConfig.LITE_EDITION
+                        ? "changelog/lite.md" : "changelog/main.md");
                 FLog.d(TAG, "Changelog loaded successfully, size: " + changelog.length());
                 
                 String formattedChangelog = ChangelogParser.parseChangelogOffline(changelog);

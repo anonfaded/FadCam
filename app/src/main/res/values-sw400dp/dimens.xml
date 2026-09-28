@@ -106,4 +106,9 @@
     <dimen name="home_dock_height">64dp</dimen>
     <dimen name="home_dock_icon">22dp</dimen>
     <dimen name="home_dock_padding">8dp</dimen>
+    <dimen name="home_dock_side_inset">48dp</dimen>
+    <dimen name="home_dock_gap">16dp</dimen>
+    <dimen name="home_dock_side_width">82dp</dimen>
+    <dimen name="home_dock_side_width_wide">98dp</dimen>
+    <dimen name="home_dock_side_height">56dp</dimen>
 </resources>

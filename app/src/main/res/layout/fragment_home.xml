@@ -1009,7 +1009,7 @@
         </FrameLayout>
 
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="@dimen/home_control_btn_size" android:layout_height="@dimen/home_control_btn_size" android:layout_marginStart="@dimen/home_control_gap" app:icon="@drawable/cam_switch" app:iconSize="@dimen/home_control_icon_cam" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="@dimen/home_control_corner"
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="@dimen/home_control_btn_size" android:layout_height="@dimen/home_control_btn_size" android:layout_marginStart="@dimen/home_control_gap" app:icon="@drawable/cam_switch" app:iconTint="@color/white" app:iconSize="@dimen/home_control_icon_cam" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="@dimen/home_control_corner"
             android:nextFocusUp="@+id/cardElapsedHero"
             android:nextFocusDown="@+id/buttonMirrorSwitch" />
 

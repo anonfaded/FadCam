@@ -137,6 +137,12 @@ public class ModeSwitcherComponent {
             // Resolve persisted mode (fallback if invalid / coming soon)
             String persisted = sharedPreferencesManager.getCurrentRecordingMode();
             if (Constants.MODE_FADMIC.equals(persisted)) persisted = Constants.MODE_FADCAM;
+            // FadRec (screen recording) is Full-only: hide the segment in Lite
+            if (com.fadcam.BuildConfig.LITE_EDITION) {
+                if (Constants.MODE_FADREC.equals(persisted)) persisted = Constants.MODE_FADCAM;
+                segmentFadRec.setVisibility(android.view.View.GONE);
+                if (badgeFadRec != null) badgeFadRec.setVisibility(android.view.View.GONE);
+            }
             currentMode = persisted;
 
             segmentFadCam.setBackground(null);

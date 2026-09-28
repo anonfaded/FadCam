@@ -23,7 +23,6 @@ import com.fadcam.MainActivity;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
-import com.fadcam.ui.miniapps.TorchToolFragment;
 import com.fadcam.ui.OverlayNavUtil;
 import com.google.android.material.sidesheet.SideSheetDialog;
 
@@ -152,13 +151,17 @@ public class HomeSidebarFragment extends DialogFragment {
             closeButton.setOnClickListener(v -> dismiss());
         }
 
-        // Profiles row
+        // Profiles row (coming soon) — hidden in Lite edition
         View profilesRow = view.findViewById(R.id.row_profiles);
         if (profilesRow != null) {
-            profilesRow.setOnClickListener(v -> {
-                showProfilesComingSoon();
-                dismiss();
-            });
+            if (com.fadcam.BuildConfig.LITE_EDITION) {
+                profilesRow.setVisibility(android.view.View.GONE);
+            } else {
+                profilesRow.setOnClickListener(v -> {
+                    showProfilesComingSoon();
+                    dismiss();
+                });
+            }
         }
 
         // What's New row
@@ -306,8 +309,76 @@ public class HomeSidebarFragment extends DialogFragment {
             });
         }
 
+        // App info footer: package + version name + version code (long-press to copy)
+        android.widget.TextView tvAppInfo = view.findViewById(R.id.tv_app_info);
+        android.view.View rowAppInfo = view.findViewById(R.id.row_app_info);
+        if (tvAppInfo != null && rowAppInfo != null) {
+            String pkg = "";
+            String ver = "";
+            long code = 0L;
+            try {
+                android.content.pm.PackageManager pm = requireContext().getPackageManager();
+                String packageName = requireContext().getPackageName();
+                android.content.pm.PackageInfo pi = pm.getPackageInfo(packageName, 0);
+                pkg = packageName;
+                ver = pi.versionName != null ? pi.versionName : "";
+                code = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P
+                        ? pi.getLongVersionCode() : pi.versionCode;
+            } catch (Exception e) {
+                FLog.w("HomeSidebar", "Failed to read app info", e);
+            }
+            final String infoText = pkg + "\nv" + ver + " (" + code + ")";
+            tvAppInfo.setText(infoText);
+            rowAppInfo.setOnLongClickListener(v -> {
+                try {
+                    android.content.ClipboardManager cm =
+                            (android.content.ClipboardManager) requireContext()
+                                    .getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("FadCam app info", infoText));
+                    }
+                    android.widget.Toast.makeText(requireContext(), "Copied", android.widget.Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    FLog.w("HomeSidebar", "Copy failed", e);
+                }
+                return true;
+            });
+        }
+
+        // Copyright: prefix + year on separate lines
+        android.widget.TextView tvCopyLine1 = view.findViewById(R.id.tv_copyright_line1);
+        android.widget.TextView tvCopyYear = view.findViewById(R.id.tv_copyright_year);
+        if (tvCopyLine1 != null && tvCopyYear != null) {
+            String copyright = getString(R.string.home_sidebar_copyright);
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("([^0-9]*)(20\\d{2}\\s*–\\s*20\\d{2}|20\\d{4}).*")
+                    .matcher(copyright);
+            if (m.matches()) {
+                tvCopyLine1.setText(m.group(1).trim());
+                tvCopyYear.setText(m.group(2).trim());
+            } else {
+                tvCopyLine1.setText(copyright);
+                tvCopyYear.setText("");
+            }
+        }
+
+        // Website link (red, no underline, opens in browser)
+        android.widget.TextView tvWebsite = view.findViewById(R.id.tv_fadseclab_link);
+        if (tvWebsite != null) {
+            tvWebsite.setOnClickListener(v -> {
+                try {
+                    android.content.Intent intent = new android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://fadseclab.com"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    FLog.w("HomeSidebar", "Failed to open website", e);
+                }
+            });
+        }
+
         // Mini Apps Section
         setupMiniAppRows(view);
+        setupUpdateCards(view);
 
         // Mini Apps Info Button
         View btnMiniAppsInfo = view.findViewById(R.id.btn_mini_apps_info);
@@ -367,14 +438,24 @@ public class HomeSidebarFragment extends DialogFragment {
     }
 
     private void setupMiniAppRows(View view) {
+        // Mini apps are Full-only in Lite — hide the whole section (title + container)
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            int[] miniAppViews = {R.id.mini_apps_group_title, R.id.btn_mini_apps_info,
+                    R.id.btn_mini_apps_edit, R.id.mini_apps_list_container};
+            for (int id : miniAppViews) {
+                View v = view.findViewById(id);
+                if (v != null) v.setVisibility(android.view.View.GONE);
+            }
+            return;
+        }
         // Torch Mini App - open full screen tool
         View torchRow = view.findViewById(R.id.row_mini_app_torch);
         if (torchRow != null) {
             torchRow.setOnClickListener(v -> {
                 try {
-                    TorchToolFragment torchTool = TorchToolFragment.newInstance();
-                    OverlayNavUtil.show(requireActivity(), torchTool, "torch_tool");
-                    dismiss();
+                    if (com.fadcam.FeatureRegistry.features().openTorchTool(requireActivity())) {
+                        dismiss();
+                    }
                 } catch (Exception e) {
                     FLog.w("HomeSidebar", "Failed to open torch tool", e);
                 }
@@ -413,9 +494,9 @@ public class HomeSidebarFragment extends DialogFragment {
         // QR Scanner Mini App - ready to use
         View qrScannerRow = view.findViewById(R.id.row_mini_app_qr_scanner);
         if (qrScannerRow != null) qrScannerRow.setOnClickListener(v -> {
-            Intent intent = new Intent(getContext(), com.fadcam.ui.miniapps.QRScannerActivity.class);
-            startActivity(intent);
-            dismiss();
+            if (com.fadcam.FeatureRegistry.features().openQrScanner(getContext())) {
+                dismiss();
+            }
         });
         // Pedometer Mini App - Coming Soon
         View pedometerRow = view.findViewById(R.id.row_mini_app_pedometer);
@@ -430,8 +511,6 @@ public class HomeSidebarFragment extends DialogFragment {
         if (qrGeneratorRow != null) qrGeneratorRow.setOnClickListener(v -> showMiniAppComingSoon(this, "qr_generator"));
 
         applyMiniAppVisibility(view);
-
-        setupUpdateCards(view);
     }
 
     /**
@@ -664,7 +743,26 @@ public class HomeSidebarFragment extends DialogFragment {
         if (section == null) return;
         com.fadcam.services.UpdateCheckService.UpdateCheckResult r =
                 com.fadcam.services.UpdateCheckService.getLastResult();
-        if (r == null || !r.hasAnyUpdate()) { section.setVisibility(View.GONE); return; }
+        FLog.d("UpdateSidebar", "setupUpdateCards r=" + (r == null ? "null"
+                : ("stable=" + r.hasStable + " beta=" + r.hasBeta + " pro=" + r.hasPro)));
+        if (r == null) {
+            // Fresh process / check not run yet: run it now (off UI thread) and rebuild.
+            section.setVisibility(View.GONE);
+            new Thread(() -> {
+                try {
+                    com.fadcam.services.UpdateCheckService.checkForUpdate(getAppVersion());
+                } catch (Exception e) {
+                    FLog.w("UpdateSidebar", "fallback check failed", e);
+                }
+                if (getView() != null) {
+                    getView().post(() -> {
+                        if (getView() != null) setupUpdateCards(getView());
+                    });
+                }
+            }).start();
+            return;
+        }
+        if (!r.hasAnyUpdate()) { section.setVisibility(View.GONE); return; }
         section.setVisibility(View.VISIBLE);
 
         String cur = getAppVersion();

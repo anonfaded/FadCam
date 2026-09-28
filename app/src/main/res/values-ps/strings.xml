@@ -2943,4 +2943,9 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="trash_show_in_settings_title">Settings ke Woyai</string>
     <string name="trash_show_in_settings_desc">Settings page ke Trash row zayed kai che ta jaldi rasai woyai</string>
 
+    <string name="fadcam_full_title">FadCam Qudrat User</string>
+    <string name="fadcam_full_subtitle">Larwaen kontorol, mozment recording, forensic ao noor. Full version wahaarai.</string>
+    <string name="github_get_on">Get it on</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

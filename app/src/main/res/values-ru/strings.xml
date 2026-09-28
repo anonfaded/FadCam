@@ -3590,4 +3590,9 @@ FadCam использует фрагментированный формат MP4 
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Показывать в Настройках</string>
     <string name="trash_show_in_settings_desc">Добавляет строку Корзины на страницу Настроек для быстрого доступа</string>
+    <string name="fadcam_full_title">FadCam для требовательных</string>
+    <string name="fadcam_full_subtitle">Удалённое управление, запись по движению, криминалистика и другое. Попробуйте полную версию.</string>
+    <string name="github_get_on">Скачать в</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

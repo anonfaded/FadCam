@@ -3018,4 +3018,9 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Εμφάνιση στις Ρυθμίσεις</string>
     <string name="trash_show_in_settings_desc">Προσθέτει μια γραμμή Απορριμμάτων στη σελίδα Ρυθμίσεων για γρήγορη πρόσβαση</string>
+    <string name="fadcam_full_title">FadCam Power User</string>
+    <string name="fadcam_full_subtitle">Τηλεχειρισμός, καταγραφή κίνησης, εγκληματολογία και άλλα. Δοκίμασε την πλήρη έκδοση.</string>
+    <string name="github_get_on">Διαθέσιμο στο</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

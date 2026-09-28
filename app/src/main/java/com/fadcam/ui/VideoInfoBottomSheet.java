@@ -25,11 +25,9 @@ import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.exifinterface.media.ExifInterface;
 
-import com.arthenica.ffmpegkit.FFprobeKit;
-import com.arthenica.ffmpegkit.MediaInformation;
-import com.arthenica.ffmpegkit.MediaInformationSession;
-import com.arthenica.ffmpegkit.StreamInformation;
+import com.fadcam.FeatureRegistry;
 import com.fadcam.R;
+import com.fadcam.videoinfo.FfprobeData;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.io.IOException;
@@ -266,184 +264,67 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
     }
 
     /**
-     * Extracts comprehensive video metadata using FFprobeKit for reliable
-     * metadata extraction from fragmented MP4 and all video formats.
+     * Extracts video metadata using MediaMetadataRetriever (framework API,
+     * works in every build). Full builds overlay richer ffprobe data through
+     * the VideoInfoProbe seam when available; Lite runs MMR-only.
      */
     private VideoMetadata extractVideoMetadata() {
         VideoMetadata metadata = new VideoMetadata();
-
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
-            // Get file path for FFprobe - handle content:// URIs using SAF protocol
-            String filePath = getFFprobePath();
-            FLog.d(TAG, "Extracting metadata with FFprobe for: " + filePath);
+            retriever.setDataSource(getContext(), videoUri);
 
-            // Use FFprobeKit to get accurate metadata
-            MediaInformationSession session = FFprobeKit.getMediaInformation(filePath);
-            MediaInformation info = session.getMediaInformation();
-
-            if (info != null) {
-                // Duration from container (in seconds, converted to ms)
-                String durationStr = info.getDuration();
-                if (durationStr != null) {
-                    try {
-                        double durationSec = Double.parseDouble(durationStr);
-                        long durationMs = (long) (durationSec * 1000);
-                        metadata.duration = formatVideoDuration(durationMs);
-                        FLog.d(TAG, "FFprobe duration: " + durationSec + "s -> " + metadata.duration);
-                    } catch (NumberFormatException e) {
-                        FLog.w(TAG, "Failed to parse duration: " + durationStr);
-                    }
-                }
-
-                // Bitrate from container
-                String bitrateStr = info.getBitrate();
-                if (bitrateStr != null) {
-                    try {
-                        long bitrate = Long.parseLong(bitrateStr);
-                        metadata.bitrate = formatBitrate(bitrate);
-                        FLog.d(TAG, "FFprobe bitrate: " + bitrate + " -> " + metadata.bitrate);
-                    } catch (NumberFormatException e) {
-                        FLog.w(TAG, "Failed to parse bitrate: " + bitrateStr);
-                    }
-                }
-
-                // Get video stream info
-                List<StreamInformation> streams = info.getStreams();
-                if (streams != null) {
-                    for (StreamInformation stream : streams) {
-                        String codecType = stream.getType();
-                        if ("video".equals(codecType)) {
-                            // Resolution
-                            Long width = stream.getWidth();
-                            Long height = stream.getHeight();
-                            if (width != null && height != null && width > 0 && height > 0) {
-                                String resolutionName = getResolutionName(width.intValue(), height.intValue());
-                                metadata.resolution = width + " x " + height + " (" + resolutionName + ")";
-                                FLog.d(TAG, "FFprobe resolution: " + metadata.resolution);
-                            }
-
-                            // Codec
-                            String codecName = stream.getCodec();
-                            if (codecName != null) {
-                                if (codecName.contains("h264") || codecName.contains("avc")) {
-                                    metadata.codec = "H.264 (AVC)";
-                                } else if (codecName.contains("hevc") || codecName.contains("h265")) {
-                                    metadata.codec = "H.265 (HEVC)";
-                                } else if (codecName.contains("vp8")) {
-                                    metadata.codec = "VP8";
-                                } else if (codecName.contains("vp9")) {
-                                    metadata.codec = "VP9";
-                                } else if (codecName.contains("av1")) {
-                                    metadata.codec = "AV1";
-                                } else {
-                                    metadata.codec = codecName.toUpperCase();
-                                }
-                                FLog.d(TAG, "FFprobe codec: " + codecName + " -> " + metadata.codec);
-                            }
-
-                            // Frame rate from r_frame_rate or avg_frame_rate
-                            String frameRateStr = stream.getAverageFrameRate();
-                            if (frameRateStr == null || frameRateStr.isEmpty()) {
-                                frameRateStr = stream.getRealFrameRate();
-                            }
-                            if (frameRateStr != null && !frameRateStr.isEmpty()) {
-                                try {
-                                    // Frame rate is often in format "30/1" or "30000/1001"
-                                    if (frameRateStr.contains("/")) {
-                                        String[] parts = frameRateStr.split("/");
-                                        double num = Double.parseDouble(parts[0]);
-                                        double den = Double.parseDouble(parts[1]);
-                                        if (den > 0) {
-                                            double fps = num / den;
-                                            metadata.frameRate = String.format(Locale.US, "%.2f fps", fps);
-                                            FLog.d(TAG, "FFprobe frame rate: " + frameRateStr + " -> " + metadata.frameRate);
-                                        }
-                                    } else {
-                                        double fps = Double.parseDouble(frameRateStr);
-                                        metadata.frameRate = String.format(Locale.US, "%.2f fps", fps);
-                                        FLog.d(TAG, "FFprobe frame rate: " + fps + " fps");
-                                    }
-                                } catch (NumberFormatException e) {
-                                    FLog.w(TAG, "Failed to parse frame rate: " + frameRateStr);
-                                }
-                            }
-                            break; // Only process first video stream
-                        }
-                    }
-                }
-            } else {
-                FLog.w(TAG, "FFprobeKit returned null MediaInformation");
-            }
-
-            // Use MediaMetadataRetriever as fallback for missing metadata and for location
-            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-            try {
-                retriever.setDataSource(getContext(), videoUri);
-                
-                // Fallback for duration if FFprobe didn't get it
-                if (getString(R.string.video_info_unknown).equals(metadata.duration)) {
-                    String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-                    if (durationStr != null) {
-                        try {
-                            long durationMs = Long.parseLong(durationStr);
-                            metadata.duration = formatVideoDuration(durationMs);
-                            FLog.d(TAG, "MediaMetadataRetriever duration fallback: " + metadata.duration);
-                        } catch (NumberFormatException e) {
-                            FLog.w(TAG, "Failed to parse duration from MediaMetadataRetriever: " + durationStr);
-                        }
-                    }
-                }
-                
-                // Fallback for resolution if FFprobe didn't get it
-                if (getString(R.string.video_info_unknown).equals(metadata.resolution)) {
-                    String widthStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
-                    String heightStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
-                    if (widthStr != null && heightStr != null) {
-                        try {
-                            int width = Integer.parseInt(widthStr);
-                            int height = Integer.parseInt(heightStr);
-                            String resolutionName = getResolutionName(width, height);
-                            metadata.resolution = width + " x " + height + " (" + resolutionName + ")";
-                            FLog.d(TAG, "MediaMetadataRetriever resolution fallback: " + metadata.resolution);
-                        } catch (NumberFormatException e) {
-                            FLog.w(TAG, "Failed to parse resolution from MediaMetadataRetriever");
-                        }
-                    }
-                }
-                
-                // Fallback for bitrate if FFprobe didn't get it
-                if (getString(R.string.video_info_unknown).equals(metadata.bitrate)) {
-                    String bitrateStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
-                    if (bitrateStr != null) {
-                        try {
-                            long bitrate = Long.parseLong(bitrateStr);
-                            metadata.bitrate = formatBitrate(bitrate);
-                            FLog.d(TAG, "MediaMetadataRetriever bitrate fallback: " + metadata.bitrate);
-                        } catch (NumberFormatException e) {
-                            FLog.w(TAG, "Failed to parse bitrate from MediaMetadataRetriever: " + bitrateStr);
-                        }
-                    }
-                }
-                
-                // Location data (FFprobe doesn't handle GPS well)
-                metadata.location = extractLocationData(retriever);
-            } catch (Exception e) {
-                FLog.w(TAG, "Could not extract data with MediaMetadataRetriever", e);
-                if (getString(R.string.video_info_unknown).equals(metadata.location) || metadata.location == null) {
-                    metadata.location = getString(R.string.video_info_no_location);
-                }
-            } finally {
+            String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            if (durationStr != null) {
                 try {
-                    retriever.release();
-                } catch (Exception e) {
-                    FLog.e(TAG, "Error releasing MediaMetadataRetriever", e);
-                }
+                    metadata.duration = formatVideoDuration(Long.parseLong(durationStr));
+                } catch (NumberFormatException ignored) { }
             }
 
+            String widthStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            String heightStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            if (widthStr != null && heightStr != null) {
+                try {
+                    int width = Integer.parseInt(widthStr);
+                    int height = Integer.parseInt(heightStr);
+                    metadata.resolution = width + " x " + height + " (" + getResolutionName(width, height) + ")";
+                } catch (NumberFormatException ignored) { }
+            }
+
+            String bitrateStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+            if (bitrateStr != null) {
+                try {
+                    metadata.bitrate = formatBitrate(Long.parseLong(bitrateStr));
+                } catch (NumberFormatException ignored) { }
+            }
+
+            metadata.location = extractLocationData(retriever);
         } catch (Exception e) {
-            FLog.e(TAG, "Error extracting video metadata with FFprobe", e);
+            FLog.w(TAG, "Could not extract data with MediaMetadataRetriever", e);
+            metadata.location = getString(R.string.video_info_no_location);
+        } finally {
+            try {
+                retriever.release();
+            } catch (Exception e) {
+                FLog.e(TAG, "Error releasing MediaMetadataRetriever", e);
+            }
         }
 
+        // Full builds: overlay richer ffprobe values (no-op in Lite)
+        try {
+            FfprobeData extra = FeatureRegistry.features().createVideoInfoProbe().probe(videoUri);
+            if (extra != null) {
+                if (extra.durationMs != null) metadata.duration = formatVideoDuration(extra.durationMs);
+                if (extra.bitrate != null) metadata.bitrate = formatBitrate(extra.bitrate);
+                if (extra.width != null && extra.height != null && extra.width > 0 && extra.height > 0) {
+                    metadata.resolution = extra.width + " x " + extra.height + " (" + getResolutionName(extra.width, extra.height) + ")";
+                }
+                if (extra.codec != null) metadata.codec = extra.codec;
+                if (extra.frameRate != null) metadata.frameRate = extra.frameRate;
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "FFprobe overlay failed", e);
+        }
         return metadata;
     }
 
@@ -656,55 +537,6 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
         return videoUri.toString();
     }
 
-    /**
-     * Gets the path for FFprobeKit. For content:// URIs, tries multiple approaches:
-     * 1. SAF protocol prefix (saf:)
-     * 2. Reconstructed file path (for Download/Documents folders)
-     * 3. File descriptor path via ParcelFileDescriptor
-     */
-    private String getFFprobePath() {
-        if ("file".equals(videoUri.getScheme()) && videoUri.getPath() != null) {
-            return videoUri.getPath();
-        }
-        
-        // For content:// URIs, try to get actual file path first (more reliable)
-        String reconstructedPath = tryGetActualFilePath();
-        if (reconstructedPath != null) {
-            java.io.File file = new java.io.File(reconstructedPath);
-            if (file.exists() && file.canRead()) {
-                FLog.d(TAG, "Using reconstructed file path for FFprobe: " + reconstructedPath);
-                return reconstructedPath;
-            }
-        }
-        
-        // Fall back to SAF protocol for FFprobeKit
-        // Format: saf:<content-uri>
-        FLog.d(TAG, "Using SAF protocol for FFprobe: saf:" + videoUri.toString());
-        return "saf:" + videoUri.toString();
-    }
-    
-    /**
-     * Attempts to reconstruct the actual file path from a SAF content:// URI.
-     * Works for common paths like Download, Documents, external storage.
-     */
-    @Nullable
-    private String tryGetActualFilePath() {
-        String path = videoUri.getPath();
-        if (path == null || !path.contains(":")) {
-            return null;
-        }
-        
-        // SAF URIs often have format /tree/primary:FadCam/document/primary:FadCam/file.mp4
-        // or /document/primary:Download/FadCam/file.mp4
-        int lastColonIndex = path.lastIndexOf(':');
-        if (lastColonIndex >= 0 && lastColonIndex < path.length() - 1) {
-            String relativePath = path.substring(lastColonIndex + 1);
-            return resolveRelativePathOnVolumes(relativePath);
-        }
-        return null;
-    }
-
-    @Nullable
     private String resolveRelativePathOnVolumes(@NonNull String relativePath) {
         if (getContext() == null) return null;
         try {
@@ -727,6 +559,13 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
         }
         return null;
     }
+    private String formatFileSize(long bytes) {
+        if (bytes < 1024)
+            return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        char pre = "KMGTPE".charAt(exp - 1);
+        return String.format(Locale.US, "%.1f %sB", bytes / Math.pow(1024, exp), pre);
+    }
 
     private String getFormattedLastModified() {
         Date d = new Date(lastModified);
@@ -734,7 +573,6 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
         String rel = getRelativeTime(d);
         return rel.isEmpty() ? abs : rel + "  (" + abs + ")";
     }
-
     private String getRelativeTime(Date date) {
         long diff = System.currentTimeMillis() - date.getTime();
         long sec = diff / 1000;
@@ -752,15 +590,6 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
         if (month < 12) return month + " month" + (month > 1 ? "s" : "") + " ago";
         return day / 365 + " year" + (day > 365 ? "s" : "") + " ago";
     }
-
-    private String formatFileSize(long bytes) {
-        if (bytes < 1024)
-            return bytes + " B";
-        int exp = (int) (Math.log(bytes) / Math.log(1024));
-        char pre = "KMGTPE".charAt(exp - 1);
-        return String.format(Locale.US, "%.1f %sB", bytes / Math.pow(1024, exp), pre);
-    }
-
     private String formatVideoDuration(long durationMs) {
         if (durationMs <= 0)
             return getString(R.string.video_info_unknown);

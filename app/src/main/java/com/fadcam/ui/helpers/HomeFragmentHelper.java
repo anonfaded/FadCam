@@ -58,6 +58,12 @@ public class HomeFragmentHelper {
      * @param view The root view containing the mode switcher
      */
     private void initializeModeSwitcher(@NonNull View view) {
+        // Lite edition: single-mode app (FadCam only) — no mode pill bar at all
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            android.view.View pill = view.findViewById(com.fadcam.R.id.mode_switcher);
+            if (pill != null) pill.setVisibility(android.view.View.GONE);
+            return;
+        }
         modeSwitcherComponent = new ModeSwitcherComponent(fragment.requireContext());
 
         // Set up listener for mode switcher events

@@ -18,7 +18,11 @@ import java.util.regex.Pattern;
  */
 public class ChangelogParser {
     private static final String TAG = "ChangelogParser";
-    private static final String CHANGELOG_URL = "https://raw.githubusercontent.com/anonfaded/FadCam/refs/heads/master/CHANGELOG.md";
+    // Changelogs are managed in ONE place: the FadCam repo.
+    // Full uses CHANGELOG.md; Lite (and all Lite flavours) use CHANGELOG_LITE.md.
+    private static final String CHANGELOG_URL = "https://raw.githubusercontent.com/"
+            + com.fadcam.BuildConfig.UPDATE_ORG + "/FadCam/refs/heads/master/"
+            + (com.fadcam.BuildConfig.LITE_EDITION ? "CHANGELOG_LITE.md" : "CHANGELOG.md");
     private static final String HEADER_COLOR = "#E43C3C"; // Red color for headers
 
     /**
