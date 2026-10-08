@@ -41,6 +41,10 @@ android {
         versionCode = 55
         versionName = "4.0.0"
         buildConfigField("boolean", "LITE_EDITION", "false")
+        // Which tier this exact APK IS (not what it can upgrade to). Drives the Pro screen:
+        // FREE shows the upgrade pitch, PRO / PRO_PLUS show the owner view of the same table.
+        // Overridden per flavor/build type below — keep the two in sync with the variant filter.
+        buildConfigField("String", "TIER", "\"FREE\"")
         buildConfigField("String", "UPDATE_ORG", "\"anonfaded\"")
         buildConfigField("String", "UPDATE_REPO", "\"FadCam\"")
         buildConfigField("String", "UPDATE_PRO_REPO", "\"FadCamPro\"")
@@ -123,6 +127,7 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             versionNameSuffix = "-Pro+"
+            buildConfigField("String", "TIER", "\"PRO_PLUS\"")
             // Custom app name via gradle property
             val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro+"
             resValue("string", "app_name", customAppName)
@@ -177,18 +182,21 @@ android {
 
     productFlavors {
         create("notesPro") {
+            buildConfigField("String", "TIER", "\"PRO\"")
             dimension = "pro"
             applicationIdSuffix = ".notes"
             resValue("string", "app_name", "Notes")
             manifestPlaceholders["appLabel"] = "Notes"
         }
         create("calcPro") {
+            buildConfigField("String", "TIER", "\"PRO\"")
             dimension = "pro"
             applicationIdSuffix = ".calc"
             resValue("string", "app_name", "Calculator")
             manifestPlaceholders["appLabel"] = "Calculator"
         }
         create("weatherPro") {
+            buildConfigField("String", "TIER", "\"PRO\"")
             dimension = "pro"
             applicationIdSuffix = ".weather"
             resValue("string", "app_name", "Weather")
@@ -210,6 +218,7 @@ android {
         }
         // Lite Pro discreet disguises (same icon/app name as the Full disguises, see sourceSets)
         create("liteNotes") {
+            buildConfigField("String", "TIER", "\"PRO\"")
             dimension = "pro"
             versionCode = liteProVersionCode
             versionName = liteProVersionName
@@ -221,6 +230,7 @@ android {
             buildConfigField("boolean", "LITE_EDITION", "true")
         }
         create("liteCalc") {
+            buildConfigField("String", "TIER", "\"PRO\"")
             dimension = "pro"
             versionCode = liteProVersionCode
             versionName = liteProVersionName
@@ -232,6 +242,7 @@ android {
             buildConfigField("boolean", "LITE_EDITION", "true")
         }
         create("liteWeather") {
+            buildConfigField("String", "TIER", "\"PRO\"")
             dimension = "pro"
             versionCode = liteProVersionCode
             versionName = liteProVersionName
@@ -318,6 +329,11 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Core library desugaring: rewrites newer JDK APIs (java.time, java.util.stream,
+        // java.util.function, Optional…) into implementations that run on the old API levels we
+        // still support (minSdk 24). Without it, any java.time call throws NoClassDefFoundError
+        // on Android 7.x even though it compiles fine. Charges a few KB after R8 shrinking.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     testOptions {
@@ -367,6 +383,11 @@ android {
         // Lite free: same component removals as the disguise flavors
         getByName("lite") {
             manifest.srcFile("src/lite/AndroidManifest.xml")
+        }
+        // Product copy belongs to every Lite tier; keep the free launcher artwork separate
+        // so the paid Notes / Calculator / Weather flavors retain their own icons.
+        listOf("lite", "liteNotes", "liteCalc", "liteWeather").forEach { flavor ->
+            getByName(flavor).res.srcDir("src/liteCommon/res")
         }
         // Full-only source dir: heavy/native features that Lite must not package
         // (Faditor/ffmpeg, motion detection/OpenCV/TFLite, forensics). Shared by ALL
@@ -428,6 +449,9 @@ configurations {
 }
 
 dependencies {
+    // Backports for newer JDK APIs on old API levels — pairs with isCoreLibraryDesugaringEnabled.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
     implementation(libs.activity)
     implementation(libs.appintro.v631)
     implementation(libs.appcompat)

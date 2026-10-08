@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FadCam Lite overrides for the Pro screen. Lite is its own product line: the paid
+     tier is a separate discreet app (Lite Pro), not an in-app purchase, so the pitch
+     and the table describe what Lite Pro adds on top of the free Lite app. -->
+<resources>
+    <string name="pro_screen_title">FadCam Lite Pro</string>
+    <string name="pro_screen_bundle">Three discreet apps. One purchase.</string>
+    <string name="pro_screen_everything">Everything in FadCam Lite</string>
+    <string name="pro_screen_everything_desc">Every feature from the free app is included, unchanged.</string>
+    <string name="pro_screen_support_note">FadCam Lite stays free. Lite Pro helps FadSec Lab build more private recording tools for everyone.</string>
+    <string name="fadcam_pro_title">FadCam Lite Pro</string>
+    <string name="fadcam_pro_subtitle">Three disguised apps. One purchase.</string>
+    <string name="fadcam_pro_get_button">Get FadCam Lite Pro</string>
+    <string name="fadcam_pro_separate_apk">Separate app · Installs alongside FadCam Lite</string>
+    <string name="fadcam_pro_feature_everything_icon">Everything in FadCam Lite</string>
+    <string name="fadcam_pro_feature_everything">Everything in FadCam Lite</string>
+    <string name="fadcam_pro_owned_subtitle">All three apps unlocked.</string>
+    <string name="fadcam_pro_owned_note">Thank you for supporting the project. Questions or a problem? Reach out on Discord any time.</string>
+    <string name="fadcam_pro_offer_after_beta">After the beta: one payment, every future Lite Pro update included.</string>
+    <string name="fadcam_pro_support_message">FadCam Lite stays free, with no ads and no tracking. Buying Lite Pro is how the Lite line keeps being built: you get the three disguised apps, early builds and direct support — and the free app stays free for everyone. That is the whole deal.</string>
+    <string name="fadcam_pro_column_label">Lite Pro</string>
+    <!-- The "one-time" wording lives in the pill next to the price; the note must not repeat it. -->
+    <string name="fadcam_pro_price_note">All three apps · lifetime updates</string>
+    <string name="fadcam_pro_feature_notes_desc">FadCam Lite behind a plain notes app.</string>
+    <string name="fadcam_pro_feature_calc_desc">FadCam Lite behind a working calculator.</string>
+    <string name="fadcam_pro_feature_weather_desc">FadCam Lite behind a weather app.</string>
+</resources>

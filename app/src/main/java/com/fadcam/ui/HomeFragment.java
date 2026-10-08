@@ -4647,18 +4647,34 @@ public class HomeFragment extends BaseFragment {
         View proBadgeDot = view.findViewById(R.id.proBadgeDot);
         
         if (btnGetPro != null) {
-            Utils.attachPressScale(btnGetPro);
+            // The pill states what this APK IS: owners see their tier, everyone else is invited
+            // to it. The screen behind it switches to the owner view on the same signal.
+            String runningTier = com.fadcam.BuildConfig.TIER;
+            boolean isProBuild = !"FREE".equals(runningTier);
+            if (isProBuild && btnGetPro instanceof android.widget.TextView) {
+                ((android.widget.TextView) btnGetPro).setText(
+                        "PRO_PLUS".equals(runningTier)
+                                ? R.string.pro_screen_tier_plus
+                                : R.string.pro_screen_tier);
+            }
+            btnGetPro.setContentDescription(getString(isProBuild
+                    ? R.string.pro_screen_navigation_owned : R.string.pro_screen_navigation));
             // Update badge visibility based on pro feature state
             if (proBadgeDot != null) {
-                try {
-                    MainActivity mainActivity = (MainActivity) getActivity();
-                    if (mainActivity != null && mainActivity.shouldShowProBadge()) {
-                        proBadgeDot.setVisibility(View.VISIBLE);
-                    } else {
-                        proBadgeDot.setVisibility(View.GONE);
+                if (isProBuild) {
+                    // Owners already have it — an upsell dot would be noise.
+                    proBadgeDot.setVisibility(View.GONE);
+                } else {
+                    try {
+                        MainActivity mainActivity = (MainActivity) getActivity();
+                        if (mainActivity != null && mainActivity.shouldShowProBadge()) {
+                            proBadgeDot.setVisibility(View.VISIBLE);
+                        } else {
+                            proBadgeDot.setVisibility(View.GONE);
+                        }
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error checking pro badge state", e);
                     }
-                } catch (Exception e) {
-                    FLog.e(TAG, "Error checking pro badge state", e);
                 }
             }
             
@@ -4678,7 +4694,6 @@ public class HomeFragment extends BaseFragment {
                 Intent intent = new Intent(getActivity(), FadCamProActivity.class);
                 startActivity(intent);
             });
-            // ShimmerTextView handles its own shimmer animation
         }
 
         // -----
@@ -10286,7 +10301,8 @@ public class HomeFragment extends BaseFragment {
             // Restore default FadCam text logo.
             stopHeaderBlinkLoop();
             ivAppTitle.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-            ivAppTitle.setImageResource(R.drawable.menu_icon_unknown);
+            ivAppTitle.setImageResource(com.fadcam.BuildConfig.LITE_EDITION
+                    ? R.drawable.fadcam_lite_header_icon : R.drawable.menu_icon_unknown);
         }
     }
 
@@ -10424,6 +10440,11 @@ public class HomeFragment extends BaseFragment {
         Utils.attachPressScale(btnHamburgerMenu, 1.15f);
         hamburgerBadgeDot = view.findViewById(R.id.hamburgerBadgeDot);
         ivAppTitle = view.findViewById(R.id.ivAppTitle);
+        if (ivAppTitle != null) {
+            // Both editions ship their own header wordmark; same dimensions, different art.
+            ivAppTitle.setImageResource(com.fadcam.BuildConfig.LITE_EDITION
+                    ? R.drawable.fadcam_lite_header_icon : R.drawable.menu_icon_unknown);
+        }
         // Set up header logo click handler for Privacy Black Mode
         if (ivAppTitle != null) {
             ivAppTitle.setOnClickListener(v -> {

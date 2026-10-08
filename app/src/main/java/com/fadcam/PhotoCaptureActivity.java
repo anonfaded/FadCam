@@ -110,8 +110,11 @@ public class PhotoCaptureActivity extends ComponentActivity {
                 SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(this);
                 Size targetSize = resolveTargetResolution(prefs);
                 int targetRotation = Surface.ROTATION_0;
-                if (getDisplay() != null) {
-                    targetRotation = getDisplay().getRotation();
+                // Context.getDisplay() only exists from API 30; the window manager path works on
+                // every supported version (minSdk 24) and needs no guard.
+                android.view.Display display = getWindowManager().getDefaultDisplay();
+                if (display != null) {
+                    targetRotation = display.getRotation();
                 }
                 ImageCapture imageCapture;
                 if (targetSize != null) {

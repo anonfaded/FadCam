@@ -90,7 +90,8 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            videoUri = getArguments().getParcelable(ARG_VIDEO_URI, android.net.Uri.class);
+            videoUri = com.fadcam.Utils.getParcelableCompat(
+                    getArguments(), ARG_VIDEO_URI, android.net.Uri.class);
             displayName = getArguments().getString(ARG_DISPLAY_NAME);
             fileSize = getArguments().getLong(ARG_FILE_SIZE);
             lastModified = getArguments().getLong(ARG_LAST_MODIFIED);

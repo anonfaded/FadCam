@@ -14,7 +14,8 @@
     android:viewportWidth="400"
     android:viewportHeight="400">
 
-    <!-- Head sphere: same gradient as toggle_on.xml -->
+    <!-- Head sphere: one even radial falloff (no hot centre, no white pivot point) — the
+         directional light is layered on top as a sweeping sheen, so the head can "turn". -->
     <path
         android:name="head"
         android:pathData="M 30,200 A 170,170 0 1,0 370,200 A 170,170 0 1,0 30,200 Z">
@@ -23,11 +24,44 @@
                 android:type="radial"
                 android:centerX="150"
                 android:centerY="100"
-                android:gradientRadius="280"
-                android:startColor="#c8c8c8"
+                android:gradientRadius="330"
+                android:startColor="#bcbcbc"
                 android:endColor="#2e2e2e" />
         </aapt:attr>
     </path>
+
+    <!-- Soft light and shadow fields. Both are radial and their alpha reaches zero well
+         before their path edges (gradientRadius 150 < path radius 170), so the glance AVD can
+         slide them across the face and deepen the shadow with no visible layer edge: the
+         shading redistributes like a 3D render, not a moving sheet. -->
+    <group android:name="light_group" android:translateX="0" android:translateY="0">
+        <path android:name="head_light"
+            android:pathData="M 15,175 A 170,170 0 1,0 355,175 A 170,170 0 1,0 15,175 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="radial"
+                    android:centerX="185"
+                    android:centerY="175"
+                    android:gradientRadius="150"
+                    android:startColor="#12FFFFFF"
+                    android:endColor="#00FFFFFF" />
+            </aapt:attr>
+        </path>
+    </group>
+    <group android:name="shadow_group" android:translateX="0" android:translateY="0">
+        <path android:name="head_shadow" android:fillAlpha="0.55"
+            android:pathData="M 70,270 A 170,170 0 1,0 410,270 A 170,170 0 1,0 70,270 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="radial"
+                    android:centerX="240"
+                    android:centerY="270"
+                    android:gradientRadius="150"
+                    android:startColor="#24000000"
+                    android:endColor="#00000000" />
+            </aapt:attr>
+        </path>
+    </group>
 
     <!-- eye_group: fully awake (scaleY=1.0, translateY=0). pivotY=178 for animations. -->
     <group

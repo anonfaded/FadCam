@@ -96,6 +96,7 @@ public class AboutFragment extends BaseFragment {
         MaterialButton checkUpdatesButton = view.findViewById(R.id.check_updates_button);
         TextView emailText = view.findViewById(R.id.email_text);
         TextView discordText = view.findViewById(R.id.discord_text);
+        TextView xText = view.findViewById(R.id.x_text);
         MaterialCardView privacyInfoCard = view.findViewById(R.id.privacy_info_card);
         ScrollView scrollView = view.findViewById(R.id.scroll_view);
 
@@ -246,6 +247,7 @@ public class AboutFragment extends BaseFragment {
         donateButton.setIconTint(ColorStateList.valueOf(black));
         emailText.setTextColor(Color.WHITE);
         discordText.setTextColor(Color.WHITE);
+        if (xText != null) xText.setTextColor(Color.WHITE);
         privacyInfoCard.setCardBackgroundColor(colorDialog);
         privacyInfoCard.setStrokeColor(colorButton);
         LinearLayout privacyHeader = privacyInfoCard.findViewById(R.id.privacy_info_header);
@@ -351,6 +353,7 @@ public class AboutFragment extends BaseFragment {
         checkUpdatesButton.setOnClickListener(v -> checkForUpdates());
         emailText.setOnClickListener(v -> sendEmail());
         discordText.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
+        if (xText != null) xText.setOnClickListener(v -> openUrl("https://x.com/anon_faded"));
         setupPrivacyInfo(privacyInfoCard, scrollView);
         view.findViewById(R.id.check_updates_button).setOnClickListener(v -> checkForUpdates());
 

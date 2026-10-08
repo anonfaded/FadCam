@@ -507,6 +507,8 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_watermark_quick, () -> openSubFragment(new WatermarkSettingsFragment()));
         bindRow(root, R.id.group_about, () -> openSubFragment(new AboutFragment()));
         bindRow(root, R.id.group_review, () -> launchReview());
+        bindRow(root, R.id.group_follow_x, () -> openUrl("https://x.com/anon_faded"));
+        bindRow(root, R.id.group_discord, () -> openUrl("https://discord.gg/kvAZvdkuuN"));
         bindRow(root, R.id.group_readme, () -> openReadmeDialog());
 
         // Tutorial YouTube CTA

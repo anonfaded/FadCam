@@ -61,7 +61,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" android:clipChildren="false" android:clipToPadding="false">
 
-            <com.fadcam.ui.ShimmerTextView 
+            <com.fadcam.ui.ShimmerTextView
                 android:id="@+id/btnGetPro"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/home_pro_btn_h"

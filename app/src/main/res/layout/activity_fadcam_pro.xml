@@ -1,374 +1,268 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout 
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/rootContainer"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/bg_fadcam_pro_gradient">
+    android:id="@+id/rootContainer" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/pro_background">
 
-    <!-- Back Button -->
-    <ImageView
-        android:id="@+id/btnBack"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_margin="12dp"
-        android:padding="8dp"
-        android:src="@drawable/ic_arrow_back"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="@string/back"
-        app:tint="@android:color/white"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <!-- Main ScrollView for entire content -->
-    <ScrollView
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:fillViewport="false"
-        android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/btnBack"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-    <!-- Header Section -->
-    <LinearLayout
-        android:id="@+id/headerSection"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:paddingTop="8dp"
-        android:paddingBottom="16dp"
-        android:paddingHorizontal="24dp">
-
-        <!-- Pro Icon/Badge with crown -->
-        <FrameLayout
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginBottom="12dp">
-
-            <View
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:background="@drawable/bg_pro_icon_glow" />
-
-            <TextView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_gravity="center"
-                android:fontFamily="@font/materialicons"
-                android:text="workspace_premium"
-                android:textColor="#FFD700"
-                android:textSize="36sp"
-                android:gravity="center" />
-        </FrameLayout>
-
-        <!-- Title -->
-        <TextView
-            android:id="@+id/tvProTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/fadcam_pro_title"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/white"
-            android:layout_marginBottom="4dp" />
-
-        <!-- Subtitle -->
-        <TextView
-            android:id="@+id/tvProSubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/fadcam_pro_subtitle"
-            android:textSize="13sp"
-            android:textColor="#B0B0B0"
-            android:gravity="center" />
-
-    </LinearLayout>
-
-    <!-- Features Container -->
-    <LinearLayout
-        android:id="@+id/featuresContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="12dp"
-        android:paddingBottom="8dp">
-
-            <!-- Feature Comparison Header -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingVertical="8dp"
-                android:paddingHorizontal="4dp"
-                android:layout_marginBottom="4dp"
-                android:gravity="center_vertical">
-
-                <!-- Feature name column (empty header) -->
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text=""
-                    android:textSize="10sp"
-                    android:textColor="#808080" />
-
-                <!-- Free column header -->
-                <FrameLayout
-                    android:layout_width="48dp"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_header_label_transparent"
-                    android:paddingVertical="3dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/fadcam_pro_free"
-                        android:textSize="9sp"
-                        android:textColor="#808080"
-                        android:gravity="center"
-                        android:textStyle="bold" />
+    <ScrollView android:id="@+id/proScroll" android:layout_width="0dp" android:layout_height="0dp"
+        android:fillViewport="true" android:overScrollMode="never" android:scrollbars="none" android:clipToPadding="false"
+        android:paddingBottom="20dp"
+        app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toTopOf="@id/footerBar"
+        app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+        <LinearLayout android:id="@+id/proScrollContent" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:paddingHorizontal="@dimen/pro_page_padding_h" android:paddingBottom="16dp">
+            <LinearLayout android:id="@+id/heroSection" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:gravity="center_horizontal" android:paddingBottom="@dimen/pro_section_gap">
+                <FrameLayout android:id="@+id/heroFrame" android:layout_width="match_parent" android:layout_height="@dimen/pro_hero_frame_h"
+                    android:importantForAccessibility="noHideDescendants">
+                    <com.fadcam.ui.widgets.ProCrownRainView android:id="@+id/crownRain"
+                        android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0.20" />
+                    <ImageView android:id="@+id/ivAvatar" android:layout_width="@dimen/pro_hero_avatar" android:layout_height="@dimen/pro_hero_avatar"
+                        android:layout_gravity="top|center_horizontal" android:src="@drawable/toggle_on_idle_pro" android:contentDescription="@null" />
                 </FrameLayout>
-
-                <!-- Pro column header -->
-                <FrameLayout
-                    android:layout_width="48dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="3dp"
-                    android:background="@drawable/bg_pro_badge_small"
-                    android:paddingVertical="3dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/fadcam_pro_column_label"
-                        android:textSize="9sp"
-                        android:textColor="#FFD700"
-                        android:gravity="center"
-                        android:textStyle="bold" />
-                </FrameLayout>
-
-                <!-- Pro+ column header -->
-                <FrameLayout
-                    android:layout_width="48dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="3dp"
-                    android:background="@drawable/bg_proplus_badge_small"
-                    android:paddingVertical="3dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/fadcam_pro_proplus_label"
-                        android:textSize="8sp"
-                        android:textColor="#FF6B6B"
-                        android:gravity="center"
-                        android:textStyle="bold"
-                        android:maxLines="1" />
-                </FrameLayout>
-
-                <!-- Lab column header -->
-                <FrameLayout
-                    android:layout_width="48dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="3dp"
-                    android:background="@drawable/bg_lab_badge_small"
-                    android:paddingVertical="3dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/fadcam_pro_lab_label"
-                        android:textSize="9sp"
-                        android:textColor="#00BCD4"
-                        android:gravity="center"
-                        android:textStyle="bold" />
-                </FrameLayout>
-
+                <TextView android:id="@+id/tvProTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="@string/pro_screen_title" android:textColor="@color/pro_text" android:textSize="@dimen/pro_hero_title_size"
+                    android:fontFamily="sans-serif-medium" android:gravity="center" android:accessibilityHeading="true" />
+                <TextView android:id="@+id/tvOwnedBadge" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" android:text="@string/pro_screen_active" android:textColor="@color/pro_gold"
+                    android:textSize="12sp" android:fontFamily="sans-serif-medium" android:background="@drawable/bg_pro_chip"
+                    android:paddingHorizontal="12dp" android:paddingVertical="6dp" android:visibility="gone" />
+                <TextView android:id="@+id/tvProSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" android:text="@string/pro_screen_claim_title" android:textColor="@color/pro_text"
+                    android:textSize="@dimen/pro_claim_title_size" android:fontFamily="sans-serif-medium" android:gravity="center" />
+                <TextView android:id="@+id/tvProClaimBody" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp" android:text="@string/pro_screen_claim_body" android:textColor="@color/pro_text_secondary"
+                    android:textSize="@dimen/pro_claim_body_size" android:fontFamily="sans-serif" android:lineSpacingExtra="3dp"
+                    android:gravity="center" />
             </LinearLayout>
 
-            <!-- Feature Row 1: Everything -->
-            <include layout="@layout/item_pro_feature_row_4col"
-                android:id="@+id/featureRow1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="2dp" />
+            <FrameLayout android:id="@+id/bundleCard" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="@drawable/bg_pro_bundle_card" android:clipChildren="false" android:clipToPadding="false">
 
-            <!-- Feature Row 2: Notification Icon -->
-            <include layout="@layout/item_pro_feature_row_4col"
-                android:id="@+id/featureRow2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="2dp" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="@dimen/pro_card_padding"
+                    android:clipChildren="false" android:clipToPadding="false">
 
-            <!-- Feature Row 3: User Uploaded Icon (Pro+ only) -->
-            <include layout="@layout/item_pro_feature_row_4col"
-                android:id="@+id/featureRow3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="2dp" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical">
+                        <TextView android:layout_width="34dp" android:layout_height="34dp" android:gravity="center"
+                            android:background="@drawable/bg_pro_bundle_seal" android:text="redeem"
+                            android:fontFamily="@font/materialicons" android:textSize="19sp" android:textColor="#3B2A0E"
+                            android:importantForAccessibility="no" />
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                            android:layout_marginStart="10dp" android:orientation="vertical">
+                            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                                android:text="@string/pro_screen_bundle"
+                                android:textColor="@color/pro_text" android:textSize="16sp" android:fontFamily="sans-serif-medium" />
+                        </LinearLayout>
+                    </LinearLayout>
 
-            <!-- Feature Row 4: Custom App Name (Pro+ only) -->
-            <include layout="@layout/item_pro_feature_row_4col"
-                android:id="@+id/featureRow4"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="2dp" />
+                    <com.fadcam.ui.widgets.BundlePhoneView android:id="@+id/bundlePhone"
+                        android:layout_width="match_parent" android:layout_height="@dimen/pro_bundle_phone_h"
+                        android:layout_marginTop="8dp" android:importantForAccessibility="no" />
 
-            <!-- Feature Row 5: FadDrive (Lab only) -->
-            <include layout="@layout/item_pro_feature_row_4col"
-                android:id="@+id/featureRow5"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="2dp" />
-
-            <!-- Early Bird Notice -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardBackgroundColor="#1A4CAF50"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="0dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="10dp"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:fontFamily="@font/materialicons"
-                        android:text="celebration"
-                        android:textColor="#4CAF50"
-                        android:textSize="16sp"
-                        android:gravity="center"
-                        android:layout_marginEnd="10dp" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/fadcam_pro_early_bird"
-                        android:textSize="12sp"
-                        android:textColor="#4CAF50"
-                        android:lineSpacingExtra="2dp" />
-
+                    <LinearLayout android:id="@+id/tvEntryPointSoon" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp" android:orientation="horizontal" android:gravity="center_vertical"
+                        android:background="@drawable/bg_pro_bundle_included" android:paddingHorizontal="9dp" android:paddingVertical="7dp">
+                        <TextView android:layout_width="20dp" android:layout_height="20dp" android:gravity="center"
+                            android:text="check_circle" android:fontFamily="@font/materialicons" android:textSize="15sp"
+                            android:textColor="@color/pro_check_gold" android:importantForAccessibility="no" />
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                            android:layout_marginStart="6dp" android:text="@string/pro_screen_bundle_status"
+                            android:textColor="@color/pro_text_secondary" android:textSize="12sp" android:lineSpacingExtra="1dp" />
+                    </LinearLayout>
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </FrameLayout>
 
-            <!-- Coming Soon Notice -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardBackgroundColor="#1AFF6B6B"
-                app:cardCornerRadius="10dp"
-                app:cardElevation="0dp">
+            <LinearLayout android:id="@+id/compareTitleRow" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginTop="@dimen/pro_section_gap" android:layout_marginBottom="12dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="table_chart" android:fontFamily="@font/materialicons" android:textColor="@color/pro_text"
+                    android:textSize="18sp" android:layout_marginEnd="8dp" android:importantForAccessibility="no" />
+                <TextView android:id="@+id/tvEyebrowCompare" style="@style/ProSectionTitle"
+                    android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="@string/pro_screen_compare" android:accessibilityHeading="true" />
+            </LinearLayout>
+            <TextView android:id="@+id/comparisonHint" style="@style/ProBody" android:layout_marginBottom="12dp"
+                android:text="@string/pro_screen_compare_hint" android:textSize="12sp" android:visibility="gone" />
+            <HorizontalScrollView android:id="@+id/comparisonScroll" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:fillViewport="true" android:overScrollMode="never" android:scrollbars="horizontal"
+                android:background="@drawable/bg_pro_card" android:clipToOutline="true">
+                <com.fadcam.ui.widgets.FitWidthLinearLayout android:id="@+id/tableContent" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:paddingBottom="4dp">
+                    <LinearLayout android:id="@+id/tableHeaderRow" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical" android:paddingHorizontal="12dp"
+                        android:paddingVertical="10dp" />
+                    <LinearLayout android:id="@+id/featuresContainer" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </com.fadcam.ui.widgets.FitWidthLinearLayout>
+            </HorizontalScrollView>
+            <LinearLayout android:id="@+id/soonLegend" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="10dp"
+                android:paddingHorizontal="12dp" android:visibility="gone">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="schedule" android:fontFamily="@font/materialicons" android:textColor="@color/pro_text_secondary"
+                    android:textSize="14sp" android:importantForAccessibility="no" />
+                <TextView style="@style/ProBody" android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:layout_marginStart="6dp"
+                    android:text="@string/pro_screen_soon_legend" android:textSize="12sp" />
+            </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="10dp"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:fontFamily="@font/materialicons"
-                        android:text="schedule"
-                        android:textColor="#FF6B6B"
-                        android:textSize="16sp"
-                        android:gravity="center"
-                        android:layout_marginEnd="10dp" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/fadcam_pro_coming_soon"
-                        android:textSize="12sp"
-                        android:textColor="#FF6B6B"
-                        android:lineSpacingExtra="2dp" />
-
+            <LinearLayout android:id="@+id/privacyBlock" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:layout_marginTop="@dimen/pro_section_gap">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="lock" android:fontFamily="@font/materialicons" android:textColor="@color/pro_text"
+                        android:textSize="18sp" android:layout_marginEnd="8dp" android:layout_marginTop="4dp"
+                        android:layout_gravity="top" android:importantForAccessibility="no" />
+                    <TextView style="@style/ProSectionTitle" android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/pro_screen_privacy_title" android:accessibilityHeading="true" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-        </LinearLayout>
-
-    <!-- Bottom Section with CTA Button -->
-    <LinearLayout
-        android:id="@+id/bottomSection"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:paddingHorizontal="20dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="20dp"
-        android:background="@drawable/bg_bottom_fade">
-
-        <!-- Golden CTA Button with Shimmer -->
-        <com.fadcam.ui.ShimmerButton
-            android:id="@+id/btnGetPro"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginBottom="8dp"
-            android:text="@string/fadcam_pro_get_button"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:textColor="#1A1A1A"
-            android:textAllCaps="false"
-            android:letterSpacing="0.02"
-            app:backgroundTint="@null"
-            android:background="@drawable/bg_golden_button"
-            app:cornerRadius="25dp"
-            app:icon="@drawable/ic_crown"
-            app:iconGravity="textStart"
-            app:iconTint="#1A1A1A"
-            app:iconPadding="8dp"
-            app:rippleColor="#80FFD700" />
-
-        <!-- Separate APK Notice -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:text="@string/fadcam_pro_separate_apk"
-            android:textSize="11sp"
-            android:textColor="#B0B0B0"
-            android:gravity="center"
-            android:drawableStart="@drawable/ic_download_small"
-            android:drawablePadding="4dp"
-            android:drawableTint="#B0B0B0" />
-
-        <!-- Support Message from Developer -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="0dp"
-            android:text="@string/fadcam_pro_support_message"
-            android:textSize="12sp"
-            android:textColor="#B0B0B0"
-            android:gravity="start"
-            android:lineSpacingMultiplier="1.15" />
-
-    </LinearLayout>
-
+                <TextView style="@style/ProBody" android:layout_marginTop="10dp" android:text="@string/pro_screen_privacy_body" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:layout_marginTop="@dimen/pro_section_gap">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="redeem" android:fontFamily="@font/materialicons" android:textColor="@color/pro_text"
+                        android:textSize="18sp" android:layout_marginEnd="8dp" android:importantForAccessibility="no" />
+                    <TextView style="@style/ProSectionTitle" android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/pro_screen_why_pro_title" android:accessibilityHeading="true" />
+                </LinearLayout>
+                <TextView style="@style/ProBody" android:layout_marginTop="10dp" android:text="@string/pro_screen_why_pro_body" />
+            </LinearLayout>
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="24dp"
+                android:layout_marginBottom="20dp" android:background="@color/pro_border" />
+            <TextView android:id="@+id/tvNote" style="@style/ProBody" android:text="@string/pro_screen_support_note" />
+            <TextView android:id="@+id/tvDiscordInvite" style="@style/ProBody" android:layout_marginTop="12dp"
+                android:text="@string/pro_screen_discord_invite" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnDiscord"
+                style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="8dp"
+                android:paddingVertical="12dp" android:text="@string/pro_screen_support" android:textAllCaps="false"
+                android:textSize="14sp" android:textColor="@color/pro_gold" android:gravity="start|center_vertical"
+                android:elevation="0dp" android:stateListAnimator="@null" app:rippleColor="#24E8C77B"
+                app:icon="@drawable/ic_discord_gold" app:iconSize="20dp" app:iconPadding="10dp" />
         </LinearLayout>
     </ScrollView>
 
+    <View android:id="@+id/footerFade" android:layout_width="0dp" android:layout_height="@dimen/pro_footer_fade_h"
+        android:background="@drawable/bg_pro_fade_bottom" android:clickable="false" android:focusable="false"
+        android:importantForAccessibility="no"
+        app:layout_constraintBottom_toTopOf="@id/footerBar" app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <LinearLayout android:id="@+id/stickyHeaderWrap" android:layout_width="0dp"
+        android:layout_height="wrap_content" android:orientation="vertical"
+        android:layout_marginStart="@dimen/pro_page_padding_h"
+        android:layout_marginEnd="@dimen/pro_page_padding_h" android:layout_marginTop="@dimen/pro_sticky_header_gap"
+        android:visibility="invisible"
+        android:importantForAccessibility="noHideDescendants"
+        app:layout_constraintTop_toBottomOf="@id/btnBack" app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="table_chart" android:fontFamily="@font/materialicons" android:textColor="@color/pro_text"
+                android:textSize="18sp" android:layout_marginEnd="8dp" android:importantForAccessibility="no" />
+            <TextView android:id="@+id/stickyTableTitle" style="@style/ProSectionTitle"
+                android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="@string/pro_screen_compare" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/stickyHeaderPanel" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical"
+            android:background="@drawable/bg_pro_sticky_header">
+            <HorizontalScrollView android:id="@+id/stickyHeaderScroll" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:fillViewport="true"
+                android:overScrollMode="never" android:scrollbars="none">
+                <LinearLayout android:id="@+id/stickyTableHeaderRow" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical"
+                    android:paddingHorizontal="12dp" android:paddingVertical="10dp" />
+            </HorizontalScrollView>
+        </LinearLayout>
+    </LinearLayout>
+    <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/btnBack"
+        android:layout_width="@dimen/pro_close_size" android:layout_height="@dimen/pro_close_size"
+        android:layout_marginStart="@dimen/pro_close_margin" android:padding="@dimen/pro_close_padding"
+        android:background="@drawable/bg_pro_close" android:foreground="@drawable/bg_pro_close_ripple"
+        android:elevation="6dp" android:src="@drawable/ic_cross"
+        android:contentDescription="@string/close" app:tint="@color/pro_text"
+        app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView android:id="@+id/btnScrollTop" android:layout_width="@dimen/pro_scroll_top_size"
+        android:layout_height="@dimen/pro_scroll_top_size"
+        android:gravity="center" android:text="keyboard_arrow_up" android:fontFamily="@font/materialicons"
+        android:textColor="@color/pro_gold" android:textSize="@dimen/pro_scroll_top_icon" android:background="@drawable/bg_pro_close"
+        android:clickable="true" android:focusable="true" android:elevation="4dp" android:visibility="gone"
+        android:alpha="0" android:scaleX="0.9" android:scaleY="0.9"
+        android:contentDescription="@string/pro_screen_scroll_top"
+        app:layout_constraintBottom_toTopOf="@id/footerBar" app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="16dp" android:layout_marginBottom="@dimen/pro_scroll_hint_margin" />
+
+    <LinearLayout android:id="@+id/scrollHint" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/pro_scroll_hint_margin"
+        android:orientation="horizontal" android:gravity="center_vertical" android:clickable="true" android:focusable="true"
+        android:background="@drawable/bg_pro_scroll_hint" android:contentDescription="@string/pro_screen_scroll_hint"
+        android:paddingHorizontal="12dp" android:paddingVertical="6dp" android:elevation="2dp" android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/footerBar" app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5" app:layout_constraintStart_toStartOf="parent">
+        <TextView android:id="@+id/scrollHintArrow" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="keyboard_arrow_down" android:fontFamily="@font/materialicons" android:textColor="@color/pro_gold"
+            android:textSize="20sp" android:importantForAccessibility="no" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginStart="4dp" android:text="@string/pro_screen_scroll_hint"
+            android:textColor="@color/pro_text_secondary" android:textSize="12sp" android:fontFamily="sans-serif-medium"
+            android:importantForAccessibility="no" />
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/footerBar" android:layout_width="0dp" android:layout_height="wrap_content"
+        android:orientation="vertical" android:background="@drawable/bg_pro_footer"
+        android:paddingHorizontal="@dimen/pro_footer_pad_h" android:paddingTop="14dp" android:paddingBottom="12dp"
+        app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+        <LinearLayout android:id="@+id/priceRow" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
+            <TextView android:id="@+id/tvPrice" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/fadcam_pro_price_amount" android:textColor="@color/pro_text" android:textSize="@dimen/pro_price_size" android:fontFamily="sans-serif-medium" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:layout_marginStart="16dp" android:orientation="vertical">
+                <TextView android:id="@+id/tvPricePill" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="@string/pro_screen_price_terms" android:textColor="@color/pro_text" android:textSize="14sp" android:fontFamily="sans-serif-medium" />
+                <TextView android:id="@+id/tvPriceNote" style="@style/ProBody" android:layout_marginTop="2dp"
+                    android:text="@string/pro_screen_price_detail" android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+        <com.fadcam.ui.ShimmerButton android:id="@+id/btnGetPro"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/pro_cta_min_h"
+            android:paddingVertical="14dp" android:text="@string/pro_screen_purchase" android:textSize="@dimen/pro_cta_text"
+            android:fontFamily="sans-serif-medium" android:textAllCaps="false" android:letterSpacing="0"
+            android:textColor="@color/pro_background" android:elevation="0dp" android:stateListAnimator="@null"
+            android:insetTop="0dp" android:insetBottom="0dp" app:backgroundTint="@color/pro_gold" app:cornerRadius="@dimen/pro_cta_corner"
+            app:icon="@drawable/ic_crown" app:iconGravity="textStart" app:iconTint="@color/pro_background" app:iconPadding="10dp"
+            app:rippleColor="#24101112" />
+        <TextView android:id="@+id/purchaseCaption" style="@style/ProBody" android:text="@string/pro_screen_purchase_caption"
+            android:textSize="12sp" android:gravity="center" android:layout_marginTop="8dp" />
+        <TextView android:id="@+id/ownedStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="48dp" android:gravity="center" android:padding="12dp" android:background="@drawable/bg_pro_cta_owned"
+            android:textColor="@color/pro_gold" android:textSize="14sp" android:fontFamily="sans-serif-medium" android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Traveling avatar: detached copy that flies into the CTA. Never clickable so taps fall
+         through to the button underneath. -->
+    <FrameLayout android:id="@+id/avatarOverlayHost" android:layout_width="0dp" android:layout_height="0dp"
+        android:visibility="invisible" android:clipChildren="false"
+        android:clipToPadding="false" android:clickable="false" android:focusable="false"
+        android:importantForAccessibility="no"
+        app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+        <FrameLayout android:id="@+id/avatarPoseFrame" android:layout_width="@dimen/pro_hero_avatar"
+            android:layout_height="@dimen/pro_hero_avatar">
+            <FrameLayout android:id="@+id/avatarUnit" android:layout_width="match_parent" android:layout_height="match_parent">
+                <ImageView android:id="@+id/ivAvatarOverlay"
+                    android:layout_width="match_parent" android:layout_height="match_parent"
+                    android:src="@drawable/toggle_on_idle_pro"
+                    android:clickable="false" android:focusable="false" android:importantForAccessibility="no" />
+            </FrameLayout>
+        </FrameLayout>
+    </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

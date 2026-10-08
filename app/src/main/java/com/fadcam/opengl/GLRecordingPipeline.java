@@ -1324,6 +1324,25 @@ public class GLRecordingPipeline {
     }
 
     /**
+     * Encoder name for OEM-specific quirks and diagnostics.
+     *
+     * <p>{@code MediaCodec#getCanonicalName()} only exists from API 29. On older devices the call
+     * throws {@link NoSuchMethodError} — an {@link Error}, so a surrounding {@code catch
+     * (Exception)} does not stop it and the recording would die. Returns {@code null} when the
+     * name is unavailable.
+     */
+    private static String safeCodecName(MediaCodec codec) {
+        if (codec == null || android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+            return null;
+        }
+        try {
+            return codec.getCanonicalName();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /**
      * Initializes the encoder and input surface once at the beginning.
      * This should be called only once during the recording session.
      */
@@ -1361,20 +1380,16 @@ public class GLRecordingPipeline {
             // configuration that works on Android 10 QCOM devices and every
             // other encoder family (Exynos/MTK/Unisoc). HEVC keeps prepend.
             if (MediaFormat.MIMETYPE_VIDEO_AVC.equals(currentMimeType)) {
-                try {
-                    String codecName = videoEncoder.getCanonicalName();
-                    if (codecName != null && codecName.contains("qcom")) {
-                        format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 0);
-                        FLog.i(TAG, "[ENCODER] QCOM AVC: prepend-sps-pps-to-idr disabled so csd is exposed in the output format (S20 FE AVC fix)");
-                    }
-                } catch (Exception ignored) {}
+                String codecName = safeCodecName(videoEncoder);
+                if (codecName != null && codecName.contains("qcom")) {
+                    format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 0);
+                    FLog.i(TAG, "[ENCODER] QCOM AVC: prepend-sps-pps-to-idr disabled so csd is exposed in the output format (S20 FE AVC fix)");
+                }
             }
             videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             // Encoder identity — critical for OEM-specific CSD bugs (Samsung C2 vs Google C2 etc.)
-            try {
-                FLog.i(TAG, "[ENCODER] Video encoder: " + videoEncoder.getCanonicalName() + " | MIME=" + currentMimeType
-                        + " | " + encoderWidth + "x" + encoderHeight);
-            } catch (Exception ignored) {}
+            FLog.i(TAG, "[ENCODER] Video encoder: " + safeCodecName(videoEncoder) + " | MIME=" + currentMimeType
+                    + " | " + encoderWidth + "x" + encoderHeight);
             
             encoderInputSurface = videoEncoder.createInputSurface();
             
@@ -1400,19 +1415,15 @@ public class GLRecordingPipeline {
                 videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
                 // Same QCOM AVC prepend-sps-pps quirk as Strategy 1 — see above.
                 if (MediaFormat.MIMETYPE_VIDEO_AVC.equals(currentMimeType)) {
-                    try {
-                        String codecName = videoEncoder.getCanonicalName();
-                        if (codecName != null && codecName.contains("qcom")) {
-                            format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 0);
-                            FLog.i(TAG, "[ENCODER] QCOM AVC: prepend-sps-pps-to-idr disabled so csd is exposed in the output format (S20 FE AVC fix)");
-                        }
-                    } catch (Exception ignored) {}
+                    String codecName = safeCodecName(videoEncoder);
+                    if (codecName != null && codecName.contains("qcom")) {
+                        format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 0);
+                        FLog.i(TAG, "[ENCODER] QCOM AVC: prepend-sps-pps-to-idr disabled so csd is exposed in the output format (S20 FE AVC fix)");
+                    }
                 }
                 videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-                try {
-                    FLog.i(TAG, "[ENCODER] Video encoder (H.264 fallback): " + videoEncoder.getCanonicalName()
-                            + " | MIME=" + currentMimeType + " | " + encoderWidth + "x" + encoderHeight);
-                } catch (Exception ignored) {}
+                FLog.i(TAG, "[ENCODER] Video encoder (H.264 fallback): " + safeCodecName(videoEncoder)
+                        + " | MIME=" + currentMimeType + " | " + encoderWidth + "x" + encoderHeight);
                 
                 encoderInputSurface = videoEncoder.createInputSurface();
                 

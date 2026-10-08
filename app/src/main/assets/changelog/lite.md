@@ -9,3 +9,7 @@ FORMAT GUIDELINES:
 
 ## 0.1.0
 - Initial FadCam Lite release.
+
+---
+
+Thank you for using FadCam Lite :)

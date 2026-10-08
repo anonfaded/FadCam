@@ -1340,11 +1340,84 @@ app:layout_constraintTop_toTopOf="parent"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
 
-        </LinearLayout>
+            <View style="@style/SettingsDivider" />
 
-        <!-- ═══════════════════════════════════════════════════════════ -->
-        <!-- Trash Section — standalone                                       -->
-        <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- Follow on X Row -->
+            <LinearLayout
+                android:id="@+id/group_follow_x"
+                style="@style/SettingsGroupRow"
+                >
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_x"
+                    android:tint="@android:color/darker_gray"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/follow_on_x"
+                        android:textColor="?attr/colorHeading"
+                        android:textStyle="bold"
+                        android:textSize="15sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/follow_on_x_sub"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+            <View style="@style/SettingsDivider" />
+
+            <!-- Discord Row -->
+            <LinearLayout
+                android:id="@+id/group_discord"
+                style="@style/SettingsGroupRow"
+                >
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_discord_gold" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/home_sidebar_discord"
+                        android:textColor="?attr/colorHeading"
+                        android:textStyle="bold"
+                        android:textSize="15sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/home_sidebar_discord_sub"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/section_trash"

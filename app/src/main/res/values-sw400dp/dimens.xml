@@ -111,4 +111,37 @@
     <dimen name="home_dock_side_width">82dp</dimen>
     <dimen name="home_dock_side_width_wide">98dp</dimen>
     <dimen name="home_dock_side_height">56dp</dimen>
+
+    <!-- Pro screen: full bucket (>=400dp smallest width), the Pixel-class reference layout. -->
+    <dimen name="pro_page_padding_h">20dp</dimen>
+    <dimen name="pro_hero_frame_h">86dp</dimen>
+    <dimen name="pro_cta_corner">16dp</dimen>
+    <dimen name="pro_cta_avatar">92dp</dimen>
+    <dimen name="pro_hero_avatar">80dp</dimen>
+    <dimen name="pro_hero_title_size">30sp</dimen>
+    <dimen name="pro_claim_title_size">16sp</dimen>
+    <dimen name="pro_claim_body_size">13sp</dimen>
+    <dimen name="pro_section_gap">28dp</dimen>
+    <dimen name="pro_card_padding">16dp</dimen>
+    <dimen name="pro_bundle_phone_h">180dp</dimen>
+    <dimen name="pro_app_icon">58dp</dimen>
+    <dimen name="pro_table_row_min_h">72dp</dimen>
+    <dimen name="pro_table_col_w">42dp</dimen>
+    <dimen name="pro_table_cell_square">26dp</dimen>
+    <dimen name="pro_table_glyph_size">19sp</dimen>
+    <dimen name="pro_row_icon_slot">28dp</dimen>
+    <dimen name="pro_row_icon_text">20sp</dimen>
+    <dimen name="pro_row_icon_image">26dp</dimen>
+    <dimen name="pro_footer_pad_h">20dp</dimen>
+    <dimen name="pro_price_size">30sp</dimen>
+    <dimen name="pro_cta_min_h">52dp</dimen>
+    <dimen name="pro_cta_text">15sp</dimen>
+    <dimen name="pro_scroll_top_size">42dp</dimen>
+    <dimen name="pro_scroll_top_icon">24sp</dimen>
+    <dimen name="pro_scroll_hint_margin">16dp</dimen>
+    <dimen name="pro_footer_fade_h">40dp</dimen>
+    <dimen name="pro_close_size">40dp</dimen>
+    <dimen name="pro_close_margin">10dp</dimen>
+    <dimen name="pro_close_padding">11dp</dimen>
+    <dimen name="pro_sticky_header_gap">8dp</dimen>
 </resources>

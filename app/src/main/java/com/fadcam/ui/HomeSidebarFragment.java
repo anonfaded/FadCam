@@ -294,6 +294,21 @@ public class HomeSidebarFragment extends DialogFragment {
             );
         }
 
+        // X (Twitter) branding row
+        View xRow = view.findViewById(R.id.row_x_branding);
+        if (xRow != null) {
+            com.fadcam.Utils.attachPressScale(xRow);
+            xRow.setOnClickListener(v -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://x.com/anon_faded"));
+                    startActivity(intent);
+                } catch (Exception e) {
+                    FLog.w("HomeSidebar", "Failed to open X link", e);
+                }
+            });
+        }
+
         // Discord branding row
         View discordRow = view.findViewById(R.id.row_discord_branding);
         if (discordRow != null) {
