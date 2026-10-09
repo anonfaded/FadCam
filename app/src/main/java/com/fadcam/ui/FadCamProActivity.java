@@ -46,6 +46,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.fadcam.BuildConfig;
 import com.fadcam.FLog;
 import com.fadcam.R;
+import com.fadcam.ui.widgets.ProBundleShowcaseView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -329,6 +330,13 @@ public class FadCamProActivity extends AppCompatActivity {
         findViewById(R.id.tvOwnedBadge).setVisibility(isOwner ? View.VISIBLE : View.GONE);
         ((TextView) findViewById(R.id.tvEyebrowCompare)).setText(isOwner
                 ? R.string.pro_screen_compare_owned : R.string.pro_screen_compare);
+        ProBundleShowcaseView showcase = findViewById(R.id.bundleShowcase);
+        if (showcase != null) {
+            showcase.configure(getString(R.string.pro_showcase_label),
+                    getString(R.string.pro_screen_bundle),
+                    getString(R.string.pro_showcase_supporting),
+                    getString(R.string.pro_showcase_meta));
+        }
         TextView note = findViewById(R.id.tvNote);
         note.setText(linkFadSecLab(getString(isOwner
                 ? R.string.pro_screen_owned_note : R.string.pro_screen_support_note)));
@@ -564,7 +572,7 @@ public class FadCamProActivity extends AppCompatActivity {
         int tableBottom = cardLocation[1] + tableCard.getHeight();
         View pageScroll = findViewById(R.id.proScroll);
         View hero = findViewById(R.id.heroSection);
-        View bundle = findViewById(R.id.bundleCard);
+        View bundle = findViewById(R.id.bundleShowcase);
         // Pin the moment the real section title reaches the spot below the close button; the
         // pinned copy renders at exactly that position, so nothing visibly jumps or duplicates.
         boolean show = titleLocation[1] <= stickyTop && tableBottom > stickyTop;

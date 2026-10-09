@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Showcase surface: solid on the right, dissolving to transparent on the left. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:angle="0"
+        android:startColor="#00FFFFFF"
+        android:centerColor="#08FFFFFF"
+        android:endColor="#14FFFFFF" />
+    <corners android:radius="20dp" />
+</shape>

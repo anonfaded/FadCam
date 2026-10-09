@@ -35,44 +35,9 @@
                     android:textSize="@dimen/pro_claim_body_size" android:fontFamily="sans-serif" android:lineSpacingExtra="3dp"
                     android:gravity="center" />
             </LinearLayout>
-
-            <FrameLayout android:id="@+id/bundleCard" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:background="@drawable/bg_pro_bundle_card" android:clipChildren="false" android:clipToPadding="false">
-
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:orientation="vertical" android:padding="@dimen/pro_card_padding"
-                    android:clipChildren="false" android:clipToPadding="false">
-
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:orientation="horizontal" android:gravity="center_vertical">
-                        <TextView android:layout_width="34dp" android:layout_height="34dp" android:gravity="center"
-                            android:background="@drawable/bg_pro_bundle_seal" android:text="redeem"
-                            android:fontFamily="@font/materialicons" android:textSize="19sp" android:textColor="#3B2A0E"
-                            android:importantForAccessibility="no" />
-                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                            android:layout_marginStart="10dp" android:orientation="vertical">
-                            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                                android:text="@string/pro_screen_bundle"
-                                android:textColor="@color/pro_text" android:textSize="16sp" android:fontFamily="sans-serif-medium" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <com.fadcam.ui.widgets.BundlePhoneView android:id="@+id/bundlePhone"
-                        android:layout_width="match_parent" android:layout_height="@dimen/pro_bundle_phone_h"
-                        android:layout_marginTop="8dp" android:importantForAccessibility="no" />
-
-                    <LinearLayout android:id="@+id/tvEntryPointSoon" android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp" android:orientation="horizontal" android:gravity="center_vertical"
-                        android:background="@drawable/bg_pro_bundle_included" android:paddingHorizontal="9dp" android:paddingVertical="7dp">
-                        <TextView android:layout_width="20dp" android:layout_height="20dp" android:gravity="center"
-                            android:text="check_circle" android:fontFamily="@font/materialicons" android:textSize="15sp"
-                            android:textColor="@color/pro_check_gold" android:importantForAccessibility="no" />
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                            android:layout_marginStart="6dp" android:text="@string/pro_screen_bundle_status"
-                            android:textColor="@color/pro_text_secondary" android:textSize="12sp" android:lineSpacingExtra="1dp" />
-                    </LinearLayout>
-                </LinearLayout>
-            </FrameLayout>
+            <com.fadcam.ui.widgets.ProBundleShowcaseView android:id="@+id/bundleShowcase"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/pro_section_gap" />
 
             <LinearLayout android:id="@+id/compareTitleRow" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:gravity="center_vertical"

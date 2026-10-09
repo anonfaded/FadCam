@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_pro_showcase"
+    android:clipChildren="false" android:clipToPadding="false"
+    android:padding="@dimen/pro_showcase_pad">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+
+            <TextView android:id="@+id/showcaseLabel"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:background="@drawable/bg_pro_showcase_badge"
+                android:paddingHorizontal="@dimen/pro_showcase_badge_pad_h"
+                android:paddingVertical="@dimen/pro_showcase_badge_pad_v"
+                android:text="@string/pro_showcase_label"
+                android:textColor="@color/pro_gold" android:textSize="@dimen/pro_showcase_label_size"
+                android:letterSpacing="0.12" />
+
+            <TextView android:id="@+id/showcaseTitle"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/pro_showcase_title_margin" android:text="@string/pro_screen_bundle"
+                android:textColor="@color/pro_text" android:textSize="@dimen/pro_showcase_title_size" />
+
+            <TextView android:id="@+id/showcaseSubtitle" android:visibility="gone"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/pro_showcase_supporting" android:textColor="@color/pro_text_secondary"
+                android:textSize="@dimen/pro_showcase_body_size" />
+            <TextView android:id="@+id/showcaseMeta" android:visibility="gone"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/pro_showcase_meta" android:textColor="@color/pro_text_secondary"
+                android:textSize="@dimen/pro_showcase_meta_size" />
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/pro_showcase_chips_margin" android:orientation="vertical">
+
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:background="@drawable/bg_pro_showcase_chip"
+                    android:paddingHorizontal="@dimen/pro_showcase_chip_pad_h"
+                    android:paddingVertical="@dimen/pro_showcase_chip_pad_v">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="download" android:fontFamily="@font/materialicons"
+                        android:textSize="@dimen/pro_showcase_chip_glyph_size" android:textColor="@color/pro_check_gold"
+                        android:importantForAccessibility="no" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/pro_showcase_chip_gap"
+                        android:text="@string/pro_showcase_chip_installs"
+                        android:textColor="@color/pro_text" android:textSize="@dimen/pro_showcase_chip_text_size" />
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/pro_showcase_chip_gap" android:orientation="horizontal"
+                    android:gravity="center_vertical" android:background="@drawable/bg_pro_showcase_chip"
+                    android:paddingHorizontal="@dimen/pro_showcase_chip_pad_h"
+                    android:paddingVertical="@dimen/pro_showcase_chip_pad_v">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="update" android:fontFamily="@font/materialicons"
+                        android:textSize="@dimen/pro_showcase_chip_glyph_size" android:textColor="@color/pro_check_gold"
+                        android:importantForAccessibility="no" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/pro_showcase_chip_gap"
+                        android:text="@string/pro_showcase_chip_updates"
+                        android:textColor="@color/pro_text" android:textSize="@dimen/pro_showcase_chip_text_size" />
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/pro_showcase_chip_gap" android:orientation="horizontal"
+                    android:gravity="center_vertical" android:background="@drawable/bg_pro_showcase_chip"
+                    android:paddingHorizontal="@dimen/pro_showcase_chip_pad_h"
+                    android:paddingVertical="@dimen/pro_showcase_chip_pad_v">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="visibility_off" android:fontFamily="@font/materialicons"
+                        android:textSize="@dimen/pro_showcase_chip_glyph_size" android:textColor="@color/pro_text_secondary"
+                        android:importantForAccessibility="no" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/pro_showcase_chip_gap"
+                        android:text="@string/pro_showcase_chip_entry"
+                        android:textColor="@color/pro_text_secondary" android:textSize="@dimen/pro_showcase_chip_text_size" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/pro_showcase_chip_gap"
+                        android:background="@drawable/bg_pro_showcase_soon"
+                        android:paddingHorizontal="5dp" android:paddingVertical="1dp"
+                        android:text="@string/pro_showcase_soon" android:textColor="@color/pro_check_gold"
+                        android:textSize="@dimen/pro_showcase_soon_size" android:letterSpacing="0.08" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <FrameLayout android:id="@+id/showcasePhoneWrapper"
+            android:layout_width="@dimen/pro_showcase_phone_w" android:layout_height="@dimen/pro_showcase_phone_h"
+            android:layout_marginStart="@dimen/pro_showcase_gap"
+            android:clipChildren="false" android:clipToPadding="false">
+            <FrameLayout android:id="@+id/showcasePhoneContainer"
+                android:layout_width="match_parent" android:layout_height="match_parent" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/pro_showcase_footer_gap"
+        android:orientation="horizontal" android:gravity="end|center_vertical">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="touch_app" android:fontFamily="@font/materialicons"
+            android:textSize="@dimen/pro_showcase_hint_glyph" android:textColor="@color/pro_text_secondary"
+            android:importantForAccessibility="no" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/pro_showcase_hint_gap" android:text="@string/pro_showcase_hint"
+            android:textColor="@color/pro_text_secondary" android:textSize="@dimen/pro_showcase_hint_size" />
+        <TextView android:id="@+id/showcaseExpand"
+            android:layout_width="@dimen/pro_showcase_expand_size" android:layout_height="@dimen/pro_showcase_expand_size"
+            android:layout_marginStart="@dimen/pro_showcase_expand_gap" android:gravity="center"
+            android:background="@drawable/bg_pro_showcase_chip"
+            android:text="fullscreen" android:fontFamily="@font/materialicons"
+            android:textSize="@dimen/pro_showcase_expand_glyph" android:textColor="@color/pro_text" />
+    </LinearLayout>
+</LinearLayout>
