@@ -12,6 +12,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RadialGradient;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
@@ -46,8 +47,17 @@ public class BundlePhoneSurfaceView extends View {
     public static final int SIDE_FRONT = 0;
     public static final int SIDE_BACK = 1;
 
+    /** Render everything (default), only the static chassis, or only the screen content. */
+    public static final int MODE_ALL = 0;
+    public static final int MODE_FRAME = 1;
+    public static final int MODE_SCREEN = 2;
+    public static final int MODE_PANEL = 3;
+
     private static final float ASPECT = 2.05f;
-    private static final float SPLASH_MS = 3000f;
+    /** The boot theater: logo + "Starting" + loader, then the status bar and the icon pop. */
+    private static final float BOOT_MS = 3600f;
+    /** The shutdown phase that precedes a restart boot. */
+    private static final float SHUTDOWN_MS = 1600f;
 
     private static final String[] CALC_KEYS = {"7", "8", "9", "÷", "4", "5", "6", "×",
             "1", "2", "3", "−", "C", "0", "=", "+"};
@@ -56,6 +66,7 @@ public class BundlePhoneSurfaceView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint fadePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+    private Typeface labelBold;
     private final RectF phone = new RectF();
     private final RectF screen = new RectF();
     private final RectF powerBtn = new RectF();
@@ -63,7 +74,6 @@ public class BundlePhoneSurfaceView extends View {
     private final RectF volDownBtn = new RectF();
     private final RectF previewBackRect = new RectF();
     private final RectF calcGrid = new RectF();
-    private final RectF visorRect = new RectF();
     private final RectF[] iconRects = {new RectF(), new RectF(), new RectF()};
     private final Path bolt = new Path();
     private final Drawable[] icons = new Drawable[3];
@@ -75,6 +85,27 @@ public class BundlePhoneSurfaceView extends View {
     private float screenR;
     private float statusBarMid;
     private float statusBarBottom;
+    private float navBarH;
+    private final RectF navDock = new RectF();
+    private float rippleX, rippleY, rippleProgress;
+    private ValueAnimator rippleAnim;
+    private final RectF rippleClip = new RectF();
+    private float rippleClipRadius;
+    private float restartProgress = 1f;
+    private ValueAnimator restartAnim;
+    private final RectF notifPowerRect = new RectF();
+    private boolean powerMenuOpen;
+    private final RectF powerMenuRestartRect = new RectF();
+    private final RectF powerMenuCancelRect = new RectF();
+    private boolean accessDialogOpen;
+    private final RectF dialogOkRect = new RectF();
+    private final RectF notifMicRect = new RectF();
+    private final RectF notifCamRect = new RectF();
+    private float popProgress = 1f;
+    private ValueAnimator popAnim;
+    private final Path screenClipPath = new Path();
+    private int lastPreviewApp = 0;
+    private boolean recentsOpen = false;
     private float iconTopY;
     private float iconSizePx;
 
@@ -83,10 +114,18 @@ public class BundlePhoneSurfaceView extends View {
     private String usageText = "";
     private int batteryPercent = -1;
     private boolean charging = false;
-    private boolean splashEnabled = true;
+    private boolean bootEnabled = true;
     private boolean cropFade = true;
-    private float splashProgress = 1f;
-    private ValueAnimator splashAnimator;
+    private boolean glMode = false;
+    private int renderMode = MODE_ALL;
+    private DirtyListener dirtyListener;
+
+    /** Notifies the GL host that this face's pixels changed and its texture must refresh. */
+    public interface DirtyListener {
+        void onContentDirty();
+    }
+    private float bootProgress = 1f;
+    private ValueAnimator bootAnimator;
 
     private float unlockProgress = 1f; // start on the home screen; the power button locks it
     private float shadeProgress = 0f;
@@ -128,6 +167,7 @@ public class BundlePhoneSurfaceView extends View {
         fadePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
         Typeface ubuntu = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.ubuntu_regular);
         labelTypeface = ubuntu != null ? ubuntu : Typeface.create("sans-serif", Typeface.NORMAL);
+        labelBold = Typeface.create(labelTypeface, Typeface.BOLD);
         flag = ContextCompat.getDrawable(context, R.drawable.fadseclab_flag);
         int[] iconRes = {R.mipmap.ic_launcher_notes, R.mipmap.ic_launcher_calculator, R.mipmap.ic_launcher_weather};
         int[] labelRes = {R.string.pro_screen_notes, R.string.pro_screen_calculator, R.string.pro_screen_weather};
@@ -172,8 +212,42 @@ public class BundlePhoneSurfaceView extends View {
         invalidate();
     }
 
-    public void setSplashEnabled(boolean enabled) {
-        splashEnabled = enabled;
+    public void setBootEnabled(boolean enabled) {
+        bootEnabled = enabled;
+    }
+
+    public void setDirtyListener(DirtyListener listener) {
+        dirtyListener = listener;
+    }
+
+    public void setRenderMode(int mode) {
+        renderMode = mode;
+        invalidate();
+    }
+
+    /** GL mode: the face fills the view exactly (no margins, no painted hardware). */
+    public void setGLMode(boolean enabled) {
+        glMode = enabled;
+        cropFade = !enabled;
+        invalidate();
+    }
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        if (dirtyListener != null) dirtyListener.onContentDirty();
+    }
+
+    @Override
+    public void invalidate(int l, int t, int r, int b) {
+        super.invalidate(l, t, r, b);
+        if (dirtyListener != null) dirtyListener.onContentDirty();
+    }
+
+    @Override
+    public void invalidate(Rect dirty) {
+        super.invalidate(dirty);
+        if (dirtyListener != null) dirtyListener.onContentDirty();
     }
 
     /** The bottom crop fade — disabled when the whole device is shown (fullscreen mode). */
@@ -182,36 +256,61 @@ public class BundlePhoneSurfaceView extends View {
         invalidate();
     }
 
-    public void startSplash() {
+    /**
+     * The boot theater: the emblem and "Starting…" rise together, a slow loader follows,
+     * then the status bar and the staggered icon pop-in. Runs on every Pro-screen visit
+     * and again after a restart.
+     */
+    public void startBoot() {
         if (side != SIDE_FRONT) return;
-        if (!splashEnabled || !motionAllowed()) {
-            settleSplash();
+        if (!bootEnabled || !motionAllowed()) {
+            settleBoot();
             return;
         }
-        splashProgress = 0f;
-        invalidate();
-        splashAnimator = ValueAnimator.ofFloat(0f, 1f);
-        splashAnimator.setDuration((long) SPLASH_MS);
-        splashAnimator.addUpdateListener(a -> {
-            splashProgress = (float) a.getAnimatedValue();
+        if (bootAnimator != null) bootAnimator.cancel();
+        prepareBoot();
+        bootAnimator = ValueAnimator.ofFloat(0f, 1f);
+        bootAnimator.setDuration((long) BOOT_MS);
+        bootAnimator.addUpdateListener(a -> {
+            bootProgress = (float) a.getAnimatedValue();
             invalidate();
         });
-        splashAnimator.addListener(new AnimatorListenerAdapter() {
+        bootAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                settleSplash();
+                settleBoot();
             }
         });
-        splashAnimator.start();
+        bootAnimator.start();
     }
 
-    public void settleSplash() {
-        if (splashAnimator != null) {
-            splashAnimator.cancel();
-            splashAnimator = null;
+    public void settleBoot() {
+        if (bootAnimator != null) {
+            bootAnimator.cancel();
+            bootAnimator = null;
         }
-        splashProgress = 1f;
+        bootProgress = 1f;
         invalidate();
+    }
+
+    /**
+     * Powers the screen off without animating: called when the showcase attaches so the
+     * fly-in never reveals a stale home screen from the previous visit. A boot always
+     * lands on the lock screen — the user unlocks with the swipe, then the icons pop in.
+     */
+    public void prepareBoot() {
+        if (side != SIDE_FRONT) return;
+        setUnlockProgress(0f);
+        setShadeProgress(0f);
+        exitToHome();
+        showRecents(false);
+        popProgress = 1f;
+        bootProgress = 0f;
+        invalidate();
+    }
+
+    public float getBootProgress() {
+        return bootProgress;
     }
 
     // ------------------------------------------------------- interaction API
@@ -222,6 +321,11 @@ public class BundlePhoneSurfaceView extends View {
 
     public float getUnlockProgress() {
         return unlockProgress;
+    }
+
+    /** The glass rect in view pixels — the GL uses it to size the live screen layer. */
+    public RectF getScreenRect() {
+        return new RectF(screen);
     }
 
     public void setUnlockProgress(float p) {
@@ -236,11 +340,32 @@ public class BundlePhoneSurfaceView extends View {
             setUnlockProgress(target);
             return;
         }
+        boolean unlocking = clamp(target) >= 1f && unlockProgress < 0.999f;
+        if (unlocking) {
+            // The icons must not sit visible behind the lock: reset the pop now so they rise
+            // out of nothing as the lock screen slides away (no replay after it is gone).
+            popProgress = 0f;
+            startIconPop();
+        }
         unlockAnimator = ValueAnimator.ofFloat(unlockProgress, clamp(target));
         unlockAnimator.setDuration(280);
         unlockAnimator.setInterpolator(new DecelerateInterpolator(1.6f));
         unlockAnimator.addUpdateListener(a -> setUnlockProgress((float) a.getAnimatedValue()));
         unlockAnimator.start();
+    }
+
+    /** Replays the staggered home-icon pop-in (used after unlocking, like the first boot). */
+    private void startIconPop() {
+        if (side != SIDE_FRONT || !motionAllowed()) return;
+        if (popAnim != null) popAnim.cancel();
+        popProgress = 0f;
+        popAnim = ValueAnimator.ofFloat(0f, 1f);
+        popAnim.setDuration(900);
+        popAnim.addUpdateListener(a -> {
+            popProgress = (float) a.getAnimatedValue();
+            invalidate();
+        });
+        popAnim.start();
     }
 
     public float getShadeProgress() {
@@ -300,32 +425,189 @@ public class BundlePhoneSurfaceView extends View {
         return 0;
     }
 
+    /** 1 = back, 2 = home, 3 = recents — the nav strip at the bottom of the glass. */
+    public int navButtonAt(float x, float y) {
+        if (unlockProgress < 0.9f || bootProgress < 0.8f) return 0;
+        if (!navDock.contains(x, y)) return 0;
+        float third = navDock.width() / 3f;
+        if (x < navDock.left + third) return 1;
+        if (x < navDock.left + third * 2f) return 2;
+        return 3;
+    }
+
+    /** Material-style ripple bounded to the tapped element's own shape. */
+    public void touchRipple(float x, float y) {
+        RectF bounds = rippleBoundsAt(x, y);
+        if (bounds == null) return;
+        rippleX = x;
+        rippleY = y;
+        rippleClip.set(bounds);
+        rippleClipRadius = Math.min(bounds.width(), bounds.height()) * (bounds == iconRects[0]
+                || bounds == iconRects[1] || bounds == iconRects[2] ? 0.5f : 0.22f);
+        rippleProgress = 0f;
+        if (rippleAnim != null) rippleAnim.cancel();
+        if (!motionAllowed()) {
+            rippleProgress = 1f;
+            return;
+        }
+        rippleAnim = ValueAnimator.ofFloat(0f, 1f);
+        rippleAnim.setDuration(520);
+        rippleAnim.setInterpolator(new DecelerateInterpolator(1.6f));
+        rippleAnim.addUpdateListener(a -> {
+            rippleProgress = (float) a.getAnimatedValue();
+            invalidate();
+        });
+        rippleAnim.start();
+    }
+
+    /** Which element's shape the ripple should live in (null = not a tappable element). */
+    private RectF rippleBoundsAt(float x, float y) {
+        if (navDock.contains(x, y)) {
+            float third = navDock.width() / 3f;
+            int idx = x < navDock.left + third ? 0 : (x < navDock.left + third * 2f ? 1 : 2);
+            RectF zone = new RectF(navDock);
+            zone.left = navDock.left + idx * third;
+            zone.right = zone.left + third;
+            return zone;
+        }
+        if (previewApp == 2 && calcGrid.contains(x, y)) {
+            float cw = calcGrid.width() / 4f;
+            float chh = calcGrid.height() / 4f;
+            int col = Math.min(3, Math.max(0, (int) ((x - calcGrid.left) / cw)));
+            int row = Math.min(3, Math.max(0, (int) ((y - calcGrid.top) / chh)));
+            return new RectF(calcGrid.left + col * cw + phone.width() * 0.012f,
+                    calcGrid.top + row * chh + phone.width() * 0.012f,
+                    calcGrid.left + (col + 1) * cw - phone.width() * 0.012f,
+                    calcGrid.top + (row + 1) * chh - phone.width() * 0.012f);
+        }
+        for (RectF icon : iconRects) {
+            if (icon.contains(x, y)) return icon;
+        }
+        if (previewApp != 0 && previewBackRect.contains(x, y)) return previewBackRect;
+        if (notifMicRect.contains(x, y) || notifCamRect.contains(x, y)) {
+            RectF both = new RectF(notifCamRect);
+            both.union(notifMicRect);
+            return both;
+        }
+        if (notifPowerRect.contains(x, y)) return notifPowerRect;
+        if (accessDialogOpen && dialogOkRect.contains(x, y)) return dialogOkRect;
+        if (powerMenuOpen) {
+            if (powerMenuRestartRect.contains(x, y)) return powerMenuRestartRect;
+            if (powerMenuCancelRect.contains(x, y)) return powerMenuCancelRect;
+        }
+        return null;
+    }
+
+    private final RectF notifCardRect = new RectF();
+
+    public boolean notifCardTappedAt(float x, float y) {
+        return shadeProgress > 0.6f && notifCardRect.contains(x, y);
+    }
+
+    public boolean notifPowerAt(float x, float y) {
+        return shadeProgress > 0.6f && notifPowerRect.contains(x, y);
+    }
+
+    public void startRestart() {
+        exitToHome();
+        showRecents(false);
+        animateShade(0f);
+        setUnlockProgress(1f);
+        popProgress = 1f;
+        showPowerMenu(false);
+        if (restartAnim != null) restartAnim.cancel();
+        restartProgress = 0f;
+        invalidate();
+        if (!motionAllowed()) {
+            restartProgress = 1f;
+            startBoot();
+            return;
+        }
+        // The shutdown beat; the boot theater follows in startBoot().
+        restartAnim = ValueAnimator.ofFloat(0f, 1f);
+        restartAnim.setDuration((long) SHUTDOWN_MS);
+        restartAnim.addUpdateListener(a -> {
+            restartProgress = (float) a.getAnimatedValue();
+            invalidate();
+        });
+        restartAnim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                restartProgress = 1f;
+                startBoot();
+            }
+        });
+        restartAnim.start();
+    }
+
+    public void showPowerMenu(boolean open) {
+        powerMenuOpen = open;
+        invalidate();
+    }
+
+    public boolean isPowerMenuOpen() {
+        return powerMenuOpen;
+    }
+
+    /** 1 = restart, 2 = cancel, 0 = elsewhere. */
+    public int powerMenuActionAt(float x, float y) {
+        if (!powerMenuOpen) return 0;
+        if (powerMenuRestartRect.contains(x, y)) return 1;
+        if (powerMenuCancelRect.contains(x, y)) return 2;
+        return 0;
+    }
+
+    public void showAccessDialog(boolean open) {
+        accessDialogOpen = open;
+        invalidate();
+    }
+
+    public boolean isAccessDialogOpen() {
+        return accessDialogOpen;
+    }
+
+    public boolean accessDialogOkAt(float x, float y) {
+        return accessDialogOpen && dialogOkRect.contains(x, y);
+    }
+
+    /** 1 = microphone, 2 = camera in the notification; 0 elsewhere. */
+    public int notificationIconAt(float x, float y) {
+        if (shadeProgress < 0.9f) return 0;
+        if (notifMicRect.contains(x, y)) return 1;
+        if (notifCamRect.contains(x, y)) return 2;
+        return 0;
+    }
+
+    public void showRecents(boolean open) {
+        recentsOpen = open;
+        invalidate();
+    }
+
+    public boolean isRecentsOpen() {
+        return recentsOpen;
+    }
+
+    public int getLastPreviewApp() {
+        return lastPreviewApp;
+    }
+
     public boolean isInStatusBar(float x, float y) {
         return y <= statusBarBottom && y >= phone.top;
     }
 
-    /** The camera visor's rect (parent coordinates) — the showcase models it as a 3D element. */
-    public RectF getVisorRect() {
-        return new RectF(visorRect);
-    }
-
-    public RectF getPowerBtnRect() {
-        return new RectF(powerBtn);
-    }
-
-    public RectF getVolUpRect() {
-        return new RectF(volUpBtn);
-    }
-
-    public RectF getVolDownRect() {
-        return new RectF(volDownBtn);
+    /** True while the touch sits on the (possibly partially pulled) shade panel itself. */
+    public boolean shadePanelAt(float x, float y) {
+        if (shadeProgress <= 0.4f) return false;
+        float shadeH = screen.height() * 0.52f;
+        return y <= screen.top + shadeH - (1f - shadeProgress) * shadeH;
     }
 
     // ---------------------------------------------------------- app previews
 
     /** 1..3 when the touch lands on an app icon, 0 otherwise. */
     public int appIconAt(float x, float y) {
-        if (previewApp != 0 || unlockProgress < 0.999f || shadeProgress > 0.01f) return 0;
+        if (previewApp != 0 || unlockProgress < 0.999f || shadeProgress > 0.01f
+                || bootProgress < 0.92f) return 0;
         for (int i = 0; i < 3; i++) {
             if (iconRects[i].contains(x, y)) return i + 1;
         }
@@ -337,6 +619,8 @@ public class BundlePhoneSurfaceView extends View {
     }
 
     public void openPreview(int app) {
+        lastPreviewApp = app;
+        recentsOpen = false;
         previewApp = app;
         if (app != 2) {
             calcDisplay = "0";
@@ -349,6 +633,12 @@ public class BundlePhoneSurfaceView extends View {
 
     public void closePreview() {
         previewApp = 0;
+        invalidate();
+    }
+
+    public void exitToHome() {
+        previewApp = 0;
+        recentsOpen = false;
         invalidate();
     }
 
@@ -450,9 +740,10 @@ public class BundlePhoneSurfaceView extends View {
 
     private void computeGeometry(float w, float h) {
         if (w <= 0f || h <= 0f) return;
-        float pw = w * 0.95f;
-        float ph = pw * ASPECT;
-        phone.set(w * 0.025f, h * 0.012f, w * 0.975f, h * 0.012f + ph);
+        float pw = glMode ? w : w * 0.95f;
+        float ph = glMode ? h : pw * ASPECT;
+        phone.set(glMode ? 0f : w * 0.025f, glMode ? 0f : h * 0.012f,
+                glMode ? w : w * 0.975f, (glMode ? 0f : h * 0.012f) + ph);
         float rail = Math.max(1.5f, pw * 0.014f);
         RectF face = new RectF(phone);
         face.inset(rail, rail);
@@ -464,15 +755,26 @@ public class BundlePhoneSurfaceView extends View {
         statusBarMid = screen.top + pw * 0.078f;
         statusBarBottom = statusBarMid + pw * 0.070f;
 
-        float powerTop = phone.top + ph * 0.235f;
-        float powerH = ph * 0.085f;
-        powerBtn.set(phone.right - pw * 0.075f, powerTop, phone.right + pw * 0.04f, powerTop + powerH);
-        float volTop = phone.top + ph * 0.185f;
-        float volH = ph * 0.060f;
-        float volGap = ph * 0.013f;
-        volUpBtn.set(phone.left - pw * 0.04f, volTop, phone.left + pw * 0.075f, volTop + volH);
-        volDownBtn.set(phone.left - pw * 0.04f, volTop + volH + volGap,
-                phone.left + pw * 0.075f, volTop + volH + volGap + volH);
+        // Generous zones (0.270/0.365/0.400 of the height) that MUST NOT overlap each other:
+        // half-height 0.045 < half the 0.095 spacing.
+        float volZone = ph * 0.045f;
+        float powerZone = ph * 0.055f;
+        float volUpCenter = phone.top + ph * 0.270f;
+        float volDownCenter = phone.top + ph * 0.365f;
+        float powerCenter = phone.top + ph * 0.400f;
+        // Mostly on/outside the button, only a slim sliver inside the glass.
+        volUpBtn.set(phone.left - pw * 0.13f, volUpCenter - volZone, phone.left + pw * 0.055f, volUpCenter + volZone);
+        volDownBtn.set(phone.left - pw * 0.13f, volDownCenter - volZone, phone.left + pw * 0.055f, volDownCenter + volZone);
+        powerBtn.set(phone.right - pw * 0.055f, powerCenter - powerZone,
+                phone.right + pw * 0.13f, powerCenter + powerZone);
+
+        navBarH = pw * 0.085f;
+        float dockW = pw * 0.58f;
+        float dockH = pw * 0.115f;
+        navDock.set(screen.centerX() - dockW / 2f, screen.bottom - dockH - pw * 0.028f,
+                screen.centerX() + dockW / 2f, screen.bottom - pw * 0.028f);
+        screenClipPath.reset();
+        screenClipPath.addRoundRect(screen, screenR, screenR, Path.Direction.CW);
 
         // App icon zones (same math as the drawing).
         iconSizePx = pw * 0.225f;
@@ -484,14 +786,11 @@ public class BundlePhoneSurfaceView extends View {
             float left = startX + i * (iconSizePx + gap);
             iconRects[i].set(left, iconTopY, left + iconSizePx, iconTopY + iconSizePx);
         }
-        previewBackRect.set(screen.left + pw * 0.045f, screen.top + pw * 0.05f,
-                screen.left + pw * 0.045f + pw * 0.13f, screen.top + pw * 0.05f + pw * 0.13f);
-        calcGrid.set(screen.left + pw * 0.06f, screen.top + screen.height() * 0.36f,
-                screen.right - pw * 0.06f, screen.top + screen.height() * 0.93f);
+        previewBackRect.set(screen.left + pw * 0.055f, screen.top + pw * 0.165f,
+                screen.left + pw * 0.055f + pw * 0.12f, screen.top + pw * 0.165f + pw * 0.12f);
+        calcGrid.set(screen.left + pw * 0.06f, screen.top + screen.height() * 0.40f,
+                screen.right - pw * 0.06f, screen.top + screen.height() * 0.82f);
 
-        float barH = pw * 0.21f;
-        visorRect.set(phone.left + pw * 0.075f, phone.top + pw * 0.075f,
-                phone.right - pw * 0.075f, phone.top + pw * 0.075f + barH);
     }
 
     @Override
@@ -503,9 +802,26 @@ public class BundlePhoneSurfaceView extends View {
         if (phone.isEmpty()) computeGeometry(w, h);
 
         int layer = canvas.saveLayer(0f, 0f, w, h, null);
-        drawChassis(canvas);
-        if (side == SIDE_FRONT) drawFront(canvas);
-        else drawBack(canvas);
+        if (glMode) {
+            // The chassis is real GL geometry; textures carry only content.
+            if (side == SIDE_FRONT && renderMode == MODE_SCREEN) {
+                paint.setStyle(Paint.Style.FILL);
+                paint.setShader(null);
+                paint.setColor(0xFF000000);
+                canvas.drawRoundRect(screen, screenR, screenR, paint);
+                drawScreenContent(canvas);
+            } else if (side == SIDE_BACK && renderMode == MODE_PANEL) {
+                drawBackPanel(canvas);
+            }
+        } else {
+            drawChassis(canvas);
+            if (side == SIDE_FRONT) {
+                drawFrontBase(canvas);
+                drawScreenContent(canvas);
+            } else {
+                drawBack(canvas);
+            }
+        }
         if (cropFade) {
             float fadeTop = h - dp(34);
             fadePaint.setShader(new LinearGradient(0f, fadeTop, 0f, h,
@@ -526,6 +842,7 @@ public class BundlePhoneSurfaceView extends View {
         paint.setXfermode(null);
         paint.setColorFilter(null);
 
+        if (!glMode) {
         float bw = Math.max(2.5f, pw * 0.020f);
         float br = bw * 0.55f;
         paint.setColor(0xFF4A4D56);
@@ -538,22 +855,24 @@ public class BundlePhoneSurfaceView extends View {
         float volInB = back ? volOuter + bw * 0.65f : volOuter + bw * 0.35f;
         canvas.drawRoundRect(new RectF(volInA, volUpBtn.top, volInB, volUpBtn.bottom), br, br, paint);
         canvas.drawRoundRect(new RectF(volInA, volDownBtn.top, volInB, volDownBtn.bottom), br, br, paint);
+        }
 
         paint.setShader(new LinearGradient(0f, phone.top, 0f, phone.bottom,
-                0xFF3A3D45, 0xFF1F2126, Shader.TileMode.CLAMP));
+                back ? 0xFF3B3F47 : 0xFF828B9A,
+                back ? 0xFF1D2025 : 0xFF484E59, Shader.TileMode.CLAMP));
         canvas.drawRoundRect(phone, r, r, paint);
-        float rail = Math.max(1.5f, pw * 0.014f);
+        float rail = Math.max(1.5f, pw * 0.018f);
         RectF face = new RectF(phone);
         face.inset(rail, rail);
         float faceR = r - rail;
         paint.setShader(new LinearGradient(0f, face.top, 0f, face.bottom,
-                back ? 0xFF1B1D22 : 0xFF1E2026,
-                back ? 0xFF0F1114 : 0xFF101216, Shader.TileMode.CLAMP));
+                back ? 0xFF1C1F24 : 0xFF5B626D,
+                back ? 0xFF101215 : 0xFF31363E, Shader.TileMode.CLAMP));
         canvas.drawRoundRect(face, faceR, faceR, paint);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(Math.max(1f, pw * 0.006f));
+        paint.setStrokeWidth(Math.max(2.5f, pw * 0.014f));
         paint.setShader(new LinearGradient(0f, phone.top, 0f, phone.bottom,
-                0x3AFFFFFF, 0x08FFFFFF, Shader.TileMode.CLAMP));
+                0xBFFFFFFF, 0x33FFFFFF, Shader.TileMode.CLAMP));
         canvas.drawRoundRect(phone, r, r, paint);
         paint.setShader(null);
         paint.setColor(0x30000000);
@@ -563,7 +882,21 @@ public class BundlePhoneSurfaceView extends View {
 
     // ---------------------------------------------------------------- front
 
-    private void drawFront(Canvas canvas) {
+    /** The static screen glass: fill + inset ring. Rendered once with the chassis. */
+    private void drawFrontBase(Canvas canvas) {
+        // Subtle bezel highlight hugging the glass: makes the frame readable from the front.
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(Math.max(1.5f, phone.width() * 0.008f));
+        paint.setColor(0x38FFFFFF);
+        canvas.drawRoundRect(screen, screenR, screenR, paint);
+        // Reflective sheen sweeping the frame (frame mode only: static, never re-uploaded).
+        if (renderMode != MODE_SCREEN) {
+            paint.setShader(new LinearGradient(phone.left, phone.top, phone.right, phone.bottom,
+                    new int[]{0x00FFFFFF, 0x0AFFFFFF, 0x00FFFFFF},
+                    new float[]{0f, 0.45f, 0.8f}, Shader.TileMode.CLAMP));
+            canvas.drawRoundRect(phone, phone.width() * 0.135f, phone.width() * 0.135f, paint);
+            paint.setShader(null);
+        }
         paint.setStyle(Paint.Style.FILL);
         paint.setShader(null);
         paint.setColor(0xFF000000);
@@ -573,58 +906,108 @@ public class BundlePhoneSurfaceView extends View {
         paint.setColor(0x30000000);
         canvas.drawRoundRect(screen, screenR, screenR, paint);
         paint.setStyle(Paint.Style.FILL);
+    }
 
-        drawWakeSequence(canvas);
+    /** The live screen content, redrawn whenever it changes. */
+    private void drawScreenContent(Canvas canvas) {
+        if (restartProgress < 1f) {
+            drawRestartSequence(canvas);
+            return;
+        }
+        drawBootSequence(canvas);
         drawPreview(canvas);
-        drawShade(canvas);
+        drawRecents(canvas);
+        drawNavBar(canvas);
+        // The lock screen sits above the home but below every overlay: the shade, dialogs
+        // and ripples must stay interactive on the lock screen (pull-down, volume, etc.).
         drawLockScreen(canvas);
+        drawShade(canvas);
+        drawAccessDialog(canvas);
+        drawPowerMenu(canvas);
+        drawTouchRipple(canvas);
         drawVolumeHud(canvas);
         drawCaption(canvas);
     }
 
-    private void drawWakeSequence(Canvas canvas) {
+    /**
+     * The boot theater, drawn every time the phone powers on: the emblem rises with the
+     * "Starting…" line, the loader joins below, then the status bar and the icon pop-in.
+     */
+    private void drawBootSequence(Canvas canvas) {
         float pw = phone.width();
-        float p = splashProgress;
-        float flagIn = easeOut(seg(p, 0.00f, 0.24f));
-        float flagOut = easeOut(seg(p, 0.46f, 0.62f));
-        float flagA = flagIn * (1f - flagOut);
-        float flagS = 0.92f + 0.08f * flagIn + 0.03f * flagOut;
-        float powerFlash = 0.07f * (1f - easeOut(seg(p, 0.00f, 0.08f)));
-        float statusA = easeOut(seg(p, 0.56f, 0.74f));
+        float p = bootProgress;
 
-        paint.setShader(new LinearGradient(0f, screen.top, 0f, screen.top + screen.height() * 0.35f,
-                0x16FFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP));
-        canvas.drawRoundRect(screen, screenR, screenR, paint);
+        // Base: black glass with a soft glow behind the emblem.
+        paint.setStyle(Paint.Style.FILL);
         paint.setShader(null);
+        paint.setColor(0xFF000000);
+        canvas.drawRoundRect(screen, screenR, screenR, paint);
 
-        if (powerFlash > 0.001f) {
-            paint.setColor(withAlpha(0xFFFFFFFF, powerFlash));
-            canvas.drawRoundRect(screen, screenR, screenR, paint);
-        }
+        // The theater rises, holds, then fades away completely before the home appears:
+        // logo + "Starting" + loader on black, a beat, then the status bar and the icon pop.
+        float theaterOut = easeOut(seg(p, 0.50f, 0.64f));
+        float flagA = easeOut(seg(p, 0.00f, 0.18f)) * (1f - theaterOut);
+        float bootTextA = easeOut(seg(p, 0.09f, 0.26f)) * (1f - theaterOut);
+        float loaderA = easeOut(seg(p, 0.36f, 0.52f)) * (1f - easeOut(seg(p, 0.54f, 0.66f)));
+        float statusA = easeOut(seg(p, 0.70f, 0.84f));
+
+        float cx = screen.centerX();
+        float cy = screen.top + screen.height() * 0.34f;
 
         if (flagA > 0.001f && flag != null) {
-            float flagSize = screen.width() * 0.50f;
-            float cx = screen.centerX();
-            float cy = screen.top + screen.height() * 0.24f;
-            paint.setShader(new RadialGradient(cx, cy, flagSize * 0.95f,
-                    new int[]{withAlpha(0xFF23252C, flagA), withAlpha(0xFF0B0C10, flagA * 0.6f), 0x00000000},
-                    new float[]{0f, 0.6f, 1f}, Shader.TileMode.CLAMP));
-            canvas.drawCircle(cx, cy, flagSize * 0.95f, paint);
+            float flagSize = screen.width() * 0.46f;
+            float glow = Math.min(1f, flagA);
+            paint.setShader(new RadialGradient(cx, cy, flagSize * 0.90f,
+                    new int[]{withAlpha(0xFF1B1D24, glow), withAlpha(0xFF0A0B0F, glow * 0.55f), 0x00000000},
+                    new float[]{0f, 0.62f, 1f}, Shader.TileMode.CLAMP));
+            canvas.drawCircle(cx, cy, flagSize * 0.90f, paint);
             paint.setShader(null);
-            float half = flagSize * flagS / 2f;
+            float half = flagSize * (0.94f + 0.06f * flagA) / 2f;
             flag.setBounds(Math.round(cx - half), Math.round(cy - half),
                     Math.round(cx + half), Math.round(cy + half));
             flag.setAlpha(Math.round(255 * flagA));
             flag.draw(canvas);
         }
 
+        paint.setTypeface(labelTypeface);
+        paint.setTextAlign(Paint.Align.CENTER);
+        if (bootTextA > 0.001f) {
+            int dots = (int) (p * 26f) % 4;
+            StringBuilder label = new StringBuilder(getContext().getString(R.string.pro_showcase_starting));
+            for (int i = 0; i < dots; i++) label.append('.');
+            paint.setTextSize(pw * 0.048f);
+            paint.setColor(withAlpha(0xFFB8B8BE, bootTextA));
+            canvas.drawText(label.toString(), cx, cy + pw * 0.62f, paint);
+        }
+        if (loaderA > 0.001f) {
+            float r = screen.width() * 0.062f;
+            float ly = cy + pw * 1.06f;
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(Math.max(2f, pw * 0.010f));
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setColor(withAlpha(0x26FFFFFF, loaderA));
+            canvas.drawCircle(cx, ly, r, paint);
+            paint.setColor(withAlpha(0xFFFFFFFF, loaderA));
+            // One slow revolution every ~1.2s, eased like a real spinner.
+            canvas.drawArc(new RectF(cx - r, ly - r, cx + r, ly + r), p * 360f * 3.0f, 96f, false, paint);
+            paint.setStrokeCap(Paint.Cap.BUTT);
+            paint.setStyle(Paint.Style.FILL);
+        }
+        paint.setTextAlign(Paint.Align.LEFT);
+
+        // While locked the boot ends on the lock screen, not the home: no status bar or
+        // icons may appear until the user actually unlocks.
+        if (unlockProgress < 0.999f) return;
+
         if (statusA > 0.001f) drawStatusBar(canvas, statusA, true);
 
         float iconSize = iconSizePx;
-        float gap = phone.width() * 0.065f;
         for (int i = 0; i < 3; i++) {
-            float start = 0.62f + i * 0.08f;
-            float a = easeOut(seg(p, start, start + 0.20f));
+            // Every segment MUST end at or before p=1: the boot settles at exactly 1, so a
+            // segment running past it would freeze the last icon/label at partial opacity
+            // forever (the "dull Weather label" bug).
+            float start = 0.74f + i * 0.06f;
+            float a = easeOut(seg(p, start, start + 0.13f)) * easeOut(popProgress);
             if (a <= 0.001f) continue;
             float s = (0.60f + 0.40f * a) * (pulseIndex == i ? appPulse : 1f);
             float left = iconRects[i].left;
@@ -639,26 +1022,15 @@ public class BundlePhoneSurfaceView extends View {
             icon.setAlpha(Math.round(255 * a));
             icon.draw(canvas);
             canvas.restore();
-            float labelA = easeOut(seg(p, start + 0.05f, start + 0.22f));
+            float labelA = easeOut(seg(p, start + 0.02f, start + 0.13f)) * easeOut(popProgress);
             if (labelA > 0.001f) {
                 paint.setTypeface(labelTypeface);
-                paint.setTextSize(phone.width() * 0.058f);
+                paint.setTextSize(pw * 0.058f);
                 paint.setTextAlign(Paint.Align.CENTER);
                 paint.setColor(withAlpha(0xFFE9E9EC, labelA));
-                canvas.drawText(labels[i], centerX, iconTopY + iconSize + phone.width() * 0.082f, paint);
+                canvas.drawText(labels[i], centerX, iconTopY + iconSize + pw * 0.082f, paint);
                 paint.setTextAlign(Paint.Align.LEFT);
             }
-        }
-
-        // Page indicator: two launcher dots.
-        if (p >= 0.9f) {
-            float dotY = iconTopY + iconSize + phone.width() * 0.19f;
-            float dotR = Math.max(1.5f, phone.width() * 0.011f);
-            float dotGap = phone.width() * 0.045f;
-            paint.setColor(0xE6E9E9EC);
-            canvas.drawCircle(screen.centerX() - dotGap / 2f, dotY, dotR, paint);
-            paint.setColor(0x4DFFFFFF);
-            canvas.drawCircle(screen.centerX() + dotGap / 2f, dotY, dotR, paint);
         }
     }
 
@@ -698,12 +1070,15 @@ public class BundlePhoneSurfaceView extends View {
             paint.setColor(withAlpha(ink, alpha));
             canvas.drawRoundRect(new RectF(battery.left + inset, battery.top + inset,
                     battery.left + inset + fillW, battery.bottom - inset), unit * 0.08f, unit * 0.08f, paint);
-            paint.setTypeface(labelTypeface);
-            paint.setTextSize(unit * 0.62f);
+            paint.setTypeface(labelBold);
+            paint.setTextSize(unit * 0.72f);
             paint.setTextAlign(Paint.Align.CENTER);
+            paint.setFakeBoldText(true);
             boolean overFill = batteryPercent >= 52;
             paint.setColor(withAlpha(overFill ? 0xFF0A0B0E : 0xFFE9E9EC, alpha));
-            canvas.drawText(String.valueOf(batteryPercent), battery.centerX(), mid + unit * 0.20f, paint);
+            canvas.drawText(String.valueOf(batteryPercent), battery.centerX(), mid + unit * 0.23f, paint);
+            paint.setFakeBoldText(false);
+            paint.setTypeface(labelTypeface);
             paint.setTextAlign(Paint.Align.LEFT);
         }
 
@@ -736,17 +1111,15 @@ public class BundlePhoneSurfaceView extends View {
         float holeR = Math.max(2.5f, pw * 0.028f);
         float holeY = mid;
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(withAlpha(0xFF05060A, alpha));
+        paint.setShader(null);
+        paint.setColor(withAlpha(0xFF020305, alpha));
         canvas.drawCircle(screen.centerX(), holeY, holeR, paint);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(Math.max(1f, pw * 0.005f));
-        paint.setColor(withAlpha(0x33FFFFFF, alpha));
-        canvas.drawCircle(screen.centerX(), holeY, holeR, paint);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(withAlpha(0xFF0B1220, alpha));
-        canvas.drawCircle(screen.centerX(), holeY, holeR * 0.62f, paint);
-        paint.setColor(withAlpha(0x59FFFFFF, alpha));
-        canvas.drawCircle(screen.centerX() - holeR * 0.22f, holeY - holeR * 0.22f, holeR * 0.13f, paint);
+        paint.setColor(withAlpha(0xFF070A12, alpha));
+        canvas.drawCircle(screen.centerX(), holeY, holeR * 0.66f, paint);
+        paint.setColor(withAlpha(0xFF04060B, alpha));
+        canvas.drawCircle(screen.centerX(), holeY, holeR * 0.38f, paint);
+        paint.setColor(withAlpha(0x0AFFFFFF, alpha));
+        canvas.drawCircle(screen.centerX() - holeR * 0.28f, holeY - holeR * 0.28f, holeR * 0.07f, paint);
     }
 
     // ------------------------------------------------------------- previews
@@ -772,9 +1145,9 @@ public class BundlePhoneSurfaceView extends View {
 
         paint.setTypeface(labelTypeface);
         paint.setTextAlign(Paint.Align.CENTER);
-        paint.setTextSize(pw * 0.075f);
+        paint.setTextSize(pw * 0.070f);
         paint.setColor(0xFFF2F2F4);
-        canvas.drawText(labels[previewApp - 1], screen.centerX(), screen.top + pw * 0.145f, paint);
+        canvas.drawText(labels[previewApp - 1], screen.centerX(), screen.top + pw * 0.252f, paint);
         paint.setTextAlign(Paint.Align.LEFT);
 
         if (previewApp == 1) drawNotesPreview(canvas);
@@ -784,8 +1157,8 @@ public class BundlePhoneSurfaceView extends View {
 
     private void drawNotesPreview(Canvas canvas) {
         float pw = phone.width();
-        RectF card = new RectF(screen.left + pw * 0.06f, screen.top + screen.height() * 0.24f,
-                screen.right - pw * 0.06f, screen.bottom - pw * 0.10f);
+        RectF card = new RectF(screen.left + pw * 0.06f, screen.top + screen.height() * 0.30f,
+                screen.right - pw * 0.06f, screen.bottom - pw * 0.19f);
         paint.setColor(0x14FFFFFF);
         canvas.drawRoundRect(card, pw * 0.045f, pw * 0.045f, paint);
         String text = noteText.trim().isEmpty()
@@ -804,13 +1177,19 @@ public class BundlePhoneSurfaceView extends View {
         canvas.restore();
     }
 
+    /** The calculator input line: shows the pending operation live, like a real app. */
+    private String calcDisplayText() {
+        if (calcOp == null) return calcDisplay;
+        return format(calcAccum) + " " + calcOp + (calcFresh ? "" : " " + calcDisplay);
+    }
+
     private void drawCalculatorPreview(Canvas canvas) {
         float pw = phone.width();
         paint.setTypeface(labelTypeface);
         paint.setTextAlign(Paint.Align.RIGHT);
         paint.setTextSize(pw * 0.13f);
         paint.setColor(0xFFF2F2F4);
-        canvas.drawText(calcDisplay, screen.right - pw * 0.09f, screen.top + screen.height() * 0.30f, paint);
+        canvas.drawText(calcDisplayText(), screen.right - pw * 0.09f, screen.top + screen.height() * 0.28f, paint);
         paint.setTextAlign(Paint.Align.LEFT);
 
         float cellW = calcGrid.width() / 4f;
@@ -879,11 +1258,85 @@ public class BundlePhoneSurfaceView extends View {
 
     // ------------------------------------------------------------------ misc
 
+    /** Three-button navigation, drawn like the real thing. */
+    private void drawNavBar(Canvas canvas) {
+        float navA = unlockProgress;
+        if (bootProgress < 0.8f || navA <= 0.02f) return;
+        float pw = phone.width();
+        float dockR = navDock.height() / 2f;
+        canvas.save();
+        canvas.clipPath(screenClipPath);
+        // Floating dock: dark glass, light glyphs (fades in with the unlock).
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(withAlpha(0xCC131418, navA));
+        canvas.drawRoundRect(navDock, dockR, dockR, paint);
+        float cy = navDock.centerY();
+        float u = pw * 0.024f;
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(Math.max(1.5f, pw * 0.007f));
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setColor(withAlpha(0xFFC9C9CF, navA));
+
+        float third = navDock.width() / 3f;
+        float bx = navDock.left + third / 2f;
+        canvas.drawLine(bx + u * 0.55f, cy - u * 0.75f, bx - u * 0.45f, cy, paint);
+        canvas.drawLine(bx - u * 0.45f, cy, bx + u * 0.55f, cy + u * 0.75f, paint);
+        canvas.drawCircle(navDock.centerX(), cy, u * 0.85f, paint);
+        float rx = navDock.right - third / 2f;
+        canvas.drawRoundRect(new RectF(rx - u * 0.75f, cy - u * 0.75f, rx + u * 0.75f, cy + u * 0.75f),
+                u * 0.22f, u * 0.22f, paint);
+        paint.setStrokeCap(Paint.Cap.BUTT);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.restore();
+    }
+
+    /** Minimal recents: a card for the last opened app. */
+    private void drawRecents(Canvas canvas) {
+        if (!recentsOpen) return;
+        float pw = phone.width();
+        canvas.save();
+        canvas.clipPath(screenClipPath);
+        canvas.drawColor(0x99000000);
+        RectF card = new RectF(screen.left + pw * 0.10f, screen.top + screen.height() * 0.18f,
+                screen.right - pw * 0.10f, screen.top + screen.height() * 0.66f);
+        paint.setColor(0xFF1C1E24);
+        canvas.drawRoundRect(card, pw * 0.05f, pw * 0.05f, paint);
+        Drawable icon = lastPreviewApp > 0 ? icons[lastPreviewApp - 1] : icons[0];
+        if (icon != null) {
+            float is = pw * 0.20f;
+            icon.setAlpha(255);
+            icon.setBounds(Math.round(card.left + pw * 0.06f), Math.round(card.top + pw * 0.06f),
+                    Math.round(card.left + pw * 0.06f + is), Math.round(card.top + pw * 0.06f + is));
+            icon.draw(canvas);
+        }
+        paint.setTypeface(labelTypeface);
+        paint.setTextSize(pw * 0.055f);
+        paint.setColor(0xFFE9E9EC);
+        paint.setTextAlign(Paint.Align.LEFT);
+        canvas.drawText(lastPreviewApp > 0 ? labels[lastPreviewApp - 1] : labels[0],
+                card.left + pw * 0.06f, card.top + pw * 0.20f + pw * 0.075f, paint);
+        paint.setTextSize(pw * 0.040f);
+        paint.setColor(0xFF9A9AA0);
+        canvas.drawText(getContext().getString(R.string.pro_showcase_recents_hint),
+                card.left + pw * 0.06f, card.bottom - pw * 0.06f, paint);
+        canvas.restore();
+    }
+
+    /** The recents card's tap zone (reopen the last app). */
+    public boolean recentsCardAt(float x, float y) {
+        if (!recentsOpen) return false;
+        float pw = phone.width();
+        RectF card = new RectF(screen.left + pw * 0.10f, screen.top + screen.height() * 0.18f,
+                screen.right - pw * 0.10f, screen.top + screen.height() * 0.66f);
+        return card.contains(x, y);
+    }
+
     private void drawShade(Canvas canvas) {
         if (shadeProgress <= 0.001f) return;
         float pw = phone.width();
         float shadeH = screen.height() * 0.52f;
         canvas.save();
+        canvas.clipPath(screenClipPath);
         canvas.translate(0f, -(1f - shadeProgress) * shadeH);
 
         RectF panel = new RectF(screen.left, screen.top - 2f, screen.right, screen.top + shadeH);
@@ -901,6 +1354,7 @@ public class BundlePhoneSurfaceView extends View {
 
         RectF card = new RectF(panel.left + pw * 0.055f, panel.top + pw * 0.30f,
                 panel.right - pw * 0.055f, panel.top + pw * 0.30f + pw * 0.30f);
+        notifCardRect.set(card);
         paint.setColor(0x1AFFFFFF);
         canvas.drawRoundRect(card, pw * 0.045f, pw * 0.045f, paint);
         float iconSize = card.height() * 0.52f;
@@ -926,6 +1380,69 @@ public class BundlePhoneSurfaceView extends View {
         canvas.drawText(getContext().getString(R.string.pro_showcase_notif_now), card.right - pw * 0.045f,
                 card.centerY() - pw * 0.02f, paint);
         paint.setTextAlign(Paint.Align.LEFT);
+        float nowW = paint.measureText(getContext().getString(R.string.pro_showcase_notif_now));
+        // Mic + camera privacy indicators (tap for the demo disclaimer). Bigger than the
+        // old glyphs and placed on the title row, left of "now", so they stay readable.
+        float u = pw * 0.052f;
+        float iconY = card.centerY() - pw * 0.015f;
+        float iconsRight = card.right - pw * 0.045f - nowW - pw * 0.035f;
+        float camW = u * 1.9f;
+        float micW = u * 1.0f;
+        float gap = u * 0.5f;
+        float iconsLeft = iconsRight - (camW + gap + micW);
+        notifCamRect.set(iconsLeft, iconY - u * 0.78f, iconsLeft + camW, iconY + u * 0.78f);
+        notifMicRect.set(notifCamRect.right + gap, iconY - u * 0.78f,
+                notifCamRect.right + gap + micW, iconY + u * 0.78f);
+        paint.setColor(0xFF9A9AA0);
+        // Camera: body + top bump + lens with a ring (reads clearly at small sizes).
+        float ccx = notifCamRect.centerX();
+        canvas.drawRoundRect(new RectF(ccx - u * 0.85f, iconY - u * 0.50f,
+                ccx + u * 0.85f, iconY + u * 0.50f), u * 0.24f, u * 0.24f, paint);
+        canvas.drawRoundRect(new RectF(ccx - u * 0.68f, iconY - u * 0.76f,
+                ccx - u * 0.18f, iconY - u * 0.40f), u * 0.10f, u * 0.10f, paint);
+        paint.setColor(0xFF23252B);
+        canvas.drawCircle(ccx + u * 0.06f, iconY, u * 0.36f, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(Math.max(1.2f, u * 0.15f));
+        paint.setColor(0xFF9A9AA0);
+        canvas.drawCircle(ccx + u * 0.06f, iconY, u * 0.36f, paint);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(0xFFC6C6CC);
+        canvas.drawCircle(ccx + u * 0.06f, iconY, u * 0.12f, paint);
+        // Microphone: capsule + cradle arc + stem.
+        float mcx = notifMicRect.centerX();
+        paint.setColor(0xFF9A9AA0);
+        canvas.drawRoundRect(new RectF(mcx - u * 0.30f, iconY - u * 0.68f,
+                mcx + u * 0.30f, iconY + u * 0.16f), u * 0.30f, u * 0.30f, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(Math.max(1.2f, u * 0.15f));
+        canvas.drawArc(new RectF(mcx - u * 0.55f, iconY - u * 0.46f,
+                mcx + u * 0.55f, iconY + u * 0.64f), 0f, 180f, false, paint);
+        canvas.drawLine(mcx, iconY + u * 0.64f, mcx, iconY + u * 0.88f, paint);
+        paint.setStyle(Paint.Style.FILL);
+
+        // Quick action: Restart (the mockup's own restart, demo theater included).
+        notifPowerRect.set(panel.right - pw * 0.330f, card.bottom + pw * 0.045f,
+                panel.right - pw * 0.055f, card.bottom + pw * 0.045f + pw * 0.14f);
+        paint.setColor(0x1AFFFFFF);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawRoundRect(notifPowerRect, notifPowerRect.height() / 2f, notifPowerRect.height() / 2f, paint);
+        float pu = pw * 0.036f;
+        float pcx = notifPowerRect.left + pw * 0.055f;
+        float pcy = notifPowerRect.centerY();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(Math.max(1.5f, pw * 0.007f));
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setColor(0xFFE9E9EC);
+        // Real power glyph: ring with a top gap + the vertical stem.
+        canvas.drawArc(new RectF(pcx - pu, pcy - pu, pcx + pu, pcy + pu), -58f, 296f, false, paint);
+        canvas.drawLine(pcx, pcy - pu * 1.05f, pcx, pcy + pu * 0.08f, paint);
+        paint.setStrokeCap(Paint.Cap.BUTT);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextSize(pw * 0.042f);
+        paint.setColor(0xFFE9E9EC);
+        canvas.drawText(getContext().getString(R.string.pro_showcase_restart),
+                pcx + pu * 1.9f, pcy + pw * 0.015f, paint);
 
         paint.setColor(0x33FFFFFF);
         RectF handle = new RectF(panel.centerX() - pw * 0.10f, panel.bottom - pw * 0.09f,
@@ -934,11 +1451,153 @@ public class BundlePhoneSurfaceView extends View {
         canvas.restore();
     }
 
-    /** Lock screen: status bar + camera, real time near the top, usage line, animated hint. */
-    private void drawLockScreen(Canvas canvas) {
-        if (unlockProgress >= 0.999f) return;
+    /**
+     * The shutdown beat of a restart: the screen darkens and shows "Shutting down…".
+     * The boot theater that follows is the shared {@link #drawBootSequence(Canvas)}.
+     */
+    private void drawRestartSequence(Canvas canvas) {
+        float pw = phone.width();
+        float p = restartProgress;
+        canvas.save();
+        canvas.clipPath(screenClipPath);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setShader(null);
+        paint.setColor(0xFF000000);
+        canvas.drawRoundRect(screen, screenR, screenR, paint);
+
+        float shutdownA = easeOut(seg(p, 0.04f, 0.22f)) * (1f - easeOut(seg(p, 0.62f, 0.78f)));
+        if (shutdownA > 0.001f) {
+            paint.setTypeface(labelTypeface);
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setTextSize(pw * 0.048f);
+            paint.setColor(withAlpha(0xFF9A9AA0, shutdownA));
+            canvas.drawText(getContext().getString(R.string.pro_showcase_shutting_down),
+                    screen.centerX(), screen.centerY(), paint);
+            paint.setTextAlign(Paint.Align.LEFT);
+        }
+        canvas.restore();
+    }
+
+    /** Long-press power menu: asks to restart, like a real device. */
+    private void drawPowerMenu(Canvas canvas) {
+        if (!powerMenuOpen) return;
         float pw = phone.width();
         canvas.save();
+        canvas.clipPath(screenClipPath);
+        canvas.drawColor(0x99000000);
+        RectF card = new RectF(screen.left + pw * 0.10f, screen.centerY() - pw * 0.52f,
+                screen.right - pw * 0.10f, screen.centerY() + pw * 0.28f);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setShader(null);
+        paint.setColor(0xFF1C1E24);
+        canvas.drawRoundRect(card, pw * 0.05f, pw * 0.05f, paint);
+        paint.setTypeface(labelTypeface);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(pw * 0.055f);
+        paint.setColor(0xFFF2F2F4);
+        canvas.drawText(getContext().getString(R.string.pro_showcase_power_menu_title),
+                card.centerX(), card.top + pw * 0.12f, paint);
+        paint.setTextSize(pw * 0.040f);
+        paint.setColor(0xFF9A9AA0);
+        canvas.drawText(getContext().getString(R.string.pro_showcase_power_menu_body),
+                card.centerX(), card.top + pw * 0.21f, paint);
+        float bw = card.width() - pw * 0.08f;
+        powerMenuRestartRect.set(card.left + pw * 0.04f, card.top + pw * 0.30f,
+                card.left + pw * 0.04f + bw, card.top + pw * 0.30f + pw * 0.13f);
+        paint.setColor(0x33FFD15C);
+        canvas.drawRoundRect(powerMenuRestartRect, pw * 0.035f, pw * 0.035f, paint);
+        paint.setTextSize(pw * 0.046f);
+        paint.setColor(0xFFFFD15C);
+        canvas.drawText(getContext().getString(R.string.pro_showcase_restart),
+                powerMenuRestartRect.centerX(), powerMenuRestartRect.centerY() + pw * 0.016f, paint);
+        powerMenuCancelRect.set(powerMenuRestartRect);
+        powerMenuCancelRect.offset(0f, pw * 0.17f);
+        paint.setColor(0x14FFFFFF);
+        canvas.drawRoundRect(powerMenuCancelRect, pw * 0.035f, pw * 0.035f, paint);
+        paint.setColor(0xFFCFCFD4);
+        canvas.drawText(getContext().getString(R.string.pro_showcase_power_menu_cancel),
+                powerMenuCancelRect.centerX(), powerMenuCancelRect.centerY() + pw * 0.016f, paint);
+        paint.setTextAlign(Paint.Align.LEFT);
+        canvas.restore();
+    }
+
+    /** Demo disclaimer shown when the mic/camera indicators are tapped. */
+    private void drawAccessDialog(Canvas canvas) {
+        if (!accessDialogOpen) return;
+        float pw = phone.width();
+        canvas.save();
+        canvas.clipPath(screenClipPath);
+        canvas.drawColor(0x99000000);
+        RectF card = new RectF(screen.left + pw * 0.09f, screen.centerY() - pw * 0.60f,
+                screen.right - pw * 0.09f, screen.centerY() + pw * 0.38f);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setShader(null);
+        paint.setColor(0xFF1C1E24);
+        canvas.drawRoundRect(card, pw * 0.05f, pw * 0.05f, paint);
+        paint.setTypeface(labelTypeface);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setTextSize(pw * 0.062f);
+        paint.setColor(0xFFF2F2F4);
+        canvas.drawText(getContext().getString(R.string.pro_showcase_access_title),
+                card.centerX(), card.top + pw * 0.135f, paint);
+        // Body: larger than a caption so it reads like a real dialog, not fine print.
+        TextPaint bodyPaint = new TextPaint(paint);
+        bodyPaint.setTextAlign(Paint.Align.LEFT); // StaticLayout must not inherit center align
+        bodyPaint.setTextSize(pw * 0.054f);
+        bodyPaint.setColor(0xFFB9B9C0);
+        StaticLayout body = StaticLayout.Builder
+                .obtain(getContext().getString(R.string.pro_showcase_access_body), 0,
+                        getContext().getString(R.string.pro_showcase_access_body).length(),
+                        bodyPaint, (int) (card.width() - pw * 0.10f))
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setLineSpacing(0f, 1.22f)
+                .build();
+        canvas.save();
+        canvas.translate(card.left + pw * 0.05f, card.top + pw * 0.21f);
+        body.draw(canvas);
+        canvas.restore();
+        dialogOkRect.set(card.centerX() - pw * 0.17f, card.bottom - pw * 0.155f,
+                card.centerX() + pw * 0.17f, card.bottom - pw * 0.055f);
+        paint.setColor(0x33FFD15C);
+        canvas.drawRoundRect(dialogOkRect, dialogOkRect.height() / 2f, dialogOkRect.height() / 2f, paint);
+        paint.setTextSize(pw * 0.052f);
+        paint.setColor(0xFFFFD15C);
+        canvas.drawText(getContext().getString(R.string.pro_showcase_access_ok),
+                dialogOkRect.centerX(), dialogOkRect.centerY() + pw * 0.018f, paint);
+        paint.setTextAlign(Paint.Align.LEFT);
+        canvas.restore();
+    }
+
+    /** Material-style ripple: grows inside the tapped element's rounded shape. */
+    private void drawTouchRipple(Canvas canvas) {
+        if (rippleProgress <= 0.001f || rippleProgress >= 1f) return;
+        canvas.save();
+        Path clip = new Path();
+        clip.addRoundRect(rippleClip, rippleClipRadius, rippleClipRadius, Path.Direction.CW);
+        canvas.clipPath(clip);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setShader(null);
+        // Keep full strength while expanding, fade out late (Material 3 feel).
+        float fade = rippleProgress < 0.65f ? 1f : 1f - (rippleProgress - 0.65f) / 0.35f;
+        paint.setColor(withAlpha(0xFFFFFFFF, 0.12f * fade));
+        // Expand until the ripple covers the farthest corner of the button.
+        float far = Math.max(
+                (float) Math.hypot(rippleX - rippleClip.left, rippleY - rippleClip.top),
+                Math.max((float) Math.hypot(rippleX - rippleClip.right, rippleY - rippleClip.top),
+                        Math.max((float) Math.hypot(rippleX - rippleClip.left, rippleY - rippleClip.bottom),
+                                (float) Math.hypot(rippleX - rippleClip.right, rippleY - rippleClip.bottom))));
+        canvas.drawCircle(rippleX, rippleY, far * rippleProgress, paint);
+        canvas.restore();
+    }
+
+    private void drawLockScreen(Canvas canvas) {
+        if (unlockProgress >= 0.999f) return;
+        // During a boot the lock screen appears only after the theater: a short black beat
+        // between "Starting…" fading out and the lock UI, like a real device.
+        if (bootProgress < 0.78f) return;
+        float pw = phone.width();
+        canvas.save();
+        canvas.clipPath(screenClipPath);
         canvas.translate(0f, -unlockProgress * screen.height());
 
         paint.setColor(0xFF050608);
@@ -956,14 +1615,14 @@ public class BundlePhoneSurfaceView extends View {
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(pw * 0.26f);
         paint.setColor(0xFFF5F5F7);
-        canvas.drawText(clockText, screen.centerX(), screen.top + screen.height() * 0.185f, paint);
+        canvas.drawText(clockText, screen.centerX(), screen.top + screen.height() * 0.225f, paint);
         paint.setTextSize(pw * 0.050f);
         paint.setColor(0xFF9A9AA0);
-        canvas.drawText(dateText, screen.centerX(), screen.top + screen.height() * 0.235f, paint);
+        canvas.drawText(dateText, screen.centerX(), screen.top + screen.height() * 0.275f, paint);
         if (!usageText.isEmpty()) {
             paint.setTextSize(pw * 0.042f);
             paint.setColor(0x8C9A9AA0);
-            canvas.drawText(usageText, screen.centerX(), screen.top + screen.height() * 0.278f, paint);
+            canvas.drawText(usageText, screen.centerX(), screen.top + screen.height() * 0.318f, paint);
         }
 
         float hintY = Math.min(screen.top + screen.height() * 0.72f, getHeight() - dp(26));
@@ -991,7 +1650,7 @@ public class BundlePhoneSurfaceView extends View {
     private void drawVolumeHud(Canvas canvas) {
         if (volumeHudAlpha <= 0.001f) return;
         float pw = phone.width();
-        float hudW = pw * 0.46f;
+        float hudW = pw * 0.58f;
         float hudH = pw * 0.15f;
         RectF hud = new RectF(screen.centerX() - hudW / 2f, screen.top + screen.height() * 0.20f,
                 screen.centerX() + hudW / 2f, screen.top + screen.height() * 0.20f + hudH);
@@ -999,27 +1658,54 @@ public class BundlePhoneSurfaceView extends View {
         canvas.drawRoundRect(hud, hudH / 2f, hudH / 2f, paint);
 
         float unit = pw * 0.045f;
-        float wx = hud.left + hudH * 0.62f;
-        float wy = hud.centerY() + unit * 0.20f;
+        float wx = hud.left + hudH * 0.55f;
+        float wy = hud.centerY();
+        paint.setColor(withAlpha(0xFFE9E9EC, volumeHudAlpha));
+        // Speaker: body + cone.
+        Path speaker = new Path();
+        speaker.moveTo(wx - unit * 0.62f, wy - unit * 0.20f);
+        speaker.lineTo(wx - unit * 0.34f, wy - unit * 0.20f);
+        speaker.lineTo(wx - unit * 0.02f, wy - unit * 0.55f);
+        speaker.lineTo(wx - unit * 0.02f, wy + unit * 0.45f);
+        speaker.lineTo(wx - unit * 0.34f, wy + unit * 0.20f);
+        speaker.lineTo(wx - unit * 0.62f, wy + unit * 0.20f);
+        speaker.close();
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawPath(speaker, paint);
+        // Sound waves.
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(Math.max(1f, pw * 0.006f));
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setColor(withAlpha(0xFFE9E9EC, volumeHudAlpha));
-        for (float rr : new float[]{unit * 0.52f, unit * 0.34f, unit * 0.16f}) {
-            canvas.drawArc(new RectF(wx - rr, wy - rr, wx + rr, wy + rr), 225f, 90f, false, paint);
+        float arcCx = wx - unit * 0.02f;
+        for (float rr : new float[]{unit * 0.32f, unit * 0.58f}) {
+            canvas.drawArc(new RectF(arcCx - rr, wy - rr, arcCx + rr, wy + rr), -50f, 100f, false, paint);
         }
         paint.setStrokeCap(Paint.Cap.BUTT);
         paint.setStyle(Paint.Style.FILL);
 
-        float trackL = hud.left + hudH * 1.05f;
-        float trackR = hud.right - hudH * 0.35f;
-        float trackH = Math.max(3f, hudH * 0.13f);
-        RectF track = new RectF(trackL, hud.centerY() - trackH / 2f, trackR, hud.centerY() + trackH / 2f);
-        paint.setColor(withAlpha(0x33FFFFFF, volumeHudAlpha));
-        canvas.drawRoundRect(track, trackH / 2f, trackH / 2f, paint);
+        // Percentage first: the remaining width is the track, so it can never be mismeasured.
+        String pct = Math.round(volumeLevel * 100f) + "%";
+        paint.setTypeface(labelTypeface);
+        paint.setTextSize(pw * 0.048f);
+        paint.setTextAlign(Paint.Align.RIGHT);
         paint.setColor(withAlpha(0xFFE9E9EC, volumeHudAlpha));
-        canvas.drawRoundRect(new RectF(track.left, track.top, track.left + track.width() * volumeLevel, track.bottom),
-                trackH / 2f, trackH / 2f, paint);
+        canvas.drawText(pct, hud.right - hudH * 0.38f, hud.centerY() + pw * 0.017f, paint);
+        float pctW = paint.measureText(pct);
+        paint.setTextAlign(Paint.Align.LEFT);
+
+        // Android-style volume bar: a clearly darker empty track with a bright filled part.
+        float trackL = hud.left + hudH * 1.05f;
+        float trackR = hud.right - hudH * 0.38f - pctW - hudH * 0.22f;
+        float trackH = Math.max(4f, hudH * 0.16f);
+        RectF track = new RectF(trackL, hud.centerY() - trackH / 2f, trackR, hud.centerY() + trackH / 2f);
+        paint.setColor(withAlpha(0xFF3A3D45, volumeHudAlpha));
+        canvas.drawRoundRect(track, trackH / 2f, trackH / 2f, paint);
+        float fillW = track.width() * volumeLevel;
+        if (fillW > 0.5f) {
+            paint.setColor(withAlpha(0xFFF2F2F4, volumeHudAlpha));
+            canvas.drawRoundRect(new RectF(track.left, track.top, track.left + fillW, track.bottom),
+                    trackH / 2f, trackH / 2f, paint);
+        }
     }
 
     /** "Included in the bundle" toast after the first app tap. */
@@ -1051,48 +1737,6 @@ public class BundlePhoneSurfaceView extends View {
         RectF face = new RectF(phone);
         face.inset(rail, rail);
 
-        // Camera visor with strong 3D shading: rim light on top, shadow at the base.
-        float barH = pw * 0.21f;
-        RectF bar = new RectF(face.left + pw * 0.045f, face.top + pw * 0.075f,
-                face.right - pw * 0.045f, face.top + pw * 0.075f + barH);
-        float barR = barH * 0.42f;
-        paint.setShader(new LinearGradient(0f, bar.top, 0f, bar.bottom,
-                0xFF454A55, 0xFF16181D, Shader.TileMode.CLAMP));
-        canvas.drawRoundRect(bar, barR, barR, paint);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(Math.max(1f, pw * 0.005f));
-        paint.setShader(new LinearGradient(0f, bar.top, 0f, bar.bottom,
-                0x66FFFFFF, 0x0AFFFFFF, Shader.TileMode.CLAMP));
-        canvas.drawRoundRect(bar, barR, barR, paint);
-        paint.setShader(null);
-        paint.setColor(0x66000000);
-        canvas.drawLine(bar.left + barR * 0.8f, bar.bottom - pw * 0.010f,
-                bar.right - barR * 0.8f, bar.bottom - pw * 0.010f, paint);
-        paint.setStyle(Paint.Style.FILL);
-
-        float lensR = barH * 0.30f;
-        float lensY = bar.centerY();
-        for (float lensX : new float[]{bar.left + barH * 0.55f, bar.left + barH * 1.52f}) {
-            paint.setColor(0xFF0A0B0F);
-            canvas.drawCircle(lensX, lensY, lensR, paint);
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(Math.max(1f, pw * 0.005f));
-            paint.setColor(0x40FFFFFF);
-            canvas.drawCircle(lensX, lensY, lensR, paint);
-            paint.setStyle(Paint.Style.FILL);
-            paint.setColor(0xFF10161F);
-            canvas.drawCircle(lensX, lensY, lensR * 0.62f, paint);
-            paint.setColor(0x55FFFFFF);
-            canvas.drawCircle(lensX - lensR * 0.22f, lensY - lensR * 0.22f, lensR * 0.16f, paint);
-        }
-        float flashX = bar.right - barH * 0.72f;
-        paint.setColor(0xFF2E2C22);
-        canvas.drawCircle(flashX, lensY, barH * 0.13f, paint);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(0x30FFFFFF);
-        canvas.drawCircle(flashX, lensY, barH * 0.13f, paint);
-        paint.setStyle(Paint.Style.FILL);
-
         if (flag != null) {
             float flagSize = face.width() * 0.52f;
             float cx = face.centerX();
@@ -1121,6 +1765,35 @@ public class BundlePhoneSurfaceView extends View {
         paint.setTextAlign(Paint.Align.LEFT);
     }
 
+    /** The back panel: just the surface plus branding — the chassis is GL geometry. */
+    private void drawBackPanel(Canvas canvas) {
+        float pw = phone.width();
+        paint.setStyle(Paint.Style.FILL);
+        paint.setShader(new LinearGradient(0f, screen.top, 0f, screen.bottom,
+                0xFF1C1F25, 0xFF101216, Shader.TileMode.CLAMP));
+        canvas.drawRoundRect(screen, screenR, screenR, paint);
+        paint.setShader(null);
+        RectF face = new RectF(screen);
+        if (flag != null) {
+            float flagSize = face.width() * 0.52f;
+            float cx = face.centerX();
+            float cy = face.top + face.height() * 0.30f;
+            float half = flagSize / 2f;
+            flag.setBounds(Math.round(cx - half), Math.round(cy - half),
+                    Math.round(cx + half), Math.round(cy + half));
+            flag.setAlpha(150);
+            flag.draw(canvas);
+        }
+        paint.setTypeface(labelTypeface);
+        paint.setTextSize(pw * 0.058f);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setLetterSpacing(0.18f);
+        paint.setColor(0x3AFFFFFF);
+        canvas.drawText("FadSec Lab", face.centerX(), face.top + face.height() * 0.47f, paint);
+        paint.setLetterSpacing(0f);
+        paint.setTextAlign(Paint.Align.LEFT);
+    }
+
     // -------------------------------------------------------------- helpers
 
     private void refreshDate() {
@@ -1139,6 +1812,7 @@ public class BundlePhoneSurfaceView extends View {
             lockBobAnimator.setDuration(1400);
             lockBobAnimator.setRepeatCount(ValueAnimator.INFINITE);
             lockBobAnimator.setRepeatMode(ValueAnimator.REVERSE);
+            lockBobAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
             lockBobAnimator.addUpdateListener(a -> {
                 lockBob = (float) a.getAnimatedValue();
                 invalidate();
@@ -1197,7 +1871,10 @@ public class BundlePhoneSurfaceView extends View {
     @Override
     protected void onDetachedFromWindow() {
         removeCallbacks(shadeTicker);
-        if (splashAnimator != null) splashAnimator.cancel();
+        if (bootAnimator != null) bootAnimator.cancel();
+        if (restartAnim != null) restartAnim.cancel();
+        if (popAnim != null) popAnim.cancel();
+        if (rippleAnim != null) rippleAnim.cancel();
         if (unlockAnimator != null) unlockAnimator.cancel();
         if (shadeAnimator != null) shadeAnimator.cancel();
         if (volumeAnimator != null) volumeAnimator.cancel();

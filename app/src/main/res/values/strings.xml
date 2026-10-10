@@ -3197,7 +3197,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_showcase_chip_entry">Discreet entry screens</string>
     <string name="pro_showcase_soon">SOON</string>
     <string name="pro_showcase_hint">Drag to turn · Tap to explore</string>
-    <string name="pro_showcase_usage">With FadCam for %1$s</string>
+    <string name="pro_showcase_usage">Using FadCam for %1$s</string>
     <string name="pro_showcase_included_caption">Included in the bundle</string>
     <string name="pro_showcase_notes_hint">Type to add a note</string>
     <string name="pro_showcase_weather_temp">24°</string>
@@ -3205,6 +3205,16 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_showcase_weather_row1_value">62%</string>
     <string name="pro_showcase_weather_row2">Wind</string>
     <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Restart</string>
+    <string name="pro_showcase_access_title">Camera &amp; Microphone</string>
+    <string name="pro_showcase_access_body">The Weather app is using your camera and microphone in this preview. It is a product demo of FadCam\'s discreet notifications — nothing is actually recorded.</string>
+    <string name="pro_showcase_access_ok">Got it</string>
+    <string name="pro_showcase_shutting_down">Shutting down…</string>
+    <string name="pro_showcase_starting">Starting</string>
+    <string name="pro_showcase_power_menu_title">Restart device?</string>
+    <string name="pro_showcase_power_menu_body">This restarts the preview device.</string>
+    <string name="pro_showcase_power_menu_cancel">Cancel</string>
+    <string name="pro_showcase_recents_hint">Tap to reopen</string>
     <string name="pro_showcase_expand_desc">Open the phone fullscreen</string>
     <string name="pro_showcase_fullscreen_hint">Drag to turn · Tap an app</string>
     <string name="pro_showcase_weather_line">Sunny · 24°</string>

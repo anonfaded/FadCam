@@ -26,7 +26,7 @@ public class ProBundleFullscreenActivity extends AppCompatActivity {
             showcase.setPhoneOnlyMode(true);
             float density = getResources().getDisplayMetrics().density;
             float widthDp = getResources().getDisplayMetrics().widthPixels / density;
-            showcase.setPhoneSize(Math.min(300f, widthDp * 0.72f), true);
+            showcase.setPhoneSize(Math.min(340f, widthDp * 0.80f), true);
         }
         View close = findViewById(R.id.fullscreenClose);
         if (close != null) close.setOnClickListener(v -> finish());

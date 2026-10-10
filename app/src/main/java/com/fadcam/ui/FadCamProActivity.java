@@ -133,12 +133,12 @@ public class FadCamProActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        // Some OEM window managers (observed on the Tecno/Android 11) keep the window frame
+        // Some OEM window managers (observed on Android 11 devices) keep the window frame
         // fitted below the status bar even after the bar is hidden, leaving a black band at the
         // top. NO_LIMITS forces the surface to span the whole display; insets are applied
         // manually to the root view below.
         getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-        // Some OEM window managers (observed on the Tecno/Android 11) still fit app windows below
+        // Some OEM window managers (observed on Android 11 devices) still fit app windows below
         // the status bar. A non-default cutout mode is the usual OEM lever that lets the surface
         // reach the top of the display.
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
@@ -652,7 +652,7 @@ public class FadCamProActivity extends AppCompatActivity {
         WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
                 .hide(WindowInsetsCompat.Type.statusBars());
         // Force a window relayout so the OEM window manager recomputes the frame with the bar
-        // hidden; on the Tecno the first layout keeps the window below the status bar otherwise.
+        // hidden; some OEM window managers keep the first layout below the status bar otherwise.
         getWindow().setAttributes(getWindow().getAttributes());
         ViewCompat.requestApplyInsets(root);
     }
@@ -1164,7 +1164,7 @@ public class FadCamProActivity extends AppCompatActivity {
                 public void getOutline(View view, android.graphics.Outline outline) {
                     // Plain rect outline: everything above the button's bottom edge is kept, the
                     // rest is cut. Rect outlines clip reliably on every GPU, unlike convex paths
-                    // (which some OEM drivers, e.g. the Tecno, silently ignore).
+                    // (which some OEM drivers silently ignore).
                     outline.setRect(0, 0, view.getWidth(), Math.max(0, Math.round(localBottom)));
                 }
             });

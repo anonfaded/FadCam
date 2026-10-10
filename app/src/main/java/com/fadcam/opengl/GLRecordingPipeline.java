@@ -3535,7 +3535,7 @@ public class GLRecordingPipeline {
                 }
             }
             
-            // Disable SBR mode to avoid corruption on some devices (e.g., TECNO with Codec2)
+            // Disable SBR mode to avoid corruption on some devices (e.g. certain Codec2 builds)
             // SBR (Spectral Band Replication) mode 3 can cause "Reserved bit set" errors
             try {
                 audioFormat.setInteger("aac-sbr-mode", 0); // Disable SBR
