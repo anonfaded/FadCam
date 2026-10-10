@@ -10,7 +10,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
+import android.graphics.LinearGradient;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RadialGradient;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.os.BatteryManager;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -112,12 +117,14 @@ public class ProBundleShowcaseView extends FrameLayout {
     private boolean backDirty = true;
     private FrameLayout cinematicHost;
     private PhoneGLView cinematicGL;
-    private View cinematicVeil;
+    private FlareView cinematicFlare;
     private ValueAnimator cinematicAnimator;
     private boolean cinematicRunning = false;
     private Bitmap cinematicBackBitmap;
     private int entranceTries = 0;
     private int cinematicTries = 0;
+    private boolean cineHaptic1;
+    private boolean cineHaptic2;
     private ValueAnimator expandAnimator;
     private ValueAnimator expandPulse;
 
@@ -975,10 +982,9 @@ public class ProBundleShowcaseView extends FrameLayout {
             cinematicGL.setCrop(1f, 0f);
             cinematicHost.addView(cinematicGL, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            cinematicVeil = new View(context);
-            cinematicVeil.setBackgroundColor(0xFFFFFFFF);
-            cinematicVeil.setAlpha(0f);
-            cinematicHost.addView(cinematicVeil, new FrameLayout.LayoutParams(
+            // Above the phone: the lens flare rays out from the real LED position.
+            cinematicFlare = new FlareView(context);
+            cinematicHost.addView(cinematicFlare, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             cinematicHost.setBackgroundColor(0xFF0E0F12);
             cinematicHost.setClickable(true);
@@ -1063,29 +1069,66 @@ public class ProBundleShowcaseView extends FrameLayout {
         final float txEnd = (loc[0] + phoneWrapper.getWidth() / 2f)
                 - (hostLoc[0] + cinematicGL.getWidth() / 2f);
 
-        cinematicGL.setExtraScale(sStart);
-        cinematicGL.setTranslationY(tyStart);
+        cinematicGL.setExtraScale(sStart * 1.06f);
+        cinematicGL.setTranslationY(tyStart + 40f);
         cinematicGL.setTranslationX(0f);
+        cinematicGL.setSweep(0f, 0f);
+        if (cinematicFlare != null) cinematicFlare.setFlare(0f, 0f, 0f);
+        cineHaptic1 = false;
+        cineHaptic2 = false;
 
+        // The flash LED's on-screen position while the back faces the viewer (the flash
+        // fires before the flip): the lens flare rays out from the actual 3D LED.
+        final float glHalfH = (float) Math.tan(Math.toRadians(15.0)) * 3.2f;
+        final float pxPerWorld = oh / (2f * glHalfH);
+        final float sPose = introModelScale(ow, oh, sStart);
+        final float ledX = ow / 2f + 0.2675f * sPose * pxPerWorld;
+        final float ledY = oh / 6f + 0.18f * sPose * pxPerWorld + tyStart;
+
+        // A slow, savoured timeline (~4.2 s): arrive and settle, hold, flash, hold,
+        // flash again (the "photo"), beat, then one long eased flip into the card.
+        final float total = 4170f;
         if (cinematicAnimator != null) cinematicAnimator.cancel();
         cinematicAnimator = ValueAnimator.ofFloat(0f, 1f);
-        cinematicAnimator.setDuration(1650);
+        cinematicAnimator.setDuration((long) total);
         cinematicAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
         cinematicAnimator.addUpdateListener(a -> {
             if (cinematicGL == null) return;
-            float t = (float) a.getAnimatedValue() * 1650f;
-            cinematicGL.setAlpha(Math.min(1f, t / 240f));
-            // Two camera-flash bursts while the back faces the viewer.
-            float glow = Math.max(pulse(t, 260f, 60f, 40f, 80f), pulse(t, 460f, 50f, 110f, 140f));
+            float t = (float) a.getAnimatedValue() * total;
+            cinematicGL.setAlpha(clamp01(t / 350f));
+
+            // Arrival: the phone drifts forward and rocks gently into its pose.
+            float ea = easeOutCubic(clamp01(t / 700f));
+            float baseS = sStart * 1.06f + (sStart - sStart * 1.06f) * ea;
+            float baseTy = (tyStart + 40f) + (tyStart - (tyStart + 40f)) * ea;
+            float baseAngle = 184f - 4f * ea;
+
+            // LED flash on the 3D camera island (short pulse, beat, long one) plus a lens
+            // flare raying out from the LED itself.
+            float glow = Math.max(pulse(t, 1000f, 90f, 80f, 140f),
+                    pulse(t, 1630f, 80f, 200f, 260f));
             cinematicGL.setFlashGlow(glow);
-            if (cinematicVeil != null) cinematicVeil.setAlpha(0.12f * glow);
-            // Flip and settle, starting under the second burst.
-            float ft = clamp01((t - 540f) / 920f);
-            float fe = 1f - (1f - ft) * (1f - ft) * (1f - ft);
-            cinematicGL.setAngle(180f * (1f - fe));
-            cinematicGL.setExtraScale(sStart + (sEnd - sStart) * fe);
-            cinematicGL.setTranslationY(tyStart + (tyEnd - tyStart) * fe);
+            if (cinematicFlare != null) cinematicFlare.setFlare(ledX, ledY, glow);
+            if (!cineHaptic1 && t >= 1000f) {
+                cineHaptic1 = true;
+                hapticTap();
+            }
+            if (!cineHaptic2 && t >= 1630f) {
+                cineHaptic2 = true;
+                hapticKey();
+            }
+
+            // Motion-graphics shine: a soft light band glides across the product as it turns.
+            float sweepT = clamp01((t - 2200f) / 1400f);
+            cinematicGL.setSweep(0.85f * (float) Math.sin(Math.PI * sweepT),
+                    -0.62f + 1.24f * sweepT);
+
+            // One long, eased flip into the card's slot — no sudden starts or stops.
+            float fe = easeInOutCubic(clamp01((t - 2200f) / 1400f));
+            cinematicGL.setExtraScale(baseS + (sEnd - baseS) * fe);
+            cinematicGL.setTranslationY(baseTy + (tyEnd - baseTy) * fe);
             cinematicGL.setTranslationX(txEnd * fe);
+            cinematicGL.setAngle(baseAngle + (0f - baseAngle) * fe);
         });
         cinematicAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
@@ -1109,15 +1152,32 @@ public class ProBundleShowcaseView extends FrameLayout {
         return Math.max(0f, Math.min(1f, v));
     }
 
+    private static float easeOutCubic(float x) {
+        float u = 1f - x;
+        return 1f - u * u * u;
+    }
+
+    private static float easeInOutCubic(float x) {
+        return x < 0.5f
+                ? 4f * x * x * x
+                : 1f - (float) Math.pow(-2f * x + 2f, 3f) / 2f;
+    }
+
     /**
      * Replicates the GL view's scale math: the {@code extraScale} that renders the phone at
      * exactly {@code targetPhoneH} px, so the handoff lands on the card's phone slot.
      */
     private static float introScaleFor(float targetPhoneH, float viewW, float viewH) {
         float halfH = (float) Math.tan(Math.toRadians(15.0)) * 3.2f;
+        return targetPhoneH * (2f * halfH) / (2.05f * introModelScale(viewW, viewH, 1f) * viewH);
+    }
+
+    /** The GL's effective model scale for a view size and extra scale (see PhoneGLView). */
+    private static float introModelScale(float viewW, float viewH, float extraScale) {
+        float halfH = (float) Math.tan(Math.toRadians(15.0)) * 3.2f;
         float halfW = halfH * (viewW / viewH);
         float scaleBase = Math.min(halfW / 0.75f, halfH / 1.5375f);
-        return targetPhoneH * (2f * halfH) / (2.05f * scaleBase * viewH);
+        return scaleBase * extraScale;
     }
 
     /** Handoff: reveal the (pixel-identical) card phone under the fading overlay. */
@@ -1128,8 +1188,11 @@ public class ProBundleShowcaseView extends FrameLayout {
             cinematicAnimator = null;
         }
         cinematicRunning = false;
-        if (cinematicGL != null) cinematicGL.setFlashGlow(0f);
-        if (cinematicVeil != null) cinematicVeil.setAlpha(0f);
+        if (cinematicGL != null) {
+            cinematicGL.setFlashGlow(0f);
+            cinematicGL.setSweep(0f, 0f);
+        }
+        if (cinematicFlare != null) cinematicFlare.setFlare(0f, 0f, 0f);
         phoneWrapper.setAlpha(1f);
         if (cinematicHost == null) {
             if (bootEnabled) frontSurface.startBoot();
@@ -1159,8 +1222,11 @@ public class ProBundleShowcaseView extends FrameLayout {
         }
         cinematicRunning = false;
         phoneWrapper.setAlpha(1f);
-        if (cinematicGL != null) cinematicGL.setFlashGlow(0f);
-        if (cinematicVeil != null) cinematicVeil.setAlpha(0f);
+        if (cinematicGL != null) {
+            cinematicGL.setFlashGlow(0f);
+            cinematicGL.setSweep(0f, 0f);
+        }
+        if (cinematicFlare != null) cinematicFlare.setFlare(0f, 0f, 0f);
         if (cinematicHost != null) {
             cinematicHost.animate().cancel();
             cinematicHost.setVisibility(View.GONE);
@@ -1238,6 +1304,68 @@ public class ProBundleShowcaseView extends FrameLayout {
         int existingUnits = sb.toString().split(",").length;
         if (existingUnits >= 2) return;
         sb.append(value).append(' ').append(unit).append(value == 1 ? "" : "s");
+    }
+
+    /**
+     * A camera-flash lens flare: a core bloom, star rays and a hot point, drawn above the
+     * phone at the LED's real position so the flash reads as coming from the device.
+     */
+    private static class FlareView extends View {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path wedge = new Path();
+        private float cx, cy, intensity;
+
+        FlareView(Context context) {
+            super(context);
+            setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+        }
+
+        void setFlare(float x, float y, float value) {
+            cx = x;
+            cy = y;
+            intensity = value;
+            invalidate();
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            if (intensity <= 0.002f) return;
+            float i = Math.min(1f, intensity);
+            float r = getWidth() * 0.30f;
+            // Core bloom.
+            paint.setShader(new RadialGradient(cx, cy, r,
+                    new int[]{withA(0xFFFFFFFF, 0.95f * i),
+                            withA(0xFFFFF3D8, 0.38f * i),
+                            withA(0xFFFFF3D8, 0f)},
+                    new float[]{0f, 0.28f, 1f}, Shader.TileMode.CLAMP));
+            canvas.drawCircle(cx, cy, r, paint);
+            // Star rays: long/short alternating, fading toward their tips.
+            for (int k = 0; k < 6; k++) {
+                float ang = k * 60f + 12f;
+                float len = r * ((k % 2 == 0) ? 1.75f : 0.95f);
+                canvas.save();
+                canvas.rotate(ang, cx, cy);
+                paint.setShader(new LinearGradient(cx, cy, cx + len, cy,
+                        new int[]{withA(0xFFFFFFFF, 0.55f * i), withA(0xFFFFFFFF, 0f)},
+                        new float[]{0f, 1f}, Shader.TileMode.CLAMP));
+                wedge.reset();
+                wedge.moveTo(cx, cy - r * 0.055f);
+                wedge.lineTo(cx + len, cy);
+                wedge.lineTo(cx, cy + r * 0.055f);
+                wedge.close();
+                canvas.drawPath(wedge, paint);
+                canvas.restore();
+            }
+            paint.setShader(null);
+            // Hot core point.
+            paint.setColor(withA(0xFFFFFFFF, i));
+            canvas.drawCircle(cx, cy, Math.max(2f, r * 0.05f), paint);
+        }
+
+        private static int withA(int color, float a) {
+            return (color & 0x00FFFFFF)
+                    | (Math.round(255 * Math.max(0f, Math.min(1f, a))) << 24);
+        }
     }
 
     // -------------------------------------------------------------- helpers

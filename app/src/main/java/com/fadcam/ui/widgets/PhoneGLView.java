@@ -69,6 +69,7 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
 
     private int program;
     private int aPos, aNormal, aUV, uMVP, uModel, uTex, uUseTex, uColor, uSpec, uLightDir, uFade, uRim;
+    private int uSweep, uSweepX;
 
     private FloatBuffer bufFront, bufBack, bufMetal, bufVisor, bufLenses, bufFlash, bufGlint, bufCores;
     private FloatBuffer bufVolUp, bufVolDown, bufPower;
@@ -88,6 +89,8 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private volatile float extraScale = 1f;
     /** 0..1 camera-flash burst: the LED element blows to white when it fires. */
     private volatile float flashGlow = 0f;
+    private volatile float sweepIntensity = 0f;
+    private volatile float sweepX = 0f;
     private volatile float cropFraction = 1f;
     private final float[] screenRect = {0f, 0f, 1f, 1f};
     private FloatBuffer bufScreen;
@@ -123,6 +126,13 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     /** Fires the camera flash: 0 = off, 1 = full burst (the LED renders white). */
     public void setFlashGlow(float glow) {
         flashGlow = Math.max(0f, Math.min(1f, glow));
+        requestRender();
+    }
+
+    /** A soft light band gliding across the product: intensity 0..1 at world x. */
+    public void setSweep(float intensity, float worldX) {
+        sweepIntensity = Math.max(0f, Math.min(1f, intensity));
+        sweepX = worldX;
         requestRender();
     }
 
@@ -389,6 +399,8 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 ? (getHeight() * (1f - 1f / overscan) / 2f + fadePx)
                 : 0f;
         GLES20.glUniform1f(uFade, fadeAt);
+        GLES20.glUniform1f(uSweep, sweepIntensity);
+        GLES20.glUniform1f(uSweepX, sweepX);
 
         if (bufScreen != null) drawGroup(bufScreen, screenTex, 0.03f, 0.06f, 0.10f, 0.11f, 0.13f);
         if (bufPanel != null) drawGroup(bufPanel, backTex, 0.05f, 0.10f, 0.10f, 0.11f, 0.13f);
@@ -401,9 +413,10 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         drawGroup(bufLenses, 0, 0.55f, 0.08f, 0.045f, 0.05f, 0.065f);
         drawGroup(bufCores, 0, 0.45f, 0.08f, 0.09f, 0.085f, 0.15f);
         if (flashGlow > 0.01f) {
-            // The LED fires: warm tint washes out to pure white with a strong rim bleed.
+            // The LED itself fires (3D, on the camera island): warm tint washes out to pure
+            // white and the rim term blooms it, like a real LED catching a lens.
             float g = flashGlow;
-            drawGroup(bufFlash, 0, 0.35f, 0.08f + 0.6f * g,
+            drawGroup(bufFlash, 0, 0.35f, 0.08f + 1.4f * g,
                     0.93f + 0.07f * g, 0.90f + 0.10f * g, 0.70f + 0.30f * g);
         } else {
             drawGroup(bufFlash, 0, 0.35f, 0.08f, 0.93f, 0.90f, 0.70f);
@@ -501,15 +514,18 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "uniform mat4 uModel;\n" +
                 "varying vec3 vNormal;\n" +
                 "varying vec2 vUV;\n" +
+                "varying vec3 vWorld;\n" +
                 "void main() {\n" +
                 "  vUV = aUV;\n" +
                 "  vNormal = mat3(uModel) * aNormal;\n" +
+                "  vWorld = (uModel * vec4(aPos, 1.0)).xyz;\n" +
                 "  gl_Position = uMVP * vec4(aPos, 1.0);\n" +
                 "}\n");
         int fs = compile(GLES20.GL_FRAGMENT_SHADER,
                 "precision mediump float;\n" +
                 "varying vec3 vNormal;\n" +
                 "varying vec2 vUV;\n" +
+                "varying vec3 vWorld;\n" +
                 "uniform sampler2D uTex;\n" +
                 "uniform float uUseTex;\n" +
                 "uniform vec4 uColor;\n" +
@@ -517,6 +533,8 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "uniform float uRim;\n" +
                 "uniform vec3 uLightDir;\n" +
                 "uniform float uFade;\n" +
+                "uniform float uSweep;\n" +
+                "uniform float uSweepX;\n" +
                 "void main() {\n" +
                 "  vec3 n = normalize(vNormal);\n" +
                 "  vec3 l = normalize(uLightDir);\n" +
@@ -529,6 +547,10 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "  float spec = pow(max(dot(n, h), 0.0), 48.0) * uSpec;\n" +
                 "  float rim = pow(1.0 - abs(n.z), 3.0) * uRim;\n" +
                 "  vec3 color = base * (0.44 + 0.66 * diff) + vec3(spec + rim);\n" +
+                // A soft light band gliding across the product (motion-graphics shine).
+                "  float sd = (vWorld.x - uSweepX) * 5.0;\n" +
+                "  float band = exp(-sd * sd) * uSweep;\n" +
+                "  color += vec3(band * 0.32, band * 0.31, band * 0.30);\n" +
                 "  float fade = uFade > 0.5 ? smoothstep(0.0, uFade, gl_FragCoord.y) : 1.0;\n" +
                 "  gl_FragColor = vec4(color, alpha * fade);\n" +
                 "}\n");
@@ -548,6 +570,8 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         uLightDir = GLES20.glGetUniformLocation(program, "uLightDir");
         uFade = GLES20.glGetUniformLocation(program, "uFade");
         uRim = GLES20.glGetUniformLocation(program, "uRim");
+        uSweep = GLES20.glGetUniformLocation(program, "uSweep");
+        uSweepX = GLES20.glGetUniformLocation(program, "uSweepX");
     }
 
     private int compile(int type, String src) {
