@@ -336,6 +336,7 @@ public class FadCamProActivity extends AppCompatActivity {
                     getString(R.string.pro_screen_bundle),
                     getString(R.string.pro_showcase_supporting),
                     getString(R.string.pro_showcase_meta));
+            showcase.setCinematicHost(findViewById(R.id.cinematicOverlay));
         }
         TextView note = findViewById(R.id.tvNote);
         note.setText(linkFadSecLab(getString(isOwner

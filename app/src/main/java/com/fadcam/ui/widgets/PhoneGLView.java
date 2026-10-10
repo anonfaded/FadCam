@@ -86,6 +86,8 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
 
     private volatile float angle = 0f;
     private volatile float extraScale = 1f;
+    /** 0..1 camera-flash burst: the LED element blows to white when it fires. */
+    private volatile float flashGlow = 0f;
     private volatile float cropFraction = 1f;
     private final float[] screenRect = {0f, 0f, 1f, 1f};
     private FloatBuffer bufScreen;
@@ -112,9 +114,15 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         requestRender();
     }
 
-    /** Optional global scale multiplier (used by the fullscreen inspector). */
+    /** Optional global scale multiplier (used by the fullscreen inspector and the intro). */
     public void setExtraScale(float scale) {
         extraScale = scale;
+        requestRender();
+    }
+
+    /** Fires the camera flash: 0 = off, 1 = full burst (the LED renders white). */
+    public void setFlashGlow(float glow) {
+        flashGlow = Math.max(0f, Math.min(1f, glow));
         requestRender();
     }
 
@@ -141,7 +149,9 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         float r = Math.max(0.012f, CORNER_RADIUS - FRAME_INSET);
         // Rounded geometry: the glass/panel silhouettes curve exactly like the frame.
         bufScreen = toBuffer(roundedFace(x0, x1, y0v, y1v, r, hd - 0.0018f, u0, v0, u1, v1));
-        bufPanel = toBuffer(roundedFace(x0, x1, y0v, y1v, r, -hd + 0.0018f, u0, v0, u1, v1));
+        // The panel is only ever seen from behind (rotation 180 mirrors world X): flip U so
+        // the flag and the wordmark read correctly instead of mirrored.
+        bufPanel = toBuffer(roundedFace(x0, x1, y0v, y1v, r, -hd + 0.0018f, u1, v0, u0, v1));
         requestRender();
     }
 
@@ -390,7 +400,14 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         drawGroup(bufVisor, 0, 0.06f, 0.30f, 0.105f, 0.11f, 0.125f);
         drawGroup(bufLenses, 0, 0.55f, 0.08f, 0.045f, 0.05f, 0.065f);
         drawGroup(bufCores, 0, 0.45f, 0.08f, 0.09f, 0.085f, 0.15f);
-        drawGroup(bufFlash, 0, 0.35f, 0.08f, 0.93f, 0.90f, 0.70f);
+        if (flashGlow > 0.01f) {
+            // The LED fires: warm tint washes out to pure white with a strong rim bleed.
+            float g = flashGlow;
+            drawGroup(bufFlash, 0, 0.35f, 0.08f + 0.6f * g,
+                    0.93f + 0.07f * g, 0.90f + 0.10f * g, 0.70f + 0.30f * g);
+        } else {
+            drawGroup(bufFlash, 0, 0.35f, 0.08f, 0.93f, 0.90f, 0.70f);
+        }
         drawGroup(bufGlint, 0, 0.30f, 0.05f, 0.28f, 0.32f, 0.42f);
     }
 

@@ -230,4 +230,13 @@
             </FrameLayout>
         </FrameLayout>
     </FrameLayout>
+
+    <!-- Fullscreen entrance cinematic: the phone towers over the window, the flash fires,
+         then it settles into the bundle card. Last child so it covers everything; hidden
+         unless the showcase drives it. -->
+    <FrameLayout android:id="@+id/cinematicOverlay" android:layout_width="0dp" android:layout_height="0dp"
+        android:visibility="gone" android:clickable="true" android:focusable="true"
+        android:importantForAccessibility="no" android:clipChildren="false" android:clipToPadding="false"
+        app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

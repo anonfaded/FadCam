@@ -31,6 +31,7 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
+import com.fadcam.FLog;
 import com.fadcam.R;
 import com.fadcam.ui.ProBundleFullscreenActivity;
 
@@ -109,9 +110,14 @@ public class ProBundleShowcaseView extends FrameLayout {
     private boolean frameDirty = true;
     private boolean frontDirty = true;
     private boolean backDirty = true;
-    private boolean introRunning = false;
-    private boolean introPlayed = false;
-    private ValueAnimator introAnimator;
+    private FrameLayout cinematicHost;
+    private PhoneGLView cinematicGL;
+    private View cinematicVeil;
+    private ValueAnimator cinematicAnimator;
+    private boolean cinematicRunning = false;
+    private Bitmap cinematicBackBitmap;
+    private int entranceTries = 0;
+    private int cinematicTries = 0;
     private ValueAnimator expandAnimator;
     private ValueAnimator expandPulse;
 
@@ -279,6 +285,14 @@ public class ProBundleShowcaseView extends FrameLayout {
         showcaseClickListener = listener;
     }
 
+    /**
+     * Fullscreen host for the entrance cinematic (a match-parent overlay at the top of the
+     * activity window). Without one the showcase simply boots the phone in its slot.
+     */
+    public void setCinematicHost(FrameLayout host) {
+        cinematicHost = host;
+    }
+
     // ------------------------------------------------------------------ sizing
 
 
@@ -295,7 +309,7 @@ public class ProBundleShowcaseView extends FrameLayout {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 if (snapAnimator != null) snapAnimator.cancel();
-                if (introRunning) return true;
+                if (cinematicRunning) return true;
                 downX = event.getRawX() - wrapperScreenX;
                 downY = event.getRawY() - wrapperScreenY;
                 startRotation = rotation;
@@ -772,12 +786,12 @@ public class ProBundleShowcaseView extends FrameLayout {
             updateBattery(sticky);
         }
         updateUsageEasterEgg();
-        // Every visit boots inside the mock-up: fly in first, then power on, so the user
-        // actually sees the emblem, the "Starting" line and the loader before the home icons.
+        // Every visit powers the phone on: the fullscreen cinematic plays first (when a host
+        // is available), then the boot theater inside the card ends on the lock screen.
         if (bootEnabled) {
-            // Power the screen off synchronously: no stale home may flash during the fly-in.
+            // Power the screen off synchronously: no stale home may flash during the intro.
             frontSurface.prepareBoot();
-            post(this::startIntroThenBoot);
+            post(this::startEntrance);
         } else {
             frontSurface.settleBoot();
         }
@@ -806,10 +820,7 @@ public class ProBundleShowcaseView extends FrameLayout {
             snapAnimator.cancel();
             snapAnimator = null;
         }
-        if (introAnimator != null) {
-            introAnimator.cancel();
-            introAnimator = null;
-        }
+        cancelCinematic();
         if (expandAnimator != null) {
             expandAnimator.cancel();
             expandAnimator = null;
@@ -912,75 +923,254 @@ public class ProBundleShowcaseView extends FrameLayout {
         spin.start();
     }
 
-    /** Entrance, then the boot theater — with a beat in between so the settle is noticed. */
-    private void startIntroThenBoot() {
+    private static final String CINE_TAG = "ProCinematic";
+
+    /** Entrance: the fullscreen cinematic when possible, otherwise the phone boots in place. */
+    private void startEntrance() {
         if (!bootEnabled) {
             frontSurface.settleBoot();
             return;
         }
-        Runnable bootTask = () -> postDelayed(() -> {
-            if (isAttachedToWindow()) frontSurface.startBoot();
-        }, 320);
-        if (!motionAllowed() || introPlayed || getWidth() == 0) {
-            introPlayed = true;
-            bootTask.run();
+        if (cinematicHost == null || !motionAllowed()) {
+            FLog.d(CINE_TAG, "skip: host=" + (cinematicHost != null)
+                    + " motion=" + motionAllowed());
+            frontSurface.startBoot();
             return;
         }
-        startIntro(bootTask);
+        // The card phone must be laid out before the cinematic can target its slot.
+        if (phoneWrapper.getWidth() == 0 || phoneWrapper.getHeight() == 0) {
+            if (entranceTries++ < 24) {
+                post(this::startEntrance);
+                return;
+            }
+            entranceTries = 0;
+            FLog.d(CINE_TAG, "skip: card phone never laid out");
+            frontSurface.startBoot();
+            return;
+        }
+        entranceTries = 0;
+        startCinematic();
     }
 
-    /** The showcase entrance: the phone arrives big and spun, then settles into the card. */
-    private void startIntro(Runnable onEnd) {
-        if (!motionAllowed() || introPlayed || getWidth() == 0) {
-            introPlayed = true;
-            if (onEnd != null) onEnd.run();
+    // ------------------------------------------------------------ cinematic
+
+    /**
+     * The fullscreen first-boot cinematic: the phone towers over the screen showing its
+     * back, the camera flash fires twice like a photo, then it flips to the front and
+     * settles exactly into the bundle card — where the boot theater takes over. The card
+     * phone stays hidden until the handoff, and both are pixel-identical at that moment
+     * (front, powered off), so the swap is invisible.
+     */
+    private void startCinematic() {
+        if (cinematicRunning) return;
+        cinematicRunning = true;
+        Context context = getContext();
+        // CRITICAL: the host starts GONE and a GONE view is never laid out, so any size
+        // read would be 0. Prepare it, hide the card phone, then show it and WAIT for the
+        // layout pass before measuring anything.
+        phoneWrapper.setAlpha(0f);
+        if (cinematicGL == null) {
+            cinematicGL = new PhoneGLView(context, null);
+            cinematicGL.setOverscan(1.5f);
+            cinematicGL.setCrop(1f, 0f);
+            cinematicHost.addView(cinematicGL, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            cinematicVeil = new View(context);
+            cinematicVeil.setBackgroundColor(0xFFFFFFFF);
+            cinematicVeil.setAlpha(0f);
+            cinematicHost.addView(cinematicVeil, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            cinematicHost.setBackgroundColor(0xFF0E0F12);
+            cinematicHost.setClickable(true);
+            cinematicHost.setFocusable(true);
+        }
+        cinematicHost.setAlpha(1f);
+        cinematicHost.setVisibility(View.VISIBLE);
+        FLog.d(CINE_TAG, "host shown, waiting for layout");
+        post(this::startCinematicShow);
+    }
+
+    /** Second step: the host is visible now — wait until it actually has its laid-out size. */
+    private void startCinematicShow() {
+        if (!cinematicRunning) return;
+        int ow = cinematicHost.getWidth();
+        int oh = cinematicHost.getHeight();
+        if (ow <= 0 || oh <= 0) {
+            if (cinematicTries++ < 24) {
+                post(this::startCinematicShow);
+                return;
+            }
+            cinematicTries = 0;
+            finishCinematic(false);
             return;
         }
-        introPlayed = true;
-        introRunning = true;
+        cinematicTries = 0;
+        // Landscape/odd windows: skip the cinematic, boot in place instead of breaking.
+        if (ow > oh) {
+            FLog.d(CINE_TAG, "skip: landscape host " + ow + "x" + oh);
+            finishCinematic(false);
+            return;
+        }
+        // The face textures must exist before the show starts.
+        updateTextures();
+        if (screenBitmap == null || backBitmap == null) {
+            FLog.d(CINE_TAG, "skip: no textures");
+            finishCinematic(false);
+            return;
+        }
+        // A crisp back render for the huge phone. Re-rendered every visit so the surface's
+        // current layout matches the texture (the card pipeline may have re-laid it out at
+        // its own, smaller size meanwhile) and the UV rect stays exactly right.
+        int texW = Math.min(1600, Math.max(720, Math.round(oh * 0.90f / 2.05f)));
+        int texH = Math.round(texW * 2.05f);
+        cinematicBackBitmap = renderSurface(backSurface, cinematicBackBitmap, texW, texH);
+        cinematicGL.setScreenBitmap(screenBitmap);
+        cinematicGL.setBackBitmap(cinematicBackBitmap);
+        RectF sr = backSurface.getScreenRect();
+        cinematicGL.setScreenRect(sr.left / texW, sr.top / texH, sr.right / texW, sr.bottom / texH);
+        cinematicGL.setAngle(180f);
+        cinematicGL.setFlashGlow(0f);
+        cinematicGL.setAlpha(0f);
+        post(this::runCinematic);
+    }
+
+    private void runCinematic() {
+        if (!cinematicRunning) return;
+        if (cinematicGL == null || cinematicGL.getWidth() == 0 || cinematicGL.getHeight() == 0) {
+            if (cinematicTries++ < 24) {
+                post(this::runCinematic);
+                return;
+            }
+            cinematicTries = 0;
+            finishCinematic(false);
+            return;
+        }
+        cinematicTries = 0;
+        float ow = cinematicGL.getWidth();
+        float oh = cinematicGL.getHeight();
+        FLog.d(CINE_TAG, "playing: gl=" + (int) ow + "x" + (int) oh
+                + " card=" + phoneWrapper.getWidth() + "x" + phoneWrapper.getHeight());
+
+        // Start: the phone towers over the screen; end: exactly the card's slot.
+        final float sStart = introScaleFor(0.90f * oh, ow, oh);
+        final float sEnd = introScaleFor(phoneWrapper.getHeight(), ow, oh);
+        final float tyStart = (oh - 0.90f * oh) / 2f - oh / 6f;
         int[] loc = new int[2];
         phoneWrapper.getLocationOnScreen(loc);
-        android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
-        final float dx = dm.widthPixels / 2f - (loc[0] + phoneWrapper.getWidth() / 2f);
-        final float dy = dm.heightPixels * 0.42f - (loc[1] + phoneWrapper.getHeight() / 2f);
-        phoneWrapper.setScaleX(2.1f);
-        phoneWrapper.setScaleY(2.1f);
-        phoneWrapper.setTranslationX(dx);
-        phoneWrapper.setTranslationY(dy);
-        phoneWrapper.setAlpha(0.35f);
-        // The phone arrives showing its back, then flips to the front as it settles.
-        applyRotation(180f);
-        introAnimator = ValueAnimator.ofFloat(0f, 1f);
-        introAnimator.setDuration(1150);
-        introAnimator.setInterpolator(new DecelerateInterpolator(1.35f));
-        introAnimator.addUpdateListener(a -> {
-            float t = (float) a.getAnimatedValue();
-            phoneWrapper.setScaleX(2.1f - 1.1f * t);
-            phoneWrapper.setScaleY(2.1f - 1.1f * t);
-            phoneWrapper.setTranslationX(dx * (1f - t));
-            phoneWrapper.setTranslationY(dy * (1f - t));
-            phoneWrapper.setAlpha(0.35f + 0.65f * t);
-            applyRotation(180f * (1f - t));
+        int[] hostLoc = new int[2];
+        cinematicHost.getLocationOnScreen(hostLoc);
+        final float tyEnd = (loc[1] - hostLoc[1]) - oh / 6f;
+        final float txEnd = (loc[0] + phoneWrapper.getWidth() / 2f)
+                - (hostLoc[0] + cinematicGL.getWidth() / 2f);
+
+        cinematicGL.setExtraScale(sStart);
+        cinematicGL.setTranslationY(tyStart);
+        cinematicGL.setTranslationX(0f);
+
+        if (cinematicAnimator != null) cinematicAnimator.cancel();
+        cinematicAnimator = ValueAnimator.ofFloat(0f, 1f);
+        cinematicAnimator.setDuration(1650);
+        cinematicAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
+        cinematicAnimator.addUpdateListener(a -> {
+            if (cinematicGL == null) return;
+            float t = (float) a.getAnimatedValue() * 1650f;
+            cinematicGL.setAlpha(Math.min(1f, t / 240f));
+            // Two camera-flash bursts while the back faces the viewer.
+            float glow = Math.max(pulse(t, 260f, 60f, 40f, 80f), pulse(t, 460f, 50f, 110f, 140f));
+            cinematicGL.setFlashGlow(glow);
+            if (cinematicVeil != null) cinematicVeil.setAlpha(0.12f * glow);
+            // Flip and settle, starting under the second burst.
+            float ft = clamp01((t - 540f) / 920f);
+            float fe = 1f - (1f - ft) * (1f - ft) * (1f - ft);
+            cinematicGL.setAngle(180f * (1f - fe));
+            cinematicGL.setExtraScale(sStart + (sEnd - sStart) * fe);
+            cinematicGL.setTranslationY(tyStart + (tyEnd - tyStart) * fe);
+            cinematicGL.setTranslationX(txEnd * fe);
         });
-        introAnimator.addListener(new AnimatorListenerAdapter() {
+        cinematicAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                phoneWrapper.setScaleX(1f);
-                phoneWrapper.setScaleY(1f);
-                phoneWrapper.setTranslationX(0f);
-                phoneWrapper.setTranslationY(0f);
-                phoneWrapper.setAlpha(1f);
-                applyRotation(0f);
-                introRunning = false;
-                if (onEnd != null) onEnd.run();
+                finishCinematic(true);
             }
         });
-        introAnimator.start();
+        cinematicAnimator.start();
+    }
+
+    /** 0→1→0 burst: rise, hold, fall (all in ms on the cinematic timeline). */
+    private static float pulse(float t, float start, float up, float hold, float down) {
+        if (t <= start) return 0f;
+        if (t < start + up) return (t - start) / up;
+        if (t < start + up + hold) return 1f;
+        if (t < start + up + hold + down) return 1f - (t - start - up - hold) / down;
+        return 0f;
+    }
+
+    private static float clamp01(float v) {
+        return Math.max(0f, Math.min(1f, v));
+    }
+
+    /**
+     * Replicates the GL view's scale math: the {@code extraScale} that renders the phone at
+     * exactly {@code targetPhoneH} px, so the handoff lands on the card's phone slot.
+     */
+    private static float introScaleFor(float targetPhoneH, float viewW, float viewH) {
+        float halfH = (float) Math.tan(Math.toRadians(15.0)) * 3.2f;
+        float halfW = halfH * (viewW / viewH);
+        float scaleBase = Math.min(halfW / 0.75f, halfH / 1.5375f);
+        return targetPhoneH * (2f * halfH) / (2.05f * scaleBase * viewH);
+    }
+
+    /** Handoff: reveal the (pixel-identical) card phone under the fading overlay. */
+    private void finishCinematic(boolean landed) {
+        FLog.d(CINE_TAG, "finish landed=" + landed);
+        if (cinematicAnimator != null) {
+            cinematicAnimator.cancel();
+            cinematicAnimator = null;
+        }
+        cinematicRunning = false;
+        if (cinematicGL != null) cinematicGL.setFlashGlow(0f);
+        if (cinematicVeil != null) cinematicVeil.setAlpha(0f);
+        phoneWrapper.setAlpha(1f);
+        if (cinematicHost == null) {
+            if (bootEnabled) frontSurface.startBoot();
+            return;
+        }
+        if (!landed || !isAttachedToWindow()) {
+            cinematicHost.setVisibility(View.GONE);
+            cinematicHost.setAlpha(1f);
+            if (bootEnabled && isAttachedToWindow()) frontSurface.startBoot();
+            return;
+        }
+        cinematicHost.animate().alpha(0f).setDuration(220).withEndAction(() -> {
+            if (cinematicHost != null) {
+                cinematicHost.setVisibility(View.GONE);
+                cinematicHost.setAlpha(1f);
+            }
+            postDelayed(() -> {
+                if (isAttachedToWindow() && bootEnabled) frontSurface.startBoot();
+            }, 120);
+        }).start();
+    }
+
+    private void cancelCinematic() {
+        if (cinematicAnimator != null) {
+            cinematicAnimator.cancel();
+            cinematicAnimator = null;
+        }
+        cinematicRunning = false;
+        phoneWrapper.setAlpha(1f);
+        if (cinematicGL != null) cinematicGL.setFlashGlow(0f);
+        if (cinematicVeil != null) cinematicVeil.setAlpha(0f);
+        if (cinematicHost != null) {
+            cinematicHost.animate().cancel();
+            cinematicHost.setVisibility(View.GONE);
+            cinematicHost.setAlpha(1f);
+        }
     }
 
     /** Spin the whole phone 360 degrees, then open the fullscreen inspector. */
     private void playExpandSequence() {
-        if (introRunning || expandAnimator != null) return;
+        if (cinematicRunning || expandAnimator != null) return;
         if (!motionAllowed()) {
             launchFullscreen();
             return;
