@@ -466,4 +466,16 @@ We look forward to your contributions!
 - Location reverse geocoding powered by <a target="_blank" href="https://nominatim.org/">Nominatim</a> — free, open-source geocoding based on <a target="_blank" href="https://www.openstreetmap.org/">OpenStreetMap</a> data. Building-level precision (zoom=18) for accurate address watermarking.
 - QR codes generated using <a target="_blank" href="https://www.qrcodechimp.com">QRCodeChimp</a>.
 
+## Star History
 
+<a href="https://www.star-history.com/?repos=anonfaded%2Ffadcam&type=date&releases=&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=anonfaded/fadcam&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=anonfaded/fadcam&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=anonfaded/fadcam&type=date&legend=bottom-right" />
+ </picture>
+</a>
+
+## `>_` License
+
+GNU General Public License v3.0
