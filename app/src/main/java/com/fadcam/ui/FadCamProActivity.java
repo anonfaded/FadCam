@@ -179,6 +179,20 @@ public class FadCamProActivity extends AppCompatActivity {
             Insets safe = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars()
                     | WindowInsetsCompat.Type.displayCutout());
             v.setPadding(bars.left, 0, bars.right, bars.bottom);
+            // The root's bottom padding insets every child, including the fullscreen
+            // cinematic overlay (it measured 71 px short of the window on a gesture-nav
+            // device). Pull it back down with a negative margin so the scene truly covers
+            // the whole display; the page chrome keeps its safe padding.
+            View cinematic = findViewById(R.id.cinematicOverlay);
+            if (cinematic != null) {
+                androidx.constraintlayout.widget.ConstraintLayout.LayoutParams clp =
+                        (androidx.constraintlayout.widget.ConstraintLayout.LayoutParams)
+                                cinematic.getLayoutParams();
+                if (clp.bottomMargin != -bars.bottom) {
+                    clp.bottomMargin = -bars.bottom;
+                    cinematic.setLayoutParams(clp);
+                }
+            }
             if (closeButton != null) {
                 ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) closeButton.getLayoutParams();
                 int top = getResources().getDimensionPixelSize(R.dimen.pro_close_margin) + safe.top;
@@ -311,6 +325,35 @@ public class FadCamProActivity extends AppCompatActivity {
         }
     }
 
+    private final java.util.Map<Integer, Integer> cinematicChromeState = new java.util.HashMap<>();
+
+    /**
+     * During the fullscreen cinematic every piece of page chrome steps aside, so nothing
+     * can draw over the scene regardless of z-order quirks. The exact previous visibility
+     * is restored afterwards (some chrome is scroll-driven).
+     */
+    private void setCinematicChrome(boolean active) {
+        int[] ids = {R.id.btnBack, R.id.footerBar, R.id.footerFade,
+                R.id.stickyHeaderWrap, R.id.scrollHint, R.id.btnScrollTop};
+        if (active) {
+            cinematicChromeState.clear();
+            for (int id : ids) {
+                View v = findViewById(id);
+                if (v != null) {
+                    cinematicChromeState.put(id, v.getVisibility());
+                    v.setVisibility(View.INVISIBLE);
+                }
+            }
+        } else {
+            for (int id : ids) {
+                View v = findViewById(id);
+                Integer prev = cinematicChromeState.get(id);
+                if (v != null && prev != null) v.setVisibility(prev);
+            }
+            cinematicChromeState.clear();
+        }
+    }
+
     /** Private binding boundary also allows tests to exercise every APK tier without a UI override. */
     private void configureScreen(String tier) {
         isOwner = "PRO".equals(tier) || "PRO_PLUS".equals(tier);
@@ -337,6 +380,7 @@ public class FadCamProActivity extends AppCompatActivity {
                     getString(R.string.pro_showcase_supporting),
                     getString(R.string.pro_showcase_meta));
             showcase.setCinematicHost(findViewById(R.id.cinematicOverlay));
+            showcase.setCinematicListener(this::setCinematicChrome);
         }
         TextView note = findViewById(R.id.tvNote);
         note.setText(linkFadSecLab(getString(isOwner

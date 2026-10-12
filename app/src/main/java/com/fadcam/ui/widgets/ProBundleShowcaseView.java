@@ -16,6 +16,7 @@ import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.graphics.SweepGradient;
 import android.os.BatteryManager;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -115,9 +116,14 @@ public class ProBundleShowcaseView extends FrameLayout {
     private boolean frameDirty = true;
     private boolean frontDirty = true;
     private boolean backDirty = true;
+    /** The turn reflection comes from a fixed side light. At rest the glass is AMOLED
+     *  black; dragging fades the reflection in and releasing fades it out smoothly. */
+    private static final float REST_SWEEP_X = -0.12f;
+    private static final float DRAG_SWEEP_I = 0.30f;
+
     private FrameLayout cinematicHost;
     private PhoneGLView cinematicGL;
-    private FlareView cinematicFlare;
+    private OutlineTracerView cinematicTracer;
     private ValueAnimator cinematicAnimator;
     private boolean cinematicRunning = false;
     private Bitmap cinematicBackBitmap;
@@ -125,6 +131,36 @@ public class ProBundleShowcaseView extends FrameLayout {
     private int cinematicTries = 0;
     private boolean cineHaptic1;
     private boolean cineHaptic2;
+
+    private android.hardware.camera2.CameraManager cameraManager;
+    private String torchCameraId;
+    private boolean torchOn;
+    private boolean torchAvailable;
+    private boolean torchCallbackRegistered;
+    private final android.hardware.camera2.CameraManager.TorchCallback torchCallback =
+            new android.hardware.camera2.CameraManager.TorchCallback() {
+        @Override
+        public void onTorchModeChanged(String cameraId, boolean enabled) {
+            if (cameraId != null && cameraId.equals(torchCameraId)) {
+                torchOn = enabled;
+                torchAvailable = true;
+                frontSurface.setTorchState(true, enabled);
+                // The real LED is physically on: the mockup's camera flash lights too.
+                if (phoneGL != null) phoneGL.setFlashGlow(enabled ? 1f : 0f);
+                FLog.d(CINE_TAG, "torch state cam=" + cameraId + " on=" + enabled);
+            }
+        }
+
+        @Override
+        public void onTorchModeUnavailable(String cameraId) {
+            if (cameraId != null && cameraId.equals(torchCameraId)) {
+                torchAvailable = false;
+                frontSurface.setTorchState(false, false);
+                if (phoneGL != null) phoneGL.setFlashGlow(0f);
+                FLog.d(CINE_TAG, "torch unavailable cam=" + cameraId);
+            }
+        }
+    };
     private ValueAnimator expandAnimator;
     private ValueAnimator expandPulse;
 
@@ -164,6 +200,7 @@ public class ProBundleShowcaseView extends FrameLayout {
         phoneGL = new PhoneGLView(context, null);
         phoneGL.setOverscan(1.5f);
         phoneGL.setCrop(1f, 0f);
+        phoneGL.setSweep(0f, REST_SWEEP_X);
         // Bigger than its slot (centred): the rotation headroom renders thanks to
         // clipChildren=false, so the phone can fill the card and still turn freely.
         LayoutParams glParams = new LayoutParams(
@@ -300,6 +337,17 @@ public class ProBundleShowcaseView extends FrameLayout {
         cinematicHost = host;
     }
 
+    /** Notified when the cinematic takes over / releases the screen (host hides chrome). */
+    public interface CinematicListener {
+        void onCinematicActive(boolean active);
+    }
+
+    private CinematicListener cinematicListener;
+
+    public void setCinematicListener(CinematicListener listener) {
+        cinematicListener = listener;
+    }
+
     // ------------------------------------------------------------------ sizing
 
 
@@ -339,16 +387,20 @@ public class ProBundleShowcaseView extends FrameLayout {
                     touchMode = MODE_SHADE;
                     shadeStart = frontSurface.getShadeProgress();
                 } else if (dragEnabled && !dialogOpen) {
-                    if (frontSurface.isOnPowerButton(downX, downY)) {
+                    // The face surfaces live at TEXTURE_SCALE× the wrapper, so their hit
+                    // zones are in texture space: convert before every hit test.
+                    float tx = downX * TEXTURE_SCALE;
+                    float ty = downY * TEXTURE_SCALE;
+                    if (frontSurface.isOnPowerButton(tx, ty)) {
                         touchMode = MODE_POWER;
                         pressedButton = 3;
                         hapticKey();
                         postDelayed(powerHoldRunnable, 550);
-                    } else if ((volumeDirection = frontSurface.volumeButtonAt(downX, downY)) != 0) {
+                    } else if ((volumeDirection = frontSurface.volumeButtonAt(tx, ty)) != 0) {
                         touchMode = MODE_VOLUME;
                         pressedButton = volumeDirection > 0 ? 1 : 2;
                         hapticKey();
-                    } else if (frontSurface.isInStatusBar(downX, downY)) {
+                    } else if (frontSurface.isInStatusBar(tx, ty)) {
                         touchMode = MODE_SHADE;
                         shadeStart = frontSurface.getShadeProgress();
                     } else if (frontSurface.isLocked()) {
@@ -386,6 +438,10 @@ public class ProBundleShowcaseView extends FrameLayout {
                     if (dragEnabled) {
                         float sensitivity = 180f / Math.max(1f, phoneWrapper.getWidth());
                         applyRotation(resist(startRotation + dx * sensitivity));
+                        // Reflections appear ONLY while the device is actually turning:
+                        // the strip light lives at the side, so it slides across the frame
+                        // and glass as they pass it, then fades away at rest.
+                        // (the reflection level is driven by the angle in applyRotation)
                     }
                     return true;
                 }
@@ -476,6 +532,10 @@ public class ProBundleShowcaseView extends FrameLayout {
 
     /** Taps inside the phone: nav bar, recents, previews, calculator keys, app icons. */
     private void handleTap(float x, float y) {
+        // The face surfaces are rendered at TEXTURE_SCALE× the wrapper: all their hit zones
+        // are in texture space, so convert once here (wrapper space -> texture space).
+        x *= TEXTURE_SCALE;
+        y *= TEXTURE_SCALE;
         // In-screen interactions only apply while the phone faces the viewer and has booted.
         if (Math.abs(rotation) > 35f) return;
         if (frontSurface.getBootProgress() < 0.95f) return;
@@ -504,6 +564,12 @@ public class ProBundleShowcaseView extends FrameLayout {
             return;
         }
         if (frontSurface.getShadeProgress() > 0.4f) {
+            if (frontSurface.torchButtonAt(x, y)) {
+                hapticKey();
+                frontSurface.touchRipple(x, y);
+                toggleRealTorch();
+                return;
+            }
             if (frontSurface.notifPowerAt(x, y)) {
                 // Never restart on a single touch: ask first, exactly like the long-press menu.
                 hapticKey();
@@ -627,7 +693,7 @@ public class ProBundleShowcaseView extends FrameLayout {
         noteInput.setVisibility(GONE);
     }
 
-    /** Taps on the mock volume buttons change the real device volume (no permission needed). */
+        /** Taps on the mock volume buttons change the real device volume (no permission needed). */
     private void adjustDeviceVolume(int direction) {
         if (direction == 0) return;
         android.media.AudioManager am =
@@ -689,10 +755,19 @@ public class ProBundleShowcaseView extends FrameLayout {
     private void applyRotation(float angle) {
         rotation = angle;
         backVisible = angle > 90f || angle < -90f;
-        if (phoneGL != null) phoneGL.setAngle(angle);
+        if (phoneGL != null) {
+            phoneGL.setAngle(angle);
+            // The side-light reflection is a pure function of the angle: zero on either
+            // resting face, strongest mid-turn. Holding still keeps it steady; settling
+            // back to a face melts it away frame by frame — no sudden appearance.
+            float a = Math.abs(angle);
+            float level = DRAG_SWEEP_I * Math.min(1f, a / 70f)
+                    * Math.min(1f, Math.max(0f, (180f - a) / 70f));
+            phoneGL.setSweep(level, REST_SWEEP_X);
+        }
     }
 
-    // ------------------------------------------------------------ live status
+        // ------------------------------------------------------------ live status
 
     private final Runnable textureTask = this::updateTextures;
 
@@ -793,6 +868,7 @@ public class ProBundleShowcaseView extends FrameLayout {
             updateBattery(sticky);
         }
         updateUsageEasterEgg();
+        setupTorchCallback();
         // Every visit powers the phone on: the fullscreen cinematic plays first (when a host
         // is available), then the boot theater inside the card ends on the lock screen.
         if (bootEnabled) {
@@ -828,6 +904,7 @@ public class ProBundleShowcaseView extends FrameLayout {
             snapAnimator = null;
         }
         cancelCinematic();
+        teardownTorchCallback();
         if (expandAnimator != null) {
             expandAnimator.cancel();
             expandAnimator = null;
@@ -841,6 +918,78 @@ public class ProBundleShowcaseView extends FrameLayout {
             velocityTracker = null;
         }
         super.onDetachedFromWindow();
+    }
+
+    /**
+     * Real torch wiring: the back camera with flash is controlled through CameraManager,
+     * and the button state comes from the hardware TorchCallback — never a guessed bool.
+     */
+    private void setupTorchCallback() {
+        if (torchCallbackRegistered) return;
+        try {
+            cameraManager = (android.hardware.camera2.CameraManager)
+                    getContext().getSystemService(Context.CAMERA_SERVICE);
+            if (cameraManager == null) {
+                frontSurface.setTorchState(false, false);
+                return;
+            }
+            String backId = null;
+            String anyId = null;
+            for (String id : cameraManager.getCameraIdList()) {
+                android.hardware.camera2.CameraCharacteristics chars =
+                        cameraManager.getCameraCharacteristics(id);
+                Boolean hasFlash = chars.get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                if (hasFlash == null || !hasFlash) continue;
+                if (anyId == null) anyId = id;
+                Integer facing = chars.get(android.hardware.camera2.CameraCharacteristics.LENS_FACING);
+                if (facing != null
+                        && facing == android.hardware.camera2.CameraCharacteristics.LENS_FACING_BACK) {
+                    backId = id;
+                    break;
+                }
+            }
+            torchCameraId = backId != null ? backId : anyId;
+            if (torchCameraId == null) {
+                frontSurface.setTorchState(false, false);
+                return;
+            }
+            // Capable is enough to make the button live: some devices only report the
+            // torch state after the first toggle, so waiting for the callback would leave
+            // the button dead. The callback refines/corrects from here on.
+            frontSurface.setTorchState(true, false);
+            cameraManager.registerTorchCallback(torchCallback, null);
+            torchCallbackRegistered = true;
+            FLog.d(CINE_TAG, "torch capable, camera=" + torchCameraId);
+        } catch (Exception e) {
+            FLog.w(CINE_TAG, "torch setup failed: " + e.getMessage());
+            frontSurface.setTorchState(false, false);
+        }
+    }
+
+    private void teardownTorchCallback() {
+        if (!torchCallbackRegistered || cameraManager == null) return;
+        try {
+            cameraManager.unregisterTorchCallback(torchCallback);
+        } catch (Exception ignored) {
+            // Already gone with the process.
+        }
+        torchCallbackRegistered = false;
+    }
+
+    private void toggleRealTorch() {
+        if (cameraManager == null || torchCameraId == null) return;
+        boolean target = !torchOn;
+        FLog.d(CINE_TAG, "torch toggle request -> " + target + " cam=" + torchCameraId);
+        try {
+            cameraManager.setTorchMode(torchCameraId, target);
+            // Reflect immediately so the button can never stick on a missed callback
+            // event; the TorchCallback still corrects us if the hardware disagrees.
+            torchOn = target;
+            frontSurface.setTorchState(true, target);
+            if (phoneGL != null) phoneGL.setFlashGlow(target ? 1f : 0f);
+        } catch (Exception e) {
+            FLog.w(CINE_TAG, "torch toggle failed: " + e.getMessage());
+        }
     }
 
     private void updateClock() {
@@ -982,16 +1131,28 @@ public class ProBundleShowcaseView extends FrameLayout {
             cinematicGL.setCrop(1f, 0f);
             cinematicHost.addView(cinematicGL, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            // Above the phone: the lens flare rays out from the real LED position.
-            cinematicFlare = new FlareView(context);
-            cinematicHost.addView(cinematicFlare, new FrameLayout.LayoutParams(
+            // Above the phone: the outline beam traces its silhouette during the reveal.
+            // (The flash glare itself lives INSIDE the 3D model, pinned to the LED.)
+            cinematicTracer = new OutlineTracerView(context);
+            cinematicHost.addView(cinematicTracer, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            cinematicHost.setBackgroundColor(0xFF0E0F12);
+            cinematicHost.setBackgroundColor(0xFF000000);
             cinematicHost.setClickable(true);
             cinematicHost.setFocusable(true);
         }
+        // Kill any stale frame from the previous visit BEFORE the host becomes visible:
+        // alpha 0 + dark exposure + the back pose, so the very first visible frame is
+        // already the dark-room silhouette (no flash of the docked, fully-lit phone).
+        if (cinematicGL != null) {
+            cinematicGL.setAlpha(0f);
+            cinematicGL.setAmbient(0.10f);
+            cinematicGL.setAngle(180f);
+            cinematicGL.setSweep(0f, 0f);
+            cinematicGL.setFlashGlow(0f);
+        }
         cinematicHost.setAlpha(1f);
         cinematicHost.setVisibility(View.VISIBLE);
+        if (cinematicListener != null) cinematicListener.onCinematicActive(true);
         FLog.d(CINE_TAG, "host shown, waiting for layout");
         post(this::startCinematicShow);
     }
@@ -1057,10 +1218,13 @@ public class ProBundleShowcaseView extends FrameLayout {
         FLog.d(CINE_TAG, "playing: gl=" + (int) ow + "x" + (int) oh
                 + " card=" + phoneWrapper.getWidth() + "x" + phoneWrapper.getHeight());
 
-        // Start: the phone towers over the screen; end: exactly the card's slot.
-        final float sStart = introScaleFor(0.90f * oh, ow, oh);
+        // Composition: the phone fits fully on screen with clear side padding — width
+        // capped at 78% of the view (never clipped at the edges), height capped at 86%.
+        // End: exactly the card's slot.
+        final float phoneHStart = Math.min(0.78f * ow * 2.05f, 0.86f * oh);
+        final float sStart = introScaleFor(phoneHStart, ow, oh);
         final float sEnd = introScaleFor(phoneWrapper.getHeight(), ow, oh);
-        final float tyStart = (oh - 0.90f * oh) / 2f - oh / 6f;
+        final float tyStart = (oh - phoneHStart) / 2f - oh / 6f;
         int[] loc = new int[2];
         phoneWrapper.getLocationOnScreen(loc);
         int[] hostLoc = new int[2];
@@ -1069,25 +1233,30 @@ public class ProBundleShowcaseView extends FrameLayout {
         final float txEnd = (loc[0] + phoneWrapper.getWidth() / 2f)
                 - (hostLoc[0] + cinematicGL.getWidth() / 2f);
 
-        cinematicGL.setExtraScale(sStart * 1.06f);
-        cinematicGL.setTranslationY(tyStart + 40f);
+        // The phone is already present, static, at its cinematic size — no scale arrival.
+        // It starts as a barely-visible silhouette in the dark and is revealed by light.
+        cinematicGL.setExtraScale(sStart);
+        cinematicGL.setTranslationY(tyStart);
         cinematicGL.setTranslationX(0f);
         cinematicGL.setSweep(0f, 0f);
-        if (cinematicFlare != null) cinematicFlare.setFlare(0f, 0f, 0f);
+        cinematicGL.setAmbient(0.10f);
         cineHaptic1 = false;
         cineHaptic2 = false;
 
         // The flash LED's on-screen position while the back faces the viewer (the flash
-        // fires before the flip): the lens flare rays out from the actual 3D LED.
-        final float glHalfH = (float) Math.tan(Math.toRadians(15.0)) * 3.2f;
-        final float pxPerWorld = oh / (2f * glHalfH);
-        final float sPose = introModelScale(ow, oh, sStart);
-        final float ledX = ow / 2f + 0.2675f * sPose * pxPerWorld;
-        final float ledY = oh / 6f + 0.18f * sPose * pxPerWorld + tyStart;
+        // fires before the flip): the lens flare rays out from the actual 3D LED. The LED
+        // sits 0.0825 model units proud of the back, so its projection carries the
+        // perspective factor CAM_Z/(CAM_Z - z) — without it the flare lands ~10 px off.
+        if (cinematicTracer != null) {
+            float phoneW = phoneHStart / 2.05f;
+            cinematicTracer.setGeometry(ow / 2f, oh / 6f + tyStart + phoneHStart / 2f,
+                    phoneW / 2f, phoneHStart / 2f, phoneW * 0.135f);
+            cinematicTracer.setTrace(0f, 0f);
+        }
 
-        // A slow, savoured timeline (~4.2 s): arrive and settle, hold, flash, hold,
-        // flash again (the "photo"), beat, then one long eased flip into the card.
-        final float total = 4170f;
+        // Deliberate timeline (~5.3 s): a real black beat, a slow light reveal, a flash
+        // the eye can register, a long beat, the "photo" flash, then one eased flip.
+        final float total = 5300f;
         if (cinematicAnimator != null) cinematicAnimator.cancel();
         cinematicAnimator = ValueAnimator.ofFloat(0f, 1f);
         cinematicAnimator.setDuration((long) total);
@@ -1095,40 +1264,55 @@ public class ProBundleShowcaseView extends FrameLayout {
         cinematicAnimator.addUpdateListener(a -> {
             if (cinematicGL == null) return;
             float t = (float) a.getAnimatedValue() * total;
-            cinematicGL.setAlpha(clamp01(t / 350f));
 
-            // Arrival: the phone drifts forward and rocks gently into its pose.
-            float ea = easeOutCubic(clamp01(t / 700f));
-            float baseS = sStart * 1.06f + (sStart - sStart * 1.06f) * ea;
-            float baseTy = (tyStart + 40f) + (tyStart - (tyStart + 40f)) * ea;
-            float baseAngle = 184f - 4f * ea;
+            // 0-0.4 s: near-black. The phone is a faint silhouette, then the studio
+            // exposure rises slowly through the reveal — the room lights come up.
+            cinematicGL.setAlpha(clamp01(t / 400f));
+            cinematicGL.setAmbient(0.45f + 0.55f * easeInOutCubic(clamp01((t - 600f) / 1800f)));
 
-            // LED flash on the 3D camera island (short pulse, beat, long one) plus a lens
-            // flare raying out from the LED itself.
-            float glow = Math.max(pulse(t, 1000f, 90f, 80f, 140f),
-                    pulse(t, 1630f, 80f, 200f, 260f));
+            // The signature reveal is the outline beam (below); no stray surface glints.
+            float revT = clamp01((t - 600f) / 1750f);
+            float sweepI = 0f;
+            float sweepX = 0f;
+
+            // The industry-style outline beam: a light traces the phone's silhouette from
+            // the camera visor around the frame, then the first flash answers it.
+            if (cinematicTracer != null) {
+                float traceIn = clamp01((t - 600f) / 220f);
+                float traceOut = 1f - clamp01((t - 2180f) / 220f);
+                cinematicTracer.setTrace(revT, traceIn * traceOut);
+            }
+
+            // LED flashes on the 3D camera island (short, then the longer "photo" one),
+            // each with a small precise flare on the LED itself.
+            float glow = Math.max(pulse(t, 2400f, 90f, 90f, 160f),
+                    pulse(t, 3200f, 80f, 200f, 260f));
             cinematicGL.setFlashGlow(glow);
-            if (cinematicFlare != null) cinematicFlare.setFlare(ledX, ledY, glow);
-            if (!cineHaptic1 && t >= 1000f) {
+            if (!cineHaptic1 && t >= 2400f) {
                 cineHaptic1 = true;
                 hapticTap();
             }
-            if (!cineHaptic2 && t >= 1630f) {
+            if (!cineHaptic2 && t >= 3200f) {
                 cineHaptic2 = true;
                 hapticKey();
             }
 
-            // Motion-graphics shine: a soft light band glides across the product as it turns.
-            float sweepT = clamp01((t - 2200f) / 1400f);
-            cinematicGL.setSweep(0.85f * (float) Math.sin(Math.PI * sweepT),
-                    -0.62f + 1.24f * sweepT);
+            // The flip starts under the second flash's decay — one continuous move.
+            float flipT = clamp01((t - 3350f) / 1600f);
+            float flipI = 0.30f * (float) Math.sin(Math.PI * flipT);
+            if (flipI > sweepI) {
+                sweepI = flipI;
+                sweepX = -0.55f + 1.10f * flipT;
+            }
+            if (t > 5000f) sweepI = 0f;
+            cinematicGL.setSweep(sweepI, t > 5000f ? REST_SWEEP_X : sweepX);
 
             // One long, eased flip into the card's slot — no sudden starts or stops.
-            float fe = easeInOutCubic(clamp01((t - 2200f) / 1400f));
-            cinematicGL.setExtraScale(baseS + (sEnd - baseS) * fe);
-            cinematicGL.setTranslationY(baseTy + (tyEnd - baseTy) * fe);
+            float fe = easeInOutCubic(flipT);
+            cinematicGL.setExtraScale(sStart + (sEnd - sStart) * fe);
+            cinematicGL.setTranslationY(tyStart + (tyEnd - tyStart) * fe);
             cinematicGL.setTranslationX(txEnd * fe);
-            cinematicGL.setAngle(baseAngle + (0f - baseAngle) * fe);
+            cinematicGL.setAngle(180f * (1f - fe));
         });
         cinematicAnimator.addListener(new AnimatorListenerAdapter() {
             @Override
@@ -1139,13 +1323,17 @@ public class ProBundleShowcaseView extends FrameLayout {
         cinematicAnimator.start();
     }
 
-    /** 0→1→0 burst: rise, hold, fall (all in ms on the cinematic timeline). */
+    /** 0→1→0 burst with smooth-stepped rise and fall (all times in ms). */
     private static float pulse(float t, float start, float up, float hold, float down) {
         if (t <= start) return 0f;
-        if (t < start + up) return (t - start) / up;
+        if (t < start + up) return smooth01((t - start) / up);
         if (t < start + up + hold) return 1f;
-        if (t < start + up + hold + down) return 1f - (t - start - up - hold) / down;
+        if (t < start + up + hold + down) return 1f - smooth01((t - start - up - hold) / down);
         return 0f;
+    }
+
+    private static float smooth01(float x) {
+        return x * x * (3f - 2f * x);
     }
 
     private static float clamp01(float v) {
@@ -1188,11 +1376,12 @@ public class ProBundleShowcaseView extends FrameLayout {
             cinematicAnimator = null;
         }
         cinematicRunning = false;
+        if (cinematicListener != null) cinematicListener.onCinematicActive(false);
         if (cinematicGL != null) {
             cinematicGL.setFlashGlow(0f);
             cinematicGL.setSweep(0f, 0f);
+            cinematicGL.setAmbient(1f);
         }
-        if (cinematicFlare != null) cinematicFlare.setFlare(0f, 0f, 0f);
         phoneWrapper.setAlpha(1f);
         if (cinematicHost == null) {
             if (bootEnabled) frontSurface.startBoot();
@@ -1221,12 +1410,13 @@ public class ProBundleShowcaseView extends FrameLayout {
             cinematicAnimator = null;
         }
         cinematicRunning = false;
+        if (cinematicListener != null) cinematicListener.onCinematicActive(false);
         phoneWrapper.setAlpha(1f);
         if (cinematicGL != null) {
             cinematicGL.setFlashGlow(0f);
             cinematicGL.setSweep(0f, 0f);
+            cinematicGL.setAmbient(1f);
         }
-        if (cinematicFlare != null) cinematicFlare.setFlare(0f, 0f, 0f);
         if (cinematicHost != null) {
             cinematicHost.animate().cancel();
             cinematicHost.setVisibility(View.GONE);
@@ -1307,59 +1497,63 @@ public class ProBundleShowcaseView extends FrameLayout {
     }
 
     /**
-     * A camera-flash lens flare: a core bloom, star rays and a hot point, drawn above the
-     * phone at the LED's real position so the flash reads as coming from the device.
+     * The industry-style outline beam: a thin light that traces the phone's silhouette
+     * from one point around the whole frame, like a wireframe reveal in product films.
      */
-    private static class FlareView extends View {
+    private static class OutlineTracerView extends View {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Path wedge = new Path();
-        private float cx, cy, intensity;
+        private final Path path = new Path();
+        private final android.graphics.Matrix matrix = new android.graphics.Matrix();
+        private float cx, cy, halfW, halfH, radius, progress, alpha;
 
-        FlareView(Context context) {
+        OutlineTracerView(Context context) {
             super(context);
             setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
         }
 
-        void setFlare(float x, float y, float value) {
-            cx = x;
-            cy = y;
-            intensity = value;
+        void setGeometry(float cx, float cy, float halfW, float halfH, float radius) {
+            this.cx = cx;
+            this.cy = cy;
+            this.halfW = halfW;
+            this.halfH = halfH;
+            this.radius = radius;
+            invalidate();
+        }
+
+        void setTrace(float progress, float alpha) {
+            this.progress = progress;
+            this.alpha = alpha;
             invalidate();
         }
 
         @Override
         protected void onDraw(Canvas canvas) {
-            if (intensity <= 0.002f) return;
-            float i = Math.min(1f, intensity);
-            float r = getWidth() * 0.30f;
-            // Core bloom.
-            paint.setShader(new RadialGradient(cx, cy, r,
-                    new int[]{withA(0xFFFFFFFF, 0.95f * i),
-                            withA(0xFFFFF3D8, 0.38f * i),
-                            withA(0xFFFFF3D8, 0f)},
-                    new float[]{0f, 0.28f, 1f}, Shader.TileMode.CLAMP));
-            canvas.drawCircle(cx, cy, r, paint);
-            // Star rays: long/short alternating, fading toward their tips.
-            for (int k = 0; k < 6; k++) {
-                float ang = k * 60f + 12f;
-                float len = r * ((k % 2 == 0) ? 1.75f : 0.95f);
-                canvas.save();
-                canvas.rotate(ang, cx, cy);
-                paint.setShader(new LinearGradient(cx, cy, cx + len, cy,
-                        new int[]{withA(0xFFFFFFFF, 0.55f * i), withA(0xFFFFFFFF, 0f)},
-                        new float[]{0f, 1f}, Shader.TileMode.CLAMP));
-                wedge.reset();
-                wedge.moveTo(cx, cy - r * 0.055f);
-                wedge.lineTo(cx + len, cy);
-                wedge.lineTo(cx, cy + r * 0.055f);
-                wedge.close();
-                canvas.drawPath(wedge, paint);
-                canvas.restore();
+            if (alpha <= 0.002f || halfW <= 0f) return;
+            path.reset();
+            path.addRoundRect(new RectF(cx - halfW, cy - halfH, cx + halfW, cy + halfH),
+                    radius, radius, Path.Direction.CW);
+            // The silhouette stays faintly present between beam passes.
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setShader(null);
+            paint.setStrokeWidth(Math.max(1.5f, halfW * 0.012f));
+            paint.setColor(withA(0xFFFFFFFF, 0.05f * alpha));
+            canvas.drawPath(path, paint);
+            // The traveling beam: one bright segment of a sweep gradient, plus its glow.
+            for (int pass = 0; pass < 2; pass++) {
+                float peak = pass == 0 ? 0.85f : 0.22f;
+                SweepGradient beam = new SweepGradient(cx, cy,
+                        new int[]{withA(0xFFFFF6E4, 0f), withA(0xFFFFF6E4, peak * 0.25f * alpha),
+                                withA(0xFFFFF6E4, peak * alpha),
+                                withA(0xFFFFF6E4, peak * 0.25f * alpha), withA(0xFFFFF6E4, 0f)},
+                        new float[]{0f, 0.42f, 0.5f, 0.58f, 1f});
+                matrix.setRotate(-90f + 360f * progress, cx, cy);
+                beam.setLocalMatrix(matrix);
+                paint.setShader(beam);
+                paint.setStrokeWidth(pass == 0 ? Math.max(2f, halfW * 0.020f)
+                        : Math.max(6f, halfW * 0.060f));
+                canvas.drawPath(path, paint);
             }
             paint.setShader(null);
-            // Hot core point.
-            paint.setColor(withA(0xFFFFFFFF, i));
-            canvas.drawCircle(cx, cy, Math.max(2f, r * 0.05f), paint);
         }
 
         private static int withA(int color, float a) {
@@ -1368,7 +1562,7 @@ public class ProBundleShowcaseView extends FrameLayout {
         }
     }
 
-    // -------------------------------------------------------------- helpers
+        // -------------------------------------------------------------- helpers
 
     private boolean motionAllowed() {
         return android.provider.Settings.Global.getFloat(getContext().getContentResolver(),

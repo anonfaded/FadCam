@@ -6,6 +6,8 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.RadialGradient;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.SurfaceTexture;
@@ -46,7 +48,8 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private static final float CORNER_RADIUS = 0.135f; // matches the texture's rounded silhouette
     private static final float FOV = 30f;              // a product-shot lens
     private static final float CAM_Z = 3.2f;
-    private static final float[] LIGHT_DIR = {-0.45f, 0.60f, 0.80f};
+    // Key light mostly from the left, slightly high — reveals side edges and thickness.
+    private static final float[] LIGHT_DIR = {-0.62f, 0.30f, 0.72f};
 
     // Button/visor placement (fractions of the phone, top-down; keep in sync with the surface).
     private static final float BTN_PROTRUSION = 0.016f;
@@ -69,9 +72,12 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
 
     private int program;
     private int aPos, aNormal, aUV, uMVP, uModel, uTex, uUseTex, uColor, uSpec, uLightDir, uFade, uRim;
-    private int uSweep, uSweepX;
+    private int uSweep, uSweepX, uSweepK, uAmbient, uBoost;
 
     private FloatBuffer bufFront, bufBack, bufMetal, bufVisor, bufLenses, bufFlash, bufGlint, bufCores;
+    private FloatBuffer bufGlare;
+    private int glareTex;
+    private Bitmap glareBitmap;
     private FloatBuffer bufVolUp, bufVolDown, bufPower;
     private FloatBuffer bufPanel;
     private volatile int pressedButton = 0; // 1 vol up, 2 vol down, 3 power
@@ -91,6 +97,7 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private volatile float flashGlow = 0f;
     private volatile float sweepIntensity = 0f;
     private volatile float sweepX = 0f;
+    private volatile float ambient = 1f;
     private volatile float cropFraction = 1f;
     private final float[] screenRect = {0f, 0f, 1f, 1f};
     private FloatBuffer bufScreen;
@@ -133,6 +140,15 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     public void setSweep(float intensity, float worldX) {
         sweepIntensity = Math.max(0f, Math.min(1f, intensity));
         sweepX = worldX;
+        requestRender();
+    }
+
+    /**
+     * Studio exposure 0..1: scales the object's whole shaded response. At low values the
+     * phone is a barely visible silhouette in the dark and only the traveling beam shows.
+     */
+    public void setAmbient(float value) {
+        ambient = Math.max(0f, Math.min(1f, value));
         requestRender();
     }
 
@@ -401,27 +417,52 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         GLES20.glUniform1f(uFade, fadeAt);
         GLES20.glUniform1f(uSweep, sweepIntensity);
         GLES20.glUniform1f(uSweepX, sweepX);
+        GLES20.glUniform1f(uAmbient, ambient);
+        GLES20.glUniform1f(uBoost, 0f);
+        if (glareTex == 0) {
+            if (glareBitmap == null) glareBitmap = buildGlareBitmap();
+            int[] tex = new int[1];
+            GLES20.glGenTextures(1, tex, 0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, tex[0]);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, glareBitmap, 0);
+            glareTex = tex[0];
+        }
 
-        if (bufScreen != null) drawGroup(bufScreen, screenTex, 0.03f, 0.06f, 0.10f, 0.11f, 0.13f);
-        if (bufPanel != null) drawGroup(bufPanel, backTex, 0.05f, 0.10f, 0.10f, 0.11f, 0.13f);
-        drawGroup(bufMetal, 0, 0.42f, 0.45f, 0.21f, 0.22f, 0.245f);
+        // Per-group sweep response: the frame carries the beam, glass is softer, the matte
+        // visor slab stays dark, lens glass glints.
+        if (bufScreen != null) drawGroup(bufScreen, screenTex, 0.22f, 0.06f, 0.10f, 0.11f, 0.13f, 1.0f);
+        if (bufPanel != null) drawGroup(bufPanel, backTex, 0.05f, 0.10f, 0.10f, 0.11f, 0.13f, 0.8f);
+        drawGroup(bufMetal, 0, 0.42f, 0.45f, 0.21f, 0.22f, 0.245f, 1.1f);
         // Inward direction: the left buttons sink toward +x, the right toward -x.
         drawButtonGroup(bufVolUp, 1, 1f);
         drawButtonGroup(bufVolDown, 2, 1f);
         drawButtonGroup(bufPower, 3, -1f);
-        drawGroup(bufVisor, 0, 0.06f, 0.30f, 0.105f, 0.11f, 0.125f);
-        drawGroup(bufLenses, 0, 0.55f, 0.08f, 0.045f, 0.05f, 0.065f);
-        drawGroup(bufCores, 0, 0.45f, 0.08f, 0.09f, 0.085f, 0.15f);
+        drawGroup(bufVisor, 0, 0.06f, 0.22f, 0.125f, 0.132f, 0.148f, 0.10f);
+        drawGroup(bufLenses, 0, 0.55f, 0.08f, 0.045f, 0.05f, 0.065f, 0.4f);
+        drawGroup(bufCores, 0, 0.45f, 0.08f, 0.09f, 0.085f, 0.15f, 0.4f);
         if (flashGlow > 0.01f) {
             // The LED itself fires (3D, on the camera island): warm tint washes out to pure
-            // white and the rim term blooms it, like a real LED catching a lens.
+            // white and the rim term blooms it, like a real LED catching a lens. The LED is
+            // exempt from the studio exposure: it is the light source.
             float g = flashGlow;
             drawGroup(bufFlash, 0, 0.35f, 0.08f + 1.4f * g,
-                    0.93f + 0.07f * g, 0.90f + 0.10f * g, 0.70f + 0.30f * g);
+                    0.93f + 0.07f * g, 0.90f + 0.10f * g, 0.70f + 0.30f * g, 1.0f, true);
         } else {
-            drawGroup(bufFlash, 0, 0.35f, 0.08f, 0.93f, 0.90f, 0.70f);
+            drawGroup(bufFlash, 0, 0.35f, 0.08f, 0.93f, 0.90f, 0.70f, 1.0f);
         }
-        drawGroup(bufGlint, 0, 0.30f, 0.05f, 0.28f, 0.32f, 0.42f);
+        drawGroup(bufGlint, 0, 0.30f, 0.05f, 0.28f, 0.32f, 0.42f, 0.4f);
+        // The LED halo: additive, unlit, pinned to the LED — exactly on the flash.
+        if (flashGlow > 0.01f && bufGlare != null && glareTex != 0) {
+            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE);
+            GLES20.glUniform1f(uBoost, 1.15f * flashGlow);
+            drawGroup(bufGlare, glareTex, 0f, 0f, 1f, 1f, 1f, 1f, true);
+            GLES20.glUniform1f(uBoost, 0f);
+            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        }
     }
 
     /** Draws a button, sinking it along its axis while pressed. */
@@ -435,21 +476,31 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
             Matrix.multiplyMM(pressedMvp, 16, proj, 0, pressedMvp, 16);
             GLES20.glUniformMatrix4fv(uMVP, 1, false, pressedMvp, 16);
             GLES20.glUniformMatrix4fv(uModel, 1, false, pressedMvp, 0);
-            drawGroup(buffer, 0, 0.30f, 0.35f, 0.22f, 0.23f, 0.26f);
+            drawGroup(buffer, 0, 0.30f, 0.35f, 0.22f, 0.23f, 0.26f, 1.0f);
             GLES20.glUniformMatrix4fv(uMVP, 1, false, mvp, 0);
             GLES20.glUniformMatrix4fv(uModel, 1, false, model, 0);
         } else {
-            drawGroup(buffer, 0, 0.30f, 0.35f, 0.20f, 0.21f, 0.235f);
+            drawGroup(buffer, 0, 0.30f, 0.35f, 0.20f, 0.21f, 0.235f, 1.0f);
         }
     }
 
     private void drawGroup(FloatBuffer buffer, int texture, float specular,
                            float cr, float cg, float cb) {
-        drawGroup(buffer, texture, specular, 0.05f, cr, cg, cb);
+        drawGroup(buffer, texture, specular, 0.05f, cr, cg, cb, 1f, false);
     }
 
     private void drawGroup(FloatBuffer buffer, int texture, float specular, float rim,
                            float cr, float cg, float cb) {
+        drawGroup(buffer, texture, specular, rim, cr, cg, cb, 1f, false);
+    }
+
+    private void drawGroup(FloatBuffer buffer, int texture, float specular, float rim,
+                           float cr, float cg, float cb, float sweepK) {
+        drawGroup(buffer, texture, specular, rim, cr, cg, cb, sweepK, false);
+    }
+
+    private void drawGroup(FloatBuffer buffer, int texture, float specular, float rim,
+                           float cr, float cg, float cb, float sweepK, boolean emissive) {
         if (buffer == null) return;
         buffer.position(0);
         GLES20.glVertexAttribPointer(aPos, 3, GLES20.GL_FLOAT, false, 32, buffer);
@@ -472,7 +523,11 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         GLES20.glUniform4f(uColor, cr, cg, cb, 1f);
         GLES20.glUniform1f(uSpec, specular);
         GLES20.glUniform1f(uRim, rim);
+        GLES20.glUniform1f(uSweepK, sweepK);
+        // Emissive parts (the flash LED) ignore the studio exposure: they ARE the light.
+        GLES20.glUniform1f(uAmbient, emissive ? 1f : ambient);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, buffer.capacity() / 8);
+        GLES20.glUniform1f(uAmbient, ambient);
     }
 
     private int uploadBitmap(Bitmap bitmap, int existing) {
@@ -535,6 +590,9 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "uniform float uFade;\n" +
                 "uniform float uSweep;\n" +
                 "uniform float uSweepX;\n" +
+                "uniform float uSweepK;\n" +
+                "uniform float uAmbient;\n" +
+                "uniform float uBoost;\n" +
                 "void main() {\n" +
                 "  vec3 n = normalize(vNormal);\n" +
                 "  vec3 l = normalize(uLightDir);\n" +
@@ -546,11 +604,21 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "  vec3 h = normalize(l + viewDir);\n" +
                 "  float spec = pow(max(dot(n, h), 0.0), 48.0) * uSpec;\n" +
                 "  float rim = pow(1.0 - abs(n.z), 3.0) * uRim;\n" +
-                "  vec3 color = base * (0.44 + 0.66 * diff) + vec3(spec + rim);\n" +
-                // A soft light band gliding across the product (motion-graphics shine).
-                "  float sd = (vWorld.x - uSweepX) * 5.0;\n" +
-                "  float band = exp(-sd * sd) * uSweep;\n" +
-                "  color += vec3(band * 0.32, band * 0.31, band * 0.30);\n" +
+                // uAmbient is the studio exposure: in the dark reveal only the traveling
+                // beam is visible; the object emerges as the exposure rises.
+                "  vec3 color = (base * (0.44 + 0.66 * diff) + vec3(spec + rim)) * uAmbient;\n" +
+                // A strip light glides past the product. The response is a soft specular
+                // lobe, so ONE coherent highlight slides across the real surfaces instead
+                // of parts blinking independently. uSweepK tunes each material: the frame
+                // catches it, the matte visor slab stays dark, the lens glass glints.
+                "  vec3 slPos = vec3(uSweepX, 1.05, 2.30);\n" +
+                "  vec3 slL = normalize(slPos - vWorld);\n" +
+                "  vec3 slH = normalize(slL + viewDir);\n" +
+                "  float strip = pow(max(dot(n, slH), 0.0), 8.0);\n" +
+                "  float band = strip * (0.25 + uSpec * 1.2) * uSweep * uSweepK;\n" +
+                "  color += vec3(band * 0.88, band * 0.87, band * 0.84);\n" +
+                // Unlit halo: the LED glare is a light source, not a shaded surface.
+                "  color += vec3(uBoost) * tex.a;\n" +
                 "  float fade = uFade > 0.5 ? smoothstep(0.0, uFade, gl_FragCoord.y) : 1.0;\n" +
                 "  gl_FragColor = vec4(color, alpha * fade);\n" +
                 "}\n");
@@ -572,6 +640,40 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         uRim = GLES20.glGetUniformLocation(program, "uRim");
         uSweep = GLES20.glGetUniformLocation(program, "uSweep");
         uSweepX = GLES20.glGetUniformLocation(program, "uSweepX");
+        uSweepK = GLES20.glGetUniformLocation(program, "uSweepK");
+        uAmbient = GLES20.glGetUniformLocation(program, "uAmbient");
+        uBoost = GLES20.glGetUniformLocation(program, "uBoost");
+    }
+
+    /** The LED halo texture: soft warm core with faint star rays. */
+    private Bitmap buildGlareBitmap() {
+        int size = 128;
+        Bitmap bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bmp);
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        float cx = size / 2f;
+        float cy = size / 2f;
+        p.setShader(new RadialGradient(cx, cy, size * 0.5f,
+                new int[]{0xFFFFFFFF, 0xCCFFF6E0, 0x33FFF6E0, 0x00FFF6E0},
+                new float[]{0f, 0.16f, 0.45f, 1f}, Shader.TileMode.CLAMP));
+        c.drawCircle(cx, cy, size * 0.5f, p);
+        p.setShader(null);
+        for (int k = 0; k < 6; k++) {
+            float ang = k * 60f + 12f;
+            float len = size * 0.5f * (k % 2 == 0 ? 1f : 0.6f);
+            c.save();
+            c.rotate(ang, cx, cy);
+            p.setShader(new LinearGradient(cx, cy, cx + len, cy,
+                    new int[]{0x55FFFFFF, 0x00FFFFFF}, null, Shader.TileMode.CLAMP));
+            Path ray = new Path();
+            ray.moveTo(cx, cy - size * 0.03f);
+            ray.lineTo(cx + len, cy);
+            ray.lineTo(cx, cy + size * 0.03f);
+            ray.close();
+            c.drawPath(ray, p);
+            c.restore();
+        }
+        return bmp;
     }
 
     private int compile(int type, String src) {
@@ -633,7 +735,20 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
             cylinder(glint, lensX - barH * 0.055f, midY + barH * 0.055f, zBack - 0.013f, zBack - 0.0145f,
                     barH * 0.030f, 20);
         }
-        cylinder(flash, vx0 + barH * 0.75f, midY, zBack, zBack - 0.007f, barH * 0.125f, 28);
+        float ledX = vx0 + barH * 0.75f;
+        cylinder(flash, ledX, midY, zBack, zBack - 0.007f, barH * 0.125f, 28);
+        // The LED halo: a glow quad pinned to the LED itself, so it rotates, scales and
+        // projects exactly with the camera island — never a floating overlay.
+        float gh = 0.085f;
+        float gz = zBack - 0.008f;
+        List<Float> glare = new ArrayList<>();
+        vertex(glare, ledX - gh, midY + gh, gz, 0f, 0f, -1f, 0f, 0f);
+        vertex(glare, ledX + gh, midY + gh, gz, 0f, 0f, -1f, 1f, 0f);
+        vertex(glare, ledX + gh, midY - gh, gz, 0f, 0f, -1f, 1f, 1f);
+        vertex(glare, ledX - gh, midY + gh, gz, 0f, 0f, -1f, 0f, 0f);
+        vertex(glare, ledX + gh, midY - gh, gz, 0f, 0f, -1f, 1f, 1f);
+        vertex(glare, ledX - gh, midY - gh, gz, 0f, 0f, -1f, 0f, 1f);
+        bufGlare = toBuffer(glare);
         cylinder(lenses, vx0 + barH * 1.22f, midY, zBack, zBack - 0.005f, barH * 0.10f, 28);
         // Front camera: a small reflective lens seated in the punch-hole, shaded like the rear.
         float camY = PHONE_ASPECT / 2f - 0.117f;

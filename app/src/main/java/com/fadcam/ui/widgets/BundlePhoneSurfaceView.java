@@ -80,6 +80,7 @@ public class BundlePhoneSurfaceView extends View {
     private final String[] labels = new String[3];
     private final Drawable flag;
     private final Typeface labelTypeface;
+    private final Typeface materialIcons;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMM d", Locale.getDefault());
 
     private float screenR;
@@ -94,6 +95,9 @@ public class BundlePhoneSurfaceView extends View {
     private float restartProgress = 1f;
     private ValueAnimator restartAnim;
     private final RectF notifPowerRect = new RectF();
+    private final RectF notifTorchRect = new RectF();
+    private boolean torchAvailable = false;
+    private boolean torchOn = false;
     private boolean powerMenuOpen;
     private final RectF powerMenuRestartRect = new RectF();
     private final RectF powerMenuCancelRect = new RectF();
@@ -106,6 +110,8 @@ public class BundlePhoneSurfaceView extends View {
     private final Path screenClipPath = new Path();
     private int lastPreviewApp = 0;
     private boolean recentsOpen = false;
+    private float recentsProgress = 0f;
+    private ValueAnimator recentsAnim;
     private float iconTopY;
     private float iconSizePx;
 
@@ -168,6 +174,7 @@ public class BundlePhoneSurfaceView extends View {
         Typeface ubuntu = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.ubuntu_regular);
         labelTypeface = ubuntu != null ? ubuntu : Typeface.create("sans-serif", Typeface.NORMAL);
         labelBold = Typeface.create(labelTypeface, Typeface.BOLD);
+        materialIcons = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.materialicons);
         flag = ContextCompat.getDrawable(context, R.drawable.fadseclab_flag);
         int[] iconRes = {R.mipmap.ic_launcher_notes, R.mipmap.ic_launcher_calculator, R.mipmap.ic_launcher_weather};
         int[] labelRes = {R.string.pro_screen_notes, R.string.pro_screen_calculator, R.string.pro_screen_weather};
@@ -490,6 +497,7 @@ public class BundlePhoneSurfaceView extends View {
             return both;
         }
         if (notifPowerRect.contains(x, y)) return notifPowerRect;
+        if (torchAvailable && notifTorchRect.contains(x, y)) return notifTorchRect;
         if (accessDialogOpen && dialogOkRect.contains(x, y)) return dialogOkRect;
         if (powerMenuOpen) {
             if (powerMenuRestartRect.contains(x, y)) return powerMenuRestartRect;
@@ -506,6 +514,18 @@ public class BundlePhoneSurfaceView extends View {
 
     public boolean notifPowerAt(float x, float y) {
         return shadeProgress > 0.6f && notifPowerRect.contains(x, y);
+    }
+
+    /** The real torch state, straight from the CameraManager TorchCallback. */
+    public void setTorchState(boolean available, boolean on) {
+        if (torchAvailable == available && torchOn == on) return;
+        torchAvailable = available;
+        torchOn = on;
+        invalidate();
+    }
+
+    public boolean torchButtonAt(float x, float y) {
+        return shadeProgress > 0.6f && torchAvailable && notifTorchRect.contains(x, y);
     }
 
     public void startRestart() {
@@ -580,7 +600,20 @@ public class BundlePhoneSurfaceView extends View {
 
     public void showRecents(boolean open) {
         recentsOpen = open;
-        invalidate();
+        if (!motionAllowed()) {
+            recentsProgress = open ? 1f : 0f;
+            invalidate();
+            return;
+        }
+        if (recentsAnim != null) recentsAnim.cancel();
+        recentsAnim = ValueAnimator.ofFloat(recentsProgress, open ? 1f : 0f);
+        recentsAnim.setDuration(open ? 220 : 150);
+        recentsAnim.setInterpolator(new DecelerateInterpolator(1.6f));
+        recentsAnim.addUpdateListener(a -> {
+            recentsProgress = (float) a.getAnimatedValue();
+            invalidate();
+        });
+        recentsAnim.start();
     }
 
     public boolean isRecentsOpen() {
@@ -1074,9 +1107,18 @@ public class BundlePhoneSurfaceView extends View {
             paint.setTextSize(unit * 0.72f);
             paint.setTextAlign(Paint.Align.CENTER);
             paint.setFakeBoldText(true);
-            boolean overFill = batteryPercent >= 52;
-            paint.setColor(withAlpha(overFill ? 0xFF0A0B0E : 0xFFE9E9EC, alpha));
-            canvas.drawText(String.valueOf(batteryPercent), battery.centerX(), mid + unit * 0.23f, paint);
+            // Two-pass contrast (like real phones): light digits everywhere, then dark
+            // digits clipped to the filled part — readable over BOTH green and black.
+            String pctText = String.valueOf(batteryPercent);
+            float pctY = mid + unit * 0.23f;
+            paint.setColor(withAlpha(0xFFE9E9EC, alpha));
+            canvas.drawText(pctText, battery.centerX(), pctY, paint);
+            canvas.save();
+            canvas.clipRect(battery.left + inset, battery.top + inset,
+                    battery.left + inset + fillW, battery.bottom - inset);
+            paint.setColor(withAlpha(0xFF0A0B0E, alpha));
+            canvas.drawText(pctText, battery.centerX(), pctY, paint);
+            canvas.restore();
             paint.setFakeBoldText(false);
             paint.setTypeface(labelTypeface);
             paint.setTextAlign(Paint.Align.LEFT);
@@ -1130,18 +1172,9 @@ public class BundlePhoneSurfaceView extends View {
         paint.setColor(0xF7000000);
         canvas.drawRoundRect(screen, screenR, screenR, paint);
 
-        // Back chevron.
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(Math.max(1.5f, pw * 0.009f));
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setColor(0xFFE9E9EC);
-        float cx = previewBackRect.centerX();
-        float cy = previewBackRect.centerY();
-        float u = previewBackRect.width() * 0.22f;
-        canvas.drawLine(cx + u * 0.5f, cy - u, cx - u * 0.5f, cy, paint);
-        canvas.drawLine(cx - u * 0.5f, cy, cx + u * 0.5f, cy + u, paint);
-        paint.setStrokeCap(Paint.Cap.BUTT);
-        paint.setStyle(Paint.Style.FILL);
+        // Back chevron (Material Icons).
+        drawIcon(canvas, "chevron_left", previewBackRect.centerX(), previewBackRect.centerY(),
+                pw * 0.085f, 0xFFE9E9EC);
 
         paint.setTypeface(labelTypeface);
         paint.setTextAlign(Paint.Align.CENTER);
@@ -1278,13 +1311,10 @@ public class BundlePhoneSurfaceView extends View {
         paint.setColor(withAlpha(0xFFC9C9CF, navA));
 
         float third = navDock.width() / 3f;
-        float bx = navDock.left + third / 2f;
-        canvas.drawLine(bx + u * 0.55f, cy - u * 0.75f, bx - u * 0.45f, cy, paint);
-        canvas.drawLine(bx - u * 0.45f, cy, bx + u * 0.55f, cy + u * 0.75f, paint);
-        canvas.drawCircle(navDock.centerX(), cy, u * 0.85f, paint);
-        float rx = navDock.right - third / 2f;
-        canvas.drawRoundRect(new RectF(rx - u * 0.75f, cy - u * 0.75f, rx + u * 0.75f, cy + u * 0.75f),
-                u * 0.22f, u * 0.22f, paint);
+        int navInk = withAlpha(0xFFC9C9CF, navA);
+        drawIcon(canvas, "arrow_back_ios", navDock.left + third / 2f, cy, pw * 0.048f, navInk);
+        drawIcon(canvas, "radio_button_unchecked", navDock.centerX(), cy, pw * 0.051f, navInk);
+        drawIcon(canvas, "crop_square", navDock.right - third / 2f, cy, pw * 0.051f, navInk);
         paint.setStrokeCap(Paint.Cap.BUTT);
         paint.setStyle(Paint.Style.FILL);
         canvas.restore();
@@ -1292,14 +1322,18 @@ public class BundlePhoneSurfaceView extends View {
 
     /** Minimal recents: a card for the last opened app. */
     private void drawRecents(Canvas canvas) {
-        if (!recentsOpen) return;
+        if (recentsProgress <= 0.001f) return;
         float pw = phone.width();
+        float rp = easeOut(recentsProgress);
         canvas.save();
         canvas.clipPath(screenClipPath);
-        canvas.drawColor(0x99000000);
+        canvas.drawColor(withAlpha(0x99000000, recentsProgress));
         RectF card = new RectF(screen.left + pw * 0.10f, screen.top + screen.height() * 0.18f,
                 screen.right - pw * 0.10f, screen.top + screen.height() * 0.66f);
-        paint.setColor(0xFF1C1E24);
+        float cardScale = 0.94f + 0.06f * rp;
+        canvas.save();
+        canvas.scale(cardScale, cardScale, card.centerX(), card.centerY());
+        paint.setColor(withAlpha(0xFF1C1E24, recentsProgress));
         canvas.drawRoundRect(card, pw * 0.05f, pw * 0.05f, paint);
         Drawable icon = lastPreviewApp > 0 ? icons[lastPreviewApp - 1] : icons[0];
         if (icon != null) {
@@ -1316,9 +1350,10 @@ public class BundlePhoneSurfaceView extends View {
         canvas.drawText(lastPreviewApp > 0 ? labels[lastPreviewApp - 1] : labels[0],
                 card.left + pw * 0.06f, card.top + pw * 0.20f + pw * 0.075f, paint);
         paint.setTextSize(pw * 0.040f);
-        paint.setColor(0xFF9A9AA0);
+        paint.setColor(withAlpha(0xFF9A9AA0, recentsProgress));
         canvas.drawText(getContext().getString(R.string.pro_showcase_recents_hint),
                 card.left + pw * 0.06f, card.bottom - pw * 0.06f, paint);
+        canvas.restore();
         canvas.restore();
     }
 
@@ -1384,42 +1419,46 @@ public class BundlePhoneSurfaceView extends View {
         // Mic + camera privacy indicators (tap for the demo disclaimer). Bigger than the
         // old glyphs and placed on the title row, left of "now", so they stay readable.
         float u = pw * 0.052f;
-        float iconY = card.centerY() - pw * 0.015f;
-        float iconsRight = card.right - pw * 0.045f - nowW - pw * 0.035f;
+        float iconY = card.centerY() - pw * 0.042f;
+        float iconsRight = card.right - pw * 0.045f - nowW - pw * 0.012f;
         float camW = u * 1.9f;
         float micW = u * 1.0f;
-        float gap = u * 0.5f;
+        float gap = u * 0.26f;
         float iconsLeft = iconsRight - (camW + gap + micW);
         notifCamRect.set(iconsLeft, iconY - u * 0.78f, iconsLeft + camW, iconY + u * 0.78f);
         notifMicRect.set(notifCamRect.right + gap, iconY - u * 0.78f,
                 notifCamRect.right + gap + micW, iconY + u * 0.78f);
-        paint.setColor(0xFF9A9AA0);
-        // Camera: body + top bump + lens with a ring (reads clearly at small sizes).
-        float ccx = notifCamRect.centerX();
-        canvas.drawRoundRect(new RectF(ccx - u * 0.85f, iconY - u * 0.50f,
-                ccx + u * 0.85f, iconY + u * 0.50f), u * 0.24f, u * 0.24f, paint);
-        canvas.drawRoundRect(new RectF(ccx - u * 0.68f, iconY - u * 0.76f,
-                ccx - u * 0.18f, iconY - u * 0.40f), u * 0.10f, u * 0.10f, paint);
-        paint.setColor(0xFF23252B);
-        canvas.drawCircle(ccx + u * 0.06f, iconY, u * 0.36f, paint);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(Math.max(1.2f, u * 0.15f));
-        paint.setColor(0xFF9A9AA0);
-        canvas.drawCircle(ccx + u * 0.06f, iconY, u * 0.36f, paint);
+        // Privacy indicators as Material Icons — the same glyphs Android itself uses.
+        drawIcon(canvas, "photo_camera", notifCamRect.centerX(), iconY, u * 1.45f, 0xFF9A9AA0);
+        drawIcon(canvas, "mic", notifMicRect.centerX(), iconY, u * 1.45f, 0xFF9A9AA0);
+
+        // Quick action: Torch (toggles the REAL phone torch; state from the real callback).
+        notifTorchRect.set(panel.left + pw * 0.055f, card.bottom + pw * 0.045f,
+                panel.left + pw * 0.055f + pw * 0.24f, card.bottom + pw * 0.045f + pw * 0.14f);
+        float torchAlpha = torchAvailable ? 1f : 0.4f;
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0xFFC6C6CC);
-        canvas.drawCircle(ccx + u * 0.06f, iconY, u * 0.12f, paint);
-        // Microphone: capsule + cradle arc + stem.
-        float mcx = notifMicRect.centerX();
-        paint.setColor(0xFF9A9AA0);
-        canvas.drawRoundRect(new RectF(mcx - u * 0.30f, iconY - u * 0.68f,
-                mcx + u * 0.30f, iconY + u * 0.16f), u * 0.30f, u * 0.30f, paint);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(Math.max(1.2f, u * 0.15f));
-        canvas.drawArc(new RectF(mcx - u * 0.55f, iconY - u * 0.46f,
-                mcx + u * 0.55f, iconY + u * 0.64f), 0f, 180f, false, paint);
-        canvas.drawLine(mcx, iconY + u * 0.64f, mcx, iconY + u * 0.88f, paint);
-        paint.setStyle(Paint.Style.FILL);
+        // Active = solid gold with dark ink; resting = the exact Restart glass, so the
+        // button is dark at rest and only turns yellow when the torch is really on.
+        paint.setColor(withAlpha(torchOn ? 0xFFE8C77B : 0x1AFFFFFF, torchAlpha));
+        canvas.drawRoundRect(notifTorchRect, notifTorchRect.height() / 2f,
+                notifTorchRect.height() / 2f, paint);
+        float tu = pw * 0.036f;
+        float tcx = notifTorchRect.left + pw * 0.040f;
+        float tcy = notifTorchRect.centerY();
+        int torchInk = torchOn ? 0xFF101112 : 0xFFE9E9EC;
+        // Material Icons ligature — the same icon font the app uses everywhere.
+        paint.setTypeface(materialIcons);
+        paint.setTextSize(pw * 0.058f);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setColor(withAlpha(torchInk, torchAlpha));
+        float torchBaseline = tcy - (paint.descent() + paint.ascent()) / 2f;
+        canvas.drawText("flashlight_on", tcx, torchBaseline, paint);
+        paint.setTextAlign(Paint.Align.LEFT);
+        paint.setTypeface(labelTypeface);
+        paint.setTextSize(pw * 0.042f);
+        paint.setColor(withAlpha(torchInk, torchAlpha));
+        canvas.drawText(getContext().getString(R.string.pro_showcase_torch),
+                tcx + tu * 0.95f, tcy + pw * 0.015f, paint);
 
         // Quick action: Restart (the mockup's own restart, demo theater included).
         notifPowerRect.set(panel.right - pw * 0.330f, card.bottom + pw * 0.045f,
@@ -1430,19 +1469,12 @@ public class BundlePhoneSurfaceView extends View {
         float pu = pw * 0.036f;
         float pcx = notifPowerRect.left + pw * 0.055f;
         float pcy = notifPowerRect.centerY();
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(Math.max(1.5f, pw * 0.007f));
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setColor(0xFFE9E9EC);
-        // Real power glyph: ring with a top gap + the vertical stem.
-        canvas.drawArc(new RectF(pcx - pu, pcy - pu, pcx + pu, pcy + pu), -58f, 296f, false, paint);
-        canvas.drawLine(pcx, pcy - pu * 1.05f, pcx, pcy + pu * 0.08f, paint);
-        paint.setStrokeCap(Paint.Cap.BUTT);
-        paint.setStyle(Paint.Style.FILL);
+        // Power glyph as the Material Icons ligature, like the rest of the app.
+        drawIcon(canvas, "power_settings_new", pcx, pcy, pw * 0.062f, 0xFFE9E9EC);
         paint.setTextSize(pw * 0.042f);
         paint.setColor(0xFFE9E9EC);
         canvas.drawText(getContext().getString(R.string.pro_showcase_restart),
-                pcx + pu * 1.9f, pcy + pw * 0.015f, paint);
+                pcx + pu * 1.15f, pcy + pw * 0.015f, paint);
 
         paint.setColor(0x33FFFFFF);
         RectF handle = new RectF(panel.centerX() - pw * 0.10f, panel.bottom - pw * 0.09f,
@@ -1630,19 +1662,10 @@ public class BundlePhoneSurfaceView extends View {
         paint.setColor(0xCCE9E9EC);
         canvas.drawText(getContext().getString(R.string.pro_showcase_swipe_unlock), screen.centerX(), hintY, paint);
 
-        // Animated up/down arrow above the hint.
+        // Animated up arrow above the hint (Material Icons).
         float bob = (float) Math.sin(lockBob * Math.PI * 2.0) * dp(3.5f);
-        float cx = screen.centerX();
-        float u = pw * 0.045f;
-        float ay = hintY - u * 2.2f + bob;
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(Math.max(1.5f, pw * 0.008f));
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setColor(0x99E9E9EC);
-        canvas.drawLine(cx - u * 0.6f, ay + u * 0.6f, cx, ay, paint);
-        canvas.drawLine(cx, ay, cx + u * 0.6f, ay + u * 0.6f, paint);
-        paint.setStrokeCap(Paint.Cap.BUTT);
-        paint.setStyle(Paint.Style.FILL);
+        drawIcon(canvas, "keyboard_arrow_up", screen.centerX(), hintY - pw * 0.145f + bob,
+                pw * 0.080f, 0x99E9E9EC);
         paint.setTextAlign(Paint.Align.LEFT);
         canvas.restore();
     }
@@ -1658,30 +1681,11 @@ public class BundlePhoneSurfaceView extends View {
         canvas.drawRoundRect(hud, hudH / 2f, hudH / 2f, paint);
 
         float unit = pw * 0.045f;
-        float wx = hud.left + hudH * 0.55f;
+        float wx = hud.left + hudH * 0.60f;
         float wy = hud.centerY();
-        paint.setColor(withAlpha(0xFFE9E9EC, volumeHudAlpha));
-        // Speaker: body + cone.
-        Path speaker = new Path();
-        speaker.moveTo(wx - unit * 0.62f, wy - unit * 0.20f);
-        speaker.lineTo(wx - unit * 0.34f, wy - unit * 0.20f);
-        speaker.lineTo(wx - unit * 0.02f, wy - unit * 0.55f);
-        speaker.lineTo(wx - unit * 0.02f, wy + unit * 0.45f);
-        speaker.lineTo(wx - unit * 0.34f, wy + unit * 0.20f);
-        speaker.lineTo(wx - unit * 0.62f, wy + unit * 0.20f);
-        speaker.close();
-        paint.setStyle(Paint.Style.FILL);
-        canvas.drawPath(speaker, paint);
-        // Sound waves.
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(Math.max(1f, pw * 0.006f));
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        float arcCx = wx - unit * 0.02f;
-        for (float rr : new float[]{unit * 0.32f, unit * 0.58f}) {
-            canvas.drawArc(new RectF(arcCx - rr, wy - rr, arcCx + rr, wy + rr), -50f, 100f, false, paint);
-        }
-        paint.setStrokeCap(Paint.Cap.BUTT);
-        paint.setStyle(Paint.Style.FILL);
+        // Speaker as the Material Icons volume glyph.
+        drawIcon(canvas, "volume_up", wx, wy, unit * 1.55f,
+                withAlpha(0xFFE9E9EC, volumeHudAlpha));
 
         // Percentage first: the remaining width is the track, so it can never be mismeasured.
         String pct = Math.round(volumeLevel * 100f) + "%";
@@ -1796,6 +1800,18 @@ public class BundlePhoneSurfaceView extends View {
 
     // -------------------------------------------------------------- helpers
 
+    /** Draws a Material Icons ligature centered at (cx, cy) — the app's icon font. */
+    private void drawIcon(Canvas canvas, String ligature, float cx, float cy, float size, int color) {
+        paint.setTypeface(materialIcons);
+        paint.setTextSize(size);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setColor(color);
+        float baseline = cy - (paint.descent() + paint.ascent()) / 2f;
+        canvas.drawText(ligature, cx, baseline, paint);
+        paint.setTextAlign(Paint.Align.LEFT);
+        paint.setTypeface(labelTypeface);
+    }
+
     private void refreshDate() {
         dateText = dateFormat.format(new Date());
     }
@@ -1863,9 +1879,12 @@ public class BundlePhoneSurfaceView extends View {
         return 1f - u * u * u;
     }
 
-    private static int withAlpha(int color, float alpha) {
-        float a = Math.max(0f, Math.min(1f, alpha));
-        return (color & 0x00FFFFFF) | (Math.round(255 * a) << 24);
+    /** Scales a color's own alpha by {@code factor} (0..1) — never replaces it, so a
+     *  translucent base like 0x1AFFFFFF stays translucent at full factor. */
+    private static int withAlpha(int color, float factor) {
+        float f = Math.max(0f, Math.min(1f, factor));
+        int base = (color >>> 24);
+        return (color & 0x00FFFFFF) | (Math.round(base * f) << 24);
     }
 
     @Override
