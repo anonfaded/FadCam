@@ -1656,6 +1656,18 @@ public class BundlePhoneSurfaceView extends View {
         canvas.drawRoundRect(screen, screenR, screenR, paint);
         paint.setShader(null);
 
+        // The FadSec flag as wallpaper art: above the dark gradient, behind the clock.
+        if (flag != null) {
+            float flagSize = pw * 0.66f;
+            float cx = screen.centerX();
+            float cy = screen.top + screen.height() * 0.53f;
+            float half = flagSize / 2f;
+            flag.setBounds(Math.round(cx - half), Math.round(cy - half),
+                    Math.round(cx + half), Math.round(cy + half));
+            flag.setAlpha(110);
+            flag.draw(canvas);
+        }
+
         // Status bar (icons + camera) stays visible on the lock screen.
         drawStatusBar(canvas, 1f, false);
 
@@ -1789,6 +1801,8 @@ public class BundlePhoneSurfaceView extends View {
     private void drawBackPanel(Canvas canvas) {
         float pw = phone.width();
         paint.setStyle(Paint.Style.FILL);
+        // The gradient must be fully opaque: `paint` still carries the wordmark's 0x3A alpha from the previous frame, and setShader() does not reset it (this made the whole back panel see-through).
+        paint.setAlpha(255);
         paint.setShader(new LinearGradient(0f, screen.top, 0f, screen.bottom,
                 0xFF1C1F25, 0xFF101216, Shader.TileMode.CLAMP));
         canvas.drawRoundRect(screen, screenR, screenR, paint);
