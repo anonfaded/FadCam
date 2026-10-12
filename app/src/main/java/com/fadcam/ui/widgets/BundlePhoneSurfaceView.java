@@ -507,6 +507,10 @@ public class BundlePhoneSurfaceView extends View {
     }
 
     private final RectF notifCardRect = new RectF();
+    private final RectF loaderRect = new RectF();
+    private final RectF dialogCardRect = new RectF();
+    private final Path rippleClipPath = new Path();
+    private long lastBobInvalidateAt;
 
     public boolean notifCardTappedAt(float x, float y) {
         return shadeProgress > 0.6f && notifCardRect.contains(x, y);
@@ -626,6 +630,15 @@ public class BundlePhoneSurfaceView extends View {
 
     public boolean isInStatusBar(float x, float y) {
         return y <= statusBarBottom && y >= phone.top;
+    }
+
+    public boolean isInUnlockZone(float x, float y) {
+        return screen.contains(x, y) && y >= screen.top + screen.height() * 0.62f;
+    }
+
+    public boolean isInteractiveOverlayOpen() {
+        return recentsOpen || previewApp != 0 || accessDialogOpen || powerMenuOpen
+                || shadeProgress > 0.01f || bootProgress < 1f;
     }
 
     /** True while the touch sits on the (possibly partially pulled) shade panel itself. */
@@ -834,7 +847,7 @@ public class BundlePhoneSurfaceView extends View {
         if (w <= 0f || h <= 0f) return;
         if (phone.isEmpty()) computeGeometry(w, h);
 
-        int layer = canvas.saveLayer(0f, 0f, w, h, null);
+        int layer = cropFade ? canvas.saveLayer(0f, 0f, w, h, null) : -1;
         if (glMode) {
             // The chassis is real GL geometry; textures carry only content.
             if (side == SIDE_FRONT && renderMode == MODE_SCREEN) {
@@ -861,7 +874,7 @@ public class BundlePhoneSurfaceView extends View {
                     0x00000000, 0xFF000000, Shader.TileMode.CLAMP));
             canvas.drawRect(-w, fadeTop, 2f * w, h + phone.height(), fadePaint);
         }
-        canvas.restoreToCount(layer);
+        if (layer >= 0) canvas.restoreToCount(layer);
     }
 
     private void drawChassis(Canvas canvas) {
@@ -1022,7 +1035,8 @@ public class BundlePhoneSurfaceView extends View {
             canvas.drawCircle(cx, ly, r, paint);
             paint.setColor(withAlpha(0xFFFFFFFF, loaderA));
             // One slow revolution every ~1.2s, eased like a real spinner.
-            canvas.drawArc(new RectF(cx - r, ly - r, cx + r, ly + r), p * 360f * 3.0f, 96f, false, paint);
+            loaderRect.set(cx - r, ly - r, cx + r, ly + r);
+            canvas.drawArc(loaderRect, p * 360f * 3.0f, 96f, false, paint);
             paint.setStrokeCap(Paint.Cap.BUTT);
             paint.setStyle(Paint.Style.FILL);
         }
@@ -1560,7 +1574,8 @@ public class BundlePhoneSurfaceView extends View {
         canvas.save();
         canvas.clipPath(screenClipPath);
         canvas.drawColor(0x99000000);
-        RectF card = new RectF(screen.left + pw * 0.09f, screen.centerY() - pw * 0.60f,
+        RectF card = dialogCardRect;
+        card.set(screen.left + pw * 0.09f, screen.centerY() - pw * 0.60f,
                 screen.right - pw * 0.09f, screen.centerY() + pw * 0.38f);
         paint.setStyle(Paint.Style.FILL);
         paint.setShader(null);
@@ -1604,7 +1619,8 @@ public class BundlePhoneSurfaceView extends View {
     private void drawTouchRipple(Canvas canvas) {
         if (rippleProgress <= 0.001f || rippleProgress >= 1f) return;
         canvas.save();
-        Path clip = new Path();
+        Path clip = rippleClipPath;
+        clip.reset();
         clip.addRoundRect(rippleClip, rippleClipRadius, rippleClipRadius, Path.Direction.CW);
         canvas.clipPath(clip);
         paint.setStyle(Paint.Style.FILL);
@@ -1831,7 +1847,11 @@ public class BundlePhoneSurfaceView extends View {
             lockBobAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
             lockBobAnimator.addUpdateListener(a -> {
                 lockBob = (float) a.getAnimatedValue();
-                invalidate();
+                long now = SystemClock.elapsedRealtime();
+                if (isShown() && now - lastBobInvalidateAt >= 33L) {
+                    lastBobInvalidateAt = now;
+                    invalidate();
+                }
             });
             lockBobAnimator.start();
         } else if (!locked && lockBobAnimator != null) {

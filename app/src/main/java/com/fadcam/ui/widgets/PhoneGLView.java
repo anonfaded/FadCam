@@ -78,8 +78,10 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private FloatBuffer bufFront, bufBack, bufMetal, bufVisor, bufLenses, bufFlash, bufGlint, bufCores;
     private FloatBuffer bufGlare, bufStreak;
     private float streakX, streakY, streakZ;
-    private final float[] streakPt = new float[4];
-    private final float[] streakClip = new float[4];
+    private float ledY, ledZ;
+    private final float[] flashWorld = new float[4];
+    private int uFlashPos, uFlashK;
+    private float flashK;
     private int streakTex;
     private int glareTex;
     private Bitmap glareBitmap;
@@ -517,6 +519,12 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         Matrix.multiplyMM(tmp, 0, viewM, 0, model, 0);
         Matrix.multiplyMM(mvp, 0, proj, 0, tmp, 0);
 
+        float[] lp = {LED_X, ledY, ledZ, 1f};
+        Matrix.multiplyMV(flashWorld, 0, model, 0, lp, 0);
+        GLES20.glUniform4f(uFlashPos, flashWorld[0], flashWorld[1], flashWorld[2], scale);
+        flashK = flashGlow * 7.5f;
+        GLES20.glUniform1f(uFlashK, flashK);
+
         GLES20.glUniformMatrix4fv(uMVP, 1, false, mvp, 0);
         GLES20.glUniformMatrix4fv(uModel, 1, false, model, 0);
         GLES20.glUniform3fv(uLightDir, 1, LIGHT_DIR, 0);
@@ -578,11 +586,10 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
             drawGroup(bufGlare, glareTex, 0f, 0f, 1f, 1f, 1f, 1f, true);
             GLES20.glUniform1f(uBoost, 0f);
         }
-        // The lens streak: fires when the beam front crosses the lenses, back face only.
-        float streak = streakLevel(w, h);
+        float streak = streakLevel();
         if (streak > 0.01f && bufStreak != null) {
             if (streakTex == 0) streakTex = createStaticTexture(buildStreakBitmap());
-            GLES20.glUniform1f(uBoost, 1.9f * streak);
+            GLES20.glUniform1f(uBoost, 1.5f * streak);
             drawGroup(bufStreak, streakTex, 0f, 0f, 1f, 1f, 1f, 1f, true);
             GLES20.glUniform1f(uBoost, 0f);
         }
@@ -590,31 +597,10 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         return true;
     }
 
-    /**
-     * Streak strength 0..1: the beam front's signed distance to the lens pair, evaluated at
-     * the lens' real projected screen position (same space as the shader's beam), so the
-     * streak ignites on the exact frame the beam touches the glass and bleeds off behind it.
-     */
-    private float streakLevel(int w, int h) {
-        float intensity = beamIntensity;
-        if (intensity <= 0.01f) return 0f;
+    private float streakLevel() {
         float facing = (float) -Math.cos(Math.toRadians(angle));
         float gate = Math.max(0f, Math.min(1f, (facing - 0.6f) / 0.35f));
-        if (gate <= 0f) return 0f;
-        streakPt[0] = streakX;
-        streakPt[1] = streakY;
-        streakPt[2] = streakZ;
-        streakPt[3] = 1f;
-        Matrix.multiplyMV(streakClip, 0, mvp, 0, streakPt, 0);
-        if (streakClip[3] <= 0f) return 0f;
-        float nx = streakClip[0] / streakClip[3];
-        float ny = streakClip[1] / streakClip[3];
-        float bpx = (nx * 0.5f * w + hostTransX) / h;
-        float bpy = (ny * 0.5f * h - hostTransY) / h;
-        float bd = bpx * beamDirX + bpy * beamDirY - beamPos;
-        float lead = (float) Math.exp(-bd * bd / 0.0030f);
-        float after = bd < 0f ? 0.65f * (float) Math.exp(bd / 0.11f) : 0f;
-        return Math.min(1f, intensity) * Math.max(lead, after) * gate;
+        return flashGlow * gate;
     }
 
     private int createStaticTexture(Bitmap bitmap) {
@@ -721,8 +707,10 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         GLES20.glUniform1f(uSweepK, sweepK);
         // Emissive parts (the flash LED) ignore the studio exposure: they ARE the light.
         GLES20.glUniform1f(uAmbient, emissive ? 1f : ambient);
+        GLES20.glUniform1f(uFlashK, emissive ? 0f : flashK);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, buffer.capacity() / 8);
         GLES20.glUniform1f(uAmbient, ambient);
+        GLES20.glUniform1f(uFlashK, flashK);
     }
 
     private int uploadBitmap(Bitmap bitmap, int existing) {
@@ -797,6 +785,8 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "uniform float uBeamPos;\n" +
                 "uniform vec3 uBeamDir;\n" +
                 "uniform vec3 uMask;\n" +
+                "uniform vec4 uFlashPos;\n" +
+                "uniform float uFlashK;\n" +
                 "void main() {\n" +
                 "  vec3 n = normalize(vNormal);\n" +
                 "  vec3 l = normalize(uLightDir);\n" +
@@ -841,6 +831,16 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "  float yTop = (uView.y - gl_FragCoord.y + uView.w) / uView.y;\n" +
                 "  float lit = mix(1.0, uMask.z, smoothstep(uMask.x, uMask.y, yTop));\n" +
                 "  color *= lit;\n" +
+                "  vec3 fv = uFlashPos.xyz - vWorld;\n" +
+                "  float fLen = max(length(fv), 1e-5);\n" +
+                "  vec3 fl = fv / fLen;\n" +
+                "  float fd = fLen / uFlashPos.w;\n" +
+                "  float fNdl = max(dot(n, fl), 0.0);\n" +
+                "  float fFall = 1.0 / (1.0 + 11.0 * fd * fd);\n" +
+                "  vec3 fh = normalize(fl + viewDir);\n" +
+                "  float fSpec = pow(max(dot(n, fh), 0.0), 60.0) * (0.10 + uSpec * 2.4);\n" +
+                "  vec3 flashLit = (base * fNdl + vec3(fSpec)) * fFall * uFlashK;\n" +
+                "  color += flashLit * vec3(1.0, 0.95, 0.84);\n" +
                 // The beam is added AFTER the dark layer and only partly dimmed by it: it is
                 // the light that cuts through the dark, so it still glints on the lower body.
                 "  color += vec3(0.93, 0.96, 1.0) * beamLight * (0.40 + 0.60 * lit);\n" +
@@ -873,6 +873,8 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         uBeamPos = GLES20.glGetUniformLocation(program, "uBeamPos");
         uBeamDir = GLES20.glGetUniformLocation(program, "uBeamDir");
         uMask = GLES20.glGetUniformLocation(program, "uMask");
+        uFlashPos = GLES20.glGetUniformLocation(program, "uFlashPos");
+        uFlashK = GLES20.glGetUniformLocation(program, "uFlashK");
     }
 
     /** The LED halo texture: soft warm core with faint star rays. */
@@ -979,14 +981,13 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         vertex(glare, ledX + gh, midY - gh, gz, 0f, 0f, -1f, 1f, 1f);
         vertex(glare, ledX - gh, midY - gh, gz, 0f, 0f, -1f, 0f, 1f);
         bufGlare = toBuffer(glare);
-        // The anamorphic streak: a wide, razor-thin additive quad pinned to the lens pair.
-        // It fires when the beam front crosses the lenses (level computed per frame from
-        // the lens' exact projected position).
-        streakX = LENS_PAIR_X;
+        ledY = midY;
+        ledZ = zBack - 0.012f - 0.16f;
+        streakX = LED_X;
         streakY = midY;
         streakZ = zBack - 0.016f;
-        float sw = 0.80f;
-        float sh = 0.055f;
+        float sw = 0.60f;
+        float sh = 0.040f;
         List<Float> streak = new ArrayList<>();
         vertex(streak, streakX - sw, streakY + sh, streakZ, 0f, 0f, -1f, 0f, 0f);
         vertex(streak, streakX + sw, streakY + sh, streakZ, 0f, 0f, -1f, 1f, 0f);

@@ -120,7 +120,6 @@ public class ProBundleShowcaseView extends FrameLayout {
     private ValueAnimator cinematicAnimator;
     private boolean cinematicRunning = false;
     private boolean cinematicLaunched = false;
-    private boolean cineHaptic0;
     private long cinematicShownAt;
     private final Runnable cinematicRunner = this::runCinematic;
     private Bitmap cinematicBackBitmap;
@@ -195,14 +194,14 @@ public class ProBundleShowcaseView extends FrameLayout {
         backSurface.setDirtyListener(this::markBackDirty);
         backSurface.setRenderMode(BundlePhoneSurfaceView.MODE_PANEL);
         phoneGL = new PhoneGLView(context, null);
-        phoneGL.setOverscan(1.5f);
+        phoneGL.setOverscan(glOverscan);
         phoneGL.setCrop(1f, 0f);
         phoneGL.setSweep(0f, REST_SWEEP_X);
         // Bigger than its slot (centred): the rotation headroom renders thanks to
         // clipChildren=false, so the phone can fill the card and still turn freely.
         LayoutParams glParams = new LayoutParams(
-                Math.round(getResources().getDimension(R.dimen.pro_showcase_phone_w) * 1.5f),
-                Math.round(getResources().getDimension(R.dimen.pro_showcase_phone_h) * 1.5f),
+                Math.round(getResources().getDimension(R.dimen.pro_showcase_phone_w) * glOverscan),
+                Math.round(getResources().getDimension(R.dimen.pro_showcase_phone_h) * glOverscan),
                 Gravity.CENTER);
         phoneContainer.addView(phoneGL, glParams);
         // (wired in onLayout — the surfaces must have measured first)
@@ -350,6 +349,8 @@ public class ProBundleShowcaseView extends FrameLayout {
 
     // -------------------------------------------------------------- 3D drag
 
+    private boolean touchCaptured;
+
     private static final int MODE_NONE = 0;
     private static final int MODE_ROTATE = 1;
     private static final int MODE_SHADE = 2;
@@ -361,7 +362,11 @@ public class ProBundleShowcaseView extends FrameLayout {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 if (snapAnimator != null) snapAnimator.cancel();
-                if (cinematicRunning) return true;
+                if (cinematicRunning) {
+                    touchCaptured = true;
+                    if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
+                    return true;
+                }
                 downX = event.getRawX() - wrapperScreenX;
                 downY = event.getRawY() - wrapperScreenY;
                 startRotation = rotation;
@@ -371,8 +376,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                 touchMode = MODE_NONE;
                 directionDecided = false;
                 movedFar = false;
-                // Swipes inside the phone belong to the phone: never let the page steal them.
-                if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
+                touchCaptured = false;
                 powerMenuShown = false;
                 lastDy = 0f;
                 boolean shadeOpen = frontSurface.getShadeProgress() > 0.4f;
@@ -384,10 +388,10 @@ public class ProBundleShowcaseView extends FrameLayout {
                     touchMode = MODE_SHADE;
                     shadeStart = frontSurface.getShadeProgress();
                 } else if (dragEnabled && !dialogOpen) {
-                    // The face surfaces live at TEXTURE_SCALE× the wrapper, so their hit
+                    // The face surfaces live at textureScale× the wrapper, so their hit
                     // zones are in texture space: convert before every hit test.
-                    float tx = downX * TEXTURE_SCALE;
-                    float ty = downY * TEXTURE_SCALE;
+                    float tx = downX * textureScale;
+                    float ty = downY * textureScale;
                     if (frontSurface.isOnPowerButton(tx, ty)) {
                         touchMode = MODE_POWER;
                         pressedButton = 3;
@@ -400,12 +404,19 @@ public class ProBundleShowcaseView extends FrameLayout {
                     } else if (frontSurface.isInStatusBar(tx, ty)) {
                         touchMode = MODE_SHADE;
                         shadeStart = frontSurface.getShadeProgress();
-                    } else if (frontSurface.isLocked()) {
+                    } else if (frontSurface.isLocked() && frontSurface.isInUnlockZone(tx, ty)) {
                         touchMode = MODE_UNLOCK;
                     }
                     if (pressedButton > 0 && phoneGL != null) {
                         phoneGL.setPressedButton(pressedButton);
                     }
+                }
+                float foldedAngle = Math.abs(rotation) % 360f;
+                if (foldedAngle > 180f) foldedAngle = 360f - foldedAngle;
+                if (frontSurface.isInteractiveOverlayOpen() || touchMode != MODE_NONE
+                        || (foldedAngle > 4f && foldedAngle < 176f)) {
+                    touchCaptured = true;
+                    if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
                 }
                 if (velocityTracker == null) velocityTracker = VelocityTracker.obtain();
                 else velocityTracker.clear();
@@ -428,6 +439,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                     directionDecided = true;
                     if (adx > ady * 1.15f) {
                         touchMode = MODE_ROTATE;
+                        touchCaptured = true;
                         if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
                     }
                 }
@@ -451,15 +463,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                     frontSurface.setUnlockProgress(-dy / (phoneH * 0.55f));
                     return true;
                 }
-                // Like a real phone: a downward drag anywhere on the home opens the shade.
-                if (touchMode == MODE_NONE && !blockShadeGesture && dy > 0 && directionDecided && ady > adx) {
-                    touchMode = MODE_SHADE;
-                    shadeStart = 0f;
-                    frontSurface.setShadeProgress(dy / (phoneH * 0.55f));
-                    return true;
-                }
-                // Vertical on the home: inside the phone, so the page stays put.
-                return true;
+                return touchCaptured;
             }
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL: {
@@ -510,6 +514,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                     pressedButton = 0;
                 }
                 touchMode = MODE_NONE;
+                touchCaptured = false;
                 dragging = false;
                 if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(false);
                 return true;
@@ -529,10 +534,10 @@ public class ProBundleShowcaseView extends FrameLayout {
 
     /** Taps inside the phone: nav bar, recents, previews, calculator keys, app icons. */
     private void handleTap(float x, float y) {
-        // The face surfaces are rendered at TEXTURE_SCALE× the wrapper: all their hit zones
+        // The face surfaces are rendered at textureScale× the wrapper: all their hit zones
         // are in texture space, so convert once here (wrapper space -> texture space).
-        x *= TEXTURE_SCALE;
-        y *= TEXTURE_SCALE;
+        x *= textureScale;
+        y *= textureScale;
         // In-screen interactions only apply while the phone faces the viewer and has booted.
         if (Math.abs(rotation) > 35f) return;
         if (frontSurface.getBootProgress() < 0.95f) return;
@@ -761,6 +766,7 @@ public class ProBundleShowcaseView extends FrameLayout {
             float level = DRAG_SWEEP_I * Math.min(1f, a / 70f)
                     * Math.min(1f, Math.max(0f, (180f - a) / 70f));
             phoneGL.setSweep(level, REST_SWEEP_X);
+            if (backDirty && backNeeded()) post(textureTask);
         }
     }
 
@@ -781,12 +787,13 @@ public class ProBundleShowcaseView extends FrameLayout {
     }
 
     /**
-     * Faces are rendered at {@code TEXTURE_SCALE}× the layout slot. The GL phone displays
+     * Faces are rendered at {@code textureScale}× the layout slot. The GL phone displays
      * the texture at roughly 1:1 slot pixels, so the supersample is what keeps small
      * details (status-bar strokes, icon labels) crisp on low-density phones
      * instead of blurring through bilinear magnification.
      */
-    private static final float TEXTURE_SCALE = 1.5f;
+    private float textureScale = 1.5f;
+    private float glOverscan = 1.5f;
 
     /** Renders the two faces offscreen and hands them to the GL thread (one pass per frame). */
     private void updateTextures() {
@@ -794,8 +801,8 @@ public class ProBundleShowcaseView extends FrameLayout {
         int w = phoneWrapper.getWidth();
         int h = phoneWrapper.getHeight();
         if (w <= 0 || h <= 0) return;
-        int tw = Math.max(1, Math.round(w * TEXTURE_SCALE));
-        int th = Math.max(1, Math.round(h * TEXTURE_SCALE));
+        int tw = Math.max(1, Math.round(w * textureScale));
+        int th = Math.max(1, Math.round(h * textureScale));
         Object lock = phoneGL.bitmapLock();
         synchronized (lock) {
             if (frontDirty) {
@@ -810,12 +817,18 @@ public class ProBundleShowcaseView extends FrameLayout {
                     phoneGL.setScreenRect(sr.left / tw, sr.top / th, sr.right / tw, sr.bottom / th);
                 }
             }
-            if (backDirty) {
+            if (backDirty && backNeeded()) {
                 backDirty = false;
                 backBitmap = renderSurface(backSurface, backBitmap, tw, th);
                 phoneGL.setBackBitmap(backBitmap);
             }
         }
+    }
+
+    private boolean backNeeded() {
+        float a = Math.abs(rotation) % 360f;
+        if (a > 180f) a = 360f - a;
+        return a > 60f;
     }
 
     private Bitmap renderSurface(View view, Bitmap reuse, int w, int h) {
@@ -1012,23 +1025,24 @@ public class ProBundleShowcaseView extends FrameLayout {
 
     /** Phone-only mode for the fullscreen view: no text column, phone centered, full height. */
     public void setPhoneOnlyMode(boolean phoneOnly) {
-        View root = getChildAt(0);
-        if (root instanceof LinearLayout) {
-            LinearLayout ll = (LinearLayout) root;
-            if (ll.getChildCount() > 0 && ll.getChildAt(0) instanceof LinearLayout) {
-                LinearLayout row = (LinearLayout) ll.getChildAt(0);
-                // Hide only the text column — never the row that also holds the phone.
-                if (row.getChildCount() > 0) {
-                    row.getChildAt(0).setVisibility(phoneOnly ? GONE : VISIBLE);
-                }
-                row.setGravity(phoneOnly ? Gravity.CENTER_HORIZONTAL : Gravity.CENTER_VERTICAL);
-            }
+        View textColumn = findViewById(R.id.showcaseTextColumn);
+        if (textColumn != null) textColumn.setVisibility(phoneOnly ? GONE : VISIBLE);
+        View row = findViewById(R.id.showcaseRow);
+        if (row instanceof LinearLayout) {
+            ((LinearLayout) row).setGravity(phoneOnly ? Gravity.CENTER_HORIZONTAL : Gravity.CENTER_VERTICAL);
         }
         if (phoneOnly) {
             frontSurface.setCropFade(false);
             setPadding(0, 0, 0, 0);
-            if (root instanceof LinearLayout) {
-                ((LinearLayout) root).setBackground(null);
+            View root = findViewById(R.id.showcaseRoot);
+            if (root != null) {
+                root.setBackground(null);
+                root.setPadding(0, 0, 0, 0);
+            }
+            ViewGroup.LayoutParams wlp = phoneWrapper.getLayoutParams();
+            if (wlp instanceof ViewGroup.MarginLayoutParams) {
+                ((ViewGroup.MarginLayoutParams) wlp).setMarginStart(0);
+                phoneWrapper.setLayoutParams(wlp);
             }
             if (phoneGL != null) {
                 phoneGL.setCrop(1f, 0f);
@@ -1036,6 +1050,30 @@ public class ProBundleShowcaseView extends FrameLayout {
         }
         frontDirty = true;
         backDirty = true;
+        post(textureTask);
+    }
+
+    /** Fullscreen trades supersampling and headroom for fill-rate. */
+    public void setFullscreenQuality(boolean fullscreen) {
+        textureScale = fullscreen ? 1.0f : 1.5f;
+        glOverscan = fullscreen ? 1.15f : 1.5f;
+        if (phoneGL != null) {
+            phoneGL.setOverscan(glOverscan);
+            ViewGroup.LayoutParams wlp = phoneWrapper.getLayoutParams();
+            int baseW = wlp != null && wlp.width > 0 ? wlp.width
+                    : Math.round(getResources().getDimension(R.dimen.pro_showcase_phone_w));
+            int baseH = wlp != null && wlp.height > 0 ? wlp.height
+                    : Math.round(getResources().getDimension(R.dimen.pro_showcase_phone_h));
+            LayoutParams glp = (LayoutParams) phoneGL.getLayoutParams();
+            glp.width = Math.round(baseW * glOverscan);
+            glp.height = Math.round(baseH * glOverscan);
+            glp.gravity = Gravity.CENTER;
+            phoneGL.setLayoutParams(glp);
+        }
+        frontDirty = true;
+        backDirty = true;
+        frameDirty = true;
+        requestLayout();
         post(textureTask);
     }
 
@@ -1049,8 +1087,8 @@ public class ProBundleShowcaseView extends FrameLayout {
         phoneWrapper.setLayoutParams(lp);
         if (phoneGL != null) {
             LayoutParams glp = (LayoutParams) phoneGL.getLayoutParams();
-            glp.width = Math.round(w * 1.5f);
-            glp.height = Math.round(h * 1.5f);
+            glp.width = Math.round(w * glOverscan);
+            glp.height = Math.round(h * glOverscan);
             glp.gravity = Gravity.CENTER;
             phoneGL.setLayoutParams(glp);
         }
@@ -1078,11 +1116,11 @@ public class ProBundleShowcaseView extends FrameLayout {
 
     private static final String CINE_TAG = "ProCinematic";
     private static final float CINE_OVERSCAN = 1.5f;
-    private static final float CINE_AMBIENT_START = 0.20f;
+    private static final float CINE_AMBIENT_START = 0.85f;
     // The dark layer: the top is lit, a long smooth gradient sinks the lower phone into black.
-    private static final float CINE_MASK_FROM = 0.34f;
-    private static final float CINE_MASK_TO = 0.88f;
-    private static final float CINE_MASK_MIN = 0.03f;
+    private static final float CINE_MASK_FROM = 0.45f;
+    private static final float CINE_MASK_TO = 1.0f;
+    private static final float CINE_MASK_MIN = 0.55f;
 
     /** Entrance: the fullscreen cinematic when possible, otherwise the phone boots in place. */
     private void startEntrance() {
@@ -1182,7 +1220,7 @@ public class ProBundleShowcaseView extends FrameLayout {
         }
         // The face textures must exist before the show starts.
         updateTextures();
-        if (screenBitmap == null || backBitmap == null) {
+        if (screenBitmap == null) {
             FLog.d(CINE_TAG, "skip: no textures");
             finishCinematic(false);
             return;
@@ -1248,7 +1286,6 @@ public class ProBundleShowcaseView extends FrameLayout {
         cinematicGL.setTranslationX(0f);
         cinematicGL.setSweep(0f, 0f);
         cinematicGL.setAmbient(CINE_AMBIENT_START);
-        cineHaptic0 = false;
         cineHaptic1 = false;
         cineHaptic2 = false;
 
@@ -1264,19 +1301,17 @@ public class ProBundleShowcaseView extends FrameLayout {
         final float beamTo = reach + 0.08f;
         final float[] island = new float[4];
         PhoneGLView.projectCameraIsland(ow, oh, CINE_OVERSCAN, sStart, 0f, tyStart, island);
-        final float lensCoord = ((island[0] - ow / 2f) * bdx + (oh / 2f - island[1]) * bdy) / oh;
         final float ledCoord = ((island[2] - ow / 2f) * bdx + (oh / 2f - island[3]) * bdy) / oh;
 
-        final float beamStart = 250f;
-        final float beamDur = 1500f;
-        final float tLens = beamStart + beamDur * solveBeam(beamFrom, beamTo, lensCoord);
+        final float beamStart = 350f;
+        final float beamDur = 2300f;
         final float tLed = beamStart + beamDur * solveBeam(beamFrom, beamTo, ledCoord);
-        final float tFlash1 = tLed + 30f;
-        final float tFlash2 = tFlash1 + 560f;
-        final float tFlip = tFlash2 + 240f;
-        final float flipDur = 1500f;
+        final float tFlash1 = tLed + 380f;
+        final float tFlash2 = tFlash1 + 900f;
+        final float tFlip = tFlash2 + 520f;
+        final float flipDur = 2000f;
         final float total = tFlip + flipDur + 60f;
-        FLog.d(CINE_TAG, "timeline lens=" + (int) tLens + " led=" + (int) tLed
+        FLog.d(CINE_TAG, "timeline led=" + (int) tLed
                 + " flash2=" + (int) tFlash2 + " flip=" + (int) tFlip + " total=" + (int) total);
 
         // Second pass on the front glass while the phone turns: a gentle reflection sheet.
@@ -1295,13 +1330,9 @@ public class ProBundleShowcaseView extends FrameLayout {
 
             cinematicGL.setAlpha(easeOutCubic(clamp01(t / 220f)));
 
-            float flash1 = pulse(t, tFlash1, 60f, 70f, 190f);
-            float flash2 = pulse(t, tFlash2, 60f, 190f, 320f);
+            float flash1 = flashBurst(t, tFlash1, 28f, 170f);
+            float flash2 = flashBurst(t, tFlash2, 28f, 360f);
             cinematicGL.setFlashGlow(Math.max(flash1, flash2));
-            if (!cineHaptic0 && t >= tLens) {
-                cineHaptic0 = true;
-                hapticTap();
-            }
             if (!cineHaptic1 && t >= tFlash1) {
                 cineHaptic1 = true;
                 hapticTap();
@@ -1315,15 +1346,11 @@ public class ProBundleShowcaseView extends FrameLayout {
             float fe = easeInOutCubic(flipT);
             float open = easeInOutCubic(clamp01(flipT * 1.35f));
 
-            // Exposure and the dark layer: the beam wakes the scene, each flash lights the
-            // room for an instant, and the flip opens everything up to the card's look.
             float amb = CINE_AMBIENT_START
-                    + 0.42f * easeOutCubic(clamp01((t - beamStart) / (beamDur + 200f)));
-            amb = Math.min(1f, amb + 0.14f * flash1 + 0.26f * flash2);
+                    + 0.15f * easeOutCubic(clamp01((t - beamStart) / (beamDur + 200f)));
             cinematicGL.setAmbient(amb + (1f - amb) * open);
-            float maskMin = CINE_MASK_MIN + 0.30f * flash1 + 0.50f * flash2;
             cinematicGL.setDarkMask(CINE_MASK_FROM, CINE_MASK_TO,
-                    Math.min(1f, maskMin + (1f - maskMin) * open));
+                    CINE_MASK_MIN + (1f - CINE_MASK_MIN) * open);
 
             // Beam 1 (down-right across the whole product), then beam 2 across the front.
             float u1 = clamp01((t - beamStart) / beamDur);
@@ -1363,13 +1390,12 @@ public class ProBundleShowcaseView extends FrameLayout {
         return 0.5f;
     }
 
-    /** 0→1→0 burst with smooth-stepped rise and fall (all times in ms). */
-    private static float pulse(float t, float start, float up, float hold, float down) {
+    /** Flash discharge: a smooth, very fast attack followed by an exponential decay (ms). */
+    private static float flashBurst(float t, float start, float attackMs, float tauMs) {
         if (t <= start) return 0f;
-        if (t < start + up) return smooth01((t - start) / up);
-        if (t < start + up + hold) return 1f;
-        if (t < start + up + hold + down) return 1f - smooth01((t - start - up - hold) / down);
-        return 0f;
+        float dt = t - start;
+        if (dt < attackMs) return smooth01(dt / attackMs);
+        return clamp01((float) Math.exp(-(dt - attackMs) / tauMs));
     }
 
     private static float smooth01(float x) {

@@ -141,11 +141,11 @@
     <dimen name="pro_claim_body_size">12sp</dimen>
     <dimen name="pro_section_gap">24dp</dimen>
     <dimen name="pro_card_padding">14dp</dimen>
-    <dimen name="pro_showcase_phone_w">146dp</dimen>
-    <dimen name="pro_showcase_phone_h">300dp</dimen>
+    <dimen name="pro_showcase_phone_w">150dp</dimen>
+    <dimen name="pro_showcase_phone_h">308dp</dimen>
     <dimen name="pro_showcase_phone_depth">44dp</dimen>
     <dimen name="pro_showcase_visor_depth">6dp</dimen>
-    <dimen name="pro_showcase_gap">14dp</dimen>
+    <dimen name="pro_showcase_gap">10dp</dimen>
     <dimen name="pro_showcase_badge_pad_h">9dp</dimen>
     <dimen name="pro_showcase_badge_pad_v">3dp</dimen>
     <dimen name="pro_showcase_chip_pad_h">8dp</dimen>
