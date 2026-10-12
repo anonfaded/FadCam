@@ -10,13 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
-import android.graphics.LinearGradient;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.RadialGradient;
 import android.graphics.RectF;
-import android.graphics.Shader;
-import android.graphics.SweepGradient;
 import android.os.BatteryManager;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -123,9 +117,12 @@ public class ProBundleShowcaseView extends FrameLayout {
 
     private FrameLayout cinematicHost;
     private PhoneGLView cinematicGL;
-    private OutlineTracerView cinematicTracer;
     private ValueAnimator cinematicAnimator;
     private boolean cinematicRunning = false;
+    private boolean cinematicLaunched = false;
+    private boolean cineHaptic0;
+    private long cinematicShownAt;
+    private final Runnable cinematicRunner = this::runCinematic;
     private Bitmap cinematicBackBitmap;
     private int entranceTries = 0;
     private int cinematicTries = 0;
@@ -1080,6 +1077,12 @@ public class ProBundleShowcaseView extends FrameLayout {
     }
 
     private static final String CINE_TAG = "ProCinematic";
+    private static final float CINE_OVERSCAN = 1.5f;
+    private static final float CINE_AMBIENT_START = 0.20f;
+    // The dark layer: the top is lit, a long smooth gradient sinks the lower phone into black.
+    private static final float CINE_MASK_FROM = 0.34f;
+    private static final float CINE_MASK_TO = 0.88f;
+    private static final float CINE_MASK_MIN = 0.03f;
 
     /** Entrance: the fullscreen cinematic when possible, otherwise the phone boots in place. */
     private void startEntrance() {
@@ -1127,14 +1130,9 @@ public class ProBundleShowcaseView extends FrameLayout {
         phoneWrapper.setAlpha(0f);
         if (cinematicGL == null) {
             cinematicGL = new PhoneGLView(context, null);
-            cinematicGL.setOverscan(1.5f);
+            cinematicGL.setOverscan(CINE_OVERSCAN);
             cinematicGL.setCrop(1f, 0f);
             cinematicHost.addView(cinematicGL, new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            // Above the phone: the outline beam traces its silhouette during the reveal.
-            // (The flash glare itself lives INSIDE the 3D model, pinned to the LED.)
-            cinematicTracer = new OutlineTracerView(context);
-            cinematicHost.addView(cinematicTracer, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             cinematicHost.setBackgroundColor(0xFF000000);
             cinematicHost.setClickable(true);
@@ -1145,11 +1143,15 @@ public class ProBundleShowcaseView extends FrameLayout {
         // already the dark-room silhouette (no flash of the docked, fully-lit phone).
         if (cinematicGL != null) {
             cinematicGL.setAlpha(0f);
-            cinematicGL.setAmbient(0.10f);
+            cinematicGL.setAmbient(CINE_AMBIENT_START);
             cinematicGL.setAngle(180f);
             cinematicGL.setSweep(0f, 0f);
             cinematicGL.setFlashGlow(0f);
+            cinematicGL.setBeam(0f, 0f, 0f, 0.2f);
+            cinematicGL.setDarkMask(CINE_MASK_FROM, CINE_MASK_TO, CINE_MASK_MIN);
         }
+        cinematicLaunched = false;
+        cinematicShownAt = android.os.SystemClock.uptimeMillis();
         cinematicHost.setAlpha(1f);
         cinematicHost.setVisibility(View.VISIBLE);
         if (cinematicListener != null) cinematicListener.onCinematicActive(true);
@@ -1198,30 +1200,38 @@ public class ProBundleShowcaseView extends FrameLayout {
         cinematicGL.setAngle(180f);
         cinematicGL.setFlashGlow(0f);
         cinematicGL.setAlpha(0f);
-        post(this::runCinematic);
+        // The animation clock must not start until the GL thread has uploaded both face
+        // textures and drawn a real frame — otherwise the upload stall eats the opening
+        // beat and the intro feels late and stuttery. The timeout is only a safety net.
+        cinematicGL.awaitNextFrame(cinematicRunner);
+        postDelayed(cinematicRunner, 450);
     }
 
     private void runCinematic() {
-        if (!cinematicRunning) return;
+        if (!cinematicRunning || cinematicLaunched) return;
         if (cinematicGL == null || cinematicGL.getWidth() == 0 || cinematicGL.getHeight() == 0) {
             if (cinematicTries++ < 24) {
-                post(this::runCinematic);
+                postDelayed(cinematicRunner, 16);
                 return;
             }
             cinematicTries = 0;
             finishCinematic(false);
             return;
         }
+        cinematicLaunched = true;
+        removeCallbacks(cinematicRunner);
         cinematicTries = 0;
-        float ow = cinematicGL.getWidth();
-        float oh = cinematicGL.getHeight();
+        final float ow = cinematicGL.getWidth();
+        final float oh = cinematicGL.getHeight();
         FLog.d(CINE_TAG, "playing: gl=" + (int) ow + "x" + (int) oh
-                + " card=" + phoneWrapper.getWidth() + "x" + phoneWrapper.getHeight());
+                + " card=" + phoneWrapper.getWidth() + "x" + phoneWrapper.getHeight()
+                + " ready=" + (android.os.SystemClock.uptimeMillis() - cinematicShownAt) + "ms");
 
         // Composition: the phone fits fully on screen with clear side padding — width
         // capped at 78% of the view (never clipped at the edges), height capped at 86%.
         // End: exactly the card's slot.
         final float phoneHStart = Math.min(0.78f * ow * 2.05f, 0.86f * oh);
+        final float phoneWStart = phoneHStart / 2.05f;
         final float sStart = introScaleFor(phoneHStart, ow, oh);
         final float sEnd = introScaleFor(phoneWrapper.getHeight(), ow, oh);
         final float tyStart = (oh - phoneHStart) / 2f - oh / 6f;
@@ -1233,30 +1243,48 @@ public class ProBundleShowcaseView extends FrameLayout {
         final float txEnd = (loc[0] + phoneWrapper.getWidth() / 2f)
                 - (hostLoc[0] + cinematicGL.getWidth() / 2f);
 
-        // The phone is already present, static, at its cinematic size — no scale arrival.
-        // It starts as a barely-visible silhouette in the dark and is revealed by light.
         cinematicGL.setExtraScale(sStart);
         cinematicGL.setTranslationY(tyStart);
         cinematicGL.setTranslationX(0f);
         cinematicGL.setSweep(0f, 0f);
-        cinematicGL.setAmbient(0.10f);
+        cinematicGL.setAmbient(CINE_AMBIENT_START);
+        cineHaptic0 = false;
         cineHaptic1 = false;
         cineHaptic2 = false;
 
-        // The flash LED's on-screen position while the back faces the viewer (the flash
-        // fires before the flip): the lens flare rays out from the actual 3D LED. The LED
-        // sits 0.0825 model units proud of the back, so its projection carries the
-        // perspective factor CAM_Z/(CAM_Z - z) — without it the flare lands ~10 px off.
-        if (cinematicTracer != null) {
-            float phoneW = phoneHStart / 2.05f;
-            cinematicTracer.setGeometry(ow / 2f, oh / 6f + tyStart + phoneHStart / 2f,
-                    phoneW / 2f, phoneHStart / 2f, phoneW * 0.135f);
-            cinematicTracer.setTrace(0f, 0f);
-        }
+        // The light beam: one diagonal front racing down-right across the whole scene. Its
+        // path is measured on the phone's real silhouette, and its crossing times of the lens
+        // pair and the LED are solved from their exact projected positions — so the lens
+        // streak and the flash fire on the very frame the light touches them.
+        final float beamDeg = -58f;
+        final float bdx = (float) Math.cos(Math.toRadians(beamDeg));
+        final float bdy = (float) Math.sin(Math.toRadians(beamDeg));
+        final float reach = (Math.abs(bdx) * phoneWStart / 2f + Math.abs(bdy) * phoneHStart / 2f) / oh;
+        final float beamFrom = -reach - 0.10f;
+        final float beamTo = reach + 0.08f;
+        final float[] island = new float[4];
+        PhoneGLView.projectCameraIsland(ow, oh, CINE_OVERSCAN, sStart, 0f, tyStart, island);
+        final float lensCoord = ((island[0] - ow / 2f) * bdx + (oh / 2f - island[1]) * bdy) / oh;
+        final float ledCoord = ((island[2] - ow / 2f) * bdx + (oh / 2f - island[3]) * bdy) / oh;
 
-        // Deliberate timeline (~5.3 s): a real black beat, a slow light reveal, a flash
-        // the eye can register, a long beat, the "photo" flash, then one eased flip.
-        final float total = 5300f;
+        final float beamStart = 250f;
+        final float beamDur = 1500f;
+        final float tLens = beamStart + beamDur * solveBeam(beamFrom, beamTo, lensCoord);
+        final float tLed = beamStart + beamDur * solveBeam(beamFrom, beamTo, ledCoord);
+        final float tFlash1 = tLed + 30f;
+        final float tFlash2 = tFlash1 + 560f;
+        final float tFlip = tFlash2 + 240f;
+        final float flipDur = 1500f;
+        final float total = tFlip + flipDur + 60f;
+        FLog.d(CINE_TAG, "timeline lens=" + (int) tLens + " led=" + (int) tLed
+                + " flash2=" + (int) tFlash2 + " flip=" + (int) tFlip + " total=" + (int) total);
+
+        // Second pass on the front glass while the phone turns: a gentle reflection sheet.
+        final float beam2Deg = -20f;
+        final float b2dx = (float) Math.cos(Math.toRadians(beam2Deg));
+        final float b2dy = (float) Math.sin(Math.toRadians(beam2Deg));
+        final float reach2 = (Math.abs(b2dx) * 0.5f * ow + Math.abs(b2dy) * 0.5f * oh) / oh + 0.08f;
+
         if (cinematicAnimator != null) cinematicAnimator.cancel();
         cinematicAnimator = ValueAnimator.ofFloat(0f, 1f);
         cinematicAnimator.setDuration((long) total);
@@ -1265,50 +1293,53 @@ public class ProBundleShowcaseView extends FrameLayout {
             if (cinematicGL == null) return;
             float t = (float) a.getAnimatedValue() * total;
 
-            // 0-0.4 s: near-black. The phone is a faint silhouette, then the studio
-            // exposure rises slowly through the reveal — the room lights come up.
-            cinematicGL.setAlpha(clamp01(t / 400f));
-            cinematicGL.setAmbient(0.45f + 0.55f * easeInOutCubic(clamp01((t - 600f) / 1800f)));
+            cinematicGL.setAlpha(easeOutCubic(clamp01(t / 220f)));
 
-            // The signature reveal is the outline beam (below); no stray surface glints.
-            float revT = clamp01((t - 600f) / 1750f);
-            float sweepI = 0f;
-            float sweepX = 0f;
-
-            // The industry-style outline beam: a light traces the phone's silhouette from
-            // the camera visor around the frame, then the first flash answers it.
-            if (cinematicTracer != null) {
-                float traceIn = clamp01((t - 600f) / 220f);
-                float traceOut = 1f - clamp01((t - 2180f) / 220f);
-                cinematicTracer.setTrace(revT, traceIn * traceOut);
+            float flash1 = pulse(t, tFlash1, 60f, 70f, 190f);
+            float flash2 = pulse(t, tFlash2, 60f, 190f, 320f);
+            cinematicGL.setFlashGlow(Math.max(flash1, flash2));
+            if (!cineHaptic0 && t >= tLens) {
+                cineHaptic0 = true;
+                hapticTap();
             }
-
-            // LED flashes on the 3D camera island (short, then the longer "photo" one),
-            // each with a small precise flare on the LED itself.
-            float glow = Math.max(pulse(t, 2400f, 90f, 90f, 160f),
-                    pulse(t, 3200f, 80f, 200f, 260f));
-            cinematicGL.setFlashGlow(glow);
-            if (!cineHaptic1 && t >= 2400f) {
+            if (!cineHaptic1 && t >= tFlash1) {
                 cineHaptic1 = true;
                 hapticTap();
             }
-            if (!cineHaptic2 && t >= 3200f) {
+            if (!cineHaptic2 && t >= tFlash2) {
                 cineHaptic2 = true;
                 hapticKey();
             }
 
-            // The flip starts under the second flash's decay — one continuous move.
-            float flipT = clamp01((t - 3350f) / 1600f);
-            float flipI = 0.30f * (float) Math.sin(Math.PI * flipT);
-            if (flipI > sweepI) {
-                sweepI = flipI;
-                sweepX = -0.55f + 1.10f * flipT;
-            }
-            if (t > 5000f) sweepI = 0f;
-            cinematicGL.setSweep(sweepI, t > 5000f ? REST_SWEEP_X : sweepX);
-
-            // One long, eased flip into the card's slot — no sudden starts or stops.
+            float flipT = clamp01((t - tFlip) / flipDur);
             float fe = easeInOutCubic(flipT);
+            float open = easeInOutCubic(clamp01(flipT * 1.35f));
+
+            // Exposure and the dark layer: the beam wakes the scene, each flash lights the
+            // room for an instant, and the flip opens everything up to the card's look.
+            float amb = CINE_AMBIENT_START
+                    + 0.42f * easeOutCubic(clamp01((t - beamStart) / (beamDur + 200f)));
+            amb = Math.min(1f, amb + 0.14f * flash1 + 0.26f * flash2);
+            cinematicGL.setAmbient(amb + (1f - amb) * open);
+            float maskMin = CINE_MASK_MIN + 0.30f * flash1 + 0.50f * flash2;
+            cinematicGL.setDarkMask(CINE_MASK_FROM, CINE_MASK_TO,
+                    Math.min(1f, maskMin + (1f - maskMin) * open));
+
+            // Beam 1 (down-right across the whole product), then beam 2 across the front.
+            float u1 = clamp01((t - beamStart) / beamDur);
+            float in1 = clamp01((t - beamStart) / 120f);
+            float out1 = 1f - clamp01((t - (beamStart + beamDur - 150f)) / 300f);
+            float u2 = clamp01((t - tFlip - 330f) / 1100f);
+            if (u2 > 0f && u2 < 1f) {
+                float pos2 = -reach2 + 2f * reach2 * easeInOutCubic(u2);
+                cinematicGL.setBeam(0.85f * (float) Math.sin(Math.PI * u2), pos2, beam2Deg, 0.20f);
+            } else if (u1 > 0f && in1 * out1 > 0.001f) {
+                float pos1 = beamFrom + (beamTo - beamFrom) * easeInOutCubic(u1);
+                cinematicGL.setBeam(in1 * out1, pos1, beamDeg, 0.26f);
+            } else {
+                cinematicGL.setBeam(0f, 0f, beamDeg, 0.26f);
+            }
+
             cinematicGL.setExtraScale(sStart + (sEnd - sStart) * fe);
             cinematicGL.setTranslationY(tyStart + (tyEnd - tyStart) * fe);
             cinematicGL.setTranslationX(txEnd * fe);
@@ -1321,6 +1352,15 @@ public class ProBundleShowcaseView extends FrameLayout {
             }
         });
         cinematicAnimator.start();
+    }
+
+    /** The eased beam-front fraction (0..1 of the travel time) at which it reaches {@code coord}. */
+    private static float solveBeam(float from, float to, float coord) {
+        for (int i = 0; i <= 240; i++) {
+            float u = i / 240f;
+            if (from + (to - from) * easeInOutCubic(u) >= coord) return u;
+        }
+        return 0.5f;
     }
 
     /** 0→1→0 burst with smooth-stepped rise and fall (all times in ms). */
@@ -1376,11 +1416,14 @@ public class ProBundleShowcaseView extends FrameLayout {
             cinematicAnimator = null;
         }
         cinematicRunning = false;
+        removeCallbacks(cinematicRunner);
         if (cinematicListener != null) cinematicListener.onCinematicActive(false);
         if (cinematicGL != null) {
             cinematicGL.setFlashGlow(0f);
-            cinematicGL.setSweep(0f, 0f);
+            cinematicGL.setSweep(0f, REST_SWEEP_X);
             cinematicGL.setAmbient(1f);
+            cinematicGL.setBeam(0f, 0f, 0f, 0.2f);
+            cinematicGL.setDarkMask(2f, 3f, 1f);
         }
         phoneWrapper.setAlpha(1f);
         if (cinematicHost == null) {
@@ -1410,12 +1453,15 @@ public class ProBundleShowcaseView extends FrameLayout {
             cinematicAnimator = null;
         }
         cinematicRunning = false;
+        removeCallbacks(cinematicRunner);
         if (cinematicListener != null) cinematicListener.onCinematicActive(false);
         phoneWrapper.setAlpha(1f);
         if (cinematicGL != null) {
             cinematicGL.setFlashGlow(0f);
-            cinematicGL.setSweep(0f, 0f);
+            cinematicGL.setSweep(0f, REST_SWEEP_X);
             cinematicGL.setAmbient(1f);
+            cinematicGL.setBeam(0f, 0f, 0f, 0.2f);
+            cinematicGL.setDarkMask(2f, 3f, 1f);
         }
         if (cinematicHost != null) {
             cinematicHost.animate().cancel();
@@ -1494,72 +1540,6 @@ public class ProBundleShowcaseView extends FrameLayout {
         int existingUnits = sb.toString().split(",").length;
         if (existingUnits >= 2) return;
         sb.append(value).append(' ').append(unit).append(value == 1 ? "" : "s");
-    }
-
-    /**
-     * The industry-style outline beam: a thin light that traces the phone's silhouette
-     * from one point around the whole frame, like a wireframe reveal in product films.
-     */
-    private static class OutlineTracerView extends View {
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Path path = new Path();
-        private final android.graphics.Matrix matrix = new android.graphics.Matrix();
-        private float cx, cy, halfW, halfH, radius, progress, alpha;
-
-        OutlineTracerView(Context context) {
-            super(context);
-            setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
-        }
-
-        void setGeometry(float cx, float cy, float halfW, float halfH, float radius) {
-            this.cx = cx;
-            this.cy = cy;
-            this.halfW = halfW;
-            this.halfH = halfH;
-            this.radius = radius;
-            invalidate();
-        }
-
-        void setTrace(float progress, float alpha) {
-            this.progress = progress;
-            this.alpha = alpha;
-            invalidate();
-        }
-
-        @Override
-        protected void onDraw(Canvas canvas) {
-            if (alpha <= 0.002f || halfW <= 0f) return;
-            path.reset();
-            path.addRoundRect(new RectF(cx - halfW, cy - halfH, cx + halfW, cy + halfH),
-                    radius, radius, Path.Direction.CW);
-            // The silhouette stays faintly present between beam passes.
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setShader(null);
-            paint.setStrokeWidth(Math.max(1.5f, halfW * 0.012f));
-            paint.setColor(withA(0xFFFFFFFF, 0.05f * alpha));
-            canvas.drawPath(path, paint);
-            // The traveling beam: one bright segment of a sweep gradient, plus its glow.
-            for (int pass = 0; pass < 2; pass++) {
-                float peak = pass == 0 ? 0.85f : 0.22f;
-                SweepGradient beam = new SweepGradient(cx, cy,
-                        new int[]{withA(0xFFFFF6E4, 0f), withA(0xFFFFF6E4, peak * 0.25f * alpha),
-                                withA(0xFFFFF6E4, peak * alpha),
-                                withA(0xFFFFF6E4, peak * 0.25f * alpha), withA(0xFFFFF6E4, 0f)},
-                        new float[]{0f, 0.42f, 0.5f, 0.58f, 1f});
-                matrix.setRotate(-90f + 360f * progress, cx, cy);
-                beam.setLocalMatrix(matrix);
-                paint.setShader(beam);
-                paint.setStrokeWidth(pass == 0 ? Math.max(2f, halfW * 0.020f)
-                        : Math.max(6f, halfW * 0.060f));
-                canvas.drawPath(path, paint);
-            }
-            paint.setShader(null);
-        }
-
-        private static int withA(int color, float a) {
-            return (color & 0x00FFFFFF)
-                    | (Math.round(255 * Math.max(0f, Math.min(1f, a))) << 24);
-        }
     }
 
         // -------------------------------------------------------------- helpers

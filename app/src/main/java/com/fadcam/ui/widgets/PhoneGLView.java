@@ -73,9 +73,14 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private int program;
     private int aPos, aNormal, aUV, uMVP, uModel, uTex, uUseTex, uColor, uSpec, uLightDir, uFade, uRim;
     private int uSweep, uSweepX, uSweepK, uAmbient, uBoost;
+    private int uView, uBeam, uBeamPos, uBeamDir, uMask;
 
     private FloatBuffer bufFront, bufBack, bufMetal, bufVisor, bufLenses, bufFlash, bufGlint, bufCores;
-    private FloatBuffer bufGlare;
+    private FloatBuffer bufGlare, bufStreak;
+    private float streakX, streakY, streakZ;
+    private final float[] streakPt = new float[4];
+    private final float[] streakClip = new float[4];
+    private int streakTex;
     private int glareTex;
     private Bitmap glareBitmap;
     private FloatBuffer bufVolUp, bufVolDown, bufPower;
@@ -98,6 +103,16 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private volatile float sweepIntensity = 0f;
     private volatile float sweepX = 0f;
     private volatile float ambient = 1f;
+    private volatile float beamIntensity = 0f;
+    private volatile float beamPos = 0f;
+    private volatile float beamDirX = 0f;
+    private volatile float beamDirY = -1f;
+    private volatile float beamTrail = 0.2f;
+    // Dark layer: fully open by default (fade band entirely below the view, no darkening).
+    private volatile float maskStart = 2f;
+    private volatile float maskEnd = 3f;
+    private volatile float maskMin = 1f;
+    private volatile Runnable frameListener;
     private volatile float cropFraction = 1f;
     private final float[] screenRect = {0f, 0f, 1f, 1f};
     private FloatBuffer bufScreen;
@@ -110,11 +125,66 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private final float[] tmp = new float[16];
     private final float[] mvp = new float[16];
 
+    private volatile float hostTransX = 0f;
+    private volatile float hostTransY = 0f;
+
     public PhoneGLView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         setSurfaceTextureListener(this);
         setOpaque(false);
     }
+
+    @Override
+    public void setTranslationX(float translationX) {
+        super.setTranslationX(translationX);
+        hostTransX = translationX;
+        requestRender();
+    }
+
+    @Override
+    public void setTranslationY(float translationY) {
+        super.setTranslationY(translationY);
+        hostTransY = translationY;
+        requestRender();
+    }
+
+    /**
+     * Where the lens pair and the flash LED land, in host pixels (y down), while the phone
+     * faces away at 180 degrees. {@code out} = {lensX, lensY, ledX, ledY}. Lets the host
+     * time the beam to the exact moment it touches the glass. Mirrors {@link #drawFrame}.
+     */
+    public static void projectCameraIsland(float viewW, float viewH, float overscan,
+                                           float extraScale, float transX, float transY,
+                                           float[] out) {
+        float midY = PHONE_ASPECT / 2f - VISOR_TOP - VISOR_HEIGHT / 2f;
+        float zBack = -DEPTH_RATIO / 2f - VISOR_DEPTH;
+        float halfH = (float) (Math.tan(Math.toRadians(FOV / 2.0)) * CAM_Z);
+        float halfW = halfH * (viewW / viewH);
+        float visHalfH = halfH / overscan;
+        float visHalfW = halfW / overscan;
+        float scale = Math.min(visHalfW / 0.5f, visHalfH / (PHONE_ASPECT / 2f)) * extraScale;
+        float shiftY = visHalfH - (PHONE_ASPECT / 2f) * scale;
+        projectBack(LENS_PAIR_X, midY, zBack - 0.013f, scale, shiftY, viewW, viewH,
+                halfW, halfH, transX, transY, out, 0);
+        projectBack(LED_X, midY, zBack - 0.007f, scale, shiftY, viewW, viewH,
+                halfW, halfH, transX, transY, out, 2);
+    }
+
+    private static void projectBack(float mx, float my, float mz, float scale, float shiftY,
+                                    float viewW, float viewH, float halfW, float halfH,
+                                    float transX, float transY, float[] out, int at) {
+        // Rotation by 180 degrees about Y mirrors x and z.
+        float wx = -scale * mx;
+        float wy = shiftY + scale * my;
+        float wz = -scale * mz;
+        float f = CAM_Z / (CAM_Z - wz);
+        out[at] = viewW / 2f * (1f + wx * f / halfW) + transX;
+        out[at + 1] = viewH / 2f * (1f - wy * f / halfH) + transY;
+    }
+
+    // Camera island anchors in model space (x runs toward the viewer's left from behind).
+    private static final float LENS_PAIR_X = (0.5f - VISOR_INSET) - VISOR_HEIGHT * 1.13f;
+    private static final float LED_X = (-0.5f + VISOR_INSET) + VISOR_HEIGHT * 0.75f;
 
     // ------------------------------------------------------------- public API
 
@@ -149,6 +219,40 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
      */
     public void setAmbient(float value) {
         ambient = Math.max(0f, Math.min(1f, value));
+        requestRender();
+    }
+
+    /**
+     * A product-film light beam racing across the view in screen space. {@code pos} is the
+     * beam front along its travel axis (view-height units, 0 = view centre), {@code angleDeg}
+     * the travel direction (0 = right, -90 = down). Sharp leading edge, long soft trail; it
+     * catches chamfered edges hardest and lights the surfaces it crosses.
+     */
+    public void setBeam(float intensity, float pos, float angleDeg, float trail) {
+        beamIntensity = Math.max(0f, intensity);
+        beamPos = pos;
+        beamTrail = Math.max(0.01f, trail);
+        double rad = Math.toRadians(angleDeg);
+        beamDirX = (float) Math.cos(rad);
+        beamDirY = (float) Math.sin(rad);
+        requestRender();
+    }
+
+    /**
+     * The dark layer: everything above {@code fadeStart} (fraction of the view height from
+     * the top) is lit, everything below {@code fadeEnd} is dimmed to {@code minLevel}, with a
+     * smooth gradient between. Pass (2, 3, 1) to open it completely.
+     */
+    public void setDarkMask(float fadeStart, float fadeEnd, float minLevel) {
+        maskStart = fadeStart;
+        maskEnd = Math.max(fadeEnd, fadeStart + 0.001f);
+        maskMin = Math.max(0f, Math.min(1f, minLevel));
+        requestRender();
+    }
+
+    /** Runs once, on the UI thread, after the next frame has actually been drawn. */
+    public void awaitNextFrame(Runnable listener) {
+        frameListener = listener;
         requestRender();
     }
 
@@ -364,14 +468,19 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 pendingScreen = null;
             }
         }
-        drawFrame();
+        boolean drew = drawFrame();
         EGL14.eglSwapBuffers(eglDisplay, eglSurface);
+        Runnable listener = frameListener;
+        if (drew && listener != null) {
+            frameListener = null;
+            post(listener);
+        }
     }
 
-    private void drawFrame() {
+    private boolean drawFrame() {
         int w = getWidth();
         int h = getHeight();
-        if (w <= 0 || h <= 0) return;
+        if (w <= 0 || h <= 0) return false;
         GLES20.glViewport(0, 0, w, h);
         GLES20.glClearColor(0f, 0f, 0f, 0f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
@@ -419,6 +528,11 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         GLES20.glUniform1f(uSweepX, sweepX);
         GLES20.glUniform1f(uAmbient, ambient);
         GLES20.glUniform1f(uBoost, 0f);
+        GLES20.glUniform4f(uView, w, h, hostTransX, hostTransY);
+        GLES20.glUniform1f(uBeam, beamIntensity);
+        GLES20.glUniform1f(uBeamPos, beamPos);
+        GLES20.glUniform3f(uBeamDir, beamDirX, beamDirY, beamTrail);
+        GLES20.glUniform3f(uMask, maskStart, maskEnd, maskMin);
         if (glareTex == 0) {
             if (glareBitmap == null) glareBitmap = buildGlareBitmap();
             int[] tex = new int[1];
@@ -455,14 +569,95 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
             drawGroup(bufFlash, 0, 0.35f, 0.08f, 0.93f, 0.90f, 0.70f, 1.0f);
         }
         drawGroup(bufGlint, 0, 0.30f, 0.05f, 0.28f, 0.32f, 0.42f, 0.4f);
-        // The LED halo: additive, unlit, pinned to the LED — exactly on the flash.
+        // Additive, unlit light sources pinned to the model: the beam must not re-light them.
+        GLES20.glUniform1f(uBeam, 0f);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE);
+        // The LED halo: pinned to the LED — exactly on the flash.
         if (flashGlow > 0.01f && bufGlare != null && glareTex != 0) {
-            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE);
             GLES20.glUniform1f(uBoost, 1.15f * flashGlow);
             drawGroup(bufGlare, glareTex, 0f, 0f, 1f, 1f, 1f, 1f, true);
             GLES20.glUniform1f(uBoost, 0f);
-            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
         }
+        // The lens streak: fires when the beam front crosses the lenses, back face only.
+        float streak = streakLevel(w, h);
+        if (streak > 0.01f && bufStreak != null) {
+            if (streakTex == 0) streakTex = createStaticTexture(buildStreakBitmap());
+            GLES20.glUniform1f(uBoost, 1.9f * streak);
+            drawGroup(bufStreak, streakTex, 0f, 0f, 1f, 1f, 1f, 1f, true);
+            GLES20.glUniform1f(uBoost, 0f);
+        }
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        return true;
+    }
+
+    /**
+     * Streak strength 0..1: the beam front's signed distance to the lens pair, evaluated at
+     * the lens' real projected screen position (same space as the shader's beam), so the
+     * streak ignites on the exact frame the beam touches the glass and bleeds off behind it.
+     */
+    private float streakLevel(int w, int h) {
+        float intensity = beamIntensity;
+        if (intensity <= 0.01f) return 0f;
+        float facing = (float) -Math.cos(Math.toRadians(angle));
+        float gate = Math.max(0f, Math.min(1f, (facing - 0.6f) / 0.35f));
+        if (gate <= 0f) return 0f;
+        streakPt[0] = streakX;
+        streakPt[1] = streakY;
+        streakPt[2] = streakZ;
+        streakPt[3] = 1f;
+        Matrix.multiplyMV(streakClip, 0, mvp, 0, streakPt, 0);
+        if (streakClip[3] <= 0f) return 0f;
+        float nx = streakClip[0] / streakClip[3];
+        float ny = streakClip[1] / streakClip[3];
+        float bpx = (nx * 0.5f * w + hostTransX) / h;
+        float bpy = (ny * 0.5f * h - hostTransY) / h;
+        float bd = bpx * beamDirX + bpy * beamDirY - beamPos;
+        float lead = (float) Math.exp(-bd * bd / 0.0030f);
+        float after = bd < 0f ? 0.65f * (float) Math.exp(bd / 0.11f) : 0f;
+        return Math.min(1f, intensity) * Math.max(lead, after) * gate;
+    }
+
+    private int createStaticTexture(Bitmap bitmap) {
+        int[] tex = new int[1];
+        GLES20.glGenTextures(1, tex, 0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, tex[0]);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+        return tex[0];
+    }
+
+    /**
+     * The anamorphic streak texture: a hot round core, a thin cool-blue horizontal blade
+     * that tapers to nothing at both ends (so no hard quad edge is ever visible).
+     */
+    private Bitmap buildStreakBitmap() {
+        int w = 256;
+        int h = 64;
+        int[] px = new int[w * h];
+        for (int y = 0; y < h; y++) {
+            float v = ((y + 0.5f) / h) * 2f - 1f;
+            for (int x = 0; x < w; x++) {
+                float u = ((x + 0.5f) / w) * 2f - 1f;
+                float au = Math.abs(u);
+                float taper = 1f - Math.min(1f, Math.max(0f, (au - 0.55f) / 0.45f));
+                taper = taper * taper * (3f - 2f * taper);
+                float blade = (float) (Math.exp(-au * 4.2) * Math.exp(-v * v * 95f)) * taper;
+                float halo = (float) Math.exp(-(u * u * 38f + v * v * 5.5f));
+                float core = (float) Math.exp(-(u * u * 520f + v * v * 34f));
+                float a = Math.min(1f, blade * 0.85f + halo * 0.30f + core);
+                float whiteMix = Math.min(1f, core * 1.4f + blade * 0.25f);
+                int r = Math.round(255f * (0.55f + 0.45f * whiteMix));
+                int g = Math.round(255f * (0.74f + 0.26f * whiteMix));
+                int b = 255;
+                px[y * w + x] = (Math.round(255f * a) << 24) | (r << 16) | (g << 8) | b;
+            }
+        }
+        Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        bmp.setPixels(px, 0, w, 0, 0, w, h);
+        return bmp;
     }
 
     /** Draws a button, sinking it along its axis while pressed. */
@@ -577,7 +772,11 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "  gl_Position = uMVP * vec4(aPos, 1.0);\n" +
                 "}\n");
         int fs = compile(GLES20.GL_FRAGMENT_SHADER,
+                "#ifdef GL_FRAGMENT_PRECISION_HIGH\n" +
+                "precision highp float;\n" +
+                "#else\n" +
                 "precision mediump float;\n" +
+                "#endif\n" +
                 "varying vec3 vNormal;\n" +
                 "varying vec2 vUV;\n" +
                 "varying vec3 vWorld;\n" +
@@ -593,6 +792,11 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "uniform float uSweepK;\n" +
                 "uniform float uAmbient;\n" +
                 "uniform float uBoost;\n" +
+                "uniform vec4 uView;\n" +
+                "uniform float uBeam;\n" +
+                "uniform float uBeamPos;\n" +
+                "uniform vec3 uBeamDir;\n" +
+                "uniform vec3 uMask;\n" +
                 "void main() {\n" +
                 "  vec3 n = normalize(vNormal);\n" +
                 "  vec3 l = normalize(uLightDir);\n" +
@@ -617,8 +821,29 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "  float strip = pow(max(dot(n, slH), 0.0), 8.0);\n" +
                 "  float band = strip * (0.25 + uSpec * 1.2) * uSweep * uSweepK;\n" +
                 "  color += vec3(band * 0.88, band * 0.87, band * 0.84);\n" +
+                // The product-film beam: a screen-space light front racing across the scene.
+                // A razor-sharp leading edge with a hot core and a long soft trail. It is
+                // geometry-aware: chamfers, side walls and lens barrels (normals turned away
+                // from the viewer) catch it hardest, flat glass only mirrors a faint sheet.
+                // uView = (w, h, translationX, translationY): the beam and the dark layer live
+                // in the HOST's space, while this surface is translated inside it.
+                "  vec2 bp = (gl_FragCoord.xy - 0.5 * uView.xy + vec2(uView.z, -uView.w)) / uView.y;\n" +
+                "  float bd = dot(bp, uBeamDir.xy) - uBeamPos;\n" +
+                "  float trail = exp(min(bd, 0.0) / uBeamDir.z) * (1.0 - smoothstep(0.0, 0.012, bd));\n" +
+                "  float core = exp(-bd * bd / 0.00012);\n" +
+                "  float edgeK = 1.0 - smoothstep(0.45, 0.98, abs(n.z));\n" +
+                "  float resp = 0.55 + uSpec * 1.5;\n" +
+                "  float beamLight = uBeam * resp * (trail * (0.10 + 0.55 * edgeK) + core * (0.25 + 1.10 * edgeK));\n" +
                 // Unlit halo: the LED glare is a light source, not a shaded surface.
                 "  color += vec3(uBoost) * tex.a;\n" +
+                // The dark layer: a smooth vertical gradient — the top of the scene is lit,
+                // the bottom sinks into black.
+                "  float yTop = (uView.y - gl_FragCoord.y + uView.w) / uView.y;\n" +
+                "  float lit = mix(1.0, uMask.z, smoothstep(uMask.x, uMask.y, yTop));\n" +
+                "  color *= lit;\n" +
+                // The beam is added AFTER the dark layer and only partly dimmed by it: it is
+                // the light that cuts through the dark, so it still glints on the lower body.
+                "  color += vec3(0.93, 0.96, 1.0) * beamLight * (0.40 + 0.60 * lit);\n" +
                 "  float fade = uFade > 0.5 ? smoothstep(0.0, uFade, gl_FragCoord.y) : 1.0;\n" +
                 "  gl_FragColor = vec4(color, alpha * fade);\n" +
                 "}\n");
@@ -643,6 +868,11 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         uSweepK = GLES20.glGetUniformLocation(program, "uSweepK");
         uAmbient = GLES20.glGetUniformLocation(program, "uAmbient");
         uBoost = GLES20.glGetUniformLocation(program, "uBoost");
+        uView = GLES20.glGetUniformLocation(program, "uView");
+        uBeam = GLES20.glGetUniformLocation(program, "uBeam");
+        uBeamPos = GLES20.glGetUniformLocation(program, "uBeamPos");
+        uBeamDir = GLES20.glGetUniformLocation(program, "uBeamDir");
+        uMask = GLES20.glGetUniformLocation(program, "uMask");
     }
 
     /** The LED halo texture: soft warm core with faint star rays. */
@@ -735,7 +965,7 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
             cylinder(glint, lensX - barH * 0.055f, midY + barH * 0.055f, zBack - 0.013f, zBack - 0.0145f,
                     barH * 0.030f, 20);
         }
-        float ledX = vx0 + barH * 0.75f;
+        float ledX = LED_X;
         cylinder(flash, ledX, midY, zBack, zBack - 0.007f, barH * 0.125f, 28);
         // The LED halo: a glow quad pinned to the LED itself, so it rotates, scales and
         // projects exactly with the camera island — never a floating overlay.
@@ -749,6 +979,22 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         vertex(glare, ledX + gh, midY - gh, gz, 0f, 0f, -1f, 1f, 1f);
         vertex(glare, ledX - gh, midY - gh, gz, 0f, 0f, -1f, 0f, 1f);
         bufGlare = toBuffer(glare);
+        // The anamorphic streak: a wide, razor-thin additive quad pinned to the lens pair.
+        // It fires when the beam front crosses the lenses (level computed per frame from
+        // the lens' exact projected position).
+        streakX = LENS_PAIR_X;
+        streakY = midY;
+        streakZ = zBack - 0.016f;
+        float sw = 0.80f;
+        float sh = 0.055f;
+        List<Float> streak = new ArrayList<>();
+        vertex(streak, streakX - sw, streakY + sh, streakZ, 0f, 0f, -1f, 0f, 0f);
+        vertex(streak, streakX + sw, streakY + sh, streakZ, 0f, 0f, -1f, 1f, 0f);
+        vertex(streak, streakX + sw, streakY - sh, streakZ, 0f, 0f, -1f, 1f, 1f);
+        vertex(streak, streakX - sw, streakY + sh, streakZ, 0f, 0f, -1f, 0f, 0f);
+        vertex(streak, streakX + sw, streakY - sh, streakZ, 0f, 0f, -1f, 1f, 1f);
+        vertex(streak, streakX - sw, streakY - sh, streakZ, 0f, 0f, -1f, 0f, 1f);
+        bufStreak = toBuffer(streak);
         cylinder(lenses, vx0 + barH * 1.22f, midY, zBack, zBack - 0.005f, barH * 0.10f, 28);
         // Front camera: a small reflective lens seated in the punch-hole, shaded like the rear.
         float camY = PHONE_ASPECT / 2f - 0.117f;
