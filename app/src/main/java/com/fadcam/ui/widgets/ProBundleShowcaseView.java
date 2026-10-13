@@ -1116,11 +1116,11 @@ public class ProBundleShowcaseView extends FrameLayout {
 
     private static final String CINE_TAG = "ProCinematic";
     private static final float CINE_OVERSCAN = 1.5f;
-    private static final float CINE_AMBIENT_START = 0.85f;
+    private static final float CINE_AMBIENT_START = 0.18f;
     // The dark layer: the top is lit, a long smooth gradient sinks the lower phone into black.
-    private static final float CINE_MASK_FROM = 0.45f;
+    private static final float CINE_MASK_FROM = 0.40f;
     private static final float CINE_MASK_TO = 1.0f;
-    private static final float CINE_MASK_MIN = 0.55f;
+    private static final float CINE_MASK_MIN = 0.04f;
 
     /** Entrance: the fullscreen cinematic when possible, otherwise the phone boots in place. */
     private void startEntrance() {
@@ -1297,19 +1297,19 @@ public class ProBundleShowcaseView extends FrameLayout {
         final float bdx = (float) Math.cos(Math.toRadians(beamDeg));
         final float bdy = (float) Math.sin(Math.toRadians(beamDeg));
         final float reach = (Math.abs(bdx) * phoneWStart / 2f + Math.abs(bdy) * phoneHStart / 2f) / oh;
-        final float beamFrom = -reach - 0.10f;
-        final float beamTo = reach + 0.08f;
+        final float beamFrom = -reach - 0.05f;
+        final float beamTo = reach + 0.04f;
         final float[] island = new float[4];
         PhoneGLView.projectCameraIsland(ow, oh, CINE_OVERSCAN, sStart, 0f, tyStart, island);
         final float ledCoord = ((island[2] - ow / 2f) * bdx + (oh / 2f - island[3]) * bdy) / oh;
 
-        final float beamStart = 350f;
-        final float beamDur = 2300f;
+        final float beamStart = 120f;
+        final float beamDur = 2200f;
         final float tLed = beamStart + beamDur * solveBeam(beamFrom, beamTo, ledCoord);
-        final float tFlash1 = tLed + 380f;
-        final float tFlash2 = tFlash1 + 900f;
-        final float tFlip = tFlash2 + 520f;
-        final float flipDur = 2000f;
+        final float tFlash1 = beamStart + beamDur + 100f;
+        final float tFlash2 = tFlash1 + 650f;
+        final float tFlip = tFlash2 + 400f;
+        final float flipDur = 1700f;
         final float total = tFlip + flipDur + 60f;
         FLog.d(CINE_TAG, "timeline led=" + (int) tLed
                 + " flash2=" + (int) tFlash2 + " flip=" + (int) tFlip + " total=" + (int) total);
@@ -1330,8 +1330,8 @@ public class ProBundleShowcaseView extends FrameLayout {
 
             cinematicGL.setAlpha(easeOutCubic(clamp01(t / 220f)));
 
-            float flash1 = flashBurst(t, tFlash1, 28f, 170f);
-            float flash2 = flashBurst(t, tFlash2, 28f, 360f);
+            float flash1 = flashBurst(t, tFlash1, 30f, 420f, 160f);
+            float flash2 = flashBurst(t, tFlash2, 28f, 0f, 360f);
             cinematicGL.setFlashGlow(Math.max(flash1, flash2));
             if (!cineHaptic1 && t >= tFlash1) {
                 cineHaptic1 = true;
@@ -1346,11 +1346,14 @@ public class ProBundleShowcaseView extends FrameLayout {
             float fe = easeInOutCubic(flipT);
             float open = easeInOutCubic(clamp01(flipT * 1.35f));
 
-            float amb = CINE_AMBIENT_START
-                    + 0.15f * easeOutCubic(clamp01((t - beamStart) / (beamDur + 200f)));
+            // The sweep IS the reveal: exposure and the dark layer open together with the
+            // beam front, so the phone returns to its normal matte color as the light passes.
+            float sweepP = easeInOutQuart(clamp01((t - beamStart) / (beamDur + 200f)));
+            float amb = CINE_AMBIENT_START + (1f - CINE_AMBIENT_START) * sweepP;
             cinematicGL.setAmbient(amb + (1f - amb) * open);
+            float maskMin = CINE_MASK_MIN + (1f - CINE_MASK_MIN) * sweepP;
             cinematicGL.setDarkMask(CINE_MASK_FROM, CINE_MASK_TO,
-                    CINE_MASK_MIN + (1f - CINE_MASK_MIN) * open);
+                    Math.min(1f, maskMin + (1f - maskMin) * open));
 
             // Beam 1 (down-right across the whole product), then beam 2 across the front.
             float u1 = clamp01((t - beamStart) / beamDur);
@@ -1361,7 +1364,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                 float pos2 = -reach2 + 2f * reach2 * easeInOutCubic(u2);
                 cinematicGL.setBeam(0.85f * (float) Math.sin(Math.PI * u2), pos2, beam2Deg, 0.20f);
             } else if (u1 > 0f && in1 * out1 > 0.001f) {
-                float pos1 = beamFrom + (beamTo - beamFrom) * easeInOutCubic(u1);
+                float pos1 = beamFrom + (beamTo - beamFrom) * easeInOutQuart(u1);
                 cinematicGL.setBeam(in1 * out1, pos1, beamDeg, 0.26f);
             } else {
                 cinematicGL.setBeam(0f, 0f, beamDeg, 0.26f);
@@ -1385,17 +1388,18 @@ public class ProBundleShowcaseView extends FrameLayout {
     private static float solveBeam(float from, float to, float coord) {
         for (int i = 0; i <= 240; i++) {
             float u = i / 240f;
-            if (from + (to - from) * easeInOutCubic(u) >= coord) return u;
+            if (from + (to - from) * easeInOutQuart(u) >= coord) return u;
         }
         return 0.5f;
     }
 
     /** Flash discharge: a smooth, very fast attack followed by an exponential decay (ms). */
-    private static float flashBurst(float t, float start, float attackMs, float tauMs) {
+    private static float flashBurst(float t, float start, float attackMs, float holdMs, float tauMs) {
         if (t <= start) return 0f;
         float dt = t - start;
         if (dt < attackMs) return smooth01(dt / attackMs);
-        return clamp01((float) Math.exp(-(dt - attackMs) / tauMs));
+        if (dt < attackMs + holdMs) return 1f;
+        return clamp01((float) Math.exp(-(dt - attackMs - holdMs) / tauMs));
     }
 
     private static float smooth01(float x) {
@@ -1415,6 +1419,12 @@ public class ProBundleShowcaseView extends FrameLayout {
         return x < 0.5f
                 ? 4f * x * x * x
                 : 1f - (float) Math.pow(-2f * x + 2f, 3f) / 2f;
+    }
+
+    private static float easeInOutQuart(float x) {
+        return x < 0.5f
+                ? 8f * x * x * x * x
+                : 1f - (float) Math.pow(-2f * x + 2f, 4f) / 2f;
     }
 
     /**
