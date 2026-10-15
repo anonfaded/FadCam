@@ -237,7 +237,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                 phoneWrapper.getLocationOnScreen(loc);
                 wrapperScreenX = loc[0];
                 wrapperScreenY = loc[1];
-                float scale = phoneWrapper.getScaleX() > 0f ? phoneWrapper.getScaleX() : 1f;
+                float scale = v.getScaleX() > 0f ? v.getScaleX() : 1f;
                 float lx = (event.getRawX() - wrapperScreenX) / scale;
                 float ly = (event.getRawY() - wrapperScreenY) / scale;
                 float margin = 24f * getResources().getDisplayMetrics().density;
@@ -384,7 +384,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                     if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
                     return true;
                 }
-                float scaleNow = phoneWrapper.getScaleX() > 0f ? phoneWrapper.getScaleX() : 1f;
+                float scaleNow = getScaleX() > 0f ? getScaleX() : 1f;
                 downX = (event.getRawX() - wrapperScreenX) / scaleNow;
                 downY = (event.getRawY() - wrapperScreenY) / scaleNow;
                 startRotation = rotation;
@@ -1539,37 +1539,41 @@ public class ProBundleShowcaseView extends FrameLayout {
     public void enterFullscreen() {
         if (fullscreenActive || cinematicRunning || phoneWrapper == null) return;
         if (!motionAllowed()) return;
-        float w = phoneWrapper.getWidth();
-        float h = phoneWrapper.getHeight();
-        if (w <= 0f || h <= 0f) return;
         fullscreenActive = true;
         if (fullscreenListener != null) fullscreenListener.onFullscreenActive(true);
-        // Only the phone should be visible: hide the card's own text + surface.
         View textColumn = findViewById(R.id.showcaseTextColumn);
         if (textColumn != null) textColumn.setVisibility(View.INVISIBLE);
         View root = findViewById(R.id.showcaseRoot);
         if (root != null) root.setBackground(null);
-        // Crisper faces for the large pose (one re-render during the flight).
         textureScale = Math.max(textureScale, 2.6f);
         frontDirty = true;
         backDirty = true;
         frameDirty = true;
         post(textureTask);
+        float w = phoneWrapper.getWidth();
+        float h = phoneWrapper.getHeight();
+        if (w <= 0f || h <= 0f) return;
         int[] loc = new int[2];
-        phoneWrapper.getLocationOnScreen(loc);
+        getLocationOnScreen(loc);
+        int[] wLoc = new int[2];
+        phoneWrapper.getLocationOnScreen(wLoc);
+        float pivotX = wLoc[0] - loc[0] + w / 2f;
+        float pivotY = wLoc[1] - loc[1] + h / 2f;
         float screenW = getResources().getDisplayMetrics().widthPixels;
         float screenH = getResources().getDisplayMetrics().heightPixels;
         float targetH = Math.min(0.86f * screenH, 0.74f * screenW * 2.05f);
         float scale = targetH / h;
-        float tx = screenW / 2f - (loc[0] + w / 2f);
-        float ty = screenH / 2f - (loc[1] + h / 2f);
-        phoneWrapper.setPivotX(w / 2f);
-        phoneWrapper.setPivotY(h / 2f);
-        phoneWrapper.animate().scaleX(scale).scaleY(scale).translationX(tx).translationY(ty)
-                .setDuration(680).setInterpolator(new DecelerateInterpolator(1.3f)).start();
+        float tx = screenW / 2f - (loc[0] + pivotX);
+        float ty = screenH / 2f - (loc[1] + pivotY);
+        setPivotX(pivotX);
+        setPivotY(pivotY);
+        // Slow-fast-slow velocity, like the entrance beam: one smooth 360 degree turn.
+        android.animation.TimeInterpolator ease = new android.view.animation.AccelerateDecelerateInterpolator();
+        animate().scaleX(scale).scaleY(scale).translationX(tx).translationY(ty)
+                .setDuration(900).setInterpolator(ease).start();
         ValueAnimator spin = ValueAnimator.ofFloat(rotation, rotation + 360f);
-        spin.setDuration(680);
-        spin.setInterpolator(new DecelerateInterpolator(1.3f));
+        spin.setDuration(900);
+        spin.setInterpolator(ease);
         spin.addUpdateListener(a -> {
             if (phoneGL != null) phoneGL.setAngle((float) a.getAnimatedValue());
         });
@@ -1580,8 +1584,9 @@ public class ProBundleShowcaseView extends FrameLayout {
     public void exitFullscreen() {
         if (!fullscreenActive || phoneWrapper == null) return;
         fullscreenActive = false;
-        phoneWrapper.animate().scaleX(1f).scaleY(1f).translationX(0f).translationY(0f)
-                .setDuration(460).setInterpolator(new AccelerateInterpolator(1.3f))
+        android.animation.TimeInterpolator ease = new android.view.animation.AccelerateDecelerateInterpolator();
+        animate().scaleX(1f).scaleY(1f).translationX(0f).translationY(0f)
+                .setDuration(820).setInterpolator(ease)
                 .withEndAction(() -> {
                     View textColumn = findViewById(R.id.showcaseTextColumn);
                     if (textColumn != null) textColumn.setVisibility(View.VISIBLE);
@@ -1595,8 +1600,8 @@ public class ProBundleShowcaseView extends FrameLayout {
                     if (fullscreenListener != null) fullscreenListener.onFullscreenActive(false);
                 }).start();
         ValueAnimator spin = ValueAnimator.ofFloat(rotation + 360f, rotation);
-        spin.setDuration(460);
-        spin.setInterpolator(new AccelerateInterpolator(1.3f));
+        spin.setDuration(820);
+        spin.setInterpolator(ease);
         spin.addUpdateListener(a -> {
             if (phoneGL != null) phoneGL.setAngle((float) a.getAnimatedValue());
         });
