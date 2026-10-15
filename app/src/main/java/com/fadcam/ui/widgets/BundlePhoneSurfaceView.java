@@ -1671,7 +1671,7 @@ public class BundlePhoneSurfaceView extends View {
         canvas.drawText(dateText, screen.centerX(), screen.top + screen.height() * 0.275f, paint);
         if (!usageText.isEmpty()) {
             paint.setTextSize(pw * 0.042f);
-            paint.setColor(0x8C9A9AA0);
+            paint.setColor(0xFFBEBEC6);
             canvas.drawText(usageText, screen.centerX(), screen.top + screen.height() * 0.318f, paint);
         }
 

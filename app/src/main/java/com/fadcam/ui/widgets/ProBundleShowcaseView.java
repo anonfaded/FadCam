@@ -1601,23 +1601,18 @@ public class ProBundleShowcaseView extends FrameLayout {
         long remDays = ((days % 365L) % 30L) % 7L;
         long remHours = hours % 24L;
         long remMinutes = minutes % 60L;
-        StringBuilder sb = new StringBuilder();
-        appendUnit(sb, years, "year");
-        appendUnit(sb, months, "month");
-        appendUnit(sb, weeks, "week");
-        appendUnit(sb, remDays, "day");
-        appendUnit(sb, remHours, "hour");
-        appendUnit(sb, remMinutes, "minute");
-        if (sb.length() == 0) sb.append("under a minute");
-        return sb.toString();
-    }
-
-    private static void appendUnit(StringBuilder sb, long value, String unit) {
-        if (value <= 0) return;
-        if (sb.length() > 0) sb.append(", ");
-        int existingUnits = sb.toString().split(",").length;
-        if (existingUnits >= 2) return;
-        sb.append(value).append(' ').append(unit).append(value == 1 ? "" : "s");
+        // Two units at most ("1 year, 2 months"), joined cleanly — never a dangling separator.
+        String[] parts = new String[6];
+        int count = 0;
+        if (years > 0) parts[count++] = years + (years == 1 ? " year" : " years");
+        if (months > 0) parts[count++] = months + (months == 1 ? " month" : " months");
+        if (weeks > 0) parts[count++] = weeks + (weeks == 1 ? " week" : " weeks");
+        if (remDays > 0) parts[count++] = remDays + (remDays == 1 ? " day" : " days");
+        if (remHours > 0) parts[count++] = remHours + (remHours == 1 ? " hour" : " hours");
+        if (remMinutes > 0) parts[count++] = remMinutes + (remMinutes == 1 ? " minute" : " minutes");
+        if (count == 0) return "under a minute";
+        if (count == 1) return parts[0];
+        return parts[0] + ", " + parts[1];
     }
 
         // -------------------------------------------------------------- helpers
