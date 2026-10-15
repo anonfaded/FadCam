@@ -1181,12 +1181,6 @@ public class ProBundleShowcaseView extends FrameLayout {
             return;
         }
         cinematicTries = 0;
-        // Landscape/odd windows: skip the cinematic, boot in place instead of breaking.
-        if (ow > oh) {
-            FLog.d(CINE_TAG, "skip: landscape host " + ow + "x" + oh);
-            finishCinematic(false);
-            return;
-        }
         // The face textures must exist before the show starts.
         updateTextures();
         if (screenBitmap == null) {
