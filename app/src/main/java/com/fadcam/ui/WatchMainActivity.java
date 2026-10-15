@@ -147,7 +147,8 @@ public class WatchMainActivity extends AppCompatActivity {
     }
 
     private void updateDots(int selectedPage) {
-        for (int i = 0; i < PAGE_COUNT; i++) {
+        int count = com.fadcam.BuildConfig.LITE_EDITION ? 3 : PAGE_COUNT;
+        for (int i = 0; i < count; i++) {
             if (dots[i] != null) {
                 dots[i].setBackgroundResource(
                         i == selectedPage
@@ -165,9 +166,17 @@ public class WatchMainActivity extends AppCompatActivity {
         @NonNull
         @Override
         public Fragment createFragment(int position) {
+            if (com.fadcam.BuildConfig.LITE_EDITION) {
+                // Lite watch: no remote page — camera, records, settings only
+                switch (position) {
+                    case 1:  return new WatchRecordsFragment();
+                    case 2:  return new WatchSettingsFragment();
+                    default: return new WatchCameraFragment();
+                }
+            }
             switch (position) {
                 case 1:  return new WatchRecordsFragment();
-                case 2:  return new WatchRemoteFragment();
+                case 2:  return com.fadcam.FeatureRegistry.features().createWatchRemoteFragment();
                 case 3:  return new WatchSettingsFragment();
                 default: return new WatchCameraFragment();
             }
@@ -175,7 +184,7 @@ public class WatchMainActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return PAGE_COUNT;
+            return com.fadcam.BuildConfig.LITE_EDITION ? 3 : PAGE_COUNT;
         }
     }
 

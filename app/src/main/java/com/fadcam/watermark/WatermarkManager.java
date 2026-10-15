@@ -306,18 +306,22 @@ public class WatermarkManager implements WatermarkInfoProvider {
         if (prefs.isSpeedEnabled() && sensorDataProvider != null) {
             if (!cachedGpsProviderEnabled) {
                 sb.append("\nSpeed: GPS is off");
-            } else {
+            } else if (sensorDataProvider.hasFreshFix()) {
                 float speed = sensorDataProvider.getSpeedKmh();
                 sb.append("\nSpeed: ").append(String.format("%.0f", speed)).append(" km/h");
+            } else {
+                sb.append("\nSpeed: --");
             }
         }
 
         if (prefs.isAltitudeEnabled() && sensorDataProvider != null) {
             if (!cachedGpsProviderEnabled) {
                 sb.append("\nAlt: GPS is off");
-            } else {
+            } else if (sensorDataProvider.hasFreshFix()) {
                 double alt = sensorDataProvider.getAltitude();
                 sb.append("\nAlt: ").append(String.format("%.0f", alt)).append("m");
+            } else {
+                sb.append("\nAlt: --");
             }
         }
 

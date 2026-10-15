@@ -337,13 +337,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Floating dock for filter chips -->
-    <LinearLayout
+    <!-- Floating dock for filter chips: card hugs the chips and stays centered,
+         sort button stays right-aligned -->
+    <FrameLayout
         android:id="@+id/records_filter_row"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="6dp"
@@ -353,9 +352,10 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
+            android:id="@+id/records_filter_card"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_gravity="center|center_vertical"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp"
             app:cardBackgroundColor="?attr/colorTopBar">
@@ -438,6 +438,7 @@
             android:id="@+id/btn_filter_checklist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="end|center_vertical"
             android:layout_marginStart="6dp"
             android:fontFamily="@font/materialicons"
             android:text="checklist"
@@ -445,7 +446,7 @@
             android:textSize="20sp"
             android:padding="4dp"
             android:contentDescription="@string/records_filter_checklist_desc" />
-    </LinearLayout>
+    </FrameLayout>
 
     <!-- Floating dock for camera filter chips -->
     <LinearLayout
@@ -454,7 +455,7 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:gravity="center"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="2dp"
@@ -464,14 +465,14 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp"
             app:cardBackgroundColor="?attr/colorTopBar">
 
             <HorizontalScrollView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:scrollbars="none"
                 android:overScrollMode="never"

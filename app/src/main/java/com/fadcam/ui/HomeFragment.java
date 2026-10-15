@@ -92,7 +92,6 @@ import com.fadcam.VideoCodec;
 import com.fadcam.services.RecordingService;
 import com.fadcam.services.TorchService;
 import com.fadcam.dualcam.service.DualCameraRecordingService;
-import com.fadcam.streaming.RemoteStreamManager;
 import com.fadcam.ui.helpers.HomeFragmentHelper;
 import com.fadcam.ui.components.ModeSwitcherComponent;
 import com.fadcam.utils.DebouncedRunnable;
@@ -1328,6 +1327,26 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    /**
+     * Clears the recording timeline (elapsed anchor + countdown latch) and repaints the
+     * quick-action timer badge.
+     *
+     * <p>Must be reached from BOTH ways the UI can learn that a recording ended:
+     * {@link #onRecordingStopped()} (stop broadcast, used by the in-app stop button) and
+     * {@link #handleServiceStateUpdate(RecordingState)} with {@code NONE} — the path taken when
+     * the app re-syncs with the service (e.g. a stop performed from the shortcut while the app was
+     * in the background). Missing the state-callback path left the elapsed anchor set and the
+     * countdown badge ticking after the recording had already stopped.
+     */
+    private void resetRecordingTimeline() {
+        quickCountdownSessionActive = false;
+        recordingStartTime = 0L;
+        recordingPauseStartedAt = 0L;
+        recordingAccumulatedPausedDurationMs = 0L;
+        latestElapsedDisplay = buildElapsedDisplayText(0L);
+        refreshQuickTimerValue();
+    }
+
     private void resetTimers() {
         // Avoid blindly resetting if we are in the middle of an existing recording.
         if (isRecording() || isPaused()) {
@@ -1496,17 +1515,20 @@ public class HomeFragment extends BaseFragment {
                     Executors.newSingleThreadExecutor();
                 updateExecutor.execute(() -> {
                     try {
-                        // Rate-limit: GitHub feed is re-fetched at most once an
-                        // hour (epoch-ms timestamp persisted at each check).
+                        // Rate-limit: GitHub feeds are re-fetched at most once an hour
+                        // (timestamp persisted at each check). Inside the window we still
+                        // USE the cached last result so the UI keeps showing updates.
                         long now = System.currentTimeMillis();
+                        String currentVersion = getAppVersionForUpdates();
+                        com.fadcam.services.UpdateCheckService.UpdateCheckResult result;
                         if (now - sharedPreferencesManager.getLong(
                                 Constants.LAST_UPDATE_CHECK_KEY, 0L)
                                 < UPDATE_CHECK_INTERVAL_MS) {
-                            return;
+                            result = com.fadcam.services.UpdateCheckService.getLastResult();
+                            if (result == null) return;
+                        } else {
+                            result = com.fadcam.services.UpdateCheckService.checkForUpdate(currentVersion);
                         }
-                        String currentVersion = getAppVersionForUpdates();
-                        com.fadcam.services.UpdateCheckService.UpdateCheckResult result =
-                            com.fadcam.services.UpdateCheckService.checkForUpdate(currentVersion);
 
                         if (result.errorOccurred) {
                             FLog.w(TAG, "Update check returned error, skipping UI");
@@ -1822,13 +1844,8 @@ public class HomeFragment extends BaseFragment {
 
         // First update the recording state
         recordingState = RecordingState.NONE;
-        quickCountdownSessionActive = false;
-        
         // Reset timer (service will have cleared its value too)
-        recordingStartTime = 0;
-        recordingPauseStartedAt = 0L;
-        recordingAccumulatedPausedDurationMs = 0L;
-        latestElapsedDisplay = buildElapsedDisplayText(0L);
+        resetRecordingTimeline();
         // log removed
 
         // Release wake lock if it was acquired
@@ -2811,6 +2828,15 @@ public class HomeFragment extends BaseFragment {
                     }
                 }
                 resetUIButtonsToIdleState();
+                // The service is the source of truth: when it reports NONE the timeline must be
+                // cleared here too. A recording stopped from the shortcut while the app was in the
+                // background never delivers the stop broadcast, so this is the only place the UI
+                // learns about it — without this the elapsed anchor stayed set and the countdown
+                // badge kept ticking after the recording had ended.
+                if (previousState != RecordingState.NONE) {
+                    resetRecordingTimeline();
+                    Log.setRecordingActive(false);
+                }
                 break;
         }
     }
@@ -4621,18 +4647,34 @@ public class HomeFragment extends BaseFragment {
         View proBadgeDot = view.findViewById(R.id.proBadgeDot);
         
         if (btnGetPro != null) {
-            Utils.attachPressScale(btnGetPro);
+            // The pill states what this APK IS: owners see their tier, everyone else is invited
+            // to it. The screen behind it switches to the owner view on the same signal.
+            String runningTier = com.fadcam.BuildConfig.TIER;
+            boolean isProBuild = !"FREE".equals(runningTier);
+            if (isProBuild && btnGetPro instanceof android.widget.TextView) {
+                ((android.widget.TextView) btnGetPro).setText(
+                        "PRO_PLUS".equals(runningTier)
+                                ? R.string.pro_screen_tier_plus
+                                : R.string.pro_screen_tier);
+            }
+            btnGetPro.setContentDescription(getString(isProBuild
+                    ? R.string.pro_screen_navigation_owned : R.string.pro_screen_navigation));
             // Update badge visibility based on pro feature state
             if (proBadgeDot != null) {
-                try {
-                    MainActivity mainActivity = (MainActivity) getActivity();
-                    if (mainActivity != null && mainActivity.shouldShowProBadge()) {
-                        proBadgeDot.setVisibility(View.VISIBLE);
-                    } else {
-                        proBadgeDot.setVisibility(View.GONE);
+                if (isProBuild) {
+                    // Owners already have it — an upsell dot would be noise.
+                    proBadgeDot.setVisibility(View.GONE);
+                } else {
+                    try {
+                        MainActivity mainActivity = (MainActivity) getActivity();
+                        if (mainActivity != null && mainActivity.shouldShowProBadge()) {
+                            proBadgeDot.setVisibility(View.VISIBLE);
+                        } else {
+                            proBadgeDot.setVisibility(View.GONE);
+                        }
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error checking pro badge state", e);
                     }
-                } catch (Exception e) {
-                    FLog.e(TAG, "Error checking pro badge state", e);
                 }
             }
             
@@ -4652,7 +4694,6 @@ public class HomeFragment extends BaseFragment {
                 Intent intent = new Intent(getActivity(), FadCamProActivity.class);
                 startActivity(intent);
             });
-            // ShimmerTextView handles its own shimmer animation
         }
 
         // -----
@@ -5509,7 +5550,7 @@ public class HomeFragment extends BaseFragment {
 
         // Check if codec is HEVC - browsers don't support HEVC for HLS live streaming
         // Only validate if streaming is actually enabled (server running)
-        if (RemoteStreamManager.getInstance().isStreamingEnabled()) {
+        if (com.fadcam.FeatureRegistry.streaming().isStreamingEnabled()) {
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
             if (selectedCodec == VideoCodec.HEVC) {
                 // HEVC is not browser-compatible for HLS streaming
@@ -6389,7 +6430,10 @@ public class HomeFragment extends BaseFragment {
                 sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
             }
             long limitMs = sharedPreferencesManager.getMaximumRecordingDurationMs();
-            boolean sessionActive = isRecording() || isPaused() || quickCountdownSessionActive;
+            // NOTE: the latch must NOT keep itself alive. Including quickCountdownSessionActive
+            // here made the release branch unreachable once the latch was set, so the badge
+            // counted down forever after a recording ended.
+            boolean sessionActive = isRecording() || isPaused();
             if (!sessionActive || limitMs <= 0L) {
                 boolean wasActive = quickCountdownSessionActive;
                 quickCountdownSessionActive = false;
@@ -6680,11 +6724,11 @@ public class HomeFragment extends BaseFragment {
             // Check if streaming is active in STREAM_ONLY mode - if so, don't deduct estimated bytes
             boolean isStreamOnlyMode = false;
             try {
-                boolean serverActive = RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode mode =
+                boolean serverActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+                com.fadcam.StreamingMode mode =
                     sharedPreferencesManager.getStreamingMode();
                 isStreamOnlyMode = serverActive &&
-                    (mode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                    (mode == com.fadcam.StreamingMode.STREAM_ONLY);
             } catch (Exception e) {
                 FLog.e(TAG, "Error checking streaming mode for storage calculation", e);
             }
@@ -6844,11 +6888,11 @@ public class HomeFragment extends BaseFragment {
             // Check if streaming is active in STREAM_ONLY mode - if so, show "Unlimited"
             boolean isStreamOnlyMode = false;
             try {
-                boolean serverActive = RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode mode =
+                boolean serverActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+                com.fadcam.StreamingMode mode =
                     sharedPreferencesManager.getStreamingMode();
                 isStreamOnlyMode = serverActive &&
-                    (mode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                    (mode == com.fadcam.StreamingMode.STREAM_ONLY);
             } catch (Exception e) {
                 FLog.e(TAG, "Error checking streaming mode in camera recording UI", e);
             }
@@ -8795,7 +8839,9 @@ public class HomeFragment extends BaseFragment {
                 tvPreviewHint.setText(getPreviewEnableHintResId());
             }
             setHintVisibilityAnimated(true);
-            Toast.makeText(requireContext(), "Preview could not start. Try long-press again.", Toast.LENGTH_SHORT).show();
+            if (isVisible() && !isHidden()) {
+                Toast.makeText(requireContext(), "Preview could not start. Try long-press again.", Toast.LENGTH_SHORT).show();
+            }
         };
         previewOnlyStartHandler.postDelayed(
                 pendingPreviewOnlyStartTimeoutRunnable,
@@ -10255,7 +10301,8 @@ public class HomeFragment extends BaseFragment {
             // Restore default FadCam text logo.
             stopHeaderBlinkLoop();
             ivAppTitle.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-            ivAppTitle.setImageResource(R.drawable.menu_icon_unknown);
+            ivAppTitle.setImageResource(com.fadcam.BuildConfig.LITE_EDITION
+                    ? R.drawable.fadcam_lite_header_icon : R.drawable.menu_icon_unknown);
         }
     }
 
@@ -10393,6 +10440,11 @@ public class HomeFragment extends BaseFragment {
         Utils.attachPressScale(btnHamburgerMenu, 1.15f);
         hamburgerBadgeDot = view.findViewById(R.id.hamburgerBadgeDot);
         ivAppTitle = view.findViewById(R.id.ivAppTitle);
+        if (ivAppTitle != null) {
+            // Both editions ship their own header wordmark; same dimensions, different art.
+            ivAppTitle.setImageResource(com.fadcam.BuildConfig.LITE_EDITION
+                    ? R.drawable.fadcam_lite_header_icon : R.drawable.menu_icon_unknown);
+        }
         // Set up header logo click handler for Privacy Black Mode
         if (ivAppTitle != null) {
             ivAppTitle.setOnClickListener(v -> {

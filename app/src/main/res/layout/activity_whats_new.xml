@@ -4,71 +4,78 @@
     android:id="@+id/whatsNewRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="false">
-
-    <!-- Gradient background is set programmatically -->
+    android:fitsSystemWindows="false"
+    android:background="#0D0D0D">
 
     <!-- Main Content -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:fitsSystemWindows="true"
-
         android:paddingBottom="8dp">
 
-        <!-- Scroll Progress Bar with gradient and glow -->
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:layout_marginBottom="0dp"
-            android:elevation="8dp">
-            
-            <ProgressBar
-                android:id="@+id/scrollProgressBar"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:max="100"
-                android:progress="0"
-                android:progressDrawable="@drawable/progress_bar_gradient"
-                android:scaleY="1.0"
-                android:layout_gravity="center_vertical"
-                android:layout_marginBottom="2dp" />
-        </FrameLayout>
-
-        <!-- Header with Close Button on LEFT -->
+        <!-- Dossier-style header panel: rounded bottom corners like the app's tab headers -->
         <LinearLayout
+            android:id="@+id/whatsNewHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="2dp">
+            android:orientation="vertical"
+            android:background="@drawable/bg_whats_new_header"
+            android:paddingBottom="8dp">
 
-            <!-- Close Button (LEFT SIDE) -->
-            <ImageButton
-                android:id="@+id/btnCloseWhatsNew"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:src="@drawable/ic_close"
-                android:contentDescription="@string/desc_close"
-                android:scaleType="centerInside"
-                android:tint="@android:color/white"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="6dp"
-                android:layout_marginEnd="8dp" />
+            <!-- Scroll Progress Bar with gradient and glow -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:layout_marginBottom="0dp"
+                android:elevation="8dp">
+                
+                <ProgressBar
+                    android:id="@+id/scrollProgressBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="4dp"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/progress_bar_gradient"
+                    android:scaleY="1.0"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginBottom="2dp" />
+            </FrameLayout>
 
-            <!-- Title -->
-            <TextView
-                android:layout_width="0dp"
+            <!-- Header with Close Button on LEFT -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="✨ What's New"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/white"
-                android:fontFamily="@font/ubuntu_regular" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="2dp">
+
+                <!-- Close Button (LEFT SIDE) -->
+                <ImageButton
+                    android:id="@+id/btnCloseWhatsNew"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_close"
+                    android:contentDescription="@string/desc_close"
+                    android:scaleType="centerInside"
+                    android:tint="@android:color/white"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="6dp"
+                    android:layout_marginEnd="8dp" />
+
+                <!-- Title -->
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="✨ What's New"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:fontFamily="@font/ubuntu_regular" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Info Card explaining What's New -->
@@ -111,17 +118,20 @@
             android:layout_marginTop="6dp"
             android:layout_marginBottom="6dp" />
 
-        <!-- Shimmer loading skeleton -->
-        <LinearLayout
-            android:id="@+id/shimmerContainer"
+        <!-- Loading skeleton and changelog share one area so the crossfade never shifts layout -->
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:paddingHorizontal="12dp"
-            android:paddingTop="1dp"
+            android:layout_weight="1">
 
-            android:visibility="visible">
+            <LinearLayout
+                android:id="@+id/shimmerContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingTop="1dp"
+                android:visibility="visible">
 
             <!-- Shimmer placeholder lines with visible shimmer effect -->
             <View
@@ -175,16 +185,16 @@
                 android:alpha="0.7" />
         </LinearLayout>
 
-        <!-- Changelog WebView (supports images) -->
-        <WebView
-            android:id="@+id/changelogWebView"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:paddingHorizontal="12dp"
-            android:paddingTop="1dp"
+            <!-- Changelog WebView (supports images) -->
+            <WebView
+                android:id="@+id/changelogWebView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingHorizontal="12dp"
+                android:paddingTop="1dp"
 
-            android:visibility="gone" />
+                android:visibility="gone" />
+        </FrameLayout>
 
         <!-- Bottom CTA Button with Countdown -->
         <LinearLayout
@@ -206,16 +216,16 @@
                 android:fontFamily="@font/ubuntu_regular"
                 android:layout_marginBottom="4dp" />
 
-            <!-- Got It Button with very rounded corners -->
+            <!-- Got It Button: squircle corners, taller -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGotIt"
                 android:layout_width="match_parent"
-                android:layout_height="42dp"
+                android:layout_height="52dp"
                 android:text="Got It!"
-                android:textSize="14sp"
+                android:textSize="15sp"
                 android:textColor="@android:color/white"
                 android:backgroundTint="#4CAF50"
-                app:cornerRadius="21dp"
+                app:cornerRadius="14dp"
                 android:enabled="false"
                 android:alpha="0.5" />
         </LinearLayout>

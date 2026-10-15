@@ -3181,4 +3181,9 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Tampilkan di Pengaturan</string>
     <string name="trash_show_in_settings_desc">Menambahkan baris Sampah ke halaman Pengaturan untuk akses cepat</string>
+    <string name="fadcam_full_title">Pengguna Daya FadCam</string>
+    <string name="fadcam_full_subtitle">Kontrol jarak jauh, perekaman gerak, forensik, dan lainnya. Coba versi lengkapnya.</string>
+    <string name="github_get_on">Dapatkan di</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

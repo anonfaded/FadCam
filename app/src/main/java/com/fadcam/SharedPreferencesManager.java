@@ -827,19 +827,19 @@ public class SharedPreferencesManager {
      * Get the current streaming mode (STREAM_ONLY or STREAM_AND_SAVE).
      * Defaults to STREAM_AND_SAVE.
      */
-    public com.fadcam.streaming.RemoteStreamManager.StreamingMode getStreamingMode() {
+    public com.fadcam.StreamingMode getStreamingMode() {
         String mode = sharedPreferences.getString(PREF_KEY_STREAMING_MODE, "STREAM_AND_SAVE");
         try {
-            return com.fadcam.streaming.RemoteStreamManager.StreamingMode.valueOf(mode);
+            return com.fadcam.StreamingMode.valueOf(mode);
         } catch (IllegalArgumentException e) {
-            return com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+            return com.fadcam.StreamingMode.STREAM_AND_SAVE;
         }
     }
     
     /**
      * Set the streaming mode (STREAM_ONLY or STREAM_AND_SAVE).
      */
-    public void setStreamingMode(com.fadcam.streaming.RemoteStreamManager.StreamingMode mode) {
+    public void setStreamingMode(com.fadcam.StreamingMode mode) {
         sharedPreferences
             .edit()
             .putString(PREF_KEY_STREAMING_MODE, mode.toString())

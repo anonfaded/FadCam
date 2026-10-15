@@ -4837,4 +4837,9 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">在设置中显示</string>
     <string name="trash_show_in_settings_desc">在设置页面添加回收站行以便快速访问</string>
+    <string name="fadcam_full_title">FadCam 高级用户</string>
+    <string name="fadcam_full_subtitle">远程控制、运动侦测录像、取证分析等功能。试用完整版。</string>
+    <string name="github_get_on">获取于</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

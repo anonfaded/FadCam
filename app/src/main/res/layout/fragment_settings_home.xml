@@ -1340,11 +1340,84 @@ app:layout_constraintTop_toTopOf="parent"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
 
-        </LinearLayout>
+            <View style="@style/SettingsDivider" />
 
-        <!-- ═══════════════════════════════════════════════════════════ -->
-        <!-- Trash Section — standalone                                       -->
-        <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- Follow on X Row -->
+            <LinearLayout
+                android:id="@+id/group_follow_x"
+                style="@style/SettingsGroupRow"
+                >
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_x"
+                    android:tint="@android:color/darker_gray"/>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/follow_on_x"
+                        android:textColor="?attr/colorHeading"
+                        android:textStyle="bold"
+                        android:textSize="15sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/follow_on_x_sub"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+            <View style="@style/SettingsDivider" />
+
+            <!-- Discord Row -->
+            <LinearLayout
+                android:id="@+id/group_discord"
+                style="@style/SettingsGroupRow"
+                >
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_discord_gold" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/home_sidebar_discord"
+                        android:textColor="?attr/colorHeading"
+                        android:textStyle="bold"
+                        android:textSize="15sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/home_sidebar_discord_sub"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/section_trash"
@@ -1906,6 +1979,99 @@ app:layout_constraintTop_toTopOf="parent"
                         android:contentDescription="Download on the App Store"/>
                 </LinearLayout>
 
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="10dp"
+            android:text="@string/fadcam_full_title"
+            android:textColor="?attr/colorHeading"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"/>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/group_full_promo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="#1A1A1A"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_launcher_playstore"
+                        android:scaleType="fitCenter"
+                        android:background="@drawable/bg_icon_rounded"
+                        android:clipToOutline="true"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="14dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/fadcam_card_title"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold"
+                            android:textSize="16sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/fadcam_full_subtitle"
+                            android:textColor="#AAAAAA"
+                            android:textSize="12sp"
+                            android:lineSpacingExtra="2dp"/>
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_open_in_new"
+                        android:tint="#AAAAAA"
+                        android:layout_marginStart="8dp"/>
+                </LinearLayout>
+
+                <!-- GitHub badge (your asset, mirrors App Store badge sizing) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:paddingVertical="4dp">
+                    <ImageView
+                        android:layout_width="180dp"
+                        android:layout_height="54dp"
+                        android:src="@drawable/ic_github_badge"
+                        android:scaleType="fitCenter"
+                        android:contentDescription="Get it on GitHub"/>
+                </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 

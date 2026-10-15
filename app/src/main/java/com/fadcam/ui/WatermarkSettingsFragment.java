@@ -294,6 +294,14 @@ public class WatermarkSettingsFragment extends Fragment {
         dotFadCam = view.findViewById(R.id.dot_fadcam);
         dotFadRec = view.findViewById(R.id.dot_fadrec);
         previewAdapter = new PreviewPagerAdapter();
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            // Lite: FadCam preview only — hide the tab strip + FadRec dot and lock the pager
+            android.view.View tabsRow = view.findViewById(R.id.preview_mode_tabs);
+            if (tabsRow != null) tabsRow.setVisibility(android.view.View.GONE);
+            if (dotFadCam != null) dotFadCam.setVisibility(android.view.View.GONE);
+            if (dotFadRec != null) dotFadRec.setVisibility(android.view.View.GONE);
+            if (previewPager != null) previewPager.setUserInputEnabled(false);
+        }
         if (previewPager != null) {
             previewPager.setAdapter(previewAdapter);
             previewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -502,6 +510,7 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     private void updateDots(int page) {
+        if (com.fadcam.BuildConfig.LITE_EDITION) return; // dots hidden in Lite (FadCam preview only)
         if (dotFadCam != null && dotFadRec != null) {
             dotFadCam.setBackgroundResource(page == 0
                     ? R.drawable.indicator_dot_active : R.drawable.indicator_dot_inactive);

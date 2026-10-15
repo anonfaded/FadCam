@@ -4578,4 +4578,9 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="trash_show_in_settings_title">Afficher dans les Paramètres</string>
     <string name="trash_show_in_settings_desc">Ajoute une ligne Corbeille à la page Paramètres pour un accès rapide</string>
 
+    <string name="fadcam_full_title">FadCam utilisateur avancé</string>
+    <string name="fadcam_full_subtitle">Contrôle à distance, enregistrement sur mouvement, expertise et plus. Essayez la version complète.</string>
+    <string name="github_get_on">Disponible sur</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

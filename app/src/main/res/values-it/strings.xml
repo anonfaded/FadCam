@@ -2905,4 +2905,9 @@
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Mostra nelle Impostazioni</string>
     <string name="trash_show_in_settings_desc">Aggiunge una riga Cestino alla pagina Impostazioni per accesso rapido</string>
+    <string name="fadcam_full_title">FadCam Power User</string>
+    <string name="fadcam_full_subtitle">Controllo remoto, registrazione su movimento, analisi forense e altro. Prova la versione completa.</string>
+    <string name="github_get_on">Scarica su</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
 </resources>

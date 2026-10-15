@@ -29,11 +29,9 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.ui.RecordsFragment;
-import com.fadcam.ui.RemoteFragment;
 import com.fadcam.ui.HomeFragment;
-import com.fadcam.ui.FaditorMiniFragment;
+import com.fadcam.FeatureRegistry;
 import com.fadcam.ui.SettingsHomeFragment;
-import com.fadcam.forensics.ui.ForensicIntelligenceFragment;
 import com.fadcam.ui.utils.NewFeatureManager;
 import com.fadcam.utils.RuntimeCompat;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -525,6 +523,83 @@ public class MainActivity extends AppCompatActivity {
 
         // Fragment container for tab navigation
         bottomNavigationView = findViewById(R.id.bottom_navigation);
+        if (bottomNavigationView != null && com.fadcam.BuildConfig.LITE_EDITION) {
+            // Lite edition: three tabs only — Records (left), Home (center), Settings (right).
+            // The internal position engine (0-5) is untouched; the menu is just a selector.
+            android.view.Menu liteMenu = bottomNavigationView.getMenu();
+            liteMenu.clear();
+            liteMenu.add(android.view.Menu.NONE, R.id.navigation_records, 0,
+                    R.string.nav_records).setIcon(R.drawable.ic_records_selector);
+            liteMenu.add(android.view.Menu.NONE, R.id.navigation_home, 1,
+                    R.string.nav_home).setIcon(R.drawable.pilot_steering_white);
+            liteMenu.add(android.view.Menu.NONE, R.id.navigation_settings, 2,
+                    R.string.nav_settings).setIcon(R.drawable.ic_nav_settings);
+            // Compact dock: real nav stays as the invisible engine; a styled duplicate
+            // renders the 3 buttons with stable colors/shadows/animations.
+            android.widget.FrameLayout.LayoutParams navLp =
+                    (android.widget.FrameLayout.LayoutParams) bottomNavigationView.getLayoutParams();
+            navLp.height = 0;
+            bottomNavigationView.setLayoutParams(navLp);
+            bottomNavigationView.setVisibility(android.view.View.INVISIBLE);
+
+            final android.view.View dock = findViewById(R.id.lite_dock);
+            if (dock != null) {
+                // Blob dock: side "tentacles" gradient from the bar color to black
+                // (black tucks into the circle) while the Home button keeps the bar color.
+                android.util.TypedValue tv = new android.util.TypedValue();
+                int color = 0xFF1E1E1E;
+                if (getTheme().resolveAttribute(com.fadcam.R.attr.colorBottomNav, tv, true)) {
+                    color = tv.data;
+                }
+                float d = getResources().getDisplayMetrics().density;
+                float homeH = getResources().getDimension(com.fadcam.R.dimen.home_dock_height);
+                // Premium palette: side buttons are one tone of the bar color (softly
+                // darkened) with FULL rounded ends (pill) — no sharp inner edges and no
+                // harsh black gradient; the Home circle is the bar color with a soft
+                // top-light and a hairline ring.
+                int sideColor = mix(color, 0xFF000000, 0.30f);
+                int light = mix(color, 0xFFFFFFFF, 0.08f);
+                float sideRadius = homeH * 0.45f;
+                android.graphics.drawable.GradientDrawable left = new android.graphics.drawable.GradientDrawable();
+                left.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+                left.setColor(sideColor);
+                left.setCornerRadii(new float[]{sideRadius, sideRadius, 0f, 0f,
+                        0f, 0f, sideRadius, sideRadius});
+                android.graphics.drawable.GradientDrawable right = new android.graphics.drawable.GradientDrawable();
+                right.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+                right.setColor(sideColor);
+                right.setCornerRadii(new float[]{0f, 0f, sideRadius, sideRadius,
+                        sideRadius, sideRadius, 0f, 0f});
+                android.graphics.drawable.GradientDrawable circle = new android.graphics.drawable.GradientDrawable();
+                circle.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                circle.setGradientType(android.graphics.drawable.GradientDrawable.LINEAR_GRADIENT);
+                circle.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
+                circle.setColors(new int[]{light, mix(color, 0xFF000000, 0.10f)});
+                circle.setStroke((int) Math.max(1f, 1.2f * d), 0x22FFFFFF);
+                android.view.View records = dock.findViewById(R.id.lite_dock_item_records);
+                android.view.View settings = dock.findViewById(R.id.lite_dock_item_settings);
+                android.view.View home = dock.findViewById(R.id.lite_dock_item_home);
+                if (records != null) records.setBackground(left);
+                if (settings != null) settings.setBackground(right);
+                if (home != null) {
+                    home.setBackground(circle);
+                    home.setElevation(3f * d); // slight lift: circle floats above the tentacles
+                }
+                dock.setBackground(null);
+                dock.setVisibility(android.view.View.VISIBLE);
+                bindLiteDockItem(dock, R.id.lite_dock_item_records, R.id.navigation_records);
+                bindLiteDockItem(dock, R.id.lite_dock_item_home, R.id.navigation_home);
+                bindLiteDockItem(dock, R.id.lite_dock_item_settings, R.id.navigation_settings);
+                android.view.View dockHome = dock.findViewById(R.id.lite_dock_item_home);
+                if (dockHome != null) {
+                    dockHome.setOnLongClickListener(v -> {
+                        showHomeIconPicker();
+                        return true;
+                    });
+                }
+                dock.post(() -> updateLiteDockSelection());
+            }
+        }
         if (bottomNavigationView != null) {
             // Prevent Material from applying its own window insets to the nav view.
             // The parent nav_container already handles insets; letting Material add its own
@@ -679,6 +754,7 @@ public class MainActivity extends AppCompatActivity {
                 // Always use instant switch with fade animation
                 switchFragment(targetPosition, true);
             }
+            updateLiteDockSelection();
             return true;
         });
 
@@ -833,21 +909,37 @@ public class MainActivity extends AppCompatActivity {
                     boolean isRtl = getWindow().getDecorView().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
                     boolean isSwipeBack = isRtl ? (dx < 0) : (dx > 0);
                     
-                    // Swipe "back" from home tab opens sidebar instead of navigating
-                    if (isSwipeBack && currentFragmentPosition == 0) {
-                        openHomeSidebarFromSwipe();
-                        swipeHandled = true;
-                        swipeCandidate = false;
-                        return true;
+                    // Navigate by the VISIBLE menu order (Lite has fewer tabs and a
+                    // different order than Full — internal positions must not drive swipes).
+                    java.util.List<Integer> visibleIds = visibleTabIds();
+                    int curIdx = -1;
+                    int curId = getNavItemIdForPosition(currentFragmentPosition);
+                    for (int i = 0; i < visibleIds.size(); i++) {
+                        if (visibleIds.get(i) == curId) {
+                            curIdx = i;
+                            break;
+                        }
                     }
-                    // RTL-aware tab navigation: reverse direction in RTL layout
-                    int direction = isRtl ? (dx > 0 ? 1 : -1) : (dx < 0 ? 1 : -1);
-                    int target = currentFragmentPosition + direction;
-                    if (target >= 0 && target <= 5) {
-                        switchFragment(target, true);
-                        swipeHandled = true;
-                        swipeCandidate = false;
-                        return true;
+                    if (curIdx >= 0) {
+                        // Swipe "back" from the FIRST (leftmost) home tab opens the sidebar
+                        if (isSwipeBack && curIdx == 0 && curId == R.id.navigation_home) {
+                            openHomeSidebarFromSwipe();
+                            swipeHandled = true;
+                            swipeCandidate = false;
+                            return true;
+                        }
+                        // RTL-aware tab navigation: reverse direction in RTL layout
+                        int direction = isRtl ? (dx > 0 ? 1 : -1) : (dx < 0 ? 1 : -1);
+                        int targetIdx = curIdx + direction;
+                        if (targetIdx >= 0 && targetIdx < visibleIds.size()) {
+                            int targetPos = internalPositionForItemId(visibleIds.get(targetIdx));
+                            if (targetPos >= 0) {
+                                switchFragment(targetPos, true);
+                                swipeHandled = true;
+                                swipeCandidate = false;
+                                return true;
+                            }
+                        }
                     }
                 }
                 swipeCandidate = false;
@@ -862,6 +954,94 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return super.dispatchTouchEvent(ev);
+    }
+
+    /** Wires a compact-dock button to the hidden nav engine. */
+    private static int mix(int base, int overlay, float t) {
+        int a = (base >>> 24) & 0xFF;
+        int r = (base >>> 16) & 0xFF;
+        int g = (base >>> 8) & 0xFF;
+        int b = base & 0xFF;
+        int ar = (overlay >>> 16) & 0xFF;
+        int ag = (overlay >>> 8) & 0xFF;
+        int ab = overlay & 0xFF;
+        return (a << 24) | ((int) (r + (ar - r) * t) << 16)
+                | ((int) (g + (ag - g) * t) << 8) | (int) (b + (ab - b) * t);
+    }
+
+    private void applyLiteDockSideAlignment(android.view.View records, android.view.View settings, android.view.View home) {
+        if (records == null || settings == null || home == null) return;
+        android.view.ViewGroup.LayoutParams rp = records.getLayoutParams();
+        android.view.ViewGroup.LayoutParams sp = settings.getLayoutParams();
+        android.view.ViewGroup.LayoutParams hp = home.getLayoutParams();
+        int circleBottom = hp.height; // home is square; container height == home height
+        int sideH = (int) getResources().getDimension(com.fadcam.R.dimen.home_dock_side_height);
+        rp.height = sideH;
+        sp.height = sideH;
+        ((android.view.ViewGroup.MarginLayoutParams) rp).topMargin = (circleBottom - sideH) / 2;
+        ((android.view.ViewGroup.MarginLayoutParams) sp).topMargin = (circleBottom - sideH) / 2;
+        records.setLayoutParams(rp);
+        settings.setLayoutParams(sp);
+    }
+
+    private void bindLiteDockItem(android.view.View dock, int dockItemId, final int navItemId) {
+        android.view.View item = dock.findViewById(dockItemId);
+        if (item == null) return;
+        item.setOnClickListener(v -> {
+            if (bottomNavigationView != null) {
+                bottomNavigationView.setSelectedItemId(navItemId);
+            }
+        });
+    }
+
+    /** Highlights the selected Lite dock button; animates the label like Material. */
+    private void updateLiteDockSelection() {
+        android.view.View dock = findViewById(R.id.lite_dock);
+        if (dock == null || dock.getVisibility() != android.view.View.VISIBLE) return;
+        int selectedId = getNavItemIdForPosition(currentFragmentPosition);
+        applyLiteDockItemState(dock, R.id.lite_dock_item_records, R.id.lite_dock_icon_records,
+                0, selectedId == R.id.navigation_records);
+        applyLiteDockItemState(dock, R.id.lite_dock_item_home, R.id.lite_dock_icon_home,
+                R.id.lite_dock_label_home, selectedId == R.id.navigation_home);
+        applyLiteDockItemState(dock, R.id.lite_dock_item_settings, R.id.lite_dock_icon_settings,
+                0, selectedId == R.id.navigation_settings);
+    }
+
+    private void applyLiteDockItemState(android.view.View dock, int itemId, int iconId, int labelId,
+                                        boolean selected) {
+        android.widget.ImageView icon = dock.findViewById(iconId);
+        android.widget.TextView label = dock.findViewById(labelId);
+        if (icon != null) {
+            icon.setColorFilter(selected ? 0xFFFFFFFF : 0x66FFFFFF,
+                    android.graphics.PorterDuff.Mode.SRC_IN);
+        }
+        if (label != null) {
+            // GONE when inactive = icon fully centered (no reserved gap);
+            // VISIBLE when active = icon rises and label appears (animateLayoutChanges
+            // on the item animates the icon movement like the stable dock).
+            label.setVisibility(selected ? android.view.View.VISIBLE : android.view.View.GONE);
+        }
+    }
+
+    /** Visible tab ids in display order (menu order = what the user sees). */
+    private java.util.List<Integer> visibleTabIds() {
+        java.util.ArrayList<Integer> ids = new java.util.ArrayList<>();
+        if (bottomNavigationView == null) return ids;
+        for (int i = 0; i < bottomNavigationView.getMenu().size(); i++) {
+            ids.add(bottomNavigationView.getMenu().getItem(i).getItemId());
+        }
+        return ids;
+    }
+
+    /** Internal fragment position for a menu item id (matches the nav listener). */
+    private int internalPositionForItemId(int itemId) {
+        if (itemId == R.id.navigation_home) return 0;
+        if (itemId == R.id.navigation_records) return 1;
+        if (itemId == R.id.navigation_remote) return 2;
+        if (itemId == R.id.navigation_faditor_mini) return 3;
+        if (itemId == R.id.navigation_settings) return 4;
+        if (itemId == R.id.navigation_lab) return 5;
+        return -1;
     }
 
     /** Opens the home sidebar when the user swipes left from the home tab. */
@@ -882,28 +1062,27 @@ public class MainActivity extends AppCompatActivity {
 
         View navContainer = findViewById(R.id.nav_container);
         if (navContainer != null && isDescendantOf(touchedView, navContainer)) {
-            return true;
+            FLog.d("TabSwipe","excl "+touchedView.getClass().getSimpleName()+" #"+touchedView.getId()); return true;
         }
 
         ViewParent parent = touchedView.getParent();
         View current = touchedView;
         while (current != null) {
+            if (current.getId() == R.id.nav_container) return true;
+            // Interactive surfaces only exist on the HOME tab (quick-actions reorder,
+            // mode pill, tutorial, preview, fast-scroll). On other tabs (Records body)
+            // horizontal swipes must switch tabs, not be swallowed by the list.
+            if (current instanceof androidx.viewpager2.widget.ViewPager2) return true;
+            if (current instanceof androidx.viewpager.widget.ViewPager) return true;
             if (current instanceof HorizontalScrollView) return true;
             if (current.getId() == R.id.tutorial_scroll) return true;
-            // The mode switcher is included with <include id="mode_switcher">,
-            // which REPLACES the layout's own root id — check both.
             if (current.getId() == R.id.mode_switcher || current.getId() == R.id.mode_switcher_root) return true;
             if (current instanceof com.fadcam.ui.GalleryFastScroller) return true;
             if (current instanceof com.google.android.material.chip.Chip) return true;
             if (current instanceof com.google.android.material.chip.ChipGroup) return true;
-            if (current instanceof BottomNavigationView) return true;
+            if (current instanceof com.google.android.material.bottomnavigation.BottomNavigationView) return true;
             if (current.getId() == R.id.textureView || current.getId() == R.id.fullscreenTextureView) return true;
             if (current.getId() == R.id.cardPreview) {
-                // Home camera preview container: while the live preview is showing,
-                // swipes must not change tabs or open the sidebar. Overlays (preview
-                // hint, zoom HUD, grid) sit ON TOP of the TextureView, so a touch that
-                // starts on them never reaches the textureView check above — gate on
-                // the whole container instead.
                 View previewTexture = findViewById(R.id.textureView);
                 if (previewTexture != null && previewTexture.getVisibility() == View.VISIBLE) {
                     return true;
@@ -2012,6 +2191,8 @@ public class MainActivity extends AppCompatActivity {
             }
             android.view.MenuItem home = bottomNavigationView.getMenu().findItem(R.id.navigation_home);
             if (home != null) home.setIcon(res);
+            android.widget.ImageView dockHomeIcon = findViewById(R.id.lite_dock_icon_home);
+            if (dockHomeIcon != null) dockHomeIcon.setImageResource(res);
         } catch (Exception e) {
             FLog.w("MainActivity", "applyHomeNavIcon failed: " + e.getMessage());
         }
@@ -2019,6 +2200,8 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Long-press the home nav item to pick which icon it shows.
+     * Locates the Home item by its menu id — NOT by position — because the
+     * Lite edition reorders the menu (Records first).
      */
     private void setupHomeIconCustomization() {
         if (bottomNavigationView == null) return;
@@ -2029,7 +2212,15 @@ public class MainActivity extends AppCompatActivity {
                 if (!(menuView instanceof ViewGroup)) return;
                 ViewGroup group = (ViewGroup) menuView;
                 if (group.getChildCount() == 0) return;
-                View homeItem = group.getChildAt(0); // menu order: home is first
+                int homeIndex = -1;
+                for (int i = 0; i < bottomNavigationView.getMenu().size(); i++) {
+                    if (bottomNavigationView.getMenu().getItem(i).getItemId() == R.id.navigation_home) {
+                        homeIndex = i;
+                        break;
+                    }
+                }
+                if (homeIndex < 0 || homeIndex >= group.getChildCount()) return;
+                View homeItem = group.getChildAt(homeIndex);
                 if (homeItem != null) {
                     homeItem.setOnLongClickListener(v -> {
                         showHomeIconPicker();
@@ -2184,10 +2375,11 @@ public class MainActivity extends AppCompatActivity {
         Fragment newFragment;
         switch (position) {
             case 0:
-                // Home tab - check current mode
+                // Home tab - check current mode (FadRec is Full-only; Lite always uses FadCam)
                 String currentMode = sharedPreferencesManager.getCurrentRecordingMode();
-                if (com.fadcam.Constants.MODE_FADREC.equals(currentMode)) {
-                    newFragment = com.fadcam.fadrec.ui.FadRecHomeFragment.newInstance();
+                Fragment fadRecHome = com.fadcam.FeatureRegistry.features().createFadRecHomeFragment();
+                if (com.fadcam.Constants.MODE_FADREC.equals(currentMode) && fadRecHome != null) {
+                    newFragment = fadRecHome;
                 } else {
                     newFragment = new com.fadcam.ui.HomeFragment();
                 }
@@ -2196,16 +2388,22 @@ public class MainActivity extends AppCompatActivity {
                 newFragment = new RecordsFragment();
                 break;
             case 2:
-                newFragment = new RemoteFragment();
+                // Remote tab is Full-only (src/full); fall back to Home in Lite
+                Fragment remoteFragment = com.fadcam.FeatureRegistry.features().createRemoteFragment();
+                newFragment = remoteFragment != null ? remoteFragment : new com.fadcam.ui.HomeFragment();
                 break;
             case 3:
-                newFragment = new FaditorMiniFragment();
+                // Faditor tab is a Full-only feature (src/full); fall back to Home in Lite
+                Fragment faditor = FeatureRegistry.features().createFaditorFragment();
+                newFragment = faditor != null ? faditor : new com.fadcam.ui.HomeFragment();
                 break;
             case 4:
                 newFragment = new com.fadcam.ui.SettingsHomeFragment();
                 break;
             case 5:
-                newFragment = new com.fadcam.forensics.ui.ForensicIntelligenceFragment();
+                // Forensics Lab is Full-only (src/full); fall back to Home in Lite
+                Fragment labFragment = FeatureRegistry.features().createLabFragment();
+                newFragment = labFragment != null ? labFragment : new com.fadcam.ui.HomeFragment();
                 break;
             default:
                 newFragment = new com.fadcam.ui.HomeFragment();
@@ -2224,6 +2422,7 @@ public class MainActivity extends AppCompatActivity {
         if (navItemId != -1) {
             bottomNavigationView.setSelectedItemId(navItemId);
         }
+        updateLiteDockSelection();
         
         // Restore correct bar colors for the selected tab
         restoreBarColorsForCurrentTab();

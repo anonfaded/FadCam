@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pro_background">#101112</color>
+    <color name="pro_surface">#1B1C1E</color>
+    <color name="pro_border">#343536</color>
+    <color name="pro_gold">#E8C77B</color>
+    <color name="pro_check_gold">#FFD15C</color>
+    <color name="pro_text">#F5F2EA</color>
+    <color name="pro_text_secondary">#B8B7B2</color>
+    <color name="pro_brand_red">#FF6464</color>
+    <style name="ProSectionTitle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/pro_text</item>
+        <item name="android:textSize">19sp</item>
+    </style>
+    <style name="ProBody">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/pro_text_secondary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+    </style>
+    <style name="ProAppLabel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/pro_text</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:layout_marginTop">10dp</item>
+    </style>
+</resources>

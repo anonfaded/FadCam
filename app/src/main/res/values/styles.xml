@@ -151,9 +151,26 @@
         <item name="android:windowAnimationStyle">@null</item>
     </style>
 
-    <!-- FadCam Pro Activity Theme with Ubuntu Font -->
+    <!-- Isolated Pro palette: native feedback must not inherit Material's purple defaults. -->
     <style name="FadCamProTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="android:fontFamily">@font/ubuntu_regular</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:windowBackground">@color/pro_background</item>
+        <item name="android:colorAccent">@color/pro_gold</item>
+        <item name="colorAccent">@color/pro_gold</item>
+        <item name="colorPrimary">@color/pro_gold</item>
+        <item name="colorPrimaryVariant">@color/pro_gold</item>
+        <item name="colorSecondary">@color/pro_gold</item>
+        <item name="colorOnPrimary">@color/pro_background</item>
+        <item name="colorOnSecondary">@color/pro_background</item>
+        <item name="colorSurface">@color/pro_surface</item>
+        <item name="colorOnSurface">@color/pro_text</item>
+        <item name="colorControlHighlight">#28E8C77B</item>
+        <item name="android:statusBarColor">#01000000</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:navigationBarColor">@color/pro_background</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
     <!-- Faditor Editor dark immersive theme -->
@@ -203,6 +220,17 @@
          secondary text color instead of the framework default (purple). -->
     <style name="PickerCancelButton" parent="Widget.Material3.Button.TextButton">
         <item name="android:textColor">?attr/homeRailTextSecondary</item>
+    </style>
+
+
+    <!-- ── Pro screen: privacy bullet rows ────────────────────────────── -->
+    <style name="ProPrivacyPoint">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">11.5sp</item>
+        <item name="android:textColor">#E3D3A6</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:drawablePadding">8dp</item>
     </style>
 
 </resources>

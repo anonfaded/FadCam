@@ -2,6 +2,7 @@ package com.fadcam.ui;
 
 import com.fadcam.Log;
 import com.fadcam.FLog;
+import com.fadcam.FeatureRegistry;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -83,8 +84,6 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.core.app.ShareCompat;
 import android.content.ContentResolver;
 import androidx.core.content.FileProvider;
-import com.arthenica.ffmpegkit.FFmpegKit;
-import com.arthenica.ffmpegkit.ReturnCode;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
@@ -1302,9 +1301,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 null,
                 null,
                 null));
-        // Temporarily hide Fix Video from UI; keep feature intact for later re-enable
-        // items.add(OptionItem.withLigature("action_fix_video",
-        // ctx.getString(R.string.fix_video_menu_title), "build"));
+        // Fix Video (ffmpeg repair) removed: hybrid-MP4 recordings self-heal via the
+        // patched media3 finalization — the manual repair feature was abandoned.
         items.add(OptionItem.withLigature("action_rename", ctx.getString(R.string.video_menu_rename),
                 "drive_file_rename_outline"));
         items.add(OptionItem.withLigature("action_info", ctx.getString(R.string.video_menu_info), "info"));
@@ -1322,8 +1320,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     ctx.getString(R.string.video_menu_upload_faddrive, "Upload to FadDrive"), "cloud",
                     ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
         }
-        // Edit with Faditor Mini
-        if (!isImage) {
+        // Edit with Faditor Mini (Full-only; Lite v1 hides the entry)
+        if (!isImage && !com.fadcam.BuildConfig.LITE_EDITION) {
             items.add(OptionItem.withLigature("action_edit_faditorx", ctx.getString(R.string.edit_with_faditorx),
                     "content_cut"));
         }
@@ -1347,9 +1345,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     break;
                 case "action_save":
                     showSaveOptionsSheet(videoItem, ctx);
-                    break;
-                case "action_fix_video":
-                    fixVideoFile(videoItem);
                     break;
                 case "action_rename":
                     showRenameDialog(videoItem);
@@ -1550,9 +1545,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 return true;
             } else if (id == R.id.action_save) {
                 saveVideoToGalleryInternal(videoItem);
-                return true;
-            } else if (id == R.id.action_fix_video) {
-                fixVideoFile(videoItem);
                 return true;
             } else if (id == R.id.action_rename) {
                 showRenameDialog(videoItem);
@@ -2026,13 +2018,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
      */
     private void launchFaditorMini(@NonNull Context ctx, @NonNull VideoItem videoItem) {
         if (videoItem.uri == null) return;
-        try {
-            Intent intent = new Intent(ctx, com.fadcam.ui.faditor.FaditorEditorActivity.class);
-            intent.setData(videoItem.uri);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            ctx.startActivity(intent);
-        } catch (Exception e) {
-            FLog.e(TAG, "Failed to launch Faditor Mini", e);
+        if (!FeatureRegistry.features().launchFaditorEditor(ctx, videoItem.uri)) {
             Toast.makeText(ctx, ctx.getString(R.string.records_cannot_open_editor), Toast.LENGTH_SHORT).show();
         }
     }
@@ -2500,7 +2486,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
-    // Get video duration from URI (Helper) using FFprobeKit for reliability
+    // Get video duration from URI. Full uses the ffprobe helper (RecordsFfmpegOps in src/full);
+    // Lite falls straight back to the shared MediaMetadataRetriever path.
     private long getVideoDuration(Uri videoUri) {
         if (context == null || videoUri == null)
             return 0;
@@ -2514,57 +2501,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             return getVideoDurationWithMmr(videoUri, "safe_mmr");
         }
 
-        // Get file path for FFprobe - try multiple approaches for content:// URIs
-        String filePath = getFFprobePathForUri(videoUri);
-        
-        // Use FFprobeKit to get accurate duration (direct file path)
-        if (!filePath.startsWith("saf:")) {
-            try {
-                com.arthenica.ffmpegkit.MediaInformationSession session = 
-                    com.arthenica.ffmpegkit.FFprobeKit.getMediaInformation(filePath);
-                com.arthenica.ffmpegkit.MediaInformation info = session.getMediaInformation();
-                
-                if (info != null) {
-                    String durationStr = info.getDuration();
-                    if (durationStr != null) {
-                        double durationSec = Double.parseDouble(durationStr);
-                        long durationMs = (long) (durationSec * 1000);
-                        FLog.d(TAG, "Duration from FFprobe (path): " + durationMs + "ms");
-                        return durationMs;
-                    }
-                }
-            } catch (Throwable e) {
-                FLog.e(TAG, "Error getting duration from FFprobe for path: " + filePath, e);
-            }
+        long probeMs = FeatureRegistry.features().probeDurationMs(context, videoUri);
+        if (probeMs > 0) {
+            FLog.d(TAG, "Duration from native probe: " + probeMs + "ms");
+            return probeMs;
         }
 
-        // For content:// URIs where path reconstruction failed, use FD-based FFprobe
-        if ("content".equals(videoUri.getScheme())) {
-            try {
-                ParcelFileDescriptor pfd = context.getContentResolver()
-                        .openFileDescriptor(videoUri, "r");
-                if (pfd != null) {
-                    try {
-                        String fdPath = "/proc/self/fd/" + pfd.getFd();
-                        com.arthenica.ffmpegkit.MediaInformationSession session =
-                                com.arthenica.ffmpegkit.FFprobeKit.getMediaInformation(fdPath);
-                        com.arthenica.ffmpegkit.MediaInformation info = session.getMediaInformation();
-                        if (info != null && info.getDuration() != null) {
-                            double durationSec = Double.parseDouble(info.getDuration());
-                            long durationMs = (long) (durationSec * 1000);
-                            FLog.d(TAG, "Duration from FFprobe (fd): " + durationMs + "ms");
-                            return durationMs;
-                        }
-                    } finally {
-                        pfd.close();
-                    }
-                }
-            } catch (Throwable e) {
-                FLog.w(TAG, "FFprobe FD-based duration failed for: " + videoUri, e);
-            }
-        }
-
-        return getVideoDurationWithMmr(videoUri, "ffprobe_fallback_mmr");
+        return getVideoDurationWithMmr(videoUri, "native_probe_fallback_mmr");
     }
 
     private long getVideoDurationWithMmr(@NonNull Uri videoUri, @NonNull String source) {
@@ -3246,149 +3189,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).setTextColor(Color.WHITE);
             }
         }
-    }
-
-    private void fixVideoFile(VideoItem videoItem) {
-        if (videoItem == null || videoItem.uri == null) {
-            Toast.makeText(context, context.getString(R.string.fix_video_invalid), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        String scheme = videoItem.uri.getScheme();
-        File inputFile = null;
-        File outputFile;
-        String outputName = "FIXED_" + videoItem.displayName;
-        boolean isSAF;
-        File safTempInput = null;
-        File safTempOutput;
-        if ("file".equals(scheme)) {
-            safTempOutput = null;
-            isSAF = false;
-            inputFile = new File(videoItem.uri.getPath());
-            if (!inputFile.exists()) {
-                Toast.makeText(context, context.getString(R.string.fix_video_file_not_exist), Toast.LENGTH_SHORT)
-                        .show();
-                return;
-            }
-            outputFile = new File(inputFile.getParent(), outputName);
-            if (outputFile.exists()) {
-                Toast.makeText(context, context.getString(R.string.fix_video_fixed_exists), Toast.LENGTH_SHORT).show();
-                return;
-            }
-        } else if ("content".equals(scheme)) {
-            isSAF = true;
-            try {
-                safTempInput = File.createTempFile("saf_repair_", ".mp4", context.getCacheDir());
-                inputFile = safTempInput;
-                try (InputStream in = context.getContentResolver().openInputStream(videoItem.uri);
-                        OutputStream out = new FileOutputStream(inputFile)) {
-                    byte[] buf = new byte[8192];
-                    int len;
-                    while ((len = in.read(buf)) > 0) {
-                        out.write(buf, 0, len);
-                    }
-                }
-            } catch (Exception e) {
-                FLog.e(TAG, "Failed to copy SAF video for repair", e);
-                Toast.makeText(context, context.getString(R.string.fix_video_saf_copy_fail), Toast.LENGTH_LONG).show();
-                if (safTempInput != null && safTempInput.exists())
-                    safTempInput.delete();
-                return;
-            }
-            safTempOutput = new File(context.getCacheDir(), outputName);
-            outputFile = safTempOutput;
-        } else {
-            safTempOutput = null;
-            outputFile = null;
-            isSAF = false;
-            Toast.makeText(context, context.getString(R.string.fix_video_internal_only), Toast.LENGTH_LONG).show();
-            return;
-        }
-        String inputPath = inputFile.getAbsolutePath();
-        String outputPath = outputFile.getAbsolutePath();
-        String ffmpegCmd = String.format("-y -i %s -c copy %s", inputPath, outputPath);
-        Toast.makeText(context, context.getString(R.string.fix_video_repairing), Toast.LENGTH_SHORT).show();
-        File finalSafTempInput = safTempInput;
-        FFmpegKit.executeAsync(ffmpegCmd, session -> {
-            if (ReturnCode.isSuccess(session.getReturnCode())) {
-                if (isSAF) {
-                    boolean wroteToSAF = false;
-                    try {
-                        // Use the SAF folder URI from preferences, just like RecordingService
-                        String safFolderUriString = sharedPreferencesManager.getCustomStorageUri();
-                        if (safFolderUriString != null) {
-                            Uri safFolderUri = Uri.parse(safFolderUriString);
-                            DocumentFile safFolder = DocumentFile.fromTreeUri(context, safFolderUri);
-                            if (safFolder != null && safFolder.canWrite()) {
-                                DocumentFile fixedDoc = safFolder.createFile("video/mp4", outputName);
-                                if (fixedDoc != null) {
-                                    try (OutputStream out = context.getContentResolver()
-                                            .openOutputStream(fixedDoc.getUri());
-                                            InputStream in = new FileInputStream(outputFile)) {
-                                        byte[] buf = new byte[8192];
-                                        int len;
-                                        while ((len = in.read(buf)) > 0) {
-                                            out.write(buf, 0, len);
-                                        }
-                                    }
-                                    wroteToSAF = true;
-                                    new Handler(Looper.getMainLooper()).post(() -> {
-                                        Toast.makeText(context,
-                                                context.getString(R.string.fix_video_saf_success, outputName),
-                                                Toast.LENGTH_LONG).show();
-                                    });
-                                }
-                            }
-                        }
-                        if (!wroteToSAF) {
-                            new Handler(Looper.getMainLooper()).post(() -> {
-                                Toast.makeText(context, context.getString(R.string.fix_video_saf_write_fail),
-                                        Toast.LENGTH_LONG).show();
-                                Toast.makeText(context,
-                                        "Cannot write to this folder. This may be due to SD card, USB, or cloud storage permissions. The repaired file is saved in app storage.",
-                                        Toast.LENGTH_LONG).show();
-                                Toast.makeText(context, context.getString(R.string.fix_video_saf_export),
-                                        Toast.LENGTH_LONG).show();
-                                // TODO: Offer share/export dialog for the fixed file in app storage
-                            });
-                        }
-                    } catch (Exception e) {
-                        FLog.e(TAG, "Failed to write repaired file to SAF folder", e);
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            Toast.makeText(context, context.getString(R.string.fix_video_saf_write_fail),
-                                    Toast.LENGTH_LONG).show();
-                            Toast.makeText(context,
-                                    "Cannot write to this folder. This may be due to SD card, USB, or cloud storage permissions. The repaired file is saved in app storage.",
-                                    Toast.LENGTH_LONG).show();
-                            Toast.makeText(context, context.getString(R.string.fix_video_saf_export), Toast.LENGTH_LONG)
-                                    .show();
-                            // TODO: Offer share/export dialog for the fixed file in app storage
-                        });
-                    } finally {
-                        // Clean up temp files
-                        if (finalSafTempInput != null && finalSafTempInput.exists())
-                            finalSafTempInput.delete();
-                        if (safTempOutput != null && safTempOutput.exists())
-                            safTempOutput.delete();
-                    }
-                } else {
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        Toast.makeText(context, context.getString(R.string.fix_video_success, outputFile.getName()),
-                                Toast.LENGTH_LONG).show();
-                    });
-                }
-            } else {
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    Toast.makeText(context, context.getString(R.string.fix_video_fail), Toast.LENGTH_LONG).show();
-                });
-                // Clean up temp files on failure as well
-                if (isSAF) {
-                    if (finalSafTempInput != null && finalSafTempInput.exists())
-                        finalSafTempInput.delete();
-                    if (safTempOutput != null && safTempOutput.exists())
-                        safTempOutput.delete();
-                }
-            }
-        });
     }
 
     /**
