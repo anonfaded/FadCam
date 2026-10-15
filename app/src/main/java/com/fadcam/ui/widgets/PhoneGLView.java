@@ -73,7 +73,7 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private int program;
     private int aPos, aNormal, aUV, uMVP, uModel, uTex, uUseTex, uColor, uSpec, uLightDir, uFade, uRim;
     private int uSweep, uSweepX, uSweepK, uAmbient, uBoost;
-    private int uView, uBeam, uBeamPos, uBeamDir, uMask;
+    private int uView, uBeam, uBeamBlur, uBeamPos, uBeamDir, uMask;
 
     private FloatBuffer bufFront, bufBack, bufMetal, bufVisor, bufLenses, bufFlash, bufGlint, bufCores;
     private FloatBuffer bufGlare, bufStreak;
@@ -111,6 +111,7 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private volatile float beamDirX = 0f;
     private volatile float beamDirY = -1f;
     private volatile float beamTrail = 0.2f;
+    private volatile float beamBlur = 0f;   // 0 = sharp core, 1 = maximum smear
     // Dark layer: fully open by default (fade band entirely below the view, no darkening).
     private volatile float maskStart = 2f;
     private volatile float maskEnd = 3f;
@@ -240,6 +241,12 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         double rad = Math.toRadians(angleDeg);
         beamDirX = (float) Math.cos(rad);
         beamDirY = (float) Math.sin(rad);
+        requestRender();
+    }
+
+    /** 0..1 motion-blur amount: widens the beam's core along its travel axis. */
+    public void setBeamBlur(float blur) {
+        beamBlur = Math.max(0f, Math.min(1f, blur));
         requestRender();
     }
 
@@ -561,6 +568,7 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         GLES20.glUniform1f(uBoost, 0f);
         GLES20.glUniform4f(uView, w, h, hostTransX, hostTransY);
         GLES20.glUniform1f(uBeam, beamIntensity);
+        GLES20.glUniform1f(uBeamBlur, beamBlur);
         GLES20.glUniform1f(uBeamPos, beamPos);
         GLES20.glUniform3f(uBeamDir, beamDirX, beamDirY, beamTrail);
         GLES20.glUniform3f(uMask, maskStart, maskEnd, maskMin);
@@ -805,6 +813,7 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "uniform float uBoost;\n" +
                 "uniform vec4 uView;\n" +
                 "uniform float uBeam;\n" +
+                "uniform float uBeamBlur;\n" +
                 "uniform float uBeamPos;\n" +
                 "uniform vec3 uBeamDir;\n" +
                 "uniform vec3 uMask;\n" +
@@ -843,10 +852,10 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
                 "  vec2 bp = (gl_FragCoord.xy - 0.5 * uView.xy + vec2(uView.z, -uView.w)) / uView.y;\n" +
                 "  float bd = dot(bp, uBeamDir.xy) - uBeamPos;\n" +
                 "  float trail = exp(min(bd, 0.0) / uBeamDir.z) * (1.0 - smoothstep(0.0, 0.012, bd));\n" +
-                "  float core = exp(-bd * bd / 0.00012);\n" +
+                "  float core = exp(-bd * bd / (0.00012 * (1.0 + 9.0 * uBeamBlur)));\n" +
                 "  float edgeK = 1.0 - smoothstep(0.45, 0.98, abs(n.z));\n" +
                 "  float resp = 0.55 + uSpec * 1.5;\n" +
-                "  float beamLight = uBeam * resp * (trail * (0.10 + 0.55 * edgeK) + core * (0.25 + 1.10 * edgeK));\n" +
+                "  float beamLight = uBeam * resp * (trail * (0.10 + 0.55 * edgeK) + core * (0.45 + 1.10 * edgeK) * (1.0 + 1.2 * uBeamBlur));\n" +
                 // Unlit halo: the LED glare is a light source, not a shaded surface.
                 "  color += vec3(uBoost) * tex.a;\n" +
                 // The dark layer: a smooth vertical gradient — the top of the scene is lit,
@@ -893,6 +902,7 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         uBoost = GLES20.glGetUniformLocation(program, "uBoost");
         uView = GLES20.glGetUniformLocation(program, "uView");
         uBeam = GLES20.glGetUniformLocation(program, "uBeam");
+        uBeamBlur = GLES20.glGetUniformLocation(program, "uBeamBlur");
         uBeamPos = GLES20.glGetUniformLocation(program, "uBeamPos");
         uBeamDir = GLES20.glGetUniformLocation(program, "uBeamDir");
         uMask = GLES20.glGetUniformLocation(program, "uMask");

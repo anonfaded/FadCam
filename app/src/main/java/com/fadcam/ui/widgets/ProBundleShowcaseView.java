@@ -1266,16 +1266,16 @@ public class ProBundleShowcaseView extends FrameLayout {
         final float bdx = (float) Math.cos(Math.toRadians(beamDeg));
         final float bdy = (float) Math.sin(Math.toRadians(beamDeg));
         final float reach = (Math.abs(bdx) * phoneWStart / 2f + Math.abs(bdy) * phoneHStart / 2f) / oh;
-        final float beamFrom = -reach - 0.05f;
-        final float beamTo = reach + 0.04f;
+        final float beamFrom = -reach - 0.015f;
+        final float beamTo = reach + 0.012f;
         final float[] island = new float[4];
         PhoneGLView.projectCameraIsland(ow, oh, CINE_OVERSCAN, sStart, 0f, tyStart, island);
         final float ledCoord = ((island[2] - ow / 2f) * bdx + (oh / 2f - island[3]) * bdy) / oh;
 
         final float beamStart = 120f;
-        final float beamDur = 2200f;
+        final float beamDur = 1300f;
         final float tLed = beamStart + beamDur * solveBeam(beamFrom, beamTo, ledCoord);
-        final float tFlash1 = beamStart + beamDur + 100f;
+        final float tFlash1 = beamStart + beamDur + 350f;
         final float tFlash2 = tFlash1 + 650f;
         final float tFlip = tFlash2 + 400f;
         final float flipDur = 1700f;
@@ -1317,7 +1317,7 @@ public class ProBundleShowcaseView extends FrameLayout {
 
             // The sweep IS the reveal: exposure and the dark layer open together with the
             // beam front, so the phone returns to its normal matte color as the light passes.
-            float sweepP = easeInOutQuart(clamp01((t - beamStart) / (beamDur + 200f)));
+            float sweepP = cinematicSweep(clamp01((t - beamStart) / (beamDur + 200f)));
             float amb = CINE_AMBIENT_START + (1f - CINE_AMBIENT_START) * sweepP;
             cinematicGL.setAmbient(amb + (1f - amb) * open);
             float maskMin = CINE_MASK_MIN + (1f - CINE_MASK_MIN) * sweepP;
@@ -1332,11 +1332,17 @@ public class ProBundleShowcaseView extends FrameLayout {
             if (u2 > 0f && u2 < 1f) {
                 float pos2 = -reach2 + 2f * reach2 * easeInOutCubic(u2);
                 cinematicGL.setBeam(0.85f * (float) Math.sin(Math.PI * u2), pos2, beam2Deg, 0.20f);
+                cinematicGL.setBeamBlur(0f);
             } else if (u1 > 0f && in1 * out1 > 0.001f) {
-                float pos1 = beamFrom + (beamTo - beamFrom) * easeInOutQuart(u1);
-                cinematicGL.setBeam(in1 * out1, pos1, beamDeg, 0.26f);
+                float pos1 = beamFrom + (beamTo - beamFrom) * cinematicSweep(u1);
+                cinematicGL.setBeam(in1 * out1, pos1, beamDeg, 0.10f);
+                // Motion blur follows the front's real speed (analytic derivative of the curve).
+                float speed = (beamTo - beamFrom)
+                        * (1f - 0.88f * (float) Math.cos(2.0 * Math.PI * u1)) / beamDur;
+                cinematicGL.setBeamBlur(Math.min(1f, speed / 0.0011f) * 0.9f);
             } else {
                 cinematicGL.setBeam(0f, 0f, beamDeg, 0.26f);
+                cinematicGL.setBeamBlur(0f);
             }
 
             cinematicGL.setExtraScale(sStart + (sEnd - sStart) * fe);
@@ -1357,7 +1363,7 @@ public class ProBundleShowcaseView extends FrameLayout {
     private static float solveBeam(float from, float to, float coord) {
         for (int i = 0; i <= 240; i++) {
             float u = i / 240f;
-            if (from + (to - from) * easeInOutQuart(u) >= coord) return u;
+            if (from + (to - from) * cinematicSweep(u) >= coord) return u;
         }
         return 0.5f;
     }
@@ -1390,10 +1396,14 @@ public class ProBundleShowcaseView extends FrameLayout {
                 : 1f - (float) Math.pow(-2f * x + 2f, 3f) / 2f;
     }
 
-    private static float easeInOutQuart(float x) {
-        return x < 0.5f
-                ? 8f * x * x * x * x
-                : 1f - (float) Math.pow(-2f * x + 2f, 4f) / 2f;
+    /**
+     * The entrance beam's velocity profile: one smooth hump — the front moves at ~12% of
+     * the average speed at the start, accelerates to ~188% in the middle and eases back to
+     * ~12% at the end, with a continuous (never zero) velocity and no phase joins, so the
+     * motion reads as a single cinematic camera move with no stutter.
+     */
+    private static float cinematicSweep(float x) {
+        return x - 0.88f * (float) Math.sin(2.0 * Math.PI * x) / (float) (2.0 * Math.PI);
     }
 
     /**
