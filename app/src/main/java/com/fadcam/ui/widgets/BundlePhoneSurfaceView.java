@@ -17,6 +17,8 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.Layout;
@@ -120,7 +122,6 @@ public class BundlePhoneSurfaceView extends View {
     private String usageText = "";
     private int batteryPercent = -1;
     private boolean charging = false;
-    private boolean bootEnabled = true;
     private boolean cropFade = true;
     private boolean glMode = false;
     private int renderMode = MODE_ALL;
@@ -140,8 +141,6 @@ public class BundlePhoneSurfaceView extends View {
     private ValueAnimator unlockAnimator;
     private ValueAnimator shadeAnimator;
     private ValueAnimator volumeAnimator;
-    private ValueAnimator lockBobAnimator;
-    private float lockBob = 0f;
 
     private int previewApp = 0; // 0 none, 1 notes, 2 calculator, 3 weather
     private String noteText = "";
@@ -156,12 +155,13 @@ public class BundlePhoneSurfaceView extends View {
     private float captionAlpha = 0f;
     private ValueAnimator captionAnimator;
 
+    private final Handler shadeTickHandler = new Handler(Looper.getMainLooper());
     private final Runnable shadeTicker = new Runnable() {
         @Override
         public void run() {
             if (shadeProgress > 0.01f) {
                 invalidate();
-                postDelayed(this, 1000L);
+                shadeTickHandler.postDelayed(this, 1000L);
             }
         }
     };
@@ -219,10 +219,6 @@ public class BundlePhoneSurfaceView extends View {
         invalidate();
     }
 
-    public void setBootEnabled(boolean enabled) {
-        bootEnabled = enabled;
-    }
-
     public void setDirtyListener(DirtyListener listener) {
         dirtyListener = listener;
     }
@@ -270,7 +266,7 @@ public class BundlePhoneSurfaceView extends View {
      */
     public void startBoot() {
         if (side != SIDE_FRONT) return;
-        if (!bootEnabled || !motionAllowed()) {
+        if (!motionAllowed()) {
             settleBoot();
             return;
         }
@@ -337,7 +333,6 @@ public class BundlePhoneSurfaceView extends View {
 
     public void setUnlockProgress(float p) {
         unlockProgress = clamp(p);
-        updateLockBob();
         invalidate();
     }
 
@@ -382,10 +377,10 @@ public class BundlePhoneSurfaceView extends View {
     public void setShadeProgress(float p) {
         shadeProgress = clamp(p);
         if (shadeProgress > 0.01f) {
-            removeCallbacks(shadeTicker);
-            postDelayed(shadeTicker, 1000L);
+            shadeTickHandler.removeCallbacks(shadeTicker);
+            shadeTickHandler.postDelayed(shadeTicker, 1000L);
         } else {
-            removeCallbacks(shadeTicker);
+            shadeTickHandler.removeCallbacks(shadeTicker);
         }
         invalidate();
     }
@@ -510,7 +505,6 @@ public class BundlePhoneSurfaceView extends View {
     private final RectF loaderRect = new RectF();
     private final RectF dialogCardRect = new RectF();
     private final Path rippleClipPath = new Path();
-    private long lastBobInvalidateAt;
 
     public boolean notifCardTappedAt(float x, float y) {
         return shadeProgress > 0.6f && notifCardRect.contains(x, y);
@@ -1686,10 +1680,10 @@ public class BundlePhoneSurfaceView extends View {
         paint.setColor(0xCCE9E9EC);
         canvas.drawText(getContext().getString(R.string.pro_showcase_swipe_unlock), screen.centerX(), hintY, paint);
 
-        // Animated up arrow above the hint (Material Icons).
-        float bob = (float) Math.sin(lockBob * Math.PI * 2.0) * dp(3.5f);
-        drawIcon(canvas, "keyboard_arrow_up", screen.centerX(), hintY - pw * 0.145f + bob,
+        // Swipe-up arrow — part of the lock screen, drawn into the face texture.
+        drawIcon(canvas, "keyboard_arrow_up", screen.centerX(), hintY - pw * 0.145f,
                 pw * 0.080f, 0x99E9E9EC);
+
         paint.setTextAlign(Paint.Align.LEFT);
         canvas.restore();
     }
@@ -1847,36 +1841,6 @@ public class BundlePhoneSurfaceView extends View {
         return String.format(Locale.US, "%d:%02d", secs / 60, secs % 60);
     }
 
-    private void updateLockBob() {
-        boolean locked = unlockProgress < 0.999f;
-        if (locked && lockBobAnimator == null && motionAllowed()) {
-            lockBobAnimator = ValueAnimator.ofFloat(0f, 1f);
-            lockBobAnimator.setDuration(1400);
-            lockBobAnimator.setRepeatCount(ValueAnimator.INFINITE);
-            lockBobAnimator.setRepeatMode(ValueAnimator.REVERSE);
-            lockBobAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
-            lockBobAnimator.addUpdateListener(a -> {
-                lockBob = (float) a.getAnimatedValue();
-                long now = SystemClock.elapsedRealtime();
-                if (now - lastBobInvalidateAt >= 33L) {
-                    lastBobInvalidateAt = now;
-                    if (glMode) {
-                        // The surface is offscreen in GL mode: the host must re-render the
-                        // face texture, otherwise the bob never reaches the screen.
-                        if (dirtyListener != null) dirtyListener.onContentDirty();
-                    } else if (isShown()) {
-                        invalidate();
-                    }
-                }
-            });
-            lockBobAnimator.start();
-        } else if (!locked && lockBobAnimator != null) {
-            lockBobAnimator.cancel();
-            lockBobAnimator = null;
-            lockBob = 0f;
-        }
-    }
-
     private static double parse(String s) {
         try {
             return Double.parseDouble(s);
@@ -1925,7 +1889,7 @@ public class BundlePhoneSurfaceView extends View {
 
     @Override
     protected void onDetachedFromWindow() {
-        removeCallbacks(shadeTicker);
+        shadeTickHandler.removeCallbacks(shadeTicker);
         if (bootAnimator != null) bootAnimator.cancel();
         if (restartAnim != null) restartAnim.cancel();
         if (popAnim != null) popAnim.cancel();
@@ -1933,7 +1897,6 @@ public class BundlePhoneSurfaceView extends View {
         if (unlockAnimator != null) unlockAnimator.cancel();
         if (shadeAnimator != null) shadeAnimator.cancel();
         if (volumeAnimator != null) volumeAnimator.cancel();
-        if (lockBobAnimator != null) lockBobAnimator.cancel();
         if (pulseAnimator != null) pulseAnimator.cancel();
         if (captionAnimator != null) captionAnimator.cancel();
         super.onDetachedFromWindow();

@@ -23,11 +23,9 @@ import android.view.View;
 import android.view.View.MeasureSpec;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -107,6 +105,7 @@ public class ProBundleShowcaseView extends FrameLayout {
     private PhoneGLView phoneGL;
     private Bitmap backBitmap;
     private Bitmap screenBitmap;
+    private int uvTw, uvTh;
     private boolean frameDirty = true;
     private boolean frontDirty = true;
     private boolean backDirty = true;
@@ -173,8 +172,6 @@ public class ProBundleShowcaseView extends FrameLayout {
             }
         }
     };
-    private ValueAnimator expandAnimator;
-    private ValueAnimator expandPulse;
     private ValueAnimator inspectorSpin;
 
     private final BroadcastReceiver timeReceiver = new BroadcastReceiver() {
@@ -309,12 +306,6 @@ public class ProBundleShowcaseView extends FrameLayout {
         frontSurface.setApps(iconRes, names);
     }
 
-    /** Enable/disable the on-screen boot theater. Call before the view is attached. */
-    public void setBootEnabled(boolean enabled) {
-        bootEnabled = enabled;
-        frontSurface.setBootEnabled(enabled);
-    }
-
     public void setDragEnabled(boolean enabled) {
         dragEnabled = enabled;
     }
@@ -394,6 +385,16 @@ public class ProBundleShowcaseView extends FrameLayout {
                 float scaleNow = getScaleX() > 0f ? getScaleX() : 1f;
                 downX = (event.getRawX() - wrapperScreenX) / scaleNow;
                 downY = (event.getRawY() - wrapperScreenY) / scaleNow;
+                float foldedAngle = Math.abs(rotation) % 360f;
+                if (foldedAngle > 180f) foldedAngle = 360f - foldedAngle;
+                FLog.d("ProTouch", "DOWN raw=" + (int) event.getRawX() + "," + (int) event.getRawY()
+                        + " wrapper=" + (int) wrapperScreenX + "," + (int) wrapperScreenY
+                        + " scale=" + getScaleX() + " local=" + (int) downX + "," + (int) downY
+                        + " tex=" + (int) (downX * textureScale) + "," + (int) (downY * textureScale)
+                        + " locked=" + frontSurface.isLocked()
+                        + " unlockZone=" + frontSurface.isInUnlockZone(downX * textureScale, downY * textureScale)
+                        + " statusBar=" + frontSurface.isInStatusBar(downX * textureScale, downY * textureScale)
+                        + " inspector=" + fullscreenActive);
                 startRotation = rotation;
                 dragging = false;
                 moved = false;
@@ -407,7 +408,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                 boolean shadeOpen = frontSurface.getShadeProgress() > 0.4f;
                 boolean dialogOpen = frontSurface.isAccessDialogOpen() || frontSurface.isPowerMenuOpen();
                 blockShadeGesture = dialogOpen;
-                if (dragEnabled && shadeOpen) {
+                if (dragEnabled && shadeOpen && foldedAngle <= 90f) {
                     // The open shade owns the vertical gesture: pulling further down holds it
                     // fully open, and an upward swipe closes it — never a reset-and-reopen.
                     touchMode = MODE_SHADE;
@@ -415,8 +416,16 @@ public class ProBundleShowcaseView extends FrameLayout {
                 } else if (dragEnabled && !dialogOpen) {
                     // The face surfaces live at textureScale× the wrapper, so their hit
                     // zones are in texture space: convert before every hit test.
-                    float tx = downX * textureScale;
-                    float ty = downY * textureScale;
+                    float rawTx = downX * textureScale;
+                    float rawTy = downY * textureScale;
+                    float tx = rawTx;
+                    float ty = rawTy;
+                    float folded = Math.abs(rotation) % 360f;
+                    if (folded > 180f) folded = 360f - folded;
+                    if (folded > 90f) {
+                        // Facing away: the model mirrors x, so the side buttons swap sides.
+                        tx = phoneWrapper.getWidth() * textureScale - tx;
+                    }
                     if (frontSurface.isOnPowerButton(tx, ty)) {
                         touchMode = MODE_POWER;
                         pressedButton = 3;
@@ -426,18 +435,17 @@ public class ProBundleShowcaseView extends FrameLayout {
                         touchMode = MODE_VOLUME;
                         pressedButton = volumeDirection > 0 ? 1 : 2;
                         hapticKey();
-                    } else if (frontSurface.isInStatusBar(tx, ty)) {
+                    } else if (foldedAngle <= 90f && frontSurface.isInStatusBar(rawTx, rawTy)) {
                         touchMode = MODE_SHADE;
                         shadeStart = frontSurface.getShadeProgress();
-                    } else if (frontSurface.isLocked() && frontSurface.isInUnlockZone(tx, ty)) {
+                    } else if (foldedAngle <= 90f && frontSurface.isLocked()
+                            && frontSurface.isInUnlockZone(rawTx, rawTy)) {
                         touchMode = MODE_UNLOCK;
                     }
                     if (pressedButton > 0 && phoneGL != null) {
                         phoneGL.setPressedButton(pressedButton);
                     }
                 }
-                float foldedAngle = Math.abs(rotation) % 360f;
-                if (foldedAngle > 180f) foldedAngle = 360f - foldedAngle;
                 if (frontSurface.isInteractiveOverlayOpen() || touchMode != MODE_NONE
                         || touchOnPhone || (foldedAngle > 4f && foldedAngle < 176f)) {
                     touchCaptured = true;
@@ -448,9 +456,12 @@ public class ProBundleShowcaseView extends FrameLayout {
                 velocityTracker.addMovement(event);
                 return true;
             case MotionEvent.ACTION_MOVE: {
+                float foldedNow = Math.abs(rotation) % 360f;
+                if (foldedNow > 180f) foldedNow = 360f - foldedNow;
                 if (velocityTracker != null) velocityTracker.addMovement(event);
-                float dx = (event.getRawX() - wrapperScreenX) - downX;
-                float dy = (event.getRawY() - wrapperScreenY) - downY;
+                float moveScale = getScaleX() > 0f ? getScaleX() : 1f;
+                float dx = (event.getRawX() - wrapperScreenX) / moveScale - downX;
+                float dy = (event.getRawY() - wrapperScreenY) / moveScale - downY;
                 lastDy = dy;
                 float adx = Math.abs(dx);
                 float ady = Math.abs(dy);
@@ -468,7 +479,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                         touchCaptured = true;
                         if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
                     } else if (ady > adx * 1.15f && dy > 0f && touchMode == MODE_NONE
-                            && !frontSurface.isLocked()) {
+                            && !frontSurface.isLocked() && foldedNow <= 90f) {
                         // Downward drag anywhere on the phone pulls the shade, like a real device.
                         touchMode = MODE_SHADE;
                         touchCaptured = true;
@@ -480,6 +491,8 @@ public class ProBundleShowcaseView extends FrameLayout {
                         if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(false);
                     }
                 }
+                FLog.d("ProTouch", "MODE=" + touchMode + " dx=" + (int) dx + " dy=" + (int) dy
+                        + " slop=" + (int) touchSlop + " captured=" + touchCaptured);
                 if (touchMode == MODE_ROTATE) {
                     if (dragEnabled) {
                         float sensitivity = 180f / Math.max(1f, phoneWrapper.getWidth());
@@ -504,6 +517,8 @@ public class ProBundleShowcaseView extends FrameLayout {
             }
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL: {
+                FLog.d("ProTouch", "UP mode=" + touchMode + " movedFar=" + movedFar
+                        + " dy=" + (int) lastDy);
                 switch (touchMode) {
                     case MODE_POWER:
                         removeCallbacks(powerHoldRunnable);
@@ -514,7 +529,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                         adjustDeviceVolume(volumeDirection);
                         break;
                     case MODE_SHADE:
-                        if (!movedFar && event.getActionMasked() == MotionEvent.ACTION_UP) {
+                        if (!moved && event.getActionMasked() == MotionEvent.ACTION_UP) {
                             // A tap while the shade is open: buttons, notification, or dismiss.
                             handleTap(downX, downY);
                         } else {
@@ -533,6 +548,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                         frontSurface.animateUnlock(frontSurface.getUnlockProgress() > 0.35f ? 1f : 0f);
                         break;
                     case MODE_ROTATE:
+                        FLog.d("ProTouch", "rotate-release rotation=" + rotation);
                         if (velocityTracker != null) velocityTracker.addMovement(event);
                         if (dragEnabled && event.getActionMasked() == MotionEvent.ACTION_UP) {
                             finishDrag();
@@ -578,30 +594,8 @@ public class ProBundleShowcaseView extends FrameLayout {
         // In-screen interactions only apply while the phone faces the viewer and has booted.
         if (Math.abs(rotation) > 35f) return;
         if (frontSurface.getBootProgress() < 0.95f) return;
-        if (frontSurface.isLocked()) return;
-        if (frontSurface.isPowerMenuOpen()) {
-            int action = frontSurface.powerMenuActionAt(x, y);
-            if (action == 1) {
-                hapticKey();
-                frontSurface.touchRipple(x, y);
-                frontSurface.startRestart();
-            } else if (action == 2) {
-                hapticTap();
-                frontSurface.touchRipple(x, y);
-                frontSurface.showPowerMenu(false);
-            } else {
-                frontSurface.showPowerMenu(false);
-            }
-            return;
-        }
-        if (frontSurface.isAccessDialogOpen()) {
-            if (frontSurface.accessDialogOkAt(x, y)) {
-                hapticTap();
-                frontSurface.touchRipple(x, y);
-                frontSurface.showAccessDialog(false);
-            }
-            return;
-        }
+        // The open shade owns the tap: its quick actions (torch, restart, notifications)
+        // must work on the lock screen too, so this runs before the locked gate below.
         if (frontSurface.getShadeProgress() > 0.4f) {
             if (frontSurface.torchButtonAt(x, y)) {
                 hapticKey();
@@ -627,6 +621,30 @@ public class ProBundleShowcaseView extends FrameLayout {
             // Tapping the panel keeps it open; only a tap on the dimmed home collapses it.
             if (!frontSurface.shadePanelAt(x, y)) {
                 frontSurface.animateShade(0f);
+            }
+            return;
+        }
+        if (frontSurface.isLocked()) return;
+        if (frontSurface.isPowerMenuOpen()) {
+            int action = frontSurface.powerMenuActionAt(x, y);
+            if (action == 1) {
+                hapticKey();
+                frontSurface.touchRipple(x, y);
+                frontSurface.startRestart();
+            } else if (action == 2) {
+                hapticTap();
+                frontSurface.touchRipple(x, y);
+                frontSurface.showPowerMenu(false);
+            } else {
+                frontSurface.showPowerMenu(false);
+            }
+            return;
+        }
+        if (frontSurface.isAccessDialogOpen()) {
+            if (frontSurface.accessDialogOkAt(x, y)) {
+                hapticTap();
+                frontSurface.touchRipple(x, y);
+                frontSurface.showAccessDialog(false);
             }
             return;
         }
@@ -810,11 +828,19 @@ public class ProBundleShowcaseView extends FrameLayout {
         // ------------------------------------------------------------ live status
 
     private final Runnable textureTask = this::updateTextures;
+    private long lastTextureTaskAt;
 
     private void markFrontDirty() {
         if (frontDirty) return;
         frontDirty = true;
-        post(textureTask);
+        long now = android.os.SystemClock.uptimeMillis();
+        long wait = 16L - (now - lastTextureTaskAt);
+        if (wait <= 0) {
+            lastTextureTaskAt = now;
+            post(textureTask);
+        } else {
+            postDelayed(textureTask, wait);
+        }
     }
 
     private void markBackDirty() {
@@ -847,8 +873,10 @@ public class ProBundleShowcaseView extends FrameLayout {
                 screenBitmap = renderSurface(frontSurface, screenBitmap, tw, th);
                 phoneGL.setScreenBitmap(screenBitmap);
             }
-            if (frameDirty) {
+            if (frameDirty || uvTw != tw || uvTh != th) {
                 frameDirty = false;
+                uvTw = tw;
+                uvTh = th;
                 RectF sr = frontSurface.getScreenRect();
                 if (sr.width() > 0) {
                     phoneGL.setScreenRect(sr.left / tw, sr.top / th, sr.right / tw, sr.bottom / th);
@@ -874,9 +902,11 @@ public class ProBundleShowcaseView extends FrameLayout {
         } else {
             reuse.eraseColor(0);
         }
-        view.measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY),
-                MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY));
-        view.layout(0, 0, w, h);
+        if (view.getWidth() != w || view.getHeight() != h) {
+            view.measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY));
+            view.layout(0, 0, w, h);
+        }
         view.draw(new Canvas(reuse));
         return reuse;
     }
@@ -892,6 +922,7 @@ public class ProBundleShowcaseView extends FrameLayout {
         if (phoneWrapper == null || phoneWrapper.getWidth() <= 0) return;
         frontDirty = true;
         backDirty = true;
+        frameDirty = true;
         post(textureTask);
     }
 
@@ -952,14 +983,6 @@ public class ProBundleShowcaseView extends FrameLayout {
         }
         cancelCinematic();
         teardownTorchCallback();
-        if (expandAnimator != null) {
-            expandAnimator.cancel();
-            expandAnimator = null;
-        }
-        if (expandPulse != null) {
-            expandPulse.cancel();
-            expandPulse = null;
-        }
         if (velocityTracker != null) {
             velocityTracker.recycle();
             velocityTracker = null;
@@ -1058,97 +1081,6 @@ public class ProBundleShowcaseView extends FrameLayout {
     /** Called on the first-ever app icon tap (used to pulse the CTA). */
     public void setOnFirstAppTapListener(Runnable listener) {
         onFirstAppTap = listener;
-    }
-
-    /** Phone-only mode for the fullscreen view: no text column, phone centered, full height. */
-    public void setPhoneOnlyMode(boolean phoneOnly) {
-        View textColumn = findViewById(R.id.showcaseTextColumn);
-        if (textColumn != null) textColumn.setVisibility(phoneOnly ? GONE : VISIBLE);
-        View row = findViewById(R.id.showcaseRow);
-        if (row instanceof LinearLayout) {
-            ((LinearLayout) row).setGravity(phoneOnly ? Gravity.CENTER_HORIZONTAL : Gravity.CENTER_VERTICAL);
-        }
-        if (phoneOnly) {
-            frontSurface.setCropFade(false);
-            setPadding(0, 0, 0, 0);
-            View root = findViewById(R.id.showcaseRoot);
-            if (root != null) {
-                root.setBackground(null);
-                root.setPadding(0, 0, 0, 0);
-            }
-            ViewGroup.LayoutParams wlp = phoneWrapper.getLayoutParams();
-            if (wlp instanceof ViewGroup.MarginLayoutParams) {
-                ((ViewGroup.MarginLayoutParams) wlp).setMarginStart(0);
-                phoneWrapper.setLayoutParams(wlp);
-            }
-            if (phoneGL != null) {
-                phoneGL.setCrop(1f, 0f);
-            }
-        }
-        frontDirty = true;
-        backDirty = true;
-        post(textureTask);
-    }
-
-    /** Fullscreen trades supersampling and headroom for fill-rate. */
-    public void setFullscreenQuality(boolean fullscreen) {
-        textureScale = fullscreen ? 1.0f : 1.5f;
-        glOverscan = fullscreen ? 1.15f : 1.5f;
-        if (phoneGL != null) {
-            phoneGL.setOverscan(glOverscan);
-            ViewGroup.LayoutParams wlp = phoneWrapper.getLayoutParams();
-            int baseW = wlp != null && wlp.width > 0 ? wlp.width
-                    : Math.round(getResources().getDimension(R.dimen.pro_showcase_phone_w));
-            int baseH = wlp != null && wlp.height > 0 ? wlp.height
-                    : Math.round(getResources().getDimension(R.dimen.pro_showcase_phone_h));
-            LayoutParams glp = (LayoutParams) phoneGL.getLayoutParams();
-            glp.width = Math.round(baseW * glOverscan);
-            glp.height = Math.round(baseH * glOverscan);
-            glp.gravity = Gravity.CENTER;
-            phoneGL.setLayoutParams(glp);
-        }
-        frontDirty = true;
-        backDirty = true;
-        frameDirty = true;
-        requestLayout();
-        post(textureTask);
-    }
-
-    /** Explicit phone size (safe: fixed dimensions, no wrap-content measurement traps). */
-    public void setPhoneSize(float widthDp, boolean fullHeight) {
-        ViewGroup.LayoutParams lp = phoneWrapper.getLayoutParams();
-        int w = Math.round(widthDp * getResources().getDisplayMetrics().density);
-        int h = Math.round(w * (fullHeight ? 2.05f : 0.55f * 2.05f));
-        lp.width = w;
-        lp.height = h;
-        phoneWrapper.setLayoutParams(lp);
-        if (phoneGL != null) {
-            LayoutParams glp = (LayoutParams) phoneGL.getLayoutParams();
-            glp.width = Math.round(w * glOverscan);
-            glp.height = Math.round(h * glOverscan);
-            glp.gravity = Gravity.CENTER;
-            phoneGL.setLayoutParams(glp);
-        }
-        frontDirty = true;
-        backDirty = true;
-        frameDirty = true;
-        post(textureTask);
-    }
-
-    /** One 360-degree turn, like a product shot. */
-    public void playIntroSpin() {
-        if (!motionAllowed()) return;
-        ValueAnimator spin = ValueAnimator.ofFloat(0f, 360f);
-        spin.setDuration(760);
-        spin.setInterpolator(new DecelerateInterpolator(1.1f));
-        spin.addUpdateListener(a -> phoneWrapper.setRotationY((float) a.getAnimatedValue()));
-        spin.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                phoneWrapper.setRotationY(0f);
-            }
-        });
-        spin.start();
     }
 
     private static final String CINE_TAG = "ProCinematic";
@@ -1547,17 +1479,29 @@ public class ProBundleShowcaseView extends FrameLayout {
     public void enterFullscreen() {
         if (fullscreenActive || cinematicRunning || phoneWrapper == null) return;
         if (!motionAllowed()) return;
+        // Deterministic: start from the card's rest pose even if an exit is mid-flight.
+        animate().cancel();
+        setScaleX(1f);
+        setScaleY(1f);
+        setTranslationX(0f);
+        setTranslationY(0f);
         fullscreenActive = true;
         if (fullscreenListener != null) fullscreenListener.onFullscreenActive(true);
         View textColumn = findViewById(R.id.showcaseTextColumn);
         if (textColumn != null) textColumn.setVisibility(View.INVISIBLE);
         View root = findViewById(R.id.showcaseRoot);
         if (root != null) root.setBackground(null);
-        textureScale = Math.max(textureScale, 2.6f);
-        frontDirty = true;
-        backDirty = true;
-        frameDirty = true;
-        post(textureTask);
+        // The supersample bump is the most expensive step of the whole flight: re-rendering
+        // both faces at 2.6x stalls the opening frames. Schedule it for the tail of the
+        // flight instead — and only if the inspector is still open by then.
+        postDelayed(() -> {
+            if (!fullscreenActive) return;
+            textureScale = Math.max(textureScale, 2.6f);
+            frontDirty = true;
+            backDirty = true;
+            frameDirty = true;
+            post(textureTask);
+        }, 700);
         float w = phoneWrapper.getWidth();
         float h = phoneWrapper.getHeight();
         if (w <= 0f || h <= 0f) return;
@@ -1599,7 +1543,15 @@ public class ProBundleShowcaseView extends FrameLayout {
     /** Close the inspector: the same phone flies back into the card slot with the reverse spin. */
     public void exitFullscreen() {
         if (!fullscreenActive || phoneWrapper == null) return;
+        animate().cancel();
         fullscreenActive = false;
+        // Back to card quality right away: the close shrinks the phone, so the big texture
+        // is dead weight — restoring the scale now keeps the flight smooth.
+        textureScale = 1.5f;
+        frontDirty = true;
+        backDirty = true;
+        frameDirty = true;
+        post(textureTask);
         android.animation.TimeInterpolator ease = new android.view.animation.AccelerateDecelerateInterpolator();
         animate().scaleX(1f).scaleY(1f).translationX(0f).translationY(0f)
                 .setDuration(820).setInterpolator(ease)
@@ -1608,11 +1560,6 @@ public class ProBundleShowcaseView extends FrameLayout {
                     if (textColumn != null) textColumn.setVisibility(View.VISIBLE);
                     View root = findViewById(R.id.showcaseRoot);
                     if (root != null) root.setBackgroundResource(R.drawable.bg_pro_showcase);
-                    textureScale = 1.5f;
-                    frontDirty = true;
-                    backDirty = true;
-                    frameDirty = true;
-                    post(textureTask);
                     if (fullscreenListener != null) fullscreenListener.onFullscreenActive(false);
                 }).start();
         inspectorSpin = ValueAnimator.ofFloat(rotation + 360f, rotation);

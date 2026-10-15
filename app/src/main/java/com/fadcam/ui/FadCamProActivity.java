@@ -130,6 +130,7 @@ public class FadCamProActivity extends AppCompatActivity {
     private final Runnable glance = this::glanceOnce;
     private Animatable2.AnimationCallback glanceCallback;
     private boolean inspectorActive;
+    private int inspectorScrollY;
     private Drawable inspectorRootBgBackup;
     private final java.util.Map<Integer, Integer> inspectorSectionState = new java.util.HashMap<>();
     private final java.util.Map<Integer, Float> inspectorSectionAlpha = new java.util.HashMap<>();
@@ -274,6 +275,10 @@ public class FadCamProActivity extends AppCompatActivity {
             return false;
         });
         proScroll.setOnScrollChangeListener((View v, int x, int y, int oldX, int oldY) -> {
+            if (inspectorActive) {
+                if (y != inspectorScrollY) v.scrollTo(0, inspectorScrollY);
+                return;
+            }
             updateScrollHint(y, proScroll.getHeight(), proScroll.getChildAt(0).getHeight());
             updateStickyHeaderVisibility();
         });
@@ -388,6 +393,13 @@ public class FadCamProActivity extends AppCompatActivity {
         int[] chromeIds = {R.id.btnBack, R.id.footerBar, R.id.footerFade,
                 R.id.stickyHeaderWrap, R.id.scrollHint, R.id.btnScrollTop};
         if (active) {
+            android.widget.ScrollView sc = findViewById(R.id.proScroll);
+            inspectorScrollY = sc != null ? sc.getScrollY() : 0;
+            // Scroll-driven buttons must not appear while the inspector owns the screen.
+            View topBtn = findViewById(R.id.btnScrollTop);
+            if (topBtn != null) topBtn.setVisibility(View.INVISIBLE);
+            View sticky = findViewById(R.id.stickyHeaderWrap);
+            if (sticky != null) sticky.setVisibility(View.INVISIBLE);
             if (root != null) {
                 inspectorRootBgBackup = root.getBackground();
                 root.setBackgroundColor(0xFF000000);
@@ -602,6 +614,7 @@ public class FadCamProActivity extends AppCompatActivity {
 
     /** Animated scroll with a longer decelerating motion than the platform's quick jump. */
     private void animateScroll(android.widget.ScrollView proScroll, int target) {
+        if (inspectorActive) return;
         int from = proScroll.getScrollY();
         if (target == from) return;
         if (scrollAnimator != null) scrollAnimator.cancel();
@@ -615,6 +628,7 @@ public class FadCamProActivity extends AppCompatActivity {
     /** Scrolls to the table, stopping exactly where the pinned header lands at its pin position,
      *  so the first row is still untouched at the top. */
     private void animateScrollToTable(android.widget.ScrollView proScroll) {
+        if (inspectorActive) return;
         View sectionTitle = findViewById(R.id.tvEyebrowCompare);
         View closeButton = findViewById(R.id.btnBack);
         int[] titleLocation = new int[2];
@@ -644,6 +658,7 @@ public class FadCamProActivity extends AppCompatActivity {
     }
 
     private void updateScrollHint(int scrollY, int viewportHeight, int contentHeight) {
+        if (inspectorActive) return;
         if (scrollHint == null) return;
         boolean canScroll = contentHeight > viewportHeight + dp(8);
         boolean atTop = scrollY <= dp(4);
@@ -727,6 +742,7 @@ public class FadCamProActivity extends AppCompatActivity {
     }
 
     private void updateStickyHeaderVisibility() {
+        if (inspectorActive) return;
         if (stickyHeaderWrap == null) return;
         // The whole title row is toggled (not just the text) so its prefix icon cannot float.
         View sectionTitle = findViewById(R.id.compareTitleRow);

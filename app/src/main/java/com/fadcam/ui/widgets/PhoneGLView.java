@@ -92,7 +92,8 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private ValueAnimator pressAnim;
     private final float[] pressedMvp = new float[32];
     private int backTex, screenTex;
-    private final int[] texSize = new int[2];
+    private final int[] screenTexSize = new int[2];
+    private final int[] backTexSize = new int[2];
     private Bitmap pendingBack, pendingScreen;
     private final Object texLock = new Object();
     private final Object renderLock = new Object();
@@ -117,6 +118,8 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
     private volatile Runnable frameListener;
     private volatile float cropFraction = 1f;
     private final float[] screenRect = {0f, 0f, 1f, 1f};
+    private volatile boolean rectPending;
+    private volatile float rectU0, rectV0, rectU1, rectV1;
     private FloatBuffer bufScreen;
     private volatile float fadePx = 0f;
     private volatile float overscan = 1f;
@@ -267,6 +270,20 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
 
     /** Normalized glass rect (u0,v0,u1,v1) — the live screen layer sits exactly there. */
     public void setScreenRect(float u0, float v0, float u1, float v1) {
+        rectU0 = u0;
+        rectV0 = v0;
+        rectU1 = u1;
+        rectV1 = v1;
+        rectPending = true;
+        requestRender();
+    }
+
+    /**
+     * Rebuilds the glass/panel quads for a rect. Runs on the GL thread, in the same pass as
+     * the texture uploads: the quads' baked UVs and the face textures always change together,
+     * so a quad can never sample the old texture through new UVs.
+     */
+    private void applyScreenRect(float u0, float v0, float u1, float v1) {
         screenRect[0] = u0;
         screenRect[1] = v0;
         screenRect[2] = u1;
@@ -284,7 +301,6 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         // The panel is only ever seen from behind (rotation 180 mirrors world X): flip U so
         // the flag and the wordmark read correctly instead of mirrored.
         bufPanel = toBuffer(roundedFace(x0, x1, y0v, y1v, r, -hd + 0.0018f, u1, v0, u0, v1));
-        requestRender();
     }
 
     /** A rounded-rect face as a triangle fan, UV-mapped from the given rect. */
@@ -462,13 +478,18 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
 
         synchronized (texLock) {
             if (pendingBack != null) {
-                backTex = uploadBitmap(pendingBack, backTex);
+                backTex = uploadBitmap(pendingBack, backTex, backTexSize);
                 pendingBack = null;
             }
             if (pendingScreen != null) {
-                screenTex = uploadBitmap(pendingScreen, screenTex);
+                screenTex = uploadBitmap(pendingScreen, screenTex, screenTexSize);
                 pendingScreen = null;
             }
+        }
+        // Same pass as the uploads above: the quads' UVs and the textures change together.
+        if (rectPending) {
+            rectPending = false;
+            applyScreenRect(rectU0, rectV0, rectU1, rectV1);
         }
         boolean drew = drawFrame();
         EGL14.eglSwapBuffers(eglDisplay, eglSurface);
@@ -715,7 +736,7 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         GLES20.glUniform1f(uFlashK, flashK);
     }
 
-    private int uploadBitmap(Bitmap bitmap, int existing) {
+    private int uploadBitmap(Bitmap bitmap, int existing, int[] size) {
         if (bitmap == null) return existing;
         if (existing == 0) {
             int[] tex = new int[1];
@@ -726,15 +747,15 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
             GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-            texSize[0] = bitmap.getWidth();
-            texSize[1] = bitmap.getHeight();
+            size[0] = bitmap.getWidth();
+            size[1] = bitmap.getHeight();
             return tex[0];
         }
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, existing);
-        if (texSize[0] != bitmap.getWidth() || texSize[1] != bitmap.getHeight()) {
+        if (size[0] != bitmap.getWidth() || size[1] != bitmap.getHeight()) {
             GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-            texSize[0] = bitmap.getWidth();
-            texSize[1] = bitmap.getHeight();
+            size[0] = bitmap.getWidth();
+            size[1] = bitmap.getHeight();
         } else {
             // Same allocation: update in place. Reallocating every frame can visibly
             // "pop" the whole face on some drivers.
