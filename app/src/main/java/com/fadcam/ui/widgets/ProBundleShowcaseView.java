@@ -175,6 +175,7 @@ public class ProBundleShowcaseView extends FrameLayout {
     };
     private ValueAnimator expandAnimator;
     private ValueAnimator expandPulse;
+    private ValueAnimator inspectorSpin;
 
     private final BroadcastReceiver timeReceiver = new BroadcastReceiver() {
         @Override
@@ -384,6 +385,12 @@ public class ProBundleShowcaseView extends FrameLayout {
                     if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
                     return true;
                 }
+                if (inspectorSpin != null) {
+                    // A touch takes over: stop the flight spin and settle on the card's face.
+                    inspectorSpin.cancel();
+                    inspectorSpin = null;
+                    if (phoneGL != null) phoneGL.setAngle(rotation);
+                }
                 float scaleNow = getScaleX() > 0f ? getScaleX() : 1f;
                 downX = (event.getRawX() - wrapperScreenX) / scaleNow;
                 downY = (event.getRawY() - wrapperScreenY) / scaleNow;
@@ -447,13 +454,14 @@ public class ProBundleShowcaseView extends FrameLayout {
                 lastDy = dy;
                 float adx = Math.abs(dx);
                 float ady = Math.abs(dy);
-                if (adx > touchSlop || ady > touchSlop) moved = true;
-                if (adx > touchSlop * 2f || ady > touchSlop * 2f) movedFar = true;
+                float slopNow = touchSlop * (getScaleX() > 0f ? getScaleX() : 1f);
+                if (adx > slopNow || ady > slopNow) moved = true;
+                if (adx > slopNow * 2f || ady > slopNow * 2f) movedFar = true;
                 if (touchMode == MODE_POWER || touchMode == MODE_VOLUME) return true;
                 float phoneH = Math.max(1f, phoneWrapper.getHeight());
                 // The first clear direction wins; afterwards the other axis is ignored.
                 if (!directionDecided) {
-                    if (adx <= touchSlop && ady <= touchSlop) return true;
+                    if (adx <= slopNow && ady <= slopNow) return true;
                     directionDecided = true;
                     if (adx > ady * 1.15f) {
                         touchMode = MODE_ROTATE;
@@ -1571,13 +1579,21 @@ public class ProBundleShowcaseView extends FrameLayout {
         android.animation.TimeInterpolator ease = new android.view.animation.AccelerateDecelerateInterpolator();
         animate().scaleX(scale).scaleY(scale).translationX(tx).translationY(ty)
                 .setDuration(900).setInterpolator(ease).start();
-        ValueAnimator spin = ValueAnimator.ofFloat(rotation, rotation + 360f);
-        spin.setDuration(900);
-        spin.setInterpolator(ease);
-        spin.addUpdateListener(a -> {
+        inspectorSpin = ValueAnimator.ofFloat(rotation, rotation + 360f);
+        inspectorSpin.setDuration(900);
+        inspectorSpin.setInterpolator(ease);
+        inspectorSpin.addUpdateListener(a -> {
             if (phoneGL != null) phoneGL.setAngle((float) a.getAnimatedValue());
         });
-        spin.start();
+        inspectorSpin.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                inspectorSpin = null;
+                // The field and the GL angle must agree again (360 == 0 visually).
+                if (phoneGL != null) phoneGL.setAngle(rotation);
+            }
+        });
+        inspectorSpin.start();
     }
 
     /** Close the inspector: the same phone flies back into the card slot with the reverse spin. */
@@ -1599,13 +1615,21 @@ public class ProBundleShowcaseView extends FrameLayout {
                     post(textureTask);
                     if (fullscreenListener != null) fullscreenListener.onFullscreenActive(false);
                 }).start();
-        ValueAnimator spin = ValueAnimator.ofFloat(rotation + 360f, rotation);
-        spin.setDuration(820);
-        spin.setInterpolator(ease);
-        spin.addUpdateListener(a -> {
+        inspectorSpin = ValueAnimator.ofFloat(rotation + 360f, rotation);
+        inspectorSpin.setDuration(820);
+        inspectorSpin.setInterpolator(ease);
+        inspectorSpin.addUpdateListener(a -> {
             if (phoneGL != null) phoneGL.setAngle((float) a.getAnimatedValue());
         });
-        spin.start();
+        inspectorSpin.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                inspectorSpin = null;
+                // The field and the GL angle must agree again (360 == 0 visually).
+                if (phoneGL != null) phoneGL.setAngle(rotation);
+            }
+        });
+        inspectorSpin.start();
     }
 
     /** "With FadCam for X years, Y months" — from the real first-install time. */

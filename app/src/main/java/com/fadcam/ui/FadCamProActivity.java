@@ -132,6 +132,7 @@ public class FadCamProActivity extends AppCompatActivity {
     private boolean inspectorActive;
     private Drawable inspectorRootBgBackup;
     private final java.util.Map<Integer, Integer> inspectorSectionState = new java.util.HashMap<>();
+    private final java.util.Map<Integer, Float> inspectorSectionAlpha = new java.util.HashMap<>();
     private ProBundleShowcaseView inspectorShowcase;
 
     @Override
@@ -374,7 +375,9 @@ public class FadCamProActivity extends AppCompatActivity {
 
     /**
      * In-place fullscreen inspector: black out the page around the phone (which is flying to
-     * the centre) and restore everything when it lands back in the card.
+     * the centre) and restore everything when it lands back in the card. The blackout itself is
+     * immediate (nothing may show through the scene), while every page section and the page
+     * chrome dissolve underneath it and fade back in on the way out.
      */
     private void setInspectorUi(boolean active) {
         inspectorActive = active;
@@ -382,14 +385,13 @@ public class FadCamProActivity extends AppCompatActivity {
         ViewGroup content = findViewById(R.id.proScrollContent);
         View close = findViewById(R.id.inspectorClose);
         ViewGroup scroll = findViewById(R.id.proScroll);
+        int[] chromeIds = {R.id.btnBack, R.id.footerBar, R.id.footerFade,
+                R.id.stickyHeaderWrap, R.id.scrollHint, R.id.btnScrollTop};
         if (active) {
-            setCinematicChrome(true);
             if (root != null) {
                 inspectorRootBgBackup = root.getBackground();
                 root.setBackgroundColor(0xFF000000);
-            }
-            // The phone must not be clipped when it scales past the card.
-            if (root != null) {
+                // The phone must not be clipped when it scales past the card.
                 root.setClipChildren(false);
                 root.setClipToPadding(false);
             }
@@ -400,18 +402,25 @@ public class FadCamProActivity extends AppCompatActivity {
             if (content != null) {
                 content.setClipChildren(false);
                 content.setClipToPadding(false);
-                inspectorSectionState.clear();
-                View card = findViewById(R.id.bundleShowcase);
-                for (int i = 0; i < content.getChildCount(); i++) {
-                    View child = content.getChildAt(i);
-                    if (child == card) continue;
-                    inspectorSectionState.put(child.getId(), child.getVisibility());
-                    child.setVisibility(View.INVISIBLE);
-                }
             }
-            if (close != null) close.setVisibility(View.VISIBLE);
+            inspectorSectionState.clear();
+            inspectorSectionAlpha.clear();
+            // Every section around the phone (and the page chrome) fades out under the blackout.
+            View card = findViewById(R.id.bundleShowcase);
+            for (int i = 0; content != null && i < content.getChildCount(); i++) {
+                View child = content.getChildAt(i);
+                if (child != card) fadeOutForInspector(child);
+            }
+            for (int id : chromeIds) {
+                fadeOutForInspector(findViewById(id));
+            }
+            if (close != null) {
+                close.animate().cancel();
+                close.setVisibility(View.VISIBLE);
+                close.setAlpha(0f);
+                close.animate().alpha(1f).setDuration(220).start();
+            }
         } else {
-            setCinematicChrome(false);
             if (root != null) {
                 root.setBackground(inspectorRootBgBackup);
                 root.setClipChildren(true);
@@ -426,15 +435,46 @@ public class FadCamProActivity extends AppCompatActivity {
             if (content != null) {
                 content.setClipChildren(true);
                 content.setClipToPadding(true);
+                // Walked by child (not by id lookup): some sections carry no id at all.
                 for (int i = 0; i < content.getChildCount(); i++) {
-                    View child = content.getChildAt(i);
-                    Integer prev = inspectorSectionState.get(child.getId());
-                    if (prev != null) child.setVisibility(prev);
+                    fadeInFromInspector(content.getChildAt(i));
                 }
-                inspectorSectionState.clear();
             }
-            if (close != null) close.setVisibility(View.GONE);
+            for (int id : chromeIds) {
+                fadeInFromInspector(findViewById(id));
+            }
+            if (close != null) {
+                close.animate().alpha(0f).setDuration(200)
+                        .withEndAction(() -> {
+                            if (!inspectorActive) close.setVisibility(View.GONE);
+                        }).start();
+            }
+            inspectorSectionState.clear();
+            inspectorSectionAlpha.clear();
         }
+    }
+
+    /** Records a view's pre-inspector state, then dissolves it under the blackout. */
+    private void fadeOutForInspector(View view) {
+        if (view == null) return;
+        inspectorSectionState.put(view.getId(), view.getVisibility());
+        inspectorSectionAlpha.put(view.getId(), view.getAlpha());
+        view.animate().cancel();
+        view.animate().alpha(0f).setDuration(220).withEndAction(() -> {
+            if (inspectorActive) view.setVisibility(View.INVISIBLE);
+        }).start();
+    }
+
+    /** Restores a recorded view to its pre-inspector state, fading it back in. */
+    private void fadeInFromInspector(View view) {
+        if (view == null) return;
+        Integer previousVisibility = inspectorSectionState.get(view.getId());
+        if (previousVisibility == null) return;
+        Float previousAlpha = inspectorSectionAlpha.get(view.getId());
+        view.animate().cancel();
+        view.setVisibility(previousVisibility);
+        view.setAlpha(0f);
+        view.animate().alpha(previousAlpha != null ? previousAlpha : 1f).setDuration(260).start();
     }
 
     /** Private binding boundary also allows tests to exercise every APK tier without a UI override. */

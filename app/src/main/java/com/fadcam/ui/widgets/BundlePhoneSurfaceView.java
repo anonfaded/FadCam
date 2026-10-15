@@ -1858,9 +1858,15 @@ public class BundlePhoneSurfaceView extends View {
             lockBobAnimator.addUpdateListener(a -> {
                 lockBob = (float) a.getAnimatedValue();
                 long now = SystemClock.elapsedRealtime();
-                if (isShown() && now - lastBobInvalidateAt >= 33L) {
+                if (now - lastBobInvalidateAt >= 33L) {
                     lastBobInvalidateAt = now;
-                    invalidate();
+                    if (glMode) {
+                        // The surface is offscreen in GL mode: the host must re-render the
+                        // face texture, otherwise the bob never reaches the screen.
+                        if (dirtyListener != null) dirtyListener.onContentDirty();
+                    } else if (isShown()) {
+                        invalidate();
+                    }
                 }
             });
             lockBobAnimator.start();
