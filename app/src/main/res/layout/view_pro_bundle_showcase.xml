@@ -5,7 +5,8 @@
     android:orientation="vertical"
     android:background="@drawable/bg_pro_showcase"
     android:clipChildren="false" android:clipToPadding="false"
-    android:padding="@dimen/pro_showcase_pad">
+    android:padding="@dimen/pro_showcase_pad"
+    android:layout_gravity="center">
 
     <LinearLayout android:id="@+id/showcaseRow"
         android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -93,7 +94,7 @@
                     </FrameLayout>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                         android:layout_marginStart="9dp"
-                        android:maxLines="2"
+                        android:maxLines="3"
                         android:text="@string/pro_showcase_chip_entry"
                         android:textColor="@color/pro_text_secondary" android:textSize="12.5sp" />
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
@@ -121,13 +122,13 @@
                     android:text="@string/pro_showcase_hint"
                     android:textColor="@color/pro_text_secondary" android:textSize="11sp" />
                 <TextView android:id="@+id/showcaseExpand"
-                    android:layout_width="36dp" android:layout_height="36dp"
+                    android:layout_width="30dp" android:layout_height="30dp"
                     android:layout_marginStart="8dp" android:gravity="center"
                     android:background="@drawable/bg_pro_showcase_expand"
                     android:clickable="true" android:focusable="true"
                     android:contentDescription="@string/pro_showcase_expand_desc"
                     android:text="fullscreen" android:fontFamily="@font/materialicons"
-                    android:textSize="18sp" android:textColor="@color/pro_gold" />
+                    android:textSize="15sp" android:textColor="@color/pro_gold" />
             </LinearLayout>
         </LinearLayout>
 

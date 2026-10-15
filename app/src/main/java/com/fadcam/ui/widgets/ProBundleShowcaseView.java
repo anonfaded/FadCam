@@ -23,6 +23,7 @@ import android.view.View;
 import android.view.View.MeasureSpec;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -33,7 +34,6 @@ import androidx.annotation.Nullable;
 
 import com.fadcam.FLog;
 import com.fadcam.R;
-import com.fadcam.ui.ProBundleFullscreenActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -128,6 +128,22 @@ public class ProBundleShowcaseView extends FrameLayout {
     private boolean cineHaptic1;
     private boolean cineHaptic2;
 
+    private boolean fullscreenActive;
+    private FullscreenListener fullscreenListener;
+
+    /** Notified when the in-place fullscreen inspector opens / closes. */
+    public interface FullscreenListener {
+        void onFullscreenActive(boolean active);
+    }
+
+    public void setFullscreenListener(FullscreenListener listener) {
+        fullscreenListener = listener;
+    }
+
+    public boolean isFullscreenActive() {
+        return fullscreenActive;
+    }
+
     private android.hardware.camera2.CameraManager cameraManager;
     private String torchCameraId;
     private boolean torchOn;
@@ -221,8 +237,9 @@ public class ProBundleShowcaseView extends FrameLayout {
                 phoneWrapper.getLocationOnScreen(loc);
                 wrapperScreenX = loc[0];
                 wrapperScreenY = loc[1];
-                float lx = event.getRawX() - wrapperScreenX;
-                float ly = event.getRawY() - wrapperScreenY;
+                float scale = phoneWrapper.getScaleX() > 0f ? phoneWrapper.getScaleX() : 1f;
+                float lx = (event.getRawX() - wrapperScreenX) / scale;
+                float ly = (event.getRawY() - wrapperScreenY) / scale;
                 float margin = 24f * getResources().getDisplayMetrics().density;
                 touchOnPhone = lx >= -margin && lx <= phoneWrapper.getWidth() + margin
                         && ly >= -margin && ly <= phoneWrapper.getHeight() + margin;
@@ -250,7 +267,7 @@ public class ProBundleShowcaseView extends FrameLayout {
         addView(noteInput);
         expandButton = findViewById(R.id.showcaseExpand);
         if (expandButton != null) {
-            expandButton.setOnClickListener(v -> playExpandSequence());
+            expandButton.setOnClickListener(v -> enterFullscreen());
             expandButton.setContentDescription(context.getString(R.string.pro_showcase_expand_desc));
             // (static button — no idle animation)
         }
@@ -367,8 +384,9 @@ public class ProBundleShowcaseView extends FrameLayout {
                     if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
                     return true;
                 }
-                downX = event.getRawX() - wrapperScreenX;
-                downY = event.getRawY() - wrapperScreenY;
+                float scaleNow = phoneWrapper.getScaleX() > 0f ? phoneWrapper.getScaleX() : 1f;
+                downX = (event.getRawX() - wrapperScreenX) / scaleNow;
+                downY = (event.getRawY() - wrapperScreenY) / scaleNow;
                 startRotation = rotation;
                 dragging = false;
                 moved = false;
@@ -414,7 +432,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                 float foldedAngle = Math.abs(rotation) % 360f;
                 if (foldedAngle > 180f) foldedAngle = 360f - foldedAngle;
                 if (frontSurface.isInteractiveOverlayOpen() || touchMode != MODE_NONE
-                        || (foldedAngle > 4f && foldedAngle < 176f)) {
+                        || touchOnPhone || (foldedAngle > 4f && foldedAngle < 176f)) {
                     touchCaptured = true;
                     if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
                 }
@@ -441,6 +459,17 @@ public class ProBundleShowcaseView extends FrameLayout {
                         touchMode = MODE_ROTATE;
                         touchCaptured = true;
                         if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
+                    } else if (ady > adx * 1.15f && dy > 0f && touchMode == MODE_NONE
+                            && !frontSurface.isLocked()) {
+                        // Downward drag anywhere on the phone pulls the shade, like a real device.
+                        touchMode = MODE_SHADE;
+                        touchCaptured = true;
+                        shadeStart = frontSurface.getShadeProgress();
+                        if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
+                    } else if (ady > adx * 1.15f && touchMode == MODE_NONE) {
+                        // Upward drag on the idle phone: hand the gesture back so the page scrolls.
+                        touchCaptured = false;
+                        if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(false);
                     }
                 }
                 if (touchMode == MODE_ROTATE) {
@@ -1506,35 +1535,72 @@ public class ProBundleShowcaseView extends FrameLayout {
         }
     }
 
-    /** Spin the whole phone 360 degrees, then open the fullscreen inspector. */
-    private void playExpandSequence() {
-        if (cinematicRunning || expandAnimator != null) return;
-        if (!motionAllowed()) {
-            launchFullscreen();
-            return;
-        }
-        expandAnimator = ValueAnimator.ofFloat(0f, 360f);
-        expandAnimator.setDuration(640);
-        expandAnimator.setInterpolator(new DecelerateInterpolator(1.1f));
-        expandAnimator.addUpdateListener(a -> applyRotation((float) a.getAnimatedValue()));
-        expandAnimator.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                expandAnimator = null;
-                applyRotation(0f);
-                launchFullscreen();
-            }
+    /** Open the in-place inspector: the same phone flies to the screen centre with a full spin. */
+    public void enterFullscreen() {
+        if (fullscreenActive || cinematicRunning || phoneWrapper == null) return;
+        if (!motionAllowed()) return;
+        float w = phoneWrapper.getWidth();
+        float h = phoneWrapper.getHeight();
+        if (w <= 0f || h <= 0f) return;
+        fullscreenActive = true;
+        if (fullscreenListener != null) fullscreenListener.onFullscreenActive(true);
+        // Only the phone should be visible: hide the card's own text + surface.
+        View textColumn = findViewById(R.id.showcaseTextColumn);
+        if (textColumn != null) textColumn.setVisibility(View.INVISIBLE);
+        View root = findViewById(R.id.showcaseRoot);
+        if (root != null) root.setBackground(null);
+        // Crisper faces for the large pose (one re-render during the flight).
+        textureScale = Math.max(textureScale, 2.6f);
+        frontDirty = true;
+        backDirty = true;
+        frameDirty = true;
+        post(textureTask);
+        int[] loc = new int[2];
+        phoneWrapper.getLocationOnScreen(loc);
+        float screenW = getResources().getDisplayMetrics().widthPixels;
+        float screenH = getResources().getDisplayMetrics().heightPixels;
+        float targetH = Math.min(0.86f * screenH, 0.74f * screenW * 2.05f);
+        float scale = targetH / h;
+        float tx = screenW / 2f - (loc[0] + w / 2f);
+        float ty = screenH / 2f - (loc[1] + h / 2f);
+        phoneWrapper.setPivotX(w / 2f);
+        phoneWrapper.setPivotY(h / 2f);
+        phoneWrapper.animate().scaleX(scale).scaleY(scale).translationX(tx).translationY(ty)
+                .setDuration(680).setInterpolator(new DecelerateInterpolator(1.3f)).start();
+        ValueAnimator spin = ValueAnimator.ofFloat(rotation, rotation + 360f);
+        spin.setDuration(680);
+        spin.setInterpolator(new DecelerateInterpolator(1.3f));
+        spin.addUpdateListener(a -> {
+            if (phoneGL != null) phoneGL.setAngle((float) a.getAnimatedValue());
         });
-        expandAnimator.start();
+        spin.start();
     }
 
-    private void launchFullscreen() {
-        Intent intent = new Intent(getContext(), ProBundleFullscreenActivity.class);
-        getContext().startActivity(intent);
-        if (getContext() instanceof android.app.Activity) {
-            ((android.app.Activity) getContext()).overridePendingTransition(
-                    android.R.anim.fade_in, android.R.anim.fade_out);
-        }
+    /** Close the inspector: the same phone flies back into the card slot with the reverse spin. */
+    public void exitFullscreen() {
+        if (!fullscreenActive || phoneWrapper == null) return;
+        fullscreenActive = false;
+        phoneWrapper.animate().scaleX(1f).scaleY(1f).translationX(0f).translationY(0f)
+                .setDuration(460).setInterpolator(new AccelerateInterpolator(1.3f))
+                .withEndAction(() -> {
+                    View textColumn = findViewById(R.id.showcaseTextColumn);
+                    if (textColumn != null) textColumn.setVisibility(View.VISIBLE);
+                    View root = findViewById(R.id.showcaseRoot);
+                    if (root != null) root.setBackgroundResource(R.drawable.bg_pro_showcase);
+                    textureScale = 1.5f;
+                    frontDirty = true;
+                    backDirty = true;
+                    frameDirty = true;
+                    post(textureTask);
+                    if (fullscreenListener != null) fullscreenListener.onFullscreenActive(false);
+                }).start();
+        ValueAnimator spin = ValueAnimator.ofFloat(rotation + 360f, rotation);
+        spin.setDuration(460);
+        spin.setInterpolator(new AccelerateInterpolator(1.3f));
+        spin.addUpdateListener(a -> {
+            if (phoneGL != null) phoneGL.setAngle((float) a.getAnimatedValue());
+        });
+        spin.start();
     }
 
     /** "With FadCam for X years, Y months" — from the real first-install time. */

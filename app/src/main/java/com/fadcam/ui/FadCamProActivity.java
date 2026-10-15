@@ -32,6 +32,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -128,6 +129,10 @@ public class FadCamProActivity extends AppCompatActivity {
     private android.animation.ValueAnimator avatarTravelAnimator;
     private final Runnable glance = this::glanceOnce;
     private Animatable2.AnimationCallback glanceCallback;
+    private boolean inspectorActive;
+    private Drawable inspectorRootBgBackup;
+    private final java.util.Map<Integer, Integer> inspectorSectionState = new java.util.HashMap<>();
+    private ProBundleShowcaseView inspectorShowcase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -261,6 +266,7 @@ public class FadCamProActivity extends AppCompatActivity {
         // section clear of it when the scroll reaches the end.
         scrollHint.setOnClickListener(v -> animateScrollToTable(proScroll));
         proScroll.setOnTouchListener((v, event) -> {
+            if (inspectorActive) return true; // the page is blacked out: never scroll
             if (event.getActionMasked() == android.view.MotionEvent.ACTION_DOWN && scrollAnimator != null) {
                 scrollAnimator.cancel();
             }
@@ -316,6 +322,18 @@ public class FadCamProActivity extends AppCompatActivity {
             scroll.setPadding(scroll.getPaddingLeft(), scroll.getPaddingTop(), scroll.getPaddingRight(), dp(54));
         }
         configureScreen(BuildConfig.TIER);
+        // The in-place inspector is a layer above the page: back closes it instead of leaving.
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (inspectorActive && inspectorShowcase != null) {
+                    inspectorShowcase.exitFullscreen();
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
         if (motionAllowed()) {
             View hero = findViewById(R.id.heroSection);
             hero.setAlpha(0f);
@@ -354,6 +372,71 @@ public class FadCamProActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * In-place fullscreen inspector: black out the page around the phone (which is flying to
+     * the centre) and restore everything when it lands back in the card.
+     */
+    private void setInspectorUi(boolean active) {
+        inspectorActive = active;
+        ViewGroup root = findViewById(R.id.rootContainer);
+        ViewGroup content = findViewById(R.id.proScrollContent);
+        View close = findViewById(R.id.inspectorClose);
+        ViewGroup scroll = findViewById(R.id.proScroll);
+        if (active) {
+            setCinematicChrome(true);
+            if (root != null) {
+                inspectorRootBgBackup = root.getBackground();
+                root.setBackgroundColor(0xFF000000);
+            }
+            // The phone must not be clipped when it scales past the card.
+            if (root != null) {
+                root.setClipChildren(false);
+                root.setClipToPadding(false);
+            }
+            if (scroll != null) {
+                scroll.setClipChildren(false);
+                scroll.setClipToPadding(false);
+            }
+            if (content != null) {
+                content.setClipChildren(false);
+                content.setClipToPadding(false);
+                inspectorSectionState.clear();
+                View card = findViewById(R.id.bundleShowcase);
+                for (int i = 0; i < content.getChildCount(); i++) {
+                    View child = content.getChildAt(i);
+                    if (child == card) continue;
+                    inspectorSectionState.put(child.getId(), child.getVisibility());
+                    child.setVisibility(View.INVISIBLE);
+                }
+            }
+            if (close != null) close.setVisibility(View.VISIBLE);
+        } else {
+            setCinematicChrome(false);
+            if (root != null) {
+                root.setBackground(inspectorRootBgBackup);
+                root.setClipChildren(true);
+                root.setClipToPadding(true);
+                inspectorRootBgBackup = null;
+            }
+            // proScroll keeps clipToPadding="false" from the layout; only clipping was widened.
+            if (scroll != null) {
+                scroll.setClipChildren(true);
+                scroll.setClipToPadding(false);
+            }
+            if (content != null) {
+                content.setClipChildren(true);
+                content.setClipToPadding(true);
+                for (int i = 0; i < content.getChildCount(); i++) {
+                    View child = content.getChildAt(i);
+                    Integer prev = inspectorSectionState.get(child.getId());
+                    if (prev != null) child.setVisibility(prev);
+                }
+                inspectorSectionState.clear();
+            }
+            if (close != null) close.setVisibility(View.GONE);
+        }
+    }
+
     /** Private binding boundary also allows tests to exercise every APK tier without a UI override. */
     private void configureScreen(String tier) {
         isOwner = "PRO".equals(tier) || "PRO_PLUS".equals(tier);
@@ -381,6 +464,14 @@ public class FadCamProActivity extends AppCompatActivity {
                     getString(R.string.pro_showcase_meta));
             showcase.setCinematicHost(findViewById(R.id.cinematicOverlay));
             showcase.setCinematicListener(this::setCinematicChrome);
+            inspectorShowcase = showcase;
+            showcase.setFullscreenListener(this::setInspectorUi);
+        }
+        View inspectorClose = findViewById(R.id.inspectorClose);
+        if (inspectorClose != null) {
+            inspectorClose.setOnClickListener(v -> {
+                if (inspectorShowcase != null) inspectorShowcase.exitFullscreen();
+            });
         }
         TextView note = findViewById(R.id.tvNote);
         note.setText(linkFadSecLab(getString(isOwner

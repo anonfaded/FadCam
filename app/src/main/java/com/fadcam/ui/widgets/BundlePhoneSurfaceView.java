@@ -1153,16 +1153,10 @@ public class BundlePhoneSurfaceView extends View {
             canvas.drawPath(bolt, paint);
         }
 
+        // Wi-Fi as the Material Icons ligature, like every other icon in the app.
         float wx = battery.left - unit * 1.15f;
-        float wy = mid + unit * 0.24f;
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(Math.max(1f, pw * 0.006f));
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setColor(withAlpha(0xFFDCDCDC, alpha * 0.92f));
-        for (float rr : new float[]{unit * 0.48f, unit * 0.31f, unit * 0.15f}) {
-            canvas.drawArc(new RectF(wx - rr, wy - rr, wx + rr, wy + rr), 225f, 90f, false, paint);
-        }
-        paint.setStrokeCap(Paint.Cap.BUTT);
+        drawIcon(canvas, "wifi", wx, mid, unit * 1.12f,
+                withAlpha(0xFFDCDCDC, alpha * 0.92f));
 
         float holeR = Math.max(2.5f, pw * 0.028f);
         float holeY = mid;
@@ -1384,6 +1378,8 @@ public class BundlePhoneSurfaceView extends View {
         if (shadeProgress <= 0.001f) return;
         float pw = phone.width();
         float shadeH = screen.height() * 0.52f;
+        // Clear the front camera punch-hole: everything in the shade sits below it.
+        float topInset = pw * 0.15f;
         canvas.save();
         canvas.clipPath(screenClipPath);
         canvas.translate(0f, -(1f - shadeProgress) * shadeH);
@@ -1396,13 +1392,13 @@ public class BundlePhoneSurfaceView extends View {
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(pw * 0.075f);
         paint.setColor(0xFFF2F2F4);
-        canvas.drawText(clockText, panel.centerX(), panel.top + pw * 0.16f, paint);
+        canvas.drawText(clockText, panel.centerX(), panel.top + topInset + pw * 0.16f, paint);
         paint.setTextSize(pw * 0.042f);
         paint.setColor(0xFF9A9AA0);
-        canvas.drawText(dateText, panel.centerX(), panel.top + pw * 0.235f, paint);
+        canvas.drawText(dateText, panel.centerX(), panel.top + topInset + pw * 0.235f, paint);
 
-        RectF card = new RectF(panel.left + pw * 0.055f, panel.top + pw * 0.30f,
-                panel.right - pw * 0.055f, panel.top + pw * 0.30f + pw * 0.30f);
+        RectF card = new RectF(panel.left + pw * 0.055f, panel.top + topInset + pw * 0.30f,
+                panel.right - pw * 0.055f, panel.top + topInset + pw * 0.30f + pw * 0.30f);
         notifCardRect.set(card);
         paint.setColor(0x1AFFFFFF);
         canvas.drawRoundRect(card, pw * 0.045f, pw * 0.045f, paint);

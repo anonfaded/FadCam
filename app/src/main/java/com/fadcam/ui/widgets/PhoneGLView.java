@@ -522,7 +522,9 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         float[] lp = {LED_X, ledY, ledZ, 1f};
         Matrix.multiplyMV(flashWorld, 0, model, 0, lp, 0);
         GLES20.glUniform4f(uFlashPos, flashWorld[0], flashWorld[1], flashWorld[2], scale);
-        flashK = flashGlow * 7.5f;
+        float facing = (float) -Math.cos(Math.toRadians(angle));
+        float gate = Math.max(0f, Math.min(1f, (facing - 0.6f) / 0.35f));
+        flashK = flashGlow * 7.5f * gate;
         GLES20.glUniform1f(uFlashK, flashK);
 
         GLES20.glUniformMatrix4fv(uMVP, 1, false, mvp, 0);
