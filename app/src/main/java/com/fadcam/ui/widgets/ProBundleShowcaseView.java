@@ -70,6 +70,8 @@ public class ProBundleShowcaseView extends FrameLayout {
     private final BundlePhoneSurfaceView frontSurface;
     private final BundlePhoneSurfaceView backSurface;
     private final SimpleDateFormat clockFormat = new SimpleDateFormat("h:mm", Locale.getDefault());
+    /** The app's own settings store: the mockup's note rides along with backup/export. */
+    private final com.fadcam.SharedPreferencesManager appPrefs;
     private final int touchSlop;
     /** Tuned text:phone ratio of the card's row, read from the layout. */
     private final float phoneWeight;
@@ -86,12 +88,18 @@ public class ProBundleShowcaseView extends FrameLayout {
     private boolean dragging;
     private int touchMode = MODE_NONE;
     private float shadeStart = 0f;
+    private float noteDragFrom;
+    private long lastNoteTapAt;
+    private float lastNoteTapX, lastNoteTapY;
+    private boolean noteSelectAllFired;
     private int volumeDirection = 0;
     private boolean moved = false;
     private boolean directionDecided = false;
     private boolean movedFar = false;
     private boolean blockShadeGesture = false;
     private final Runnable powerHoldRunnable = this::onPowerHeld;
+    /** Long-press inside the mini Notes editor selects the whole note, like a real text field. */
+    private final Runnable noteSelectAllRunnable = this::selectAllNote;
     private boolean powerMenuShown = false;
     private boolean touchOnPhone = false;
     private float wrapperScreenX, wrapperScreenY;
@@ -193,6 +201,7 @@ public class ProBundleShowcaseView extends FrameLayout {
     public ProBundleShowcaseView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         inflate(context, R.layout.view_pro_bundle_showcase, this);
+        appPrefs = com.fadcam.SharedPreferencesManager.getInstance(context);
         labelView = findViewById(R.id.showcaseLabel);
         titleView = findViewById(R.id.showcaseTitle);
         subtitleView = findViewById(R.id.showcaseSubtitle);
@@ -253,7 +262,13 @@ public class ProBundleShowcaseView extends FrameLayout {
         applyRotation(0f);
 
         // Hidden input that lets the Notes preview be typed on with the real keyboard.
-        noteInput = new EditText(context);
+        noteInput = new EditText(context) {
+            @Override
+            protected void onSelectionChanged(int selStart, int selEnd) {
+                super.onSelectionChanged(selStart, selEnd);
+                if (frontSurface != null) frontSurface.setNoteSelection(selStart, selEnd);
+            }
+        };
         noteInput.setBackground(null);
         noteInput.setAlpha(0f);
         noteInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
@@ -264,10 +279,15 @@ public class ProBundleShowcaseView extends FrameLayout {
             @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) { }
             @Override public void onTextChanged(CharSequence s, int st, int b, int c) { }
             @Override public void afterTextChanged(Editable e) {
-                frontSurface.setNote(e.toString());
+                String text = e.toString();
+                frontSurface.setNote(text);
+                frontSurface.setNoteSelection(noteInput.getSelectionStart(), noteInput.getSelectionEnd());
+                // The preview is a real notes app: the draft outlives the screen and the process.
+                appPrefs.setProShowcaseNote(text);
             }
         });
         addView(noteInput);
+        noteInput.setText(appPrefs.getProShowcaseNote());
         expandButton = findViewById(R.id.showcaseExpand);
         if (expandButton != null) {
             expandButton.setOnClickListener(v -> enterFullscreen());
@@ -371,6 +391,7 @@ public class ProBundleShowcaseView extends FrameLayout {
     private static final int MODE_UNLOCK = 3;
     private static final int MODE_POWER = 4;
     private static final int MODE_VOLUME = 5;
+    private static final int MODE_NOTE = 6;
 
     private boolean handleTouch(MotionEvent event) {
         switch (event.getActionMasked()) {
@@ -431,6 +452,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                         // Facing away: the model mirrors x, so the side buttons swap sides.
                         tx = phoneWrapper.getWidth() * textureScale - tx;
                     }
+                    noteDragFrom = frontSurface.getNoteScroll();
                     if (frontSurface.isOnPowerButton(tx, ty)) {
                         touchMode = MODE_POWER;
                         pressedButton = 3;
@@ -456,6 +478,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                     touchCaptured = true;
                     if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
                 }
+                if (frontSurface.getPreviewApp() == 1) postDelayed(noteSelectAllRunnable, 500);
                 if (velocityTracker == null) velocityTracker = VelocityTracker.obtain();
                 else velocityTracker.clear();
                 velocityTracker.addMovement(event);
@@ -471,7 +494,10 @@ public class ProBundleShowcaseView extends FrameLayout {
                 float adx = Math.abs(dx);
                 float ady = Math.abs(dy);
                 float slopNow = touchSlop * (getScaleX() > 0f ? getScaleX() : 1f);
-                if (adx > slopNow || ady > slopNow) moved = true;
+                if (adx > slopNow || ady > slopNow) {
+                    moved = true;
+                    removeCallbacks(noteSelectAllRunnable);
+                }
                 if (adx > slopNow * 2f || ady > slopNow * 2f) movedFar = true;
                 if (touchMode == MODE_POWER || touchMode == MODE_VOLUME) return true;
                 float phoneH = Math.max(1f, phoneWrapper.getHeight());
@@ -481,6 +507,12 @@ public class ProBundleShowcaseView extends FrameLayout {
                     directionDecided = true;
                     if (adx > ady * 1.15f) {
                         touchMode = MODE_ROTATE;
+                        touchCaptured = true;
+                        if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
+                    } else if (ady > adx * 1.15f && frontSurface.previewVisible()
+                            && touchMode == MODE_NONE) {
+                        // An open app owns vertical drags: the note scrolls, the page stays put.
+                        touchMode = MODE_NOTE;
                         touchCaptured = true;
                         if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
                     } else if (ady > adx * 1.15f && dy > 0f && touchMode == MODE_NONE
@@ -509,6 +541,12 @@ public class ProBundleShowcaseView extends FrameLayout {
                     }
                     return true;
                 }
+                if (touchMode == MODE_NOTE) {
+                    if (frontSurface.getPreviewApp() == 1) {
+                        frontSurface.scrollNoteTo(noteDragFrom - dy);
+                    }
+                    return true;
+                }
                 if (touchMode == MODE_SHADE) {
                     // Downward drag opens the shade; upward closes it.
                     frontSurface.setShadeProgress(shadeStart + dy / (phoneH * 0.55f));
@@ -522,6 +560,7 @@ public class ProBundleShowcaseView extends FrameLayout {
             }
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL: {
+                removeCallbacks(noteSelectAllRunnable);
                 FLog.d("ProTouch", "UP mode=" + touchMode + " movedFar=" + movedFar
                         + " dy=" + (int) lastDy);
                 switch (touchMode) {
@@ -695,7 +734,6 @@ public class ProBundleShowcaseView extends FrameLayout {
             return;
         }
         if (frontSurface.previewVisible()) {
-            frontSurface.touchRipple(x, y);
             if (frontSurface.closePreviewAt(x, y)) {
                 hapticTap();
                 closeAppPreview();
@@ -704,6 +742,30 @@ public class ProBundleShowcaseView extends FrameLayout {
                 if (key >= 0) {
                     hapticKey();
                     frontSurface.calculatorPress(key);
+                } else if (frontSurface.getPreviewApp() == 1 && noteInput != null) {
+                    if (noteSelectAllFired) {
+                        // This is the release of the long press that just selected the note.
+                        noteSelectAllFired = false;
+                        return;
+                    }
+                    long now = android.os.SystemClock.uptimeMillis();
+                    float slop = phoneWrapper.getWidth() * 0.12f;
+                    boolean doubleTap = now - lastNoteTapAt < 320L
+                            && Math.abs(x - lastNoteTapX) < slop && Math.abs(y - lastNoteTapY) < slop;
+                    lastNoteTapAt = now;
+                    lastNoteTapX = x;
+                    lastNoteTapY = y;
+                    hapticTap();
+                    noteInput.requestFocus();
+                    int offset = frontSurface.noteOffsetAt(x, y);
+                    if (doubleTap) {
+                        selectWordAt(offset);
+                    } else {
+                        noteInput.setSelection(offset);
+                    }
+                    InputMethodManager imm = (InputMethodManager)
+                            getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) imm.showSoftInput(noteInput, InputMethodManager.SHOW_IMPLICIT);
                 }
             }
             return;
@@ -714,7 +776,7 @@ public class ProBundleShowcaseView extends FrameLayout {
             frontSurface.touchRipple(x, y);
             if (!nudgeShown) {
                 nudgeShown = true;
-                frontSurface.pulseApp(app - 1, true);
+                frontSurface.pulseApp(app - 1);
                 if (onFirstAppTap != null) onFirstAppTap.run();
             }
             openAppPreview(app);
@@ -724,6 +786,28 @@ public class ProBundleShowcaseView extends FrameLayout {
     }
 
     // ------------------------------------------------------------- haptics
+
+    private void selectAllNote() {
+        if (frontSurface == null || frontSurface.getPreviewApp() != 1 || noteInput == null) return;
+        noteInput.selectAll();
+        noteSelectAllFired = true;
+        hapticTap();
+    }
+
+    /** Selects the word around a character, for the double-tap a text field normally handles. */
+    private void selectWordAt(int offset) {
+        CharSequence text = noteInput.getText();
+        int start = Math.max(0, Math.min(offset, text.length()));
+        int end = start;
+        while (start > 0 && isWordChar(text.charAt(start - 1))) start--;
+        while (end < text.length() && isWordChar(text.charAt(end))) end++;
+        if (start == end) return;
+        noteInput.setSelection(start, end);
+    }
+
+    private static boolean isWordChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '\'';
+    }
 
     private void hapticKey() {
         performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY);

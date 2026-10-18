@@ -75,6 +75,8 @@ public class BundlePhoneSurfaceView extends View {
     private final RectF volUpBtn = new RectF();
     private final RectF volDownBtn = new RectF();
     private final RectF previewBackRect = new RectF();
+    private final RectF noteThumb = new RectF();
+    private final Path noteSelectionPath = new Path();
     private final RectF calcGrid = new RectF();
     private final RectF[] iconRects = {new RectF(), new RectF(), new RectF()};
     private final Path bolt = new Path();
@@ -144,6 +146,21 @@ public class BundlePhoneSurfaceView extends View {
 
     private int previewApp = 0; // 0 none, 1 notes, 2 calculator, 3 weather
     private String noteText = "";
+    private int noteSelStart;
+    private int noteSelEnd;
+    private float noteScroll;
+    private int noteFollowOffset = -1;
+    private final RectF noteCard = new RectF();
+    private final RectF noteViewport = new RectF();
+    private StaticLayout noteLayout;
+    private final Handler noteCaretHandler = new Handler(Looper.getMainLooper());
+    private final Runnable noteCaretTick = new Runnable() {
+        @Override public void run() {
+            if (previewApp != 1) return;
+            invalidate();
+            noteCaretHandler.postDelayed(this, 500L);
+        }
+    };
     private String calcDisplay = "0";
     private double calcAccum = 0;
     private String calcOp = null;
@@ -152,8 +169,6 @@ public class BundlePhoneSurfaceView extends View {
     private float appPulse = 1f;
     private int pulseIndex = -1;
     private ValueAnimator pulseAnimator;
-    private float captionAlpha = 0f;
-    private ValueAnimator captionAnimator;
 
     private final Handler shadeTickHandler = new Handler(Looper.getMainLooper());
     private final Runnable shadeTicker = new Runnable() {
@@ -307,6 +322,7 @@ public class BundlePhoneSurfaceView extends View {
         setShadeProgress(0f);
         exitToHome();
         showRecents(false);
+        noteScroll = 0f;
         popProgress = 1f;
         bootProgress = 0f;
         invalidate();
@@ -660,6 +676,8 @@ public class BundlePhoneSurfaceView extends View {
 
     public void openPreview(int app) {
         lastPreviewApp = app;
+        noteCaretHandler.removeCallbacks(noteCaretTick);
+        if (app == 1) noteCaretHandler.postDelayed(noteCaretTick, 500L);
         recentsOpen = false;
         previewApp = app;
         if (app != 2) {
@@ -672,11 +690,13 @@ public class BundlePhoneSurfaceView extends View {
     }
 
     public void closePreview() {
+        noteCaretHandler.removeCallbacks(noteCaretTick);
         previewApp = 0;
         invalidate();
     }
 
     public void exitToHome() {
+        noteCaretHandler.removeCallbacks(noteCaretTick);
         previewApp = 0;
         recentsOpen = false;
         invalidate();
@@ -730,24 +750,56 @@ public class BundlePhoneSurfaceView extends View {
         invalidate();
     }
 
+    /** Caret / selection from the hidden input, so the editor draws exactly what the IME does. */
+    public void setNoteSelection(int start, int end) {
+        noteSelStart = Math.max(0, start);
+        noteSelEnd = Math.max(0, end);
+        // A collapsed caret keeps itself in view; a range keeps its START in view, so a select-all
+        // shows the beginning of the highlight instead of jumping to its end.
+        noteFollowOffset = noteSelStart == noteSelEnd ? noteSelEnd : noteSelStart;
+        if (noteSelStart > noteSelEnd) {
+            int swap = noteSelStart;
+            noteSelStart = noteSelEnd;
+            noteSelEnd = swap;
+        }
+        invalidate();
+    }
+
+    public int getPreviewApp() {
+        return previewApp;
+    }
+
+    /** Character offset under a tap inside the note, so the caret can be placed like a text field. */
+    public int noteOffsetAt(float x, float y) {
+        if (noteLayout == null) return noteText.length();
+        float localX = x - noteViewport.left;
+        float localY = y - noteViewport.top + noteScroll;
+        int line = noteLayout.getLineForVertical(Math.round(localY));
+        return Math.max(0, Math.min(noteText.length(),
+                noteLayout.getOffsetForHorizontal(line, localX)));
+    }
+
+    public float getNoteScroll() {
+        return noteScroll;
+    }
+
+    public boolean canScrollNote() {
+        return noteLayout != null && noteLayout.getHeight() > noteViewport.height() + 0.5f;
+    }
+
+    /** Drags the note's text; clamped to its content so a short note cannot be pushed around. */
+    public void scrollNoteTo(float scroll) {
+        if (noteLayout == null) return;
+        float max = Math.max(0f, noteLayout.getHeight() - noteViewport.height());
+        noteScroll = Math.max(0f, Math.min(max, scroll));
+        noteFollowOffset = -1;
+        invalidate();
+    }
+
     /** A quick scale pulse on one app icon (the first-tap nudge). */
-    public void pulseApp(int appIndex, boolean showCaption) {
+    public void pulseApp(int appIndex) {
         if (pulseAnimator != null) pulseAnimator.cancel();
         pulseIndex = appIndex;
-        if (showCaption) {
-            captionAlpha = 1f;
-            if (captionAnimator != null) captionAnimator.cancel();
-            if (motionAllowed()) {
-                captionAnimator = ValueAnimator.ofFloat(1f, 0f);
-                captionAnimator.setStartDelay(1700);
-                captionAnimator.setDuration(420);
-                captionAnimator.addUpdateListener(a -> {
-                    captionAlpha = (float) a.getAnimatedValue();
-                    invalidate();
-                });
-                captionAnimator.start();
-            }
-        }
         if (!motionAllowed()) {
             appPulse = 1f;
             invalidate();
@@ -966,7 +1018,6 @@ public class BundlePhoneSurfaceView extends View {
         drawPowerMenu(canvas);
         drawTouchRipple(canvas);
         drawVolumeHud(canvas);
-        drawCaption(canvas);
     }
 
     /**
@@ -1190,26 +1241,96 @@ public class BundlePhoneSurfaceView extends View {
         else drawWeatherPreview(canvas);
     }
 
+    /**
+     * A real editor inside the glass: a rounded note card that starts right under the title and
+     * stops above the navigation dock, with the caret, the selection and a scrollbar drawn from
+     * the hidden input's state — never a bare text blob over the wallpaper.
+     */
     private void drawNotesPreview(Canvas canvas) {
         float pw = phone.width();
-        RectF card = new RectF(screen.left + pw * 0.06f, screen.top + screen.height() * 0.30f,
-                screen.right - pw * 0.06f, screen.bottom - pw * 0.19f);
+        float inset = pw * 0.055f;
+        RectF card = new RectF(screen.left + inset, screen.top + pw * 0.300f,
+                screen.right - inset, screen.bottom - pw * 0.161f);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(0x14FFFFFF);
         canvas.drawRoundRect(card, pw * 0.045f, pw * 0.045f, paint);
-        String text = noteText.trim().isEmpty()
-                ? getContext().getString(R.string.pro_showcase_notes_hint) : noteText;
+
+        float pad = pw * 0.045f;
+        RectF viewport = new RectF(card.left + pad, card.top + pad,
+                card.right - pad, card.bottom - pad);
+        boolean empty = noteText.trim().isEmpty();
+        String text = empty ? getContext().getString(R.string.pro_showcase_notes_hint) : noteText;
         textPaint.setTypeface(labelTypeface);
-        textPaint.setTextSize(pw * 0.048f);
-        textPaint.setColor(noteText.trim().isEmpty() ? 0x66E9E9EC : 0xFFE9E9EC);
+        textPaint.setTextSize(pw * 0.060f);
+        textPaint.setColor(empty ? 0x66E9E9EC : 0xFFE9E9EC);
         StaticLayout layout = StaticLayout.Builder
-                .obtain(text, 0, text.length(), textPaint, (int) (card.width() - pw * 0.08f))
+                .obtain(text, 0, text.length(), textPaint, Math.max(1, (int) viewport.width()))
                 .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-                .setLineSpacing(0f, 1.25f)
+                .setLineSpacing(0f, 1.28f)
                 .build();
+
+        noteCard.set(card);
+        noteViewport.set(viewport);
+        noteLayout = layout;
+        int caret = Math.min(text.length(), Math.max(noteSelStart, noteSelEnd));
+        float maxScroll = Math.max(0f, layout.getHeight() - viewport.height());
+        if (noteFollowOffset >= 0) {
+            // Keep the tracked point in view as the note grows; a deliberate drag is left alone.
+            int follow = Math.max(0, Math.min(text.length(), noteFollowOffset));
+            float followTop = layout.getLineTop(layout.getLineForOffset(follow));
+            float followBottom = layout.getLineBottom(layout.getLineForOffset(follow));
+            if (followBottom > noteScroll + viewport.height()) noteScroll = followBottom - viewport.height();
+            if (followTop < noteScroll) noteScroll = followTop;
+            noteFollowOffset = -1;
+        }
+        noteScroll = Math.max(0f, Math.min(maxScroll, noteScroll));
+
         canvas.save();
-        canvas.translate(card.left + pw * 0.04f, card.top + pw * 0.04f);
+        canvas.clipRect(viewport);
+        canvas.translate(viewport.left, viewport.top - noteScroll);
+        if (!empty && noteSelEnd > noteSelStart) drawNoteSelection(canvas, layout);
         layout.draw(canvas);
+        if (caretOn()) drawNoteCaret(canvas, layout, caret);
         canvas.restore();
+
+        if (maxScroll > 0.5f) drawNoteScrollbar(canvas, viewport, layout.getHeight(), maxScroll);
+    }
+
+    /**
+     * One path for the whole range. Drawing it line by line cannot work: a line's end offset
+     * belongs to the *next* line, so getPrimaryHorizontal() returns that line's start and every
+     * rect except the last collapses to zero width (the "only the last line is selected" bug).
+     */
+    private void drawNoteSelection(Canvas canvas, StaticLayout layout) {
+        noteSelectionPath.reset();
+        layout.getSelectionPath(noteSelStart, noteSelEnd, noteSelectionPath);
+        paint.setColor(0x59C6A66A);
+        canvas.drawPath(noteSelectionPath, paint);
+    }
+
+    private void drawNoteCaret(Canvas canvas, StaticLayout layout, int caret) {
+        float pw = phone.width();
+        int line = layout.getLineForOffset(caret);
+        float x = layout.getPrimaryHorizontal(caret);
+        paint.setColor(0xFFC6A66A);
+        canvas.drawRect(x, layout.getLineTop(line), x + Math.max(2f, pw * 0.005f),
+                layout.getLineBottom(line), paint);
+    }
+
+    private void drawNoteScrollbar(Canvas canvas, RectF viewport, float contentHeight, float maxScroll) {
+        float pw = phone.width();
+        float trackTop = viewport.top;
+        float trackH = viewport.height();
+        float thumbH = Math.max(pw * 0.045f, trackH * trackH / contentHeight);
+        float thumbTop = trackTop + (trackH - thumbH) * (noteScroll / maxScroll);
+        paint.setColor(0x33FFFFFF);
+        noteThumb.set(viewport.right + pw * 0.012f, thumbTop,
+                viewport.right + pw * 0.026f, thumbTop + thumbH);
+        canvas.drawRoundRect(noteThumb, pw * 0.007f, pw * 0.007f, paint);
+    }
+
+    private boolean caretOn() {
+        return SystemClock.uptimeMillis() % 1000L < 520L;
     }
 
     /** The calculator input line: shows the pending operation live, like a real app. */
@@ -1337,31 +1458,40 @@ public class BundlePhoneSurfaceView extends View {
         canvas.scale(cardScale, cardScale, card.centerX(), card.centerY());
         paint.setColor(withAlpha(0xFF1C1E24, recentsProgress));
         canvas.drawRoundRect(card, pw * 0.05f, pw * 0.05f, paint);
-        Drawable icon = lastPreviewApp > 0 ? icons[lastPreviewApp - 1] : icons[0];
-        if (icon != null) {
-            float is = pw * 0.20f;
-            icon.setAlpha(255);
-            icon.setBounds(Math.round(card.left + pw * 0.06f), Math.round(card.top + pw * 0.06f),
-                    Math.round(card.left + pw * 0.06f + is), Math.round(card.top + pw * 0.06f + is));
-            icon.draw(canvas);
-        }
         paint.setTypeface(labelTypeface);
-        paint.setTextSize(pw * 0.055f);
-        paint.setColor(0xFFE9E9EC);
-        paint.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText(lastPreviewApp > 0 ? labels[lastPreviewApp - 1] : labels[0],
-                card.left + pw * 0.06f, card.top + pw * 0.20f + pw * 0.075f, paint);
-        paint.setTextSize(pw * 0.040f);
-        paint.setColor(withAlpha(0xFF9A9AA0, recentsProgress));
-        canvas.drawText(getContext().getString(R.string.pro_showcase_recents_hint),
-                card.left + pw * 0.06f, card.bottom - pw * 0.06f, paint);
+        if (lastPreviewApp > 0) {
+            Drawable icon = icons[lastPreviewApp - 1];
+            if (icon != null) {
+                float is = pw * 0.20f;
+                icon.setAlpha(255);
+                icon.setBounds(Math.round(card.left + pw * 0.06f), Math.round(card.top + pw * 0.06f),
+                        Math.round(card.left + pw * 0.06f + is), Math.round(card.top + pw * 0.06f + is));
+                icon.draw(canvas);
+            }
+            paint.setTextSize(pw * 0.055f);
+            paint.setColor(0xFFE9E9EC);
+            paint.setTextAlign(Paint.Align.LEFT);
+            canvas.drawText(labels[lastPreviewApp - 1],
+                    card.left + pw * 0.06f, card.top + pw * 0.20f + pw * 0.075f, paint);
+            paint.setTextSize(pw * 0.040f);
+            paint.setColor(withAlpha(0xFF9A9AA0, recentsProgress));
+            canvas.drawText(getContext().getString(R.string.pro_showcase_recents_hint),
+                    card.left + pw * 0.06f, card.bottom - pw * 0.06f, paint);
+        } else {
+            // Nothing has been opened yet: say so instead of inventing a recent app.
+            paint.setTextSize(pw * 0.050f);
+            paint.setColor(withAlpha(0xFF9A9AA0, recentsProgress));
+            paint.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText(getContext().getString(R.string.pro_showcase_recents_empty),
+                    card.centerX(), card.centerY() + pw * 0.018f, paint);
+        }
         canvas.restore();
         canvas.restore();
     }
 
     /** The recents card's tap zone (reopen the last app). */
     public boolean recentsCardAt(float x, float y) {
-        if (!recentsOpen) return false;
+        if (!recentsOpen || lastPreviewApp == 0) return false;
         float pw = phone.width();
         RectF card = new RectF(screen.left + pw * 0.10f, screen.top + screen.height() * 0.18f,
                 screen.right - pw * 0.10f, screen.top + screen.height() * 0.66f);
@@ -1730,27 +1860,6 @@ public class BundlePhoneSurfaceView extends View {
         }
     }
 
-    /** "Included in the bundle" toast after the first app tap. */
-    private void drawCaption(Canvas canvas) {
-        if (captionAlpha <= 0.001f) return;
-        float pw = phone.width();
-        paint.setTypeface(labelTypeface);
-        paint.setTextSize(pw * 0.048f);
-        String text = getContext().getString(R.string.pro_showcase_included_caption);
-        float textW = paint.measureText(text);
-        float padH = pw * 0.05f;
-        float padV = pw * 0.032f;
-        float y = Math.min(screen.bottom - pw * 0.16f, getHeight() - dp(52));
-        RectF pill = new RectF(screen.centerX() - textW / 2f - padH, y - padV - pw * 0.035f,
-                screen.centerX() + textW / 2f + padH, y + padV);
-        paint.setColor(withAlpha(0xE61A1C22, captionAlpha));
-        canvas.drawRoundRect(pill, pill.height() / 2f, pill.height() / 2f, paint);
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setColor(withAlpha(0xFFE9E9EC, captionAlpha));
-        canvas.drawText(text, screen.centerX(), y, paint);
-        paint.setTextAlign(Paint.Align.LEFT);
-    }
-
     // ----------------------------------------------------------------- back
 
     private void drawBack(Canvas canvas) {
@@ -1850,6 +1959,7 @@ public class BundlePhoneSurfaceView extends View {
     }
 
     private static String format(double v) {
+        if (Double.isNaN(v) || Double.isInfinite(v)) return "Error";
         if (v == Math.rint(v) && Math.abs(v) < 1e12) return String.valueOf((long) v);
         return String.valueOf(Math.round(v * 1e8) / 1e8);
     }
@@ -1859,7 +1969,7 @@ public class BundlePhoneSurfaceView extends View {
             case "+": return a + b;
             case "−": return a - b;
             case "×": return a * b;
-            case "÷": return b == 0 ? 0 : a / b;
+            case "÷": return b == 0 ? Double.NaN : a / b;
             default: return b;
         }
     }
@@ -1898,7 +2008,6 @@ public class BundlePhoneSurfaceView extends View {
         if (shadeAnimator != null) shadeAnimator.cancel();
         if (volumeAnimator != null) volumeAnimator.cancel();
         if (pulseAnimator != null) pulseAnimator.cancel();
-        if (captionAnimator != null) captionAnimator.cancel();
         super.onDetachedFromWindow();
     }
 

@@ -3198,7 +3198,6 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_showcase_soon">SOON</string>
     <string name="pro_showcase_hint">Unlock and explore the apps.</string>
     <string name="pro_showcase_usage">Using FadCam for %1$s</string>
-    <string name="pro_showcase_included_caption">Included in the bundle</string>
     <string name="pro_showcase_notes_hint">Type to add a note</string>
     <string name="pro_showcase_weather_temp">24°</string>
     <string name="pro_showcase_weather_row1">Humidity</string>
@@ -3216,6 +3215,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_showcase_power_menu_body">This restarts the preview device.</string>
     <string name="pro_showcase_power_menu_cancel">Cancel</string>
     <string name="pro_showcase_recents_hint">Tap to reopen</string>
+    <string name="pro_showcase_recents_empty">No recent apps</string>
     <string name="pro_showcase_expand_desc">Open the phone fullscreen</string>
     <string name="pro_showcase_fullscreen_hint">Drag to turn · Tap an app</string>
     <string name="pro_showcase_weather_line">Sunny · 24°</string>
@@ -3243,7 +3243,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_screen_why_pro_title">Then why Pro?</string>
     <string name="pro_screen_why_pro_body">FadCam Free already includes features that many other apps charge for. We believe useful software shouldn\'t come at the cost of your privacy.\n\nIf you find FadCam valuable and want to support our work, Pro is a way to give back while getting even more in return: three standalone private apps, early updates, and other extras, on top of everything FadCam Free already offers.\n\nYour support also helps us continue building open-source, privacy-first apps and solutions at FadSec Lab.</string>
     <string name="pro_screen_support">Join Discord</string>
-    <string name="pro_screen_discord_invite">Questions, ideas, or feedback? Stay connected with FadSec Lab.</string>
+    <string name="pro_screen_discord_invite">Questions, ideas, or just want to say hi? Stay connected with FadSec Lab.</string>
     <string name="pro_screen_everything">All free features</string>
     <string name="pro_screen_everything_desc">Everything in the free version is included.</string>
     <string name="pro_screen_notes_feature">Notes app</string>

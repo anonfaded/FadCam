@@ -425,6 +425,21 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    // --- Pro showcase mockup ---
+    /** The mini Notes app's draft. Lives in app_prefs so settings backup/export carries it too. */
+    public static final String PREF_PRO_SHOWCASE_NOTE = "pro_showcase_note";
+
+    public String getProShowcaseNote() {
+        return sharedPreferences.getString(PREF_PRO_SHOWCASE_NOTE, "");
+    }
+
+    public void setProShowcaseNote(String note) {
+        sharedPreferences
+            .edit()
+            .putString(PREF_PRO_SHOWCASE_NOTE, note == null ? "" : note)
+            .apply();
+    }
+
     /** Quick-action button order as comma-separated tokens (e.g. "mute,full,fadshot"). */
     public String getQuickActionsOrder() {
         return sharedPreferences.getString(
