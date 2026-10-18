@@ -40,6 +40,43 @@
         <item name="android:maxLines">3</item>
         <item name="android:ellipsize">end</item>
     </style>
+    <!-- Community links: plain inline actions, no filled buttons or cards. -->
+    <style name="ProCommunityAction">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingHorizontal">4dp</item>
+        <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    <style name="ProCommunityActionLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/pro_gold</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+    <style name="ProCommunityActionArrow">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">5dp</item>
+        <item name="android:fontFamily">@font/materialicons</item>
+        <item name="android:text">open_in_new</item>
+        <item name="android:textColor">@color/pro_gold</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:alpha">0.85</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+    <style name="ProCommunityActionMark">
+        <item name="android:layout_width">16dp</item>
+        <item name="android:layout_height">16dp</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
     <style name="ProSectionTitle">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>

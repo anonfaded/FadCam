@@ -95,20 +95,34 @@
                     <TextView style="@style/ProSectionTitle" android:layout_width="0dp" android:layout_height="wrap_content"
                         android:layout_weight="1" android:text="@string/pro_screen_why_pro_title" android:accessibilityHeading="true" />
                 </LinearLayout>
-                <TextView style="@style/ProBody" android:layout_marginTop="10dp" android:text="@string/pro_screen_why_pro_body" />
+                <TextView android:id="@+id/tvWhyProBody" style="@style/ProBody" android:layout_marginTop="10dp"
+                android:text="@string/pro_screen_why_pro_body" />
             </LinearLayout>
             <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="24dp"
                 android:layout_marginBottom="20dp" android:background="@color/pro_border" />
-            <TextView android:id="@+id/tvNote" style="@style/ProBody" android:text="@string/pro_screen_support_note" />
-            <TextView android:id="@+id/tvDiscordInvite" style="@style/ProBody" android:layout_marginTop="12dp"
+            <TextView android:id="@+id/tvDiscordInvite" style="@style/ProBody" android:layout_marginTop="16dp"
                 android:text="@string/pro_screen_discord_invite" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnDiscord"
-                style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="8dp"
-                android:paddingVertical="12dp" android:text="@string/pro_screen_support" android:textAllCaps="false"
-                android:textSize="14sp" android:textColor="@color/pro_gold" android:gravity="start|center_vertical"
-                android:elevation="0dp" android:stateListAnimator="@null" app:rippleColor="#24E8C77B"
-                app:icon="@drawable/ic_discord_gold" app:iconSize="20dp" app:iconPadding="10dp" />
+
+            <!-- Community: two quiet inline links, deliberately lighter than the purchase CTA. -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="2dp" android:orientation="horizontal" android:gravity="center_vertical"
+                android:baselineAligned="false">
+                <LinearLayout android:id="@+id/btnDiscord" style="@style/ProCommunityAction">
+                    <ImageView style="@style/ProCommunityActionMark"
+                        android:src="@drawable/ic_discord_gold" />
+                    <TextView style="@style/ProCommunityActionLabel"
+                        android:text="@string/pro_screen_support" />
+                    <TextView style="@style/ProCommunityActionArrow" />
+                </LinearLayout>
+                <LinearLayout android:id="@+id/btnX" style="@style/ProCommunityAction"
+                    android:layout_marginStart="14dp">
+                    <ImageView style="@style/ProCommunityActionMark"
+                        android:src="@drawable/ic_x" android:tint="@color/pro_gold" />
+                    <TextView style="@style/ProCommunityActionLabel"
+                        android:text="@string/follow_on_x" />
+                    <TextView style="@style/ProCommunityActionArrow" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 

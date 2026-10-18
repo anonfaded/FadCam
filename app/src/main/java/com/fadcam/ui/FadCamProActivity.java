@@ -57,6 +57,8 @@ import java.util.Random;
 public class FadCamProActivity extends AppCompatActivity {
     private static final String PATREON_SHOP_URL = "https://www.patreon.com/cw/Fadedx/shop";
     private static final String DISCORD_URL = "https://discord.gg/kvAZvdkuuN";
+    /** Same destination the What's New screen links to. */
+    private static final String X_URL = "https://x.com/anon_faded";
     private static final String INCLUDED = "check";
     private static final String ABSENT = "remove";
     private static final String SOON = "soon";
@@ -320,6 +322,7 @@ public class FadCamProActivity extends AppCompatActivity {
         });
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnDiscord).setOnClickListener(v -> openLink(DISCORD_URL));
+        findViewById(R.id.btnX).setOnClickListener(v -> openLink(X_URL));
         // In short windows or with very large text, a pinned footer would consume the viewport.
         // Keep every action reachable by letting it travel with the rest of the page instead.
         if (getResources().getConfiguration().screenHeightDp < 480
@@ -542,11 +545,10 @@ public class FadCamProActivity extends AppCompatActivity {
                 if (inspectorShowcase != null) inspectorShowcase.exitFullscreen();
             });
         }
-        TextView note = findViewById(R.id.tvNote);
-        note.setText(linkFadSecLab(getString(isOwner
-                ? R.string.pro_screen_owned_note : R.string.pro_screen_support_note)));
-        note.setMovementMethod(LinkMovementMethod.getInstance());
-        note.setHighlightColor(android.graphics.Color.TRANSPARENT);
+        TextView whyPro = findViewById(R.id.tvWhyProBody);
+        whyPro.setText(linkFadSecLab(getString(R.string.pro_screen_why_pro_body)));
+        whyPro.setMovementMethod(LinkMovementMethod.getInstance());
+        whyPro.setHighlightColor(android.graphics.Color.TRANSPARENT);
         priceRow.setVisibility(isOwner ? View.GONE : View.VISIBLE);
         btnGetPro.setVisibility(isOwner ? View.GONE : View.VISIBLE);
         if (isOwner) btnGetPro.stopShimmer(); else btnGetPro.startShimmer();
