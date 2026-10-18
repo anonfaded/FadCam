@@ -41,7 +41,8 @@ import java.util.List;
  * The mesh is ~120 triangles; the cost is one textured draw per face group.
  */
 public class PhoneGLView extends TextureView implements TextureView.SurfaceTextureListener {
-    private static final float PHONE_ASPECT = 2.05f;   // height / width (matches the textures)
+    /** Height / width of the device. The GL slot and the model must agree or the faces stretch. */
+    public static final float PHONE_ASPECT = 2.05f;   // height / width (matches the textures)
     private static final float DEPTH_RATIO = 0.105f;   // realistic phone thickness / width
     private static final float FRAME_INSET = 0.030f;   // glass inset (matches the surface rail+bezel)
     private static final float CHAMFER = 0.012f;       // beveled frame depth

@@ -26,6 +26,7 @@ import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -70,6 +71,8 @@ public class ProBundleShowcaseView extends FrameLayout {
     private final BundlePhoneSurfaceView backSurface;
     private final SimpleDateFormat clockFormat = new SimpleDateFormat("h:mm", Locale.getDefault());
     private final int touchSlop;
+    /** Tuned text:phone ratio of the card's row, read from the layout. */
+    private final float phoneWeight;
 
     private boolean dragEnabled = true;
     private boolean bootEnabled = true;
@@ -196,6 +199,11 @@ public class ProBundleShowcaseView extends FrameLayout {
         metaView = findViewById(R.id.showcaseMeta);
         phoneWrapper = findViewById(R.id.showcasePhoneWrapper);
         phoneContainer = findViewById(R.id.showcasePhoneContainer);
+        // The layout's weight is the tuned text:phone ratio; only the ratio is kept, because the
+        // host rewrites the weight from the card's actual width (see applyPhoneSlotWidth).
+        ViewGroup.LayoutParams slotParams = phoneWrapper.getLayoutParams();
+        phoneWeight = slotParams instanceof LinearLayout.LayoutParams
+                ? ((LinearLayout.LayoutParams) slotParams).weight : 0.72f;
 
         // The phone is a real OpenGL mesh now: the surfaces become offscreen texture
         // producers, rendered on demand whenever their content changes.
@@ -211,13 +219,10 @@ public class ProBundleShowcaseView extends FrameLayout {
         phoneGL.setOverscan(glOverscan);
         phoneGL.setCrop(1f, 0f);
         phoneGL.setSweep(0f, REST_SWEEP_X);
-        // Bigger than its slot (centred): the rotation headroom renders thanks to
-        // clipChildren=false, so the phone can fill the card and still turn freely.
-        LayoutParams glParams = new LayoutParams(
-                Math.round(getResources().getDimension(R.dimen.pro_showcase_phone_w) * glOverscan),
-                Math.round(getResources().getDimension(R.dimen.pro_showcase_phone_h) * glOverscan),
-                Gravity.CENTER);
-        phoneContainer.addView(phoneGL, glParams);
+        // Real size comes from the slot on every layout pass (see wirePhoneParts): the slot is
+        // fluid, so a fixed dp layout param here would render the phone at the wrong scale.
+        phoneContainer.addView(phoneGL, new LayoutParams(
+                LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, Gravity.CENTER));
         // (wired in onLayout — the surfaces must have measured first)
 
         // The tilted device overflows its own bounds; never clip it (this was cutting the top).
@@ -827,6 +832,41 @@ public class ProBundleShowcaseView extends FrameLayout {
 
         // ------------------------------------------------------------ live status
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        applyPhoneSlotWidth(widthMeasureSpec);
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
+    /**
+     * The phone's slot takes a share of the card's content width and the text column takes the
+     * rest. Sizing it in dp made the slot a constant 150dp of every screen (136dp of copy left
+     * on a 360dp phone, where the row collapsed); sizing it purely by share would blow the
+     * device up on a wide card (landscape, tablets), so the slot is capped at its tuned width.
+     * The share is the row's weight from the layout; this resolves it into an actual width and
+     * only rewrites the weight when the slot changes (writing layout params schedules a layout
+     * pass of its own).
+     */
+    private void applyPhoneSlotWidth(int widthMeasureSpec) {
+        if (phoneWrapper == null) return;
+        if (MeasureSpec.getMode(widthMeasureSpec) != MeasureSpec.EXACTLY) return;
+        ViewGroup.LayoutParams raw = phoneWrapper.getLayoutParams();
+        if (!(raw instanceof LinearLayout.LayoutParams)) return;
+        LinearLayout.LayoutParams phoneParams = (LinearLayout.LayoutParams) raw;
+        int contentWidth = MeasureSpec.getSize(widthMeasureSpec) - getPaddingLeft() - getPaddingRight();
+        float share = phoneWeight / (1f + phoneWeight);
+        int slot = Math.min(Math.round(contentWidth * share),
+                getResources().getDimensionPixelSize(R.dimen.pro_showcase_phone_max_w));
+        int available = contentWidth - phoneParams.getMarginStart() - phoneParams.getMarginEnd();
+        if (slot > 0 && slot != lastPhoneSlot) {
+            lastPhoneSlot = slot;
+            phoneParams.weight = (float) slot / Math.max(1, available - slot);
+            phoneWrapper.setLayoutParams(phoneParams);
+        }
+    }
+
+    private int lastPhoneSlot;
+
     private final Runnable textureTask = this::updateTextures;
     private long lastTextureTaskAt;
 
@@ -856,7 +896,12 @@ public class ProBundleShowcaseView extends FrameLayout {
      * instead of blurring through bilinear magnification.
      */
     private float textureScale = 1.5f;
-    private float glOverscan = 1.5f;
+    /**
+     * Rotation headroom, as a multiple of the slot. The model's silhouette reaches ~1.05x the
+     * slot at its widest instant of a turn (buttons included), so the viewport only needs a
+     * little more than the slot itself.
+     */
+    private static final float glOverscan = 1.15f;
 
     /** Renders the two faces offscreen and hands them to the GL thread (one pass per frame). */
     private void updateTextures() {
@@ -917,9 +962,22 @@ public class ProBundleShowcaseView extends FrameLayout {
         wirePhoneParts();
     }
 
-    /** Keeps the GL textures in sync whenever the phone's measured size changes. */
+    /**
+     * Keeps the GL viewport and the face textures in sync with the slot's measured size. The
+     * viewport is the slot plus the rotation headroom, centred on it: the model's projected
+     * silhouette grows by at most ~5% beyond the slot (measured over a full turn), so the
+     * headroom stays tight instead of painting a 1.5x rectangle over the text column.
+     */
     private void wirePhoneParts() {
-        if (phoneWrapper == null || phoneWrapper.getWidth() <= 0) return;
+        if (phoneWrapper == null || phoneWrapper.getWidth() <= 0 || phoneWrapper.getHeight() <= 0) return;
+        int glW = Math.round(phoneWrapper.getWidth() * glOverscan);
+        int glH = Math.round(phoneWrapper.getHeight() * glOverscan);
+        ViewGroup.LayoutParams glp = phoneGL.getLayoutParams();
+        if (glp.width != glW || glp.height != glH) {
+            glp.width = glW;
+            glp.height = glH;
+            phoneGL.setLayoutParams(glp);
+        }
         frontDirty = true;
         backDirty = true;
         frameDirty = true;

@@ -14,6 +14,7 @@ import android.provider.Settings;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.fadcam.BuildConfig;
@@ -229,12 +230,108 @@ public class FadCamProActivityTest {
         return Math.round(size * activity.getResources().getDisplayMetrics().density);
     }
 
+    /** Longer than any bucket's text column, so the overflow is real under Robolectric. */
+    private static final String PROBE_LONG_LABEL = "Discreet entry screens that keep the disguise "
+            + "visible in the launcher, the notification shade and the recent apps list of every "
+            + "edition of the bundle without a single visible recording indicator";
+
     private void measurePage() {
+        measurePage(360, 780);
+    }
+
+    private void measurePage(int widthDp, int heightDp) {
         View root = view(R.id.rootContainer);
-        int width = dp(360);
-        int height = dp(780);
+        int width = dp(widthDp);
+        int height = dp(heightDp);
         root.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY));
         root.layout(0, 0, width, height);
+    }
+
+    /**
+     * The SOON pill used to be pushed out of the card: its label was a wrap-to-wrap constraint
+     * chain, so the label resolved at its one-line width on a 360dp screen and the pill landed
+     * past the text column's edge — clipped there and covered by the phone mockup. The pill must
+     * always keep its width, stay inside the text column and stay clear of the phone's slot.
+     */
+    private void assertSoonPillIsVisibleAndClearOfThePhone() {
+        View soon = view(R.id.entrySoon);
+        View label = view(R.id.entryLabel);
+        View column = view(R.id.showcaseTextColumn);
+        View phone = view(R.id.showcasePhoneWrapper);
+        assertEquals(View.VISIBLE, soon.getVisibility());
+        assertTrue("SOON pill was squeezed to nothing", soon.getWidth() > 0);
+        assertTrue("SOON pill overflows the text column", soon.getRight() <= column.getRight());
+        assertTrue("label runs under the SOON pill", label.getRight() <= soon.getLeft());
+        assertTrue("phone covers the SOON pill", phone.getLeft() >= soon.getRight());
+    }
+
+    @Test
+    public void soonPillStaysVisibleAndClearOfThePhoneOnNarrowScreens() {
+        launch();
+        measurePage();
+        assertSoonPillIsVisibleAndClearOfThePhone();
+    }
+
+    /**
+     * Localized copy is the long-label case: a wrap-to-wrap constraint chain resolved the label
+     * at its full one-line width and pushed the pill out of the row, so the row must be a
+     * weight split — the label wraps (max three lines) and the pill keeps its width.
+     */
+    @Test
+    public void longEntryLabelWrapsInsteadOfPushingTheSoonPillOut() {
+        launch();
+        TextView label = activity.findViewById(R.id.entryLabel);
+        ViewGroup.LayoutParams labelParams = label.getLayoutParams();
+        // Robolectric measures text at one pixel per character, so the probe copy has to be
+        // longer than the column itself to make the overflow real; the row must absorb it by
+        // wrapping the label (max three lines) instead of pushing the pill out of the card.
+        label.setText(PROBE_LONG_LABEL);
+        measurePage();
+        assertSoonPillIsVisibleAndClearOfThePhone();
+        assertEquals("the label must take the leftover width, never push its sibling out",
+                0, labelParams.width);
+        assertTrue("the label must be weighted against the pill",
+                labelParams instanceof LinearLayout.LayoutParams
+                        && ((LinearLayout.LayoutParams) labelParams).weight > 0f);
+    }
+
+    @Test
+    @Config(qualifiers = "sw400dp-w412dp-h900dp-mdpi")
+    public void soonPillStaysVisibleAndClearOfThePhoneOnWideScreens() {
+        launch();
+        measurePage(412, 900);
+        assertSoonPillIsVisibleAndClearOfThePhone();
+    }
+
+    @Test
+    public void soonPillSurvivesLargeTextInsteadOfCollapsing() {
+        RuntimeEnvironment.setFontScale(1.5f);
+        launch();
+        measurePage();
+        assertSoonPillIsVisibleAndClearOfThePhone();
+    }
+
+    /**
+     * The card is a proportional composition: the phone slot takes a share of the row and its
+     * height follows the device's own aspect ratio. With fixed dp sizes the phone ate a constant
+     * 150dp of every screen, which emptied the text column on narrow ones.
+     */
+    @Test
+    public void phoneSlotScalesWithTheCardAndKeepsTheDeviceAspect() {
+        launch();
+        int previousSlot = 0;
+        for (int widthDp : new int[] {320, 360, 412, 480}) {
+            measurePage(widthDp, 780);
+            View phone = view(R.id.showcasePhoneWrapper);
+            View column = view(R.id.showcaseTextColumn);
+            assertEquals("device aspect at " + widthDp + "dp", 2.05f,
+                    phone.getHeight() / (float) phone.getWidth(), 0.02f);
+            assertTrue("text column collapsed at " + widthDp + "dp: " + column.getWidth(),
+                    column.getWidth() >= dp(120));
+            assertTrue("phone slot did not follow the card at " + widthDp + "dp",
+                    phone.getWidth() > previousSlot);
+            previousSlot = phone.getWidth();
+        }
     }
 }

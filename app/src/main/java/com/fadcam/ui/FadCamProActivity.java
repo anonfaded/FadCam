@@ -156,7 +156,14 @@ public class FadCamProActivity extends AppCompatActivity {
         }
         // A one-alpha black surface is visually transparent, while preventing Android's
         // transient-bar contrast scrim from tinting the page when the user swipes down.
-        getWindow().setStatusBarColor(android.graphics.Color.argb(1, 0, 0, 0));
+        // In landscape some OEMs (observed on Android 11) draw their own dark scrim over a
+        // transparent bar, so there the bar is filled with the page colour instead — the
+        // portrait design keeps the fully transparent bar.
+        boolean landscapeOrientation = getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+        getWindow().setStatusBarColor(landscapeOrientation
+                ? ContextCompat.getColor(this, R.color.pro_background)
+                : android.graphics.Color.argb(1, 0, 0, 0));
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             getWindow().setStatusBarContrastEnforced(false);
         }
@@ -167,6 +174,16 @@ public class FadCamProActivity extends AppCompatActivity {
         controller.setAppearanceLightStatusBars(false);
         controller.setAppearanceLightNavigationBars(false);
         controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        // In landscape some OEMs draw a dark scrim over the status-bar area that cannot be
+        // removed by colour alone; hiding the bar there removes the artefact entirely. Portrait
+        // keeps the transparent status bar the design calls for.
+        boolean landscapeNow = getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+        if (landscapeNow) {
+            getWindow().getDecorView().post(() -> controller.hide(WindowInsetsCompat.Type.statusBars()));
+        } else {
+            getWindow().getDecorView().post(() -> controller.show(WindowInsetsCompat.Type.statusBars()));
+        }
         setContentView(R.layout.activity_fadcam_pro);
         View root = findViewById(R.id.rootContainer);
         View closeButton = findViewById(R.id.btnBack);

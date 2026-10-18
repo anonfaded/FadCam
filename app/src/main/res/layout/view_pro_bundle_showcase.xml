@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/showcaseRoot"
     android:layout_width="match_parent" android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -81,10 +82,18 @@
                         android:textColor="@color/pro_text_secondary" android:textSize="12.5sp" />
                 </LinearLayout>
 
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                <!-- Coming-soon row: the label takes the leftover width and wraps to as many as
+                     three lines, the pill keeps its own intrinsic width. A weight-split row
+                     cannot push the pill past the column edge like a wrap-to-wrap constraint
+                     chain can (on a 360dp screen the chain squeezed the pill out of the card,
+                     where it was clipped and covered by the phone). -->
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:layout_marginTop="10dp" android:alpha="0.55"
                     android:orientation="horizontal" android:gravity="center_vertical">
-                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp"
+
+                    <FrameLayout android:id="@+id/entryIconFrame"
+                        android:layout_width="26dp" android:layout_height="26dp"
                         android:background="@drawable/bg_pro_showcase_feature_icon">
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                             android:layout_gravity="center"
@@ -92,17 +101,23 @@
                             android:textSize="14sp" android:textColor="@color/pro_gold"
                             android:importantForAccessibility="no" />
                     </FrameLayout>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:layout_marginStart="9dp"
-                        android:maxLines="3"
+
+                    <TextView android:id="@+id/entryLabel"
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:layout_marginStart="9dp"
+                        android:maxLines="3" android:ellipsize="end"
                         android:text="@string/pro_showcase_chip_entry"
                         android:textColor="@color/pro_text_secondary" android:textSize="12.5sp" />
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+
+                    <TextView android:id="@+id/entrySoon"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/pro_showcase_chip_gap"
                         android:background="@drawable/bg_pro_showcase_soon"
                         android:paddingHorizontal="5dp" android:paddingVertical="1dp"
+                        android:maxLines="1"
                         android:text="@string/pro_showcase_soon" android:textColor="@color/pro_check_gold"
-                        android:textSize="8sp" android:textStyle="bold" android:letterSpacing="0.08" />
+                        android:textSize="@dimen/pro_showcase_soon_size" android:textStyle="bold"
+                        android:letterSpacing="0.08" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -132,13 +147,19 @@
             </LinearLayout>
         </LinearLayout>
 
-        <FrameLayout android:id="@+id/showcasePhoneWrapper"
-            android:layout_width="@dimen/pro_showcase_phone_w" android:layout_height="@dimen/pro_showcase_phone_h"
+        <!-- The phone slot is fluid: it takes a share of the row (weight from the width bucket)
+             and its height follows its width through the device's own aspect ratio, so the
+             composition is the same on a 360dp phone and a 480dp one instead of the phone
+             eating a fixed 150dp out of the text column. -->
+        <com.fadcam.ui.widgets.AspectRatioFrameLayout android:id="@+id/showcasePhoneWrapper"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="@dimen/pro_showcase_phone_weight"
             android:layout_marginStart="@dimen/pro_showcase_gap"
+            app:aspectRatio="2.05"
             android:contentDescription="@string/pro_showcase_phone_desc"
             android:clipChildren="false" android:clipToPadding="false">
             <FrameLayout android:id="@+id/showcasePhoneContainer"
                 android:layout_width="match_parent" android:layout_height="match_parent" />
-        </FrameLayout>
+        </com.fadcam.ui.widgets.AspectRatioFrameLayout>
     </LinearLayout>
 </LinearLayout>
