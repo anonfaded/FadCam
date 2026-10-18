@@ -8,6 +8,38 @@
     <color name="pro_text">#F5F2EA</color>
     <color name="pro_text_secondary">#B8B7B2</color>
     <color name="pro_brand_red">#FF6464</color>
+
+    <!-- Pro bundle card: deep charcoal surface with champagne detailing. Gold stays an accent:
+         hairline border, badge, feature icons and the SOON pill; never a filled gold panel. -->
+    <color name="pro_card_surface">#161719</color>
+    <color name="pro_card_border">#5966583D</color>
+    <color name="pro_card_tint">#0FC6A66A</color>
+    <color name="pro_card_badge_surface">#352C1F</color>
+    <color name="pro_card_champagne">#C6A66A</color>
+    <color name="pro_card_text_secondary">#999A9E</color>
+    <color name="pro_card_text_muted">#777A80</color>
+    <color name="pro_card_soon_surface">#2C2923</color>
+    <color name="pro_card_soon_text">#AA9366</color>
+    <color name="pro_card_soon_border">#33AA9366</color>
+    <color name="pro_card_divider">#1FC6A66A</color>
+
+    <!-- One feature row of the bundle card: small outline glyph, quiet label. -->
+    <style name="ProShowcaseFeatureIcon">
+        <item name="android:layout_width">@dimen/pro_showcase_feature_icon_size</item>
+        <item name="android:layout_height">@dimen/pro_showcase_feature_icon_size</item>
+        <item name="android:tint">@color/pro_card_champagne</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+    <style name="ProShowcaseFeatureLabel">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/pro_card_text_secondary</item>
+        <item name="android:textSize">@dimen/pro_showcase_feature_text_size</item>
+        <item name="android:maxLines">3</item>
+        <item name="android:ellipsize">end</item>
+    </style>
     <style name="ProSectionTitle">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>

@@ -25,15 +25,19 @@
                 android:paddingHorizontal="@dimen/pro_showcase_badge_pad_h"
                 android:paddingVertical="@dimen/pro_showcase_badge_pad_v"
                 android:text="@string/pro_showcase_label"
-                android:textColor="@color/pro_gold" android:textSize="10sp"
-                android:letterSpacing="0.12" />
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/pro_card_champagne"
+                android:textSize="@dimen/pro_showcase_label_size"
+                android:letterSpacing="0.14" />
 
+            <!-- The card's focal point: confident, warm white, generous line spacing. -->
             <TextView android:id="@+id/showcaseTitle"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" android:text="@string/pro_screen_bundle"
-                android:fontFamily="sans-serif-medium"
-                android:lineSpacingExtra="1dp" android:maxLines="3"
-                android:textColor="@color/pro_text" android:textSize="17sp" />
+                android:layout_marginTop="@dimen/pro_showcase_title_margin"
+                android:text="@string/pro_screen_bundle"
+                android:fontFamily="sans-serif" android:textStyle="bold"
+                android:lineSpacingExtra="2dp" android:maxLines="3"
+                android:textColor="@color/pro_text" android:textSize="@dimen/pro_showcase_title_size" />
 
             <TextView android:id="@+id/showcaseSubtitle" android:visibility="gone"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -45,105 +49,91 @@
                 android:textSize="@dimen/pro_showcase_meta_size" />
 
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="14dp" android:orientation="vertical">
+                android:layout_marginTop="@dimen/pro_showcase_chips_margin" android:orientation="vertical">
 
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="horizontal" android:gravity="center_vertical">
-                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp"
-                        android:background="@drawable/bg_pro_showcase_feature_icon">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:text="download" android:fontFamily="@font/materialicons"
-                            android:textSize="14sp" android:textColor="@color/pro_gold"
-                            android:importantForAccessibility="no" />
-                    </FrameLayout>
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginStart="9dp"
-                        android:maxLines="2"
-                        android:text="@string/pro_showcase_chip_installs"
-                        android:textColor="@color/pro_text_secondary" android:textSize="12.5sp" />
+                    <ImageView style="@style/ProShowcaseFeatureIcon"
+                        android:src="@drawable/ic_pro_feature_apps" />
+                    <TextView style="@style/ProShowcaseFeatureLabel"
+                        android:layout_marginStart="@dimen/pro_showcase_feature_gap"
+                        android:text="@string/pro_showcase_chip_installs" />
                 </LinearLayout>
 
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="@dimen/pro_showcase_feature_row_gap"
                     android:orientation="horizontal" android:gravity="center_vertical">
-                    <FrameLayout android:layout_width="26dp" android:layout_height="26dp"
-                        android:background="@drawable/bg_pro_showcase_feature_icon">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:text="update" android:fontFamily="@font/materialicons"
-                            android:textSize="14sp" android:textColor="@color/pro_gold"
-                            android:importantForAccessibility="no" />
-                    </FrameLayout>
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginStart="9dp"
-                        android:maxLines="2"
-                        android:text="@string/pro_showcase_chip_updates"
-                        android:textColor="@color/pro_text_secondary" android:textSize="12.5sp" />
+                    <ImageView style="@style/ProShowcaseFeatureIcon"
+                        android:src="@drawable/ic_pro_feature_updates" />
+                    <TextView style="@style/ProShowcaseFeatureLabel"
+                        android:layout_marginStart="@dimen/pro_showcase_feature_gap"
+                        android:text="@string/pro_showcase_chip_updates" />
                 </LinearLayout>
 
-                <!-- Coming-soon row: the label takes the leftover width and wraps to as many as
-                     three lines, the pill keeps its own intrinsic width. A weight-split row
-                     cannot push the pill past the column edge like a wrap-to-wrap constraint
-                     chain can (on a 360dp screen the chain squeezed the pill out of the card,
-                     where it was clipped and covered by the phone). -->
-                <LinearLayout
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp" android:alpha="0.55"
+                <!-- Coming-soon row: the label takes the leftover width and wraps (three lines at
+                     most), the pill keeps its intrinsic width. A weight split cannot push the pill
+                     past the column edge and under the phone the way a wrap-to-wrap constraint
+                     chain can. Only the label and its glyph are muted — never the whole row, so
+                     the pill stays readable. -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/pro_showcase_feature_row_gap"
                     android:orientation="horizontal" android:gravity="center_vertical">
 
-                    <FrameLayout android:id="@+id/entryIconFrame"
-                        android:layout_width="26dp" android:layout_height="26dp"
-                        android:background="@drawable/bg_pro_showcase_feature_icon">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:text="visibility_off" android:fontFamily="@font/materialicons"
-                            android:textSize="14sp" android:textColor="@color/pro_gold"
-                            android:importantForAccessibility="no" />
-                    </FrameLayout>
+                    <ImageView style="@style/ProShowcaseFeatureIcon"
+                        android:src="@drawable/ic_pro_feature_disguise"
+                        android:tint="@color/pro_card_text_muted" />
 
                     <TextView android:id="@+id/entryLabel"
-                        android:layout_width="0dp" android:layout_height="wrap_content"
-                        android:layout_weight="1" android:layout_marginStart="9dp"
-                        android:maxLines="3" android:ellipsize="end"
-                        android:text="@string/pro_showcase_chip_entry"
-                        android:textColor="@color/pro_text_secondary" android:textSize="12.5sp" />
+                        style="@style/ProShowcaseFeatureLabel"
+                        android:layout_marginStart="@dimen/pro_showcase_feature_gap"
+                        android:textColor="@color/pro_card_text_muted"
+                        android:text="@string/pro_showcase_chip_entry" />
 
                     <TextView android:id="@+id/entrySoon"
                         android:layout_width="wrap_content" android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/pro_showcase_chip_gap"
                         android:background="@drawable/bg_pro_showcase_soon"
-                        android:paddingHorizontal="5dp" android:paddingVertical="1dp"
+                        android:paddingHorizontal="@dimen/pro_showcase_soon_pad_h"
+                        android:paddingVertical="@dimen/pro_showcase_soon_pad_v"
                         android:maxLines="1"
-                        android:text="@string/pro_showcase_soon" android:textColor="@color/pro_check_gold"
-                        android:textSize="@dimen/pro_showcase_soon_size" android:textStyle="bold"
-                        android:letterSpacing="0.08" />
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.1"
+                        android:text="@string/pro_showcase_soon"
+                        android:textColor="@color/pro_card_soon_text"
+                        android:textSize="@dimen/pro_showcase_soon_size" />
                 </LinearLayout>
             </LinearLayout>
 
             <View android:layout_width="match_parent" android:layout_height="0dp"
-                android:layout_weight="1" android:minHeight="10dp" />
+                android:layout_weight="1" android:minHeight="@dimen/pro_showcase_rule_gap" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/pro_card_divider" />
 
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/pro_showcase_footer_gap"
                 android:orientation="horizontal" android:gravity="center_vertical">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:text="touch_app" android:fontFamily="@font/materialicons"
-                    android:textSize="14sp" android:textColor="@color/pro_text_secondary"
-                    android:alpha="0.8"
+                    android:textSize="@dimen/pro_showcase_hint_glyph"
+                    android:textColor="@color/pro_card_text_secondary"
                     android:importantForAccessibility="no" />
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:layout_marginStart="6dp"
-                    android:maxLines="2" android:alpha="0.8"
+                    android:layout_weight="1" android:layout_marginStart="@dimen/pro_showcase_hint_gap"
+                    android:maxLines="2"
                     android:text="@string/pro_showcase_hint"
-                    android:textColor="@color/pro_text_secondary" android:textSize="11sp" />
+                    android:textColor="@color/pro_card_text_secondary"
+                    android:textSize="@dimen/pro_showcase_hint_size" />
                 <TextView android:id="@+id/showcaseExpand"
-                    android:layout_width="30dp" android:layout_height="30dp"
-                    android:layout_marginStart="8dp" android:gravity="center"
+                    android:layout_width="@dimen/pro_showcase_expand_size"
+                    android:layout_height="@dimen/pro_showcase_expand_size"
+                    android:layout_marginStart="@dimen/pro_showcase_expand_gap" android:gravity="center"
                     android:background="@drawable/bg_pro_showcase_expand"
                     android:clickable="true" android:focusable="true"
                     android:contentDescription="@string/pro_showcase_expand_desc"
                     android:text="fullscreen" android:fontFamily="@font/materialicons"
-                    android:textSize="15sp" android:textColor="@color/pro_gold" />
+                    android:textSize="@dimen/pro_showcase_expand_glyph"
+                    android:textColor="@color/pro_card_champagne" />
             </LinearLayout>
         </LinearLayout>
 

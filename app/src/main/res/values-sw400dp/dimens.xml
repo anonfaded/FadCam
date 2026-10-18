@@ -123,6 +123,31 @@
     <dimen name="pro_claim_body_size">13sp</dimen>
     <dimen name="pro_section_gap">28dp</dimen>
     <dimen name="pro_card_padding">16dp</dimen>
+    <!-- Pro bundle card: charcoal plate, champagne accents, quiet feature list. -->
+    <dimen name="pro_showcase_corner">20dp</dimen>
+    <dimen name="pro_showcase_pad">18dp</dimen>
+    <dimen name="pro_showcase_label_size">10sp</dimen>
+    <dimen name="pro_showcase_badge_pad_h">10dp</dimen>
+    <dimen name="pro_showcase_badge_pad_v">3dp</dimen>
+    <dimen name="pro_showcase_title_margin">12dp</dimen>
+    <dimen name="pro_showcase_title_size">19sp</dimen>
+    <dimen name="pro_showcase_chips_margin">18dp</dimen>
+    <dimen name="pro_showcase_feature_icon_size">20dp</dimen>
+    <dimen name="pro_showcase_feature_gap">11dp</dimen>
+    <dimen name="pro_showcase_feature_row_gap">12dp</dimen>
+    <dimen name="pro_showcase_feature_text_size">13.5sp</dimen>
+    <dimen name="pro_showcase_chip_gap">7dp</dimen>
+    <dimen name="pro_showcase_soon_size">8.5sp</dimen>
+    <dimen name="pro_showcase_soon_pad_h">6dp</dimen>
+    <dimen name="pro_showcase_soon_pad_v">2dp</dimen>
+    <dimen name="pro_showcase_rule_gap">16dp</dimen>
+    <dimen name="pro_showcase_footer_gap">14dp</dimen>
+    <dimen name="pro_showcase_hint_size">12sp</dimen>
+    <dimen name="pro_showcase_hint_glyph">15sp</dimen>
+    <dimen name="pro_showcase_hint_gap">6dp</dimen>
+    <dimen name="pro_showcase_expand_size">32dp</dimen>
+    <dimen name="pro_showcase_expand_glyph">16sp</dimen>
+    <dimen name="pro_showcase_expand_gap">11dp</dimen>
     <!-- Fluid phone slot: a share of the text column's weight (the height follows the width,
          so this is a ratio, not a size). Tuned per width bucket because the copy next to the
          phone is set in sp and needs proportionally more room on narrow screens. -->
@@ -131,24 +156,6 @@
     <dimen name="pro_showcase_phone_depth">46dp</dimen>
     <dimen name="pro_showcase_visor_depth">7dp</dimen>
     <dimen name="pro_showcase_gap">10dp</dimen>
-    <dimen name="pro_showcase_chip_pad_h">9dp</dimen>
-    <dimen name="pro_showcase_chip_pad_v">6dp</dimen>
-    <dimen name="pro_showcase_chip_gap">7dp</dimen>
-    <dimen name="pro_showcase_chip_glyph_size">15sp</dimen>
-    <dimen name="pro_showcase_chip_text_size">11sp</dimen>
-    <dimen name="pro_showcase_soon_size">9sp</dimen>
-    <dimen name="pro_showcase_hint_size">11sp</dimen>
-    <dimen name="pro_showcase_hint_glyph">14sp</dimen>
-    <dimen name="pro_showcase_hint_gap">6dp</dimen>
-    <dimen name="pro_showcase_expand_size">34dp</dimen>
-    <dimen name="pro_showcase_expand_glyph">17sp</dimen>
-    <dimen name="pro_showcase_expand_gap">11dp</dimen>
-    <dimen name="pro_showcase_title_margin">10dp</dimen>
-    <dimen name="pro_showcase_chips_margin">11dp</dimen>
-    <dimen name="pro_showcase_footer_gap">9dp</dimen>
-    <dimen name="pro_showcase_pad">14dp</dimen>
-    <dimen name="pro_showcase_label_size">11sp</dimen>
-    <dimen name="pro_showcase_title_size">16sp</dimen>
     <dimen name="pro_showcase_body_size">13sp</dimen>
     <dimen name="pro_showcase_meta_size">11sp</dimen>
     <dimen name="pro_app_icon">58dp</dimen>
