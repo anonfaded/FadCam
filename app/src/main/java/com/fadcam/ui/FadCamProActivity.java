@@ -110,6 +110,12 @@ public class FadCamProActivity extends AppCompatActivity {
     private View.OnLayoutChangeListener comparisonLayoutListener;
     private View scrollHint;
     private View scrollHintArrow;
+    /** The hero's crown rain, reused as the sticky bar's backdrop once the page scrolls. */
+    private View footerCrownRain;
+    private View footerContent;
+    private int footerContentPadBottom;
+    private float footerCrownRainAlpha = 0.16f;
+    private boolean footerCrownRainShown;
     private View scrollTopButton;
     private android.animation.ValueAnimator scrollAnimator;
     private android.animation.ValueAnimator hintBounce;
@@ -168,8 +174,16 @@ public class FadCamProActivity extends AppCompatActivity {
                 : android.graphics.Color.argb(1, 0, 0, 0));
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             getWindow().setStatusBarContrastEnforced(false);
+            // Without this the platform paints a dark scrim across the navigation bar on top of
+            // whatever the app draws there, which is the grey band at the bottom of this page.
+            getWindow().setNavigationBarContrastEnforced(false);
         }
-        getWindow().setNavigationBarColor(ContextCompat.getColor(this, R.color.pro_background));
+        // The navigation bar is treated exactly like the status bar: visually transparent in
+        // portrait so the page's own surface reaches the bottom edge, and filled with the page
+        // colour in landscape, where some OEMs draw their own dark scrim over a transparent bar.
+        getWindow().setNavigationBarColor(landscapeOrientation
+                ? ContextCompat.getColor(this, R.color.pro_background)
+                : android.graphics.Color.argb(1, 0, 0, 0));
         getWindow().setBackgroundDrawableResource(R.color.pro_background);
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(
                 getWindow(), getWindow().getDecorView());
@@ -204,19 +218,17 @@ public class FadCamProActivity extends AppCompatActivity {
             // inset so the crown rain starts at the screen top while its content stays below.
             Insets safe = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars()
                     | WindowInsetsCompat.Type.displayCutout());
-            v.setPadding(bars.left, 0, bars.right, bars.bottom);
-            // The root's bottom padding insets every child, including the fullscreen
-            // cinematic overlay (it measured 71 px short of the window on a gesture-nav
-            // device). Pull it back down with a negative margin so the scene truly covers
-            // the whole display; the page chrome keeps its safe padding.
-            View cinematic = findViewById(R.id.cinematicOverlay);
-            if (cinematic != null) {
-                androidx.constraintlayout.widget.ConstraintLayout.LayoutParams clp =
-                        (androidx.constraintlayout.widget.ConstraintLayout.LayoutParams)
-                                cinematic.getLayoutParams();
-                if (clp.bottomMargin != -bars.bottom) {
-                    clp.bottomMargin = -bars.bottom;
-                    cinematic.setLayoutParams(clp);
+            v.setPadding(bars.left, 0, bars.right, 0);
+            // The page's bottom surface runs behind the navigation bar, exactly like the hero art
+            // runs behind the status bar. Only the bar's content keeps clear of it, so the CTA and
+            // its caption stay out of the gesture area while the plate and the rain reach the edge.
+            if (footerContent != null) {
+                // Only what the bar actually occupies: while it is hidden the bar's content drops
+                // to the bottom edge instead of reserving an empty strip.
+                int bottom = footerContentPadBottom + bars.bottom;
+                if (footerContent.getPaddingBottom() != bottom) {
+                    footerContent.setPadding(footerContent.getPaddingLeft(), footerContent.getPaddingTop(),
+                            footerContent.getPaddingRight(), bottom);
                 }
             }
             if (closeButton != null) {
@@ -257,7 +269,7 @@ public class FadCamProActivity extends AppCompatActivity {
                 firstFrameDrawn = true;
                 root.postOnAnimation(() -> {
                     if (!isFinishing()) {
-                        hideStatusBar(root);
+                        hideSystemBars(root);
                     }
                 });
                 return true;
@@ -272,6 +284,10 @@ public class FadCamProActivity extends AppCompatActivity {
         btnGetPro = findViewById(R.id.btnGetPro);
         scrollHint = findViewById(R.id.scrollHint);
         scrollHintArrow = findViewById(R.id.scrollHintArrow);
+        footerCrownRain = findViewById(R.id.footerCrownRain);
+        footerContent = findViewById(R.id.footerContent);
+        if (footerContent != null) footerContentPadBottom = footerContent.getPaddingBottom();
+        if (footerCrownRain != null) footerCrownRainAlpha = footerCrownRain.getAlpha();
         android.widget.ScrollView proScroll = findViewById(R.id.proScroll);
         scrollTopButton = findViewById(R.id.btnScrollTop);
         if (scrollTopButton != null) {
@@ -327,13 +343,16 @@ public class FadCamProActivity extends AppCompatActivity {
         // Keep every action reachable by letting it travel with the rest of the page instead.
         if (getResources().getConfiguration().screenHeightDp < 480
                 || getResources().getConfiguration().fontScale >= 1.5f) {
-            LinearLayout footer = findViewById(R.id.footerBar);
+            ViewGroup footer = findViewById(R.id.footerBar);
             ((ViewGroup) footer.getParent()).removeView(footer);
             android.widget.ScrollView scroll = findViewById(R.id.proScroll);
             ((LinearLayout) scroll.getChildAt(0)).addView(footer,
                     new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT));
-            footer.setPadding(0, dp(20), 0, 0);
+            if (footerContent != null) {
+                footerContentPadBottom = dp(20);
+                footerContent.setPadding(0, dp(20), 0, 0);
+            }
             ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) scroll.getLayoutParams();
             params.bottomToTop = ConstraintLayout.LayoutParams.UNSET;
             params.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
@@ -682,6 +701,7 @@ public class FadCamProActivity extends AppCompatActivity {
         boolean canScroll = contentHeight > viewportHeight + dp(8);
         boolean atTop = scrollY <= dp(4);
         boolean show = canScroll && atTop;
+        updateFooterCrownRain(canScroll && !atTop);
         if (!motionAllowed()) {
             scrollHint.animate().cancel();
             scrollHint.setAlpha(show ? 1f : 0f);
@@ -707,6 +727,41 @@ public class FadCamProActivity extends AppCompatActivity {
                         }
                     }).start();
         }
+    }
+
+    /**
+     * The sticky bar carries the hero's crown rain, but only once the page is actually moving:
+     * it fades in as the scroll cue leaves and fades back out at the top, so the footer reads
+     * plain until there is somewhere to scroll. Reduced motion keeps it hidden (the hero's rain
+     * behaves the same way), and the view stops its own frame loop while it is not visible.
+     */
+    private void updateFooterCrownRain(boolean scrolled) {
+        if (footerCrownRain == null) return;
+        boolean wanted = scrolled && motionAllowed();
+        if (wanted == footerCrownRainShown) return;
+        footerCrownRainShown = wanted;
+        FLog.d("ProRain", "backdrop=" + (wanted ? "shown" : "hidden")
+                + " h=" + footerCrownRain.getHeight() + " alpha=" + footerRainTargetAlpha());
+        footerCrownRain.animate().cancel();
+        if (wanted) {
+            footerCrownRain.setAlpha(0f);
+            footerCrownRain.setVisibility(View.VISIBLE);
+            // A backdrop arrives and leaves slowly; a fast cut reads as a flicker.
+            footerCrownRain.animate().alpha(footerCrownRainAlpha).setDuration(900)
+                    .setInterpolator(new DecelerateInterpolator()).start();
+        } else if (footerCrownRain.getVisibility() == View.VISIBLE) {
+            footerCrownRain.animate().alpha(0f).setDuration(600)
+                    .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+                    .withEndAction(() -> {
+                        if (!footerCrownRainShown) footerCrownRain.setVisibility(View.INVISIBLE);
+                    }).start();
+        } else {
+            footerCrownRain.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    private float footerRainTargetAlpha() {
+        return footerCrownRain == null ? 0f : footerCrownRainAlpha;
     }
 
     private CharSequence styledClaimTitle() {
@@ -850,7 +905,7 @@ public class FadCamProActivity extends AppCompatActivity {
         }
     }
 
-    private void hideStatusBar(View root) {
+    private void hideSystemBars(View root) {
         getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
         View decor = getWindow().getDecorView();
@@ -860,8 +915,11 @@ public class FadCamProActivity extends AppCompatActivity {
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        // Both bars: the page draws its own surface edge to edge (hero art under the status bar,
+        // the sticky plate under the navigation bar) and either bar peeks in on a swipe from its
+        // edge, which is the behaviour the status bar already had.
         WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
-                .hide(WindowInsetsCompat.Type.statusBars());
+                .hide(WindowInsetsCompat.Type.statusBars() | WindowInsetsCompat.Type.navigationBars());
         // Force a window relayout so the OEM window manager recomputes the frame with the bar
         // hidden; some OEM window managers keep the first layout below the status bar otherwise.
         getWindow().setAttributes(getWindow().getAttributes());
@@ -1075,7 +1133,7 @@ public class FadCamProActivity extends AppCompatActivity {
             if (root != null) ViewCompat.requestApplyInsets(root);
             if (root != null && firstFrameDrawn) root.postOnAnimation(() -> {
                 if (hasWindowFocus() && !isFinishing()) {
-                    hideStatusBar(root);
+                    hideSystemBars(root);
                 }
             });
         }

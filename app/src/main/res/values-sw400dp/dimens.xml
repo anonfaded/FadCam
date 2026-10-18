@@ -166,6 +166,7 @@
     <dimen name="pro_row_icon_slot">28dp</dimen>
     <dimen name="pro_row_icon_text">20sp</dimen>
     <dimen name="pro_row_icon_image">26dp</dimen>
+    <dimen name="pro_footer_pad_bottom">12dp</dimen>
     <dimen name="pro_footer_pad_h">20dp</dimen>
     <dimen name="pro_price_size">30sp</dimen>
     <dimen name="pro_cta_min_h">52dp</dimen>

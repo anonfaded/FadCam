@@ -235,6 +235,25 @@ public class FadCamProActivityTest {
             + "visible in the launcher, the notification shade and the recent apps list of every "
             + "edition of the bundle without a single visible recording indicator";
 
+    /**
+     * The crown backdrop is a `match_parent` child of a wrapping bar, and a plain View under an
+     * AT_MOST pass claims the whole window: that turned the sticky bar into a full-screen panel
+     * that covered everything. The backdrop must never drive the bar's height, and must end up
+     * exactly as tall as the bar.
+     */
+    @Test
+    public void stickyFooterKeepsItsHeightWithTheCrownBackdrop() {
+        launch();
+        measurePage();
+        measurePage();
+        View footer = view(R.id.footerBar);
+        View rain = view(R.id.footerCrownRain);
+        assertTrue("sticky footer grew to the window: " + footer.getHeight(),
+                footer.getHeight() < dp(400));
+        assertEquals("crown backdrop must span the whole bar, divider included",
+                footer.getHeight(), rain.getHeight());
+    }
+
     private void measurePage() {
         measurePage(360, 780);
     }

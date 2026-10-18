@@ -195,10 +195,19 @@
             android:importantForAccessibility="no" />
     </LinearLayout>
 
-    <LinearLayout android:id="@+id/footerBar" android:layout_width="0dp" android:layout_height="wrap_content"
-        android:orientation="vertical" android:background="@drawable/bg_pro_footer"
-        android:paddingHorizontal="@dimen/pro_footer_pad_h" android:paddingTop="14dp" android:paddingBottom="12dp"
+    <!-- Sticky purchase bar. The crown rain is the hero's texture carried into the footer; it is
+         kept invisible until the page actually scrolls (the scroll cue has left), so the bar
+         starts plain. It stops itself whenever it is not visible. -->
+    <FrameLayout android:id="@+id/footerBar" android:layout_width="0dp" android:layout_height="wrap_content"
+        android:background="@drawable/bg_pro_footer"
         app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+        <com.fadcam.ui.widgets.ProCrownRainView android:id="@+id/footerCrownRain"
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:visibility="invisible" android:alpha="0.16" />
+        <LinearLayout android:id="@+id/footerContent" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/pro_footer_pad_h" android:paddingTop="14dp"
+            android:paddingBottom="@dimen/pro_footer_pad_bottom">
         <LinearLayout android:id="@+id/priceRow" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="12dp">
             <TextView android:id="@+id/tvPrice" android:layout_width="wrap_content" android:layout_height="wrap_content"
@@ -224,7 +233,8 @@
         <TextView android:id="@+id/ownedStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:minHeight="48dp" android:gravity="center" android:padding="12dp" android:background="@drawable/bg_pro_cta_owned"
             android:textColor="@color/pro_gold" android:textSize="14sp" android:fontFamily="sans-serif-medium" android:visibility="gone" />
-    </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
 
     <!-- Traveling avatar: detached copy that flies into the CTA. Never clickable so taps fall
          through to the button underneath. -->

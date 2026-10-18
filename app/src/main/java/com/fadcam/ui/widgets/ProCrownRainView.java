@@ -12,6 +12,7 @@ import android.provider.Settings;
 import android.util.AttributeSet;
 import android.view.Choreographer;
 import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
@@ -53,6 +54,10 @@ public class ProCrownRainView extends View {
     private float[] columnTilt;
     private int[] columnSprite;
     private float[] columnPhase;      // sway phase offset
+
+    /** Band above the view that drops spawn in, and how far below it they are recycled. */
+    private static final float CYCLE_ABOVE_DP = 100f;
+    private static final float CYCLE_BELOW_DP = 40f;
 
     private float density;
     private boolean animating;
@@ -100,6 +105,40 @@ public class ProCrownRainView extends View {
         // Sprites only exist after the first measure, and onAttachedToWindow runs earlier:
         // kick the loop here so the rain actually falls.
         startRain();
+    }
+
+    /**
+     * A backdrop never drives its host's size. Under an {@code AT_MOST} pass a plain View claims
+     * the whole available space (the classic trap), which turns a {@code wrap_content} host into
+     * a full-window panel. This reports zero and then adopts the host's resolved height, so the
+     * rain overlays any host exactly — a fixed-height frame or a wrapping bar.
+     */
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY) {
+            setMeasuredDimension(width, MeasureSpec.getSize(heightMeasureSpec));
+            return;
+        }
+        setMeasuredDimension(width, 0);
+        adoptHostSize();
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+        adoptHostSize();
+    }
+
+    /** Takes the host's finished content height once and keeps it in sync when the host resizes. */
+    private void adoptHostSize() {
+        if (!(getParent() instanceof View)) return;
+        View host = (View) getParent();
+        int hostHeight = host.getHeight() - host.getPaddingTop() - host.getPaddingBottom();
+        ViewGroup.LayoutParams params = getLayoutParams();
+        if (hostHeight <= 0 || params == null || params.height == hostHeight) return;
+        params.height = hostHeight;
+        setLayoutParams(params);
     }
 
     @Override
@@ -186,9 +225,14 @@ public class ProCrownRainView extends View {
         if (width <= 0) {
             return;
         }
+        final float cycleTop = -CYCLE_ABOVE_DP * density;
+        final float limit = height + CYCLE_BELOW_DP * density;
         float spacing = 46f * density;
         int columns = Math.max(6, Math.round(width / spacing));
-        int count = columns * 2;
+        // A compact frame carries one drop per column: with the cycle kept close to the view, two
+        // would read as clutter behind the mascot, while a taller host wants the extra drop.
+        int perColumn = height >= 160f * density ? 2 : 1;
+        int count = columns * perColumn;
         columnX = new float[count];
         columnY = new float[count];
         columnSpeed = new float[count];
@@ -203,9 +247,13 @@ public class ProCrownRainView extends View {
             float halfSprite = spriteSizes[1] / 2f;
             columnX[i] = Math.min(width - halfSprite,
                     Math.max(halfSprite, step * column + step * 0.5f));
-            // Second drop in a column starts staggered so the fall never looks like a grid.
-            float phase = (i < columns) ? 0f : Math.max(0.28f, random.nextFloat() * 0.42f);
-            columnY[i] = (random.nextFloat() + phase) % 1f * height;
+            // Extra drops in a column start staggered so the fall never looks like a grid.
+            int slot = i / columns;
+            float phase = slot == 0 ? 0f : slot / (float) perColumn + random.nextFloat() * 0.1f;
+            // Distribute the drops over the whole cycle, not just the visible frame: a field that
+            // starts inside the frame falls out entirely before the host is even looked at, and
+            // the refills then arrive in a late batch instead of raining.
+            columnY[i] = cycleTop + ((random.nextFloat() + phase) % 1f) * (limit - cycleTop);
             columnSpeed[i] = (13f + random.nextFloat() * 24f) * density;   // px/s: 13-37 dp/s
             columnAlpha[i] = 0.36f + random.nextFloat() * 0.38f;
             columnTilt[i] = 0f;
@@ -218,12 +266,12 @@ public class ProCrownRainView extends View {
         if (columnY == null) {
             return;
         }
-        float limit = getHeight() + 140f * density;
+        float limit = getHeight() + CYCLE_BELOW_DP * density;
         for (int i = 0; i < columnY.length; i++) {
             columnY[i] += columnSpeed[i] * dtSeconds;
             if (columnY[i] > limit) {
                 // Recycle to the top with fresh character so the rain never loops visibly.
-                columnY[i] = -60f * density - random.nextFloat() * 160f * density;
+                columnY[i] = -CYCLE_ABOVE_DP * density - random.nextFloat() * 60f * density;
                 columnSpeed[i] = (13f + random.nextFloat() * 24f) * density;
                 columnAlpha[i] = 0.34f + random.nextFloat() * 0.38f;
                 columnSprite[i] = random.nextInt(3);
