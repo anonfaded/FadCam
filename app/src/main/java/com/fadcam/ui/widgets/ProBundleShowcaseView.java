@@ -1659,8 +1659,7 @@ public class ProBundleShowcaseView extends FrameLayout {
         long days = hours / 24L;
         long years = days / 365L;
         long months = (days % 365L) / 30L;
-        long weeks = ((days % 365L) % 30L) / 7L;
-        long remDays = ((days % 365L) % 30L) % 7L;
+        long remDays = (days % 365L) % 30L;
         long remHours = hours % 24L;
         long remMinutes = minutes % 60L;
         // Two units at most ("1 year, 2 months"), joined cleanly — never a dangling separator.
@@ -1668,7 +1667,7 @@ public class ProBundleShowcaseView extends FrameLayout {
         int count = 0;
         if (years > 0) parts[count++] = years + (years == 1 ? " year" : " years");
         if (months > 0) parts[count++] = months + (months == 1 ? " month" : " months");
-        if (weeks > 0) parts[count++] = weeks + (weeks == 1 ? " week" : " weeks");
+        // Days only: a rounded week reads as a vague guess beside a date ("1 month, 7 days").
         if (remDays > 0) parts[count++] = remDays + (remDays == 1 ? " day" : " days");
         if (remHours > 0) parts[count++] = remHours + (remHours == 1 ? " hour" : " hours");
         if (remMinutes > 0) parts[count++] = remMinutes + (remMinutes == 1 ? " minute" : " minutes");
