@@ -2948,4 +2948,7 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="github_get_on">Get it on</string>
     <string name="github_badge_text">GitHub</string>
     <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Tase FadCam %1$s karawal</string>
+    <string name="app_usage_since_install_title">Tase FadCam karawal</string>
+    <string name="app_usage_installed_on">Install nita</string>
 </resources>

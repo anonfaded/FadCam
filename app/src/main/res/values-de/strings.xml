@@ -2868,4 +2868,7 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="github_get_on">Jetzt bei</string>
     <string name="github_badge_text">GitHub</string>
     <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Du nutzt FadCam seit %1$s</string>
+    <string name="app_usage_since_install_title">Du nutzt FadCam seit</string>
+    <string name="app_usage_installed_on">Installiert am</string>
 </resources>

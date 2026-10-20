@@ -4583,4 +4583,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="github_get_on">Disponible sur</string>
     <string name="github_badge_text">GitHub</string>
     <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Vous utilisez FadCam depuis %1$s</string>
+    <string name="app_usage_since_install_title">Vous utilisez FadCam depuis</string>
+    <string name="app_usage_installed_on">Installé le</string>
 </resources>

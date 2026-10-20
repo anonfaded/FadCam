@@ -33,6 +33,9 @@ import com.google.android.material.sidesheet.SideSheetDialog;
  */
 public class HomeSidebarFragment extends DialogFragment {
 
+    /** Tap state of the app-age row: false = age, true = exact install moment. */
+    private boolean usageShowsInstallDate;
+
     private String resultKey = "home_sidebar_result";
 
     /** Currently open sidebar instance, so the reorder sheet can refresh it directly. */
@@ -107,6 +110,38 @@ public class HomeSidebarFragment extends DialogFragment {
         return dialog;
     }
     
+    /** Toggles the age row between "using it for …" and the exact install moment. */
+    private void updateAppUsageRow(android.view.View view, boolean animate) {
+        android.widget.TextView title = view.findViewById(R.id.tv_app_usage_title);
+        android.widget.TextView value = view.findViewById(R.id.tv_app_usage);
+        if (title == null || value == null) return;
+        CharSequence titleText;
+        CharSequence valueText;
+        if (usageShowsInstallDate) {
+            titleText = getString(R.string.app_usage_installed_on);
+            valueText = com.fadcam.utils.AppUsageAge.installedAt(requireContext());
+        } else {
+            titleText = com.fadcam.utils.AppUsageAge.title(requireContext());
+            valueText = com.fadcam.utils.AppUsageAge.value(requireContext());
+        }
+        android.widget.TextView icon = view.findViewById(R.id.tv_app_usage_icon);
+        CharSequence iconGlyph = usageShowsInstallDate ? "download" : "history";
+        if (animate
+                && title instanceof com.fadcam.ui.utils.AnimatedTextView
+                && value instanceof com.fadcam.ui.utils.AnimatedTextView) {
+            // Same slot-machine roll the elapsed-time digits use, glyph included.
+            ((com.fadcam.ui.utils.AnimatedTextView) title).animateSlot(titleText, 380);
+            ((com.fadcam.ui.utils.AnimatedTextView) value).animateSlot(valueText, 380);
+            if (icon instanceof com.fadcam.ui.utils.AnimatedTextView) {
+                ((com.fadcam.ui.utils.AnimatedTextView) icon).animateSlot(iconGlyph, 380);
+            }
+        } else {
+            title.setText(titleText);
+            value.setText(valueText);
+            if (icon != null) icon.setText(iconGlyph);
+        }
+    }
+
     private void clearMaterialBackgrounds(android.view.ViewGroup group) {
         for (int i = 0; i < group.getChildCount(); i++) {
             android.view.View child = group.getChildAt(i);
@@ -324,9 +359,13 @@ public class HomeSidebarFragment extends DialogFragment {
             });
         }
 
-        android.widget.TextView tvAppUsage = view.findViewById(R.id.tv_app_usage);
-        if (tvAppUsage != null) {
-            tvAppUsage.setText(com.fadcam.utils.AppUsageAge.text(requireContext()));
+        android.view.View rowAppUsage = view.findViewById(R.id.row_app_usage);
+        if (rowAppUsage != null) {
+            updateAppUsageRow(view, false);
+            rowAppUsage.setOnClickListener(v -> {
+                usageShowsInstallDate = !usageShowsInstallDate;
+                updateAppUsageRow(view, true);
+            });
         }
 
         // App info footer: package + version name + version code (long-press to copy)

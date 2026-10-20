@@ -3023,4 +3023,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="github_get_on">Διαθέσιμο στο</string>
     <string name="github_badge_text">GitHub</string>
     <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Χρησιμοποιείτε το FadCam για %1$s</string>
+    <string name="app_usage_since_install_title">Χρησιμοποιείτε το FadCam για</string>
+    <string name="app_usage_installed_on">Εγκαταστάθηκε στις</string>
 </resources>

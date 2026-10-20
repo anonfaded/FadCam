@@ -4842,4 +4842,7 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <string name="github_get_on">获取于</string>
     <string name="github_badge_text">GitHub</string>
     <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">已使用 FadCam %1$s</string>
+    <string name="app_usage_since_install_title">已使用 FadCam</string>
+    <string name="app_usage_installed_on">安装于</string>
 </resources>

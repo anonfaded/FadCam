@@ -1540,15 +1540,57 @@
                 android:layout_marginBottom="4dp"
                 android:background="#334E4E4E" />
 
-            <!-- How long this install has been in use (same line as the Pro mockup). -->
-            <TextView
-                android:id="@+id/tv_app_usage"
-                android:layout_width="wrap_content"
+            <!-- App age: the earlier centred block, in the display rows' own card, with their
+                 row ripple. Tapping swaps the age for the exact install moment. -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center"
-                android:textColor="?attr/pickerTextSecondary"
-                android:textSize="11sp" />
+                android:layout_marginTop="10dp"
+                android:orientation="vertical"
+                android:background="@drawable/settings_group_card_bg">
+
+                <LinearLayout
+                    android:id="@+id/row_app_usage"
+                    style="@style/SettingsGroupRow"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:clickable="true" android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <com.fadcam.ui.utils.AnimatedTextView
+                            android:id="@+id/tv_app_usage_icon"
+                            android:layout_width="24dp" android:layout_height="24dp"
+                            android:fontFamily="@font/materialicons"
+                            android:text="history" android:textColor="?attr/colorHeading"
+                            android:textSize="18sp" android:gravity="center"
+                            android:importantForAccessibility="no" />
+
+                        <com.fadcam.ui.utils.AnimatedTextView
+                            android:id="@+id/tv_app_usage_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="2dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textColor="?attr/pickerTextSecondary"
+                            android:textSize="10.5sp" />
+                    </LinearLayout>
+
+                    <com.fadcam.ui.utils.AnimatedTextView
+                        android:id="@+id/tv_app_usage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:gravity="center"
+                        android:minLines="2"
+                        android:textColor="?attr/pickerTextPrimary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
 
             <!-- App info (package / version / code); long-press to copy -->
             <LinearLayout
@@ -1565,7 +1607,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:textColor="?attr/pickerTextPrimary"
+                    android:textColor="?attr/pickerTextSecondary"
                     android:textSize="11sp" />
             </LinearLayout>
 

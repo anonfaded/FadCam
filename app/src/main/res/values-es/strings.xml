@@ -3031,4 +3031,7 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <string name="github_get_on">Disponible en</string>
     <string name="github_badge_text">GitHub</string>
     <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Usas FadCam desde hace %1$s</string>
+    <string name="app_usage_since_install_title">Usas FadCam desde hace</string>
+    <string name="app_usage_installed_on">Instalado el</string>
 </resources>

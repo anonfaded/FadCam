@@ -2910,4 +2910,7 @@
     <string name="github_get_on">Scarica su</string>
     <string name="github_badge_text">GitHub</string>
     <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Usi FadCam da %1$s</string>
+    <string name="app_usage_since_install_title">Usi FadCam da</string>
+    <string name="app_usage_installed_on">Installato il</string>
 </resources>

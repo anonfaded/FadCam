@@ -2926,4 +2926,7 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="github_get_on">Hangi</string>
     <string name="github_badge_text">GitHub</string>
     <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">FadCam on kasutusel olnud %1$s</string>
+    <string name="app_usage_since_install_title">FadCam on kasutusel olnud</string>
+    <string name="app_usage_installed_on">Paigaldatud</string>
 </resources>

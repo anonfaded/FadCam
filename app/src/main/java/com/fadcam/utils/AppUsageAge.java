@@ -16,13 +16,46 @@ public final class AppUsageAge {
     private AppUsageAge() {
     }
 
-    /** The finished line, or an empty string when the install time cannot be read. */
+    /** The finished one-line phrasing, or an empty string when the install time is unreadable. */
     public static String text(Context context) {
+        try {
+            return context.getString(R.string.app_usage_since_install, value(context));
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /** The leading phrase on its own, for hosts that show the age as a titled stat. */
+    public static String title(Context context) {
+        return context.getString(R.string.app_usage_since_install_title);
+    }
+
+    /**
+     * The exact first-install moment: full weekday, abbreviated month, exact time in the user's
+     * locale — "Monday, 9 Sep 2026 · 3:52 AM".
+     */
+    public static String installedAt(Context context) {
+        try {
+            PackageInfo info = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0);
+            java.util.Date installed = new java.util.Date(info.firstInstallTime);
+            java.util.Locale locale = java.util.Locale.getDefault();
+            String day = new java.text.SimpleDateFormat("EEEE, d MMM yyyy", locale).format(installed);
+            String time = java.text.DateFormat.getTimeInstance(
+                    java.text.DateFormat.SHORT, locale).format(installed);
+            return day + " · " + time;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /** The age itself, open-ended ("1 year, 1 month, 5 days, 3 hours…"). */
+    public static String value(Context context) {
         try {
             PackageInfo info = context.getPackageManager()
                     .getPackageInfo(context.getPackageName(), 0);
             long millis = Math.max(0L, System.currentTimeMillis() - info.firstInstallTime);
-            return context.getString(R.string.app_usage_since_install, duration(millis));
+            return duration(millis) + "…";
         } catch (Exception e) {
             return "";
         }

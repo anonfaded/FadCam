@@ -24,4 +24,5 @@
     <string name="fadcam_pro_feature_calc_desc">FadCam Lite behind a working calculator.</string>
     <string name="fadcam_pro_feature_weather_desc">FadCam Lite behind a weather app.</string>
     <string name="app_usage_since_install">Using FadCam Lite for %1$s</string>
+    <string name="app_usage_since_install_title">Using FadCam Lite for</string>
 </resources>
