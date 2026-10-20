@@ -1540,6 +1540,16 @@
                 android:layout_marginBottom="4dp"
                 android:background="#334E4E4E" />
 
+            <!-- How long this install has been in use (same line as the Pro mockup). -->
+            <TextView
+                android:id="@+id/tv_app_usage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:textColor="?attr/pickerTextSecondary"
+                android:textSize="11sp" />
+
             <!-- App info (package / version / code); long-press to copy -->
             <LinearLayout
                 android:id="@+id/row_app_info"

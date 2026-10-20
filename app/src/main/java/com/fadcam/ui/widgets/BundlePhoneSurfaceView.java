@@ -1800,9 +1800,23 @@ public class BundlePhoneSurfaceView extends View {
         paint.setColor(0xFF9A9AA0);
         canvas.drawText(dateText, screen.centerX(), screen.top + screen.height() * 0.275f, paint);
         if (!usageText.isEmpty()) {
-            paint.setTextSize(pw * 0.042f);
-            paint.setColor(0xFFBEBEC6);
-            canvas.drawText(usageText, screen.centerX(), screen.top + screen.height() * 0.318f, paint);
+            // Every unit is shown, so the line can wrap; keep it centred over the glass.
+            textPaint.setTypeface(labelTypeface);
+            textPaint.setTextSize(pw * 0.042f);
+            textPaint.setColor(0xFFBEBEC6);
+            textPaint.setTextAlign(Paint.Align.LEFT);
+            StaticLayout usage = StaticLayout.Builder
+                    .obtain(usageText, 0, usageText.length(), textPaint,
+                            Math.max(1, Math.round(screen.width() * 0.84f)))
+                    .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                    .setLineSpacing(0f, 1.15f)
+                    .build();
+            canvas.save();
+            canvas.translate(screen.centerX() - screen.width() * 0.42f,
+                    screen.top + screen.height() * 0.318f - usage.getLineBaseline(0));
+            usage.draw(canvas);
+            canvas.restore();
+            paint.setTextAlign(Paint.Align.CENTER);
         }
 
         float hintY = Math.min(screen.top + screen.height() * 0.72f, getHeight() - dp(26));

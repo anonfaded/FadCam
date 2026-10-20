@@ -324,6 +324,11 @@ public class HomeSidebarFragment extends DialogFragment {
             });
         }
 
+        android.widget.TextView tvAppUsage = view.findViewById(R.id.tv_app_usage);
+        if (tvAppUsage != null) {
+            tvAppUsage.setText(com.fadcam.utils.AppUsageAge.text(requireContext()));
+        }
+
         // App info footer: package + version name + version code (long-press to copy)
         android.widget.TextView tvAppInfo = view.findViewById(R.id.tv_app_info);
         android.view.View rowAppInfo = view.findViewById(R.id.row_app_info);

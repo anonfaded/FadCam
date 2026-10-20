@@ -1,0 +1,59 @@
+package com.fadcam.utils;
+
+import android.content.Context;
+import android.content.pm.PackageInfo;
+
+import com.fadcam.R;
+
+/**
+ * The app's own age, phrased as a product line: "Using FadCam for 1 month, 9 days".
+ *
+ * <p>Shared by the Pro mockup's lock screen and the home sidebar footer, so both always show the
+ * same thing. The age comes from the real first-install time, never from an update.
+ */
+public final class AppUsageAge {
+
+    private AppUsageAge() {
+    }
+
+    /** The finished line, or an empty string when the install time cannot be read. */
+    public static String text(Context context) {
+        try {
+            PackageInfo info = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0);
+            long millis = Math.max(0L, System.currentTimeMillis() - info.firstInstallTime);
+            return context.getString(R.string.app_usage_since_install, duration(millis));
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * Every non-zero unit, most significant first ("1 month, 9 days, 16 hours, 25 minutes"),
+     * joined cleanly — never a dangling separator. Days are the smallest calendar unit: a
+     * rounded week reads as a vague guess beside a date.
+     */
+    static String duration(long millis) {
+        long minutes = millis / 60000L;
+        long hours = minutes / 60L;
+        long days = hours / 24L;
+        long years = days / 365L;
+        long months = (days % 365L) / 30L;
+        long remDays = (days % 365L) % 30L;
+        long remHours = hours % 24L;
+        long remMinutes = minutes % 60L;
+        String[] parts = new String[6];
+        int count = 0;
+        if (years > 0) parts[count++] = years + (years == 1 ? " year" : " years");
+        if (months > 0) parts[count++] = months + (months == 1 ? " month" : " months");
+        if (remDays > 0) parts[count++] = remDays + (remDays == 1 ? " day" : " days");
+        if (remHours > 0) parts[count++] = remHours + (remHours == 1 ? " hour" : " hours");
+        if (remMinutes > 0) parts[count++] = remMinutes + (remMinutes == 1 ? " minute" : " minutes");
+        if (count == 0) return "under a minute";
+        StringBuilder joined = new StringBuilder(parts[0]);
+        for (int i = 1; i < count; i++) {
+            joined.append(", ").append(parts[i]);
+        }
+        return joined.toString();
+    }
+}

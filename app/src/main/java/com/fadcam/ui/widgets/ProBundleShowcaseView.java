@@ -1725,40 +1725,11 @@ public class ProBundleShowcaseView extends FrameLayout {
         inspectorSpin.start();
     }
 
-    /** "With FadCam for X years, Y months" — from the real first-install time. */
+    /** "Using FadCam for X years, Y months" — from the real first-install time. */
     private void updateUsageEasterEgg() {
-        try {
-            PackageInfo info = getContext().getPackageManager()
-                    .getPackageInfo(getContext().getPackageName(), 0);
-            long millis = Math.max(0L, System.currentTimeMillis() - info.firstInstallTime);
-            frontSurface.setUsageText(getContext().getString(R.string.pro_showcase_usage, formatMillis(millis)));
-        } catch (Exception ignored) {
-            // No install time available: leave the line out.
-        }
+        frontSurface.setUsageText(com.fadcam.utils.AppUsageAge.text(getContext()));
     }
 
-    private static String formatMillis(long millis) {
-        long minutes = millis / 60000L;
-        long hours = minutes / 60L;
-        long days = hours / 24L;
-        long years = days / 365L;
-        long months = (days % 365L) / 30L;
-        long remDays = (days % 365L) % 30L;
-        long remHours = hours % 24L;
-        long remMinutes = minutes % 60L;
-        // Two units at most ("1 year, 2 months"), joined cleanly — never a dangling separator.
-        String[] parts = new String[6];
-        int count = 0;
-        if (years > 0) parts[count++] = years + (years == 1 ? " year" : " years");
-        if (months > 0) parts[count++] = months + (months == 1 ? " month" : " months");
-        // Days only: a rounded week reads as a vague guess beside a date ("1 month, 7 days").
-        if (remDays > 0) parts[count++] = remDays + (remDays == 1 ? " day" : " days");
-        if (remHours > 0) parts[count++] = remHours + (remHours == 1 ? " hour" : " hours");
-        if (remMinutes > 0) parts[count++] = remMinutes + (remMinutes == 1 ? " minute" : " minutes");
-        if (count == 0) return "under a minute";
-        if (count == 1) return parts[0];
-        return parts[0] + ", " + parts[1];
-    }
 
         // -------------------------------------------------------------- helpers
 
