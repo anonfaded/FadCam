@@ -241,7 +241,7 @@
     <string name="home_time_left_color_helper">Elige el color de acento para la fila de tiempo restante. Rojo es el predeterminado.</string>
     <string name="home_time_left_color_choice_desc">Color de acento %1$s</string>
     <string name="home_clock_customize_title">Apariencia del reloj</string>
-    <string name="home_clock_customize_helper">Cambia la visualización del reloj, color y formato de hora.</string>
+    <string name="home_clock_customize_helper">Cambia la visualización del reloj, el color, el formato de hora y el estilo de la fecha árabe.</string>
     <string name="home_clock_display_option">Visualización del reloj</string>
     <string name="home_clock_display_option_desc">Elige qué líneas de fecha y hora aparecen en la tarjeta del reloj</string>
     <string name="home_clock_display_helper">Selecciona el diseño usado por la tarjeta del reloj.</string>

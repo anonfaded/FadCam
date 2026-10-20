@@ -239,7 +239,7 @@
     <string name="home_time_left_color_helper">Choose the accent color for the time-left row. Red is the default.</string>
     <string name="home_time_left_color_choice_desc">Accent color %1$s</string>
     <string name="home_clock_customize_title">Clock Appearance</string>
-    <string name="home_clock_customize_helper">Change the clock display, color, and hour format.</string>
+    <string name="home_clock_customize_helper">Change the clock display, color, hour format and Arabic date style.</string>
     <string name="home_clock_display_option">Clock display</string>
     <string name="home_clock_display_option_desc">Choose which date and time lines appear in the clock card</string>
     <string name="home_clock_display_helper">Pick the layout used by the clock card.</string>

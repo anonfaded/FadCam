@@ -196,7 +196,7 @@
     <string name="home_time_left_color_helper">Επιλέξτε το χρώμα έμφασης για τη γραμμή χρόνου που απομένει. Το κόκκινο είναι η προεπιλογή.</string>
     <string name="home_time_left_color_choice_desc">Χρώμα έμφασης %1$s</string>
     <string name="home_clock_customize_title">Εμφάνιση Ρολογιού</string>
-    <string name="home_clock_customize_helper">Αλλάξτε την εμφάνιση ρολογιού, το χρώμα και τη μορφή ώρας.</string>
+    <string name="home_clock_customize_helper">Αλλάξτε την εμφάνιση ρολογιού, το χρώμα, τη μορφή ώρας και το στυλ της αραβικής ημερομηνίας.</string>
     <string name="home_clock_display_option">Εμφάνιση ρολογιού</string>
     <string name="home_clock_display_option_desc">Επιλέξτε ποιες γραμμές ημερομηνίας και ώρας εμφανίζονται στην κάρτα ρολογιού</string>
     <string name="home_clock_display_helper">Επιλέξτε τη διάταξη που χρησιμοποιείται για την κάρτα ρολογιού.</string>

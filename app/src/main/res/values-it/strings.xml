@@ -241,7 +241,7 @@
     <string name="home_time_left_color_helper">Scegli il colore dell\'accento per la riga del tempo rimanente. Rosso è il predefinito.</string>
     <string name="home_time_left_color_choice_desc">Colore accento %1$s</string>
     <string name="home_clock_customize_title">Aspetto orologio</string>
-    <string name="home_clock_customize_helper">Cambia la visualizzazione dell\'orologio, il colore e il formato dell\'ora.</string>
+    <string name="home_clock_customize_helper">Cambia la visualizzazione dell\'orologio, il colore, il formato dell\'ora e lo stile della data araba.</string>
     <string name="home_clock_display_option">Visualizzazione orologio</string>
     <string name="home_clock_display_option_desc">Scegli quali righe di data e ora appaiono nella scheda dell\'orologio</string>
     <string name="home_clock_display_helper">Scegli il layout utilizzato dalla scheda dell\'orologio.</string>

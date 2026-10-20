@@ -108,9 +108,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.time.chrono.HijrahChronology;
-import java.time.chrono.HijrahDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -6008,6 +6005,49 @@ public class HomeFragment extends BaseFragment {
         scaleDownSet.start();
     }
 
+    /** Arabic date style: the same three options, ids and strings as the clock widget setting. */
+    private void showArabicDateFormatSheet() {
+        final String resultKey = "home_clock_arabic_format";
+        getParentFragmentManager().setFragmentResultListener(
+                resultKey,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID, null);
+                    if (selected == null) return;
+                    new com.fadcam.widgets.WidgetPreferences(requireContext())
+                            .setArabicDateFormat(selected);
+                    // The card re-renders on its next tick; the widget needs a nudge.
+                    com.fadcam.widgets.ClockWidgetProvider.requestUpdate(requireContext());
+                    handlerClock.postDelayed(this::showClockAppearanceDialog, 200);
+                });
+
+        String[] formats = {"FULL_ARABIC", "MONTH_ARABIC_NUMBERS_ENGLISH", "FULL_ENGLISH"};
+        int[] titles = {
+                R.string.arabic_date_full_arabic,
+                R.string.arabic_date_month_arabic_numbers_english,
+                R.string.arabic_date_full_english};
+        int[] samples = {
+                R.string.arabic_date_sample_full_arabic,
+                R.string.arabic_date_sample_mixed,
+                R.string.arabic_date_sample_english};
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        for (int i = 0; i < formats.length; i++) {
+            items.add(new com.fadcam.ui.picker.OptionItem(
+                    formats[i], getString(titles[i]), getString(samples[i]),
+                    null, R.drawable.ic_language, null));
+        }
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                        getString(R.string.arabic_date_format_title),
+                        items,
+                        new com.fadcam.widgets.WidgetPreferences(requireContext()).getArabicDateFormat(),
+                        resultKey,
+                        getString(R.string.arabic_date_format_description));
+        sheet.show(getParentFragmentManager(), "home_arabic_date_format");
+    }
+
     private void showClockAppearanceDialog() {
         if (!isAdded()) return;
 
@@ -6027,6 +6067,14 @@ public class HomeFragment extends BaseFragment {
                 getString(R.string.home_clock_hour_format_option),
                 getString(R.string.home_clock_hour_format_option_desc),
                 null, null, R.drawable.ic_arrow_right, null, null, "schedule"));
+        // Same stored preference the clock widget uses: one setting, two places it shows up.
+        String arabicFormat = new com.fadcam.widgets.WidgetPreferences(requireContext())
+                .getArabicDateFormat();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "clock_arabic_format",
+                getString(R.string.arabic_date_format_title),
+                getString(com.fadcam.widgets.ArabicDateUtils.descriptionRes(arabicFormat)),
+                null, R.drawable.ic_language, R.drawable.ic_arrow_right));
 
         getParentFragmentManager().setFragmentResultListener(
                 CLOCK_CUSTOMIZE_RESULT_KEY,
@@ -6042,6 +6090,8 @@ public class HomeFragment extends BaseFragment {
                         showClockColorChooserDialog();
                     } else if ("clock_hour_format".equals(selected)) {
                         showClockHourFormatSheet();
+                    } else if ("clock_arabic_format".equals(selected)) {
+                        showArabicDateFormatSheet();
                     }
                 });
 
@@ -6331,18 +6381,12 @@ public class HomeFragment extends BaseFragment {
         );
         String currentDateEnglish = dateFormatEnglish.format(new Date());
 
-        // Update the date in Arabic (Islamic calendar)
-        String currentDateArabic = "N/A";
-        if (
-            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
-        ) {
-            HijrahDate hijrahDate = HijrahChronology.INSTANCE.dateNow();
-            DateTimeFormatter dateFormatterArabic = DateTimeFormatter.ofPattern(
-                "d MMMM yyyy",
-                Locale.forLanguageTag("ar")
-            );
-            currentDateArabic = dateFormatterArabic.format(hijrahDate);
-        }
+        // Arabic (Hijri) date. Formatted from ArabicDateUtils' own Arabic month names and
+        // numerals rather than a java.time formatter: the desugared java.time ships English-only
+        // locale data, so a formatter built with Locale "ar" silently fell back to English month
+        // names and Latin digits on the beta builds. The widget has always used this helper.
+        String currentDateArabic = com.fadcam.widgets.ArabicDateUtils.getArabicDate(
+                new com.fadcam.widgets.WidgetPreferences(requireContext()).getArabicDateFormat());
 
         // Set text visibility based on user choice
         String displayDateEnglish = displayOption == 1 || displayOption == 2 ? currentDateEnglish : "";

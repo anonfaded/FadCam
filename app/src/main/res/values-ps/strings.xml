@@ -1153,7 +1153,7 @@ Fun fact: 10/Jul/2024 04:47 PM wakht ke FadCam v1.0 first shipped.</string>
     <string name="home_clock_color_helper">Da Kor palette na yao clock card rang intikhab ka.</string>
     <string name="home_clock_color_option">Clock color</string>
     <string name="home_clock_color_option_desc">Da clock card istemal shwi accent/background rang intikhab ka</string>
-    <string name="home_clock_customize_helper">Change the clock display, color, and hour format.</string>
+    <string name="home_clock_customize_helper">Da clock display, rang, hour format aw Arabi date style badal krai.</string>
     <string name="home_clock_customize_title">Clock Appearance</string>
     <string name="home_clock_display_english_desc">Show time with the English date line</string>
     <string name="home_clock_display_helper">Da clock card istemal shwi layout intikhab ka.</string>

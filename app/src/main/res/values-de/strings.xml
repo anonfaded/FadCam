@@ -819,7 +819,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="home_time_left_color_helper">Wähle die Akzentfarbe für die Zeile „Verbleibende Zeit". Rot ist der Standard.</string>
     <string name="home_time_left_color_choice_desc">Akzentfarbe %1$s</string>
     <string name="home_clock_customize_title">Uhr-Erscheinungsbild</string>
-    <string name="home_clock_customize_helper">Ändere die Uhranzeige, Farbe und das Stundenformat.</string>
+    <string name="home_clock_customize_helper">Ändere die Uhranzeige, Farbe, das Stundenformat und den Stil des arabischen Datums.</string>
     <string name="home_clock_display_option">Uhranzeige</string>
     <string name="home_clock_display_option_desc">Wähle, welche Datums- und Zeitzeilen in der Uhrkarte erscheinen</string>
     <string name="home_clock_display_helper">Wähle das Layout für die Uhrkarte.</string>

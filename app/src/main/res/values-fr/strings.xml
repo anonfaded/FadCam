@@ -815,7 +815,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="home_clock_customize_title">Clock Appearance</string>
 
-<string name="home_clock_customize_helper">Change the clock display, color, and hour format.</string>
+<string name="home_clock_customize_helper">Modifiez l\'affichage de l\'horloge, la couleur, le format de l\'heure et le style de la date arabe.</string>
 
 <string name="home_clock_display_option">Clock display</string>
 

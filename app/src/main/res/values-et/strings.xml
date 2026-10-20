@@ -241,7 +241,7 @@
     <string name="home_time_left_color_helper">Vali aktsentvärv aja-jäänud reale. Punane on vaikimisi.</string>
     <string name="home_time_left_color_choice_desc">Aktsentvärv %1$s</string>
     <string name="home_clock_customize_title">Kella välimus</string>
-    <string name="home_clock_customize_helper">Muuda kella kuva, värvi ja tunnivormingut.</string>
+    <string name="home_clock_customize_helper">Muuda kella kuva, värvi, tunnivormingut ja araabia kuupäeva stiili.</string>
     <string name="home_clock_display_option">Kella kuva</string>
     <string name="home_clock_display_option_desc">Vali, millised kuupäeva ja kella read kellakaardil kuvatakse</string>
     <string name="home_clock_display_helper">Vali kellakaardi paigutus.</string>

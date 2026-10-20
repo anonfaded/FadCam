@@ -1334,7 +1334,7 @@
     <string name="home_time_left_color_helper">Kalan süre satırı için vurgu rengini seçin. Kırmızı varsayılandır.</string>
     <string name="home_time_left_color_choice_desc">Vurgu rengi %1$s</string>
     <string name="home_clock_customize_title">Saat Görünümü</string>
-    <string name="home_clock_customize_helper">Saat görüntüsünü, rengini ve saat biçimini değiştirin.</string>
+    <string name="home_clock_customize_helper">Saat görüntüsünü, rengini, saat biçimini ve Arapça tarih stilini değiştirin.</string>
     <string name="home_clock_display_option">Saat görüntüsü</string>
     <string name="home_clock_display_option_desc">Saat kartında hangi tarih ve saat satırlarının görüneceğini seçin</string>
     <string name="home_clock_display_helper">Saat kartı tarafından kullanılan düzeni seçin.</string>

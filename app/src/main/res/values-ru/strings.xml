@@ -1610,7 +1610,7 @@ FadCam использует фрагментированный формат MP4 
 
     <string name="home_clock_customize_title">Внешний вид часов</string>
 
-    <string name="home_clock_customize_helper">Измените отображение часов, цвет и формат времени.</string>
+    <string name="home_clock_customize_helper">Измените отображение часов, цвет, формат времени и стиль арабской даты.</string>
 
     <string name="home_clock_display_option">Отображение часов</string>
 

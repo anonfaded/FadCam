@@ -2452,7 +2452,7 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="home_clock_color_option_desc">选择时钟卡片的强调/背景色</string>
 
 <!-- home_clock_customize_helper -->
-<string name="home_clock_customize_helper">更改时钟显示、颜色和小时制式。</string>
+<string name="home_clock_customize_helper">更改时钟显示、颜色、小时制式和阿拉伯日期样式。</string>
 
 <!-- home_clock_customize_title -->
 <string name="home_clock_customize_title">时钟外观</string>

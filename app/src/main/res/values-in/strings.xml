@@ -240,7 +240,7 @@
     <string name="home_time_left_color_helper">Pilih warna aksen untuk baris sisa waktu. Merah adalah default.</string>
     <string name="home_time_left_color_choice_desc">Warna aksen %1$s</string>
     <string name="home_clock_customize_title">Tampilan Jam</string>
-    <string name="home_clock_customize_helper">Ubah tampilan jam, warna, dan format jam.</string>
+    <string name="home_clock_customize_helper">Ubah tampilan jam, warna, format jam, dan gaya tanggal Arab.</string>
     <string name="home_clock_display_option">Tampilan jam</string>
     <string name="home_clock_display_option_desc">Pilih baris tanggal dan waktu mana yang muncul di kartu jam</string>
     <string name="home_clock_display_helper">Pilih tata letak yang digunakan oleh kartu jam.</string>
