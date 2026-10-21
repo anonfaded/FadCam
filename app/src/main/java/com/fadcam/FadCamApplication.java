@@ -16,6 +16,10 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
         // Must run before Log.init(): the HTML log sink does not exist this early, which is
         // exactly why the previous exit reason used to be written into the void.
         DiagnosticsStore.captureExitReasons(this);
+        // Init the HTML sink here, not in HomeFragment: the service can be started directly
+        // from a shortcut/notification before any UI exists, and those are exactly the logs
+        // (encoder setup, #176) we need in the dossier.
+        Log.init(this);
         com.fadcam.services.UpdateCheckService.init(this);
         ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
         // Room DB open + invalidation observer registration is deferred off the

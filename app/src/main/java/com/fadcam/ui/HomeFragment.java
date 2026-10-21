@@ -2351,7 +2351,10 @@ public class HomeFragment extends BaseFragment {
                         String stackTrace = intent.getStringExtra(
                             Constants.EXTRA_STACK_TRACE
                         );
-                        showRecordingFailedDialog(errorMessage, stackTrace);
+                        String encoderDiagnostics = intent.getStringExtra(
+                            Constants.EXTRA_ENCODER_DIAGNOSTICS
+                        );
+                        showRecordingFailedDialog(errorMessage, stackTrace, encoderDiagnostics);
                     }
                 }
             };
@@ -2380,7 +2383,8 @@ public class HomeFragment extends BaseFragment {
 
     private void showRecordingFailedDialog(
         String errorMessage,
-        String stackTrace
+        String stackTrace,
+        String encoderDiagnostics
     ) {
         if (getContext() == null || !isAdded()) return;
 
@@ -2401,8 +2405,11 @@ public class HomeFragment extends BaseFragment {
             Build.VERSION.RELEASE +
             " (API " +
             Build.VERSION.SDK_INT +
-            ")\n\n" +
-            "Stack Trace:\n" +
+            ")\n" +
+            (encoderDiagnostics != null && !encoderDiagnostics.trim().isEmpty()
+                ? "\nEncoder Diagnostics:\n" + encoderDiagnostics + "\n"
+                : "") +
+            "\nStack Trace:\n" +
             (stackTrace != null ? stackTrace : "No stack trace") +
             "\n-----------------------------------";
 

@@ -224,7 +224,7 @@ public class DebugLogBottomSheetFragment extends BottomSheetDialogFragment {
             Intent send = new Intent(Intent.ACTION_SEND);
             send.setType("text/html");
             send.putExtra(Intent.EXTRA_STREAM, uri);
-            send.putExtra(Intent.EXTRA_SUBJECT, "FADCAM_debug.html");
+            send.putExtra(Intent.EXTRA_SUBJECT, "FadCam_Debug.html");
             send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             Intent chooser = Intent.createChooser(send, getString(R.string.debug_log_share_title));
             shareLauncher.launch(chooser);

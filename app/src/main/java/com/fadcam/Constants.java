@@ -565,6 +565,9 @@ public abstract class Constants {
         "com.fadcam.EXTRA_ERROR_MESSAGE";
     public static final String EXTRA_STACK_TRACE =
         "com.fadcam.EXTRA_STACK_TRACE";
+    /** Per-attempt encoder report (codec, format, exception) attached to a start failure. */
+    public static final String EXTRA_ENCODER_DIAGNOSTICS =
+        "com.fadcam.EXTRA_ENCODER_DIAGNOSTICS";
 
     // Broadcast action sent by RecordingService when a video segment is complete
     // (due to splitting)

@@ -2,6 +2,7 @@ package com.fadcam.services;
 
 import com.fadcam.Log;
 import com.fadcam.FLog;
+import com.fadcam.DiagnosticsStore;
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -4627,6 +4628,21 @@ public class RecordingService extends Service {
             // Use per-camera FPS setting and only choose HSR if selected resolution
             // supports it
             int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+
+            // If the encoder had to clamp the frame rate (4K60 on a 4K30 encoder), the camera
+            // session must clamp too. Otherwise the encoder is configured for 30 while the
+            // camera keeps delivering 60.
+            try {
+                int encoderFps = glRecordingPipeline.getEncoderFramerate();
+                if (encoderFps > 0 && encoderFps != targetFrameRate) {
+                    if (Log.isEnabled()) {
+                        FLog.w(TAG, "[REC] camera FPS follows encoder clamp: " + targetFrameRate
+                                + " -> " + encoderFps);
+                    }
+                    targetFrameRate = encoderFps;
+                }
+            } catch (Exception ignored) {
+            }
             
             // Apply streaming FPS cap only when server is actually ON
             boolean isStreamingForFps1 = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
@@ -7187,6 +7203,13 @@ public class RecordingService extends Service {
             return;
         }
 
+        // Durable, fsynced journal. The async HTML log loses its last 250 ms if the process dies
+        // during recorder setup; this file is how we will read the next Huawei report.
+        DiagnosticsStore.beginRecordingJournal(this, "recording-start-request state=" + recordingState
+                + " camera=" + sharedPreferencesManager.getCameraSelection()
+                + " codec=" + sharedPreferencesManager.getVideoCodec());
+        FLog.i(TAG, "[REC] ===== startRecording() requested =====");
+
         // Clear STREAM_ONLY temp file tracking from any previous session
         streamOnlyTempFiles.clear();
         streamOnlySafUris.clear();
@@ -7290,6 +7313,27 @@ public class RecordingService extends Service {
 
             String storageMode = sharedPreferencesManager.getStorageMode();
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
+
+            // One consolidated snapshot: every line a future report needs in order to identify
+            // a codec/size/fps/bitrate mismatch without guessing.
+            if (Log.isEnabled()) {
+                String startSnapshot = "camera=" + cameraType
+                        + " cameraId=" + cameraId
+                        + " sensorOrientation=" + sensorOrientation
+                        + " codec=" + selectedCodec
+                        + " mime=" + selectedCodec.getMimeType()
+                        + " res=" + videoWidth + "x" + videoHeight
+                        + " fps=" + videoFramerate
+                        + " bitrate=" + videoBitrate
+                        + " orientation=" + orientation
+                        + " streaming=" + isStreamingActive
+                        + " storage=" + storageMode
+                        + " splitBytes=" + splitSizeBytes
+                        + " audio=" + sharedPreferencesManager.isRecordAudioEnabled()
+                        + " previewSurface=" + (previewSurface != null && previewSurface.isValid());
+                FLog.i(TAG, "[REC] snapshot " + startSnapshot);
+                DiagnosticsStore.appendRecordingJournal(this, "[REC] snapshot " + startSnapshot);
+            }
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
                 String customUriString = sharedPreferencesManager.getCustomStorageUri();
                 if (customUriString == null) {
@@ -7429,8 +7473,32 @@ public class RecordingService extends Service {
             }
 
             createCameraPreviewSession();
+            DiagnosticsStore.endRecordingJournal(this, "[REC] RESULT=OK");
+            FLog.i(TAG, "[REC] ===== startRecording() complete =====");
         } catch (Exception e) {
-            FLog.e(TAG, "CRITICAL FAILURE IN startRecording", e);
+            String failureDetail = e.getClass().getName()
+                    + (e.getMessage() == null ? "" : ": " + e.getMessage());
+            if (Log.isEnabled()) {
+                FLog.e(TAG, "[REC] CRITICAL FAILURE IN startRecording | " + failureDetail, e);
+            }
+            DiagnosticsStore.appendRecordingJournal(this, "[REC] START FAILED | " + failureDetail);
+
+            // Encoder attempts are the useful part of a recorder failure; keep them separate
+            // from the Java stack so the dialog and the copied report are readable.
+            String encoderDiagnostics = null;
+            try {
+                if (glRecordingPipeline != null) {
+                    encoderDiagnostics = glRecordingPipeline.getEncoderDiagnostics();
+                }
+            } catch (Throwable ignored) {
+            }
+            if (encoderDiagnostics != null && !encoderDiagnostics.trim().isEmpty()) {
+                if (Log.isEnabled()) {
+                    FLog.e(TAG, "[REC] encoder diagnostics:\n" + encoderDiagnostics);
+                }
+                DiagnosticsStore.appendRecordingJournal(this,
+                        "[REC] encoder diagnostics:\n" + encoderDiagnostics);
+            }
 
             // Broadcast the failure to the UI with details
             java.io.StringWriter sw = new java.io.StringWriter();
@@ -7441,11 +7509,16 @@ public class RecordingService extends Service {
             Intent failureIntent = new Intent(Constants.ACTION_RECORDING_FAILED);
             failureIntent.putExtra(Constants.EXTRA_ERROR_MESSAGE, e.getMessage());
             failureIntent.putExtra(Constants.EXTRA_STACK_TRACE, stackTrace);
+            if (encoderDiagnostics != null && !encoderDiagnostics.trim().isEmpty()) {
+                failureIntent.putExtra(Constants.EXTRA_ENCODER_DIAGNOSTICS, encoderDiagnostics);
+            }
             try {
                 sendBroadcast(failureIntent);
             } catch (Throwable t) {
                 FLog.e(TAG, "Failed to broadcast recording failure", t);
             }
+            DiagnosticsStore.endRecordingJournal(this, "[REC] RESULT=FAIL | " + failureDetail);
+            Log.flushNow();
 
             // Clean up and stop the service
             recordingState = RecordingState.NONE;
