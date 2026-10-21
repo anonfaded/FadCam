@@ -2282,6 +2282,8 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="screen_rec_settings_subtitle">Ποιότητα, ήχος &amp; ρυθμίσεις εξόδου</string>
     <string name="screen_rec_resolution">Ανάλυση</string>
     <string name="screen_rec_framerate">Ρυθμός Καρέ</string>
+    <string name="screen_rec_codec">Κωδικοποιητής</string>
+    <string name="note_screen_codec">Επιλέξτε τον κωδικοποιητή εγγραφής οθόνης\n(Προεπιλογή: %1$s)\nΣυμβουλή: Το H.265 (HEVC) δίνει μικρότερα αρχεία στην ίδια ποιότητα. Αν η συσκευή δεν διαθέτει χρησιμοποιήσιμο κωδικοποιητή HEVC, το FadCam εγγράφει αυτόματα σε H.264.</string>
     <string name="screen_rec_bitrate">Ρυθμός Μετάδοσης</string>
     <string name="screen_rec_orientation">Προσανατολισμός</string>
     <string name="screen_rec_bitrate_mode_auto">Αυτόματο (VBR)</string>

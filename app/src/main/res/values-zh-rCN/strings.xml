@@ -3790,6 +3790,8 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 
 <!-- screen_rec_framerate -->
 <string name="screen_rec_framerate">帧率</string>
+    <string name="screen_rec_codec">编码格式</string>
+    <string name="note_screen_codec">选择屏幕录制编码格式\n（默认：%1$s）\n提示：H.265 (HEVC) 在相同画质下文件更小。如果此设备没有可用的 HEVC 编码器，FadCam 将自动使用 H.264 录制。</string>
 
 <!-- screen_rec_orientation -->
 <string name="screen_rec_orientation">方向</string>

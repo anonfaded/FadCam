@@ -53,7 +53,12 @@ public class ScreenRecordingPipeline {
     }
 
     private static final String TAG = "ScreenRecPipeline";
-    private static final String VIDEO_MIME_TYPE = "video/avc";
+    /**
+     * Requested codec for this session. Defaults to AVC; may be downgraded to AVC at
+     * encoder-init time when the device has no usable HEVC encoder.
+     */
+    private VideoCodec videoCodec;
+    private String videoMimeType;
     private static final int VIDEO_IFRAME_INTERVAL = 1;
     private static volatile boolean preferSoftwareAvcEncoder = false;
 
@@ -95,6 +100,8 @@ public class ScreenRecordingPipeline {
 
     // Cached formats for muxer recreation during segment rollover
     private MediaFormat cachedVideoFormat;
+    /** HEVC output format held back until csd-0 is available; null once registered. */
+    private MediaFormat pendingHevcFormat;
     private MediaFormat cachedAudioFormat;
 
     // Current output path/descriptor (mutable for rollover)
@@ -225,9 +232,19 @@ public class ScreenRecordingPipeline {
         private MediaProjection mediaProjection;
         private long maxFileSizeBytes = Long.MAX_VALUE;
         private SegmentCallback segmentCallback;
+        private VideoCodec videoCodec = VideoCodec.AVC;
 
         public Builder(Context context) {
             this.context = context.getApplicationContext();
+        }
+
+        /**
+         * Video codec for this session. The pipeline falls back to AVC when the device
+         * cannot open a HEVC encoder.
+         */
+        public Builder setVideoCodec(VideoCodec codec) {
+            this.videoCodec = (codec == null ? VideoCodec.AVC : codec);
+            return this;
         }
         
         public Builder setWatermarkInfoProvider(WatermarkInfoProvider provider) {
@@ -328,6 +345,8 @@ public class ScreenRecordingPipeline {
         this.mediaProjection = builder.mediaProjection;
         this.maxFileSizeBytes = builder.maxFileSizeBytes;
         this.segmentCallback = builder.segmentCallback;
+        this.videoCodec = builder.videoCodec;
+        this.videoMimeType = builder.videoCodec.getMimeType();
         this.currentOutputFilePath = builder.outputFilePath;
         this.currentOutputFd = builder.outputFd;
         
@@ -421,11 +440,27 @@ public class ScreenRecordingPipeline {
      * Initialize MediaCodec video encoder
      */
     private void initializeVideoEncoder() throws IOException {
+        try {
+            initializeVideoEncoderFor(videoMimeType);
+        } catch (IOException e) {
+            if (videoCodec != VideoCodec.HEVC) {
+                throw e;
+            }
+            // No usable HEVC encoder on this device — record in H.264 instead of failing
+            // the session. The user still gets a working recording, and the log says why.
+            FLog.w(TAG, "HEVC encoder unavailable — falling back to H.264 for this recording");
+            videoCodec = VideoCodec.AVC;
+            videoMimeType = VideoCodec.AVC.getMimeType();
+            initializeVideoEncoderFor(videoMimeType);
+        }
+    }
+
+    private void initializeVideoEncoderFor(String mimeType) throws IOException {
         IOException lastException = null;
 
         int[][] candidates = buildEncoderSizeCandidates(displayWidth, displayHeight);
         FLog.i(TAG, "Encoder init start: display=" + displayWidth + "x" + displayHeight
-                + " preferSoftware=" + preferSoftwareAvcEncoder);
+                + " codec=" + videoCodec + " preferSoftware=" + preferSoftwareAvcEncoder);
 
         if (!preferSoftwareAvcEncoder) {
             // First-start churn was coming from retrying hardware across many resolutions.
@@ -434,20 +469,31 @@ public class ScreenRecordingPipeline {
             int candidateWidth = candidates[0][0];
             int candidateHeight = candidates[0][1];
             try {
-                MediaCodec encoder = MediaCodec.createEncoderByType(VIDEO_MIME_TYPE);
+                MediaCodec encoder = MediaCodec.createEncoderByType(mimeType);
                 configureVideoEncoder(encoder, false, candidateWidth, candidateHeight);
 
                 videoEncoder = encoder;
                 screenWidth = candidateWidth;
                 screenHeight = candidateHeight;
 
-                FLog.i(TAG, "Hardware H.264 encoder initialized: " + screenWidth + "x" + screenHeight);
+                FLog.i(TAG, "Hardware " + videoCodec + " encoder initialized: "
+                        + screenWidth + "x" + screenHeight);
                 return;
             } catch (Exception e) {
                 lastException = new IOException("Hardware encoder failed for " + candidateWidth + "x" + candidateHeight, e);
-                preferSoftwareAvcEncoder = true;
+                // Only remember the preference for AVC. A HEVC failure must not force the
+                // AVC fallback path to skip its own hardware encoder.
+                if (VideoCodec.AVC.getMimeType().equals(mimeType)) {
+                    preferSoftwareAvcEncoder = true;
+                }
                 FLog.w(TAG, "Hardware encoder failed for " + candidateWidth + "x" + candidateHeight + ": " + e.getMessage());
             }
+        }
+
+        // Software encoders exist for AVC. HEVC reaches here only when its hardware encoder
+        // failed; initializeVideoEncoder() then retries the whole path with AVC.
+        if (!VideoCodec.AVC.getMimeType().equals(mimeType)) {
+            throw new IOException("No hardware " + videoCodec + " encoder available", lastException);
         }
 
         // Fallback to software encoder (more flexible). Prefer the largest (scale 1.0) size.
@@ -459,7 +505,7 @@ public class ScreenRecordingPipeline {
             try {
                 MediaCodec encoder = softwareCodecName != null
                         ? MediaCodec.createByCodecName(softwareCodecName)
-                        : MediaCodec.createEncoderByType(VIDEO_MIME_TYPE);
+                        : MediaCodec.createEncoderByType(mimeType);
                 configureVideoEncoder(encoder, true, candidateWidth, candidateHeight);
 
                 videoEncoder = encoder;
@@ -486,7 +532,7 @@ public class ScreenRecordingPipeline {
                     continue;
                 }
                 for (String type : info.getSupportedTypes()) {
-                    if (VIDEO_MIME_TYPE.equalsIgnoreCase(type) && info.isSoftwareOnly()) {
+                    if (VideoCodec.AVC.getMimeType().equalsIgnoreCase(type) && info.isSoftwareOnly()) {
                         return info.getName();
                     }
                 }
@@ -508,14 +554,17 @@ public class ScreenRecordingPipeline {
             effectiveBitrate = (int) Math.max(500_000L, (videoBitrate * encoderPixels) / displayPixels);
         }
 
-        MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME_TYPE, width, height);
+        MediaFormat format = MediaFormat.createVideoFormat(videoMimeType, width, height);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         format.setInteger(MediaFormat.KEY_BIT_RATE, effectiveBitrate);
         format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VIDEO_IFRAME_INTERVAL);
 
-        // Baseline profile for maximum compatibility
-        format.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline);
+        // Baseline profile for maximum compatibility. Only meaningful for AVC — HEVC
+        // encoders pick their own level, and forcing a profile can be rejected.
+        if (VideoCodec.AVC.getMimeType().equals(videoMimeType)) {
+            format.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline);
+        }
 
         // Bitrate mode: VBR for quality, CBR for consistent bitrate
         format.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR);
@@ -956,15 +1005,52 @@ public class ScreenRecordingPipeline {
                 // Muxer setup
                 MediaFormat newFormat = videoEncoder.getOutputFormat();
                 cachedVideoFormat = newFormat; // Cache for rollover
-                videoTrackIndex = mediaMuxer.addTrack(newFormat);
-
-                tryStartMuxer();
+                pendingHevcFormat = null;
+                if (needsDeferredCsdRegistration(newFormat)) {
+                    // Some HEVC encoders omit csd-0 from the output format. Registering the
+                    // track now would write a moov without hvcC and the file would not play,
+                    // so wait for the codec-config buffer (or the first IDR) instead.
+                    pendingHevcFormat = newFormat;
+                    FLog.w(TAG, "[HEVC-CSD] csd-0 missing from encoder output — deferring track registration");
+                } else {
+                    videoTrackIndex = mediaMuxer.addTrack(newFormat);
+                    tryStartMuxer();
+                }
 
             } else if (outputBufferIndex >= 0) {
                 ByteBuffer outputBuffer = videoEncoder.getOutputBuffer(outputBufferIndex);
 
                 if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                    if (pendingHevcFormat != null && bufferInfo.size > 0) {
+                        byte[] csd = new byte[bufferInfo.size];
+                        outputBuffer.position(bufferInfo.offset);
+                        outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
+                        outputBuffer.get(csd);
+                        pendingHevcFormat.setByteBuffer("csd-0", ByteBuffer.wrap(csd));
+                        cachedVideoFormat = pendingHevcFormat;
+                        videoTrackIndex = mediaMuxer.addTrack(pendingHevcFormat);
+                        pendingHevcFormat = null;
+                        FLog.i(TAG, "[HEVC-CSD] Track registered from codec config ("
+                                + csd.length + " bytes)");
+                        tryStartMuxer();
+                    }
                     bufferInfo.size = 0;
+                } else if (pendingHevcFormat != null
+                        && (bufferInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0
+                        && bufferInfo.size > 0) {
+                    // No codec-config buffer arrived — pull VPS/SPS/PPS out of the IDR.
+                    ByteBuffer csd = extractHevcCsd(outputBuffer, bufferInfo.offset, bufferInfo.size);
+                    if (csd != null) {
+                        pendingHevcFormat.setByteBuffer("csd-0", csd);
+                        cachedVideoFormat = pendingHevcFormat;
+                        videoTrackIndex = mediaMuxer.addTrack(pendingHevcFormat);
+                        pendingHevcFormat = null;
+                        FLog.i(TAG, "[HEVC-CSD] Track registered from keyframe ("
+                                + csd.remaining() + " bytes)");
+                        tryStartMuxer();
+                    } else {
+                        FLog.e(TAG, "[HEVC-CSD] Could not extract parameter sets from keyframe");
+                    }
                 }
 
                 if (bufferInfo.size > 0 && muxerStarted && !isPaused) {
@@ -1205,6 +1291,77 @@ public class ScreenRecordingPipeline {
     /**
      * Try to start muxer when all tracks are ready
      */
+    /** True when this is HEVC and the encoder's output format carries no csd-0. */
+    private boolean needsDeferredCsdRegistration(MediaFormat format) {
+        return VideoCodec.HEVC.getMimeType().equals(videoMimeType)
+                && format != null
+                && !format.containsKey("csd-0");
+    }
+
+    /**
+     * Extracts HEVC parameter sets (VPS 32 / SPS 33 / PPS 34) from an Annex-B IDR frame
+     * so they can be used as csd-0. Returns null when none are found.
+     */
+    private static ByteBuffer extractHevcCsd(ByteBuffer buffer, int offset, int size) {
+        if (buffer == null || size <= 8) {
+            return null;
+        }
+        try {
+            byte[] data = new byte[size];
+            int savedPosition = buffer.position();
+            int savedLimit = buffer.limit();
+            buffer.position(offset);
+            buffer.limit(offset + size);
+            buffer.get(data);
+            buffer.position(savedPosition);
+            buffer.limit(savedLimit);
+
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            int i = 0;
+            while (i + 4 < data.length) {
+                int startLen;
+                if (data[i] == 0 && data[i + 1] == 0 && data[i + 2] == 1) {
+                    startLen = 3;
+                } else if (i + 4 <= data.length && data[i] == 0 && data[i + 1] == 0
+                        && data[i + 2] == 0 && data[i + 3] == 1) {
+                    startLen = 4;
+                } else {
+                    i++;
+                    continue;
+                }
+                int nalStart = i + startLen;
+                if (nalStart >= data.length) {
+                    break;
+                }
+                int nalType = (data[nalStart] >> 1) & 0x3F;
+                int j = nalStart;
+                while (j + 3 < data.length) {
+                    if (data[j] == 0 && data[j + 1] == 0
+                            && (data[j + 2] == 1
+                                || (data[j + 2] == 0 && data[j + 3] == 1))) {
+                        break;
+                    }
+                    j++;
+                }
+                int end = Math.min(j, data.length);
+                if (nalType == 32 || nalType == 33 || nalType == 34) {
+                    out.write(data, i, end - i);
+                }
+                i = end;
+            }
+            if (out.size() == 0) {
+                return null;
+            }
+            ByteBuffer csd = ByteBuffer.allocate(out.size());
+            csd.put(out.toByteArray());
+            csd.flip();
+            return csd;
+        } catch (Exception e) {
+            FLog.w(TAG, "[HEVC-CSD] Extraction failed: " + e.getMessage());
+            return null;
+        }
+    }
+
     private void tryStartMuxer() {
         boolean videoReady = videoTrackIndex >= 0;
         boolean audioReady = !enableAudio || audioTrackIndex >= 0;

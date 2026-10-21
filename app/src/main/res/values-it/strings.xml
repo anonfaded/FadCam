@@ -2144,6 +2144,8 @@
     <string name="screen_rec_settings_subtitle">Qualità e FPS</string>
     <string name="screen_rec_resolution">Risoluzione</string>
     <string name="screen_rec_framerate">FPS</string>
+    <string name="screen_rec_codec">Codec</string>
+    <string name="note_screen_codec">Scegli il codec per la registrazione dello schermo\n(Predefinito: %1$s)\nSuggerimento: H.265 (HEVC) produce file più piccoli a parità di qualità. Se questo dispositivo non dispone di un encoder HEVC utilizzabile, FadCam registra automaticamente in H.264.</string>
     <string name="screen_rec_bitrate">Bitrate</string>
     <string name="screen_rec_orientation">Orientamento</string>
     <string name="screen_rec_bitrate_mode_auto">Auto</string>

@@ -3770,6 +3770,8 @@
     <string name="screen_rec_resolution">الدقة</string>
 
     <string name="screen_rec_framerate">معدل الإطارات</string>
+    <string name="screen_rec_codec">الترميز</string>
+    <string name="note_screen_codec">اختر ترميز تسجيل الشاشة\n(الافتراضي: %1$s)\nملاحظة: يوفر H.265 (HEVC) ملفات أصغر بنفس الجودة. إذا لم يكن لدى هذا الجهاز مُرمِّز HEVC صالح، فسيسجل FadCam بصيغة H.264 تلقائيًا.</string>
 
     <string name="screen_rec_bitrate">معدل البت</string>
 

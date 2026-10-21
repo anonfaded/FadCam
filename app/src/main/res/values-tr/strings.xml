@@ -1019,6 +1019,8 @@
     <string name="screen_rec_settings_subtitle">Kalite, ses ve çıktı ayarları</string>
     <string name="screen_rec_resolution">Çözünürlük</string>
     <string name="screen_rec_framerate">Kare Hızı</string>
+    <string name="screen_rec_codec">Kodek</string>
+    <string name="note_screen_codec">Ekran kaydı kodekini seçin\n(Varsayılan: %1$s)\nİpucu: H.265 (HEVC) aynı kalitede daha küçük dosyalar üretir. Bu cihazda kullanılabilir bir HEVC kodlayıcı yoksa FadCam otomatik olarak H.264 ile kaydeder.</string>
     <string name="screen_rec_bitrate">Bit Hızı</string>
     <string name="screen_rec_orientation">Yön</string>
     <string name="screen_rec_bitrate_mode_auto">Otomatik (VBR)</string>

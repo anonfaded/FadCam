@@ -2097,6 +2097,8 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="screen_rec_bitrate_mode_manual">Manuell (CBR)</string>
     <string name="screen_rec_bitrate_range">1 \u2013 50 Mbps</string>
     <string name="screen_rec_framerate">Bildrate</string>
+    <string name="screen_rec_codec">Codec</string>
+    <string name="note_screen_codec">Wähle den Codec für die Bildschirmaufnahme\n(Standard: %1$s)\nTipp: H.265 (HEVC) erzeugt bei gleicher Qualität kleinere Dateien. Hat dieses Gerät keinen nutzbaren HEVC-Encoder, nimmt FadCam automatisch in H.264 auf.</string>
     <string name="screen_rec_orientation">Ausrichtung</string>
     <string name="screen_rec_orientation_landscape">Querformat</string>
     <string name="screen_rec_orientation_portrait">Hochformat</string>

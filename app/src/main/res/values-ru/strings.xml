@@ -2991,6 +2991,8 @@ FadCam использует фрагментированный формат MP4 
     <string name="screen_rec_settings_subtitle">Качество, аудио и настройки вывода</string>
     <string name="screen_rec_resolution">Разрешение</string>
     <string name="screen_rec_framerate">Частота кадров</string>
+    <string name="screen_rec_codec">Кодек</string>
+    <string name="note_screen_codec">Выберите кодек записи экрана\n(По умолчанию: %1$s)\nСовет: H.265 (HEVC) даёт файлы меньшего размера при том же качестве. Если на устройстве нет рабочего кодировщика HEVC, FadCam автоматически запишет в H.264.</string>
     <string name="screen_rec_bitrate">Битрейт</string>
     <string name="screen_rec_orientation">Ориентация</string>
     <string name="screen_rec_bitrate_mode_auto">Авто (VBR)</string>

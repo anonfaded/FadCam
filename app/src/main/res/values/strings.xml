@@ -2441,6 +2441,9 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="screen_rec_settings_subtitle">Quality, audio &amp; output settings</string>
     <string name="screen_rec_resolution">Resolution</string>
     <string name="screen_rec_framerate">Frame Rate</string>
+    <string name="screen_rec_codec">Codec</string>
+    <string name="screen_rec_codec_value" translatable="false">H.264</string>
+    <string name="note_screen_codec">Choose the screen recording codec\n(Default: %1$s)\nTip: H.265 (HEVC) gives smaller files at the same quality. If this device has no usable HEVC encoder, FadCam records in H.264 automatically.</string>
     <string name="screen_rec_bitrate">Bitrate</string>
     <string name="screen_rec_orientation">Orientation</string>
     <string name="screen_rec_bitrate_mode_auto">Auto (VBR)</string>

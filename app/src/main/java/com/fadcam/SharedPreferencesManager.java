@@ -2840,6 +2840,32 @@ public class SharedPreferencesManager {
     }
 
     /**
+     * Gets the screen recording video codec. Defaults to H.264: it is the only codec with a
+     * guaranteed software fallback, so a fresh install can always record.
+     */
+    public VideoCodec getScreenRecordingCodec() {
+        String saved = sharedPreferences.getString(
+            Constants.PREF_SCREEN_RECORDING_CODEC,
+            VideoCodec.AVC.name()
+        );
+        try {
+            return VideoCodec.valueOf(saved);
+        } catch (Exception e) {
+            return VideoCodec.AVC;
+        }
+    }
+
+    /**
+     * Sets the screen recording video codec preference.
+     */
+    public void setScreenRecordingCodec(VideoCodec codec) {
+        sharedPreferences.edit()
+            .putString(Constants.PREF_SCREEN_RECORDING_CODEC,
+                (codec == null ? VideoCodec.AVC : codec).name())
+            .apply();
+    }
+
+    /**
      * Gets the screen recording bitrate from preferences.
      */
     public int getScreenRecordingBitrate() {

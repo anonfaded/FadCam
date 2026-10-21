@@ -56,6 +56,7 @@ public class ScreenRecordingSettingsFragment extends Fragment {
     private SharedPreferencesManager prefs;
     private TextView valueResolution;
     private TextView valueFrameRate;
+    private TextView valueCodec;
     private TextView valueBitrate;
     private TextView valueOrientation;
     private TextView valueAudioSource;
@@ -76,6 +77,7 @@ public class ScreenRecordingSettingsFragment extends Fragment {
 
         valueResolution = view.findViewById(R.id.value_resolution);
         valueFrameRate = view.findViewById(R.id.value_framerate);
+        valueCodec = view.findViewById(R.id.value_codec);
         valueBitrate = view.findViewById(R.id.value_bitrate);
         valueOrientation = view.findViewById(R.id.value_orientation);
         valueAudioSource = view.findViewById(R.id.value_audio_source);
@@ -104,6 +106,7 @@ public class ScreenRecordingSettingsFragment extends Fragment {
     private void bindRowHandlers(View root) {
         root.findViewById(R.id.row_resolution).setOnClickListener(v -> showResolutionPicker());
         root.findViewById(R.id.row_framerate).setOnClickListener(v -> showFrameRatePicker());
+        root.findViewById(R.id.row_codec).setOnClickListener(v -> showCodecPicker());
         root.findViewById(R.id.row_bitrate).setOnClickListener(v -> showBitrateModePicker());
         root.findViewById(R.id.row_orientation).setOnClickListener(v -> showOrientationPicker());
         root.findViewById(R.id.row_audio_source).setOnClickListener(v -> showAudioSourcePicker());
@@ -119,6 +122,10 @@ public class ScreenRecordingSettingsFragment extends Fragment {
 
         int fps = prefs.getScreenRecordingFrameRate();
         valueFrameRate.setText(fps + " fps");
+
+        if (valueCodec != null) {
+            valueCodec.setText(prefs.getScreenRecordingCodec().toString());
+        }
 
         if (valueBitrate != null) {
             int br = prefs.getScreenRecordingBitrate();
@@ -171,6 +178,49 @@ public class ScreenRecordingSettingsFragment extends Fragment {
     }
 
     // ── Resolution: dynamically queried from device display ──
+
+    /**
+     * Codec picker — same component and row styling as the camera Video settings.
+     * Only codecs the device can actually encode are offered; H.264 stays the default.
+     */
+    private void showCodecPicker() {
+        com.fadcam.VideoCodec saved = prefs.getScreenRecordingCodec();
+        List<com.fadcam.VideoCodec> codecs = getCompatibleScreenCodecs();
+        ArrayList<OptionItem> items = new ArrayList<>();
+        for (com.fadcam.VideoCodec c : codecs) {
+            items.add(new OptionItem(c.toString(), c.toString()));
+        }
+        final String currentId = saved.toString();
+        final String resultKey = "picker_result_screen_codec";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
+            String sel = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (sel != null && !sel.equals(currentId)) {
+                try {
+                    prefs.setScreenRecordingCodec(com.fadcam.VideoCodec.valueOf(sel));
+                } catch (Exception e) {
+                    FLog.w(TAG, "Invalid screen recording codec selection: " + sel);
+                }
+                refreshValues();
+            }
+        });
+        String helper = getString(R.string.note_screen_codec, saved.toString());
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
+                getString(R.string.setting_codec_title), items, currentId, resultKey, helper);
+        sheet.show(getParentFragmentManager(), "screen_codec_picker");
+    }
+
+    private List<com.fadcam.VideoCodec> getCompatibleScreenCodecs() {
+        List<com.fadcam.VideoCodec> codecs = new ArrayList<>();
+        for (com.fadcam.VideoCodec c : com.fadcam.VideoCodec.values()) {
+            if (com.fadcam.Utils.isCodecSupported(c.getMimeType())) {
+                codecs.add(c);
+            }
+        }
+        if (codecs.isEmpty()) {
+            codecs.add(com.fadcam.VideoCodec.AVC);
+        }
+        return codecs;
+    }
 
     private void showResolutionPicker() {
         if (!isAdded() || getActivity() == null) return;

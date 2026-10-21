@@ -546,6 +546,7 @@ public class ScreenRecordingService extends Service {
                 .setEnableAudio(enableAudio)
                 .setAudioSource(audioSource)
                 .setMediaProjection(mediaProjection)
+                .setVideoCodec(sharedPreferencesManager.getScreenRecordingCodec())
                 .setWatermarkInfoProvider(createWatermarkInfoProvider());
 
             // Use FileDescriptor for SAF mode, file path for internal storage

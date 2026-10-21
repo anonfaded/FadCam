@@ -2196,6 +2196,8 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="screen_rec_settings_subtitle">Kvaliteet, heli ja väljundi seaded</string>
     <string name="screen_rec_resolution">Eraldusvõime</string>
     <string name="screen_rec_framerate">Kaadrisagedus</string>
+    <string name="screen_rec_codec">Koodek</string>
+    <string name="note_screen_codec">Vali ekraanikirje koodek\n(Vaikimisi: %1$s)\nNäpunäide: H.265 (HEVC) annab sama kvaliteedi juures väiksemad failid. Kui seadmes pole kasutatavat HEVC-kooderit, salvestab FadCam automaatselt H.264-s.</string>
     <string name="screen_rec_bitrate">Bitikiirus</string>
     <string name="screen_rec_orientation">Suund</string>
     <string name="screen_rec_bitrate_mode_auto">Automaatne (VBR)</string>
