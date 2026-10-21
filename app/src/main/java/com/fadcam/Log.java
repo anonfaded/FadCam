@@ -43,7 +43,10 @@ public class Log {
     private static Uri fileUri;
 
     private static boolean isDebugEnabled = false;
-    
+
+    /** Previous-run diagnostics are consumed into the log exactly once per process. */
+    private static volatile boolean diagnosticsIngested = false;
+
     // Recording state (used for markers in the debug log)
     private static volatile boolean recordingActive = false;
 
@@ -87,9 +90,53 @@ public class Log {
                                 + ", Android=" + Build.VERSION.RELEASE
                                 + " (API " + Build.VERSION.SDK_INT + ")</font>"
                         );
+                        // Surface why the PREVIOUS process died (native crash / ANR / LMK).
+                        // Captured to a file in Application.onCreate, before this sink existed.
+                        ingestPreviousRunDiagnostics(context);
                     });
                 }
             }
+        }
+    }
+
+    /**
+     * Appends the previous process' death record (exit reason + trace) and any fatal exception
+     * captured by the crash handler. Consumes the files so each death appears once.
+     *
+     * <p>Runs only once per process and only after the async log worker is live.
+     */
+    private static void ingestPreviousRunDiagnostics(Context ctx) {
+        if (ctx == null || diagnosticsIngested) {
+            return;
+        }
+        diagnosticsIngested = true;
+        try {
+            String block = DiagnosticsStore.consumeForDossier(ctx);
+            if (block == null || block.isEmpty()) {
+                return;
+            }
+            boolean inCrashBlock = false;
+            for (String raw : block.split("\n")) {
+                String line = raw.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                if (line.startsWith("SYSTEM:")) {
+                    inCrashBlock = false;
+                    appendHtmlToFile(buildLogEntry(
+                            "system", "PreviousRun", line.substring("SYSTEM:".length()).trim()));
+                } else if (line.startsWith("ERROR:")) {
+                    inCrashBlock = true;
+                    appendHtmlToFile(buildLogEntry(
+                            "error", "PreviousRun", line.substring("ERROR:".length()).trim()));
+                } else {
+                    // Continuation: stack frames belong to the crash block above them.
+                    appendHtmlToFile(buildLogEntry(
+                            inCrashBlock ? "error" : "system", "PreviousRun", line));
+                }
+            }
+        } catch (Throwable t) {
+            android.util.Log.w(TAG, "ingestPreviousRunDiagnostics failed", t);
         }
     }
 
@@ -99,6 +146,9 @@ public class Log {
             // Ensure the single log file exists; do NOT wipe it. We keep a rolling window via trim.
             createHtmlFile(context, DEBUG_FILE_NAME);
             startWorkerIfNeeded();
+            if (logHandler != null) {
+                logHandler.post(() -> ingestPreviousRunDiagnostics(context));
+            }
         } else {
             stopWorkerAndFlush();
         }

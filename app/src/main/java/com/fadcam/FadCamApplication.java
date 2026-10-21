@@ -13,7 +13,9 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
     public void onCreate() {
         super.onCreate();
         installCrashLogger();
-        reportPreviousExitReasons();
+        // Must run before Log.init(): the HTML log sink does not exist this early, which is
+        // exactly why the previous exit reason used to be written into the void.
+        DiagnosticsStore.captureExitReasons(this);
         com.fadcam.services.UpdateCheckService.init(this);
         ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
         // Room DB open + invalidation observer registration is deferred off the
@@ -24,91 +26,10 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
     }
 
     /**
-     * Reports why the PREVIOUS process instance died, using the platform's own
-     * {@link android.app.ApplicationExitInfo} records (API 30+).
-     *
-     * <p>A Java {@link Thread.UncaughtExceptionHandler} only sees uncaught Java exceptions. Native
-     * crashes (SIGSEGV in a codec/GL library), ANRs and low-memory kills terminate the process
-     * without ever reaching Java code — which is exactly why a tester's in-app dossier can end
-     * mid-sentence with no stack. The platform keeps the exit reason plus, where available, the
-     * tombstone/ANR trace; reading it on the next start is the standard way to capture those.
-     */
-    private void reportPreviousExitReasons() {
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
-            return;
-        }
-        try {
-            android.app.ActivityManager am =
-                    (android.app.ActivityManager) getSystemService(ACTIVITY_SERVICE);
-            if (am == null) {
-                return;
-            }
-            java.util.List<android.app.ApplicationExitInfo> history =
-                    am.getHistoricalProcessExitReasons(getPackageName(), 0, 5);
-            for (android.app.ApplicationExitInfo info : history) {
-                int reason = info.getReason();
-                if (reason == android.app.ApplicationExitInfo.REASON_EXIT_SELF
-                        || reason == android.app.ApplicationExitInfo.REASON_USER_REQUESTED) {
-                    continue; // normal termination
-                }
-                String describe = info.getDescription() != null ? info.getDescription() : "";
-                FLog.w("ExitInfo", "Previous process death: reason=" + reason
-                        + " (" + exitReasonName(reason) + ")"
-                        + " | status=" + info.getStatus()
-                        + " | description=" + describe
-                        + " | at=" + new java.util.Date(info.getTimestamp()));
-                try (java.io.InputStream trace = info.getTraceInputStream()) {
-                    if (trace != null) {
-                        java.io.BufferedReader reader = new java.io.BufferedReader(
-                                new java.io.InputStreamReader(trace));
-                        StringBuilder sb = new StringBuilder();
-                        String line;
-                        int lines = 0;
-                        while ((line = reader.readLine()) != null && lines < 120) {
-                            sb.append(line).append('\n');
-                            lines++;
-                        }
-                        if (sb.length() > 0) {
-                            FLog.w("ExitInfo", "Trace for previous exit (" + exitReasonName(reason)
-                                    + "):\n" + sb);
-                        }
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-        } catch (Exception e) {
-            FLog.w("ExitInfo", "Could not read process exit history: " + e.getMessage());
-        }
-    }
-
-    private static String exitReasonName(int reason) {
-        switch (reason) {
-            case android.app.ApplicationExitInfo.REASON_CRASH:
-                return "JAVA_CRASH";
-            case android.app.ApplicationExitInfo.REASON_CRASH_NATIVE:
-                return "NATIVE_CRASH";
-            case android.app.ApplicationExitInfo.REASON_ANR:
-                return "ANR";
-            case android.app.ApplicationExitInfo.REASON_LOW_MEMORY:
-                return "LOW_MEMORY_KILL";
-            case android.app.ApplicationExitInfo.REASON_SIGNALED:
-                return "SIGNALED";
-            case android.app.ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE:
-                return "EXCESSIVE_RESOURCE_USAGE";
-            case android.app.ApplicationExitInfo.REASON_OTHER:
-                return "OTHER";
-            case android.app.ApplicationExitInfo.REASON_INITIALIZATION_FAILURE:
-                return "INIT_FAILURE";
-            default:
-                return "UNKNOWN";
-        }
-    }
-
-    /**
-     * Captures uncaught exceptions into the app's own log (FLog) and a cache
+     * Captures uncaught exceptions into the app's own log (FLog) and a durable
      * file, then delegates to the platform handler so logcat still records the
-     * crash. This makes remote-tester crash reports visible in the in-app
-     * debug dossier instead of only in `adb logcat`.
+     * crash. The file is ingested into the debug dossier on the next launch, so
+     * remote testers never need adb.
      */
     private void installCrashLogger() {
         final Thread.UncaughtExceptionHandler previous =
@@ -120,11 +41,8 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
                 String stack = sw.toString();
                 FLog.e("CrashLogger", "FATAL EXCEPTION on thread '" + thread.getName()
                         + "'\n" + stack);
-                java.io.File crashFile = new java.io.File(getCacheDir(), "last_crash.txt");
-                try (java.io.FileWriter fw = new java.io.FileWriter(crashFile, false)) {
-                    fw.write("Thread: " + thread.getName() + "\n\n" + stack);
-                } catch (Exception ignored) {
-                }
+                // filesDir, not cacheDir: a cache wipe would erase the only record of the crash.
+                DiagnosticsStore.recordCrash(this, thread.getName(), stack);
             } catch (Exception ignored) {
             }
             if (previous != null) {
