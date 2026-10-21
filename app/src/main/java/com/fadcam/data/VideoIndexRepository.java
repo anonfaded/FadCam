@@ -42,6 +42,9 @@ public class VideoIndexRepository {
 
     private static final String TAG = "VideoIndexRepository";
 
+    /** Rate limit for the "single row re-indexed" diagnostic (write-loop signature). */
+    private static volatile long lastReindexLogMs = 0L;
+
     /** Singleton instance. */
     private static volatile VideoIndexRepository instance;
 
@@ -233,7 +236,14 @@ public class VideoIndexRepository {
                 // New file — not in DB
                 toInsert.add(diskEntity);
             } else if (diskEntity.lastModified != dbRow.last_modified || diskEntity.fileSize != dbRow.file_size) {
-                // Changed file — re-index (will replace via REPLACE strategy)
+                // Changed file — re-index (will replace via REPLACE strategy).
+                // REPLACE wipes every column we do not carry over, including the
+                // hybrid-finalization state. Preserve it: a repair itself changes
+                // the file size, so resetting finalized to "pending" here is what
+                // makes the self-healing scan re-repair the same file forever
+                // (issue #357). Content columns are still refreshed from disk.
+                diskEntity.finalized = dbRow.finalized;
+                diskEntity.retryAfter = dbRow.retry_after;
                 toInsert.add(diskEntity);
             }
             // Else: unchanged — skip
@@ -243,6 +253,19 @@ public class VideoIndexRepository {
         for (String dbUri : dbUris) {
             if (!diskMap.containsKey(dbUri)) {
                 toDelete.add(dbUri);
+            }
+        }
+
+        // A single re-indexed row repeating on every scan is the signature of a
+        // write loop (issue #357). Name it, but rate-limit so a loop cannot flood
+        // the dossier.
+        if (toInsert.size() == 1) {
+            long now = System.currentTimeMillis();
+            if (now - lastReindexLogMs > 5000L) {
+                lastReindexLogMs = now;
+                VideoIndexEntity e = toInsert.get(0);
+                FLog.d(TAG, "Delta scan re-indexed: " + e.uriString
+                        + " size=" + e.fileSize + " finalized=" + e.finalized);
             }
         }
 
@@ -279,16 +302,24 @@ public class VideoIndexRepository {
     public List<VideoItem> forceFullReindex(@NonNull SharedPreferencesManager prefs) {
         long start = System.currentTimeMillis();
 
-        // Save existing enrichment data before modifying the DB
+        // Save existing enrichment + repair state before modifying the DB
         Map<String, long[]> enrichmentData = new HashMap<>();
+        Map<String, long[]> repairState = new HashMap<>();
         try {
             List<VideoIndexEntity> existing = dao.getAllNewestFirst();
             for (VideoIndexEntity e : existing) {
                 if (e.durationResolved) {
                     enrichmentData.put(e.uriString, new long[]{e.durationMs, 1});
                 }
+                // deleteAll() + re-insert resets finalized to 0, which would make
+                // every file pending again and let the self-healing scan re-repair
+                // files that are already good (issue #357).
+                if (e.finalized != 0 || e.retryAfter != 0) {
+                    repairState.put(e.uriString, new long[]{e.finalized, e.retryAfter});
+                }
             }
-            FLog.d(TAG, "Preserved enrichment data for " + enrichmentData.size() + " items");
+            FLog.d(TAG, "Preserved enrichment for " + enrichmentData.size()
+                    + " items, repair state for " + repairState.size());
         } catch (Exception e) {
             FLog.w(TAG, "Failed to read existing enrichment data (non-fatal)", e);
         }
@@ -304,6 +335,17 @@ public class VideoIndexRepository {
                 if (saved != null) {
                     entity.durationMs = saved[0];
                     entity.durationResolved = true;
+                }
+            }
+        }
+
+        // Restore repair state (see above)
+        if (!repairState.isEmpty()) {
+            for (VideoIndexEntity entity : scanned) {
+                long[] saved = repairState.get(entity.uriString);
+                if (saved != null) {
+                    entity.finalized = (int) saved[0];
+                    entity.retryAfter = saved[1];
                 }
             }
         }

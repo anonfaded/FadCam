@@ -1186,7 +1186,20 @@ public class RecordingService extends Service {
             final android.content.Context app = context.getApplicationContext();
             final SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(app);
             // Never scan while a recording is active — its file may be mid-write.
+            // FadCam's camera recorder owns isRecordingInProgress().
             if (prefs.isRecordingInProgress()) {
+                if (onDone != null) onDone.run();
+                return;
+            }
+            // Screen recording keeps its own state (it never sets isRecordingInProgress),
+            // so it must be checked separately — otherwise the scan can finalize a file
+            // that is still being written (issue #357).
+            //
+            // FadMic (coming soon) must register its own recording state and be added
+            // to this guard for exactly the same reason.
+            final String screenState = prefs.getScreenRecordingState();
+            if ("IN_PROGRESS".equals(screenState) || "PAUSED".equals(screenState)) {
+                FLog.d(TAG, "Self-healing scan skipped: screen recording is " + screenState);
                 if (onDone != null) onDone.run();
                 return;
             }
@@ -1229,6 +1242,15 @@ public class RecordingService extends Service {
             if (onDone != null) onDone.run();
         }
     }
+
+    /**
+     * URIs already attempted in this process. A second attempt is always refused:
+     * the finalizer is idempotent, so one pass is enough, and refusing a second one
+     * makes a repair loop impossible even if another path regresses (issue #357 —
+     * the same file was repaired 4× in 5.7 s because each write reset the DB state).
+     */
+    private static final java.util.Set<String> REPAIR_ATTEMPTED_THIS_PROCESS =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private static final java.util.concurrent.atomic.AtomicBoolean scanRunning =
             new java.util.concurrent.atomic.AtomicBoolean(false);
@@ -1298,8 +1320,21 @@ public class RecordingService extends Service {
                             if (IN_FLIGHT_FINALIZATIONS.contains(uriString)) {
                                 continue;
                             }
+                            if (!REPAIR_ATTEMPTED_THIS_PROCESS.add(uriString)) {
+                                // Normally unreachable now that the index preserves repair
+                                // state; kept as a hard stop so a future regression cannot
+                                // loop on the same file again.
+                                FLog.e(TAG, "Self-healing: already attempted " + uriString
+                                        + " in this session — refusing to touch it again");
+                                continue;
+                            }
                             android.net.Uri uri = android.net.Uri.parse(uriString);
                             String scheme = uri.getScheme();
+                            long attemptStartMs = System.currentTimeMillis();
+                            // Size before/after is the definitive write-loop evidence:
+                            // a repair must never grow a file it did not convert.
+                            long sizeBefore = -1L;
+                            long sizeAfter = -1L;
                             int result;
                             if ("file".equals(scheme)) {
                                 java.io.File f = new java.io.File(uri.getPath());
@@ -1307,6 +1342,7 @@ public class RecordingService extends Service {
                                     repo.markUnrepairableWithRetry(uriString, retryAfter);
                                     continue;
                                 }
+                                sizeBefore = f.length();
                                 java.nio.channels.FileChannel ch =
                                         new java.io.RandomAccessFile(f, "rw").getChannel();
                                 try {
@@ -1315,6 +1351,7 @@ public class RecordingService extends Service {
                                 } finally {
                                     try { ch.close(); } catch (Exception ignored) {}
                                 }
+                                sizeAfter = f.length();
                             } else if ("content".equals(scheme)) {
                                 android.os.ParcelFileDescriptor pfd =
                                         app.getContentResolver().openFileDescriptor(uri, "rw");
@@ -1323,6 +1360,8 @@ public class RecordingService extends Service {
                                     continue;
                                 }
                                 try {
+                                    try { sizeBefore = pfd.getStatSize(); }
+                                    catch (Exception ignored) {}
                                     // Two channels over the same fd: FileOutputStream's
                                     // channel is write-only (reads throw
                                     // NonReadableChannelException), so read via
@@ -1334,6 +1373,8 @@ public class RecordingService extends Service {
                                                             pfd.getFileDescriptor()).getChannel(),
                                                     new java.io.FileOutputStream(
                                                             pfd.getFileDescriptor()).getChannel());
+                                    try { sizeAfter = pfd.getStatSize(); }
+                                    catch (Exception ignored) {}
                                 } finally {
                                     try { pfd.close(); } catch (Exception ignored) {}
                                 }
@@ -1341,6 +1382,13 @@ public class RecordingService extends Service {
                                 repo.markUnrepairableWithRetry(uriString, retryAfter);
                                 continue;
                             }
+                            // Visible in the dossier so the next report shows exactly what
+                            // the scanner did, and never more than once per file/process.
+                            FLog.i(TAG, "Self-healing: " + fileNameFromUri(uriString)
+                                    + " → result=" + result
+                                    + " size=" + sizeBefore + "→" + sizeAfter
+                                    + " in " + (System.currentTimeMillis() - attemptStartMs) + "ms");
+
                             if (result == 1) {
                                 repo.markFinalized(uriString, 1);
                                 recordRepairEventStatic(prefs,
