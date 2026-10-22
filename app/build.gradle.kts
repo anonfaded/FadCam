@@ -41,6 +41,9 @@ android {
         versionCode = 55
         versionName = "4.0.0"
         buildConfigField("boolean", "LITE_EDITION", "false")
+        // Free-only weekly Pro reminder. PRO/PRO_PLUS variants compile the flag as false and
+        // disable the reminder receivers, so ownership builds never run the feature paths.
+        buildConfigField("boolean", "ENABLE_PRO_REMINDER", "true")
         // Which tier this exact APK IS (not what it can upgrade to). Drives the Pro screen:
         // FREE shows the upgrade pitch, PRO / PRO_PLUS show the owner view of the same table.
         // Overridden per flavor/build type below — keep the two in sync with the variant filter.
@@ -51,6 +54,7 @@ android {
         // Launcher label per variant: defaultConfig is the base, flavors/build types override,
         // onVariants() below sets the per-variant debug labels (Full beta vs Lite beta).
         manifestPlaceholders["appLabel"] = "FadCam"
+        manifestPlaceholders["proReminderEnabled"] = "true"
         vectorDrawables.useSupportLibrary = true
         
         // Fix 16KB native library alignment for Android 15
@@ -112,6 +116,8 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             versionNameSuffix = "-Pro"
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
         }
         
         create("proPlus") {
@@ -128,6 +134,8 @@ android {
             }
             versionNameSuffix = "-Pro+"
             buildConfigField("String", "TIER", "\"PRO_PLUS\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             // Custom app name via gradle property
             val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro+"
             resValue("string", "app_name", customAppName)
@@ -183,6 +191,8 @@ android {
     productFlavors {
         create("notesPro") {
             buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             dimension = "pro"
             applicationIdSuffix = ".notes"
             resValue("string", "app_name", "Notes")
@@ -190,6 +200,8 @@ android {
         }
         create("calcPro") {
             buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             dimension = "pro"
             applicationIdSuffix = ".calc"
             resValue("string", "app_name", "Calculator")
@@ -197,6 +209,8 @@ android {
         }
         create("weatherPro") {
             buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             dimension = "pro"
             applicationIdSuffix = ".weather"
             resValue("string", "app_name", "Weather")
@@ -219,6 +233,8 @@ android {
         // Lite Pro discreet disguises (same icon/app name as the Full disguises, see sourceSets)
         create("liteNotes") {
             buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             dimension = "pro"
             versionCode = liteProVersionCode
             versionName = liteProVersionName
@@ -231,6 +247,8 @@ android {
         }
         create("liteCalc") {
             buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             dimension = "pro"
             versionCode = liteProVersionCode
             versionName = liteProVersionName
@@ -243,6 +261,8 @@ android {
         }
         create("liteWeather") {
             buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             dimension = "pro"
             versionCode = liteProVersionCode
             versionName = liteProVersionName

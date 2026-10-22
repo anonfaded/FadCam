@@ -62,6 +62,44 @@ public final class AppUsageAge {
     }
 
     /**
+     * Exactly two meaningful units, for short promotional copy:
+     * "1 year 2 months", "3 months 8 days", "5 days 4 hours".
+     * Zero units are skipped; minutes are only used when the whole age is under an hour,
+     * where "under an hour" reads better than a fake second unit.
+     */
+    public static String twoUnits(Context context) {
+        try {
+            PackageInfo info = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0);
+            long millis = Math.max(0L, System.currentTimeMillis() - info.firstInstallTime);
+            return twoUnits(millis);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    static String twoUnits(long millis) {
+        long minutes = millis / 60000L;
+        long hours = minutes / 60L;
+        long days = hours / 24L;
+        long years = days / 365L;
+        long months = (days % 365L) / 30L;
+        long remDays = (days % 365L) % 30L;
+        long remHours = hours % 24L;
+
+        String[] parts = new String[4];
+        int count = 0;
+        if (years > 0) parts[count++] = years + (years == 1 ? " year" : " years");
+        if (months > 0) parts[count++] = months + (months == 1 ? " month" : " months");
+        if (remDays > 0) parts[count++] = remDays + (remDays == 1 ? " day" : " days");
+        if (remHours > 0) parts[count++] = remHours + (remHours == 1 ? " hour" : " hours");
+
+        if (count == 0) return "under an hour";
+        if (count == 1) return parts[0];
+        return parts[0] + " " + parts[1];
+    }
+
+    /**
      * Every non-zero unit, most significant first ("1 month, 9 days, 16 hours, 25 minutes"),
      * joined cleanly — never a dangling separator. Days are the smallest calendar unit: a
      * rounded week reads as a vague guess beside a date.

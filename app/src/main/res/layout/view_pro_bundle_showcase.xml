@@ -48,7 +48,8 @@
                 android:text="@string/pro_showcase_meta" android:textColor="@color/pro_text_secondary"
                 android:textSize="@dimen/pro_showcase_meta_size" />
 
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            <LinearLayout android:id="@+id/showcaseFeatures"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/pro_showcase_chips_margin" android:orientation="vertical">
 
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -104,13 +105,16 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <View android:layout_width="match_parent" android:layout_height="0dp"
+            <View android:id="@+id/showcaseSpacer"
+                android:layout_width="match_parent" android:layout_height="0dp"
                 android:layout_weight="1" android:minHeight="@dimen/pro_showcase_rule_gap" />
 
-            <View android:layout_width="match_parent" android:layout_height="1dp"
+            <View android:id="@+id/showcaseDivider"
+                android:layout_width="match_parent" android:layout_height="1dp"
                 android:background="@color/pro_card_divider" />
 
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            <LinearLayout android:id="@+id/showcaseFooter"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/pro_showcase_footer_gap"
                 android:orientation="horizontal" android:gravity="center_vertical">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"

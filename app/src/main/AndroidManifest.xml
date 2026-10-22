@@ -457,6 +457,12 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/clock_widget_info" />
         </receiver>
+
+        <!-- Weekly Pro reminder: free builds only. Disabled in every ownership build. -->
+        <receiver
+            android:name=".pro.ProReminderAlarmReceiver"
+            android:enabled="${proReminderEnabled}"
+            android:exported="false" />
     </application>
 
 </manifest>

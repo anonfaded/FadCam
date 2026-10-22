@@ -23,6 +23,18 @@
     <color name="pro_card_soon_border">#33AA9366</color>
     <color name="pro_card_divider">#1FC6A66A</color>
 
+    <!-- Weekly dossier: olive-drab paper, typewriter ink, a single red classification mark. -->
+    <color name="dossier_paper">#14150F</color>
+    <color name="dossier_paper_light">#1B1C13</color>
+    <color name="dossier_ink">#E6DFC7</color>
+    <color name="dossier_muted">#9B987F</color>
+    <color name="dossier_olive">#77754A</color>
+    <color name="dossier_olive_bright">#B3AF74</color>
+    <color name="dossier_line">#3B3B2A</color>
+    <color name="dossier_grid">#143F3F2E</color>
+    <color name="dossier_red">#C15445</color>
+    <color name="dossier_red_dim">#66C15445</color>
+
     <!-- One feature row of the bundle card: small outline glyph, quiet label. -->
     <style name="ProShowcaseFeatureIcon">
         <item name="android:layout_width">@dimen/pro_showcase_feature_icon_size</item>

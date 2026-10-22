@@ -11,6 +11,7 @@ import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.Drawable;
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
@@ -139,6 +140,13 @@ public class PhoneGLView extends TextureView implements TextureView.SurfaceTextu
         super(context, attrs);
         setSurfaceTextureListener(this);
         setOpaque(false);
+    }
+
+    @Override
+    public void setBackgroundDrawable(Drawable background) {
+        // TextureView throws if a background drawable is applied. Dialog themes can inject one
+        // into every View through the theme's view style; this surface has no background of its
+        // own, so ignore it instead of crashing while the view is being inflated.
     }
 
     @Override

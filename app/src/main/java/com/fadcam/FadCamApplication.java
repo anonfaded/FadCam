@@ -20,6 +20,10 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
         // from a shortcut/notification before any UI exists, and those are exactly the logs
         // (encoder setup, #176) we need in the dossier.
         Log.init(this);
+        if (BuildConfig.ENABLE_PRO_REMINDER) {
+            com.fadcam.pro.ProReminderManager.onProcessStart(this);
+            com.fadcam.pro.ProReminderScheduler.ensureScheduled(this);
+        }
         com.fadcam.services.UpdateCheckService.init(this);
         ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
         // Room DB open + invalidation observer registration is deferred off the

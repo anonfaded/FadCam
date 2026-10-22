@@ -81,6 +81,7 @@ public class ProBundleShowcaseView extends FrameLayout {
     private boolean liveClockEnabled = true;
     private boolean realBatteryEnabled = true;
     private boolean compactMode = false;
+    private boolean phoneOnlyMode = false;
     private float rotation = 0f;
     private boolean backVisible = false;
     private float downX, downY, startRotation;
@@ -224,7 +225,11 @@ public class ProBundleShowcaseView extends FrameLayout {
         backSurface.setGLMode(true);
         backSurface.setDirtyListener(this::markBackDirty);
         backSurface.setRenderMode(BundlePhoneSurfaceView.MODE_PANEL);
-        phoneGL = new PhoneGLView(context, null);
+        // TextureView rejects a themed background during its constructor. Dialog themes can
+        // carry one, so give the GL surface a bare theme; it only needs resources/density.
+        android.content.Context glContext = new android.view.ContextThemeWrapper(
+                context, android.R.style.Theme_Material_NoActionBar);
+        phoneGL = new PhoneGLView(glContext, null);
         phoneGL.setOverscan(glOverscan);
         phoneGL.setCrop(1f, 0f);
         phoneGL.setSweep(0f, REST_SWEEP_X);
@@ -318,6 +323,10 @@ public class ProBundleShowcaseView extends FrameLayout {
         subtitleView.setText(text);
     }
 
+    public void setSubtitleVisible(boolean visible) {
+        subtitleView.setVisibility(visible ? VISIBLE : GONE);
+    }
+
     public void setMeta(CharSequence text) {
         metaView.setText(text);
     }
@@ -349,10 +358,92 @@ public class ProBundleShowcaseView extends FrameLayout {
         applyRotation(Math.max(MIN_ROTATION, Math.min(MAX_ROTATION, degrees)));
     }
 
-    /** Tighter variant: hides the metadata line and shrinks the phone slightly. */
+    /** Tighter variant: hides the metadata line. The card remains the same object. */
     public void setCompactMode(boolean compact) {
         compactMode = compact;
+        if (metaView != null) {
+            metaView.setVisibility(compact ? GONE : VISIBLE);
+        }
+    }
 
+    /**
+     * Dialog variant: keep only the label, headline, supporting line and the phone.
+     * The feature chips, divider and the fullscreen/footer row are removed so the card can
+     * live inside a weekly prompt without turning the dialog into a second Pro screen.
+     */
+    public void setDialogMode(boolean dialog) {
+        View features = findViewById(R.id.showcaseFeatures);
+        View spacer = findViewById(R.id.showcaseSpacer);
+        View divider = findViewById(R.id.showcaseDivider);
+        View footer = findViewById(R.id.showcaseFooter);
+        if (features != null) features.setVisibility(dialog ? GONE : VISIBLE);
+        if (spacer != null) spacer.setVisibility(dialog ? GONE : VISIBLE);
+        if (divider != null) divider.setVisibility(dialog ? GONE : VISIBLE);
+        if (footer != null) footer.setVisibility(dialog ? GONE : VISIBLE);
+        if (titleView != null) {
+            // Big fonts must wrap, never shrink. Three lines is right for the Pro card; a
+            // dialog has less width per line, so allow the headline to breathe.
+            titleView.setMaxLines(dialog ? 6 : 3);
+        }
+        View textColumn = findViewById(R.id.showcaseTextColumn);
+        if (textColumn instanceof LinearLayout) {
+            ((LinearLayout) textColumn).setGravity(dialog ? Gravity.CENTER_VERTICAL : Gravity.TOP);
+        }
+        if (dialog) {
+            if (metaView != null) metaView.setVisibility(GONE);
+        }
+    }
+
+    /** Enable/disable the boot splash. Call before the view is attached. */
+    public void setSplashEnabled(boolean enabled) {
+        bootEnabled = enabled;
+    }
+
+    /**
+     * Dossier/dialog variant: keep only the phone, centred at a fixed width, with the card
+     * plate removed so a host can draw its own paper/frame around it. The boot splash and
+     * drag interaction stay live.
+     */
+    public void setPhoneOnlyMode(boolean enabled, int widthDp) {
+        phoneOnlyMode = enabled;
+        View textColumn = findViewById(R.id.showcaseTextColumn);
+        View root = findViewById(R.id.showcaseRoot);
+        View row = findViewById(R.id.showcaseRow);
+        if (textColumn != null) textColumn.setVisibility(enabled ? GONE : VISIBLE);
+        if (root != null) {
+            if (enabled) {
+                root.setBackground(null);
+                root.setPadding(0, 0, 0, 0);
+            } else {
+                root.setBackgroundResource(R.drawable.bg_pro_showcase);
+                int pad = getResources().getDimensionPixelSize(R.dimen.pro_showcase_pad);
+                root.setPadding(pad, pad, pad, pad);
+            }
+        }
+        if (row instanceof LinearLayout) {
+            ((LinearLayout) row).setGravity(enabled ? Gravity.CENTER : Gravity.CENTER_VERTICAL);
+        }
+        if (phoneWrapper != null && phoneWrapper.getLayoutParams() instanceof LinearLayout.LayoutParams) {
+            LinearLayout.LayoutParams lp =
+                    (LinearLayout.LayoutParams) phoneWrapper.getLayoutParams();
+            if (enabled) {
+                lp.width = Math.max(1, Math.round(widthDp
+                        * getResources().getDisplayMetrics().density));
+                lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                lp.weight = 0f;
+                lp.gravity = Gravity.CENTER_HORIZONTAL;
+                lp.setMarginStart(0);
+            } else {
+                lp.width = 0;
+                lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                lp.weight = phoneWeight;
+                lp.gravity = Gravity.NO_GRAVITY;
+                lp.setMarginStart(getResources().getDimensionPixelSize(R.dimen.pro_showcase_gap));
+            }
+            phoneWrapper.setLayoutParams(lp);
+        }
+        lastPhoneSlot = -1;
+        requestLayout();
     }
 
     public void setOnShowcaseClickListener(OnClickListener listener) {
@@ -932,7 +1023,7 @@ public class ProBundleShowcaseView extends FrameLayout {
      * pass of its own).
      */
     private void applyPhoneSlotWidth(int widthMeasureSpec) {
-        if (phoneWrapper == null) return;
+        if (phoneWrapper == null || phoneOnlyMode) return;
         if (MeasureSpec.getMode(widthMeasureSpec) != MeasureSpec.EXACTLY) return;
         ViewGroup.LayoutParams raw = phoneWrapper.getLayoutParams();
         if (!(raw instanceof LinearLayout.LayoutParams)) return;
@@ -1236,12 +1327,16 @@ public class ProBundleShowcaseView extends FrameLayout {
     /** Entrance: the fullscreen cinematic when possible, otherwise the phone boots in place. */
     private void startEntrance() {
         if (!bootEnabled) {
+            if (cinematicHost != null) cinematicHost.setVisibility(View.GONE);
+            if (cinematicListener != null) cinematicListener.onCinematicActive(false);
             frontSurface.settleBoot();
             return;
         }
         if (cinematicHost == null || !motionAllowed()) {
             FLog.d(CINE_TAG, "skip: host=" + (cinematicHost != null)
                     + " motion=" + motionAllowed());
+            if (cinematicHost != null) cinematicHost.setVisibility(View.GONE);
+            if (cinematicListener != null) cinematicListener.onCinematicActive(false);
             frontSurface.startBoot();
             return;
         }
@@ -1253,6 +1348,8 @@ public class ProBundleShowcaseView extends FrameLayout {
             }
             entranceTries = 0;
             FLog.d(CINE_TAG, "skip: card phone never laid out");
+            if (cinematicHost != null) cinematicHost.setVisibility(View.GONE);
+            if (cinematicListener != null) cinematicListener.onCinematicActive(false);
             frontSurface.startBoot();
             return;
         }

@@ -3282,6 +3282,65 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_screen_soon_legend">Pro+ and Lab tiers are coming soon.</string>
     <string name="pro_screen_status_description">%1$s: %2$s</string>
     <string name="pro_screen_link_error">Couldn’t open the link. Check that a browser is available and try again.</string>
+
+    <!-- Weekly Pro reminder (free builds only; Pro suppresses it permanently). -->
+    <string name="pro_reminder_button_continue">Continue</string>
+    <string name="pro_reminder_button_countdown">Continue · %1$d</string>
+    <string name="pro_reminder_back_toast_1">Nice try. Continue when ready.</string>
+    <string name="pro_reminder_back_toast_2">The only way out is forward.</string>
+    <string name="pro_reminder_back_toast_3">Almost. The button is still waiting.</string>
+    <string name="pro_reminder_after_title">If you hate these visits, upgrading does make me disappear.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">I will check back in %1$d day. See you then.</item>
+        <item quantity="other">I will check back in %1$d days. See you then.</item>
+    </plurals>
+    <string name="pro_reminder_after_got_it">Got it</string>
+
+    <!-- Military-dossier framing for the reminder cards. -->
+    <string name="pro_dossier_header">FADSEC LAB // INTERNAL DOSSIER</string>
+    <string name="pro_dossier_eyes_only">EYES ONLY</string>
+    <string name="pro_dossier_subject">SUBJECT // UPGRADE PROTOCOL</string>
+    <string name="pro_dossier_file_no">FILE NO.</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">CLEARANCE</string>
+    <string name="pro_dossier_clearance_value">PUBLIC / FREE TIER</string>
+    <string name="pro_dossier_status">STATUS</string>
+    <string name="pro_dossier_status_value">AWAITING ACKNOWLEDGEMENT</string>
+    <string name="pro_dossier_ref">REF: FADSEC/PR-07</string>
+    <string name="pro_dossier_page">PAGE 1/1</string>
+    <string name="pro_dossier_drag">DRAG TO INSPECT // FRONT</string>
+    <string name="pro_dossier_cycle">CYCLE %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // AFTER ACTION REPORT</string>
+    <string name="pro_dossier_after_stamp">DEBRIEF</string>
+    <string name="pro_dossier_after_subject">SUBJECT // WEEKLY CONTACT</string>
+    <string name="pro_dossier_after_status">DISPOSITION</string>
+    <string name="pro_dossier_after_status_value">ACKNOWLEDGEMENT REQUIRED</string>
+    <string name="pro_dossier_after_ref">REF: FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">Got it</string>
+
+    <string name="pro_reminder_title_1">We have history</string>
+    <string name="pro_reminder_subtitle_1">%1$s together. Come meet the rest of FadCam.</string>
+    <string name="pro_reminder_title_2">Still recording together</string>
+    <string name="pro_reminder_subtitle_2">It has been %1$s. Pro deserves a proper hello.</string>
+    <string name="pro_reminder_title_3">I kept my promise</string>
+    <string name="pro_reminder_subtitle_3">One week later, here I am. Let us visit Pro.</string>
+    <string name="pro_reminder_title_4">This is our weekly thing now</string>
+    <string name="pro_reminder_subtitle_4">%1$s with FadCam. Pro is starting to feel left out.</string>
+    <string name="pro_reminder_title_5">You knew I would be back</string>
+    <string name="pro_reminder_subtitle_5">I waited seven days. Pro waited too.</string>
+    <string name="pro_reminder_title_6">Same time next week?</string>
+    <string name="pro_reminder_subtitle_6">First, your scheduled three-second tour of Pro.</string>
+
+    <string name="pro_reminder_notification_channel_name">Pro reminders</string>
+    <string name="pro_reminder_notification_channel_description">A weekly note about FadCam Pro. Pro builds never see it.</string>
+    <string name="pro_reminder_notification_title_1">Together for %1$s</string>
+    <string name="pro_reminder_notification_body_1">I am back. Pro asked me to bring you.</string>
+    <string name="pro_reminder_notification_title_2">I waited seven days</string>
+    <string name="pro_reminder_notification_body_2">Tap before I make this a weekly tradition.</string>
+    <string name="pro_reminder_notification_title_3">Your Pro visit is due</string>
+    <string name="pro_reminder_notification_body_3">%1$s with FadCam. Time to meet the family.</string>
+    <string name="pro_reminder_notification_title_4">Still us after %1$s</string>
+    <string name="pro_reminder_notification_body_4">Honestly, Pro is getting a little jealous.</string>
     <!-- Material Icons ligatures for comparison rows (do not translate). -->
     <string name="pro_glyph_notes" translatable="false">sticky_note_2</string>
     <string name="pro_glyph_calc" translatable="false">calculate</string>

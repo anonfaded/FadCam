@@ -46,7 +46,9 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.fadcam.BuildConfig;
 import com.fadcam.FLog;
+import com.fadcam.MainActivity;
 import com.fadcam.R;
+import com.fadcam.pro.ProReminderManager;
 import com.fadcam.ui.widgets.ProBundleShowcaseView;
 
 import java.util.ArrayList;
@@ -97,6 +99,8 @@ public class FadCamProActivity extends AppCompatActivity {
     private Tier[] tiers;
     private Feature[] features;
     private boolean isOwner;
+    private boolean launchedFromReminder;
+    private long launchedAt;
     private String ownerTierLabel;
     private LinearLayout tableHeaderRow;
     private LinearLayout stickyTableHeaderRow;
@@ -147,6 +151,12 @@ public class FadCamProActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        launchedAt = android.os.SystemClock.elapsedRealtime();
+        launchedFromReminder = getIntent().getBooleanExtra(
+                ProReminderManager.EXTRA_FROM_NOTIFICATION, false);
+        if (savedInstanceState == null && launchedFromReminder) {
+            ProReminderManager.onNotificationOpened(this);
+        }
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         // Some OEM window managers (observed on Android 11 devices) keep the window frame
         // fitted below the status bar even after the bar is hidden, leaving a black band at the
@@ -336,7 +346,7 @@ public class FadCamProActivity extends AppCompatActivity {
                 syncingHeaderScroll = false;
             }
         });
-        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+        findViewById(R.id.btnBack).setOnClickListener(v -> leaveProScreen());
         findViewById(R.id.btnDiscord).setOnClickListener(v -> openLink(DISCORD_URL));
         findViewById(R.id.btnX).setOnClickListener(v -> openLink(X_URL));
         // In short windows or with very large text, a pinned footer would consume the viewport.
@@ -373,6 +383,12 @@ public class FadCamProActivity extends AppCompatActivity {
             public void handleOnBackPressed() {
                 if (inspectorActive && inspectorShowcase != null) {
                     inspectorShowcase.exitFullscreen();
+                } else if (launchedFromReminder && isTaskRoot()
+                        && android.os.SystemClock.elapsedRealtime() - launchedAt < 900L) {
+                    // Notification shade collapse can deliver a stray Back to the freshly
+                    // launched activity. Swallow it so the cinematic is not skipped.
+                } else if (launchedFromReminder && isTaskRoot()) {
+                    leaveProScreen();
                 } else {
                     setEnabled(false);
                     getOnBackPressedDispatcher().onBackPressed();
@@ -395,7 +411,23 @@ public class FadCamProActivity extends AppCompatActivity {
      * can draw over the scene regardless of z-order quirks. The exact previous visibility
      * is restored afterwards (some chrome is scroll-driven).
      */
+    /** Leave Pro cleanly. A notification cold-start has no Home underneath, so create it. */
+    private void leaveProScreen() {
+        if (launchedFromReminder && isTaskRoot()) {
+            Intent home = new Intent(this, MainActivity.class);
+            home.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            // Do not let the update-day What's New detour swallow the after-Pro confirmation.
+            home.putExtra(ProReminderManager.EXTRA_SKIP_WHATS_NEW, true);
+            startActivity(home);
+            finish();
+            return;
+        }
+        finish();
+    }
+
     private void setCinematicChrome(boolean active) {
+        // The overlay's own visibility is owned by the showcase (it fades out on landing);
+        // here only the page chrome is hidden so it cannot peek around the phone.
         int[] ids = {R.id.btnBack, R.id.footerBar, R.id.footerFade,
                 R.id.stickyHeaderWrap, R.id.scrollHint, R.id.btnScrollTop};
         if (active) {

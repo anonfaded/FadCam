@@ -28,6 +28,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
+import com.fadcam.pro.ProReminderManager;
 import com.fadcam.ui.RecordsFragment;
 import com.fadcam.ui.HomeFragment;
 import com.fadcam.FeatureRegistry;
@@ -442,6 +443,9 @@ public class MainActivity extends AppCompatActivity {
         // Check for onboarding BEFORE applying theme or language
         boolean completedOnboarding = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.COMPLETED_ONBOARDING_KEY, false);
         boolean showOnboarding = sharedPreferencesManager.isShowOnboarding();
+        boolean skipWhatsNew = BuildConfig.ENABLE_PRO_REMINDER
+                && getIntent().getBooleanExtra(
+                        ProReminderManager.EXTRA_SKIP_WHATS_NEW, false);
         FLog.d("MainActivity", "Should show onboarding: " + showOnboarding);
 
         if (showOnboarding) {
@@ -450,18 +454,21 @@ public class MainActivity extends AppCompatActivity {
                 // User has NOT completed onboarding yet - show full onboarding first
                 Intent intent = new Intent(this, com.fadcam.ui.OnboardingActivity.class);
                 startActivity(intent);
-            } else {
+                finish();
+                return;
+            }
+            // A weekly-notification tap is a direct intent: skip What's New for this launch
+            // (it will show again on the next normal launch) and let the handler open Pro.
+            if (!skipWhatsNew) {
                 // User HAS completed onboarding - show What's New screen instead
                 // Skip WhatsNewActivity on Wear OS: WebView is not supported
                 if (!RuntimeCompat.isWatchDevice(this)) {
                     Intent intent = new Intent(this, com.fadcam.ui.WhatsNewActivity.class);
                     startActivity(intent);
-                    finish();
-                    return;
                 }
+                finish(); // Finish this activity so it's not in the back stack
+                return;
             }
-            finish(); // Finish this activity so it's not in the back stack
-            return;
         }
 
         // Now that we know we're not showing onboarding, continue with normal
@@ -730,6 +737,8 @@ public class MainActivity extends AppCompatActivity {
             scheduleTabPrewarm();
         }
 
+        // A weekly-notification tap routes through Home first, so backing out of Pro
+        // returns to the app (and the after-Pro confirmation) instead of the launcher.
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             int targetPosition = -1;
@@ -1592,7 +1601,6 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-    @Override
     protected void onResume() {
         super.onResume();
         // state)-----------

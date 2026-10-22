@@ -1,4 +1,87 @@
 <resources>
+    <!-- Always-dark floating host for the weekly Pro reminder. The showcase card supplies
+         the visible surface; the window itself stays transparent. -->
+    <style name="ProReminderDialogTheme" parent="FadCamProTheme">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:colorAccent">@color/pro_card_champagne</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="ProDossierHeader">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textSize">8.5sp</item>
+        <item name="android:textColor">@color/dossier_olive</item>
+        <item name="android:letterSpacing">0.18</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="ProDossierLabel">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textSize">7.5sp</item>
+        <item name="android:textColor">@color/dossier_muted</item>
+        <item name="android:letterSpacing">0.12</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="ProDossierValue">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">@color/dossier_ink</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="ProDossierStamp">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textSize">7.5sp</item>
+        <item name="android:textColor">@color/dossier_red</item>
+        <item name="android:letterSpacing">0.14</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:background">@drawable/bg_pro_dossier_stamp</item>
+        <item name="android:paddingStart">7dp</item>
+        <item name="android:paddingEnd">7dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+    </style>
+
+    <style name="ProDossierTitle">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">25sp</item>
+        <item name="android:textColor">@color/dossier_ink</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:lineSpacingExtra">1dp</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="ProDossierBody">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textSize">11.5sp</item>
+        <item name="android:textColor">@color/dossier_muted</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+    </style>
+
+    <style name="ProDossierButton" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/dossier_olive_bright</item>
+        <item name="cornerRadius">2dp</item>
+        <item name="android:textColor">@color/dossier_paper</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+
     <style name="CustomBottomSheetStyle" parent="Widget.MaterialComponents.BottomSheet.Modal">
         <item name="background">@drawable/picker_bottom_sheet_gradient_bg_dynamic</item>
         <item name="backgroundTint">@null</item>

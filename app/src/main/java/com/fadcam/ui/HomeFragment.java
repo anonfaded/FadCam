@@ -76,9 +76,12 @@ import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.documentfile.provider.DocumentFile;
+import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager; // <<< ADD IMPORT FOR FragmentManager
 import androidx.fragment.app.FragmentTransaction; // <<< ADD IMPORT FOR FragmentTransaction
 import com.google.android.material.card.MaterialCardView;
+import com.fadcam.BuildConfig;
 import com.fadcam.CameraType;
 import com.fadcam.MainActivity;
 import com.fadcam.Constants;
@@ -92,6 +95,8 @@ import com.fadcam.VideoCodec;
 import com.fadcam.services.RecordingService;
 import com.fadcam.services.TorchService;
 import com.fadcam.dualcam.service.DualCameraRecordingService;
+import com.fadcam.pro.ProReminderManager;
+import com.fadcam.pro.ProReminderNotification;
 import com.fadcam.ui.helpers.HomeFragmentHelper;
 import com.fadcam.ui.components.ModeSwitcherComponent;
 import com.fadcam.utils.DebouncedRunnable;
@@ -125,6 +130,11 @@ public class HomeFragment extends BaseFragment {
 
     private static final String TAG = "HomeFragment";
     private static final long UPDATE_CHECK_INTERVAL_MS = 60L * 60L * 1000L;
+    private static final long PRO_REMINDER_SETTLE_MS = 1500L;
+    private static final long AFTER_PRO_SETTLE_MS = 350L;
+
+    private final Runnable proReminderRunnable = this::maybeShowProReminder;
+    private final Runnable afterProRunnable = this::showAfterProIfPending;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private static final String ELAPSED_ALIGNMENT_RESULT_KEY = "home_elapsed_alignment_picker";
     private static final String ELAPSED_DISPLAY_RESULT_KEY = "home_elapsed_display_picker";
@@ -1888,6 +1898,9 @@ public class HomeFragment extends BaseFragment {
         VideoStatsCache.invalidateStats(sharedPreferencesManager);
         com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
         updateStats(); // Will query Room DB (fast) then background delta scan updates it
+        if (BuildConfig.ENABLE_PRO_REMINDER) {
+            scheduleProReminderCheck(2000L);
+        }
     }
 
     // Inside HomeFragment.java
@@ -2081,6 +2094,7 @@ public class HomeFragment extends BaseFragment {
     @Override
     public void onStop() {
         super.onStop();
+        removeProReminderCallbacks();
         // unregisterStatsReceiver(); // Unregister receiver when fragment stops
 
         FLog.d(TAG, "HomeFragment stopped");
@@ -2221,6 +2235,162 @@ public class HomeFragment extends BaseFragment {
         // Start bubble rotation animation when visible (battery optimization)
         startBubbleRotation();
         isLaunchingPhotoCapture = false;
+
+        // The Pro reminder waits for the screen to settle, then re-checks every safe guard.
+        // The after-Pro confirmation is one-shot; this also covers process death while the
+        // Pro screen was open. Ownership builds compile this flag false and schedule nothing.
+        if (BuildConfig.ENABLE_PRO_REMINDER) {
+            scheduleAfterProCheck(AFTER_PRO_SETTLE_MS);
+            scheduleProReminderCheck(PRO_REMINDER_SETTLE_MS);
+        }
+    }
+
+    private void scheduleProReminderCheck(long delayMs) {
+        View root = getView();
+        if (root == null) return;
+        root.removeCallbacks(proReminderRunnable);
+        root.postDelayed(proReminderRunnable, delayMs);
+    }
+
+    private void scheduleAfterProCheck(long delayMs) {
+        View root = getView();
+        if (root == null) return;
+        root.removeCallbacks(afterProRunnable);
+        root.postDelayed(afterProRunnable, delayMs);
+    }
+
+    private void removeProReminderCallbacks() {
+        View root = getView();
+        if (root == null) return;
+        root.removeCallbacks(proReminderRunnable);
+        root.removeCallbacks(afterProRunnable);
+    }
+
+    /**
+     * Shows the weekly Pro prompt only on a settled, focused Home screen. Never during a
+     * recording/preview, never over a sheet/dialog, never from a shortcut or background start.
+     */
+    private void maybeShowProReminder() {
+        if (!BuildConfig.ENABLE_PRO_REMINDER || !ProReminderManager.isSupported()) return;
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+        if (isHidden() || !isResumed() || !isVisible()) return;
+        if (recordingState != RecordingState.NONE
+                || isPreviewOnlyActive || isPreviewOnlyStartPending
+                || isLaunchingPhotoCapture) return;
+        if (isScreenRecordingActive()) return;
+        if (getActivity().isFinishing() || getActivity().isDestroyed()) return;
+        if (!getActivity().hasWindowFocus()) return;
+        if (getParentFragmentManager().isStateSaved()) return;
+        if (isProReminderDialogShowing() || hasVisibleDialogOrSheet()) return;
+
+        if (ProReminderManager.isAfterProPending(requireContext())) {
+            showAfterProIfPending();
+            return;
+        }
+
+        // Both touchpoints are mandatory. If the alarm was late/missed, or the app opened
+        // first, post the notification now and only then raise the dossier.
+        if (!ProReminderManager.isDesignMode(requireContext())
+                && !ProReminderManager.isNotificationSent(requireContext())) {
+            if (ProReminderNotification.post(requireContext())) {
+                ProReminderManager.markNotificationPosted(requireContext());
+            }
+        }
+
+        int copyIndex = ProReminderManager.claimPresentation(requireContext());
+        if (copyIndex < 0) return;
+        // Do not cancel the tray notification here: both touchpoints are required in a cycle.
+        try {
+            ProReminderDialogFragment.newInstance(copyIndex)
+                    .show(getParentFragmentManager(), ProReminderDialogFragment.TAG);
+        } catch (IllegalStateException e) {
+            ProReminderManager.releaseClaim(requireContext());
+        }
+    }
+
+    private void showAfterProIfPending() {
+        if (!BuildConfig.ENABLE_PRO_REMINDER || !ProReminderManager.isSupported()) return;
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+        if (isHidden() || !isResumed() || !isVisible()) return;
+        if (isScreenRecordingActive()) return;
+        if (recordingState != RecordingState.NONE
+                || isPreviewOnlyActive || isPreviewOnlyStartPending
+                || isLaunchingPhotoCapture) return;
+        if (getParentFragmentManager().isStateSaved()) return;
+        if (isAfterProDialogShowing() || hasVisibleDialogOrSheet()) return;
+        if (!ProReminderManager.isAfterProPending(requireContext())) return;
+        try {
+            // Do not stack a fresh reminder behind the confirmation in the same Home visit.
+            View root = getView();
+            if (root != null) root.removeCallbacks(proReminderRunnable);
+            new ProReminderAfterDialogFragment()
+                    .show(getParentFragmentManager(), ProReminderAfterDialogFragment.TAG);
+        } catch (IllegalStateException ignored) {
+        }
+    }
+
+    private boolean isAfterProDialogShowing() {
+        try {
+            Fragment fragment = getParentFragmentManager()
+                    .findFragmentByTag(ProReminderAfterDialogFragment.TAG);
+            return fragment instanceof DialogFragment && fragment.isAdded();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isScreenRecordingActive() {
+        try {
+            return SharedPreferencesManager.getInstance(requireContext())
+                    .isScreenRecordingInProgress();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isProReminderDialogShowing() {
+        try {
+            Fragment fragment = getParentFragmentManager()
+                    .findFragmentByTag(ProReminderDialogFragment.TAG);
+            return fragment instanceof DialogFragment && fragment.isAdded();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean hasVisibleDialogOrSheet() {
+        try {
+            if (hasVisibleDialogOrSheet(getParentFragmentManager().getFragments())) return true;
+            if (hasVisibleDialogOrSheet(getChildFragmentManager().getFragments())) return true;
+            if (getActivity() != null) {
+                View overlay = getActivity().findViewById(R.id.overlay_fragment_container);
+                if (overlay != null && overlay.getVisibility() == View.VISIBLE) return true;
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    private boolean hasVisibleDialogOrSheet(List<Fragment> fragments) {
+        if (fragments == null) return false;
+        for (Fragment fragment : fragments) {
+            if (fragment instanceof DialogFragment && fragment.isAdded()
+                    && !fragment.isHidden()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void dismissProReminderDialog() {
+        try {
+            Fragment fragment = getParentFragmentManager()
+                    .findFragmentByTag(ProReminderDialogFragment.TAG);
+            if (fragment instanceof DialogFragment) {
+                ((DialogFragment) fragment).dismissAllowingStateLoss();
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private void clearPreviewOnlyPendingState(boolean resetHintText) {
@@ -4694,9 +4864,13 @@ public class HomeFragment extends BaseFragment {
                     FLog.e(TAG, "Error marking pro as seen", e);
                 }
                 
-                // Open FadCam Pro Activity
+                // Open FadCam Pro Activity; its own cinematic is the entrance.
                 Intent intent = new Intent(getActivity(), FadCamProActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
                 startActivity(intent);
+                if (getActivity() != null) {
+                    getActivity().overridePendingTransition(0, 0);
+                }
             });
         }
 
@@ -7923,7 +8097,12 @@ public class HomeFragment extends BaseFragment {
                     sizeInMB[0] = lastKnownSizeMB;
                 }
 
-                if (videoCount[0] > 0) lastKnownVideoCount = videoCount[0];
+                if (videoCount[0] > 0) {
+                    lastKnownVideoCount = videoCount[0];
+                    if (BuildConfig.ENABLE_PRO_REMINDER && getContext() != null) {
+                        ProReminderManager.markSuccessfulRecording(getContext());
+                    }
+                }
                 if (sizeInMB[0] > 0) lastKnownSizeMB = sizeInMB[0];
 
                 long totalSizeBytes = sizeInMB[0] * 1024L * 1024L;
@@ -12493,6 +12672,8 @@ public class HomeFragment extends BaseFragment {
             }
         } else {
             // Tab switched away — pause heavy operations
+            removeProReminderCallbacks();
+            dismissProReminderDialog();
             pauseUpdateHandlers();
             if (!isLaunchingPhotoCapture) {
                 stopBubbleRotation();
