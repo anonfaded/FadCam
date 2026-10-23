@@ -1,5 +1,11 @@
 # Developer & Agent Guide: Best Practices for Workflow Orchestration and Task Management
 
+## Scope
+
+- This file covers the project: code, builds, device testing and task workflow.
+- Documentation has its own guide: [`docs/AGENTS.md`](docs/AGENTS.md). Follow it for anything
+  inside `docs/` (folder structure, file naming, relative links).
+
 ## Workflow Orchestration
 
 ### 1. Plan Node Default
