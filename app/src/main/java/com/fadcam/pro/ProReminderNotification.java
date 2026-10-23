@@ -1,15 +1,18 @@
 package com.fadcam.pro;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import com.fadcam.R;
 import com.fadcam.ui.FadCamProActivity;
@@ -27,6 +30,10 @@ public final class ProReminderNotification {
     public static boolean post(Context context) {
         try {
             ensureChannel(context);
+            // notify() silently drops a notification when the app or this channel is blocked.
+            // Return false so the cycle is not marked as notified and the next safe Home visit
+            // can retry after the user grants permission or unblocks the channel.
+            if (!canPost(context)) return false;
             ProReminderManager.NotificationCopy copy =
                     ProReminderManager.getNotificationCopy(
                             context, ProReminderManager.getNotificationCopyIndex(context));
@@ -69,6 +76,31 @@ public final class ProReminderNotification {
             NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID);
         } catch (Exception ignored) {
         }
+    }
+
+    private static boolean canPost(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(
+                        context, Manifest.permission.POST_NOTIFICATIONS)
+                        != PackageManager.PERMISSION_GRANTED) {
+            return false;
+        }
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            return false;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager manager = (NotificationManager) context.getSystemService(
+                    Context.NOTIFICATION_SERVICE);
+            if (manager == null) return false;
+            NotificationChannel channel = manager.getNotificationChannel(CHANNEL_ID);
+            // A null channel is fine: ensureChannel() has just created it. A channel the user
+            // blocked must be respected instead of silently counting as delivered.
+            if (channel != null
+                    && channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void ensureChannel(Context context) {

@@ -3190,6 +3190,9 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">Menggunakan FadCam selama %1$s</string>
     <string name="app_usage_since_install_title">Menggunakan FadCam selama</string>
+
+
+    <string name="app_age_a_while">beberapa saat</string>
     <string name="app_usage_installed_on">Dipasang pada</string>
     <string name="pro_reminder_button_continue">Lanjutkan</string>
     <string name="pro_reminder_button_countdown">Lanjutkan · %1$d</string>
@@ -3243,4 +3246,18 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <plurals name="pro_reminder_after_body">
         <item quantity="other">Aku akan kembali dalam %1$d hari. Sampai jumpa.</item>
     </plurals>
+    <string name="pro_screen_bundle">Tiga aplikasi privat.
+Milikmu selamanya.</string>
+    <string name="pro_showcase_label">PAKET PRO</string>
+    <string name="pro_showcase_supporting">Pasang ketiganya secara terpisah dengan pembaruan seumur hidup.</string>
+    <string name="pro_showcase_meta">Instalasi terpisah · Pembaruan seumur hidup</string>
+    <string name="pro_showcase_chip_installs">Tiga aplikasi mandiri</string>
+    <string name="pro_showcase_chip_updates">Termasuk pembaruan seumur hidup</string>
+    <string name="pro_showcase_chip_entry">Antarmuka aplikasi menyamar</string>
+    <string name="pro_showcase_soon">SEGERA</string>
+    <string name="pro_showcase_hint">Buka kunci dan jelajahi aplikasinya.</string>
+    <string name="pro_showcase_expand_desc">Buka ponsel layar penuh</string>
+    <string name="pro_showcase_collapse_desc">Keluar dari layar penuh</string>
+    <string name="pro_showcase_phone_desc">Mockup perangkat FadSec Lab. Layar menampilkan tiga aplikasi Pro. Geser ke samping untuk memutar ponsel.</string>
+    <string name="pro_showcase_privacy_mark">Privasi sejak awal</string>
 </resources>

@@ -4655,6 +4655,9 @@
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">لقد استخدمت FadCam لمدة %1$s</string>
     <string name="app_usage_since_install_title">لقد استخدمت FadCam لمدة</string>
+
+
+    <string name="app_age_a_while">بعض الوقت</string>
     <string name="app_usage_installed_on">تاريخ التثبيت</string>
     <string name="pro_reminder_button_continue">متابعة</string>
     <string name="pro_reminder_button_countdown">متابعة · %1$d</string>
@@ -4713,4 +4716,18 @@
         <item quantity="many">سأعود بعد %1$d يومًا. إلى اللقاء.</item>
         <item quantity="other">سأعود بعد %1$d يوم. إلى اللقاء.</item>
     </plurals>
+    <string name="pro_screen_bundle">ثلاثة تطبيقات خاصة.
+ملكك إلى الأبد.</string>
+    <string name="pro_showcase_label">حزمة PRO</string>
+    <string name="pro_showcase_supporting">ثبّت التطبيقات الثلاثة كلًا على حدة مع تحديثات مدى الحياة.</string>
+    <string name="pro_showcase_meta">تثبيتات منفصلة · تحديثات مدى الحياة</string>
+    <string name="pro_showcase_chip_installs">ثلاثة تطبيقات مستقلة</string>
+    <string name="pro_showcase_chip_updates">تحديثات مدى الحياة مشمولة</string>
+    <string name="pro_showcase_chip_entry">واجهات تطبيقات متنكرة</string>
+    <string name="pro_showcase_soon">قريبًا</string>
+    <string name="pro_showcase_hint">افتح القفل واستكشف التطبيقات.</string>
+    <string name="pro_showcase_expand_desc">فتح الهاتف بملء الشاشة</string>
+    <string name="pro_showcase_collapse_desc">الخروج من ملء الشاشة</string>
+    <string name="pro_showcase_phone_desc">مجسّم هاتف FadSec Lab. تعرض الشاشة تطبيقات Pro الثلاثة. اسحب جانبيًا لتدوير الهاتف.</string>
+    <string name="pro_showcase_privacy_mark">الخصوصية بالتصميم</string>
 </resources>

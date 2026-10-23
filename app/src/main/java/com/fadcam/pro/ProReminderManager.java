@@ -206,32 +206,34 @@ public final class ProReminderManager {
     /** Continue was pressed and the Pro screen opened. Start the next seven-day cycle. */
     public static boolean completePresentation(Context context) {
         if (!isSupported()) return false;
+        boolean design;
         synchronized (LOCK) {
             SharedPreferences p = prefs(context);
             long now = System.currentTimeMillis();
-            int currentCopy = Math.floorMod(p.getInt(K_COPY_INDEX, 0), COPY_COUNT);
-            int claimedCopy = p.getInt(K_CLAIMED_COPY, -1);
-            int nextCopy = isDesignMode(context)
-                    ? currentCopy
-                    : (claimedCopy >= 0
-                            ? (claimedCopy + 1) % COPY_COUNT
-                            : (currentCopy + 1) % COPY_COUNT);
-            boolean saved = p.edit()
-                    .putLong(K_COMPLETED_AT, now)
-                    .putLong(K_NEXT_ELIGIBLE_AT, now + WEEK_MS)
-                    .putInt(K_COPY_INDEX, nextCopy)
-                    .putBoolean(K_NOTIFICATION_SENT, false)
-                    .putLong(K_NOTIFICATION_POSTED_AT, 0L)
+            design = isDesignMode(context);
+            SharedPreferences.Editor editor = p.edit()
                     .putLong(K_CLAIMED_AT, 0L)
                     .putInt(K_CLAIMED_COPY, 0)
                     .putBoolean(K_AFTER_PRO_PENDING, true)
-                    .putLong(K_PRO_OPENED_AT, now)
-                    .commit();
-            if (!saved) return false;
+                    .putLong(K_PRO_OPENED_AT, now);
+            if (!design) {
+                int currentCopy = Math.floorMod(p.getInt(K_COPY_INDEX, 0), COPY_COUNT);
+                int claimedCopy = p.getInt(K_CLAIMED_COPY, -1);
+                int nextCopy = claimedCopy >= 0
+                        ? (claimedCopy + 1) % COPY_COUNT
+                        : (currentCopy + 1) % COPY_COUNT;
+                editor.putLong(K_COMPLETED_AT, now)
+                        .putLong(K_NEXT_ELIGIBLE_AT, now + WEEK_MS)
+                        .putInt(K_COPY_INDEX, nextCopy)
+                        .putBoolean(K_NOTIFICATION_SENT, false)
+                        .putLong(K_NOTIFICATION_POSTED_AT, 0L);
+            }
+            if (!editor.commit()) return false;
         }
-        // Leave the tray notification alone: the user may tap it or swipe it away. The next
-        // cycle's notification will reuse the same ID and replace any stale copy.
-        ProReminderScheduler.ensureScheduled(context);
+        // Design mode is a UI preview: it must not start the real weekly clock or touch the
+        // real notification state. Leave the tray notification alone in a real cycle: the user
+        // may tap it or swipe it away. The next cycle reuses the same ID and replaces it.
+        if (!design) ProReminderScheduler.ensureScheduled(context);
         return true;
     }
 
@@ -277,10 +279,15 @@ public final class ProReminderManager {
             SharedPreferences p = prefs(context);
             if (p.getBoolean(K_NOTIFICATION_SENT, false)) return false;
             long completed = p.getLong(K_COMPLETED_AT, 0L);
-            if (completed <= 0L) return false;
+            long now = System.currentTimeMillis();
+            if (completed <= 0L) {
+                // First cycle: there is no alarm yet. Home posts the notification at the same
+                // moment the first dossier becomes eligible (3 days + one recording).
+                return firstEligible(context, p);
+            }
             long next = p.getLong(K_NEXT_ELIGIBLE_AT, 0L);
             if (next <= 0L) return false;
-            return System.currentTimeMillis() >= next;
+            return now >= next;
         }
     }
 
@@ -311,7 +318,9 @@ public final class ProReminderManager {
 
     public static String getAgeText(Context context) {
         String age = AppUsageAge.twoUnits(context);
-        return age == null || age.trim().isEmpty() ? "a while" : age;
+        return age == null || age.trim().isEmpty()
+                ? context.getString(R.string.app_age_a_while)
+                : age;
     }
 
     public static DialogCopy getDialogCopy(Context context, int copyIndex) {

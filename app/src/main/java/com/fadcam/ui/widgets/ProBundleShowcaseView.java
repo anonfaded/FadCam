@@ -295,7 +295,10 @@ public class ProBundleShowcaseView extends FrameLayout {
         noteInput.setText(appPrefs.getProShowcaseNote());
         expandButton = findViewById(R.id.showcaseExpand);
         if (expandButton != null) {
-            expandButton.setOnClickListener(v -> enterFullscreen());
+            expandButton.setOnClickListener(v -> {
+                if (fullscreenActive) exitFullscreen();
+                else enterFullscreen();
+            });
             expandButton.setContentDescription(context.getString(R.string.pro_showcase_expand_desc));
             // (static button — no idle animation)
         }
@@ -373,11 +376,9 @@ public class ProBundleShowcaseView extends FrameLayout {
      */
     public void setDialogMode(boolean dialog) {
         View features = findViewById(R.id.showcaseFeatures);
-        View spacer = findViewById(R.id.showcaseSpacer);
         View divider = findViewById(R.id.showcaseDivider);
         View footer = findViewById(R.id.showcaseFooter);
         if (features != null) features.setVisibility(dialog ? GONE : VISIBLE);
-        if (spacer != null) spacer.setVisibility(dialog ? GONE : VISIBLE);
         if (divider != null) divider.setVisibility(dialog ? GONE : VISIBLE);
         if (footer != null) footer.setVisibility(dialog ? GONE : VISIBLE);
         if (titleView != null) {
@@ -415,7 +416,7 @@ public class ProBundleShowcaseView extends FrameLayout {
                 root.setBackground(null);
                 root.setPadding(0, 0, 0, 0);
             } else {
-                root.setBackgroundResource(R.drawable.bg_pro_showcase);
+                root.setBackgroundResource(R.drawable.bg_pro_bundle_dossier);
                 int pad = getResources().getDimensionPixelSize(R.dimen.pro_showcase_pad);
                 root.setPadding(pad, pad, pad, pad);
             }
@@ -1135,6 +1136,29 @@ public class ProBundleShowcaseView extends FrameLayout {
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         super.onLayout(changed, l, t, r, b);
         wirePhoneParts();
+        fitPrivacyMark();
+    }
+
+    /**
+     * The lower band of the sheet is not the same height on every device. The privacy mark
+     * takes only what the band can spare after the label, so the pair always fits instead of
+     * spilling over the divider; the drawing itself scales with the resulting height.
+     */
+    private void fitPrivacyMark() {
+        View band = findViewById(R.id.showcasePrivacy);
+        View mark = findViewById(R.id.showcasePrivacyMark);
+        View label = findViewById(R.id.showcasePrivacyLabel);
+        if (band == null || mark == null || label == null) return;
+        if (band.getHeight() <= 0 || label.getMeasuredHeight() <= 0) return;
+        float density = getResources().getDisplayMetrics().density;
+        int available = band.getHeight() - label.getMeasuredHeight() - Math.round(2f * density);
+        int target = Math.max(Math.round(25f * density),
+                Math.min(Math.round(68f * density), Math.round(available * 0.55f)));
+        ViewGroup.LayoutParams params = mark.getLayoutParams();
+        if (params.height != target) {
+            params.height = target;
+            mark.setLayoutParams(params);
+        }
     }
 
     /**
@@ -1732,6 +1756,14 @@ public class ProBundleShowcaseView extends FrameLayout {
         if (fullscreenListener != null) fullscreenListener.onFullscreenActive(true);
         View textColumn = findViewById(R.id.showcaseTextColumn);
         if (textColumn != null) textColumn.setVisibility(View.INVISIBLE);
+        View headerBand = findViewById(R.id.showcaseHeaderBand);
+        if (headerBand != null) headerBand.setVisibility(View.INVISIBLE);
+        View divider = findViewById(R.id.showcaseDivider);
+        if (divider != null) divider.setVisibility(View.INVISIBLE);
+        View footer = findViewById(R.id.showcaseFooter);
+        if (footer != null) footer.setVisibility(View.INVISIBLE);
+        View paper = findViewById(R.id.showcasePaper);
+        if (paper != null) paper.setVisibility(View.INVISIBLE);
         View root = findViewById(R.id.showcaseRoot);
         if (root != null) root.setBackground(null);
         // The supersample bump is the most expensive step of the whole flight: re-rendering
@@ -1759,7 +1791,9 @@ public class ProBundleShowcaseView extends FrameLayout {
         float targetH = Math.min(0.86f * screenH, 0.74f * screenW * 2.05f);
         float scale = targetH / h;
         float tx = screenW / 2f - (loc[0] + pivotX);
-        float ty = screenH / 2f - (loc[1] + pivotY);
+        // Slightly above the exact centre: the legend band below stays clear when the
+        // device turns and its silhouette grows during the drag.
+        float ty = screenH / 2f - (loc[1] + pivotY) - 30f * getResources().getDisplayMetrics().density;
         setPivotX(pivotX);
         setPivotY(pivotY);
         // Slow-fast-slow velocity, like the entrance beam: one smooth 360 degree turn.
@@ -1801,8 +1835,16 @@ public class ProBundleShowcaseView extends FrameLayout {
                 .withEndAction(() -> {
                     View textColumn = findViewById(R.id.showcaseTextColumn);
                     if (textColumn != null) textColumn.setVisibility(View.VISIBLE);
+                    View headerBand = findViewById(R.id.showcaseHeaderBand);
+                    if (headerBand != null) headerBand.setVisibility(View.VISIBLE);
+                    View divider = findViewById(R.id.showcaseDivider);
+                    if (divider != null) divider.setVisibility(View.VISIBLE);
+                    View footer = findViewById(R.id.showcaseFooter);
+                    if (footer != null) footer.setVisibility(View.VISIBLE);
+                    View paper = findViewById(R.id.showcasePaper);
+                    if (paper != null) paper.setVisibility(View.VISIBLE);
                     View root = findViewById(R.id.showcaseRoot);
-                    if (root != null) root.setBackgroundResource(R.drawable.bg_pro_showcase);
+                    if (root != null) root.setBackgroundResource(R.drawable.bg_pro_bundle_dossier);
                     if (fullscreenListener != null) fullscreenListener.onFullscreenActive(false);
                 }).start();
         inspectorSpin = ValueAnimator.ofFloat(rotation + 360f, rotation);

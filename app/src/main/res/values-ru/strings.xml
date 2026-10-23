@@ -3599,6 +3599,9 @@ FadCam использует фрагментированный формат MP4 
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">Вы пользуетесь FadCam уже %1$s</string>
     <string name="app_usage_since_install_title">Вы пользуетесь FadCam уже</string>
+
+
+    <string name="app_age_a_while">некоторое время</string>
     <string name="app_usage_installed_on">Установлено</string>
     <string name="pro_reminder_button_continue">Продолжить</string>
     <string name="pro_reminder_button_countdown">Продолжить · %1$d</string>
@@ -3655,4 +3658,18 @@ FadCam использует фрагментированный формат MP4 
         <item quantity="many">Вернусь через %1$d дней. До встречи.</item>
         <item quantity="other">Вернусь через %1$d дней. До встречи.</item>
     </plurals>
+    <string name="pro_screen_bundle">Три приватных приложения.
+Ваши навсегда.</string>
+    <string name="pro_showcase_label">НАБОР PRO</string>
+    <string name="pro_showcase_supporting">Установите все три отдельно — обновления навсегда.</string>
+    <string name="pro_showcase_meta">Отдельные установки · Обновления навсегда</string>
+    <string name="pro_showcase_chip_installs">Три отдельных приложения</string>
+    <string name="pro_showcase_chip_updates">Обновления навсегда включены</string>
+    <string name="pro_showcase_chip_entry">Замаскированные интерфейсы приложений</string>
+    <string name="pro_showcase_soon">СКОРО</string>
+    <string name="pro_showcase_hint">Разблокируйте и изучите приложения.</string>
+    <string name="pro_showcase_expand_desc">Открыть телефон на весь экран</string>
+    <string name="pro_showcase_collapse_desc">Выйти из полноэкранного режима</string>
+    <string name="pro_showcase_phone_desc">Макет устройства FadSec Lab. На экране три приложения Pro. Потяните в сторону, чтобы повернуть телефон.</string>
+    <string name="pro_showcase_privacy_mark">Приватность в дизайне</string>
 </resources>

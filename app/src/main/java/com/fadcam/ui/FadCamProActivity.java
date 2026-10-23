@@ -383,10 +383,11 @@ public class FadCamProActivity extends AppCompatActivity {
             public void handleOnBackPressed() {
                 if (inspectorActive && inspectorShowcase != null) {
                     inspectorShowcase.exitFullscreen();
-                } else if (launchedFromReminder && isTaskRoot()
+                } else if (launchedFromReminder
                         && android.os.SystemClock.elapsedRealtime() - launchedAt < 900L) {
                     // Notification shade collapse can deliver a stray Back to the freshly
-                    // launched activity. Swallow it so the cinematic is not skipped.
+                    // launched activity. Swallow it so the cinematic is not skipped, whether
+                    // Pro is the task root or was pushed on top of an existing task.
                 } else if (launchedFromReminder && isTaskRoot()) {
                     leaveProScreen();
                 } else {
@@ -457,9 +458,20 @@ public class FadCamProActivity extends AppCompatActivity {
      */
     private void setInspectorUi(boolean active) {
         inspectorActive = active;
+        View inspectorChrome = findViewById(R.id.inspectorChrome);
+        if (inspectorChrome != null) {
+            inspectorChrome.animate().cancel();
+            if (active) {
+                inspectorChrome.setVisibility(View.VISIBLE);
+                inspectorChrome.setAlpha(0f);
+                inspectorChrome.animate().alpha(1f).setDuration(240).start();
+            } else {
+                inspectorChrome.setVisibility(View.GONE);
+                inspectorChrome.setAlpha(1f);
+            }
+        }
         ViewGroup root = findViewById(R.id.rootContainer);
         ViewGroup content = findViewById(R.id.proScrollContent);
-        View close = findViewById(R.id.inspectorClose);
         ViewGroup scroll = findViewById(R.id.proScroll);
         int[] chromeIds = {R.id.btnBack, R.id.footerBar, R.id.footerFade,
                 R.id.stickyHeaderWrap, R.id.scrollHint, R.id.btnScrollTop};
@@ -497,12 +509,6 @@ public class FadCamProActivity extends AppCompatActivity {
             for (int id : chromeIds) {
                 fadeOutForInspector(findViewById(id));
             }
-            if (close != null) {
-                close.animate().cancel();
-                close.setVisibility(View.VISIBLE);
-                close.setAlpha(0f);
-                close.animate().alpha(1f).setDuration(220).start();
-            }
         } else {
             if (root != null) {
                 root.setBackground(inspectorRootBgBackup);
@@ -525,12 +531,6 @@ public class FadCamProActivity extends AppCompatActivity {
             }
             for (int id : chromeIds) {
                 fadeInFromInspector(findViewById(id));
-            }
-            if (close != null) {
-                close.animate().alpha(0f).setDuration(200)
-                        .withEndAction(() -> {
-                            if (!inspectorActive) close.setVisibility(View.GONE);
-                        }).start();
             }
             inspectorSectionState.clear();
             inspectorSectionAlpha.clear();
@@ -590,9 +590,15 @@ public class FadCamProActivity extends AppCompatActivity {
             inspectorShowcase = showcase;
             showcase.setFullscreenListener(this::setInspectorUi);
         }
-        View inspectorClose = findViewById(R.id.inspectorClose);
-        if (inspectorClose != null) {
-            inspectorClose.setOnClickListener(v -> {
+        View inspectorCollapse = findViewById(R.id.inspectorCollapse);
+        if (inspectorCollapse != null) {
+            inspectorCollapse.setOnClickListener(v -> {
+                // Fade the legend out with the collapse, not after it lands.
+                View chrome = findViewById(R.id.inspectorChrome);
+                if (chrome != null) {
+                    chrome.animate().cancel();
+                    chrome.animate().alpha(0f).setDuration(180).start();
+                }
                 if (inspectorShowcase != null) inspectorShowcase.exitFullscreen();
             });
         }

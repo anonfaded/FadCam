@@ -4846,6 +4846,9 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">已使用 FadCam %1$s</string>
     <string name="app_usage_since_install_title">已使用 FadCam</string>
+
+
+    <string name="app_age_a_while">一段时间</string>
     <string name="app_usage_installed_on">安装于</string>
     <string name="pro_reminder_button_continue">继续</string>
     <string name="pro_reminder_button_countdown">继续 · %1$d</string>
@@ -4899,4 +4902,18 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <plurals name="pro_reminder_after_body">
         <item quantity="other">我会在 %1$d 天后回来。到时见。</item>
     </plurals>
+    <string name="pro_screen_bundle">三款私密应用。
+永久属于你。</string>
+    <string name="pro_showcase_label">PRO 套装</string>
+    <string name="pro_showcase_supporting">三款应用分别安装，含终身更新。</string>
+    <string name="pro_showcase_meta">独立安装 · 终身更新</string>
+    <string name="pro_showcase_chip_installs">三款独立应用</string>
+    <string name="pro_showcase_chip_updates">含终身更新</string>
+    <string name="pro_showcase_chip_entry">伪装应用界面</string>
+    <string name="pro_showcase_soon">即将推出</string>
+    <string name="pro_showcase_hint">解锁并探索应用。</string>
+    <string name="pro_showcase_expand_desc">全屏打开手机</string>
+    <string name="pro_showcase_collapse_desc">退出全屏</string>
+    <string name="pro_showcase_phone_desc">FadSec Lab 设备模型。屏幕显示三款 Pro 应用。向侧面拖动可旋转手机。</string>
+    <string name="pro_showcase_privacy_mark">隐私源于设计</string>
 </resources>

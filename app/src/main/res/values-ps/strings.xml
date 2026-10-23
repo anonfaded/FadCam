@@ -2952,6 +2952,29 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">Tase FadCam %1$s karawal</string>
     <string name="app_usage_since_install_title">Tase FadCam karawal</string>
+
+    <string name="app_age_a_while">yawa wakht</string>
+    <!-- Roman Pashto age units: ICU's ps data is Arabic script, so these are written by hand. -->
+    <plurals name="app_age_year">
+        <item quantity="one">%1$s kal</item>
+        <item quantity="other">%1$s kala</item>
+    </plurals>
+    <plurals name="app_age_month">
+        <item quantity="one">%1$s myasht</item>
+        <item quantity="other">%1$s myashte</item>
+    </plurals>
+    <plurals name="app_age_day">
+        <item quantity="one">%1$s wradz</item>
+        <item quantity="other">%1$s wredzi</item>
+    </plurals>
+    <plurals name="app_age_hour">
+        <item quantity="one">%1$s saat</item>
+        <item quantity="other">%1$s saata</item>
+    </plurals>
+    <plurals name="app_age_minute">
+        <item quantity="one">%1$s daqiqa</item>
+        <item quantity="other">%1$s daqiqe</item>
+    </plurals>
     <string name="app_usage_installed_on">Install nita</string>
     <string name="pro_reminder_button_continue">Dwam</string>
     <string name="pro_reminder_button_countdown">Dwam · %1$d</string>
@@ -3006,4 +3029,18 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
         <item quantity="one">Za ba pa %1$d wradz ke bya raam. Pa de khabar.</item>
         <item quantity="other">Za ba pa %1$d wredzo ke bya raam. Pa de khabar.</item>
     </plurals>
+    <string name="pro_screen_bundle">Dre zaati apps.
+Da tase da hamisha paara.</string>
+    <string name="pro_showcase_label">PRO PAKET</string>
+    <string name="pro_showcase_supporting">Dre wa separate install kawa, da umar updates sara.</string>
+    <string name="pro_showcase_meta">Juda installs · Da umar updates</string>
+    <string name="pro_showcase_chip_installs">Dre mustaqil apps</string>
+    <string name="pro_showcase_chip_updates">Da umar updates shamil di</string>
+    <string name="pro_showcase_chip_entry">Da apps petawe interfaces</string>
+    <string name="pro_showcase_soon">ZHAR</string>
+    <string name="pro_showcase_hint">Unlock kawa aw apps wogori.</string>
+    <string name="pro_showcase_expand_desc">Phone full screen kawa</string>
+    <string name="pro_showcase_collapse_desc">Da full screen woza</string>
+    <string name="pro_showcase_phone_desc">Da FadSec Lab device mockup. Screen dre Pro apps show kawi. Phone droundolo da paara tsale kae.</string>
+    <string name="pro_showcase_privacy_mark">Privacy pa design</string>
 </resources>

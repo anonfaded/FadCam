@@ -21,7 +21,6 @@ import androidx.fragment.app.DialogFragment;
 
 import com.fadcam.R;
 import com.fadcam.pro.ProReminderManager;
-import com.fadcam.ui.widgets.ProBundleShowcaseView;
 import com.google.android.material.button.MaterialButton;
 
 /**
@@ -89,24 +88,13 @@ public class ProReminderDialogFragment extends DialogFragment {
 
         installBackGuard(getDialog());
 
-        ProBundleShowcaseView showcase = view.findViewById(R.id.proReminderShowcase);
         ProReminderManager.DialogCopy copy =
                 ProReminderManager.getDialogCopy(requireContext(), copyIndex);
-        // The dossier frame already carries the copy; the showcase is the device exhibit only.
-        showcase.setPhoneOnlyMode(true, 120);
-        showcase.setSplashEnabled(true);
-        showcase.setLiveClockEnabled(true);
-        showcase.setRealBatteryEnabled(true);
-        showcase.setDragEnabled(true);
 
         android.widget.TextView title = view.findViewById(R.id.proReminderTitle);
         android.widget.TextView subtitle = view.findViewById(R.id.proReminderSubtitle);
-        android.widget.TextView fileNo = view.findViewById(R.id.proReminderFileNo);
-        android.widget.TextView cycle = view.findViewById(R.id.proReminderCycle);
         title.setText(copy.title);
         subtitle.setText(copy.subtitle);
-        fileNo.setText(getString(R.string.pro_dossier_file_value, copyIndex + 1));
-        cycle.setText(getString(R.string.pro_dossier_cycle, copyIndex + 1));
 
         continueButton = view.findViewById(R.id.proReminderContinue);
         continueButton.setOnClickListener(v -> openPro());

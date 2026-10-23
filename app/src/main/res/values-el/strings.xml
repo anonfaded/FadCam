@@ -3027,6 +3027,9 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">Χρησιμοποιείτε το FadCam για %1$s</string>
     <string name="app_usage_since_install_title">Χρησιμοποιείτε το FadCam για</string>
+
+
+    <string name="app_age_a_while">λίγο καιρό</string>
     <string name="app_usage_installed_on">Εγκαταστάθηκε στις</string>
     <string name="pro_reminder_button_continue">Συνέχεια</string>
     <string name="pro_reminder_button_countdown">Συνέχεια · %1$d</string>
@@ -3081,4 +3084,18 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
         <item quantity="one">Θα επιστρέψω σε %1$d ημέρα. Τα λέμε.</item>
         <item quantity="other">Θα επιστρέψω σε %1$d ημέρες. Τα λέμε.</item>
     </plurals>
+    <string name="pro_screen_bundle">Τρεις ιδιωτικές εφαρμογές.
+Δικές σου για πάντα.</string>
+    <string name="pro_showcase_label">ΠΑΚΕΤΟ PRO</string>
+    <string name="pro_showcase_supporting">Εγκατέστησε και τις τρεις ξεχωριστά, με ενημερώσεις για πάντα.</string>
+    <string name="pro_showcase_meta">Ξεχωριστές εγκαταστάσεις · Ενημερώσεις για πάντα</string>
+    <string name="pro_showcase_chip_installs">Τρεις αυτόνομες εφαρμογές</string>
+    <string name="pro_showcase_chip_updates">Περιλαμβάνονται ενημερώσεις για πάντα</string>
+    <string name="pro_showcase_chip_entry">Μεταμφιεσμένα περιβάλλοντα εφαρμογών</string>
+    <string name="pro_showcase_soon">ΣΥΝΤΟΜΑ</string>
+    <string name="pro_showcase_hint">Ξεκλείδωσε και εξερεύνησε τις εφαρμογές.</string>
+    <string name="pro_showcase_expand_desc">Άνοιγμα τηλεφώνου σε πλήρη οθόνη</string>
+    <string name="pro_showcase_collapse_desc">Έξοδος από πλήρη οθόνη</string>
+    <string name="pro_showcase_phone_desc">Ομοίωμα συσκευής FadSec Lab. Η οθόνη δείχνει τις τρεις εφαρμογές Pro. Σύρε στο πλάι για να περιστρέψεις το τηλέφωνο.</string>
+    <string name="pro_showcase_privacy_mark">Ιδιωτικότητα εκ σχεδιασμού</string>
 </resources>

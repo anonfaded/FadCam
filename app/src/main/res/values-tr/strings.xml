@@ -2827,6 +2827,9 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">FadCam\'i %1$s süredir kullanıyorsunuz</string>
     <string name="app_usage_since_install_title">FadCam\'i kullanalı</string>
+
+
+    <string name="app_age_a_while">bir süredir</string>
     <string name="app_usage_installed_on">Yüklenme tarihi</string>
     <string name="pro_reminder_button_continue">Devam</string>
     <string name="pro_reminder_button_countdown">Devam · %1$d</string>
@@ -2881,4 +2884,18 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
         <item quantity="one">%1$d gün sonra tekrar uğrarım. Görüşürüz.</item>
         <item quantity="other">%1$d gün sonra tekrar uğrarım. Görüşürüz.</item>
     </plurals>
+    <string name="pro_screen_bundle">Üç özel uygulama.
+Sonsuza dek senin.</string>
+    <string name="pro_showcase_label">PRO PAKET</string>
+    <string name="pro_showcase_supporting">Üçünü ayrı ayrı kur, ömür boyu güncellemelerle.</string>
+    <string name="pro_showcase_meta">Ayrı kurulumlar · Ömür boyu güncellemeler</string>
+    <string name="pro_showcase_chip_installs">Üç bağımsız uygulama</string>
+    <string name="pro_showcase_chip_updates">Ömür boyu güncellemeler dahil</string>
+    <string name="pro_showcase_chip_entry">Gizlenmiş uygulama arayüzleri</string>
+    <string name="pro_showcase_soon">YAKINDA</string>
+    <string name="pro_showcase_hint">Kilidi aç ve uygulamaları keşfet.</string>
+    <string name="pro_showcase_expand_desc">Telefonu tam ekran aç</string>
+    <string name="pro_showcase_collapse_desc">Tam ekrandan çık</string>
+    <string name="pro_showcase_phone_desc">FadSec Lab cihaz maketi. Ekranda üç Pro uygulaması var. Telefonu döndürmek için yana sürükle.</string>
+    <string name="pro_showcase_privacy_mark">Tasarımda gizlilik</string>
 </resources>

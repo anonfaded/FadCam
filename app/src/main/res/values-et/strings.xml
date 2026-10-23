@@ -2930,6 +2930,9 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">FadCam on kasutusel olnud %1$s</string>
     <string name="app_usage_since_install_title">FadCam on kasutusel olnud</string>
+
+
+    <string name="app_age_a_while">mõnda aega</string>
     <string name="app_usage_installed_on">Paigaldatud</string>
     <string name="pro_reminder_button_continue">Jätka</string>
     <string name="pro_reminder_button_countdown">Jätka · %1$d</string>
@@ -2984,4 +2987,18 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
         <item quantity="one">Tulen tagasi %1$d päeva pärast. Näeme siis.</item>
         <item quantity="other">Tulen tagasi %1$d päeva pärast. Näeme siis.</item>
     </plurals>
+    <string name="pro_screen_bundle">Kolm privaatset rakendust.
+Igavesti sinu.</string>
+    <string name="pro_showcase_label">PRO-PAKETT</string>
+    <string name="pro_showcase_supporting">Paigalda kõik kolm eraldi, eluaegsete uuendustega.</string>
+    <string name="pro_showcase_meta">Eraldi paigaldused · Eluaegsed uuendused</string>
+    <string name="pro_showcase_chip_installs">Kolm iseseisvat rakendust</string>
+    <string name="pro_showcase_chip_updates">Eluaegsed uuendused sisalduvad</string>
+    <string name="pro_showcase_chip_entry">Varjatud rakenduseliidesed</string>
+    <string name="pro_showcase_soon">VARSTI</string>
+    <string name="pro_showcase_hint">Ava lukk ja uuri rakendusi.</string>
+    <string name="pro_showcase_expand_desc">Ava telefon täisekraanil</string>
+    <string name="pro_showcase_collapse_desc">Välju täisekraanilt</string>
+    <string name="pro_showcase_phone_desc">FadSec Labi seadme makett. Ekraanil on kolm Pro rakendust. Pööramiseks lohista küljele.</string>
+    <string name="pro_showcase_privacy_mark">Privaatsus disainis</string>
 </resources>

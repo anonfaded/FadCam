@@ -135,6 +135,10 @@ public class HomeFragment extends BaseFragment {
 
     private final Runnable proReminderRunnable = this::maybeShowProReminder;
     private final Runnable afterProRunnable = this::showAfterProIfPending;
+    /** A cold start can still be laying out Home when the first check fires; retry briefly. */
+    private int proReminderVisibilityRetries;
+    /** Plain AlertDialogs are not fragments, so track the one Home may be showing. */
+    private AlertDialog visibleAlertDialog;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private static final String ELAPSED_ALIGNMENT_RESULT_KEY = "home_elapsed_alignment_picker";
     private static final String ELAPSED_DISPLAY_RESULT_KEY = "home_elapsed_display_picker";
@@ -2240,6 +2244,7 @@ public class HomeFragment extends BaseFragment {
         // The after-Pro confirmation is one-shot; this also covers process death while the
         // Pro screen was open. Ownership builds compile this flag false and schedule nothing.
         if (BuildConfig.ENABLE_PRO_REMINDER) {
+            proReminderVisibilityRetries = 0;
             scheduleAfterProCheck(AFTER_PRO_SETTLE_MS);
             scheduleProReminderCheck(PRO_REMINDER_SETTLE_MS);
         }
@@ -2273,7 +2278,16 @@ public class HomeFragment extends BaseFragment {
     private void maybeShowProReminder() {
         if (!BuildConfig.ENABLE_PRO_REMINDER || !ProReminderManager.isSupported()) return;
         if (!isAdded() || getContext() == null || getActivity() == null) return;
-        if (isHidden() || !isResumed() || !isVisible()) return;
+        if (isHidden() || !isResumed()) return;
+        if (!isVisible()) {
+            // The fragment can be resumed a frame or two before its view is actually shown
+            // on a slow cold start. Retry briefly instead of dropping this visit entirely.
+            if (proReminderVisibilityRetries++ < 6) {
+                scheduleProReminderCheck(500L);
+            }
+            return;
+        }
+        proReminderVisibilityRetries = 0;
         if (recordingState != RecordingState.NONE
                 || isPreviewOnlyActive || isPreviewOnlyStartPending
                 || isLaunchingPhotoCapture) return;
@@ -2289,9 +2303,10 @@ public class HomeFragment extends BaseFragment {
         }
 
         // Both touchpoints are mandatory. If the alarm was late/missed, or the app opened
-        // first, post the notification now and only then raise the dossier.
-        if (!ProReminderManager.isDesignMode(requireContext())
-                && !ProReminderManager.isNotificationSent(requireContext())) {
+        // first, post the notification now and only then raise the dossier. shouldPostNotification
+        // covers both the first cycle (3 days + one recording) and the 7-day alarm cycles, and
+        // it also respects the notification permission/channel state.
+        if (ProReminderManager.shouldPostNotification(requireContext())) {
             if (ProReminderNotification.post(requireContext())) {
                 ProReminderManager.markNotificationPosted(requireContext());
             }
@@ -2358,8 +2373,19 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    /** Shows a plain AlertDialog and remembers it for the safe-screen guard. */
+    private void showTrackedDialog(AlertDialog dialog) {
+        if (dialog == null) return;
+        visibleAlertDialog = dialog;
+        dialog.setOnDismissListener(d -> {
+            if (visibleAlertDialog == d) visibleAlertDialog = null;
+        });
+        dialog.show();
+    }
+
     private boolean hasVisibleDialogOrSheet() {
         try {
+            if (visibleAlertDialog != null && visibleAlertDialog.isShowing()) return true;
             if (hasVisibleDialogOrSheet(getParentFragmentManager().getFragments())) return true;
             if (hasVisibleDialogOrSheet(getChildFragmentManager().getFragments())) return true;
             if (getActivity() != null) {
@@ -2583,9 +2609,10 @@ public class HomeFragment extends BaseFragment {
             (stackTrace != null ? stackTrace : "No stack trace") +
             "\n-----------------------------------";
 
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(
-            requireContext()
-        )
+        AlertDialog failureDialog =
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(
+                requireContext()
+            )
             .setTitle("Recording Failed")
             .setMessage(fullErrorMessage)
             .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
@@ -2606,7 +2633,8 @@ public class HomeFragment extends BaseFragment {
                     android.widget.Toast.LENGTH_SHORT
                 ).show();
             })
-            .show();
+            .create();
+        showTrackedDialog(failureDialog);
     }
 
     // --- Initialization Helper Methods ---
@@ -5900,7 +5928,7 @@ public class HomeFragment extends BaseFragment {
     private void showCodecIncompatibilityDialog() {
         if (getContext() == null) return;
 
-        new MaterialAlertDialogBuilder(getContext())
+        AlertDialog codecDialog = new MaterialAlertDialogBuilder(getContext())
                 .setTitle(getString(R.string.codec_hevc_incompatible_title))
                 .setMessage(getString(R.string.codec_hevc_incompatible_message))
                 .setPositiveButton(getString(R.string.codec_switch_and_record), (dialog, which) -> {
@@ -5925,7 +5953,8 @@ public class HomeFragment extends BaseFragment {
                     dialog.dismiss();
                 })
                 .setCancelable(true)
-                .show();
+                .create();
+        showTrackedDialog(codecDialog);
     }
 
     /**
@@ -12416,7 +12445,7 @@ public class HomeFragment extends BaseFragment {
         // Handle any special cases for the HomeFragment's back button
         if (isRecordingOrPaused()) {
             // If recording is in progress, show a confirmation dialog
-            new MaterialAlertDialogBuilder(requireContext())
+            AlertDialog exitDialog = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Recording in Progress")
                 .setMessage("Do you want to stop recording and exit?")
                 .setPositiveButton("Stop and Exit", (dialog, which) -> {
@@ -12427,7 +12456,8 @@ public class HomeFragment extends BaseFragment {
                         .onBackPressed();
                 })
                 .setNegativeButton("Continue Recording", null)
-                .show();
+                .create();
+            showTrackedDialog(exitDialog);
             return true; // We handled the back press
         }
 

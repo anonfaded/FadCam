@@ -255,6 +255,100 @@
         </FrameLayout>
     </FrameLayout>
 
+    <!-- Fullscreen inspector chrome: the sheet legend stays readable while the phone is
+         inspected, and the collapse control keeps a safe margin above the gesture bar. -->
+    <FrameLayout android:id="@+id/inspectorChrome" android:layout_width="0dp" android:layout_height="0dp"
+        android:visibility="gone" android:clickable="false" android:focusable="false"
+        app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout android:id="@+id/inspectorLegend" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical"
+            android:layout_gravity="bottom|start" android:layout_marginStart="20dp"
+            android:layout_marginEnd="96dp" android:layout_marginBottom="30dp"
+            android:clickable="false" android:focusable="false">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/pro_showcase_label" android:fontFamily="monospace"
+                android:textColor="@color/dossier_olive_bright" android:textSize="9sp"
+                android:letterSpacing="0.18" android:textAllCaps="true" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:layout_marginTop="6dp" android:background="@color/dossier_line" />
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:text="@string/pro_screen_bundle"
+                android:fontFamily="sans-serif-condensed" android:textStyle="bold"
+                android:textAllCaps="true" android:letterSpacing="0.02"
+                android:lineSpacingExtra="1dp" android:textColor="@color/dossier_ink"
+                android:textSize="14sp" />
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView android:layout_width="14dp" android:layout_height="14dp"
+                    android:src="@drawable/ic_pro_feature_apps"
+                    android:tint="@color/dossier_olive_bright"
+                    android:importantForAccessibility="no" />
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:layout_marginStart="8dp"
+                    android:text="@string/pro_showcase_chip_installs"
+                    android:fontFamily="monospace" android:textColor="@color/dossier_muted"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView android:layout_width="14dp" android:layout_height="14dp"
+                    android:src="@drawable/ic_pro_feature_updates"
+                    android:tint="@color/dossier_olive_bright"
+                    android:importantForAccessibility="no" />
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:layout_marginStart="8dp"
+                    android:text="@string/pro_showcase_chip_updates"
+                    android:fontFamily="monospace" android:textColor="@color/dossier_muted"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView android:layout_width="14dp" android:layout_height="14dp"
+                    android:src="@drawable/ic_pro_feature_disguise"
+                    android:tint="@color/dossier_muted"
+                    android:importantForAccessibility="no" />
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp" android:text="@string/pro_showcase_chip_entry"
+                    android:fontFamily="monospace" android:textColor="@color/dossier_muted"
+                    android:textSize="10sp" />
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp" android:background="@drawable/bg_pro_dossier_tag"
+                    android:paddingHorizontal="5dp" android:paddingVertical="1dp"
+                    android:fontFamily="monospace" android:letterSpacing="0.14"
+                    android:text="@string/pro_showcase_soon"
+                    android:textColor="@color/dossier_olive_bright" android:textSize="7.5sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView android:id="@+id/inspectorCollapse" android:layout_width="44dp"
+            android:layout_height="44dp" android:layout_gravity="bottom|end"
+            android:layout_marginEnd="20dp" android:layout_marginBottom="30dp"
+            android:gravity="center" android:text="fullscreen_exit"
+            android:fontFamily="@font/materialicons" android:textSize="20sp"
+            android:textColor="@color/dossier_olive_bright"
+            android:background="@drawable/bg_pro_dossier_expand"
+            android:contentDescription="@string/pro_showcase_collapse_desc"
+            android:clickable="true" android:focusable="true" android:elevation="4dp" />
+    </FrameLayout>
+
     <!-- Fullscreen entrance cinematic: the phone towers over the window, the flash fires,
          then it settles into the bundle card. Last child so it covers everything; hidden
          unless the showcase drives it. -->
@@ -265,15 +359,4 @@
         android:elevation="64dp"
         app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- In-place fullscreen inspector close button: only visible while the inspector is open.
-         Last child so it draws above everything, including the cinematic overlay. -->
-    <TextView android:id="@+id/inspectorClose" android:layout_width="44dp" android:layout_height="44dp"
-        android:layout_marginStart="18dp" android:layout_marginTop="18dp"
-        android:text="close" android:fontFamily="@font/materialicons" android:textSize="20sp"
-        android:textColor="@color/pro_text" android:gravity="center"
-        android:background="@drawable/picker_circle_btn" app:backgroundTint="#80000000"
-        android:contentDescription="@string/close" android:visibility="gone"
-        android:clickable="true" android:focusable="true" android:elevation="70dp"
-        app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

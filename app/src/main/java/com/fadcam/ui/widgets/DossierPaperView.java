@@ -3,7 +3,6 @@ package com.fadcam.ui.widgets;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -19,7 +18,6 @@ public class DossierPaperView extends View {
 
     private final Paint gridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint bracketPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint watermarkPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final float density;
     private final float gridStep;
 
@@ -34,12 +32,6 @@ public class DossierPaperView extends View {
         bracketPaint.setStrokeWidth(1.1f * density);
         bracketPaint.setColor(getResources().getColor(R.color.dossier_olive, null));
         bracketPaint.setAlpha(150);
-        watermarkPaint.setStyle(Paint.Style.FILL);
-        watermarkPaint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
-        watermarkPaint.setTextSize(42f * density);
-        watermarkPaint.setLetterSpacing(0.12f);
-        watermarkPaint.setColor(getResources().getColor(R.color.dossier_ink, null));
-        watermarkPaint.setAlpha(12);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
     }
 
@@ -56,11 +48,6 @@ public class DossierPaperView extends View {
         for (float y = gridStep; y < h; y += gridStep) {
             canvas.drawLine(0, y, w, y, gridPaint);
         }
-
-        canvas.save();
-        canvas.rotate(-18f, w * 0.5f, h * 0.62f);
-        canvas.drawText("FADSEC LAB // DOSSIER", w * 0.05f, h * 0.64f, watermarkPaint);
-        canvas.restore();
 
         float inset = 10f * density;
         float arm = 17f * density;

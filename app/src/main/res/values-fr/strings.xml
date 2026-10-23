@@ -4587,6 +4587,9 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">Vous utilisez FadCam depuis %1$s</string>
     <string name="app_usage_since_install_title">Vous utilisez FadCam depuis</string>
+
+
+    <string name="app_age_a_while">un moment</string>
     <string name="app_usage_installed_on">Installé le</string>
     <string name="pro_reminder_button_continue">Continuer</string>
     <string name="pro_reminder_button_countdown">Continuer · %1$d</string>
@@ -4641,4 +4644,18 @@ For the smoothest playback experience, you can use an external player like VLC. 
         <item quantity="one">Je reviens dans %1$d jour. À bientôt.</item>
         <item quantity="other">Je reviens dans %1$d jours. À bientôt.</item>
     </plurals>
+    <string name="pro_screen_bundle">Trois applis privées.
+À vous pour toujours.</string>
+    <string name="pro_showcase_label">PACK PRO</string>
+    <string name="pro_showcase_supporting">Installez les trois séparément, mises à jour à vie incluses.</string>
+    <string name="pro_showcase_meta">Installations séparées · Mises à jour à vie</string>
+    <string name="pro_showcase_chip_installs">Trois applis autonomes</string>
+    <string name="pro_showcase_chip_updates">Mises à jour à vie incluses</string>
+    <string name="pro_showcase_chip_entry">Interfaces d\'applis déguisées</string>
+    <string name="pro_showcase_soon">BIENTÔT</string>
+    <string name="pro_showcase_hint">Déverrouillez et explorez les applis.</string>
+    <string name="pro_showcase_expand_desc">Ouvrir le téléphone en plein écran</string>
+    <string name="pro_showcase_collapse_desc">Quitter le plein écran</string>
+    <string name="pro_showcase_phone_desc">Maquette d\'appareil FadSec Lab. L\'écran montre les trois applis Pro. Glissez sur le côté pour tourner le téléphone.</string>
+    <string name="pro_showcase_privacy_mark">Confidentiel par conception</string>
 </resources>

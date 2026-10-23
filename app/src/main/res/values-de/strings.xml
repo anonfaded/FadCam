@@ -2872,6 +2872,9 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">Du nutzt FadCam seit %1$s</string>
     <string name="app_usage_since_install_title">Du nutzt FadCam seit</string>
+
+
+    <string name="app_age_a_while">eine Weile</string>
     <string name="app_usage_installed_on">Installiert am</string>
     <string name="pro_reminder_button_continue">Weiter</string>
     <string name="pro_reminder_button_countdown">Weiter · %1$d</string>
@@ -2926,4 +2929,18 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
         <item quantity="one">Ich melde mich in %1$d Tag wieder. Bis dann.</item>
         <item quantity="other">Ich melde mich in %1$d Tagen wieder. Bis dann.</item>
     </plurals>
+    <string name="pro_screen_bundle">Drei private Apps.
+Für immer dein.</string>
+    <string name="pro_showcase_label">PRO-PAKET</string>
+    <string name="pro_showcase_supporting">Installiere alle drei separat – mit lebenslangen Updates.</string>
+    <string name="pro_showcase_meta">Separate Installationen · Lebenslange Updates</string>
+    <string name="pro_showcase_chip_installs">Drei eigenständige Apps</string>
+    <string name="pro_showcase_chip_updates">Lebenslange Updates inklusive</string>
+    <string name="pro_showcase_chip_entry">Getarnte App-Oberflächen</string>
+    <string name="pro_showcase_soon">BALD</string>
+    <string name="pro_showcase_hint">Entsperren und die Apps erkunden.</string>
+    <string name="pro_showcase_expand_desc">Telefon im Vollbild öffnen</string>
+    <string name="pro_showcase_collapse_desc">Vollbild verlassen</string>
+    <string name="pro_showcase_phone_desc">FadSec-Lab-Gerätemodell. Der Bildschirm zeigt die drei Pro-Apps. Ziehe seitwärts, um das Telefon zu drehen.</string>
+    <string name="pro_showcase_privacy_mark">Privat gestaltet</string>
 </resources>

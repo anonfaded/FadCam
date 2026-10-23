@@ -2914,6 +2914,9 @@
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">Usi FadCam da %1$s</string>
     <string name="app_usage_since_install_title">Usi FadCam da</string>
+
+
+    <string name="app_age_a_while">un po’</string>
     <string name="app_usage_installed_on">Installato il</string>
     <string name="pro_reminder_button_continue">Continua</string>
     <string name="pro_reminder_button_countdown">Continua · %1$d</string>
@@ -2968,4 +2971,18 @@
         <item quantity="one">Tornerò tra %1$d giorno. A presto.</item>
         <item quantity="other">Tornerò tra %1$d giorni. A presto.</item>
     </plurals>
+    <string name="pro_screen_bundle">Tre app private.
+Tue per sempre.</string>
+    <string name="pro_showcase_label">PACCHETTO PRO</string>
+    <string name="pro_showcase_supporting">Installa tutte e tre separatamente, con aggiornamenti a vita.</string>
+    <string name="pro_showcase_meta">Installazioni separate · Aggiornamenti a vita</string>
+    <string name="pro_showcase_chip_installs">Tre app autonome</string>
+    <string name="pro_showcase_chip_updates">Aggiornamenti a vita inclusi</string>
+    <string name="pro_showcase_chip_entry">Interfacce delle app camuffate</string>
+    <string name="pro_showcase_soon">PRESTO</string>
+    <string name="pro_showcase_hint">Sblocca ed esplora le app.</string>
+    <string name="pro_showcase_expand_desc">Apri il telefono a schermo intero</string>
+    <string name="pro_showcase_collapse_desc">Esci dallo schermo intero</string>
+    <string name="pro_showcase_phone_desc">Modello del dispositivo FadSec Lab. Lo schermo mostra le tre app Pro. Trascina di lato per ruotare il telefono.</string>
+    <string name="pro_showcase_privacy_mark">Privacy per design</string>
 </resources>

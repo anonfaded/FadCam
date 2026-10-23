@@ -14,15 +14,15 @@
 
     <style name="ProDossierHeader">
         <item name="android:fontFamily">monospace</item>
-        <item name="android:textSize">8.5sp</item>
-        <item name="android:textColor">@color/dossier_olive</item>
+        <item name="android:textSize">9sp</item>
+        <item name="android:textColor">@color/dossier_olive_bright</item>
         <item name="android:letterSpacing">0.18</item>
         <item name="android:textAllCaps">true</item>
     </style>
 
     <style name="ProDossierLabel">
         <item name="android:fontFamily">monospace</item>
-        <item name="android:textSize">7.5sp</item>
+        <item name="android:textSize">9sp</item>
         <item name="android:textColor">@color/dossier_muted</item>
         <item name="android:letterSpacing">0.12</item>
         <item name="android:textAllCaps">true</item>
@@ -30,7 +30,7 @@
 
     <style name="ProDossierValue">
         <item name="android:fontFamily">monospace</item>
-        <item name="android:textSize">11sp</item>
+        <item name="android:textSize">11.5sp</item>
         <item name="android:textColor">@color/dossier_ink</item>
         <item name="android:letterSpacing">0.04</item>
         <item name="android:textAllCaps">true</item>
@@ -38,7 +38,7 @@
 
     <style name="ProDossierStamp">
         <item name="android:fontFamily">monospace</item>
-        <item name="android:textSize">7.5sp</item>
+        <item name="android:textSize">8.5sp</item>
         <item name="android:textColor">@color/dossier_red</item>
         <item name="android:letterSpacing">0.14</item>
         <item name="android:textAllCaps">true</item>
@@ -61,7 +61,7 @@
 
     <style name="ProDossierBody">
         <item name="android:fontFamily">monospace</item>
-        <item name="android:textSize">11.5sp</item>
+        <item name="android:textSize">12sp</item>
         <item name="android:textColor">@color/dossier_muted</item>
         <item name="android:lineSpacingExtra">3dp</item>
     </style>

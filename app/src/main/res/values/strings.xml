@@ -3190,7 +3190,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_screen_navigation_owned">Your Pro</string>
     <string name="pro_screen_purchase">Unlock the Pro Bundle</string>
     <string name="pro_screen_purchase_caption">Opens the FadSec Lab shop</string>
-    <string name="pro_screen_bundle">Three private apps. Yours forever.</string>
+    <string name="pro_screen_bundle">Three private apps.\nYours forever.</string>
     <string name="pro_showcase_label">PRO BUNDLE</string>
     <string name="pro_showcase_supporting">Install all three separately with lifetime updates.</string>
     <string name="pro_showcase_meta">Separate installs · Lifetime updates</string>
@@ -3199,9 +3199,34 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_showcase_chip_updates">Lifetime updates included</string>
     <string name="pro_showcase_chip_entry">Disguised app interfaces</string>
     <string name="pro_showcase_soon">SOON</string>
+    <string name="pro_showcase_privacy_mark">Private by design</string>
     <string name="pro_showcase_hint">Unlock and explore the apps.</string>
     <string name="app_usage_since_install">Using FadCam for %1$s</string>
     <string name="app_usage_since_install_title">Using FadCam for</string>
+
+    <string name="app_age_a_while">a while</string>
+    <!-- Bare age units. Used by the Roman-Pashto special case and as the default fallback;
+         every other locale is formatted by ICU at runtime. -->
+    <plurals name="app_age_year">
+        <item quantity="one">%1$d year</item>
+        <item quantity="other">%1$d years</item>
+    </plurals>
+    <plurals name="app_age_month">
+        <item quantity="one">%1$d month</item>
+        <item quantity="other">%1$d months</item>
+    </plurals>
+    <plurals name="app_age_day">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="app_age_hour">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+    <plurals name="app_age_minute">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
     <string name="app_usage_installed_on">Installed on</string>
     <string name="pro_showcase_notes_hint">Type to add a note</string>
     <string name="pro_showcase_weather_temp">24°</string>
@@ -3222,6 +3247,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_showcase_recents_hint">Tap to reopen</string>
     <string name="pro_showcase_recents_empty">No recent apps</string>
     <string name="pro_showcase_expand_desc">Open the phone fullscreen</string>
+    <string name="pro_showcase_collapse_desc">Exit fullscreen</string>
     <string name="pro_showcase_fullscreen_hint">Drag to turn · Tap an app</string>
     <string name="pro_showcase_weather_line">Sunny · 24°</string>
     <string name="pro_showcase_notif_now">now</string>

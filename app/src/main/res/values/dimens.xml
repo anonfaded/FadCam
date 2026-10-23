@@ -169,7 +169,7 @@
     <!-- Fluid phone slot: a share of the text column's weight (the height follows the width,
          so this is a ratio, not a size). Tuned per width bucket because the copy next to the
          phone is set in sp and needs proportionally more room on narrow screens. -->
-    <item name="pro_showcase_phone_weight" type="dimen" format="float">0.72</item>
+    <item name="pro_showcase_phone_weight" type="dimen" format="float">0.62</item>
     <dimen name="pro_showcase_phone_max_w">150dp</dimen>
     <dimen name="pro_showcase_phone_depth">44dp</dimen>
     <dimen name="pro_showcase_visor_depth">6dp</dimen>

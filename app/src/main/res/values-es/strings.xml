@@ -3035,6 +3035,9 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
     <string name="fadcam_card_title">FadCam</string>
     <string name="app_usage_since_install">Usas FadCam desde hace %1$s</string>
     <string name="app_usage_since_install_title">Usas FadCam desde hace</string>
+
+
+    <string name="app_age_a_while">un tiempo</string>
     <string name="app_usage_installed_on">Instalado el</string>
     <string name="pro_reminder_button_continue">Continuar</string>
     <string name="pro_reminder_button_countdown">Continuar · %1$d</string>
@@ -3089,4 +3092,18 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
         <item quantity="one">Volveré en %1$d día. Nos vemos.</item>
         <item quantity="other">Volveré en %1$d días. Nos vemos.</item>
     </plurals>
+    <string name="pro_screen_bundle">Tres apps privadas.
+Tuyas para siempre.</string>
+    <string name="pro_showcase_label">PAQUETE PRO</string>
+    <string name="pro_showcase_supporting">Instala las tres por separado con actualizaciones de por vida.</string>
+    <string name="pro_showcase_meta">Instalaciones separadas · Actualizaciones de por vida</string>
+    <string name="pro_showcase_chip_installs">Tres apps independientes</string>
+    <string name="pro_showcase_chip_updates">Actualizaciones de por vida incluidas</string>
+    <string name="pro_showcase_chip_entry">Interfaces de app camufladas</string>
+    <string name="pro_showcase_soon">PRONTO</string>
+    <string name="pro_showcase_hint">Desbloquea y explora las apps.</string>
+    <string name="pro_showcase_expand_desc">Abrir el teléfono a pantalla completa</string>
+    <string name="pro_showcase_collapse_desc">Salir de pantalla completa</string>
+    <string name="pro_showcase_phone_desc">Maqueta del dispositivo FadSec Lab. La pantalla muestra las tres apps Pro. Arrastra de lado para girar el teléfono.</string>
+    <string name="pro_showcase_privacy_mark">Privacidad por diseño</string>
 </resources>
