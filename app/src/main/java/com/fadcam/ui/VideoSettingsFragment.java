@@ -50,6 +50,7 @@ import java.util.TreeSet;
 import com.fadcam.Utils;
 import com.fadcam.utils.CameraXFrameRateUtil;
 import com.fadcam.utils.DeviceHelper;
+import com.fadcam.utils.VideoEncoderCapabilities;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import java.util.Collections;
 import java.util.Arrays;
@@ -490,6 +491,7 @@ public class VideoSettingsFragment extends Fragment {
                     cachedResolutionsFront.clear();
                     cachedResolutionsBack.clear();
 
+                    validateFrameRateForEncoder();
                     refreshAllValues();
                 }
 
@@ -608,7 +610,9 @@ public class VideoSettingsFragment extends Fragment {
 
     private void showFrameRateBottomSheet() {
         CameraType cam = prefs.getCameraSelection();
-        java.util.List<Integer> rates = getHardwareSupportedFrameRates(cam);
+        validateFrameRateForEncoder();
+        java.util.List<Integer> rates = getEncoderSupportedFrameRates(cam, prefs.getCameraResolution(),
+                prefs.getVideoCodec());
         int current = prefs.getSpecificVideoFrameRate(cam);
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         String currentId = String.valueOf(current);
@@ -650,6 +654,7 @@ public class VideoSettingsFragment extends Fragment {
             String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
             if (sel != null && !sel.equals(currentId)) {
                 prefs.sharedPreferences.edit().putString(Constants.PREF_VIDEO_CODEC, sel).apply();
+                validateFrameRateForEncoder();
                 refreshAllValues();
             }
         });
@@ -1492,7 +1497,115 @@ public class VideoSettingsFragment extends Fragment {
     }
 
     private void onResolutionOrFramerateChanged() {
+        // A camera can advertise 60 fps and still have no encoder that does 60 at the selected
+        // resolution (P30 Pro: 4K is 30 fps, 1080p is 60 fps). Never leave an impossible pair
+        // saved — the recorder would fail at configure().
+        validateFrameRateForEncoder();
         refreshAllValues();
+    }
+
+    /**
+     * Camera frame rates intersected with what the selected encoder advertises for the current
+     * resolution. Fail-open: if every capability query breaks, keep the camera list.
+     */
+    private List<Integer> getEncoderSupportedFrameRates(CameraType cam, Size size, VideoCodec codec) {
+        List<Integer> cameraRates = getHardwareSupportedFrameRates(cam);
+        if (size == null || codec == null || cameraRates.isEmpty()) {
+            return cameraRates;
+        }
+        List<VideoEncoderCapabilities.EncoderInfo> infos;
+        try {
+            // Mirror GLRecordingPipeline.initializeEncoder(): the encoder receives the
+            // post-orientation-swap size, not the raw camera size.
+            boolean appWantsPortrait = !prefs.isOrientationLandscape();
+            boolean sensorPortrait = size.getHeight() > size.getWidth();
+            boolean swap = appWantsPortrait != sensorPortrait;
+            int encoderW = swap ? size.getHeight() : size.getWidth();
+            int encoderH = swap ? size.getWidth() : size.getHeight();
+            infos = VideoEncoderCapabilities.inspectAll(codec.getMimeType(), encoderW, encoderH);
+        } catch (Throwable t) {
+            return cameraRates;
+        }
+        if (infos.isEmpty()) {
+            return cameraRates;
+        }
+        List<Integer> filtered = new ArrayList<>();
+        for (Integer rate : cameraRates) {
+            if (rate == null) {
+                continue;
+            }
+            for (VideoEncoderCapabilities.EncoderInfo info : infos) {
+                if (!info.surfaceSupported || info.frameRates == null) {
+                    continue;
+                }
+                if (VideoEncoderCapabilities.supportsFrameRate(info.frameRates, rate)) {
+                    filtered.add(rate);
+                    break;
+                }
+            }
+        }
+        if (filtered.isEmpty()) {
+            if (Log.isEnabled()) {
+                FLog.w(TAG, "FPS query returned no encoder match for " + codec + " " + size
+                        + "; keeping camera list");
+            }
+            return cameraRates;
+        }
+        if (Log.isEnabled()) {
+            FLog.i(TAG, "FPS " + codec + " " + size + ": camera=" + cameraRates + " encoder=" + filtered);
+        }
+        return filtered;
+    }
+
+    /** Re-saves the frame rate if the current resolution/codec cannot encode it. */
+    private void validateFrameRateForEncoder() {
+        CameraType cam = prefs.getCameraSelection();
+        Size size = prefs.getCameraResolution();
+        VideoCodec codec = prefs.getVideoCodec();
+        int current = prefs.getSpecificVideoFrameRate(cam);
+        double maxFps = getEncoderMaxFrameRate(size, codec);
+        if (maxFps <= 0 || current <= maxFps) {
+            return;
+        }
+        int fallback = (int) Math.floor(maxFps);
+        if (fallback < 1) {
+            fallback = 1;
+        }
+        prefs.setSpecificVideoFrameRate(cam, fallback);
+        if (Log.isEnabled()) {
+            FLog.w(TAG, "FPS " + current + " unsupported by " + codec + " at " + size
+                    + "; auto-corrected to " + fallback);
+        }
+    }
+
+    /**
+     * Highest frame rate any surface-capable encoder advertises for this size. Deliberately
+     * does not touch CameraX: validation must not unbind camera use cases just because the
+     * user changed resolution/codec.
+     */
+    private double getEncoderMaxFrameRate(Size size, VideoCodec codec) {
+        if (size == null || codec == null) {
+            return -1;
+        }
+        try {
+            boolean appWantsPortrait = !prefs.isOrientationLandscape();
+            boolean sensorPortrait = size.getHeight() > size.getWidth();
+            boolean swap = appWantsPortrait != sensorPortrait;
+            int encoderW = swap ? size.getHeight() : size.getWidth();
+            int encoderH = swap ? size.getWidth() : size.getHeight();
+            List<VideoEncoderCapabilities.EncoderInfo> infos =
+                    VideoEncoderCapabilities.inspectAll(codec.getMimeType(), encoderW, encoderH);
+            double max = -1;
+            for (VideoEncoderCapabilities.EncoderInfo info : infos) {
+                if (!info.surfaceSupported || info.frameRates == null) {
+                    continue;
+                }
+                max = Math.max(max, info.frameRates.getUpper());
+            }
+            return max;
+        } catch (Throwable t) {
+            return -1;
+        }
     }
 
     // Bitrate helper text mirroring thresholds used in dialog (low<3, high>100) but

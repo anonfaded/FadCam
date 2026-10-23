@@ -823,17 +823,26 @@ public class TrashManager {
             }
 
             // Create a unique file name in the SAF directory
-            String targetFileName = getUniqueSafFileName(safDir, item.getOriginalDisplayName());
+            // Put the file back where it came from (Camera/Back, Screen, …) instead of the
+            // tree root. Falls back to the root when the original folder is gone.
+            DocumentFile targetDir = resolveOriginalSafFolder(context, safTreeUri, safDir, item);
+            if (targetDir == null || !targetDir.exists() || !targetDir.canWrite()) {
+                targetDir = safDir;
+            }
+
+            String targetFileName = getUniqueSafFileName(targetDir, item.getOriginalDisplayName());
             String mimeType = getMimeTypeForFile(targetFileName);
 
             try {
-                // Create the document in the SAF directory
-                DocumentFile newDoc = safDir.createFile(mimeType, targetFileName);
+                // Create the document in the resolved SAF directory
+                DocumentFile newDoc = targetDir.createFile(mimeType, targetFileName);
                 if (newDoc == null) {
-                    FLog.e(TAG, "restoreItemsToSaf: Failed to create document in SAF for: " + targetFileName);
+                    FLog.e(TAG, "restoreItemsToSaf: Failed to create document in SAF for: " + targetFileName
+                            + " (folder=" + targetDir.getUri() + ")");
                     allSucceeded = false;
                     continue;
                 }
+                FLog.i(TAG, "restoreItemsToSaf: restoring into " + targetDir.getUri());
 
                 // Copy content from trash file to new SAF document
                 try (InputStream in = new FileInputStream(fileInTrash);
@@ -889,6 +898,79 @@ public class TrashManager {
         }
 
         return allSucceeded;
+    }
+
+    /**
+     * Resolves the folder an item originally lived in, inside the configured SAF tree.
+     *
+     * <p>{@link TrashItem#getOriginalUriString()} holds the document URI, whose document id is
+     * the tree id plus a relative path ({@code <treeId>/Camera/Back/x.mp4}). Walking that path
+     * back gives the real "Original Location" instead of the tree root. Folders that no longer
+     * exist are recreated; if the provider refuses, the deepest folder that does exist is used.
+     * A restore is never aborted because of this lookup.
+     */
+    private static DocumentFile resolveOriginalSafFolder(Context context, Uri treeUri,
+            DocumentFile root, TrashItem item) {
+        try {
+            String originalUri = item.getOriginalUriString();
+            if (originalUri == null || originalUri.isEmpty()) {
+                return root;
+            }
+            Uri uri = Uri.parse(originalUri);
+            if (!DocumentsContract.isDocumentUri(context, uri)) {
+                return root;
+            }
+
+            String treeDocId = DocumentsContract.getTreeDocumentId(treeUri);
+            String docId = DocumentsContract.getDocumentId(uri);
+            if (treeDocId == null || docId == null) {
+                return root;
+            }
+            // Only resolve inside the same tree this restore writes to.
+            if (!docId.startsWith(treeDocId + "/")) {
+                return root;
+            }
+
+            String relative = docId.substring(treeDocId.length() + 1);
+            int lastSlash = relative.lastIndexOf('/');
+            if (lastSlash < 0) {
+                return root; // the file sat directly in the tree root
+            }
+            String folderPath = relative.substring(0, lastSlash);
+            if (folderPath.isEmpty()) {
+                return root;
+            }
+
+            DocumentFile dir = root;
+            for (String segment : folderPath.split("/")) {
+                if (segment.isEmpty()) {
+                    continue;
+                }
+                DocumentFile next = dir.findFile(segment);
+                if (next == null) {
+                    // The folder is gone — recreate the original location rather than
+                    // dropping the file somewhere else in the tree.
+                    next = dir.createDirectory(segment);
+                    if (next == null) {
+                        FLog.w(TAG, "restoreItemsToSaf: could not recreate '" + segment
+                                + "' under " + dir.getUri() + " — using that folder");
+                        return dir;
+                    }
+                    FLog.i(TAG, "restoreItemsToSaf: recreated folder '" + segment
+                            + "' under " + dir.getUri());
+                } else if (!next.isDirectory()) {
+                    // A file with that name is in the way — restore beside it.
+                    FLog.w(TAG, "restoreItemsToSaf: '" + segment
+                            + "' exists but is not a folder — using its parent");
+                    return dir;
+                }
+                dir = next;
+            }
+            return dir;
+        } catch (Exception e) {
+            FLog.w(TAG, "restoreItemsToSaf: could not resolve the original folder", e);
+            return root;
+        }
     }
 
     /**

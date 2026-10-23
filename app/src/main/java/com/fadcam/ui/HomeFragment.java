@@ -76,9 +76,12 @@ import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.documentfile.provider.DocumentFile;
+import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager; // <<< ADD IMPORT FOR FragmentManager
 import androidx.fragment.app.FragmentTransaction; // <<< ADD IMPORT FOR FragmentTransaction
 import com.google.android.material.card.MaterialCardView;
+import com.fadcam.BuildConfig;
 import com.fadcam.CameraType;
 import com.fadcam.MainActivity;
 import com.fadcam.Constants;
@@ -92,7 +95,8 @@ import com.fadcam.VideoCodec;
 import com.fadcam.services.RecordingService;
 import com.fadcam.services.TorchService;
 import com.fadcam.dualcam.service.DualCameraRecordingService;
-import com.fadcam.streaming.RemoteStreamManager;
+import com.fadcam.pro.ProReminderManager;
+import com.fadcam.pro.ProReminderNotification;
 import com.fadcam.ui.helpers.HomeFragmentHelper;
 import com.fadcam.ui.components.ModeSwitcherComponent;
 import com.fadcam.utils.DebouncedRunnable;
@@ -109,9 +113,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.time.chrono.HijrahChronology;
-import java.time.chrono.HijrahDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -129,6 +130,15 @@ public class HomeFragment extends BaseFragment {
 
     private static final String TAG = "HomeFragment";
     private static final long UPDATE_CHECK_INTERVAL_MS = 60L * 60L * 1000L;
+    private static final long PRO_REMINDER_SETTLE_MS = 1500L;
+    private static final long AFTER_PRO_SETTLE_MS = 350L;
+
+    private final Runnable proReminderRunnable = this::maybeShowProReminder;
+    private final Runnable afterProRunnable = this::showAfterProIfPending;
+    /** A cold start can still be laying out Home when the first check fires; retry briefly. */
+    private int proReminderVisibilityRetries;
+    /** Plain AlertDialogs are not fragments, so track the one Home may be showing. */
+    private AlertDialog visibleAlertDialog;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private static final String ELAPSED_ALIGNMENT_RESULT_KEY = "home_elapsed_alignment_picker";
     private static final String ELAPSED_DISPLAY_RESULT_KEY = "home_elapsed_display_picker";
@@ -1328,6 +1338,26 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    /**
+     * Clears the recording timeline (elapsed anchor + countdown latch) and repaints the
+     * quick-action timer badge.
+     *
+     * <p>Must be reached from BOTH ways the UI can learn that a recording ended:
+     * {@link #onRecordingStopped()} (stop broadcast, used by the in-app stop button) and
+     * {@link #handleServiceStateUpdate(RecordingState)} with {@code NONE} — the path taken when
+     * the app re-syncs with the service (e.g. a stop performed from the shortcut while the app was
+     * in the background). Missing the state-callback path left the elapsed anchor set and the
+     * countdown badge ticking after the recording had already stopped.
+     */
+    private void resetRecordingTimeline() {
+        quickCountdownSessionActive = false;
+        recordingStartTime = 0L;
+        recordingPauseStartedAt = 0L;
+        recordingAccumulatedPausedDurationMs = 0L;
+        latestElapsedDisplay = buildElapsedDisplayText(0L);
+        refreshQuickTimerValue();
+    }
+
     private void resetTimers() {
         // Avoid blindly resetting if we are in the middle of an existing recording.
         if (isRecording() || isPaused()) {
@@ -1496,17 +1526,20 @@ public class HomeFragment extends BaseFragment {
                     Executors.newSingleThreadExecutor();
                 updateExecutor.execute(() -> {
                     try {
-                        // Rate-limit: GitHub feed is re-fetched at most once an
-                        // hour (epoch-ms timestamp persisted at each check).
+                        // Rate-limit: GitHub feeds are re-fetched at most once an hour
+                        // (timestamp persisted at each check). Inside the window we still
+                        // USE the cached last result so the UI keeps showing updates.
                         long now = System.currentTimeMillis();
+                        String currentVersion = getAppVersionForUpdates();
+                        com.fadcam.services.UpdateCheckService.UpdateCheckResult result;
                         if (now - sharedPreferencesManager.getLong(
                                 Constants.LAST_UPDATE_CHECK_KEY, 0L)
                                 < UPDATE_CHECK_INTERVAL_MS) {
-                            return;
+                            result = com.fadcam.services.UpdateCheckService.getLastResult();
+                            if (result == null) return;
+                        } else {
+                            result = com.fadcam.services.UpdateCheckService.checkForUpdate(currentVersion);
                         }
-                        String currentVersion = getAppVersionForUpdates();
-                        com.fadcam.services.UpdateCheckService.UpdateCheckResult result =
-                            com.fadcam.services.UpdateCheckService.checkForUpdate(currentVersion);
 
                         if (result.errorOccurred) {
                             FLog.w(TAG, "Update check returned error, skipping UI");
@@ -1822,13 +1855,8 @@ public class HomeFragment extends BaseFragment {
 
         // First update the recording state
         recordingState = RecordingState.NONE;
-        quickCountdownSessionActive = false;
-        
         // Reset timer (service will have cleared its value too)
-        recordingStartTime = 0;
-        recordingPauseStartedAt = 0L;
-        recordingAccumulatedPausedDurationMs = 0L;
-        latestElapsedDisplay = buildElapsedDisplayText(0L);
+        resetRecordingTimeline();
         // log removed
 
         // Release wake lock if it was acquired
@@ -1874,6 +1902,9 @@ public class HomeFragment extends BaseFragment {
         VideoStatsCache.invalidateStats(sharedPreferencesManager);
         com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
         updateStats(); // Will query Room DB (fast) then background delta scan updates it
+        if (BuildConfig.ENABLE_PRO_REMINDER) {
+            scheduleProReminderCheck(2000L);
+        }
     }
 
     // Inside HomeFragment.java
@@ -2067,6 +2098,7 @@ public class HomeFragment extends BaseFragment {
     @Override
     public void onStop() {
         super.onStop();
+        removeProReminderCallbacks();
         // unregisterStatsReceiver(); // Unregister receiver when fragment stops
 
         FLog.d(TAG, "HomeFragment stopped");
@@ -2207,6 +2239,184 @@ public class HomeFragment extends BaseFragment {
         // Start bubble rotation animation when visible (battery optimization)
         startBubbleRotation();
         isLaunchingPhotoCapture = false;
+
+        // The Pro reminder waits for the screen to settle, then re-checks every safe guard.
+        // The after-Pro confirmation is one-shot; this also covers process death while the
+        // Pro screen was open. Ownership builds compile this flag false and schedule nothing.
+        if (BuildConfig.ENABLE_PRO_REMINDER) {
+            proReminderVisibilityRetries = 0;
+            scheduleAfterProCheck(AFTER_PRO_SETTLE_MS);
+            scheduleProReminderCheck(PRO_REMINDER_SETTLE_MS);
+        }
+    }
+
+    private void scheduleProReminderCheck(long delayMs) {
+        View root = getView();
+        if (root == null) return;
+        root.removeCallbacks(proReminderRunnable);
+        root.postDelayed(proReminderRunnable, delayMs);
+    }
+
+    private void scheduleAfterProCheck(long delayMs) {
+        View root = getView();
+        if (root == null) return;
+        root.removeCallbacks(afterProRunnable);
+        root.postDelayed(afterProRunnable, delayMs);
+    }
+
+    private void removeProReminderCallbacks() {
+        View root = getView();
+        if (root == null) return;
+        root.removeCallbacks(proReminderRunnable);
+        root.removeCallbacks(afterProRunnable);
+    }
+
+    /**
+     * Shows the weekly Pro prompt only on a settled, focused Home screen. Never during a
+     * recording/preview, never over a sheet/dialog, never from a shortcut or background start.
+     */
+    private void maybeShowProReminder() {
+        if (!BuildConfig.ENABLE_PRO_REMINDER || !ProReminderManager.isSupported()) return;
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+        if (isHidden() || !isResumed()) return;
+        if (!isVisible()) {
+            // The fragment can be resumed a frame or two before its view is actually shown
+            // on a slow cold start. Retry briefly instead of dropping this visit entirely.
+            if (proReminderVisibilityRetries++ < 6) {
+                scheduleProReminderCheck(500L);
+            }
+            return;
+        }
+        proReminderVisibilityRetries = 0;
+        if (recordingState != RecordingState.NONE
+                || isPreviewOnlyActive || isPreviewOnlyStartPending
+                || isLaunchingPhotoCapture) return;
+        if (isScreenRecordingActive()) return;
+        if (getActivity().isFinishing() || getActivity().isDestroyed()) return;
+        if (!getActivity().hasWindowFocus()) return;
+        if (getParentFragmentManager().isStateSaved()) return;
+        if (isProReminderDialogShowing() || hasVisibleDialogOrSheet()) return;
+
+        if (ProReminderManager.isAfterProPending(requireContext())) {
+            showAfterProIfPending();
+            return;
+        }
+
+        // Both touchpoints are mandatory. If the alarm was late/missed, or the app opened
+        // first, post the notification now and only then raise the dossier. shouldPostNotification
+        // covers both the first cycle (3 days + one recording) and the 7-day alarm cycles, and
+        // it also respects the notification permission/channel state.
+        if (ProReminderManager.shouldPostNotification(requireContext())) {
+            if (ProReminderNotification.post(requireContext())) {
+                ProReminderManager.markNotificationPosted(requireContext());
+            }
+        }
+
+        int copyIndex = ProReminderManager.claimPresentation(requireContext());
+        if (copyIndex < 0) return;
+        // Do not cancel the tray notification here: both touchpoints are required in a cycle.
+        try {
+            ProReminderDialogFragment.newInstance(copyIndex)
+                    .show(getParentFragmentManager(), ProReminderDialogFragment.TAG);
+        } catch (IllegalStateException e) {
+            ProReminderManager.releaseClaim(requireContext());
+        }
+    }
+
+    private void showAfterProIfPending() {
+        if (!BuildConfig.ENABLE_PRO_REMINDER || !ProReminderManager.isSupported()) return;
+        if (!isAdded() || getContext() == null || getActivity() == null) return;
+        if (isHidden() || !isResumed() || !isVisible()) return;
+        if (isScreenRecordingActive()) return;
+        if (recordingState != RecordingState.NONE
+                || isPreviewOnlyActive || isPreviewOnlyStartPending
+                || isLaunchingPhotoCapture) return;
+        if (getParentFragmentManager().isStateSaved()) return;
+        if (isAfterProDialogShowing() || hasVisibleDialogOrSheet()) return;
+        if (!ProReminderManager.isAfterProPending(requireContext())) return;
+        try {
+            // Do not stack a fresh reminder behind the confirmation in the same Home visit.
+            View root = getView();
+            if (root != null) root.removeCallbacks(proReminderRunnable);
+            new ProReminderAfterDialogFragment()
+                    .show(getParentFragmentManager(), ProReminderAfterDialogFragment.TAG);
+        } catch (IllegalStateException ignored) {
+        }
+    }
+
+    private boolean isAfterProDialogShowing() {
+        try {
+            Fragment fragment = getParentFragmentManager()
+                    .findFragmentByTag(ProReminderAfterDialogFragment.TAG);
+            return fragment instanceof DialogFragment && fragment.isAdded();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isScreenRecordingActive() {
+        try {
+            return SharedPreferencesManager.getInstance(requireContext())
+                    .isScreenRecordingInProgress();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isProReminderDialogShowing() {
+        try {
+            Fragment fragment = getParentFragmentManager()
+                    .findFragmentByTag(ProReminderDialogFragment.TAG);
+            return fragment instanceof DialogFragment && fragment.isAdded();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Shows a plain AlertDialog and remembers it for the safe-screen guard. */
+    private void showTrackedDialog(AlertDialog dialog) {
+        if (dialog == null) return;
+        visibleAlertDialog = dialog;
+        dialog.setOnDismissListener(d -> {
+            if (visibleAlertDialog == d) visibleAlertDialog = null;
+        });
+        dialog.show();
+    }
+
+    private boolean hasVisibleDialogOrSheet() {
+        try {
+            if (visibleAlertDialog != null && visibleAlertDialog.isShowing()) return true;
+            if (hasVisibleDialogOrSheet(getParentFragmentManager().getFragments())) return true;
+            if (hasVisibleDialogOrSheet(getChildFragmentManager().getFragments())) return true;
+            if (getActivity() != null) {
+                View overlay = getActivity().findViewById(R.id.overlay_fragment_container);
+                if (overlay != null && overlay.getVisibility() == View.VISIBLE) return true;
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    private boolean hasVisibleDialogOrSheet(List<Fragment> fragments) {
+        if (fragments == null) return false;
+        for (Fragment fragment : fragments) {
+            if (fragment instanceof DialogFragment && fragment.isAdded()
+                    && !fragment.isHidden()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void dismissProReminderDialog() {
+        try {
+            Fragment fragment = getParentFragmentManager()
+                    .findFragmentByTag(ProReminderDialogFragment.TAG);
+            if (fragment instanceof DialogFragment) {
+                ((DialogFragment) fragment).dismissAllowingStateLoss();
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private void clearPreviewOnlyPendingState(boolean resetHintText) {
@@ -2337,7 +2547,10 @@ public class HomeFragment extends BaseFragment {
                         String stackTrace = intent.getStringExtra(
                             Constants.EXTRA_STACK_TRACE
                         );
-                        showRecordingFailedDialog(errorMessage, stackTrace);
+                        String encoderDiagnostics = intent.getStringExtra(
+                            Constants.EXTRA_ENCODER_DIAGNOSTICS
+                        );
+                        showRecordingFailedDialog(errorMessage, stackTrace, encoderDiagnostics);
                     }
                 }
             };
@@ -2366,7 +2579,8 @@ public class HomeFragment extends BaseFragment {
 
     private void showRecordingFailedDialog(
         String errorMessage,
-        String stackTrace
+        String stackTrace,
+        String encoderDiagnostics
     ) {
         if (getContext() == null || !isAdded()) return;
 
@@ -2387,14 +2601,18 @@ public class HomeFragment extends BaseFragment {
             Build.VERSION.RELEASE +
             " (API " +
             Build.VERSION.SDK_INT +
-            ")\n\n" +
-            "Stack Trace:\n" +
+            ")\n" +
+            (encoderDiagnostics != null && !encoderDiagnostics.trim().isEmpty()
+                ? "\nEncoder Diagnostics:\n" + encoderDiagnostics + "\n"
+                : "") +
+            "\nStack Trace:\n" +
             (stackTrace != null ? stackTrace : "No stack trace") +
             "\n-----------------------------------";
 
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(
-            requireContext()
-        )
+        AlertDialog failureDialog =
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(
+                requireContext()
+            )
             .setTitle("Recording Failed")
             .setMessage(fullErrorMessage)
             .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
@@ -2415,7 +2633,8 @@ public class HomeFragment extends BaseFragment {
                     android.widget.Toast.LENGTH_SHORT
                 ).show();
             })
-            .show();
+            .create();
+        showTrackedDialog(failureDialog);
     }
 
     // --- Initialization Helper Methods ---
@@ -2811,6 +3030,15 @@ public class HomeFragment extends BaseFragment {
                     }
                 }
                 resetUIButtonsToIdleState();
+                // The service is the source of truth: when it reports NONE the timeline must be
+                // cleared here too. A recording stopped from the shortcut while the app was in the
+                // background never delivers the stop broadcast, so this is the only place the UI
+                // learns about it — without this the elapsed anchor stayed set and the countdown
+                // badge kept ticking after the recording had ended.
+                if (previousState != RecordingState.NONE) {
+                    resetRecordingTimeline();
+                    Log.setRecordingActive(false);
+                }
                 break;
         }
     }
@@ -4621,18 +4849,34 @@ public class HomeFragment extends BaseFragment {
         View proBadgeDot = view.findViewById(R.id.proBadgeDot);
         
         if (btnGetPro != null) {
-            Utils.attachPressScale(btnGetPro);
+            // The pill states what this APK IS: owners see their tier, everyone else is invited
+            // to it. The screen behind it switches to the owner view on the same signal.
+            String runningTier = com.fadcam.BuildConfig.TIER;
+            boolean isProBuild = !"FREE".equals(runningTier);
+            if (isProBuild && btnGetPro instanceof android.widget.TextView) {
+                ((android.widget.TextView) btnGetPro).setText(
+                        "PRO_PLUS".equals(runningTier)
+                                ? R.string.pro_screen_tier_plus
+                                : R.string.pro_screen_tier);
+            }
+            btnGetPro.setContentDescription(getString(isProBuild
+                    ? R.string.pro_screen_navigation_owned : R.string.pro_screen_navigation));
             // Update badge visibility based on pro feature state
             if (proBadgeDot != null) {
-                try {
-                    MainActivity mainActivity = (MainActivity) getActivity();
-                    if (mainActivity != null && mainActivity.shouldShowProBadge()) {
-                        proBadgeDot.setVisibility(View.VISIBLE);
-                    } else {
-                        proBadgeDot.setVisibility(View.GONE);
+                if (isProBuild) {
+                    // Owners already have it — an upsell dot would be noise.
+                    proBadgeDot.setVisibility(View.GONE);
+                } else {
+                    try {
+                        MainActivity mainActivity = (MainActivity) getActivity();
+                        if (mainActivity != null && mainActivity.shouldShowProBadge()) {
+                            proBadgeDot.setVisibility(View.VISIBLE);
+                        } else {
+                            proBadgeDot.setVisibility(View.GONE);
+                        }
+                    } catch (Exception e) {
+                        FLog.e(TAG, "Error checking pro badge state", e);
                     }
-                } catch (Exception e) {
-                    FLog.e(TAG, "Error checking pro badge state", e);
                 }
             }
             
@@ -4648,11 +4892,14 @@ public class HomeFragment extends BaseFragment {
                     FLog.e(TAG, "Error marking pro as seen", e);
                 }
                 
-                // Open FadCam Pro Activity
+                // Open FadCam Pro Activity; its own cinematic is the entrance.
                 Intent intent = new Intent(getActivity(), FadCamProActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
                 startActivity(intent);
+                if (getActivity() != null) {
+                    getActivity().overridePendingTransition(0, 0);
+                }
             });
-            // ShimmerTextView handles its own shimmer animation
         }
 
         // -----
@@ -5509,7 +5756,7 @@ public class HomeFragment extends BaseFragment {
 
         // Check if codec is HEVC - browsers don't support HEVC for HLS live streaming
         // Only validate if streaming is actually enabled (server running)
-        if (RemoteStreamManager.getInstance().isStreamingEnabled()) {
+        if (com.fadcam.FeatureRegistry.streaming().isStreamingEnabled()) {
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
             if (selectedCodec == VideoCodec.HEVC) {
                 // HEVC is not browser-compatible for HLS streaming
@@ -5681,7 +5928,7 @@ public class HomeFragment extends BaseFragment {
     private void showCodecIncompatibilityDialog() {
         if (getContext() == null) return;
 
-        new MaterialAlertDialogBuilder(getContext())
+        AlertDialog codecDialog = new MaterialAlertDialogBuilder(getContext())
                 .setTitle(getString(R.string.codec_hevc_incompatible_title))
                 .setMessage(getString(R.string.codec_hevc_incompatible_message))
                 .setPositiveButton(getString(R.string.codec_switch_and_record), (dialog, which) -> {
@@ -5706,7 +5953,8 @@ public class HomeFragment extends BaseFragment {
                     dialog.dismiss();
                 })
                 .setCancelable(true)
-                .show();
+                .create();
+        showTrackedDialog(codecDialog);
     }
 
     /**
@@ -5967,6 +6215,49 @@ public class HomeFragment extends BaseFragment {
         scaleDownSet.start();
     }
 
+    /** Arabic date style: the same three options, ids and strings as the clock widget setting. */
+    private void showArabicDateFormatSheet() {
+        final String resultKey = "home_clock_arabic_format";
+        getParentFragmentManager().setFragmentResultListener(
+                resultKey,
+                getViewLifecycleOwner(),
+                (key, bundle) -> {
+                    if (bundle == null) return;
+                    String selected = bundle.getString(
+                            com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID, null);
+                    if (selected == null) return;
+                    new com.fadcam.widgets.WidgetPreferences(requireContext())
+                            .setArabicDateFormat(selected);
+                    // The card re-renders on its next tick; the widget needs a nudge.
+                    com.fadcam.widgets.ClockWidgetProvider.requestUpdate(requireContext());
+                    handlerClock.postDelayed(this::showClockAppearanceDialog, 200);
+                });
+
+        String[] formats = {"FULL_ARABIC", "MONTH_ARABIC_NUMBERS_ENGLISH", "FULL_ENGLISH"};
+        int[] titles = {
+                R.string.arabic_date_full_arabic,
+                R.string.arabic_date_month_arabic_numbers_english,
+                R.string.arabic_date_full_english};
+        int[] samples = {
+                R.string.arabic_date_sample_full_arabic,
+                R.string.arabic_date_sample_mixed,
+                R.string.arabic_date_sample_english};
+        ArrayList<com.fadcam.ui.picker.OptionItem> items = new ArrayList<>();
+        for (int i = 0; i < formats.length; i++) {
+            items.add(new com.fadcam.ui.picker.OptionItem(
+                    formats[i], getString(titles[i]), getString(samples[i]),
+                    null, R.drawable.ic_language, null));
+        }
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                        getString(R.string.arabic_date_format_title),
+                        items,
+                        new com.fadcam.widgets.WidgetPreferences(requireContext()).getArabicDateFormat(),
+                        resultKey,
+                        getString(R.string.arabic_date_format_description));
+        sheet.show(getParentFragmentManager(), "home_arabic_date_format");
+    }
+
     private void showClockAppearanceDialog() {
         if (!isAdded()) return;
 
@@ -5986,6 +6277,14 @@ public class HomeFragment extends BaseFragment {
                 getString(R.string.home_clock_hour_format_option),
                 getString(R.string.home_clock_hour_format_option_desc),
                 null, null, R.drawable.ic_arrow_right, null, null, "schedule"));
+        // Same stored preference the clock widget uses: one setting, two places it shows up.
+        String arabicFormat = new com.fadcam.widgets.WidgetPreferences(requireContext())
+                .getArabicDateFormat();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                "clock_arabic_format",
+                getString(R.string.arabic_date_format_title),
+                getString(com.fadcam.widgets.ArabicDateUtils.descriptionRes(arabicFormat)),
+                null, R.drawable.ic_language, R.drawable.ic_arrow_right));
 
         getParentFragmentManager().setFragmentResultListener(
                 CLOCK_CUSTOMIZE_RESULT_KEY,
@@ -6001,6 +6300,8 @@ public class HomeFragment extends BaseFragment {
                         showClockColorChooserDialog();
                     } else if ("clock_hour_format".equals(selected)) {
                         showClockHourFormatSheet();
+                    } else if ("clock_arabic_format".equals(selected)) {
+                        showArabicDateFormatSheet();
                     }
                 });
 
@@ -6290,18 +6591,12 @@ public class HomeFragment extends BaseFragment {
         );
         String currentDateEnglish = dateFormatEnglish.format(new Date());
 
-        // Update the date in Arabic (Islamic calendar)
-        String currentDateArabic = "N/A";
-        if (
-            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
-        ) {
-            HijrahDate hijrahDate = HijrahChronology.INSTANCE.dateNow();
-            DateTimeFormatter dateFormatterArabic = DateTimeFormatter.ofPattern(
-                "d MMMM yyyy",
-                Locale.forLanguageTag("ar")
-            );
-            currentDateArabic = dateFormatterArabic.format(hijrahDate);
-        }
+        // Arabic (Hijri) date. Formatted from ArabicDateUtils' own Arabic month names and
+        // numerals rather than a java.time formatter: the desugared java.time ships English-only
+        // locale data, so a formatter built with Locale "ar" silently fell back to English month
+        // names and Latin digits on the beta builds. The widget has always used this helper.
+        String currentDateArabic = com.fadcam.widgets.ArabicDateUtils.getArabicDate(
+                new com.fadcam.widgets.WidgetPreferences(requireContext()).getArabicDateFormat());
 
         // Set text visibility based on user choice
         String displayDateEnglish = displayOption == 1 || displayOption == 2 ? currentDateEnglish : "";
@@ -6389,7 +6684,10 @@ public class HomeFragment extends BaseFragment {
                 sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
             }
             long limitMs = sharedPreferencesManager.getMaximumRecordingDurationMs();
-            boolean sessionActive = isRecording() || isPaused() || quickCountdownSessionActive;
+            // NOTE: the latch must NOT keep itself alive. Including quickCountdownSessionActive
+            // here made the release branch unreachable once the latch was set, so the badge
+            // counted down forever after a recording ended.
+            boolean sessionActive = isRecording() || isPaused();
             if (!sessionActive || limitMs <= 0L) {
                 boolean wasActive = quickCountdownSessionActive;
                 quickCountdownSessionActive = false;
@@ -6680,11 +6978,11 @@ public class HomeFragment extends BaseFragment {
             // Check if streaming is active in STREAM_ONLY mode - if so, don't deduct estimated bytes
             boolean isStreamOnlyMode = false;
             try {
-                boolean serverActive = RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode mode =
+                boolean serverActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+                com.fadcam.StreamingMode mode =
                     sharedPreferencesManager.getStreamingMode();
                 isStreamOnlyMode = serverActive &&
-                    (mode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                    (mode == com.fadcam.StreamingMode.STREAM_ONLY);
             } catch (Exception e) {
                 FLog.e(TAG, "Error checking streaming mode for storage calculation", e);
             }
@@ -6844,11 +7142,11 @@ public class HomeFragment extends BaseFragment {
             // Check if streaming is active in STREAM_ONLY mode - if so, show "Unlimited"
             boolean isStreamOnlyMode = false;
             try {
-                boolean serverActive = RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode mode =
+                boolean serverActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+                com.fadcam.StreamingMode mode =
                     sharedPreferencesManager.getStreamingMode();
                 isStreamOnlyMode = serverActive &&
-                    (mode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                    (mode == com.fadcam.StreamingMode.STREAM_ONLY);
             } catch (Exception e) {
                 FLog.e(TAG, "Error checking streaming mode in camera recording UI", e);
             }
@@ -7828,7 +8126,12 @@ public class HomeFragment extends BaseFragment {
                     sizeInMB[0] = lastKnownSizeMB;
                 }
 
-                if (videoCount[0] > 0) lastKnownVideoCount = videoCount[0];
+                if (videoCount[0] > 0) {
+                    lastKnownVideoCount = videoCount[0];
+                    if (BuildConfig.ENABLE_PRO_REMINDER && getContext() != null) {
+                        ProReminderManager.markSuccessfulRecording(getContext());
+                    }
+                }
                 if (sizeInMB[0] > 0) lastKnownSizeMB = sizeInMB[0];
 
                 long totalSizeBytes = sizeInMB[0] * 1024L * 1024L;
@@ -8795,7 +9098,9 @@ public class HomeFragment extends BaseFragment {
                 tvPreviewHint.setText(getPreviewEnableHintResId());
             }
             setHintVisibilityAnimated(true);
-            Toast.makeText(requireContext(), "Preview could not start. Try long-press again.", Toast.LENGTH_SHORT).show();
+            if (isVisible() && !isHidden()) {
+                Toast.makeText(requireContext(), "Preview could not start. Try long-press again.", Toast.LENGTH_SHORT).show();
+            }
         };
         previewOnlyStartHandler.postDelayed(
                 pendingPreviewOnlyStartTimeoutRunnable,
@@ -10255,7 +10560,8 @@ public class HomeFragment extends BaseFragment {
             // Restore default FadCam text logo.
             stopHeaderBlinkLoop();
             ivAppTitle.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-            ivAppTitle.setImageResource(R.drawable.menu_icon_unknown);
+            ivAppTitle.setImageResource(com.fadcam.BuildConfig.LITE_EDITION
+                    ? R.drawable.fadcam_lite_header_icon : R.drawable.menu_icon_unknown);
         }
     }
 
@@ -10393,6 +10699,11 @@ public class HomeFragment extends BaseFragment {
         Utils.attachPressScale(btnHamburgerMenu, 1.15f);
         hamburgerBadgeDot = view.findViewById(R.id.hamburgerBadgeDot);
         ivAppTitle = view.findViewById(R.id.ivAppTitle);
+        if (ivAppTitle != null) {
+            // Both editions ship their own header wordmark; same dimensions, different art.
+            ivAppTitle.setImageResource(com.fadcam.BuildConfig.LITE_EDITION
+                    ? R.drawable.fadcam_lite_header_icon : R.drawable.menu_icon_unknown);
+        }
         // Set up header logo click handler for Privacy Black Mode
         if (ivAppTitle != null) {
             ivAppTitle.setOnClickListener(v -> {
@@ -12134,7 +12445,7 @@ public class HomeFragment extends BaseFragment {
         // Handle any special cases for the HomeFragment's back button
         if (isRecordingOrPaused()) {
             // If recording is in progress, show a confirmation dialog
-            new MaterialAlertDialogBuilder(requireContext())
+            AlertDialog exitDialog = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Recording in Progress")
                 .setMessage("Do you want to stop recording and exit?")
                 .setPositiveButton("Stop and Exit", (dialog, which) -> {
@@ -12145,7 +12456,8 @@ public class HomeFragment extends BaseFragment {
                         .onBackPressed();
                 })
                 .setNegativeButton("Continue Recording", null)
-                .show();
+                .create();
+            showTrackedDialog(exitDialog);
             return true; // We handled the back press
         }
 
@@ -12390,6 +12702,8 @@ public class HomeFragment extends BaseFragment {
             }
         } else {
             // Tab switched away — pause heavy operations
+            removeProReminderCallbacks();
+            dismissProReminderDialog();
             pauseUpdateHandlers();
             if (!isLaunchingPhotoCapture) {
                 stopBubbleRotation();

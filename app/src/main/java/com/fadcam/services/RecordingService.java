@@ -2,6 +2,7 @@ package com.fadcam.services;
 
 import com.fadcam.Log;
 import com.fadcam.FLog;
+import com.fadcam.DiagnosticsStore;
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -63,7 +64,7 @@ import com.fadcam.utils.PhotoStorageHelper;
 import com.fadcam.utils.RecordingStoragePaths;
 import com.fadcam.utils.RuntimeCompat;
 import com.fadcam.utils.ServiceStartPolicy;
-import com.fadcam.forensics.service.DigitalForensicsEventRecorder;
+import com.fadcam.service.ForensicsRecorder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -213,7 +214,7 @@ public class RecordingService extends Service {
     private long lastMotionAnalysisTimestampMs = 0L;
     private volatile com.fadcam.motion.domain.detector.MotionDetector motionDetector =
             new com.fadcam.motion.domain.detector.FrameDiffMotionDetector();
-    private volatile com.fadcam.motion.domain.detector.EfficientDetLite1Detector efficientDetDetector;
+    private volatile com.fadcam.motion.domain.detector.AiObjectDetector efficientDetDetector;
     private com.fadcam.motion.domain.policy.MotionPolicy motionPolicy =
             new com.fadcam.motion.domain.policy.MotionPolicy();
     private com.fadcam.motion.domain.state.MotionStateMachine motionStateMachine;
@@ -231,7 +232,7 @@ public class RecordingService extends Service {
     private volatile boolean motionDetectorWarmupScheduled = false;
     private volatile boolean motionDetectorWarmupCompleted = false;
     private java.util.concurrent.ExecutorService motionDetectorWarmupExecutor;
-    private DigitalForensicsEventRecorder digitalForensicsEventRecorder;
+    private com.fadcam.service.ForensicsRecorder digitalForensicsEventRecorder;
     private boolean motionLastPersonDetected = false;
     private float motionLastPersonConfidence = 0f;
     private float motionLastScore = 0f;
@@ -320,7 +321,8 @@ public class RecordingService extends Service {
         android.os.PowerManager powerManager = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         recordingWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "FadCam:RecordingService");
         try {
-            digitalForensicsEventRecorder = new DigitalForensicsEventRecorder(getApplicationContext());
+            digitalForensicsEventRecorder = com.fadcam.FeatureRegistry.features()
+                    .createForensicsRecorder(getApplicationContext());
         } catch (Exception e) {
             FLog.w(TAG, "Digital forensics event recorder init failed", e);
             digitalForensicsEventRecorder = null;
@@ -433,9 +435,9 @@ public class RecordingService extends Service {
             try {
                 if (efficientDetDetector == null) {
                     try {
-                        com.fadcam.motion.domain.detector.EfficientDetLite1Detector detector =
-                                new com.fadcam.motion.domain.detector.EfficientDetLite1Detector(getApplicationContext());
-                        if (detector.isAvailable()) {
+                        com.fadcam.motion.domain.detector.AiObjectDetector detector =
+                                com.fadcam.FeatureRegistry.features().createAiDetector(getApplicationContext());
+                        if (detector != null && detector.isAvailable()) {
                             efficientDetDetector = detector;
                             FLog.i(TAG, "EfficientDet detector available: true");
                         } else {
@@ -448,9 +450,15 @@ public class RecordingService extends Service {
 
                 if (!motionOpenCvActive) {
                     try {
-                        motionDetector = new com.fadcam.motion.domain.detector.OpenCvMog2MotionDetector();
-                        motionOpenCvActive = true;
-                        FLog.i(TAG, "Motion detector backend: OpenCV MOG2");
+                        com.fadcam.motion.domain.detector.MotionDetector upgraded =
+                                com.fadcam.FeatureRegistry.features().createOpenCvMotionDetector();
+                        if (upgraded != null) {
+                            motionDetector = upgraded;
+                            motionOpenCvActive = true;
+                            FLog.i(TAG, "Motion detector backend: OpenCV MOG2");
+                        } else {
+                            FLog.w(TAG, "OpenCV backend unavailable; keeping FrameDiffMotionDetector");
+                        }
                     } catch (Throwable t) {
                         motionDetector = new com.fadcam.motion.domain.detector.FrameDiffMotionDetector();
                         motionOpenCvActive = false;
@@ -1179,7 +1187,20 @@ public class RecordingService extends Service {
             final android.content.Context app = context.getApplicationContext();
             final SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(app);
             // Never scan while a recording is active — its file may be mid-write.
+            // FadCam's camera recorder owns isRecordingInProgress().
             if (prefs.isRecordingInProgress()) {
+                if (onDone != null) onDone.run();
+                return;
+            }
+            // Screen recording keeps its own state (it never sets isRecordingInProgress),
+            // so it must be checked separately — otherwise the scan can finalize a file
+            // that is still being written (issue #357).
+            //
+            // FadMic (coming soon) must register its own recording state and be added
+            // to this guard for exactly the same reason.
+            final String screenState = prefs.getScreenRecordingState();
+            if ("IN_PROGRESS".equals(screenState) || "PAUSED".equals(screenState)) {
+                FLog.d(TAG, "Self-healing scan skipped: screen recording is " + screenState);
                 if (onDone != null) onDone.run();
                 return;
             }
@@ -1222,6 +1243,15 @@ public class RecordingService extends Service {
             if (onDone != null) onDone.run();
         }
     }
+
+    /**
+     * URIs already attempted in this process. A second attempt is always refused:
+     * the finalizer is idempotent, so one pass is enough, and refusing a second one
+     * makes a repair loop impossible even if another path regresses (issue #357 —
+     * the same file was repaired 4× in 5.7 s because each write reset the DB state).
+     */
+    private static final java.util.Set<String> REPAIR_ATTEMPTED_THIS_PROCESS =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private static final java.util.concurrent.atomic.AtomicBoolean scanRunning =
             new java.util.concurrent.atomic.AtomicBoolean(false);
@@ -1291,8 +1321,21 @@ public class RecordingService extends Service {
                             if (IN_FLIGHT_FINALIZATIONS.contains(uriString)) {
                                 continue;
                             }
+                            if (!REPAIR_ATTEMPTED_THIS_PROCESS.add(uriString)) {
+                                // Normally unreachable now that the index preserves repair
+                                // state; kept as a hard stop so a future regression cannot
+                                // loop on the same file again.
+                                FLog.e(TAG, "Self-healing: already attempted " + uriString
+                                        + " in this session — refusing to touch it again");
+                                continue;
+                            }
                             android.net.Uri uri = android.net.Uri.parse(uriString);
                             String scheme = uri.getScheme();
+                            long attemptStartMs = System.currentTimeMillis();
+                            // Size before/after is the definitive write-loop evidence:
+                            // a repair must never grow a file it did not convert.
+                            long sizeBefore = -1L;
+                            long sizeAfter = -1L;
                             int result;
                             if ("file".equals(scheme)) {
                                 java.io.File f = new java.io.File(uri.getPath());
@@ -1300,6 +1343,7 @@ public class RecordingService extends Service {
                                     repo.markUnrepairableWithRetry(uriString, retryAfter);
                                     continue;
                                 }
+                                sizeBefore = f.length();
                                 java.nio.channels.FileChannel ch =
                                         new java.io.RandomAccessFile(f, "rw").getChannel();
                                 try {
@@ -1308,6 +1352,7 @@ public class RecordingService extends Service {
                                 } finally {
                                     try { ch.close(); } catch (Exception ignored) {}
                                 }
+                                sizeAfter = f.length();
                             } else if ("content".equals(scheme)) {
                                 android.os.ParcelFileDescriptor pfd =
                                         app.getContentResolver().openFileDescriptor(uri, "rw");
@@ -1316,6 +1361,8 @@ public class RecordingService extends Service {
                                     continue;
                                 }
                                 try {
+                                    try { sizeBefore = pfd.getStatSize(); }
+                                    catch (Exception ignored) {}
                                     // Two channels over the same fd: FileOutputStream's
                                     // channel is write-only (reads throw
                                     // NonReadableChannelException), so read via
@@ -1327,6 +1374,8 @@ public class RecordingService extends Service {
                                                             pfd.getFileDescriptor()).getChannel(),
                                                     new java.io.FileOutputStream(
                                                             pfd.getFileDescriptor()).getChannel());
+                                    try { sizeAfter = pfd.getStatSize(); }
+                                    catch (Exception ignored) {}
                                 } finally {
                                     try { pfd.close(); } catch (Exception ignored) {}
                                 }
@@ -1334,6 +1383,13 @@ public class RecordingService extends Service {
                                 repo.markUnrepairableWithRetry(uriString, retryAfter);
                                 continue;
                             }
+                            // Visible in the dossier so the next report shows exactly what
+                            // the scanner did, and never more than once per file/process.
+                            FLog.i(TAG, "Self-healing: " + fileNameFromUri(uriString)
+                                    + " → result=" + result
+                                    + " size=" + sizeBefore + "→" + sizeAfter
+                                    + " in " + (System.currentTimeMillis() - attemptStartMs) + "ms");
+
                             if (result == 1) {
                                 repo.markFinalized(uriString, 1);
                                 recordRepairEventStatic(prefs,
@@ -1621,7 +1677,7 @@ public class RecordingService extends Service {
             }
             
             // STREAM ENFORCEMENT GATE: Validate and gate streaming mode
-            boolean streamingEnabled = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            boolean streamingEnabled = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
             android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
             String presetName = fadcamPrefs.getString("quality_preset", "HIGH");
             int presetBitrate = fadcamPrefs.getInt("stream_bitrate", 5_000_000);
@@ -1871,7 +1927,7 @@ public class RecordingService extends Service {
                 Constants.EXTRA_BROADCAST_EXPOSURE_COMPENSATION,
                 sharedPreferencesManager.getSavedExposureCompensation());
             sendBroadcast(exposureBroadcast.setPackage(getPackageName()));
-            com.fadcam.streaming.RemoteStreamManager.getInstance().invalidateStatusCache();
+            com.fadcam.FeatureRegistry.streaming().invalidateStatusCache();
             }
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_TOGGLE_AE_LOCK.equals(action)) {
@@ -1941,7 +1997,7 @@ public class RecordingService extends Service {
                     zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_Y, broadcastPanY);
                     this.sendBroadcast(zoomBcast.setPackage(this.getPackageName()));
                 }
-                com.fadcam.streaming.RemoteStreamManager.getInstance().invalidateStatusCache();
+                com.fadcam.FeatureRegistry.streaming().invalidateStatusCache();
             }
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_SET_FRONT_VIDEO_MIRROR.equals(action)) {
@@ -2342,7 +2398,7 @@ public class RecordingService extends Service {
         
         // Notify RemoteStreamManager that recording stopped
         try {
-            com.fadcam.streaming.RemoteStreamManager.getInstance().stopRecording();
+            com.fadcam.FeatureRegistry.streaming().stopRecording();
             FLog.i(TAG, "🛑 RemoteStreamManager notified: recording stopped");
             
         } catch (Exception e) {
@@ -2401,9 +2457,9 @@ public class RecordingService extends Service {
 
                 // Delete temporary file if in STREAM_ONLY mode
                 if (currentSegmentFile != null && currentSegmentFile.exists()) {
-                    com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
-                        com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
-                    if (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY) {
+                    com.fadcam.StreamingMode streamingMode = 
+                        com.fadcam.FeatureRegistry.streaming().getStreamingMode();
+                    if (streamingMode == com.fadcam.StreamingMode.STREAM_ONLY) {
                         boolean deleted = currentSegmentFile.delete();
                         if (deleted) {
                             FLog.i(TAG, "🗑️ STREAM_ONLY: Deleted temporary file: " + currentSegmentFile.getName());
@@ -2592,7 +2648,7 @@ public class RecordingService extends Service {
             FLog.d(TAG, "Paused maximum recording duration countdown");
         }
         // Notify RemoteStreamManager so status JSON reflects paused state
-        com.fadcam.streaming.RemoteStreamManager.getInstance().pauseRecording();
+        com.fadcam.FeatureRegistry.streaming().pauseRecording();
 
         // Battery saving: release camera while paused (unless motion detection needs it).
         // The GL pipeline stays alive (paused) so recording can resume instantly.
@@ -2641,7 +2697,7 @@ public class RecordingService extends Service {
             FLog.d(TAG, "Resumed maximum recording duration countdown");
         }
         // Notify RemoteStreamManager so status JSON reflects resumed (recording) state
-        com.fadcam.streaming.RemoteStreamManager.getInstance().resumeRecording();
+        com.fadcam.FeatureRegistry.streaming().resumeRecording();
         
         // Resume noise monitor and sensors if they were enabled
         if (sharedPreferencesManager != null && sharedPreferencesManager.isNoiseEnabled() && noiseMonitor != null) {
@@ -3120,8 +3176,8 @@ public class RecordingService extends Service {
                         }
                         lastMotionAnalysisTimestampMs = now;
                         float rawMotionScore = motionDetector.detectScore(image);
-                        com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket =
-                                com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket.copyFrom(image);
+                        com.fadcam.motion.domain.detector.AiObjectDetector.FramePacket framePacket =
+                                com.fadcam.motion.domain.detector.AiObjectDetector.FramePacket.copyFrom(image);
                         image.close();
                         image = null;
                         processMotionFrame(rawMotionScore, framePacket, now);
@@ -3145,7 +3201,7 @@ public class RecordingService extends Service {
 
     private void processMotionFrame(
             float rawMotionScore,
-            @Nullable com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket,
+            @Nullable com.fadcam.motion.domain.detector.AiObjectDetector.FramePacket framePacket,
             long nowMs
     ) {
         motionFramesAnalyzed++;
@@ -3163,11 +3219,11 @@ public class RecordingService extends Service {
             motionScoreEma = (alpha * rawMotionScore) + ((1f - alpha) * motionScoreEma);
         }
         float motionScore = motionScoreEma;
-        List<com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult> detections =
+        List<com.fadcam.motion.domain.detector.AiObjectDetector.DetectionResult> detections =
                 (efficientDetDetector != null && framePacket != null)
                         ? efficientDetDetector.detect(framePacket)
                         : java.util.Collections.emptyList();
-        com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult primaryDetection =
+        com.fadcam.motion.domain.detector.AiObjectDetector.DetectionResult primaryDetection =
                 efficientDetDetector != null ? efficientDetDetector.choosePrimary(detections) : null;
         float personConfidence = efficientDetDetector != null ? efficientDetDetector.bestPersonConfidence(detections) : 0f;
         boolean personDetectedRaw = efficientDetDetector != null && efficientDetDetector.hasPerson(detections);
@@ -3554,14 +3610,14 @@ public class RecordingService extends Service {
 
     @Nullable
     private String buildOverlayPayloadFromDetections(
-            @Nullable List<com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult> detections
+            @Nullable List<com.fadcam.motion.domain.detector.AiObjectDetector.DetectionResult> detections
     ) {
         if (detections == null || detections.isEmpty()) {
             return null;
         }
         StringBuilder out = new StringBuilder();
         int emitted = 0;
-        for (com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult detection : detections) {
+        for (com.fadcam.motion.domain.detector.AiObjectDetector.DetectionResult detection : detections) {
             if (detection == null || detection.confidence < 0.45f) {
                 continue;
             }
@@ -3746,7 +3802,7 @@ public class RecordingService extends Service {
 
     @Nullable
     private byte[] buildMotionDebugFrameJpeg(
-            @Nullable com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket
+            @Nullable com.fadcam.motion.domain.detector.AiObjectDetector.FramePacket framePacket
     ) {
         if (framePacket == null) {
             return null;
@@ -3853,7 +3909,7 @@ public class RecordingService extends Service {
 
     @Nullable
     private byte[] framePacketToNv21(
-            @NonNull com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket
+            @NonNull com.fadcam.motion.domain.detector.AiObjectDetector.FramePacket framePacket
     ) {
         int width = framePacket.width;
         int height = framePacket.height;
@@ -4572,9 +4628,24 @@ public class RecordingService extends Service {
             // Use per-camera FPS setting and only choose HSR if selected resolution
             // supports it
             int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+
+            // If the encoder had to clamp the frame rate (4K60 on a 4K30 encoder), the camera
+            // session must clamp too. Otherwise the encoder is configured for 30 while the
+            // camera keeps delivering 60.
+            try {
+                int encoderFps = glRecordingPipeline.getEncoderFramerate();
+                if (encoderFps > 0 && encoderFps != targetFrameRate) {
+                    if (Log.isEnabled()) {
+                        FLog.w(TAG, "[REC] camera FPS follows encoder clamp: " + targetFrameRate
+                                + " -> " + encoderFps);
+                    }
+                    targetFrameRate = encoderFps;
+                }
+            } catch (Exception ignored) {
+            }
             
             // Apply streaming FPS cap only when server is actually ON
-            boolean isStreamingForFps1 = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            boolean isStreamingForFps1 = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
             android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
             if (isStreamingForFps1) {
                 int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
@@ -4656,7 +4727,7 @@ public class RecordingService extends Service {
             int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
             
             // Apply streaming FPS cap only when server is actually ON
-            boolean isStreamingForFps2 = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            boolean isStreamingForFps2 = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
             android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
             if (isStreamingForFps2) {
                 int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
@@ -5037,7 +5108,7 @@ public class RecordingService extends Service {
 
     private int getVideoBitrate() {
         int videoBitrate;
-        boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        boolean isStreaming = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
         
         if (isStreaming) {
             // Server is ON: enforce stream quality preset bitrate, ignore user settings
@@ -5270,10 +5341,14 @@ public class RecordingService extends Service {
             if (!cachedGpsProviderEnabled) {
                 FLog.d(TAG, "Extended: speed=GPS is off");
                 sb.append("\nSpeed: GPS is off");
-            } else {
+            } else if (sensorDataProvider.hasFreshFix()) {
                 float speed = sensorDataProvider.getSpeedKmh();
                 FLog.d(TAG, "Extended: speed=" + speed + " km/h");
                 sb.append("\nSpeed: ").append(String.format("%.0f", speed)).append(" km/h");
+            } else {
+                // No fresh fix: a held-over number would be a fabricated reading.
+                FLog.d(TAG, "Extended: speed=no fresh fix");
+                sb.append("\nSpeed: --");
             }
         }
 
@@ -5281,10 +5356,13 @@ public class RecordingService extends Service {
             if (!cachedGpsProviderEnabled) {
                 FLog.d(TAG, "Extended: altitude=GPS is off");
                 sb.append("\nAlt: GPS is off");
-            } else {
+            } else if (sensorDataProvider.hasFreshFix()) {
                 double alt = sensorDataProvider.getAltitude();
                 FLog.d(TAG, "Extended: altitude=" + alt + " m");
                 sb.append("\nAlt: ").append(String.format("%.0f", alt)).append("m");
+            } else {
+                FLog.d(TAG, "Extended: altitude=no fresh fix");
+                sb.append("\nAlt: --");
             }
         }
 
@@ -5947,10 +6025,10 @@ public class RecordingService extends Service {
         String storageMode = sharedPreferencesManager.getStorageMode();
         
         // Use "Stream_" prefix only if streaming is actually enabled (server running)
-        boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-        com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
-            com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
-        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+        boolean isStreamingActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+        com.fadcam.StreamingMode streamingMode = 
+            com.fadcam.FeatureRegistry.streaming().getStreamingMode();
+        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.StreamingMode.STREAM_AND_SAVE);
         String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
         
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
@@ -6782,8 +6860,7 @@ public class RecordingService extends Service {
                 // Notify RemoteStreamManager about active recording file
                 if (currentSegmentFile != null) {
                     try {
-                        com.fadcam.streaming.RemoteStreamManager.getInstance()
-                            .startRecording(currentSegmentFile);
+                        com.fadcam.FeatureRegistry.streaming().startRecording(currentSegmentFile);
                         FLog.i(TAG, "🎬 RemoteStreamManager notified: recording started");
                     } catch (Exception e) {
                         FLog.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
@@ -6951,10 +7028,10 @@ public class RecordingService extends Service {
         String segmentSuffix = ""; // No segment number for the initial file
         
         // Use "Stream_" prefix only if streaming is actually enabled (server running)
-        boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-        com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
-            com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
-        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+        boolean isStreamingActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+        com.fadcam.StreamingMode streamingMode = 
+            com.fadcam.FeatureRegistry.streaming().getStreamingMode();
+        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.StreamingMode.STREAM_AND_SAVE);
         String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
         String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                 + Constants.RECORDING_FILE_EXTENSION;
@@ -6983,11 +7060,11 @@ public class RecordingService extends Service {
                     stopRecording();
                     return;
                 }
-                boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode =
-                        com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isStreamingActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+                com.fadcam.StreamingMode streamingMode =
+                        com.fadcam.FeatureRegistry.streaming().getStreamingMode();
                 boolean isStreamAndSave = isStreamingActive
-                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+                        && (streamingMode == com.fadcam.StreamingMode.STREAM_AND_SAVE);
                 androidx.documentfile.provider.DocumentFile pickedDir = resolveSafRecordingVideoDir(
                         customUriString, isStreamAndSave);
                 if (pickedDir == null || !pickedDir.canWrite()) {
@@ -7013,7 +7090,7 @@ public class RecordingService extends Service {
                 com.fadcam.ActiveRecordingStats.rolloverToNewSegment(null, safUri.toString(), RecordingService.this);
                 // Track SAF URI for STREAM_ONLY cleanup during segment rollover
                 boolean isStreamOnlyRollover = isStreamingActive
-                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                        && (streamingMode == com.fadcam.StreamingMode.STREAM_ONLY);
                 if (isStreamOnlyRollover) {
                     streamOnlySafUris.add(safUri.toString());
                     FLog.i(TAG, "📺 STREAM_ONLY (SAF rollover): Tracking temp URI: " + safUri);
@@ -7126,6 +7203,13 @@ public class RecordingService extends Service {
             return;
         }
 
+        // Durable, fsynced journal. The async HTML log loses its last 250 ms if the process dies
+        // during recorder setup; this file is how we will read the next Huawei report.
+        DiagnosticsStore.beginRecordingJournal(this, "recording-start-request state=" + recordingState
+                + " camera=" + sharedPreferencesManager.getCameraSelection()
+                + " codec=" + sharedPreferencesManager.getVideoCodec());
+        FLog.i(TAG, "[REC] ===== startRecording() requested =====");
+
         // Clear STREAM_ONLY temp file tracking from any previous session
         streamOnlyTempFiles.clear();
         streamOnlySafUris.clear();
@@ -7171,7 +7255,7 @@ public class RecordingService extends Service {
             ensureWatermarkInfoProvider();
 
             // Re-fetch streaming state and config at actual recording start
-            boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            boolean isStreamingActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
             android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
             
             // Resolution always from Recording Settings — presets only control bitrate + FPS
@@ -7229,6 +7313,27 @@ public class RecordingService extends Service {
 
             String storageMode = sharedPreferencesManager.getStorageMode();
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
+
+            // One consolidated snapshot: every line a future report needs in order to identify
+            // a codec/size/fps/bitrate mismatch without guessing.
+            if (Log.isEnabled()) {
+                String startSnapshot = "camera=" + cameraType
+                        + " cameraId=" + cameraId
+                        + " sensorOrientation=" + sensorOrientation
+                        + " codec=" + selectedCodec
+                        + " mime=" + selectedCodec.getMimeType()
+                        + " res=" + videoWidth + "x" + videoHeight
+                        + " fps=" + videoFramerate
+                        + " bitrate=" + videoBitrate
+                        + " orientation=" + orientation
+                        + " streaming=" + isStreamingActive
+                        + " storage=" + storageMode
+                        + " splitBytes=" + splitSizeBytes
+                        + " audio=" + sharedPreferencesManager.isRecordAudioEnabled()
+                        + " previewSurface=" + (previewSurface != null && previewSurface.isValid());
+                FLog.i(TAG, "[REC] snapshot " + startSnapshot);
+                DiagnosticsStore.appendRecordingJournal(this, "[REC] snapshot " + startSnapshot);
+            }
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
                 String customUriString = sharedPreferencesManager.getCustomStorageUri();
                 if (customUriString == null) {
@@ -7237,11 +7342,11 @@ public class RecordingService extends Service {
                     stopSelf();
                     return;
                 }
-                boolean isSafStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
-                    com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isSafStreamingActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+                com.fadcam.StreamingMode streamingMode = 
+                    com.fadcam.FeatureRegistry.streaming().getStreamingMode();
                 boolean isStreamAndSave = isSafStreamingActive
-                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+                        && (streamingMode == com.fadcam.StreamingMode.STREAM_AND_SAVE);
                 androidx.documentfile.provider.DocumentFile pickedDir = resolveSafRecordingVideoDir(
                         customUriString, isStreamAndSave);
                 if (pickedDir == null || !pickedDir.canWrite()) {
@@ -7267,7 +7372,7 @@ public class RecordingService extends Service {
                 com.fadcam.ActiveRecordingStats.setActiveSegment(null, safUri.toString());
                 // Track SAF URI for STREAM_ONLY cleanup (0-byte files created but no data written)
                 boolean isStreamOnlySaf = isStreamingActive
-                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                        && (streamingMode == com.fadcam.StreamingMode.STREAM_ONLY);
                 if (isStreamOnlySaf) {
                     streamOnlySafUris.add(safUri.toString());
                     FLog.i(TAG, "📺 STREAM_ONLY (SAF): Tracking temp URI for cleanup: " + safUri);
@@ -7321,9 +7426,9 @@ public class RecordingService extends Service {
                 }
                 
                 // Check streaming mode to determine output file handling
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
-                    com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
-                boolean isStreamOnly = (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                com.fadcam.StreamingMode streamingMode = 
+                    com.fadcam.FeatureRegistry.streaming().getStreamingMode();
+                boolean isStreamOnly = (streamingMode == com.fadcam.StreamingMode.STREAM_ONLY);
                 
                 File outputFile;
                 if (isStreamOnly) {
@@ -7355,12 +7460,12 @@ public class RecordingService extends Service {
             // Notify RemoteStreamManager that recording started
             try {
                 if (currentSegmentFile != null) {
-                    com.fadcam.streaming.RemoteStreamManager.getInstance().startRecording(currentSegmentFile);
+                    com.fadcam.FeatureRegistry.streaming().startRecording(currentSegmentFile);
                     FLog.i(TAG, "🎬 RemoteStreamManager notified: recording started for file: "
                             + currentSegmentFile.getAbsolutePath());
                 } else {
                     // SAF mode: no File object available, use flag-based notification
-                    com.fadcam.streaming.RemoteStreamManager.getInstance().startRecordingSaf();
+                    com.fadcam.FeatureRegistry.streaming().startRecordingSaf();
                 }
                 
             } catch (Exception e) {
@@ -7368,8 +7473,32 @@ public class RecordingService extends Service {
             }
 
             createCameraPreviewSession();
+            DiagnosticsStore.endRecordingJournal(this, "[REC] RESULT=OK");
+            FLog.i(TAG, "[REC] ===== startRecording() complete =====");
         } catch (Exception e) {
-            FLog.e(TAG, "CRITICAL FAILURE IN startRecording", e);
+            String failureDetail = e.getClass().getName()
+                    + (e.getMessage() == null ? "" : ": " + e.getMessage());
+            if (Log.isEnabled()) {
+                FLog.e(TAG, "[REC] CRITICAL FAILURE IN startRecording | " + failureDetail, e);
+            }
+            DiagnosticsStore.appendRecordingJournal(this, "[REC] START FAILED | " + failureDetail);
+
+            // Encoder attempts are the useful part of a recorder failure; keep them separate
+            // from the Java stack so the dialog and the copied report are readable.
+            String encoderDiagnostics = null;
+            try {
+                if (glRecordingPipeline != null) {
+                    encoderDiagnostics = glRecordingPipeline.getEncoderDiagnostics();
+                }
+            } catch (Throwable ignored) {
+            }
+            if (encoderDiagnostics != null && !encoderDiagnostics.trim().isEmpty()) {
+                if (Log.isEnabled()) {
+                    FLog.e(TAG, "[REC] encoder diagnostics:\n" + encoderDiagnostics);
+                }
+                DiagnosticsStore.appendRecordingJournal(this,
+                        "[REC] encoder diagnostics:\n" + encoderDiagnostics);
+            }
 
             // Broadcast the failure to the UI with details
             java.io.StringWriter sw = new java.io.StringWriter();
@@ -7380,11 +7509,16 @@ public class RecordingService extends Service {
             Intent failureIntent = new Intent(Constants.ACTION_RECORDING_FAILED);
             failureIntent.putExtra(Constants.EXTRA_ERROR_MESSAGE, e.getMessage());
             failureIntent.putExtra(Constants.EXTRA_STACK_TRACE, stackTrace);
+            if (encoderDiagnostics != null && !encoderDiagnostics.trim().isEmpty()) {
+                failureIntent.putExtra(Constants.EXTRA_ENCODER_DIAGNOSTICS, encoderDiagnostics);
+            }
             try {
                 sendBroadcast(failureIntent);
             } catch (Throwable t) {
                 FLog.e(TAG, "Failed to broadcast recording failure", t);
             }
+            DiagnosticsStore.endRecordingJournal(this, "[REC] RESULT=FAIL | " + failureDetail);
+            Log.flushNow();
 
             // Clean up and stop the service
             recordingState = RecordingState.NONE;

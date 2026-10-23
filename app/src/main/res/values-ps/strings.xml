@@ -1153,7 +1153,7 @@ Fun fact: 10/Jul/2024 04:47 PM wakht ke FadCam v1.0 first shipped.</string>
     <string name="home_clock_color_helper">Da Kor palette na yao clock card rang intikhab ka.</string>
     <string name="home_clock_color_option">Clock color</string>
     <string name="home_clock_color_option_desc">Da clock card istemal shwi accent/background rang intikhab ka</string>
-    <string name="home_clock_customize_helper">Change the clock display, color, and hour format.</string>
+    <string name="home_clock_customize_helper">Da clock display, rang, hour format aw Arabi date style badal krai.</string>
     <string name="home_clock_customize_title">Clock Appearance</string>
     <string name="home_clock_display_english_desc">Show time with the English date line</string>
     <string name="home_clock_display_helper">Da clock card istemal shwi layout intikhab ka.</string>
@@ -1833,6 +1833,8 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="screen_rec_bitrate_mode_manual">Manual (CBR)</string>
     <string name="screen_rec_bitrate_range">1 \u2013 50 Mbps</string>
     <string name="screen_rec_framerate">Frame Rate</string>
+    <string name="screen_rec_codec">Codec</string>
+    <string name="note_screen_codec">Da skrin sabt codec wutaka\n(Talawala: %1$s)\nLarxhowuna: H.265 (HEVC) pa warta kayfiyat ke kochni fayluna war-kawi. Ka da wasila da karawalo war HEVC encoder wan-lari, FadCam ba pa automatiki dol H.264 ke sabt kri.</string>
     <string name="screen_rec_orientation">Samt</string>
     <string name="screen_rec_orientation_landscape">Landscape</string>
     <string name="screen_rec_orientation_portrait">Portrait</string>
@@ -2943,4 +2945,102 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="trash_show_in_settings_title">Settings ke Woyai</string>
     <string name="trash_show_in_settings_desc">Settings page ke Trash row zayed kai che ta jaldi rasai woyai</string>
 
+    <string name="fadcam_full_title">FadCam Qudrat User</string>
+    <string name="fadcam_full_subtitle">Larwaen kontorol, mozment recording, forensic ao noor. Full version wahaarai.</string>
+    <string name="github_get_on">Get it on</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Tase FadCam %1$s karawal</string>
+    <string name="app_usage_since_install_title">Tase FadCam karawal</string>
+
+    <string name="app_age_a_while">yawa wakht</string>
+    <!-- Roman Pashto age units: ICU's ps data is Arabic script, so these are written by hand. -->
+    <plurals name="app_age_year">
+        <item quantity="one">%1$s kal</item>
+        <item quantity="other">%1$s kala</item>
+    </plurals>
+    <plurals name="app_age_month">
+        <item quantity="one">%1$s myasht</item>
+        <item quantity="other">%1$s myashte</item>
+    </plurals>
+    <plurals name="app_age_day">
+        <item quantity="one">%1$s wradz</item>
+        <item quantity="other">%1$s wredzi</item>
+    </plurals>
+    <plurals name="app_age_hour">
+        <item quantity="one">%1$s saat</item>
+        <item quantity="other">%1$s saata</item>
+    </plurals>
+    <plurals name="app_age_minute">
+        <item quantity="one">%1$s daqiqa</item>
+        <item quantity="other">%1$s daqiqe</item>
+    </plurals>
+    <string name="app_usage_installed_on">Install nita</string>
+    <string name="pro_reminder_button_continue">Dwam</string>
+    <string name="pro_reminder_button_countdown">Dwam · %1$d</string>
+    <string name="pro_reminder_back_toast_1">Sha kawal. Kala tayar ye dwam waka.</string>
+    <string name="pro_reminder_back_toast_2">Yawazi lara makh ta da.</string>
+    <string name="pro_reminder_back_toast_3">Nazde. Button la pa intezar ke da.</string>
+    <string name="pro_reminder_after_title">Kala che da katalo na bad ghwari, upgrade ba za rasta na wala.</string>
+    <string name="pro_reminder_after_got_it">Poh shwa</string>
+    <string name="pro_dossier_header">FADSEC LAB // DAKHILI DOSIER</string>
+    <string name="pro_dossier_eyes_only">SIRRI</string>
+    <string name="pro_dossier_subject">MAWZU // UPGRADE PROTOCOL</string>
+    <string name="pro_dossier_file_no">DA FILE SHUMERA</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">Ijazat</string>
+    <string name="pro_dossier_clearance_value">AWAMI / FREE</string>
+    <string name="pro_dossier_status">HALAT</string>
+    <string name="pro_dossier_status_value">DA TAYID INTEZAR</string>
+    <string name="pro_dossier_ref">REF: FADSEC/PR-07</string>
+    <string name="pro_dossier_page">PANA 1/1</string>
+    <string name="pro_dossier_drag">DA KATALO LAPARA WARKAWA // MAKH</string>
+    <string name="pro_dossier_cycle">DAWRA %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // PAS AZ AMAL REPORT</string>
+    <string name="pro_dossier_after_stamp">TAFSEEL</string>
+    <string name="pro_dossier_after_subject">MAWZU // HAFTAWAR CONTACT</string>
+    <string name="pro_dossier_after_status">FAISLA</string>
+    <string name="pro_dossier_after_status_value">TAYID ZAROORI DA</string>
+    <string name="pro_dossier_after_ref">REF: FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">Poh shwa</string>
+    <string name="pro_reminder_title_1">Zmoonda Tarikh Laro</string>
+    <string name="pro_reminder_subtitle_1">%1$s hamra. Raghlara da FadCam nor hissa wo pezhnawa.</string>
+    <string name="pro_reminder_title_2">La hamra record kaw</string>
+    <string name="pro_reminder_subtitle_2">%1$s shwa. Pro ta yaw sam salam zaroori da.</string>
+    <string name="pro_reminder_title_3">Zma wada owda</string>
+    <string name="pro_reminder_subtitle_3">Yawa hafta bad, za dalta yam. Raghlara Pro ta wogoro.</string>
+    <string name="pro_reminder_title_4">Da os zmoonga haftawarada shwa</string>
+    <string name="pro_reminder_subtitle_4">%1$s da FadCam sara. Pro ta hasab kawi che paray shwa.</string>
+    <string name="pro_reminder_title_5">Ta poha che za ba bya raam</string>
+    <string name="pro_reminder_subtitle_5">Za owa wradzee intezar wokar. Pro ham.</string>
+    <string name="pro_reminder_title_6">Bala hafta haghse wakht?</string>
+    <string name="pro_reminder_subtitle_6">Loomar, sta plan shaway dre sekani Pro dor.</string>
+    <string name="pro_reminder_notification_channel_name">Pro yadawonay</string>
+    <string name="pro_reminder_notification_channel_description">Da FadCam Pro pa bara ke haftawara note. Pro version da haghse na gori.</string>
+    <string name="pro_reminder_notification_title_1">%1$s hamra</string>
+    <string name="pro_reminder_notification_body_1">Za bya raghlam. Pro waway che ta raawara.</string>
+    <string name="pro_reminder_notification_title_2">Za owa wradzee intezar wokar</string>
+    <string name="pro_reminder_notification_body_2">Da tap waka, tar che za da haftawara daod wala.</string>
+    <string name="pro_reminder_notification_title_3">Da Pro da katalo wakht shwa</string>
+    <string name="pro_reminder_notification_body_3">%1$s da FadCam sara. Wakht shwa che kor walid shi.</string>
+    <string name="pro_reminder_notification_title_4">La zmoonga yoo pa %1$s bad</string>
+    <string name="pro_reminder_notification_body_4">Rastiya, Pro la hazar kawi.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">Za ba pa %1$d wradz ke bya raam. Pa de khabar.</item>
+        <item quantity="other">Za ba pa %1$d wredzo ke bya raam. Pa de khabar.</item>
+    </plurals>
+    <string name="pro_screen_bundle">Dre zaati apps.
+Da tase da hamisha paara.</string>
+    <string name="pro_showcase_label">PRO PAKET</string>
+    <string name="pro_showcase_supporting">Dre wa separate install kawa, da umar updates sara.</string>
+    <string name="pro_showcase_meta">Juda installs · Da umar updates</string>
+    <string name="pro_showcase_chip_installs">Dre mustaqil apps</string>
+    <string name="pro_showcase_chip_updates">Da umar updates shamil di</string>
+    <string name="pro_showcase_chip_entry">Da apps petawe interfaces</string>
+    <string name="pro_showcase_soon">ZHAR</string>
+    <string name="pro_showcase_hint">Unlock kawa aw apps wogori.</string>
+    <string name="pro_showcase_expand_desc">Phone full screen kawa</string>
+    <string name="pro_showcase_collapse_desc">Da full screen woza</string>
+    <string name="pro_showcase_phone_desc">Da FadSec Lab device mockup. Screen dre Pro apps show kawi. Phone droundolo da paara tsale kae.</string>
+    <string name="pro_showcase_privacy_mark">Privacy pa design</string>
 </resources>

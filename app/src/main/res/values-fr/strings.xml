@@ -815,7 +815,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="home_clock_customize_title">Clock Appearance</string>
 
-<string name="home_clock_customize_helper">Change the clock display, color, and hour format.</string>
+<string name="home_clock_customize_helper">Modifiez l\'affichage de l\'horloge, la couleur, le format de l\'heure et le style de la date arabe.</string>
 
 <string name="home_clock_display_option">Clock display</string>
 
@@ -3704,6 +3704,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
 <string name="screen_rec_resolution">Resolution</string>
 
 <string name="screen_rec_framerate">Frame Rate</string>
+    <string name="screen_rec_codec">Codec</string>
+    <string name="note_screen_codec">Choisissez le codec d’enregistrement d’écran\n(Par défaut : %1$s)\nAstuce : H.265 (HEVC) produit des fichiers plus petits à qualité égale. Si cet appareil n’a pas d’encodeur HEVC utilisable, FadCam enregistre automatiquement en H.264.</string>
 
 <string name="screen_rec_bitrate">Bitrate</string>
 
@@ -4578,4 +4580,82 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="trash_show_in_settings_title">Afficher dans les Paramètres</string>
     <string name="trash_show_in_settings_desc">Ajoute une ligne Corbeille à la page Paramètres pour un accès rapide</string>
 
+    <string name="fadcam_full_title">FadCam utilisateur avancé</string>
+    <string name="fadcam_full_subtitle">Contrôle à distance, enregistrement sur mouvement, expertise et plus. Essayez la version complète.</string>
+    <string name="github_get_on">Disponible sur</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Vous utilisez FadCam depuis %1$s</string>
+    <string name="app_usage_since_install_title">Vous utilisez FadCam depuis</string>
+
+
+    <string name="app_age_a_while">un moment</string>
+    <string name="app_usage_installed_on">Installé le</string>
+    <string name="pro_reminder_button_continue">Continuer</string>
+    <string name="pro_reminder_button_countdown">Continuer · %1$d</string>
+    <string name="pro_reminder_back_toast_1">Bien essayé. Continuez quand vous êtes prêt.</string>
+    <string name="pro_reminder_back_toast_2">La seule sortie, c’est tout droit.</string>
+    <string name="pro_reminder_back_toast_3">Presque. Le bouton vous attend encore.</string>
+    <string name="pro_reminder_after_title">Si vous détestez ces visites, passer à Pro me fait vraiment disparaître.</string>
+    <string name="pro_reminder_after_got_it">Compris</string>
+    <string name="pro_dossier_header">FADSEC LAB // DOSSIER INTERNE</string>
+    <string name="pro_dossier_eyes_only">CONFIDENTIEL</string>
+    <string name="pro_dossier_subject">OBJET // PROTOCOLE DE MISE À NIVEAU</string>
+    <string name="pro_dossier_file_no">N° DE DOSSIER</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">AUTORISATION</string>
+    <string name="pro_dossier_clearance_value">PUBLIC / GRATUIT</string>
+    <string name="pro_dossier_status">STATUT</string>
+    <string name="pro_dossier_status_value">EN ATTENTE DE CONFIRMATION</string>
+    <string name="pro_dossier_ref">RÉF. : FADSEC/PR-07</string>
+    <string name="pro_dossier_page">PAGE 1/1</string>
+    <string name="pro_dossier_drag">GLISSE POUR INSPECTER // AVANT</string>
+    <string name="pro_dossier_cycle">CYCLE %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // RAPPORT POST-ACTION</string>
+    <string name="pro_dossier_after_stamp">DÉBRIEF</string>
+    <string name="pro_dossier_after_subject">OBJET // CONTACT HEBDOMADAIRE</string>
+    <string name="pro_dossier_after_status">DISPOSITION</string>
+    <string name="pro_dossier_after_status_value">CONFIRMATION REQUISE</string>
+    <string name="pro_dossier_after_ref">RÉF. : FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">Compris</string>
+    <string name="pro_reminder_title_1">Nous avons un passé</string>
+    <string name="pro_reminder_subtitle_1">%1$s ensemble. Venez rencontrer le reste de FadCam.</string>
+    <string name="pro_reminder_title_2">Toujours là pour filmer</string>
+    <string name="pro_reminder_subtitle_2">Cela fait %1$s. Pro mérite un vrai bonjour.</string>
+    <string name="pro_reminder_title_3">J’ai tenu ma promesse</string>
+    <string name="pro_reminder_subtitle_3">Une semaine plus tard, me voilà. Allons voir Pro.</string>
+    <string name="pro_reminder_title_4">C’est notre rituel hebdomadaire</string>
+    <string name="pro_reminder_subtitle_4">%1$s avec FadCam. Pro commence à se sentir délaissé.</string>
+    <string name="pro_reminder_title_5">Vous saviez que je reviendrais</string>
+    <string name="pro_reminder_subtitle_5">J’ai attendu sept jours. Pro aussi.</string>
+    <string name="pro_reminder_title_6">Même heure la semaine prochaine ?</string>
+    <string name="pro_reminder_subtitle_6">D’abord, votre visite de trois secondes chez Pro.</string>
+    <string name="pro_reminder_notification_channel_name">Rappels Pro</string>
+    <string name="pro_reminder_notification_channel_description">Une note hebdomadaire sur FadCam Pro. Les versions Pro ne la voient jamais.</string>
+    <string name="pro_reminder_notification_title_1">Ensemble depuis %1$s</string>
+    <string name="pro_reminder_notification_body_1">Je suis de retour. Pro m’a demandé de vous amener.</string>
+    <string name="pro_reminder_notification_title_2">J’ai attendu sept jours</string>
+    <string name="pro_reminder_notification_body_2">Touchez avant que ça ne devienne une tradition hebdomadaire.</string>
+    <string name="pro_reminder_notification_title_3">Votre visite Pro est due</string>
+    <string name="pro_reminder_notification_body_3">%1$s avec FadCam. Il est temps de rencontrer la famille.</string>
+    <string name="pro_reminder_notification_title_4">Toujours nous après %1$s</string>
+    <string name="pro_reminder_notification_body_4">Franchement, Pro devient un peu jaloux.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">Je reviens dans %1$d jour. À bientôt.</item>
+        <item quantity="other">Je reviens dans %1$d jours. À bientôt.</item>
+    </plurals>
+    <string name="pro_screen_bundle">Trois applis privées.
+À vous pour toujours.</string>
+    <string name="pro_showcase_label">PACK PRO</string>
+    <string name="pro_showcase_supporting">Installez les trois séparément, mises à jour à vie incluses.</string>
+    <string name="pro_showcase_meta">Installations séparées · Mises à jour à vie</string>
+    <string name="pro_showcase_chip_installs">Trois applis autonomes</string>
+    <string name="pro_showcase_chip_updates">Mises à jour à vie incluses</string>
+    <string name="pro_showcase_chip_entry">Interfaces d\'applis déguisées</string>
+    <string name="pro_showcase_soon">BIENTÔT</string>
+    <string name="pro_showcase_hint">Déverrouillez et explorez les applis.</string>
+    <string name="pro_showcase_expand_desc">Ouvrir le téléphone en plein écran</string>
+    <string name="pro_showcase_collapse_desc">Quitter le plein écran</string>
+    <string name="pro_showcase_phone_desc">Maquette d\'appareil FadSec Lab. L\'écran montre les trois applis Pro. Glissez sur le côté pour tourner le téléphone.</string>
+    <string name="pro_showcase_privacy_mark">Confidentiel par conception</string>
 </resources>

@@ -1,35 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Background -->
+    <!-- Empty track blends into the header panel -->
     <item android:id="@android:id/background">
         <shape android:shape="rectangle">
-            <solid android:color="#0d0d0d" />
+            <solid android:color="@color/dark_card_background" />
         </shape>
     </item>
-    <!-- Progress with enhanced gradient -->
+    <!-- Filled progress uses the dossier red accent -->
     <item android:id="@android:id/progress">
         <clip>
             <shape android:shape="rectangle">
                 <gradient
                     android:type="linear"
                     android:angle="0"
-                    android:startColor="#4CAF50"
-                    android:centerColor="#66BB6A"
-                    android:endColor="#45a049" />
-            </shape>
-        </clip>
-    </item>
-    <!-- Shimmer/glow overlay -->
-    <item android:id="@android:id/secondaryProgress">
-        <clip>
-            <shape android:shape="rectangle">
-                <gradient
-                    android:type="linear"
-                    android:angle="90"
-                    android:startColor="#ffffff"
-                    android:centerColor="#66BB6A"
-                    android:endColor="#4CAF50"
-                    android:gradientRadius="50%" />
+                    android:startColor="#B3322F"
+                    android:centerColor="#E43C3C"
+                    android:endColor="#FF6161" />
             </shape>
         </clip>
     </item>

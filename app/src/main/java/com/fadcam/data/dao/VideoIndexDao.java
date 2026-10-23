@@ -103,16 +103,24 @@ public interface VideoIndexDao {
      * Get lightweight list for delta detection: uri + lastModified + size.
      * This avoids loading full entities just to compare timestamps.
      */
-    @Query("SELECT uri_string, last_modified, file_size FROM video_index")
+    @Query("SELECT uri_string, last_modified, file_size, finalized, retry_after"
+            + " FROM video_index")
     List<DeltaCheckRow> getDeltaCheckRows();
 
     /**
      * Lightweight projection for delta scanning.
+     *
+     * <p>Carries the hybrid-finalization state so a re-index can preserve it. The
+     * upsert is REPLACE, which would otherwise reset {@code finalized} to 0 every
+     * time a file's size changes — and a repair changes the size, so the
+     * self-healing scan would re-repair the same file forever (issue #357).
      */
     class DeltaCheckRow {
         public String uri_string;
         public long last_modified;
         public long file_size;
+        public int finalized;
+        public long retry_after;
     }
 
     // ──────────────────────────────────────────────

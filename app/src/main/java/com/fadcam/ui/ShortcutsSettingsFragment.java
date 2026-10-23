@@ -807,18 +807,7 @@ public class ShortcutsSettingsFragment extends Fragment {
     }
 
     private void updateAllWidgets() {
-        android.content.Context ctx = requireContext();
-        android.appwidget.AppWidgetManager awm = android.appwidget.AppWidgetManager.getInstance(ctx);
-        android.content.ComponentName provider = new android.content.ComponentName(ctx,
-                com.fadcam.widgets.ClockWidgetProvider.class);
-        int[] ids = awm.getAppWidgetIds(provider);
-        if (ids.length > 0) {
-            android.content.Intent intent = new android.content.Intent(ctx,
-                    com.fadcam.widgets.ClockWidgetProvider.class);
-            intent.setAction(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE);
-            intent.putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
-            ctx.sendBroadcast(intent);
-        }
+        com.fadcam.widgets.ClockWidgetProvider.requestUpdate(requireContext());
         updatePreview();
     }
 
@@ -870,16 +859,7 @@ public class ShortcutsSettingsFragment extends Fragment {
     }
 
     private String getArabicDateFormatDescription(String format) {
-        switch (format) {
-            case "FULL_ARABIC":
-                return getString(R.string.arabic_date_description_full_arabic);
-            case "MONTH_ARABIC_NUMBERS_ENGLISH":
-                return getString(R.string.arabic_date_description_mixed);
-            case "FULL_ENGLISH":
-                return getString(R.string.arabic_date_description_english);
-            default:
-                return getString(R.string.arabic_date_description_default);
-        }
+        return getString(com.fadcam.widgets.ArabicDateUtils.descriptionRes(format));
     }
 
     private void toggleBranding() {

@@ -819,7 +819,7 @@
 
     <string name="home_clock_customize_title">مظهر الساعة</string>
 
-    <string name="home_clock_customize_helper">تغيير عرض الساعة واللون وتنسيق الساعة.</string>
+    <string name="home_clock_customize_helper">تغيير عرض الساعة واللون وتنسيق الساعة ونمط التاريخ الهجري.</string>
 
     <string name="home_clock_display_option">عرض الساعة</string>
 
@@ -3770,6 +3770,8 @@
     <string name="screen_rec_resolution">الدقة</string>
 
     <string name="screen_rec_framerate">معدل الإطارات</string>
+    <string name="screen_rec_codec">الترميز</string>
+    <string name="note_screen_codec">اختر ترميز تسجيل الشاشة\n(الافتراضي: %1$s)\nملاحظة: يوفر H.265 (HEVC) ملفات أصغر بنفس الجودة. إذا لم يكن لدى هذا الجهاز مُرمِّز HEVC صالح، فسيسجل FadCam بصيغة H.264 تلقائيًا.</string>
 
     <string name="screen_rec_bitrate">معدل البت</string>
 
@@ -4646,4 +4648,86 @@
     <string name="trash_show_in_settings_title">إظهار في الإعدادات</string>
     <string name="trash_show_in_settings_desc">يضيف صف المهملات إلى صفحة الإعدادات للوصول السريع</string>
 
+    <string name="fadcam_full_title">FadCam للمستخدمين المحترفين</string>
+    <string name="fadcam_full_subtitle">التحكم عن بُعد، التسجيل عند الحركة، والتحليل الجنائي والمزيد. جرّب النسخة الكاملة.</string>
+    <string name="github_get_on">احصل عليه على</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">لقد استخدمت FadCam لمدة %1$s</string>
+    <string name="app_usage_since_install_title">لقد استخدمت FadCam لمدة</string>
+
+
+    <string name="app_age_a_while">بعض الوقت</string>
+    <string name="app_usage_installed_on">تاريخ التثبيت</string>
+    <string name="pro_reminder_button_continue">متابعة</string>
+    <string name="pro_reminder_button_countdown">متابعة · %1$d</string>
+    <string name="pro_reminder_back_toast_1">محاولة جيدة. تابع عندما تكون جاهزًا.</string>
+    <string name="pro_reminder_back_toast_2">الطريق الوحيد للخروج هو الأمام.</string>
+    <string name="pro_reminder_back_toast_3">تقريبًا. الزر ما زال ينتظر.</string>
+    <string name="pro_reminder_after_title">إن كنت تكره هذه الزيارات، فالترقية تجعلني أختفي فعلًا.</string>
+    <string name="pro_reminder_after_got_it">فهمت</string>
+    <string name="pro_dossier_header">FADSEC LAB // ملف داخلي</string>
+    <string name="pro_dossier_eyes_only">سري للغاية</string>
+    <string name="pro_dossier_subject">الموضوع // بروتوكول الترقية</string>
+    <string name="pro_dossier_file_no">رقم الملف</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">التصريح</string>
+    <string name="pro_dossier_clearance_value">عام / مجاني</string>
+    <string name="pro_dossier_status">الحالة</string>
+    <string name="pro_dossier_status_value">بانتظار التأكيد</string>
+    <string name="pro_dossier_ref">المرجع: FADSEC/PR-07</string>
+    <string name="pro_dossier_page">صفحة 1/1</string>
+    <string name="pro_dossier_drag">اسحب للفحص // الأمام</string>
+    <string name="pro_dossier_cycle">الدورة %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // تقرير ما بعد المهمة</string>
+    <string name="pro_dossier_after_stamp">إحاطة</string>
+    <string name="pro_dossier_after_subject">الموضوع // اتصال أسبوعي</string>
+    <string name="pro_dossier_after_status">التصرف</string>
+    <string name="pro_dossier_after_status_value">التأكيد مطلوب</string>
+    <string name="pro_dossier_after_ref">المرجع: FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">فهمت</string>
+    <string name="pro_reminder_title_1">لدينا تاريخ</string>
+    <string name="pro_reminder_subtitle_1">%1$s معًا. تعرّف على بقية FadCam.</string>
+    <string name="pro_reminder_title_2">ما زلنا نسجل معًا</string>
+    <string name="pro_reminder_subtitle_2">مرّ %1$s. Pro يستحق تحية لائقة.</string>
+    <string name="pro_reminder_title_3">أوفيت بوعدي</string>
+    <string name="pro_reminder_subtitle_3">بعد أسبوع، ها أنا. لنزر Pro.</string>
+    <string name="pro_reminder_title_4">هذه عادتنا الأسبوعية الآن</string>
+    <string name="pro_reminder_subtitle_4">%1$s مع FadCam. Pro بدأ يشعر بأنه منسي.</string>
+    <string name="pro_reminder_title_5">كنت تعرف أنني سأعود</string>
+    <string name="pro_reminder_subtitle_5">انتظرت سبعة أيام. وPro أيضًا.</string>
+    <string name="pro_reminder_title_6">نفس الوقت الأسبوع المقبل؟</string>
+    <string name="pro_reminder_subtitle_6">أولًا، جولتك المجدولة لثلاث ثوانٍ في Pro.</string>
+    <string name="pro_reminder_notification_channel_name">تذكيرات Pro</string>
+    <string name="pro_reminder_notification_channel_description">ملاحظة أسبوعية عن FadCam Pro. إصدارات Pro لا تراها أبدًا.</string>
+    <string name="pro_reminder_notification_title_1">معًا منذ %1$s</string>
+    <string name="pro_reminder_notification_body_1">عدت. طلب مني Pro أن أحضرك.</string>
+    <string name="pro_reminder_notification_title_2">انتظرت سبعة أيام</string>
+    <string name="pro_reminder_notification_body_2">اضغط قبل أن يصبح هذا تقليدًا أسبوعيًا.</string>
+    <string name="pro_reminder_notification_title_3">حان وقت زيارة Pro</string>
+    <string name="pro_reminder_notification_body_3">%1$s مع FadCam. حان وقت لقاء العائلة.</string>
+    <string name="pro_reminder_notification_title_4">ما زلنا نحن بعد %1$s</string>
+    <string name="pro_reminder_notification_body_4">بصراحة، Pro بدأ يغار قليلًا.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="zero">سأعود بعد %1$d يوم. إلى اللقاء.</item>
+        <item quantity="one">سأعود بعد %1$d يوم. إلى اللقاء.</item>
+        <item quantity="two">سأعود بعد %1$d يومين. إلى اللقاء.</item>
+        <item quantity="few">سأعود بعد %1$d أيام. إلى اللقاء.</item>
+        <item quantity="many">سأعود بعد %1$d يومًا. إلى اللقاء.</item>
+        <item quantity="other">سأعود بعد %1$d يوم. إلى اللقاء.</item>
+    </plurals>
+    <string name="pro_screen_bundle">ثلاثة تطبيقات خاصة.
+ملكك إلى الأبد.</string>
+    <string name="pro_showcase_label">حزمة PRO</string>
+    <string name="pro_showcase_supporting">ثبّت التطبيقات الثلاثة كلًا على حدة مع تحديثات مدى الحياة.</string>
+    <string name="pro_showcase_meta">تثبيتات منفصلة · تحديثات مدى الحياة</string>
+    <string name="pro_showcase_chip_installs">ثلاثة تطبيقات مستقلة</string>
+    <string name="pro_showcase_chip_updates">تحديثات مدى الحياة مشمولة</string>
+    <string name="pro_showcase_chip_entry">واجهات تطبيقات متنكرة</string>
+    <string name="pro_showcase_soon">قريبًا</string>
+    <string name="pro_showcase_hint">افتح القفل واستكشف التطبيقات.</string>
+    <string name="pro_showcase_expand_desc">فتح الهاتف بملء الشاشة</string>
+    <string name="pro_showcase_collapse_desc">الخروج من ملء الشاشة</string>
+    <string name="pro_showcase_phone_desc">مجسّم هاتف FadSec Lab. تعرض الشاشة تطبيقات Pro الثلاثة. اسحب جانبيًا لتدوير الهاتف.</string>
+    <string name="pro_showcase_privacy_mark">الخصوصية بالتصميم</string>
 </resources>

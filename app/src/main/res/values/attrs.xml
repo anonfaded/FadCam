@@ -37,6 +37,11 @@
     <attr name="homeRailTextSecondary" format="color" />
     <attr name="homeRailAccent" format="color" />
 
+    <declare-styleable name="AspectRatioFrameLayout">
+        <!-- Height / width of the slot. The showcase keeps it equal to the phone model's aspect. -->
+        <attr name="aspectRatio" format="float" />
+    </declare-styleable>
+
     <declare-styleable name="TornPaperImageView">
         <attr name="tearAmplitude" format="dimension" />
         <attr name="tearFrequency" format="float" />

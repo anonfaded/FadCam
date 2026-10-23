@@ -385,7 +385,8 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
             title = args.getString(ARG_TITLE, "");
             selectedId = args.getString(ARG_SELECTED_ID, null);
             resultKey = args.getString(ARG_RESULT_KEY, RESULT_KEY);
-            ArrayList<OptionItem> list = args.getParcelableArrayList(ARG_ITEMS, OptionItem.class);
+            ArrayList<OptionItem> list = com.fadcam.Utils.getParcelableArrayListCompat(
+                    args, ARG_ITEMS, OptionItem.class);
             if (list != null) items = list;
             // If strict-items-only is requested and no items were provided explicitly,
             // keep items empty rather than falling back to any previous state.

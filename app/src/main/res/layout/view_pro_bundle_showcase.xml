@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bundle card, dossier edition: charcoal sheet, grid texture, registration marks and a
+     typed header band. The phone is the exhibit; the copy column ends in a faint crown
+     blueprint so the sheet reads as a technical record; the footer is a full-width rule. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/showcaseRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:background="@drawable/bg_pro_bundle_dossier"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <com.fadcam.ui.widgets.DossierPaperView
+        android:id="@+id/showcasePaper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_pro_bundle_paper_clip"
+        android:clipToOutline="true" />
+
+    <LinearLayout
+        android:id="@+id/showcaseContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:id="@+id/showcaseHeaderBand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/showcaseLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pro_showcase_label"
+                android:fontFamily="monospace"
+                android:textColor="@color/dossier_olive_bright"
+                android:textSize="9sp"
+                android:letterSpacing="0.18"
+                android:textAllCaps="true" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="6dp"
+                android:background="@color/dossier_line" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/showcaseRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="top"
+            android:baselineAligned="false"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:id="@+id/showcaseTextColumn"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/showcaseTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pro_screen_bundle"
+                    android:fontFamily="sans-serif-condensed"
+                    android:textStyle="bold"
+                    android:textAllCaps="true"
+                    android:letterSpacing="0.02"
+                    android:lineSpacingExtra="1dp"
+                    android:textColor="@color/dossier_ink"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/showcaseSubtitle"
+                    android:visibility="gone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pro_showcase_supporting"
+                    android:textColor="@color/dossier_muted"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/showcaseMeta"
+                    android:visibility="gone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pro_showcase_meta"
+                    android:textColor="@color/dossier_muted"
+                    android:textSize="13sp" />
+
+                <!-- The list stays compact; the sheet's remaining space carries the faint
+                     crown blueprint, so the column never reads as a half-empty form. -->
+                <LinearLayout
+                    android:id="@+id/showcaseFeatures"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            style="@style/ProShowcaseFeatureIcon"
+                            android:src="@drawable/ic_pro_feature_apps" />
+
+                        <TextView
+                            style="@style/ProShowcaseFeatureLabel"
+                            android:layout_marginStart="@dimen/pro_showcase_feature_gap"
+                            android:text="@string/pro_showcase_chip_installs" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            style="@style/ProShowcaseFeatureIcon"
+                            android:src="@drawable/ic_pro_feature_updates" />
+
+                        <TextView
+                            style="@style/ProShowcaseFeatureLabel"
+                            android:layout_marginStart="@dimen/pro_showcase_feature_gap"
+                            android:text="@string/pro_showcase_chip_updates" />
+                    </LinearLayout>
+
+                    <!-- Coming-soon row: the tag always keeps its width; it drops under the
+                         label when the pair cannot share a line. Only the label is muted. -->
+                    <com.fadcam.ui.widgets.TaggedRowLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp">
+
+                        <ImageView
+                            style="@style/ProShowcaseFeatureIcon"
+                            android:src="@drawable/ic_pro_feature_disguise"
+                            android:tint="@color/dossier_muted" />
+
+                        <TextView
+                            android:id="@+id/entryLabel"
+                            style="@style/ProShowcaseFeatureLabel"
+                            android:textColor="@color/dossier_muted"
+                            android:text="@string/pro_showcase_chip_entry" />
+
+                        <TextView
+                            android:id="@+id/entrySoon"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_pro_dossier_tag"
+                            android:paddingHorizontal="@dimen/pro_showcase_soon_pad_h"
+                            android:paddingVertical="@dimen/pro_showcase_soon_pad_v"
+                            android:maxLines="1"
+                            android:fontFamily="monospace"
+                            android:letterSpacing="0.14"
+                            android:text="@string/pro_showcase_soon"
+                            android:textColor="@color/dossier_olive_bright"
+                            android:textSize="@dimen/pro_showcase_soon_size" />
+                    </com.fadcam.ui.widgets.TaggedRowLayout>
+                </LinearLayout>
+
+                <!-- Privacy schematic: the apps in the phone converge into one shield. The
+                     list stays compact so the drawing owns the remaining sheet space. -->
+                <FrameLayout
+                    android:id="@+id/showcasePrivacy"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginEnd="8dp"
+                        android:orientation="vertical">
+
+                        <com.fadcam.ui.widgets.PrivacyConvergenceView
+                            android:id="@+id/showcasePrivacyMark"
+                            android:layout_width="match_parent"
+                            android:layout_height="68dp"
+                            android:importantForAccessibility="no" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:gravity="center"
+                            android:id="@+id/showcasePrivacyLabel"
+                            android:text="@string/pro_showcase_privacy_mark"
+                            android:fontFamily="monospace"
+                            android:textColor="@color/dossier_olive_bright"
+                            android:textSize="11sp"
+                            android:letterSpacing="0.16"
+                            android:textAllCaps="true" />
+                    </LinearLayout>
+                </FrameLayout>
+            </LinearLayout>
+
+            <!-- The phone slot is fluid: it takes a share of the row and its height follows
+                 its width through the device's own aspect ratio. -->
+            <com.fadcam.ui.widgets.AspectRatioFrameLayout
+                android:id="@+id/showcasePhoneWrapper"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="@dimen/pro_showcase_phone_weight"
+                android:layout_marginStart="@dimen/pro_showcase_gap"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="20dp"
+                app:aspectRatio="2.05"
+                android:contentDescription="@string/pro_showcase_phone_desc"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <FrameLayout
+                    android:id="@+id/showcasePhoneContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </com.fadcam.ui.widgets.AspectRatioFrameLayout>
+        </LinearLayout>
+
+        <View
+            android:id="@+id/showcaseDivider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/dossier_line" />
+
+        <LinearLayout
+            android:id="@+id/showcaseFooter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:gravity="top">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:text="touch_app"
+                android:fontFamily="@font/materialicons"
+                android:textSize="@dimen/pro_showcase_hint_glyph"
+                android:textColor="@color/dossier_olive_bright"
+                android:importantForAccessibility="no" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/pro_showcase_hint_gap"
+                android:fontFamily="monospace"
+                android:lineSpacingExtra="2dp"
+                android:text="@string/pro_showcase_hint"
+                android:textColor="@color/dossier_muted"
+                android:textSize="@dimen/pro_showcase_hint_size" />
+
+            <TextView
+                android:id="@+id/showcaseExpand"
+                android:layout_width="@dimen/pro_showcase_expand_size"
+                android:layout_height="@dimen/pro_showcase_expand_size"
+                android:layout_marginStart="@dimen/pro_showcase_expand_gap"
+                android:gravity="center"
+                android:background="@drawable/bg_pro_dossier_expand"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/pro_showcase_expand_desc"
+                android:text="fullscreen"
+                android:fontFamily="@font/materialicons"
+                android:textSize="@dimen/pro_showcase_expand_glyph"
+                android:textColor="@color/dossier_olive_bright" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

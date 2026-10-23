@@ -123,4 +123,78 @@
     <dimen name="home_dock_height">56dp</dimen>
     <dimen name="home_dock_icon">20dp</dimen>
     <dimen name="home_dock_padding">4dp</dimen>
-</resources> 
+    <dimen name="home_dock_side_inset">44dp</dimen>
+    <dimen name="home_dock_gap">12dp</dimen>
+    <dimen name="home_dock_side_width">78dp</dimen>
+    <dimen name="home_dock_side_width_wide">94dp</dimen>
+    <dimen name="home_dock_side_height">48dp</dimen>
+
+    <!-- Pro screen: compact bucket (<400dp smallest width), tuned so the composition
+         matches the large-phone layout without horizontal scrolling. -->
+    <dimen name="pro_page_padding_h">18dp</dimen>
+    <dimen name="pro_hero_frame_h">78dp</dimen>
+    <dimen name="pro_cta_corner">16dp</dimen>
+    <dimen name="pro_cta_avatar">84dp</dimen>
+    <dimen name="pro_hero_avatar">72dp</dimen>
+    <dimen name="pro_hero_title_size">26sp</dimen>
+    <dimen name="pro_claim_title_size">15sp</dimen>
+    <dimen name="pro_claim_body_size">12sp</dimen>
+    <dimen name="pro_section_gap">24dp</dimen>
+    <dimen name="pro_card_padding">14dp</dimen>
+    <!-- Pro bundle card: charcoal plate, champagne accents, quiet feature list. -->
+    <dimen name="pro_showcase_corner">20dp</dimen>
+    <dimen name="pro_showcase_pad">16dp</dimen>
+    <dimen name="pro_showcase_label_size">10sp</dimen>
+    <dimen name="pro_showcase_badge_pad_h">9dp</dimen>
+    <dimen name="pro_showcase_badge_pad_v">3dp</dimen>
+    <dimen name="pro_showcase_title_margin">10dp</dimen>
+    <dimen name="pro_showcase_title_size">18sp</dimen>
+    <dimen name="pro_showcase_chips_margin">16dp</dimen>
+    <dimen name="pro_showcase_feature_icon_size">18dp</dimen>
+    <dimen name="pro_showcase_feature_gap">10dp</dimen>
+    <dimen name="pro_showcase_feature_row_gap">11dp</dimen>
+    <dimen name="pro_showcase_feature_text_size">13sp</dimen>
+    <dimen name="pro_showcase_chip_gap">6dp</dimen>
+    <dimen name="pro_showcase_soon_size">8sp</dimen>
+    <dimen name="pro_showcase_soon_pad_h">6dp</dimen>
+    <dimen name="pro_showcase_soon_pad_v">2dp</dimen>
+    <dimen name="pro_showcase_rule_gap">14dp</dimen>
+    <dimen name="pro_showcase_footer_gap">12dp</dimen>
+    <dimen name="pro_showcase_hint_size">11.5sp</dimen>
+    <dimen name="pro_showcase_hint_glyph">14sp</dimen>
+    <dimen name="pro_showcase_hint_gap">5dp</dimen>
+    <dimen name="pro_showcase_expand_size">30dp</dimen>
+    <dimen name="pro_showcase_expand_glyph">15sp</dimen>
+    <dimen name="pro_showcase_expand_gap">10dp</dimen>
+    <!-- Fluid phone slot: a share of the text column's weight (the height follows the width,
+         so this is a ratio, not a size). Tuned per width bucket because the copy next to the
+         phone is set in sp and needs proportionally more room on narrow screens. -->
+    <item name="pro_showcase_phone_weight" type="dimen" format="float">0.62</item>
+    <dimen name="pro_showcase_phone_max_w">150dp</dimen>
+    <dimen name="pro_showcase_phone_depth">44dp</dimen>
+    <dimen name="pro_showcase_visor_depth">6dp</dimen>
+    <dimen name="pro_showcase_gap">10dp</dimen>
+    <dimen name="pro_showcase_body_size">12sp</dimen>
+    <dimen name="pro_showcase_meta_size">11sp</dimen>
+    <dimen name="pro_app_icon">52dp</dimen>
+    <dimen name="pro_table_row_min_h">64dp</dimen>
+    <dimen name="pro_table_col_w">36dp</dimen>
+    <dimen name="pro_table_cell_square">24dp</dimen>
+    <dimen name="pro_table_glyph_size">17sp</dimen>
+    <dimen name="pro_row_icon_slot">24dp</dimen>
+    <dimen name="pro_row_icon_text">17sp</dimen>
+    <dimen name="pro_row_icon_image">22dp</dimen>
+    <dimen name="pro_footer_pad_bottom">12dp</dimen>
+    <dimen name="pro_footer_pad_h">16dp</dimen>
+    <dimen name="pro_price_size">26sp</dimen>
+    <dimen name="pro_cta_min_h">48dp</dimen>
+    <dimen name="pro_cta_text">14sp</dimen>
+    <dimen name="pro_scroll_top_size">36dp</dimen>
+    <dimen name="pro_scroll_top_icon">20sp</dimen>
+    <dimen name="pro_scroll_hint_margin">16dp</dimen>
+    <dimen name="pro_footer_fade_h">40dp</dimen>
+    <dimen name="pro_close_size">36dp</dimen>
+    <dimen name="pro_close_margin">8dp</dimen>
+    <dimen name="pro_close_padding">10dp</dimen>
+    <dimen name="pro_sticky_header_gap">8dp</dimen>
+</resources>

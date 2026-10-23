@@ -1,5 +1,7 @@
 package com.fadcam.widgets;
 
+import com.fadcam.R;
+
 import java.time.LocalDate;
 import java.time.chrono.HijrahDate;
 import java.time.temporal.ChronoField;
@@ -73,6 +75,20 @@ public class ArabicDateUtils {
         }
     }
     
+    /** The picker subtitle for a stored format id, shared by the widget and home-clock settings. */
+    public static int descriptionRes(String format) {
+        if ("MONTH_ARABIC_NUMBERS_ENGLISH".equals(format)) {
+            return R.string.arabic_date_description_mixed;
+        }
+        if ("FULL_ENGLISH".equals(format)) {
+            return R.string.arabic_date_description_english;
+        }
+        if ("FULL_ARABIC".equals(format)) {
+            return R.string.arabic_date_description_full_arabic;
+        }
+        return R.string.arabic_date_description_default;
+    }
+
     /**
      * Convert Western numerals to Arabic numerals
      */
