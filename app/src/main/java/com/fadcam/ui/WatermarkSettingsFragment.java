@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ImageSpan;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +35,7 @@ import com.fadcam.ui.OverlayNavUtil;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.Constants;
+import com.fadcam.watermark.WatermarkFontSizePreset;
 
 import org.json.JSONObject;
 import com.fadcam.ui.utils.NewFeatureManager;
@@ -49,6 +51,7 @@ public class WatermarkSettingsFragment extends Fragment {
     private SharedPreferencesManager prefs;
     private TextView valueLocationWatermark;
     private TextView valueWatermarkStyle;
+    private TextView valueWatermarkFontSize;
     private TextView valueCustomText;
     private TextView valueLocationFormat;
     private TextView valueLocationInterval;
@@ -80,12 +83,17 @@ public class WatermarkSettingsFragment extends Fragment {
         prefs = SharedPreferencesManager.getInstance(requireContext());
         valueLocationWatermark = view.findViewById(R.id.value_location_watermark);
         valueWatermarkStyle = view.findViewById(R.id.value_watermark_style);
+        valueWatermarkFontSize = view.findViewById(R.id.value_watermark_font_size);
         valueCustomText = view.findViewById(R.id.value_custom_text);
         valueLocationFormat = view.findViewById(R.id.value_location_format);
         valueLocationInterval = view.findViewById(R.id.value_location_interval);
         // previewText will be set up in setupButtonHandlers (using new preview card IDs)
         View rowStyle = view.findViewById(R.id.row_watermark_option);
         if(rowStyle!=null){ rowStyle.setOnClickListener(v -> showWatermarkStyleBottomSheet()); }
+        View rowFontSize = view.findViewById(R.id.row_watermark_font_size);
+        if (rowFontSize != null) {
+            rowFontSize.setOnClickListener(v -> showWatermarkFontSizeBottomSheet());
+        }
         locationRow = view.findViewById(R.id.row_location_watermark);
         if(locationRow!=null){ locationRow.setOnClickListener(v -> { if(locationRow.isEnabled()) showLocationWatermarkSheet(); }); }
         View rowLocationFormat = view.findViewById(R.id.row_location_format);
@@ -336,6 +344,7 @@ public class WatermarkSettingsFragment extends Fragment {
         
     refreshLocationValue();
     refreshWatermarkStyleValue();
+    refreshWatermarkFontSizeValue();
     refreshCustomTextValue();
     refreshLocationFormatValue();
     refreshLocationIntervalValue();
@@ -485,6 +494,72 @@ public class WatermarkSettingsFragment extends Fragment {
         else valueWatermarkStyle.setText(getString(R.string.watermark_style_none_label));
     }
 
+    private void showWatermarkFontSizeBottomSheet() {
+        final String resultKey = "picker_result_watermark_font_size";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
+            if (!bundle.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)) {
+                return;
+            }
+            String id = bundle.getString(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            WatermarkFontSizePreset preset = WatermarkFontSizePreset.fromPreference(id);
+            prefs.setWatermarkFontSizePreset(preset);
+            refreshWatermarkFontSizeValue();
+            updatePreview();
+        });
+
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                WatermarkFontSizePreset.SMALL.getPreferenceValue(),
+                getString(R.string.watermark_font_size_small),
+                (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                WatermarkFontSizePreset.MEDIUM.getPreferenceValue(),
+                getString(R.string.watermark_font_size_medium),
+                (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                WatermarkFontSizePreset.LARGE.getPreferenceValue(),
+                getString(R.string.watermark_font_size_large),
+                (String) null));
+        items.add(new com.fadcam.ui.picker.OptionItem(
+                WatermarkFontSizePreset.EXTRA_LARGE.getPreferenceValue(),
+                getString(R.string.watermark_font_size_extra_large),
+                (String) null));
+
+        WatermarkFontSizePreset current = prefs.getWatermarkFontSizePreset();
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+                com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                        getString(R.string.watermark_font_size_title),
+                        items,
+                        current.getPreferenceValue(),
+                        resultKey,
+                        getString(R.string.watermark_font_size_helper));
+        sheet.show(getParentFragmentManager(), "watermark_font_size_sheet");
+    }
+
+    private void refreshWatermarkFontSizeValue() {
+        if (valueWatermarkFontSize == null) {
+            return;
+        }
+        int labelRes;
+        switch (prefs.getWatermarkFontSizePreset()) {
+            case SMALL:
+                labelRes = R.string.watermark_font_size_small;
+                break;
+            case LARGE:
+                labelRes = R.string.watermark_font_size_large;
+                break;
+            case EXTRA_LARGE:
+                labelRes = R.string.watermark_font_size_extra_large;
+                break;
+            case MEDIUM:
+            default:
+                labelRes = R.string.watermark_font_size_medium;
+                break;
+        }
+        valueWatermarkFontSize.setText(labelRes);
+    }
+
     private void updateLocationRowState(){
         if(locationRow==null) return;
         boolean watermarkNone = "no_watermark".equals(prefs.getWatermarkOption());
@@ -511,6 +586,10 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     private void updatePreview(){
+        if (previewAdapter != null) {
+            previewAdapter.setTextSizeSp(
+                    prefs.getWatermarkFontSizePreset().scale(14f));
+        }
         String v = prefs.getWatermarkOption();
         // Static sample (10 Jul 2024 is a Wednesday) — day shown when the toggle is on.
         String formatted = (prefs.isWatermarkDayEnabled() ? "Wed, " : "")
@@ -1031,6 +1110,13 @@ public class WatermarkSettingsFragment extends Fragment {
 
         private CharSequence fadcamContent = "";
         private CharSequence fadrecContent = "";
+        private float textSizeSp = 14f;
+
+        void setTextSizeSp(float textSizeSp) {
+            this.textSizeSp = textSizeSp;
+            notifyItemChanged(0);
+            notifyItemChanged(1);
+        }
 
         void setContent(String fadcamText, String fadrecRaw,
                         @Nullable Drawable fadcamIconDrawable,
@@ -1068,6 +1154,7 @@ public class WatermarkSettingsFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull VH holder, int position) {
             holder.text.setText(position == 0 ? fadcamContent : fadrecContent);
+            holder.text.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp);
         }
 
         @Override

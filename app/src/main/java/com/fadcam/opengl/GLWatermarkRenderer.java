@@ -28,6 +28,7 @@ import androidx.core.content.res.ResourcesCompat;
 import com.fadcam.CameraType;
 import com.fadcam.SharedPreferencesManager;
 import com.fadcam.dualcam.DualCameraConfig;
+import com.fadcam.watermark.WatermarkFontSizePreset;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -1198,7 +1199,11 @@ public class GLWatermarkRenderer {
         // This ensures text GROWS visibly at higher resolutions (not same % of screen)
         // Range [16px, 48px] - more aggressive than before to show actual resolution differences
         float rawCalc = refWidth * 0.020f;
-        float dynamicTextSize = Math.max(16f, Math.min(48f, rawCalc));
+        float baseTextSize = Math.max(16f, Math.min(48f, rawCalc));
+        WatermarkFontSizePreset fontSizePreset = SharedPreferencesManager
+                .getInstance(context)
+                .getWatermarkFontSizePreset();
+        float dynamicTextSize = fontSizePreset.scale(baseTextSize);
         watermarkPaint.setTextSize(dynamicTextSize);
         watermarkPaint.setAntiAlias(true);
         watermarkPaint.setARGB(255, 255, 255, 255);

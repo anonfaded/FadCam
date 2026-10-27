@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.util.Size;
 import androidx.annotation.Nullable; // Import Nullable
 import com.fadcam.CameraType; // Ensure CameraType is imported
+import com.fadcam.watermark.WatermarkFontSizePreset;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -1260,6 +1261,34 @@ public class SharedPreferencesManager {
             Constants.PREF_WATERMARK_OPTION,
             Constants.DEFAULT_WATERMARK_OPTION
         );
+    }
+
+    /**
+     * Get the font-size preset shared by video and FadShot watermarks.
+     * Unknown or legacy values safely retain the existing medium size.
+     *
+     * @return A validated watermark font-size preset
+     */
+    public WatermarkFontSizePreset getWatermarkFontSizePreset() {
+        String value = sharedPreferences.getString(
+            Constants.PREF_WATERMARK_FONT_SIZE,
+            WatermarkFontSizePreset.MEDIUM.getPreferenceValue()
+        );
+        return WatermarkFontSizePreset.fromPreference(value);
+    }
+
+    /**
+     * Set the font-size preset shared by video and FadShot watermarks.
+     *
+     * @param preset Validated watermark font-size preset
+     */
+    public void setWatermarkFontSizePreset(@Nullable WatermarkFontSizePreset preset) {
+        WatermarkFontSizePreset safePreset = preset != null
+            ? preset
+            : WatermarkFontSizePreset.MEDIUM;
+        sharedPreferences.edit()
+            .putString(Constants.PREF_WATERMARK_FONT_SIZE, safePreset.getPreferenceValue())
+            .apply();
     }
 
     /**

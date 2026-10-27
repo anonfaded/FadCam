@@ -878,6 +878,12 @@
     <string name="watermark_style_timeonly_label">Timestamp</string>
     <string name="watermark_style_badge_label">Brand Label Only</string>
     <string name="watermark_style_none_label">No Watermark</string>
+    <string name="watermark_font_size_title">Watermark Font Size</string>
+    <string name="watermark_font_size_helper">Choose the text size used for both video and FadShot watermarks. Medium preserves the current size.</string>
+    <string name="watermark_font_size_small">Small</string>
+    <string name="watermark_font_size_medium">Medium</string>
+    <string name="watermark_font_size_large">Large</string>
+    <string name="watermark_font_size_extra_large">Extra large</string>
     <string name="helper_watermark_preview">This is how the watermark will appear at the top-left of your recorded video.\nFun fact: 10/Jul/2024 04:47 PM is when FadCam v1.0 first shipped.</string>
     <string name="helper_location_watermark_option">Toggle adding your device location as an overlay. Requires location permission.</string>
     <string name="location_format_title">Location Format</string>

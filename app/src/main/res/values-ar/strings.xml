@@ -1686,6 +1686,18 @@
 
     <string name="watermark_style_none_label">بدون علامة مائية</string>
 
+    <string name="watermark_font_size_title">حجم خط العلامة المائية</string>
+
+    <string name="watermark_font_size_helper">اختر حجم النص المستخدم في العلامات المائية للفيديو ولقطات FadShot. يحافظ الحجم المتوسط على الحجم الحالي.</string>
+
+    <string name="watermark_font_size_small">صغير</string>
+
+    <string name="watermark_font_size_medium">متوسط</string>
+
+    <string name="watermark_font_size_large">كبير</string>
+
+    <string name="watermark_font_size_extra_large">كبير جدًا</string>
+
     <string name="helper_watermark_preview">هكذا ستظهر العلامة المائية في أعلى يسار الفيديو المسجل.\nحقيقة ممتعة: 10/يوليو/2024 04:47 م هو تاريخ إطلاق FadCam v1.0 لأول مرة.</string>
 
     <string name="helper_location_watermark_option">تبديل إضافة موقع جهازك كطبقة. يتطلب إذن الموقع.</string>

@@ -20,6 +20,7 @@ import androidx.documentfile.provider.DocumentFile;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.watermark.WatermarkFontSizePreset;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -240,7 +241,14 @@ public final class PhotoStorageHelper {
         if (applyWatermarkFromPreferences) {
             String watermarkText = buildWatermarkText(prefs, extraWatermarkData);
             if (!watermarkText.isEmpty()) {
-                Bitmap watermarked = applyWatermark(context, working, watermarkText);
+                Bitmap watermarked = applyWatermark(
+                        context,
+                        working,
+                        watermarkText,
+                        prefs != null
+                                ? prefs.getWatermarkFontSizePreset()
+                                : WatermarkFontSizePreset.MEDIUM
+                );
                 if (watermarked != null) {
                     if (working != source && !working.isRecycled()) {
                         working.recycle();
@@ -310,14 +318,20 @@ public final class PhotoStorageHelper {
     }
 
     @Nullable
-    private static Bitmap applyWatermark(@NonNull Context context, @NonNull Bitmap source, @NonNull String text) {
+    private static Bitmap applyWatermark(
+            @NonNull Context context,
+            @NonNull Bitmap source,
+            @NonNull String text,
+            @NonNull WatermarkFontSizePreset fontSizePreset
+    ) {
         try {
             Bitmap result = source.copy(Bitmap.Config.ARGB_8888, true);
             Canvas canvas = new Canvas(result);
             // Text size: ~3% of smallest dimension (same proportion as video watermark)
             // For 1080p: 1080 * 0.03 = ~32px (clamped 24-40)
             float minDim = Math.min(result.getWidth(), result.getHeight());
-            float textSize = Math.max(18f, Math.min(26f, minDim * 0.02f));
+            float baseTextSize = Math.max(18f, Math.min(26f, minDim * 0.02f));
+            float textSize = fontSizePreset.scale(baseTextSize);
 
             Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
             paint.setColor(Color.WHITE);
