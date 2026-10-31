@@ -1849,6 +1849,7 @@
     <string name="name_your_project">Nome progetto</string>
     <string name="project_naming_message">Dai un nome al progetto.</string>
     <string name="fadrec_projects">Progetti FadRec</string>
+    <string name="fadrec_projects_location">I progetti vengono salvati nello spazio privato dell\'app</string>
     <string name="delete_project">Elimina progetto</string>
     <string name="delete_all">Elimina tutto</string>
     <string name="new_project">Nuovo progetto</string>

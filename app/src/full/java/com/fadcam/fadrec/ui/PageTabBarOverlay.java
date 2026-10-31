@@ -391,7 +391,8 @@ public class PageTabBarOverlay {
         if (btnRenamePage != null) {
             btnRenamePage.setOnClickListener(v -> {
                 // Broadcast rename intent
-                Intent intent = new Intent("com.fadcam.fadrec.RENAME_PAGE");
+                Intent intent = new Intent("com.fadcam.fadrec.RENAME_PAGE")
+                        .setPackage(context.getPackageName());
                 intent.putExtra("page_index", index);
                 intent.putExtra("page_name", page.getName());
                 context.sendBroadcast(intent);

@@ -160,7 +160,6 @@ public class AnnotationService extends Service {
     private boolean isAnimating = false; // Track if menu is currently animating
     private boolean overlayVisible = true; // Controls if arrow overlay is shown
     private boolean annotationEnabled = false; // Controls if drawing is active (DEFAULT: OFF)
-    private boolean hasShownStartupDialog = false; // Track if startup dialog already shown to prevent repeated prompts
     private boolean canvasHidden = false; // Controls if canvas drawings are hidden (except pinned layers)
     private long lastArrowHintTimestamp = 0L;
     private Runnable pendingArrowHintRunnable;
@@ -222,7 +221,8 @@ public class AnnotationService extends Service {
             if (!android.provider.Settings.canDrawOverlays(this)) {
                 FLog.e(TAG, "SYSTEM_ALERT_WINDOW permission not granted, cannot start AnnotationService");
                 // Broadcast permission missing error
-                Intent errorBroadcast = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_PERMISSION_ERROR");
+                Intent errorBroadcast = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_PERMISSION_ERROR")
+                        .setPackage(getPackageName());
                 sendBroadcast(errorBroadcast);
                 stopSelf();
                 return START_NOT_STICKY;
@@ -270,7 +270,8 @@ public class AnnotationService extends Service {
         FLog.d(TAG, "Terminate service requested from notification");
         
         // Broadcast to FadRecHomeFragment to turn off toggle
-        Intent broadcast = new Intent("com.fadcam.fadrec.ACTION_SERVICE_TERMINATED");
+        Intent broadcast = new Intent("com.fadcam.fadrec.ACTION_SERVICE_TERMINATED")
+                .setPackage(getPackageName());
         sendBroadcast(broadcast);
         
         // Stop service
@@ -353,12 +354,8 @@ public class AnnotationService extends Service {
             txtCurrentProject.setText("Current: None");
         }
 
-        // Display projects path
-        String projectsPath = projectFileManager.getProjectsPath();
-        // Convert to user-friendly path
-        String userFriendlyPath = projectsPath.replace(android.os.Environment.getExternalStorageDirectory().getPath(),
-                "~");
-        txtProjectsPath.setText("Projects saved at: " + userFriendlyPath);
+        // Projects are app-private now; a raw Android/data path means nothing to users.
+        txtProjectsPath.setText(getString(R.string.fadrec_projects_location));
 
         // Load all project folders
         File[] projectFolders = projectFileManager.listProjects();
@@ -778,17 +775,17 @@ public class AnnotationService extends Service {
         if (currentProjectName != null && projectFileManager != null) {
             // Check if project exists
             if (projectFileManager.projectExists(currentProjectName)) {
-                FLog.i(TAG, "Found existing project: " + currentProjectName);
-
-                // Only show startup dialog if we haven't shown it yet (prevents repeated prompts on service restart)
-                if (!hasShownStartupDialog) {
-                    FLog.d(TAG, "First time loading - showing startup dialog");
-                    showStartupDialog(currentProjectName);
-                    hasShownStartupDialog = true;
-                } else {
-                    FLog.d(TAG, "Service restarted - skipping dialog and loading project directly");
-                    loadExistingProject(currentProjectName);
-                }
+                // Resume silently. The old "continue or start a new project?" prompt was
+                // guarded by a per-instance flag, so it reappeared on every service start
+                // (START_STICKY restarts, overlay toggles) and, being an overlay window,
+                // could show up over other apps. Starting a new project is now a manual
+                // action in the Projects menu.
+                //
+                // Resuming is also required for correctness: auto-save runs every 5s, so
+                // leaving the canvas empty against an existing project name would
+                // overwrite that project's pages on the first save.
+                FLog.i(TAG, "Resuming project: " + currentProjectName);
+                loadExistingProject(currentProjectName);
             } else {
                 FLog.w(TAG, "Saved project doesn't exist, starting fresh");
                 startFreshProject();
@@ -797,76 +794,6 @@ public class AnnotationService extends Service {
             FLog.w(TAG, "No current project name or ProjectFileManager not initialized");
             startFreshProject();
         }
-    }
-
-    /**
-     * Show dialog asking user to continue with last project or create new
-     */
-    private void showStartupDialog(String existingProjectName) {
-        String sanitizedName = ProjectFileManager.sanitizeProjectName(existingProjectName);
-
-        // Wrap with ContextThemeWrapper to provide Material theme context
-        Context themedContext = new ContextThemeWrapper(this, R.style.Base_Theme_FadCam);
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(themedContext);
-
-        androidx.appcompat.app.AlertDialog startupDialog = builder
-                .setTitle(getString(R.string.annotation_welcome_back))
-                .setMessage("Continue with your last saved project \"" + sanitizedName + "\" or start a new one?")
-                .setPositiveButton("Continue", (dialog, which) -> {
-                    dialog.dismiss();
-                    FLog.i(TAG, "User chose to continue with: " + existingProjectName);
-                    loadExistingProject(existingProjectName);
-                })
-                .setNegativeButton("New Project", (dialog, which) -> {
-                    dialog.dismiss();
-                    FLog.i(TAG, "User chose to create new project");
-                    createNewProject();
-                })
-                .setCancelable(false)
-                .create();
-
-        // Set proper colors for dialog visibility
-        if (startupDialog.getWindow() != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startupDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
-            } else {
-                startupDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
-            }
-        }
-        
-        // Force visibility with hardcoded colors
-        startupDialog.setOnShowListener(dialog -> {
-            // Set background color - dark gray
-            startupDialog.getWindow().getDecorView().setBackgroundColor(0xFF2A2A2A);
-            
-            // Set title color - white
-            int titleId = getResources().getIdentifier("alertTitle", "id", getPackageName());
-            if (titleId > 0) {
-                android.widget.TextView titleView = startupDialog.findViewById(titleId);
-                if (titleView != null) {
-                    titleView.setTextColor(0xFFFFFFFF);
-                }
-            }
-            
-            // Set message color - light gray
-            int messageId = android.R.id.message;
-            android.widget.TextView messageView = startupDialog.findViewById(messageId);
-            if (messageView != null) {
-                messageView.setTextColor(0xFFE0E0E0);
-            }
-            
-            // Set button colors
-            android.widget.Button positiveButton = startupDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE);
-            android.widget.Button negativeButton = startupDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE);
-            if (positiveButton != null) {
-                positiveButton.setTextColor(0xFF4CAF50);
-            }
-            if (negativeButton != null) {
-                negativeButton.setTextColor(0xFF4CAF50);
-            }
-        });
-
-        startupDialog.show();
     }
 
     /**
@@ -919,7 +846,8 @@ public class AnnotationService extends Service {
      * Called from onCreate (in finally block) and onStartCommand (for implicit starts).
      */
     private void sendReadyBroadcast() {
-        Intent readyIntent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_READY");
+        Intent readyIntent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_READY")
+                .setPackage(getPackageName());
         sendBroadcast(readyIntent);
         FLog.d(TAG, "ANNOTATION_SERVICE_READY broadcast sent");
     }
@@ -4384,7 +4312,8 @@ public class AnnotationService extends Service {
         stopRecordingTimer();
 
         // Send broadcast to turn off menu switch in app
-        Intent intent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED");
+        Intent intent = new Intent("com.fadcam.fadrec.ANNOTATION_SERVICE_STOPPED")
+                .setPackage(getPackageName());
         sendBroadcast(intent);
 
         // Unregister broadcast receivers

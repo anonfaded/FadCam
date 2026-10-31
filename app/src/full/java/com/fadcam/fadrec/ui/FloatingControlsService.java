@@ -183,10 +183,10 @@ public class FloatingControlsService extends Service {
             if (btnStartStop.isEnabled()) {
                 if (recordingState == ScreenRecordingState.NONE) {
                     // Start recording
-                    sendBroadcast(new Intent(Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY));
+                    sendBroadcast(new Intent(Constants.ACTION_START_SCREEN_RECORDING_FROM_OVERLAY).setPackage(getPackageName()));
                 } else {
                     // Stop recording (works for both IN_PROGRESS and PAUSED)
-                    sendBroadcast(new Intent(Constants.ACTION_STOP_SCREEN_RECORDING));
+                    sendBroadcast(new Intent(Constants.ACTION_STOP_SCREEN_RECORDING).setPackage(getPackageName()));
                 }
             }
         });
@@ -195,10 +195,10 @@ public class FloatingControlsService extends Service {
             if (btnPauseResume.isEnabled()) {
                 if (recordingState == ScreenRecordingState.IN_PROGRESS) {
                     // Pause recording
-                    sendBroadcast(new Intent(Constants.ACTION_PAUSE_SCREEN_RECORDING));
+                    sendBroadcast(new Intent(Constants.ACTION_PAUSE_SCREEN_RECORDING).setPackage(getPackageName()));
                 } else if (recordingState == ScreenRecordingState.PAUSED) {
                     // Resume recording
-                    sendBroadcast(new Intent(Constants.ACTION_RESUME_SCREEN_RECORDING));
+                    sendBroadcast(new Intent(Constants.ACTION_RESUME_SCREEN_RECORDING).setPackage(getPackageName()));
                 }
             }
         });
@@ -224,20 +224,20 @@ public class FloatingControlsService extends Service {
         // Snap guides switch listener
         snapGuidesSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             // Send broadcast to AnnotationView to toggle snap guides
-            Intent intent = new Intent("com.fadcam.fadrec.TOGGLE_SNAP_GUIDES");
+            Intent intent = new Intent("com.fadcam.fadrec.TOGGLE_SNAP_GUIDES").setPackage(getPackageName());
             intent.putExtra("enabled", isChecked);
             sendBroadcast(intent);
         });
         
         // Add text button
         btnAddText.setOnClickListener(v -> {
-            Intent intent = new Intent("com.fadcam.fadrec.ADD_TEXT");
+            Intent intent = new Intent("com.fadcam.fadrec.ADD_TEXT").setPackage(getPackageName());
             sendBroadcast(intent);
         });
         
         // Add shape button
         btnAddShape.setOnClickListener(v -> {
-            Intent intent = new Intent("com.fadcam.fadrec.ADD_SHAPE");
+            Intent intent = new Intent("com.fadcam.fadrec.ADD_SHAPE").setPackage(getPackageName());
             sendBroadcast(intent);
         });
         

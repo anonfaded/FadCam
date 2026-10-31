@@ -1088,6 +1088,7 @@
     <string name="name_your_project">为您的项目命名</string>
     <string name="project_naming_message">为您的项目起一个容易记住的名字和描述，以便整理您的录制内容</string>
     <string name="fadrec_projects">FadRec 项目</string>
+    <string name="fadrec_projects_location">项目保存在应用的私有存储空间中</string>
     <string name="delete_project">删除项目</string>
     <string name="delete_all">删除全部</string>
     <string name="new_project">新建项目</string>

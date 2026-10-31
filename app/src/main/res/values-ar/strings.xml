@@ -3180,6 +3180,7 @@
     <string name="project_naming_message">أعطِ مشروعك اسمًا ووصفًا لا يُنسى لتنظيم تسجيلاتك</string>
 
     <string name="fadrec_projects">مشاريع FadRec</string>
+    <string name="fadrec_projects_location">يتم تخزين المشاريع في مساحة التخزين الخاصة بالتطبيق</string>
 
     <string name="delete_project">حذف المشروع</string>
 

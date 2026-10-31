@@ -2047,6 +2047,7 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="name_your_project">Beri Nama Proyek Anda</string>
     <string name="project_naming_message">Beri proyek Anda nama dan deskripsi yang mudah diingat untuk mengatur rekaman Anda</string>
     <string name="fadrec_projects">Proyek FadRec</string>
+    <string name="fadrec_projects_location">Proyek disimpan di penyimpanan privat aplikasi</string>
     <string name="delete_project">Hapus Proyek</string>
     <string name="delete_all">Hapus Semua</string>
     <string name="new_project">Proyek Baru</string>

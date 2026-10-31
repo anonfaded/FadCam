@@ -120,7 +120,8 @@ public class ProjectNamingDialogActivity extends Activity {
             }
             
             // Send broadcast with new name and description (will be sanitized by receiver)
-            Intent resultIntent = new Intent(ACTION_PROJECT_RENAMED);
+            Intent resultIntent = new Intent(ACTION_PROJECT_RENAMED)
+                    .setPackage(getPackageName());
             resultIntent.putExtra(EXTRA_PROJECT_NAME, newName);
             resultIntent.putExtra(EXTRA_PROJECT_DESCRIPTION, newDescription);
             sendBroadcast(resultIntent);

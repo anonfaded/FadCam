@@ -1943,6 +1943,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="name_your_project">Ονομάστε το Έργο σας</string>
     <string name="project_naming_message">Δώστε ένα όνομα στο έργο σας.</string>
     <string name="fadrec_projects">Έργα FadRec</string>
+    <string name="fadrec_projects_location">Τα έργα αποθηκεύονται στον ιδιωτικό χώρο αποθήκευσης της εφαρμογής</string>
     <string name="delete_project">Διαγραφή Έργου</string>
     <string name="delete_all">Διαγραφή Όλων</string>
     <string name="new_project">Νέο Έργο</string>

@@ -1893,6 +1893,7 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="name_your_project">Nimeta oma projekt</string>
     <string name="project_naming_message">Anna oma projektile meeldejääv nimi ja kirjeldus, et salvestisi korraldada</string>
     <string name="fadrec_projects">FadRec projektid</string>
+    <string name="fadrec_projects_location">Projektid salvestatakse rakenduse privaatsesse mällu</string>
     <string name="delete_project">Kustuta projekt</string>
     <string name="delete_all">Kustuta kõik</string>
     <string name="new_project">Uus projekt</string>

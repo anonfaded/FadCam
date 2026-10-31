@@ -104,6 +104,12 @@ public class FadRecHomeFragment extends HomeFragment {
     
     // Material loading dialog for annotation service startup
     private androidx.appcompat.app.AlertDialog loadingDialog;
+    // Safety net: the READY broadcast can be missed (service already running, blocked
+    // delivery, OEM quirk). Never leave the user stuck on a non-cancelable spinner.
+    private static final long LOADING_DIALOG_TIMEOUT_MS = 4000L;
+    private final android.os.Handler loadingDialogHandler =
+            new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable loadingDialogTimeoutRunnable = this::dismissLoadingDialogFromTimeout;
     private boolean forceMutedNoAudioThisStart = false;
     private boolean isRecordingForcedMuted = false;
 
@@ -293,6 +299,7 @@ public class FadRecHomeFragment extends HomeFragment {
                         FLog.d(TAG, "Annotation service stopped/terminated - menu switch turned off");
                     } else if ("com.fadcam.fadrec.ANNOTATION_SERVICE_READY".equals(action)) {
                         // Service initialization complete, dismiss loading dialog
+                        loadingDialogHandler.removeCallbacks(loadingDialogTimeoutRunnable);
                         if (loadingDialog != null && loadingDialog.isShowing()) {
                             loadingDialog.dismiss();
                             FLog.d(TAG, "Annotation service ready - loading dialog dismissed");
@@ -740,11 +747,23 @@ public class FadRecHomeFragment extends HomeFragment {
                 requireContext().startService(intent);
             }
             FLog.d(TAG, "Annotation service started");
+
+            // Safety net: if the READY broadcast is missed, drop the spinner anyway.
+            loadingDialogHandler.removeCallbacks(loadingDialogTimeoutRunnable);
+            loadingDialogHandler.postDelayed(loadingDialogTimeoutRunnable, LOADING_DIALOG_TIMEOUT_MS);
         } catch (Exception e) {
             FLog.e(TAG, "Error starting annotation service", e);
+            loadingDialogHandler.removeCallbacks(loadingDialogTimeoutRunnable);
             if (loadingDialog != null && loadingDialog.isShowing()) {
                 loadingDialog.dismiss();
             }
+        }
+    }
+
+    private void dismissLoadingDialogFromTimeout() {
+        if (loadingDialog != null && loadingDialog.isShowing()) {
+            loadingDialog.dismiss();
+            FLog.w(TAG, "Loading dialog dismissed by timeout - READY broadcast was not received");
         }
     }
     

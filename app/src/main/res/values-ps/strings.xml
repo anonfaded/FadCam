@@ -979,6 +979,7 @@ Export runs as a background service — you can close the app and it will keep e
     <string name="fadrec_preview_enable_hint">Hold to show preview</string>
     <string name="fadrec_preview_not_available">Live screen preview enham FadRec ke wired na shwi</string>
     <string name="fadrec_projects">FadRec Projects</string>
+    <string name="fadrec_projects_location">Projey da app pa khpal khaas storage ke zakhira kee</string>
     <string name="fadrec_ready_to_record">Screen capture kolo lapara tayar</string>
     <string name="fadrec_ready_to_record_subtitle">Tap to begin</string>
     <string name="fadrec_record_muted">Khamosh Record Ka</string>

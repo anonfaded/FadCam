@@ -1996,6 +1996,7 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="name_your_project">Nombra tu proyecto</string>
     <string name="project_naming_message">Dale a tu proyecto un nombre y descripción memorables para organizar tus grabaciones</string>
     <string name="fadrec_projects">Proyectos FadRec</string>
+    <string name="fadrec_projects_location">Los proyectos se guardan en el almacenamiento privado de la aplicación</string>
     <string name="delete_project">Eliminar proyecto</string>
     <string name="delete_all">Eliminar todo</string>
     <string name="new_project">Nuevo proyecto</string>

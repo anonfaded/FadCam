@@ -984,7 +984,8 @@ public class ScreenRecordingService extends Service {
                     if (recordingSuccessful) {
                         // Broadcast recording complete for RecordsFragment to refresh
                         try {
-                            Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE);
+                            Intent recordingCompleteIntent = new Intent(Constants.ACTION_RECORDING_COMPLETE)
+                                    .setPackage(getPackageName());
                             if (outputFile != null) {
                                 recordingCompleteIntent.putExtra("videoPath", outputFile.getAbsolutePath());
                             } else if (safRecordingUri != null) {

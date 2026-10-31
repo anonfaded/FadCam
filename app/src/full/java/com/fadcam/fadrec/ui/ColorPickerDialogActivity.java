@@ -109,7 +109,8 @@ public class ColorPickerDialogActivity extends Activity {
             int finalColor = colors[i];
             colorSwatch.setOnClickListener(v -> {
                 // Send result back to service
-                Intent resultIntent = new Intent(ACTION_COLOR_SELECTED);
+                Intent resultIntent = new Intent(ACTION_COLOR_SELECTED)
+                        .setPackage(getPackageName());
                 resultIntent.putExtra(EXTRA_SELECTED_COLOR, finalColor);
                 sendBroadcast(resultIntent);
                 

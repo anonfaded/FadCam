@@ -4,7 +4,6 @@ import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Environment;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,8 +20,8 @@ import java.util.Locale;
  * Manages .fadrec project files for annotation state persistence.
  * Format: JSON-based project file (like .psd for Photoshop).
  * 
- * NEW Structure (v2.0): Each project is now a folder containing:
- * ~/Documents/FadRec/Projects/{ProjectName}/
+ * NEW Structure (v2.0): Each project is now a folder inside the app-specific
+ * external files directory (Android/data/…/files/FadRec/Projects/{ProjectName}):
  *   ├── project.fadrec (main project file)
  *   ├── thumbnail.png (auto-generated preview)
  *   └── assets/ (for future: images, videos, etc)
@@ -52,7 +51,6 @@ public class ProjectFileManager {
     private static final String PREFS_NAME = "FadRecProjects";
     private static final String KEY_CURRENT_PROJECT = "current_project";
     
-    private final Context context;
     private final File projectsDir;
     private final SharedPreferences prefs;
     
@@ -67,18 +65,29 @@ public class ProjectFileManager {
     }
     
     public ProjectFileManager(Context context) {
-        this.context = context;
         this.prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        
-        // Create projects directory: ~/Documents/FadRec/Projects/
-        File documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-        File fadrecDir = new File(documentsDir, "FadRec");
-        this.projectsDir = new File(fadrecDir, "Projects");
-        
-        if (!projectsDir.exists()) {
-            projectsDir.mkdirs();
-            FLog.i(TAG, "Created FadRec projects directory: " + projectsDir.getAbsolutePath());
+
+        // Projects live in the app's own external files dir, next to the recordings
+        // (Android/data/<pkg>/files/). Public Documents/FadRec needs all-files access
+        // and a folder this install actually owns; when either is missing every read
+        // and write fails with EACCES and annotations silently stop persisting.
+        this.projectsDir = resolveProjectsDir(context);
+
+        if (!projectsDir.exists() && !projectsDir.mkdirs()) {
+            FLog.e(TAG, "Could not create FadRec projects directory: " + projectsDir.getAbsolutePath());
+        } else {
+            FLog.i(TAG, "FadRec projects directory: " + projectsDir.getAbsolutePath());
         }
+    }
+
+    private static File resolveProjectsDir(Context context) {
+        File base = context.getExternalFilesDir(null);
+        if (base == null) {
+            // External volume unavailable - fall back to internal app storage so the
+            // annotation layer keeps working (no permission needed either way).
+            base = context.getFilesDir();
+        }
+        return new File(new File(base, "FadRec"), "Projects");
     }
     
     /**
@@ -540,13 +549,6 @@ public class ProjectFileManager {
             FLog.e(TAG, "❌ Failed to rename project folder");
             return false;
         }
-    }
-    
-    /**
-     * Get projects directory path
-     */
-    public String getProjectsPath() {
-        return projectsDir.getAbsolutePath();
     }
     
     /**

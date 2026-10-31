@@ -1286,6 +1286,7 @@
     <string name="name_your_project">Назовите свой проект</string>
     <string name="project_naming_message">Дайте своему проекту запоминающееся имя и описание, чтобы организовать свои записи</string>
     <string name="fadrec_projects">Проекты FadRec</string>
+    <string name="fadrec_projects_location">Проекты хранятся во внутреннем хранилище приложения</string>
     <string name="delete_project">Удалить проект</string>
     <string name="delete_all">Удалить все</string>
     <string name="new_project">Новый проект</string>

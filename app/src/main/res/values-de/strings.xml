@@ -1702,6 +1702,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="fadrec_preview_enable_hint">Halten, um Vorschau anzuzeigen</string>
     <string name="fadrec_preview_not_available">Live-Bildschirmvorschau ist in FadRec noch nicht integriert</string>
     <string name="fadrec_projects">FadRec-Projekte</string>
+    <string name="fadrec_projects_location">Projekte werden im privaten Speicher der App gespeichert</string>
     <string name="forensic_intelligence_title">Forensische Intelligenz</string>
     <string name="forensics_clip_black">Schwarze Klammer</string>
     <string name="forensics_clip_red">Rote Klammer</string>
