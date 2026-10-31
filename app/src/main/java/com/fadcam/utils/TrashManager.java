@@ -327,6 +327,9 @@ public class TrashManager {
         }
 
         if (success) {
+            // Free space changed on both volumes (source and trash) — drop the cached
+            // StatFs values so the Home storage card stops showing pre-delete numbers.
+            StorageInfoCache.clearCache();
             if (!isSafSource && copiedBytes <= 0L) {
                 dispatchProgress(progressListener, sourceLengthForProgress(videoUri), sourceLengthForProgress(videoUri));
             } else {
@@ -528,6 +531,8 @@ public class TrashManager {
             allSucceeded = false; // Saving metadata is crucial
         }
 
+        StorageInfoCache.clearCache();
+
         return allSucceeded;
     }
 
@@ -568,6 +573,8 @@ public class TrashManager {
             FLog.e(TAG, "emptyAllTrash: Failed to clear trash metadata after deleting files.");
             return false; // This is a more critical failure
         }
+
+        StorageInfoCache.clearCache();
 
         if (!allFilesDeleted) {
             FLog.w(TAG,
@@ -757,6 +764,8 @@ public class TrashManager {
             allSucceeded = false; // This is a critical failure for consistency
         }
 
+        StorageInfoCache.clearCache();
+
         return allSucceeded;
     }
 
@@ -896,6 +905,8 @@ public class TrashManager {
             FLog.e(TAG, "restoreItemsToSaf: Failed to save updated trash metadata after restoration attempts.");
             allSucceeded = false;
         }
+
+        StorageInfoCache.clearCache();
 
         return allSucceeded;
     }

@@ -2229,6 +2229,12 @@ public class HomeFragment extends BaseFragment {
         // This ensures stats reflect any changes made in Records tab or after recording.
         VideoStatsCache.invalidateStats(sharedPreferencesManager);
         updateStats();
+
+        // Same for the storage card: the StatFs read is cached for 30s and nothing
+        // refreshed the card while the tab was hidden, so a delete made in Records or
+        // Trash could leave the old free-space/time-left values on screen indefinitely.
+        StorageInfoCache.clearCache();
+        updateStorageInfo();
         isTorchOn = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.PREF_TORCH_STATE, false);
         updateTorchUI(isTorchOn);
         updateMirrorButtonVisibilityAndState(false); // instant on resume
