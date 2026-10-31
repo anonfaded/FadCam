@@ -844,6 +844,7 @@ public class HomeFragment extends BaseFragment {
                             isPreviewOnlyStartPending = true;
                             previewOnlyStartPendingDeadlineMs = SystemClock.elapsedRealtime() + 1800L;
                             isPreviewEnabled = true;
+                            savePreviewState();
                             resetTextureView(); // avoid stale last frame from previous recording session
                             ensureTextureViewSurfaceForPreviewStart();
                             if (textureViewSurface != null && textureViewSurface.isValid()) {
@@ -856,6 +857,14 @@ public class HomeFragment extends BaseFragment {
                         } else {
                             clearPreviewOnlyPendingState(true);
                             isPreviewOnlyActive = false;
+                            // Turning the preview off has to persist too. This branch used to
+                            // return without touching the flag, so the in-memory value stayed
+                            // true (set when the preview-only session started) and the next
+                            // recording re-enabled the preview while the sidebar, reading the
+                            // untouched preference, still showed it as off. Only a restart
+                            // reloaded the preference and cleared it.
+                            isPreviewEnabled = false;
+                            savePreviewState();
                         }
                         ServiceStartPolicy.startRecordingAction(requireContext(), previewIntent);
                         if (!shouldStopPreviewOnly) {
@@ -4094,6 +4103,7 @@ public class HomeFragment extends BaseFragment {
     private void savePreviewState() {
         // Use the SharedPreferencesManager's method which uses the correct constant
         sharedPreferencesManager.setPreviewEnabled(isPreviewEnabled);
+        FLog.d(TAG, "Preview preference saved: enabled=" + isPreviewEnabled);
     }
 
     // function to use haptic feedbacks
