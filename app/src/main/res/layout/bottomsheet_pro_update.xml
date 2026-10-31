@@ -1,47 +1,177 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:background="@android:color/transparent">
+    android:overScrollMode="never"
+    android:scrollbars="none"
+    android:fillViewport="false">
 
-     <ImageView
-         android:layout_width="40dp" android:layout_height="40dp"
-         android:layout_gravity="center"
-         android:src="@drawable/ic_crown"
-         android:tint="#FFD700"
-         android:scaleType="centerInside"
-         android:layout_marginBottom="12dp"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="24dp">
 
-    <TextView
-        android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/update_pro_title" android:textColor="@android:color/white"
-        android:textSize="18sp" android:textStyle="bold" android:gravity="center"
-        android:layout_marginBottom="6dp"/>
+        <View
+            android:id="@+id/picker_drag_handle"
+            android:layout_width="32dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_pro_update_handle"
+            android:importantForAccessibility="no" />
 
-     <TextView
-         android:id="@+id/tv_pro_sheet_version"
-         android:layout_width="match_parent" android:layout_height="wrap_content"
-         android:text="v4.0.0  >>  v5.0.0" android:textColor="#FFFFFF"
-         android:textSize="14sp" android:textStyle="bold" android:gravity="center"
-         android:layout_marginBottom="14dp"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-    <TextView
-        android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/update_pro_desc"
-        android:textColor="#D0D0D0" android:textSize="13sp" android:gravity="center"
-        android:lineSpacingExtra="3dp" android:layout_marginBottom="18dp"/>
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_crown"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
+                app:tint="@color/pro_gold" />
 
-     <Button
-         android:id="@+id/btn_pro_get" android:layout_width="match_parent"
-         android:layout_height="48dp" android:text="@string/update_get_pro"
-         android:textColor="#1A1A1A" android:backgroundTint="#FFD700"
-         android:layout_marginBottom="8dp"/>
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:text="@string/pro_update_eyebrow"
+                android:textColor="@color/pro_gold"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.08" />
 
-    <Button
-        android:id="@+id/btn_pro_dismiss" style="@style/Widget.Material3.Button.TextButton"
-        android:layout_width="match_parent" android:layout_height="40dp"
-        android:text="@string/update_maybe_later" android:textColor="#999"/>
+            <androidx.appcompat.widget.AppCompatImageButton
+                android:id="@+id/picker_close_btn"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="-12dp"
+                android:background="@drawable/bg_pro_update_close"
+                android:padding="12dp"
+                android:src="@drawable/ic_cross"
+                android:contentDescription="@string/close"
+                app:tint="@color/pro_text_secondary" />
+        </LinearLayout>
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/pro_update_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/pro_text"
+            android:textSize="24sp"
+            android:fontFamily="sans-serif-medium"
+            android:lineSpacingExtra="2dp" />
+
+        <TextView
+            android:id="@+id/pro_update_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/pro_text_secondary"
+            android:textSize="15sp"
+            android:lineSpacingExtra="4dp" />
+
+        <LinearLayout
+            android:id="@+id/pro_update_versions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/bg_pro_update_versions"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:id="@+id/pro_update_current_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pro_update_installed"
+                    android:textColor="@color/pro_text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/pro_update_current_version"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textColor="@color/pro_text"
+                    android:textSize="16sp"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/pro_update_latest_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pro_update_available"
+                    android:textColor="@color/pro_text_secondary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_pro_sheet_version"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textColor="@color/pro_gold"
+                    android:textSize="18sp"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/pro_update_browser_hint"
+            android:textColor="@color/pro_text_secondary"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp" />
+
+        <TextView
+            android:id="@+id/pro_update_error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/pro_gold"
+            android:textSize="14sp"
+            android:lineSpacingExtra="2dp"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_pro_get"
+            style="@style/ProUpdatePrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/pro_update_open_release" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_pro_dismiss"
+            style="@style/ProUpdateSecondaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/pro_update_not_now" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

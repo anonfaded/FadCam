@@ -6,6 +6,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -44,6 +45,15 @@ public class SensorDataProvider implements SensorEventListener {
     private long previousLocationTime = 0;
     private float currentSpeedMs = 0f;
     private long lastLocationUpdateTime = 0;
+    /**
+     * Identity + age of the newest GPS fix we actually accepted, in the fix's own clock
+     * ({@link Location#getElapsedRealtimeNanos()}, falling back to {@link Location#getTime()}).
+     * Freshness is derived from the fix itself — not from "when we last processed a callback" —
+     * because providers re-deliver the same cached fix (e.g. after a location restart or while
+     * stationary), which previously kept re-stamping a stale speed as if it were current.
+     */
+    private long lastAcceptedFixTimeMs = 0L;
+    private long lastFixWallTimeMs = 0L;
     private float smoothedBearing = -1f;
     private boolean hasBearingFromGps = false;
 
@@ -138,6 +148,18 @@ public class SensorDataProvider implements SensorEventListener {
     public void updateLocation(Location location) {
         if (location == null) return;
 
+        // Only a genuinely NEWER fix counts. Providers re-deliver the last fix when updates are
+        // restarted or when the device is stationary; treating those as fresh kept a stale speed
+        // (and bearing/altitude) alive indefinitely.
+        long fixTimeMs = location.getElapsedRealtimeNanos() > 0
+                ? location.getElapsedRealtimeNanos() / 1_000_000L
+                : location.getTime();
+        if (fixTimeMs <= lastAcceptedFixTimeMs) {
+            return;
+        }
+        lastAcceptedFixTimeMs = fixTimeMs;
+        lastFixWallTimeMs = System.currentTimeMillis();
+
         previousLocation = currentLocation;
         previousLocationTime = lastLocationTime;
 
@@ -186,11 +208,24 @@ public class SensorDataProvider implements SensorEventListener {
         //    moving as "no data" so the computed fallback below can take over.
         if (currentLocation.hasSpeed()) {
             float rawSpeed = currentLocation.getSpeed();
-            if (rawSpeed > 0f) {
-                currentSpeedMs = rawSpeed;
+            // A speed is only meaningful when it is distinguishable from zero: the platform
+            // reports speed accuracy (1-sigma) for fused fixes. While stationary the Doppler
+            // estimate jitters around 0 with an accuracy that exceeds the value itself, so
+            // reporting the raw number would show motion that is not there — and holding the
+            // previous non-zero value would be worse. Below that threshold the honest reading is
+            // "stationary".
+            boolean distinguishableFromZero = true;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && currentLocation.hasSpeedAccuracy()) {
+                distinguishableFromZero = rawSpeed > currentLocation.getSpeedAccuracyMetersPerSecond();
+            }
+            if (rawSpeed <= 0f || !distinguishableFromZero) {
+                currentSpeedMs = 0f;
                 lastLocationUpdateTime = System.currentTimeMillis();
                 return;
             }
+            currentSpeedMs = rawSpeed;
+            lastLocationUpdateTime = System.currentTimeMillis();
+            return;
         }
 
         // 2) Computed fallback: distance / real elapsed time between fixes.
@@ -314,23 +349,19 @@ public class SensorDataProvider implements SensorEventListener {
         return output;
     }
 
+    /**
+     * Whether a GPS fix newer than {@link #STALE_LOCATION_TIMEOUT_MS} is available.
+     *
+     * <p>Callers should surface a no-data state when this is false instead of printing the last
+     * measured value: a number that stopped being updated is not a measurement.
+     */
+    public boolean hasFreshFix() {
+        return lastFixWallTimeMs > 0L
+                && (System.currentTimeMillis() - lastFixWallTimeMs) <= STALE_LOCATION_TIMEOUT_MS;
+    }
+
+    /** Last measured speed in km/h from a fresh fix (0 when the fix measured a standstill). */
     public float getSpeedKmh() {
-        // Honest reporting: only surface a speed if we have a recent fix.
-        // If GPS went stale (no fix for 10s), the value is no longer real —
-        // report 0 so the watermark doesn't show a frozen made-up number.
-        if (System.currentTimeMillis() - lastLocationUpdateTime > STALE_LOCATION_TIMEOUT_MS) {
-            return 0f;
-        }
-        // Self-healing read: if the pull-based updateLocation() feed hasn't run
-        // yet this tick (or after pause/resume), recompute from the raw fix so
-        // we never report a stale 0 while the vehicle is moving. Direct GPS
-        // speed is Doppler-derived and accuracy-independent.
-        if (currentLocation != null && currentLocation.hasSpeed()) {
-            float raw = currentLocation.getSpeed();
-            if (raw > 0f) {
-                currentSpeedMs = raw;
-            }
-        }
         return currentSpeedMs * 3.6f;
     }
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pro variant of the blink AVD (white glowing eyes). Same animator and target. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/toggle_on_idle_pro">
+    <target android:name="eye_group" android:animation="@animator/anim_blink" />
+</animated-vector>

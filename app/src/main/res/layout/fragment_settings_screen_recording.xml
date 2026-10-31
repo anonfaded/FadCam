@@ -134,6 +134,40 @@ app:layout_constraintTop_toTopOf="parent"
 
                 <View style="@style/SettingsDivider" />
 
+                <!-- Codec Row -->
+                <LinearLayout
+                    android:id="@+id/row_codec"
+                    style="@style/SettingsGroupRow">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_avc"
+                        android:tint="@android:color/darker_gray"/>
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/screen_rec_codec"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="?attr/colorHeading"/>
+                    <TextView
+                        android:id="@+id/value_codec"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/screen_rec_codec_value"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="13sp"/>
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray"/>
+                </LinearLayout>
+
+                <View style="@style/SettingsDivider" />
+
                 <!-- Bitrate Row -->
                 <LinearLayout
                     android:id="@+id/row_bitrate"

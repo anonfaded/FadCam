@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pro_background">#101112</color>
+    <color name="pro_surface">#1B1C1E</color>
+    <color name="pro_border">#343536</color>
+    <color name="pro_gold">#E8C77B</color>
+    <color name="pro_check_gold">#FFD15C</color>
+    <color name="pro_text">#F5F2EA</color>
+    <color name="pro_text_secondary">#B8B7B2</color>
+    <color name="pro_brand_red">#FF6464</color>
+
+    <!-- Pro bundle card: deep charcoal surface with champagne detailing. Gold stays an accent:
+         hairline border, badge, feature icons and the SOON pill; never a filled gold panel. -->
+    <color name="pro_card_surface">#161719</color>
+    <color name="pro_card_border">#5966583D</color>
+    <color name="pro_card_tint">#0FC6A66A</color>
+    <color name="pro_card_badge_surface">#352C1F</color>
+    <color name="pro_card_champagne">#C6A66A</color>
+    <color name="pro_card_text_secondary">#999A9E</color>
+    <color name="pro_card_text_muted">#777A80</color>
+    <color name="pro_card_soon_surface">#2C2923</color>
+    <color name="pro_card_soon_text">#AA9366</color>
+    <color name="pro_card_soon_border">#33AA9366</color>
+    <color name="pro_card_divider">#1FC6A66A</color>
+
+    <!-- Weekly dossier: charcoal "paper" in the app's own dark scheme, typewriter ink,
+         champagne detailing and one red classification mark. Token names are historical
+         ("olive"); the values now follow the Pro screen's champagne family. -->
+    <color name="dossier_paper">#161719</color>
+    <color name="dossier_paper_light">#1E1F22</color>
+    <color name="dossier_ink">#F5F2EA</color>
+    <color name="dossier_muted">#A09D95</color>
+    <color name="dossier_olive">#6B5E44</color>
+    <color name="dossier_olive_bright">#C6A66A</color>
+    <color name="dossier_line">#35373A</color>
+    <color name="dossier_grid">#17C6A66A</color>
+    <color name="dossier_red">#D9564A</color>
+    <color name="dossier_red_dim">#7FD9564A</color>
+    <color name="dossier_hairline">#3DC6A66A</color>
+
+    <!-- One feature row of the bundle card: small outline glyph, typed label. -->
+    <style name="ProShowcaseFeatureIcon">
+        <item name="android:layout_width">16dp</item>
+        <item name="android:layout_height">16dp</item>
+        <item name="android:tint">@color/dossier_olive_bright</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+    <style name="ProShowcaseFeatureLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textColor">@color/dossier_muted</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+    <!-- Community links: plain inline actions, no filled buttons or cards. -->
+    <style name="ProCommunityAction">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingHorizontal">4dp</item>
+        <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    <style name="ProCommunityActionLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/pro_gold</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+    <style name="ProCommunityActionArrow">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">5dp</item>
+        <item name="android:fontFamily">@font/materialicons</item>
+        <item name="android:text">open_in_new</item>
+        <item name="android:textColor">@color/pro_gold</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:alpha">0.85</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+    <style name="ProCommunityActionMark">
+        <item name="android:layout_width">16dp</item>
+        <item name="android:layout_height">16dp</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
+    <style name="ProSectionTitle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/pro_text</item>
+        <item name="android:textSize">19sp</item>
+    </style>
+    <style name="ProBody">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/pro_text_secondary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+    </style>
+    <style name="ProAppLabel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/pro_text</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:layout_marginTop">10dp</item>
+    </style>
+</resources>
