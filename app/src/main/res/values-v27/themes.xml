@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- API 27+: light navigation bar (windowLightNavigationBar requires O MR1) -->
+<resources>
+    <style name="Theme.FadCam.SnowVeil" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

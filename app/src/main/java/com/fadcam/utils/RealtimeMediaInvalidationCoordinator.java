@@ -1,5 +1,6 @@
 package com.fadcam.utils;
 
+import android.os.Build;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -125,19 +126,35 @@ public class RealtimeMediaInvalidationCoordinator {
 
         for (File dir : watchRoots) {
             if (dir == null || !dir.exists() || !dir.isDirectory()) continue;
-            FileObserver observer = new FileObserver(
+            // FileObserver(File, int) was introduced in Android 10 (API 29); use the
+            // path-based constructor on older devices (avoids NoSuchMethodError)
+            FileObserver observer = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? new FileObserver(
                     dir,
                     FileObserver.CREATE
                             | FileObserver.CLOSE_WRITE
                             | FileObserver.MOVED_TO
                             | FileObserver.DELETE
                             | FileObserver.DELETE_SELF
-            ) {
-                @Override
-                public void onEvent(int event, @Nullable String path) {
-                    invalidate("file:" + dir.getName());
-                }
-            };
+                    ) {
+                        @Override
+                        public void onEvent(int event, @Nullable String path) {
+                            invalidate("file:" + dir.getName());
+                        }
+                    }
+                    : new FileObserver(
+                    dir.getAbsolutePath(),
+                    FileObserver.CREATE
+                            | FileObserver.CLOSE_WRITE
+                            | FileObserver.MOVED_TO
+                            | FileObserver.DELETE
+                            | FileObserver.DELETE_SELF
+                    ) {
+                        @Override
+                        public void onEvent(int event, @Nullable String path) {
+                            invalidate("file:" + dir.getName());
+                        }
+                    };
             observer.startWatching();
             fileObservers.add(observer);
         }

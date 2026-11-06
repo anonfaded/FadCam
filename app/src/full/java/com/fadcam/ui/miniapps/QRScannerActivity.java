@@ -1,5 +1,6 @@
 package com.fadcam.ui.miniapps;
 
+import android.os.Build;
 import android.Manifest;
 import android.content.ClipboardManager;
 import android.content.Intent;
@@ -117,7 +118,13 @@ public class QRScannerActivity extends AppCompatActivity {
 
         View headerBar = findViewById(R.id.qr_header_bar);
         if (headerBar != null) headerBar.setOnApplyWindowInsetsListener((v, ins) -> {
-            int top = ins.getInsets(android.view.WindowInsets.Type.systemBars()).top;
+            // WindowInsets#getInsets(Type) requires API 30; use legacy inset on older devices
+            int top;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                top = ins.getInsets(android.view.WindowInsets.Type.systemBars()).top;
+            } else {
+                top = ins.getSystemWindowInsetTop();
+            }
             v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + top,
                     v.getPaddingRight(), v.getPaddingBottom());
             return ins;

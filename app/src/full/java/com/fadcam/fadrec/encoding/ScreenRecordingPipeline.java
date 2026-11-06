@@ -532,7 +532,8 @@ public class ScreenRecordingPipeline {
                     continue;
                 }
                 for (String type : info.getSupportedTypes()) {
-                    if (VideoCodec.AVC.getMimeType().equalsIgnoreCase(type) && info.isSoftwareOnly()) {
+                    if (VideoCodec.AVC.getMimeType().equalsIgnoreCase(type)
+                            && (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || info.isSoftwareOnly())) {
                         return info.getName();
                     }
                 }
