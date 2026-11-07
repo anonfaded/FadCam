@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- API 27+: light navigation bar (windowLightNavigationBar requires O MR1) -->
+<!-- API 27+: adds the light navigation bar (windowLightNavigationBar requires O MR1).
+     Inherits all other items from Theme.FadCam.SnowVeil.Base so the theme does not
+     lose its custom colors/styles on API 27+. -->
 <resources>
-    <style name="Theme.FadCam.SnowVeil" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.FadCam.SnowVeil" parent="Theme.FadCam.SnowVeil.Base">
         <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>
