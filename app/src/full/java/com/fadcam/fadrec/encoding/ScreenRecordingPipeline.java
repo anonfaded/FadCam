@@ -532,7 +532,8 @@ public class ScreenRecordingPipeline {
                     continue;
                 }
                 for (String type : info.getSupportedTypes()) {
-                    if (VideoCodec.AVC.getMimeType().equalsIgnoreCase(type) && info.isSoftwareOnly()) {
+                    if (VideoCodec.AVC.getMimeType().equalsIgnoreCase(type)
+                            && com.fadcam.utils.VideoEncoderCapabilities.isSoftwareOnly(info)) {
                         return info.getName();
                     }
                 }

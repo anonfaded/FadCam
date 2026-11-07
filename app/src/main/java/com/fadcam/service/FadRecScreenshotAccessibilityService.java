@@ -20,6 +20,7 @@ import android.view.Display;
 import android.view.accessibility.AccessibilityEvent;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.Nullable;
 
 import com.fadcam.Constants;
@@ -131,6 +132,7 @@ public class FadRecScreenshotAccessibilityService extends AccessibilityService {
         showToast(triggered ? R.string.screenshot_capture_system_saved : R.string.screenshot_capture_failed);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.R)
     private void saveScreenshotResult(@NonNull ScreenshotResult screenshotResult) {
         Bitmap hardwareBitmap = null;
         Bitmap copyBitmap = null;

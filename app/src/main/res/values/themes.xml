@@ -607,7 +607,7 @@
         <item name="android:textColor">@color/white</item>
     </style>
 
-    <style name="Theme.FadCam.SnowVeil" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.FadCam.SnowVeil.Base" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorTopBar">@color/snowveil_theme_primary_variant</item>
         <item name="colorBottomNav">@color/snowveil_theme_primary_variant</item>
         <item name="colorHeading">@color/snowveil_theme_heading_on_blue</item>
@@ -649,7 +649,6 @@
         <item name="android:textColorTertiary">@color/black</item>
         <item name="colorSwitchThumbNormal">@color/black</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
         <!-- Switch styling -->
         <item name="switchStyle">@style/Widget.FadCam.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.FadCam.Switch</item>
@@ -684,6 +683,10 @@
         <item name="pickerSliderActive">@color/snowveil_theme_primary</item>
         <item name="pickerSliderInactive">@color/snowveil_theme_slider_inactive</item>
     </style>
+
+    <!-- Empty passthrough on API 26-: inherits the Base style above; on API 27+
+         values-v27 re-declares it to add the light navigation bar. -->
+    <style name="Theme.FadCam.SnowVeil" parent="Theme.FadCam.SnowVeil.Base" />
 
     <!-- Add CardView style for Snow Veil theme with dark background for better contrast -->
     <style name="Theme.FadCam.SnowVeilCardView" parent="Widget.MaterialComponents.CardView">
