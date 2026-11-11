@@ -387,13 +387,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         swipeTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
 
-        // Modern back handling (onBackPressed override is deprecated in API 33).
-        getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                handleBackPress();
-            }
-        });
         // Install splash screen (shows the themed windowSplashScreenAnimatedIcon)
         SplashScreen.installSplashScreen(this);
         // Apply user-selected theme AFTER splash so postSplashScreenTheme replaced by
@@ -1349,41 +1342,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    @SuppressWarnings("deprecation") // exits via the dispatcher; kept for clarity
-    private void handleBackPress() {
-        // Unified: handle any visible overlay fragment (trash or settings)
-        if (handleOverlayBack()) {
-            return;
-        }
-
-        // If we're not on the home tab, go to home tab first before exiting
-        if (getCurrentFragmentPosition() != 0) {
-            switchFragment(0, true); // Enable animation
-        } else {
-            // Check if we should skip this back handling
-            if (skipNextBackHandling) {
-                skipNextBackHandling = false;
-                getOnBackPressedDispatcher().onBackPressed();
-                return;
-            }
-
-            // We're on the home tab, implement double back press to exit
-            if (doubleBackToExitPressedOnce) {
-                // Remove the callback to prevent it from executing after app close
-                backPressHandler.removeCallbacks(backPressRunnable);
-                getOnBackPressedDispatcher().onBackPressed();
-                return;
-            }
-
-            // First back press - show toast and set flag
-            this.doubleBackToExitPressedOnce = true;
-            Toast.makeText(this, getString(R.string.press_back_again_exit), Toast.LENGTH_SHORT).show();
-
-            // Reset the flag after a delay
-            backPressHandler.postDelayed(backPressRunnable, BACK_PRESS_DELAY);
-        }
-    }
-
     /**
      * Handle D-pad navigation for Android TV. Routes DPAD_LEFT/RIGHT to tab switching
      * and passes other keys to current fragment.
@@ -1661,47 +1619,6 @@ public class MainActivity extends AppCompatActivity {
             switchFragment(1, false); // Navigate to Records tab
         }
 
-        // Set up the back press behavior with the newer API
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-                @Override
-                public void handleOnBackPressed() {
-                    // Unified: generic overlay back handling (trash & settings)
-                    if (handleOverlayBack()) {
-                        return; // handled
-                    }
-
-                    // If we're not on the home tab, go to home tab first before exiting
-                    if (getCurrentFragmentPosition() != 0) {
-                        switchFragment(0, true); // Enable animation
-                    } else {
-                        // Check if we should skip this back handling
-                        if (skipNextBackHandling) {
-                            skipNextBackHandling = false;
-                            setEnabled(false);
-                            getOnBackPressedDispatcher().onBackPressed();
-                            return;
-                        }
-
-                        // We're on the home tab, implement double back press to exit
-                        if (doubleBackToExitPressedOnce) {
-                            // Remove the callback to prevent it from executing after app close
-                            backPressHandler.removeCallbacks(backPressRunnable);
-                            setEnabled(false);
-                            getOnBackPressedDispatcher().onBackPressed();
-                            return;
-                        }
-
-                        // First back press - show toast and set flag
-                        doubleBackToExitPressedOnce = true;
-                        Toast.makeText(MainActivity.this, getString(R.string.press_back_again_exit), Toast.LENGTH_SHORT).show();
-
-                        // Reset the flag after a delay
-                        backPressHandler.postDelayed(backPressRunnable, BACK_PRESS_DELAY);
-                    }
-                }
-            });
-        }
     }
 
     @Override
