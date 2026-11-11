@@ -39,6 +39,11 @@ public final class ProReminderManager {
     private static final long DAY_MS = TimeUnit.DAYS.toMillis(1);
     private static final long WEEK_MS = TimeUnit.DAYS.toMillis(7);
     private static final long FIRST_DELAY_MS = TimeUnit.DAYS.toMillis(3);
+    /**
+     * If the user has not stopped a recording by then, the card is raised anyway: six days
+     * after the cycle became due, one day before the next cycle would start.
+     */
+    private static final long CARD_FALLBACK_MS = WEEK_MS - DAY_MS;
     /** A presented-but-unfinished dialog may be reclaimed after this long. */
     private static final long CLAIM_TTL_MS = TimeUnit.MINUTES.toMillis(10);
 
@@ -305,6 +310,30 @@ public final class ProReminderManager {
 
     public static long getNextEligibleAt(Context context) {
         return prefs(context).getLong(K_NEXT_ELIGIBLE_AT, 0L);
+    }
+
+    /**
+     * Moment the card may be raised without waiting for a recording. Zero while no cycle is
+     * due. Counted from the moment the cycle became eligible, so a user who never records
+     * still sees the card one day before the next cycle would have started.
+     */
+    public static long getCardFallbackAt(Context context) {
+        SharedPreferences p = prefs(context);
+        long completed = p.getLong(K_COMPLETED_AT, 0L);
+        long due;
+        if (completed > 0L) {
+            due = p.getLong(K_NEXT_ELIGIBLE_AT, 0L);
+            if (due <= 0L) due = completed + WEEK_MS;
+        } else {
+            try {
+                due = context.getPackageManager()
+                        .getPackageInfo(context.getPackageName(), 0).firstInstallTime
+                        + FIRST_DELAY_MS;
+            } catch (Exception e) {
+                return 0L;
+            }
+        }
+        return due + CARD_FALLBACK_MS;
     }
 
     /** Whole days remaining in the current cycle, for the after-Pro copy. */

@@ -24,8 +24,15 @@ recording. After that, the clock starts again each time the user presses CONTINU
 If the app is opened first, Home posts the notification before showing the card. Showing the
 card does not remove the notification; the user can tap it or swipe it away.
 
+The card is modal, so it is never raised on a cold Home visit. It waits for a recording to
+finish (or for the next Home visit after one), so opening the app to capture something urgent
+is never blocked by an upsell. The notification still posts on the normal deadline. If no
+recording is stopped, the card falls back to the first safe Home visit after day six of the
+cycle, one day before the next cycle would start.
+
 Tapping the notification opens the Pro screen, but it does **not** finish the cycle. The card
-still appears on the next safe Home visit. Only **CONTINUE** in the card finishes the cycle.
+still appears on the next Home visit after a recording finishes. Only **CONTINUE** in the card
+finishes the cycle.
 
 After CONTINUE, a short follow-up card appears when the user comes back to Home. Only
 **GOT IT** closes that card.
@@ -57,6 +64,7 @@ test the real timing. Release builds ignore it.
 - Debug package: `com.fadcam.beta`.
 - Install: `./gradlew :app:installDefaultDebug`.
 - Design mode is on by default. To test the real notification, set
-  `pro_reminder_design_mode=false`, make a cycle due, and open Home.
-- The reminder never shows while recording, previewing, taking a photo, or when another
+  `pro_reminder_design_mode=false`, make a cycle due, and open Home. The notification posts on
+  open; the card waits until a recording has been stopped.
+- The card never shows while recording, previewing, taking a photo, or when another
   dialog/sheet is open. It also stays away on watches, TVs and cars.

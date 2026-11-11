@@ -135,6 +135,12 @@ public class HomeFragment extends BaseFragment {
 
     private final Runnable proReminderRunnable = this::maybeShowProReminder;
     private final Runnable afterProRunnable = this::showAfterProIfPending;
+    /**
+     * The dossier only opens after a recording finishes in this session, so opening the app
+     * to start an urgent recording never puts a modal upsell in the way. Reset by process
+     * death; design mode bypasses it for previews.
+     */
+    private boolean proReminderAfterRecording;
     /** A cold start can still be laying out Home when the first check fires; retry briefly. */
     private int proReminderVisibilityRetries;
     /** Plain AlertDialogs are not fragments, so track the one Home may be showing. */
@@ -1912,6 +1918,7 @@ public class HomeFragment extends BaseFragment {
         com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
         updateStats(); // Will query Room DB (fast) then background delta scan updates it
         if (BuildConfig.ENABLE_PRO_REMINDER) {
+            proReminderAfterRecording = true;
             scheduleProReminderCheck(2000L);
         }
     }
@@ -2324,6 +2331,17 @@ public class HomeFragment extends BaseFragment {
         if (ProReminderManager.shouldPostNotification(requireContext())) {
             if (ProReminderNotification.post(requireContext())) {
                 ProReminderManager.markNotificationPosted(requireContext());
+            }
+        }
+
+        // The tray notification is asynchronous, but the card is modal. Only raise it at a
+        // natural boundary - right after a recording finishes. If the user does not record,
+        // fall back to the first Home visit after day six of the cycle. Design mode still
+        // previews the card on Home so the layout can be worked on.
+        if (!ProReminderManager.isDesignMode(requireContext()) && !proReminderAfterRecording) {
+            long fallbackAt = ProReminderManager.getCardFallbackAt(requireContext());
+            if (fallbackAt <= 0L || System.currentTimeMillis() < fallbackAt) {
+                return;
             }
         }
 
