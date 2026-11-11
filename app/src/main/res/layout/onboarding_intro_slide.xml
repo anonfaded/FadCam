@@ -154,17 +154,23 @@
                 android:text="@string/onboarding_dossier_lede"
                 android:textSize="13sp" />
 
+
+            <Space
+                android:layout_width="1dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:orientation="horizontal"
-                android:weightSum="3">
+                android:layout_gravity="center_horizontal"
+                android:orientation="horizontal">
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="14dp"
                     android:gravity="center_horizontal"
                     android:orientation="vertical">
 
@@ -173,7 +179,7 @@
                         android:layout_height="24dp"
                         android:contentDescription="@string/onboarding_cred_open"
                         android:src="@drawable/ic_open_source"
-                        android:tint="@color/dossier_olive_bright" />
+                        android:tint="@color/pro_gold" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -186,9 +192,10 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="14dp"
                     android:gravity="center_horizontal"
                     android:orientation="vertical">
 
@@ -197,7 +204,7 @@
                         android:layout_height="24dp"
                         android:contentDescription="@string/onboarding_cred_ads"
                         android:src="@drawable/ic_no_ads"
-                        android:tint="@color/dossier_olive_bright" />
+                        android:tint="@color/pro_gold" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -210,9 +217,10 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginEnd="14dp"
                     android:gravity="center_horizontal"
                     android:orientation="vertical">
 
@@ -221,7 +229,7 @@
                         android:layout_height="24dp"
                         android:contentDescription="@string/onboarding_cred_track"
                         android:src="@drawable/ic_no_trackers"
-                        android:tint="@color/dossier_olive_bright" />
+                        android:tint="@color/pro_gold" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -237,17 +245,18 @@
             <Space
                 android:layout_width="1dp"
                 android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:layout_weight="0.45" />
 
             <TextView
                 android:id="@+id/tvSwipeInstruction"
                 style="@style/ProDossierLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="6dp"
                 android:gravity="center"
                 android:text="@string/onboarding_swipe_instruction"
                 android:textSize="11sp" />
+
         </LinearLayout>
     </FrameLayout>
 </ScrollView>

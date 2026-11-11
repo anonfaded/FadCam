@@ -92,52 +92,6 @@ public class OnboardingActivity extends AppIntro {
             return insets;
         });
 
-        // AppIntro's bottom bar uses start/end constraints, so the whole window must be RTL
-        // for the arrows to swap sides. The activity config can still report LTR even when the
-        // locale is Arabic, so force the decor as well as the AppIntro root.
-        boolean windowRtl = android.text.TextUtils.getLayoutDirectionFromLocale(
-                getResources().getConfiguration().getLocales().get(0))
-                == View.LAYOUT_DIRECTION_RTL;
-        View decor = getWindow().getDecorView();
-        decor.setLayoutDirection(windowRtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
-        decor.post(() -> decor.setLayoutDirection(
-                windowRtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR));
-        View appIntroRoot = findViewById(com.github.appintro.R.id.background);
-        if (appIntroRoot != null) {
-            boolean rtl = android.text.TextUtils.getLayoutDirectionFromLocale(
-                    getResources().getConfiguration().getLocales().get(0))
-                    == View.LAYOUT_DIRECTION_RTL;
-            appIntroRoot.setLayoutDirection(
-                    rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
-            if (appIntroRoot instanceof androidx.constraintlayout.widget.ConstraintLayout) {
-                androidx.constraintlayout.widget.ConstraintLayout bar =
-                        (androidx.constraintlayout.widget.ConstraintLayout) appIntroRoot;
-                androidx.constraintlayout.widget.ConstraintSet set =
-                        new androidx.constraintlayout.widget.ConstraintSet();
-                set.clone(bar);
-                int backId = com.github.appintro.R.id.back;
-                int nextId = com.github.appintro.R.id.next;
-                set.clear(backId, androidx.constraintlayout.widget.ConstraintSet.START);
-                set.clear(backId, androidx.constraintlayout.widget.ConstraintSet.END);
-                set.clear(nextId, androidx.constraintlayout.widget.ConstraintSet.START);
-                set.clear(nextId, androidx.constraintlayout.widget.ConstraintSet.END);
-                set.connect(backId,
-                        rtl ? androidx.constraintlayout.widget.ConstraintSet.RIGHT
-                                : androidx.constraintlayout.widget.ConstraintSet.LEFT,
-                        androidx.constraintlayout.widget.ConstraintSet.PARENT_ID,
-                        rtl ? androidx.constraintlayout.widget.ConstraintSet.RIGHT
-                                : androidx.constraintlayout.widget.ConstraintSet.LEFT);
-                set.connect(nextId,
-                        rtl ? androidx.constraintlayout.widget.ConstraintSet.LEFT
-                                : androidx.constraintlayout.widget.ConstraintSet.RIGHT,
-                        androidx.constraintlayout.widget.ConstraintSet.PARENT_ID,
-                        rtl ? androidx.constraintlayout.widget.ConstraintSet.LEFT
-                                : androidx.constraintlayout.widget.ConstraintSet.RIGHT);
-                set.applyTo(bar);
-            }
-
-        }
-
         // Make sure we don't have duplicate slides when changing language
         // Clear any existing slides by removing them all first.
         try {
@@ -179,11 +133,15 @@ public class OnboardingActivity extends AppIntro {
         // Use wizard mode to replace Skip with Back button
         setWizardMode(true);
 
-        // Fix for indicator dots - use custom colors
-        setIndicatorColor(
-                ContextCompat.getColor(this, R.color.white), // Selected dot
-                ContextCompat.getColor(this, R.color.gray500) // Unselected dot
-        );
+        // Dossier squircles instead of AppIntro's circles.
+        SquircleIndicatorController indicator = new SquircleIndicatorController();
+        indicator.setSelectedIndicatorColor(ContextCompat.getColor(this, R.color.white));
+        indicator.setUnselectedIndicatorColor(ContextCompat.getColor(this, R.color.gray500));
+        setIndicatorController(indicator);
+        ViewPager navPager = findViewById(com.github.appintro.R.id.view_pager);
+        if (navPager != null) {
+            navPager.post(() -> updateNavigationButtons(navPager.getCurrentItem()));
+        }
 
         // Disable color transitions as our slides don't implement
         // SlideBackgroundColorHolder
@@ -219,9 +177,8 @@ public class OnboardingActivity extends AppIntro {
         // Initialize navigation button references
         backButton = findViewById(com.github.appintro.R.id.back);
         nextButton = findViewById(com.github.appintro.R.id.next);
-        styleNavArrow(backButton, true);
-        styleNavArrow(nextButton, false);
-        positionNavArrows();
+        styleNavArrow(backButton);
+        styleNavArrow(nextButton);
 
         // Completely remove the Done button
         View doneButton = findViewById(com.github.appintro.R.id.done);
@@ -253,8 +210,7 @@ public class OnboardingActivity extends AppIntro {
                     public void onFragmentViewCreated(@NonNull androidx.fragment.app.FragmentManager fm,
                             @NonNull Fragment f, @Nullable View v, @Nullable Bundle savedInstanceState) {
                         super.onFragmentViewCreated(fm, f, v, savedInstanceState);
-                        if (v == null)
-                            return;
+                        if (v == null) return;
                         final View slideContent = v.findViewById(R.id.onboarding_content);
                         if (slideContent != null) {
                             final int baseTop = slideContent.getPaddingTop();
@@ -286,7 +242,7 @@ public class OnboardingActivity extends AppIntro {
                                         new android.text.SpannableString(heroText);
                                 styled.setSpan(new android.text.style.ForegroundColorSpan(
                                                 androidx.core.content.ContextCompat.getColor(
-                                                        OnboardingActivity.this, R.color.dossier_olive_bright)),
+                                                        OnboardingActivity.this, R.color.pro_gold)),
                                         marker, marker + 2,
                                         android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                 heroTitle.setText(styled);
@@ -456,51 +412,6 @@ public class OnboardingActivity extends AppIntro {
     }
 
     /** Place the arrows explicitly; AppIntro's RTL constraints are not reliable here. */
-    private void positionNavArrows() {
-        if (backButton == null || nextButton == null) return;
-        View parent = (View) backButton.getParent();
-        if (parent == null) return;
-        parent.postDelayed(() -> {
-            int width = parent.getWidth();
-            if (width <= 0) return;
-            boolean rtl = android.text.TextUtils.getLayoutDirectionFromLocale(
-                    getResources().getConfiguration().getLocales().get(0))
-                    == View.LAYOUT_DIRECTION_RTL;
-            float margin = 20 * getResources().getDisplayMetrics().density;
-            backButton.setX(rtl ? width - backButton.getWidth() - margin : margin);
-            nextButton.setX(rtl ? margin : width - nextButton.getWidth() - margin);
-        }, 150);
-    }
-
-    /** Themed dossier arrows instead of AppIntro's generic chevrons. */
-    private void styleNavArrow(View button, boolean back) {
-        if (!(button instanceof android.widget.ImageView)) return;
-        android.widget.ImageView arrow = (android.widget.ImageView) button;
-        arrow.setBackgroundResource(R.drawable.bg_onboarding_arrow);
-        // The library's back ImageButton ships with rotation="180" and can mirror with
-        // scaleX; reset both before choosing our own glyph.
-        arrow.setRotation(0f);
-        arrow.setScaleX(1f);
-        int pad = Math.round(12 * getResources().getDisplayMetrics().density);
-        arrow.setPadding(pad, pad, pad, pad);
-        boolean rtl = android.text.TextUtils.getLayoutDirectionFromLocale(
-                getResources().getConfiguration().getLocales().get(0))
-                == View.LAYOUT_DIRECTION_RTL;
-        // LTR: back points left, next right. RTL mirrors both.
-        boolean pointsLeft = back != rtl;
-        int glyph = pointsLeft
-                ? R.drawable.ic_onboarding_chevron_left
-                : R.drawable.ic_onboarding_chevron;
-        arrow.setImageResource(glyph);
-        // AppIntro flips both arrows with scaleX(-1) when it thinks the layout is RTL,
-        // sometimes after this method runs. Reset it once layout settles.
-        arrow.post(() -> {
-            arrow.setRotation(0f);
-            arrow.setScaleX(1f);
-            arrow.setImageResource(glyph);
-        });
-    }
-
     private void hideSystemBars() {
         getWindow().setNavigationBarColor(android.graphics.Color.BLACK);
         androidx.core.view.WindowInsetsControllerCompat controller =
@@ -519,27 +430,41 @@ public class OnboardingActivity extends AppIntro {
         if (hasFocus) hideSystemBars();
     }
 
+    /** Keep AppIntro's RTL-aware arrows; only give them the dossier shell and gold tint. */
+    private void styleNavArrow(View button) {
+        if (!(button instanceof android.widget.ImageView)) return;
+        button.setBackgroundResource(R.drawable.bg_onboarding_arrow);
+        ((android.widget.ImageView) button).setColorFilter(
+                androidx.core.content.ContextCompat.getColor(this, R.color.pro_gold));
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
     // Method to update navigation buttons based on current position
     private void updateNavigationButtons(int position) {
         ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
-        if (viewPager == null || viewPager.getAdapter() == null)
-            return;
+        if (viewPager == null) return;
 
-        int slideCount = viewPager.getAdapter().getCount();
+        // The pager adapter can arrive after the first resume; the flow always has 4 slides.
+        int slideCount = viewPager.getAdapter() == null ? 4 : viewPager.getAdapter().getCount();
         isFirstSlide = position == 0;
         isLastSlide = position == slideCount - 1;
 
+        // AppIntro swaps which physical button is the forward one in RTL, so hide by role,
+        // not by the LTR id.
+        boolean rtlNav = android.text.TextUtils.getLayoutDirectionFromLocale(
+                getResources().getConfiguration().getLocales().get(0))
+                == View.LAYOUT_DIRECTION_RTL;
         if (backButton != null) {
-            backButton.setVisibility(isFirstSlide ? View.INVISIBLE : View.VISIBLE);
+            boolean hide = rtlNav ? isLastSlide : isFirstSlide;
+            backButton.setVisibility(hide ? View.INVISIBLE : View.VISIBLE);
         }
-
         if (nextButton != null) {
-            nextButton.setVisibility(isLastSlide ? View.INVISIBLE : View.VISIBLE);
+            boolean hide = rtlNav ? isFirstSlide : isLastSlide;
+            nextButton.setVisibility(hide ? View.INVISIBLE : View.VISIBLE);
         }
-        // AppIntro re-applies its own arrow images/transforms on page changes.
-        styleNavArrow(backButton, true);
-        styleNavArrow(nextButton, false);
-        positionNavArrows();
     }
 
     // Implement a custom page transformer for fade transitions
@@ -564,443 +489,6 @@ public class OnboardingActivity extends AppIntro {
                 page.setAlpha(MIN_ALPHA);
             }
         }
-    }
-
-    /**
-     * Sets up the language choose button for onboarding, using a Material dialog
-     * for selection.
-     * 
-     * @param chooseButton The MaterialButton to setup.
-     */
-    private void setupOnboardingLanguageDialog(MaterialButton chooseButton) {
-        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-        String[] languages = getResources().getStringArray(R.array.languages_array);
-        String savedLanguageCode = sharedPreferencesManager.getLanguage();
-        int selectedIndex = getLanguageIndex(savedLanguageCode);
-        chooseButton.setText(languages[selectedIndex]);
-        chooseButton.setOnClickListener(v -> {
-            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-            android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
-            android.view.View dialogView = inflater.inflate(R.layout.dialog_language_dark, null);
-            android.widget.ListView listView = dialogView.findViewById(R.id.language_list);
-            android.widget.TextView titleView = dialogView.findViewById(R.id.dialog_title);
-            titleView.setText(R.string.setting_language_title);
-            titleView.setTextColor(android.graphics.Color.WHITE);
-            String[] languagesArr = getResources().getStringArray(R.array.languages_array);
-            listView.setAdapter(new android.widget.ArrayAdapter<String>(this,
-                    android.R.layout.simple_list_item_single_choice, languagesArr) {
-                @Override
-                public android.view.View getView(int position, android.view.View convertView,
-                        android.view.ViewGroup parent) {
-                    android.view.View view = super.getView(position, convertView, parent);
-                    android.widget.TextView text1 = view.findViewById(android.R.id.text1);
-                    if (text1 != null) {
-                        text1.setTextColor(android.graphics.Color.WHITE);
-                    }
-                    return view;
-                }
-            });
-            listView.setChoiceMode(android.widget.ListView.CHOICE_MODE_SINGLE);
-            listView.setItemChecked(selectedIndex, true);
-            final android.app.AlertDialog[] dialogHolder = new android.app.AlertDialog[1];
-            listView.setOnItemClickListener((parent, view1, position, id) -> {
-                String newLangCode = getLanguageCode(position);
-                if (!newLangCode.equals(sharedPreferencesManager.getLanguage())) {
-                    sharedPreferencesManager.sharedPreferences.edit()
-                            .putString(com.fadcam.Constants.LANGUAGE_KEY, newLangCode).apply();
-                    applyLanguage(newLangCode);
-                }
-                chooseButton.setText(languagesArr[position]);
-                if (dialogHolder[0] != null)
-                    dialogHolder[0].dismiss();
-            });
-            builder.setView(dialogView);
-            builder.setNegativeButton(R.string.universal_cancel, (dialogInterface, i) -> dialogInterface.dismiss());
-            android.app.AlertDialog dialog = builder.create();
-            dialogHolder[0] = dialog;
-            Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.background_dark);
-            dialog.show();
-            // Set cancel button text color to white
-            android.widget.Button negativeButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE);
-            if (negativeButton != null) {
-                negativeButton.setTextColor(android.graphics.Color.WHITE);
-            }
-        });
-    }
-
-    /**
-     * Helper to map language code to spinner index (must match SettingsFragment).
-     */
-    private int getLanguageIndex(String languageCode) {
-        switch (languageCode) {
-            case "en":
-                return 0;
-            case "zh":
-                return 1;
-            case "ar":
-                return 2;
-            case "fr":
-                return 3;
-            case "tr":
-                return 4;
-            case "ps":
-                return 5;
-            case "in":
-                return 6;
-            case "it":
-                return 7;
-            case "el":
-                return 8; // Added for Greek
-            case "de":
-                return 9; // Added for German
-            case "es":
-                return 10; // Added for Spanish
-            case "et":
-                return 11; // Added for Estonian
-            case "ru":
-                return 12; // Added for Russian
-            default:
-                return 0;
-        }
-    }
-
-    /**
-     * Helper to map spinner index to language code (must match SettingsFragment).
-     */
-    private String getLanguageCode(int position) {
-        switch (position) {
-            case 0:
-                return "en";
-            case 1:
-                return "zh";
-            case 2:
-                return "ar";
-            case 3:
-                return "fr";
-            case 4:
-                return "tr";
-            case 5:
-                return "ps";
-            case 6:
-                return "in";
-            case 7:
-                return "it";
-            case 8:
-                return "el"; // Added for Greek
-            case 9:
-                return "de"; // Added for German
-            case 10:
-                return "es"; // Added for Spanish
-            case 11:
-                return "et"; // Added for Estonian
-            case 12:
-                return "ru"; // Added for Russian
-            default:
-                return "en";
-        }
-    }
-
-    /**
-     * Applies the selected language immediately (same as MainActivity).
-     */
-    @SuppressWarnings("deprecation") // AppIntro's internal pager adapter is a FragmentPagerAdapter
-    private void applyLanguage(String languageCode) {
-        String currentLanguage = getResources().getConfiguration().getLocales().get(0).getLanguage();
-        if (!languageCode.equals(currentLanguage)) {
-            // Save current position before applying language change
-            ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
-            final int currentPosition = viewPager != null ? viewPager.getCurrentItem() : 0;
-
-            // Apply locale change (Locale.forLanguageTag replaces deprecated Locale(String))
-            java.util.Locale locale = java.util.Locale.forLanguageTag(languageCode);
-            java.util.Locale.setDefault(locale);
-            android.content.res.Configuration config = new android.content.res.Configuration();
-            config.setLocale(locale);
-            getApplicationContext().createConfigurationContext(config);
-
-            // IMPORTANT: SKIP RECREATE() WHICH IS CAUSING THE SLIDE ORDERING ISSUES
-            // Instead manually update UI elements that need language change
-
-            // Force immediate refresh of the current slide
-            if (viewPager != null && viewPager.getAdapter() != null) {
-                // Get current fragment and force invalidate its view
-                Fragment currentFragment = ((androidx.fragment.app.FragmentPagerAdapter) viewPager.getAdapter())
-                        .getItem(currentPosition);
-                View fragmentView = currentFragment.getView();
-                if (fragmentView != null) {
-                    // Force the fragment view to detach and reattach
-                    ViewGroup parent = (ViewGroup) fragmentView.getParent();
-                    if (parent != null) {
-                        int index = parent.indexOfChild(fragmentView);
-                        parent.removeViewAt(index);
-                        parent.addView(fragmentView, index);
-                    }
-                }
-            }
-
-            // Add a small delay to ensure all resources are reloaded with the new locale
-            new Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                // Force refresh the current slide first
-                forceRefreshCurrentSlide();
-
-                // Then update all slides
-                updateViewsAfterLanguageChange();
-
-                // Force a final layout update on the entire view hierarchy
-                View rootView = findViewById(android.R.id.content);
-                if (rootView != null) {
-                    // Force immediate layout
-                    rootView.requestLayout();
-                    rootView.invalidate();
-
-                    // Also force a redraw of the entire window
-                    getWindow().getDecorView().requestLayout();
-                    getWindow().getDecorView().invalidate();
-                }
-            }, 100); // Small delay to ensure locale change is processed
-
-            // Force LTR layout for ViewPager and slide navigation
-            if (viewPager != null) {
-                viewPager.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-
-                // For RTL languages like Arabic, apply additional safeguards
-                if (android.text.TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL) {
-                    ViewGroup parent = (ViewGroup) viewPager.getParent();
-                    if (parent != null) {
-                        parent.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-                    }
-
-                    // Manually force navigation controls to maintain LTR behavior
-                    View backButton = findViewById(com.github.appintro.R.id.back);
-                    View nextButton = findViewById(com.github.appintro.R.id.next);
-                    if (backButton != null)
-                        backButton.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-                    if (nextButton != null)
-                        nextButton.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-                }
-
-                // Restore position after locale change if needed
-                if (viewPager.getCurrentItem() != currentPosition) {
-                    viewPager.setCurrentItem(currentPosition, false);
-                }
-            }
-        }
-    }
-
-    /**
-     * Force refresh the current visible slide with a more aggressive approach
-     */
-    @SuppressWarnings("deprecation") // AppIntro's internal pager adapter is a FragmentPagerAdapter
-    private void forceRefreshCurrentSlide() {
-        ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
-        if (viewPager == null || viewPager.getAdapter() == null)
-            return;
-
-        // Get current position and fragment
-        int position = viewPager.getCurrentItem();
-
-        try {
-            // Get fragment from adapter
-            Fragment currentFragment = ((androidx.fragment.app.FragmentPagerAdapter) viewPager.getAdapter())
-                    .getItem(position);
-
-            // Force detach and reattach the fragment view to trigger a full redraw
-            View fragmentView = currentFragment.getView();
-            if (fragmentView != null) {
-                // Get all TextViews in the fragment and force text update
-                updateAllTextViewsAggressively(fragmentView);
-
-                // Type-specific refresh for our custom fragments
-                if (currentFragment instanceof OnboardingHumanFragment) {
-                    ((OnboardingHumanFragment) currentFragment).refreshLanguage();
-                } else if (currentFragment instanceof OnboardingPermissionsFragment) {
-                    ((OnboardingPermissionsFragment) currentFragment).refreshLanguage();
-                }
-
-                // Force layout
-                fragmentView.invalidate();
-                fragmentView.requestLayout();
-
-                // Try to force a redraw by changing visibility momentarily
-                fragmentView.setVisibility(View.INVISIBLE);
-                fragmentView.postDelayed(() -> {
-                    fragmentView.setVisibility(View.VISIBLE);
-                    // After visibility change, force layout again
-                    fragmentView.invalidate();
-                    fragmentView.requestLayout();
-                }, 10);
-            }
-        } catch (Exception e) {
-            // Log error but continue
-            FLog.e("OnboardingActivity", "Error refreshing current slide: " + e.getMessage());
-        }
-    }
-
-    /**
-     * More aggressive text view updating that forces locale reload
-     */
-    private void updateAllTextViewsAggressively(View view) {
-        if (view instanceof TextView) {
-            TextView textView = (TextView) view;
-            CharSequence currentText = textView.getText();
-
-            // Force text refresh by clearing and resetting
-            textView.setText("");
-            textView.setText(currentText);
-
-            // If it has a resource ID, try to reload from resources
-            if (textView.getId() != View.NO_ID) {
-                try {
-                    android.content.res.Resources resources = getResources();
-                    String resourceName = resources.getResourceEntryName(textView.getId());
-                    int resId = resources.getIdentifier(resourceName, "string", getPackageName());
-                    if (resId != 0) {
-                        textView.setText(resId); // Force reload from string resource
-                    }
-                } catch (Exception e) {
-                    // Ignore and continue with current text
-                }
-            }
-
-            // Force layout of textView
-            textView.invalidate();
-            textView.requestLayout();
-        } else if (view instanceof ViewGroup) {
-            ViewGroup group = (ViewGroup) view;
-            for (int i = 0; i < group.getChildCount(); i++) {
-                updateAllTextViewsAggressively(group.getChildAt(i));
-            }
-        }
-    }
-
-    /**
-     * Updates views after language change without recreating the activity
-     */
-    @SuppressWarnings("deprecation") // AppIntro's internal pager adapter is a FragmentPagerAdapter
-    private void updateViewsAfterLanguageChange() {
-        // Update any text views or labels that need translation
-        // For most views, this isn't necessary since they'll use the updated resources
-        // automatically
-
-        // Update indicator dots (they sometimes need manual refresh)
-        setIndicatorColor(
-                ContextCompat.getColor(this, R.color.white),
-                ContextCompat.getColor(this, R.color.gray500));
-
-        // Force refresh ALL fragments, not just the current one
-        ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
-        if (viewPager != null && viewPager.getAdapter() != null) {
-            final int currentPosition = viewPager.getCurrentItem();
-            final int totalSlides = viewPager.getAdapter().getCount();
-
-            // First refresh visible fragments in ViewPager
-            refreshVisibleFragments(viewPager);
-
-            // Then force load and refresh all other fragments
-            // This ensures all fragments are updated even if they're not yet visible
-            for (int i = 0; i < totalSlides; i++) {
-                if (i != currentPosition) { // We already refreshed the current one
-                    try {
-                        Fragment fragment = ((androidx.fragment.app.FragmentPagerAdapter) viewPager.getAdapter())
-                                .getItem(i);
-
-                        // Handle different fragment types
-                        if (fragment instanceof OnboardingHumanFragment) {
-                            ((OnboardingHumanFragment) fragment).refreshLanguage();
-                        } else if (fragment instanceof OnboardingPermissionsFragment) {
-                            // Find and update all text views within this fragment
-                            ((OnboardingPermissionsFragment) fragment).refreshLanguage();
-                        } else if (fragment instanceof AppIntroCustomLayoutFragment) {
-                            // For custom layout fragments, we need to find and update all TextViews
-                            View fragmentView = fragment.getView();
-                            if (fragmentView != null) {
-                                updateAllTextViewsInViewHierarchy(fragmentView);
-                            }
-                        }
-                    } catch (Exception e) {
-                        FLog.e("OnboardingActivity",
-                                "Failed to refresh fragment at position " + i + ": " + e.getMessage());
-                    }
-                }
-            }
-
-            // Force layout refresh on main container
-            ViewGroup containerView = findViewById(android.R.id.content);
-            if (containerView != null) {
-                containerView.invalidate();
-                containerView.requestLayout();
-            }
-        }
-    }
-
-    /**
-     * Refreshes fragments currently visible in the ViewPager
-     */
-    @SuppressWarnings("deprecation") // AppIntro's internal pager adapter is a FragmentPagerAdapter
-    private void refreshVisibleFragments(ViewPager viewPager) {
-        if (viewPager == null || viewPager.getAdapter() == null)
-            return;
-
-        // Get the current position
-        int position = viewPager.getCurrentItem();
-
-        // Get the currently visible fragment
-        Fragment currentFragment = ((androidx.fragment.app.FragmentPagerAdapter) viewPager.getAdapter())
-                .getItem(position);
-
-        // Refresh the fragment based on its type
-        if (currentFragment instanceof OnboardingHumanFragment) {
-            ((OnboardingHumanFragment) currentFragment).refreshLanguage();
-        } else if (currentFragment instanceof OnboardingPermissionsFragment) {
-            ((OnboardingPermissionsFragment) currentFragment).refreshLanguage();
-        } else if (currentFragment instanceof AppIntroCustomLayoutFragment) {
-            // Force refresh all TextViews in custom layout fragments
-            View view = currentFragment.getView();
-            if (view != null) {
-                updateAllTextViewsInViewHierarchy(view);
-            }
-        }
-    }
-
-    /**
-     * Recursively finds and updates all TextViews in a view hierarchy
-     */
-    private void updateAllTextViewsInViewHierarchy(View view) {
-        if (view instanceof TextView) {
-            // For TextViews, we can force a refresh by setting the text to its current
-            // value
-            // This will cause Android to re-look up the string resource with the new locale
-            TextView textView = (TextView) view;
-            if (textView.getId() != View.NO_ID) {
-                try {
-                    // Try to get the original string resource ID and reset it
-                    android.content.res.Resources resources = getResources();
-                    String resourceName = resources.getResourceEntryName(textView.getId());
-                    int resId = resources.getIdentifier(resourceName, "string", getPackageName());
-                    if (resId != 0) {
-                        textView.setText(resId);
-                    }
-                } catch (Exception e) {
-                    // If we can't get the resource ID, just force reload the current text
-                    CharSequence text = textView.getText();
-                    textView.setText(text);
-                }
-            } else {
-                // If there's no ID, just reset the current text
-                CharSequence text = textView.getText();
-                textView.setText(text);
-            }
-        } else if (view instanceof ViewGroup) {
-            // Recursively process all children of ViewGroups
-            ViewGroup viewGroup = (ViewGroup) view;
-            for (int i = 0; i < viewGroup.getChildCount(); i++) {
-                updateAllTextViewsInViewHierarchy(viewGroup.getChildAt(i));
-            }
-        }
-
-        // Force a layout update on this view
-        view.invalidate();
-        view.requestLayout();
     }
 
     /**
