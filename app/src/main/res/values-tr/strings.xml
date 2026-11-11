@@ -2832,13 +2832,6 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
 
     <string name="app_age_a_while">bir süredir</string>
     <string name="app_usage_installed_on">Yüklenme tarihi</string>
-    <string name="pro_reminder_button_continue">Devam</string>
-    <string name="pro_reminder_button_countdown">Devam · %1$d</string>
-    <string name="pro_reminder_back_toast_1">İyi denemeydi. Hazır olduğunuzda devam edin.</string>
-    <string name="pro_reminder_back_toast_2">Tek çıkış yolu ileri.</string>
-    <string name="pro_reminder_back_toast_3">Neredeyse. Buton hâlâ bekliyor.</string>
-    <string name="pro_reminder_after_title">Bu ziyaretlerden nefret ediyorsan, yükseltme beni gerçekten yok eder.</string>
-    <string name="pro_reminder_after_got_it">Anladım</string>
     <string name="pro_dossier_header">FADSEC LAB // DAHİLİ DOSYA</string>
     <string name="pro_dossier_eyes_only">SADECE YETKİLİ</string>
     <string name="pro_dossier_subject">KONU // YÜKSELTME PROTOKOLÜ</string>
@@ -2859,32 +2852,6 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="pro_dossier_after_status_value">ONAY GEREKLİ</string>
     <string name="pro_dossier_after_ref">REF: FADSEC/PR-07-AAR</string>
     <string name="pro_dossier_got_it">Anladım</string>
-    <string name="pro_reminder_title_1">Bir geçmişimiz var</string>
-    <string name="pro_reminder_subtitle_1">%1$s birlikte. FadCam’in geri kalanıyla tanışın.</string>
-    <string name="pro_reminder_title_2">Hâlâ birlikte kaydediyoruz</string>
-    <string name="pro_reminder_subtitle_2">%1$s geçti. Pro düzgün bir merhabayı hak ediyor.</string>
-    <string name="pro_reminder_title_3">Sözümü tuttum</string>
-    <string name="pro_reminder_subtitle_3">Bir hafta sonra buradayım. Pro’yu ziyaret edelim.</string>
-    <string name="pro_reminder_title_4">Bu artık haftalık ritüelimiz</string>
-    <string name="pro_reminder_subtitle_4">FadCam’le %1$s. Pro kendini dışlanmış hissetmeye başladı.</string>
-    <string name="pro_reminder_title_5">Geri döneceğimi biliyordunuz</string>
-    <string name="pro_reminder_subtitle_5">Yedi gün bekledim. Pro da bekledi.</string>
-    <string name="pro_reminder_title_6">Gelecek hafta aynı saatte?</string>
-    <string name="pro_reminder_subtitle_6">Önce, planlanan üç saniyelik Pro turunuz.</string>
-    <string name="pro_reminder_notification_channel_name">Pro hatırlatıcıları</string>
-    <string name="pro_reminder_notification_channel_description">FadCam Pro hakkında haftalık not. Pro sürümleri bunu hiç görmez.</string>
-    <string name="pro_reminder_notification_title_1">%1$s boyunca birlikte</string>
-    <string name="pro_reminder_notification_body_1">Döndüm. Pro sizi getirmemi istedi.</string>
-    <string name="pro_reminder_notification_title_2">Yedi gün bekledim</string>
-    <string name="pro_reminder_notification_body_2">Bunu haftalık bir gelenek yapmadan önce dokunun.</string>
-    <string name="pro_reminder_notification_title_3">Pro ziyaretinin zamanı geldi</string>
-    <string name="pro_reminder_notification_body_3">FadCam’le %1$s. Aileyle tanışma zamanı.</string>
-    <string name="pro_reminder_notification_title_4">%1$s sonra hâlâ biz</string>
-    <string name="pro_reminder_notification_body_4">Dürüst olmak gerekirse Pro biraz kıskanıyor.</string>
-    <plurals name="pro_reminder_after_body">
-        <item quantity="one">%1$d gün sonra tekrar uğrarım. Görüşürüz.</item>
-        <item quantity="other">%1$d gün sonra tekrar uğrarım. Görüşürüz.</item>
-    </plurals>
     <string name="pro_screen_bundle">Üç özel uygulama.
 Sonsuza dek senin.</string>
     <string name="pro_showcase_label">PRO PAKET</string>
@@ -2921,4 +2888,39 @@ Sonsuza dek senin.</string>
     <string name="pro_showcase_weather_line">Güneşli · 24°</string>
     <string name="pro_showcase_notif_now">şimdi</string>
     <string name="pro_showcase_swipe_unlock">Kilidi açmak için yukarı kaydırın</string>
+    <string name="pro_reminder_intro_title">Pro dramatikleşmeden önce</string>
+    <string name="pro_reminder_intro_subtitle">FadCam\'i %1$s kullanıyorsun. Pro\'nun sunduklarına bir bak.</string>
+    <string name="pro_reminder_title_1">Bizim bir geçmişimiz var</string>
+    <string name="pro_reminder_title_2">Pro kıskanmaya başladı</string>
+    <string name="pro_reminder_title_3">Bil bakalım kim geri döndü</string>
+    <string name="pro_reminder_title_4">Artık bu bizim işimiz</string>
+    <string name="pro_reminder_title_5">Lütfen şaşırmış gibi yap</string>
+    <string name="pro_reminder_title_6">Gelecek hafta aynı saatte?</string>
+    <string name="pro_reminder_subtitle_1">FadCam ile %1$s geçirdin ve hâlâ Pro ile tanışmadın.</string>
+    <string name="pro_reminder_subtitle_2">FadCam\'i %1$s kullanıyorsun. Pro kendini dışlanmış hissetmeye başladı.</string>
+    <string name="pro_reminder_subtitle_3">FadCam ile %1$s. Sana Pro\'yu hatırlatmak için geri döndüm.</string>
+    <string name="pro_reminder_subtitle_4">FadCam ile %1$s. Pro da biraz ilgi istiyor.</string>
+    <string name="pro_reminder_subtitle_5">%1$s oldu ve yine buradayım. Pro\'yu getirdim.</string>
+    <string name="pro_reminder_subtitle_6">%1$s geçti. Pro selam söylüyor. Yine.</string>
+    <string name="pro_reminder_notification_title_1">Pro kendini dışlanmış hissediyor</string>
+    <string name="pro_reminder_notification_title_2">Küçük bir kesinti</string>
+    <string name="pro_reminder_notification_title_3">Pro sohbete katıldı</string>
+    <string name="pro_reminder_notification_title_4">Bil bakalım kim geri döndü</string>
+    <string name="pro_reminder_notification_body_1">%1$s birlikte. Pro kısa bir selam istiyor.</string>
+    <string name="pro_reminder_notification_body_2">Merak etme, acil değil. Pro sadece selam veriyor.</string>
+    <string name="pro_reminder_notification_body_3">%1$s geçti. Hızlıca bir göz atmaya hazır mısın?</string>
+    <string name="pro_reminder_notification_body_4">Yine ben. Pro bunun hızlı olacağına söz veriyor.</string>
+    <string name="pro_reminder_button_continue">Devam</string>
+    <string name="pro_reminder_button_countdown">Devam için %1$d sn</string>
+    <string name="pro_reminder_back_toast_1">Güzel deneme. Devam hemen orada.</string>
+    <string name="pro_reminder_back_toast_2">Sürpriz: Geri, çıkış değil.</string>
+    <string name="pro_reminder_back_toast_3">Neredeyse kaçıyordun. Sadece Devam\'a dokun.</string>
+    <string name="pro_reminder_after_title">Pro\'ya geç, ben de sonunda seni rahatsız etmeyi bırakayım. Sonsuza dek.</string>
+    <string name="pro_reminder_after_got_it">Anladım</string>
+    <string name="pro_reminder_notification_channel_name">Pro hatırlatmaları</string>
+    <string name="pro_reminder_notification_channel_description">FadCam Pro hakkında haftalık hatırlatmalar. Pro sürümünde gösterilmez.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">%1$d gün sonra döneceğim. Huzurun tadını çıkar.</item>
+        <item quantity="other">%1$d gün sonra döneceğim. Huzurun tadını çıkar.</item>
+    </plurals>
 </resources>

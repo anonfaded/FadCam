@@ -2877,13 +2877,6 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
 
     <string name="app_age_a_while">eine Weile</string>
     <string name="app_usage_installed_on">Installiert am</string>
-    <string name="pro_reminder_button_continue">Weiter</string>
-    <string name="pro_reminder_button_countdown">Weiter · %1$d</string>
-    <string name="pro_reminder_back_toast_1">Netter Versuch. Weiter, wenn du bereit bist.</string>
-    <string name="pro_reminder_back_toast_2">Der einzige Ausweg ist vorwärts.</string>
-    <string name="pro_reminder_back_toast_3">Fast. Der Button wartet noch.</string>
-    <string name="pro_reminder_after_title">Wenn du diese Besuche hasst, lässt mich ein Upgrade wirklich verschwinden.</string>
-    <string name="pro_reminder_after_got_it">Verstanden</string>
     <string name="pro_dossier_header">FADSEC LAB // INTERNES DOSSIER</string>
     <string name="pro_dossier_eyes_only">STRENG VERTRAULICH</string>
     <string name="pro_dossier_subject">BETREFF // UPGRADE-PROTOKOLL</string>
@@ -2904,32 +2897,6 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="pro_dossier_after_status_value">BESTÄTIGUNG ERFORDERLICH</string>
     <string name="pro_dossier_after_ref">REF: FADSEC/PR-07-AAR</string>
     <string name="pro_dossier_got_it">Verstanden</string>
-    <string name="pro_reminder_title_1">Wir haben Geschichte</string>
-    <string name="pro_reminder_subtitle_1">Seit %1$s zusammen. Lern den Rest von FadCam kennen.</string>
-    <string name="pro_reminder_title_2">Wir nehmen noch zusammen auf</string>
-    <string name="pro_reminder_subtitle_2">Schon %1$s. Pro verdient ein anständiges Hallo.</string>
-    <string name="pro_reminder_title_3">Ich habe mein Versprechen gehalten</string>
-    <string name="pro_reminder_subtitle_3">Eine Woche später, hier bin ich. Besuchen wir Pro.</string>
-    <string name="pro_reminder_title_4">Das ist jetzt unser Wochenritual</string>
-    <string name="pro_reminder_subtitle_4">Seit %1$s mit FadCam. Pro fühlt sich langsam ausgeschlossen.</string>
-    <string name="pro_reminder_title_5">Du wusstest, dass ich zurückkomme</string>
-    <string name="pro_reminder_subtitle_5">Ich habe sieben Tage gewartet. Pro auch.</string>
-    <string name="pro_reminder_title_6">Gleiche Zeit nächste Woche?</string>
-    <string name="pro_reminder_subtitle_6">Zuerst: deine geplanten drei Sekunden Pro.</string>
-    <string name="pro_reminder_notification_channel_name">Pro-Erinnerungen</string>
-    <string name="pro_reminder_notification_channel_description">Eine wöchentliche Notiz zu FadCam Pro. Pro-Builds sehen sie nie.</string>
-    <string name="pro_reminder_notification_title_1">Zusammen seit %1$s</string>
-    <string name="pro_reminder_notification_body_1">Ich bin zurück. Pro hat mich gebeten, dich mitzubringen.</string>
-    <string name="pro_reminder_notification_title_2">Ich habe sieben Tage gewartet</string>
-    <string name="pro_reminder_notification_body_2">Tippe, bevor ich daraus eine wöchentliche Tradition mache.</string>
-    <string name="pro_reminder_notification_title_3">Dein Pro-Besuch ist fällig</string>
-    <string name="pro_reminder_notification_body_3">Seit %1$s mit FadCam. Zeit, die Familie kennenzulernen.</string>
-    <string name="pro_reminder_notification_title_4">Nach %1$s noch wir</string>
-    <string name="pro_reminder_notification_body_4">Ehrlich, Pro wird ein bisschen eifersüchtig.</string>
-    <plurals name="pro_reminder_after_body">
-        <item quantity="one">Ich melde mich in %1$d Tag wieder. Bis dann.</item>
-        <item quantity="other">Ich melde mich in %1$d Tagen wieder. Bis dann.</item>
-    </plurals>
     <string name="pro_screen_bundle">Drei private Apps.
 Für immer dein.</string>
     <string name="pro_showcase_label">PRO-PAKET</string>
@@ -2966,4 +2933,39 @@ Für immer dein.</string>
     <string name="pro_showcase_weather_line">Sonnig · 24°</string>
     <string name="pro_showcase_notif_now">jetzt</string>
     <string name="pro_showcase_swipe_unlock">Nach oben wischen zum Entsperren</string>
+    <string name="pro_reminder_intro_title">Bevor Pro dramatisch wird</string>
+    <string name="pro_reminder_intro_subtitle">Du nutzt FadCam seit %1$s. Das hat Pro zu bieten.</string>
+    <string name="pro_reminder_title_1">Wir haben Geschichte</string>
+    <string name="pro_reminder_title_2">Pro wird eifersüchtig</string>
+    <string name="pro_reminder_title_3">Rate, wer zurück ist</string>
+    <string name="pro_reminder_title_4">Das ist jetzt unser Ding</string>
+    <string name="pro_reminder_title_5">Bitte tu überrascht</string>
+    <string name="pro_reminder_title_6">Nächste Woche, gleiche Zeit?</string>
+    <string name="pro_reminder_subtitle_1">Seit %1$s mit FadCam unterwegs, und Pro hast du noch immer nicht getroffen.</string>
+    <string name="pro_reminder_subtitle_2">Du nutzt FadCam seit %1$s. Pro fühlt sich langsam übergangen.</string>
+    <string name="pro_reminder_subtitle_3">Seit %1$s mit FadCam. Ich bin zurück, um dich an Pro zu erinnern.</string>
+    <string name="pro_reminder_subtitle_4">Seit %1$s mit FadCam. Pro hätte auch gern etwas Aufmerksamkeit.</string>
+    <string name="pro_reminder_subtitle_5">Seit %1$s dabei, und hier bin ich wieder. Ich habe Pro mitgebracht.</string>
+    <string name="pro_reminder_subtitle_6">Es ist %1$s her. Pro sagt Hallo. Schon wieder.</string>
+    <string name="pro_reminder_notification_title_1">Pro fühlt sich übergangen</string>
+    <string name="pro_reminder_notification_title_2">Eine kleine Unterbrechung</string>
+    <string name="pro_reminder_notification_title_3">Pro ist dem Chat beigetreten</string>
+    <string name="pro_reminder_notification_title_4">Rate, wer zurück ist</string>
+    <string name="pro_reminder_notification_body_1">%1$s zusammen. Pro hätte gern ein kurzes Hallo.</string>
+    <string name="pro_reminder_notification_body_2">Keine Sorge, nichts Dringendes. Pro sagt nur Hallo.</string>
+    <string name="pro_reminder_notification_body_3">Es ist %1$s her. Bereit für einen kurzen Blick?</string>
+    <string name="pro_reminder_notification_body_4">Ich mal wieder. Pro verspricht, das wird schnell.</string>
+    <string name="pro_reminder_button_continue">Weiter</string>
+    <string name="pro_reminder_button_countdown">Weiter in %1$ds</string>
+    <string name="pro_reminder_back_toast_1">Netter Versuch. Weiter ist direkt dort.</string>
+    <string name="pro_reminder_back_toast_2">Wendung: Zurück ist nicht der Ausgang.</string>
+    <string name="pro_reminder_back_toast_3">Fast entkommen. Tippe einfach auf Weiter.</string>
+    <string name="pro_reminder_after_title">Hol dir Pro, und ich höre endlich auf, dich zu stören. Für immer.</string>
+    <string name="pro_reminder_after_got_it">Verstanden</string>
+    <string name="pro_reminder_notification_channel_name">Pro-Erinnerungen</string>
+    <string name="pro_reminder_notification_channel_description">Wöchentliche Erinnerungen an FadCam Pro. In Pro nicht sichtbar.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">Ich bin in %1$d Tag zurück. Genieß die Ruhe, solange sie hält.</item>
+        <item quantity="other">Ich bin in %1$d Tagen zurück. Genieß die Ruhe, solange sie hält.</item>
+    </plurals>
 </resources>

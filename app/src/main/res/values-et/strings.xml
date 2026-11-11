@@ -2935,13 +2935,6 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
 
     <string name="app_age_a_while">mõnda aega</string>
     <string name="app_usage_installed_on">Paigaldatud</string>
-    <string name="pro_reminder_button_continue">Jätka</string>
-    <string name="pro_reminder_button_countdown">Jätka · %1$d</string>
-    <string name="pro_reminder_back_toast_1">Hea katse. Jätka, kui valmis oled.</string>
-    <string name="pro_reminder_back_toast_2">Ainus väljapääs on edasi.</string>
-    <string name="pro_reminder_back_toast_3">Peaaegu. Nupp ootab veel.</string>
-    <string name="pro_reminder_after_title">Kui sa neid külaskäike vihkad, siis upgrade paneb mind tõesti kaduma.</string>
-    <string name="pro_reminder_after_got_it">Selge</string>
     <string name="pro_dossier_header">FADSEC LAB // SISEMINE TOIMIK</string>
     <string name="pro_dossier_eyes_only">KONFIDENTSIAALNE</string>
     <string name="pro_dossier_subject">TEEMA // UUENDUSPROTOKOLL</string>
@@ -2962,32 +2955,6 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="pro_dossier_after_status_value">VAJAB KINNITUST</string>
     <string name="pro_dossier_after_ref">VIIDE: FADSEC/PR-07-AAR</string>
     <string name="pro_dossier_got_it">Selge</string>
-    <string name="pro_reminder_title_1">Meil on ajalugu</string>
-    <string name="pro_reminder_subtitle_1">%1$s koos. Tule tutvu FadCami ülejäänud osaga.</string>
-    <string name="pro_reminder_title_2">Filmeerime ikka koos</string>
-    <string name="pro_reminder_subtitle_2">Sellest on %1$s. Pro väärib korralikku tereütlemist.</string>
-    <string name="pro_reminder_title_3">Pidasin lubadust</string>
-    <string name="pro_reminder_subtitle_3">Nädal hiljem olen siin. Lähme Pro juurde.</string>
-    <string name="pro_reminder_title_4">See on nüüd meie nädalane asi</string>
-    <string name="pro_reminder_subtitle_4">%1$s FadCamiga. Pro hakkab end kõrvale jäetuna tundma.</string>
-    <string name="pro_reminder_title_5">Sa teadsid, et tulen tagasi</string>
-    <string name="pro_reminder_subtitle_5">Ootasin seitse päeva. Pro ootas ka.</string>
-    <string name="pro_reminder_title_6">Järgmisel nädalal sama aeg?</string>
-    <string name="pro_reminder_subtitle_6">Kõigepealt sinu planeeritud kolmesekundiline Pro-tuur.</string>
-    <string name="pro_reminder_notification_channel_name">Pro meeldetuletused</string>
-    <string name="pro_reminder_notification_channel_description">Nädalane teade FadCam Pro kohta. Pro versioonid ei näe seda kunagi.</string>
-    <string name="pro_reminder_notification_title_1">Koos juba %1$s</string>
-    <string name="pro_reminder_notification_body_1">Ma olen tagasi. Pro palus sind kaasa tuua.</string>
-    <string name="pro_reminder_notification_title_2">Ootasin seitse päeva</string>
-    <string name="pro_reminder_notification_body_2">Puuduta, enne kui sellest saab nädalane traditsioon.</string>
-    <string name="pro_reminder_notification_title_3">Pro külastus on tähtaegne</string>
-    <string name="pro_reminder_notification_body_3">%1$s FadCamiga. Aeg perega tutvuda.</string>
-    <string name="pro_reminder_notification_title_4">Ikka meie pärast %1$s</string>
-    <string name="pro_reminder_notification_body_4">Ausalt, Pro muutub veidi armukadedaks.</string>
-    <plurals name="pro_reminder_after_body">
-        <item quantity="one">Tulen tagasi %1$d päeva pärast. Näeme siis.</item>
-        <item quantity="other">Tulen tagasi %1$d päeva pärast. Näeme siis.</item>
-    </plurals>
     <string name="pro_screen_bundle">Kolm privaatset rakendust.
 Igavesti sinu.</string>
     <string name="pro_showcase_label">PRO-PAKETT</string>
@@ -3024,4 +2991,39 @@ Igavesti sinu.</string>
     <string name="pro_showcase_weather_line">Päikeseline · 24°</string>
     <string name="pro_showcase_notif_now">praegu</string>
     <string name="pro_showcase_swipe_unlock">Avamiseks pühkige üles</string>
+    <string name="pro_reminder_intro_title">Enne kui Pro hakkab draamat tegema</string>
+    <string name="pro_reminder_intro_subtitle">Oled FadCami kasutanud %1$s. Vaata, mida Pro pakub.</string>
+    <string name="pro_reminder_title_1">Meil on ajalugu</string>
+    <string name="pro_reminder_title_2">Pro on hakanud kadestama</string>
+    <string name="pro_reminder_title_3">Arva, kes on tagasi</string>
+    <string name="pro_reminder_title_4">See on nüüd meie oma asi</string>
+    <string name="pro_reminder_title_5">Palun tee üllatunud nägu</string>
+    <string name="pro_reminder_title_6">Järgmisel nädalal samal ajal?</string>
+    <string name="pro_reminder_subtitle_1">%1$s FadCamiga ja Pro pole sa ikka veel kohanud.</string>
+    <string name="pro_reminder_subtitle_2">Oled FadCami kasutanud %1$s. Pro hakkab end kõrvale jäetuna tundma.</string>
+    <string name="pro_reminder_subtitle_3">%1$s FadCamiga. Olen tagasi, et Pro sulle meelde tuletada.</string>
+    <string name="pro_reminder_subtitle_4">%1$s FadCamiga. Pro tahaks ka veidi tähelepanu.</string>
+    <string name="pro_reminder_subtitle_5">%1$s sees ja siin ma jälle olen. Tõin Pro.</string>
+    <string name="pro_reminder_subtitle_6">Möödunud on %1$s. Pro ütleb tere. Jälle.</string>
+    <string name="pro_reminder_notification_title_1">Pro tunneb end kõrvale jäetuna</string>
+    <string name="pro_reminder_notification_title_2">Väike katkestus</string>
+    <string name="pro_reminder_notification_title_3">Pro liitus vestlusega</string>
+    <string name="pro_reminder_notification_title_4">Arva, kes on tagasi</string>
+    <string name="pro_reminder_notification_body_1">%1$s koos. Pro tahaks kiiret tere.</string>
+    <string name="pro_reminder_notification_body_2">Ära muretse, see pole kiire. Pro lihtsalt ütleb tere.</string>
+    <string name="pro_reminder_notification_body_3">Möödunud on %1$s. Valmis kiireks pilguks?</string>
+    <string name="pro_reminder_notification_body_4">Jälle mina. Pro lubab, et see tuleb kiire.</string>
+    <string name="pro_reminder_button_continue">Jätka</string>
+    <string name="pro_reminder_button_countdown">Jätka %1$ds pärast</string>
+    <string name="pro_reminder_back_toast_1">Tubli katse. Jätka on kohe seal.</string>
+    <string name="pro_reminder_back_toast_2">Sisu pööre: Tagasi pole väljapääs.</string>
+    <string name="pro_reminder_back_toast_3">Peaaegu pääsesid. Lihtsalt vajuta Jätka.</string>
+    <string name="pro_reminder_after_title">Võta Pro, ja ma lõpetan lõpuks sinu tülitamise. Igavesti.</string>
+    <string name="pro_reminder_after_got_it">Selge</string>
+    <string name="pro_reminder_notification_channel_name">Pro meeldetuletused</string>
+    <string name="pro_reminder_notification_channel_description">Iganädalased meeldetuletused FadCam Pro kohta. Pro versioonis ei kuvata.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">Tulen tagasi %1$d päeva pärast. Naudi rahu, kuni see kestab.</item>
+        <item quantity="other">Tulen tagasi %1$d päeva pärast. Naudi rahu, kuni see kestab.</item>
+    </plurals>
 </resources>

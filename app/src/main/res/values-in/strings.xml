@@ -3195,13 +3195,6 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
 
     <string name="app_age_a_while">beberapa saat</string>
     <string name="app_usage_installed_on">Dipasang pada</string>
-    <string name="pro_reminder_button_continue">Lanjutkan</string>
-    <string name="pro_reminder_button_countdown">Lanjutkan · %1$d</string>
-    <string name="pro_reminder_back_toast_1">Usaha bagus. Lanjutkan saat Anda siap.</string>
-    <string name="pro_reminder_back_toast_2">Satu-satunya jalan keluar adalah maju.</string>
-    <string name="pro_reminder_back_toast_3">Hampir. Tombolnya masih menunggu.</string>
-    <string name="pro_reminder_after_title">Kalau Anda benci kunjungan ini, upgrade memang membuatku menghilang.</string>
-    <string name="pro_reminder_after_got_it">Mengerti</string>
     <string name="pro_dossier_header">FADSEC LAB // DOSIER INTERNAL</string>
     <string name="pro_dossier_eyes_only">RAHASIA</string>
     <string name="pro_dossier_subject">SUBJEK // PROTOKOL UPGRADE</string>
@@ -3222,31 +3215,6 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="pro_dossier_after_status_value">KONFIRMASI DIPERLUKAN</string>
     <string name="pro_dossier_after_ref">REF: FADSEC/PR-07-AAR</string>
     <string name="pro_dossier_got_it">Mengerti</string>
-    <string name="pro_reminder_title_1">Kita punya sejarah</string>
-    <string name="pro_reminder_subtitle_1">%1$s bersama. Ayo kenali sisi lain FadCam.</string>
-    <string name="pro_reminder_title_2">Masih merekam bersama</string>
-    <string name="pro_reminder_subtitle_2">Sudah %1$s. Pro pantas mendapat sapaan yang layak.</string>
-    <string name="pro_reminder_title_3">Janjiku kutepati</string>
-    <string name="pro_reminder_subtitle_3">Seminggu kemudian, aku di sini. Ayo kunjungi Pro.</string>
-    <string name="pro_reminder_title_4">Ini sudah jadi ritual mingguan kita</string>
-    <string name="pro_reminder_subtitle_4">%1$s dengan FadCam. Pro mulai merasa ditinggalkan.</string>
-    <string name="pro_reminder_title_5">Anda tahu aku akan kembali</string>
-    <string name="pro_reminder_subtitle_5">Aku menunggu tujuh hari. Pro juga.</string>
-    <string name="pro_reminder_title_6">Jam yang sama minggu depan?</string>
-    <string name="pro_reminder_subtitle_6">Pertama, tur tiga detik Pro yang sudah dijadwalkan.</string>
-    <string name="pro_reminder_notification_channel_name">Pengingat Pro</string>
-    <string name="pro_reminder_notification_channel_description">Catatan mingguan tentang FadCam Pro. Versi Pro tidak pernah melihatnya.</string>
-    <string name="pro_reminder_notification_title_1">Bersama selama %1$s</string>
-    <string name="pro_reminder_notification_body_1">Aku kembali. Pro memintaku membawa Anda.</string>
-    <string name="pro_reminder_notification_title_2">Aku menunggu tujuh hari</string>
-    <string name="pro_reminder_notification_body_2">Ketuk sebelum ini jadi tradisi mingguan.</string>
-    <string name="pro_reminder_notification_title_3">Saatnya mengunjungi Pro</string>
-    <string name="pro_reminder_notification_body_3">%1$s dengan FadCam. Saatnya berkenalan dengan keluarga.</string>
-    <string name="pro_reminder_notification_title_4">Setelah %1$s, masih kita</string>
-    <string name="pro_reminder_notification_body_4">Jujur, Pro mulai sedikit cemburu.</string>
-    <plurals name="pro_reminder_after_body">
-        <item quantity="other">Aku akan kembali dalam %1$d hari. Sampai jumpa.</item>
-    </plurals>
     <string name="pro_screen_bundle">Tiga aplikasi privat.
 Milikmu selamanya.</string>
     <string name="pro_showcase_label">PAKET PRO</string>
@@ -3283,4 +3251,38 @@ Milikmu selamanya.</string>
     <string name="pro_showcase_weather_line">Cerah · 24°</string>
     <string name="pro_showcase_notif_now">sekarang</string>
     <string name="pro_showcase_swipe_unlock">Geser ke atas untuk membuka kunci</string>
+    <string name="pro_reminder_intro_title">Sebelum Pro jadi dramatis</string>
+    <string name="pro_reminder_intro_subtitle">Kamu sudah memakai FadCam selama %1$s. Ini yang ditawarkan Pro.</string>
+    <string name="pro_reminder_title_1">Kita punya sejarah</string>
+    <string name="pro_reminder_title_2">Pro mulai cemburu</string>
+    <string name="pro_reminder_title_3">Tebak siapa yang kembali</string>
+    <string name="pro_reminder_title_4">Ini sudah jadi kebiasaan kita</string>
+    <string name="pro_reminder_title_5">Tolong pura-pura kaget</string>
+    <string name="pro_reminder_title_6">Waktu yang sama minggu depan?</string>
+    <string name="pro_reminder_subtitle_1">%1$s dengan FadCam, dan kamu masih belum bertemu Pro.</string>
+    <string name="pro_reminder_subtitle_2">Kamu sudah memakai FadCam selama %1$s. Pro mulai merasa diabaikan.</string>
+    <string name="pro_reminder_subtitle_3">%1$s dengan FadCam. Aku kembali untuk mengingatkanmu tentang Pro.</string>
+    <string name="pro_reminder_subtitle_4">%1$s dengan FadCam. Pro juga ingin sedikit perhatian.</string>
+    <string name="pro_reminder_subtitle_5">%1$s sudah, dan aku di sini lagi. Aku bawa Pro.</string>
+    <string name="pro_reminder_subtitle_6">Sudah %1$s. Pro menyapa. Lagi.</string>
+    <string name="pro_reminder_notification_title_1">Pro merasa diabaikan</string>
+    <string name="pro_reminder_notification_title_2">Gangguan kecil</string>
+    <string name="pro_reminder_notification_title_3">Pro bergabung ke obrolan</string>
+    <string name="pro_reminder_notification_title_4">Tebak siapa yang kembali</string>
+    <string name="pro_reminder_notification_body_1">%1$s bersama. Pro ingin sapaan singkat.</string>
+    <string name="pro_reminder_notification_body_2">Tenang, ini tidak mendesak. Pro cuma menyapa.</string>
+    <string name="pro_reminder_notification_body_3">Sudah %1$s. Siap untuk lihat sebentar?</string>
+    <string name="pro_reminder_notification_body_4">Aku lagi. Pro janji ini akan cepat.</string>
+    <string name="pro_reminder_button_continue">Lanjutkan</string>
+    <string name="pro_reminder_button_countdown">Lanjutkan dalam %1$ds</string>
+    <string name="pro_reminder_back_toast_1">Niat baik. Lanjutkan ada di sana.</string>
+    <string name="pro_reminder_back_toast_2">Plot twist: Kembali bukan jalan keluar.</string>
+    <string name="pro_reminder_back_toast_3">Hampir kabur. Cukup ketuk Lanjutkan.</string>
+    <string name="pro_reminder_after_title">Beralih ke Pro, dan aku akhirnya berhenti mengganggumu. Selamanya.</string>
+    <string name="pro_reminder_after_got_it">Mengerti</string>
+    <string name="pro_reminder_notification_channel_name">Pengingat Pro</string>
+    <string name="pro_reminder_notification_channel_description">Pengingat mingguan tentang FadCam Pro. Tidak muncul di Pro.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="other">Aku kembali dalam %1$d hari. Nikmati ketenangan selama masih ada.</item>
+    </plurals>
 </resources>

@@ -3032,13 +3032,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
 
     <string name="app_age_a_while">λίγο καιρό</string>
     <string name="app_usage_installed_on">Εγκαταστάθηκε στις</string>
-    <string name="pro_reminder_button_continue">Συνέχεια</string>
-    <string name="pro_reminder_button_countdown">Συνέχεια · %1$d</string>
-    <string name="pro_reminder_back_toast_1">Καλή προσπάθεια. Συνεχίστε όταν είστε έτοιμος.</string>
-    <string name="pro_reminder_back_toast_2">Η μόνη διέξοδος είναι μπροστά.</string>
-    <string name="pro_reminder_back_toast_3">Σχεδόν. Το κουμπί ακόμα περιμένει.</string>
-    <string name="pro_reminder_after_title">Αν μισείτε αυτές τις επισκέψεις, η αναβάθμιση με κάνει πραγματικά να εξαφανιστώ.</string>
-    <string name="pro_reminder_after_got_it">Κατανοητό</string>
     <string name="pro_dossier_header">FADSEC LAB // ΕΣΩΤΕΡΙΚΟΣ ΦΑΚΕΛΟΣ</string>
     <string name="pro_dossier_eyes_only">ΑΥΣΤΗΡΑ ΕΜΠΙΣΤΕΥΤΙΚΟ</string>
     <string name="pro_dossier_subject">ΘΕΜΑ // ΠΡΩΤΟΚΟΛΛΟ ΑΝΑΒΑΘΜΙΣΗΣ</string>
@@ -3059,32 +3052,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="pro_dossier_after_status_value">ΑΠΑΙΤΕΙΤΑΙ ΕΠΙΒΕΒΑΙΩΣΗ</string>
     <string name="pro_dossier_after_ref">ΑΝΑΦ.: FADSEC/PR-07-AAR</string>
     <string name="pro_dossier_got_it">Κατανοητό</string>
-    <string name="pro_reminder_title_1">Έχουμε ιστορία</string>
-    <string name="pro_reminder_subtitle_1">%1$s μαζί. Ελάτε να γνωρίσετε την υπόλοιπη FadCam.</string>
-    <string name="pro_reminder_title_2">Γράφουμε ακόμα μαζί</string>
-    <string name="pro_reminder_subtitle_2">Ήδη %1$s μαζί. Το Pro αξίζει ένα σωστό γεια.</string>
-    <string name="pro_reminder_title_3">Κράτησα την υπόσχεσή μου</string>
-    <string name="pro_reminder_subtitle_3">Μια εβδομάδα μετά, εδώ είμαι. Πάμε στο Pro.</string>
-    <string name="pro_reminder_title_4">Αυτό είναι πλέον εβδομαδιαία συνήθεια</string>
-    <string name="pro_reminder_subtitle_4">%1$s με τη FadCam. Το Pro αρχίζει να νιώθει παραμελημένο.</string>
-    <string name="pro_reminder_title_5">Ήξερετε πως θα γυρίσω</string>
-    <string name="pro_reminder_subtitle_5">Περίμενα επτά ημέρες. Και το Pro.</string>
-    <string name="pro_reminder_title_6">Ίδια ώρα την επόμενη εβδομάδα;</string>
-    <string name="pro_reminder_subtitle_6">Πρώτα, η προγραμματισμένη βόλτα σας τριών δευτερολέπτων στο Pro.</string>
-    <string name="pro_reminder_notification_channel_name">Υπενθυμίσεις Pro</string>
-    <string name="pro_reminder_notification_channel_description">Εβδομαδιαία σημείωση για το FadCam Pro. Οι εκδόσεις Pro δεν τη βλέπουν ποτέ.</string>
-    <string name="pro_reminder_notification_title_1">Μαζί για %1$s</string>
-    <string name="pro_reminder_notification_body_1">Επέστρεψα. Το Pro μου ζήτησε να σε φέρω.</string>
-    <string name="pro_reminder_notification_title_2">Περίμενα επτά ημέρες</string>
-    <string name="pro_reminder_notification_body_2">Πατήστε πριν γίνει εβδομαδιαία παράδοση.</string>
-    <string name="pro_reminder_notification_title_3">Ώρα για επίσκεψη στο Pro</string>
-    <string name="pro_reminder_notification_body_3">%1$s με τη FadCam. Ώρα να γνωρίσεις την οικογένεια.</string>
-    <string name="pro_reminder_notification_title_4">Ακόμα εμείς μετά από %1$s</string>
-    <string name="pro_reminder_notification_body_4">Ειλικρινά, το Pro ζηλεύει λίγο.</string>
-    <plurals name="pro_reminder_after_body">
-        <item quantity="one">Θα επιστρέψω σε %1$d ημέρα. Τα λέμε.</item>
-        <item quantity="other">Θα επιστρέψω σε %1$d ημέρες. Τα λέμε.</item>
-    </plurals>
     <string name="pro_screen_bundle">Τρεις ιδιωτικές εφαρμογές.
 Δικές σου για πάντα.</string>
     <string name="pro_showcase_label">ΠΑΚΕΤΟ PRO</string>
@@ -3121,4 +3088,39 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="pro_showcase_weather_line">Ηλιόλουστο · 24°</string>
     <string name="pro_showcase_notif_now">τώρα</string>
     <string name="pro_showcase_swipe_unlock">Σύρετε προς τα πάνω για ξεκλείδωμα</string>
+    <string name="pro_reminder_intro_title">Πριν γίνει δραματικό το Pro</string>
+    <string name="pro_reminder_intro_subtitle">Χρησιμοποιείς το FadCam εδώ και %1$s. Δες τι προσφέρει το Pro.</string>
+    <string name="pro_reminder_title_1">Έχουμε ιστορία</string>
+    <string name="pro_reminder_title_2">Το Pro ζηλεύει</string>
+    <string name="pro_reminder_title_3">Μάντεψε ποιος επέστρεψε</string>
+    <string name="pro_reminder_title_4">Αυτό είναι πλέον το δικό μας</string>
+    <string name="pro_reminder_title_5">Κάνε πως ξαφνιάστηκες</string>
+    <string name="pro_reminder_title_6">Ίδια ώρα την επόμενη εβδομάδα;</string>
+    <string name="pro_reminder_subtitle_1">%1$s με το FadCam, και ακόμα δεν έχεις γνωρίσει το Pro.</string>
+    <string name="pro_reminder_subtitle_2">Χρησιμοποιείς το FadCam εδώ και %1$s. Το Pro αρχίζει να νιώθει παραμελημένο.</string>
+    <string name="pro_reminder_subtitle_3">%1$s με το FadCam. Επέστρεψα για να σου θυμίσω το Pro.</string>
+    <string name="pro_reminder_subtitle_4">%1$s με το FadCam. Και το Pro θέλει λίγη προσοχή.</string>
+    <string name="pro_reminder_subtitle_5">%1$s μαζί, και να είμαι πάλι εδώ. Έφερα το Pro.</string>
+    <string name="pro_reminder_subtitle_6">Πέρασαν %1$s. Το Pro λέει γεια. Ξανά.</string>
+    <string name="pro_reminder_notification_title_1">Το Pro νιώθει παραμελημένο</string>
+    <string name="pro_reminder_notification_title_2">Μια μικρή διακοπή</string>
+    <string name="pro_reminder_notification_title_3">Το Pro μπήκε στη συζήτηση</string>
+    <string name="pro_reminder_notification_title_4">Μάντεψε ποιος επέστρεψε</string>
+    <string name="pro_reminder_notification_body_1">%1$s μαζί. Το Pro θέλει ένα γρήγορο γεια.</string>
+    <string name="pro_reminder_notification_body_2">Μην ανησυχείς, δεν είναι επείγον. Το Pro λέει απλώς γεια.</string>
+    <string name="pro_reminder_notification_body_3">Πέρασαν %1$s. Έτοιμος για μια γρήγορη ματιά;</string>
+    <string name="pro_reminder_notification_body_4">Εγώ ξανά. Το Pro υπόσχεται πως θα είναι γρήγορο.</string>
+    <string name="pro_reminder_button_continue">Συνέχεια</string>
+    <string name="pro_reminder_button_countdown">Συνέχεια σε %1$d δευτ.</string>
+    <string name="pro_reminder_back_toast_1">Καλή προσπάθεια. Το Συνέχεια είναι εκεί.</string>
+    <string name="pro_reminder_back_toast_2">Ανατροπή: το Πίσω δεν είναι η έξοδος.</string>
+    <string name="pro_reminder_back_toast_3">Παραλίγο να ξεφύγεις. Απλώς πάτησε Συνέχεια.</string>
+    <string name="pro_reminder_after_title">Πήγαινε στο Pro, και επιτέλους θα σταματήσω να σε ενοχλώ. Για πάντα.</string>
+    <string name="pro_reminder_after_got_it">Κατανοητό</string>
+    <string name="pro_reminder_notification_channel_name">Υπενθυμίσεις Pro</string>
+    <string name="pro_reminder_notification_channel_description">Εβδομαδιαίες υπενθυμίσεις για το FadCam Pro. Δεν εμφανίζονται στο Pro.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">Επιστρέφω σε %1$d ημέρα. Απόλαυσε την ησυχία όσο κρατάει.</item>
+        <item quantity="other">Επιστρέφω σε %1$d ημέρες. Απόλαυσε την ησυχία όσο κρατάει.</item>
+    </plurals>
 </resources>
