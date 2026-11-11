@@ -233,6 +233,9 @@ public class OnboardingActivity extends AppIntro {
                                     });
                             androidx.core.view.ViewCompat.requestApplyInsets(slideContent);
                         }
+                        if (v.findViewById(R.id.onboarding_capability_grid) != null) {
+                            applyCapabilitiesEdition(v);
+                        }
                         final TextView heroTitle = v.findViewById(R.id.onboardingHeroTitle);
                         if (heroTitle != null) {
                             String heroText = heroTitle.getText().toString();
@@ -411,7 +414,38 @@ public class OnboardingActivity extends AppIntro {
                 }, true);
     }
 
-    /** Place the arrows explicitly; AppIntro's RTL constraints are not reliable here. */
+    /**
+     * Lite ships a smaller feature set, so slide 02 must not advertise Full-only
+     * tools or mini apps. Hide them, fold the grid to one column and restate the
+     * count with the same dossier layout.
+     */
+    private void applyCapabilitiesEdition(View root) {
+        if (!com.fadcam.BuildConfig.LITE_EDITION) return;
+
+        int[] fullOnlyTiles = {R.id.onboarding_cap_screen, R.id.onboarding_cap_editor,
+                R.id.onboarding_cap_dashboard};
+        for (int id : fullOnlyTiles) {
+            View tile = root.findViewById(id);
+            if (tile != null) tile.setVisibility(View.GONE);
+        }
+
+        View miniApps = root.findViewById(R.id.onboarding_mini_apps_section);
+        if (miniApps != null) miniApps.setVisibility(View.GONE);
+
+        android.widget.GridLayout grid = root.findViewById(R.id.onboarding_capability_grid);
+        if (grid != null) grid.setColumnCount(1);
+
+        int[] visibleIndexIds = {R.id.onboarding_cap_index_1, R.id.onboarding_cap_index_4,
+                R.id.onboarding_cap_index_6};
+        for (int i = 0; i < visibleIndexIds.length; i++) {
+            TextView index = root.findViewById(visibleIndexIds[i]);
+            if (index != null) index.setText(String.format(java.util.Locale.US, "%02d", i + 1));
+        }
+
+        TextView tally = root.findViewById(R.id.onboarding_tally_number);
+        if (tally != null) tally.setText(R.string.onboarding_total_number_lite);
+    }
+
     private void hideSystemBars() {
         getWindow().setNavigationBarColor(android.graphics.Color.BLACK);
         androidx.core.view.WindowInsetsControllerCompat controller =

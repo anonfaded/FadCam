@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Onboarding 02: the toolbox. Native jobs plus the growing mini-app drawer. -->
+<!-- Onboarding 02: the toolbox. Six real jobs plus the mini apps that ship in the app. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black"
@@ -19,13 +18,13 @@
             android:layout_height="match_parent" />
 
         <LinearLayout
+            android:id="@+id/onboarding_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:id="@+id/onboarding_content"
             android:paddingStart="@dimen/onboarding_dossier_pad"
+            android:paddingTop="18dp"
             android:paddingEnd="@dimen/onboarding_dossier_pad"
-            android:paddingTop="20dp"
             android:paddingBottom="0dp">
 
             <RelativeLayout
@@ -59,14 +58,16 @@
                 android:background="@color/dossier_line" />
 
             <TextView
+                android:id="@+id/onboarding_capabilities_title"
                 style="@style/ProDossierTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="16dp"
                 android:text="@string/onboarding_capabilities_title"
                 android:textSize="@dimen/onboarding_dossier_title_size" />
 
             <TextView
+                android:id="@+id/onboarding_capabilities_lede"
                 style="@style/ProDossierBody"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -74,386 +75,546 @@
                 android:text="@string/onboarding_capabilities_lede"
                 android:textSize="12sp" />
 
-            <!-- Native capabilities, natural height: no stretched rows. -->
-            <LinearLayout
+            <!-- Six jobs, one tile each: fixed grid, no horizontal scrolling. -->
+            <GridLayout
+                android:id="@+id/onboarding_capability_grid"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="10dp"
+                android:alignmentMode="alignMargins"
+                android:columnCount="2"
+                android:useDefaultMargins="false">
+
+                <LinearLayout
+                    android:id="@+id/onboarding_cap_bg"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_gravity="fill"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_onboarding_tile"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:fontFamily="@font/materialicons"
+                            android:gravity="center"
+                            android:importantForAccessibility="no"
+                            android:includeFontPadding="false"
+                            android:text="videocam"
+                            android:textColor="@color/pro_gold"
+                            android:textSize="24sp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/onboarding_cap_index_1"
+                            android:fontFamily="monospace"
+                            android:text="01"
+                            android:textColor="@color/dossier_olive"
+                            android:textSize="8sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/ProDossierValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="7dp"
+                        android:text="@string/onboarding_cap_1_title"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        style="@style/ProDossierBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/onboarding_cap_1_desc"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/onboarding_cap_screen"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_gravity="fill"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_onboarding_tile"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:fontFamily="@font/materialicons"
+                            android:gravity="center"
+                            android:importantForAccessibility="no"
+                            android:includeFontPadding="false"
+                            android:text="screenshot_monitor"
+                            android:textColor="@color/pro_gold"
+                            android:textSize="24sp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/onboarding_cap_index_2"
+                            android:fontFamily="monospace"
+                            android:text="02"
+                            android:textColor="@color/dossier_olive"
+                            android:textSize="8sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/ProDossierValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="7dp"
+                        android:text="@string/onboarding_cap_2_title"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        style="@style/ProDossierBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/onboarding_cap_2_desc"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/onboarding_cap_editor"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_gravity="fill"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_onboarding_tile"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:fontFamily="@font/materialicons"
+                            android:gravity="center"
+                            android:importantForAccessibility="no"
+                            android:includeFontPadding="false"
+                            android:text="movie_edit"
+                            android:textColor="@color/pro_gold"
+                            android:textSize="24sp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/onboarding_cap_index_3"
+                            android:fontFamily="monospace"
+                            android:text="03"
+                            android:textColor="@color/dossier_olive"
+                            android:textSize="8sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/ProDossierValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="7dp"
+                        android:text="@string/onboarding_cap_3_title"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        style="@style/ProDossierBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/onboarding_cap_3_desc"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/onboarding_cap_motion"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_gravity="fill"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_onboarding_tile"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:fontFamily="@font/materialicons"
+                            android:gravity="center"
+                            android:importantForAccessibility="no"
+                            android:includeFontPadding="false"
+                            android:text="sensors"
+                            android:textColor="@color/pro_gold"
+                            android:textSize="24sp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/onboarding_cap_index_4"
+                            android:fontFamily="monospace"
+                            android:text="04"
+                            android:textColor="@color/dossier_olive"
+                            android:textSize="8sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/ProDossierValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="7dp"
+                        android:text="@string/onboarding_cap_4_title"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        style="@style/ProDossierBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/onboarding_cap_4_desc"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/onboarding_cap_dashboard"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_gravity="fill"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_onboarding_tile"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:fontFamily="@font/materialicons"
+                            android:gravity="center"
+                            android:importantForAccessibility="no"
+                            android:includeFontPadding="false"
+                            android:text="dashboard"
+                            android:textColor="@color/pro_gold"
+                            android:textSize="24sp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/onboarding_cap_index_5"
+                            android:fontFamily="monospace"
+                            android:text="05"
+                            android:textColor="@color/dossier_olive"
+                            android:textSize="8sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/ProDossierValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="7dp"
+                        android:text="@string/onboarding_cap_5_title"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        style="@style/ProDossierBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/onboarding_cap_5_desc"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/onboarding_cap_dual"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_gravity="fill"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_onboarding_tile"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:fontFamily="@font/materialicons"
+                            android:gravity="center"
+                            android:importantForAccessibility="no"
+                            android:includeFontPadding="false"
+                            android:text="cameraswitch"
+                            android:textColor="@color/pro_gold"
+                            android:textSize="24sp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:id="@+id/onboarding_cap_index_6"
+                            android:fontFamily="monospace"
+                            android:text="06"
+                            android:textColor="@color/dossier_olive"
+                            android:textSize="8sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/ProDossierValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="7dp"
+                        android:text="@string/onboarding_cap_6_title"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        style="@style/ProDossierBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/onboarding_cap_6_desc"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+            </GridLayout>
+
+            <!-- Mini apps that actually ship today. Hidden in Lite. -->
+            <LinearLayout
+                android:id="@+id/onboarding_mini_apps_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp">
-
-                    <TextView
-                        android:layout_width="30dp"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="monospace"
-                        android:text="01"
-                        android:textColor="@color/dossier_olive_bright"
-                        android:textSize="11sp" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            style="@style/ProDossierValue"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/onboarding_cap_1_title"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            style="@style/ProDossierBody"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/onboarding_cap_1_desc"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/dossier_line" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp">
-
-                    <TextView
-                        android:layout_width="30dp"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="monospace"
-                        android:text="02"
-                        android:textColor="@color/dossier_olive_bright"
-                        android:textSize="11sp" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            style="@style/ProDossierValue"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/onboarding_cap_2_title"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            style="@style/ProDossierBody"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/onboarding_cap_2_desc"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/dossier_line" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp">
-
-                    <TextView
-                        android:layout_width="30dp"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="monospace"
-                        android:text="03"
-                        android:textColor="@color/dossier_olive_bright"
-                        android:textSize="11sp" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            style="@style/ProDossierValue"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/onboarding_cap_3_title"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            style="@style/ProDossierBody"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/onboarding_cap_3_desc"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/dossier_line" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp">
-
-                    <TextView
-                        android:layout_width="30dp"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="monospace"
-                        android:text="04"
-                        android:textColor="@color/dossier_olive_bright"
-                        android:textSize="11sp" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            style="@style/ProDossierValue"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/onboarding_cap_4_title"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            style="@style/ProDossierBody"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/onboarding_cap_4_desc"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/dossier_line" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp">
-
-                    <TextView
-                        android:layout_width="30dp"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="monospace"
-                        android:text="05"
-                        android:textColor="@color/dossier_olive_bright"
-                        android:textSize="11sp" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            style="@style/ProDossierValue"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/onboarding_cap_5_title"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            style="@style/ProDossierBody"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/onboarding_cap_5_desc"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/dossier_line" />
-            </LinearLayout>
-
-            <!-- Mini apps: one strip with a native fading edge; the drawer keeps growing. -->
             <TextView
+                android:id="@+id/onboarding_mini_apps_label"
                 style="@style/ProDossierLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="12dp"
                 android:text="@string/onboarding_mini_label" />
 
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:clipToPadding="true"
-                android:fadingEdgeLength="36dp"
-                android:requiresFadingEdge="horizontal"
-                android:scrollbars="none">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        style="@style/ProDossierValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:background="@drawable/bg_onboarding_chip"
-                        android:paddingStart="10dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="7dp"
-                        android:text="@string/onboarding_mini_qr"
-                        android:textSize="11sp" />
-
-                    <TextView
-                        style="@style/ProDossierValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:background="@drawable/bg_onboarding_chip"
-                        android:paddingStart="10dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="7dp"
-                        android:text="@string/onboarding_mini_torch"
-                        android:textSize="11sp" />
-
-                    <TextView
-                        style="@style/ProDossierValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:background="@drawable/bg_onboarding_chip"
-                        android:paddingStart="10dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="7dp"
-                        android:text="@string/onboarding_mini_compass"
-                        android:textSize="11sp" />
-
-                    <TextView
-                        style="@style/ProDossierValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:background="@drawable/bg_onboarding_chip"
-                        android:paddingStart="10dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="7dp"
-                        android:text="@string/onboarding_mini_sound"
-                        android:textSize="11sp" />
-
-                    <TextView
-                        style="@style/ProDossierValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:background="@drawable/bg_onboarding_chip"
-                        android:paddingStart="10dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="7dp"
-                        android:text="@string/onboarding_mini_speed"
-                        android:textSize="11sp" />
-
-                    <TextView
-                        style="@style/ProDossierValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:background="@drawable/bg_onboarding_chip"
-                        android:paddingStart="10dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="7dp"
-                        android:text="@string/onboarding_mini_pedometer"
-                        android:textSize="11sp" />
-
-                    <TextView
-                        style="@style/ProDossierValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:background="@drawable/bg_onboarding_chip"
-                        android:paddingStart="10dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="7dp"
-                        android:text="@string/onboarding_mini_clinometer"
-                        android:textSize="11sp" />
-
-                    <TextView
-                        style="@style/ProDossierValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:background="@drawable/bg_onboarding_chip"
-                        android:paddingStart="10dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="7dp"
-                        android:text="@string/onboarding_mini_metal"
-                        android:textSize="11sp" />
-
-                    <TextView
-                        style="@style/ProDossierValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_onboarding_chip"
-                        android:paddingStart="10dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="7dp"
-                        android:text="@string/onboarding_mini_more_chip"
-                        android:textColor="@color/dossier_olive_bright"
-                        android:textSize="11sp" />
-                </LinearLayout>
-            </HorizontalScrollView>
-
             <TextView
-                style="@style/ProDossierHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center"
-                android:text="@string/onboarding_mini_more" />
-
-            <TextView
+                android:id="@+id/onboarding_mini_more_note"
                 style="@style/ProDossierBody"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center"
-                android:text="@string/onboarding_mini_more_list"
-                android:textSize="11sp" />
+                android:layout_marginTop="3dp"
+                android:text="@string/onboarding_mini_more"
+                android:textColor="@color/pro_gold"
+                android:textSize="9.5sp" />
+
+            <LinearLayout
+                android:id="@+id/onboarding_mini_app_torch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="7dp"
+                android:background="@drawable/bg_onboarding_tile"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:fontFamily="@font/materialicons"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="flashlight_on"
+                    android:textColor="@color/pro_gold"
+                    android:textSize="24sp"
+                    android:importantForAccessibility="no" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/ProDossierValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/onboarding_mini_torch"
+                        android:textSize="11.5sp" />
+
+                    <TextView
+                        style="@style/ProDossierBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/onboarding_mini_torch_desc"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/onboarding_mini_app_qr"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/bg_onboarding_tile"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:fontFamily="@font/materialicons"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="qr_code_scanner"
+                    android:textColor="@color/pro_gold"
+                    android:textSize="24sp"
+                    android:importantForAccessibility="no" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/ProDossierValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/onboarding_mini_qr"
+                        android:textSize="11.5sp" />
+
+                    <TextView
+                        style="@style/ProDossierBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/onboarding_mini_qr_desc"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- The tally: six tools + two mini apps, one install. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_onboarding_tally"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="10dp">
+
+                <TextView
+                    android:id="@+id/onboarding_tally_number"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-condensed"
+                    android:includeFontPadding="false"
+                    android:text="@string/onboarding_total_number"
+                    android:textColor="@color/pro_gold"
+                    android:textSize="36sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/ProDossierValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/onboarding_total_label"
+                        android:textSize="11.5sp" />
+
+                    <TextView
+                        style="@style/ProDossierBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/onboarding_total_note"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+            </LinearLayout>
 
         </LinearLayout>
     </FrameLayout>
