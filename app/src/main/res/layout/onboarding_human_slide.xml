@@ -1,193 +1,245 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Onboarding 04: the oath. Flag rain stays; everything else joins the dossier system. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black"
-    android:layoutDirection="ltr"
-    android:fillViewport="true">
+    android:clipToPadding="true"
+    android:paddingBottom="@dimen/onboarding_bottom_inset"
+    android:fillViewport="true"
+    android:scrollbars="none">
 
-    <RelativeLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <com.fadcam.ui.widgets.DossierPaperView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
         <com.fadcam.ui.PalestineRainView
             android:id="@+id/palestineRainView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:alpha="0.35" />
+            android:alpha="0.22" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layoutDirection="ltr"
-            android:layout_marginTop="120dp"
-            android:paddingTop="@dimen/onboarding_nav_margin"
-            android:paddingBottom="@dimen/onboarding_nav_margin">
+            android:id="@+id/onboarding_content"
+            android:paddingStart="@dimen/onboarding_dossier_pad"
+            android:paddingEnd="@dimen/onboarding_dossier_pad"
+            android:paddingTop="20dp"
+            android:paddingBottom="0dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/onboardingPage"
+                    style="@style/ProDossierHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:text="@string/onboarding_human_page"
+                    android:textDirection="ltr" />
+
+                <TextView
+                    style="@style/ProDossierHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="8dp"
+                    android:layout_toStartOf="@id/onboardingPage"
+                    android:text="@string/onboarding_human_kicker"
+                    android:textAlignment="viewStart" />
+            </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="6dp"
+                android:background="@color/dossier_line" />
 
             <com.airbnb.lottie.LottieAnimationView
                 android:id="@+id/lottieHuman"
-                android:layout_width="180dp"
-                android:layout_height="120dp"
+                android:layout_width="160dp"
+                android:layout_height="96dp"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="16dp"
-                app:lottie_fileName="document_rules_green_checkmark.json"
+                android:layout_marginTop="16dp"
                 app:lottie_autoPlay="true"
+                app:lottie_fileName="document_rules_green_checkmark.json"
                 app:lottie_loop="true" />
 
             <TextView
                 android:id="@+id/tvHumanTitle"
+                style="@style/ProDossierTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/onboarding_human_title"
-                android:textSize="@dimen/onboarding_title_size"
-                android:textStyle="bold"
-                android:fontFamily="monospace"
-                android:textColor="@color/redPastel"
+                android:layout_marginTop="10dp"
                 android:gravity="center"
-                android:layout_marginLeft="@dimen/onboarding_margin"
-                android:layout_marginRight="@dimen/onboarding_margin"/>
+                android:text="@string/onboarding_human_title"
+                android:textSize="@dimen/onboarding_dossier_title_size" />
 
             <TextView
                 android:id="@+id/tvHumanDesc"
+                style="@style/ProDossierBody"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/onboarding_human_desc"
-                android:textSize="@dimen/onboarding_desc_size"
-                android:fontFamily="monospace"
-                android:textColor="@color/white"
+                android:layout_marginTop="8dp"
                 android:gravity="center"
-                android:layout_marginTop="@dimen/onboarding_margin"
-                android:layout_marginLeft="@dimen/onboarding_margin"
-                android:layout_marginRight="@dimen/onboarding_margin"/>
+                android:text="@string/onboarding_human_desc"
+                android:textSize="13sp" />
 
-            <!-- Custom Checkbox Row 1 -->
             <LinearLayout
                 android:id="@+id/checkbox_row_1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="@dimen/onboarding_margin"
-                android:layout_marginLeft="@dimen/onboarding_margin"
-                android:layout_marginRight="@dimen/onboarding_margin"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp"
+                android:layout_marginTop="14dp"
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
-                android:focusable="true">
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
+
+                <TextView
+                    android:layout_width="28dp"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="01"
+                    android:textColor="@color/dossier_olive_bright"
+                    android:textSize="11sp" />
 
                 <ImageView
                     android:id="@+id/checkbox_icon_1"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@drawable/placeholder_checkbox_outline"
+                    android:layout_marginEnd="12dp"
                     android:contentDescription="@string/onboarding_human_checkbox1"
-                    android:layout_marginRight="12dp"
                     android:padding="2dp"
-                    android:tint="@color/white"/>
+                    android:src="@drawable/placeholder_checkbox_outline"
+                    android:tint="@color/dossier_ink" />
 
                 <TextView
                     android:id="@+id/checkbox_label_1"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/onboarding_human_checkbox1"
-                    android:textColor="@color/white"
                     android:fontFamily="monospace"
-                    android:textSize="@dimen/onboarding_desc_size"/>
+                    android:text="@string/onboarding_human_checkbox1"
+                    android:textColor="@color/dossier_ink"
+                    android:textSize="13sp" />
             </LinearLayout>
 
-            <!-- Custom Checkbox Row 2 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/dossier_line" />
+
             <LinearLayout
                 android:id="@+id/checkbox_row_2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="12dp"
-                android:layout_marginLeft="@dimen/onboarding_margin"
-                android:layout_marginRight="@dimen/onboarding_margin"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp"
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
-                android:focusable="true">
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
+
+                <TextView
+                    android:layout_width="28dp"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="02"
+                    android:textColor="@color/dossier_olive_bright"
+                    android:textSize="11sp" />
 
                 <ImageView
                     android:id="@+id/checkbox_icon_2"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@drawable/placeholder_checkbox_outline"
+                    android:layout_marginEnd="12dp"
                     android:contentDescription="@string/onboarding_human_checkbox2"
-                    android:layout_marginRight="12dp"
                     android:padding="2dp"
-                    android:tint="@color/white"/>
+                    android:src="@drawable/placeholder_checkbox_outline"
+                    android:tint="@color/dossier_ink" />
 
                 <TextView
                     android:id="@+id/checkbox_label_2"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/onboarding_human_checkbox2"
-                    android:textColor="@color/white"
                     android:fontFamily="monospace"
-                    android:textSize="@dimen/onboarding_desc_size"/>
+                    android:text="@string/onboarding_human_checkbox2"
+                    android:textColor="@color/dossier_ink"
+                    android:textSize="13sp" />
             </LinearLayout>
 
-            <!-- Custom Checkbox Row 3 - Privacy Policy -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/dossier_line" />
+
             <LinearLayout
                 android:id="@+id/checkbox_row_3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="12dp"
-                android:layout_marginLeft="@dimen/onboarding_margin"
-                android:layout_marginRight="@dimen/onboarding_margin"
-                android:paddingTop="12dp"
-                android:paddingBottom="12dp"
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
-                android:focusable="true">
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
+
+                <TextView
+                    android:layout_width="28dp"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:text="03"
+                    android:textColor="@color/dossier_olive_bright"
+                    android:textSize="11sp" />
 
                 <ImageView
                     android:id="@+id/checkbox_icon_3"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:src="@drawable/placeholder_checkbox_outline"
+                    android:layout_marginEnd="12dp"
                     android:contentDescription="@string/onboarding_human_checkbox3"
-                    android:layout_marginRight="12dp"
                     android:padding="2dp"
-                    android:tint="@color/white"/>
+                    android:src="@drawable/placeholder_checkbox_outline"
+                    android:tint="@color/dossier_ink" />
 
                 <TextView
                     android:id="@+id/checkbox_label_3"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/onboarding_human_checkbox3"
-                    android:textColor="@color/white"
                     android:fontFamily="monospace"
-                    android:textSize="@dimen/onboarding_desc_size"
-                    android:clickable="true"
-                    android:focusable="true"/>
+                    android:text="@string/onboarding_human_checkbox3"
+                    android:textColor="@color/dossier_ink"
+                    android:textSize="13sp" />
             </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/dossier_line" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_human_continue"
+                style="@style/ProDossierButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/onboarding_human_button"
-                android:fontFamily="monospace"
-                android:textSize="@dimen/onboarding_button_text_size"
-                android:textColor="@color/white"
-                android:backgroundTint="@color/redPastel"
-                app:cornerRadius="12dp"
-                android:layout_marginTop="@dimen/onboarding_margin"
-                android:layout_marginLeft="@dimen/onboarding_nav_margin"
-                android:layout_marginRight="@dimen/onboarding_nav_margin"/>
+                android:layout_marginTop="18dp"
+                android:text="@string/onboarding_human_button" />
         </LinearLayout>
-    </RelativeLayout>
-</ScrollView> 
+    </FrameLayout>
+</ScrollView>

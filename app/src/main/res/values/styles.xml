@@ -316,4 +316,13 @@
         <item name="android:drawablePadding">8dp</item>
     </style>
 
+    <!-- Dark, edge-to-edge intro. A light DayNight theme makes some OEMs paint the
+         three-button navigation bar white when it peeks in. -->
+    <style name="Theme.FadCam.Onboarding" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
 </resources>

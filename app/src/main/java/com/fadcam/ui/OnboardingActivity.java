@@ -56,6 +56,88 @@ public class OnboardingActivity extends AppIntro {
         }
         super.onCreate(savedInstanceState);
 
+        // Edge to edge, but keep every control inside the status bar, camera cutout and
+        // navigation bar. AppIntro puts its arrows at the window edges, so the whole
+        // content root gets the inset padding once.
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        // Some OEMs ignore a transparent nav bar and paint a white scrim. Black blends with
+        // the briefing background instead.
+        getWindow().setNavigationBarColor(android.graphics.Color.BLACK);
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            getWindow().setNavigationBarDividerColor(android.graphics.Color.TRANSPARENT);
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            // Without this the system paints a contrast scrim over the transparent nav bar.
+            getWindow().setNavigationBarContrastEnforced(false);
+            getWindow().setStatusBarContrastEnforced(false);
+        }
+        androidx.core.view.WindowInsetsControllerCompat barsController =
+                androidx.core.view.WindowCompat.getInsetsController(
+                        getWindow(), getWindow().getDecorView());
+        barsController.setAppearanceLightNavigationBars(false);
+        barsController.setAppearanceLightStatusBars(false);
+        // Full-screen briefing: bars stay hidden and only peek back as transient overlays
+        // when the user swipes from an edge. This also removes the OEM's white nav scrim.
+        hideSystemBars();
+        View windowContent = findViewById(android.R.id.content);
+        windowContent.setBackgroundColor(android.graphics.Color.BLACK);
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(windowContent, (v, insets) -> {
+            androidx.core.graphics.Insets bars = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.systemBars()
+                            | androidx.core.view.WindowInsetsCompat.Type.displayCutout());
+            // The dossier grid stays full-bleed behind the status bar and cutout. Only the
+            // bottom controls need window padding; each slide pads its own header.
+            v.setPadding(0, 0, 0, bars.bottom);
+            return insets;
+        });
+
+        // AppIntro's bottom bar uses start/end constraints, so the whole window must be RTL
+        // for the arrows to swap sides. The activity config can still report LTR even when the
+        // locale is Arabic, so force the decor as well as the AppIntro root.
+        boolean windowRtl = android.text.TextUtils.getLayoutDirectionFromLocale(
+                getResources().getConfiguration().getLocales().get(0))
+                == View.LAYOUT_DIRECTION_RTL;
+        View decor = getWindow().getDecorView();
+        decor.setLayoutDirection(windowRtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+        decor.post(() -> decor.setLayoutDirection(
+                windowRtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR));
+        View appIntroRoot = findViewById(com.github.appintro.R.id.background);
+        if (appIntroRoot != null) {
+            boolean rtl = android.text.TextUtils.getLayoutDirectionFromLocale(
+                    getResources().getConfiguration().getLocales().get(0))
+                    == View.LAYOUT_DIRECTION_RTL;
+            appIntroRoot.setLayoutDirection(
+                    rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+            if (appIntroRoot instanceof androidx.constraintlayout.widget.ConstraintLayout) {
+                androidx.constraintlayout.widget.ConstraintLayout bar =
+                        (androidx.constraintlayout.widget.ConstraintLayout) appIntroRoot;
+                androidx.constraintlayout.widget.ConstraintSet set =
+                        new androidx.constraintlayout.widget.ConstraintSet();
+                set.clone(bar);
+                int backId = com.github.appintro.R.id.back;
+                int nextId = com.github.appintro.R.id.next;
+                set.clear(backId, androidx.constraintlayout.widget.ConstraintSet.START);
+                set.clear(backId, androidx.constraintlayout.widget.ConstraintSet.END);
+                set.clear(nextId, androidx.constraintlayout.widget.ConstraintSet.START);
+                set.clear(nextId, androidx.constraintlayout.widget.ConstraintSet.END);
+                set.connect(backId,
+                        rtl ? androidx.constraintlayout.widget.ConstraintSet.RIGHT
+                                : androidx.constraintlayout.widget.ConstraintSet.LEFT,
+                        androidx.constraintlayout.widget.ConstraintSet.PARENT_ID,
+                        rtl ? androidx.constraintlayout.widget.ConstraintSet.RIGHT
+                                : androidx.constraintlayout.widget.ConstraintSet.LEFT);
+                set.connect(nextId,
+                        rtl ? androidx.constraintlayout.widget.ConstraintSet.LEFT
+                                : androidx.constraintlayout.widget.ConstraintSet.RIGHT,
+                        androidx.constraintlayout.widget.ConstraintSet.PARENT_ID,
+                        rtl ? androidx.constraintlayout.widget.ConstraintSet.LEFT
+                                : androidx.constraintlayout.widget.ConstraintSet.RIGHT);
+                set.applyTo(bar);
+            }
+
+        }
+
         // Make sure we don't have duplicate slides when changing language
         // Clear any existing slides by removing them all first.
         try {
@@ -85,7 +167,7 @@ public class OnboardingActivity extends AppIntro {
 
         // Add slides in the correct sequence
         addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_intro_slide));
-        addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_language_slide));
+        addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_capabilities_slide));
         addSlide(new OnboardingPermissionsFragment());
         addSlide(new OnboardingHumanFragment());
 
@@ -110,13 +192,6 @@ public class OnboardingActivity extends AppIntro {
         // Set fade transition effect between slides
         ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
         if (viewPager != null) {
-            // Force LTR layout direction for ViewPager regardless of locale
-            // This ensures that slides always navigate left-to-right even in RTL languages
-            viewPager.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-
-            // Force RTL-aware configuration settings
-            viewPager.setTextDirection(View.TEXT_DIRECTION_LTR); // Ensure text direction is LTR regardless of locale
-
             // ViewPager2 would use viewPager.setUserInputEnabled(true);
             viewPager.setEnabled(true); // Ensure the ViewPager is enabled
 
@@ -139,32 +214,14 @@ public class OnboardingActivity extends AppIntro {
                 }
             });
 
-            // Add a post-layout action to double-check and enforce LTR direction
-            viewPager.post(() -> {
-                viewPager.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-
-                // For extra compatibility with RTL languages (like Arabic)
-                // Get current locale and enforce special handling if needed
-                java.util.Locale currentLocale = getResources().getConfiguration().getLocales().get(0);
-                if (currentLocale.toString().startsWith("ar") ||
-                        android.text.TextUtils
-                                .getLayoutDirectionFromLocale(currentLocale) == View.LAYOUT_DIRECTION_RTL) {
-
-                    // Take extra steps to ensure LTR navigation works even in Arabic
-                    viewPager.setRotationY(0); // Reset any possible RTL-induced flip
-
-                    // Force parent ViewGroups to respect LTR as well
-                    ViewGroup parent = (ViewGroup) viewPager.getParent();
-                    if (parent != null) {
-                        parent.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-                    }
-                }
-            });
         }
 
         // Initialize navigation button references
         backButton = findViewById(com.github.appintro.R.id.back);
         nextButton = findViewById(com.github.appintro.R.id.next);
+        styleNavArrow(backButton, true);
+        styleNavArrow(nextButton, false);
+        positionNavArrows();
 
         // Completely remove the Done button
         View doneButton = findViewById(com.github.appintro.R.id.done);
@@ -198,12 +255,50 @@ public class OnboardingActivity extends AppIntro {
                         super.onFragmentViewCreated(fm, f, v, savedInstanceState);
                         if (v == null)
                             return;
+                        final View slideContent = v.findViewById(R.id.onboarding_content);
+                        if (slideContent != null) {
+                            final int baseTop = slideContent.getPaddingTop();
+                            final int baseLeft = slideContent.getPaddingLeft();
+                            final int baseRight = slideContent.getPaddingRight();
+                            boolean contentRtl = android.text.TextUtils.getLayoutDirectionFromLocale(
+                                    getResources().getConfiguration().getLocales().get(0))
+                                    == View.LAYOUT_DIRECTION_RTL;
+                            slideContent.setLayoutDirection(contentRtl
+                                    ? View.LAYOUT_DIRECTION_RTL
+                                    : View.LAYOUT_DIRECTION_LTR);
+                            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
+                                    slideContent, (cv, insets) -> {
+                                        androidx.core.graphics.Insets bars = insets.getInsets(
+                                                androidx.core.view.WindowInsetsCompat.Type.systemBars()
+                                                        | androidx.core.view.WindowInsetsCompat.Type.displayCutout());
+                                        cv.setPadding(baseLeft + bars.left, baseTop + bars.top,
+                                                baseRight + bars.right, cv.getPaddingBottom());
+                                        return insets;
+                                    });
+                            androidx.core.view.ViewCompat.requestApplyInsets(slideContent);
+                        }
+                        final TextView heroTitle = v.findViewById(R.id.onboardingHeroTitle);
+                        if (heroTitle != null) {
+                            String heroText = heroTitle.getText().toString();
+                            int marker = heroText.indexOf("#1");
+                            if (marker >= 0) {
+                                android.text.SpannableString styled =
+                                        new android.text.SpannableString(heroText);
+                                styled.setSpan(new android.text.style.ForegroundColorSpan(
+                                                androidx.core.content.ContextCompat.getColor(
+                                                        OnboardingActivity.this, R.color.dossier_olive_bright)),
+                                        marker, marker + 2,
+                                        android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                heroTitle.setText(styled);
+                            }
+                        }
+                        final TextView swipeHint = v.findViewById(R.id.tvSwipeInstruction);
+                        if (swipeHint != null) {
+                            swipeHint.post(() -> startShimmerEffect(swipeHint));
+                        }
                         final android.widget.ImageView ivOnboardingAvatar = v.findViewById(R.id.ivOnboardingAvatar);
                         final TextView tvHiGreeting = v.findViewById(R.id.tvHiGreeting);
-                        final TextView descView = v.findViewById(R.id.tvOnboardingDescription);
-                        final LottieAnimationView lottieArrow = v.findViewById(R.id.lottieArrow);
-                        final TextView swipeInstruction = v.findViewById(R.id.tvSwipeInstruction);
-                        if (ivOnboardingAvatar != null && descView != null) {
+                        if (ivOnboardingAvatar != null) {
                             // ===== SLEEP STATE =====
                             ivOnboardingAvatar.setImageResource(R.drawable.toggle_off);
                             final Handler handler = new Handler(android.os.Looper.getMainLooper());
@@ -334,143 +429,7 @@ public class OnboardingActivity extends AppIntro {
                                             };
                                             tvHiGreeting.setVisibility(View.VISIBLE);
                                             handler.post(greetingCycle[0]);
-                                            // ===== TEXT ANIMATION (starts immediately, alongside greeting) =====
-                                            descView.setTypeface(android.graphics.Typeface.MONOSPACE);
-                                descView.setGravity(android.view.Gravity.START);
-                                descView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                                final String[] lines = {
-                                        getString(R.string.onboarding_intro_line1),
-                                        getString(R.string.onboarding_intro_line2),
-                                        getString(R.string.onboarding_intro_line3),
-                                        getString(R.string.onboarding_intro_line4)
-                                };
-                                final String cursorChar = "▌";
-                                final int rowFadeDuration = 220;
-                                final int rowPauseDelay = 1200;
-                                final int blinkFrameDelay = 32;
-                                final int blinkDuration = 900;
-                                final Runnable[] blinkRunnable = new Runnable[1];
-                                final float[] cursorAlpha = { 1f };
-                                final boolean[] fadingOut = { true };
-                                final int cursorColor = 0xFFE43C3C;
-                                descView.setText("");
-                                // Define startBlinkingCursor before RowFadeAnimator so it is in scope
-                                final Runnable startBlinkingCursor = new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        blinkRunnable[0] = new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                if (fadingOut[0]) {
-                                                    cursorAlpha[0] -= (float) blinkFrameDelay / (blinkDuration / 2f);
-                                                    if (cursorAlpha[0] <= 0f) {
-                                                        cursorAlpha[0] = 0f;
-                                                        fadingOut[0] = false;
-                                                    }
-                                                } else {
-                                                    cursorAlpha[0] += (float) blinkFrameDelay / (blinkDuration / 2f);
-                                                    if (cursorAlpha[0] >= 1f) {
-                                                        cursorAlpha[0] = 1f;
-                                                        fadingOut[0] = true;
-                                                    }
-                                                }
-                                                String finalText = String.join("\n", lines);
-                                                android.text.SpannableString span = new android.text.SpannableString(
-                                                        finalText + cursorChar);
-                                                span.setSpan(new AlphaSpan(1f), 0, finalText.length(),
-                                                        android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                                span.setSpan(new android.text.style.ForegroundColorSpan(cursorColor),
-                                                        finalText.length(), finalText.length() + 1,
-                                                        android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                                span.setSpan(new AlphaSpan(cursorAlpha[0]), finalText.length(),
-                                                        finalText.length() + 1,
-                                                        android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                                descView.setText(span);
-                                                handler.postDelayed(this, blinkFrameDelay);
-                                            }
-                                        };
-                                        handler.post(blinkRunnable[0]);
-                                    }
-                                };
-                                class RowFadeAnimator {
-                                    private final Runnable startBlinkingCursor;
-                                    int rowIdx = 0;
-                                    StringBuilder shownText = new StringBuilder();
-
-                                    RowFadeAnimator(Runnable startBlinkingCursor) {
-                                        this.startBlinkingCursor = startBlinkingCursor;
-                                    }
-
-                                    void start() {
-                                        shownText.append(lines[0]);
-                                        updateTextWithCursor();
-                                        rowIdx = 1;
-                                        handler.postDelayed(this::animateNextRow, rowPauseDelay);
-                                    }
-
-                                    void animateNextRow() {
-                                        if (rowIdx >= lines.length) {
-                                            // Start blinking cursor after all lines
-                                            startBlinkingCursor.run();
-                                            return;
-                                        }
-                                        shownText.append("\n").append(lines[rowIdx]);
-                                        descView.setAlpha(0f);
-                                        updateTextWithCursor();
-                                        descView.animate().alpha(1f).setDuration(rowFadeDuration).withEndAction(() -> {
-                                            // As the last line animates in, fade in swipe instruction and arrow
-                                            if (rowIdx == lines.length - 1 && swipeInstruction != null
-                                                    && lottieArrow != null) {
-                                                // Show arrow first
-                                                lottieArrow.setVisibility(View.VISIBLE);
-                                                lottieArrow.setSpeed(0.5f);
-                                                lottieArrow.setRepeatCount(0);
-                                                lottieArrow.playAnimation();
-
-                                                // Create a center-outward fade effect for the text
-                                                handler.postDelayed(() -> {
-                                                    // Check if the view is still attached before proceeding
-                                                    if (swipeInstruction == null
-                                                            || !swipeInstruction.isAttachedToWindow()) {
-                                                        return; // Skip animation if view is detached
-                                                    }
-
-                                                    // Simple fade-in without reveal animation (which was causing the
-                                                    // crash)
-                                                    swipeInstruction.setVisibility(View.VISIBLE);
-                                                    swipeInstruction.setAlpha(0f);
-
-                                                    // First fade in the entire text (base layer)
-                                                    swipeInstruction.animate()
-                                                            .alpha(1f)
-                                                            .setDuration(1200)
-                                                            .setInterpolator(
-                                                                    new android.view.animation.AccelerateDecelerateInterpolator())
-                                                            .withEndAction(() -> {
-                                                                // Start the shimmer effect after fade-in completes
-                                                                if (swipeInstruction.isAttachedToWindow()) {
-                                                                    startShimmerEffect(swipeInstruction);
-                                                                }
-                                                            })
-                                                            .start();
-                                                }, 700); // Delay before animation
-                                            }
-                                            rowIdx++;
-                                            handler.postDelayed(this::animateNextRow, rowPauseDelay);
-                                        }).start();
-                                    }
-
-                                    void updateTextWithCursor() {
-                                        String text = shownText.toString() + cursorChar;
-                                        android.text.SpannableString span = new android.text.SpannableString(text);
-                                        span.setSpan(new android.text.style.ForegroundColorSpan(cursorColor),
-                                                text.length() - 1, text.length(),
-                                                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                        descView.setText(span);
-                                    }
-                                }
-                                final RowFadeAnimator rowAnimator = new RowFadeAnimator(startBlinkingCursor);
-                                            handler.postDelayed(rowAnimator::start, 200);
+                                            
                                         }; // closes afterWake
                                         // Play wake AVD; call afterWake on completion
                                         if (wakeDrawable instanceof android.graphics.drawable.Animatable2) {
@@ -492,13 +451,72 @@ public class OnboardingActivity extends AppIntro {
                                     });
                             }, 600); // sleep display duration
                         }
-                        // Slide 2 logic (language selection)
-                        MaterialButton languageChooseButton = v.findViewById(R.id.language_choose_button);
-                        if (languageChooseButton != null) {
-                            setupOnboardingLanguageDialog(languageChooseButton);
-                        }
                     }
                 }, true);
+    }
+
+    /** Place the arrows explicitly; AppIntro's RTL constraints are not reliable here. */
+    private void positionNavArrows() {
+        if (backButton == null || nextButton == null) return;
+        View parent = (View) backButton.getParent();
+        if (parent == null) return;
+        parent.postDelayed(() -> {
+            int width = parent.getWidth();
+            if (width <= 0) return;
+            boolean rtl = android.text.TextUtils.getLayoutDirectionFromLocale(
+                    getResources().getConfiguration().getLocales().get(0))
+                    == View.LAYOUT_DIRECTION_RTL;
+            float margin = 20 * getResources().getDisplayMetrics().density;
+            backButton.setX(rtl ? width - backButton.getWidth() - margin : margin);
+            nextButton.setX(rtl ? margin : width - nextButton.getWidth() - margin);
+        }, 150);
+    }
+
+    /** Themed dossier arrows instead of AppIntro's generic chevrons. */
+    private void styleNavArrow(View button, boolean back) {
+        if (!(button instanceof android.widget.ImageView)) return;
+        android.widget.ImageView arrow = (android.widget.ImageView) button;
+        arrow.setBackgroundResource(R.drawable.bg_onboarding_arrow);
+        // The library's back ImageButton ships with rotation="180" and can mirror with
+        // scaleX; reset both before choosing our own glyph.
+        arrow.setRotation(0f);
+        arrow.setScaleX(1f);
+        int pad = Math.round(12 * getResources().getDisplayMetrics().density);
+        arrow.setPadding(pad, pad, pad, pad);
+        boolean rtl = android.text.TextUtils.getLayoutDirectionFromLocale(
+                getResources().getConfiguration().getLocales().get(0))
+                == View.LAYOUT_DIRECTION_RTL;
+        // LTR: back points left, next right. RTL mirrors both.
+        boolean pointsLeft = back != rtl;
+        int glyph = pointsLeft
+                ? R.drawable.ic_onboarding_chevron_left
+                : R.drawable.ic_onboarding_chevron;
+        arrow.setImageResource(glyph);
+        // AppIntro flips both arrows with scaleX(-1) when it thinks the layout is RTL,
+        // sometimes after this method runs. Reset it once layout settles.
+        arrow.post(() -> {
+            arrow.setRotation(0f);
+            arrow.setScaleX(1f);
+            arrow.setImageResource(glyph);
+        });
+    }
+
+    private void hideSystemBars() {
+        getWindow().setNavigationBarColor(android.graphics.Color.BLACK);
+        androidx.core.view.WindowInsetsControllerCompat controller =
+                androidx.core.view.WindowCompat.getInsetsController(
+                        getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightNavigationBars(false);
+        controller.setAppearanceLightStatusBars(false);
+        controller.setSystemBarsBehavior(
+                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) hideSystemBars();
     }
 
     // Method to update navigation buttons based on current position
@@ -518,6 +536,10 @@ public class OnboardingActivity extends AppIntro {
         if (nextButton != null) {
             nextButton.setVisibility(isLastSlide ? View.INVISIBLE : View.VISIBLE);
         }
+        // AppIntro re-applies its own arrow images/transforms on page changes.
+        styleNavArrow(backButton, true);
+        styleNavArrow(nextButton, false);
+        positionNavArrows();
     }
 
     // Implement a custom page transformer for fade transitions

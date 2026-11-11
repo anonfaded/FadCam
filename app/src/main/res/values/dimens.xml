@@ -197,4 +197,8 @@
     <dimen name="pro_close_margin">8dp</dimen>
     <dimen name="pro_close_padding">10dp</dimen>
     <dimen name="pro_sticky_header_gap">8dp</dimen>
+    <dimen name="onboarding_dossier_pad">20dp</dimen>
+    <dimen name="onboarding_bottom_inset">96dp</dimen>
+    <dimen name="onboarding_human_top">72dp</dimen>
+    <dimen name="onboarding_human_icon">110dp</dimen>
 </resources>

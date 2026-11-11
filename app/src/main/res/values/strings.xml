@@ -1513,8 +1513,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="choose_language">Choose Language</string>
     <string name="language_change_later_note">You can change this later in Settings.</string>
 
-    <string name="permissions_required">Permissions Required</string>
-    <string name="permissions_description">FadCam needs access to your camera, microphone, and storage to record and save videos.</string>
+    <string name="permissions_required">A few permissions</string>
+    <string name="permissions_description">FadCam needs the camera, microphone and storage to record and save videos.</string>
     <string name="grant_permissions">Grant Permissions</string>
     <string name="permissions_note">You must grant all permissions to continue.</string>
     <string name="permissions_granted">All permissions granted!</string>
@@ -1523,10 +1523,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <string name="disable_battery_optimization">Disable Battery Optimization</string>
 
-    <string name="onboarding_human_title">Verify if you are a human</string>
-    <string name="onboarding_human_desc">Hmmmm... alright. These rules are non-negotiable. If you can\'t agree, please uninstall FadCam right now.</string>
-    <string name="onboarding_human_checkbox1">I won\'t use FadCam to break any laws, invade anyone\'s privacy, or be a creep. The dev\'s out of the picture if I mess up. (That\'s on me.)</string>
-    <string name="onboarding_human_checkbox2">I already love FadCam before even using it. (Not optional)</string>
+    <string name="onboarding_human_title">The house rules</string>
+    <string name="onboarding_human_desc">Three promises, and you\'re in.</string>
+    <string name="onboarding_human_checkbox1">I\'ll use FadCam legally and respect other people\'s privacy. If I misuse it, that\'s on me.</string>
+    <string name="onboarding_human_checkbox2">I\'m here for a private, ad-free camera. (Not optional)</string>
     <string name="onboarding_human_checkbox3">I agree to the Privacy Policy</string>
     <string name="onboarding_human_button">Let me in!</string>
 
@@ -1848,7 +1848,53 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_minimal" translatable="false">FadCam</string>
 
     <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Swipe right to continue</string>
+
+
+    <!-- Onboarding slide 02 mini apps -->
+
+    <string name="onboarding_cred_open">Open source</string>
+    <string name="onboarding_cred_ads">No ads</string>
+    <string name="onboarding_cred_track">No trackers</string>
+    <string name="onboarding_mini_label">BUILT-IN MINI APPS</string>
+    <string name="onboarding_mini_qr">QR scanner</string>
+    <string name="onboarding_mini_torch">Torch</string>
+    <string name="onboarding_mini_compass">Compass</string>
+    <string name="onboarding_mini_sound">Sound meter</string>
+    <string name="onboarding_mini_speed">Speedometer</string>
+    <string name="onboarding_mini_pedometer">Pedometer</string>
+    <string name="onboarding_mini_clinometer">Clinometer</string>
+    <string name="onboarding_mini_metal">Metal detector</string>
+    <string name="onboarding_mini_more_chip">+ MORE</string>
+    <string name="onboarding_mini_more">MORE SOON</string>
+    <string name="onboarding_mini_more_list">Parking marker · Sensor dashboard · QR generator</string>
+    <string name="onboarding_permissions_kicker">ACCESS // REQUIRED</string>
+    <string name="onboarding_permissions_page">03 / 04</string>
+    <string name="onboarding_human_kicker">OATH // RULES OF USE</string>
+    <string name="onboarding_human_page">04 / 04</string>
+
+    <!-- Dossier onboarding (slides 01-02) -->
+    <string name="onboarding_dossier_kicker">FADCAM // PRIVATE RECORDER</string>
+    <string name="onboarding_dossier_page">01 / 04</string>
+    <string name="onboarding_dossier_title">The #1 background video recorder.</string>
+    <string name="onboarding_dossier_lede">Powered by FadCam\'s Hybrid MP4 pipeline. Recordings stay playable through crashes, dead batteries and sudden shutdowns — right up to the last second.</string>
+    <string name="onboarding_dossier_meta">OPEN SOURCE · NO ADS · NO TRACKING</string>
+    <string name="onboarding_capabilities_kicker">CAPABILITIES // ONE APP</string>
+    <string name="onboarding_capabilities_page">02 / 04</string>
+    <string name="onboarding_capabilities_title">One app.\nA whole toolbox.</string>
+    <string name="onboarding_capabilities_lede">FadCam does the job of a drawer full of apps — without the trackers or ads.</string>
+    <string name="onboarding_cap_1_title">Background video</string>
+    <string name="onboarding_cap_1_desc">Records with the screen off.</string>
+    <string name="onboarding_cap_2_title">Screen recording</string>
+    <string name="onboarding_cap_2_desc">Captures the screen and its sound.</string>
+    <string name="onboarding_cap_3_title">Video editor</string>
+    <string name="onboarding_cap_3_desc">Trim and export without another app.</string>
+    <string name="onboarding_cap_4_title">Live streaming</string>
+    <string name="onboarding_cap_4_desc">Stream your camera to a private page.</string>
+    <string name="onboarding_cap_5_title">Remote control</string>
+    <string name="onboarding_cap_5_desc">Control another phone\'s camera.</string>
+    <string name="onboarding_capabilities_footer">NO TRACKERS. NO ADS. NO ACCOUNTS.</string>
+
+    <string name="onboarding_swipe_instruction">Swipe to continue</string>
     <string name="onboarding_select_language">Select your preferred app language.</string>
     <string name="onboarding_camera">Camera</string>
     <string name="onboarding_microphone">Microphone</string>

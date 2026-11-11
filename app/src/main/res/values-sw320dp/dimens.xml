@@ -11,4 +11,9 @@
     <!-- Home screen sizes — full/normal values for phones >= 320dp smallestWidth.
          Mirrors the exact numbers used before the dimens refactor (no visual change).
          Small phones (< 320dp) get the compact set from values/dimens.xml. -->
+    <dimen name="onboarding_dossier_pad">16dp</dimen>
+    <dimen name="onboarding_dossier_title_size">26sp</dimen>
+    <dimen name="onboarding_bottom_inset">96dp</dimen>
+    <dimen name="onboarding_human_top">12dp</dimen>
+    <dimen name="onboarding_human_icon">88dp</dimen>
 </resources> 
