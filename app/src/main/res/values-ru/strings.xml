@@ -3673,4 +3673,26 @@ FadCam использует фрагментированный формат MP4 
     <string name="pro_showcase_collapse_desc">Выйти из полноэкранного режима</string>
     <string name="pro_showcase_phone_desc">Макет устройства FadSec Lab. На экране три приложения Pro. Потяните в сторону, чтобы повернуть телефон.</string>
     <string name="pro_showcase_privacy_mark">Приватность в дизайне</string>
+    <string name="pro_showcase_notes_hint">Введите текст, чтобы добавить заметку</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Влажность</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Ветер</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Перезапустить</string>
+    <string name="pro_showcase_torch">Фонарик</string>
+    <string name="pro_showcase_access_title">Камера и микрофон</string>
+    <string name="pro_showcase_access_body">Приложение «Погода» использует камеру и микрофон в этом предпросмотре. Это демонстрация незаметных уведомлений FadCam — на самом деле ничего не записывается.</string>
+    <string name="pro_showcase_access_ok">Понятно</string>
+    <string name="pro_showcase_shutting_down">Завершение работы…</string>
+    <string name="pro_showcase_starting">Запуск</string>
+    <string name="pro_showcase_power_menu_title">Перезапустить устройство?</string>
+    <string name="pro_showcase_power_menu_body">Это перезапустит устройство предпросмотра.</string>
+    <string name="pro_showcase_power_menu_cancel">Отмена</string>
+    <string name="pro_showcase_recents_hint">Нажмите, чтобы открыть</string>
+    <string name="pro_showcase_recents_empty">Нет недавних приложений</string>
+    <string name="pro_showcase_fullscreen_hint">Проведите, чтобы повернуть · Нажмите на приложение</string>
+    <string name="pro_showcase_weather_line">Солнечно · 24°</string>
+    <string name="pro_showcase_notif_now">сейчас</string>
+    <string name="pro_showcase_swipe_unlock">Смахните вверх, чтобы разблокировать</string>
 </resources>

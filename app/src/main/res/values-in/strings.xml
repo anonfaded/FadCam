@@ -3261,4 +3261,26 @@ Milikmu selamanya.</string>
     <string name="pro_showcase_collapse_desc">Keluar dari layar penuh</string>
     <string name="pro_showcase_phone_desc">Mockup perangkat FadSec Lab. Layar menampilkan tiga aplikasi Pro. Geser ke samping untuk memutar ponsel.</string>
     <string name="pro_showcase_privacy_mark">Privasi sejak awal</string>
+    <string name="pro_showcase_notes_hint">Ketik untuk menambah catatan</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Kelembapan</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Angin</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Mulai ulang</string>
+    <string name="pro_showcase_torch">Senter</string>
+    <string name="pro_showcase_access_title">Kamera &amp; Mikrofon</string>
+    <string name="pro_showcase_access_body">Aplikasi Cuaca menggunakan kamera dan mikrofon Anda dalam pratinjau ini. Ini adalah demo notifikasi senyap FadCam — tidak ada yang benar-benar direkam.</string>
+    <string name="pro_showcase_access_ok">Mengerti</string>
+    <string name="pro_showcase_shutting_down">Mematikan…</string>
+    <string name="pro_showcase_starting">Memulai</string>
+    <string name="pro_showcase_power_menu_title">Mulai ulang perangkat?</string>
+    <string name="pro_showcase_power_menu_body">Ini akan memulai ulang perangkat pratinjau.</string>
+    <string name="pro_showcase_power_menu_cancel">Batal</string>
+    <string name="pro_showcase_recents_hint">Ketuk untuk membuka lagi</string>
+    <string name="pro_showcase_recents_empty">Tidak ada aplikasi terbaru</string>
+    <string name="pro_showcase_fullscreen_hint">Seret untuk memutar · Ketuk aplikasi</string>
+    <string name="pro_showcase_weather_line">Cerah · 24°</string>
+    <string name="pro_showcase_notif_now">sekarang</string>
+    <string name="pro_showcase_swipe_unlock">Geser ke atas untuk membuka kunci</string>
 </resources>

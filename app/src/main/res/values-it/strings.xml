@@ -2986,4 +2986,26 @@ Tue per sempre.</string>
     <string name="pro_showcase_collapse_desc">Esci dallo schermo intero</string>
     <string name="pro_showcase_phone_desc">Modello del dispositivo FadSec Lab. Lo schermo mostra le tre app Pro. Trascina di lato per ruotare il telefono.</string>
     <string name="pro_showcase_privacy_mark">Privacy per design</string>
+    <string name="pro_showcase_notes_hint">Digita per aggiungere una nota</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Umidità</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Vento</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Riavvia</string>
+    <string name="pro_showcase_torch">Torcia</string>
+    <string name="pro_showcase_access_title">Fotocamera e microfono</string>
+    <string name="pro_showcase_access_body">L\'app Meteo sta usando fotocamera e microfono in questa anteprima. È una demo delle notifiche discrete di FadCam: non viene registrato nulla.</string>
+    <string name="pro_showcase_access_ok">Ho capito</string>
+    <string name="pro_showcase_shutting_down">Spegnimento…</string>
+    <string name="pro_showcase_starting">Avvio</string>
+    <string name="pro_showcase_power_menu_title">Riavviare il dispositivo?</string>
+    <string name="pro_showcase_power_menu_body">Questo riavvia il dispositivo di anteprima.</string>
+    <string name="pro_showcase_power_menu_cancel">Annulla</string>
+    <string name="pro_showcase_recents_hint">Tocca per riaprire</string>
+    <string name="pro_showcase_recents_empty">Nessuna app recente</string>
+    <string name="pro_showcase_fullscreen_hint">Trascina per ruotare · Tocca un\'app</string>
+    <string name="pro_showcase_weather_line">Soleggiato · 24°</string>
+    <string name="pro_showcase_notif_now">ora</string>
+    <string name="pro_showcase_swipe_unlock">Scorri verso l\'alto per sbloccare</string>
 </resources>

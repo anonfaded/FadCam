@@ -3002,4 +3002,26 @@ Igavesti sinu.</string>
     <string name="pro_showcase_collapse_desc">Välju täisekraanilt</string>
     <string name="pro_showcase_phone_desc">FadSec Labi seadme makett. Ekraanil on kolm Pro rakendust. Pööramiseks lohista küljele.</string>
     <string name="pro_showcase_privacy_mark">Privaatsus disainis</string>
+    <string name="pro_showcase_notes_hint">Märkuse lisamiseks kirjuta</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Niiskus</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Tuul</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Taaskäivita</string>
+    <string name="pro_showcase_torch">Taskulamp</string>
+    <string name="pro_showcase_access_title">Kaamera ja mikrofon</string>
+    <string name="pro_showcase_access_body">Ilmaäpp kasutab selles eelvaates kaamerat ja mikrofoni. See on FadCami märkamatu teavituse tootedemo – midagi ei salvestata.</string>
+    <string name="pro_showcase_access_ok">Selge</string>
+    <string name="pro_showcase_shutting_down">Lülitan välja…</string>
+    <string name="pro_showcase_starting">Käivitan</string>
+    <string name="pro_showcase_power_menu_title">Taaskäivitada seade?</string>
+    <string name="pro_showcase_power_menu_body">See taaskäivitab eelvaate seadme.</string>
+    <string name="pro_showcase_power_menu_cancel">Tühista</string>
+    <string name="pro_showcase_recents_hint">Uuesti avamiseks puuduta</string>
+    <string name="pro_showcase_recents_empty">Viimaseid äppe pole</string>
+    <string name="pro_showcase_fullscreen_hint">Pööramiseks lohista · Äpi avamiseks puuduta</string>
+    <string name="pro_showcase_weather_line">Päikeseline · 24°</string>
+    <string name="pro_showcase_notif_now">praegu</string>
+    <string name="pro_showcase_swipe_unlock">Avamiseks pühkige üles</string>
 </resources>

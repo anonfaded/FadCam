@@ -2944,4 +2944,26 @@ Für immer dein.</string>
     <string name="pro_showcase_collapse_desc">Vollbild verlassen</string>
     <string name="pro_showcase_phone_desc">FadSec-Lab-Gerätemodell. Der Bildschirm zeigt die drei Pro-Apps. Ziehe seitwärts, um das Telefon zu drehen.</string>
     <string name="pro_showcase_privacy_mark">Privat gestaltet</string>
+    <string name="pro_showcase_notes_hint">Tippen, um eine Notiz hinzuzufügen</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Luftfeuchtigkeit</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Wind</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Neu starten</string>
+    <string name="pro_showcase_torch">Taschenlampe</string>
+    <string name="pro_showcase_access_title">Kamera &amp; Mikrofon</string>
+    <string name="pro_showcase_access_body">Die Wetter-App verwendet in dieser Vorschau Kamera und Mikrofon. Das ist eine Produktdemo von FadCams unauffälligen Benachrichtigungen – es wird nichts aufgezeichnet.</string>
+    <string name="pro_showcase_access_ok">Verstanden</string>
+    <string name="pro_showcase_shutting_down">Wird heruntergefahren…</string>
+    <string name="pro_showcase_starting">Wird gestartet</string>
+    <string name="pro_showcase_power_menu_title">Gerät neu starten?</string>
+    <string name="pro_showcase_power_menu_body">Dadurch wird das Vorschau-Gerät neu gestartet.</string>
+    <string name="pro_showcase_power_menu_cancel">Abbrechen</string>
+    <string name="pro_showcase_recents_hint">Zum Öffnen tippen</string>
+    <string name="pro_showcase_recents_empty">Keine zuletzt verwendeten Apps</string>
+    <string name="pro_showcase_fullscreen_hint">Ziehen zum Drehen · App antippen</string>
+    <string name="pro_showcase_weather_line">Sonnig · 24°</string>
+    <string name="pro_showcase_notif_now">jetzt</string>
+    <string name="pro_showcase_swipe_unlock">Nach oben wischen zum Entsperren</string>
 </resources>

@@ -4917,4 +4917,26 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <string name="pro_showcase_collapse_desc">退出全屏</string>
     <string name="pro_showcase_phone_desc">FadSec Lab 设备模型。屏幕显示三款 Pro 应用。向侧面拖动可旋转手机。</string>
     <string name="pro_showcase_privacy_mark">隐私源于设计</string>
+    <string name="pro_showcase_notes_hint">输入以添加备注</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">湿度</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">风力</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">重启</string>
+    <string name="pro_showcase_torch">手电筒</string>
+    <string name="pro_showcase_access_title">摄像头和麦克风</string>
+    <string name="pro_showcase_access_body">天气应用在此预览中正在使用你的摄像头和麦克风。这是 FadCam 隐蔽通知的产品演示——实际上不会录制任何内容。</string>
+    <string name="pro_showcase_access_ok">知道了</string>
+    <string name="pro_showcase_shutting_down">正在关机…</string>
+    <string name="pro_showcase_starting">正在启动</string>
+    <string name="pro_showcase_power_menu_title">重启设备？</string>
+    <string name="pro_showcase_power_menu_body">这将重启预览设备。</string>
+    <string name="pro_showcase_power_menu_cancel">取消</string>
+    <string name="pro_showcase_recents_hint">点按重新打开</string>
+    <string name="pro_showcase_recents_empty">没有最近的应用</string>
+    <string name="pro_showcase_fullscreen_hint">拖动旋转 · 点按应用</string>
+    <string name="pro_showcase_weather_line">晴 · 24°</string>
+    <string name="pro_showcase_notif_now">刚刚</string>
+    <string name="pro_showcase_swipe_unlock">上滑解锁</string>
 </resources>

@@ -4659,4 +4659,26 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_showcase_collapse_desc">Quitter le plein écran</string>
     <string name="pro_showcase_phone_desc">Maquette d\'appareil FadSec Lab. L\'écran montre les trois applis Pro. Glissez sur le côté pour tourner le téléphone.</string>
     <string name="pro_showcase_privacy_mark">Confidentiel par conception</string>
+    <string name="pro_showcase_notes_hint">Saisissez pour ajouter une note</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Humidité</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Vent</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Redémarrer</string>
+    <string name="pro_showcase_torch">Lampe torche</string>
+    <string name="pro_showcase_access_title">Caméra et micro</string>
+    <string name="pro_showcase_access_body">L\'app Météo utilise votre caméra et votre micro dans cet aperçu. C\'est une démo des notifications discrètes de FadCam — rien n\'est réellement enregistré.</string>
+    <string name="pro_showcase_access_ok">Compris</string>
+    <string name="pro_showcase_shutting_down">Arrêt en cours…</string>
+    <string name="pro_showcase_starting">Démarrage</string>
+    <string name="pro_showcase_power_menu_title">Redémarrer l\'appareil ?</string>
+    <string name="pro_showcase_power_menu_body">Cela redémarre l\'appareil d\'aperçu.</string>
+    <string name="pro_showcase_power_menu_cancel">Annuler</string>
+    <string name="pro_showcase_recents_hint">Touchez pour rouvrir</string>
+    <string name="pro_showcase_recents_empty">Aucune appli récente</string>
+    <string name="pro_showcase_fullscreen_hint">Faites glisser pour tourner · Touchez une appli</string>
+    <string name="pro_showcase_weather_line">Ensoleillé · 24°</string>
+    <string name="pro_showcase_notif_now">maintenant</string>
+    <string name="pro_showcase_swipe_unlock">Balayez vers le haut pour déverrouiller</string>
 </resources>

@@ -3107,4 +3107,26 @@ Tuyas para siempre.</string>
     <string name="pro_showcase_collapse_desc">Salir de pantalla completa</string>
     <string name="pro_showcase_phone_desc">Maqueta del dispositivo FadSec Lab. La pantalla muestra las tres apps Pro. Arrastra de lado para girar el teléfono.</string>
     <string name="pro_showcase_privacy_mark">Privacidad por diseño</string>
+    <string name="pro_showcase_notes_hint">Escribe para añadir una nota</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Humedad</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Viento</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Reiniciar</string>
+    <string name="pro_showcase_torch">Linterna</string>
+    <string name="pro_showcase_access_title">Cámara y micrófono</string>
+    <string name="pro_showcase_access_body">La app del tiempo está usando tu cámara y micrófono en esta vista previa. Es una demo de las notificaciones discretas de FadCam: no se graba nada.</string>
+    <string name="pro_showcase_access_ok">Entendido</string>
+    <string name="pro_showcase_shutting_down">Apagando…</string>
+    <string name="pro_showcase_starting">Iniciando</string>
+    <string name="pro_showcase_power_menu_title">¿Reiniciar dispositivo?</string>
+    <string name="pro_showcase_power_menu_body">Esto reinicia el dispositivo de vista previa.</string>
+    <string name="pro_showcase_power_menu_cancel">Cancelar</string>
+    <string name="pro_showcase_recents_hint">Toca para reabrir</string>
+    <string name="pro_showcase_recents_empty">No hay apps recientes</string>
+    <string name="pro_showcase_fullscreen_hint">Arrastra para girar · Toca una app</string>
+    <string name="pro_showcase_weather_line">Soleado · 24°</string>
+    <string name="pro_showcase_notif_now">ahora</string>
+    <string name="pro_showcase_swipe_unlock">Desliza hacia arriba para desbloquear</string>
 </resources>
