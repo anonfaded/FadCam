@@ -39,6 +39,26 @@ After CONTINUE, a short follow-up card appears when the user comes back to Home.
 
 There is no "never show again" button. Buying Pro is the only permanent way to stop it.
 
+## Copy pools
+
+The card and notification copy are split in two, because the first reminder must not say
+"one week later" before a week has actually passed:
+
+- **Intro** (`pro_reminder_intro_title` / `pro_reminder_intro_subtitle`) — `completed_at == 0`.
+  One variation. No mention of coming back, waiting, a promise, or a week.
+- **Return** (`pro_reminder_title_1..6` / `subtitle_1..6`, notifications `1..4`) —
+  `completed_at > 0`, i.e. the user pressed CONTINUE at least once. Only here is "one week
+  later" true by construction, since the next due date is `completed_at + 7 days`.
+
+Notifications 1–3 read neutrally and are reused for the first cycle; notification 4
+("Guess who's back") is return-only. If dedicated first-cycle notification copy is added
+later, put it in `INTRO_NOTIFICATION_*`.
+
+Selection is a single check on `completed_at`; do not rely on array order. Reinstall, cleared
+data and abandoned cards all keep `completed_at` at zero, so they stay on intro copy. The
+first CONTINUE resets the rotation cursor so the return pool starts at its first variation.
+Design mode previews the intro card and all six return cards in order.
+
 ## Design mode (debug builds only)
 
 Debug builds show the reminder card on every safe Home visit so the design can be worked on.

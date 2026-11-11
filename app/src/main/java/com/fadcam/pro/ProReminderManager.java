@@ -48,7 +48,6 @@ public final class ProReminderManager {
     private static final long CLAIM_TTL_MS = TimeUnit.MINUTES.toMillis(10);
 
     public static final int COPY_COUNT = 6;
-    public static final int NOTIFICATION_COPY_COUNT = 4;
     public static final String EXTRA_FROM_NOTIFICATION =
             "com.fadcam.pro.extra.PRO_REMINDER_NOTIFICATION";
     /** Set on the Home intent created when Back leaves a notification-launched Pro screen. */
@@ -73,7 +72,18 @@ public final class ProReminderManager {
     private static final Object LOCK = new Object();
     private static boolean processInitialized = false;
 
-    private static final int[] DIALOG_TITLES = {
+    /**
+     * First cycle only. Must not promise a return visit: at this point the user has never
+     * seen the card, let alone pressed CONTINUE.
+     */
+    private static final int INTRO_TITLE = R.string.pro_reminder_intro_title;
+    private static final int INTRO_SUBTITLE = R.string.pro_reminder_intro_subtitle;
+    /**
+     * Only shown after at least one CONTINUE, so "one week later" is literally true. Never
+     * move an intro string in here, and never move a return string out: the first card a user
+     * ever sees must not promise a return visit that has not happened yet.
+     */
+    private static final int[] RETURN_TITLES = {
             R.string.pro_reminder_title_1,
             R.string.pro_reminder_title_2,
             R.string.pro_reminder_title_3,
@@ -81,7 +91,7 @@ public final class ProReminderManager {
             R.string.pro_reminder_title_5,
             R.string.pro_reminder_title_6
     };
-    private static final int[] DIALOG_SUBTITLES = {
+    private static final int[] RETURN_SUBTITLES = {
             R.string.pro_reminder_subtitle_1,
             R.string.pro_reminder_subtitle_2,
             R.string.pro_reminder_subtitle_3,
@@ -89,13 +99,27 @@ public final class ProReminderManager {
             R.string.pro_reminder_subtitle_5,
             R.string.pro_reminder_subtitle_6
     };
-    private static final int[] NOTIFICATION_TITLES = {
+    /**
+     * The first cycle has no dedicated notification copy; 1-3 read neutrally and are reused.
+     * The fourth ("Guess who's back") is return-only.
+     */
+    private static final int[] INTRO_NOTIFICATION_TITLES = {
+            R.string.pro_reminder_notification_title_1,
+            R.string.pro_reminder_notification_title_2,
+            R.string.pro_reminder_notification_title_3
+    };
+    private static final int[] INTRO_NOTIFICATION_BODIES = {
+            R.string.pro_reminder_notification_body_1,
+            R.string.pro_reminder_notification_body_2,
+            R.string.pro_reminder_notification_body_3
+    };
+    private static final int[] RETURN_NOTIFICATION_TITLES = {
             R.string.pro_reminder_notification_title_1,
             R.string.pro_reminder_notification_title_2,
             R.string.pro_reminder_notification_title_3,
             R.string.pro_reminder_notification_title_4
     };
-    private static final int[] NOTIFICATION_BODIES = {
+    private static final int[] RETURN_NOTIFICATION_BODIES = {
             R.string.pro_reminder_notification_body_1,
             R.string.pro_reminder_notification_body_2,
             R.string.pro_reminder_notification_body_3,
@@ -184,8 +208,9 @@ public final class ProReminderManager {
             if (!shouldShowDialog(context)) return -1;
             SharedPreferences p = prefs(context);
             boolean design = isDesignMode(context);
+            int designCopyCount = 1 + RETURN_TITLES.length;
             int copy = design
-                    ? Math.floorMod(p.getInt(K_DESIGN_COPY, 0), COPY_COUNT)
+                    ? Math.floorMod(p.getInt(K_DESIGN_COPY, 0), designCopyCount)
                     : Math.floorMod(p.getInt(K_COPY_INDEX, 0), COPY_COUNT);
             long now = System.currentTimeMillis();
             boolean saved = p.edit()
@@ -194,7 +219,7 @@ public final class ProReminderManager {
                     .commit();
             if (!saved) return -1;
             if (design) {
-                p.edit().putInt(K_DESIGN_COPY, (copy + 1) % COPY_COUNT).apply();
+                p.edit().putInt(K_DESIGN_COPY, (copy + 1) % designCopyCount).apply();
             }
             return copy;
         }
@@ -222,11 +247,16 @@ public final class ProReminderManager {
                     .putBoolean(K_AFTER_PRO_PENDING, true)
                     .putLong(K_PRO_OPENED_AT, now);
             if (!design) {
+                // The first CONTINUE switches from intro copy to return copy. Start that pool
+                // at its first variation instead of carrying the intro cursor over.
+                boolean firstCompletion = p.getLong(K_COMPLETED_AT, 0L) <= 0L;
                 int currentCopy = Math.floorMod(p.getInt(K_COPY_INDEX, 0), COPY_COUNT);
                 int claimedCopy = p.getInt(K_CLAIMED_COPY, -1);
-                int nextCopy = claimedCopy >= 0
-                        ? (claimedCopy + 1) % COPY_COUNT
-                        : (currentCopy + 1) % COPY_COUNT;
+                int nextCopy = firstCompletion
+                        ? 0
+                        : (claimedCopy >= 0
+                                ? (claimedCopy + 1) % COPY_COUNT
+                                : (currentCopy + 1) % COPY_COUNT);
                 editor.putLong(K_COMPLETED_AT, now)
                         .putLong(K_NEXT_ELIGIBLE_AT, now + WEEK_MS)
                         .putInt(K_COPY_INDEX, nextCopy)
@@ -353,23 +383,45 @@ public final class ProReminderManager {
     }
 
     public static DialogCopy getDialogCopy(Context context, int copyIndex) {
-        int index = Math.floorMod(copyIndex, COPY_COUNT);
         String age = getAgeText(context);
+        DialogCopy intro = new DialogCopy(
+                context.getString(INTRO_TITLE),
+                context.getString(INTRO_SUBTITLE, age));
+        if (isDesignMode(context)) {
+            // Design mode previews both pools in order: intro first, then return.
+            int total = 1 + RETURN_TITLES.length;
+            int designIndex = Math.floorMod(copyIndex, total);
+            if (designIndex == 0) return intro;
+            int index = designIndex - 1;
+            return new DialogCopy(
+                    context.getString(RETURN_TITLES[index]),
+                    context.getString(RETURN_SUBTITLES[index], age));
+        }
+        if (!hasCompletedCycle(prefs(context))) return intro;
+        int index = Math.floorMod(copyIndex, RETURN_TITLES.length);
         return new DialogCopy(
-                context.getString(DIALOG_TITLES[index]),
-                context.getString(DIALOG_SUBTITLES[index], age));
+                context.getString(RETURN_TITLES[index]),
+                context.getString(RETURN_SUBTITLES[index], age));
     }
 
     public static int getNotificationCopyIndex(Context context) {
-        return Math.floorMod(prefs(context).getInt(K_COPY_INDEX, 0), NOTIFICATION_COPY_COUNT);
+        return Math.floorMod(prefs(context).getInt(K_COPY_INDEX, 0), COPY_COUNT);
     }
 
     public static NotificationCopy getNotificationCopy(Context context, int copyIndex) {
-        int index = Math.floorMod(copyIndex, NOTIFICATION_COPY_COUNT);
+        boolean returning = hasCompletedCycle(prefs(context));
+        int[] titles = returning ? RETURN_NOTIFICATION_TITLES : INTRO_NOTIFICATION_TITLES;
+        int[] bodies = returning ? RETURN_NOTIFICATION_BODIES : INTRO_NOTIFICATION_BODIES;
+        int index = Math.floorMod(copyIndex, titles.length);
         String age = getAgeText(context);
         return new NotificationCopy(
-                context.getString(NOTIFICATION_TITLES[index], age),
-                context.getString(NOTIFICATION_BODIES[index], age));
+                context.getString(titles[index], age),
+                context.getString(bodies[index], age));
+    }
+
+    /** True once the user has pressed CONTINUE, i.e. a real seven-day cycle completed. */
+    private static boolean hasCompletedCycle(SharedPreferences p) {
+        return p.getLong(K_COMPLETED_AT, 0L) > 0L;
     }
 
     public static String getAfterProTitle(Context context) {
