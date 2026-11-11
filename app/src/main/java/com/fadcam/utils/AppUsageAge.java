@@ -46,7 +46,7 @@ public final class AppUsageAge {
             PackageInfo info = context.getPackageManager()
                     .getPackageInfo(context.getPackageName(), 0);
             java.util.Date installed = new java.util.Date(info.firstInstallTime);
-            java.util.Locale locale = java.util.Locale.getDefault();
+            java.util.Locale locale = appLocale(context);
             String day = new java.text.SimpleDateFormat("EEEE, d MMM yyyy", locale).format(installed);
             String time = java.text.DateFormat.getTimeInstance(
                     java.text.DateFormat.SHORT, locale).format(installed);
@@ -62,7 +62,7 @@ public final class AppUsageAge {
             PackageInfo info = context.getPackageManager()
                     .getPackageInfo(context.getPackageName(), 0);
             long millis = Math.max(0L, System.currentTimeMillis() - info.firstInstallTime);
-            return duration(millis) + "…";
+            return duration(context, millis) + "…";
         } catch (Exception e) {
             return "";
         }
@@ -183,6 +183,62 @@ public final class AppUsageAge {
         if (count == 0) return "under an hour";
         if (count == 1) return parts[0];
         return parts[0] + " " + parts[1];
+    }
+
+    /**
+     * Every non-zero unit, localized for the app language. The mockup note used to call the
+     * English {@link #duration(long)} directly, so Arabic and every other locale showed
+     * "20 days, 1 hour" inside an otherwise translated UI.
+     */
+    static String duration(Context context, long millis) {
+        long minutes = millis / 60000L;
+        long hours = minutes / 60L;
+        long days = hours / 24L;
+        long years = days / 365L;
+        long months = (days % 365L) / 30L;
+        long remDays = (days % 365L) % 30L;
+        long remHours = hours % 24L;
+        long remMinutes = minutes % 60L;
+
+        List<Measure> measures = new ArrayList<>(6);
+        if (years > 0) measures.add(new Measure(years, MeasureUnit.YEAR));
+        if (months > 0) measures.add(new Measure(months, MeasureUnit.MONTH));
+        if (remDays > 0) measures.add(new Measure(remDays, MeasureUnit.DAY));
+        if (remHours > 0) measures.add(new Measure(remHours, MeasureUnit.HOUR));
+        if (remMinutes > 0) measures.add(new Measure(remMinutes, MeasureUnit.MINUTE));
+        if (measures.isEmpty()) measures.add(new Measure(Math.max(1L, minutes), MeasureUnit.MINUTE));
+
+        Locale locale = appLocale(context);
+        if ("ps".equals(locale.getLanguage())) {
+            return pashtoDuration(context, measures);
+        }
+        try {
+            MeasureFormat format = MeasureFormat.getInstance(
+                    locale, MeasureFormat.FormatWidth.WIDE);
+            String formatted = format.formatMeasures(measures.toArray(new Measure[0]));
+            if (formatted != null && !formatted.trim().isEmpty()) return formatted;
+        } catch (Exception ignored) {
+            // Fall through to the English helper below.
+        }
+        return duration(millis);
+    }
+
+    /** Roman Pashto unit names; ICU's ps data is Arabic script. */
+    private static String pashtoDuration(Context context, List<Measure> measures) {
+        StringBuilder out = new StringBuilder();
+        for (Measure measure : measures) {
+            int id;
+            MeasureUnit unit = measure.getUnit();
+            if (MeasureUnit.YEAR.equals(unit)) id = R.plurals.app_age_year;
+            else if (MeasureUnit.MONTH.equals(unit)) id = R.plurals.app_age_month;
+            else if (MeasureUnit.DAY.equals(unit)) id = R.plurals.app_age_day;
+            else if (MeasureUnit.HOUR.equals(unit)) id = R.plurals.app_age_hour;
+            else id = R.plurals.app_age_minute;
+            int count = ((Number) measure.getNumber()).intValue();
+            if (out.length() > 0) out.append(", ");
+            out.append(context.getResources().getQuantityString(id, count, count));
+        }
+        return out.toString();
     }
 
     /**

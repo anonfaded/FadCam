@@ -3189,7 +3189,7 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="github_get_on">Dapatkan di</string>
     <string name="github_badge_text">GitHub</string>
     <string name="fadcam_card_title">FadCam</string>
-    <string name="app_usage_since_install">Menggunakan FadCam selama %1$s</string>
+    <string name="app_usage_since_install">Kamu sudah menggunakan FadCam selama %1$s</string>
     <string name="app_usage_since_install_title">Menggunakan FadCam selama</string>
 
 

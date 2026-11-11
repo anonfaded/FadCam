@@ -3202,7 +3202,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_showcase_soon">SOON</string>
     <string name="pro_showcase_privacy_mark">Private by design</string>
     <string name="pro_showcase_hint">Unlock and explore the apps.</string>
-    <string name="app_usage_since_install">Using FadCam for %1$s</string>
+    <string name="app_usage_since_install">You\'ve been using FadCam for %1$s</string>
     <string name="app_usage_since_install_title">Using FadCam for</string>
 
     <string name="app_age_a_while">a while</string>

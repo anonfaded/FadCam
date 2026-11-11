@@ -129,15 +129,22 @@ public class PrivacyConvergenceView extends View {
         checkPath.lineTo(cx - shieldW * 0.03f, cy + shieldHeight * 0.14f);
         checkPath.lineTo(cx + shieldW * 0.21f, cy - shieldHeight * 0.11f);
 
-        float nodeRight = Math.min(w - pad, cx + shieldHeight * 1.55f);
-        float junctionX = Math.min(right + shieldW * 0.08f, nodeRight - shieldHeight * 0.45f);
+        boolean rtl = getLayoutDirection() == LAYOUT_DIRECTION_RTL;
+        // The mark mirrors as a composition: the shield stays upright (its check must not
+        // flip), but the node bank and wires move to the other side.
+        float nodeEdge = rtl
+                ? Math.max(pad, cx - shieldHeight * 1.55f)
+                : Math.min(w - pad, cx + shieldHeight * 1.55f);
+        float junctionX = rtl
+                ? Math.max(left - shieldW * 0.08f, nodeEdge + shieldHeight * 0.45f)
+                : Math.min(right + shieldW * 0.08f, nodeEdge - shieldHeight * 0.45f);
         float junctionY = cy;
-        float trunkStartX = right + shieldW * 0.03f;
-        float spread = Math.min(shieldHeight * 0.40f, nodeRight - junctionX);
+        float trunkStartX = rtl ? left - shieldW * 0.03f : right + shieldW * 0.03f;
+        float spread = Math.min(shieldHeight * 0.40f, Math.abs(nodeEdge - junctionX));
 
         float[] offsets = {-spread, 0f, spread};
         for (int i = 0; i < wirePaths.length; i++) {
-            nodeX[i] = nodeRight;
+            nodeX[i] = nodeEdge;
             nodeY[i] = Math.max(pad, Math.min(h - pad, cy + offsets[i]));
             float dx = nodeX[i] - junctionX;
             wirePaths[i].reset();
@@ -149,6 +156,15 @@ public class PrivacyConvergenceView extends View {
         trunkPath.reset();
         trunkPath.moveTo(junctionX, junctionY);
         trunkPath.lineTo(trunkStartX, junctionY);
+    }
+
+    @Override
+    public void onRtlPropertiesChanged(int layoutDirection) {
+        super.onRtlPropertiesChanged(layoutDirection);
+        if (getWidth() > 0 && getHeight() > 0) {
+            onSizeChanged(getWidth(), getHeight(), getWidth(), getHeight());
+        }
+        invalidate();
     }
 
     @Override
