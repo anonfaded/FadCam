@@ -1206,24 +1206,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void applyLanguage(String languageCode) {
-        // Get current app language
-        String currentLanguage = getResources().getConfiguration().getLocales().get(0).getLanguage();
+        if (languageCode == null || languageCode.isEmpty()) return;
+        androidx.core.os.LocaleListCompat desired =
+                androidx.core.os.LocaleListCompat.forLanguageTags(languageCode);
+        if (desired.isEmpty()) return;
 
-        // Only apply language change if it's different from the current language
-        if (!languageCode.equals(currentLanguage)) {
-            FLog.d("MainActivity", "Applying language: " + languageCode);
-            Locale locale = Locale.forLanguageTag(languageCode);
-            Locale.setDefault(locale);
+        // The previous implementation built a ConfigurationContext, discarded it, then
+        // recreated the activity. The activity's locale never changed, so every recreation
+        // ran this method again and recreated forever (visible as UI flicker, e.g. switching
+        // to Chinese). AppCompat applies the locale for real and recreates once; on the new
+        // instance the check below matches and the loop stops.
+        androidx.core.os.LocaleListCompat current =
+                androidx.appcompat.app.AppCompatDelegate.getApplicationLocales();
+        String currentTag = current.isEmpty()
+                ? getResources().getConfiguration().getLocales().get(0).toLanguageTag()
+                : current.get(0).toLanguageTag();
+        String desiredTag = desired.get(0).toLanguageTag();
 
-            android.content.res.Configuration config = new android.content.res.Configuration();
-            config.setLocale(locale);
-            getApplicationContext().createConfigurationContext(config);
-
-            // Recreate the activity to apply the changes
-            recreate();
-        } else {
+        if (desiredTag.equals(currentTag)) {
             FLog.d("MainActivity", "Language is already set to " + languageCode + "; no need to change.");
+            return;
         }
+        FLog.d("MainActivity", "Applying language: " + languageCode);
+        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(desired);
     }
 
     @Override

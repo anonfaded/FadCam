@@ -463,6 +463,18 @@
             android:name=".pro.ProReminderAlarmReceiver"
             android:enabled="${proReminderEnabled}"
             android:exported="false" />
+
+        <!-- Persists the AppCompat app locale across process death, so a non-system
+             language is restored before the first frame instead of recreating the
+             activity once on every cold start. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
     </application>
 
 </manifest>
