@@ -149,7 +149,8 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         if (!lite) return;
 
         int[] fullOnly = {R.id.onboarding_feature_screen, R.id.onboarding_feature_editor,
-                R.id.onboarding_feature_motion, R.id.onboarding_feature_remote};
+                R.id.onboarding_feature_motion, R.id.onboarding_feature_forensic,
+                R.id.onboarding_feature_remote};
         for (int id : fullOnly) {
             View card = root.findViewById(id);
             if (card != null) card.setVisibility(View.GONE);
@@ -159,12 +160,6 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         if (mini != null) mini.setVisibility(View.GONE);
 
         // Lite counts its jobs separately: background, bodycam, dashcam.
-        View combined = root.findViewById(R.id.onboarding_feature_bodycam);
-        if (combined != null) combined.setVisibility(View.GONE);
-        View bodycam = root.findViewById(R.id.onboarding_feature_bodycam_solo);
-        if (bodycam != null) bodycam.setVisibility(View.VISIBLE);
-        View dashcam = root.findViewById(R.id.onboarding_feature_dashcam);
-        if (dashcam != null) dashcam.setVisibility(View.VISIBLE);
 
         GridLayout grid = root.findViewById(R.id.onboarding_feature_grid);
         if (grid != null) grid.setColumnCount(1);
@@ -288,8 +283,8 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
                 || view.getId() == R.id.onboarding_feature_screen
                 || view.getId() == R.id.onboarding_feature_editor
                 || view.getId() == R.id.onboarding_feature_motion
+                || view.getId() == R.id.onboarding_feature_forensic
                 || view.getId() == R.id.onboarding_feature_remote
-                || view.getId() == R.id.onboarding_feature_bodycam
                 || view.getId() == R.id.onboarding_feature_bodycam_solo
                 || view.getId() == R.id.onboarding_feature_dashcam
                 || view.getId() == R.id.onboarding_mini_flashlight

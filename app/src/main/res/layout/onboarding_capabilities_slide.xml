@@ -225,6 +225,40 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/onboarding_feature_forensic"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:layout_gravity="fill"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_onboarding_tile"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <com.fadcam.ui.OnboardingDemoView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/onboarding_demo_height"
+                        app:demoType="forensic" />
+
+                    <TextView
+                        style="@style/ProDossierValue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="7dp"
+                        android:text="@string/onboarding_feature_forensic_title"
+                        android:textSize="@dimen/onboarding_card_title_size" />
+
+                    <TextView
+                        style="@style/ProDossierBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/onboarding_feature_forensic_desc"
+                        android:textSize="@dimen/onboarding_card_desc_size" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/onboarding_feature_remote"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -258,41 +292,7 @@
                         android:textSize="@dimen/onboarding_card_desc_size" />
                 </LinearLayout>
 
-                <LinearLayout
-                    android:id="@+id/onboarding_feature_bodycam"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:layout_gravity="fill"
-                    android:layout_margin="3dp"
-                    android:background="@drawable/bg_onboarding_tile"
-                    android:orientation="vertical"
-                    android:padding="8dp">
-
-                    <com.fadcam.ui.OnboardingDemoView
-                        android:layout_width="match_parent"
-                        android:layout_height="@dimen/onboarding_demo_height"
-                        app:demoType="bodycam" />
-
-                    <TextView
-                        style="@style/ProDossierValue"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="7dp"
-                        android:text="@string/onboarding_feature_bodycam_title"
-                        android:textSize="@dimen/onboarding_card_title_size" />
-
-                    <TextView
-                        style="@style/ProDossierBody"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="3dp"
-                        android:lineSpacingExtra="2dp"
-                        android:text="@string/onboarding_feature_bodycam_desc"
-                        android:textSize="@dimen/onboarding_card_desc_size" />
-                </LinearLayout>
-
-                <!-- Lite splits the combined card into two of its three jobs. -->
+                <!-- Bodycam and dashcam are separate jobs in both editions. -->
                 <LinearLayout
                     android:id="@+id/onboarding_feature_bodycam_solo"
                     android:layout_width="0dp"
@@ -302,8 +302,7 @@
                     android:layout_margin="3dp"
                     android:background="@drawable/bg_onboarding_tile"
                     android:orientation="vertical"
-                    android:padding="8dp"
-                    android:visibility="gone">
+                    android:padding="8dp">
 
                     <com.fadcam.ui.OnboardingDemoView
                         android:layout_width="match_parent"
@@ -337,8 +336,7 @@
                     android:layout_margin="3dp"
                     android:background="@drawable/bg_onboarding_tile"
                     android:orientation="vertical"
-                    android:padding="8dp"
-                    android:visibility="gone">
+                    android:padding="8dp">
 
                     <com.fadcam.ui.OnboardingDemoView
                         android:layout_width="match_parent"

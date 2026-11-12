@@ -1885,15 +1885,17 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_feature_editor_title">Video editor</string>
     <string name="onboarding_feature_editor_desc">Trim, cut, merge, duplicate, or mute clips.</string>
     <string name="onboarding_feature_motion_title">Motion detection</string>
-    <string name="onboarding_feature_motion_desc">Detect people and objects with on-device AI. Build your own Forensic Intelligence gallery.</string>
+    <string name="onboarding_feature_motion_desc">Records only when movement is detected. Pauses when it stops.</string>
+    <string name="onboarding_feature_forensic_title">Forensic AI</string>
+    <string name="onboarding_feature_forensic_desc">On-device AI detects people and objects. Saved as evidence.</string>
     <string name="onboarding_feature_remote_title">Remote camera</string>
     <string name="onboarding_feature_remote_desc">Live stream and control your camera remotely.</string>
     <string name="onboarding_feature_bodycam_title">Bodycam &amp; dashcam</string>
-    <string name="onboarding_feature_bodycam_desc">Turn your phone into a bodycam or dashcam.</string>
+    <string name="onboarding_feature_bodycam_desc">Wear it for personal security and hands-free recording.</string>
     <string name="onboarding_feature_bodycam_solo_title">Bodycam</string>
-    <string name="onboarding_feature_bodycam_solo_desc">Wear it and record hands-free.</string>
+    <string name="onboarding_feature_bodycam_solo_desc">Wear it for personal security and hands-free recording.</string>
     <string name="onboarding_feature_dashcam_title">Dashcam</string>
-    <string name="onboarding_feature_dashcam_desc">Mount it and record the road.</string>
+    <string name="onboarding_feature_dashcam_desc">Mount it and record the road ahead.</string>
 
     <string name="onboarding_scroll_hint">Scroll for more</string>
     <string name="onboarding_scroll_short">Scroll</string>
@@ -1911,6 +1913,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_demo_gun">GUN</string>
     <string name="onboarding_demo_knife">KNIFE</string>
     <string name="onboarding_demo_confidence">%1$s %2$d%%</string>
+    <string name="onboarding_demo_score" translatable="false">%1$d%%</string>
     <string name="onboarding_demo_qr_value" translatable="false">fadseclab.com</string>
 
     <string name="onboarding_swipe_instruction">Swipe to continue</string>
