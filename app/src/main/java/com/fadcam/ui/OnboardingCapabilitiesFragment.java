@@ -1,6 +1,5 @@
 package com.fadcam.ui;
 
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -10,7 +9,6 @@ import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.LinearInterpolator;
 import android.view.animation.PathInterpolator;
 import android.widget.GridLayout;
 import android.widget.ScrollView;
@@ -22,6 +20,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.BuildConfig;
+import com.fadcam.ui.animations.AnimationView;
 import com.fadcam.R;
 import com.github.appintro.SlidePolicy;
 
@@ -48,10 +47,7 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
     private Host host;
     private ScrollView scrollView;
     private boolean lastAtBottom;
-    private ValueAnimator ambientAnimator;
-    private List<OnboardingDemoView> ambientDemos;
     private MiniAppsMarqueeView miniAppsMarquee;
-    private final Runnable startAmbientRunnable = this::startAmbient;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -213,15 +209,10 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
     private void stopShowcase() {
         View root = getView();
         if (root == null) return;
-        root.removeCallbacks(startAmbientRunnable);
-        if (ambientAnimator != null) {
-            ambientAnimator.cancel();
-            ambientAnimator = null;
-        }
-        ambientDemos = null;
-        List<OnboardingDemoView> demos = new ArrayList<>();
+        List<AnimationView> demos = new ArrayList<>();
         collectDemos(root, demos);
-        for (OnboardingDemoView demo : demos) {
+        for (AnimationView demo : demos) {
+            demo.setActive(false);
             demo.resetDemo();
         }
         List<View> cards = new ArrayList<>();
@@ -242,55 +233,22 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         collectCards(root, cards);
         animateCards(cards);
 
-        List<OnboardingDemoView> demos = new ArrayList<>();
+        List<AnimationView> demos = new ArrayList<>();
         collectDemos(root, demos);
         long base = animationsEnabled() ? 520L : 0L;
         for (int i = 0; i < demos.size(); i++) {
-            demos.get(i).playOnce(base + i * 120L);
+            AnimationView demo = demos.get(i);
+            demo.setActive(true);
+            demo.setAmbientOffset(i * 0.11f);
+            // Each preview ignores the ambient phase until its own reveal settles,
+            // so the loop takes over with no dead gap.
+            demo.setAmbientEnabled(animationsEnabled());
+            demo.playOnce(base + i * 120L);
         }
-        if (animationsEnabled()) {
-            // Start the ambient clock with the reveal. Each view ignores the phase until
-            // its own one-shot settles, so the loop takes over seamlessly with no dead gap.
-            root.removeCallbacks(startAmbientRunnable);
-            root.postDelayed(startAmbientRunnable, base + 60L);
-        }
-    }
-
-    private void startAmbient() {
-        if (!isAdded() || !animationsEnabled()) return;
-        View root = getView();
-        if (root == null || ambientAnimator != null) return;
-        List<OnboardingDemoView> demos = new ArrayList<>();
-        collectDemos(root, demos);
-        if (demos.isEmpty()) return;
-        ambientDemos = demos;
-        for (int i = 0; i < demos.size(); i++) {
-            demos.get(i).setAmbientOffset(i * 0.11f);
-        }
-        ambientAnimator = ValueAnimator.ofFloat(0f, 1f);
-        ambientAnimator.setDuration(6000L);
-        ambientAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        ambientAnimator.setRepeatMode(ValueAnimator.RESTART);
-        ambientAnimator.setInterpolator(new LinearInterpolator());
-        ambientAnimator.addUpdateListener(a -> {
-            float phase = (float) a.getAnimatedValue();
-            if (ambientDemos == null) return;
-            for (OnboardingDemoView demo : ambientDemos) {
-                demo.setAmbientPhase(phase);
-            }
-        });
-        ambientAnimator.start();
     }
 
     @Override
     public void onDestroyView() {
-        View root = getView();
-        if (root != null) root.removeCallbacks(startAmbientRunnable);
-        if (ambientAnimator != null) {
-            ambientAnimator.cancel();
-            ambientAnimator = null;
-        }
-        ambientDemos = null;
         if (miniAppsMarquee != null) miniAppsMarquee.stopMarquee();
         miniAppsMarquee = null;
         super.onDestroyView();
@@ -320,10 +278,10 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         }
     }
 
-    private void collectDemos(View view, List<OnboardingDemoView> out) {
+    private void collectDemos(View view, List<AnimationView> out) {
         if (view.getVisibility() != View.VISIBLE) return;
-        if (view instanceof OnboardingDemoView) {
-            out.add((OnboardingDemoView) view);
+        if (view instanceof AnimationView) {
+            out.add((AnimationView) view);
             return;
         }
         if (view instanceof ViewGroup) {

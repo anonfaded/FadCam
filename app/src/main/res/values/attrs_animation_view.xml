@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="OnboardingDemoView">
-        <attr name="demoType" format="enum">
+    <declare-styleable name="AnimationView">
+        <attr name="sceneType" format="enum">
             <enum name="background" value="0" />
             <enum name="screen" value="1" />
             <enum name="editor" value="2" />
@@ -13,6 +13,5 @@
             <enum name="dashcam" value="9" />
             <enum name="forensic" value="10" />
         </attr>
-        <attr name="demoCompact" format="boolean" />
     </declare-styleable>
 </resources>

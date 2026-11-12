@@ -1,6 +1,5 @@
 package com.fadcam.ui;
 
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -12,9 +11,10 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.Nullable;
+
+import com.fadcam.ui.animations.AnimationClock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.List;
  * seamless. LTR moves right-to-left, RTL moves left-to-right while keeping the
  * normal reading order, and the edges fade out on both sides.</p>
  */
-public class MiniAppsMarqueeView extends View {
+public class MiniAppsMarqueeView extends View implements AnimationClock.FrameListener {
 
     /** Slow enough to read, fast enough to feel alive. */
     private static final float SPEED_DP_PER_SECOND = 24f;
@@ -50,7 +50,8 @@ public class MiniAppsMarqueeView extends View {
     private float offset;
     private boolean rtl;
     private boolean running;
-    private ValueAnimator animator;
+    private boolean clockAttached;
+    private long lastFrameMs = -1L;
     private Shader leftFade;
     private Shader rightFade;
 
@@ -83,6 +84,7 @@ public class MiniAppsMarqueeView extends View {
         borderPaint.setColor(0x66C6A66A);
 
         rtl = getLayoutDirection() == LAYOUT_DIRECTION_RTL;
+        AnimationClock.get().install(context);
     }
 
     /** Replaces the chips. Empty input hides the view. */
@@ -100,20 +102,20 @@ public class MiniAppsMarqueeView extends View {
         setVisibility(VISIBLE);
         setContentDescription(TextUtils.join(", ", labels));
         measureChips();
-        updateAnimator();
+        updateAnimation();
         invalidate();
     }
 
     /** Called by the slide while it is visible. */
     public void startMarquee() {
         running = true;
-        updateAnimator();
+        updateAnimation();
     }
 
     /** Called when the slide leaves the screen. */
     public void stopMarquee() {
         running = false;
-        cancelAnimator();
+        detachClock();
         offset = 0f;
         invalidate();
     }
@@ -129,8 +131,8 @@ public class MiniAppsMarqueeView extends View {
         contentWidth = total;
     }
 
-    private void updateAnimator() {
-        cancelAnimator();
+    private void updateAnimation() {
+        detachClock();
         if (!running || labels.isEmpty() || getWidth() == 0) {
             return;
         }
@@ -139,26 +141,29 @@ public class MiniAppsMarqueeView extends View {
             invalidate();
             return;
         }
-        float distance = contentWidth;
-        long duration = Math.max(1000L,
-                (long) (distance / (SPEED_DP_PER_SECOND * density) * 1000f));
-        animator = ValueAnimator.ofFloat(0f, distance);
-        animator.setDuration(duration);
-        animator.setRepeatCount(ValueAnimator.INFINITE);
-        animator.setRepeatMode(ValueAnimator.RESTART);
-        animator.setInterpolator(new LinearInterpolator());
-        animator.addUpdateListener(a -> {
-            offset = (float) a.getAnimatedValue();
-            invalidate();
-        });
-        animator.start();
+        lastFrameMs = -1L;
+        AnimationClock.get().add(this);
+        clockAttached = true;
     }
 
-    private void cancelAnimator() {
-        if (animator != null) {
-            animator.cancel();
-            animator = null;
+    private void detachClock() {
+        if (!clockAttached) return;
+        AnimationClock.get().remove(this);
+        clockAttached = false;
+    }
+
+    /** Advances the loop with real frame deltas, so pausing never skips ahead. */
+    @Override
+    public void onAnimFrame(long timeMs) {
+        if (!running || contentWidth <= 0f) return;
+        if (lastFrameMs < 0L) lastFrameMs = timeMs;
+        long deltaMs = timeMs - lastFrameMs;
+        lastFrameMs = timeMs;
+        offset += SPEED_DP_PER_SECOND * density * (deltaMs / 1000f);
+        if (offset >= contentWidth) {
+            offset %= contentWidth;
         }
+        invalidate();
     }
 
     private boolean animationsEnabled() {
@@ -181,7 +186,7 @@ public class MiniAppsMarqueeView extends View {
                 0xFF000000, 0x00000000, Shader.TileMode.CLAMP);
         rightFade = new LinearGradient(w - fade, 0f, w, 0f,
                 0x00000000, 0xFF000000, Shader.TileMode.CLAMP);
-        updateAnimator();
+        updateAnimation();
     }
 
     @Override

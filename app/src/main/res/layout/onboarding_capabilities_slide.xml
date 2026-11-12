@@ -98,10 +98,10 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <com.fadcam.ui.OnboardingDemoView
+                    <com.fadcam.ui.animations.AnimationView
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/onboarding_demo_height"
-                        app:demoType="background" />
+                        app:sceneType="background" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -132,10 +132,10 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <com.fadcam.ui.OnboardingDemoView
+                    <com.fadcam.ui.animations.AnimationView
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/onboarding_demo_height"
-                        app:demoType="screen" />
+                        app:sceneType="screen" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -166,10 +166,10 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <com.fadcam.ui.OnboardingDemoView
+                    <com.fadcam.ui.animations.AnimationView
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/onboarding_demo_height"
-                        app:demoType="editor" />
+                        app:sceneType="editor" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -200,10 +200,10 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <com.fadcam.ui.OnboardingDemoView
+                    <com.fadcam.ui.animations.AnimationView
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/onboarding_demo_height"
-                        app:demoType="motion" />
+                        app:sceneType="motion" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -235,10 +235,10 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <com.fadcam.ui.OnboardingDemoView
+                    <com.fadcam.ui.animations.AnimationView
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/onboarding_demo_height"
-                        app:demoType="forensic" />
+                        app:sceneType="forensic" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -269,10 +269,10 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <com.fadcam.ui.OnboardingDemoView
+                    <com.fadcam.ui.animations.AnimationView
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/onboarding_demo_height"
-                        app:demoType="remote" />
+                        app:sceneType="remote" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -304,10 +304,10 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <com.fadcam.ui.OnboardingDemoView
+                    <com.fadcam.ui.animations.AnimationView
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/onboarding_demo_height"
-                        app:demoType="bodycam_solo" />
+                        app:sceneType="bodycam_solo" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -338,10 +338,10 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
-                    <com.fadcam.ui.OnboardingDemoView
+                    <com.fadcam.ui.animations.AnimationView
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/onboarding_demo_height"
-                        app:demoType="dashcam" />
+                        app:sceneType="dashcam" />
 
                     <TextView
                         style="@style/ProDossierValue"
@@ -405,11 +405,10 @@
                         android:orientation="vertical"
                         android:padding="8dp">
 
-                        <com.fadcam.ui.OnboardingDemoView
+                        <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
                             android:layout_height="@dimen/onboarding_mini_demo_height"
-                            app:demoCompact="true"
-                            app:demoType="flashlight" />
+                            app:sceneType="flashlight" />
 
                         <TextView
                             style="@style/ProDossierValue"
@@ -440,11 +439,10 @@
                         android:orientation="vertical"
                         android:padding="8dp">
 
-                        <com.fadcam.ui.OnboardingDemoView
+                        <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
                             android:layout_height="@dimen/onboarding_mini_demo_height"
-                            app:demoCompact="true"
-                            app:demoType="qr" />
+                            app:sceneType="qr" />
 
                         <TextView
                             style="@style/ProDossierValue"

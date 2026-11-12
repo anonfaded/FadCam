@@ -12,6 +12,7 @@ Central hub for FadCam documentation, guides and development resources.
 ### Features & Internals
 - [Feature Badge System](features/feature-badge-system.md) — How the in-app "NEW" badges work.
 - [Weekly Pro Reminder](features/weekly-pro-reminder.md) — The weekly Pro briefing and its lifecycle.
+- [Animation Components](architecture/animations.md) — Canvas scenes, the shared clock, and reuse rules.
 
 ### Video Recording
 - [Dual Camera](architecture/dual-camera.md) — Overview of the dual camera recording system.
