@@ -70,6 +70,8 @@ public class OnboardingDemoView extends View {
     private final DashPathEffect dash = new DashPathEffect(new float[]{2f, 2f}, 0f);
     private final Typeface mono = Typeface.MONOSPACE;
     private final Typeface monoBold = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD);
+    private final java.text.SimpleDateFormat cctvStamp =
+            new java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US);
     private final boolean[][] qr = new boolean[21][21];
     private final String[] objectConfidence = new String[3];
     private final String[] objectScore = new String[3];
@@ -579,60 +581,89 @@ public class OnboardingDemoView extends View {
         c.save();
         c.clipRect(11f, 15f, 157f, 77f);
 
-        // Room: wall, floor, door and a shelf.
+        // Wall and floor.
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.3f);
         paint.setColor(0x12FFFFFF);
         for (float x = 26f; x < 158f; x += 16f) c.drawLine(x, 16f, x, 66f, paint);
         c.drawLine(10f, 66f, 158f, 66f, paint);
 
-        fillRound(c, 128f, 30f, 150f, 66f, 1f, 0xFF15181A);
-        frameRound(c, 128f, 30f, 150f, 66f, 1f, C_LINE, 0.5f);
-        dot(c, 145f, 48f, 0.9f, C_DIM);
-
-        paint.setColor(0x44C6A66A);
+        // Computer desk: monitor, stand, keyboard.
+        paint.setColor(0x66C6A66A);
         paint.setStrokeWidth(0.8f);
-        c.drawLine(58f, 52f, 86f, 52f, paint);
-        fillRound(c, 64f, 43f, 76f, 52f, 1f, 0xFF262A2D);
-        frameRound(c, 64f, 43f, 76f, 52f, 1f, 0x66C6A66A, 0.4f);
+        c.drawLine(54f, 54f, 92f, 54f, paint);
+        c.drawLine(56f, 54f, 56f, 66f, paint);
+        c.drawLine(90f, 54f, 90f, 66f, paint);
+        fillRound(c, 62f, 32f, 84f, 48f, 1.2f, 0xFF181B1D);
+        frameRound(c, 62f, 32f, 84f, 48f, 1.2f, 0x99E8C77B, 0.6f);
+        fillRound(c, 64f, 34f, 82f, 46f, 0.8f, 0xFF23282C);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(0x66C6A66A);
+        c.drawLine(73f, 48f, 73f, 54f, paint);
+        c.drawLine(69f, 54f, 77f, 54f, paint);
+        fillRound(c, 58f, 55f, 86f, 57.5f, 0.7f, 0xFF1B1F22);
+        frameRound(c, 58f, 55f, 86f, 57.5f, 0.7f, C_LINE, 0.3f);
 
-        // Mounted phone at the left, aimed across the room.
-        fillRound(c, 12f, 30f, 17f, 44f, 1f, 0xFF1F2326);
+        // Doorway; the leaf swings open for the exit.
+        fillRound(c, 128f, 30f, 150f, 66f, 1f, 0xFF0A0C0D);
+        frameRound(c, 126f, 28f, 152f, 66f, 1f, C_LINE, 0.6f);
+
+        // Mounted phone: bright body, gold lens ring and a recording light.
+        fillRound(c, 12f, 30f, 17f, 44f, 1f, 0xFF23282C);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1f);
         paint.setColor(0xFF3A3F43);
         c.drawLine(17f, 37f, 20f, 37f, paint);
-        fillRound(c, 20f, 26f, 34f, 50f, 3.5f, 0xFF121416);
-        frameRound(c, 20f, 26f, 34f, 50f, 3.5f, C_LINE, 0.7f);
-        dot(c, 27f, 30f, 1.1f, 0xFF2B3033);
-        dot(c, 23f, 28f, 0.9f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
+        fillRound(c, 20f, 26f, 34f, 50f, 3.5f, 0xFF202529);
+        frameRound(c, 20f, 26f, 34f, 50f, 3.5f, 0xAAE8C77B, 0.7f);
+        fillRound(c, 22f, 28f, 32f, 48f, 2f, 0xFF2B3237);
+        dot(c, 27f, 31f, 1.9f, 0x33E8C77B);
+        dot(c, 27f, 31f, 1.2f, 0xFFA9BAC5);
 
-        // Walk in, stand for a beat, then walk out.
+        // Walk in, pause, then leave through the door.
         float t = ambientOn ? ambientLocal : p;
         float px;
         boolean active;
-        if (t < 0.45f) {
-            px = 40f + 66f * (t / 0.45f);
+        if (t < 0.44f) {
+            px = 40f + 64f * (t / 0.44f);
             active = true;
-        } else if (t < 0.75f) {
-            px = 106f;
+        } else if (t < 0.56f) {
+            px = 104f;
             active = false;
+        } else if (t < 0.86f) {
+            px = 104f + 35f * ((t - 0.56f) / 0.30f);
+            active = true;
         } else {
-            px = 106f + 64f * ((t - 0.75f) / 0.25f);
-            active = t < 0.985f;
+            px = 139f;
+            active = t < 0.90f;
         }
-        if (px < 158f) drawWalker(c, px, t, active);
+        float fade = 1f - seg(t, 0.86f, 0.93f);
+        int walkerAlpha = (int) (255f * fade);
 
+        // Torch-like beam while the camera is recording.
         if (active) {
-            float l = px - 7f, r = px + 7f, tp = 34f, b = 65f;
-            int gold = withAlpha(C_GOLD, 225);
+            path.reset();
+            path.moveTo(34f, 33f);
+            path.lineTo(92f, 18f);
+            path.lineTo(92f, 56f);
+            path.lineTo(34f, 43f);
+            path.close();
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(0x1FE8C77B);
+            paint.setColor(withAlpha(C_GOLD, 20));
+            c.drawPath(path, paint);
+        }
+
+        if (fade > 0.02f) drawWalker(c, px, t, active, walkerAlpha);
+
+        if (active && fade > 0.02f) {
+            float l = px - 7f, r = px + 7f, tp = 33f, b = 65f;
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(withAlpha(C_GOLD, (int) (18f * fade)));
             rect.set(l, tp, r, b);
             c.drawRect(rect, paint);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(0.8f);
-            paint.setColor(gold);
+            paint.setColor(withAlpha(C_GOLD, (int) (225f * fade)));
             rect.set(l, tp, r, b);
             c.drawRect(rect, paint);
             paint.setStrokeWidth(1.4f);
@@ -646,24 +677,38 @@ public class OnboardingDemoView extends View {
             c.drawLine(r, b, r, b - 4f, paint);
         }
 
+        // Door leaf on top, swinging toward the hinge.
+        float open = seg(t, 0.72f, 0.84f) * (1f - seg(t, 0.965f, 1f));
+        float leafW = 21f * (1f - 0.82f * open);
+        float leafL = 150f - leafW;
+        fillRound(c, leafL, 30f, 150f, 66f, 0.8f, 0xFF202427);
+        frameRound(c, leafL, 30f, 150f, 66f, 0.8f, 0xCCE8C77B, 0.6f);
+        dot(c, leafL + 3f, 49f, 0.8f, C_GOLD);
+
+        // CCTV timestamp with milliseconds.
+        label(c, cctvStamp.format(new java.util.Date()), 22f, 21f, 4.6f,
+                withAlpha(C_INK, 210), Paint.Align.LEFT, false);
         drawPlayPauseBadge(c, 146f, 22f, active);
         dot(c, 16f, 19f, 1.4f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
         c.restore();
     }
 
-    private void drawWalker(Canvas c, float x, float phase, boolean walking) {
+    private void drawWalker(Canvas c, float x, float phase, boolean walking, int alpha) {
         float swing = walking
                 ? (float) Math.sin(phase * Math.PI * 2 * 9) * 2.6f : 0f;
-        dot(c, x, 38f, 3.1f, C_INK);
+        int ink = withAlpha(C_INK, alpha);
+        dot(c, x, 37f, 3.2f, ink);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1.5f);
+        paint.setStrokeWidth(1.4f);
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setColor(C_INK);
-        c.drawLine(x, 41.5f, x, 54f, paint);
-        c.drawLine(x, 45f, x - 4.6f - swing, 50f, paint);
-        c.drawLine(x, 45f, x + 4.6f + swing, 50f, paint);
-        c.drawLine(x, 54f, x - 2.2f - swing, 63f, paint);
-        c.drawLine(x, 54f, x + 2.2f + swing, 63f, paint);
+        paint.setColor(ink);
+        c.drawLine(x, 40.2f, x, 42f, paint);
+        c.drawLine(x - 4.2f, 42f, x + 4.2f, 42f, paint);
+        c.drawLine(x, 42f, x, 54f, paint);
+        c.drawLine(x - 4.2f, 42.5f, x - 5.2f - swing, 50f, paint);
+        c.drawLine(x + 4.2f, 42.5f, x + 5.2f + swing, 50f, paint);
+        c.drawLine(x, 54f, x - 2.4f - swing, 63f, paint);
+        c.drawLine(x, 54f, x + 2.4f + swing, 63f, paint);
         paint.setStrokeCap(Paint.Cap.BUTT);
     }
 
@@ -713,11 +758,12 @@ public class OnboardingDemoView extends View {
 
         drawObjectIcon(c, idx, 116f, 26f, 144f, 54f, 255);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.9f);
-        paint.setColor(C_GOLD);
+        paint.setStrokeWidth(0.45f);
+        paint.setColor(withAlpha(C_GOLD, 170));
         rect.set(106f, 22f, 152f, 56f);
         c.drawRect(rect, paint);
-        paint.setStrokeWidth(1.5f);
+        paint.setStrokeWidth(1.6f);
+        paint.setColor(C_GOLD);
         c.drawLine(106f, 22f, 111f, 22f, paint);
         c.drawLine(106f, 22f, 106f, 27f, paint);
         c.drawLine(152f, 22f, 147f, 22f, paint);
@@ -729,7 +775,8 @@ public class OnboardingDemoView extends View {
 
         label(c, objectConfidence[idx], 106f, 65f, 6f, C_GOLD,
                 Paint.Align.LEFT, true);
-        label(c, "SAVED", 106f, 74f, 4.8f, C_MUTED, Paint.Align.LEFT, true);
+        label(c, "SAVED", 106f, 74f, 6f, withAlpha(C_INK, 235),
+                Paint.Align.LEFT, true);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.2f);
         paint.setColor(C_GOLD);
@@ -737,7 +784,7 @@ public class OnboardingDemoView extends View {
         c.drawLine(143f, 74f, 149f, 67f, paint);
 
         // Evidence log; names stay in the viewer, the log carries time and score.
-        label(c, "PEOPLE + OBJECTS", 14f, 22f, 4.8f, C_MUTED,
+        label(c, "DETECTION LOG", 14f, 22f, 5.6f, C_GOLD,
                 Paint.Align.LEFT, true);
         for (int i = 0; i < 3; i++) {
             float reveal = ambientOn ? 1f
@@ -750,9 +797,9 @@ public class OnboardingDemoView extends View {
             frameRound(c, 14f, top, 98f, top + 15f, 1.5f,
                     withAlpha(selected ? C_GOLD : C_LINE, a), selected ? 0.9f : 0.5f);
             drawObjectIcon(c, i, 18f, top + 2f, 29f, top + 13f, a);
-            label(c, objectTime[i], 33f, top + 11f, 5.4f,
+            label(c, objectTime[i], 33f, top + 11f, 5.8f,
                     withAlpha(selected ? C_GOLD : C_MUTED, a), Paint.Align.LEFT, true);
-            label(c, objectScore[i], 94f, top + 11f, 5.8f,
+            label(c, objectScore[i], 94f, top + 11f, 6f,
                     withAlpha(selected ? C_GOLD : C_MUTED, a), Paint.Align.RIGHT, true);
         }
     }
@@ -885,8 +932,38 @@ public class OnboardingDemoView extends View {
         int a = 255;
         fillRound(c, 49f, 26f, 73f, 60f, 4f, withAlpha(0xFF101214, a));
         frameRound(c, 49f, 26f, 73f, 60f, 4f, withAlpha(C_GOLD, a), 0.9f);
-        fillRound(c, 52f, 29f, 70f, 57f, 2.5f, withAlpha(0xFF1B1F22, a));
-        dot(c, 55f, 33f, 1.2f, withAlpha(C_RED,
+        // Live road view: a seamless driving loop inside the phone.
+        fillRound(c, 52f, 29f, 70f, 57f, 2.5f, withAlpha(0xFF0E1317, a));
+        c.save();
+        rect.set(52f, 29f, 70f, 57f);
+        path.reset();
+        path.addRoundRect(rect, 2.5f, 2.5f, Path.Direction.CW);
+        c.clipPath(path);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(withAlpha(0xFF151B20, a));
+        c.drawRect(52f, 29f, 70f, 41f, paint);
+        path.reset();
+        path.moveTo(52f, 57f);
+        path.lineTo(58f, 41f);
+        path.lineTo(64f, 41f);
+        path.lineTo(70f, 57f);
+        path.close();
+        paint.setColor(withAlpha(0xFF252C32, a));
+        c.drawPath(path, paint);
+        paint.setColor(withAlpha(C_GOLD, (int) (70f * a / 255f)));
+        c.drawRect(52f, 40.4f, 70f, 41f, paint);
+        float flow = (android.os.SystemClock.uptimeMillis() % 1800L) / 1800f;
+        paint.setStyle(Paint.Style.STROKE);
+        for (int i = 0; i < 4; i++) {
+            float f = (i / 4f + flow) % 1f;
+            float y = 41f + 16f * f;
+            float len = 0.5f + 3.6f * f;
+            paint.setStrokeWidth(0.35f + 1.1f * f);
+            paint.setColor(withAlpha(C_GOLD, (int) (a * (0.3f + 0.6f * f))));
+            c.drawLine(61f, y, 61f, y + len, paint);
+        }
+        c.restore();
+        dot(c, 55f, 32.5f, 1.1f, withAlpha(C_RED,
                 (int) (a * (0.22f + 0.78f * recBlink()))));
         paint.setStyle(Paint.Style.STROKE);
         paint.setColor(withAlpha(C_MUTED, (int) (180f * dash)));
