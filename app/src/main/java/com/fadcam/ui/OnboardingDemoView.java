@@ -9,6 +9,7 @@ import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathMeasure;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -64,6 +65,7 @@ public class OnboardingDemoView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF rect = new RectF();
+    private final Rect iconBounds = new Rect();
     private final Path path = new Path();
     private final Path strokeDst = new Path();
     private final PathMeasure strokeMeasure = new PathMeasure();
@@ -520,9 +522,9 @@ public class OnboardingDemoView extends View {
         frameRound(c, 10f, 8f, 112f, 42f, 3f, C_LINE, 0.8f);
         fillRound(c, 14f, 12f, 108f, 38f, 2f, 0xFF1B1F22);
         path.reset();
-        path.moveTo(56f, 17f);
-        path.lineTo(67f, 26f);
-        path.lineTo(56f, 35f);
+        path.moveTo(52f, 15f);
+        path.lineTo(71f, 26f);
+        path.lineTo(52f, 37f);
         path.close();
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(0xCCE8C77B);
@@ -573,24 +575,33 @@ public class OnboardingDemoView extends View {
         paint.setStrokeWidth(0.4f);
         paint.setColor(0x22FFFFFF);
         c.drawLine(115f, 8f, 115f, 84f, paint);
-        toolTile(c, 118f, 9f, true, "crop_free");
-        toolTile(c, 118f, 24f, false, "content_cut");
-        toolTile(c, 118f, 39f, false, "call_merge");
-        toolTile(c, 118f, 54f, false, "content_copy");
-        toolTile(c, 118f, 69f, false, "volume_off");
+        toolTile(c, 118f, 8f, true, "crop_free");
+        toolTile(c, 118f, 23f, false, "content_cut");
+        toolTile(c, 118f, 38f, false, "call_merge");
+        toolTile(c, 118f, 53f, false, "content_copy");
+        toolTile(c, 118f, 68f, false, "volume_off");
     }
 
     private void toolTile(Canvas c, float x, float y, boolean active, String glyph) {
-        fillRound(c, x, y, x + 38f, y + 12f, 2f,
+        fillRound(c, x, y, x + 38f, y + 13f, 2.5f,
                 active ? 0x1FE8C77B : 0xFF121416);
-        frameRound(c, x, y, x + 38f, y + 12f, 2f,
-                active ? C_GOLD : C_LINE, active ? 1f : 0.5f);
-        int color = active ? C_GOLD : C_MUTED;
+        frameRound(c, x, y, x + 38f, y + 13f, 2.5f,
+                active ? C_GOLD : C_LINE, active ? 0.9f : 0.5f);
+        drawIconGlyph(c, glyph, x + 19f, y + 6.5f, 10f,
+                active ? C_GOLD : C_MUTED);
+    }
+
+    /** Draws a Material icon ligature centred on the given point. */
+    private void drawIconGlyph(Canvas c, String glyph, float cx, float cy,
+                               float size, int color) {
         textPaint.setTypeface(iconFont != null ? iconFont : Typeface.DEFAULT);
-        textPaint.setTextSize(11f);
+        textPaint.setTextSize(size);
         textPaint.setColor(color);
         textPaint.setTextAlign(Paint.Align.CENTER);
-        c.drawText(glyph, x + 19f, y + 8.2f, textPaint);
+        iconBounds.setEmpty();
+        textPaint.getTextBounds(glyph, 0, glyph.length(), iconBounds);
+        float baseline = cy - (iconBounds.top + iconBounds.bottom) * 0.5f;
+        c.drawText(glyph, cx, baseline, textPaint);
     }
 
     private void clip(Canvas c, float l, float r, int fill, int border, boolean selected) {
@@ -814,7 +825,7 @@ public class OnboardingDemoView extends View {
         paint.setColor(0x66E8C77B);
         c.drawLine(106f, sy, 152f, sy, paint);
 
-        drawObjectIcon(c, idx, 116f, 26f, 144f, 54f, 255);
+        drawObjectIcon(c, idx, 111f, 22f, 145f, 56f, 255);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.45f);
         paint.setColor(withAlpha(C_GOLD, 170));
@@ -831,9 +842,9 @@ public class OnboardingDemoView extends View {
         c.drawLine(152f, 56f, 147f, 56f, paint);
         c.drawLine(152f, 56f, 152f, 51f, paint);
 
-        label(c, objectConfidence[idx], 106f, 65f, 6f, C_GOLD,
+        label(c, objectConfidence[idx], 106f, 65f, 6.4f, C_GOLD,
                 Paint.Align.LEFT, true);
-        label(c, "SAVED", 106f, 74f, 6f, withAlpha(C_INK, 235),
+        label(c, "SAVED", 106f, 74f, 6.4f, withAlpha(C_INK, 235),
                 Paint.Align.LEFT, true);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.2f);
@@ -842,7 +853,7 @@ public class OnboardingDemoView extends View {
         c.drawLine(143f, 74f, 149f, 67f, paint);
 
         // Evidence log; names stay in the viewer, the log carries time and score.
-        label(c, "DETECTION LOG", 14f, 22f, 5.6f, C_GOLD,
+        label(c, "DETECTION LOG", 14f, 22f, 6f, C_GOLD,
                 Paint.Align.LEFT, true);
         for (int i = 0; i < 3; i++) {
             float reveal = ambientOn ? 1f
@@ -854,10 +865,10 @@ public class OnboardingDemoView extends View {
             fillRound(c, 14f, top, 98f, top + 15f, 1.5f, withAlpha(0x151719, a));
             frameRound(c, 14f, top, 98f, top + 15f, 1.5f,
                     withAlpha(selected ? C_GOLD : C_LINE, a), selected ? 0.9f : 0.5f);
-            drawObjectIcon(c, i, 18f, top + 2f, 29f, top + 13f, a);
-            label(c, objectTime[i], 33f, top + 11f, 5.8f,
+            drawObjectIcon(c, i, 18f, top + 1.5f, 30f, top + 13.5f, a);
+            label(c, objectTime[i], 33f, top + 11f, 6.2f,
                     withAlpha(selected ? C_GOLD : C_MUTED, a), Paint.Align.LEFT, true);
-            label(c, objectScore[i], 94f, top + 11f, 6f,
+            label(c, objectScore[i], 94f, top + 11f, 6.4f,
                     withAlpha(selected ? C_GOLD : C_MUTED, a), Paint.Align.RIGHT, true);
         }
     }
@@ -1000,12 +1011,11 @@ public class OnboardingDemoView extends View {
         paint.setColor(0x22FFFFFF);
         c.drawLine(85f, 50f, 155f, 50f, paint);
 
-        // Mic.
+        // Torch toggle.
         paint.setColor(0x99C6A66A);
         paint.setStrokeWidth(0.7f);
         c.drawCircle(97f, 61f, 5f, paint);
-        fillRound(c, 96f, 58.5f, 98f, 62f, 1f, 0xFF9C9991);
-        c.drawLine(95.5f, 63f, 98.5f, 63f, paint);
+        drawIconGlyph(c, "flashlight_on", 97f, 61f, 7.5f, C_GOLD);
 
         // D-pad.
         paint.setColor(0x66C6A66A);
@@ -1067,6 +1077,10 @@ public class OnboardingDemoView extends View {
     private void drawBodycamSolo(Canvas c, float p) {
         float body = 1f;
         int a = 255;
+        c.save();
+        c.translate(84f, 46f);
+        c.scale(1.05f, 1.05f);
+        c.translate(-84f, -46f);
         dot(c, 84f, 24f, 8f, withAlpha(0xFF4A4E52, a));
         fillRound(c, 64f, 36f, 104f, 76f, 11f, withAlpha(0xFF3D4145, a));
         // Chest-mounted phone, showing the street ahead.
@@ -1101,9 +1115,9 @@ public class OnboardingDemoView extends View {
         c.drawRect(76.5f, 62.2f, 77.2f, 64f, paint);
         c.drawRect(80.8f, 62.2f, 81.5f, 64f, paint);
         float flow = (android.os.SystemClock.uptimeMillis() % 6200L) / 6200f;
-        streetWalker(c, 75f + 18f * ((flow + 0.05f) % 1f), 66f, 1.15f, flow, true, a);
-        streetWalker(c, 75f + 18f * ((1.05f - flow) % 1f), 68.5f, 1f, flow, false, a);
-        streetWalker(c, 75f + 18f * ((flow * 0.8f + 0.45f) % 1f), 64f, 1.25f, flow, true, a);
+        streetWalker(c, 70f + 28f * ((flow + 0.05f) % 1f), 66f, 1.15f, flow, true, a);
+        streetWalker(c, 98f - 28f * ((1.05f - flow) % 1f), 68.5f, 1f, flow, false, a);
+        streetWalker(c, 70f + 28f * ((flow * 0.8f + 0.45f) % 1f), 64f, 1.25f, flow, true, a);
         c.restore();
         dot(c, 76.8f, 43.8f, 0.7f, withAlpha(C_RED,
                 (int) (a * (0.22f + 0.78f * recBlink()))));
@@ -1112,11 +1126,16 @@ public class OnboardingDemoView extends View {
         paint.setStrokeWidth(0.6f);
         c.drawLine(68f, 41f, 76f, 48f, paint);
         c.drawLine(100f, 41f, 92f, 48f, paint);
+        c.restore();
     }
 
     /** Lite card: dashcam only, phone plus steering wheel. */
     private void drawDashcamSolo(Canvas c, float p) {
         float a = 255f;
+        c.save();
+        c.translate(84f, 46f);
+        c.scale(1.08f, 1.08f);
+        c.translate(-84f, -46f);
         // Landscape dash phone.
         fillRound(c, 43f, 24f, 83f, 50f, 4.5f, withAlpha(0xFF101214, (int) a));
         frameRound(c, 43f, 24f, 83f, 50f, 4.5f, withAlpha(C_GOLD, (int) a), 0.9f);
@@ -1193,6 +1212,7 @@ public class OnboardingDemoView extends View {
         c.drawLine(107f, 47f, 92f, 56f, paint);
         c.drawLine(107f, 47f, 122f, 56f, paint);
         dot(c, 107f, 47f, 2f, withAlpha(C_GOLD, (int) a));
+        c.restore();
         c.restore();
     }
 

@@ -1904,7 +1904,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_done">Done</string>
     <string name="onboarding_mini_heading">And we\'re not done yet.</string>
     <string name="onboarding_mini_support">Mini apps. Everyday tools, built right into FadCam.</string>
-    <string name="onboarding_mini_coming_soon">COMING SOON</string>
+    <string name="onboarding_mini_more">More mini apps coming soon.</string>
 
     <string name="onboarding_payoff_title">%1$d JOBS. ONE FADCAM.</string>
     <string name="onboarding_payoff_support">Time to say goodbye to those extra apps.</string>

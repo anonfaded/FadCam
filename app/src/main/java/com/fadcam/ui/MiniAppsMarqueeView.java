@@ -41,6 +41,7 @@ public class MiniAppsMarqueeView extends View {
 
     private final float density;
     private final float chipHeight;
+    private final float chipRadius;
     private final float chipPad;
     private final float chipGap;
     private final float edgeFade;
@@ -65,6 +66,8 @@ public class MiniAppsMarqueeView extends View {
         super(context, attrs, defStyleAttr);
         density = getResources().getDisplayMetrics().density;
         chipHeight = 26f * density;
+        // A squircle like the page indicators, not a fully rounded pill.
+        chipRadius = 8f * density;
         chipPad = 11f * density;
         chipGap = 8f * density;
         edgeFade = 22f * density;
@@ -235,8 +238,8 @@ public class MiniAppsMarqueeView extends View {
 
     private void drawChip(Canvas canvas, String label, float left, float top, float width) {
         rect.set(left, top, left + width, top + chipHeight);
-        canvas.drawRoundRect(rect, chipHeight * 0.5f, chipHeight * 0.5f, chipPaint);
-        canvas.drawRoundRect(rect, chipHeight * 0.5f, chipHeight * 0.5f, borderPaint);
+        canvas.drawRoundRect(rect, chipRadius, chipRadius, chipPaint);
+        canvas.drawRoundRect(rect, chipRadius, chipRadius, borderPaint);
         float baseline = top + chipHeight * 0.5f
                 - (textPaint.descent() + textPaint.ascent()) * 0.5f;
         canvas.drawText(label, left + chipPad, baseline, textPaint);

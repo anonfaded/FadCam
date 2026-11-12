@@ -64,6 +64,8 @@ public class OnboardingActivity extends AppIntro
     private ImageView dockNext;
     private ImageView dockDone;
     private View dockScrollHint;
+    private View scrollHintArrow;
+    private android.animation.ObjectAnimator scrollHintArrowAnimator;
     private SquircleIndicatorController dockIndicator;
     private boolean capabilitiesNextRevealed;
     private boolean scrollHintVisible;
@@ -563,6 +565,28 @@ public class OnboardingActivity extends AppIntro
         }
     }
 
+    /** A quiet bob on the hint arrow, pointing at the scroll direction. */
+    private void startScrollHintArrow() {
+        if (!animationsEnabled() || scrollHintArrow == null) return;
+        if (scrollHintArrowAnimator != null) return;
+        scrollHintArrowAnimator = android.animation.ObjectAnimator.ofFloat(
+                scrollHintArrow, "translationY", 0f, dp(3));
+        scrollHintArrowAnimator.setDuration(680L);
+        scrollHintArrowAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        scrollHintArrowAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        scrollHintArrowAnimator.setInterpolator(
+                new android.view.animation.AccelerateDecelerateInterpolator());
+        scrollHintArrowAnimator.start();
+    }
+
+    private void stopScrollHintArrow() {
+        if (scrollHintArrowAnimator != null) {
+            scrollHintArrowAnimator.cancel();
+            scrollHintArrowAnimator = null;
+        }
+        if (scrollHintArrow != null) scrollHintArrow.setTranslationY(0f);
+    }
+
     private void setScrollHintVisible(boolean show) {
         if (dockScrollHint == null) return;
         if (show && !scrollHintVisible) {
@@ -578,7 +602,9 @@ public class OnboardingActivity extends AppIntro
                 dockScrollHint.setAlpha(1f);
                 dockScrollHint.setTranslationY(0f);
             }
+            startScrollHintArrow();
         } else if (!show && scrollHintVisible) {
+            stopScrollHintArrow();
             scrollHintVisible = false;
             if (animationsEnabled()) {
                 dockScrollHint.animate().alpha(0f).translationY(-dp(4))
@@ -588,6 +614,7 @@ public class OnboardingActivity extends AppIntro
                 dockScrollHint.setVisibility(View.GONE);
             }
         } else if (!show) {
+            stopScrollHintArrow();
             dockScrollHint.setVisibility(View.GONE);
         }
     }
@@ -734,6 +761,7 @@ public class OnboardingActivity extends AppIntro
         });
 
         TextView chevron = new TextView(this);
+        scrollHintArrow = chevron;
         chevron.setText("keyboard_arrow_down");
         chevron.setTypeface(ResourcesCompat.getFont(this, R.font.materialicons));
         chevron.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
@@ -861,9 +889,22 @@ public class OnboardingActivity extends AppIntro
     }
 
     @Override
+    protected void onPause() {
+        stopScrollHintArrow();
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        stopScrollHintArrow();
+        super.onDestroy();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         hideNativeBottomChrome();
+        if (scrollHintVisible) startScrollHintArrow();
         ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
         if (pager != null) {
             pager.post(() -> updateNavigationButtons(pager.getCurrentItem()));
