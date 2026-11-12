@@ -60,6 +60,8 @@ public class OnboardingDemoView extends View {
     private static final int C_MUTED = 0xFF9C9991;
     private static final int C_DIM = 0xFF5C605F;
     private static final int C_RED = 0xFFD9564A;
+    private static final float[] STAR_X = {13.5f, 15.5f, 23.2f, 23.5f, 15.2f};
+    private static final float[] STAR_Y = {5.5f, 12f, 12f, 5f, 5.2f};
     private static final int C_GREEN = 0xFF86D3A0;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -75,6 +77,14 @@ public class OnboardingDemoView extends View {
             0f, 0f, 26f,
             new int[]{0x3DFFFFFF, 0x00FFFFFF}, null,
             android.graphics.Shader.TileMode.CLAMP);
+    private final android.graphics.Shader torchBeamShader =
+            new android.graphics.LinearGradient(55f, 0f, 120f, 0f,
+                    new int[]{0xFFFFF4DA, 0x00FFF4DA}, null,
+                    android.graphics.Shader.TileMode.CLAMP);
+    private final android.graphics.Shader skyFade =
+            new android.graphics.LinearGradient(0f, 0f, 0f, 12f,
+                    new int[]{0x001A2430, 0xFF16202A}, null,
+                    android.graphics.Shader.TileMode.CLAMP);
     private final Typeface mono = Typeface.MONOSPACE;
     private Typeface iconFont;
     private final Typeface monoBold = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD);
@@ -347,9 +357,9 @@ public class OnboardingDemoView extends View {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.5f);
         paint.setColor(0x77E8C77B);
-        c.drawCircle(76f, 26f, 6f, paint);
-        c.drawLine(76f, 26f, 76f, 21.5f, paint);
-        c.drawLine(76f, 26f, 79.5f, 27.8f, paint);
+        c.drawCircle(84f, 30f, 6f, paint);
+        c.drawLine(84f, 30f, 84f, 25.5f, paint);
+        c.drawLine(84f, 30f, 87.5f, 31.8f, paint);
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
                 float bx = 68.5f + col * 12f;
@@ -522,9 +532,9 @@ public class OnboardingDemoView extends View {
         frameRound(c, 10f, 8f, 112f, 42f, 3f, C_LINE, 0.8f);
         fillRound(c, 14f, 12f, 108f, 38f, 2f, 0xFF1B1F22);
         path.reset();
-        path.moveTo(52f, 15f);
-        path.lineTo(71f, 26f);
-        path.lineTo(52f, 37f);
+        path.moveTo(56f, 19f);
+        path.lineTo(68f, 26f);
+        path.lineTo(56f, 33f);
         path.close();
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(0xCCE8C77B);
@@ -575,9 +585,9 @@ public class OnboardingDemoView extends View {
         paint.setStrokeWidth(0.4f);
         paint.setColor(0x22FFFFFF);
         c.drawLine(115f, 8f, 115f, 84f, paint);
-        toolTile(c, 118f, 8f, true, "crop_free");
-        toolTile(c, 118f, 23f, false, "content_cut");
-        toolTile(c, 118f, 38f, false, "call_merge");
+        toolTile(c, 118f, 8f, true, "content_cut");
+        toolTile(c, 118f, 23f, false, "carpenter");
+        toolTile(c, 118f, 38f, false, "crop");
         toolTile(c, 118f, 53f, false, "content_copy");
         toolTile(c, 118f, 68f, false, "volume_off");
     }
@@ -853,7 +863,7 @@ public class OnboardingDemoView extends View {
         c.drawLine(143f, 74f, 149f, 67f, paint);
 
         // Evidence log; names stay in the viewer, the log carries time and score.
-        label(c, "DETECTION LOG", 14f, 22f, 6f, C_GOLD,
+        label(c, "EVIDENCE GALLERY", 14f, 22f, 6f, C_GOLD,
                 Paint.Align.LEFT, true);
         for (int i = 0; i < 3; i++) {
             float reveal = ambientOn ? 1f
@@ -898,17 +908,15 @@ public class OnboardingDemoView extends View {
     // ── 05 remote camera ────────────────────────────────────────────────────
 
     private void drawRemote(Canvas c, float p) {
-        // Camera source phone.
+        // Phone front: the same CCTV scene, cropped to portrait.
         fillRound(c, 10f, 20f, 48f, 72f, 5f, 0xFF121416);
         frameRound(c, 10f, 20f, 48f, 72f, 5f, C_LINE, 0.8f);
-        fillRound(c, 14f, 24f, 44f, 68f, 3f, 0xFF1A1D1F);
-        fillRound(c, 21f, 24f, 37f, 31f, 3f, 0xFF0B0D0E);
-        frameRound(c, 21f, 24f, 37f, 31f, 3f, 0x99C6A66A, 0.6f);
-        dot(c, 26.5f, 27.5f, 2f, 0xFF3A4044);
-        dot(c, 26.5f, 27.5f, 1.3f, 0xFF121416);
-        dot(c, 32f, 27.5f, 1.4f, 0xFF2B3033);
-        dot(c, 16f, 27f, 1.2f,
-                withAlpha(C_RED, (int) (55f + 200f * recBlink())));
+        fillRound(c, 12f, 22f, 46f, 70f, 3f, 0xFF0A0C0D);
+        drawRemoteScene(c, 12f, 22f, 46f, 70f, false, 3f);
+        frameRound(c, 12f, 22f, 46f, 70f, 3f, 0x33C6A66A, 0.5f);
+        dot(c, 29f, 24.5f, 1.3f, 0xFF050708);
+        frameRound(c, 27.7f, 23.2f, 30.3f, 25.8f, 1.2f, 0x66C6A66A, 0.4f);
+        dot(c, 29f, 24.5f, 0.5f, 0xFF3A4044);
 
         // Signal arcs and travelling dot.
         float signal = seg(p, 0.2f, 0.55f);
@@ -942,87 +950,26 @@ public class OnboardingDemoView extends View {
         paint.setStrokeWidth(0.4f);
         c.drawLine(100f, 13f, 152f, 13f, paint);
 
-        // Upper grid: the CCTV scene only.
-        fillRound(c, 85f, 17f, 155f, 47f, 2f, 0xFF1B2228);
+        // Upper grid: the shared CCTV scene.
+        drawRemoteScene(c, 85f, 17f, 155f, 47f, true, 2f);
         frameRound(c, 85f, 17f, 155f, 47f, 2f, C_LINE, 0.5f);
-        c.save();
-        c.clipRect(86f, 18f, 154f, 46f);
 
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0xFF202830);
-        c.drawRect(86f, 18f, 154f, 34f, paint);
-        paint.setColor(0xFF2A3239);
-        c.drawRect(86f, 34f, 154f, 46f, paint);
-        paint.setColor(0x33C6A66A);
-        c.drawRect(86f, 34f, 154f, 34.5f, paint);
-
-        // Window with a night view.
-        fillRound(c, 96f, 21f, 110f, 31f, 0.8f, 0xFF0C141D);
-        frameRound(c, 96f, 21f, 110f, 31f, 0.8f, 0x88E8C77B, 0.5f);
-        dot(c, 99f, 24f, 0.5f, 0xFFB9C6D1);
-        dot(c, 104f, 22.5f, 0.4f, 0xFFB9C6D1);
-        dot(c, 107f, 26f, 0.5f, 0xFFB9C6D1);
-
-        // Framed picture on the left wall.
-        fillRound(c, 88f, 22f, 94f, 28f, 0.5f, 0xFF12181C);
-        frameRound(c, 88f, 22f, 94f, 28f, 0.5f, 0x66C6A66A, 0.4f);
-
-        // Sofa.
-        fillRound(c, 112f, 30f, 132f, 35f, 2f, 0xFF333C43);
-        fillRound(c, 113f, 34f, 131f, 39f, 1.5f, 0xFF3E4850);
-        fillRound(c, 110f, 33f, 114f, 40f, 1.2f, 0xFF333C43);
-        fillRound(c, 130f, 33f, 134f, 40f, 1.2f, 0xFF333C43);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.4f);
-        paint.setColor(0x22FFFFFF);
-        c.drawLine(118f, 31f, 118f, 34f, paint);
-        c.drawLine(126f, 31f, 126f, 34f, paint);
-        dot(c, 113f, 40.5f, 0.6f, C_DIM);
-        dot(c, 131f, 40.5f, 0.6f, C_DIM);
-
-        // Coffee table and plant.
-        fillRound(c, 118f, 41f, 128f, 43f, 0.8f, 0xFF262D33);
-        fillRound(c, 120f, 43f, 126f, 44f, 0.5f, 0xFF1C2227);
-        fillRound(c, 136f, 38f, 140f, 42f, 0.8f, 0xFF2A3136);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.6f);
-        paint.setColor(0xFF3C5A44);
-        c.drawLine(138f, 38f, 138f, 34f, paint);
-        c.drawLine(138f, 36f, 135.5f, 34f, paint);
-        c.drawLine(138f, 36f, 140.5f, 34f, paint);
-        dot(c, 138f, 33.5f, 1.8f, 0x663C5A44);
-
-        // The walker crosses the lounge, with a real stride.
-        float walk = (android.os.SystemClock.uptimeMillis() % 8000L) / 8000f;
-        drawLoungeWalker(c, 82f + 76f * walk, 45f, walk);
-
-        // CCTV scanlines.
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.3f);
-        paint.setColor(0x0CFFFFFF);
-        for (float y = 18f; y < 46f; y += 2f) c.drawLine(86f, y, 154f, y, paint);
-        c.restore();
-        dot(c, 87f, 19f, 1.1f,
-                withAlpha(C_RED, (int) (55f + 200f * recBlink())));
-
-        // Lower grid: compact controls, no label.
+        // Lower grid: torch, D-pad, record.
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.4f);
         paint.setColor(0x22FFFFFF);
         c.drawLine(85f, 50f, 155f, 50f, paint);
 
-        // Torch toggle.
         paint.setColor(0x99C6A66A);
         paint.setStrokeWidth(0.7f);
         c.drawCircle(97f, 61f, 5f, paint);
         drawIconGlyph(c, "flashlight_on", 97f, 61f, 7.5f, C_GOLD);
 
-        // D-pad.
         paint.setColor(0x66C6A66A);
         c.drawCircle(120f, 61f, 7.5f, paint);
         dot(c, 120f, 61f, 2f, C_GOLD);
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0x99C6A66A);
+        paint.setColor(C_GOLD);
         path.reset();
         path.moveTo(120f, 52.5f);
         path.lineTo(118.4f, 55.2f);
@@ -1048,10 +995,99 @@ public class OnboardingDemoView extends View {
         path.close();
         c.drawPath(path, paint);
 
-        // Record.
-        paint.setColor(0x99C6A66A);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(0xCCE8E4D8);
+        paint.setStrokeWidth(0.7f);
         c.drawCircle(143f, 61f, 5f, paint);
         dot(c, 143f, 61f, 2f, C_RED);
+    }
+
+    /**
+     * Draws the lounge CCTV scene once, reused by the dashboard and the phone.
+     * fit=true letterboxes the whole scene; fit=false centre-crops it to fill
+     * a portrait phone screen.
+     */
+    private void drawRemoteScene(Canvas c, float l, float t, float r, float b,
+                                 boolean fit, float corner) {
+        float scale = fit
+                ? Math.min((r - l) / 70f, (b - t) / 30f)
+                : Math.max((r - l) / 70f, (b - t) / 30f);
+        float drawW = 70f * scale;
+        float drawH = 30f * scale;
+        float ox = l + (r - l - drawW) * 0.5f;
+        float oy = t + (b - t - drawH) * 0.5f;
+
+        rect.set(l, t, r, b);
+        path.reset();
+        path.addRoundRect(rect, corner, corner, Path.Direction.CW);
+        c.save();
+        c.clipPath(path);
+        c.translate(ox, oy);
+        c.scale(scale, scale);
+
+        // Wall, floor and baseboard.
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(0xFF202830);
+        c.drawRect(0f, 0f, 70f, 17f, paint);
+        paint.setColor(0xFF2A3239);
+        c.drawRect(0f, 17f, 70f, 30f, paint);
+        paint.setColor(0x33C6A66A);
+        c.drawRect(0f, 17f, 70f, 17.5f, paint);
+
+        // Window with a crescent moon and twinkling stars.
+        fillRound(c, 11f, 4f, 25f, 14f, 0.8f, 0xFF0C141D);
+        frameRound(c, 11f, 4f, 25f, 14f, 0.8f, 0x88E8C77B, 0.5f);
+        long twinkle = android.os.SystemClock.uptimeMillis();
+        for (int i = 0; i < STAR_X.length; i++) {
+            float tw = 0.35f + 0.65f * (0.5f + 0.5f *
+                    (float) Math.sin(twinkle / 620f + i * 1.9f));
+            dot(c, STAR_X[i], STAR_Y[i], 0.5f,
+                    withAlpha(0xFFDCE8F2, (int) (255f * tw)));
+            if (tw > 0.82f) dot(c, STAR_X[i], STAR_Y[i], 1.4f, 0x28DCE8F2);
+        }
+        dot(c, 19.8f, 7.2f, 2.2f, 0xFFE9E5D8);
+        dot(c, 21.1f, 6.4f, 2.15f, 0xFF0C141D);
+
+        // Framed picture.
+        fillRound(c, 3f, 5f, 9f, 11f, 0.5f, 0xFF12181C);
+        frameRound(c, 3f, 5f, 9f, 11f, 0.5f, 0x66C6A66A, 0.4f);
+
+        // Sofa.
+        fillRound(c, 27f, 13f, 47f, 18f, 2f, 0xFF3E4A42);
+        fillRound(c, 28f, 17f, 46f, 22f, 1.5f, 0xFF4C5A50);
+        fillRound(c, 25f, 16f, 29f, 23f, 1.2f, 0xFF3E4A42);
+        fillRound(c, 45f, 16f, 49f, 23f, 1.2f, 0xFF3E4A42);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(0.4f);
+        paint.setColor(0x33E8C77B);
+        c.drawLine(33f, 14f, 33f, 17f, paint);
+        c.drawLine(41f, 14f, 41f, 17f, paint);
+
+        // Coffee table and plant.
+        fillRound(c, 33f, 24f, 43f, 26f, 0.8f, 0xFF262D33);
+        fillRound(c, 35f, 26f, 41f, 27f, 0.5f, 0xFF1C2227);
+        fillRound(c, 51f, 21f, 55f, 25f, 0.8f, 0xFF7A5A3A);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(0.6f);
+        paint.setColor(0xFF3C6B4A);
+        c.drawLine(53f, 21f, 53f, 17f, paint);
+        c.drawLine(53f, 19f, 50.5f, 17f, paint);
+        c.drawLine(53f, 19f, 55.5f, 17f, paint);
+        dot(c, 51.2f, 17.5f, 1.1f, 0xFF3C6B4A);
+        dot(c, 54.8f, 18f, 1f, 0xFF4E7C58);
+        dot(c, 53f, 16.5f, 1.5f, 0xFF4E7C58);
+
+        // Walker.
+        float walk = (android.os.SystemClock.uptimeMillis() % 6400L) / 6400f;
+        drawLoungeWalker(c, -4f + 78f * walk, 28f, walk);
+
+        // CCTV scanlines and recording dot.
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(0.3f);
+        paint.setColor(0x0CFFFFFF);
+        for (float y = 0f; y < 30f; y += 2f) c.drawLine(0f, y, 70f, y, paint);
+        dot(c, 2f, 2f, 1.1f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
+        c.restore();
     }
 
     /** A lounge walker with swinging arms and legs; keeps a detached head. */
@@ -1063,7 +1099,7 @@ public class OnboardingDemoView extends View {
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setColor(ink);
         c.drawLine(x, floorY - 8.1f, x, floorY - 4f, paint);
-        float swing = (float) Math.sin(phase * Math.PI * 2 * 6) * 1.7f;
+        float swing = (float) Math.sin(phase * Math.PI * 2 * 7) * 1.7f;
         c.drawLine(x, floorY - 7f, x - 2.2f - swing * 0.45f, floorY - 4.6f, paint);
         c.drawLine(x, floorY - 7f, x + 2.2f + swing * 0.45f, floorY - 4.6f, paint);
         c.drawLine(x, floorY - 4f, x - 1.4f - swing, floorY, paint);
@@ -1079,10 +1115,16 @@ public class OnboardingDemoView extends View {
         int a = 255;
         c.save();
         c.translate(84f, 46f);
-        c.scale(1.05f, 1.05f);
+        c.scale(1.18f, 1.18f);
         c.translate(-84f, -46f);
         dot(c, 84f, 24f, 8f, withAlpha(0xFF4A4E52, a));
         fillRound(c, 64f, 36f, 104f, 76f, 11f, withAlpha(0xFF3D4145, a));
+        // Lanyard sits behind the phone.
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(withAlpha(C_MUTED, (int) (150f * body)));
+        paint.setStrokeWidth(0.6f);
+        c.drawLine(68f, 41f, 76f, 48f, paint);
+        c.drawLine(100f, 41f, 92f, 48f, paint);
         // Chest-mounted phone, showing the street ahead.
         fillRound(c, 72f, 40f, 96f, 72f, 4f, withAlpha(0xFF101214, a));
         frameRound(c, 72f, 40f, 96f, 72f, 4f, withAlpha(C_GOLD, a), 0.9f);
@@ -1114,105 +1156,200 @@ public class OnboardingDemoView extends View {
         c.drawRect(76f, 61f, 82f, 62.2f, paint);
         c.drawRect(76.5f, 62.2f, 77.2f, 64f, paint);
         c.drawRect(80.8f, 62.2f, 81.5f, 64f, paint);
-        float flow = (android.os.SystemClock.uptimeMillis() % 6200L) / 6200f;
-        streetWalker(c, 70f + 28f * ((flow + 0.05f) % 1f), 66f, 1.15f, flow, true, a);
-        streetWalker(c, 98f - 28f * ((1.05f - flow) % 1f), 68.5f, 1f, flow, false, a);
-        streetWalker(c, 70f + 28f * ((flow * 0.8f + 0.45f) % 1f), 64f, 1.25f, flow, true, a);
+        float flow = (android.os.SystemClock.uptimeMillis() % 9000L) / 9000f;
+        streetWalk(c, flow, 0.00f, 66f, 36f, true, 66f, 1.15f, a);
+        streetWalk(c, flow, 0.31f, 66f, 36f, false, 68.5f, 1f, a);
+        streetWalk(c, flow, 0.57f, 66f, 36f, true, 64f, 1.25f, a);
+        streetWalk(c, flow, 0.79f, 66f, 36f, false, 69.5f, 0.95f, a);
         c.restore();
         dot(c, 76.8f, 43.8f, 0.7f, withAlpha(C_RED,
                 (int) (a * (0.22f + 0.78f * recBlink()))));
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(withAlpha(C_MUTED, (int) (150f * body)));
-        paint.setStrokeWidth(0.6f);
-        c.drawLine(68f, 41f, 76f, 48f, paint);
-        c.drawLine(100f, 41f, 92f, 48f, paint);
         c.restore();
     }
 
     /** Lite card: dashcam only, phone plus steering wheel. */
     private void drawDashcamSolo(Canvas c, float p) {
+        float flow = (android.os.SystemClock.uptimeMillis() % 1800L) / 1800f;
+
+        // Windshield view ahead of the car, reused inside the phone screen.
+        drawDashScene(c, 14f, 14f, 154f, 72f, false, 0f, flow);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(0x20000000);
+        c.drawRect(14f, 14f, 154f, 72f, paint);
+
         float a = 255f;
         c.save();
         c.translate(84f, 46f);
-        c.scale(1.08f, 1.08f);
+        c.scale(1.25f, 1.25f);
         c.translate(-84f, -46f);
-        // Landscape dash phone.
-        fillRound(c, 43f, 24f, 83f, 50f, 4.5f, withAlpha(0xFF101214, (int) a));
-        frameRound(c, 43f, 24f, 83f, 50f, 4.5f, withAlpha(C_GOLD, (int) a), 0.9f);
-        fillRound(c, 46f, 27f, 80f, 47f, 2.5f, withAlpha(0xFF0E1317, (int) a));
-        c.save();
-        rect.set(46f, 27f, 80f, 47f);
-        path.reset();
-        path.addRoundRect(rect, 2.5f, 2.5f, Path.Direction.CW);
-        c.clipPath(path);
 
-        // Sky and horizon glow.
+        // Car dashboard under the phone and wheel.
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(withAlpha(0xFF151B20, (int) a));
-        c.drawRect(46f, 27f, 80f, 33f, paint);
-        paint.setColor(withAlpha(0x33E8C77B, (int) a));
-        c.drawRect(46f, 32.6f, 80f, 33f, paint);
-
-        // Road.
+        paint.setColor(withAlpha(0xFF1C2227, (int) a));
         path.reset();
-        path.moveTo(46f, 47f);
-        path.lineTo(57f, 33f);
-        path.lineTo(69f, 33f);
-        path.lineTo(80f, 47f);
+        path.moveTo(12f, 82f);
+        path.lineTo(156f, 82f);
+        path.lineTo(150f, 64f);
+        path.cubicTo(120f, 58f, 48f, 58f, 18f, 64f);
         path.close();
-        paint.setColor(withAlpha(0xFF252C32, (int) a));
+        c.drawPath(path, paint);
+        paint.setColor(withAlpha(0xFF323B42, (int) a));
+        path.reset();
+        path.moveTo(18f, 64f);
+        path.cubicTo(48f, 58f, 120f, 58f, 150f, 64f);
+        path.lineTo(150f, 65.5f);
+        path.cubicTo(120f, 59.5f, 48f, 59.5f, 18f, 65.5f);
+        path.close();
         c.drawPath(path, paint);
 
-        float flow = (android.os.SystemClock.uptimeMillis() % 1800L) / 1800f;
-
-        // Lane dashes rushing toward the viewer.
-        paint.setStyle(Paint.Style.STROKE);
-        for (int i = 0; i < 4; i++) {
-            float f = (i / 4f + flow) % 1f;
-            float y = 33f + 14f * f;
-            float len = 0.5f + 3f * f;
-            paint.setStrokeWidth(0.35f + 1.1f * f);
-            paint.setColor(withAlpha(C_GOLD, (int) (a * (0.3f + 0.6f * f))));
-            c.drawLine(63f, y, 63f, y + len, paint);
+        // Side vents.
+        fillRound(c, 18f, 69f, 28f, 74f, 1.2f, withAlpha(0xFF0B0E10, (int) a));
+        fillRound(c, 140f, 69f, 150f, 74f, 1.2f, withAlpha(0xFF0B0E10, (int) a));
+        paint.setStrokeWidth(0.35f);
+        paint.setColor(withAlpha(0x44FFFFFF, (int) a));
+        for (float yy = 70.2f; yy < 73.5f; yy += 1.1f) {
+            c.drawLine(19f, yy, 27f, yy, paint);
+            c.drawLine(141f, yy, 149f, yy, paint);
         }
 
-        // A few distant trees at the very edges; the road stays clear.
-        for (int i = 0; i < 2; i++) {
-            float f = (i / 2f + flow) % 1f;
-            float y = 33f + 14f * f;
-            float size = 0.8f + 1.3f * f;
-            float spread = (y - 33f) * 0.79f;
-            tree(c, 57f - spread - 2f, y, size, (int) (a * 0.78f));
-            tree(c, 69f + spread + 2f, y, size, (int) (a * 0.78f));
+        // Centre AC vents.
+        fillRound(c, 61f, 68f, 72f, 74f, 1.2f, withAlpha(0xFF0B0E10, (int) a));
+        fillRound(c, 80f, 68f, 91f, 74f, 1.2f, withAlpha(0xFF0B0E10, (int) a));
+        paint.setColor(withAlpha(0x44FFFFFF, (int) a));
+        for (float yy = 69.5f; yy < 73.5f; yy += 1.2f) {
+            c.drawLine(62f, yy, 71f, yy, paint);
+            c.drawLine(81f, yy, 90f, yy, paint);
         }
-        c.restore();
-        dot(c, 48.5f, 29.5f, 1.1f, withAlpha(C_RED,
+
+        // Larger hazard switch centred between the AC vents.
+        fillRound(c, 72.8f, 68.8f, 79.2f, 74f, 1f,
+                withAlpha(0xFF0B0E10, (int) a));
+        path.reset();
+        path.moveTo(76f, 69.6f);
+        path.lineTo(73.6f, 73f);
+        path.lineTo(78.4f, 73f);
+        path.close();
+        paint.setColor(withAlpha(0xFFC0392B, (int) a));
+        c.drawPath(path, paint);
+
+        // Button row centred under the AC vents.
+        for (int i = 0; i < 3; i++) {
+            fillRound(c, 68f + i * 6f, 76f, 72f + i * 6f, 78.2f, 0.6f,
+                    withAlpha(0xFF2A3238, (int) a));
+        }
+
+        // Landscape dash phone, showing the same road.
+        fillRound(c, 43f, 30f, 83f, 56f, 4.5f, withAlpha(0xFF101214, (int) a));
+        frameRound(c, 43f, 30f, 83f, 56f, 4.5f, withAlpha(C_GOLD, (int) a), 0.9f);
+        fillRound(c, 46f, 33f, 80f, 53f, 2.5f, withAlpha(0xFF0E1317, (int) a));
+        drawDashScene(c, 46f, 33f, 80f, 53f, true, 2.5f, flow);
+        dot(c, 48.5f, 35.5f, 1.1f, withAlpha(C_RED,
                 (int) (a * (0.22f + 0.78f * recBlink()))));
 
         // Stand.
         paint.setStyle(Paint.Style.STROKE);
         paint.setColor(withAlpha(C_MUTED, 180));
         paint.setStrokeWidth(0.9f);
-        c.drawLine(63f, 50f, 63f, 56f, paint);
-        c.drawLine(43f, 56f, 83f, 56f, paint);
+        c.drawLine(63f, 56f, 63f, 64f, paint);
+        c.drawLine(43f, 64f, 83f, 64f, paint);
 
         // Steering wheel.
         float steer = ambientOn
                 ? (float) Math.sin(ambientLocal * Math.PI * 2) * 14f : 0f;
         c.save();
-        c.rotate(steer, 107f, 47f);
+        c.rotate(steer, 107f, 53f);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.8f);
         paint.setColor(withAlpha(C_OLIVE, (int) a));
-        c.drawCircle(107f, 47f, 18f, paint);
+        c.drawCircle(107f, 53f, 18f, paint);
         paint.setStrokeWidth(1f);
         paint.setColor(withAlpha(C_MUTED, (int) a));
-        c.drawCircle(107f, 47f, 5f, paint);
-        c.drawLine(107f, 47f, 107f, 29f, paint);
-        c.drawLine(107f, 47f, 92f, 56f, paint);
-        c.drawLine(107f, 47f, 122f, 56f, paint);
-        dot(c, 107f, 47f, 2f, withAlpha(C_GOLD, (int) a));
+        c.drawCircle(107f, 53f, 5f, paint);
+        c.drawLine(107f, 53f, 107f, 35f, paint);
+        c.drawLine(107f, 53f, 92f, 62f, paint);
+        c.drawLine(107f, 53f, 122f, 62f, paint);
+        dot(c, 107f, 53f, 2f, withAlpha(C_GOLD, (int) a));
         c.restore();
+        c.restore();
+    }
+
+    /**
+     * The road ahead, drawn once and reused as the windshield background and
+     * inside the dash phone. Local design space is 100x50.
+     */
+    private void drawDashScene(Canvas c, float l, float t, float r, float b,
+                               boolean fit, float corner, float flow) {
+        float scale = fit
+                ? Math.min((r - l) / 100f, (b - t) / 50f)
+                : Math.max((r - l) / 100f, (b - t) / 50f);
+        float drawW = 100f * scale;
+        float drawH = 50f * scale;
+        float ox = l + (r - l - drawW) * 0.5f;
+        float oy = t + (b - t - drawH) * 0.5f;
+
+        rect.set(l, t, r, b);
+        path.reset();
+        path.addRoundRect(rect, corner, corner, Path.Direction.CW);
+        c.save();
+        c.clipPath(path);
+        c.translate(ox, oy);
+        c.scale(scale, scale);
+
+        // Sky fades in from the top edge, then the horizon glow.
+        paint.setStyle(Paint.Style.FILL);
+        paint.setShader(skyFade);
+        c.drawRect(0f, 0f, 100f, 12f, paint);
+        paint.setShader(null);
+        paint.setColor(0x44E8C77B);
+        c.drawRect(0f, 11.4f, 100f, 12f, paint);
+
+        // Road.
+        path.reset();
+        path.moveTo(8f, 50f);
+        path.lineTo(44f, 12f);
+        path.lineTo(56f, 12f);
+        path.lineTo(92f, 50f);
+        path.close();
+        paint.setColor(0xFF2A3138);
+        c.drawPath(path, paint);
+
+        // Edge lines.
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(0.5f);
+        paint.setColor(0x44FFFFFF);
+        c.drawLine(10f, 50f, 44.6f, 12f, paint);
+        c.drawLine(90f, 50f, 55.4f, 12f, paint);
+
+        // Lane dashes.
+        for (int i = 0; i < 4; i++) {
+            float f = (i / 4f + flow) % 1f;
+            float y = 12f + 38f * f;
+            float len = 0.8f + 4.5f * f;
+            paint.setStrokeWidth(0.35f + 1.4f * f);
+            paint.setColor(withAlpha(C_GOLD, (int) (110f + 140f * f)));
+            c.drawLine(50f, y, 50f, y + len, paint);
+        }
+
+        // Trees passing on both sides, below the horizon.
+        for (int i = 0; i < 2; i++) {
+            float f = 0.28f + 0.72f * ((i / 2f + flow) % 1f);
+            float y = 12f + 38f * f;
+            float size = 0.9f + 2.4f * f;
+            float spread = (y - 12f) * 0.947f;
+            tree(c, 44f - spread - 2f, y, size, 215);
+            tree(c, 56f + spread + 2f, y, size, 215);
+        }
+
+        // Distant car with red tail lights.
+        fillRound(c, 46f, 25f, 54f, 30f, 1.2f, 0xFF1A1E22);
+        fillRound(c, 47f, 22.5f, 53f, 26f, 1f, 0xFF22282D);
+        dot(c, 47.2f, 27.5f, 0.7f, C_RED);
+        dot(c, 52.8f, 27.5f, 0.7f, C_RED);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(0x33000000);
+        rect.set(46f, 29.6f, 54f, 30.6f);
+        c.drawRect(rect, paint);
+
         c.restore();
     }
 
@@ -1230,26 +1367,35 @@ public class OnboardingDemoView extends View {
     private void drawFlashlight(Canvas c, float p) {
         float glow = torchGlow(p);
 
-        // Beam from the torch lens.
-        path.reset();
-        path.moveTo(55f, 25f);
-        path.lineTo(112f, 4f);
-        path.lineTo(112f, 60f);
-        path.lineTo(55f, 39f);
-        path.close();
+        // Soft warm beam that fades out at the far end instead of a hard edge.
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(C_GOLD);
-        paint.setAlpha((int) (30f * glow));
-        c.drawPath(path, paint);
+        paint.setShader(torchBeamShader);
+        paint.setAlpha((int) (22f * glow));
         path.reset();
-        path.moveTo(56f, 29f);
-        path.lineTo(106f, 12f);
-        path.lineTo(106f, 52f);
-        path.lineTo(56f, 35f);
+        path.moveTo(55f, 20f);
+        path.lineTo(120f, 0f);
+        path.lineTo(120f, 64f);
+        path.lineTo(55f, 44f);
         path.close();
-        paint.setAlpha((int) (48f * glow));
+        c.drawPath(path, paint);
+        paint.setAlpha((int) (30f * glow));
+        path.reset();
+        path.moveTo(55f, 24f);
+        path.lineTo(116f, 6f);
+        path.lineTo(116f, 58f);
+        path.lineTo(55f, 40f);
+        path.close();
+        c.drawPath(path, paint);
+        paint.setAlpha((int) (42f * glow));
+        path.reset();
+        path.moveTo(56f, 28f);
+        path.lineTo(110f, 14f);
+        path.lineTo(110f, 50f);
+        path.lineTo(56f, 36f);
+        path.close();
         c.drawPath(path, paint);
         paint.setAlpha(255);
+        paint.setShader(null);
 
         // Forensics asset pack: proper side-view flashlight.
         if (torchIcon != null) {
@@ -1261,7 +1407,7 @@ public class OnboardingDemoView extends View {
         }
         if (glow > 0.55f) {
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(withAlpha(C_GOLD, (int) (70f * glow)));
+            paint.setColor(withAlpha(0xFFFFF4DA, (int) (80f * glow)));
             c.drawCircle(59f, 32f, 4.5f, paint);
         }
     }
@@ -1406,6 +1552,17 @@ public class OnboardingDemoView extends View {
         return String.format(java.util.Locale.US, "%02d:%02d", m, s);
     }
 
+    private void streetWalk(Canvas c, float flow, float offset, float minX,
+                            float span, boolean right, float groundY,
+                            float scale, int alpha) {
+        float t = (flow + offset) % 1f;
+        float x = right ? minX + span * t : minX + span * (1f - t);
+        float walkPhase = (android.os.SystemClock.uptimeMillis() / 1000f) * 4.2f
+                + offset * 6.283f;
+        streetWalker(c, x, groundY, scale, right ? walkPhase : -walkPhase,
+                right, alpha);
+    }
+
     private void streetWalker(Canvas c, float x, float groundY, float scale,
                               float phase, boolean right, int alpha) {
         int ink = withAlpha(0xFFD9D5C8, alpha);
@@ -1415,8 +1572,7 @@ public class OnboardingDemoView extends View {
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setColor(ink);
         c.drawLine(x, groundY - 5.1f * scale, x, groundY - 2.1f * scale, paint);
-        float swing = (float) Math.sin((right ? phase : -phase)
-                * Math.PI * 2 * 7) * 1.1f * scale;
+        float swing = (float) Math.sin(phase) * 1.1f * scale;
         c.drawLine(x, groundY - 4.3f * scale,
                 x - 1.2f * scale - swing * 0.4f, groundY - 2.7f * scale, paint);
         c.drawLine(x, groundY - 4.3f * scale,

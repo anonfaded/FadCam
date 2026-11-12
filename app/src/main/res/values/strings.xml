@@ -1879,11 +1879,11 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_capabilities_lede">FadCam does their jobs too. Yes, all of these. Without any trackers or dark patterns.</string>
 
     <string name="onboarding_feature_background_title">Background recording</string>
-    <string name="onboarding_feature_background_desc">Keep recording, even with the screen off.</string>
+    <string name="onboarding_feature_background_desc">Record even with the screen off, powered by crash-resistant Hybrid MP4 technology.</string>
     <string name="onboarding_feature_screen_title">Screen recording</string>
     <string name="onboarding_feature_screen_desc">Record your screen with drawing tools, layers, and pages.</string>
     <string name="onboarding_feature_editor_title">Video editor</string>
-    <string name="onboarding_feature_editor_desc">Trim, cut, merge, duplicate, or mute clips.</string>
+    <string name="onboarding_feature_editor_desc">Trim, split, crop, duplicate, or mute clips.</string>
     <string name="onboarding_feature_motion_title">Motion detection</string>
     <string name="onboarding_feature_motion_desc">Records only when movement is detected. Pauses when it stops.</string>
     <string name="onboarding_feature_forensic_title">Forensic intelligence</string>

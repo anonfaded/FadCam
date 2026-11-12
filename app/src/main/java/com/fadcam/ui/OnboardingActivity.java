@@ -169,6 +169,10 @@ public class OnboardingActivity extends AppIntro
         if (viewPager != null) {
             // ViewPager2 would use viewPager.setUserInputEnabled(true);
             viewPager.setEnabled(true); // Ensure the ViewPager is enabled
+            // On TV the remote must go through the gated dock, never the pager's
+            // built-in arrow paging.
+            viewPager.setFocusable(false);
+            viewPager.setFocusableInTouchMode(false);
 
             // Set page transformer
             viewPager.setPageTransformer(true, new FadePageTransformer());
@@ -507,12 +511,25 @@ public class OnboardingActivity extends AppIntro
         setScrollHintVisible(scrollGate);
     }
 
+    /** TV/D-pad focus feedback: a quiet scale around the dock control. */
+    private void attachDockFocus(View view, float focusedScale) {
+        view.setOnFocusChangeListener((v, hasFocus) -> {
+            v.animate().cancel();
+            v.animate().scaleX(hasFocus ? focusedScale : 1f)
+                    .scaleY(hasFocus ? focusedScale : 1f)
+                    .setDuration(140L)
+                    .setInterpolator(expoOut())
+                    .start();
+        });
+    }
+
     /** Disabled arrows stay in the dock as quiet anchors instead of leaving a hole. */
     private void setDockArrowEnabled(View arrow, boolean enabled) {
         if (!(arrow instanceof ImageView)) return;
         ImageView image = (ImageView) arrow;
         image.setEnabled(enabled);
         image.setClickable(enabled);
+        image.setFocusable(enabled);
         image.setAlpha(enabled ? 1f : 0.55f);
         image.setColorFilter(ContextCompat.getColor(this,
                 enabled ? R.color.pro_gold : R.color.dossier_muted));
@@ -523,12 +540,14 @@ public class OnboardingActivity extends AppIntro
         dockNext.animate().cancel();
         if (!visible) {
             dockNext.setVisibility(View.INVISIBLE);
+            dockNext.setFocusable(false);
             return;
         }
         float targetAlpha = enabled ? 1f : 0.55f;
         dockNext.setVisibility(View.VISIBLE);
         dockNext.setEnabled(enabled);
         dockNext.setClickable(enabled);
+        dockNext.setFocusable(enabled);
         dockNext.setColorFilter(ContextCompat.getColor(this,
                 enabled ? R.color.pro_gold : R.color.dossier_muted));
         if (animationsEnabled()) {
@@ -675,6 +694,9 @@ public class OnboardingActivity extends AppIntro
 
         ImageView back = new ImageView(this);
         back.setLayoutParams(new LinearLayout.LayoutParams(arrow, arrow));
+        back.setFocusable(true);
+        back.setFocusableInTouchMode(false);
+        attachDockFocus(back, 1.14f);
         back.setScaleType(ImageView.ScaleType.CENTER);
         back.setImageResource(rtl
                 ? R.drawable.ic_onboarding_chevron
@@ -702,6 +724,9 @@ public class OnboardingActivity extends AppIntro
         dots.setLayoutParams(dotsLp);
 
         ImageView next = new ImageView(this);
+        next.setFocusable(true);
+        next.setFocusableInTouchMode(false);
+        attachDockFocus(next, 1.14f);
         next.setScaleType(ImageView.ScaleType.CENTER);
         next.setImageResource(rtl
                 ? R.drawable.ic_onboarding_chevron_left
@@ -755,6 +780,8 @@ public class OnboardingActivity extends AppIntro
         hint.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
         hint.setClickable(true);
         hint.setFocusable(true);
+        hint.setFocusableInTouchMode(false);
+        attachDockFocus(hint, 1.06f);
         hint.setOnClickListener(v -> {
             OnboardingCapabilitiesFragment capabilities = findCapabilitiesFragment();
             if (capabilities != null) capabilities.scrollDown();
@@ -820,6 +847,15 @@ public class OnboardingActivity extends AppIntro
                     .setStartDelay(140L).setDuration(420L)
                     .setInterpolator(expoOut()).start());
         }
+        if (isTelevision()) {
+            next.post(next::requestFocus);
+        }
+    }
+
+    private boolean isTelevision() {
+        PackageManager pm = getPackageManager();
+        return pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+                || pm.hasSystemFeature(PackageManager.FEATURE_TELEVISION);
     }
 
     private int selectableBorderless() {
