@@ -78,7 +78,7 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         lite = BuildConfig.LITE_EDITION;
         started = false;
         applyEdition(view);
-        setPayoff(view, lite ? 3 : 8);
+        setPayoff(view, lite ? 3 : 10);
         TextView liteNote = view.findViewById(R.id.onboarding_lite_note);
         if (liteNote != null && lite) liteNote.setVisibility(View.VISIBLE);
         scrollView = view.findViewById(R.id.onboarding_scroll);

@@ -71,11 +71,13 @@ public class OnboardingDemoView extends View {
     private final Typeface mono = Typeface.MONOSPACE;
     private final Typeface monoBold = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD);
     private final boolean[][] qr = new boolean[21][21];
+    private final String[] objectConfidence = new String[3];
     private final String[] objectScore = new String[3];
     private final String[] objectTime = new String[3];
     private final Drawable[] objectIcons = new Drawable[3];
     private Drawable torchIcon;
     private String qrValue;
+    private long lockStartedMs;
 
     private int type = TYPE_BACKGROUND;
     private boolean compact;
@@ -105,13 +107,20 @@ public class OnboardingDemoView extends View {
             compact = a.getBoolean(R.styleable.OnboardingDemoView_demoCompact, false);
             a.recycle();
         }
-        // Demo evidence log: generic timestamps and scores, not a class list.
+        String person = context.getString(R.string.onboarding_demo_person);
+        String gun = context.getString(R.string.onboarding_demo_gun);
+        String knife = context.getString(R.string.onboarding_demo_knife);
+        objectConfidence[0] = context.getString(
+                R.string.onboarding_demo_confidence, person, 96);
+        objectConfidence[1] = context.getString(
+                R.string.onboarding_demo_confidence, gun, 91);
+        objectConfidence[2] = context.getString(
+                R.string.onboarding_demo_confidence, knife, 88);
         int[] scores = {96, 91, 88};
-        int[][] times = {{14, 2}, {14, 5}, {14, 9}};
+        int[] minutes = {2, 5, 9};
         for (int i = 0; i < 3; i++) {
             objectScore[i] = context.getString(R.string.onboarding_demo_score, scores[i]);
-            objectTime[i] = String.format(java.util.Locale.US, "%02d:%02d",
-                    times[i][0], times[i][1]);
+            objectTime[i] = String.format(java.util.Locale.US, "02:%02d PM", minutes[i]);
         }
         qrValue = context.getString(R.string.onboarding_demo_qr_value);
         objectIcons[0] = ContextCompat.getDrawable(context, R.drawable.ic_detection_person);
@@ -163,6 +172,7 @@ public class OnboardingDemoView extends View {
         played = true;
         ambientOn = false;
         progress = 0f;
+        lockStartedMs = 0L;
         if (!animationsEnabled()) {
             progress = 1f;
             invalidate();
@@ -212,6 +222,7 @@ public class OnboardingDemoView extends View {
         played = false;
         progress = 0f;
         ambientOn = false;
+        lockStartedMs = 0L;
         invalidate();
     }
 
@@ -362,10 +373,15 @@ public class OnboardingDemoView extends View {
             c.drawLine(85f, 54f, 85f, 57.5f, paint);
         }
 
-        // The recording indicator stays alive after the screen goes dark.
-        dot(c, 66f, 20f, 1.6f,
-                withAlpha(C_RED, (int) (55f + 200f * recBlink())));
-        label(c, clockLabel(p), 102f, 22f, 5.5f, C_INK, Paint.Align.RIGHT, false);
+        // The capture indicator starts exactly when the lock screen appears.
+        if (dim > 0.5f) {
+            if (lockStartedMs == 0L) lockStartedMs = android.os.SystemClock.uptimeMillis();
+            long seconds = (android.os.SystemClock.uptimeMillis() - lockStartedMs) / 1000L;
+            dot(c, 66f, 20f, 1.6f,
+                    withAlpha(C_RED, (int) (55f + 200f * recBlink())));
+            label(c, clockText(seconds), 102f, 22f, 5.5f, C_INK,
+                    Paint.Align.RIGHT, false);
+        }
     }
 
     // ── 02 screen recording ─────────────────────────────────────────────────
@@ -557,69 +573,118 @@ public class OnboardingDemoView extends View {
     // ── 04 motion detection ─────────────────────────────────────────────────
 
     private void drawMotion(Canvas c, float p) {
-        // Two-state story: motion starts -> recording resumes; motion stops -> recording pauses.
-        float on = ambientOn
-                ? seg(ambientLocal, 0f, 0.06f) * (1f - seg(ambientLocal, 0.46f, 0.56f))
-                : seg(p, 0.04f, 0.12f) * (1f - seg(p, 0.48f, 0.58f));
+        // Scene frame, centred between the corner ticks.
+        fillRound(c, 10f, 14f, 158f, 78f, 3f, 0xFF101214);
+        frameRound(c, 10f, 14f, 158f, 78f, 3f, C_LINE, 0.8f);
+        c.save();
+        c.clipRect(11f, 15f, 157f, 77f);
 
-        // Camera preview.
-        fillRound(c, 12f, 4f, 158f, 52f, 3f, 0xFF101214);
-        frameRound(c, 12f, 4f, 158f, 52f, 3f, C_LINE, 0.8f);
+        // Room: wall, floor, door and a shelf.
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.35f);
-        paint.setColor(0x14FFFFFF);
-        for (float x = 24f; x < 156f; x += 16f) c.drawLine(x, 8f, x, 48f, paint);
-        c.drawLine(16f, 48f, 154f, 48f, paint);
+        paint.setStrokeWidth(0.3f);
+        paint.setColor(0x12FFFFFF);
+        for (float x = 26f; x < 158f; x += 16f) c.drawLine(x, 16f, x, 66f, paint);
+        c.drawLine(10f, 66f, 158f, 66f, paint);
 
-        int live = (int) ((60f + 195f * on) * recBlink());
-        dot(c, 18f, 11f, 1.4f, withAlpha(C_RED, live));
-        label(c, on > 0.5f ? "REC" : "IDLE", 24f, 13f, 4.4f,
-                withAlpha(C_MUTED, 120 + (int) (135f * on)), Paint.Align.LEFT, true);
+        fillRound(c, 128f, 30f, 150f, 66f, 1f, 0xFF15181A);
+        frameRound(c, 128f, 30f, 150f, 66f, 1f, C_LINE, 0.5f);
+        dot(c, 145f, 48f, 0.9f, C_DIM);
 
-        float bob = (float) Math.sin(ambientLocal * Math.PI * 2 * 3) * 1.5f * on;
-        drawObjectIcon(c, 0, 70f, 18f + bob, 98f, 46f + bob,
-                (int) (140f + 115f * on));
-        if (on > 0.02f) {
-            float l = 64f, t = 12f + bob, r = 104f, b = 50f + bob;
-            int gold = withAlpha(C_GOLD, (int) (225f * on));
+        paint.setColor(0x44C6A66A);
+        paint.setStrokeWidth(0.8f);
+        c.drawLine(58f, 52f, 86f, 52f, paint);
+        fillRound(c, 64f, 43f, 76f, 52f, 1f, 0xFF262A2D);
+        frameRound(c, 64f, 43f, 76f, 52f, 1f, 0x66C6A66A, 0.4f);
+
+        // Mounted phone at the left, aimed across the room.
+        fillRound(c, 12f, 30f, 17f, 44f, 1f, 0xFF1F2326);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1f);
+        paint.setColor(0xFF3A3F43);
+        c.drawLine(17f, 37f, 20f, 37f, paint);
+        fillRound(c, 20f, 26f, 34f, 50f, 3.5f, 0xFF121416);
+        frameRound(c, 20f, 26f, 34f, 50f, 3.5f, C_LINE, 0.7f);
+        dot(c, 27f, 30f, 1.1f, 0xFF2B3033);
+        dot(c, 23f, 28f, 0.9f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
+
+        // Walk in, stand for a beat, then walk out.
+        float t = ambientOn ? ambientLocal : p;
+        float px;
+        boolean active;
+        if (t < 0.45f) {
+            px = 40f + 66f * (t / 0.45f);
+            active = true;
+        } else if (t < 0.75f) {
+            px = 106f;
+            active = false;
+        } else {
+            px = 106f + 64f * ((t - 0.75f) / 0.25f);
+            active = t < 0.985f;
+        }
+        if (px < 158f) drawWalker(c, px, t, active);
+
+        if (active) {
+            float l = px - 7f, r = px + 7f, tp = 34f, b = 65f;
+            int gold = withAlpha(C_GOLD, 225);
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(withAlpha(C_GOLD, (int) (18f * on)));
-            rect.set(l, t, r, b);
+            paint.setColor(0x1FE8C77B);
+            rect.set(l, tp, r, b);
             c.drawRect(rect, paint);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(0.8f);
             paint.setColor(gold);
-            rect.set(l, t, r, b);
+            rect.set(l, tp, r, b);
             c.drawRect(rect, paint);
             paint.setStrokeWidth(1.4f);
-            c.drawLine(l, t, l + 5f, t, paint);
-            c.drawLine(l, t, l, t + 5f, paint);
-            c.drawLine(r, t, r - 5f, t, paint);
-            c.drawLine(r, t, r, t + 5f, paint);
-            c.drawLine(l, b, l + 5f, b, paint);
-            c.drawLine(l, b, l, b - 5f, paint);
-            c.drawLine(r, b, r - 5f, b, paint);
-            c.drawLine(r, b, r, b - 5f, paint);
+            c.drawLine(l, tp, l + 4f, tp, paint);
+            c.drawLine(l, tp, l, tp + 4f, paint);
+            c.drawLine(r, tp, r - 4f, tp, paint);
+            c.drawLine(r, tp, r, tp + 4f, paint);
+            c.drawLine(l, b, l + 4f, b, paint);
+            c.drawLine(l, b, l, b - 4f, paint);
+            c.drawLine(r, b, r - 4f, b, paint);
+            c.drawLine(r, b, r, b - 4f, paint);
         }
 
-        drawMotionRow(c, 60f, on, "MOTION DETECTED", "MOTION STOPPED");
-        drawMotionRow(c, 72f, on, "RECORDING RESUMED", "RECORDING PAUSED");
+        drawPlayPauseBadge(c, 146f, 22f, active);
+        dot(c, 16f, 19f, 1.4f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
+        c.restore();
     }
 
-    /** One status line that cross-swaps between the active and idle labels. */
-    private void drawMotionRow(Canvas c, float y, float on, String active, String idle) {
-        float activeAlpha = Math.max(0f, on * 2f - 1f);
-        float idleAlpha = Math.max(0f, 1f - on * 2f);
+    private void drawWalker(Canvas c, float x, float phase, boolean walking) {
+        float swing = walking
+                ? (float) Math.sin(phase * Math.PI * 2 * 9) * 2.6f : 0f;
+        dot(c, x, 38f, 3.1f, C_INK);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.3f);
-        paint.setColor(0x1AFFFFFF);
-        c.drawLine(12f, y - 3.5f, 158f, y - 3.5f, paint);
-        dot(c, 17f, y + 2f, 1.4f, withAlpha(C_GOLD, (int) (255f * activeAlpha)));
-        dot(c, 17f, y + 2f, 1.4f, withAlpha(C_MUTED, (int) (255f * idleAlpha)));
-        label(c, active, 23f, y + 4f, 5.4f,
-                withAlpha(C_GOLD, (int) (255f * activeAlpha)), Paint.Align.LEFT, true);
-        label(c, idle, 23f, y + 4f, 5.4f,
-                withAlpha(C_MUTED, (int) (255f * idleAlpha)), Paint.Align.LEFT, true);
+        paint.setStrokeWidth(1.5f);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setColor(C_INK);
+        c.drawLine(x, 41.5f, x, 54f, paint);
+        c.drawLine(x, 45f, x - 4.6f - swing, 50f, paint);
+        c.drawLine(x, 45f, x + 4.6f + swing, 50f, paint);
+        c.drawLine(x, 54f, x - 2.2f - swing, 63f, paint);
+        c.drawLine(x, 54f, x + 2.2f + swing, 63f, paint);
+        paint.setStrokeCap(Paint.Cap.BUTT);
+    }
+
+    /** Gold play while recording motion, muted pause between events. */
+    private void drawPlayPauseBadge(Canvas c, float x, float y, boolean playing) {
+        int accent = playing ? C_GOLD : C_MUTED;
+        fillRound(c, x - 6f, y - 6f, x + 6f, y + 6f, 6f, 0xE60B0C0D);
+        frameRound(c, x - 6f, y - 6f, x + 6f, y + 6f, 6f, accent, 0.8f);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(accent);
+        if (playing) {
+            path.reset();
+            path.moveTo(x - 1.6f, y - 3f);
+            path.lineTo(x + 3.4f, y);
+            path.lineTo(x - 1.6f, y + 3f);
+            path.close();
+            c.drawPath(path, paint);
+        } else {
+            c.drawRect(x - 3f, y - 3f, x - 0.9f, y + 3f, paint);
+            c.drawRect(x + 0.9f, y - 3f, x + 3f, y + 3f, paint);
+        }
     }
 
     // ── forensic intelligence ───────────────────────────────────────────────
@@ -629,66 +694,65 @@ public class OnboardingDemoView extends View {
                 ? ((int) (ambientLocal * 3f)) % 3
                 : (int) Math.max(0f, Math.min(2f, (p - 0.3f) * 4f));
 
-        fillRound(c, 10f, 4f, 158f, 84f, 3f, 0xFF101214);
-        frameRound(c, 10f, 4f, 158f, 84f, 3f, C_LINE, 0.8f);
+        fillRound(c, 10f, 14f, 158f, 78f, 3f, 0xFF101214);
+        frameRound(c, 10f, 14f, 158f, 78f, 3f, C_LINE, 0.8f);
 
-        // Evidence viewer with a scan line.
-        fillRound(c, 102f, 8f, 154f, 80f, 2.5f, 0xFF1B1F22);
-        frameRound(c, 102f, 8f, 154f, 80f, 2.5f, C_LINE, 0.6f);
+        // Evidence viewer; the scan stays inside the golden frame.
+        fillRound(c, 102f, 18f, 156f, 76f, 2.5f, 0xFF1B1F22);
+        frameRound(c, 102f, 18f, 156f, 76f, 2.5f, C_LINE, 0.6f);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.3f);
         paint.setColor(0x12FFFFFF);
-        for (float x = 110f; x < 154f; x += 8f) c.drawLine(x, 10f, x, 78f, paint);
+        for (float x = 108f; x < 156f; x += 8f) c.drawLine(x, 20f, x, 74f, paint);
 
         float sweep = ambientOn ? ambientLocal : seg(p, 0.45f, 0.85f);
-        float sy = 10f + 68f * sweep;
-        paint.setStyle(Paint.Style.STROKE);
+        float sy = 22f + 34f * sweep;
         paint.setStrokeWidth(0.7f);
-        paint.setColor(0x55E8C77B);
-        c.drawLine(104f, sy, 152f, sy, paint);
+        paint.setColor(0x66E8C77B);
+        c.drawLine(106f, sy, 152f, sy, paint);
 
-        drawObjectIcon(c, idx, 112f, 18f, 144f, 50f, 255);
+        drawObjectIcon(c, idx, 116f, 26f, 144f, 54f, 255);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.9f);
         paint.setColor(C_GOLD);
-        rect.set(108f, 14f, 148f, 54f);
+        rect.set(106f, 22f, 152f, 56f);
         c.drawRect(rect, paint);
         paint.setStrokeWidth(1.5f);
-        c.drawLine(108f, 14f, 113f, 14f, paint);
-        c.drawLine(108f, 14f, 108f, 19f, paint);
-        c.drawLine(148f, 14f, 143f, 14f, paint);
-        c.drawLine(148f, 14f, 148f, 19f, paint);
-        c.drawLine(108f, 54f, 113f, 54f, paint);
-        c.drawLine(108f, 54f, 108f, 49f, paint);
-        c.drawLine(148f, 54f, 143f, 54f, paint);
-        c.drawLine(148f, 54f, 148f, 49f, paint);
+        c.drawLine(106f, 22f, 111f, 22f, paint);
+        c.drawLine(106f, 22f, 106f, 27f, paint);
+        c.drawLine(152f, 22f, 147f, 22f, paint);
+        c.drawLine(152f, 22f, 152f, 27f, paint);
+        c.drawLine(106f, 56f, 111f, 56f, paint);
+        c.drawLine(106f, 56f, 106f, 51f, paint);
+        c.drawLine(152f, 56f, 147f, 56f, paint);
+        c.drawLine(152f, 56f, 152f, 51f, paint);
 
-        label(c, "CONF " + objectScore[idx], 106f, 64f, 5f, C_GOLD,
+        label(c, objectConfidence[idx], 106f, 65f, 6f, C_GOLD,
                 Paint.Align.LEFT, true);
-        label(c, "SAVED", 106f, 74f, 4.4f, C_MUTED, Paint.Align.LEFT, true);
+        label(c, "SAVED", 106f, 74f, 4.8f, C_MUTED, Paint.Align.LEFT, true);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.2f);
         paint.setColor(C_GOLD);
-        c.drawLine(134f, 71f, 137f, 74f, paint);
-        c.drawLine(137f, 74f, 142f, 68f, paint);
+        c.drawLine(140f, 71f, 143f, 74f, paint);
+        c.drawLine(143f, 74f, 149f, 67f, paint);
 
-        // Evidence log: broad "people + objects", with time and score only.
-        label(c, "PEOPLE + OBJECTS", 14f, 12f, 4.2f, C_MUTED,
+        // Evidence log; names stay in the viewer, the log carries time and score.
+        label(c, "PEOPLE + OBJECTS", 14f, 22f, 4.8f, C_MUTED,
                 Paint.Align.LEFT, true);
         for (int i = 0; i < 3; i++) {
             float reveal = ambientOn ? 1f
                     : seg(p, 0.1f + i * 0.12f, 0.32f + i * 0.12f);
             int a = (int) (255f * reveal);
             if (a <= 0) continue;
-            float top = 18f + i * 22f;
+            float top = 26f + i * 17f;
             boolean selected = i == idx;
-            fillRound(c, 14f, top, 96f, top + 18f, 1.5f, withAlpha(0x151719, a));
-            frameRound(c, 14f, top, 96f, top + 18f, 1.5f,
+            fillRound(c, 14f, top, 98f, top + 15f, 1.5f, withAlpha(0x151719, a));
+            frameRound(c, 14f, top, 98f, top + 15f, 1.5f,
                     withAlpha(selected ? C_GOLD : C_LINE, a), selected ? 0.9f : 0.5f);
-            drawObjectIcon(c, i, 18f, top + 3f, 30f, top + 15f, a);
-            label(c, objectTime[i], 34f, top + 12f, 4.8f,
+            drawObjectIcon(c, i, 18f, top + 2f, 29f, top + 13f, a);
+            label(c, objectTime[i], 33f, top + 11f, 5.4f,
                     withAlpha(selected ? C_GOLD : C_MUTED, a), Paint.Align.LEFT, true);
-            label(c, objectScore[i], 92f, top + 12f, 4.8f,
+            label(c, objectScore[i], 94f, top + 11f, 5.8f,
                     withAlpha(selected ? C_GOLD : C_MUTED, a), Paint.Align.RIGHT, true);
         }
     }
@@ -722,12 +786,12 @@ public class OnboardingDemoView extends View {
         fillRound(c, 10f, 20f, 48f, 72f, 5f, 0xFF121416);
         frameRound(c, 10f, 20f, 48f, 72f, 5f, C_LINE, 0.8f);
         fillRound(c, 14f, 24f, 44f, 68f, 3f, 0xFF1A1D1F);
-        // Camera module: big enough to read as a real lens at this size.
-        fillRound(c, 22.5f, 24.5f, 34.5f, 30f, 2.7f, 0xFF0B0D0E);
-        frameRound(c, 22.5f, 24.5f, 34.5f, 30f, 2.7f, 0x88C6A66A, 0.5f);
-        dot(c, 26.5f, 27.25f, 1.6f, 0xFF3A4044);
-        dot(c, 26.5f, 27.25f, 1.1f, 0xFF121416);
-        dot(c, 31.5f, 27.25f, 1.2f, 0xFF2B3033);
+        // Camera module: deliberately readable at card size.
+        fillRound(c, 21f, 24f, 37f, 31f, 3f, 0xFF0B0D0E);
+        frameRound(c, 21f, 24f, 37f, 31f, 3f, 0x99C6A66A, 0.6f);
+        dot(c, 26.5f, 27.5f, 2f, 0xFF3A4044);
+        dot(c, 26.5f, 27.5f, 1.3f, 0xFF121416);
+        dot(c, 32f, 27.5f, 1.4f, 0xFF2B3033);
         dot(c, 16f, 27f, 1.2f,
                 withAlpha(C_RED, (int) (55f + 200f * recBlink())));
 
@@ -765,16 +829,16 @@ public class OnboardingDemoView extends View {
         paint.setStrokeWidth(0.4f);
         c.drawLine(100f, 13f, 152f, 13f, paint);
 
-        fillRound(c, 87f, 17f, 121f, 43f, 2f, 0xFF1B1F22);
-        frameRound(c, 87f, 17f, 121f, 43f, 2f, C_LINE, 0.6f);
-        dot(c, 91f, 21f, 1.1f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
-        drawObjectIcon(c, 0, 95f, 18f, 115f, 42f, 255);
+        fillRound(c, 85f, 17f, 117f, 43f, 2f, 0xFF1B1F22);
+        frameRound(c, 85f, 17f, 117f, 43f, 2f, C_LINE, 0.6f);
+        dot(c, 89f, 21f, 1.1f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
+        drawObjectIcon(c, 0, 92f, 19f, 110f, 37f, 255);
 
         // CONTROLS tag, same mono-bold plate as the motion-detection names.
         String controls = "CONTROLS";
-        float tagSize = 6.2f;
+        float tagSize = 5.8f;
         float tagW = measureLabel(controls, tagSize, true);
-        float tagL = 139.5f - (tagW + 5f) * 0.5f;
+        float tagL = 136.5f - (tagW + 5f) * 0.5f;
         fillRound(c, tagL, 41f, tagL + tagW + 5f, 50f, 1.2f, 0xE60B0C0D);
         frameRound(c, tagL, 41f, tagL + tagW + 5f, 50f, 1.2f,
                 0xC6E8C77B, 0.6f);
@@ -784,14 +848,14 @@ public class OnboardingDemoView extends View {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.7f);
         paint.setColor(0x66C6A66A);
-        c.drawCircle(138f, 61f, 7.5f, paint);
-        dot(c, 138f, 61f, 2.2f, C_GOLD);
+        c.drawCircle(136.5f, 61f, 7.5f, paint);
+        dot(c, 136.5f, 61f, 2.2f, C_GOLD);
         paint.setColor(C_LINE);
         paint.setStrokeWidth(0.4f);
-        c.drawLine(138f, 53f, 138f, 56f, paint);
-        c.drawLine(138f, 66f, 138f, 69f, paint);
-        c.drawLine(130.5f, 61f, 133.5f, 61f, paint);
-        c.drawLine(142.5f, 61f, 145.5f, 61f, paint);
+        c.drawLine(136.5f, 53f, 136.5f, 56f, paint);
+        c.drawLine(136.5f, 66f, 136.5f, 69f, paint);
+        c.drawLine(129f, 61f, 132f, 61f, paint);
+        c.drawLine(141f, 61f, 144f, 61f, paint);
     }
 
     // ── 06 bodycam / dashcam ────────────────────────────────────────────────
@@ -819,32 +883,32 @@ public class OnboardingDemoView extends View {
     private void drawDashcamSolo(Canvas c, float p) {
         float dash = 1f;
         int a = 255;
-        fillRound(c, 56f, 25f, 72f, 49f, 3f, withAlpha(0xFF101214, a));
-        frameRound(c, 56f, 25f, 72f, 49f, 3f, withAlpha(C_GOLD, a), 0.8f);
-        fillRound(c, 58f, 27f, 70f, 45f, 2f, withAlpha(0xFF1B1F22, a));
-        dot(c, 61f, 30f, 1.1f, withAlpha(C_RED,
+        fillRound(c, 49f, 26f, 73f, 60f, 4f, withAlpha(0xFF101214, a));
+        frameRound(c, 49f, 26f, 73f, 60f, 4f, withAlpha(C_GOLD, a), 0.9f);
+        fillRound(c, 52f, 29f, 70f, 57f, 2.5f, withAlpha(0xFF1B1F22, a));
+        dot(c, 55f, 33f, 1.2f, withAlpha(C_RED,
                 (int) (a * (0.22f + 0.78f * recBlink()))));
         paint.setStyle(Paint.Style.STROKE);
         paint.setColor(withAlpha(C_MUTED, (int) (180f * dash)));
-        paint.setStrokeWidth(0.8f);
-        c.drawLine(64f, 49f, 64f, 55f, paint);
-        c.drawLine(56f, 55f, 72f, 55f, paint);
+        paint.setStrokeWidth(0.9f);
+        c.drawLine(61f, 60f, 61f, 66f, paint);
+        c.drawLine(49f, 66f, 73f, 66f, paint);
 
         float steer = ambientOn
                 ? (float) Math.sin(ambientLocal * Math.PI * 2) * 14f : 0f;
         c.save();
-        c.rotate(steer, 100f, 45f);
+        c.rotate(steer, 101f, 47f);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1.5f);
+        paint.setStrokeWidth(1.8f);
         paint.setColor(withAlpha(C_OLIVE, a));
-        c.drawCircle(100f, 45f, 14f, paint);
-        paint.setStrokeWidth(0.8f);
+        c.drawCircle(101f, 47f, 18f, paint);
+        paint.setStrokeWidth(1f);
         paint.setColor(withAlpha(C_MUTED, a));
-        c.drawCircle(100f, 45f, 4f, paint);
-        c.drawLine(100f, 45f, 100f, 31f, paint);
-        c.drawLine(100f, 45f, 88f, 52f, paint);
-        c.drawLine(100f, 45f, 112f, 52f, paint);
-        dot(c, 100f, 45f, 1.7f, withAlpha(C_GOLD, a));
+        c.drawCircle(101f, 47f, 5f, paint);
+        c.drawLine(101f, 47f, 101f, 29f, paint);
+        c.drawLine(101f, 47f, 86f, 56f, paint);
+        c.drawLine(101f, 47f, 116f, 56f, paint);
+        dot(c, 101f, 47f, 2f, withAlpha(C_GOLD, a));
         c.restore();
     }
 
@@ -1023,13 +1087,10 @@ public class OnboardingDemoView extends View {
                 Paint.Align.LEFT, true);
     }
 
-    /** Recording clock: ticks once per second so the preview reads as a live capture. */
-    private String clockLabel(float p) {
-        int seconds = ambientOn
-                ? 12 + (int) (ambientLocal * 6f)
-                : 12 + (int) (p * 5f);
-        if (seconds > 59) seconds = 59;
-        return seconds < 10 ? "00:0" + seconds : "00:" + seconds;
+    private String clockText(long seconds) {
+        long m = (seconds / 60L) % 60L;
+        long s = seconds % 60L;
+        return String.format(java.util.Locale.US, "%02d:%02d", m, s);
     }
 
     // ── drawing helpers ────────────────────────────────────────────────────
