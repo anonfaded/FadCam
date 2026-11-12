@@ -465,29 +465,19 @@
                     </LinearLayout>
                 </GridLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/onboarding_mini_coming_label"
+                    style="@style/ProDossierHeader"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_marginTop="14dp"
+                    android:text="@string/onboarding_mini_coming_soon" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/materialicons"
-                        android:importantForAccessibility="no"
-                        android:text="add"
-                        android:textColor="@color/pro_gold"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        style="@style/ProDossierHeader"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="5dp"
-                        android:text="@string/onboarding_mini_more" />
-                </LinearLayout>
+                <com.fadcam.ui.MiniAppsMarqueeView
+                    android:id="@+id/onboarding_mini_marquee"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="6dp" />
             </LinearLayout>
 
             <!-- Final payoff. The count and brand are gold-spanned in code. -->

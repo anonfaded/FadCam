@@ -50,6 +50,7 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
     private boolean lastAtBottom;
     private ValueAnimator ambientAnimator;
     private List<OnboardingDemoView> ambientDemos;
+    private MiniAppsMarqueeView miniAppsMarquee;
     private final Runnable startAmbientRunnable = this::startAmbient;
 
     @Override
@@ -81,6 +82,18 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         setPayoff(view, lite ? 3 : 10);
         TextView liteNote = view.findViewById(R.id.onboarding_lite_note);
         if (liteNote != null && lite) liteNote.setVisibility(View.VISIBLE);
+
+        miniAppsMarquee = view.findViewById(R.id.onboarding_mini_marquee);
+        if (miniAppsMarquee != null) {
+            List<String> comingSoon = MiniAppsCatalog.comingSoonTitles(requireContext());
+            if (comingSoon.isEmpty()) {
+                miniAppsMarquee.setVisibility(View.GONE);
+                View comingLabel = view.findViewById(R.id.onboarding_mini_coming_label);
+                if (comingLabel != null) comingLabel.setVisibility(View.GONE);
+            } else {
+                miniAppsMarquee.setItems(comingSoon);
+            }
+        }
         scrollView = view.findViewById(R.id.onboarding_scroll);
         if (scrollView != null) {
             scrollView.setOnScrollChangeListener((v, x, y, oldX, oldY) -> reportScrollState());
@@ -95,12 +108,16 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         view.post(() -> {
             reportScrollState();
             playShowcase();
+            if (miniAppsMarquee != null && miniAppsMarquee.isShown()) {
+                miniAppsMarquee.startMarquee();
+            }
         });
     }
 
     /** Stops previews before the page leaves the screen and rewinds them for the next visit. */
     public void onPageHidden() {
         stopShowcase();
+        if (miniAppsMarquee != null) miniAppsMarquee.stopMarquee();
         started = false;
     }
 
@@ -274,6 +291,8 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
             ambientAnimator = null;
         }
         ambientDemos = null;
+        if (miniAppsMarquee != null) miniAppsMarquee.stopMarquee();
+        miniAppsMarquee = null;
         super.onDestroyView();
     }
 

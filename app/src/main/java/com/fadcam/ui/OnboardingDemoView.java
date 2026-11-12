@@ -19,6 +19,7 @@ import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 
 import com.fadcam.R;
 
@@ -73,6 +74,7 @@ public class OnboardingDemoView extends View {
             new int[]{0x3DFFFFFF, 0x00FFFFFF}, null,
             android.graphics.Shader.TileMode.CLAMP);
     private final Typeface mono = Typeface.MONOSPACE;
+    private Typeface iconFont;
     private final Typeface monoBold = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD);
     private final boolean[][] qr = new boolean[21][21];
     private final String[] objectConfidence = new String[3];
@@ -129,6 +131,7 @@ public class OnboardingDemoView extends View {
             objectTime[i] = String.format(java.util.Locale.US, "02:%02d PM", minutes[i]);
         }
         qrValue = context.getString(R.string.onboarding_demo_qr_value);
+        iconFont = ResourcesCompat.getFont(context, R.font.materialicons);
         objectIcons[0] = ContextCompat.getDrawable(context, R.drawable.ic_detection_person);
         objectIcons[1] = ContextCompat.getDrawable(context, R.drawable.ic_detection_gun);
         objectIcons[2] = ContextCompat.getDrawable(context, R.drawable.ic_detection_knife);
@@ -512,14 +515,14 @@ public class OnboardingDemoView extends View {
     // ── 03 video editor ─────────────────────────────────────────────────────
 
     private void drawEditor(Canvas c, float p) {
-        // Preview.
-        fillRound(c, 12f, 8f, 156f, 42f, 3f, 0xFF101214);
-        frameRound(c, 12f, 8f, 156f, 42f, 3f, C_LINE, 0.8f);
-        fillRound(c, 18f, 12f, 150f, 38f, 2f, 0xFF1B1F22);
+        // Main grid: preview.
+        fillRound(c, 10f, 8f, 112f, 42f, 3f, 0xFF101214);
+        frameRound(c, 10f, 8f, 112f, 42f, 3f, C_LINE, 0.8f);
+        fillRound(c, 14f, 12f, 108f, 38f, 2f, 0xFF1B1F22);
         path.reset();
-        path.moveTo(78f, 18f);
-        path.lineTo(90f, 25f);
-        path.lineTo(78f, 32f);
+        path.moveTo(56f, 17f);
+        path.lineTo(67f, 26f);
+        path.lineTo(56f, 35f);
         path.close();
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(0xCCE8C77B);
@@ -528,54 +531,77 @@ public class OnboardingDemoView extends View {
         float progress = ambientOn
                 ? 0.5f + 0.5f * (float) Math.sin(ambientLocal * Math.PI * 2)
                 : seg(p, 0.08f, 0.9f);
-        fillRound(c, 18f, 39.5f, 150f, 41f, 0.5f, 0xFF2A2C2E);
-        fillRound(c, 18f, 39.5f, 18f + 132f * progress, 41f, 0.5f, C_GOLD);
+        fillRound(c, 14f, 39.5f, 108f, 41f, 0.5f, 0xFF2A2C2E);
+        fillRound(c, 14f, 39.5f, 14f + 94f * progress, 41f, 0.5f, C_GOLD);
 
-        // Timeline.
-        fillRound(c, 12f, 48f, 156f, 78f, 3f, 0xFF101214);
-        frameRound(c, 12f, 48f, 156f, 78f, 3f, C_LINE, 0.8f);
+        // Main grid: timeline.
+        fillRound(c, 10f, 46f, 112f, 78f, 3f, 0xFF101214);
+        frameRound(c, 10f, 46f, 112f, 78f, 3f, C_LINE, 0.8f);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.4f);
         paint.setColor(0x22FFFFFF);
-        for (float x = 16f; x < 152f; x += 8f) c.drawLine(x, 51f, x, 55f, paint);
+        for (float x = 14f; x < 108f; x += 8f) c.drawLine(x, 49f, x, 53f, paint);
 
-        clip(c, 18f, 62f, 0xFF1A1D1F, C_LINE, false);
-        clip(c, 62f, 100f, 0xFF1A1D1F, C_LINE, false);
-        clip(c, 100f, 150f, 0xFF2A2415, C_GOLD, true);
+        clip(c, 14f, 46f, 0xFF1A1D1F, C_LINE, false);
+        clip(c, 48f, 70f, 0xFF1A1D1F, C_LINE, false);
+        clip(c, 72f, 106f, 0xFF2A2415, C_GOLD, true);
 
-        // Clean trim handles on the selected clip.
+        // Trim handles on the selected clip.
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.8f);
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setColor(C_GOLD);
-        c.drawLine(100f, 55f, 100f, 74f, paint);
-        c.drawLine(150f, 55f, 150f, 74f, paint);
+        c.drawLine(72f, 53f, 72f, 73f, paint);
+        c.drawLine(106f, 53f, 106f, 73f, paint);
         paint.setStrokeCap(Paint.Cap.BUTT);
 
-        // Playhead glides through the selected clip.
-        float head = 106f + 34f * progress;
+        // Playhead.
+        float head = 76f + 28f * progress;
         paint.setColor(0xFFEFECE4);
         paint.setStrokeWidth(0.8f);
-        c.drawLine(head, 53f, head, 76f, paint);
+        c.drawLine(head, 51f, head, 76f, paint);
         path.reset();
-        path.moveTo(head - 2.4f, 51f);
-        path.lineTo(head + 2.4f, 51f);
-        path.lineTo(head, 55f);
+        path.moveTo(head - 2.4f, 49f);
+        path.lineTo(head + 2.4f, 49f);
+        path.lineTo(head, 53f);
         path.close();
         paint.setStyle(Paint.Style.FILL);
         c.drawPath(path, paint);
+
+        // Right grid: trim, cut, merge, duplicate, mute.
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(0.4f);
+        paint.setColor(0x22FFFFFF);
+        c.drawLine(115f, 8f, 115f, 84f, paint);
+        toolTile(c, 118f, 9f, true, "crop_free");
+        toolTile(c, 118f, 24f, false, "content_cut");
+        toolTile(c, 118f, 39f, false, "call_merge");
+        toolTile(c, 118f, 54f, false, "content_copy");
+        toolTile(c, 118f, 69f, false, "volume_off");
+    }
+
+    private void toolTile(Canvas c, float x, float y, boolean active, String glyph) {
+        fillRound(c, x, y, x + 38f, y + 12f, 2f,
+                active ? 0x1FE8C77B : 0xFF121416);
+        frameRound(c, x, y, x + 38f, y + 12f, 2f,
+                active ? C_GOLD : C_LINE, active ? 1f : 0.5f);
+        int color = active ? C_GOLD : C_MUTED;
+        textPaint.setTypeface(iconFont != null ? iconFont : Typeface.DEFAULT);
+        textPaint.setTextSize(11f);
+        textPaint.setColor(color);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        c.drawText(glyph, x + 19f, y + 8.2f, textPaint);
     }
 
     private void clip(Canvas c, float l, float r, int fill, int border, boolean selected) {
-        fillRound(c, l, 58f, r, 73f, 1.5f, fill);
-        frameRound(c, l, 58f, r, 73f, 1.5f, border, selected ? 1f : 0.6f);
+        fillRound(c, l, 56f, r, 72f, 1.5f, fill);
+        frameRound(c, l, 56f, r, 72f, 1.5f, border, selected ? 1f : 0.6f);
         if (selected) {
-            // Filmstrip frames inside the gold-selected clip.
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(0.35f);
             paint.setColor(0x44E8C77B);
             for (float x = l + 8f; x < r - 3f; x += 7f) {
-                c.drawLine(x, 61f, x, 70f, paint);
+                c.drawLine(x, 59f, x, 69f, paint);
             }
         }
     }
@@ -648,14 +674,14 @@ public class OnboardingDemoView extends View {
 
         // Soft white flash converging exactly on the lens centre (27, 31).
         if (active) {
-            fillCone(c, 27f, 31f, 27f, 31f, 130f, 66f, 78f, 66f, 12);
-            fillCone(c, 27f, 31f, 27f, 31f, 122f, 66f, 84f, 66f, 16);
-            fillCone(c, 27f, 31f, 27f, 31f, 114f, 66f, 92f, 66f, 20);
+            fillCone(c, 27f, 31f, 27f, 31f, 152f, 66f, 38f, 66f, 10);
+            fillCone(c, 27f, 31f, 27f, 31f, 146f, 66f, 50f, 66f, 14);
+            fillCone(c, 27f, 31f, 27f, 31f, 138f, 66f, 64f, 66f, 18);
             paint.setStyle(Paint.Style.FILL);
             paint.setShader(beamPool);
             c.save();
-            c.translate(103f, 66f);
-            c.scale(1f, 0.22f);
+            c.translate(95f, 66f);
+            c.scale(2.1f, 0.24f);
             c.drawCircle(0f, 0f, 26f, paint);
             c.restore();
             paint.setShader(null);
@@ -861,11 +887,10 @@ public class OnboardingDemoView extends View {
     // ── 05 remote camera ────────────────────────────────────────────────────
 
     private void drawRemote(Canvas c, float p) {
-        // Camera source: a slim phone with a small punch-hole lens, not a huge module.
+        // Camera source phone.
         fillRound(c, 10f, 20f, 48f, 72f, 5f, 0xFF121416);
         frameRound(c, 10f, 20f, 48f, 72f, 5f, C_LINE, 0.8f);
         fillRound(c, 14f, 24f, 44f, 68f, 3f, 0xFF1A1D1F);
-        // Camera module: deliberately readable at card size.
         fillRound(c, 21f, 24f, 37f, 31f, 3f, 0xFF0B0D0E);
         frameRound(c, 21f, 24f, 37f, 31f, 3f, 0x99C6A66A, 0.6f);
         dot(c, 26.5f, 27.5f, 2f, 0xFF3A4044);
@@ -874,7 +899,7 @@ public class OnboardingDemoView extends View {
         dot(c, 16f, 27f, 1.2f,
                 withAlpha(C_RED, (int) (55f + 200f * recBlink())));
 
-        // Signal arcs.
+        // Signal arcs and travelling dot.
         float signal = seg(p, 0.2f, 0.55f);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.8f);
@@ -884,8 +909,6 @@ public class OnboardingDemoView extends View {
             rect.set(56f - r, 46f - r, 56f + r, 46f + r);
             c.drawArc(rect, -52f, 104f, false, paint);
         }
-
-        // Connection pulse.
         paint.setPathEffect(dash);
         paint.setColor(withAlpha(C_OLIVE, (int) (120f * signal)));
         c.drawLine(54f, 46f, 80f, 46f, paint);
@@ -898,7 +921,7 @@ public class OnboardingDemoView extends View {
         }
         dot(c, 54f + 26f * travel, 46f, 1.4f, withAlpha(C_GOLD, travelAlpha));
 
-        // Web dashboard.
+        // Dashboard shell.
         fillRound(c, 82f, 8f, 158f, 74f, 4f, 0xFF121416);
         frameRound(c, 82f, 8f, 158f, 74f, 4f, C_LINE, 0.8f);
         dot(c, 87f, 13f, 1f, C_DIM);
@@ -908,59 +931,134 @@ public class OnboardingDemoView extends View {
         paint.setStrokeWidth(0.4f);
         c.drawLine(100f, 13f, 152f, 13f, paint);
 
-        fillRound(c, 85f, 17f, 117f, 43f, 2f, 0xFF1B1F22);
-        frameRound(c, 85f, 17f, 117f, 43f, 2f, C_LINE, 0.6f);
-        dot(c, 86.5f, 19f, 1.1f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
-        // CCTV view: a room with a door, sofa, plant and a slow walker.
+        // Upper grid: the CCTV scene only.
+        fillRound(c, 85f, 17f, 155f, 47f, 2f, 0xFF1B2228);
+        frameRound(c, 85f, 17f, 155f, 47f, 2f, C_LINE, 0.5f);
+        c.save();
+        c.clipRect(86f, 18f, 154f, 46f);
+
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0xFF1B2228);
-        c.drawRect(85f, 17f, 117f, 33f, paint);
-        paint.setColor(0xFF232A2F);
-        c.drawRect(85f, 33f, 117f, 43f, paint);
-        fillRound(c, 88f, 21f, 96f, 37f, 0.6f, 0xFF0A0D0F);
-        frameRound(c, 88f, 21f, 96f, 37f, 0.6f, 0x66C6A66A, 0.4f);
-        fillRound(c, 103f, 29f, 114f, 34f, 1f, 0xFF2A3136);
-        fillRound(c, 104f, 27f, 113f, 30f, 1f, 0xFF313A40);
-        fillRound(c, 99f, 30f, 102f, 35f, 0.6f, 0xFF2A3136);
-        dot(c, 100.5f, 28f, 1.6f, 0xFF3C5A44);
-        float roam = ambientOn
-                ? (float) Math.sin(ambientLocal * Math.PI * 2) : 0f;
-        float wx = 99.5f + 3.5f * roam;
-        dot(c, wx, 27.5f, 1.1f, C_INK);
+        paint.setColor(0xFF202830);
+        c.drawRect(86f, 18f, 154f, 34f, paint);
+        paint.setColor(0xFF2A3239);
+        c.drawRect(86f, 34f, 154f, 46f, paint);
+        paint.setColor(0x33C6A66A);
+        c.drawRect(86f, 34f, 154f, 34.5f, paint);
+
+        // Window with a night view.
+        fillRound(c, 96f, 21f, 110f, 31f, 0.8f, 0xFF0C141D);
+        frameRound(c, 96f, 21f, 110f, 31f, 0.8f, 0x88E8C77B, 0.5f);
+        dot(c, 99f, 24f, 0.5f, 0xFFB9C6D1);
+        dot(c, 104f, 22.5f, 0.4f, 0xFFB9C6D1);
+        dot(c, 107f, 26f, 0.5f, 0xFFB9C6D1);
+
+        // Framed picture on the left wall.
+        fillRound(c, 88f, 22f, 94f, 28f, 0.5f, 0xFF12181C);
+        frameRound(c, 88f, 22f, 94f, 28f, 0.5f, 0x66C6A66A, 0.4f);
+
+        // Sofa.
+        fillRound(c, 112f, 30f, 132f, 35f, 2f, 0xFF333C43);
+        fillRound(c, 113f, 34f, 131f, 39f, 1.5f, 0xFF3E4850);
+        fillRound(c, 110f, 33f, 114f, 40f, 1.2f, 0xFF333C43);
+        fillRound(c, 130f, 33f, 134f, 40f, 1.2f, 0xFF333C43);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.8f);
-        paint.setColor(C_INK);
-        c.drawLine(wx, 28.6f, wx, 33f, paint);
-        c.drawLine(wx, 33f, wx - 1.2f, 36f, paint);
-        c.drawLine(wx, 33f, wx + 1.2f, 36f, paint);
-        c.drawLine(wx, 29.6f, wx - 1.2f, 32f, paint);
-        c.drawLine(wx, 29.6f, wx + 1.2f, 32f, paint);
+        paint.setStrokeWidth(0.4f);
+        paint.setColor(0x22FFFFFF);
+        c.drawLine(118f, 31f, 118f, 34f, paint);
+        c.drawLine(126f, 31f, 126f, 34f, paint);
+        dot(c, 113f, 40.5f, 0.6f, C_DIM);
+        dot(c, 131f, 40.5f, 0.6f, C_DIM);
+
+        // Coffee table and plant.
+        fillRound(c, 118f, 41f, 128f, 43f, 0.8f, 0xFF262D33);
+        fillRound(c, 120f, 43f, 126f, 44f, 0.5f, 0xFF1C2227);
+        fillRound(c, 136f, 38f, 140f, 42f, 0.8f, 0xFF2A3136);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(0.6f);
+        paint.setColor(0xFF3C5A44);
+        c.drawLine(138f, 38f, 138f, 34f, paint);
+        c.drawLine(138f, 36f, 135.5f, 34f, paint);
+        c.drawLine(138f, 36f, 140.5f, 34f, paint);
+        dot(c, 138f, 33.5f, 1.8f, 0x663C5A44);
+
+        // The walker crosses the lounge, with a real stride.
+        float walk = (android.os.SystemClock.uptimeMillis() % 8000L) / 8000f;
+        drawLoungeWalker(c, 82f + 76f * walk, 45f, walk);
+
+        // CCTV scanlines.
+        paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.3f);
         paint.setColor(0x0CFFFFFF);
-        for (float y = 18f; y < 43f; y += 2f) c.drawLine(85f, y, 117f, y, paint);
+        for (float y = 18f; y < 46f; y += 2f) c.drawLine(86f, y, 154f, y, paint);
+        c.restore();
+        dot(c, 87f, 19f, 1.1f,
+                withAlpha(C_RED, (int) (55f + 200f * recBlink())));
 
-        // CONTROLS tag, same mono-bold plate as the motion-detection names.
-        String controls = "CONTROLS";
-        float tagSize = 5.8f;
-        float tagW = measureLabel(controls, tagSize, true);
-        float tagL = 136.5f - (tagW + 5f) * 0.5f;
-        fillRound(c, tagL, 41f, tagL + tagW + 5f, 50f, 1.2f, 0xE60B0C0D);
-        frameRound(c, tagL, 41f, tagL + tagW + 5f, 50f, 1.2f,
-                0xC6E8C77B, 0.6f);
-        label(c, controls, tagL + 2.5f, 48.3f, tagSize, C_GOLD,
-                Paint.Align.LEFT, true);
-
+        // Lower grid: compact controls, no label.
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.7f);
-        paint.setColor(0x66C6A66A);
-        c.drawCircle(136.5f, 61f, 7.5f, paint);
-        dot(c, 136.5f, 61f, 2.2f, C_GOLD);
-        paint.setColor(C_LINE);
         paint.setStrokeWidth(0.4f);
-        c.drawLine(136.5f, 53f, 136.5f, 56f, paint);
-        c.drawLine(136.5f, 66f, 136.5f, 69f, paint);
-        c.drawLine(129f, 61f, 132f, 61f, paint);
-        c.drawLine(141f, 61f, 144f, 61f, paint);
+        paint.setColor(0x22FFFFFF);
+        c.drawLine(85f, 50f, 155f, 50f, paint);
+
+        // Mic.
+        paint.setColor(0x99C6A66A);
+        paint.setStrokeWidth(0.7f);
+        c.drawCircle(97f, 61f, 5f, paint);
+        fillRound(c, 96f, 58.5f, 98f, 62f, 1f, 0xFF9C9991);
+        c.drawLine(95.5f, 63f, 98.5f, 63f, paint);
+
+        // D-pad.
+        paint.setColor(0x66C6A66A);
+        c.drawCircle(120f, 61f, 7.5f, paint);
+        dot(c, 120f, 61f, 2f, C_GOLD);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(0x99C6A66A);
+        path.reset();
+        path.moveTo(120f, 52.5f);
+        path.lineTo(118.4f, 55.2f);
+        path.lineTo(121.6f, 55.2f);
+        path.close();
+        c.drawPath(path, paint);
+        path.reset();
+        path.moveTo(120f, 69.5f);
+        path.lineTo(118.4f, 66.8f);
+        path.lineTo(121.6f, 66.8f);
+        path.close();
+        c.drawPath(path, paint);
+        path.reset();
+        path.moveTo(111.5f, 61f);
+        path.lineTo(114.2f, 59.4f);
+        path.lineTo(114.2f, 62.6f);
+        path.close();
+        c.drawPath(path, paint);
+        path.reset();
+        path.moveTo(128.5f, 61f);
+        path.lineTo(125.8f, 59.4f);
+        path.lineTo(125.8f, 62.6f);
+        path.close();
+        c.drawPath(path, paint);
+
+        // Record.
+        paint.setColor(0x99C6A66A);
+        c.drawCircle(143f, 61f, 5f, paint);
+        dot(c, 143f, 61f, 2f, C_RED);
+    }
+
+    /** A lounge walker with swinging arms and legs; keeps a detached head. */
+    private void drawLoungeWalker(Canvas c, float x, float floorY, float phase) {
+        int ink = 0xFFE8E4D8;
+        dot(c, x, floorY - 9.6f, 1.5f, ink);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.1f);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setColor(ink);
+        c.drawLine(x, floorY - 8.1f, x, floorY - 4f, paint);
+        float swing = (float) Math.sin(phase * Math.PI * 2 * 6) * 1.7f;
+        c.drawLine(x, floorY - 7f, x - 2.2f - swing * 0.45f, floorY - 4.6f, paint);
+        c.drawLine(x, floorY - 7f, x + 2.2f + swing * 0.45f, floorY - 4.6f, paint);
+        c.drawLine(x, floorY - 4f, x - 1.4f - swing, floorY, paint);
+        c.drawLine(x, floorY - 4f, x + 1.4f + swing, floorY, paint);
+        paint.setStrokeCap(Paint.Cap.BUTT);
     }
 
     // ── 06 bodycam / dashcam ────────────────────────────────────────────────
@@ -972,36 +1070,42 @@ public class OnboardingDemoView extends View {
         dot(c, 84f, 24f, 8f, withAlpha(0xFF4A4E52, a));
         fillRound(c, 64f, 36f, 104f, 76f, 11f, withAlpha(0xFF3D4145, a));
         // Chest-mounted phone, showing the street ahead.
-        fillRound(c, 75f, 42f, 93f, 70f, 3.5f, withAlpha(0xFF101214, a));
-        frameRound(c, 75f, 42f, 93f, 70f, 3.5f, withAlpha(C_GOLD, a), 0.8f);
-        fillRound(c, 77f, 44f, 91f, 68f, 1.8f, withAlpha(0xFF10161A, a));
+        fillRound(c, 72f, 40f, 96f, 72f, 4f, withAlpha(0xFF101214, a));
+        frameRound(c, 72f, 40f, 96f, 72f, 4f, withAlpha(C_GOLD, a), 0.9f);
+        fillRound(c, 75f, 42f, 93f, 70f, 2f, withAlpha(0xFF10161A, a));
         c.save();
-        rect.set(77f, 44f, 91f, 68f);
+        rect.set(75f, 42f, 93f, 70f);
         path.reset();
-        path.addRoundRect(rect, 1.8f, 1.8f, Path.Direction.CW);
+        path.addRoundRect(rect, 2f, 2f, Path.Direction.CW);
         c.clipPath(path);
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(withAlpha(0xFF1B2329, a));
-        c.drawRect(77f, 44f, 91f, 55f, paint);
+        c.drawRect(75f, 42f, 93f, 53f, paint);
         paint.setColor(withAlpha(0xFF2A3238, a));
-        c.drawRect(77f, 49f, 81.5f, 55f, paint);
-        c.drawRect(83f, 47.5f, 87.5f, 55f, paint);
-        c.drawRect(88.5f, 50f, 91f, 55f, paint);
-        paint.setColor(withAlpha(0xFF262D33, a));
-        c.drawRect(77f, 55f, 91f, 68f, paint);
-        paint.setColor(withAlpha(C_GOLD, (int) (110f * a / 255f)));
-        c.drawRect(77f, 55f, 91f, 55.6f, paint);
-        float flow = (android.os.SystemClock.uptimeMillis() % 2400L) / 2400f;
-        paint.setColor(withAlpha(C_GOLD, (int) (140f * a / 255f)));
-        for (int i = 0; i < 3; i++) {
-            float f = (i / 3f + flow) % 1f;
-            float y = 57f + 9f * f;
-            c.drawRect(83.6f, y, 84.4f, y + 1.4f + 2.2f * f, paint);
-        }
-        tinyWalker(c, 79.5f + 6f * flow, 59f, flow, a);
-        tinyWalker(c, 88f - 5f * flow, 62f, 1f - flow, a);
+        c.drawRect(75f, 46f, 79f, 53f, paint);
+        c.drawRect(81f, 44f, 85f, 53f, paint);
+        c.drawRect(87f, 47f, 91f, 53f, paint);
+        c.drawRect(91.5f, 45f, 93f, 53f, paint);
+        paint.setColor(withAlpha(C_GOLD, (int) (90f * a / 255f)));
+        c.drawRect(76f, 48f, 77.5f, 49.5f, paint);
+        c.drawRect(82f, 46f, 83.5f, 47.5f, paint);
+        c.drawRect(88f, 49f, 90f, 50.5f, paint);
+        paint.setColor(withAlpha(0xFF2A3036, a));
+        c.drawRect(75f, 53f, 93f, 70f, paint);
+        paint.setColor(withAlpha(0xFF3A4044, a));
+        c.drawRect(89.5f, 45f, 90.2f, 61f, paint);
+        paint.setColor(withAlpha(0x99E8C77B, a));
+        c.drawRect(88.5f, 44.5f, 91.2f, 45.6f, paint);
+        paint.setColor(withAlpha(0xFF232A30, a));
+        c.drawRect(76f, 61f, 82f, 62.2f, paint);
+        c.drawRect(76.5f, 62.2f, 77.2f, 64f, paint);
+        c.drawRect(80.8f, 62.2f, 81.5f, 64f, paint);
+        float flow = (android.os.SystemClock.uptimeMillis() % 6200L) / 6200f;
+        streetWalker(c, 75f + 18f * ((flow + 0.05f) % 1f), 66f, 1.15f, flow, true, a);
+        streetWalker(c, 75f + 18f * ((1.05f - flow) % 1f), 68.5f, 1f, flow, false, a);
+        streetWalker(c, 75f + 18f * ((flow * 0.8f + 0.45f) % 1f), 64f, 1.25f, flow, true, a);
         c.restore();
-        dot(c, 78.3f, 45.7f, 0.7f, withAlpha(C_RED,
+        dot(c, 76.8f, 43.8f, 0.7f, withAlpha(C_RED,
                 (int) (a * (0.22f + 0.78f * recBlink()))));
         paint.setStyle(Paint.Style.STROKE);
         paint.setColor(withAlpha(C_MUTED, (int) (150f * body)));
@@ -1012,65 +1116,93 @@ public class OnboardingDemoView extends View {
 
     /** Lite card: dashcam only, phone plus steering wheel. */
     private void drawDashcamSolo(Canvas c, float p) {
-        float dash = 1f;
-        int a = 255;
-        fillRound(c, 49f, 26f, 73f, 60f, 4f, withAlpha(0xFF101214, a));
-        frameRound(c, 49f, 26f, 73f, 60f, 4f, withAlpha(C_GOLD, a), 0.9f);
-        // Live road view: a seamless driving loop inside the phone.
-        fillRound(c, 52f, 29f, 70f, 57f, 2.5f, withAlpha(0xFF0E1317, a));
+        float a = 255f;
+        // Landscape dash phone.
+        fillRound(c, 43f, 24f, 83f, 50f, 4.5f, withAlpha(0xFF101214, (int) a));
+        frameRound(c, 43f, 24f, 83f, 50f, 4.5f, withAlpha(C_GOLD, (int) a), 0.9f);
+        fillRound(c, 46f, 27f, 80f, 47f, 2.5f, withAlpha(0xFF0E1317, (int) a));
         c.save();
-        rect.set(52f, 29f, 70f, 57f);
+        rect.set(46f, 27f, 80f, 47f);
         path.reset();
         path.addRoundRect(rect, 2.5f, 2.5f, Path.Direction.CW);
         c.clipPath(path);
+
+        // Sky and horizon glow.
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(withAlpha(0xFF151B20, a));
-        c.drawRect(52f, 29f, 70f, 41f, paint);
+        paint.setColor(withAlpha(0xFF151B20, (int) a));
+        c.drawRect(46f, 27f, 80f, 33f, paint);
+        paint.setColor(withAlpha(0x33E8C77B, (int) a));
+        c.drawRect(46f, 32.6f, 80f, 33f, paint);
+
+        // Road.
         path.reset();
-        path.moveTo(52f, 57f);
-        path.lineTo(58f, 41f);
-        path.lineTo(64f, 41f);
-        path.lineTo(70f, 57f);
+        path.moveTo(46f, 47f);
+        path.lineTo(57f, 33f);
+        path.lineTo(69f, 33f);
+        path.lineTo(80f, 47f);
         path.close();
-        paint.setColor(withAlpha(0xFF252C32, a));
+        paint.setColor(withAlpha(0xFF252C32, (int) a));
         c.drawPath(path, paint);
-        paint.setColor(withAlpha(C_GOLD, (int) (70f * a / 255f)));
-        c.drawRect(52f, 40.4f, 70f, 41f, paint);
+
         float flow = (android.os.SystemClock.uptimeMillis() % 1800L) / 1800f;
+
+        // Lane dashes rushing toward the viewer.
         paint.setStyle(Paint.Style.STROKE);
         for (int i = 0; i < 4; i++) {
             float f = (i / 4f + flow) % 1f;
-            float y = 41f + 16f * f;
-            float len = 0.5f + 3.6f * f;
+            float y = 33f + 14f * f;
+            float len = 0.5f + 3f * f;
             paint.setStrokeWidth(0.35f + 1.1f * f);
             paint.setColor(withAlpha(C_GOLD, (int) (a * (0.3f + 0.6f * f))));
-            c.drawLine(61f, y, 61f, y + len, paint);
+            c.drawLine(63f, y, 63f, y + len, paint);
+        }
+
+        // A few distant trees at the very edges; the road stays clear.
+        for (int i = 0; i < 2; i++) {
+            float f = (i / 2f + flow) % 1f;
+            float y = 33f + 14f * f;
+            float size = 0.8f + 1.3f * f;
+            float spread = (y - 33f) * 0.79f;
+            tree(c, 57f - spread - 2f, y, size, (int) (a * 0.78f));
+            tree(c, 69f + spread + 2f, y, size, (int) (a * 0.78f));
         }
         c.restore();
-        dot(c, 55f, 32.5f, 1.1f, withAlpha(C_RED,
+        dot(c, 48.5f, 29.5f, 1.1f, withAlpha(C_RED,
                 (int) (a * (0.22f + 0.78f * recBlink()))));
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(withAlpha(C_MUTED, (int) (180f * dash)));
-        paint.setStrokeWidth(0.9f);
-        c.drawLine(61f, 60f, 61f, 66f, paint);
-        c.drawLine(49f, 66f, 73f, 66f, paint);
 
+        // Stand.
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(withAlpha(C_MUTED, 180));
+        paint.setStrokeWidth(0.9f);
+        c.drawLine(63f, 50f, 63f, 56f, paint);
+        c.drawLine(43f, 56f, 83f, 56f, paint);
+
+        // Steering wheel.
         float steer = ambientOn
                 ? (float) Math.sin(ambientLocal * Math.PI * 2) * 14f : 0f;
         c.save();
-        c.rotate(steer, 101f, 47f);
+        c.rotate(steer, 107f, 47f);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.8f);
-        paint.setColor(withAlpha(C_OLIVE, a));
-        c.drawCircle(101f, 47f, 18f, paint);
+        paint.setColor(withAlpha(C_OLIVE, (int) a));
+        c.drawCircle(107f, 47f, 18f, paint);
         paint.setStrokeWidth(1f);
-        paint.setColor(withAlpha(C_MUTED, a));
-        c.drawCircle(101f, 47f, 5f, paint);
-        c.drawLine(101f, 47f, 101f, 29f, paint);
-        c.drawLine(101f, 47f, 86f, 56f, paint);
-        c.drawLine(101f, 47f, 116f, 56f, paint);
-        dot(c, 101f, 47f, 2f, withAlpha(C_GOLD, a));
+        paint.setColor(withAlpha(C_MUTED, (int) a));
+        c.drawCircle(107f, 47f, 5f, paint);
+        c.drawLine(107f, 47f, 107f, 29f, paint);
+        c.drawLine(107f, 47f, 92f, 56f, paint);
+        c.drawLine(107f, 47f, 122f, 56f, paint);
+        dot(c, 107f, 47f, 2f, withAlpha(C_GOLD, (int) a));
         c.restore();
+    }
+
+    private void tree(Canvas c, float x, float groundY, float size, int alpha) {
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(withAlpha(0xFF3A2E22, alpha));
+        c.drawRect(x - size * 0.16f, groundY - size * 1.8f,
+                x + size * 0.16f, groundY, paint);
+        paint.setColor(withAlpha(0xFF3C5A44, alpha));
+        c.drawCircle(x, groundY - size * 1.9f, size, paint);
     }
 
     // ── mini: flashlight ────────────────────────────────────────────────────
@@ -1254,16 +1386,26 @@ public class OnboardingDemoView extends View {
         return String.format(java.util.Locale.US, "%02d:%02d", m, s);
     }
 
-    private void tinyWalker(Canvas c, float x, float baseY, float phase, int alpha) {
+    private void streetWalker(Canvas c, float x, float groundY, float scale,
+                              float phase, boolean right, int alpha) {
         int ink = withAlpha(0xFFD9D5C8, alpha);
-        dot(c, x, baseY - 4.2f, 0.8f, ink);
+        dot(c, x, groundY - 6.2f * scale, 1.05f * scale, ink);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.55f);
+        paint.setStrokeWidth(0.6f * scale);
+        paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setColor(ink);
-        c.drawLine(x, baseY - 3.2f, x, baseY, paint);
-        float swing = (float) Math.sin(phase * Math.PI * 2 * 2) * 0.8f;
-        c.drawLine(x, baseY, x - 0.7f - swing, baseY + 1.5f, paint);
-        c.drawLine(x, baseY, x + 0.7f + swing, baseY + 1.5f, paint);
+        c.drawLine(x, groundY - 5.1f * scale, x, groundY - 2.1f * scale, paint);
+        float swing = (float) Math.sin((right ? phase : -phase)
+                * Math.PI * 2 * 7) * 1.1f * scale;
+        c.drawLine(x, groundY - 4.3f * scale,
+                x - 1.2f * scale - swing * 0.4f, groundY - 2.7f * scale, paint);
+        c.drawLine(x, groundY - 4.3f * scale,
+                x + 1.2f * scale + swing * 0.4f, groundY - 2.7f * scale, paint);
+        c.drawLine(x, groundY - 2.1f * scale,
+                x - 0.9f * scale - swing, groundY, paint);
+        c.drawLine(x, groundY - 2.1f * scale,
+                x + 0.9f * scale + swing, groundY, paint);
+        paint.setStrokeCap(Paint.Cap.BUTT);
     }
 
     /** Accumulate CCTV time only while motion is being recorded. */

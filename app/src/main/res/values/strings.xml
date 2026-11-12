@@ -1888,8 +1888,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_feature_motion_desc">Records only when movement is detected. Pauses when it stops.</string>
     <string name="onboarding_feature_forensic_title">Forensic intelligence</string>
     <string name="onboarding_feature_forensic_desc">On-device AI detects people and objects. Saved as evidence.</string>
-    <string name="onboarding_feature_remote_title">Remote camera</string>
-    <string name="onboarding_feature_remote_desc">Live stream and control your camera remotely.</string>
+    <string name="onboarding_feature_remote_title">Remote CCTV</string>
+    <string name="onboarding_feature_remote_desc">Turn your phone into a Closed-Circuit Television (CCTV) camera. Live stream and control it remotely.</string>
     <string name="onboarding_feature_bodycam_title">Bodycam &amp; dashcam</string>
     <string name="onboarding_feature_bodycam_desc">Wear it for personal security and hands-free recording.</string>
     <string name="onboarding_feature_bodycam_solo_title">Bodycam</string>
@@ -1904,7 +1904,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_done">Done</string>
     <string name="onboarding_mini_heading">And we\'re not done yet.</string>
     <string name="onboarding_mini_support">Mini apps. Everyday tools, built right into FadCam.</string>
-    <string name="onboarding_mini_more">More mini apps coming soon.</string>
+    <string name="onboarding_mini_coming_soon">COMING SOON</string>
 
     <string name="onboarding_payoff_title">%1$d JOBS. ONE FADCAM.</string>
     <string name="onboarding_payoff_support">Time to say goodbye to those extra apps.</string>
