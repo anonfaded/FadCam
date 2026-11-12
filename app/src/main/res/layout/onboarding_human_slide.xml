@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="@color/black"
     android:clipToPadding="true"
-    android:paddingBottom="@dimen/onboarding_bottom_inset"
     android:fillViewport="true"
     android:scrollbars="none">
 
@@ -32,7 +31,7 @@
             android:paddingStart="@dimen/onboarding_dossier_pad"
             android:paddingEnd="@dimen/onboarding_dossier_pad"
             android:paddingTop="20dp"
-            android:paddingBottom="0dp">
+            android:paddingBottom="@dimen/onboarding_bottom_inset">
 
             <RelativeLayout
                 android:layout_width="match_parent"

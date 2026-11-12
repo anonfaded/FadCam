@@ -186,6 +186,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
+                        android:gravity="center_horizontal"
                         android:text="@string/onboarding_cred_open"
                         android:textColor="@color/dossier_ink"
                         android:textSize="12sp" />
@@ -211,6 +212,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
+                        android:gravity="center_horizontal"
                         android:text="@string/onboarding_cred_ads"
                         android:textColor="@color/dossier_ink"
                         android:textSize="12sp" />
@@ -236,6 +238,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
+                        android:gravity="center_horizontal"
                         android:text="@string/onboarding_cred_track"
                         android:textColor="@color/dossier_ink"
                         android:textSize="12sp" />

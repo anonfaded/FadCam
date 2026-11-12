@@ -38,6 +38,8 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
     private TextView permissionStatusText; // Text view to show status instead of toasts
     private boolean statusToastShown = false; // Flag to prevent multiple toasts
 
+    private boolean requestedOnce;
+
     private final androidx.activity.result.ActivityResultLauncher<String[]> permissionLauncher =
             registerForActivityResult(
                     new androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions(),
@@ -64,9 +66,6 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
             }
         });
         checkPermissionsAndUpdateUI();
-        if (!permissionsGranted && !permanentlyDenied) {
-            requestAllPermissionsAlways();
-        }
 
         View openSettingsLink = view.findViewById(R.id.open_settings_link);
         if (openSettingsLink != null) {
@@ -181,8 +180,29 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
         }
         
 
+        View root = getView();
+        if (root != null) {
+            View note = root.findViewById(R.id.permissionsNote);
+            if (note != null) {
+                note.setVisibility(permissionsGranted ? View.GONE : View.VISIBLE);
+            }
+        }
+
         // Update battery optimization button status
         updateBatteryOptimizationButton();
+
+        if (getActivity() instanceof OnboardingActivity) {
+            ((OnboardingActivity) getActivity()).onPermissionsStateChanged();
+        }
+    }
+
+    /** The permission request must wait until this slide is actually visible. */
+    public void onSlideShown() {
+        checkPermissionsAndUpdateUI();
+        if (!permissionsGranted && !permanentlyDenied && !requestedOnce) {
+            requestedOnce = true;
+            requestAllPermissionsAlways();
+        }
     }
 
     @Override
@@ -321,7 +341,7 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
             if (isIgnoring) {
                 batteryOptButton.setEnabled(false);
                 batteryOptButton.setAlpha(0.5f);
-                batteryOptButton.setText(R.string.permissions_granted);
+                batteryOptButton.setText(R.string.battery_optimization_disabled);
             } else {
                 batteryOptButton.setEnabled(true);
                 batteryOptButton.setAlpha(1f);

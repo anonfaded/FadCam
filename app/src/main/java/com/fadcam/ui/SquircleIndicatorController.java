@@ -19,6 +19,16 @@ public class SquircleIndicatorController implements IndicatorController {
     private int selectedColor = 0xFFFFFFFF;
     private int unselectedColor = 0xFF808080;
     private int position = 0;
+    private int dotSize = -1;
+    private int dotMargin = -1;
+
+    public void setDotSize(int px) {
+        dotSize = px;
+    }
+
+    public void setDotMargin(int px) {
+        dotMargin = px;
+    }
 
     @Override
     public int getSelectedIndicatorColor() {
@@ -55,9 +65,10 @@ public class SquircleIndicatorController implements IndicatorController {
         container.removeAllViews();
         for (int i = 0; i < slideCount; i++) {
             View dot = new View(context);
-            int size = dp(8);
+            int size = dotSize > 0 ? dotSize : dp(8);
+            int margin = dotMargin > 0 ? dotMargin : dp(4);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(size, size);
-            params.setMargins(dp(4), 0, dp(4), 0);
+            params.setMargins(margin, 0, margin, 0);
             dot.setLayoutParams(params);
             container.addView(dot);
         }

@@ -33,6 +33,18 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 import android.view.ViewGroup;
 import android.text.TextUtils;
+import android.graphics.Typeface;
+import android.provider.Settings;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.animation.PathInterpolator;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+
+import androidx.core.content.res.ResourcesCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,12 +53,20 @@ import java.util.Objects;
 /**
  * OnboardingActivity shows the app intro slides using AppIntro.
  */
-public class OnboardingActivity extends AppIntro {
+public class OnboardingActivity extends AppIntro
+        implements OnboardingCapabilitiesFragment.Host {
     private boolean isLastSlide = false;
     private boolean isFirstSlide = true; // Track if we're on the first slide
     // Use View instead of Button to avoid class cast exceptions
     private View backButton;
     private View nextButton;
+    private ImageView dockBack;
+    private ImageView dockNext;
+    private ImageView dockDone;
+    private View dockScrollHint;
+    private SquircleIndicatorController dockIndicator;
+    private boolean capabilitiesNextRevealed;
+    private boolean scrollHintVisible;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -121,23 +141,18 @@ public class OnboardingActivity extends AppIntro {
 
         // Add slides in the correct sequence
         addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_intro_slide));
-        addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_capabilities_slide));
+        addSlide(new OnboardingCapabilitiesFragment());
         addSlide(new OnboardingPermissionsFragment());
         addSlide(new OnboardingHumanFragment());
 
         // Hide only the Done button while keeping navigation buttons
         setSkipButtonEnabled(false); // No skip button needed
         setSwipeLock(false); // (setNextPageSwipeLock is deprecated in AppIntro 6.x)
-        setIndicatorEnabled(true);
+        setIndicatorEnabled(false);
 
         // Use wizard mode to replace Skip with Back button
         setWizardMode(true);
 
-        // Dossier squircles instead of AppIntro's circles.
-        SquircleIndicatorController indicator = new SquircleIndicatorController();
-        indicator.setSelectedIndicatorColor(ContextCompat.getColor(this, R.color.white));
-        indicator.setUnselectedIndicatorColor(ContextCompat.getColor(this, R.color.gray500));
-        setIndicatorController(indicator);
         ViewPager navPager = findViewById(com.github.appintro.R.id.view_pager);
         if (navPager != null) {
             navPager.post(() -> updateNavigationButtons(navPager.getCurrentItem()));
@@ -165,6 +180,13 @@ public class OnboardingActivity extends AppIntro {
                 @Override
                 public void onPageSelected(int position) {
                     updateNavigationButtons(position);
+                    viewPager.post(() -> notifyCapabilitiesPage(
+                            viewPager.getCurrentItem() == 1));
+                    viewPager.postDelayed(() -> notifyCapabilitiesPage(
+                            viewPager.getCurrentItem() == 1), 220L);
+                    viewPager.post(() -> {
+                        if (viewPager.getCurrentItem() == 2) notifyPermissionsPage();
+                    });
                 }
 
                 @Override
@@ -174,11 +196,11 @@ public class OnboardingActivity extends AppIntro {
 
         }
 
-        // Initialize navigation button references
+        // AppIntro's bottom bar is replaced by a floating dossier dock.
         backButton = findViewById(com.github.appintro.R.id.back);
         nextButton = findViewById(com.github.appintro.R.id.next);
-        styleNavArrow(backButton);
-        styleNavArrow(nextButton);
+        hideNativeBottomChrome();
+        setupFloatingDock();
 
         // Completely remove the Done button
         View doneButton = findViewById(com.github.appintro.R.id.done);
@@ -207,6 +229,18 @@ public class OnboardingActivity extends AppIntro {
         getSupportFragmentManager().registerFragmentLifecycleCallbacks(
                 new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
                     @Override
+                    public void onFragmentResumed(
+                            @NonNull androidx.fragment.app.FragmentManager fm,
+                            @NonNull Fragment f) {
+                        super.onFragmentResumed(fm, f);
+                        if (!(f instanceof OnboardingCapabilitiesFragment)) return;
+                        ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+                        if (pager != null && pager.getCurrentItem() == 1) {
+                            pager.post(((OnboardingCapabilitiesFragment) f)::onPageBecameVisible);
+                        }
+                    }
+
+                    @Override
                     public void onFragmentViewCreated(@NonNull androidx.fragment.app.FragmentManager fm,
                             @NonNull Fragment f, @Nullable View v, @Nullable Bundle savedInstanceState) {
                         super.onFragmentViewCreated(fm, f, v, savedInstanceState);
@@ -216,12 +250,6 @@ public class OnboardingActivity extends AppIntro {
                             final int baseTop = slideContent.getPaddingTop();
                             final int baseLeft = slideContent.getPaddingLeft();
                             final int baseRight = slideContent.getPaddingRight();
-                            boolean contentRtl = android.text.TextUtils.getLayoutDirectionFromLocale(
-                                    getResources().getConfiguration().getLocales().get(0))
-                                    == View.LAYOUT_DIRECTION_RTL;
-                            slideContent.setLayoutDirection(contentRtl
-                                    ? View.LAYOUT_DIRECTION_RTL
-                                    : View.LAYOUT_DIRECTION_LTR);
                             androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
                                     slideContent, (cv, insets) -> {
                                         androidx.core.graphics.Insets bars = insets.getInsets(
@@ -232,9 +260,6 @@ public class OnboardingActivity extends AppIntro {
                                         return insets;
                                     });
                             androidx.core.view.ViewCompat.requestApplyInsets(slideContent);
-                        }
-                        if (v.findViewById(R.id.onboarding_capability_grid) != null) {
-                            applyCapabilitiesEdition(v);
                         }
                         final TextView heroTitle = v.findViewById(R.id.onboardingHeroTitle);
                         if (heroTitle != null) {
@@ -414,38 +439,6 @@ public class OnboardingActivity extends AppIntro {
                 }, true);
     }
 
-    /**
-     * Lite ships a smaller feature set, so slide 02 must not advertise Full-only
-     * tools or mini apps. Hide them, fold the grid to one column and restate the
-     * count with the same dossier layout.
-     */
-    private void applyCapabilitiesEdition(View root) {
-        if (!com.fadcam.BuildConfig.LITE_EDITION) return;
-
-        int[] fullOnlyTiles = {R.id.onboarding_cap_screen, R.id.onboarding_cap_editor,
-                R.id.onboarding_cap_dashboard};
-        for (int id : fullOnlyTiles) {
-            View tile = root.findViewById(id);
-            if (tile != null) tile.setVisibility(View.GONE);
-        }
-
-        View miniApps = root.findViewById(R.id.onboarding_mini_apps_section);
-        if (miniApps != null) miniApps.setVisibility(View.GONE);
-
-        android.widget.GridLayout grid = root.findViewById(R.id.onboarding_capability_grid);
-        if (grid != null) grid.setColumnCount(1);
-
-        int[] visibleIndexIds = {R.id.onboarding_cap_index_1, R.id.onboarding_cap_index_4,
-                R.id.onboarding_cap_index_6};
-        for (int i = 0; i < visibleIndexIds.length; i++) {
-            TextView index = root.findViewById(visibleIndexIds[i]);
-            if (index != null) index.setText(String.format(java.util.Locale.US, "%02d", i + 1));
-        }
-
-        TextView tally = root.findViewById(R.id.onboarding_tally_number);
-        if (tally != null) tally.setText(R.string.onboarding_total_number_lite);
-    }
-
     private void hideSystemBars() {
         getWindow().setNavigationBarColor(android.graphics.Color.BLACK);
         androidx.core.view.WindowInsetsControllerCompat controller =
@@ -461,15 +454,10 @@ public class OnboardingActivity extends AppIntro {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) hideSystemBars();
-    }
-
-    /** Keep AppIntro's RTL-aware arrows; only give them the dossier shell and gold tint. */
-    private void styleNavArrow(View button) {
-        if (!(button instanceof android.widget.ImageView)) return;
-        button.setBackgroundResource(R.drawable.bg_onboarding_arrow);
-        ((android.widget.ImageView) button).setColorFilter(
-                androidx.core.content.ContextCompat.getColor(this, R.color.pro_gold));
+        if (hasFocus) {
+            hideSystemBars();
+            hideNativeBottomChrome();
+        }
     }
 
     private int dp(int value) {
@@ -486,18 +474,354 @@ public class OnboardingActivity extends AppIntro {
         isFirstSlide = position == 0;
         isLastSlide = position == slideCount - 1;
 
-        // AppIntro swaps which physical button is the forward one in RTL, so hide by role,
-        // not by the LTR id.
-        boolean rtlNav = android.text.TextUtils.getLayoutDirectionFromLocale(
-                getResources().getConfiguration().getLocales().get(0))
-                == View.LAYOUT_DIRECTION_RTL;
-        if (backButton != null) {
-            boolean hide = rtlNav ? isLastSlide : isFirstSlide;
-            backButton.setVisibility(hide ? View.INVISIBLE : View.VISIBLE);
+        // The library's own arrows and indicator stay out of the way; the dock owns them.
+        if (backButton != null) backButton.setVisibility(View.GONE);
+        if (nextButton != null) nextButton.setVisibility(View.GONE);
+
+        if (position == 1 && !capabilitiesNextRevealed) {
+            OnboardingCapabilitiesFragment capabilities = findCapabilitiesFragment();
+            if (capabilities != null && capabilities.isAtBottom()) {
+                capabilitiesNextRevealed = true;
+            }
         }
-        if (nextButton != null) {
-            boolean hide = rtlNav ? isFirstSlide : isLastSlide;
-            nextButton.setVisibility(hide ? View.INVISIBLE : View.VISIBLE);
+
+        if (dockBack != null) {
+            dockBack.setVisibility(View.VISIBLE);
+            setDockArrowEnabled(dockBack, !isFirstSlide);
+        }
+        if (dockIndicator != null) {
+            dockIndicator.selectPosition(position);
+        }
+
+        boolean scrollGate = position == 1 && !capabilitiesNextRevealed;
+        boolean permissionsBlocked = false;
+        if (position == 2) {
+            OnboardingPermissionsFragment permissions = findPermissionsFragment();
+            permissionsBlocked = permissions == null || !permissions.isPolicyRespected();
+        }
+        setDockNextVisible(!isLastSlide,
+                !isLastSlide && !scrollGate && !permissionsBlocked);
+        setDockDoneVisible(isLastSlide);
+        setScrollHintVisible(scrollGate);
+    }
+
+    /** Disabled arrows stay in the dock as quiet anchors instead of leaving a hole. */
+    private void setDockArrowEnabled(View arrow, boolean enabled) {
+        if (!(arrow instanceof ImageView)) return;
+        ImageView image = (ImageView) arrow;
+        image.setEnabled(enabled);
+        image.setClickable(enabled);
+        image.setAlpha(enabled ? 1f : 0.55f);
+        image.setColorFilter(ContextCompat.getColor(this,
+                enabled ? R.color.pro_gold : R.color.dossier_muted));
+    }
+
+    private void setDockNextVisible(boolean visible, boolean enabled) {
+        if (dockNext == null) return;
+        dockNext.animate().cancel();
+        if (!visible) {
+            dockNext.setVisibility(View.INVISIBLE);
+            return;
+        }
+        float targetAlpha = enabled ? 1f : 0.55f;
+        dockNext.setVisibility(View.VISIBLE);
+        dockNext.setEnabled(enabled);
+        dockNext.setClickable(enabled);
+        dockNext.setColorFilter(ContextCompat.getColor(this,
+                enabled ? R.color.pro_gold : R.color.dossier_muted));
+        if (animationsEnabled()) {
+            dockNext.setAlpha(0f);
+            dockNext.setScaleX(0.9f);
+            dockNext.setScaleY(0.9f);
+            dockNext.animate().alpha(targetAlpha).scaleX(1f).scaleY(1f)
+                    .setDuration(240L).setInterpolator(expoOut()).start();
+        } else {
+            dockNext.setAlpha(targetAlpha);
+            dockNext.setScaleX(1f);
+            dockNext.setScaleY(1f);
+        }
+    }
+
+    private void setDockDoneVisible(boolean visible) {
+        if (dockDone == null) return;
+        dockDone.animate().cancel();
+        if (!visible) {
+            dockDone.setVisibility(View.INVISIBLE);
+            return;
+        }
+        dockDone.setVisibility(View.VISIBLE);
+        if (animationsEnabled()) {
+            dockDone.setAlpha(0f);
+            dockDone.setScaleX(0.8f);
+            dockDone.setScaleY(0.8f);
+            dockDone.animate().alpha(1f).scaleX(1f).scaleY(1f)
+                    .setDuration(260L).setInterpolator(expoOut()).start();
+        } else {
+            dockDone.setAlpha(1f);
+            dockDone.setScaleX(1f);
+            dockDone.setScaleY(1f);
+        }
+    }
+
+    private void setScrollHintVisible(boolean show) {
+        if (dockScrollHint == null) return;
+        if (show && !scrollHintVisible) {
+            dockScrollHint.animate().cancel();
+            dockScrollHint.setVisibility(View.VISIBLE);
+            scrollHintVisible = true;
+            if (animationsEnabled()) {
+                dockScrollHint.setAlpha(0f);
+                dockScrollHint.setTranslationY(dp(6));
+                dockScrollHint.animate().alpha(1f).translationY(0f)
+                        .setDuration(300L).setInterpolator(expoOut()).start();
+            } else {
+                dockScrollHint.setAlpha(1f);
+                dockScrollHint.setTranslationY(0f);
+            }
+        } else if (!show && scrollHintVisible) {
+            scrollHintVisible = false;
+            if (animationsEnabled()) {
+                dockScrollHint.animate().alpha(0f).translationY(-dp(4))
+                        .setDuration(180L).setInterpolator(expoOut())
+                        .withEndAction(() -> dockScrollHint.setVisibility(View.GONE)).start();
+            } else {
+                dockScrollHint.setVisibility(View.GONE);
+            }
+        } else if (!show) {
+            dockScrollHint.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onCapabilitiesScrollState(boolean atBottom) {
+        // The gate is live: scrolling back up brings the cue and the quiet arrow back.
+        capabilitiesNextRevealed = atBottom;
+        ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+        if (pager != null && pager.getCurrentItem() == 1) {
+            updateNavigationButtons(1);
+        }
+    }
+
+    /**
+     * Floating translucent dock: back, page squircles and next. It replaces AppIntro's
+     * opaque bottom bar so the dossier paper stays visible behind the controls.
+     */
+    private void setupFloatingDock() {
+        if (dockBack != null) return;
+        FrameLayout content = findViewById(android.R.id.content);
+        if (content == null) return;
+        final ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+        final boolean rtl = getResources().getConfiguration().getLayoutDirection()
+                == View.LAYOUT_DIRECTION_RTL;
+
+        final int dockH = getResources().getDimensionPixelSize(R.dimen.onboarding_dock_height);
+        final int arrow = getResources().getDimensionPixelSize(R.dimen.onboarding_dock_arrow);
+        final int pad = getResources().getDimensionPixelSize(R.dimen.onboarding_dock_padding);
+        final int dockBottom = getResources().getDimensionPixelSize(
+                R.dimen.onboarding_dock_bottom_margin);
+        final int dotSize = getResources().getDimensionPixelSize(R.dimen.onboarding_dock_dot);
+        final int dotMargin = getResources().getDimensionPixelSize(
+                R.dimen.onboarding_dock_dot_margin);
+        final int hintGap = getResources().getDimensionPixelSize(
+                R.dimen.onboarding_scroll_hint_bottom_gap);
+        final float hintTextSize = getResources().getDimension(
+                R.dimen.onboarding_scroll_hint_text_size);
+        final int hintBottom = dockBottom + dockH + hintGap;
+
+        LinearLayout dock = new LinearLayout(this);
+        dock.setOrientation(LinearLayout.HORIZONTAL);
+        dock.setGravity(Gravity.CENTER_VERTICAL);
+        dock.setBackgroundResource(R.drawable.bg_onboarding_dock);
+        dock.setElevation(dp(10));
+        dock.setPadding(pad, 0, pad, 0);
+
+        ImageView back = new ImageView(this);
+        back.setLayoutParams(new LinearLayout.LayoutParams(arrow, arrow));
+        back.setScaleType(ImageView.ScaleType.CENTER);
+        back.setImageResource(rtl
+                ? R.drawable.ic_onboarding_chevron
+                : R.drawable.ic_onboarding_chevron_left);
+        back.setContentDescription(getString(R.string.onboarding_back));
+        int ripple = selectableBorderless();
+        if (ripple != 0) back.setBackgroundResource(ripple);
+        back.setOnClickListener(v -> {
+            if (pager == null) return;
+            int current = pager.getCurrentItem();
+            if (current > 0) pager.setCurrentItem(current - 1, true);
+        });
+
+        dockIndicator = new SquircleIndicatorController();
+        dockIndicator.setSelectedIndicatorColor(ContextCompat.getColor(this, R.color.white));
+        dockIndicator.setUnselectedIndicatorColor(ContextCompat.getColor(this, R.color.gray500));
+        dockIndicator.setDotSize(dotSize);
+        dockIndicator.setDotMargin(dotMargin);
+        View dots = dockIndicator.newInstance(this);
+        dockIndicator.initialize(4);
+        dots.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams dotsLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        dotsLp.setMargins(dp(5), 0, dp(5), 0);
+        dots.setLayoutParams(dotsLp);
+
+        ImageView next = new ImageView(this);
+        next.setScaleType(ImageView.ScaleType.CENTER);
+        next.setImageResource(rtl
+                ? R.drawable.ic_onboarding_chevron_left
+                : R.drawable.ic_onboarding_chevron);
+        next.setContentDescription(getString(R.string.onboarding_next));
+        if (ripple != 0) next.setBackgroundResource(ripple);
+        next.setOnClickListener(v -> {
+            if (pager == null) return;
+            int current = pager.getCurrentItem();
+            if (pager.getAdapter() != null && current < pager.getAdapter().getCount() - 1) {
+                pager.setCurrentItem(current + 1, true);
+            }
+        });
+
+        ImageView done = new ImageView(this);
+        done.setScaleType(ImageView.ScaleType.CENTER);
+        done.setImageResource(R.drawable.ic_check);
+        done.setColorFilter(ContextCompat.getColor(this, R.color.pro_gold));
+        done.setContentDescription(getString(R.string.onboarding_done));
+        done.setVisibility(View.INVISIBLE);
+
+        FrameLayout slot = new FrameLayout(this);
+        slot.setLayoutParams(new LinearLayout.LayoutParams(arrow, arrow));
+        next.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER));
+        done.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER));
+        slot.addView(next);
+        slot.addView(done);
+
+        dock.addView(back);
+        dock.addView(dots);
+        dock.addView(slot);
+
+        FrameLayout.LayoutParams dockLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dockH,
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        dockLp.bottomMargin = dockBottom;
+        content.addView(dock, dockLp);
+
+        LinearLayout hint = new LinearLayout(this);
+        hint.setOrientation(LinearLayout.HORIZONTAL);
+        hint.setGravity(Gravity.CENTER_VERTICAL);
+        hint.setBackgroundResource(R.drawable.bg_onboarding_scroll_hint);
+        hint.setElevation(dp(6));
+        hint.setPadding(dp(10), dp(5), dp(10), dp(5));
+        hint.setVisibility(View.GONE);
+        hint.setContentDescription(getString(R.string.onboarding_scroll_hint));
+        hint.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        hint.setClickable(true);
+        hint.setFocusable(true);
+        hint.setOnClickListener(v -> {
+            OnboardingCapabilitiesFragment capabilities = findCapabilitiesFragment();
+            if (capabilities != null) capabilities.scrollDown();
+        });
+
+        TextView chevron = new TextView(this);
+        chevron.setText("keyboard_arrow_down");
+        chevron.setTypeface(ResourcesCompat.getFont(this, R.font.materialicons));
+        chevron.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
+        chevron.setTextColor(ContextCompat.getColor(this, R.color.pro_gold));
+        chevron.setIncludeFontPadding(false);
+        chevron.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+
+        TextView scrollLabel = new TextView(this);
+        scrollLabel.setText(R.string.onboarding_scroll_short);
+        scrollLabel.setTypeface(Typeface.MONOSPACE);
+        scrollLabel.setTextSize(TypedValue.COMPLEX_UNIT_PX, hintTextSize);
+        scrollLabel.setTextColor(ContextCompat.getColor(this, R.color.pro_gold));
+        scrollLabel.setAllCaps(true);
+        scrollLabel.setLetterSpacing(0.12f);
+        scrollLabel.setIncludeFontPadding(false);
+        scrollLabel.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams scrollLabelLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        scrollLabelLp.setMarginStart(dp(4));
+
+        hint.addView(chevron);
+        hint.addView(scrollLabel, scrollLabelLp);
+
+        FrameLayout.LayoutParams hintLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        hintLp.bottomMargin = hintBottom;
+        content.addView(hint, hintLp);
+
+        dockBack = back;
+        dockNext = next;
+        dockDone = done;
+        dockScrollHint = hint;
+
+        ViewCompat.setOnApplyWindowInsetsListener(dock, (v, insets) -> {
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
+            lp.bottomMargin = dockBottom + insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()).bottom;
+            v.setLayoutParams(lp);
+            return insets;
+        });
+        ViewCompat.setOnApplyWindowInsetsListener(hint, (v, insets) -> {
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
+            lp.bottomMargin = hintBottom + insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()).bottom;
+            v.setLayoutParams(lp);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(dock);
+        ViewCompat.requestApplyInsets(hint);
+
+        if (animationsEnabled()) {
+            dock.setAlpha(0f);
+            dock.setTranslationY(dp(10));
+            dock.post(() -> dock.animate().alpha(1f).translationY(0f)
+                    .setStartDelay(140L).setDuration(420L)
+                    .setInterpolator(expoOut()).start());
+        }
+    }
+
+    private int selectableBorderless() {
+        TypedValue value = new TypedValue();
+        getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, value, true);
+        return value.resourceId;
+    }
+
+    private void hideNativeBottomChrome() {
+        // AppIntro may re-show its own arrows on SlidePolicy pages, so merely setting
+        // GONE is not enough: detach the arrows and native indicator from the hierarchy.
+        // The bottom/separator views stay attached (hidden) because the pager anchors to them.
+        int[] removable = {com.github.appintro.R.id.back, com.github.appintro.R.id.next,
+                com.github.appintro.R.id.indicator_container};
+        for (int id : removable) {
+            View view = findViewById(id);
+            if (view == null) continue;
+            view.setVisibility(View.GONE);
+            if (view.getParent() instanceof ViewGroup) {
+                ((ViewGroup) view.getParent()).removeView(view);
+            }
+        }
+        int[] hidden = {com.github.appintro.R.id.bottom,
+                com.github.appintro.R.id.bottom_separator};
+        for (int id : hidden) {
+            View view = findViewById(id);
+            if (view != null) view.setVisibility(View.GONE);
+        }
+    }
+
+    private android.view.animation.Interpolator expoOut() {
+        return new PathInterpolator(0.16f, 1f, 0.3f, 1f);
+    }
+
+    private boolean animationsEnabled() {
+        try {
+            float scale = Settings.Global.getFloat(getContentResolver(),
+                    Settings.Global.ANIMATOR_DURATION_SCALE, 1f);
+            return scale != 0f;
+        } catch (Exception ignored) {
+            return true;
         }
     }
 
@@ -522,6 +846,74 @@ public class OnboardingActivity extends AppIntro {
             } else { // Page is way off-screen to the right
                 page.setAlpha(MIN_ALPHA);
             }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        hideNativeBottomChrome();
+        ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+        if (pager != null) {
+            pager.post(() -> updateNavigationButtons(pager.getCurrentItem()));
+            pager.postDelayed(() -> updateNavigationButtons(pager.getCurrentItem()), 240L);
+            pager.post(() -> notifyCapabilitiesPage(pager.getCurrentItem() == 1));
+            pager.postDelayed(() -> notifyCapabilitiesPage(pager.getCurrentItem() == 1), 240L);
+            pager.post(() -> {
+                if (pager.getCurrentItem() == 2) notifyPermissionsPage();
+            });
+        }
+    }
+
+    private void notifyPermissionsPage() {
+        OnboardingPermissionsFragment permissions = findPermissionsFragment();
+        if (permissions != null) permissions.onSlideShown();
+    }
+
+    private OnboardingPermissionsFragment findPermissionsFragment() {
+        Fragment target = getSupportFragmentManager().findFragmentByTag(
+                "android:switcher:" + com.github.appintro.R.id.view_pager + ":2");
+        if (target instanceof OnboardingPermissionsFragment) {
+            return (OnboardingPermissionsFragment) target;
+        }
+        for (Fragment candidate : getSupportFragmentManager().getFragments()) {
+            if (candidate instanceof OnboardingPermissionsFragment) {
+                return (OnboardingPermissionsFragment) candidate;
+            }
+        }
+        return null;
+    }
+
+    /** Called by the permission slide whenever the grant state changes. */
+    public void onPermissionsStateChanged() {
+        ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+        if (pager != null && pager.getCurrentItem() == 2) {
+            updateNavigationButtons(2);
+        }
+    }
+
+    private OnboardingCapabilitiesFragment findCapabilitiesFragment() {
+        Fragment target = getSupportFragmentManager().findFragmentByTag(
+                "android:switcher:" + com.github.appintro.R.id.view_pager + ":1");
+        if (target instanceof OnboardingCapabilitiesFragment) {
+            return (OnboardingCapabilitiesFragment) target;
+        }
+        for (Fragment candidate : getSupportFragmentManager().getFragments()) {
+            if (candidate instanceof OnboardingCapabilitiesFragment) {
+                return (OnboardingCapabilitiesFragment) candidate;
+            }
+        }
+        return null;
+    }
+
+    /** Slide 02 owns its reveal; the pager is the source of truth for visibility. */
+    private void notifyCapabilitiesPage(boolean visible) {
+        OnboardingCapabilitiesFragment target = findCapabilitiesFragment();
+        if (target == null) return;
+        if (visible) {
+            target.onPageBecameVisible();
+        } else {
+            target.onPageHidden();
         }
     }
 

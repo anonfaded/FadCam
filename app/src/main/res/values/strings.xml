@@ -1522,6 +1522,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="open_settings">Open Settings</string>
 
     <string name="disable_battery_optimization">Disable Battery Optimization</string>
+    <string name="battery_optimization_disabled">Battery optimization disabled</string>
 
     <string name="onboarding_human_title">The house rules</string>
     <string name="onboarding_human_desc">Three promises, and you\'re in.</string>
@@ -1855,16 +1856,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_cred_open">Open source</string>
     <string name="onboarding_cred_ads">No ads</string>
     <string name="onboarding_cred_track">No trackers</string>
-    <string name="onboarding_mini_label">MINI APPS // 2 BUILT IN</string>
-    <string name="onboarding_mini_torch">Flashlight apps</string>
-    <string name="onboarding_mini_torch_desc">LED, screen light, strobe, SOS.</string>
-    <string name="onboarding_mini_qr">QR scanner apps</string>
-    <string name="onboarding_mini_qr_desc">Scans codes, saves the frame to Records.</string>
-    <string name="onboarding_mini_more">+ MORE COMING · EACH NEW ONE RETIRES ANOTHER APP</string>
-    <string name="onboarding_total_number" translatable="false">8</string>
-    <string name="onboarding_total_number_lite" translatable="false">3</string>
-    <string name="onboarding_total_label">APPS YOU CAN UNINSTALL</string>
-    <string name="onboarding_total_note">No ads. No trackers. No profiling.</string>
+    <string name="onboarding_mini_torch">Flashlight</string>
+    <string name="onboarding_mini_torch_desc">Flashlight, strobe, and SOS modes.</string>
+    <string name="onboarding_mini_qr">QR scanner</string>
+    <string name="onboarding_mini_qr_desc">Scan QR codes and save scans to Records.</string>
     <string name="onboarding_permissions_kicker">ACCESS // REQUIRED</string>
     <string name="onboarding_permissions_page">03 / 04</string>
     <string name="onboarding_human_kicker">OATH // RULES OF USE</string>
@@ -1874,24 +1869,45 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_dossier_kicker">FADCAM // PRIVATE RECORDER</string>
     <string name="onboarding_dossier_page">01 / 04</string>
     <string name="onboarding_dossier_title">The #1 background video recorder.</string>
-    <string name="onboarding_dossier_lede">Powered by FadCam\'s Hybrid MP4 pipeline. Recordings stay playable through crashes, dead batteries and sudden shutdowns — right up to the last second.</string>
+    <string name="onboarding_dossier_lede">Powered by FadCam\'s Hybrid MP4 pipeline. Your recordings survive crashes, dead batteries, and sudden shutdowns — playable right up to the last second.</string>
     <string name="onboarding_dossier_meta">OPEN SOURCE · NO ADS · NO TRACKING</string>
-    <string name="onboarding_capabilities_kicker">APPS REPLACED // ONE APP</string>
+
+    <!-- Slide 02: multimedia suite -->
+    <string name="onboarding_capabilities_kicker">FADCAM // MULTIMEDIA SUITE</string>
     <string name="onboarding_capabilities_page">02 / 04</string>
-    <string name="onboarding_capabilities_title">One app.\nA lighter phone.</string>
-    <string name="onboarding_capabilities_lede">Each card is an app you can delete.</string>
-    <string name="onboarding_cap_1_title">Background cams</string>
-    <string name="onboarding_cap_1_desc">Records with the screen off.</string>
-    <string name="onboarding_cap_2_title">Screen recorders</string>
-    <string name="onboarding_cap_2_desc">Screen, mic and annotation.</string>
-    <string name="onboarding_cap_3_title">Video editors</string>
-    <string name="onboarding_cap_3_desc">Trim, merge, export to MP4.</string>
-    <string name="onboarding_cap_4_title">CCTV cameras</string>
-    <string name="onboarding_cap_4_desc">Records when it sees movement.</string>
-    <string name="onboarding_cap_5_title">IP webcam apps</string>
-    <string name="onboarding_cap_5_desc">Watch and control this camera.</string>
-    <string name="onboarding_cap_6_title">Dual-cam apps</string>
-    <string name="onboarding_cap_6_desc">Front and back in one video.</string>
+    <string name="onboarding_capabilities_title">Time to uninstall\na few apps.</string>
+    <string name="onboarding_capabilities_lede">FadCam does their jobs too. Yes, all of these. Without any trackers or dark patterns.</string>
+
+    <string name="onboarding_feature_background_title">Background recording</string>
+    <string name="onboarding_feature_background_desc">Keep recording, even with the screen off.</string>
+    <string name="onboarding_feature_screen_title">Screen recording</string>
+    <string name="onboarding_feature_screen_desc">Record your screen with drawing tools, layers, and pages.</string>
+    <string name="onboarding_feature_editor_title">Video editor</string>
+    <string name="onboarding_feature_editor_desc">Trim, cut, merge, duplicate, or mute clips.</string>
+    <string name="onboarding_feature_motion_title">Motion detection</string>
+    <string name="onboarding_feature_motion_desc">Detect people and objects with on-device AI. Build your own Forensic Intelligence gallery.</string>
+    <string name="onboarding_feature_remote_title">Remote camera</string>
+    <string name="onboarding_feature_remote_desc">Live stream and control your camera remotely.</string>
+    <string name="onboarding_feature_bodycam_title">Bodycam &amp; dashcam</string>
+    <string name="onboarding_feature_bodycam_desc">Turn your phone into a bodycam or dashcam.</string>
+
+    <string name="onboarding_scroll_hint">Scroll for more</string>
+    <string name="onboarding_scroll_short">Scroll</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_done">Done</string>
+    <string name="onboarding_mini_heading">And we\'re not done yet.</string>
+    <string name="onboarding_mini_support">Mini apps. No extra apps needed.</string>
+    <string name="onboarding_mini_more">More mini apps coming soon.</string>
+
+    <string name="onboarding_payoff_title">%1$d JOBS. ONE FADCAM.</string>
+    <string name="onboarding_payoff_support">Time to say goodbye to those extra apps.</string>
+    <string name="onboarding_lite_full_note">FadCam Full replaces 8 apps.</string>
+    <string name="onboarding_demo_person">PERSON</string>
+    <string name="onboarding_demo_gun">GUN</string>
+    <string name="onboarding_demo_knife">KNIFE</string>
+    <string name="onboarding_demo_confidence">%1$s %2$d%%</string>
+    <string name="onboarding_demo_qr_value" translatable="false">fadseclab.com</string>
 
     <string name="onboarding_swipe_instruction">Swipe to continue</string>
     <string name="onboarding_select_language">Select your preferred app language.</string>
