@@ -68,10 +68,12 @@ public class OnboardingDemoView extends View {
     private final PathMeasure strokeMeasure = new PathMeasure();
     private final float[] pos = new float[2];
     private final DashPathEffect dash = new DashPathEffect(new float[]{2f, 2f}, 0f);
+    private final android.graphics.Shader beamPool = new android.graphics.RadialGradient(
+            0f, 0f, 26f,
+            new int[]{0x3DFFFFFF, 0x00FFFFFF}, null,
+            android.graphics.Shader.TileMode.CLAMP);
     private final Typeface mono = Typeface.MONOSPACE;
     private final Typeface monoBold = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD);
-    private final java.text.SimpleDateFormat cctvStamp =
-            new java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US);
     private final boolean[][] qr = new boolean[21][21];
     private final String[] objectConfidence = new String[3];
     private final String[] objectScore = new String[3];
@@ -80,6 +82,8 @@ public class OnboardingDemoView extends View {
     private Drawable torchIcon;
     private String qrValue;
     private long lockStartedMs;
+    private long cctvElapsedMs;
+    private long cctvLastTickMs;
 
     private int type = TYPE_BACKGROUND;
     private boolean compact;
@@ -175,6 +179,8 @@ public class OnboardingDemoView extends View {
         ambientOn = false;
         progress = 0f;
         lockStartedMs = 0L;
+        cctvElapsedMs = 0L;
+        cctvLastTickMs = 0L;
         if (!animationsEnabled()) {
             progress = 1f;
             invalidate();
@@ -225,6 +231,8 @@ public class OnboardingDemoView extends View {
         progress = 0f;
         ambientOn = false;
         lockStartedMs = 0L;
+        cctvElapsedMs = 0L;
+        cctvLastTickMs = 0L;
         invalidate();
     }
 
@@ -608,18 +616,6 @@ public class OnboardingDemoView extends View {
         fillRound(c, 128f, 30f, 150f, 66f, 1f, 0xFF0A0C0D);
         frameRound(c, 126f, 28f, 152f, 66f, 1f, C_LINE, 0.6f);
 
-        // Mounted phone: bright body, gold lens ring and a recording light.
-        fillRound(c, 12f, 30f, 17f, 44f, 1f, 0xFF23282C);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1f);
-        paint.setColor(0xFF3A3F43);
-        c.drawLine(17f, 37f, 20f, 37f, paint);
-        fillRound(c, 20f, 26f, 34f, 50f, 3.5f, 0xFF202529);
-        frameRound(c, 20f, 26f, 34f, 50f, 3.5f, 0xAAE8C77B, 0.7f);
-        fillRound(c, 22f, 28f, 32f, 48f, 2f, 0xFF2B3237);
-        dot(c, 27f, 31f, 1.9f, 0x33E8C77B);
-        dot(c, 27f, 31f, 1.2f, 0xFFA9BAC5);
-
         // Walk in, pause, then leave through the door.
         float t = ambientOn ? ambientLocal : p;
         float px;
@@ -640,17 +636,37 @@ public class OnboardingDemoView extends View {
         float fade = 1f - seg(t, 0.86f, 0.93f);
         int walkerAlpha = (int) (255f * fade);
 
-        // Torch-like beam while the camera is recording.
+        // Mounted phone: bright body, gold ring, lens lit only while recording.
+        fillRound(c, 12f, 30f, 17f, 44f, 1f, 0xFF23282C);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1f);
+        paint.setColor(0xFF3A3F43);
+        c.drawLine(17f, 37f, 20f, 37f, paint);
+        fillRound(c, 20f, 26f, 34f, 50f, 3.5f, 0xFF202529);
+        frameRound(c, 20f, 26f, 34f, 50f, 3.5f, 0xAAE8C77B, 0.7f);
+        fillRound(c, 22f, 28f, 32f, 48f, 2f, 0xFF2B3237);
+
+        // Soft white flash converging exactly on the lens centre (27, 31).
         if (active) {
-            path.reset();
-            path.moveTo(34f, 33f);
-            path.lineTo(92f, 18f);
-            path.lineTo(92f, 56f);
-            path.lineTo(34f, 43f);
-            path.close();
+            fillCone(c, 27f, 31f, 27f, 31f, 130f, 66f, 78f, 66f, 12);
+            fillCone(c, 27f, 31f, 27f, 31f, 122f, 66f, 84f, 66f, 16);
+            fillCone(c, 27f, 31f, 27f, 31f, 114f, 66f, 92f, 66f, 20);
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(withAlpha(C_GOLD, 20));
-            c.drawPath(path, paint);
+            paint.setShader(beamPool);
+            c.save();
+            c.translate(103f, 66f);
+            c.scale(1f, 0.22f);
+            c.drawCircle(0f, 0f, 26f, paint);
+            c.restore();
+            paint.setShader(null);
+        }
+
+        // Lens dot on top so the beam visibly starts at its centre.
+        if (active) {
+            dot(c, 27f, 31f, 3.4f, 0x33FFFFFF);
+            dot(c, 27f, 31f, 1.7f, 0xFFFFFFFF);
+        } else {
+            dot(c, 27f, 31f, 1.2f, 0xFF3A4044);
         }
 
         if (fade > 0.02f) drawWalker(c, px, t, active, walkerAlpha);
@@ -685,12 +701,29 @@ public class OnboardingDemoView extends View {
         frameRound(c, leafL, 30f, 150f, 66f, 0.8f, 0xCCE8C77B, 0.6f);
         dot(c, leafL + 3f, 49f, 0.8f, C_GOLD);
 
-        // CCTV timestamp with milliseconds.
-        label(c, cctvStamp.format(new java.util.Date()), 22f, 21f, 4.6f,
-                withAlpha(C_INK, 210), Paint.Align.LEFT, false);
+        // Human-readable CCTV clock; it freezes whenever motion stops.
+        updateCctvClock(active);
+        String stamp = cctvText();
+        float stampW = measureLabel(stamp, 5.8f, false);
+        fillRound(c, 20.5f, 16.2f, 22f + stampW + 1.5f, 22.5f, 1f,
+                0xA60B0C0D);
+        label(c, stamp, 22f, 21.5f, 5.8f, C_INK, Paint.Align.LEFT, false);
         drawPlayPauseBadge(c, 146f, 22f, active);
         dot(c, 16f, 19f, 1.4f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
         c.restore();
+    }
+
+    private void fillCone(Canvas c, float x1, float y1, float x2, float y2,
+                          float x3, float y3, float x4, float y4, int alpha) {
+        path.reset();
+        path.moveTo(x1, y1);
+        path.lineTo(x3, y3);
+        path.lineTo(x4, y4);
+        path.lineTo(x2, y2);
+        path.close();
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(alpha << 24 | 0x00FFFFFF);
+        c.drawPath(path, paint);
     }
 
     private void drawWalker(Canvas c, float x, float phase, boolean walking, int alpha) {
@@ -702,11 +735,10 @@ public class OnboardingDemoView extends View {
         paint.setStrokeWidth(1.4f);
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setColor(ink);
-        c.drawLine(x, 40.2f, x, 42f, paint);
-        c.drawLine(x - 4.2f, 42f, x + 4.2f, 42f, paint);
-        c.drawLine(x, 42f, x, 54f, paint);
-        c.drawLine(x - 4.2f, 42.5f, x - 5.2f - swing, 50f, paint);
-        c.drawLine(x + 4.2f, 42.5f, x + 5.2f + swing, 50f, paint);
+        // Head stays detached, as requested.
+        c.drawLine(x, 41.5f, x, 54f, paint);
+        c.drawLine(x, 44f, x - 5.2f - swing, 50f, paint);
+        c.drawLine(x, 44f, x + 5.2f + swing, 50f, paint);
         c.drawLine(x, 54f, x - 2.4f - swing, 63f, paint);
         c.drawLine(x, 54f, x + 2.4f + swing, 63f, paint);
         paint.setStrokeCap(Paint.Cap.BUTT);
@@ -878,8 +910,34 @@ public class OnboardingDemoView extends View {
 
         fillRound(c, 85f, 17f, 117f, 43f, 2f, 0xFF1B1F22);
         frameRound(c, 85f, 17f, 117f, 43f, 2f, C_LINE, 0.6f);
-        dot(c, 89f, 21f, 1.1f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
-        drawObjectIcon(c, 0, 92f, 19f, 110f, 37f, 255);
+        dot(c, 86.5f, 19f, 1.1f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
+        // CCTV view: a room with a door, sofa, plant and a slow walker.
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(0xFF1B2228);
+        c.drawRect(85f, 17f, 117f, 33f, paint);
+        paint.setColor(0xFF232A2F);
+        c.drawRect(85f, 33f, 117f, 43f, paint);
+        fillRound(c, 88f, 21f, 96f, 37f, 0.6f, 0xFF0A0D0F);
+        frameRound(c, 88f, 21f, 96f, 37f, 0.6f, 0x66C6A66A, 0.4f);
+        fillRound(c, 103f, 29f, 114f, 34f, 1f, 0xFF2A3136);
+        fillRound(c, 104f, 27f, 113f, 30f, 1f, 0xFF313A40);
+        fillRound(c, 99f, 30f, 102f, 35f, 0.6f, 0xFF2A3136);
+        dot(c, 100.5f, 28f, 1.6f, 0xFF3C5A44);
+        float roam = ambientOn
+                ? (float) Math.sin(ambientLocal * Math.PI * 2) : 0f;
+        float wx = 99.5f + 3.5f * roam;
+        dot(c, wx, 27.5f, 1.1f, C_INK);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(0.8f);
+        paint.setColor(C_INK);
+        c.drawLine(wx, 28.6f, wx, 33f, paint);
+        c.drawLine(wx, 33f, wx - 1.2f, 36f, paint);
+        c.drawLine(wx, 33f, wx + 1.2f, 36f, paint);
+        c.drawLine(wx, 29.6f, wx - 1.2f, 32f, paint);
+        c.drawLine(wx, 29.6f, wx + 1.2f, 32f, paint);
+        paint.setStrokeWidth(0.3f);
+        paint.setColor(0x0CFFFFFF);
+        for (float y = 18f; y < 43f; y += 2f) c.drawLine(85f, y, 117f, y, paint);
 
         // CONTROLS tag, same mono-bold plate as the motion-detection names.
         String controls = "CONTROLS";
@@ -913,11 +971,37 @@ public class OnboardingDemoView extends View {
         int a = 255;
         dot(c, 84f, 24f, 8f, withAlpha(0xFF4A4E52, a));
         fillRound(c, 64f, 36f, 104f, 76f, 11f, withAlpha(0xFF3D4145, a));
-        // Chest-mounted phone, portrait and upside down.
-        fillRound(c, 76f, 44f, 92f, 68f, 3f, withAlpha(0xFF101214, a));
-        frameRound(c, 76f, 44f, 92f, 68f, 3f, withAlpha(C_GOLD, a), 0.8f);
-        fillRound(c, 78f, 46f, 90f, 64f, 1.8f, withAlpha(0xFF1B1F22, a));
-        dot(c, 84f, 62f, 1.2f, withAlpha(C_RED,
+        // Chest-mounted phone, showing the street ahead.
+        fillRound(c, 75f, 42f, 93f, 70f, 3.5f, withAlpha(0xFF101214, a));
+        frameRound(c, 75f, 42f, 93f, 70f, 3.5f, withAlpha(C_GOLD, a), 0.8f);
+        fillRound(c, 77f, 44f, 91f, 68f, 1.8f, withAlpha(0xFF10161A, a));
+        c.save();
+        rect.set(77f, 44f, 91f, 68f);
+        path.reset();
+        path.addRoundRect(rect, 1.8f, 1.8f, Path.Direction.CW);
+        c.clipPath(path);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(withAlpha(0xFF1B2329, a));
+        c.drawRect(77f, 44f, 91f, 55f, paint);
+        paint.setColor(withAlpha(0xFF2A3238, a));
+        c.drawRect(77f, 49f, 81.5f, 55f, paint);
+        c.drawRect(83f, 47.5f, 87.5f, 55f, paint);
+        c.drawRect(88.5f, 50f, 91f, 55f, paint);
+        paint.setColor(withAlpha(0xFF262D33, a));
+        c.drawRect(77f, 55f, 91f, 68f, paint);
+        paint.setColor(withAlpha(C_GOLD, (int) (110f * a / 255f)));
+        c.drawRect(77f, 55f, 91f, 55.6f, paint);
+        float flow = (android.os.SystemClock.uptimeMillis() % 2400L) / 2400f;
+        paint.setColor(withAlpha(C_GOLD, (int) (140f * a / 255f)));
+        for (int i = 0; i < 3; i++) {
+            float f = (i / 3f + flow) % 1f;
+            float y = 57f + 9f * f;
+            c.drawRect(83.6f, y, 84.4f, y + 1.4f + 2.2f * f, paint);
+        }
+        tinyWalker(c, 79.5f + 6f * flow, 59f, flow, a);
+        tinyWalker(c, 88f - 5f * flow, 62f, 1f - flow, a);
+        c.restore();
+        dot(c, 78.3f, 45.7f, 0.7f, withAlpha(C_RED,
                 (int) (a * (0.22f + 0.78f * recBlink()))));
         paint.setStyle(Paint.Style.STROKE);
         paint.setColor(withAlpha(C_MUTED, (int) (150f * body)));
@@ -1168,6 +1252,39 @@ public class OnboardingDemoView extends View {
         long m = (seconds / 60L) % 60L;
         long s = seconds % 60L;
         return String.format(java.util.Locale.US, "%02d:%02d", m, s);
+    }
+
+    private void tinyWalker(Canvas c, float x, float baseY, float phase, int alpha) {
+        int ink = withAlpha(0xFFD9D5C8, alpha);
+        dot(c, x, baseY - 4.2f, 0.8f, ink);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(0.55f);
+        paint.setColor(ink);
+        c.drawLine(x, baseY - 3.2f, x, baseY, paint);
+        float swing = (float) Math.sin(phase * Math.PI * 2 * 2) * 0.8f;
+        c.drawLine(x, baseY, x - 0.7f - swing, baseY + 1.5f, paint);
+        c.drawLine(x, baseY, x + 0.7f + swing, baseY + 1.5f, paint);
+    }
+
+    /** Accumulate CCTV time only while motion is being recorded. */
+    private void updateCctvClock(boolean active) {
+        long now = android.os.SystemClock.uptimeMillis();
+        if (cctvLastTickMs == 0L) cctvLastTickMs = now;
+        if (active) cctvElapsedMs += now - cctvLastTickMs;
+        cctvLastTickMs = now;
+    }
+
+    private String cctvText() {
+        long total = 80778000L + cctvElapsedMs; // 10:26:18.000 PM
+        int ms = (int) (total % 1000L);
+        long secs = total / 1000L;
+        int s = (int) (secs % 60L);
+        int m = (int) ((secs / 60L) % 60L);
+        int h24 = (int) ((secs / 3600L) % 24L);
+        int h = h24 % 12;
+        if (h == 0) h = 12;
+        return String.format(java.util.Locale.US, "%02d:%02d:%02d.%03d %s",
+                h, m, s, ms, h24 < 12 ? "AM" : "PM");
     }
 
     // ── drawing helpers ────────────────────────────────────────────────────
