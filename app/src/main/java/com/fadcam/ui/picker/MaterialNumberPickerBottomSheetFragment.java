@@ -1,5 +1,6 @@
 package com.fadcam.ui.picker;
 
+import android.os.Build;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -960,7 +961,9 @@ public class MaterialNumberPickerBottomSheetFragment extends BottomSheetDialogFr
             md.invoke(picker, divider);
         } catch (Exception ignored) {
             try {
-                picker.setSelectionDividerHeight(2);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    picker.setSelectionDividerHeight(2);
+                }
             } catch (Exception ignored2) {
             }
         }
