@@ -1890,6 +1890,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_feature_remote_desc">Live stream and control your camera remotely.</string>
     <string name="onboarding_feature_bodycam_title">Bodycam &amp; dashcam</string>
     <string name="onboarding_feature_bodycam_desc">Turn your phone into a bodycam or dashcam.</string>
+    <string name="onboarding_feature_bodycam_solo_title">Bodycam</string>
+    <string name="onboarding_feature_bodycam_solo_desc">Wear it and record hands-free.</string>
+    <string name="onboarding_feature_dashcam_title">Dashcam</string>
+    <string name="onboarding_feature_dashcam_desc">Mount it and record the road.</string>
 
     <string name="onboarding_scroll_hint">Scroll for more</string>
     <string name="onboarding_scroll_short">Scroll</string>

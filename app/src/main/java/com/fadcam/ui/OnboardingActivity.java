@@ -602,6 +602,17 @@ public class OnboardingActivity extends AppIntro
         }
     }
 
+    @Override
+    public void onCapabilitiesScrollBlocked() {
+        // A forward swipe was refused: nudge the scroll cue so the reason is visible.
+        if (dockScrollHint == null || dockScrollHint.getVisibility() != View.VISIBLE) return;
+        dockScrollHint.animate().cancel();
+        dockScrollHint.animate().translationY(-dp(5)).setDuration(90L)
+                .withEndAction(() -> dockScrollHint.animate()
+                        .translationY(0f).setDuration(160L).start())
+                .start();
+    }
+
     /**
      * Floating translucent dock: back, page squircles and next. It replaces AppIntro's
      * opaque bottom bar so the dossier paper stays visible behind the controls.

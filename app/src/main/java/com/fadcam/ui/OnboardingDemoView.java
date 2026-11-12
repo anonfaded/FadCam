@@ -39,6 +39,8 @@ public class OnboardingDemoView extends View {
     public static final int TYPE_BODYCAM = 5;
     public static final int TYPE_FLASHLIGHT = 6;
     public static final int TYPE_QR = 7;
+    public static final int TYPE_BODYCAM_SOLO = 8;
+    public static final int TYPE_DASHCAM = 9;
 
     private static final float DESIGN_W = 168f;
     private static final float DESIGN_H = 92f;
@@ -56,8 +58,7 @@ public class OnboardingDemoView extends View {
     private static final int C_MUTED = 0xFF9C9991;
     private static final int C_DIM = 0xFF5C605F;
     private static final int C_RED = 0xFFD9564A;
-
-    private static final String T_TIME = "00:12";
+    private static final int C_GREEN = 0xFF86D3A0;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -160,6 +161,8 @@ public class OnboardingDemoView extends View {
     public void playOnce(long startDelayMs) {
         if (played) return;
         played = true;
+        ambientOn = false;
+        progress = 0f;
         if (!animationsEnabled()) {
             progress = 1f;
             invalidate();
@@ -183,6 +186,11 @@ public class OnboardingDemoView extends View {
 
     /** One shared clock drives every preview; a per-view offset keeps them out of sync. */
     public void setAmbientPhase(float phase) {
+        // Never run the ambient loop on top of the one-shot reveal.
+        if (progress < 0.999f) {
+            ambientOn = false;
+            return;
+        }
         ambientOn = true;
         ambientLocal = phase + ambientOffset;
         ambientLocal -= (float) Math.floor(ambientLocal);
@@ -191,6 +199,18 @@ public class OnboardingDemoView extends View {
     }
 
     public void clearAmbient() {
+        ambientOn = false;
+        invalidate();
+    }
+
+    /** Rewinds the demo so the next visit replays the one-shot from the start. */
+    public void resetDemo() {
+        if (animator != null) {
+            animator.cancel();
+            animator = null;
+        }
+        played = false;
+        progress = 0f;
         ambientOn = false;
         invalidate();
     }
@@ -244,6 +264,12 @@ public class OnboardingDemoView extends View {
             case TYPE_BODYCAM:
                 drawBodycam(canvas, progress);
                 break;
+            case TYPE_BODYCAM_SOLO:
+                drawBodycamSolo(canvas, progress);
+                break;
+            case TYPE_DASHCAM:
+                drawDashcamSolo(canvas, progress);
+                break;
             case TYPE_FLASHLIGHT:
                 drawFlashlight(canvas, progress);
                 break;
@@ -291,13 +317,21 @@ public class OnboardingDemoView extends View {
         frameRound(c, 58f, 8f, 110f, 84f, 7f, 0x55C6A66A, 0.8f);
         fillRound(c, 62f, 13f, 106f, 79f, 4f, 0xFF1B1F22);
 
-        // Camera preview.
+        // Home screen: a clock and an app grid, then the phone locks.
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.5f);
-        paint.setColor(0x1FFFFFFF);
-        c.drawLine(64f, 64f, 104f, 34f, paint);
-        c.drawLine(64f, 72f, 96f, 46f, paint);
-        frameRound(c, 77f, 40f, 93f, 56f, 1f, 0x88E8C77B, 0.7f);
+        paint.setColor(0x77E8C77B);
+        c.drawCircle(76f, 26f, 6f, paint);
+        c.drawLine(76f, 26f, 76f, 21.5f, paint);
+        c.drawLine(76f, 26f, 79.5f, 27.8f, paint);
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 3; col++) {
+                float bx = 68.5f + col * 12f;
+                float by = 41f + row * 11f;
+                fillRound(c, bx, by, bx + 7f, by + 7f, 1.6f, 0xFF24282B);
+                frameRound(c, bx, by, bx + 7f, by + 7f, 1.6f, 0x33E8C77B, 0.3f);
+            }
+        }
 
         float dim = seg(p, 0.35f, 0.72f);
         if (dim > 0f) {
@@ -331,7 +365,7 @@ public class OnboardingDemoView extends View {
         // The recording indicator stays alive after the screen goes dark.
         dot(c, 66f, 20f, 1.6f,
                 withAlpha(C_RED, (int) (55f + 200f * recBlink())));
-        label(c, T_TIME, 102f, 22f, 5.5f, C_INK, Paint.Align.RIGHT, false);
+        label(c, clockLabel(p), 102f, 22f, 5.5f, C_INK, Paint.Align.RIGHT, false);
     }
 
     // ── 02 screen recording ─────────────────────────────────────────────────
@@ -367,10 +401,9 @@ public class OnboardingDemoView extends View {
             }
         }
 
-        // Layer 2: shape.
+        // Layer 2: typed text annotation.
         int l2 = activeLayer == 1 ? 255 : 42;
-        frameRound(c, 58f, 24f, 108f, 50f, 4f, withAlpha(C_GOLD, l2), 1.2f);
-        dot(c, 82f, 37f, 3f, withAlpha(C_GOLD, l2));
+        drawTextAnnotation(c, l2);
 
         // Layer 3: colour pencil stroke.
         int l3 = activeLayer == 2 ? 255 : 42;
@@ -388,9 +421,9 @@ public class OnboardingDemoView extends View {
         dot(c, 20f, 16f, 1.4f,
                 withAlpha(C_RED, (int) (55f + 200f * recBlink())));
 
-        drawLayer(c, 132f, 15f, activeLayer == 0);
-        drawLayer(c, 132f, 31f, activeLayer == 1);
-        drawLayer(c, 132f, 47f, activeLayer == 2);
+        drawLayer(c, 132f, 15f, 0, activeLayer == 0);
+        drawLayer(c, 132f, 31f, 1, activeLayer == 1);
+        drawLayer(c, 132f, 47f, 2, activeLayer == 2);
 
         // Bottom drawing toolbar: shapes, color, pen.
         paint.setStyle(Paint.Style.STROKE);
@@ -398,42 +431,56 @@ public class OnboardingDemoView extends View {
         paint.setColor(C_LINE);
         c.drawLine(16f, 65f, 152f, 65f, paint);
 
+        // Text tool drawn as a stroked icon, matching the palette and pen weights.
         int toolColor = activeLayer == 1 ? C_GOLD : C_MUTED;
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(activeLayer == 1 ? 1.2f : 1.0f);
+        paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setColor(toolColor);
-        paint.setStrokeWidth(activeLayer == 1 ? 1.1f : 0.8f);
-        c.drawRect(18f, 69f, 26f, 77f, paint);
-        c.drawCircle(32f, 73f, 4f, paint);
+        c.drawLine(19f, 68.5f, 29f, 68.5f, paint);
+        c.drawLine(24f, 68.5f, 24f, 78.5f, paint);
+        paint.setStrokeCap(Paint.Cap.BUTT);
 
         int paletteColor = activeLayer == 2 ? C_GOLD : C_MUTED;
         paint.setColor(paletteColor);
         paint.setStrokeWidth(activeLayer == 2 ? 1.1f : 0.8f);
-        c.drawCircle(55f, 73f, 6f, paint);
-        dot(c, 53f, 71f, 1.4f, C_GOLD);
-        dot(c, 58f, 72f, 1.4f, C_INK);
-        dot(c, 54f, 76f, 1.4f, C_RED);
+        c.drawCircle(48f, 73f, 6f, paint);
+        dot(c, 46f, 71f, 1.4f, C_GOLD);
+        dot(c, 51f, 72f, 1.4f, C_INK);
+        dot(c, 47f, 76f, 1.4f, C_RED);
 
         // Pen tool: a simple line, no arrow head.
         int penColor = activeLayer == 0 ? C_GOLD : C_MUTED;
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(activeLayer == 0 ? 1.2f : 0.9f);
+        paint.setStrokeWidth(activeLayer == 0 ? 1.2f : 1.0f);
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setColor(penColor);
-        c.drawLine(75f, 80f, 89f, 67f, paint);
+        c.drawLine(66f, 78.5f, 78f, 67.5f, paint);
         paint.setStrokeCap(Paint.Cap.BUTT);
     }
 
-    private void drawLayer(Canvas c, float x, float y, boolean active) {
+    private void drawLayer(Canvas c, float x, float y, int kind, boolean active) {
         int activeGold = ambientOn
                 ? withAlpha(C_GOLD, (int) (255f * (0.65f + 0.35f * ambientWave)))
                 : C_GOLD;
         fillRound(c, x, y, x + 18f, y + 10f, 1.5f, active ? 0x1AE8C77B : 0xFF151719);
         frameRound(c, x, y, x + 18f, y + 10f, 1.5f, active ? activeGold : C_LINE, 0.7f);
-        // Small stacked-sheet mark.
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.45f);
-        paint.setColor(active ? activeGold : C_MUTED);
-        c.drawRect(x + 5f, y + 3f, x + 12f, y + 7f, paint);
-        c.drawLine(x + 7f, y + 8f, x + 13f, y + 8f, paint);
+        int ink = active ? activeGold : C_MUTED;
+        if (kind == 0) {
+            // Pen mark.
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(0.55f);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setColor(ink);
+            c.drawLine(x + 6f, y + 7f, x + 12f, y + 3.5f, paint);
+            paint.setStrokeCap(Paint.Cap.BUTT);
+        } else if (kind == 1) {
+            // Text mark.
+            label(c, "T", x + 9f, y + 7.8f, 5.6f, ink, Paint.Align.CENTER, true);
+        } else {
+            // Colour mark.
+            dot(c, x + 9f, y + 5f, 2.1f, ink);
+        }
     }
 
     // ── 03 video editor ─────────────────────────────────────────────────────
@@ -443,11 +490,6 @@ public class OnboardingDemoView extends View {
         fillRound(c, 12f, 8f, 156f, 42f, 3f, 0xFF101214);
         frameRound(c, 12f, 8f, 156f, 42f, 3f, C_LINE, 0.8f);
         fillRound(c, 18f, 12f, 150f, 38f, 2f, 0xFF1B1F22);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.6f);
-        paint.setColor(0x22E8C77B);
-        c.drawLine(24f, 33f, 68f, 19f, paint);
-        c.drawLine(24f, 33f, 118f, 25f, paint);
         path.reset();
         path.moveTo(78f, 18f);
         path.lineTo(90f, 25f);
@@ -515,6 +557,9 @@ public class OnboardingDemoView extends View {
     // ── 04 motion detection ─────────────────────────────────────────────────
 
     private void drawMotion(Canvas c, float p) {
+        // 66 units tall in a 92-unit stage: shift down to sit dead centre.
+        c.save();
+        c.translate(0f, 9f);
         fillRound(c, 12f, 4f, 114f, 70f, 3f, 0xFF101214);
         frameRound(c, 12f, 4f, 114f, 70f, 3f, C_LINE, 0.8f);
 
@@ -584,6 +629,7 @@ public class OnboardingDemoView extends View {
         eventThumb(c, 124f, 17f, 0, idx == 0);
         eventThumb(c, 124f, 33f, 1, idx == 1);
         eventThumb(c, 124f, 49f, 2, idx == 2);
+        c.restore();
     }
 
     private void drawObjectIcon(Canvas c, int idx, float l, float t, float r,
@@ -611,13 +657,13 @@ public class OnboardingDemoView extends View {
     // ── 05 remote camera ────────────────────────────────────────────────────
 
     private void drawRemote(Canvas c, float p) {
-        // Camera source.
-        fillRound(c, 10f, 22f, 48f, 70f, 4f, 0xFF121416);
-        frameRound(c, 10f, 22f, 48f, 70f, 4f, C_LINE, 0.8f);
-        fillRound(c, 14f, 26f, 44f, 66f, 3f, 0xFF1A1D1F);
-        frameRound(c, 21f, 31f, 37f, 47f, 4f, 0x99C6A66A, 0.8f);
-        dot(c, 29f, 39f, 3f, 0xFF2B3033);
-        dot(c, 16f, 29f, 1.3f,
+        // Camera source: a slim phone with a small punch-hole lens, not a huge module.
+        fillRound(c, 10f, 20f, 48f, 72f, 5f, 0xFF121416);
+        frameRound(c, 10f, 20f, 48f, 72f, 5f, C_LINE, 0.8f);
+        fillRound(c, 14f, 24f, 44f, 68f, 3f, 0xFF1A1D1F);
+        dot(c, 29f, 28f, 1.1f, 0xFF2B3033);
+        frameRound(c, 27.3f, 26.3f, 30.7f, 29.7f, 1.1f, 0x77C6A66A, 0.45f);
+        dot(c, 16f, 27f, 1.2f,
                 withAlpha(C_RED, (int) (55f + 200f * recBlink())));
 
         // Signal arcs.
@@ -654,24 +700,33 @@ public class OnboardingDemoView extends View {
         paint.setStrokeWidth(0.4f);
         c.drawLine(100f, 13f, 152f, 13f, paint);
 
-        fillRound(c, 87f, 19f, 123f, 47f, 2f, 0xFF1B1F22);
-        frameRound(c, 87f, 19f, 123f, 47f, 2f, C_LINE, 0.6f);
-        dot(c, 91f, 24f, 1.1f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
-        dot(c, 105f, 36f, 3.2f, 0xFF55595D);
-        fillRound(c, 101f, 39f, 109f, 46f, 3f, 0xFF45494D);
+        fillRound(c, 87f, 17f, 121f, 43f, 2f, 0xFF1B1F22);
+        frameRound(c, 87f, 17f, 121f, 43f, 2f, C_LINE, 0.6f);
+        dot(c, 91f, 21f, 1.1f, withAlpha(C_RED, (int) (55f + 200f * recBlink())));
+        drawObjectIcon(c, 0, 95f, 18f, 115f, 42f, 255);
 
-        // Remote control pad.
+        // CONTROLS tag, same mono-bold plate as the motion-detection names.
+        String controls = "CONTROLS";
+        float tagSize = 6.2f;
+        float tagW = measureLabel(controls, tagSize, true);
+        float tagL = 139.5f - (tagW + 5f) * 0.5f;
+        fillRound(c, tagL, 41f, tagL + tagW + 5f, 50f, 1.2f, 0xE60B0C0D);
+        frameRound(c, tagL, 41f, tagL + tagW + 5f, 50f, 1.2f,
+                0xC6E8C77B, 0.6f);
+        label(c, controls, tagL + 2.5f, 48.3f, tagSize, C_GOLD,
+                Paint.Align.LEFT, true);
+
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(0.7f);
         paint.setColor(0x66C6A66A);
-        c.drawCircle(138f, 58f, 8f, paint);
-        dot(c, 138f, 58f, 2.2f, C_GOLD);
+        c.drawCircle(138f, 61f, 7.5f, paint);
+        dot(c, 138f, 61f, 2.2f, C_GOLD);
         paint.setColor(C_LINE);
         paint.setStrokeWidth(0.4f);
-        c.drawLine(138f, 49f, 138f, 52f, paint);
-        c.drawLine(138f, 64f, 138f, 67f, paint);
-        c.drawLine(129f, 58f, 132f, 58f, paint);
-        c.drawLine(144f, 58f, 147f, 58f, paint);
+        c.drawLine(138f, 53f, 138f, 56f, paint);
+        c.drawLine(138f, 66f, 138f, 69f, paint);
+        c.drawLine(130.5f, 61f, 133.5f, 61f, paint);
+        c.drawLine(142.5f, 61f, 145.5f, 61f, paint);
     }
 
     // ── 06 bodycam / dashcam ────────────────────────────────────────────────
@@ -682,9 +737,10 @@ public class OnboardingDemoView extends View {
         paint.setColor(0x24FFFFFF);
         c.drawLine(84f, 8f, 84f, 86f, paint);
 
-        float body = seg(p, 0.06f, 0.34f);
+        // Present from the first frame: no random fade-in of the scene.
+        float body = 1f;
         if (body > 0f) {
-            int a = (int) (255f * body);
+            int a = 255;
             dot(c, 42f, 26f, 8f, withAlpha(0xFF4A4E52, a));
             fillRound(c, 26f, 36f, 58f, 70f, 10f, withAlpha(0xFF3D4145, a));
             // Chest-mounted phone, portrait and upside down.
@@ -699,9 +755,9 @@ public class OnboardingDemoView extends View {
             c.drawLine(55f, 40f, 48f, 47f, paint);
         }
 
-        float dash = seg(p, 0.22f, 0.55f);
+        float dash = 1f;
         if (dash > 0f) {
-            int a = (int) (255f * dash);
+            int a = 255;
             // Phone on a dash stand, left of the wheel.
             fillRound(c, 96f, 29f, 112f, 53f, 3f, withAlpha(0xFF101214, a));
             frameRound(c, 96f, 29f, 112f, 53f, 3f, withAlpha(C_GOLD, a), 0.8f);
@@ -733,11 +789,62 @@ public class OnboardingDemoView extends View {
         }
     }
 
+    /** Lite card: bodycam only, centred on the stage. */
+    private void drawBodycamSolo(Canvas c, float p) {
+        float body = 1f;
+        int a = 255;
+        dot(c, 84f, 24f, 8f, withAlpha(0xFF4A4E52, a));
+        fillRound(c, 64f, 36f, 104f, 76f, 11f, withAlpha(0xFF3D4145, a));
+        // Chest-mounted phone, portrait and upside down.
+        fillRound(c, 76f, 44f, 92f, 68f, 3f, withAlpha(0xFF101214, a));
+        frameRound(c, 76f, 44f, 92f, 68f, 3f, withAlpha(C_GOLD, a), 0.8f);
+        fillRound(c, 78f, 46f, 90f, 64f, 1.8f, withAlpha(0xFF1B1F22, a));
+        dot(c, 84f, 62f, 1.2f, withAlpha(C_RED,
+                (int) (a * (0.22f + 0.78f * recBlink()))));
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(withAlpha(C_MUTED, (int) (150f * body)));
+        paint.setStrokeWidth(0.6f);
+        c.drawLine(68f, 41f, 76f, 48f, paint);
+        c.drawLine(100f, 41f, 92f, 48f, paint);
+    }
+
+    /** Lite card: dashcam only, phone plus steering wheel. */
+    private void drawDashcamSolo(Canvas c, float p) {
+        float dash = 1f;
+        int a = 255;
+        fillRound(c, 56f, 25f, 72f, 49f, 3f, withAlpha(0xFF101214, a));
+        frameRound(c, 56f, 25f, 72f, 49f, 3f, withAlpha(C_GOLD, a), 0.8f);
+        fillRound(c, 58f, 27f, 70f, 45f, 2f, withAlpha(0xFF1B1F22, a));
+        dot(c, 61f, 30f, 1.1f, withAlpha(C_RED,
+                (int) (a * (0.22f + 0.78f * recBlink()))));
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(withAlpha(C_MUTED, (int) (180f * dash)));
+        paint.setStrokeWidth(0.8f);
+        c.drawLine(64f, 49f, 64f, 55f, paint);
+        c.drawLine(56f, 55f, 72f, 55f, paint);
+
+        float steer = ambientOn
+                ? (float) Math.sin(ambientLocal * Math.PI * 2) * 14f : 0f;
+        c.save();
+        c.rotate(steer, 100f, 45f);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.5f);
+        paint.setColor(withAlpha(C_OLIVE, a));
+        c.drawCircle(100f, 45f, 14f, paint);
+        paint.setStrokeWidth(0.8f);
+        paint.setColor(withAlpha(C_MUTED, a));
+        c.drawCircle(100f, 45f, 4f, paint);
+        c.drawLine(100f, 45f, 100f, 31f, paint);
+        c.drawLine(100f, 45f, 88f, 52f, paint);
+        c.drawLine(100f, 45f, 112f, 52f, paint);
+        dot(c, 100f, 45f, 1.7f, withAlpha(C_GOLD, a));
+        c.restore();
+    }
+
     // ── mini: flashlight ────────────────────────────────────────────────────
 
     private void drawFlashlight(Canvas c, float p) {
-        float glow = 0.35f + 0.65f * seg(p, 0.1f, 0.55f);
-        if (ambientOn) glow = 0.82f + 0.18f * ambientWave;
+        float glow = torchGlow(p);
 
         // Beam from the torch lens.
         path.reset();
@@ -763,9 +870,41 @@ public class OnboardingDemoView extends View {
         // Forensics asset pack: proper side-view flashlight.
         if (torchIcon != null) {
             torchIcon.setBounds(8, 4, 64, 60);
-            torchIcon.setAlpha(255);
+            // The tube dims too, not just the beam.
+            torchIcon.setAlpha(165 + (int) (90f * glow));
             torchIcon.draw(c);
+            torchIcon.setAlpha(255);
         }
+        if (glow > 0.55f) {
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(withAlpha(C_GOLD, (int) (70f * glow)));
+            c.drawCircle(59f, 32f, 4.5f, paint);
+        }
+    }
+
+    /**
+     * Old fluorescent-tube behaviour: a stuttering ignition before the light settles,
+     * then a barely-there mains hum with the occasional dip.
+     */
+    private float torchGlow(float p) {
+        if (ambientOn) {
+            // An old tube keeps burning with two short stutter bursts per cycle.
+            float t = ambientLocal;
+            if (t > 0.14f && t < 0.26f) {
+                int step = (int) (t * 24f);
+                return ((step * 7 + 3) % 3) == 0 ? 1f : 0.14f;
+            }
+            if (t > 0.68f && t < 0.74f) {
+                int step = (int) (t * 24f);
+                return ((step * 5) % 2) == 0 ? 0.95f : 0.22f;
+            }
+            return 0.94f + 0.06f * ambientWave;
+        }
+        if (p >= 0.55f) return 1f;
+        if (p < 0.06f) return 0.08f;
+        int step = (int) (p * 70f);
+        int hash = (step * 1103515245 + 12345) & 0x7fffffff;
+        return (hash % 100) < 42 ? 1f : 0.10f;
     }
 
     // ── mini: QR scanner ───────────────────────────────────────────────────
@@ -833,6 +972,57 @@ public class OnboardingDemoView extends View {
         c.drawRect(x + cell, y + cell, x + 6f * cell, y + 6f * cell, paint);
         paint.setColor(0xFFE7E4D9);
         c.drawRect(x + 2f * cell, y + 2f * cell, x + 5f * cell, y + 5f * cell, paint);
+    }
+
+    /** Filled heart glyph used by the screen-recording text layer. */
+    private void heart(Canvas c, float cx, float cy, float s, int color) {
+        path.reset();
+        path.moveTo(cx, cy + s * 0.78f);
+        path.cubicTo(cx - s * 1.15f, cy - s * 0.05f,
+                cx - s * 0.62f, cy - s * 0.98f, cx, cy - s * 0.32f);
+        path.cubicTo(cx + s * 0.62f, cy - s * 0.98f,
+                cx + s * 1.15f, cy - s * 0.05f, cx, cy + s * 0.78f);
+        path.close();
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(color);
+        c.drawPath(path, paint);
+    }
+
+    /** "I <heart> FadCam", in a soft green with a quiet text box behind it. */
+    private void drawTextAnnotation(Canvas c, int alpha) {
+        int color = withAlpha(C_GREEN, alpha);
+        float size = 7.2f;
+        String first = "I ";
+        String last = " FadCam";
+        float wFirst = measureLabel(first, size, true);
+        float wLast = measureLabel(last, size, true);
+        float heart = 7.4f;
+        float total = wFirst + heart + wLast;
+        float x = 70f - total * 0.5f;
+        float baseline = 25f;
+
+        fillRound(c, x - 3f, baseline - 7.4f, x + total + 3f, baseline + 2.4f,
+                1.5f, withAlpha(0x101213, (int) (alpha * 0.82f)));
+        frameRound(c, x - 3f, baseline - 7.4f, x + total + 3f, baseline + 2.4f,
+                1.5f, withAlpha(C_GREEN, (int) (alpha * 0.45f)), 0.45f);
+
+        // The heart must dim with its layer, not glow while the layer is inactive.
+        float pulse = ambientOn && alpha > 200
+                ? 0.78f + 0.22f * ambientWave : 1f;
+        int beat = withAlpha(C_GREEN, (int) (alpha * pulse));
+        label(c, first, x, baseline, size, color, Paint.Align.LEFT, true);
+        heart(c, x + wFirst + heart * 0.5f, baseline - 2.4f, 3.6f, beat);
+        label(c, last, x + wFirst + heart, baseline, size, color,
+                Paint.Align.LEFT, true);
+    }
+
+    /** Recording clock: ticks once per second so the preview reads as a live capture. */
+    private String clockLabel(float p) {
+        int seconds = ambientOn
+                ? 12 + (int) (ambientLocal * 6f)
+                : 12 + (int) (p * 5f);
+        if (seconds > 59) seconds = 59;
+        return seconds < 10 ? "00:0" + seconds : "00:" + seconds;
     }
 
     // ── drawing helpers ────────────────────────────────────────────────────

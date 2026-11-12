@@ -10,6 +10,8 @@
             <enum name="bodycam" value="5" />
             <enum name="flashlight" value="6" />
             <enum name="qr" value="7" />
+            <enum name="bodycam_solo" value="8" />
+            <enum name="dashcam" value="9" />
         </attr>
         <attr name="demoCompact" format="boolean" />
     </declare-styleable>

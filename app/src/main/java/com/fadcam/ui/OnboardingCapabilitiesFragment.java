@@ -23,6 +23,7 @@ import androidx.fragment.app.Fragment;
 
 import com.fadcam.BuildConfig;
 import com.fadcam.R;
+import com.github.appintro.SlidePolicy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,11 +33,14 @@ import java.util.List;
  * miniature product previews, so animations only start when the page is
  * actually visible and never accumulate across page visits.
  */
-public class OnboardingCapabilitiesFragment extends Fragment {
+public class OnboardingCapabilitiesFragment extends Fragment implements SlidePolicy {
 
     /** Host hooks for the slide-02 scroll gate. */
     public interface Host {
         void onCapabilitiesScrollState(boolean atBottom);
+
+        /** A forward swipe was refused because the showcase has not been read yet. */
+        void onCapabilitiesScrollBlocked();
     }
 
     private boolean started;
@@ -74,7 +78,7 @@ public class OnboardingCapabilitiesFragment extends Fragment {
         lite = BuildConfig.LITE_EDITION;
         started = false;
         applyEdition(view);
-        setPayoff(view, lite ? 2 : 8);
+        setPayoff(view, lite ? 3 : 8);
         TextView liteNote = view.findViewById(R.id.onboarding_lite_note);
         if (liteNote != null && lite) liteNote.setVisibility(View.VISIBLE);
         scrollView = view.findViewById(R.id.onboarding_scroll);
@@ -90,17 +94,25 @@ public class OnboardingCapabilitiesFragment extends Fragment {
         if (view == null) return;
         view.post(() -> {
             reportScrollState();
-            if (started) {
-                startAmbient();
-            } else {
-                playShowcase();
-            }
+            playShowcase();
         });
     }
 
-    /** Stops previews before the page leaves the screen. */
+    /** Stops previews before the page leaves the screen and rewinds them for the next visit. */
     public void onPageHidden() {
         stopShowcase();
+        started = false;
+    }
+
+    @Override
+    public boolean isPolicyRespected() {
+        // Same gate as the dock arrow: the payoff must be read before moving on.
+        return isAtBottom();
+    }
+
+    @Override
+    public void onUserIllegallyRequestedNextPage() {
+        if (host != null) host.onCapabilitiesScrollBlocked();
     }
 
     /** True when the payoff is close enough to be considered seen. */
@@ -146,6 +158,14 @@ public class OnboardingCapabilitiesFragment extends Fragment {
         View mini = root.findViewById(R.id.onboarding_mini_section);
         if (mini != null) mini.setVisibility(View.GONE);
 
+        // Lite counts its jobs separately: background, bodycam, dashcam.
+        View combined = root.findViewById(R.id.onboarding_feature_bodycam);
+        if (combined != null) combined.setVisibility(View.GONE);
+        View bodycam = root.findViewById(R.id.onboarding_feature_bodycam_solo);
+        if (bodycam != null) bodycam.setVisibility(View.VISIBLE);
+        View dashcam = root.findViewById(R.id.onboarding_feature_dashcam);
+        if (dashcam != null) dashcam.setVisibility(View.VISIBLE);
+
         GridLayout grid = root.findViewById(R.id.onboarding_feature_grid);
         if (grid != null) grid.setColumnCount(1);
 
@@ -190,8 +210,7 @@ public class OnboardingCapabilitiesFragment extends Fragment {
         List<OnboardingDemoView> demos = new ArrayList<>();
         collectDemos(root, demos);
         for (OnboardingDemoView demo : demos) {
-            demo.stopDemo();
-            demo.clearAmbient();
+            demo.resetDemo();
         }
         List<View> cards = new ArrayList<>();
         collectCards(root, cards);
@@ -218,8 +237,10 @@ public class OnboardingCapabilitiesFragment extends Fragment {
             demos.get(i).playOnce(base + i * 120L);
         }
         if (animationsEnabled()) {
+            // Start the ambient clock with the reveal. Each view ignores the phase until
+            // its own one-shot settles, so the loop takes over seamlessly with no dead gap.
             root.removeCallbacks(startAmbientRunnable);
-            root.postDelayed(startAmbientRunnable, 5600L);
+            root.postDelayed(startAmbientRunnable, base + 60L);
         }
     }
 
@@ -269,6 +290,8 @@ public class OnboardingCapabilitiesFragment extends Fragment {
                 || view.getId() == R.id.onboarding_feature_motion
                 || view.getId() == R.id.onboarding_feature_remote
                 || view.getId() == R.id.onboarding_feature_bodycam
+                || view.getId() == R.id.onboarding_feature_bodycam_solo
+                || view.getId() == R.id.onboarding_feature_dashcam
                 || view.getId() == R.id.onboarding_mini_flashlight
                 || view.getId() == R.id.onboarding_mini_qr
                 || view.getId() == R.id.onboarding_payoff) {
