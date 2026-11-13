@@ -22,6 +22,7 @@ import androidx.fragment.app.Fragment;
 
 import com.fadcam.BuildConfig;
 import com.fadcam.ui.animations.AnimationView;
+import com.fadcam.ui.animations.SceneStyle;
 import com.fadcam.ui.animations.PayoffFlowView;
 import com.fadcam.R;
 import com.github.appintro.SlidePolicy;
@@ -93,6 +94,20 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
                 miniAppsMarquee.setItems(comingSoon);
             }
         }
+        // The cards already frame the preview; the stage corner ticks repeated the
+        // screen chrome four times and ate space the illustration needs.
+        SceneStyle quietStage = SceneStyle.defaults().toBuilder()
+                .cornerTicks(false)
+                // A touch lighter than the card surface, so the preview reads as a
+                // window inside the card instead of a black hole in it.
+                .background(0xFF0E0F0F)
+                .line(0xFF3A3D3F)
+                .dim(0xFF6E7273)
+                .build();
+        List<AnimationView> previews = new ArrayList<>();
+        collectDemos(view, previews);
+        for (AnimationView preview : previews) preview.setStyle(quietStage);
+
         payoffFlow = view.findViewById(R.id.onboarding_payoff_flow);
         if (payoffFlow != null) {
             payoffFlow.setIconMetrics(
@@ -115,6 +130,8 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         View view = getView();
         if (view == null) return;
         view.post(() -> {
+            // A re-entry starts at the top, exactly like a fresh visit to this slide.
+            if (!started && scrollView != null) scrollView.scrollTo(0, 0);
             reportScrollState();
             playShowcase();
             if (payoffFlow != null) payoffFlow.setActive(true);

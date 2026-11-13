@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Onboarding toolbox tile: faint paper fill with a hairline dossier border. -->
+<!-- Onboarding tile: a nearly opaque charcoal surface so the page grid and the live
+     preview inside the card never compete. A thin champagne hairline keeps the card
+     separate from the background without making it a heavy floating box. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#08FFFFFF" />
+    <gradient
+        android:angle="270"
+        android:endColor="@color/onboarding_card_bottom"
+        android:startColor="@color/onboarding_card_top" />
     <corners android:radius="3dp" />
     <stroke
         android:width="1dp"
-        android:color="@color/dossier_hairline" />
+        android:color="@color/onboarding_card_stroke" />
 </shape>

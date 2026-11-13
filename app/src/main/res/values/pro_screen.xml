@@ -33,10 +33,18 @@
     <color name="dossier_olive">#6B5E44</color>
     <color name="dossier_olive_bright">#C6A66A</color>
     <color name="dossier_line">#35373A</color>
-    <color name="dossier_grid">#17C6A66A</color>
+    <color name="dossier_grid">#13C6A66A</color>
     <color name="dossier_red">#D9564A</color>
     <color name="dossier_red_dim">#7FD9564A</color>
     <color name="dossier_hairline">#3DC6A66A</color>
+
+    <!-- Onboarding surfaces: nearly opaque charcoal tiles, a muted champagne hairline and
+         one restrained warm halo shared by both slides. -->
+    <color name="onboarding_card_top">#141413</color>
+    <color name="onboarding_card_bottom">#0B0B0A</color>
+    <color name="onboarding_card_stroke">#33C6A66A</color>
+    <color name="onboarding_mascot_glow_core">#70E8C77B</color>
+    <color name="onboarding_mascot_glow_mid">#3DE8C77B</color>
 
     <!-- One feature row of the bundle card: small outline glyph, typed label. -->
     <style name="ProShowcaseFeatureIcon">

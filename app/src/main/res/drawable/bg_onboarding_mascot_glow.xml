@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Warm halo behind the Slide 1 mascot. The oval and the radius (slightly less
+     than half the box) guarantee the falloff ends inside the drawable, so it can
+     never show a rectangular clip. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:centerX="0.5"
+        android:centerY="0.5"
+        android:endColor="#00000000"
+        android:centerColor="@color/onboarding_mascot_glow_mid"
+        android:gradientRadius="72dp"
+        android:startColor="@color/onboarding_mascot_glow_core"
+        android:type="radial" />
+</shape>

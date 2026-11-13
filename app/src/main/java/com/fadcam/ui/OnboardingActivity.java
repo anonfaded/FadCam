@@ -499,6 +499,8 @@ public class OnboardingActivity extends AppIntro
             dockIndicator.selectPosition(position);
         }
 
+        // The gate itself never depends on the hint: the arrow stays muted until the
+        // showcase has actually been read to the end.
         boolean scrollGate = position == 1 && !capabilitiesNextRevealed;
         boolean permissionsBlocked = false;
         if (position == 2) {
@@ -650,13 +652,8 @@ public class OnboardingActivity extends AppIntro
 
     @Override
     public void onCapabilitiesScrollBlocked() {
-        // A forward swipe was refused: nudge the scroll cue so the reason is visible.
-        if (dockScrollHint == null || dockScrollHint.getVisibility() != View.VISIBLE) return;
-        dockScrollHint.animate().cancel();
-        dockScrollHint.animate().translationY(-dp(5)).setDuration(90L)
-                .withEndAction(() -> dockScrollHint.animate()
-                        .translationY(0f).setDuration(160L).start())
-                .start();
+        // The muted arrow and the visible SCROLL cue already explain the gate;
+        // moving the cue here read as a glitch, so the block stays still.
     }
 
     /**
@@ -684,6 +681,27 @@ public class OnboardingActivity extends AppIntro
         final float hintTextSize = getResources().getDimension(
                 R.dimen.onboarding_scroll_hint_text_size);
         final int hintBottom = dockBottom + dockH + hintGap;
+
+        // Bottom fade: a separate full-width layer behind the dock so cards dissolve
+        // into the navigation area. Added before the dock, so it can never cover it.
+        final int fadeHeight = getResources().getDimensionPixelSize(
+                R.dimen.onboarding_bottom_fade_height);
+        final View bottomFade = new View(this);
+        bottomFade.setBackgroundResource(R.drawable.bg_onboarding_bottom_fade);
+        bottomFade.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        bottomFade.setClickable(false);
+        bottomFade.setFocusable(false);
+        FrameLayout.LayoutParams fadeLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, fadeHeight, Gravity.BOTTOM);
+        content.addView(bottomFade, fadeLp);
+        ViewCompat.setOnApplyWindowInsetsListener(bottomFade, (v, insets) -> {
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
+            lp.height = fadeHeight + insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()).bottom;
+            v.setLayoutParams(lp);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(bottomFade);
 
         LinearLayout dock = new LinearLayout(this);
         dock.setOrientation(LinearLayout.HORIZONTAL);
