@@ -2,6 +2,7 @@ package com.fadcam.ui;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -35,9 +36,11 @@ import java.util.List;
  */
 public class OnboardingPermissionsFragment extends Fragment implements SlidePolicy {
 
+    private static final String PREFS = "onboarding_permissions";
+    private static final String KEY_REQUESTED = "requested_before";
+
     private boolean permissionsGranted = false;
     private boolean permanentlyDenied = false;
-    private boolean requestedOnce;
 
     private MaterialButton grantButton;
     private MaterialButton batteryButton;
@@ -70,7 +73,15 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
         micStatus = view.findViewById(R.id.permission_status_microphone);
         storageStatus = view.findViewById(R.id.permission_status_storage);
 
-        grantButton.setOnClickListener(v -> requestAllPermissionsAlways());
+        grantButton.setOnClickListener(v -> {
+            // Android only shows the dialog once per install. After a hard denial
+            // the button must still lead somewhere: send the user to Settings.
+            if (permanentlyDenied && hasRequestedBefore()) {
+                showManualPermissionDialog();
+            } else {
+                requestAllPermissionsAlways();
+            }
+        });
 
         openSettingsLink.setOnClickListener(v -> showManualPermissionDialog());
 
@@ -85,7 +96,19 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
     }
 
     /** Requests every permission the app needs; the system ignores ones already granted. */
+    private boolean hasRequestedBefore() {
+        SharedPreferences prefs = requireContext()
+                .getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE);
+        return prefs.getBoolean(KEY_REQUESTED, false);
+    }
+
+    private void markRequested() {
+        requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+                .edit().putBoolean(KEY_REQUESTED, true).apply();
+    }
+
     private void requestAllPermissionsAlways() {
+        markRequested();
         List<String> permissions = new ArrayList<>();
         permissions.add(Manifest.permission.CAMERA);
         permissions.add(Manifest.permission.RECORD_AUDIO);
@@ -169,11 +192,9 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
 
         grantButton.setVisibility(permissionsGranted ? View.GONE : View.VISIBLE);
         permissionSuccessRow.setVisibility(permissionsGranted ? View.VISIBLE : View.GONE);
-        // Only offer Settings after a real request came back denied; a fresh
-        // install has rationale=false too and must not look permanently blocked.
-        openSettingsLink.setVisibility(
-                !permissionsGranted && permanentlyDenied && requestedOnce
-                        ? View.VISIBLE : View.GONE);
+        // Always keep the manual escape hatch while anything is missing: on some
+        // devices the runtime dialog never appears again after a denial.
+        openSettingsLink.setVisibility(permissionsGranted ? View.GONE : View.VISIBLE);
         noteText.setVisibility(permissionsGranted ? View.GONE : View.VISIBLE);
 
         updateBatteryState();
@@ -204,8 +225,8 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
     /** The permission request must wait until this slide is actually visible. */
     public void onSlideShown() {
         checkPermissionsAndUpdateUI();
-        if (!permissionsGranted && !permanentlyDenied && !requestedOnce) {
-            requestedOnce = true;
+        // Ask automatically only the first time this install reaches the slide.
+        if (!permissionsGranted && !hasRequestedBefore()) {
             requestAllPermissionsAlways();
         }
     }
