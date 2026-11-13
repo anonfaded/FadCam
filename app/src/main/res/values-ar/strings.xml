@@ -819,7 +819,7 @@
 
     <string name="home_clock_customize_title">مظهر الساعة</string>
 
-    <string name="home_clock_customize_helper">تغيير عرض الساعة واللون وتنسيق الساعة.</string>
+    <string name="home_clock_customize_helper">تغيير عرض الساعة واللون وتنسيق الساعة ونمط التاريخ الهجري.</string>
 
     <string name="home_clock_display_option">عرض الساعة</string>
 
@@ -3180,6 +3180,7 @@
     <string name="project_naming_message">أعطِ مشروعك اسمًا ووصفًا لا يُنسى لتنظيم تسجيلاتك</string>
 
     <string name="fadrec_projects">مشاريع FadRec</string>
+    <string name="fadrec_projects_location">يتم تخزين المشاريع في مساحة التخزين الخاصة بالتطبيق</string>
 
     <string name="delete_project">حذف المشروع</string>
 
@@ -3770,6 +3771,8 @@
     <string name="screen_rec_resolution">الدقة</string>
 
     <string name="screen_rec_framerate">معدل الإطارات</string>
+    <string name="screen_rec_codec">الترميز</string>
+    <string name="note_screen_codec">اختر ترميز تسجيل الشاشة\n(الافتراضي: %1$s)\nملاحظة: يوفر H.265 (HEVC) ملفات أصغر بنفس الجودة. إذا لم يكن لدى هذا الجهاز مُرمِّز HEVC صالح، فسيسجل FadCam بصيغة H.264 تلقائيًا.</string>
 
     <string name="screen_rec_bitrate">معدل البت</string>
 
@@ -4646,4 +4649,177 @@
     <string name="trash_show_in_settings_title">إظهار في الإعدادات</string>
     <string name="trash_show_in_settings_desc">يضيف صف المهملات إلى صفحة الإعدادات للوصول السريع</string>
 
+    <string name="fadcam_full_title">FadCam للمستخدمين المحترفين</string>
+    <string name="fadcam_full_subtitle">التحكم عن بُعد، التسجيل عند الحركة، والتحليل الجنائي والمزيد. جرّب النسخة الكاملة.</string>
+    <string name="github_get_on">احصل عليه على</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">أنت تستخدم FadCam منذ %1$s</string>
+    <string name="app_usage_since_install_title">لقد استخدمت FadCam لمدة</string>
+
+
+    <string name="app_age_a_while">بعض الوقت</string>
+    <string name="app_usage_installed_on">تاريخ التثبيت</string>
+    <string name="pro_dossier_header">FADSEC LAB // ملف داخلي</string>
+    <string name="pro_dossier_eyes_only">سري للغاية</string>
+    <string name="pro_dossier_subject">الموضوع // بروتوكول الترقية</string>
+    <string name="pro_dossier_file_no">رقم الملف</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">التصريح</string>
+    <string name="pro_dossier_clearance_value">عام / مجاني</string>
+    <string name="pro_dossier_status">الحالة</string>
+    <string name="pro_dossier_status_value">بانتظار التأكيد</string>
+    <string name="pro_dossier_ref">المرجع: FADSEC/PR-07</string>
+    <string name="pro_dossier_page">صفحة 1/1</string>
+    <string name="pro_dossier_drag">اسحب للفحص // الأمام</string>
+    <string name="pro_dossier_cycle">الدورة %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // تقرير ما بعد المهمة</string>
+    <string name="pro_dossier_after_stamp">إحاطة</string>
+    <string name="pro_dossier_after_subject">الموضوع // اتصال أسبوعي</string>
+    <string name="pro_dossier_after_status">التصرف</string>
+    <string name="pro_dossier_after_status_value">التأكيد مطلوب</string>
+    <string name="pro_dossier_after_ref">المرجع: FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">فهمت</string>
+    <string name="pro_reminder_intro_title">قبل أن يبدأ Pro بالدراما</string>
+    <string name="pro_reminder_intro_subtitle">لقد استخدمت FadCam لمدة %1$s. إليك ما يقدمه Pro.</string>
+    <string name="pro_reminder_title_1">بيننا تاريخ</string>
+    <string name="pro_reminder_title_2">Pro أصبح يغار</string>
+    <string name="pro_reminder_title_3">خمّن من عاد</string>
+    <string name="pro_reminder_title_4">هذا أصبح شيئنا الآن</string>
+    <string name="pro_reminder_title_5">تظاهر بالدهشة رجاءً</string>
+    <string name="pro_reminder_title_6">نفس الوقت الأسبوع القادم؟</string>
+    <string name="pro_reminder_subtitle_1">%1$s مع FadCam، وما زلت لم تقابل Pro بعد.</string>
+    <string name="pro_reminder_subtitle_2">لقد استخدمت FadCam لمدة %1$s. Pro بدأ يشعر بأنه مُهمل.</string>
+    <string name="pro_reminder_subtitle_3">%1$s مع FadCam. عدت لتذكيرك بـ Pro.</string>
+    <string name="pro_reminder_subtitle_4">%1$s مع FadCam. Pro يريد بعض الاهتمام أيضًا.</string>
+    <string name="pro_reminder_subtitle_5">%1$s، وها أنا مجددًا. أحضرت Pro.</string>
+    <string name="pro_reminder_subtitle_6">مرّ %1$s. Pro يسلّم عليك. مجددًا.</string>
+    <string name="pro_reminder_notification_title_1">Pro يشعر بأنه مُهمل</string>
+    <string name="pro_reminder_notification_title_2">مقاطعة صغيرة</string>
+    <string name="pro_reminder_notification_title_3">Pro دخل المحادثة</string>
+    <string name="pro_reminder_notification_title_4">خمّن من عاد</string>
+    <string name="pro_reminder_notification_body_1">%1$s معًا. Pro يريد تحية سريعة.</string>
+    <string name="pro_reminder_notification_body_2">لا تقلق، الأمر ليس عاجلًا. Pro يسلّم عليك فقط.</string>
+    <string name="pro_reminder_notification_body_3">مرّ %1$s. مستعد لنظرة سريعة؟</string>
+    <string name="pro_reminder_notification_body_4">أنا مجددًا. Pro يعدك بأن هذا سيكون سريعًا.</string>
+    <string name="pro_reminder_button_continue">متابعة</string>
+    <string name="pro_reminder_button_countdown">متابعة خلال %1$d ث</string>
+    <string name="pro_reminder_back_toast_1">محاولة لطيفة. زر المتابعة أمامك.</string>
+    <string name="pro_reminder_back_toast_2">مفاجأة: زر الرجوع ليس المخرج.</string>
+    <string name="pro_reminder_back_toast_3">كدت تهرب. فقط اضغط متابعة.</string>
+    <string name="pro_reminder_after_title">ترقَّ إلى Pro، وسأتوقف عن إزعاجك أخيرًا. إلى الأبد.</string>
+    <string name="pro_reminder_after_got_it">فهمت</string>
+    <string name="pro_reminder_notification_channel_name">تذكيرات Pro</string>
+    <string name="pro_reminder_notification_channel_description">تذكيرات أسبوعية حول FadCam Pro. لا تظهر في إصدار Pro.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="zero">سأعود بعد %1$d يوم. استمتع بالهدوء ما دام مستمرًا.</item>
+        <item quantity="one">سأعود بعد %1$d يوم. استمتع بالهدوء ما دام مستمرًا.</item>
+        <item quantity="two">سأعود بعد %1$d أيام. استمتع بالهدوء ما دام مستمرًا.</item>
+        <item quantity="few">سأعود بعد %1$d أيام. استمتع بالهدوء ما دام مستمرًا.</item>
+        <item quantity="many">سأعود بعد %1$d يومًا. استمتع بالهدوء ما دام مستمرًا.</item>
+        <item quantity="other">سأعود بعد %1$d يوم. استمتع بالهدوء ما دام مستمرًا.</item>
+    </plurals>
+    <string name="follow_on_x">تابع على X</string>
+    <string name="pro_screen_active">مفعّل</string>
+    <string name="pro_screen_calc_desc">تطبيق منفصل يبدو كآلة حاسبة.</string>
+    <string name="pro_screen_calc_feature">تطبيق الآلة الحاسبة</string>
+    <string name="pro_screen_calculator">الآلة الحاسبة</string>
+    <string name="pro_screen_claim_body">مدعوم بمحرك Hybrid MP4 الحصري من FadCam — مصمم خصيصًا لنظام أندرويد ليبقى تسجيلك قابلًا للتشغيل عبر الأعطال ونفاد البطارية والإغلاق المفاجئ، حتى الثانية الأخيرة.</string>
+    <string name="pro_screen_claim_title">أفضل مسجّل فيديو في الخلفية</string>
+    <string name="pro_screen_cloud">مزامنة FadDrive</string>
+    <string name="pro_screen_cloud_desc">اعمل نسخًا احتياطيًا لتسجيلاتك بأمان إلى سحابتنا المشفرة.</string>
+    <string name="pro_screen_coming_soon_status">قريبًا</string>
+    <string name="pro_screen_compare">اطّلع على ما يتضمنه</string>
+    <string name="pro_screen_compare_hint">اسحب لمقارنة الإصدارات</string>
+    <string name="pro_screen_compare_owned">ميزات Pro الخاصة بك</string>
+    <string name="pro_screen_custom_icon">أيقونة تطبيق مخصصة</string>
+    <string name="pro_screen_custom_icon_desc">اختر أيقونة التطبيق الخاصة بك.</string>
+    <string name="pro_screen_custom_name">اسم تطبيق مخصص</string>
+    <string name="pro_screen_custom_name_desc">اختر اسمًا خاصًا بك للتطبيق.</string>
+    <string name="pro_screen_direct_support">دعم المطور</string>
+    <string name="pro_screen_direct_support_desc">احصل على المساعدة من المطور على ديسكورد.</string>
+    <string name="pro_screen_discord_invite">أسئلة أو أفكار أو تريد فقط إلقاء التحية؟ ابقَ على تواصل مع FadSec Lab.</string>
+    <string name="pro_screen_everything">كل الميزات المجانية</string>
+    <string name="pro_screen_everything_desc">كل ما في النسخة المجانية مشمول.</string>
+    <string name="pro_screen_fan_desc">أنت تؤمن بمستقبل من التطبيقات والحلول مفتوحة المصدر التي تضع الخصوصية أولًا.</string>
+    <string name="pro_screen_fan_feature">أنت تحب الخصوصية</string>
+    <string name="pro_screen_features">الميزات</string>
+    <string name="pro_screen_free">مجاني</string>
+    <string name="pro_screen_included">مشمول</string>
+    <string name="pro_screen_link_error">تعذّر فتح الرابط. تأكد من توفر متصفح وحاول مرة أخرى.</string>
+    <string name="pro_screen_navigation">استكشف Pro</string>
+    <string name="pro_screen_navigation_owned">نسخة Pro الخاصة بك</string>
+    <string name="pro_screen_no_ads">بلا إعلانات أو تتبع</string>
+    <string name="pro_screen_no_ads_desc">لا إعلانات. لا تتبع. لا جمع لسجلات الأعطال.</string>
+    <string name="pro_screen_no_nags">بلا تذكيرات بالترقية</string>
+    <string name="pro_screen_no_nags_desc">لا تذكيرات أسبوعية للترقية إلى Pro.</string>
+    <string name="pro_screen_not_included">غير مشمول</string>
+    <string name="pro_screen_notes">الملاحظات</string>
+    <string name="pro_screen_notes_desc">تطبيق منفصل يبدو كتطبيق ملاحظات.</string>
+    <string name="pro_screen_notes_feature">تطبيق الملاحظات</string>
+    <string name="pro_screen_notification">أيقونات الإشعارات</string>
+    <string name="pro_screen_notification_desc">اختر أيقونة مختلفة لإشعارات التسجيل.</string>
+    <string name="pro_screen_owned_status">%1$s · مفعّل في هذا التطبيق</string>
+    <string name="pro_screen_owned_subtitle">مشمول مع هذا الإصدار</string>
+    <string name="pro_screen_owned_title">%1$s مفعّل</string>
+    <string name="pro_screen_price_detail">3 تطبيقات Pro خاصة · تحديثات مدى الحياة</string>
+    <string name="pro_screen_price_terms">شراء لمرة واحدة</string>
+    <string name="pro_screen_privacy_body">نؤمن بأن الخصوصية يجب أن تكون للجميع. لهذا لا يحتوي FadCam على إعلانات أو متتبعات أو جمع بيانات. نحن لا نجمع تقارير الأعطال تلقائيًا.\n\nنحن مفتوحو المصدر بنسبة 100%، لذا يمكنك رؤية كيف يعمل التطبيق. لن تُحجب ميزات الخصوصية الأساسية خلف أي دفع.</string>
+    <string name="pro_screen_privacy_title">الخصوصية اليوم. غدًا. إلى الأبد.</string>
+    <string name="pro_screen_purchase">افتح حزمة Pro</string>
+    <string name="pro_screen_purchase_caption">يفتح متجر FadSec Lab</string>
+    <string name="pro_screen_scroll_hint">مرّر للمزيد</string>
+    <string name="pro_screen_scroll_top">العودة إلى الأعلى</string>
+    <string name="pro_screen_soon">قريبًا</string>
+    <string name="pro_screen_soon_legend">إصدارا Pro+ وLab قادمان قريبًا.</string>
+    <string name="pro_screen_status_description">%1$s: %2$s</string>
+    <string name="pro_screen_support">انضم إلى ديسكورد</string>
+    <string name="pro_screen_tier">Pro</string>
+    <string name="pro_screen_tier_lab">Lab</string>
+    <string name="pro_screen_tier_plus">Pro+</string>
+    <string name="pro_screen_title">FadCam Pro</string>
+    <string name="pro_screen_updates">تحديثات مبكرة</string>
+    <string name="pro_screen_updates_desc">احصل على الإصدارات الجديدة قبل الجميع بنحو 60 يومًا.</string>
+    <string name="pro_screen_weather">الطقس</string>
+    <string name="pro_screen_weather_desc">تطبيق منفصل يبدو كتطبيق طقس.</string>
+    <string name="pro_screen_weather_feature">تطبيق الطقس</string>
+    <string name="pro_screen_why_pro_body">تتضمن نسخة FadCam المجانية بالفعل ميزات تدفع مقابلها تطبيقات أخرى كثيرة. نؤمن بأن البرامج المفيدة لا يجب أن تأتي على حساب خصوصيتك.\n\nإذا كان FadCam مفيدًا لك وتريد دعم عملنا، فإن Pro وسيلة لرد الجميل مع الحصول على المزيد: ثلاثة تطبيقات خاصة مستقلة، وتحديثات مبكرة، ومزايا أخرى، إضافة إلى كل ما تقدمه النسخة المجانية.\n\nدعمك يساعدنا أيضًا على مواصلة بناء تطبيقات وحلول مفتوحة المصدر تضع الخصوصية أولًا في FadSec Lab.</string>
+    <string name="pro_screen_why_pro_title">إذن لماذا Pro؟</string>
+    <string name="pro_screen_bundle">ثلاثة تطبيقات خاصة.
+ملكك إلى الأبد.</string>
+    <string name="pro_showcase_label">حزمة PRO</string>
+    <string name="pro_showcase_supporting">ثبّت التطبيقات الثلاثة كلًا على حدة مع تحديثات مدى الحياة.</string>
+    <string name="pro_showcase_meta">تثبيتات منفصلة · تحديثات مدى الحياة</string>
+    <string name="pro_showcase_chip_installs">ثلاثة تطبيقات مستقلة</string>
+    <string name="pro_showcase_chip_updates">تحديثات مدى الحياة مشمولة</string>
+    <string name="pro_showcase_chip_entry">واجهات تطبيقات متنكرة</string>
+    <string name="pro_showcase_soon">قريبًا</string>
+    <string name="pro_showcase_hint">افتح القفل واستكشف التطبيقات.</string>
+    <string name="pro_showcase_expand_desc">فتح الهاتف بملء الشاشة</string>
+    <string name="pro_showcase_collapse_desc">الخروج من ملء الشاشة</string>
+    <string name="pro_showcase_phone_desc">مجسّم هاتف FadSec Lab. تعرض الشاشة تطبيقات Pro الثلاثة. اسحب جانبيًا لتدوير الهاتف.</string>
+    <string name="pro_showcase_privacy_mark">الخصوصية بالتصميم</string>
+    <string name="pro_showcase_notes_hint">اكتب لإضافة ملاحظة</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">الرطوبة</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">الرياح</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">إعادة تشغيل</string>
+    <string name="pro_showcase_torch">المصباح</string>
+    <string name="pro_showcase_access_title">الكاميرا والميكروفون</string>
+    <string name="pro_showcase_access_body">تطبيق الطقس يستخدم الكاميرا والميكروفون في هذه المعاينة. إنه عرض تجريبي لإشعارات FadCam الخفية — لا يتم تسجيل أي شيء فعليًا.</string>
+    <string name="pro_showcase_access_ok">فهمت</string>
+    <string name="pro_showcase_shutting_down">جارٍ إيقاف التشغيل…</string>
+    <string name="pro_showcase_starting">جارٍ البدء</string>
+    <string name="pro_showcase_power_menu_title">إعادة تشغيل الجهاز؟</string>
+    <string name="pro_showcase_power_menu_body">سيؤدي هذا إلى إعادة تشغيل جهاز المعاينة.</string>
+    <string name="pro_showcase_power_menu_cancel">إلغاء</string>
+    <string name="pro_showcase_recents_hint">اضغط لإعادة الفتح</string>
+    <string name="pro_showcase_recents_empty">لا توجد تطبيقات حديثة</string>
+    <string name="pro_showcase_fullscreen_hint">اسحب للتدوير · اضغط على تطبيق</string>
+    <string name="pro_showcase_weather_line">مشمس · 24°</string>
+    <string name="pro_showcase_notif_now">الآن</string>
+    <string name="pro_showcase_swipe_unlock">اسحب لأعلى لفتح القفل</string>
+    <string name="fadcam_pro_price_amount">$49</string>
 </resources>

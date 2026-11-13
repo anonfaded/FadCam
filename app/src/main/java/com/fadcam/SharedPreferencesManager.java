@@ -425,6 +425,21 @@ public class SharedPreferencesManager {
             .apply();
     }
 
+    // --- Pro showcase mockup ---
+    /** The mini Notes app's draft. Lives in app_prefs so settings backup/export carries it too. */
+    public static final String PREF_PRO_SHOWCASE_NOTE = "pro_showcase_note";
+
+    public String getProShowcaseNote() {
+        return sharedPreferences.getString(PREF_PRO_SHOWCASE_NOTE, "");
+    }
+
+    public void setProShowcaseNote(String note) {
+        sharedPreferences
+            .edit()
+            .putString(PREF_PRO_SHOWCASE_NOTE, note == null ? "" : note)
+            .apply();
+    }
+
     /** Quick-action button order as comma-separated tokens (e.g. "mute,full,fadshot"). */
     public String getQuickActionsOrder() {
         return sharedPreferences.getString(
@@ -827,19 +842,19 @@ public class SharedPreferencesManager {
      * Get the current streaming mode (STREAM_ONLY or STREAM_AND_SAVE).
      * Defaults to STREAM_AND_SAVE.
      */
-    public com.fadcam.streaming.RemoteStreamManager.StreamingMode getStreamingMode() {
+    public com.fadcam.StreamingMode getStreamingMode() {
         String mode = sharedPreferences.getString(PREF_KEY_STREAMING_MODE, "STREAM_AND_SAVE");
         try {
-            return com.fadcam.streaming.RemoteStreamManager.StreamingMode.valueOf(mode);
+            return com.fadcam.StreamingMode.valueOf(mode);
         } catch (IllegalArgumentException e) {
-            return com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+            return com.fadcam.StreamingMode.STREAM_AND_SAVE;
         }
     }
     
     /**
      * Set the streaming mode (STREAM_ONLY or STREAM_AND_SAVE).
      */
-    public void setStreamingMode(com.fadcam.streaming.RemoteStreamManager.StreamingMode mode) {
+    public void setStreamingMode(com.fadcam.StreamingMode mode) {
         sharedPreferences
             .edit()
             .putString(PREF_KEY_STREAMING_MODE, mode.toString())
@@ -2821,6 +2836,32 @@ public class SharedPreferencesManager {
     public void setScreenRecordingFrameRate(int fps) {
         sharedPreferences.edit()
             .putInt(Constants.PREF_SCREEN_RECORDING_FPS, fps)
+            .apply();
+    }
+
+    /**
+     * Gets the screen recording video codec. Defaults to H.264: it is the only codec with a
+     * guaranteed software fallback, so a fresh install can always record.
+     */
+    public VideoCodec getScreenRecordingCodec() {
+        String saved = sharedPreferences.getString(
+            Constants.PREF_SCREEN_RECORDING_CODEC,
+            VideoCodec.AVC.name()
+        );
+        try {
+            return VideoCodec.valueOf(saved);
+        } catch (Exception e) {
+            return VideoCodec.AVC;
+        }
+    }
+
+    /**
+     * Sets the screen recording video codec preference.
+     */
+    public void setScreenRecordingCodec(VideoCodec codec) {
+        sharedPreferences.edit()
+            .putString(Constants.PREF_SCREEN_RECORDING_CODEC,
+                (codec == null ? VideoCodec.AVC : codec).name())
             .apply();
     }
 

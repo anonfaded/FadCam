@@ -205,6 +205,15 @@ public class AnimatedTextView extends AppCompatTextView {
         int maxNeededW = (int) Math.ceil(Math.max(
                 oldStr.isEmpty() ? 0f : paint.measureText(oldStr),
                 newStr.isEmpty() ? 0f : paint.measureText(newStr)));
+
+        // A view with a fixed width (match_parent, a weight column) owns the wrap: forcing a
+        // single-line layout there draws one long clipped line first and then reflows to the
+        // real multi-line layout when the animation ends. Only wrap_content views need the
+        // widened layout, because they are still sized to the old, shorter text.
+        android.view.ViewGroup.LayoutParams lp = getLayoutParams();
+        boolean wrapContent = lp != null
+                && lp.width == android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+        if (!wrapContent) maxNeededW = usableW;
         int layoutW = Math.max(usableW, maxNeededW);
 
         // Always build FULL-STRING layouts so every region (prefix, column, suffix) is
@@ -409,24 +418,39 @@ public class AnimatedTextView extends AppCompatTextView {
 
         int left   = getCompoundPaddingLeft();
         int right  = getWidth() - getCompoundPaddingRight();
-        // Use the same Y origin that TextView.onDraw() uses for the canvas translation:
-        // extendedPaddingTop for default (top) gravity.  This eliminates the 1-frame
-        // snap that occurred when super.onDraw() took over at animation end.
         int top    = getExtendedPaddingTop();
         int bottom = getHeight() - getExtendedPaddingBottom();
 
-        // Slide distance = height of the taller layout (keeps text fully visible during slide).
-        int slideDistance = Math.max(slotOldLayout.getHeight(), slotNewLayout.getHeight());
-        if (slideDistance == 0) slideDistance = bottom - top;
+        // Rest origin per layout, not one origin for both. A "minLines" box is taller than a
+        // one-line value, so the short incoming text must be centred by its OWN height — sharing
+        // the tallest layout's origin drew it at the top of the box and it snapped to the centre
+        // when the animation ended.
+        int oldHeight = slotOldLayout.getHeight();
+        int newHeight = slotNewLayout.getHeight();
+        int boxHeight = Math.max(0, bottom - top);
+        int verticalGravity = getGravity() & Gravity.VERTICAL_GRAVITY_MASK;
+        float oldRest = top;
+        float newRest = top;
+        if (verticalGravity == Gravity.CENTER_VERTICAL) {
+            oldRest += Math.max(0, (boxHeight - oldHeight) / 2f);
+            newRest += Math.max(0, (boxHeight - newHeight) / 2f);
+        } else if (verticalGravity == Gravity.BOTTOM) {
+            oldRest += Math.max(0, boxHeight - oldHeight);
+            newRest += Math.max(0, boxHeight - newHeight);
+        }
 
-        // Compute Y positions for the two animating layers.
+        // Slide distance = height of the taller layout (keeps text fully visible during slide).
+        int slideDistance = Math.max(oldHeight, newHeight);
+        if (slideDistance == 0) slideDistance = boxHeight;
+
+        // Compute Y positions for the two animating layers around their own rest origins.
         float oldY, newY;
         if (slotUpward) {
-            oldY = top - slideDistance * slotProgress;
-            newY = top + slideDistance * (1f - slotProgress);
+            oldY = oldRest - slideDistance * slotProgress;
+            newY = newRest + slideDistance * (1f - slotProgress);
         } else {
-            oldY = top + slideDistance * slotProgress;
-            newY = top - slideDistance * (1f - slotProgress);
+            oldY = oldRest + slideDistance * slotProgress;
+            newY = newRest - slideDistance * (1f - slotProgress);
         }
 
         // Column bounds derived from prefix/changed-text widths.
@@ -449,7 +473,7 @@ public class AnimatedTextView extends AppCompatTextView {
         if (slotHasDifferentialRegions && slotPrefixWidth > 0f) {
             canvas.save();
             canvas.clipRect(slotDrawBaseX, top, colLeft, bottom);
-            canvas.translate(slotDrawBaseX, top);
+            canvas.translate(slotDrawBaseX, newRest);
             slotNewLayout.draw(canvas);
             canvas.restore();
         }
@@ -474,7 +498,7 @@ public class AnimatedTextView extends AppCompatTextView {
         if (slotHasDifferentialRegions) {
             canvas.save();
             canvas.clipRect(suffixStart, top, right, bottom);
-            canvas.translate(slotDrawBaseX, top);
+            canvas.translate(slotDrawBaseX, newRest);
             slotNewLayout.draw(canvas);
             canvas.restore();
         }

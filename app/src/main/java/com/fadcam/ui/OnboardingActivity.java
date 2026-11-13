@@ -33,6 +33,18 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 import android.view.ViewGroup;
 import android.text.TextUtils;
+import android.graphics.Typeface;
+import android.provider.Settings;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.animation.PathInterpolator;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+
+import androidx.core.content.res.ResourcesCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,12 +53,22 @@ import java.util.Objects;
 /**
  * OnboardingActivity shows the app intro slides using AppIntro.
  */
-public class OnboardingActivity extends AppIntro {
+public class OnboardingActivity extends AppIntro
+        implements OnboardingCapabilitiesFragment.Host {
     private boolean isLastSlide = false;
     private boolean isFirstSlide = true; // Track if we're on the first slide
     // Use View instead of Button to avoid class cast exceptions
     private View backButton;
     private View nextButton;
+    private ImageView dockBack;
+    private ImageView dockNext;
+    private ImageView dockDone;
+    private View dockScrollHint;
+    private View scrollHintArrow;
+    private android.animation.ObjectAnimator scrollHintArrowAnimator;
+    private SquircleIndicatorController dockIndicator;
+    private boolean capabilitiesNextRevealed;
+    private boolean scrollHintVisible;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,6 +77,42 @@ public class OnboardingActivity extends AppIntro {
             getDelegate().setLocalNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
         }
         super.onCreate(savedInstanceState);
+
+        // Edge to edge, but keep every control inside the status bar, camera cutout and
+        // navigation bar. AppIntro puts its arrows at the window edges, so the whole
+        // content root gets the inset padding once.
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+        // Some OEMs ignore a transparent nav bar and paint a white scrim. Black blends with
+        // the briefing background instead.
+        getWindow().setNavigationBarColor(android.graphics.Color.BLACK);
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            getWindow().setNavigationBarDividerColor(android.graphics.Color.TRANSPARENT);
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            // Without this the system paints a contrast scrim over the transparent nav bar.
+            getWindow().setNavigationBarContrastEnforced(false);
+            getWindow().setStatusBarContrastEnforced(false);
+        }
+        androidx.core.view.WindowInsetsControllerCompat barsController =
+                androidx.core.view.WindowCompat.getInsetsController(
+                        getWindow(), getWindow().getDecorView());
+        barsController.setAppearanceLightNavigationBars(false);
+        barsController.setAppearanceLightStatusBars(false);
+        // Full-screen briefing: bars stay hidden and only peek back as transient overlays
+        // when the user swipes from an edge. This also removes the OEM's white nav scrim.
+        hideSystemBars();
+        View windowContent = findViewById(android.R.id.content);
+        windowContent.setBackgroundColor(android.graphics.Color.BLACK);
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(windowContent, (v, insets) -> {
+            androidx.core.graphics.Insets bars = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.systemBars()
+                            | androidx.core.view.WindowInsetsCompat.Type.displayCutout());
+            // The dossier grid stays full-bleed behind the status bar and cutout. Only the
+            // bottom controls need window padding; each slide pads its own header.
+            v.setPadding(0, 0, 0, bars.bottom);
+            return insets;
+        });
 
         // Make sure we don't have duplicate slides when changing language
         // Clear any existing slides by removing them all first.
@@ -85,23 +143,22 @@ public class OnboardingActivity extends AppIntro {
 
         // Add slides in the correct sequence
         addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_intro_slide));
-        addSlide(AppIntroCustomLayoutFragment.newInstance(R.layout.onboarding_language_slide));
+        addSlide(new OnboardingCapabilitiesFragment());
         addSlide(new OnboardingPermissionsFragment());
         addSlide(new OnboardingHumanFragment());
 
         // Hide only the Done button while keeping navigation buttons
         setSkipButtonEnabled(false); // No skip button needed
         setSwipeLock(false); // (setNextPageSwipeLock is deprecated in AppIntro 6.x)
-        setIndicatorEnabled(true);
+        setIndicatorEnabled(false);
 
         // Use wizard mode to replace Skip with Back button
         setWizardMode(true);
 
-        // Fix for indicator dots - use custom colors
-        setIndicatorColor(
-                ContextCompat.getColor(this, R.color.white), // Selected dot
-                ContextCompat.getColor(this, R.color.gray500) // Unselected dot
-        );
+        ViewPager navPager = findViewById(com.github.appintro.R.id.view_pager);
+        if (navPager != null) {
+            navPager.post(() -> updateNavigationButtons(navPager.getCurrentItem()));
+        }
 
         // Disable color transitions as our slides don't implement
         // SlideBackgroundColorHolder
@@ -110,15 +167,12 @@ public class OnboardingActivity extends AppIntro {
         // Set fade transition effect between slides
         ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
         if (viewPager != null) {
-            // Force LTR layout direction for ViewPager regardless of locale
-            // This ensures that slides always navigate left-to-right even in RTL languages
-            viewPager.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-
-            // Force RTL-aware configuration settings
-            viewPager.setTextDirection(View.TEXT_DIRECTION_LTR); // Ensure text direction is LTR regardless of locale
-
             // ViewPager2 would use viewPager.setUserInputEnabled(true);
             viewPager.setEnabled(true); // Ensure the ViewPager is enabled
+            // On TV the remote must go through the gated dock, never the pager's
+            // built-in arrow paging.
+            viewPager.setFocusable(false);
+            viewPager.setFocusableInTouchMode(false);
 
             // Set page transformer
             viewPager.setPageTransformer(true, new FadePageTransformer());
@@ -132,6 +186,13 @@ public class OnboardingActivity extends AppIntro {
                 @Override
                 public void onPageSelected(int position) {
                     updateNavigationButtons(position);
+                    viewPager.post(() -> notifyCapabilitiesPage(
+                            viewPager.getCurrentItem() == 1));
+                    viewPager.postDelayed(() -> notifyCapabilitiesPage(
+                            viewPager.getCurrentItem() == 1), 220L);
+                    viewPager.post(() -> {
+                        if (viewPager.getCurrentItem() == 2) notifyPermissionsPage();
+                    });
                 }
 
                 @Override
@@ -139,32 +200,13 @@ public class OnboardingActivity extends AppIntro {
                 }
             });
 
-            // Add a post-layout action to double-check and enforce LTR direction
-            viewPager.post(() -> {
-                viewPager.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-
-                // For extra compatibility with RTL languages (like Arabic)
-                // Get current locale and enforce special handling if needed
-                java.util.Locale currentLocale = getResources().getConfiguration().getLocales().get(0);
-                if (currentLocale.toString().startsWith("ar") ||
-                        android.text.TextUtils
-                                .getLayoutDirectionFromLocale(currentLocale) == View.LAYOUT_DIRECTION_RTL) {
-
-                    // Take extra steps to ensure LTR navigation works even in Arabic
-                    viewPager.setRotationY(0); // Reset any possible RTL-induced flip
-
-                    // Force parent ViewGroups to respect LTR as well
-                    ViewGroup parent = (ViewGroup) viewPager.getParent();
-                    if (parent != null) {
-                        parent.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-                    }
-                }
-            });
         }
 
-        // Initialize navigation button references
+        // AppIntro's bottom bar is replaced by a floating dossier dock.
         backButton = findViewById(com.github.appintro.R.id.back);
         nextButton = findViewById(com.github.appintro.R.id.next);
+        hideNativeBottomChrome();
+        setupFloatingDock();
 
         // Completely remove the Done button
         View doneButton = findViewById(com.github.appintro.R.id.done);
@@ -193,17 +235,60 @@ public class OnboardingActivity extends AppIntro {
         getSupportFragmentManager().registerFragmentLifecycleCallbacks(
                 new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
                     @Override
+                    public void onFragmentResumed(
+                            @NonNull androidx.fragment.app.FragmentManager fm,
+                            @NonNull Fragment f) {
+                        super.onFragmentResumed(fm, f);
+                        if (!(f instanceof OnboardingCapabilitiesFragment)) return;
+                        ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+                        if (pager != null && pager.getCurrentItem() == 1) {
+                            pager.post(((OnboardingCapabilitiesFragment) f)::onPageBecameVisible);
+                        }
+                    }
+
+                    @Override
                     public void onFragmentViewCreated(@NonNull androidx.fragment.app.FragmentManager fm,
                             @NonNull Fragment f, @Nullable View v, @Nullable Bundle savedInstanceState) {
                         super.onFragmentViewCreated(fm, f, v, savedInstanceState);
-                        if (v == null)
-                            return;
+                        if (v == null) return;
+                        final View slideContent = v.findViewById(R.id.onboarding_content);
+                        if (slideContent != null) {
+                            final int baseTop = slideContent.getPaddingTop();
+                            final int baseLeft = slideContent.getPaddingLeft();
+                            final int baseRight = slideContent.getPaddingRight();
+                            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
+                                    slideContent, (cv, insets) -> {
+                                        androidx.core.graphics.Insets bars = insets.getInsets(
+                                                androidx.core.view.WindowInsetsCompat.Type.systemBars()
+                                                        | androidx.core.view.WindowInsetsCompat.Type.displayCutout());
+                                        cv.setPadding(baseLeft + bars.left, baseTop + bars.top,
+                                                baseRight + bars.right, cv.getPaddingBottom());
+                                        return insets;
+                                    });
+                            androidx.core.view.ViewCompat.requestApplyInsets(slideContent);
+                        }
+                        final TextView heroTitle = v.findViewById(R.id.onboardingHeroTitle);
+                        if (heroTitle != null) {
+                            String heroText = heroTitle.getText().toString();
+                            int marker = heroText.indexOf("#1");
+                            if (marker >= 0) {
+                                android.text.SpannableString styled =
+                                        new android.text.SpannableString(heroText);
+                                styled.setSpan(new android.text.style.ForegroundColorSpan(
+                                                androidx.core.content.ContextCompat.getColor(
+                                                        OnboardingActivity.this, R.color.pro_gold)),
+                                        marker, marker + 2,
+                                        android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                heroTitle.setText(styled);
+                            }
+                        }
+                        final TextView swipeHint = v.findViewById(R.id.tvSwipeInstruction);
+                        if (swipeHint != null) {
+                            swipeHint.post(() -> startShimmerEffect(swipeHint));
+                        }
                         final android.widget.ImageView ivOnboardingAvatar = v.findViewById(R.id.ivOnboardingAvatar);
                         final TextView tvHiGreeting = v.findViewById(R.id.tvHiGreeting);
-                        final TextView descView = v.findViewById(R.id.tvOnboardingDescription);
-                        final LottieAnimationView lottieArrow = v.findViewById(R.id.lottieArrow);
-                        final TextView swipeInstruction = v.findViewById(R.id.tvSwipeInstruction);
-                        if (ivOnboardingAvatar != null && descView != null) {
+                        if (ivOnboardingAvatar != null) {
                             // ===== SLEEP STATE =====
                             ivOnboardingAvatar.setImageResource(R.drawable.toggle_off);
                             final Handler handler = new Handler(android.os.Looper.getMainLooper());
@@ -334,143 +419,7 @@ public class OnboardingActivity extends AppIntro {
                                             };
                                             tvHiGreeting.setVisibility(View.VISIBLE);
                                             handler.post(greetingCycle[0]);
-                                            // ===== TEXT ANIMATION (starts immediately, alongside greeting) =====
-                                            descView.setTypeface(android.graphics.Typeface.MONOSPACE);
-                                descView.setGravity(android.view.Gravity.START);
-                                descView.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                                final String[] lines = {
-                                        getString(R.string.onboarding_intro_line1),
-                                        getString(R.string.onboarding_intro_line2),
-                                        getString(R.string.onboarding_intro_line3),
-                                        getString(R.string.onboarding_intro_line4)
-                                };
-                                final String cursorChar = "▌";
-                                final int rowFadeDuration = 220;
-                                final int rowPauseDelay = 1200;
-                                final int blinkFrameDelay = 32;
-                                final int blinkDuration = 900;
-                                final Runnable[] blinkRunnable = new Runnable[1];
-                                final float[] cursorAlpha = { 1f };
-                                final boolean[] fadingOut = { true };
-                                final int cursorColor = 0xFFE43C3C;
-                                descView.setText("");
-                                // Define startBlinkingCursor before RowFadeAnimator so it is in scope
-                                final Runnable startBlinkingCursor = new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        blinkRunnable[0] = new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                if (fadingOut[0]) {
-                                                    cursorAlpha[0] -= (float) blinkFrameDelay / (blinkDuration / 2f);
-                                                    if (cursorAlpha[0] <= 0f) {
-                                                        cursorAlpha[0] = 0f;
-                                                        fadingOut[0] = false;
-                                                    }
-                                                } else {
-                                                    cursorAlpha[0] += (float) blinkFrameDelay / (blinkDuration / 2f);
-                                                    if (cursorAlpha[0] >= 1f) {
-                                                        cursorAlpha[0] = 1f;
-                                                        fadingOut[0] = true;
-                                                    }
-                                                }
-                                                String finalText = String.join("\n", lines);
-                                                android.text.SpannableString span = new android.text.SpannableString(
-                                                        finalText + cursorChar);
-                                                span.setSpan(new AlphaSpan(1f), 0, finalText.length(),
-                                                        android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                                span.setSpan(new android.text.style.ForegroundColorSpan(cursorColor),
-                                                        finalText.length(), finalText.length() + 1,
-                                                        android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                                span.setSpan(new AlphaSpan(cursorAlpha[0]), finalText.length(),
-                                                        finalText.length() + 1,
-                                                        android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                                descView.setText(span);
-                                                handler.postDelayed(this, blinkFrameDelay);
-                                            }
-                                        };
-                                        handler.post(blinkRunnable[0]);
-                                    }
-                                };
-                                class RowFadeAnimator {
-                                    private final Runnable startBlinkingCursor;
-                                    int rowIdx = 0;
-                                    StringBuilder shownText = new StringBuilder();
-
-                                    RowFadeAnimator(Runnable startBlinkingCursor) {
-                                        this.startBlinkingCursor = startBlinkingCursor;
-                                    }
-
-                                    void start() {
-                                        shownText.append(lines[0]);
-                                        updateTextWithCursor();
-                                        rowIdx = 1;
-                                        handler.postDelayed(this::animateNextRow, rowPauseDelay);
-                                    }
-
-                                    void animateNextRow() {
-                                        if (rowIdx >= lines.length) {
-                                            // Start blinking cursor after all lines
-                                            startBlinkingCursor.run();
-                                            return;
-                                        }
-                                        shownText.append("\n").append(lines[rowIdx]);
-                                        descView.setAlpha(0f);
-                                        updateTextWithCursor();
-                                        descView.animate().alpha(1f).setDuration(rowFadeDuration).withEndAction(() -> {
-                                            // As the last line animates in, fade in swipe instruction and arrow
-                                            if (rowIdx == lines.length - 1 && swipeInstruction != null
-                                                    && lottieArrow != null) {
-                                                // Show arrow first
-                                                lottieArrow.setVisibility(View.VISIBLE);
-                                                lottieArrow.setSpeed(0.5f);
-                                                lottieArrow.setRepeatCount(0);
-                                                lottieArrow.playAnimation();
-
-                                                // Create a center-outward fade effect for the text
-                                                handler.postDelayed(() -> {
-                                                    // Check if the view is still attached before proceeding
-                                                    if (swipeInstruction == null
-                                                            || !swipeInstruction.isAttachedToWindow()) {
-                                                        return; // Skip animation if view is detached
-                                                    }
-
-                                                    // Simple fade-in without reveal animation (which was causing the
-                                                    // crash)
-                                                    swipeInstruction.setVisibility(View.VISIBLE);
-                                                    swipeInstruction.setAlpha(0f);
-
-                                                    // First fade in the entire text (base layer)
-                                                    swipeInstruction.animate()
-                                                            .alpha(1f)
-                                                            .setDuration(1200)
-                                                            .setInterpolator(
-                                                                    new android.view.animation.AccelerateDecelerateInterpolator())
-                                                            .withEndAction(() -> {
-                                                                // Start the shimmer effect after fade-in completes
-                                                                if (swipeInstruction.isAttachedToWindow()) {
-                                                                    startShimmerEffect(swipeInstruction);
-                                                                }
-                                                            })
-                                                            .start();
-                                                }, 700); // Delay before animation
-                                            }
-                                            rowIdx++;
-                                            handler.postDelayed(this::animateNextRow, rowPauseDelay);
-                                        }).start();
-                                    }
-
-                                    void updateTextWithCursor() {
-                                        String text = shownText.toString() + cursorChar;
-                                        android.text.SpannableString span = new android.text.SpannableString(text);
-                                        span.setSpan(new android.text.style.ForegroundColorSpan(cursorColor),
-                                                text.length() - 1, text.length(),
-                                                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                        descView.setText(span);
-                                    }
-                                }
-                                final RowFadeAnimator rowAnimator = new RowFadeAnimator(startBlinkingCursor);
-                                            handler.postDelayed(rowAnimator::start, 200);
+                                            
                                         }; // closes afterWake
                                         // Play wake AVD; call afterWake on completion
                                         if (wakeDrawable instanceof android.graphics.drawable.Animatable2) {
@@ -492,31 +441,480 @@ public class OnboardingActivity extends AppIntro {
                                     });
                             }, 600); // sleep display duration
                         }
-                        // Slide 2 logic (language selection)
-                        MaterialButton languageChooseButton = v.findViewById(R.id.language_choose_button);
-                        if (languageChooseButton != null) {
-                            setupOnboardingLanguageDialog(languageChooseButton);
-                        }
                     }
                 }, true);
+    }
+
+    private void hideSystemBars() {
+        getWindow().setNavigationBarColor(android.graphics.Color.BLACK);
+        androidx.core.view.WindowInsetsControllerCompat controller =
+                androidx.core.view.WindowCompat.getInsetsController(
+                        getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightNavigationBars(false);
+        controller.setAppearanceLightStatusBars(false);
+        controller.setSystemBarsBehavior(
+                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            hideSystemBars();
+            hideNativeBottomChrome();
+        }
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     // Method to update navigation buttons based on current position
     private void updateNavigationButtons(int position) {
         ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
-        if (viewPager == null || viewPager.getAdapter() == null)
-            return;
+        if (viewPager == null) return;
 
-        int slideCount = viewPager.getAdapter().getCount();
+        // The pager adapter can arrive after the first resume; the flow always has 4 slides.
+        int slideCount = viewPager.getAdapter() == null ? 4 : viewPager.getAdapter().getCount();
         isFirstSlide = position == 0;
         isLastSlide = position == slideCount - 1;
 
-        if (backButton != null) {
-            backButton.setVisibility(isFirstSlide ? View.INVISIBLE : View.VISIBLE);
+        // The library's own arrows and indicator stay out of the way; the dock owns them.
+        if (backButton != null) backButton.setVisibility(View.GONE);
+        if (nextButton != null) nextButton.setVisibility(View.GONE);
+
+        if (position == 1 && !capabilitiesNextRevealed) {
+            OnboardingCapabilitiesFragment capabilities = findCapabilitiesFragment();
+            if (capabilities != null && capabilities.isAtBottom()) {
+                capabilitiesNextRevealed = true;
+            }
         }
 
-        if (nextButton != null) {
-            nextButton.setVisibility(isLastSlide ? View.INVISIBLE : View.VISIBLE);
+        if (dockBack != null) {
+            dockBack.setVisibility(View.VISIBLE);
+            setDockArrowEnabled(dockBack, !isFirstSlide);
+        }
+        if (dockIndicator != null) {
+            dockIndicator.selectPosition(position);
+        }
+
+        // The gate itself never depends on the hint: the arrow stays muted until the
+        // showcase has actually been read to the end.
+        boolean scrollGate = position == 1 && !capabilitiesNextRevealed;
+        boolean permissionsBlocked = false;
+        if (position == 2) {
+            OnboardingPermissionsFragment permissions = findPermissionsFragment();
+            permissionsBlocked = permissions == null || !permissions.isPolicyRespected();
+        }
+        setDockNextVisible(!isLastSlide,
+                !isLastSlide && !scrollGate && !permissionsBlocked);
+        setDockDoneVisible(isLastSlide);
+        setScrollHintVisible(scrollGate);
+    }
+
+    /** TV/D-pad focus feedback: a quiet scale around the dock control. */
+    private void attachDockFocus(View view, float focusedScale) {
+        view.setOnFocusChangeListener((v, hasFocus) -> {
+            v.animate().cancel();
+            v.animate().scaleX(hasFocus ? focusedScale : 1f)
+                    .scaleY(hasFocus ? focusedScale : 1f)
+                    .setDuration(140L)
+                    .setInterpolator(expoOut())
+                    .start();
+        });
+    }
+
+    /** Disabled arrows stay in the dock as quiet anchors instead of leaving a hole. */
+    private void setDockArrowEnabled(View arrow, boolean enabled) {
+        if (!(arrow instanceof ImageView)) return;
+        ImageView image = (ImageView) arrow;
+        image.setEnabled(enabled);
+        image.setClickable(enabled);
+        image.setFocusable(enabled);
+        image.setAlpha(enabled ? 1f : 0.55f);
+        image.setColorFilter(ContextCompat.getColor(this,
+                enabled ? R.color.pro_gold : R.color.dossier_muted));
+    }
+
+    private void setDockNextVisible(boolean visible, boolean enabled) {
+        if (dockNext == null) return;
+        dockNext.animate().cancel();
+        if (!visible) {
+            dockNext.setVisibility(View.INVISIBLE);
+            dockNext.setFocusable(false);
+            return;
+        }
+        float targetAlpha = enabled ? 1f : 0.55f;
+        dockNext.setVisibility(View.VISIBLE);
+        dockNext.setEnabled(enabled);
+        dockNext.setClickable(enabled);
+        dockNext.setFocusable(enabled);
+        dockNext.setColorFilter(ContextCompat.getColor(this,
+                enabled ? R.color.pro_gold : R.color.dossier_muted));
+        if (animationsEnabled()) {
+            dockNext.setAlpha(0f);
+            dockNext.setScaleX(0.9f);
+            dockNext.setScaleY(0.9f);
+            dockNext.animate().alpha(targetAlpha).scaleX(1f).scaleY(1f)
+                    .setDuration(240L).setInterpolator(expoOut()).start();
+        } else {
+            dockNext.setAlpha(targetAlpha);
+            dockNext.setScaleX(1f);
+            dockNext.setScaleY(1f);
+        }
+    }
+
+    private void setDockDoneVisible(boolean visible) {
+        if (dockDone == null) return;
+        dockDone.animate().cancel();
+        if (!visible) {
+            dockDone.setVisibility(View.INVISIBLE);
+            return;
+        }
+        dockDone.setVisibility(View.VISIBLE);
+        if (animationsEnabled()) {
+            dockDone.setAlpha(0f);
+            dockDone.setScaleX(0.8f);
+            dockDone.setScaleY(0.8f);
+            dockDone.animate().alpha(1f).scaleX(1f).scaleY(1f)
+                    .setDuration(260L).setInterpolator(expoOut()).start();
+        } else {
+            dockDone.setAlpha(1f);
+            dockDone.setScaleX(1f);
+            dockDone.setScaleY(1f);
+        }
+    }
+
+    /** A quiet bob on the hint arrow, pointing at the scroll direction. */
+    private void startScrollHintArrow() {
+        if (!animationsEnabled() || scrollHintArrow == null) return;
+        if (scrollHintArrowAnimator != null) return;
+        scrollHintArrowAnimator = android.animation.ObjectAnimator.ofFloat(
+                scrollHintArrow, "translationY", 0f, dp(3));
+        scrollHintArrowAnimator.setDuration(680L);
+        scrollHintArrowAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        scrollHintArrowAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        scrollHintArrowAnimator.setInterpolator(
+                new android.view.animation.AccelerateDecelerateInterpolator());
+        scrollHintArrowAnimator.start();
+    }
+
+    private void stopScrollHintArrow() {
+        if (scrollHintArrowAnimator != null) {
+            scrollHintArrowAnimator.cancel();
+            scrollHintArrowAnimator = null;
+        }
+        if (scrollHintArrow != null) scrollHintArrow.setTranslationY(0f);
+    }
+
+    private void setScrollHintVisible(boolean show) {
+        if (dockScrollHint == null) return;
+        if (show && !scrollHintVisible) {
+            dockScrollHint.animate().cancel();
+            dockScrollHint.setVisibility(View.VISIBLE);
+            scrollHintVisible = true;
+            if (animationsEnabled()) {
+                dockScrollHint.setAlpha(0f);
+                dockScrollHint.setTranslationY(dp(6));
+                dockScrollHint.animate().alpha(1f).translationY(0f)
+                        .setDuration(300L).setInterpolator(expoOut()).start();
+            } else {
+                dockScrollHint.setAlpha(1f);
+                dockScrollHint.setTranslationY(0f);
+            }
+            startScrollHintArrow();
+        } else if (!show && scrollHintVisible) {
+            stopScrollHintArrow();
+            scrollHintVisible = false;
+            if (animationsEnabled()) {
+                dockScrollHint.animate().alpha(0f).translationY(-dp(4))
+                        .setDuration(180L).setInterpolator(expoOut())
+                        .withEndAction(() -> dockScrollHint.setVisibility(View.GONE)).start();
+            } else {
+                dockScrollHint.setVisibility(View.GONE);
+            }
+        } else if (!show) {
+            stopScrollHintArrow();
+            dockScrollHint.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onCapabilitiesScrollState(boolean atBottom) {
+        // The gate is live: scrolling back up brings the cue and the quiet arrow back.
+        capabilitiesNextRevealed = atBottom;
+        ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+        if (pager != null && pager.getCurrentItem() == 1) {
+            updateNavigationButtons(1);
+        }
+    }
+
+    @Override
+    public void onCapabilitiesScrollBlocked() {
+        // The muted arrow and the visible SCROLL cue already explain the gate;
+        // moving the cue here read as a glitch, so the block stays still.
+    }
+
+    /**
+     * Floating translucent dock: back, page squircles and next. It replaces AppIntro's
+     * opaque bottom bar so the dossier paper stays visible behind the controls.
+     */
+    private void setupFloatingDock() {
+        if (dockBack != null) return;
+        FrameLayout content = findViewById(android.R.id.content);
+        if (content == null) return;
+        final ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+        final boolean rtl = getResources().getConfiguration().getLayoutDirection()
+                == View.LAYOUT_DIRECTION_RTL;
+
+        final int dockH = getResources().getDimensionPixelSize(R.dimen.onboarding_dock_height);
+        final int arrow = getResources().getDimensionPixelSize(R.dimen.onboarding_dock_arrow);
+        final int pad = getResources().getDimensionPixelSize(R.dimen.onboarding_dock_padding);
+        final int dockBottom = getResources().getDimensionPixelSize(
+                R.dimen.onboarding_dock_bottom_margin);
+        final int dotSize = getResources().getDimensionPixelSize(R.dimen.onboarding_dock_dot);
+        final int dotMargin = getResources().getDimensionPixelSize(
+                R.dimen.onboarding_dock_dot_margin);
+        final int hintGap = getResources().getDimensionPixelSize(
+                R.dimen.onboarding_scroll_hint_bottom_gap);
+        final float hintTextSize = getResources().getDimension(
+                R.dimen.onboarding_scroll_hint_text_size);
+        final int hintBottom = dockBottom + dockH + hintGap;
+
+        // Bottom fade: a separate full-width layer behind the dock so cards dissolve
+        // into the navigation area. Added before the dock, so it can never cover it.
+        final int fadeHeight = getResources().getDimensionPixelSize(
+                R.dimen.onboarding_bottom_fade_height);
+        final View bottomFade = new View(this);
+        bottomFade.setBackgroundResource(R.drawable.bg_onboarding_bottom_fade);
+        bottomFade.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        bottomFade.setClickable(false);
+        bottomFade.setFocusable(false);
+        FrameLayout.LayoutParams fadeLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, fadeHeight, Gravity.BOTTOM);
+        content.addView(bottomFade, fadeLp);
+        ViewCompat.setOnApplyWindowInsetsListener(bottomFade, (v, insets) -> {
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
+            lp.height = fadeHeight + insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()).bottom;
+            v.setLayoutParams(lp);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(bottomFade);
+
+        LinearLayout dock = new LinearLayout(this);
+        dock.setOrientation(LinearLayout.HORIZONTAL);
+        dock.setGravity(Gravity.CENTER_VERTICAL);
+        dock.setBackgroundResource(R.drawable.bg_onboarding_dock);
+        dock.setElevation(dp(10));
+        dock.setPadding(pad, 0, pad, 0);
+
+        ImageView back = new ImageView(this);
+        back.setLayoutParams(new LinearLayout.LayoutParams(arrow, arrow));
+        back.setFocusable(true);
+        back.setFocusableInTouchMode(false);
+        attachDockFocus(back, 1.14f);
+        back.setScaleType(ImageView.ScaleType.CENTER);
+        back.setImageResource(rtl
+                ? R.drawable.ic_onboarding_chevron
+                : R.drawable.ic_onboarding_chevron_left);
+        back.setContentDescription(getString(R.string.onboarding_back));
+        int ripple = selectableBorderless();
+        if (ripple != 0) back.setBackgroundResource(ripple);
+        back.setOnClickListener(v -> {
+            if (pager == null) return;
+            int current = pager.getCurrentItem();
+            if (current > 0) pager.setCurrentItem(current - 1, true);
+        });
+
+        dockIndicator = new SquircleIndicatorController();
+        dockIndicator.setSelectedIndicatorColor(ContextCompat.getColor(this, R.color.white));
+        dockIndicator.setUnselectedIndicatorColor(ContextCompat.getColor(this, R.color.gray500));
+        dockIndicator.setDotSize(dotSize);
+        dockIndicator.setDotMargin(dotMargin);
+        View dots = dockIndicator.newInstance(this);
+        dockIndicator.initialize(4);
+        dots.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams dotsLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        dotsLp.setMargins(dp(5), 0, dp(5), 0);
+        dots.setLayoutParams(dotsLp);
+
+        ImageView next = new ImageView(this);
+        next.setFocusable(true);
+        next.setFocusableInTouchMode(false);
+        attachDockFocus(next, 1.14f);
+        next.setScaleType(ImageView.ScaleType.CENTER);
+        next.setImageResource(rtl
+                ? R.drawable.ic_onboarding_chevron_left
+                : R.drawable.ic_onboarding_chevron);
+        next.setContentDescription(getString(R.string.onboarding_next));
+        if (ripple != 0) next.setBackgroundResource(ripple);
+        next.setOnClickListener(v -> {
+            if (pager == null) return;
+            int current = pager.getCurrentItem();
+            if (pager.getAdapter() != null && current < pager.getAdapter().getCount() - 1) {
+                pager.setCurrentItem(current + 1, true);
+            }
+        });
+
+        ImageView done = new ImageView(this);
+        done.setScaleType(ImageView.ScaleType.CENTER);
+        done.setImageResource(R.drawable.ic_check);
+        done.setColorFilter(ContextCompat.getColor(this, R.color.pro_gold));
+        done.setContentDescription(getString(R.string.onboarding_done));
+        done.setVisibility(View.INVISIBLE);
+
+        FrameLayout slot = new FrameLayout(this);
+        slot.setLayoutParams(new LinearLayout.LayoutParams(arrow, arrow));
+        next.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER));
+        done.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER));
+        slot.addView(next);
+        slot.addView(done);
+
+        dock.addView(back);
+        dock.addView(dots);
+        dock.addView(slot);
+
+        FrameLayout.LayoutParams dockLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dockH,
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        dockLp.bottomMargin = dockBottom;
+        content.addView(dock, dockLp);
+
+        LinearLayout hint = new LinearLayout(this);
+        hint.setOrientation(LinearLayout.HORIZONTAL);
+        hint.setGravity(Gravity.CENTER_VERTICAL);
+        hint.setBackgroundResource(R.drawable.bg_onboarding_scroll_hint);
+        hint.setElevation(dp(6));
+        hint.setPadding(dp(10), dp(5), dp(10), dp(5));
+        hint.setVisibility(View.GONE);
+        hint.setContentDescription(getString(R.string.onboarding_scroll_hint));
+        hint.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        hint.setClickable(true);
+        hint.setFocusable(true);
+        hint.setFocusableInTouchMode(false);
+        attachDockFocus(hint, 1.06f);
+        hint.setOnClickListener(v -> {
+            OnboardingCapabilitiesFragment capabilities = findCapabilitiesFragment();
+            if (capabilities != null) capabilities.scrollDown();
+        });
+
+        TextView chevron = new TextView(this);
+        scrollHintArrow = chevron;
+        chevron.setText("keyboard_arrow_down");
+        chevron.setTypeface(ResourcesCompat.getFont(this, R.font.materialicons));
+        chevron.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
+        chevron.setTextColor(ContextCompat.getColor(this, R.color.pro_gold));
+        chevron.setIncludeFontPadding(false);
+        chevron.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+
+        TextView scrollLabel = new TextView(this);
+        scrollLabel.setText(R.string.onboarding_scroll_short);
+        scrollLabel.setTypeface(Typeface.MONOSPACE);
+        scrollLabel.setTextSize(TypedValue.COMPLEX_UNIT_PX, hintTextSize);
+        scrollLabel.setTextColor(ContextCompat.getColor(this, R.color.pro_gold));
+        scrollLabel.setAllCaps(true);
+        scrollLabel.setLetterSpacing(0.12f);
+        scrollLabel.setIncludeFontPadding(false);
+        scrollLabel.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams scrollLabelLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        scrollLabelLp.setMarginStart(dp(4));
+
+        hint.addView(chevron);
+        hint.addView(scrollLabel, scrollLabelLp);
+
+        FrameLayout.LayoutParams hintLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        hintLp.bottomMargin = hintBottom;
+        content.addView(hint, hintLp);
+
+        dockBack = back;
+        dockNext = next;
+        dockDone = done;
+        dockScrollHint = hint;
+
+        ViewCompat.setOnApplyWindowInsetsListener(dock, (v, insets) -> {
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
+            lp.bottomMargin = dockBottom + insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()).bottom;
+            v.setLayoutParams(lp);
+            return insets;
+        });
+        ViewCompat.setOnApplyWindowInsetsListener(hint, (v, insets) -> {
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
+            lp.bottomMargin = hintBottom + insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()).bottom;
+            v.setLayoutParams(lp);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(dock);
+        ViewCompat.requestApplyInsets(hint);
+
+        if (animationsEnabled()) {
+            dock.setAlpha(0f);
+            dock.setTranslationY(dp(10));
+            dock.post(() -> dock.animate().alpha(1f).translationY(0f)
+                    .setStartDelay(140L).setDuration(420L)
+                    .setInterpolator(expoOut()).start());
+        }
+        if (isTelevision()) {
+            next.post(next::requestFocus);
+        }
+    }
+
+    private boolean isTelevision() {
+        PackageManager pm = getPackageManager();
+        return pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+                || pm.hasSystemFeature(PackageManager.FEATURE_TELEVISION);
+    }
+
+    private int selectableBorderless() {
+        TypedValue value = new TypedValue();
+        getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, value, true);
+        return value.resourceId;
+    }
+
+    private void hideNativeBottomChrome() {
+        // AppIntro may re-show its own arrows on SlidePolicy pages, so merely setting
+        // GONE is not enough: detach the arrows and native indicator from the hierarchy.
+        // The bottom/separator views stay attached (hidden) because the pager anchors to them.
+        int[] removable = {com.github.appintro.R.id.back, com.github.appintro.R.id.next,
+                com.github.appintro.R.id.indicator_container};
+        for (int id : removable) {
+            View view = findViewById(id);
+            if (view == null) continue;
+            view.setVisibility(View.GONE);
+            if (view.getParent() instanceof ViewGroup) {
+                ((ViewGroup) view.getParent()).removeView(view);
+            }
+        }
+        int[] hidden = {com.github.appintro.R.id.bottom,
+                com.github.appintro.R.id.bottom_separator};
+        for (int id : hidden) {
+            View view = findViewById(id);
+            if (view != null) view.setVisibility(View.GONE);
+        }
+    }
+
+    private android.view.animation.Interpolator expoOut() {
+        return new PathInterpolator(0.16f, 1f, 0.3f, 1f);
+    }
+
+    private boolean animationsEnabled() {
+        try {
+            float scale = Settings.Global.getFloat(getContentResolver(),
+                    Settings.Global.ANIMATOR_DURATION_SCALE, 1f);
+            return scale != 0f;
+        } catch (Exception ignored) {
+            return true;
         }
     }
 
@@ -544,441 +942,85 @@ public class OnboardingActivity extends AppIntro {
         }
     }
 
-    /**
-     * Sets up the language choose button for onboarding, using a Material dialog
-     * for selection.
-     * 
-     * @param chooseButton The MaterialButton to setup.
-     */
-    private void setupOnboardingLanguageDialog(MaterialButton chooseButton) {
-        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-        String[] languages = getResources().getStringArray(R.array.languages_array);
-        String savedLanguageCode = sharedPreferencesManager.getLanguage();
-        int selectedIndex = getLanguageIndex(savedLanguageCode);
-        chooseButton.setText(languages[selectedIndex]);
-        chooseButton.setOnClickListener(v -> {
-            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-            android.view.LayoutInflater inflater = android.view.LayoutInflater.from(this);
-            android.view.View dialogView = inflater.inflate(R.layout.dialog_language_dark, null);
-            android.widget.ListView listView = dialogView.findViewById(R.id.language_list);
-            android.widget.TextView titleView = dialogView.findViewById(R.id.dialog_title);
-            titleView.setText(R.string.setting_language_title);
-            titleView.setTextColor(android.graphics.Color.WHITE);
-            String[] languagesArr = getResources().getStringArray(R.array.languages_array);
-            listView.setAdapter(new android.widget.ArrayAdapter<String>(this,
-                    android.R.layout.simple_list_item_single_choice, languagesArr) {
-                @Override
-                public android.view.View getView(int position, android.view.View convertView,
-                        android.view.ViewGroup parent) {
-                    android.view.View view = super.getView(position, convertView, parent);
-                    android.widget.TextView text1 = view.findViewById(android.R.id.text1);
-                    if (text1 != null) {
-                        text1.setTextColor(android.graphics.Color.WHITE);
-                    }
-                    return view;
-                }
+    @Override
+    protected void onPause() {
+        stopScrollHintArrow();
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        stopScrollHintArrow();
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        hideNativeBottomChrome();
+        if (scrollHintVisible) startScrollHintArrow();
+        ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+        if (pager != null) {
+            pager.post(() -> updateNavigationButtons(pager.getCurrentItem()));
+            pager.postDelayed(() -> updateNavigationButtons(pager.getCurrentItem()), 240L);
+            pager.post(() -> notifyCapabilitiesPage(pager.getCurrentItem() == 1));
+            pager.postDelayed(() -> notifyCapabilitiesPage(pager.getCurrentItem() == 1), 240L);
+            pager.post(() -> {
+                if (pager.getCurrentItem() == 2) notifyPermissionsPage();
             });
-            listView.setChoiceMode(android.widget.ListView.CHOICE_MODE_SINGLE);
-            listView.setItemChecked(selectedIndex, true);
-            final android.app.AlertDialog[] dialogHolder = new android.app.AlertDialog[1];
-            listView.setOnItemClickListener((parent, view1, position, id) -> {
-                String newLangCode = getLanguageCode(position);
-                if (!newLangCode.equals(sharedPreferencesManager.getLanguage())) {
-                    sharedPreferencesManager.sharedPreferences.edit()
-                            .putString(com.fadcam.Constants.LANGUAGE_KEY, newLangCode).apply();
-                    applyLanguage(newLangCode);
-                }
-                chooseButton.setText(languagesArr[position]);
-                if (dialogHolder[0] != null)
-                    dialogHolder[0].dismiss();
-            });
-            builder.setView(dialogView);
-            builder.setNegativeButton(R.string.universal_cancel, (dialogInterface, i) -> dialogInterface.dismiss());
-            android.app.AlertDialog dialog = builder.create();
-            dialogHolder[0] = dialog;
-            Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(android.R.color.background_dark);
-            dialog.show();
-            // Set cancel button text color to white
-            android.widget.Button negativeButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE);
-            if (negativeButton != null) {
-                negativeButton.setTextColor(android.graphics.Color.WHITE);
-            }
-        });
-    }
-
-    /**
-     * Helper to map language code to spinner index (must match SettingsFragment).
-     */
-    private int getLanguageIndex(String languageCode) {
-        switch (languageCode) {
-            case "en":
-                return 0;
-            case "zh":
-                return 1;
-            case "ar":
-                return 2;
-            case "fr":
-                return 3;
-            case "tr":
-                return 4;
-            case "ps":
-                return 5;
-            case "in":
-                return 6;
-            case "it":
-                return 7;
-            case "el":
-                return 8; // Added for Greek
-            case "de":
-                return 9; // Added for German
-            case "es":
-                return 10; // Added for Spanish
-            case "et":
-                return 11; // Added for Estonian
-            case "ru":
-                return 12; // Added for Russian
-            default:
-                return 0;
         }
     }
 
-    /**
-     * Helper to map spinner index to language code (must match SettingsFragment).
-     */
-    private String getLanguageCode(int position) {
-        switch (position) {
-            case 0:
-                return "en";
-            case 1:
-                return "zh";
-            case 2:
-                return "ar";
-            case 3:
-                return "fr";
-            case 4:
-                return "tr";
-            case 5:
-                return "ps";
-            case 6:
-                return "in";
-            case 7:
-                return "it";
-            case 8:
-                return "el"; // Added for Greek
-            case 9:
-                return "de"; // Added for German
-            case 10:
-                return "es"; // Added for Spanish
-            case 11:
-                return "et"; // Added for Estonian
-            case 12:
-                return "ru"; // Added for Russian
-            default:
-                return "en";
+    private void notifyPermissionsPage() {
+        OnboardingPermissionsFragment permissions = findPermissionsFragment();
+        if (permissions != null) permissions.onSlideShown();
+    }
+
+    private OnboardingPermissionsFragment findPermissionsFragment() {
+        Fragment target = getSupportFragmentManager().findFragmentByTag(
+                "android:switcher:" + com.github.appintro.R.id.view_pager + ":2");
+        if (target instanceof OnboardingPermissionsFragment) {
+            return (OnboardingPermissionsFragment) target;
+        }
+        for (Fragment candidate : getSupportFragmentManager().getFragments()) {
+            if (candidate instanceof OnboardingPermissionsFragment) {
+                return (OnboardingPermissionsFragment) candidate;
+            }
+        }
+        return null;
+    }
+
+    /** Called by the permission slide whenever the grant state changes. */
+    public void onPermissionsStateChanged() {
+        ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+        if (pager != null && pager.getCurrentItem() == 2) {
+            updateNavigationButtons(2);
         }
     }
 
-    /**
-     * Applies the selected language immediately (same as MainActivity).
-     */
-    @SuppressWarnings("deprecation") // AppIntro's internal pager adapter is a FragmentPagerAdapter
-    private void applyLanguage(String languageCode) {
-        String currentLanguage = getResources().getConfiguration().getLocales().get(0).getLanguage();
-        if (!languageCode.equals(currentLanguage)) {
-            // Save current position before applying language change
-            ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
-            final int currentPosition = viewPager != null ? viewPager.getCurrentItem() : 0;
-
-            // Apply locale change (Locale.forLanguageTag replaces deprecated Locale(String))
-            java.util.Locale locale = java.util.Locale.forLanguageTag(languageCode);
-            java.util.Locale.setDefault(locale);
-            android.content.res.Configuration config = new android.content.res.Configuration();
-            config.setLocale(locale);
-            getApplicationContext().createConfigurationContext(config);
-
-            // IMPORTANT: SKIP RECREATE() WHICH IS CAUSING THE SLIDE ORDERING ISSUES
-            // Instead manually update UI elements that need language change
-
-            // Force immediate refresh of the current slide
-            if (viewPager != null && viewPager.getAdapter() != null) {
-                // Get current fragment and force invalidate its view
-                Fragment currentFragment = ((androidx.fragment.app.FragmentPagerAdapter) viewPager.getAdapter())
-                        .getItem(currentPosition);
-                View fragmentView = currentFragment.getView();
-                if (fragmentView != null) {
-                    // Force the fragment view to detach and reattach
-                    ViewGroup parent = (ViewGroup) fragmentView.getParent();
-                    if (parent != null) {
-                        int index = parent.indexOfChild(fragmentView);
-                        parent.removeViewAt(index);
-                        parent.addView(fragmentView, index);
-                    }
-                }
-            }
-
-            // Add a small delay to ensure all resources are reloaded with the new locale
-            new Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                // Force refresh the current slide first
-                forceRefreshCurrentSlide();
-
-                // Then update all slides
-                updateViewsAfterLanguageChange();
-
-                // Force a final layout update on the entire view hierarchy
-                View rootView = findViewById(android.R.id.content);
-                if (rootView != null) {
-                    // Force immediate layout
-                    rootView.requestLayout();
-                    rootView.invalidate();
-
-                    // Also force a redraw of the entire window
-                    getWindow().getDecorView().requestLayout();
-                    getWindow().getDecorView().invalidate();
-                }
-            }, 100); // Small delay to ensure locale change is processed
-
-            // Force LTR layout for ViewPager and slide navigation
-            if (viewPager != null) {
-                viewPager.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-
-                // For RTL languages like Arabic, apply additional safeguards
-                if (android.text.TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL) {
-                    ViewGroup parent = (ViewGroup) viewPager.getParent();
-                    if (parent != null) {
-                        parent.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-                    }
-
-                    // Manually force navigation controls to maintain LTR behavior
-                    View backButton = findViewById(com.github.appintro.R.id.back);
-                    View nextButton = findViewById(com.github.appintro.R.id.next);
-                    if (backButton != null)
-                        backButton.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-                    if (nextButton != null)
-                        nextButton.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-                }
-
-                // Restore position after locale change if needed
-                if (viewPager.getCurrentItem() != currentPosition) {
-                    viewPager.setCurrentItem(currentPosition, false);
-                }
+    private OnboardingCapabilitiesFragment findCapabilitiesFragment() {
+        Fragment target = getSupportFragmentManager().findFragmentByTag(
+                "android:switcher:" + com.github.appintro.R.id.view_pager + ":1");
+        if (target instanceof OnboardingCapabilitiesFragment) {
+            return (OnboardingCapabilitiesFragment) target;
+        }
+        for (Fragment candidate : getSupportFragmentManager().getFragments()) {
+            if (candidate instanceof OnboardingCapabilitiesFragment) {
+                return (OnboardingCapabilitiesFragment) candidate;
             }
         }
+        return null;
     }
 
-    /**
-     * Force refresh the current visible slide with a more aggressive approach
-     */
-    @SuppressWarnings("deprecation") // AppIntro's internal pager adapter is a FragmentPagerAdapter
-    private void forceRefreshCurrentSlide() {
-        ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
-        if (viewPager == null || viewPager.getAdapter() == null)
-            return;
-
-        // Get current position and fragment
-        int position = viewPager.getCurrentItem();
-
-        try {
-            // Get fragment from adapter
-            Fragment currentFragment = ((androidx.fragment.app.FragmentPagerAdapter) viewPager.getAdapter())
-                    .getItem(position);
-
-            // Force detach and reattach the fragment view to trigger a full redraw
-            View fragmentView = currentFragment.getView();
-            if (fragmentView != null) {
-                // Get all TextViews in the fragment and force text update
-                updateAllTextViewsAggressively(fragmentView);
-
-                // Type-specific refresh for our custom fragments
-                if (currentFragment instanceof OnboardingHumanFragment) {
-                    ((OnboardingHumanFragment) currentFragment).refreshLanguage();
-                } else if (currentFragment instanceof OnboardingPermissionsFragment) {
-                    ((OnboardingPermissionsFragment) currentFragment).refreshLanguage();
-                }
-
-                // Force layout
-                fragmentView.invalidate();
-                fragmentView.requestLayout();
-
-                // Try to force a redraw by changing visibility momentarily
-                fragmentView.setVisibility(View.INVISIBLE);
-                fragmentView.postDelayed(() -> {
-                    fragmentView.setVisibility(View.VISIBLE);
-                    // After visibility change, force layout again
-                    fragmentView.invalidate();
-                    fragmentView.requestLayout();
-                }, 10);
-            }
-        } catch (Exception e) {
-            // Log error but continue
-            FLog.e("OnboardingActivity", "Error refreshing current slide: " + e.getMessage());
+    /** Slide 02 owns its reveal; the pager is the source of truth for visibility. */
+    private void notifyCapabilitiesPage(boolean visible) {
+        OnboardingCapabilitiesFragment target = findCapabilitiesFragment();
+        if (target == null) return;
+        if (visible) {
+            target.onPageBecameVisible();
+        } else {
+            target.onPageHidden();
         }
-    }
-
-    /**
-     * More aggressive text view updating that forces locale reload
-     */
-    private void updateAllTextViewsAggressively(View view) {
-        if (view instanceof TextView) {
-            TextView textView = (TextView) view;
-            CharSequence currentText = textView.getText();
-
-            // Force text refresh by clearing and resetting
-            textView.setText("");
-            textView.setText(currentText);
-
-            // If it has a resource ID, try to reload from resources
-            if (textView.getId() != View.NO_ID) {
-                try {
-                    android.content.res.Resources resources = getResources();
-                    String resourceName = resources.getResourceEntryName(textView.getId());
-                    int resId = resources.getIdentifier(resourceName, "string", getPackageName());
-                    if (resId != 0) {
-                        textView.setText(resId); // Force reload from string resource
-                    }
-                } catch (Exception e) {
-                    // Ignore and continue with current text
-                }
-            }
-
-            // Force layout of textView
-            textView.invalidate();
-            textView.requestLayout();
-        } else if (view instanceof ViewGroup) {
-            ViewGroup group = (ViewGroup) view;
-            for (int i = 0; i < group.getChildCount(); i++) {
-                updateAllTextViewsAggressively(group.getChildAt(i));
-            }
-        }
-    }
-
-    /**
-     * Updates views after language change without recreating the activity
-     */
-    @SuppressWarnings("deprecation") // AppIntro's internal pager adapter is a FragmentPagerAdapter
-    private void updateViewsAfterLanguageChange() {
-        // Update any text views or labels that need translation
-        // For most views, this isn't necessary since they'll use the updated resources
-        // automatically
-
-        // Update indicator dots (they sometimes need manual refresh)
-        setIndicatorColor(
-                ContextCompat.getColor(this, R.color.white),
-                ContextCompat.getColor(this, R.color.gray500));
-
-        // Force refresh ALL fragments, not just the current one
-        ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
-        if (viewPager != null && viewPager.getAdapter() != null) {
-            final int currentPosition = viewPager.getCurrentItem();
-            final int totalSlides = viewPager.getAdapter().getCount();
-
-            // First refresh visible fragments in ViewPager
-            refreshVisibleFragments(viewPager);
-
-            // Then force load and refresh all other fragments
-            // This ensures all fragments are updated even if they're not yet visible
-            for (int i = 0; i < totalSlides; i++) {
-                if (i != currentPosition) { // We already refreshed the current one
-                    try {
-                        Fragment fragment = ((androidx.fragment.app.FragmentPagerAdapter) viewPager.getAdapter())
-                                .getItem(i);
-
-                        // Handle different fragment types
-                        if (fragment instanceof OnboardingHumanFragment) {
-                            ((OnboardingHumanFragment) fragment).refreshLanguage();
-                        } else if (fragment instanceof OnboardingPermissionsFragment) {
-                            // Find and update all text views within this fragment
-                            ((OnboardingPermissionsFragment) fragment).refreshLanguage();
-                        } else if (fragment instanceof AppIntroCustomLayoutFragment) {
-                            // For custom layout fragments, we need to find and update all TextViews
-                            View fragmentView = fragment.getView();
-                            if (fragmentView != null) {
-                                updateAllTextViewsInViewHierarchy(fragmentView);
-                            }
-                        }
-                    } catch (Exception e) {
-                        FLog.e("OnboardingActivity",
-                                "Failed to refresh fragment at position " + i + ": " + e.getMessage());
-                    }
-                }
-            }
-
-            // Force layout refresh on main container
-            ViewGroup containerView = findViewById(android.R.id.content);
-            if (containerView != null) {
-                containerView.invalidate();
-                containerView.requestLayout();
-            }
-        }
-    }
-
-    /**
-     * Refreshes fragments currently visible in the ViewPager
-     */
-    @SuppressWarnings("deprecation") // AppIntro's internal pager adapter is a FragmentPagerAdapter
-    private void refreshVisibleFragments(ViewPager viewPager) {
-        if (viewPager == null || viewPager.getAdapter() == null)
-            return;
-
-        // Get the current position
-        int position = viewPager.getCurrentItem();
-
-        // Get the currently visible fragment
-        Fragment currentFragment = ((androidx.fragment.app.FragmentPagerAdapter) viewPager.getAdapter())
-                .getItem(position);
-
-        // Refresh the fragment based on its type
-        if (currentFragment instanceof OnboardingHumanFragment) {
-            ((OnboardingHumanFragment) currentFragment).refreshLanguage();
-        } else if (currentFragment instanceof OnboardingPermissionsFragment) {
-            ((OnboardingPermissionsFragment) currentFragment).refreshLanguage();
-        } else if (currentFragment instanceof AppIntroCustomLayoutFragment) {
-            // Force refresh all TextViews in custom layout fragments
-            View view = currentFragment.getView();
-            if (view != null) {
-                updateAllTextViewsInViewHierarchy(view);
-            }
-        }
-    }
-
-    /**
-     * Recursively finds and updates all TextViews in a view hierarchy
-     */
-    private void updateAllTextViewsInViewHierarchy(View view) {
-        if (view instanceof TextView) {
-            // For TextViews, we can force a refresh by setting the text to its current
-            // value
-            // This will cause Android to re-look up the string resource with the new locale
-            TextView textView = (TextView) view;
-            if (textView.getId() != View.NO_ID) {
-                try {
-                    // Try to get the original string resource ID and reset it
-                    android.content.res.Resources resources = getResources();
-                    String resourceName = resources.getResourceEntryName(textView.getId());
-                    int resId = resources.getIdentifier(resourceName, "string", getPackageName());
-                    if (resId != 0) {
-                        textView.setText(resId);
-                    }
-                } catch (Exception e) {
-                    // If we can't get the resource ID, just force reload the current text
-                    CharSequence text = textView.getText();
-                    textView.setText(text);
-                }
-            } else {
-                // If there's no ID, just reset the current text
-                CharSequence text = textView.getText();
-                textView.setText(text);
-            }
-        } else if (view instanceof ViewGroup) {
-            // Recursively process all children of ViewGroups
-            ViewGroup viewGroup = (ViewGroup) view;
-            for (int i = 0; i < viewGroup.getChildCount(); i++) {
-                updateAllTextViewsInViewHierarchy(viewGroup.getChildAt(i));
-            }
-        }
-
-        // Force a layout update on this view
-        view.invalidate();
-        view.requestLayout();
     }
 
     /**

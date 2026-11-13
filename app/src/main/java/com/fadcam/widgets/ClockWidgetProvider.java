@@ -32,6 +32,18 @@ public class ClockWidgetProvider extends AppWidgetProvider {
 
     private static final String ACTION_UPDATE_CLOCK = "com.fadcam.widgets.ACTION_UPDATE_CLOCK";
 
+    /** Asks every placed widget to redraw; call after a preference it renders changed. */
+    public static void requestUpdate(Context context) {
+        AppWidgetManager manager = AppWidgetManager.getInstance(context);
+        ComponentName provider = new ComponentName(context, ClockWidgetProvider.class);
+        int[] ids = manager.getAppWidgetIds(provider);
+        if (ids.length == 0) return;
+        Intent intent = new Intent(context, ClockWidgetProvider.class);
+        intent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
+        context.sendBroadcast(intent);
+    }
+
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         for (int id : appWidgetIds) {

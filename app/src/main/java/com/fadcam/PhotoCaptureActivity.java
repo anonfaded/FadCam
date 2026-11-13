@@ -110,8 +110,11 @@ public class PhotoCaptureActivity extends ComponentActivity {
                 SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(this);
                 Size targetSize = resolveTargetResolution(prefs);
                 int targetRotation = Surface.ROTATION_0;
-                if (getDisplay() != null) {
-                    targetRotation = getDisplay().getRotation();
+                // Context.getDisplay() only exists from API 30; the window manager path works on
+                // every supported version (minSdk 24) and needs no guard.
+                android.view.Display display = getWindowManager().getDefaultDisplay();
+                if (display != null) {
+                    targetRotation = display.getRotation();
                 }
                 ImageCapture imageCapture;
                 if (targetSize != null) {
@@ -315,7 +318,15 @@ public class PhotoCaptureActivity extends ComponentActivity {
                     sdp.updateLocation(rawFix);
                 }
                 try { Thread.sleep(400); } catch (InterruptedException ignored) {}
-                if (prefs.isSpeedEnabled()) { if (sb.length() > 0) sb.append("\n"); sb.append("Speed: ").append(String.format(java.util.Locale.US, "%.0f", sdp.getSpeedKmh())).append("km/h"); }
+                if (prefs.isSpeedEnabled()) {
+                    if (sb.length() > 0) sb.append("\n");
+                    sb.append("Speed: ");
+                    if (sdp.hasFreshFix()) {
+                        sb.append(String.format(java.util.Locale.US, "%.0f", sdp.getSpeedKmh())).append("km/h");
+                    } else {
+                        sb.append("--");
+                    }
+                }
                 if (prefs.isAltitudeEnabled()) { if (sb.length() > 0) sb.append("\n"); sb.append("Alt: ").append(String.format(java.util.Locale.US, "%.0f", sdp.getAltitude())).append("m"); }
                 if (prefs.isCompassEnabled()) { if (sb.length() > 0) sb.append("\n"); sb.append("Compass: ").append(sdp.getCompassDirection()); }
                 com.fadcam.sensors.SensorDataProvider.resetInstance();

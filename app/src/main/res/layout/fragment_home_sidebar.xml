@@ -1532,44 +1532,191 @@
             android:paddingTop="24dp"
             android:paddingBottom="8dp">
 
-            <!-- Discord row -->
+            <!-- Divider above app info -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:background="#334E4E4E" />
+
+            <!-- App age: the earlier centred block, in the display rows' own card, with their
+                 row ripple. Tapping swaps the age for the exact install moment. -->
             <LinearLayout
-                android:id="@+id/row_discord_branding"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical"
+                android:background="@drawable/settings_group_card_bg">
+
+                <LinearLayout
+                    android:id="@+id/row_app_usage"
+                    style="@style/SettingsGroupRow"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:clickable="true" android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <com.fadcam.ui.utils.AnimatedTextView
+                            android:id="@+id/tv_app_usage_icon"
+                            android:layout_width="24dp" android:layout_height="24dp"
+                            android:fontFamily="@font/materialicons"
+                            android:text="history" android:textColor="?attr/colorHeading"
+                            android:textSize="18sp" android:gravity="center"
+                            android:importantForAccessibility="no" />
+
+                        <com.fadcam.ui.utils.AnimatedTextView
+                            android:id="@+id/tv_app_usage_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="2dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textColor="?attr/pickerTextSecondary"
+                            android:textSize="10.5sp" />
+                    </LinearLayout>
+
+                    <com.fadcam.ui.utils.AnimatedTextView
+                        android:id="@+id/tv_app_usage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:gravity="center"
+                        android:minLines="2"
+                        android:textColor="?attr/pickerTextPrimary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- App info (package / version / code); long-press to copy -->
+            <LinearLayout
+                android:id="@+id/row_app_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:focusable="true"
                 android:paddingHorizontal="12dp"
-                android:paddingVertical="8dp">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginEnd="0dp"
-                    android:src="@drawable/ic_discord" />
-
+                android:paddingVertical="6dp">
                 <TextView
+                    android:id="@+id/tv_app_info"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/home_sidebar_discord"
-                    android:textColor="?attr/pickerTextPrimary"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
+                    android:gravity="center"
+                    android:textColor="?attr/pickerTextSecondary"
+                    android:textSize="11sp" />
             </LinearLayout>
 
-            <!-- Copyright -->
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Two-column footer: left = copyright + website, right = Discord -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="@string/home_sidebar_copyright"
-                android:textColor="@android:color/darker_gray"
-                android:textSize="11sp"
-                android:gravity="center" />
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_copyright_line1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tv_copyright_year"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tv_fadseclab_link"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="start"
+                        android:text="fadseclab.com"
+                        android:textColor="#E53935"
+                        android:textSize="13sp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="end">
+
+                    <LinearLayout
+                        android:id="@+id/row_x_branding"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="2dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginEnd="4dp"
+                            android:src="@drawable/ic_x" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/follow_on_x"
+                            android:textColor="?attr/pickerTextPrimary"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/row_discord_branding"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="0dp"
+                            android:src="@drawable/ic_discord" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/home_sidebar_discord"
+                            android:textColor="?attr/pickerTextPrimary"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
 
         </LinearLayout>
 

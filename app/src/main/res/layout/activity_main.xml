@@ -80,7 +80,82 @@
             app:itemTextColor="@android:color/white"
             app:itemActiveIndicatorStyle="@null"
             app:menu="@menu/bottom_nav_menu" />
-    </FrameLayout>
+        <!-- Lite compact dock (enhanced duplicate; drives the hidden nav above) -->
+        <LinearLayout
+            android:id="@+id/lite_dock"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/home_dock_height"
+            android:layout_gravity="bottom|center_horizontal"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/home_dock_padding"
+            android:paddingEnd="@dimen/home_dock_padding"
+            android:elevation="12dp"
+            android:visibility="gone">
+
+<LinearLayout
+                android:id="@+id/lite_dock_item_records"
+                android:layout_width="@dimen/home_dock_side_width_wide"
+                android:layout_height="@dimen/home_dock_side_height"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:animateLayoutChanges="true"
+                android:paddingEnd="@dimen/home_dock_side_inset"
+                android:layout_marginEnd="-34dp"
+                android:clickable="true"
+                android:focusable="true">
+                <ImageView
+                    android:id="@+id/lite_dock_icon_records"
+                    android:layout_width="@dimen/home_dock_icon"
+                    android:layout_height="@dimen/home_dock_icon"
+                    android:src="@drawable/ic_records_selector"
+                    android:contentDescription="@string/nav_records" />
+            </LinearLayout>
+
+<LinearLayout
+                android:id="@+id/lite_dock_item_home"
+                android:layout_width="@dimen/home_dock_height"
+                android:layout_height="@dimen/home_dock_height"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:animateLayoutChanges="true"
+                android:clickable="true"
+                android:focusable="true">
+                <ImageView
+                    android:id="@+id/lite_dock_icon_home"
+                    android:layout_width="@dimen/home_dock_icon"
+                    android:layout_height="@dimen/home_dock_icon"
+                    android:src="@drawable/pilot_steering_white"
+                    android:contentDescription="@string/nav_home" />
+                <TextView
+                    android:id="@+id/lite_dock_label_home"
+                    android:paddingTop="2dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/nav_home"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+
+<LinearLayout
+                android:id="@+id/lite_dock_item_settings"
+                android:layout_width="@dimen/home_dock_side_width_wide"
+                android:layout_height="@dimen/home_dock_side_height"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:animateLayoutChanges="true"
+                android:paddingStart="@dimen/home_dock_side_inset"
+                android:layout_marginStart="-34dp"
+                android:clickable="true"
+                android:focusable="true">
+                <ImageView
+                    android:id="@+id/lite_dock_icon_settings"
+                    android:layout_width="@dimen/home_dock_icon"
+                    android:layout_height="@dimen/home_dock_icon"
+                    android:src="@drawable/ic_nav_settings"
+                    android:contentDescription="@string/nav_settings" />
+            </LinearLayout>        </LinearLayout>
+
+        </FrameLayout>
 
     <!-- ********************************************************** -->
     <!-- *** ADD THIS FRAMELAYOUT FOR OVERLAY FRAGMENTS (like TrashFragment) *** -->

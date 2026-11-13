@@ -1,243 +1,258 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Onboarding 03: access clearance. Same dossier sheet as the rest of the flow. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/black"
+    android:clipToPadding="true"
     android:fillViewport="true"
-    android:background="@color/black">
+    android:scrollbars="none">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent">
 
-        <com.airbnb.lottie.LottieAnimationView
-            android:id="@+id/lottiePermissions"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            app:lottie_fileName="document_stamp_green_checkmark.json"
-            app:lottie_autoPlay="true"
-            app:lottie_loop="true"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="@dimen/onboarding_margin"
-            app:layout_constraintVertical_bias="0.12" />
-
-        <TextView
-            android:id="@+id/permissionsTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/permissions_required"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:fontWeight="900"
-            android:fontFamily="monospace"
-            android:textColor="@color/redPastel"
-            app:layout_constraintTop_toBottomOf="@id/lottiePermissions"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="@dimen/onboarding_margin" />
-
-        <TextView
-            android:id="@+id/permissionsDescription"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/permissions_description"
-            android:textSize="@dimen/onboarding_desc_size"
-            android:fontFamily="monospace"
-            android:textColor="@color/white"
-            android:gravity="center"
-            android:paddingLeft="@dimen/onboarding_margin"
-            android:paddingRight="@dimen/onboarding_margin"
-            app:layout_constraintTop_toBottomOf="@id/permissionsTitle"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="@dimen/onboarding_margin"
-            android:layout_marginBottom="@dimen/onboarding_margin" />
-
-        <TextView
-            android:id="@+id/permission_status_text"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="@string/permissions_granted"
-            android:textSize="@dimen/onboarding_desc_size"
-            android:fontFamily="monospace"
-            android:textColor="@color/green"
-            android:gravity="center"
-            android:visibility="gone"
-            android:paddingLeft="@dimen/onboarding_margin"
-            android:paddingRight="@dimen/onboarding_margin"
-            app:layout_constraintTop_toBottomOf="@id/permissionsDescription"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="8dp" />
+        <com.fadcam.ui.widgets.DossierPaperView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
         <LinearLayout
-            android:id="@+id/permissionsListContainer"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:orientation="horizontal"
-            android:gravity="center"
-            app:layout_constraintTop_toBottomOf="@id/permission_status_text"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="@dimen/onboarding_margin"
-            android:layout_marginBottom="@dimen/onboarding_margin">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:id="@+id/onboarding_content"
+            android:paddingStart="@dimen/onboarding_dossier_pad"
+            android:paddingEnd="@dimen/onboarding_dossier_pad"
+            android:paddingTop="20dp"
+            android:paddingBottom="@dimen/onboarding_bottom_inset">
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:layout_marginEnd="@dimen/onboarding_margin">
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_camera"
-                    android:contentDescription="@string/onboarding_camera"
-                    android:tint="@color/white" />
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
                 <TextView
+                    android:id="@+id/onboardingPage"
+                    style="@style/ProDossierHeader"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/onboarding_camera"
-                    android:textSize="@dimen/onboarding_small_text_size"
-                    android:fontFamily="monospace"
-                    android:textColor="@color/white" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:layout_marginEnd="@dimen/onboarding_margin">
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_mic"
-                    android:contentDescription="@string/onboarding_microphone"
-                    android:tint="@color/white" />
+                    android:layout_alignParentEnd="true"
+                    android:text="@string/onboarding_permissions_page"
+                    android:textDirection="ltr" />
+
                 <TextView
-                    android:layout_width="wrap_content"
+                    style="@style/ProDossierHeader"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/onboarding_microphone"
-                    android:textSize="@dimen/onboarding_small_text_size"
-                    android:fontFamily="monospace"
-                    android:textColor="@color/white" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="8dp"
+                    android:layout_toStartOf="@id/onboardingPage"
+                    android:text="@string/onboarding_permissions_kicker"
+                    android:textAlignment="viewStart" />
+            </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="6dp"
+                android:background="@color/dossier_line" />
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lottiePermissions"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="18dp"
+                app:lottie_autoPlay="true"
+                app:lottie_fileName="document_stamp_green_checkmark.json"
+                app:lottie_loop="true" />
+
+            <TextView
+                android:id="@+id/permissionsTitle"
+                style="@style/ProDossierTitle"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_save2"
-                    android:contentDescription="@string/onboarding_storage"
-                    android:tint="@color/white" />
-                <TextView
-                    android:layout_width="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:text="@string/permissions_required"
+                android:textSize="@dimen/onboarding_dossier_title_size" />
+
+            <TextView
+                android:id="@+id/permissionsDescription"
+                style="@style/ProDossierBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/permissions_description"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/permission_status_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:text="@string/permissions_granted"
+                android:textColor="@color/green"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <!-- Keep the three LinearLayout children: the fragment refreshes their labels. -->
+            <LinearLayout
+                android:id="@+id/permissionsListContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/onboarding_storage"
-                    android:textSize="@dimen/onboarding_small_text_size"
-                    android:fontFamily="monospace"
-                    android:textColor="@color/white" />
+                    android:layout_margin="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_onboarding_chip"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:contentDescription="@string/onboarding_camera"
+                        android:src="@drawable/ic_camera"
+                        android:tint="@color/dossier_olive_bright" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="monospace"
+                        android:text="@string/onboarding_camera"
+                        android:textColor="@color/dossier_ink"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_onboarding_chip"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:contentDescription="@string/onboarding_microphone"
+                        android:src="@drawable/ic_mic"
+                        android:tint="@color/dossier_olive_bright" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="monospace"
+                        android:text="@string/onboarding_microphone"
+                        android:textColor="@color/dossier_ink"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_onboarding_chip"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:contentDescription="@string/onboarding_storage"
+                        android:src="@drawable/ic_save2"
+                        android:tint="@color/dossier_olive_bright" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="monospace"
+                        android:text="@string/onboarding_storage"
+                        android:textColor="@color/dossier_ink"
+                        android:textSize="12sp" />
+                </LinearLayout>
             </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/permissions_grant_button"
+                style="@style/ProDossierButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/grant_permissions" />
+
+            <TextView
+                android:id="@+id/or_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:text="@string/onboarding_or"
+                android:textColor="@color/dossier_muted"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/open_settings_link"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:text="@string/onboarding_open_settings"
+                android:textColor="@color/dossier_olive_bright"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/and_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:text="@string/onboarding_and"
+                android:textColor="@color/dossier_muted"
+                android:textSize="11sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/disable_battery_optimization_button"
+                style="@style/ProDossierButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/disable_battery_optimization" />
+
+            <TextView
+                android:id="@+id/permissionsNote"
+                style="@style/ProDossierBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:gravity="center"
+                android:text="@string/permissions_note"
+                android:textSize="11sp" />
         </LinearLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/permissions_grant_button"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="@string/grant_permissions"
-            android:fontFamily="monospace"
-            android:textSize="@dimen/onboarding_button_text_size"
-            android:textColor="@color/white"
-            android:backgroundTint="@color/redPastel"
-            app:cornerRadius="12dp"
-            app:layout_constraintTop_toBottomOf="@id/permissionsListContainer"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="@dimen/onboarding_margin"
-            android:layout_marginLeft="@dimen/onboarding_margin"
-            android:layout_marginRight="@dimen/onboarding_margin" />
-
-        <TextView
-            android:id="@+id/or_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/onboarding_or"
-            android:textColor="@color/white"
-            android:textSize="@dimen/onboarding_small_text_size"
-            android:fontFamily="monospace"
-            android:gravity="center"
-            android:layout_marginTop="@dimen/onboarding_margin"
-            app:layout_constraintTop_toBottomOf="@id/permissions_grant_button"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <TextView
-            android:id="@+id/open_settings_link"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/onboarding_open_settings"
-            android:textColor="@color/redPastel"
-            android:textSize="@dimen/onboarding_small_text_size"
-            android:fontFamily="monospace"
-            android:paddingTop="@dimen/onboarding_margin"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:textStyle="bold"
-            app:layout_constraintTop_toBottomOf="@id/or_text"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <TextView
-            android:id="@+id/and_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/onboarding_and"
-            android:textColor="@color/white"
-            android:textSize="@dimen/onboarding_small_text_size"
-            android:fontFamily="monospace"
-            android:gravity="center"
-            android:layout_marginTop="@dimen/onboarding_margin"
-            app:layout_constraintTop_toBottomOf="@id/open_settings_link"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/disable_battery_optimization_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/disable_battery_optimization"
-            android:backgroundTint="@color/redPastel"
-            android:textColor="@color/white"
-            android:textSize="@dimen/onboarding_button_text_size"
-            app:cornerRadius="12dp"
-            android:layout_marginTop="@dimen/onboarding_margin"
-            app:layout_constraintTop_toBottomOf="@id/and_text"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <TextView
-            android:id="@+id/permissionsNote"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/permissions_note"
-            android:textSize="@dimen/onboarding_small_text_size"
-            android:fontFamily="monospace"
-            android:textColor="@color/white"
-            android:gravity="center"
-            android:layout_marginTop="@dimen/onboarding_margin"
-            android:layout_marginBottom="@dimen/onboarding_nav_margin"
-            app:layout_constraintTop_toBottomOf="@id/disable_battery_optimization_button"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</ScrollView> 
+    </FrameLayout>
+</ScrollView>

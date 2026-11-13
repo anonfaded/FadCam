@@ -96,12 +96,45 @@ public class AboutFragment extends BaseFragment {
         MaterialButton checkUpdatesButton = view.findViewById(R.id.check_updates_button);
         TextView emailText = view.findViewById(R.id.email_text);
         TextView discordText = view.findViewById(R.id.discord_text);
+        TextView xText = view.findViewById(R.id.x_text);
         MaterialCardView privacyInfoCard = view.findViewById(R.id.privacy_info_card);
         ScrollView scrollView = view.findViewById(R.id.scroll_view);
 
         // Initialize footer elements
         ImageView ivFadSecLabLogo = view.findViewById(R.id.ivFadSecLabLogo);
         TextView tvAboutFooter = view.findViewById(R.id.tvAboutFooter);
+
+        // Copyright footer: make the https://fadcam.fadseclab.com part clickable (opens browser)
+        TextView tvCopyright = view.findViewById(R.id.tv_copyright_info);
+        if (tvCopyright != null) {
+            String copyright = tvCopyright.getText().toString();
+            int urlStart = copyright.indexOf("https://");
+            if (urlStart >= 0) {
+                int urlEnd = copyright.indexOf('\n', urlStart);
+                if (urlEnd == -1) urlEnd = copyright.length();
+                android.text.SpannableString sp = new android.text.SpannableString(copyright);
+                sp.setSpan(new android.text.style.ClickableSpan() {
+                    @Override
+                    public void onClick(@NonNull View widget) {
+                        try {
+                            widget.getContext().startActivity(new Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://fadcam.fadseclab.com")));
+                        } catch (Exception e) {
+                            FLog.w("About", "open website failed", e);
+                        }
+                    }
+                    @Override
+                    public void updateDrawState(android.text.TextPaint ds) {
+                        super.updateDrawState(ds);
+                        ds.setColor(Color.parseColor("#E43C3C"));
+                        ds.setUnderlineText(false);
+                    }
+                }, urlStart, urlEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                tvCopyright.setText(sp);
+                tvCopyright.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+            }
+        }
 
         int colorHeading = resolveThemeColor(R.attr.colorHeading);
         int colorButton = resolveThemeColor(R.attr.colorButton);
@@ -136,7 +169,11 @@ public class AboutFragment extends BaseFragment {
         }
 
         appIcon.setImageResource(R.mipmap.ic_launcher);
-        appName.setText(getString(R.string.app_name));
+        String displayName = com.fadcam.BuildConfig.LITE_EDITION
+                ? (com.fadcam.BuildConfig.APPLICATION_ID.endsWith(".beta")
+                    ? "FadCam Lite Beta" : "FadCam Lite")
+                : getString(R.string.app_name);
+        appName.setText(displayName);
         // Set app name to theme color instead of default colorHeading
         appName.setTextColor(themeTextColor);
         
@@ -210,6 +247,7 @@ public class AboutFragment extends BaseFragment {
         donateButton.setIconTint(ColorStateList.valueOf(black));
         emailText.setTextColor(Color.WHITE);
         discordText.setTextColor(Color.WHITE);
+        if (xText != null) xText.setTextColor(Color.WHITE);
         privacyInfoCard.setCardBackgroundColor(colorDialog);
         privacyInfoCard.setStrokeColor(colorButton);
         LinearLayout privacyHeader = privacyInfoCard.findViewById(R.id.privacy_info_header);
@@ -261,7 +299,7 @@ public class AboutFragment extends BaseFragment {
                 spannable.setSpan(new android.text.style.ClickableSpan() {
                     @Override
                     public void onClick(@NonNull View widget) {
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/fadsec-lab"));
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://fadcam.fadseclab.com"));
                         widget.getContext().startActivity(browserIntent);
                     }
                     @Override
@@ -315,6 +353,7 @@ public class AboutFragment extends BaseFragment {
         checkUpdatesButton.setOnClickListener(v -> checkForUpdates());
         emailText.setOnClickListener(v -> sendEmail());
         discordText.setOnClickListener(v -> openUrl("https://discord.gg/kvAZvdkuuN"));
+        if (xText != null) xText.setOnClickListener(v -> openUrl("https://x.com/anon_faded"));
         setupPrivacyInfo(privacyInfoCard, scrollView);
         view.findViewById(R.id.check_updates_button).setOnClickListener(v -> checkForUpdates());
 

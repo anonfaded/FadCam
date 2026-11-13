@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Eye-direction AVD: the eyes (and glows) shift toward the left/up-left, hold, then return.
+     Base matches toggle_on_idle_amber exactly, so start and end are seamless. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/toggle_on_idle_amber">
+    <target android:name="eye_group" android:animation="@animator/anim_glance" />
+    <target android:name="light_group" android:animation="@animator/anim_glance_light" />
+    <target android:name="shadow_group" android:animation="@animator/anim_glance_shadow" />
+    <target android:name="head_shadow" android:animation="@animator/anim_glance_shadow_alpha" />
+</animated-vector>
