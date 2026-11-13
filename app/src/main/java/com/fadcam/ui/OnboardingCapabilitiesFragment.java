@@ -1,6 +1,7 @@
 package com.fadcam.ui;
 
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.SpannableString;
@@ -21,6 +22,7 @@ import androidx.fragment.app.Fragment;
 
 import com.fadcam.BuildConfig;
 import com.fadcam.ui.animations.AnimationView;
+import com.fadcam.ui.animations.PayoffFlowView;
 import com.fadcam.R;
 import com.github.appintro.SlidePolicy;
 
@@ -48,6 +50,7 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
     private ScrollView scrollView;
     private boolean lastAtBottom;
     private MiniAppsMarqueeView miniAppsMarquee;
+    private PayoffFlowView payoffFlow;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -90,9 +93,19 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
                 miniAppsMarquee.setItems(comingSoon);
             }
         }
+        payoffFlow = view.findViewById(R.id.onboarding_payoff_flow);
+        if (payoffFlow != null) {
+            payoffFlow.setIconMetrics(
+                    getResources().getDimension(R.dimen.onboarding_payoff_icon_size),
+                    getResources().getDimension(R.dimen.onboarding_payoff_icon_margin));
+            payoffFlow.setIcon(BitmapFactory.decodeResource(
+                    getResources(), R.drawable.payoff_icon));
+        }
+
         scrollView = view.findViewById(R.id.onboarding_scroll);
         if (scrollView != null) {
-            scrollView.setOnScrollChangeListener((v, x, y, oldX, oldY) -> reportScrollState());
+            scrollView.setOnScrollChangeListener((v, x, y, oldX, oldY) ->
+                    reportScrollState());
         }
         view.post(this::reportScrollState);
     }
@@ -104,6 +117,7 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         view.post(() -> {
             reportScrollState();
             playShowcase();
+            if (payoffFlow != null) payoffFlow.setActive(true);
             if (miniAppsMarquee != null && miniAppsMarquee.isShown()) {
                 miniAppsMarquee.startMarquee();
             }
@@ -112,6 +126,7 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
 
     /** Stops previews before the page leaves the screen and rewinds them for the next visit. */
     public void onPageHidden() {
+        if (payoffFlow != null) payoffFlow.setActive(false);
         stopShowcase();
         if (miniAppsMarquee != null) miniAppsMarquee.stopMarquee();
         started = false;
@@ -209,6 +224,7 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
     private void stopShowcase() {
         View root = getView();
         if (root == null) return;
+        if (payoffFlow != null) payoffFlow.setActive(false);
         List<AnimationView> demos = new ArrayList<>();
         collectDemos(root, demos);
         for (AnimationView demo : demos) {
@@ -251,6 +267,7 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
     public void onDestroyView() {
         if (miniAppsMarquee != null) miniAppsMarquee.stopMarquee();
         miniAppsMarquee = null;
+        payoffFlow = null;
         super.onDestroyView();
     }
 

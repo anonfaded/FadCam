@@ -495,31 +495,39 @@
                     android:layout_marginTop="6dp" />
             </LinearLayout>
 
-            <!-- Final payoff. The count and brand are gold-spanned in code. -->
+            <!-- Final payoff: streams converge into the real per-edition icon.
+                 Deliberately not a card, so the illustration sits on the paper. -->
             <LinearLayout
                 android:id="@+id/onboarding_payoff"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:background="@drawable/bg_onboarding_tally"
+                android:layout_marginTop="24dp"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:paddingBottom="6dp">
+
+                <com.fadcam.ui.animations.PayoffFlowView
+                    android:id="@+id/onboarding_payoff_flow"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/onboarding_payoff_visual_height" />
 
                 <TextView
                     android:id="@+id/onboarding_payoff_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
                     android:fontFamily="sans-serif-condensed"
+                    android:gravity="center"
                     android:textColor="@color/dossier_ink"
                     android:textSize="@dimen/onboarding_payoff_title_size"
                     android:textStyle="bold"
-                    tools:text="8 JOBS. ONE FADCAM." />
+                    tools:text="10 JOBS. ONE FADCAM." />
 
                 <TextView
                     style="@style/ProDossierBody"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
+                    android:gravity="center"
                     android:text="@string/onboarding_payoff_support"
                     android:textSize="11.5sp" />
 
@@ -529,6 +537,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
+                    android:gravity="center"
                     android:text="@string/onboarding_lite_full_note"
                     android:textColor="@color/dossier_olive_bright"
                     android:textSize="9.5sp"

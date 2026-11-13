@@ -189,6 +189,9 @@
     <dimen name="onboarding_card_desc_size">12sp</dimen>
     <dimen name="onboarding_mini_demo_height">72dp</dimen>
     <dimen name="onboarding_mini_desc_size">11.5sp</dimen>
+    <dimen name="onboarding_payoff_visual_height">210dp</dimen>
+    <dimen name="onboarding_payoff_icon_size">76dp</dimen>
+    <dimen name="onboarding_payoff_icon_margin">22dp</dimen>
     <dimen name="onboarding_payoff_title_size">28sp</dimen>
     <dimen name="onboarding_dock_height">56dp</dimen>
     <dimen name="onboarding_dock_arrow">42dp</dimen>

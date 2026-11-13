@@ -79,3 +79,22 @@ change pacing without touching the scene.
    visual repeats in two scenes, extract it as a part instead of copying.
 4. Add the new preview to `docs/home.md` only when it becomes a user-facing
    feature, not for every internal scene.
+
+## Payoff icon
+
+`PayoffFlowView` draws the whole payoff in one view: the soft floor glow, the
+two stationary golden streams, the two slow particles, and then the icon.
+
+The icon is a stable full-bleed 432px PNG (`drawable-nodpi/payoff_icon.png`)
+with a Lite override, built from that edition's launcher icon. Do not use
+`AdaptiveIconDrawable` here and do not crop the adaptive foreground by hand:
+the two editions have different content boxes, which is what caused a gap on
+Lite and an off-centre crop on Full.
+
+The icon bitmap is drawn through a `BitmapShader` into the same rectangle and
+corner radius used by the gold frame stroke, so the icon always fills the frame
+edge to edge and cannot drift. A soft gold aura is baked around that rectangle
+in the same static bitmap as the streams. The floor is a two-layer radial
+gradient centred on the icon by its shader matrix, and the frame gradient is
+vertical rather than diagonal so the frame does not look brighter on one side.
+There are no feature chips, no platform and no per-visit reveal.
