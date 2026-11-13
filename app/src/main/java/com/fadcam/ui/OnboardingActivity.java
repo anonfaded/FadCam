@@ -37,6 +37,7 @@ import android.graphics.Typeface;
 import android.provider.Settings;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.animation.PathInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -69,6 +70,18 @@ public class OnboardingActivity extends AppIntro
     private SquircleIndicatorController dockIndicator;
     private boolean capabilitiesNextRevealed;
     private boolean scrollHintVisible;
+    private int acceptedPage;
+    private int settledPage;
+    private final Runnable settlePager = () -> {
+        ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+        if (pager == null) return;
+        int width = pager.getWidth();
+        if (width <= 0) return;
+        int expected = pager.getCurrentItem() * width;
+        if (Math.abs(pager.getScrollX() - expected) > 2) {
+            pager.setCurrentItem(pager.getCurrentItem(), true);
+        }
+    };
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -177,6 +190,42 @@ public class OnboardingActivity extends AppIntro
             // Set page transformer
             viewPager.setPageTransformer(true, new FadePageTransformer());
 
+            // AppIntro swallows ACTION_UP when a forward swipe crosses a gated
+            // slide, which leaves the pager frozen between two pages. We keep the
+            // gate but enforce it in onPageSelected instead of dropping the event.
+            if (viewPager instanceof com.github.appintro.internal.AppIntroViewPager) {
+                ((com.github.appintro.internal.AppIntroViewPager) viewPager)
+                        .setOnNextPageRequestedListener(
+                                new com.github.appintro.AppIntroViewPagerListener() {
+                                    @Override
+                                    public boolean onCanRequestNextPage() {
+                                        // Decide from the page the gesture started
+                                        // on, never from the item the pager happens
+                                        // to be crossing mid-swipe.
+                                        return isPagePolicyRespected(settledPage);
+                                    }
+
+                                    @Override
+                                    public void onIllegallyRequestedNextPage() {
+                                    }
+
+                                    @Override
+                                    public void onUserRequestedPermissionsDialog() {
+                                    }
+                                });
+            }
+
+            // Safety net: if any gesture is ever lost, settle the pager instead of
+            // leaving it stuck at a fractional offset.
+            viewPager.setOnTouchListener((v, event) -> {
+                int action = event.getActionMasked();
+                if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                    v.removeCallbacks(settlePager);
+                    v.postDelayed(settlePager, 600L);
+                }
+                return false;
+            });
+
             // Listen for page changes to update navigation buttons
             viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
                 @Override
@@ -185,6 +234,11 @@ public class OnboardingActivity extends AppIntro
 
                 @Override
                 public void onPageSelected(int position) {
+                    if (position > acceptedPage && !isPagePolicyRespected(acceptedPage)) {
+                        viewPager.setCurrentItem(acceptedPage, true);
+                        return;
+                    }
+                    acceptedPage = position;
                     updateNavigationButtons(position);
                     viewPager.post(() -> notifyCapabilitiesPage(
                             viewPager.getCurrentItem() == 1));
@@ -197,6 +251,9 @@ public class OnboardingActivity extends AppIntro
 
                 @Override
                 public void onPageScrollStateChanged(int state) {
+                    if (state == ViewPager.SCROLL_STATE_IDLE) {
+                        settledPage = viewPager.getCurrentItem();
+                    }
                 }
             });
 
@@ -464,6 +521,19 @@ public class OnboardingActivity extends AppIntro
             hideSystemBars();
             hideNativeBottomChrome();
         }
+    }
+
+    /** True when the slide at {@code page} has been read/granted enough to leave. */
+    private boolean isPagePolicyRespected(int page) {
+        if (page == 1) {
+            OnboardingCapabilitiesFragment capabilities = findCapabilitiesFragment();
+            return capabilities == null || capabilities.isPolicyRespected();
+        }
+        if (page == 2) {
+            OnboardingPermissionsFragment permissions = findPermissionsFragment();
+            return permissions == null || permissions.isPolicyRespected();
+        }
+        return true;
     }
 
     private int dp(int value) {

@@ -318,7 +318,26 @@
 
     <!-- Dark, edge-to-edge intro. A light DayNight theme makes some OEMs paint the
          three-button navigation bar white when it peeks in. -->
-    <style name="Theme.FadCam.Onboarding" parent="Theme.MaterialComponents.NoActionBar">
+    <style name="Theme.FadCam.Onboarding" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Keep the Material 3 dialog, but tint every M3 accent to the dossier
+             palette so ripples and surfaces never fall back to the purple baseline. -->
+        <item name="colorPrimary">@color/dossier_olive_bright</item>
+        <item name="colorOnPrimary">@color/dossier_paper</item>
+        <item name="colorPrimaryContainer">@color/dossier_olive</item>
+        <item name="colorOnPrimaryContainer">@color/dossier_ink</item>
+        <item name="colorSecondary">@color/dossier_olive_bright</item>
+        <item name="colorOnSecondary">@color/dossier_paper</item>
+        <item name="colorSecondaryContainer">@color/dossier_olive</item>
+        <item name="colorOnSecondaryContainer">@color/dossier_ink</item>
+        <item name="colorControlHighlight">#33C6A66A</item>
+        <item name="colorSurface">#10100F</item>
+        <item name="colorOnSurface">@color/dossier_ink</item>
+        <item name="colorSurfaceVariant">#1A1A18</item>
+        <item name="colorOnSurfaceVariant">@color/dossier_muted</item>
+        <item name="colorSurfaceContainer">#10100F</item>
+        <item name="colorSurfaceContainerHigh">#141413</item>
+        <item name="colorSurfaceContainerHighest">#181816</item>
+        <item name="colorOutline">@color/onboarding_card_stroke</item>
         <item name="android:windowBackground">@color/black</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@color/black</item>

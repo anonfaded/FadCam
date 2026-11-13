@@ -162,7 +162,7 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
     }
 
     private void showManualPermissionDialog() {
-        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.permissions_required)
                 .setMessage(R.string.permissions_description)
                 .setPositiveButton(R.string.onboarding_open_settings, (dialog, which) -> {
