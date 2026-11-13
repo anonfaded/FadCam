@@ -4,6 +4,26 @@
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
         <item name="android:fontFamily">@font/ubuntu_regular</item>
+        <!-- Material 3 tokens: keep every M3 component on the app palette instead of
+             falling back to the purple baseline when the theme does not define them. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorPrimaryContainer">@color/colorPrimary</item>
+        <item name="colorOnPrimaryContainer">@color/black</item>
+        <item name="colorSecondary">@color/colorPrimary</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="colorSecondaryContainer">@color/colorPrimary</item>
+        <item name="colorOnSecondaryContainer">@color/black</item>
+        <item name="colorSurface">@color/gray</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="colorSurfaceVariant">@color/gray</item>
+        <item name="colorOnSurfaceVariant">@color/gray_text_light</item>
+        <item name="colorSurfaceContainer">@color/gray</item>
+        <item name="colorSurfaceContainerHigh">@color/gray</item>
+        <item name="colorSurfaceContainerHighest">@color/gray</item>
+        <item name="colorOutline">@color/gray500</item>
+        <item name="colorControlHighlight">#33FFFFFF</item>
+
         <!-- Status bar color -->
         <item name="android:statusBarColor">@color/gray</item>
         <item name="colorTopBar">@color/colorPrimary</item>
@@ -56,6 +76,8 @@
 
     <!-- Splash theme leveraging AndroidX SplashScreen attributes (Fix Start Theme.FadCam.Splash) -->
     <style name="Theme.FadCam.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorSecondary">@color/colorPrimary</item>
         <!-- Solid dark background -->
         <item name="android:windowBackground">@color/black</item>
         <!-- SplashScreen API attrs -->
