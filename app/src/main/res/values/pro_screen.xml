@@ -43,6 +43,8 @@
     <color name="onboarding_card_top">#141413</color>
     <color name="onboarding_card_bottom">#0B0B0A</color>
     <color name="onboarding_card_stroke">#33C6A66A</color>
+    <color name="onboarding_link">#E4BF78</color>
+    <color name="onboarding_success">#86D3A0</color>
     <color name="onboarding_mascot_glow_core">#70E8C77B</color>
     <color name="onboarding_mascot_glow_mid">#3DE8C77B</color>
 

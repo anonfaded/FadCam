@@ -1514,10 +1514,10 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="language_change_later_note">You can change this later in Settings.</string>
 
     <string name="permissions_required">A few permissions</string>
-    <string name="permissions_description">FadCam needs the camera, microphone and storage to record and save videos.</string>
+    <string name="permissions_description">FadCam needs a few permissions to record and save your videos.</string>
     <string name="grant_permissions">Grant Permissions</string>
     <string name="permissions_note">You must grant all permissions to continue.</string>
-    <string name="permissions_granted">All permissions granted!</string>
+    <string name="permissions_granted">All permissions granted. You\'re good to go!</string>
 
     <string name="open_settings">Open Settings</string>
 
@@ -1525,11 +1525,19 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="battery_optimization_disabled">Battery optimization disabled</string>
 
     <string name="onboarding_human_title">The house rules</string>
-    <string name="onboarding_human_desc">Three promises, and you\'re in.</string>
+    <string name="onboarding_human_desc">Two quick things, then you\'re in. If you don\'t agree, uninstall FadCam right now.</string>
     <string name="onboarding_human_checkbox1">I\'ll use FadCam legally and respect other people\'s privacy. If I misuse it, that\'s on me.</string>
     <string name="onboarding_human_checkbox2">I\'m here for a private, ad-free camera. (Not optional)</string>
     <string name="onboarding_human_checkbox3">I agree to the Privacy Policy</string>
     <string name="onboarding_human_button">Let me in!</string>
+    <string name="onboarding_permissions_section">Permissions</string>
+    <string name="onboarding_battery_section">Battery</string>
+    <string name="onboarding_permission_granted">Granted</string>
+    <string name="onboarding_permission_required">Required</string>
+    <string name="onboarding_human_agreement_responsible">I\'ll use FadCam responsibly and respect others\' privacy.</string>
+    <string name="onboarding_human_agreement_legal">I agree to the %1$s and acknowledge the %2$s.</string>
+    <string name="onboarding_terms_of_use">Terms of Use</string>
+    <string name="onboarding_privacy_policy">Privacy Policy</string>
 
 
 

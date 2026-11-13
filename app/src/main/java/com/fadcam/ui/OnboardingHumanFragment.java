@@ -1,160 +1,101 @@
 package com.fadcam.ui;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.TextPaint;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.UnderlineSpan;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.graphics.PorterDuff;
-import com.google.android.material.button.MaterialButton;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+
 import com.airbnb.lottie.LottieAnimationView;
 import com.fadcam.R;
+import com.google.android.material.button.MaterialButton;
 
+/**
+ * Onboarding slide 04: two honest agreements in one premium panel.
+ *
+ * <p>Each row is the toggle target. Inside the legal row, the Terms and Privacy
+ * spans keep their own taps: a link opens the document and never changes the
+ * checkbox. State survives Activity recreation through the instance state.</p>
+ */
 public class OnboardingHumanFragment extends Fragment {
-    private boolean checked1 = false;
-    private boolean checked2 = false;
-    private boolean checked3 = false;
+
+    private static final String STATE_AGREED_RESPONSIBLE = "agreed_responsible";
+    private static final String STATE_AGREED_LEGAL = "agreed_legal";
+
+    private static final String URL_TERMS = "https://fadseclab.com/terms/";
+    private static final String URL_PRIVACY = "https://fadseclab.com/privacy/";
+
+    private boolean agreedResponsible;
+    private boolean agreedLegal;
+
     private MaterialButton continueButton;
-    private ImageView icon1, icon2, icon3;
-    private TextView label1, label2, label3;
-    private TextView titleText, descText;
+    private ImageView icon1;
+    private ImageView icon2;
+    private TextView label1;
+    private TextView label2;
+    private LinearLayout row1;
+    private LinearLayout row2;
+    private TextView titleText;
+    private TextView descText;
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.onboarding_human_slide, container, false);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.onboarding_human_slide, container, false);
 
-        LinearLayout row1 = v.findViewById(R.id.checkbox_row_1);
-        LinearLayout row2 = v.findViewById(R.id.checkbox_row_2);
-        LinearLayout row3 = v.findViewById(R.id.checkbox_row_3);
-        icon1 = v.findViewById(R.id.checkbox_icon_1);
-        icon2 = v.findViewById(R.id.checkbox_icon_2);
-        icon3 = v.findViewById(R.id.checkbox_icon_3);
-        label1 = v.findViewById(R.id.checkbox_label_1);
-        label2 = v.findViewById(R.id.checkbox_label_2);
-        label3 = v.findViewById(R.id.checkbox_label_3);
-        continueButton = v.findViewById(R.id.btn_human_continue);
-        titleText = v.findViewById(R.id.tvHumanTitle);
-        descText = v.findViewById(R.id.tvHumanDesc);
-        
-        // Find the PalestineRainView and prevent it from intercepting touch events
-        View palestineRainView = v.findViewById(R.id.palestineRainView);
-        if (palestineRainView != null) {
-            palestineRainView.setClickable(false);
-            palestineRainView.setFocusable(false);
-        }
-        
-        // Configure the LottieAnimationView
-        LottieAnimationView lottieHuman = v.findViewById(R.id.lottieHuman);
-        if (lottieHuman != null) {
-            lottieHuman.setSpeed(0.8f);
+        if (savedInstanceState != null) {
+            agreedResponsible = savedInstanceState.getBoolean(STATE_AGREED_RESPONSIBLE, false);
+            agreedLegal = savedInstanceState.getBoolean(STATE_AGREED_LEGAL, false);
         }
 
-        // Set initial button state
-        continueButton.setEnabled(false);
-        continueButton.setAlpha(0.6f);
+        row1 = view.findViewById(R.id.checkbox_row_1);
+        row2 = view.findViewById(R.id.checkbox_row_2);
+        icon1 = view.findViewById(R.id.checkbox_icon_1);
+        icon2 = view.findViewById(R.id.checkbox_icon_2);
+        label1 = view.findViewById(R.id.checkbox_label_1);
+        label2 = view.findViewById(R.id.checkbox_label_2);
+        continueButton = view.findViewById(R.id.btn_human_continue);
+        titleText = view.findViewById(R.id.tvHumanTitle);
+        descText = view.findViewById(R.id.tvHumanDesc);
 
-        // Get the redPastel color
-        int redPastelColor = ContextCompat.getColor(requireContext(), R.color.redPastel);
-
-        View.OnClickListener update = view -> {
-            continueButton.setEnabled(checked1 && checked2 && checked3);
-            continueButton.setAlpha((checked1 && checked2 && checked3) ? 1f : 0.6f);
-        };
-
-        View.OnClickListener toggle1 = view -> {
-            checked1 = !checked1;
-            // Set the appropriate checkbox image and apply redPastel tint when checked
-            icon1.setImageResource(checked1 ? R.drawable.placeholder_checkbox_checked : R.drawable.placeholder_checkbox_outline);
-            if (checked1) {
-                // Apply redPastel tint to the checked checkbox
-                icon1.setColorFilter(redPastelColor, PorterDuff.Mode.SRC_IN);
-            } else {
-                // Clear any color filter for unchecked state
-                icon1.clearColorFilter();
-            }
-            update.onClick(view);
-        };
-        
-        View.OnClickListener toggle2 = view -> {
-            checked2 = !checked2;
-            // Set the appropriate checkbox image and apply redPastel tint when checked
-            icon2.setImageResource(checked2 ? R.drawable.placeholder_checkbox_checked : R.drawable.placeholder_checkbox_outline);
-            if (checked2) {
-                // Apply redPastel tint to the checked checkbox
-                icon2.setColorFilter(redPastelColor, PorterDuff.Mode.SRC_IN);
-            } else {
-                // Clear any color filter for unchecked state
-                icon2.clearColorFilter();
-            }
-            update.onClick(view);
-        };
-
-        View.OnClickListener toggle3 = view -> {
-            checked3 = !checked3;
-            // Set the appropriate checkbox image and apply redPastel tint when checked
-            icon3.setImageResource(checked3 ? R.drawable.placeholder_checkbox_checked : R.drawable.placeholder_checkbox_outline);
-            if (checked3) {
-                // Apply redPastel tint to the checked checkbox
-                icon3.setColorFilter(redPastelColor, PorterDuff.Mode.SRC_IN);
-            } else {
-                // Clear any color filter for unchecked state
-                icon3.clearColorFilter();
-            }
-            update.onClick(view);
-        };
-
-        // Set up privacy policy clickable text
-        String fullText = getString(R.string.onboarding_human_checkbox3);
-        SpannableString spannableString = new SpannableString(fullText);
-        
-        // Find "Privacy Policy" in the text
-        String privacyPolicyText = "Privacy Policy";
-        int startIndex = fullText.indexOf(privacyPolicyText);
-        if (startIndex >= 0) {
-            int endIndex = startIndex + privacyPolicyText.length();
-            
-            // Create clickable span for Privacy Policy
-            ClickableSpan clickableSpan = new ClickableSpan() {
-                @Override
-                public void onClick(View widget) {
-                    // Open privacy policy in external browser
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/anonfaded/FadCam/blob/master/PRIVACY.md"));
-                    startActivity(intent);
-                }
-            };
-            
-            spannableString.setSpan(clickableSpan, startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannableString.setSpan(new UnderlineSpan(), startIndex, endIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        // The flag rain is decoration only and must never eat touches.
+        View rain = view.findViewById(R.id.palestineRainView);
+        if (rain != null) {
+            rain.setClickable(false);
+            rain.setFocusable(false);
         }
-        
-        label3.setText(spannableString);
-        label3.setMovementMethod(LinkMovementMethod.getInstance());
 
-        row1.setOnClickListener(toggle1);
-        icon1.setOnClickListener(toggle1);
-        label1.setOnClickListener(toggle1);
-        row2.setOnClickListener(toggle2);
-        icon2.setOnClickListener(toggle2);
-        label2.setOnClickListener(toggle2);
-        row3.setOnClickListener(toggle3);
-        icon3.setOnClickListener(toggle3);
-        label3.setOnClickListener(toggle3);
+        LottieAnimationView lottie = view.findViewById(R.id.lottieHuman);
+        if (lottie != null) lottie.setSpeed(0.8f);
 
-        continueButton.setOnClickListener(view -> {
+        bindLegalLabel();
+
+        row1.setOnClickListener(v -> setResponsible(!agreedResponsible));
+        row2.setOnClickListener(v -> setLegal(!agreedLegal));
+
+        continueButton.setOnClickListener(v -> {
             if (getActivity() instanceof OnboardingActivity) {
                 ((OnboardingActivity) getActivity()).finishOnboarding();
             } else {
@@ -162,46 +103,150 @@ public class OnboardingHumanFragment extends Fragment {
             }
         });
 
-        return v;
+        render();
+        return view;
     }
-    
+
+    private void setResponsible(boolean checked) {
+        agreedResponsible = checked;
+        render();
+    }
+
+    private void setLegal(boolean checked) {
+        agreedLegal = checked;
+        render();
+    }
+
+    private void render() {
+        int gold = ContextCompat.getColor(requireContext(), R.color.pro_gold);
+        int ink = ContextCompat.getColor(requireContext(), R.color.dossier_ink);
+
+        icon1.setImageResource(agreedResponsible
+                ? R.drawable.placeholder_checkbox_checked
+                : R.drawable.placeholder_checkbox_outline);
+        icon1.setImageTintList(ColorStateList.valueOf(agreedResponsible ? gold : ink));
+
+        icon2.setImageResource(agreedLegal
+                ? R.drawable.placeholder_checkbox_checked
+                : R.drawable.placeholder_checkbox_outline);
+        icon2.setImageTintList(ColorStateList.valueOf(agreedLegal ? gold : ink));
+
+        boolean ready = agreedResponsible && agreedLegal;
+        continueButton.setEnabled(ready);
+        continueButton.setAlpha(ready ? 1f : 0.6f);
+
+        bindCheckableRow(row1, label1.getText().toString(), agreedResponsible);
+        bindCheckableRow(row2, label2.getText().toString(), agreedLegal);
+    }
+
+    /** Exposes the row as a single checkable control to TalkBack. */
+    private void bindCheckableRow(View row, String text, boolean checked) {
+        row.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+            @Override
+            public void onInitializeAccessibilityNodeInfo(@NonNull View host,
+                                                          @NonNull AccessibilityNodeInfo info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                info.setClassName("android.widget.CheckBox");
+                info.setCheckable(true);
+                info.setChecked(checked);
+                info.setText(text);
+            }
+        });
+    }
+
+    private void bindLegalLabel() {
+        String terms = getString(R.string.onboarding_terms_of_use);
+        String privacy = getString(R.string.onboarding_privacy_policy);
+        String full = getString(R.string.onboarding_human_agreement_legal, terms, privacy);
+
+        SpannableString text = new SpannableString(full);
+        applyLink(text, terms, URL_TERMS);
+        applyLink(text, privacy, URL_PRIVACY);
+
+        label2.setText(text);
+        label2.setMovementMethod(new LinkOnlyMovementMethod());
+        label2.setHighlightColor(Color.TRANSPARENT);
+        // A movement method makes the TextView clickable, which would swallow
+        // taps meant for the row. Links still work; everything else falls through.
+        label2.setClickable(false);
+        label2.setLongClickable(false);
+    }
+
+    private void applyLink(SpannableString text, String label, String url) {
+        int start = text.toString().indexOf(label);
+        if (start < 0) return;
+        int end = start + label.length();
+        text.setSpan(new LegalLinkSpan(url), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        text.setSpan(new UnderlineSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    }
+
+    private final class LegalLinkSpan extends ClickableSpan {
+        private final String url;
+
+        LegalLinkSpan(String url) {
+            this.url = url;
+        }
+
+        @Override
+        public void onClick(@NonNull View widget) {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+            } catch (Exception ignored) {
+                // No browser installed; leave the checkbox exactly as it was.
+            }
+        }
+
+        @Override
+        public void updateDrawState(@NonNull TextPaint ds) {
+            ds.setColor(ContextCompat.getColor(requireContext(), R.color.onboarding_link));
+            ds.setUnderlineText(true);
+        }
+    }
+
     /**
-     * Called to refresh language-specific UI elements when the language has changed
-     * without recreating the entire fragment
+     * Only consumes a touch when a link is actually under the finger. Every other
+     * tap falls through to the agreement row, which owns the toggle.
      */
+    private static final class LinkOnlyMovementMethod extends LinkMovementMethod {
+        @Override
+        public boolean onTouchEvent(TextView widget, Spannable buffer, MotionEvent event) {
+            int action = event.getAction();
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP) {
+                int x = (int) event.getX();
+                int y = (int) event.getY();
+                x -= widget.getTotalPaddingLeft();
+                y -= widget.getTotalPaddingTop();
+                x += widget.getScrollX();
+                y += widget.getScrollY();
+                Layout layout = widget.getLayout();
+                if (layout == null || y < 0 || y > layout.getHeight()) return false;
+                int line = layout.getLineForVertical(y);
+                int offset = layout.getOffsetForHorizontal(line, x);
+                ClickableSpan[] links = buffer.getSpans(offset, offset, ClickableSpan.class);
+                if (links.length == 0) return false;
+            }
+            return super.onTouchEvent(widget, buffer, event);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(STATE_AGREED_RESPONSIBLE, agreedResponsible);
+        outState.putBoolean(STATE_AGREED_LEGAL, agreedLegal);
+    }
+
+    /** Refreshes language-specific text without recreating the fragment. */
     public void refreshLanguage() {
-        if (titleText != null) {
-            titleText.setText(R.string.onboarding_human_title);
-        }
-        if (descText != null) {
-            descText.setText(R.string.onboarding_human_desc);
-        }
-        if (label1 != null) {
-            label1.setText(R.string.onboarding_human_checkbox1);
-        }
-        if (label2 != null) {
-            label2.setText(R.string.onboarding_human_checkbox2);
-        }
-        if (label3 != null) {
-            label3.setText(R.string.onboarding_human_checkbox3);
-        }
+        if (titleText != null) titleText.setText(R.string.onboarding_human_title);
+        if (descText != null) descText.setText(R.string.onboarding_human_desc);
+        if (label1 != null) label1.setText(R.string.onboarding_human_agreement_responsible);
+        if (label2 != null) bindLegalLabel();
         if (continueButton != null) {
             continueButton.setText(R.string.onboarding_human_button);
-            
-            // Important: Force LTR layout direction for the button
             continueButton.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
             continueButton.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-            
-            // Reset button state to match current checkbox status
-            continueButton.setEnabled(checked1 && checked2 && checked3);
-            continueButton.setAlpha((checked1 && checked2 && checked3) ? 1f : 0.6f);
         }
-        
-        // Force layout refresh to fix any RTL/LTR issues
-        View view = getView();
-        if (view != null) {
-            view.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-            view.requestLayout();
-        }
+        render();
     }
-} 
+}
