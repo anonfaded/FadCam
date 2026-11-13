@@ -1501,24 +1501,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Fix End: Add onboarding toggle strings -->
 
     <string name="choose_language">Pilih Bahasa</string>
-    <string name="language_change_later_note">Anda dapat mengubahnya nanti di Pengaturan.</string>
-
-    <string name="permissions_required">Izin Diperlukan</string>
-    <string name="permissions_description">FadCam memerlukan akses ke kamera, mikrofon, dan penyimpanan Anda untuk merekam dan menyimpan video.</string>
-    <string name="grant_permissions">Berikan Izin</string>
-    <string name="permissions_note">Anda harus memberikan semua izin untuk melanjutkan.</string>
-    <string name="permissions_granted">Semua izin diberikan!</string>
-
-    <string name="open_settings">Buka Pengaturan</string>
-
-    <string name="disable_battery_optimization">Nonaktifkan Optimisasi Baterai</string>
-
-    <string name="onboarding_human_title">Verifikasi jika Anda manusia</string>
-    <string name="onboarding_human_desc">Hmmmm... baiklah. Aturan ini tidak bisa ditawar. Jika Anda tidak bisa menyetujui, silakan copot FadCam sekarang.</string>
-    <string name="onboarding_human_checkbox1">Saya tidak akan menggunakan FadCam untuk melanggar hukum, menginvasi privasi siapapun, atau menjadi orang mencurigakan. Pengembang tidak bertanggung jawab jika saya melakukan kesalahan. (Itu tanggung jawab saya.)</string>
-    <string name="onboarding_human_checkbox2">Saya sudah mencintai FadCam bahkan sebelum menggunakannya. (Tidak opsional)</string>
-    <string name="onboarding_human_checkbox3">Saya menyetujui Kebijakan Privasi</string>
-    <string name="onboarding_human_button">Biarkan saya masuk!</string>
 
 
 
@@ -1842,19 +1824,6 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
 
     <string name="app_icon_minimal" translatable="false">FadCam</string>
 
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Geser ke kanan untuk melanjutkan</string>
-    <string name="onboarding_select_language">Pilih bahasa aplikasi yang Anda inginkan.</string>
-    <string name="onboarding_camera">Kamera</string>
-    <string name="onboarding_microphone">Mikrofon</string>
-    <string name="onboarding_storage">Penyimpanan</string>
-    <string name="onboarding_or">ATAU</string>
-    <string name="onboarding_and">DAN</string>
-    <string name="onboarding_open_settings">Buka Pengaturan</string>
-    <string name="onboarding_intro_line1">perekam multimedia—</string>
-    <string name="onboarding_intro_line2">video latar belakang, layar &amp; stream langsung,</string>
-    <string name="onboarding_intro_line3">kontrol kamera jarak jauh,</string>
-    <string name="onboarding_intro_line4">sumber terbuka. bebas iklan. milik Anda.</string>
 
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Urutkan Berdasarkan</string>

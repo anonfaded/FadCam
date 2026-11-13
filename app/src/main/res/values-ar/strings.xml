@@ -312,31 +312,6 @@
     <string name="update_variation_2">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; أصبح قديمًا.&lt;br&gt;بينما &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; جاهز للإعجاب بميزات جديدة وإصلاحات للأخطاء. قم بالترقية للحصول على تجربة أفضل!</string>
     <string name="update_variation_3">تطبيقك يعيش في الماضي مع &lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;.&lt;br&gt;بينما &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; هو المستقبل - أسرع، أذكى، وأكثر لمعانًا. لماذا لا تنضم؟</string>
     <string name="update_variation_4">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt; قدم لك خدمة جيدة، لكن &lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt; يناديك!&lt;br&gt;استمتع بأحدث التحسينات وتجربة أكثر سلاسة - بنقرة واحدة.</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">اسحب لليمين للمتابعة</string>
-    <string name="onboarding_select_language">اختر لغة التطبيق المفضلة لديك.</string>
-    <string name="onboarding_camera">الكاميرا</string>
-    <string name="onboarding_microphone">الميكروفون</string>
-    <string name="onboarding_storage">التخزين</string>
-    <string name="onboarding_or">أو</string>
-    <string name="onboarding_and">و</string>
-    <string name="onboarding_open_settings">فتح الإعدادات</string>
-    <string name="onboarding_intro_line1">مفتوح المصدر،</string>
-    <string name="onboarding_intro_line2">بدون إعلانات،</string>
-    <string name="onboarding_intro_line3">مصمم من أجلك — وليس للمعلنين.</string>
-    <string name="language_change_later_note">يمكنك تغيير هذا لاحقًا في الإعدادات.</string>
-    <string name="permissions_required">الأذونات المطلوبة</string>
-    <string name="permissions_description">تحتاج FadCam إلى الوصول إلى الكاميرا والميكروفون والتخزين لتسجيل وحفظ مقاطع الفيديو.</string>
-    <string name="grant_permissions">منح الأذونات</string>
-    <string name="permissions_note">يجب عليك منح جميع الأذونات للمتابعة.</string>
-    <string name="permissions_granted">تم منح جميع الأذونات!</string>
-    <string name="open_settings">فتح الإعدادات</string>
-    <string name="disable_battery_optimization">تعطيل تحسين البطارية</string>
-    <string name="onboarding_human_title">تحقق إذا كنت إنسانًا</string>
-    <string name="onboarding_human_desc">هممم... حسنًا. هذه القواعد غير قابلة للتفاوض. إذا لم تتمكن من الموافقة، يرجى إلغاء تثبيت FadCam الآن.</string>
-    <string name="onboarding_human_checkbox1">لن أستخدم FadCam لخرق أي قوانين، أو انتهاك خصوصية أي شخص، أو أكون مزعجًا. المطور غير مسؤول إذا أخطأت. (هذا على عاتقي.)</string>
-    <string name="onboarding_human_checkbox2">أنا بالفعل أحب FadCam قبل حتى استخدامه. (غير اختياري)</string>
-    <string name="onboarding_human_button">دعني أدخل!</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">ترتيب حسب</string>
     <string name="sort_latest_first">الأحدث أولاً</string>
@@ -2526,8 +2501,6 @@
 
     <string name="choose_language">اختر اللغة</string>
 
-    <string name="onboarding_human_checkbox3">أوافق على سياسة الخصوصية</string>
-
     <string name="applock_set_pin_enable">تعيين رمز PIN &amp; تمكين</string>
 
     <string name="applock_helper_create">أنشئ حماية لتبويب التسجيلات باستخدام رمز PIN من 4 أرقام أو كلمة مرور أو بصمة. سيتم القفل تلقائيًا عند انتقال التطبيق للخلفية.</string>
@@ -2977,8 +2950,6 @@
     <string name="storage_helper_current_custom_uri_prefix">URI:</string>
 
     <string name="app_icon_minimal" translatable="false">FadCam</string>
-
-    <string name="onboarding_intro_line4">مفتوح المصدر. بدون إعلانات. لك.</string>
 
     <string name="records_sort_helper">اختر كيفية ترتيب التسجيلات في القائمة.</string>
 

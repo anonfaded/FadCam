@@ -1481,24 +1481,6 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="note_onboarding">Habilita para ver la introducción de la app y guía de permisos la próxima vez que abras FadCam.</string>
 
     <string name="choose_language">Elegir idioma</string>
-    <string name="language_change_later_note">Puedes cambiar esto más tarde en Ajustes.</string>
-
-    <string name="permissions_required">Permisos requeridos</string>
-    <string name="permissions_description">FadCam necesita acceso a tu cámara, micrófono y almacenamiento para grabar y guardar videos.</string>
-    <string name="grant_permissions">Conceder permisos</string>
-    <string name="permissions_note">Debes conceder todos los permisos para continuar.</string>
-    <string name="permissions_granted">¡Todos los permisos concedidos!</string>
-
-    <string name="open_settings">Abrir ajustes</string>
-
-    <string name="disable_battery_optimization">Desactivar optimización de batería</string>
-
-    <string name="onboarding_human_title">Verifica si eres humano</string>
-    <string name="onboarding_human_desc">Hmmmm... está bien. Estas reglas son innegociables. Si no estás de acuerdo, por favor desinstala FadCam ahora mismo.</string>
-    <string name="onboarding_human_checkbox1">No usaré FadCam para violar leyes, invadir la privacidad de nadie o ser un creepy. El desarrollador no se hace responsable si me equivoco. (Eso es conmigo.)</string>
-    <string name="onboarding_human_checkbox2">Ya amo FadCam antes de usarla. (No opcional)</string>
-    <string name="onboarding_human_checkbox3">Acepto la Política de Privacidad</string>
-    <string name="onboarding_human_button">¡Déjame entrar!</string>
 
     <string name="trash_select_all">Seleccionar todo</string>
 
@@ -1795,19 +1777,6 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
 
     <string name="app_icon_minimal" translatable="false">FadCam</string>
 
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Desliza a la derecha para continuar</string>
-    <string name="onboarding_select_language">Selecciona tu idioma preferido para la app.</string>
-    <string name="onboarding_camera">Cámara</string>
-    <string name="onboarding_microphone">Micrófono</string>
-    <string name="onboarding_storage">Almacenamiento</string>
-    <string name="onboarding_or">O</string>
-    <string name="onboarding_and">Y</string>
-    <string name="onboarding_open_settings">Abrir ajustes</string>
-    <string name="onboarding_intro_line1">una grabadora multimedia—</string>
-    <string name="onboarding_intro_line2">video en segundo plano, pantalla y transmisión en vivo,</string>
-    <string name="onboarding_intro_line3">control remoto de cámara,</string>
-    <string name="onboarding_intro_line4">código abierto. sin anuncios. tuyo.</string>
 
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Ordenar por</string>

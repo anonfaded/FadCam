@@ -1437,20 +1437,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="note_onboarding">Ενεργοποιήστε για να δείτε την εισαγωγή την επόμενη φορά.</string>
     <!-- Fix End: Add onboarding toggle strings -->
     <string name="choose_language">Επιλογή Γλώσσας</string>
-    <string name="language_change_later_note">Μπορείτε να το αλλάξετε στις Ρυθμίσεις.</string>
-    <string name="permissions_required">Απαιτούνται Άδειες</string>
-    <string name="permissions_description">Το FadCam χρειάζεται πρόσβαση στην κάμερα, το μικρόφωνο και τον αποθηκευτικό χώρο.</string>
-    <string name="grant_permissions">Παραχώρηση Αδειών</string>
-    <string name="permissions_note">Πρέπει να παραχωρήσετε όλες τις άδειες.</string>
-    <string name="permissions_granted">Όλες οι άδειες παραχωρήθηκαν!</string>
-    <string name="open_settings">Άνοιγμα Ρυθμίσεων</string>
-    <string name="disable_battery_optimization">Απενεργοποίηση Βελτιστοποίησης Μπαταρίας</string>
-    <string name="onboarding_human_title">Επιβεβαιώστε ότι είστε άνθρωπος</string>
-    <string name="onboarding_human_desc">Αυτοί οι κανόνες είναι αδιαπραγμάτευτοι.</string>
-    <string name="onboarding_human_checkbox1">Δεν θα χρησιμοποιήσω το FadCam παράνομα.</string>
-    <string name="onboarding_human_checkbox2">Αγαπώ ήδη το FadCam πριν καν το χρησιμοποιήσω. (Δεν είναι προαιρετικό)</string>
-    <string name="onboarding_human_checkbox3">Συμφωνώ με την Πολιτική Απορρήτου</string>
-    <string name="onboarding_human_button">Αφήστε με να μπω!</string>
     <string name="trash_select_all">Επιλογή Όλων</string>
     <!-- Fix Start: Update location permission message -->
     <string name="location_permission_granted_manual_toggle">Η άδεια παραχωρήθηκε!</string>
@@ -1750,19 +1736,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="location_icon_description">Εικονίδιο Τοποθεσίας</string>
     <string name="location_embedding_icon_description">Εικονίδιο Ενσωμάτωσης Τοποθεσίας</string>
     <string name="app_icon_minimal" translatable="false">FadCam</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Σύρετε δεξιά για συνέχεια</string>
-    <string name="onboarding_select_language">Επιλέξτε γλώσσα εφαρμογής.</string>
-    <string name="onboarding_camera">Κάμερα</string>
-    <string name="onboarding_microphone">Μικρόφωνο</string>
-    <string name="onboarding_storage">Αποθηκευτικός Χώρος</string>
-    <string name="onboarding_or">Ή</string>
-    <string name="onboarding_and">ΚΑΙ</string>
-    <string name="onboarding_open_settings">Άνοιγμα Ρυθμίσεων</string>
-    <string name="onboarding_intro_line1">μια πολυμεσική συσκευή εγγραφής—</string>
-    <string name="onboarding_intro_line2">βίντεο παρασκηνίου, οθόνη &amp; ζωντανή ροή,</string>
-    <string name="onboarding_intro_line3">απομακρυσμένος έλεγχος κάμερας,</string>
-    <string name="onboarding_intro_line4">ανοιχτού κώδικα. χωρίς διαφημίσεις. δικό σου.</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Ταξινόμηση κατά</string>
     <string name="records_sort_helper">Επιλέξτε σειρά εγγραφών.</string>

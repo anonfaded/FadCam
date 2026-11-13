@@ -464,19 +464,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <!-- Fix End: Add onboarding toggle strings -->
 
     <string name="choose_language">Sprache auswählen</string>
-    <string name="language_change_later_note">Du kannst dies später in den Einstellungen ändern.</string>
-    <string name="permissions_required">Berechtigungen erforderlich</string>
-    <string name="permissions_description">FadCam benötigt Zugriff auf deine Kamera, dein Mikrofon und deinen Speicher, um Videos aufzunehmen und zu speichern.</string>
-    <string name="grant_permissions">Berechtigungen erteilen</string>
-    <string name="permissions_note">Du musst alle Berechtigungen erteilen, um fortzufahren.</string>
-    <string name="permissions_granted">Alle Berechtigungen erteilt!</string>
-    <string name="open_settings">Einstellungen öffnen</string>
-    <string name="disable_battery_optimization">Akku-Optimierung deaktivieren</string>
-    <string name="onboarding_human_title">Bestätige, dass du ein Mensch bist</string>
-    <string name="onboarding_human_desc">Hmmmm... also gut. Diese Regeln sind nicht verhandelbar. Wenn du nicht zustimmen kannst, deinstalliere FadCam bitte sofort.</string>
-    <string name="onboarding_human_checkbox1">Ich werde FadCam nicht benutzen, um Gesetze zu brechen, die Privatsphäre von irgendjemandem zu verletzen oder ein Spinner zu sein. Der Entwickler ist raus, wenn ich Mist baue. (Das geht auf meine Kappe.)</string>
-    <string name="onboarding_human_checkbox2">Ich liebe FadCam schon, bevor ich es überhaupt benutzt habe. (Nicht optional)</string>
-    <string name="onboarding_human_button">Lass mich rein!</string>
     <string name="trash_select_all">Alle auswählen</string>
     <!-- Fix Start: Update location permission message -->
     <string name="location_permission_granted_manual_toggle">Berechtigung erteilt! Du kannst jetzt Standortfunktionen in den Einstellungen aktivieren.</string>
@@ -563,18 +550,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="location_icon_description">Standort-Symbol</string>
     <string name="location_embedding_icon_description">Symbol für Standorteinbettung</string>
     <string name="app_icon_minimal" translatable="false">FadCam</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Wische nach rechts, um fortzufahren</string>
-    <string name="onboarding_select_language">Wähle deine bevorzugte App-Sprache.</string>
-    <string name="onboarding_camera">Kamera</string>
-    <string name="onboarding_microphone">Mikrofon</string>
-    <string name="onboarding_storage">Speicher</string>
-    <string name="onboarding_or">ODER</string>
-    <string name="onboarding_and">UND</string>
-    <string name="onboarding_open_settings">Einstellungen öffnen</string>
-    <string name="onboarding_intro_line1">Open Source,</string>
-    <string name="onboarding_intro_line2">werbefrei,</string>
-    <string name="onboarding_intro_line3">und für dich gemacht – nicht für Werbetreibende.</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Sortieren nach</string>
     <string name="sort_latest_first">Neueste zuerst</string>
@@ -1995,8 +1970,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="notification_stop_button_row_title">Stopp-Taste</string>
     <string name="notification_stop_button_visible">Sichtbar</string>
     <string name="notification_style_row_title">Benachrichtigungsstil</string>
-    <string name="onboarding_human_checkbox3">Ich stimme der Datenschutzrichtlinie zu</string>
-    <string name="onboarding_intro_line4">Open Source. Werbefrei. Deins.</string>
     <string name="pattern_morse_desc">Morsecode-Muster für fortgeschrittene Signalgebung</string>
     <string name="pattern_sos_desc">SOS-Morsecode-Muster: 3 kurze + 3 lange + 3 kurze Blitze</string>
     <string name="pattern_steady_desc">Dauerhaftes, gleichmäßiges Licht für normalen Taschenlampen-Gebrauch</string>

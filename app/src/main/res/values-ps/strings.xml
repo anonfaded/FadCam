@@ -319,31 +319,6 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="location_embedding_icon_description">Da Mawqeiyat Shamil Kawlo Icon</string>
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">Meharbaani wka da naway recording shoroo kolo na wrandy yaw lahza sabr wka</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">د دوام لپاره ښي خواته وښويئ</string>
-    <string name="onboarding_select_language">خپله خوښه د ایپ ژبه غوره کړئ.</string>
-    <string name="onboarding_camera">کامره</string>
-    <string name="onboarding_microphone">مایکروفون</string>
-    <string name="onboarding_storage">زېرمتون</string>
-    <string name="onboarding_or">یا</string>
-    <string name="onboarding_and">او</string>
-    <string name="onboarding_open_settings">تنظیمات خلاص کړئ</string>
-    <string name="onboarding_intro_line1">خلاص کوډ،</string>
-    <string name="onboarding_intro_line2">له اعلاناتو پرته،</string>
-    <string name="onboarding_intro_line3">او ستاسو لپاره جوړ شوی - نه د اعلان ورکوونکو لپاره.</string>
-    <string name="language_change_later_note">تاسو کولای شئ دا وروسته په تنظیماتو کې بدل کړئ.</string>
-    <string name="permissions_required">اجازې ته اړتیا ده</string>
-    <string name="permissions_description">FadCam د ویډیو ثبتولو او ساتلو لپاره ستاسو کامرې، مایکروفون، او زېرمتون ته لاسرسي ته اړتیا لري.</string>
-    <string name="grant_permissions">اجازې ورکړئ</string>
-    <string name="permissions_note">د دوام لپاره تاسو باید ټولې اجازې ورکړئ.</string>
-    <string name="permissions_granted">ټولې اجازې ورکړل شوې!</string>
-    <string name="open_settings">تنظیمات خلاص کړئ</string>
-    <string name="disable_battery_optimization">د بیټرۍ آپټیمایزيشن غیر فعاله کړئ</string>
-    <string name="onboarding_human_title">تصدیق کړئ که تاسو انسان یاست</string>
-    <string name="onboarding_human_desc">هممم... سمه ده. دا قواعد غیر قابل مذاکره دي. که تاسو نشئ منلی، مهرباني وکړئ FadCam همدا اوس له منځه یوسئ.</string>
-    <string name="onboarding_human_checkbox1">زه به FadCam د کوم قانون ماتولو، د چا محرمیت ته تېری کولو، یا د عجیبه کارونو لپاره نه کاروم. که چېرې زه غلطي وکړم، د پروګرام جوړوونکی مسؤل نه دی. (دا زما مسؤلیت دی).</string>
-    <string name="onboarding_human_checkbox2">زه لا له کارولو مخکې له FadCam سره مینه لرم. (اختیاري نه دی)</string>
-    <string name="onboarding_human_button">اجازه راکړئ ننوځم!</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Tartib ka</string>
     <string name="sort_latest_first">Tar tolo taza awalan</string>
@@ -1453,8 +1428,6 @@ Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programm
     <string name="notification_stop_button_row_title">Bandawalo Button</string>
     <string name="notification_stop_button_visible">Zaher</string>
     <string name="notification_style_row_title">Da Notification Style</string>
-    <string name="onboarding_human_checkbox3">Za da Privacy Policy sara mutafiq yam</string>
-    <string name="onboarding_intro_line4">open-source. ad-free. yours.</string>
     <string name="pattern_morse_desc">Morse code pattern for advanced signaling</string>
     <string name="pattern_sos_desc">SOS Morse code pattern: 3 lag + 3 loong + 3 lag flashes</string>
     <string name="pattern_steady_desc">Continuous steady light for normal flashlight use</string>

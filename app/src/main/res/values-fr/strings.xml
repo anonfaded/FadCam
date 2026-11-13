@@ -309,7 +309,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="setting_debug_title">Journalisation de Débogage</string>
     <string name="note_debug">Activer la génération de fichiers journaux de débogage \n(Par défaut: Désactivé)</string>
     <string name="note_debug_extra">Lorsqu\'activé, un fichier journal de débogage sera créé dans le dossier Téléchargements/FadCam. Cela peut aider à diagnostiquer les problèmes de l\'application.</string>
-    <!-- Onboarding Strings -->
+    <!-- Onboarding Settings -->
     <string name="setting_onboarding_title">Afficher l\'Introduction</string>
     <string name="note_onboarding">Activez pour voir la présentation de l\'application et le guide des permissions la prochaine fois que vous ouvrirez FadCam.</string>
     <!-- Auto Update Settings -->
@@ -327,31 +327,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="location_embedding_icon_description">Icône d\'intégration de localisation</string>
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">Veuillez patienter un moment avant de démarrer un nouvel enregistrement</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Glissez à droite pour continuer</string>
-    <string name="onboarding_select_language">Sélectionnez la langue de votre choix.</string>
-    <string name="onboarding_camera">Caméra</string>
-    <string name="onboarding_microphone">Microphone</string>
-    <string name="onboarding_storage">Stockage</string>
-    <string name="onboarding_or">OU</string>
-    <string name="onboarding_and">ET</string>
-    <string name="onboarding_open_settings">Ouvrir les paramètres</string>
-    <string name="onboarding_intro_line1">Open source,</string>
-    <string name="onboarding_intro_line2">sans publicités,</string>
-    <string name="onboarding_intro_line3">et créé pour vous — pas pour les annonceurs.</string>
-    <string name="language_change_later_note">Vous pourrez changer cela plus tard dans les Paramètres.</string>
-    <string name="permissions_required">Permissions Requises</string>
-    <string name="permissions_description">FadCam a besoin d\'accéder à votre caméra, microphone, et stockage pour enregistrer et sauvegarder des vidéos.</string>
-    <string name="grant_permissions">Accorder les Permissions</string>
-    <string name="permissions_note">Vous devez accorder toutes les permissions pour continuer.</string>
-    <string name="permissions_granted">Toutes les permissions accordées !</string>
-    <string name="open_settings">Ouvrir les Paramètres</string>
-    <string name="disable_battery_optimization">Désactiver l\'Optimisation de la Batterie</string>
-    <string name="onboarding_human_title">Vérifier si vous êtes humain</string>
-    <string name="onboarding_human_desc">Hmmmm… d\'accord. Ces règles sont non-négociables. Si vous ne pouvez pas accepter, veuillez désinstaller FadCam maintenant.</string>
-    <string name="onboarding_human_checkbox1">Je n\'utiliserai pas FadCam pour enfreindre des lois, envahir la vie privée de quiconque, ou avoir un comportement déplacé. Le développeur n\'est pas responsable si je fais une erreur. (C\'est ma responsabilité.)</string>
-    <string name="onboarding_human_checkbox2">J\'aime déjà FadCam avant même de l\'utiliser. (Non optionnel)</string>
-    <string name="onboarding_human_button">Laissez-moi entrer !</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Trier par</string>
     <string name="sort_latest_first">Plus récents d\'abord</string>
@@ -2477,8 +2452,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="choose_language">Choose Language</string>
 
-<string name="onboarding_human_checkbox3">I agree to the Privacy Policy</string>
-
 <string name="applock_set_pin_enable">Set PIN &amp; Enable</string>
 
 <string name="applock_helper_create">Create protection for the Records tab using a 4‑digit PIN, password, or fingerprint. It will auto‑lock when the app goes to background.</string>
@@ -2939,8 +2912,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="storage_helper_current_custom_uri_prefix">URI:</string>
 
 <string name="app_icon_minimal" translatable="false">FadCam</string>
-
-<string name="onboarding_intro_line4">open-source. ad-free. yours.</string>
 
 <string name="records_sort_helper">Choose how recordings are ordered in the list.</string>
 

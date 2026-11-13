@@ -311,31 +311,6 @@
     <string name="update_variation_2">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;已经过时了。&lt;br&gt;而&lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt;带着新功能和错误修复等待您的体验。升级以获得更好的体验！</string>
     <string name="update_variation_3">您的应用正在使用过去的&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;版本。&lt;br&gt;而&lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt;代表着未来——更快、更智能、更闪亮。何不加入呢？</string>
     <string name="update_variation_4">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;已经很好地为您服务，但&lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt;正在召唤您！&lt;br&gt;享受最新的改进和更流畅的体验——只需点击一下。</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">右滑继续</string>
-    <string name="onboarding_select_language">选择您偏好的应用语言。</string>
-    <string name="onboarding_camera">相机</string>
-    <string name="onboarding_microphone">麦克风</string>
-    <string name="onboarding_storage">存储</string>
-    <string name="onboarding_or">或者</string>
-    <string name="onboarding_and">以及</string>
-    <string name="onboarding_open_settings">打开设置</string>
-    <string name="onboarding_intro_line1">开源软件，</string>
-    <string name="onboarding_intro_line2">无广告，</string>
-    <string name="onboarding_intro_line3">为您而设计，而非广告商。</string>
-    <string name="language_change_later_note">您可以稍后在设置中更改此项。</string>
-    <string name="permissions_required">需要权限</string>
-    <string name="permissions_description">FadCam需要访问您的相机、麦克风和存储空间来录制和保存视频。</string>
-    <string name="grant_permissions">授予权限</string>
-    <string name="permissions_note">您必须授予所有权限才能继续。</string>
-    <string name="permissions_granted">所有权限已授予！</string>
-    <string name="open_settings">打开设置</string>
-    <string name="disable_battery_optimization">禁用电池优化</string>
-    <string name="onboarding_human_title">验证您是否为人类</string>
-    <string name="onboarding_human_desc">嗯... 好吧。这些规则是不可协商的。如果您不能同意，请立即卸载FadCam。</string>
-    <string name="onboarding_human_checkbox1">我不会使用FadCam违反任何法律、侵犯他人隐私或做令人不适的事情。如果我犯错，开发者概不负责。（那是我的责任。）</string>
-    <string name="onboarding_human_checkbox2">我在使用前就已经爱上了FadCam。（非可选）</string>
-    <string name="onboarding_human_button">让我进入！</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">排序方式</string>
     <string name="sort_latest_first">最新优先</string>
@@ -846,7 +821,6 @@
     <string name="kofi_button_text">请我喝杯咖啡 (Ko-fi)</string>
     <string name="kofi_footer_text">匠心打造于 FadSecLab</string>
     <string name="choose_language">选择语言</string>
-    <string name="onboarding_human_checkbox3">我同意隐私政策</string>
     <string name="applock_set_pin_enable">设置PIN码并启用</string>
     <string name="applock_helper_create">使用4位数字PIN码、密码或指纹为“录制”标签页创建保护。当应用进入后台时，该标签页将自动锁定。</string>
     <string name="applock_helper_manage_disabled">标签页锁定PIN码已设置。开启切换开关，即可在返回应用时要求输入PIN码。</string>
@@ -3199,7 +3173,6 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     </string-array>
 
 <!-- onboarding_intro_line4 -->
-<string name="onboarding_intro_line4">开源。无广告。属于你。</string>
 
 <!-- pattern_morse_desc -->
 <string name="pattern_morse_desc">用于高级信号传输的摩斯电码模式</string>

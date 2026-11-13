@@ -935,24 +935,6 @@
     <!-- Fix End: Add onboarding toggle strings -->
 
     <string name="choose_language">Выбрать язык</string>
-    <string name="language_change_later_note">Вы можете изменить это позже в Настройках.</string>
-
-    <string name="permissions_required">Требуются разрешения</string>
-    <string name="permissions_description">FadCam нужен доступ к вашей камере, микрофону и хранилищу для записи и сохранения видео.</string>
-    <string name="grant_permissions">Предоставить разрешения</string>
-    <string name="permissions_note">Вы должны предоставить все разрешения, чтобы продолжить.</string>
-    <string name="permissions_granted">Все разрешения предоставлены!</string>
-
-    <string name="open_settings">Открыть настройки</string>
-
-    <string name="disable_battery_optimization">Отключить оптимизацию батареи</string>
-
-    <string name="onboarding_human_title">Подтвердите, что вы человек</string>
-    <string name="onboarding_human_desc">Хммм... ладно. Эти правила не подлежат обсуждению. Если вы не можете согласиться, пожалуйста, удалите FadCam прямо сейчас.</string>
-    <string name="onboarding_human_checkbox1">Я не буду использовать FadCam для нарушения законов, вторжения в чью-либо приватность или быть creep\'ом. Разработчик вне картины, если я напортачу. (Это на мне.)</string>
-    <string name="onboarding_human_checkbox2">Я уже люблю FadCam ещё до использования. (Не опционально)</string>
-    <string name="onboarding_human_checkbox3">Я согласен с Политикой конфиденциальности</string>
-    <string name="onboarding_human_button">Впустите меня!</string>
 
 
 
@@ -1090,18 +1072,6 @@
 
     <string name="app_icon_minimal" translatable="false">FadCam</string>
 
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Проведите вправо для продолжения</string>
-    <string name="onboarding_select_language">Выберите предпочитаемый язык приложения.</string>
-    <string name="onboarding_camera">Камера</string>
-    <string name="onboarding_microphone">Микрофон</string>
-    <string name="onboarding_storage">Хранилище</string>
-    <string name="onboarding_or">ИЛИ</string>
-    <string name="onboarding_and">И</string>
-    <string name="onboarding_open_settings">Открыть настройки</string>
-    <string name="onboarding_intro_line1">Открытый исходный код,</string>
-    <string name="onboarding_intro_line2">без рекламы,</string>
-    <string name="onboarding_intro_line3">и создан для вас — не для рекламодателей.</string>
 
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Сортировать по</string>
@@ -2947,7 +2917,6 @@ FadCam использует фрагментированный формат MP4 
     <string name="motion_lab_footer">Настройте элементы управления выше, только если вам нужно особое поведение. Для большинства конфигураций настройки по умолчанию — самый безопасный и надёжный выбор.</string>
 
     <!-- Onboarding -->
-    <string name="onboarding_intro_line4">с открытым исходным кодом. без рекламы. ваш.</string>
 
     <!-- Patterns -->
     <string name="pattern_steady_desc">Постоянный ровный свет для обычного использования фонарика</string>

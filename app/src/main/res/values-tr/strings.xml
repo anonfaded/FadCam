@@ -399,31 +399,6 @@
     <string name="location_embedding_icon_description">Konum Gömme İkonu</string>
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">Yeni bir kayıt başlatmadan önce lütfen bir süre bekleyin</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Devam etmek için sağa kaydırın</string>
-    <string name="onboarding_select_language">Tercih ettiğiniz uygulama dilini seçin.</string>
-    <string name="onboarding_camera">Kamera</string>
-    <string name="onboarding_microphone">Mikrofon</string>
-    <string name="onboarding_storage">Depolama</string>
-    <string name="onboarding_or">VEYA</string>
-    <string name="onboarding_and">VE</string>
-    <string name="onboarding_open_settings">Ayarları Aç</string>
-    <string name="onboarding_intro_line1">Açık kaynak,</string>
-    <string name="onboarding_intro_line2">reklamsız,</string>
-    <string name="onboarding_intro_line3">ve reklamcılar için değil, sizin için oluşturuldu.</string>
-    <string name="language_change_later_note">Bunu daha sonra Ayarlar\'dan değiştirebilirsiniz.</string>
-    <string name="permissions_required">İzinler Gerekli</string>
-    <string name="permissions_description">FadCam, video kaydetmek ve kaydetmek için kameranıza, mikrofonunuza ve depolamanıza erişim gerektirir.</string>
-    <string name="grant_permissions">İzinleri Ver</string>
-    <string name="permissions_note">Devam etmek için tüm izinleri vermeniz gerekir.</string>
-    <string name="permissions_granted">Tüm izinler verildi!</string>
-    <string name="open_settings">Ayarları Aç</string>
-    <string name="disable_battery_optimization">Pil Optimizasyonunu Devre Dışı Bırak</string>
-    <string name="onboarding_human_title">İnsan olduğunuzu doğrulayın</string>
-    <string name="onboarding_human_desc">Hmmmm... tamam. Bu kurallar pazarlık edilemez. Kabul edemiyorsanız, lütfen FadCam\'i hemen kaldırın.</string>
-    <string name="onboarding_human_checkbox1">FadCam\'i herhangi bir yasayı çiğnemek, birinin mahremiyetine saldırmak veya ürkütücü olmak için kullanmayacağım. Eğer hata yaparsam, geliştirici sorumlu değildir. (Bu benim sorumluluğum.)</string>
-    <string name="onboarding_human_checkbox2">FadCam\'i kullanmadan önce bile seviyorum. (İsteğe bağlı değil)</string>
-    <string name="onboarding_human_button">İçeri girmeme izin ver!</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Sıralama Kriteri</string>
     <string name="sort_latest_first">En Yeniler Önce</string>
@@ -1971,7 +1946,6 @@
 <string name="kofi_button_text">Bana bir Ko-fi ısmarla</string>
 <string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
 <string name="choose_language">Dil Seç</string>
-<string name="onboarding_human_checkbox3">Gizlilik Politikası\'nı kabul ediyorum</string>
 <string name="applock_set_pin_enable">PIN Belirle &amp; Etkinleştir</string>
 <string name="applock_helper_create">Kayıtlar sekmesi için 4 haneli PIN, şifre veya parmak izi kullanarak koruma oluşturun. Uygulama arka plana geçtiğinde otomatik kilitlenir.</string>
 <string name="applock_helper_manage_disabled">Sekme Kilidi PIN\'i ayarlandı. Uygulamaya dönerken PIN\'i gerektirmek için açın.</string>
@@ -2165,7 +2139,6 @@
     <string name="storage_helper_current_custom_prefix">Mevcut özel klasör:</string>
     <string name="storage_helper_current_custom_uri_prefix">URI:</string>
     <string name="app_icon_minimal" translatable="false">FadCam</string>
-    <string name="onboarding_intro_line4">açık kaynak. reklamsız. senin.</string>
     <string name="records_sort_helper">Kayıtların listede nasıl sıralanacağını seçin.</string>
     <string name="records_sort_order_title">Sıralama düzeni</string>
     <string name="records_view_mode_title">Görüntüleme modu</string>
