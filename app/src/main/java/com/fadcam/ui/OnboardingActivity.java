@@ -65,6 +65,10 @@ public class OnboardingActivity extends AppIntro
     private ImageView dockNext;
     private ImageView dockDone;
     private View dockScrollHint;
+    private View dockContainer;
+    private int dockBaseBottom;
+    private int dockHeightPx;
+    private int scrollHintGapPx;
     private View scrollHintArrow;
     private android.animation.ObjectAnimator scrollHintArrowAnimator;
     private SquircleIndicatorController dockIndicator;
@@ -678,6 +682,33 @@ public class OnboardingActivity extends AppIntro
         if (scrollHintArrow != null) scrollHintArrow.setTranslationY(0f);
     }
 
+    /**
+     * Places the SCROLL cue immediately beside the dock, vertically centred with it.
+     * The dock itself never moves: the cue is translated out from its own centred slot.
+     * The dock and cue dimens shrink together on narrower width buckets, so the pair
+     * always fits without a fallback layout.
+     */
+    private void positionScrollHint() {
+        if (dockContainer == null || dockScrollHint == null) return;
+        if (dockScrollHint.getVisibility() != View.VISIBLE) return;
+        int dockWidth = dockContainer.getWidth();
+        int hintWidth = dockScrollHint.getWidth();
+        if (dockWidth <= 0 || hintWidth <= 0) return;
+
+        FrameLayout.LayoutParams lp =
+                (FrameLayout.LayoutParams) dockScrollHint.getLayoutParams();
+        if (lp.bottomMargin != dockBaseBottom) {
+            lp.bottomMargin = dockBaseBottom;
+            dockScrollHint.setLayoutParams(lp);
+        }
+        boolean rtl = getResources().getConfiguration().getLayoutDirection()
+                == View.LAYOUT_DIRECTION_RTL;
+        float offsetX = dockWidth / 2f + scrollHintGapPx + hintWidth / 2f;
+        dockScrollHint.setTranslationX(rtl ? -offsetX : offsetX);
+        dockScrollHint.setTranslationY(
+                (dockScrollHint.getHeight() - dockHeightPx) / 2f);
+    }
+
     private void setScrollHintVisible(boolean show) {
         if (dockScrollHint == null) return;
         if (show && !scrollHintVisible) {
@@ -686,19 +717,18 @@ public class OnboardingActivity extends AppIntro
             scrollHintVisible = true;
             if (animationsEnabled()) {
                 dockScrollHint.setAlpha(0f);
-                dockScrollHint.setTranslationY(dp(6));
-                dockScrollHint.animate().alpha(1f).translationY(0f)
+                dockScrollHint.animate().alpha(1f)
                         .setDuration(300L).setInterpolator(expoOut()).start();
             } else {
                 dockScrollHint.setAlpha(1f);
-                dockScrollHint.setTranslationY(0f);
             }
+            dockScrollHint.post(this::positionScrollHint);
             startScrollHintArrow();
         } else if (!show && scrollHintVisible) {
             stopScrollHintArrow();
             scrollHintVisible = false;
             if (animationsEnabled()) {
-                dockScrollHint.animate().alpha(0f).translationY(-dp(4))
+                dockScrollHint.animate().alpha(0f)
                         .setDuration(180L).setInterpolator(expoOut())
                         .withEndAction(() -> dockScrollHint.setVisibility(View.GONE)).start();
             } else {
@@ -747,10 +777,15 @@ public class OnboardingActivity extends AppIntro
         final int dotMargin = getResources().getDimensionPixelSize(
                 R.dimen.onboarding_dock_dot_margin);
         final int hintGap = getResources().getDimensionPixelSize(
-                R.dimen.onboarding_scroll_hint_bottom_gap);
+                R.dimen.onboarding_scroll_hint_gap);
+        final int hintPadH = getResources().getDimensionPixelSize(
+                R.dimen.onboarding_scroll_hint_pad_h);
+        final int hintPadV = getResources().getDimensionPixelSize(
+                R.dimen.onboarding_scroll_hint_pad_v);
         final float hintTextSize = getResources().getDimension(
                 R.dimen.onboarding_scroll_hint_text_size);
-        final int hintBottom = dockBottom + dockH + hintGap;
+        final float hintIconSize = getResources().getDimension(
+                R.dimen.onboarding_scroll_hint_icon_size);
 
         // Bottom fade: a separate full-width layer behind the dock so cards dissolve
         // into the navigation area. Added before the dock, so it can never cover it.
@@ -862,7 +897,7 @@ public class OnboardingActivity extends AppIntro
         hint.setGravity(Gravity.CENTER_VERTICAL);
         hint.setBackgroundResource(R.drawable.bg_onboarding_scroll_hint);
         hint.setElevation(dp(6));
-        hint.setPadding(dp(10), dp(5), dp(10), dp(5));
+        hint.setPadding(hintPadH, hintPadV, hintPadH, hintPadV);
         hint.setVisibility(View.GONE);
         hint.setContentDescription(getString(R.string.onboarding_scroll_hint));
         hint.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
@@ -879,7 +914,7 @@ public class OnboardingActivity extends AppIntro
         scrollHintArrow = chevron;
         chevron.setText("keyboard_arrow_down");
         chevron.setTypeface(ResourcesCompat.getFont(this, R.font.materialicons));
-        chevron.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
+        chevron.setTextSize(TypedValue.COMPLEX_UNIT_PX, hintIconSize);
         chevron.setTextColor(ContextCompat.getColor(this, R.color.pro_gold));
         chevron.setIncludeFontPadding(false);
         chevron.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
@@ -903,30 +938,32 @@ public class OnboardingActivity extends AppIntro
         FrameLayout.LayoutParams hintLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
-        hintLp.bottomMargin = hintBottom;
+        hintLp.bottomMargin = dockBottom;
         content.addView(hint, hintLp);
 
         dockBack = back;
         dockNext = next;
         dockDone = done;
         dockScrollHint = hint;
+        dockContainer = dock;
+        dockBaseBottom = dockBottom;
+        dockHeightPx = dockH;
+        scrollHintGapPx = hintGap;
+        View.OnLayoutChangeListener repositionHint =
+                (v, l, t, r, b, ol, ot, or, ob) -> positionScrollHint();
+        dock.addOnLayoutChangeListener(repositionHint);
+        hint.addOnLayoutChangeListener(repositionHint);
 
         ViewCompat.setOnApplyWindowInsetsListener(dock, (v, insets) -> {
             FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
             lp.bottomMargin = dockBottom + insets.getInsets(
                     WindowInsetsCompat.Type.systemBars()).bottom;
             v.setLayoutParams(lp);
-            return insets;
-        });
-        ViewCompat.setOnApplyWindowInsetsListener(hint, (v, insets) -> {
-            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
-            lp.bottomMargin = hintBottom + insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars()).bottom;
-            v.setLayoutParams(lp);
+            dockBaseBottom = lp.bottomMargin;
+            positionScrollHint();
             return insets;
         });
         ViewCompat.requestApplyInsets(dock);
-        ViewCompat.requestApplyInsets(hint);
 
         if (animationsEnabled()) {
             dock.setAlpha(0f);

@@ -100,7 +100,7 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
                 .cornerTicks(false)
                 // A touch lighter than the card surface, so the preview reads as a
                 // window inside the card instead of a black hole in it.
-                .background(0xFF0E0F0F)
+                .background(ContextCompat.getColor(requireContext(), R.color.onboarding_stage))
                 .line(0xFF3A3D3F)
                 .dim(0xFF6E7273)
                 .build();

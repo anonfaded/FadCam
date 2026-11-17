@@ -36,6 +36,20 @@
         <item name="android:textAllCaps">true</item>
     </style>
 
+    <!-- Showcase card heading: the mono face stays, but bold gives it a clear step above
+         the description without enlarging it out of the narrow column. -->
+    <style name="ProDossierCardTitle" parent="ProDossierValue">
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <!-- Showcase card description: a touch warmer and lighter than the shared body text
+         so it stays readable against the charcoal tile. -->
+    <style name="ProDossierCardBody" parent="ProDossierBody">
+        <item name="android:textColor">@color/onboarding_card_desc</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+    </style>
+
     <style name="ProDossierStamp">
         <item name="android:fontFamily">monospace</item>
         <item name="android:textSize">8.5sp</item>

@@ -186,7 +186,7 @@
     <dimen name="onboarding_human_icon">120dp</dimen>
     <dimen name="onboarding_demo_height">108dp</dimen>
     <dimen name="onboarding_card_title_size">12sp</dimen>
-    <dimen name="onboarding_card_desc_size">12sp</dimen>
+    <dimen name="onboarding_card_desc_size">12.5sp</dimen>
     <dimen name="onboarding_mini_demo_height">72dp</dimen>
     <dimen name="onboarding_mini_desc_size">11.5sp</dimen>
     <dimen name="onboarding_payoff_visual_height">210dp</dimen>
@@ -201,5 +201,8 @@
     <dimen name="onboarding_dock_padding">8dp</dimen>
     <dimen name="onboarding_scroll_hint_text_size">9sp</dimen>
     <dimen name="onboarding_bottom_fade_height">132dp</dimen>
-    <dimen name="onboarding_scroll_hint_bottom_gap">10dp</dimen>
+    <dimen name="onboarding_scroll_hint_gap">10dp</dimen>
+    <dimen name="onboarding_scroll_hint_pad_h">11dp</dimen>
+    <dimen name="onboarding_scroll_hint_pad_v">6dp</dimen>
+    <dimen name="onboarding_scroll_hint_icon_size">15sp</dimen>
 </resources>

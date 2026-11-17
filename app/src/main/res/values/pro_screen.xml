@@ -40,9 +40,16 @@
 
     <!-- Onboarding surfaces: nearly opaque charcoal tiles, a muted champagne hairline and
          one restrained warm halo shared by both slides. -->
-    <color name="onboarding_card_top">#141413</color>
-    <color name="onboarding_card_bottom">#0B0B0A</color>
+    <color name="onboarding_card_top">#141512</color>
+    <color name="onboarding_card_bottom">#111210</color>
     <color name="onboarding_card_stroke">#33C6A66A</color>
+    <!-- Solid 1dp hairline for the showcase cards. Kept separate from the agreement
+         border so the stronger card edge does not restyle Slide 04. -->
+    <color name="onboarding_card_stroke_solid">#514630</color>
+    <!-- The live preview sits on a slightly lifted charcoal so the illustration reads
+         before the card border does. -->
+    <color name="onboarding_stage">#191A17</color>
+    <color name="onboarding_card_desc">#BDB9B0</color>
     <color name="onboarding_link">#E4BF78</color>
     <color name="onboarding_success">#86D3A0</color>
     <color name="onboarding_mascot_glow_core">#70E8C77B</color>
