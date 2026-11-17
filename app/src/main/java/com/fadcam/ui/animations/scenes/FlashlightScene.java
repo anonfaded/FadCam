@@ -21,6 +21,22 @@ import com.fadcam.ui.animations.SceneFrame;
  */
 public final class FlashlightScene implements Scene {
 
+    /**
+     * The torch drawable is a 256-unit vector mapped into 8..64 x 4..60. Its head front
+     * face sits at 216/256 of that box, i.e. x = 8 + 56 * 216/256 = 55.25, with the gold
+     * ring spanning y 25..39.4. The beam must start there, not at the bounds edge, or it
+     * floats in front of the torch.
+     */
+    private static final float LENS_X = 55.25f;
+    private static final float LENS_Y = 32f;
+    /**
+     * Beam origin sits fractionally inside the lens so the glow reads as coming out of
+     * the torch instead of floating in front of it. The aperture is narrow at the lens
+     * and widens with distance, like a real reflector.
+     */
+    private static final float BEAM_X = LENS_X - 0.15f;
+    private static final float APERTURE = 3.6f;
+
     private static final Shader BEAM = new LinearGradient(55f, 0f, 120f, 0f,
             new int[]{0xFFFFF4DA, 0x00FFF4DA}, null, Shader.TileMode.CLAMP);
 
@@ -45,31 +61,32 @@ public final class FlashlightScene implements Scene {
         Paint paint = kit.paint;
         float glow = torchGlow(frame);
 
-        // Soft warm beam that fades out at the far end instead of a hard edge.
+        // Soft warm beam that leaves the lens and widens with distance. Every band
+        // starts at the lens, so no light spills out from behind the torch.
         paint.setStyle(Paint.Style.FILL);
         paint.setShader(BEAM);
         paint.setAlpha((int) (22f * glow));
         kit.path.reset();
-        kit.path.moveTo(55f, 20f);
+        kit.path.moveTo(BEAM_X, LENS_Y - APERTURE);
         kit.path.lineTo(120f, 0f);
         kit.path.lineTo(120f, 64f);
-        kit.path.lineTo(55f, 44f);
+        kit.path.lineTo(BEAM_X, LENS_Y + APERTURE);
         kit.path.close();
         canvas.drawPath(kit.path, paint);
         paint.setAlpha((int) (30f * glow));
         kit.path.reset();
-        kit.path.moveTo(55f, 24f);
+        kit.path.moveTo(BEAM_X, LENS_Y - APERTURE * 0.78f);
         kit.path.lineTo(116f, 6f);
         kit.path.lineTo(116f, 58f);
-        kit.path.lineTo(55f, 40f);
+        kit.path.lineTo(BEAM_X, LENS_Y + APERTURE * 0.78f);
         kit.path.close();
         canvas.drawPath(kit.path, paint);
         paint.setAlpha((int) (42f * glow));
         kit.path.reset();
-        kit.path.moveTo(56f, 28f);
+        kit.path.moveTo(BEAM_X, LENS_Y - APERTURE * 0.52f);
         kit.path.lineTo(110f, 14f);
         kit.path.lineTo(110f, 50f);
-        kit.path.lineTo(56f, 36f);
+        kit.path.lineTo(BEAM_X, LENS_Y + APERTURE * 0.52f);
         kit.path.close();
         canvas.drawPath(kit.path, paint);
         paint.setAlpha(255);
@@ -83,9 +100,14 @@ public final class FlashlightScene implements Scene {
             torch.setAlpha(255);
         }
         if (glow > 0.55f) {
+            // The hot spot is clipped to the lens, so it reads as the emitter rather
+            // than a halo painted over the torch body.
             paint.setStyle(Paint.Style.FILL);
             paint.setColor(AnimationMath.withAlpha(0xFFFFF4DA, (int) (80f * glow)));
-            canvas.drawCircle(59f, 32f, 4.5f, paint);
+            canvas.save();
+            canvas.clipRect(LENS_X - 2.4f, LENS_Y - 2.4f, LENS_X + 1.6f, LENS_Y + 2.4f);
+            canvas.drawCircle(BEAM_X, LENS_Y, 2.6f, paint);
+            canvas.restore();
         }
     }
 

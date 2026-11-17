@@ -35,43 +35,52 @@ public final class DashcamScene implements Scene {
         SceneStyle style = frame.style;
         Paint paint = kit.paint;
 
-        // Windshield first, so the dashboard and phone sit in front of it.
-        road.draw(kit, canvas, frame, 6f, 14f, 162f, 72f, false, 0f, 0f);
+        // Windshield fills the whole preview: cover-crop with no stage background at any
+        // edge. Filling the taller slot also makes the sky bigger in real pixels than the
+        // old letterboxed frame, while every element stays where it was composed.
+        float wideScale = Math.max(designWidth() / RoadView.DESIGN_W,
+                designHeight() / RoadView.DESIGN_H);
+        canvas.save();
+        canvas.clipRect(0f, 0f, designWidth(), designHeight());
+        canvas.translate((designWidth() - RoadView.DESIGN_W * wideScale) * 0.5f, 0f);
+        canvas.scale(wideScale, wideScale);
+        road.drawLocal(kit, canvas, frame);
+        canvas.restore();
 
         canvas.save();
         canvas.translate(84f, 46f);
         canvas.scale(1.25f, 1.25f);
         canvas.translate(-84f, -46f);
 
-        // Dashboard.
+        // Dashboard, edge to edge so it meets the card border on every side.
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(0xFF1C2227);
         kit.path.reset();
-        kit.path.moveTo(12f, 84f);
-        kit.path.lineTo(156f, 84f);
-        kit.path.lineTo(150f, 64f);
-        kit.path.cubicTo(120f, 58f, 48f, 58f, 18f, 64f);
+        kit.path.moveTo(0f, 92f);
+        kit.path.lineTo(168f, 92f);
+        kit.path.lineTo(168f, 65f);
+        kit.path.cubicTo(140f, 58f, 28f, 58f, 0f, 65f);
         kit.path.close();
         canvas.drawPath(kit.path, paint);
 
         // Leather top edge: the line the steering wheel centre rides on.
         paint.setColor(0xFF323B42);
         kit.path.reset();
-        kit.path.moveTo(18f, 64f);
-        kit.path.cubicTo(48f, 58f, 120f, 58f, 150f, 64f);
-        kit.path.lineTo(150f, 65.5f);
-        kit.path.cubicTo(120f, 59.5f, 48f, 59.5f, 18f, 65.5f);
+        kit.path.moveTo(0f, 65f);
+        kit.path.cubicTo(28f, 58f, 140f, 58f, 168f, 65f);
+        kit.path.lineTo(168f, 66.6f);
+        kit.path.cubicTo(140f, 59.6f, 28f, 59.6f, 0f, 66.6f);
         kit.path.close();
         canvas.drawPath(kit.path, paint);
 
         // Side vents.
-        kit.fillRound(canvas, 18f, 69f, 28f, 74f, 1.2f, 0xFF0B0E10);
-        kit.fillRound(canvas, 140f, 69f, 150f, 74f, 1.2f, 0xFF0B0E10);
+        kit.fillRound(canvas, 22f, 69f, 32f, 74f, 1.2f, 0xFF0B0E10);
+        kit.fillRound(canvas, 136f, 69f, 146f, 74f, 1.2f, 0xFF0B0E10);
         paint.setStrokeWidth(0.35f);
         paint.setColor(0x44FFFFFF);
         for (float y = 70.2f; y < 73.5f; y += 1.1f) {
-            canvas.drawLine(19f, y, 27f, y, paint);
-            canvas.drawLine(141f, y, 149f, y, paint);
+            canvas.drawLine(23f, y, 31f, y, paint);
+            canvas.drawLine(137f, y, 145f, y, paint);
         }
 
         // Centre AC vents.
@@ -99,11 +108,11 @@ public final class DashcamScene implements Scene {
                     0xFF2A3238);
         }
 
-        // Landscape phone on the left, so the road and car stay visible.
-        PhoneShell.draw(kit, canvas, 24f, 31f, 62f, 53f, 1f, 2f,
+        // Landscape phone on the left, sized up to fill the taller windshield.
+        PhoneShell.draw(kit, canvas, 20f, 28f, 66f, 55f, 1f, 2f,
                 0xFF101214, style.accent, 0.7f, 0xFF0E1317);
-        road.draw(kit, canvas, frame, 24f, 31f, 62f, 53f, false, 2f, 0.5f);
-        kit.dot(canvas, 26.2f, 33.2f, 0.9f,
+        road.draw(kit, canvas, frame, 20f, 28f, 66f, 55f, false, 2f, 0.5f);
+        kit.dot(canvas, 22.4f, 30.4f, 0.9f,
                 AnimationMath.withAlpha(style.alert,
                         (int) (255f * (0.22f + 0.78f * frame.pulse(3f)))));
 
@@ -111,8 +120,8 @@ public final class DashcamScene implements Scene {
         paint.setStyle(Paint.Style.STROKE);
         paint.setColor(AnimationMath.withAlpha(style.muted, 180));
         paint.setStrokeWidth(0.9f);
-        canvas.drawLine(43f, 53f, 43f, 64f, paint);
-        canvas.drawLine(33f, 64f, 53f, 64f, paint);
+        canvas.drawLine(43f, 55f, 43f, 66f, paint);
+        canvas.drawLine(33f, 66f, 53f, 66f, paint);
 
         // Steering wheel: centre on the leather line, top half over the glass.
         float steer = frame.ambient
