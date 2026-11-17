@@ -467,11 +467,15 @@ public class MainActivity extends AppCompatActivity {
         // Now that we know we're not showing onboarding, continue with normal
         // initialization
 
-        // Load and apply the saved language preference before anything else
+        // Apply only a language the user explicitly picked. With no saved choice the
+        // app keeps following the device language, including later device changes.
         SharedPreferences prefs = getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
-        String savedLanguageCode = prefs.getString(Constants.LANGUAGE_KEY, Locale.getDefault().getLanguage());
-
-        applyLanguage(savedLanguageCode); // Apply the language preference
+        String savedLanguageCode = prefs.getString(Constants.LANGUAGE_KEY, null);
+        if (savedLanguageCode != null && !savedLanguageCode.isEmpty()) {
+            applyLanguage(savedLanguageCode);
+        } else {
+            followSystemLanguage();
+        }
 
         // Check if current locale is Pashto
         if (getResources().getConfiguration().getLocales().get(0).getLanguage().equals("ps")) {
@@ -1231,6 +1235,18 @@ public class MainActivity extends AppCompatActivity {
         androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(desired);
     }
 
+    /**
+     * Clears any AppCompat per-app locale override so the app follows the device
+     * language. Used only while the user has never picked a language manually.
+     */
+    private void followSystemLanguage() {
+        if (!androidx.appcompat.app.AppCompatDelegate.getApplicationLocales().isEmpty()) {
+            FLog.d("MainActivity", "No saved language choice; following the device language.");
+            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                    androidx.core.os.LocaleListCompat.getEmptyLocaleList());
+        }
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -1607,11 +1623,15 @@ public class MainActivity extends AppCompatActivity {
         // Update badge visibility for new features
         updateFeatureBadgeVisibility();
 
-        // Restore language settings
+        // Restore language settings. A saved language is a manual choice and stays
+        // pinned; otherwise the app must keep following the device language.
         this.sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
-        String savedLanguageCode = sharedPreferencesManager.sharedPreferences.getString(Constants.LANGUAGE_KEY,
-                Locale.getDefault().getLanguage());
-        applyLanguage(savedLanguageCode);
+        String savedLanguageCode = sharedPreferencesManager.sharedPreferences.getString(Constants.LANGUAGE_KEY, null);
+        if (savedLanguageCode != null && !savedLanguageCode.isEmpty()) {
+            applyLanguage(savedLanguageCode);
+        } else {
+            followSystemLanguage();
+        }
 
         // Create shortcuts if needed (Android 7.1+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
