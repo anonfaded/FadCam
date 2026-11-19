@@ -2540,8 +2540,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
 
-<string name="app_icon_black_alias_label" translatable="false">\u0020</string>
-
 <string name="changelog_label">What\'s New</string>
 
 <string name="general">General</string>

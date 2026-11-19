@@ -488,7 +488,6 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="annotations">Annotashun</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
     <string name="app_icon_calculator" translatable="false">Calculator</string>
     <string name="app_icon_car" translatable="false">ClutchX</string>
     <string name="app_icon_clock" translatable="false">Clock</string>

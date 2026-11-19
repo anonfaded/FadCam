@@ -1021,7 +1021,6 @@
     <string name="app_icon_changed">Иконка приложения изменена</string>
     <string name="app_icon_preview">Превью иконки приложения</string>
     <!-- Launcher alias label for the Black icon: use a single space to appear blank -->
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
 
     <!-- Misc -->
     <string name="changelog_label">Что нового</string>

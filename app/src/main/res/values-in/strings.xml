@@ -1606,7 +1606,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_changed">Ikon aplikasi diubah</string>
     <string name="app_icon_preview">Pratinjau ikon aplikasi</string>
     <!-- Launcher alias label for the Black icon: use a single space to appear blank -->
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
 
     <!-- Misc -->
     <string name="changelog_label">Yang Baru</string>

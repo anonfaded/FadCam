@@ -1371,7 +1371,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="timer_custom_description">Gib die Anzahl der Minuten ein. Beispiele: 5 = 5 Minuten (300 Sekunden). Der Timer stoppt die Wiedergabe nach dieser Anzahl Minuten.</string>
     <string name="timer_custom_placeholder">z.B. 5 (Minuten)</string>
     <string name="about_version_update_licenses">Version, Update, Lizenzen</string>
-    <string name="app_icon_black_alias_label" translatable="false"> </string>
     <string name="applock_helper_create">Erstelle einen Schutz für den Aufnahmen-Tab mit einer 4-stelligen PIN, einem Passwort oder Fingerabdruck. Er wird automatisch gesperrt, wenn die App in den Hintergrund geht.</string>
     <string name="applock_helper_enabled">Tab-Sperre ist aktiv. Du benötigst die PIN beim Öffnen des Aufnahmen-Tabs nach Verlassen der App.</string>
     <string name="applock_helper_manage_disabled">Tab-Sperre-PIN ist festgelegt. Schalte sie ein, um die PIN bei der Rückkehr zur App zu benötigen.</string>

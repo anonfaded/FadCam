@@ -1502,7 +1502,6 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
     <string name="app_icon_changed">Rakenduse ikoon muudetud</string>
     <string name="app_icon_preview">Rakenduse ikooni eelvaade</string>
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
     <string name="changelog_label">Mis on uut</string>
     <string name="setting_auto_update_check_title">Automaatne uuenduste kontroll</string>
     <string name="note_auto_update_check">Kui lubatud, kontrollib FadCam uuendusi iga kord, kui rakenduse avad. Lülita välja, et keelata automaatne uuenduste kontrollimisel käivitamisel.\n(vaikimisi: sees)</string>

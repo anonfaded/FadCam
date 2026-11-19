@@ -1528,7 +1528,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="app_icon_changed">Το εικονίδιο άλλαξε</string>
     <string name="app_icon_preview">Προεπισκόπηση εικονιδίου</string>
     <!-- Launcher alias label for the Black icon: use a single space to appear blank -->
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
     <!-- Misc -->
     <string name="changelog_label">Τι Νέο</string>
     <!-- Fix Start: Add auto update check toggle strings -->
