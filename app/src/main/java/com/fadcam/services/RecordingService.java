@@ -133,6 +133,12 @@ public class RecordingService extends Service {
     private CameraCharacteristics currentCameraCharacteristics;
     private Surface previewSurface; // Surface from UI if preview enabled
     private boolean previewSurfaceAdded = false; // Flag to track if preview surface was added to session
+    /**
+     * Crop window currently applied via SCALER_CROP_REGION, in sensor coordinates.
+     * Null means no crop has been applied (full active array is visible). Used by
+     * tap-to-focus so the AF/AE region lands inside the visible field of view.
+     */
+    private android.graphics.Rect lastCropRegion = null;
 
     private LocationHelper locationHelper;
     private LocationGeocoder locationGeocoder;
@@ -949,6 +955,9 @@ public class RecordingService extends Service {
                                 activeArray);
                     }
                 }
+                // CONTROL_ZOOM_RATIO < 1 makes the active array represent the post-zoom FOV,
+                // so tap-to-focus must keep using the full active array here.
+                lastCropRegion = null;
 
                 captureRequestBuilder.set(
                         android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO,
@@ -991,6 +1000,7 @@ public class RecordingService extends Service {
                             cropLeft, cropTop, cropRight, cropBottom);
                     captureRequestBuilder.set(
                             android.hardware.camera2.CaptureRequest.SCALER_CROP_REGION, cropRegion);
+                    lastCropRegion = new android.graphics.Rect(cropRegion);
 
                     // On API ≥ 30 reset zoom ratio to 1 so crop is the sole zoom/pan mechanism
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -1013,6 +1023,9 @@ public class RecordingService extends Service {
 
             // Fallback: API ≥ 30 zoom-ratio only (no pan), or warn for older APIs
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // With CONTROL_ZOOM_RATIO != 1 the active array is the post-zoom FOV,
+                // so tap-to-focus must not apply the stale crop window.
+                lastCropRegion = null;
                 captureRequestBuilder.set(
                         android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO, clampedZoom);
                 captureSession.setRepeatingRequest(
@@ -1061,42 +1074,80 @@ public class RecordingService extends Service {
             return;
         }
 
-        float sensorNX = nx;
+        // The visible field of view is the current zoom/pan crop window, further
+        // cropped by the camera to the output stream's aspect ratio. Mapping straight
+        // to the active array would put the AF region outside what the user sees
+        // whenever zoom != 1 or the stream aspect differs from the sensor aspect.
+        Rect visibleRect = new Rect(lastCropRegion != null ? lastCropRegion : activeArray);
+        try {
+            if (sharedPreferencesManager != null) {
+                android.util.Size res = sharedPreferencesManager.getCameraResolution();
+                float streamAR = Math.max(res.getWidth(), res.getHeight())
+                        / (float) Math.max(1, Math.min(res.getWidth(), res.getHeight()));
+                float cropAR = visibleRect.width() / (float) Math.max(1, visibleRect.height());
+                if (cropAR > streamAR + 0.001f) {
+                    int w = Math.round(visibleRect.height() * streamAR);
+                    int left = visibleRect.left + (visibleRect.width() - w) / 2;
+                    visibleRect.set(left, visibleRect.top, left + w, visibleRect.bottom);
+                } else if (cropAR < streamAR - 0.001f) {
+                    int h = Math.round(visibleRect.width() / streamAR);
+                    int top = visibleRect.top + (visibleRect.height() - h) / 2;
+                    visibleRect.set(visibleRect.left, top, visibleRect.right, top + h);
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "tap-to-focus: stream aspect mapping failed: " + e.getMessage());
+        }
+
+        // A mirrored front preview shows the scene flipped, so mirror the tap too.
+        float displayNX = nx;
+        try {
+            if (sharedPreferencesManager != null
+                    && sharedPreferencesManager.getCameraSelection() == CameraType.FRONT
+                    && sharedPreferencesManager.isFrontVideoMirrorEnabled()) {
+                displayNX = 1f - nx;
+            }
+        } catch (Exception ignored) {
+        }
+
+        float sensorNX = displayNX;
         float sensorNY = ny;
         try {
             switch (getDisplayToSensorRotation()) {
                 case 90:
                     sensorNX = ny;
-                    sensorNY = 1f - nx;
+                    sensorNY = 1f - displayNX;
                     break;
                 case 180:
-                    sensorNX = 1f - nx;
+                    sensorNX = 1f - displayNX;
                     sensorNY = 1f - ny;
                     break;
                 case 270:
                     sensorNX = 1f - ny;
-                    sensorNY = nx;
+                    sensorNY = displayNX;
                     break;
                 default:
                     break; // 0°
             }
         } catch (Exception e) {
-            sensorNX = nx;
+            sensorNX = displayNX;
             sensorNY = ny;
         }
 
-        int x = activeArray.left + (int) (sensorNX * activeArray.width());
-        int y = activeArray.top + (int) (sensorNY * activeArray.height());
+        int x = visibleRect.left + Math.round(sensorNX * visibleRect.width());
+        int y = visibleRect.top + Math.round(sensorNY * visibleRect.height());
 
-        // Clamp coordinates to active array bounds before creating rectangle
+        // Clamp coordinates to the visible rect before creating the rectangle
         // This prevents IllegalArgumentException when normalized coords go out of bounds (>1.0)
-        x = Math.max(activeArray.left, Math.min(activeArray.right, x));
-        y = Math.max(activeArray.top, Math.min(activeArray.bottom, y));
+        x = Math.max(visibleRect.left, Math.min(visibleRect.right, x));
+        y = Math.max(visibleRect.top, Math.min(visibleRect.bottom, y));
 
-        FLog.d(TAG, "Mapped to sensor coords: " + x + ", " + y + " (active array: " + activeArray + ")");
+        FLog.d(TAG, "Mapped to sensor coords: " + x + ", " + y
+                + " (visible: " + visibleRect + ", active array: " + activeArray + ")");
 
-        // Create a small region around the tap point
-        int half = Math.max(10, Math.min(activeArray.width(), activeArray.height()) / 20);
+        // Create a small region around the tap point, sized from the visible field
+        // of view so it stays symmetric when zoomed in.
+        int half = Math.max(10, Math.min(visibleRect.width(), visibleRect.height()) / 20);
         Rect area = new Rect(
                 Math.max(activeArray.left, x - half),
                 Math.max(activeArray.top, y - half),
@@ -3875,7 +3926,11 @@ public class RecordingService extends Service {
      */
     private int getDisplayToSensorRotation() {
         int displayRotationDeg = getDisplayRotationDegrees();
-        int total = (getCurrentSensorOrientationDegrees() + displayRotationDeg) % 360;
+        // Matches GLWatermarkRenderer#getRequiredRotation(): the preview rotates the
+        // sensor image by (sensorOrientation - displayRotation) to look upright, so the
+        // inverse mapping used here must use the same signed difference. Using a sum
+        // flips the mapping by 180° when the device is held in landscape.
+        int total = ((getCurrentSensorOrientationDegrees() - displayRotationDeg) % 360 + 360) % 360;
         if (currentCameraCharacteristics != null) {
             Integer facing = currentCameraCharacteristics.get(
                     CameraCharacteristics.LENS_FACING);
@@ -6420,6 +6475,9 @@ public class RecordingService extends Service {
     private void createStandardSession(List<Surface> surfaces, int targetFrameRate,
             CameraCharacteristics characteristics, CameraType cameraType) {
         try {
+            // A fresh session starts from the full active array; drop any stale
+            // crop window from a previous session so tap-to-focus stays aligned.
+            lastCropRegion = null;
             // Create standard request builder
             captureRequestBuilder = cameraDevice.createCaptureRequest(
                     previewOnlyActive ? CameraDevice.TEMPLATE_PREVIEW : CameraDevice.TEMPLATE_RECORD);

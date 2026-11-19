@@ -5224,12 +5224,18 @@ public class HomeFragment extends BaseFragment {
                             int width = textureView.getWidth();
                             int height = textureView.getHeight();
                             if (width > 0 && height > 0) {
-                                float normalizedX = x / width;
-                                float normalizedY = y / height;
+                                com.fadcam.utils.camera.PreviewGeometry.Tap tap =
+                                        com.fadcam.utils.camera.PreviewGeometry.mapTap(
+                                                requireContext(), x, y, width, height);
+                                if (tap == null) {
+                                    // Tap landed on the letterbox/pillarbox bars, not on the
+                                    // camera image; focusing there would be misleading.
+                                    return true;
+                                }
                                 Intent tapToFocusIntent = RecordingControlIntents.tapToFocus(
                                     requireContext(),
-                                    normalizedX,
-                                    normalizedY
+                                    tap.nx,
+                                    tap.ny
                                 );
                                 requireContext().startService(tapToFocusIntent);
                                 showFocusIndicator(x, y);

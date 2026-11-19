@@ -638,9 +638,18 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
 
             if (tapToFocusEnabled && (isRecordingActive || isPreviewOnlyActive)) {
-                float normX = event.getX() / Math.max(1f, v.getWidth());
-                float normY = event.getY() / Math.max(1f, v.getHeight());
-                Intent intent = RecordingControlIntents.tapToFocus(this, normX, normY);
+                com.fadcam.utils.camera.PreviewGeometry.Tap tap =
+                        com.fadcam.utils.camera.PreviewGeometry.mapTap(
+                                this,
+                                event.getX(),
+                                event.getY(),
+                                v.getWidth(),
+                                v.getHeight());
+                if (tap == null) {
+                    // Tap landed on the letterbox/pillarbox bars.
+                    return true;
+                }
+                Intent intent = RecordingControlIntents.tapToFocus(this, tap.nx, tap.ny);
                 intent.setClass(this, getTargetServiceClass());
                 startService(intent);
                 showFocusIndicator(event.getX(), event.getY());
