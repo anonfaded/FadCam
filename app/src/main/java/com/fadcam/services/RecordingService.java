@@ -900,6 +900,13 @@ public class RecordingService extends Service {
             float minSupportedZoom = zoomRatioRange != null ? zoomRatioRange.getLower() : 1.0f;
             float maxSupportedZoom = zoomRatioRange != null ? zoomRatioRange.getUpper() : Math.max(1.0f, zoomRatio);
             float clampedZoom = Math.max(minSupportedZoom, Math.min(maxSupportedZoom, zoomRatio));
+            FLog.d(TAG, "applyZoomAndPan caps: requested=" + zoomRatio
+                    + " applied=" + clampedZoom
+                    + " min=" + minSupportedZoom
+                    + " max=" + maxSupportedZoom
+                    + " range=" + zoomRatioRange
+                    + " displayToSensor=" + getDisplayToSensorRotation()
+                    + " sensorOrientation=" + getCurrentSensorOrientationDegrees());
             float clampedPanX = Math.max(-1.0f, Math.min(1.0f, panX));
             float clampedPanY = Math.max(-1.0f, Math.min(1.0f, panY));
 
@@ -3867,13 +3874,7 @@ public class RecordingService extends Service {
      * coordinates.
      */
     private int getDisplayToSensorRotation() {
-        int displayRotationDeg = 0;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            android.view.Display display = getDisplay();
-            if (display != null) {
-                displayRotationDeg = 90 * display.getRotation();
-            }
-        }
+        int displayRotationDeg = getDisplayRotationDegrees();
         int total = (getCurrentSensorOrientationDegrees() + displayRotationDeg) % 360;
         if (currentCameraCharacteristics != null) {
             Integer facing = currentCameraCharacteristics.get(
@@ -3883,6 +3884,31 @@ public class RecordingService extends Service {
             }
         }
         return total % 360;
+    }
+
+    /**
+     * Rotation of the display the preview is shown on, in degrees.
+     *
+     * <p>{@link Context#getDisplay()} cannot be used here: a Service is not associated with a
+     * display, so the call throws {@link UnsupportedOperationException} (and it does not exist
+     * below API 30). The exception used to be swallowed, silently reporting 0° for every
+     * device, which transposed pan/tap coordinates by 90° on portrait-mounted sensors.
+     */
+    private int getDisplayRotationDegrees() {
+        try {
+            android.hardware.display.DisplayManager displayManager =
+                    (android.hardware.display.DisplayManager) getSystemService(DISPLAY_SERVICE);
+            if (displayManager != null) {
+                android.view.Display display =
+                        displayManager.getDisplay(android.view.Display.DEFAULT_DISPLAY);
+                if (display != null) {
+                    return 90 * display.getRotation();
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "getDisplayRotationDegrees failed: " + e.getMessage());
+        }
+        return 0;
     }
 
     private boolean shouldMirrorForensicsSnapshots() {
@@ -6762,6 +6788,7 @@ public class RecordingService extends Service {
     private void applyZoomSettings(CaptureRequest.Builder builder, CameraType cameraType) {
         // Get zoom ratio from settings for the specific camera type
         float zoomRatio = sharedPreferencesManager.getSpecificZoomRatio(cameraType);
+        FLog.d(TAG, "applyZoomSettings: type=" + cameraType + " savedZoom=" + zoomRatio);
 
         // Apply zoom ratio to the capture request
         // CONTROL_ZOOM_RATIO was added in Android 11 (API 30)

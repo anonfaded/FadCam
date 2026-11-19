@@ -2336,9 +2336,8 @@ public class HomeFragment extends BaseFragment {
 
         // The tray notification is asynchronous, but the card is modal. Only raise it at a
         // natural boundary - right after a recording finishes. If the user does not record,
-        // fall back to the first Home visit after day six of the cycle. Design mode still
-        // previews the card on Home so the layout can be worked on.
-        if (!ProReminderManager.isDesignMode(requireContext()) && !proReminderAfterRecording) {
+        // fall back to the first Home visit after day six of the cycle.
+        if (!proReminderAfterRecording) {
             long fallbackAt = ProReminderManager.getCardFallbackAt(requireContext());
             if (fallbackAt <= 0L || System.currentTimeMillis() < fallbackAt) {
                 return;
@@ -8824,6 +8823,8 @@ public class HomeFragment extends BaseFragment {
                     SharedPreferencesManager.getInstance(requireContext());
                 CameraType currentCamera = sp.getCameraSelection();
 
+                com.fadcam.utils.camera.ZoomCapabilities.logCameraReportOnce(requireContext());
+
                 // Build zoom options using the same logic as VideoSettingsFragment
                 List<Float> zoomRatios = buildZoomRatioOptions(currentCamera);
                 if (zoomRatios.isEmpty()) {
@@ -8836,6 +8837,11 @@ public class HomeFragment extends BaseFragment {
                 }
 
                 float currentZoom = sp.getSpecificZoomRatio(currentCamera);
+                boolean showZoomOutBanner =
+                    com.fadcam.utils.camera.ZoomCapabilities.shouldShowZoomOutBanner(
+                        requireContext(), currentCamera);
+                com.fadcam.utils.camera.ZoomCapabilities.logZoomDecision(
+                    requireContext(), currentCamera, showZoomOutBanner);
 
                 com.fadcam.ui.picker.PickerBottomSheetFragment zoomSlider =
                     com.fadcam.ui.picker.PickerBottomSheetFragment.newInstanceSliderZoom(
@@ -8845,6 +8851,11 @@ public class HomeFragment extends BaseFragment {
                         Constants.RK_ZOOM_RATIO,
                         getString(R.string.zoom_slider_helper)
                     );
+                if (showZoomOutBanner) {
+                    zoomSlider.getArguments().putString(
+                        com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_BANNER_TEXT,
+                        getString(R.string.zoom_lens_unavailable_banner));
+                }
                 zoomSlider.show(
                     getParentFragmentManager(),
                     "zoom_slider_sheet"
@@ -8864,17 +8875,8 @@ public class HomeFragment extends BaseFragment {
      * Uses the same logic as VideoSettingsFragment to ensure consistency.
      */
     private List<Float> buildZoomRatioOptions(CameraType cam) {
-        List<Float> list = new ArrayList<>();
-        float max = getHardwareSupportedMaxZoomRatio(cam);
-
-        for (float z = 0.5f; z <= max + 0.001f; z += 0.5f) {
-            list.add(((float) Math.round(z * 10)) / 10f);
-        }
-        if (!list.contains(1.0f)) {
-            list.add(1.0f);
-        }
-        Collections.sort(list);
-        return list;
+        return com.fadcam.utils.camera.ZoomCapabilities.buildZoomRatioOptions(
+                getHardwareSupportedMaxZoomRatio(cam));
     }
 
     private void applyPreviewPinchZoom(float scaleFactor, float focusX, float focusY) {

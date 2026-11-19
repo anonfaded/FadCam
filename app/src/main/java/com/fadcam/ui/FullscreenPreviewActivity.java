@@ -1270,6 +1270,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         if (tileZoom != null) {
             tileZoom.setOnClickListener(v -> {
                 CameraType currentCam = prefs.getCameraSelection();
+                com.fadcam.utils.camera.ZoomCapabilities.logCameraReportOnce(this);
                 List<Float> zoomRatios = buildZoomRatioOptions(currentCam);
                 if (zoomRatios.isEmpty()) {
                     Toast.makeText(this, getString(R.string.zoom_not_available_toast),
@@ -1277,9 +1278,19 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                     return;
                 }
                 float currentZoom = prefs.getSpecificZoomRatio(currentCam);
+                boolean showZoomOutBanner =
+                        com.fadcam.utils.camera.ZoomCapabilities.shouldShowZoomOutBanner(
+                                this, currentCam);
+                com.fadcam.utils.camera.ZoomCapabilities.logZoomDecision(
+                        this, currentCam, showZoomOutBanner);
                 PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceSliderZoom(
                         getString(R.string.zoom_slider_title), zoomRatios, currentZoom,
                         Constants.RK_ZOOM_RATIO, getString(R.string.zoom_slider_helper));
+                if (showZoomOutBanner) {
+                    sheet.getArguments().putString(
+                            PickerBottomSheetFragment.ARG_BANNER_TEXT,
+                            getString(R.string.zoom_lens_unavailable_banner));
+                }
                 sheet.show(getSupportFragmentManager(), "zoom_slider_sheet");
             });
         }
@@ -1404,14 +1415,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     @NonNull
     private List<Float> buildZoomRatioOptions(CameraType cam) {
-        List<Float> list = new ArrayList<>();
-        float max = getMaxZoomRatio(cam);
-        for (float z = 0.5f; z <= max + 0.001f; z += 0.5f) {
-            list.add(((float) Math.round(z * 10)) / 10f);
-        }
-        if (!list.contains(1.0f)) list.add(1.0f);
-        Collections.sort(list);
-        return list;
+        return com.fadcam.utils.camera.ZoomCapabilities.buildZoomRatioOptions(
+                getMaxZoomRatio(cam));
     }
 
     private void applyPinchZoom(float scaleFactor) {

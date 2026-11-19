@@ -4792,4 +4792,5 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="onboarding_open_settings">Ouvrir les paramètres</string>
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">Salut !</string>
+    <string name="zoom_lens_unavailable_banner">Ce téléphone n\'expose pas son appareil ultra grand-angle aux applications. Un zoom inférieur à 1.0x restera à 1.0x.</string>
 </resources>

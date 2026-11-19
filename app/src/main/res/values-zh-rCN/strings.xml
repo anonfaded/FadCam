@@ -5052,4 +5052,5 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <string name="onboarding_open_settings">打开设置</string>
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">嗨！</string>
+    <string name="zoom_lens_unavailable_banner">此手机未向应用开放超广角摄像头。低于 1.0x 的变焦将保持在 1.0x。</string>
 </resources>

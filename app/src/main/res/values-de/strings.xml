@@ -3079,4 +3079,5 @@ Für immer dein.</string>
     <string name="onboarding_open_settings">Einstellungen öffnen</string>
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">Hallo!</string>
+    <string name="zoom_lens_unavailable_banner">Dieses Telefon stellt seine Ultraweitwinkelkamera Apps nicht zur Verfügung. Zoom unter 1.0x bleibt bei 1.0x.</string>
 </resources>

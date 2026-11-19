@@ -3122,4 +3122,5 @@ Tue per sempre.</string>
     <string name="onboarding_open_settings">Apri impostazioni</string>
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">Ciao!</string>
+    <string name="zoom_lens_unavailable_banner">Questo telefono non espone la fotocamera ultra-grandangolare alle app. Lo zoom sotto 1.0x resterà a 1.0x.</string>
 </resources>

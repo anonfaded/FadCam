@@ -3238,4 +3238,5 @@ Tuyas para siempre.</string>
     <string name="onboarding_open_settings">Abrir ajustes</string>
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">¡Hola!</string>
+    <string name="zoom_lens_unavailable_banner">Este teléfono no expone su cámara ultraangular a las apps. El zoom por debajo de 1.0x se quedará en 1.0x.</string>
 </resources>

@@ -22,7 +22,6 @@ public final class ProReminderScheduler {
 
     public static void ensureScheduled(Context context) {
         if (!ProReminderManager.isSupported()
-                || ProReminderManager.isDesignMode(context)
                 || ProReminderManager.isUnsupportedSurface(context)) return;
         long next = ProReminderManager.getNextEligibleAt(context);
         long now = System.currentTimeMillis();

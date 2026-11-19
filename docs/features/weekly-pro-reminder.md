@@ -57,14 +57,6 @@ later, put it in `INTRO_NOTIFICATION_*`.
 Selection is a single check on `completed_at`; do not rely on array order. Reinstall, cleared
 data and abandoned cards all keep `completed_at` at zero, so they stay on intro copy. The
 first CONTINUE resets the rotation cursor so the return pool starts at its first variation.
-Design mode previews the intro card and all six return cards in order.
-
-## Design mode (debug builds only)
-
-Debug builds show the reminder card on every safe Home visit so the design can be worked on.
-Design mode does not post notifications and does not start the 7-day clock. It is on by
-default in debug builds. The setting is `pro_reminder_design_mode`; set it to `false` to
-test the real timing. Release builds ignore it.
 
 ## Where it lives
 
@@ -83,8 +75,8 @@ test the real timing. Release builds ignore it.
 
 - Debug package: `com.fadcam.beta`.
 - Install: `./gradlew :app:installDefaultDebug`.
-- Design mode is on by default. To test the real notification, set
-  `pro_reminder_design_mode=false`, make a cycle due, and open Home. The notification posts on
-  open; the card waits until a recording has been stopped.
+- Debug and release builds use the same cadence. To test the notification, make a cycle due
+  and open Home. The notification posts on open; the card waits until a recording has been
+  stopped.
 - The card never shows while recording, previewing, taking a photo, or when another
   dialog/sheet is open. It also stays away on watches, TVs and cars.

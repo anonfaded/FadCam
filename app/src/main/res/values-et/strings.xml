@@ -3138,4 +3138,5 @@ Igavesti sinu.</string>
     <string name="onboarding_open_settings">Ava seaded</string>
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">Tere!</string>
+    <string name="zoom_lens_unavailable_banner">See telefon ei ava rakendustele oma ülilainurkkaamerat. Alla 1.0x suumimine jääb 1.0x peale.</string>
 </resources>

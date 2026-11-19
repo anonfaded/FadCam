@@ -3179,4 +3179,5 @@ Da tase da hamisha paara.</string>
     <string name="onboarding_open_settings">Settings Khola</string>
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">Helo!</string>
+    <string name="zoom_lens_unavailable_banner">دا تلیفون خپله پراخه کمره اپلیکیشنونو ته نه ښیي. له 1.0x څخه ټیټ زوم به 1.0x پاتې شي.</string>
 </resources>

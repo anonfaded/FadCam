@@ -1616,14 +1616,17 @@ public class VideoSettingsFragment extends Fragment {
     // ---- Zoom Ratio Migration ----
     private void showZoomRatioBottomSheet() {
         CameraType cam = prefs.getCameraSelection();
+        com.fadcam.utils.camera.ZoomCapabilities.logCameraReportOnce(requireContext());
         List<Float> ratios = buildZoomRatioOptions(cam);
         if (ratios.isEmpty())
             return;
         float current = prefs.getSpecificZoomRatio(cam);
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
-        String currentId = String.format(Locale.getDefault(), "%.1f", current);
+        // IDs must be locale-independent: the picker sends them back and the
+        // result listener parses them with Float.parseFloat, which only accepts '.'.
+        String currentId = String.format(Locale.US, "%.1f", current);
         for (Float r : ratios) {
-            items.add(new com.fadcam.ui.picker.OptionItem(String.format(Locale.getDefault(), "%.1f", r),
+            items.add(new com.fadcam.ui.picker.OptionItem(String.format(Locale.US, "%.1f", r),
                     String.format(Locale.getDefault(), "%.1fx", r)));
         }
         final String resultKey = "picker_result_zoom_ratio";
@@ -1642,22 +1645,25 @@ public class VideoSettingsFragment extends Fragment {
         });
         // Create dynamic helper text explaining auto-selection behavior
         String helper = createZoomHelperText(cam);
+        boolean showZoomOutBanner =
+                com.fadcam.utils.camera.ZoomCapabilities.shouldShowZoomOutBanner(
+                        requireContext(), cam);
+        com.fadcam.utils.camera.ZoomCapabilities.logZoomDecision(
+                requireContext(), cam, showZoomOutBanner);
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstance(
                         getString(R.string.setting_zoom_ratio_title), items, currentId, resultKey, helper);
+        if (showZoomOutBanner) {
+            sheet.getArguments().putString(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_BANNER_TEXT,
+                    getString(R.string.zoom_lens_unavailable_banner));
+        }
         sheet.show(getParentFragmentManager(), "zoom_ratio_picker");
     }
 
     private List<Float> buildZoomRatioOptions(CameraType cam) {
-        List<Float> list = new ArrayList<>();
-        float max = getHardwareSupportedMaxZoomRatio(cam);
-        for (float z = 0.5f; z <= max + 0.001f; z += 0.5f) {
-            list.add(((float) Math.round(z * 10)) / 10f);
-        }
-        if (!list.contains(1.0f))
-            list.add(1.0f);
-        java.util.Collections.sort(list);
-        return list;
+        return com.fadcam.utils.camera.ZoomCapabilities.buildZoomRatioOptions(
+                getHardwareSupportedMaxZoomRatio(cam));
     }
 
     private float getHardwareSupportedMaxZoomRatio(CameraType cam) {

@@ -3034,4 +3034,5 @@ Sonsuza dek senin.</string>
     <string name="onboarding_open_settings">Ayarları aç</string>
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">Merhaba!</string>
+    <string name="zoom_lens_unavailable_banner">Bu telefon ultra geniş açılı kamerasını uygulamalara açmıyor. 1.0x altındaki yakınlaştırma 1.0x\'te kalır.</string>
 </resources>

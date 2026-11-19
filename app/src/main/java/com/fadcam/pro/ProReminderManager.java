@@ -27,14 +27,10 @@ import java.util.concurrent.TimeUnit;
  * A claim that was never completed is dropped when a new process starts, so killing the app
  * before Continue makes the prompt eligible again on the next safe Home visit.
  *
- * <p>{@link #DESIGN_ALWAYS_SHOW} keeps the current preview build showing the dialog on every
- * Home visit. Set it to {@code false} (or remove the debug clause) to switch to the real
- * three-day/first-recording + seven-day cadence.
+ * <p>The cadence is three days after first install plus one finished recording, then one week
+ * per completed cycle, with a six-day card fallback for users who stop recording.
  */
 public final class ProReminderManager {
-
-    /** Preview switch: every Home visit. Must be false for production. */
-    private static final boolean DESIGN_ALWAYS_SHOW = BuildConfig.DEBUG;
 
     private static final long DAY_MS = TimeUnit.DAYS.toMillis(1);
     private static final long WEEK_MS = TimeUnit.DAYS.toMillis(7);
@@ -64,8 +60,6 @@ public final class ProReminderManager {
     private static final String K_CLAIMED_COPY = "pro_reminder_claimed_copy";
     private static final String K_AFTER_PRO_PENDING = "pro_reminder_after_pro_pending";
     private static final String K_PRO_OPENED_AT = "pro_reminder_pro_opened_at";
-    private static final String K_DESIGN_COPY = "pro_reminder_design_copy";
-    private static final String K_DESIGN_MODE = "pro_reminder_design_mode";
     private static final String K_HAS_RECORDING = "pro_reminder_has_recording";
     private static final String K_BACK_TOAST_INDEX = "pro_reminder_back_toast_index";
 
@@ -135,16 +129,6 @@ public final class ProReminderManager {
     }
 
     /**
-     * Current preview behaviour: every Home visit instead of the weekly gate. Debug builds
-     * default to on; QA can toggle {@code pro_reminder_design_mode} to compare with the real
-     * cadence. Release builds ignore it because {@link #DESIGN_ALWAYS_SHOW} is false.
-     */
-    public static boolean isDesignMode(Context context) {
-        return isSupported() && DESIGN_ALWAYS_SHOW
-                && prefs(context).getBoolean(K_DESIGN_MODE, true);
-    }
-
-    /**
      * Called once per process from {@link com.fadcam.FadCamApplication}. A claim from a
      * previous process was never completed (otherwise it would have been cleared), so drop it.
      */
@@ -182,7 +166,6 @@ public final class ProReminderManager {
             long now = System.currentTimeMillis();
             if (isClaimValid(p, now)) return false;
             if (p.getBoolean(K_AFTER_PRO_PENDING, false)) return false;
-            if (isDesignMode(context)) return true;
 
             long completed = p.getLong(K_COMPLETED_AT, 0L);
             if (completed <= 0L) return firstEligible(context, p);
@@ -207,20 +190,13 @@ public final class ProReminderManager {
         synchronized (LOCK) {
             if (!shouldShowDialog(context)) return -1;
             SharedPreferences p = prefs(context);
-            boolean design = isDesignMode(context);
-            int designCopyCount = 1 + RETURN_TITLES.length;
-            int copy = design
-                    ? Math.floorMod(p.getInt(K_DESIGN_COPY, 0), designCopyCount)
-                    : Math.floorMod(p.getInt(K_COPY_INDEX, 0), COPY_COUNT);
+            int copy = Math.floorMod(p.getInt(K_COPY_INDEX, 0), COPY_COUNT);
             long now = System.currentTimeMillis();
             boolean saved = p.edit()
                     .putLong(K_CLAIMED_AT, now)
                     .putInt(K_CLAIMED_COPY, copy)
                     .commit();
             if (!saved) return -1;
-            if (design) {
-                p.edit().putInt(K_DESIGN_COPY, (copy + 1) % designCopyCount).apply();
-            }
             return copy;
         }
     }
@@ -236,39 +212,34 @@ public final class ProReminderManager {
     /** Continue was pressed and the Pro screen opened. Start the next seven-day cycle. */
     public static boolean completePresentation(Context context) {
         if (!isSupported()) return false;
-        boolean design;
         synchronized (LOCK) {
             SharedPreferences p = prefs(context);
             long now = System.currentTimeMillis();
-            design = isDesignMode(context);
             SharedPreferences.Editor editor = p.edit()
                     .putLong(K_CLAIMED_AT, 0L)
                     .putInt(K_CLAIMED_COPY, 0)
                     .putBoolean(K_AFTER_PRO_PENDING, true)
                     .putLong(K_PRO_OPENED_AT, now);
-            if (!design) {
-                // The first CONTINUE switches from intro copy to return copy. Start that pool
-                // at its first variation instead of carrying the intro cursor over.
-                boolean firstCompletion = p.getLong(K_COMPLETED_AT, 0L) <= 0L;
-                int currentCopy = Math.floorMod(p.getInt(K_COPY_INDEX, 0), COPY_COUNT);
-                int claimedCopy = p.getInt(K_CLAIMED_COPY, -1);
-                int nextCopy = firstCompletion
-                        ? 0
-                        : (claimedCopy >= 0
-                                ? (claimedCopy + 1) % COPY_COUNT
-                                : (currentCopy + 1) % COPY_COUNT);
-                editor.putLong(K_COMPLETED_AT, now)
-                        .putLong(K_NEXT_ELIGIBLE_AT, now + WEEK_MS)
-                        .putInt(K_COPY_INDEX, nextCopy)
-                        .putBoolean(K_NOTIFICATION_SENT, false)
-                        .putLong(K_NOTIFICATION_POSTED_AT, 0L);
-            }
+            // The first CONTINUE switches from intro copy to return copy. Start that pool
+            // at its first variation instead of carrying the intro cursor over.
+            boolean firstCompletion = p.getLong(K_COMPLETED_AT, 0L) <= 0L;
+            int currentCopy = Math.floorMod(p.getInt(K_COPY_INDEX, 0), COPY_COUNT);
+            int claimedCopy = p.getInt(K_CLAIMED_COPY, -1);
+            int nextCopy = firstCompletion
+                    ? 0
+                    : (claimedCopy >= 0
+                            ? (claimedCopy + 1) % COPY_COUNT
+                            : (currentCopy + 1) % COPY_COUNT);
+            editor.putLong(K_COMPLETED_AT, now)
+                    .putLong(K_NEXT_ELIGIBLE_AT, now + WEEK_MS)
+                    .putInt(K_COPY_INDEX, nextCopy)
+                    .putBoolean(K_NOTIFICATION_SENT, false)
+                    .putLong(K_NOTIFICATION_POSTED_AT, 0L);
             if (!editor.commit()) return false;
         }
-        // Design mode is a UI preview: it must not start the real weekly clock or touch the
-        // real notification state. Leave the tray notification alone in a real cycle: the user
-        // may tap it or swipe it away. The next cycle reuses the same ID and replaces it.
-        if (!design) ProReminderScheduler.ensureScheduled(context);
+        // Leave the tray notification alone in a real cycle: the user may tap it or swipe it
+        // away. The next cycle reuses the same ID and replaces it.
+        ProReminderScheduler.ensureScheduled(context);
         return true;
     }
 
@@ -307,8 +278,7 @@ public final class ProReminderManager {
     }
 
     public static boolean shouldPostNotification(Context context) {
-        if (!isSupported() || isDesignMode(context)
-                || isUnsupportedSurface(context)) return false;
+        if (!isSupported() || isUnsupportedSurface(context)) return false;
         if (!notificationsEnabled(context)) return false;
         synchronized (LOCK) {
             SharedPreferences p = prefs(context);
@@ -384,20 +354,11 @@ public final class ProReminderManager {
 
     public static DialogCopy getDialogCopy(Context context, int copyIndex) {
         String age = getAgeText(context);
-        DialogCopy intro = new DialogCopy(
-                context.getString(INTRO_TITLE),
-                context.getString(INTRO_SUBTITLE, age));
-        if (isDesignMode(context)) {
-            // Design mode previews both pools in order: intro first, then return.
-            int total = 1 + RETURN_TITLES.length;
-            int designIndex = Math.floorMod(copyIndex, total);
-            if (designIndex == 0) return intro;
-            int index = designIndex - 1;
+        if (!hasCompletedCycle(prefs(context))) {
             return new DialogCopy(
-                    context.getString(RETURN_TITLES[index]),
-                    context.getString(RETURN_SUBTITLES[index], age));
+                    context.getString(INTRO_TITLE),
+                    context.getString(INTRO_SUBTITLE, age));
         }
-        if (!hasCompletedCycle(prefs(context))) return intro;
         int index = Math.floorMod(copyIndex, RETURN_TITLES.length);
         return new DialogCopy(
                 context.getString(RETURN_TITLES[index]),
