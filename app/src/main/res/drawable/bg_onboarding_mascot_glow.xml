@@ -1,15 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Warm halo behind the Slide 1 mascot. The oval and the radius (slightly less
-     than half the box) guarantee the falloff ends inside the drawable, so it can
-     never show a rectangular clip. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <gradient
-        android:centerX="0.5"
-        android:centerY="0.5"
-        android:endColor="#00000000"
-        android:centerColor="@color/onboarding_mascot_glow_mid"
-        android:gradientRadius="72dp"
-        android:startColor="@color/onboarding_mascot_glow_core"
-        android:type="radial" />
-</shape>
+<!-- Warm halo behind the Slide 1 mascot.
+
+     The host box is 156x142dp. The 7dp side insets make the halo a true circle
+     centred on the mascot instead of a wide ellipse, and the gradient radius ends
+     well inside that circle so the falloff reaches full transparency before any
+     bound is hit — no rectangular or oval clip, no hard rim.
+
+     Dithering keeps the low-alpha tail smooth on 8-bit panels instead of banding
+     into visible rings. The gradient is static; the mascot animates on top. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:left="7dp"
+        android:right="7dp">
+        <shape
+            android:shape="oval"
+            android:dither="true">
+            <gradient
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:endColor="#00000000"
+                android:centerColor="@color/onboarding_mascot_glow_mid"
+                android:gradientRadius="63dp"
+                android:startColor="@color/onboarding_mascot_glow_core"
+                android:type="radial" />
+        </shape>
+    </item>
+</layer-list>

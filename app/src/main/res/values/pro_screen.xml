@@ -52,8 +52,8 @@
     <color name="onboarding_card_desc">#BDB9B0</color>
     <color name="onboarding_link">#E4BF78</color>
     <color name="onboarding_success">#86D3A0</color>
-    <color name="onboarding_mascot_glow_core">#70E8C77B</color>
-    <color name="onboarding_mascot_glow_mid">#3DE8C77B</color>
+    <color name="onboarding_mascot_glow_core">#6BE8C77B</color>
+    <color name="onboarding_mascot_glow_mid">#3AE8C77B</color>
 
     <!-- One feature row of the bundle card: small outline glyph, typed label. -->
     <style name="ProShowcaseFeatureIcon">
