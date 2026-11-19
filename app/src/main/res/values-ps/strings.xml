@@ -3177,4 +3177,6 @@ Da tase da hamisha paara.</string>
     <string name="onboarding_microphone">Microphone</string>
     <string name="onboarding_storage">Zakhira</string>
     <string name="onboarding_open_settings">Settings Khola</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Helo!</string>
 </resources>

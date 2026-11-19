@@ -4862,4 +4862,6 @@
     <string name="onboarding_microphone">الميكروفون</string>
     <string name="onboarding_storage">التخزين</string>
     <string name="onboarding_open_settings">فتح الإعدادات</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">أهلًا!</string>
 </resources>

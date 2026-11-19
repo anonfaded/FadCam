@@ -3390,4 +3390,6 @@ Milikmu selamanya.</string>
     <string name="onboarding_microphone">Mikrofon</string>
     <string name="onboarding_storage">Penyimpanan</string>
     <string name="onboarding_open_settings">Buka Pengaturan</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Halo!</string>
 </resources>

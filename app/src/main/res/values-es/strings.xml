@@ -3236,4 +3236,6 @@ Tuyas para siempre.</string>
     <string name="onboarding_microphone">Micrófono</string>
     <string name="onboarding_storage">Almacenamiento</string>
     <string name="onboarding_open_settings">Abrir ajustes</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">¡Hola!</string>
 </resources>

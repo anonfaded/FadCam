@@ -349,6 +349,11 @@ public class OnboardingActivity extends AppIntro
                         }
                         final android.widget.ImageView ivOnboardingAvatar = v.findViewById(R.id.ivOnboardingAvatar);
                         final TextView tvHiGreeting = v.findViewById(R.id.tvHiGreeting);
+                        // Resolve the greeting once per activity creation. The string comes
+                        // from the app's effective locale (manual choice or system), and an
+                        // unsupported locale falls back to the English default resource.
+                        final String casualGreeting = getString(
+                                R.string.onboarding_mascot_greeting_casual);
                         if (ivOnboardingAvatar != null) {
                             // ===== SLEEP STATE =====
                             ivOnboardingAvatar.setImageResource(R.drawable.toggle_off);
@@ -459,11 +464,17 @@ public class OnboardingActivity extends AppIntro
                                             greetingCycle[0] = () -> {
                                                 if (tvHiGreeting == null || !tvHiGreeting.isAttachedToWindow()) return;
                                                 boolean isHi = (gCycleIdx[0] % 2 == 0);
-                                                tvHiGreeting.setText(isHi ? "Hi!"
+                                                tvHiGreeting.setText(isHi ? casualGreeting
                                                         : "\u0627\u0644\u0633\u0644\u0627\u0645 \u0639\u0644\u064a\u0643\u0645\n\u0648\u0631\u062d\u0645\u0629 \u0627\u0644\u0644\u0647 \u0648\u0628\u0631\u0643\u0627\u062a\u0647");
                                                 tvHiGreeting.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, isHi ? 32f : 11f);
                                                 tvHiGreeting.setRotation(isHi ? -10f : 4f);
-                                                tvHiGreeting.setTextDirection(isHi ? View.TEXT_DIRECTION_LTR : View.TEXT_DIRECTION_RTL);
+                                                // The casual hello picks its own direction from its
+                                                // first strong character, so Arabic is RTL while
+                                                // Latin/Cyrillic translations stay LTR; the Salam
+                                                // keeps its fixed RTL treatment.
+                                                tvHiGreeting.setTextDirection(isHi
+                                                        ? View.TEXT_DIRECTION_FIRST_STRONG
+                                                        : View.TEXT_DIRECTION_RTL);
                                                 tvHiGreeting.setAlpha(0f);
                                                 tvHiGreeting.setScaleX(isHi ? 0.4f : 0.7f);
                                                 tvHiGreeting.setScaleY(isHi ? 0.4f : 0.7f);

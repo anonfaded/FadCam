@@ -5050,4 +5050,6 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <string name="onboarding_microphone">麦克风</string>
     <string name="onboarding_storage">存储</string>
     <string name="onboarding_open_settings">打开设置</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">嗨！</string>
 </resources>

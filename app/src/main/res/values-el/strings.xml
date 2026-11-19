@@ -3232,4 +3232,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="onboarding_microphone">Μικρόφωνο</string>
     <string name="onboarding_storage">Αποθήκευση</string>
     <string name="onboarding_open_settings">Άνοιγμα ρυθμίσεων</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Γεια!</string>
 </resources>

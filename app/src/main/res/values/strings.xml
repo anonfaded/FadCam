@@ -3461,4 +3461,6 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="pro_glyph_no_nags" translatable="false">notifications_off</string>
     <string name="pro_glyph_fan" translatable="false">favorite</string>
 
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Hi!</string>
 </resources>

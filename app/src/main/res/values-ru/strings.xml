@@ -3802,4 +3802,6 @@ FadCam использует фрагментированный формат MP4 
     <string name="onboarding_microphone">Микрофон</string>
     <string name="onboarding_storage">Хранилище</string>
     <string name="onboarding_open_settings">Открыть настройки</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Привет!</string>
 </resources>

@@ -67,7 +67,8 @@
                 android:layout_width="156dp"
                 android:layout_height="142dp"
                 android:layout_gravity="center_horizontal"
-                android:background="@drawable/bg_onboarding_mascot_glow">
+                android:background="@drawable/bg_onboarding_mascot_glow"
+                android:clipChildren="false">
 
                 <ImageView
                     android:id="@+id/ivOnboardingAvatar"

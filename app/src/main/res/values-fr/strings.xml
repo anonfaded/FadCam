@@ -4790,4 +4790,6 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="onboarding_microphone">Microphone</string>
     <string name="onboarding_storage">Stockage</string>
     <string name="onboarding_open_settings">Ouvrir les paramètres</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Salut !</string>
 </resources>

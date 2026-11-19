@@ -3136,4 +3136,6 @@ Igavesti sinu.</string>
     <string name="onboarding_microphone">Mikrofon</string>
     <string name="onboarding_storage">Salvestusruum</string>
     <string name="onboarding_open_settings">Ava seaded</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Tere!</string>
 </resources>

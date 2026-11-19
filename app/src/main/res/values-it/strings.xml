@@ -3120,4 +3120,6 @@ Tue per sempre.</string>
     <string name="onboarding_microphone">Microfono</string>
     <string name="onboarding_storage">Archiviazione</string>
     <string name="onboarding_open_settings">Apri impostazioni</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Ciao!</string>
 </resources>

@@ -3032,4 +3032,6 @@ Sonsuza dek senin.</string>
     <string name="onboarding_microphone">Mikrofon</string>
     <string name="onboarding_storage">Depolama</string>
     <string name="onboarding_open_settings">Ayarları aç</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Merhaba!</string>
 </resources>
