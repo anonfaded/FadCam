@@ -224,11 +224,9 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
 
     /** The permission request must wait until this slide is actually visible. */
     public void onSlideShown() {
+        // Never launch the system prompt on entry: the user starts it with the
+        // Grant Permissions button, so the slide opens quiet.
         checkPermissionsAndUpdateUI();
-        // Ask automatically only the first time this install reaches the slide.
-        if (!permissionsGranted && !hasRequestedBefore()) {
-            requestAllPermissionsAlways();
-        }
     }
 
     @Override
@@ -244,11 +242,9 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
 
     @Override
     public void onUserIllegallyRequestedNextPage() {
+        // Swiping past the gate only explains the requirement; it must not fire the
+        // runtime permission dialogs. Those start from the Grant Permissions button.
         Toast.makeText(requireContext(), R.string.permissions_note, Toast.LENGTH_SHORT).show();
-        if (!permissionsGranted && grantButton != null
-                && grantButton.getVisibility() == View.VISIBLE) {
-            grantButton.performClick();
-        }
     }
 
     /** Refreshes language-specific text without recreating the fragment. */
