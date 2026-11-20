@@ -471,7 +471,14 @@ public class SettingsHomeFragment extends Fragment {
         }
         bindRow(root, R.id.group_storage, () -> openSubFragment(new StorageSettingsFragment()));
         bindRow(root, R.id.group_security, () -> openSubFragment(new SecuritySettingsFragment()));
-        bindRow(root, R.id.group_motion_lab, () -> openSubFragment(new MotionLabSettingsFragment()));
+        bindRow(root, R.id.group_motion_lab, () -> {
+            // Full-only screen; Lite already hides this row.
+            androidx.fragment.app.Fragment f =
+                    com.fadcam.FeatureRegistry.features().createMotionLabFragment();
+            if (f != null) {
+                openSubFragment(f);
+            }
+        });
         if (com.fadcam.BuildConfig.LITE_EDITION) {
             // Lite hides advanced features. Motion Lab + digital forensics depend
             // on the Full-only OpenCV/AI stack, so both rows are hidden rather

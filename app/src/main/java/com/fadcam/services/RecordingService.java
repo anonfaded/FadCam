@@ -505,12 +505,10 @@ public class RecordingService extends Service {
                         });
                         disableMotionProcessingForSession("opencv_unavailable");
                     }
-                } else {
-                    // Lite by design: lightweight detector, not a fallback.
-                    motionDetector = new com.fadcam.motion.domain.detector.FrameDiffMotionDetector();
-                    motionOpenCvActive = false;
-                    FLog.i(TAG, "Motion detector backend: frame-diff (Lite)");
                 }
+                // No else branch: motion only arms in Full (see configureMotionLabForSession)
+                // and Full always provides the OpenCV backend. Lite never runs motion, so
+                // there is no second detector to fall back to.
             } finally {
                 motionDetectorWarmupCompleted = true;
                 long elapsedMs = SystemClock.elapsedRealtime() - startMs;

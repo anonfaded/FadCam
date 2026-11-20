@@ -45,6 +45,12 @@ public final class FullFeaturesDefault implements FullFeatures {
     }
 
     @Override
+    public androidx.fragment.app.Fragment createMotionLabFragment() {
+        return null;
+    }
+
+
+    @Override
     public boolean hasOpenCvMotionBackend() {
         return false;
     }

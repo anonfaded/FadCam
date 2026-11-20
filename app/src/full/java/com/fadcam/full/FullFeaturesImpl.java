@@ -73,6 +73,17 @@ public final class FullFeaturesImpl implements FullFeatures {
     }
 
     @Override
+    public androidx.fragment.app.Fragment createMotionLabFragment() {
+        try {
+            return new com.fadcam.motion.ui.MotionLabSettingsFragment();
+        } catch (Throwable t) {
+            com.fadcam.FLog.e("FullFeatures", "Unable to create Motion Lab fragment", t);
+            return null;
+        }
+    }
+
+
+    @Override
     public boolean hasOpenCvMotionBackend() {
         return true;
     }

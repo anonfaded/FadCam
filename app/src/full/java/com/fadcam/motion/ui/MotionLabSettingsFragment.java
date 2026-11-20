@@ -1,4 +1,4 @@
-package com.fadcam.ui;
+package com.fadcam.motion.ui;
 
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
@@ -36,6 +36,8 @@ import com.fadcam.ui.picker.MaterialNumberPickerBottomSheetFragment;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import com.fadcam.ui.AvatarToggleView;
+import com.fadcam.ui.MotionLabInfoBottomSheetFragment;
+import com.fadcam.ui.OverlayNavUtil;
 
 import java.util.ArrayList;
 

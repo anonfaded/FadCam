@@ -46,11 +46,15 @@ public class AdvancedSettingsFragment extends Fragment {
                         motionDivider.setVisibility(android.view.View.GONE);
                     }
             } else {
-                motionLab.setOnClickListener(v -> OverlayNavUtil.show(
-                    requireActivity(),
-                    new MotionLabSettingsFragment(),
-                    "MotionLabSettingsFragment"
-                ));
+                motionLab.setOnClickListener(v -> {
+                    // Resolved through the feature registry so Lite never references the
+                    // Full-only fragment class.
+                    androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()
+                            .createMotionLabFragment();
+                    if (f != null) {
+                        OverlayNavUtil.show(requireActivity(), f, "MotionLabSettingsFragment");
+                    }
+                });
             }
         }
         View digitalForensics = view.findViewById(R.id.row_digital_forensics);

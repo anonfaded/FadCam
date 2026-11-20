@@ -41,6 +41,14 @@ public interface FullFeatures {
     com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector();
 
     /**
+     * Motion Lab settings screen (Full-only). Returns null in Lite, which has no
+     * Motion Lab and must not compile or reference that UI.
+     */
+    @Nullable
+    androidx.fragment.app.Fragment createMotionLabFragment();
+
+
+    /**
      * True when this build ships the OpenCV motion backend (Full). Lite returns
      * false and uses the lightweight frame-diff detector by design. There is no
      * silent runtime fallback in Full: if OpenCV cannot initialize, the session
