@@ -53,10 +53,19 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
 
     private static final String TAG = "ForensicsEventRecorder";
     private static final long EVENT_STALE_GAP_MS = 1800L;
-    private static final long SNAPSHOT_FAST_INTERVAL_MS = 900L;
-    private static final long SNAPSHOT_STEADY_INTERVAL_MS = 6000L;
     private static final long SNAPSHOT_HEARTBEAT_INTERVAL_MS = 12000L;
-    private static final int SNAPSHOT_FAST_COUNT = 3;
+    /**
+     * Hard floor between two snapshots of the SAME event. Nothing can bypass it:
+     * not a change in position, size or confidence, and not a new pHash. Without
+     * this, a person standing in frame produced a photo every heartbeat (~1.6 s),
+     * i.e. thousands per hour, because the change test always succeeds for a live
+     * subject.
+     */
+    private static final long SNAPSHOT_MIN_INTERVAL_MS = 6000L;
+    /** Snapshots a single continuous event may collect before going to heartbeat only. */
+    private static final int SNAPSHOT_MAX_PER_EVENT = 15;
+    /** Slow cadence once the per-event budget is spent, so a long event still has evidence. */
+    private static final long SNAPSHOT_LOW_POWER_INTERVAL_MS = 60000L;
     private static final float SNAPSHOT_CENTER_DELTA_THRESHOLD = 0.04f;
     private static final float SNAPSHOT_SIZE_DELTA_THRESHOLD = 0.06f;
     private static final float SNAPSHOT_CONF_DELTA_THRESHOLD = 0.10f;
@@ -334,10 +343,27 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
             return true;
         }
         long elapsed = Math.max(0L, timelineMs - event.lastSnapshotMs);
-        long minInterval = event.snapshotCount < SNAPSHOT_FAST_COUNT
-                ? SNAPSHOT_FAST_INTERVAL_MS
-                : SNAPSHOT_STEADY_INTERVAL_MS;
 
+        // 1. Hard floor. A live subject always moves, so any "did it change?" test is
+        //    true almost every sample. Without this check the floor above is dead code
+        //    and the gallery fills with near-identical photos.
+        if (elapsed < SNAPSHOT_MIN_INTERVAL_MS) {
+            return false;
+        }
+
+        // 2. Spent budget: keep a slow heartbeat so a long event still has evidence,
+        //    but stop collecting a photo every few seconds.
+        if (event.snapshotCount >= SNAPSHOT_MAX_PER_EVENT) {
+            return elapsed >= SNAPSHOT_LOW_POWER_INTERVAL_MS;
+        }
+
+        // 3. Periodic record of a long-standing event.
+        if (elapsed >= SNAPSHOT_HEARTBEAT_INTERVAL_MS) {
+            return true;
+        }
+
+        // 4. Between the floor and the heartbeat, only a meaningful change is worth a
+        //    new photo (subject moved a lot, changed size, or the scene changed).
         float centerDx = Math.abs(event.centerX - event.lastSnapshotCenterX);
         float centerDy = Math.abs(event.centerY - event.lastSnapshotCenterY);
         float sizeDw = Math.abs(event.boxWidth - event.lastSnapshotWidth);
@@ -346,15 +372,8 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
         boolean motionChanged = (centerDx + centerDy) > SNAPSHOT_CENTER_DELTA_THRESHOLD
                 || (sizeDw + sizeDh) > SNAPSHOT_SIZE_DELTA_THRESHOLD
                 || confDelta > SNAPSHOT_CONF_DELTA_THRESHOLD;
-        boolean visualChanged = hammingDistance(event.lastSnapshotPHash, newPHash) > SNAPSHOT_PHASH_HAMMING_THRESHOLD;
-        boolean heartbeatDue = elapsed >= SNAPSHOT_HEARTBEAT_INTERVAL_MS;
-
-        if (heartbeatDue) {
-            return true;
-        }
-        if (elapsed < minInterval) {
-            return motionChanged || visualChanged;
-        }
+        boolean visualChanged = hammingDistance(event.lastSnapshotPHash, newPHash)
+                > SNAPSHOT_PHASH_HAMMING_THRESHOLD;
         return motionChanged || visualChanged;
     }
 
