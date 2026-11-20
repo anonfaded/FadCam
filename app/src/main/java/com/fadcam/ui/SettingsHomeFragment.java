@@ -478,8 +478,12 @@ public class SettingsHomeFragment extends Fragment {
             // than exposing controls that cannot work.
             android.view.View motionRow = root.findViewById(R.id.group_motion_lab);
             if (motionRow != null) motionRow.setVisibility(android.view.View.GONE);
+            android.view.View motionDivider = root.findViewById(R.id.divider_motion_lab);
+            if (motionDivider != null) motionDivider.setVisibility(android.view.View.GONE);
             android.view.View forensicsRow = root.findViewById(R.id.group_digital_forensics);
             if (forensicsRow != null) forensicsRow.setVisibility(android.view.View.GONE);
+            android.view.View forensicsDivider = root.findViewById(R.id.divider_digital_forensics);
+            if (forensicsDivider != null) forensicsDivider.setVisibility(android.view.View.GONE);
         } else {
             bindRow(root, R.id.group_digital_forensics, () -> {
                 androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()

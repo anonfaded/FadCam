@@ -682,7 +682,9 @@ app:layout_constraintTop_toTopOf="parent"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
 
-            <View style="@style/SettingsDivider" />
+            <View
+                android:id="@+id/divider_motion_lab"
+                style="@style/SettingsDivider" />
 
             <LinearLayout
                 android:id="@+id/group_motion_lab"
@@ -719,7 +721,9 @@ app:layout_constraintTop_toTopOf="parent"
                     android:tint="@android:color/darker_gray"/>
             </LinearLayout>
 
-            <View style="@style/SettingsDivider" />
+            <View
+                android:id="@+id/divider_digital_forensics"
+                style="@style/SettingsDivider" />
 
             <LinearLayout
                 android:id="@+id/group_digital_forensics"

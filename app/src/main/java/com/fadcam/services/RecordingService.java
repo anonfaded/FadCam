@@ -242,7 +242,6 @@ public class RecordingService extends Service {
      */
     private final java.util.List<File> sessionCreatedLocalFiles =
             java.util.Collections.synchronizedList(new java.util.ArrayList<>());
-    private boolean motionSafeMode = false;
     /** Cached Motion Lab settings; listener-updated, read per frame without prefs I/O. */
     private volatile com.fadcam.motion.domain.model.MotionRuntimeSettings motionRuntime;
     private int motionConsecutivePersonHits = 0;
@@ -2489,7 +2488,6 @@ public class RecordingService extends Service {
             FLog.i(TAG, "MotionLab summary: frames=" + motionFramesAnalyzed
                     + ", actions=" + motionTriggerActionCount
                     + ", suppressed=" + motionSuppressedSignalCount
-                    + ", safeMode=" + motionSafeMode
                     + ", detectorAvailable=" + (efficientDetDetector != null && efficientDetDetector.isAvailable()));
         }
         if (digitalForensicsEventRecorder != null) {
@@ -3284,11 +3282,14 @@ public class RecordingService extends Service {
             }
             motionRuntime = new com.fadcam.motion.domain.model.MotionRuntimeSettings(sharedPreferencesManager);
         }
-        motionLabEnabledForSession = sharedPreferencesManager != null && sharedPreferencesManager.isMotionModeEnabled();
+        // Lite has no Motion Lab: the preference is not exposed there, so arming on a
+        // restored/leftover value would run detection with no way to see or change it.
+        motionLabEnabledForSession = !com.fadcam.BuildConfig.LITE_EDITION
+                && sharedPreferencesManager != null
+                && sharedPreferencesManager.isMotionModeEnabled();
         com.fadcam.FeatureRegistry.streaming().setMotionState(motionLabEnabledForSession ? "armed" : "off");
         lastMotionAnalysisTimestampMs = 0L;
         motionAutoPaused = false;
-        motionSafeMode = RuntimeCompat.shouldUseSafeMotionAnalysis(getApplicationContext());
         motionConsecutivePersonHits = 0;
         motionFramesAnalyzed = 0L;
         motionTriggerActionCount = 0L;
@@ -3366,16 +3367,13 @@ public class RecordingService extends Service {
             // before the detector is ready, and the size must match the backend.
             boolean highResBackend =
                     com.fadcam.FeatureRegistry.features().hasOpenCvMotionBackend();
-            int analysisFps = sharedPreferencesManager != null ? sharedPreferencesManager.getMotionAnalysisFps() : 3;
-            if (highResBackend && !motionSafeMode) {
-                // Motion must be sampled fast enough for quick events (a jump,
-                // a fast hand). 10 fps is the production range; the old 1 fps
-                // idle throttle could miss an event entirely.
-                analysisFps = Math.max(5, Math.min(10, analysisFps));
-            }
-            if (motionSafeMode) {
-                analysisFps = Math.min(2, analysisFps);
-            }
+            // The user's value is the value. No hidden caps: a lower setting is a
+            // deliberate CPU choice, and silently running it faster would make the
+            // setting a lie.
+            int analysisFps = motionRuntime != null
+                    ? motionRuntime.getAnalysisFps()
+                    : (sharedPreferencesManager != null
+                        ? sharedPreferencesManager.getMotionAnalysisFps() : 10);
             motionAnalysisIntervalMs = Math.max(100L, 1000L / Math.max(1, analysisFps));
             Size selected = sharedPreferencesManager != null
                     ? sharedPreferencesManager.getCameraResolution()
@@ -3392,21 +3390,13 @@ public class RecordingService extends Service {
                     ? motionRuntime.getAnalysisResolution()
                     : (sharedPreferencesManager != null
                         ? sharedPreferencesManager.getMotionAnalysisResolution() : 720);
+            // The selected analyzer resolution is used verbatim (never above the
+            // camera's own output size). No hidden downgrade for low-RAM devices.
             int width;
             int height;
-            if (motionSafeMode) {
-                width = 320;
-                height = Math.max(54, Math.round(
-                        width * selected.getHeight() / (float) selected.getWidth()));
-            } else if (highResBackend) {
-                height = Math.min(requestedHeight, Math.max(240, selected.getHeight()));
-                width = Math.max(96, Math.round(
-                        height * selected.getWidth() / (float) selected.getHeight()));
-            } else {
-                height = Math.min(360, Math.max(240, selected.getHeight()));
-                width = Math.max(96, Math.round(
-                        height * selected.getWidth() / (float) selected.getHeight()));
-            }
+            height = Math.min(requestedHeight, Math.max(240, selected.getHeight()));
+            width = Math.max(96, Math.round(
+                    height * selected.getWidth() / (float) selected.getHeight()));
             if ((width & 1) != 0) width--;
             if ((height & 1) != 0) height--;
             boolean recreate = motionAnalysisReader == null
@@ -3429,14 +3419,10 @@ public class RecordingService extends Service {
                         int requestedFps = runtime != null ? runtime.getAnalysisFps() : 10;
                         boolean openCvBackend =
                                 com.fadcam.FeatureRegistry.features().hasOpenCvMotionBackend();
-                        // Honour the user's value. The only real limits are the shared
-                        // 1..15 range and the safe-mode 2 fps cap for low-RAM devices.
-                        // (This used to clamp OpenCV to 5..10 and frame-diff to 1..6,
-                        // so a setting of 1 silently ran at 5 and 15 silently ran at 10.)
+                        // The configured rate is used as-is. The only bound is the
+                        // shared 1..15 range that the preference itself enforces; there
+                        // is no backend-specific or "low-RAM" override.
                         int cappedFps = Math.max(1, Math.min(15, requestedFps));
-                        if (motionSafeMode) {
-                            cappedFps = Math.min(2, cappedFps);
-                        }
                         motionAnalysisIntervalMs = Math.max(50L, 1000L / Math.max(1, cappedFps));
                         long effectiveIntervalMs = motionAnalysisIntervalMs;
                         if (now - lastMotionAnalysisTimestampMs < effectiveIntervalMs) {
@@ -3540,47 +3526,61 @@ public class RecordingService extends Service {
     }
 
     /**
-     * Replaces the analysis ImageReader and re-attaches it to the live capture
-     * session. Runs on the camera thread; falls back to a full session rebuild if
-     * the device rejects a partial reconfigure.
+     * Applies a changed analyzer resolution while a session is live.
+     *
+     * <p>Camera2 output surfaces are fixed for the lifetime of a capture session, so
+     * a new size always means a new session — there is no partial reconfigure to
+     * attempt and therefore no fallback path. The reader is rebuilt for the new size
+     * and the session is recreated once. If the rebuild cannot start (a camera switch
+     * is already running, or no camera device), the change is NOT applied silently:
+     * the user is told the new resolution takes effect on the next recording.
      */
     private void reconfigureAnalysisSurface() {
         if (!analysisSurfaceReconfigurePending || isStopping) {
             return;
         }
         analysisSurfaceReconfigurePending = false;
-        try {
-            releaseMotionAnalysisReader();
-            if (!motionLabEnabledForSession) {
-                return;
-            }
-            FLog.i(TAG, "Recreating analysis reader for " + appliedAnalysisResolution + "p");
-            // The next repeating-request/session setup picks up the new surface.
-            // A partial reconfigure is not supported by Camera2, so rebuild.
-            recreateCameraSessionForAnalysisChange();
-        } catch (Exception e) {
-            FLog.w(TAG, "Failed to apply analyzer resolution live", e);
+        if (!motionLabEnabledForSession) {
+            return;
         }
+        FLog.i(TAG, "Recreating analysis reader for " + appliedAnalysisResolution + "p");
+        releaseMotionAnalysisReader();
+        recreateCameraSessionForAnalysisChange();
     }
 
     private void recreateCameraSessionForAnalysisChange() {
         if (isSwitchingCamera || cameraDevice == null) {
-            FLog.w(TAG, "Analyzer resolution: cannot rebuild session now "
-                    + "(switching=" + isSwitchingCamera + ")");
+            // Do not fail silently: the setting is stored, it just cannot be applied
+            // to the live session right now.
+            FLog.w(TAG, "Analyzer resolution: session rebuild skipped (switching="
+                    + isSwitchingCamera + ", camera=" + (cameraDevice != null) + ")");
+            notifyAnalyzerResolutionDeferred();
             return;
         }
         isSwitchingCamera = true;
         cameraSwitchPreviousType = sharedPreferencesManager.getCameraSelection();
         cameraSwitchStartTimeNanos = System.nanoTime();
+        // No catch-and-continue: openCamera() owns its own failure reporting (it
+        // surfaces a recording error). Swallowing it here would leave the user with a
+        // dead preview and no explanation.
         try {
             FLog.i(TAG, "Analyzer resolution: rebuilding camera session");
             closeCameraResourcesForSwitch();
             openCamera();
-        } catch (Exception e) {
-            FLog.e(TAG, "Analyzer resolution: session rebuild failed", e);
         } finally {
             isSwitchingCamera = false;
         }
+    }
+
+    /** Tells the user the analyzer change needs a fresh session. */
+    private void notifyAnalyzerResolutionDeferred() {
+        mainHandler.post(() -> {
+            try {
+                Utils.showQuickToast(getApplicationContext(),
+                        "Analyzer resolution will apply on the next recording");
+            } catch (Throwable ignored) {
+            }
+        });
     }
 
     /** Last pre-roll window pushed to the pipeline, so a change is applied once. */
@@ -3646,7 +3646,8 @@ public class RecordingService extends Service {
         } else {
             motionConsecutivePersonHits = Math.max(0, motionConsecutivePersonHits - 1);
         }
-        int requiredHits = motionSafeMode ? 3 : 2;
+        // Fixed confirmation depth: detection behaviour must not vary by device.
+        int requiredHits = 2;
         boolean personDetected = personDetectedRaw && motionConsecutivePersonHits >= requiredHits;
         if (personDetectedRaw && personConfidence >= 0.62f) {
             motionPersonLikelyUntilMs = nowMs + 2500L;

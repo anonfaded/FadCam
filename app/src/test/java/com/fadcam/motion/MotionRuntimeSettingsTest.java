@@ -106,6 +106,14 @@ public class MotionRuntimeSettingsTest {
         prefs.edit().putString(Constants.PREF_MOTION_TRIGGER_MODE,
                 "person_confirmed").commit();
         assertEquals("person_confirmed", runtime.getTriggerMode());
+        prefs.edit().putString(Constants.PREF_MOTION_TRIGGER_MODE, "any_motion").commit();
+        assertEquals("any_motion", runtime.getTriggerMode());
+    }
+
+    @Test
+    public void triggerModeDefaultsToAnyMotion() {
+        // A fresh install must never require the AI model to record.
+        assertEquals("any_motion", runtime.getTriggerMode());
     }
 
     @Test

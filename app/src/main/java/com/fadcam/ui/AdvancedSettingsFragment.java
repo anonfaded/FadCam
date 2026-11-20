@@ -34,11 +34,24 @@ public class AdvancedSettingsFragment extends Fragment {
         }
         View motionLab = view.findViewById(R.id.row_motion_lab);
         if (motionLab != null) {
-            motionLab.setOnClickListener(v -> OverlayNavUtil.show(
-                requireActivity(),
-                new MotionLabSettingsFragment(),
-                "MotionLabSettingsFragment"
-            ));
+            if (com.fadcam.BuildConfig.LITE_EDITION) {
+                // Motion Lab and Digital Forensics are Full-only. The main Settings
+                // screen already hides them; this screen is a second entrance and was
+                // left open, so Lite could reach Motion Lab from Advanced.
+                motionLab.setVisibility(android.view.View.GONE);
+                    // The divider belongs to this row; hide it too so Lite cannot show
+                    // an orphan separator.
+                    View motionDivider = view.findViewById(R.id.divider_motion_lab);
+                    if (motionDivider != null) {
+                        motionDivider.setVisibility(android.view.View.GONE);
+                    }
+            } else {
+                motionLab.setOnClickListener(v -> OverlayNavUtil.show(
+                    requireActivity(),
+                    new MotionLabSettingsFragment(),
+                    "MotionLabSettingsFragment"
+                ));
+            }
         }
         View digitalForensics = view.findViewById(R.id.row_digital_forensics);
         if (digitalForensics != null) {

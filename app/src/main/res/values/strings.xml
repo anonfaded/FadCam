@@ -2409,7 +2409,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="motion_lab_sensitivity">Sensitivity</string>
     <string name="motion_lab_sensitivity_hint">Think of this like a motion \"hearing\" knob. Higher reacts to smaller movement (like a hand near the edge). Lower ignores tiny movement. Keep the default 80 for most rooms.</string>
     <string name="motion_lab_analysis_fps">Analysis FPS</string>
-    <string name="motion_lab_analysis_helper">How many times per second the motion detector analyses the scene. Higher reacts faster to quick movement but uses more battery and can heat the phone. 10 fps is the default; 5-10 is the reliable range on most phones. Low-RAM devices are capped at 2 fps automatically.</string>
+    <string name="motion_lab_analysis_helper">How many times per second the motion detector analyses the scene. Higher reacts faster to quick movement but uses more battery and can heat the phone. 10 fps is the default. On slower phones a high value can make the preview stutter; 5-10 is a good starting range.</string>
     <string name="motion_lab_analysis_2_desc">Power saving, slower response.</string>
     <string name="motion_lab_analysis_3_desc">Balanced default.</string>
     <string name="motion_lab_analysis_5_desc">Faster response, more CPU.</string>

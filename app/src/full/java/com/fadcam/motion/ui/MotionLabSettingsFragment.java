@@ -45,6 +45,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
     private TextView valueMotionStatus;
     private TextView valueSensitivity;
+    private TextView valueTriggerMode;
     private TextView valueAnalysisFps;
     private TextView valueAnalysisResolution;
     private TextView valueDebounce;
@@ -101,6 +102,7 @@ public class MotionLabSettingsFragment extends Fragment {
     private void bindViews(@NonNull View view) {
         valueMotionStatus = view.findViewById(R.id.value_motion_status);
         valueSensitivity = view.findViewById(R.id.value_motion_sensitivity);
+        valueTriggerMode = view.findViewById(R.id.value_motion_trigger_mode);
         valueAnalysisFps = view.findViewById(R.id.value_motion_analysis_fps);
         valueAnalysisResolution = view.findViewById(R.id.value_motion_analysis_resolution);
         valueDebounce = view.findViewById(R.id.value_motion_debounce);
@@ -131,6 +133,7 @@ public class MotionLabSettingsFragment extends Fragment {
         view.findViewById(R.id.row_motion_enabled).setOnClickListener(v -> switchMotionEnabled.performClick());
         view.findViewById(R.id.row_motion_auto_torch).setOnClickListener(v -> switchMotionAutoTorch.performClick());
 
+        view.findViewById(R.id.row_motion_trigger_mode).setOnClickListener(v -> showTriggerModePicker());
         view.findViewById(R.id.row_motion_sensitivity).setOnClickListener(v -> showSensitivityInput());
         view.findViewById(R.id.row_motion_analysis_fps).setOnClickListener(v -> showAnalysisFpsPicker());
         view.findViewById(R.id.row_motion_analysis_resolution).setOnClickListener(v -> showAnalysisResolutionPicker());
@@ -163,6 +166,13 @@ public class MotionLabSettingsFragment extends Fragment {
             ? getString(R.string.motion_lab_status_enabled)
             : getString(R.string.motion_lab_status_disabled));
         valueSensitivity.setText(getString(R.string.motion_lab_percent_value, state.sensitivity));
+        if (valueTriggerMode != null) {
+            String triggerLabel = state.triggerMode
+                    == com.fadcam.motion.domain.model.MotionTriggerMode.PERSON_CONFIRMED
+                    ? getString(R.string.motion_lab_trigger_person_confirmed)
+                    : getString(R.string.motion_lab_trigger_any_motion);
+            valueTriggerMode.setText(triggerLabel);
+        }
         valueAnalysisFps.setText(getString(R.string.motion_lab_fps_value, state.analysisFps));
         if (valueAnalysisResolution != null) {
             valueAnalysisResolution.setText(state.analysisResolution + "p");
@@ -172,6 +182,49 @@ public class MotionLabSettingsFragment extends Fragment {
         if (valuePreRoll != null) {
             valuePreRoll.setText(getString(R.string.motion_lab_seconds_value, state.preRollSeconds));
         }
+    }
+
+    private void showTriggerModePicker() {
+        MotionLabViewState current = viewModel.getState().getValue();
+        com.fadcam.motion.domain.model.MotionTriggerMode initial =
+                current == null ? com.fadcam.motion.domain.model.MotionTriggerMode.ANY_MOTION
+                        : current.triggerMode;
+
+        // Person-confirmed mode is backed by the real EfficientDet-Lite1 model
+        // (90 COCO labels, "person" class). If that model is unavailable the option
+        // is shown disabled rather than silently behaving like any-motion.
+        boolean personDetectorAvailable =
+                com.fadcam.FeatureRegistry.features().hasOpenCvMotionBackend()
+                        && com.fadcam.FeatureRegistry.features().createAiDetector(requireContext()) != null;
+
+        ArrayList<OptionItem> items = new ArrayList<>();
+        items.add(new OptionItem(
+                com.fadcam.motion.domain.model.MotionTriggerMode.ANY_MOTION.getValue(),
+                getString(R.string.motion_lab_trigger_any_motion),
+                getString(R.string.motion_lab_trigger_any_motion_desc)));
+        items.add(new OptionItem(
+                com.fadcam.motion.domain.model.MotionTriggerMode.PERSON_CONFIRMED.getValue(),
+                getString(R.string.motion_lab_trigger_person_confirmed),
+                getString(R.string.motion_lab_trigger_person_confirmed_desc)));
+
+        final String resultKey = "motion_trigger_mode_picker";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
+            String selected = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (selected == null) {
+                return;
+            }
+            viewModel.onTriggerModeChanged(
+                    com.fadcam.motion.domain.model.MotionTriggerMode.fromValue(selected));
+        });
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
+            getString(R.string.motion_lab_trigger_mode),
+            items,
+            initial.getValue(),
+            resultKey,
+            getString(R.string.motion_lab_trigger_mode_helper)
+        );
+        sheet.show(getParentFragmentManager(), resultKey + "_sheet");
     }
 
     private void showAnalysisFpsPicker() {
