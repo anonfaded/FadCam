@@ -6,6 +6,7 @@ file covers `docs/` only.
 ## Layout
 
 - `home.md` — index; every page is linked here.
+- `ai/` — on-device models and inference.
 - `architecture/` — system design and internals.
 - `development/setup/` — build and dependency setup.
 - `development/debugging/` — logging and diagnostics.

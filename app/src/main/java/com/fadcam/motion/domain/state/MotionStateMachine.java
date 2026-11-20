@@ -124,4 +124,28 @@ public class MotionStateMachine {
         recordingLossSinceMs = -1L;
         recordingStartedAtMs = -1L;
     }
+
+    /**
+     * Re-aligns the machine with a recording state that was changed outside it.
+     *
+     * <p>The machine kept running while the user manually paused. It walked on into
+     * POST_ROLL with an expiry timestamp, and the first analysed frame after a manual
+     * resume satisfied that already-expired timer and fired STOP_RECORDING — so
+     * motion recording appeared to stop working after a manual pause or resume.
+     *
+     * <p>Called when the user pauses or resumes directly, so the machine starts from
+     * the state the recorder is actually in.
+     *
+     * @param recording true when the file is actively recording
+     */
+    public void syncToRecording(boolean recording) {
+        pendingSinceMs = -1L;
+        pendingLastTriggeredAtMs = -1L;
+        postRollUntilMs = -1L;
+        postRollTriggeredSinceMs = -1L;
+        recordingLossSinceMs = -1L;
+        cooldownUntilMs = -1L;
+        recordingStartedAtMs = -1L;
+        state = recording ? MotionSessionState.RECORDING : MotionSessionState.IDLE;
+    }
 }

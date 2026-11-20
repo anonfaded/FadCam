@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
 
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.util.CaptureThrottlePolicy;
 import com.fadcam.Constants;
 import com.fadcam.forensics.data.local.ForensicsDatabase;
 import com.fadcam.forensics.data.local.dao.AiEventDao;
@@ -52,24 +53,15 @@ import android.text.TextUtils;
 public class DigitalForensicsEventRecorder implements com.fadcam.service.ForensicsRecorder {
 
     private static final String TAG = "ForensicsEventRecorder";
+    /** Minimum confidence for a detection to be archived as evidence. */
+    private static final float MIN_EVIDENCE_CONFIDENCE = 0.45f;
     private static final long EVENT_STALE_GAP_MS = 1800L;
-    private static final long SNAPSHOT_HEARTBEAT_INTERVAL_MS = 12000L;
-    /**
-     * Hard floor between two snapshots of the SAME event. Nothing can bypass it:
-     * not a change in position, size or confidence, and not a new pHash. Without
-     * this, a person standing in frame produced a photo every heartbeat (~1.6 s),
-     * i.e. thousands per hour, because the change test always succeeds for a live
-     * subject.
-     */
-    private static final long SNAPSHOT_MIN_INTERVAL_MS = 6000L;
-    /** Snapshots a single continuous event may collect before going to heartbeat only. */
-    private static final int SNAPSHOT_MAX_PER_EVENT = 15;
-    /** Slow cadence once the per-event budget is spent, so a long event still has evidence. */
-    private static final long SNAPSHOT_LOW_POWER_INTERVAL_MS = 60000L;
-    private static final float SNAPSHOT_CENTER_DELTA_THRESHOLD = 0.04f;
-    private static final float SNAPSHOT_SIZE_DELTA_THRESHOLD = 0.06f;
-    private static final float SNAPSHOT_CONF_DELTA_THRESHOLD = 0.10f;
-    private static final int SNAPSHOT_PHASH_HAMMING_THRESHOLD = 4;
+    /** Extra context around the detected box, as a fraction of its own size. */
+    private static final float CROP_CONTEXT_MARGIN = 0.35f;
+    /** Minimum padding in normalised units, so tiny detections still get context. */
+    private static final float CROP_MIN_SIDE = 0.06f;
+    // All capture-throttle rules live in CaptureThrottlePolicy so they can be
+    // unit-tested without Android or the database.
 
     private final SharedPreferencesManager prefs;
     private final Context appContext;
@@ -79,6 +71,8 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
     private final Map<String, ActiveEvent> activeEvents = new HashMap<>();
     private volatile boolean snapshotRootLogged;
+    @Nullable
+    private Typeface snapshotTypeface;
     private long snapshotPersistCount;
     private long filteredByScopeCount;
     private long filteredByCategoryCount;
@@ -86,6 +80,8 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
     private long filterSeenCount;
     private long lastFilterLogMs;
     private final Map<String, Long> lastMediaSnapshotCount = new ConcurrentHashMap<>();
+    /** Last timeline position at which any snapshot was stored for the current media. */
+    private long lastMediaCaptureMs = -1L;
 
     private static final class ActiveEvent {
         String eventUid;
@@ -140,6 +136,7 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
             @Nullable byte[] snapshotJpeg,
             boolean frontCamera,
             int sensorOrientationDegrees,
+            int snapshotRotationDegrees,
             @Nullable String recordingOrientation,
             boolean mirrorHorizontally
     ) {
@@ -162,7 +159,9 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
         List<AiObjectDetector.DetectionResult> stable = new ArrayList<>();
         for (AiObjectDetector.DetectionResult detection : detections) {
             filterSeenCount++;
-            if (detection == null || detection.confidence < 0.28f) {
+            // Evidence must meet the same bar as detection. This was 0.28, far below
+            // the detector's own precision, so weak guesses were archived as evidence.
+            if (detection == null || detection.confidence < MIN_EVIDENCE_CONFIDENCE) {
                 continue;
             }
             String eventType = normalizeEventType(detection.coarseType);
@@ -199,6 +198,7 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
                 snapshotJpeg,
                 frontCamera,
                 sensorOrientationDegrees,
+                snapshotRotationDegrees,
                 recordingOrientation,
                 mirrorHorizontally
         ));
@@ -219,6 +219,7 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
             @Nullable byte[] snapshotJpeg,
             boolean frontCamera,
             int sensorOrientationDegrees,
+            int snapshotRotationDegrees,
             @Nullable String recordingOrientation,
             boolean mirrorHorizontally
     ) {
@@ -230,19 +231,35 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
         long nowEpoch = System.currentTimeMillis();
         closeStaleEvents(timelineMs, false);
 
+        // Media-wide budget: bounds total evidence for this recording no matter how
+        // many subjects appear or how often the detector relabels one of them.
+        long sinceMediaCapture = lastMediaCaptureMs < 0L
+                ? -1L : Math.max(0L, timelineMs - lastMediaCaptureMs);
+        boolean mediaAllowsCapture = CaptureThrottlePolicy.mediaBudgetAllows(sinceMediaCapture);
+
+        // Decode the frame once for the whole batch. The old code decoded the full
+        // JPEG once per detection, multiplying CPU and GC by the number of objects.
+        Bitmap fullFrame = null;
+        if (snapshotJpeg != null && snapshotJpeg.length > 0 && mediaAllowsCapture) {
+            try {
+                fullFrame = BitmapFactory.decodeByteArray(snapshotJpeg, 0, snapshotJpeg.length);
+            } catch (Throwable t) {
+                FLog.w(TAG, "Forensics frame decode failed", t);
+            }
+        }
+        try {
         for (AiObjectDetector.DetectionResult detection : detections) {
             String eventType = normalizeEventType(detection.coarseType);
             String className = normalizeClassName(detection.className);
-            String key = buildActiveKey(
+            ActiveEvent event = matchExistingEvent(
                     mediaUid,
                     eventType,
                     className,
-                    detection.centerX,
-                    detection.centerY,
-                    detection.width,
-                    detection.height
+                    clamp01(detection.centerX),
+                    clamp01(detection.centerY),
+                    clampBox(detection.width),
+                    clampBox(detection.height)
             );
-            ActiveEvent event = activeEvents.get(key);
             if (event == null) {
                 event = new ActiveEvent();
                 event.eventUid = UUID.randomUUID().toString();
@@ -253,12 +270,17 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
                 event.startMs = timelineMs;
                 event.firstSeenEpochMs = nowEpoch;
                 event.lastSnapshotMs = -1L;
-                activeEvents.put(key, event);
+                activeEvents.put(event.eventUid, event);
             }
 
             event.lastSeenMs = timelineMs;
             event.lastSeenEpochMs = nowEpoch;
             event.sampleCount += 1;
+            // Keep the label that the model was most confident about. The event itself
+            // continues by position, so a one-frame re-label does not fork it.
+            if (detection.confidence >= event.peakConfidence) {
+                event.className = className;
+            }
             event.peakConfidence = Math.max(event.peakConfidence, detection.confidence);
             event.centerX = clamp01(detection.centerX);
             event.centerY = clamp01(detection.centerY);
@@ -267,12 +289,26 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
 
             upsertEvent(event, false);
 
-            if (snapshotJpeg != null && snapshotJpeg.length > 0) {
+            if (fullFrame != null) {
+                long elapsed = event.lastSnapshotMs < 0L
+                        ? -1L
+                        : Math.max(0L, timelineMs - event.lastSnapshotMs);
+                // Cheap pre-check before the expensive crop/encode/hash. Nothing can
+                // pass the hard floor or the spent budget, so do not build a snapshot
+                // that the policy is about to discard.
+                if (elapsed >= 0L && elapsed < CaptureThrottlePolicy.MIN_INTERVAL_MS) {
+                    continue;
+                }
+                if (event.snapshotCount >= CaptureThrottlePolicy.MAX_PER_EVENT
+                        && elapsed < CaptureThrottlePolicy.LOW_POWER_INTERVAL_MS) {
+                    continue;
+                }
                 SnapshotPayload payload = buildDetectionSnapshot(
-                        snapshotJpeg,
+                        fullFrame,
                         detection,
                         frontCamera,
                         sensorOrientationDegrees,
+                        snapshotRotationDegrees,
                         recordingOrientation,
                         mirrorHorizontally,
                         timelineMs,
@@ -284,6 +320,7 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
                 if (!shouldPersistSnapshot(event, detection, payload.pHash, timelineMs)) {
                     continue;
                 }
+                lastMediaCaptureMs = timelineMs;
                 String snapshotUid = UUID.randomUUID().toString();
                 String imageUri = persistSnapshotFile(mediaUid, event.eventUid, snapshotUid, timelineMs, payload.jpeg);
                 if (imageUri != null) {
@@ -301,21 +338,17 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
                     snapshot.sha256 = sha256(payload.jpeg);
                     snapshotDao.upsert(snapshot);
                     snapshotPersistCount++;
-                    long mediaCount = snapshotDao.countByMediaUid(mediaUid);
-                    long totalCount = snapshotDao.countAllSnapshots();
-                    long prev = lastMediaSnapshotCount.containsKey(mediaUid) ? lastMediaSnapshotCount.get(mediaUid) : 0L;
-                    if (mediaCount < prev) {
-                        FLog.e(TAG, "ForensicsPersist regression: mediaUid=" + mediaUid
-                                + ", previousMediaSnapshots=" + prev
-                                + ", currentMediaSnapshots=" + mediaCount
-                                + ", totalSnapshots=" + totalCount
+                    // Two full-table COUNT(*) queries used to run here for every
+                    // snapshot. They exist only to validate the write, yet they scan an
+                    // ever-growing table on the capture path: with ~1250 rows the cost
+                    // creeps up during a long recording, which is felt as the scene
+                    // getting slower the longer the session runs. The insert result is
+                    // the correct signal for a failed write.
+                    if (snapshotPersistCount % 25L == 0L) {
+                        FLog.i(TAG, "ForensicsPersist: stored=" + snapshotPersistCount
+                                + ", mediaUid=" + mediaUid
                                 + ", lastSnapshotUid=" + snapshotUid);
                     }
-                    lastMediaSnapshotCount.put(mediaUid, mediaCount);
-                    FLog.i(TAG, "ForensicsPersist: mediaUid=" + mediaUid
-                            + ", mediaSnapshots=" + mediaCount
-                            + ", totalSnapshots=" + totalCount
-                            + ", lastSnapshotUid=" + snapshotUid);
                     Intent persisted = new Intent(Constants.ACTION_FORENSICS_SNAPSHOT_PERSISTED);
                     persisted.putExtra("snapshot_uid", snapshotUid);
                     persisted.putExtra("media_uid", mediaUid);
@@ -329,6 +362,14 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
                 event.lastSnapshotWidth = event.boxWidth;
                 event.lastSnapshotHeight = event.boxHeight;
                 event.snapshotCount += 1;
+                // One snapshot per AI sample. Additional detections in the same frame
+                // have identical pixels; storing them again multiplies IO for nothing.
+                break;
+            }
+        }
+        } finally {
+            if (fullFrame != null) {
+                fullFrame.recycle();
             }
         }
     }
@@ -339,42 +380,25 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
             long newPHash,
             long timelineMs
     ) {
-        if (event.lastSnapshotMs < 0L) {
-            return true;
-        }
-        long elapsed = Math.max(0L, timelineMs - event.lastSnapshotMs);
+        long elapsed = event.lastSnapshotMs < 0L
+                ? -1L
+                : Math.max(0L, timelineMs - event.lastSnapshotMs);
 
-        // 1. Hard floor. A live subject always moves, so any "did it change?" test is
-        //    true almost every sample. Without this check the floor above is dead code
-        //    and the gallery fills with near-identical photos.
-        if (elapsed < SNAPSHOT_MIN_INTERVAL_MS) {
-            return false;
-        }
-
-        // 2. Spent budget: keep a slow heartbeat so a long event still has evidence,
-        //    but stop collecting a photo every few seconds.
-        if (event.snapshotCount >= SNAPSHOT_MAX_PER_EVENT) {
-            return elapsed >= SNAPSHOT_LOW_POWER_INTERVAL_MS;
-        }
-
-        // 3. Periodic record of a long-standing event.
-        if (elapsed >= SNAPSHOT_HEARTBEAT_INTERVAL_MS) {
-            return true;
-        }
-
-        // 4. Between the floor and the heartbeat, only a meaningful change is worth a
-        //    new photo (subject moved a lot, changed size, or the scene changed).
         float centerDx = Math.abs(event.centerX - event.lastSnapshotCenterX);
         float centerDy = Math.abs(event.centerY - event.lastSnapshotCenterY);
         float sizeDw = Math.abs(event.boxWidth - event.lastSnapshotWidth);
         float sizeDh = Math.abs(event.boxHeight - event.lastSnapshotHeight);
         float confDelta = Math.abs(detection.confidence - event.lastSnapshotConfidence);
-        boolean motionChanged = (centerDx + centerDy) > SNAPSHOT_CENTER_DELTA_THRESHOLD
-                || (sizeDw + sizeDh) > SNAPSHOT_SIZE_DELTA_THRESHOLD
-                || confDelta > SNAPSHOT_CONF_DELTA_THRESHOLD;
+
+        boolean motionChanged =
+                (centerDx + centerDy) > CaptureThrottlePolicy.CENTER_DELTA_THRESHOLD
+                || (sizeDw + sizeDh) > CaptureThrottlePolicy.SIZE_DELTA_THRESHOLD
+                || confDelta > CaptureThrottlePolicy.CONFIDENCE_DELTA_THRESHOLD;
         boolean visualChanged = hammingDistance(event.lastSnapshotPHash, newPHash)
-                > SNAPSHOT_PHASH_HAMMING_THRESHOLD;
-        return motionChanged || visualChanged;
+                > CaptureThrottlePolicy.PHASH_HAMMING_THRESHOLD;
+
+        return CaptureThrottlePolicy.shouldCapture(
+                elapsed, event.snapshotCount, motionChanged, visualChanged);
     }
 
     private void closeStaleEvents(long timelineMs, boolean forceAll) {
@@ -481,12 +505,45 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
         }
     }
 
-    private String buildActiveKey(String mediaUid, String eventType, String className, float centerX, float centerY, float width, float height) {
-        int bucketX = Math.max(0, Math.min(15, Math.round(clamp01(centerX) * 15f)));
-        int bucketY = Math.max(0, Math.min(15, Math.round(clamp01(centerY) * 15f)));
-        int bucketW = Math.max(0, Math.min(12, Math.round(clampBox(width) * 12f)));
-        int bucketH = Math.max(0, Math.min(12, Math.round(clampBox(height) * 12f)));
-        return mediaUid + "|" + eventType + "|" + className + "|" + bucketX + "|" + bucketY + "|" + bucketW + "|" + bucketH;
+    /**
+     * Minimum IoU for a detection to continue an existing event.
+     *
+     * <p>Events used to be keyed by quantised position/size buckets. A person
+     * walking across the frame crossed bucket boundaries and started a NEW event
+     * each time, and every new event received its own first-snapshot plus its own
+     * per-event snapshot budget. One person could therefore produce many events and
+     * multiply the gallery. Matching by overlap instead keeps one continuous event
+     * for one subject while still separating two people standing apart.
+     */
+    /**
+     * Finds the event this detection continues, or null when it is a new subject.
+     * Only events of the same media and class are considered.
+     */
+    @Nullable
+    private ActiveEvent matchExistingEvent(String mediaUid, String eventType, String className,
+                                           float centerX, float centerY,
+                                           float width, float height) {
+        ActiveEvent best = null;
+        float bestIou = CaptureThrottlePolicy.IOU_MATCH_THRESHOLD;
+        for (ActiveEvent candidate : activeEvents.values()) {
+            if (!mediaUid.equals(candidate.mediaUid)
+                    || !eventType.equals(candidate.eventType)) {
+                continue;
+            }
+            // Deliberately NOT matching on className. A detector can re-label the same
+            // subject from frame to frame ("person", then "skateboard", then "person"),
+            // and requiring the label to be equal split one subject into several
+            // events. Every split event was a first sighting, and first sightings always
+            // capture, which is how a single scene produced hundreds of snapshots.
+            float score = CaptureThrottlePolicy.iou(centerX, centerY, width, height,
+                    candidate.centerX, candidate.centerY,
+                    candidate.boxWidth, candidate.boxHeight);
+            if (score > bestIou) {
+                bestIou = score;
+                best = candidate;
+            }
+        }
+        return best;
     }
 
     private String ensureMediaAsset(String mediaUri) {
@@ -545,39 +602,56 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
 
     @Nullable
     private SnapshotPayload buildDetectionSnapshot(
-            @NonNull byte[] fullJpeg,
+            @NonNull Bitmap full,
             @NonNull AiObjectDetector.DetectionResult detection,
             boolean frontCamera,
             int sensorOrientationDegrees,
+            int snapshotRotationDegrees,
             @Nullable String recordingOrientation,
             boolean mirrorHorizontally,
             long timelineMs,
             long captureEpochMs
     ) {
+        Bitmap cropped = null;
+        Bitmap rotated = null;
         try {
-            Bitmap full = BitmapFactory.decodeByteArray(fullJpeg, 0, fullJpeg.length);
-            if (full == null) {
-                return new SnapshotPayload(fullJpeg, 0L);
-            }
             int width = full.getWidth();
             int height = full.getHeight();
-            int left = Math.max(0, Math.round((detection.centerX - (detection.width * 0.5f)) * width));
-            int top = Math.max(0, Math.round((detection.centerY - (detection.height * 0.5f)) * height));
-            int right = Math.min(width, Math.round((detection.centerX + (detection.width * 0.5f)) * width));
-            int bottom = Math.min(height, Math.round((detection.centerY + (detection.height * 0.5f)) * height));
+            // Both the snapshot JPEG and the detection box are in the same upright
+            // frame, so the box is used as-is. Converting here as well applied the
+            // rotation a second time and produced wide, off-target crops.
+            float boxCx = detection.centerX;
+            float boxCy = detection.centerY;
+            float boxW = detection.width;
+            float boxH = detection.height;
+
+            // Pad the box so the snapshot shows the subject AND its surroundings.
+            // A raw box crop is often too tight to tell what is going on — a hand, a
+            // face, or a distant object fills the frame with no context.
+            float padX = Math.max(boxW * CROP_CONTEXT_MARGIN, CROP_MIN_SIDE);
+            float padY = Math.max(boxH * CROP_CONTEXT_MARGIN, CROP_MIN_SIDE);
+            float halfW = (boxW * 0.5f) + padX;
+            float halfH = (boxH * 0.5f) + padY;
+            int left = Math.max(0, Math.round((boxCx - halfW) * width));
+            int top = Math.max(0, Math.round((boxCy - halfH) * height));
+            int right = Math.min(width, Math.round((boxCx + halfW) * width));
+            int bottom = Math.min(height, Math.round((boxCy + halfH) * height));
             int cropW = Math.max(1, right - left);
             int cropH = Math.max(1, bottom - top);
-            Bitmap cropped = Bitmap.createBitmap(full, left, top, cropW, cropH);
+            cropped = Bitmap.createBitmap(full, left, top, cropW, cropH);
             Bitmap finalBitmap = cropped;
-            FrameOrientationTransform transform = resolveTransform(
-                    frontCamera,
-                    sensorOrientationDegrees,
-                    recordingOrientation,
-                    mirrorHorizontally
-            );
-            if (transform.rotationDegrees != 0 || transform.mirrorHorizontally || transform.mirrorVertically) {
-                Matrix matrix = transform.toMatrix(cropped.getWidth(), cropped.getHeight());
-                finalBitmap = Bitmap.createBitmap(
+            // The incoming JPEG has already been rotated into the upright content
+            // orientation, and the detection box is in that same space. Rotating the
+            // crop again by the sensor orientation applied the transform twice: the
+            // crop was taken through an upright box but then turned sideways again,
+            // which produced very wide, smeared-looking evidence images.
+            //
+            // Only the optional horizontal mirror remains, because that is a user
+            // preference rather than a coordinate-space transform.
+            if (mirrorHorizontally) {
+                Matrix matrix = new Matrix();
+                matrix.preScale(-1f, 1f);
+                rotated = Bitmap.createBitmap(
                         cropped,
                         0,
                         0,
@@ -586,13 +660,23 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
                         matrix,
                         true
                 );
+                finalBitmap = rotated;
             }
             drawSnapshotWatermark(finalBitmap, timelineMs, captureEpochMs);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             finalBitmap.compress(Bitmap.CompressFormat.JPEG, 84, out);
             return new SnapshotPayload(out.toByteArray(), computeDHash64(finalBitmap));
         } catch (Throwable t) {
-            return new SnapshotPayload(fullJpeg, 0L);
+            return null;
+        } finally {
+            if (rotated != null) {
+                rotated.recycle();
+            }
+            // createBitmap may return the source itself when the crop is the full
+            // frame; never recycle the shared frame here.
+            if (cropped != null && cropped != full) {
+                cropped.recycle();
+            }
         }
     }
 
@@ -607,12 +691,15 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
             paint.setTextSize(maxTextSize);
             paint.setShadowLayer(1.4f, 0f, 0.6f, Color.BLACK);
             paint.setFakeBoldText(false);
-            try {
-                Typeface ubuntu = Typeface.createFromAsset(appContext.getAssets(), "ubuntu_regular.ttf");
-                paint.setTypeface(ubuntu);
-            } catch (Exception ignored) {
-                paint.setTypeface(Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD));
+            if (snapshotTypeface == null) {
+                try {
+                    snapshotTypeface = Typeface.createFromAsset(
+                            appContext.getAssets(), "ubuntu_regular.ttf");
+                } catch (Exception ignored) {
+                    snapshotTypeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD);
+                }
             }
+            paint.setTypeface(snapshotTypeface);
 
             int padding = Math.max(1, Math.round(Math.min(bitmap.getWidth(), bitmap.getHeight()) * 0.0035f));
             int maxWidth = Math.max(20, bitmap.getWidth() - (padding * 2));
@@ -671,31 +758,10 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
         return "Captured by FadCam - " + date;
     }
 
-    @NonNull
-    private FrameOrientationTransform resolveTransform(
-            boolean frontCamera,
-            int sensorOrientationDegrees,
-            @Nullable String recordingOrientation,
-            boolean mirrorHorizontally
-    ) {
-        String orientation = recordingOrientation == null ? "" : recordingOrientation.toLowerCase(Locale.US);
-        int sensor = ((sensorOrientationDegrees % 360) + 360) % 360;
-        int rotation;
-        if (orientation.contains("portrait")) {
-            rotation = sensor == 0 ? (frontCamera ? 270 : 90) : sensor;
-        } else if (orientation.contains("reverse_landscape")) {
-            rotation = 180;
-        } else if (orientation.contains("reverse_portrait")) {
-            rotation = (sensor + 180) % 360;
-        } else {
-            rotation = 0;
-        }
-        return new FrameOrientationTransform(rotation, mirrorHorizontally, false);
-    }
-
     private long computeDHash64(@NonNull Bitmap source) {
+        Bitmap scaled = null;
         try {
-            Bitmap scaled = Bitmap.createScaledBitmap(source, 9, 8, true);
+            scaled = Bitmap.createScaledBitmap(source, 9, 8, true);
             long hash = 0L;
             int bit = 0;
             for (int y = 0; y < 8; y++) {
@@ -713,6 +779,10 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
             return hash;
         } catch (Throwable t) {
             return 0L;
+        } finally {
+            if (scaled != null && scaled != source) {
+                scaled.recycle();
+            }
         }
     }
 

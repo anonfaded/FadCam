@@ -37,7 +37,11 @@ public class RecordingStartActivity extends Activity {
                     ? getIntent().getStringExtra(EXTRA_SHORTCUT_CAMERA_MODE)
                     : null;
             if (mode == null) {
-                mode = CAMERA_MODE_BACK;
+                // No explicit mode means "whatever the user has selected". Defaulting
+                // to BACK here silently overwrote the saved camera preference, so
+                // starting from a shortcut or any external launch recorded from the
+                // back camera even when front was chosen.
+                mode = CAMERA_MODE_CURRENT;
             }
             if (CAMERA_MODE_FRONT.equals(mode)) {
                 sharedPreferencesManager.sharedPreferences.edit()

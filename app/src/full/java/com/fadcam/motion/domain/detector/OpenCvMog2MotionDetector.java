@@ -61,7 +61,8 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
     private final BackgroundSubtractorMOG2 mog2;
     private Mat grayMat;
     private Mat fgMask;
-    private Mat gammaLut;
+    /** Gamma curve as a lookup table, applied in one pass over the byte array. */
+    private int[] gammaLutValues;
     private Mat openKernel;
     private Mat closeKernel;
     private Mat hierarchy;
@@ -131,9 +132,11 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
 
         sampleLumaBox(yBuffer, srcW, srcH, rowStride, pixelStride, targetW, targetH, current);
 
+        // The gamma curve is part of the detector's sensitivity: it lifts shadows so
+        // dim motion is not missed. Keep the LUT, but apply it in place on the byte
+        // array instead of copying the frame into the Mat and back out again.
+        applyGamma(current, gammaLutValues);
         grayMat.put(0, 0, current);
-        Core.LUT(grayMat, gammaLut, grayMat);
-        grayMat.get(0, 0, current);
 
         if (previous == null) {
             previous = current.clone();
@@ -305,6 +308,16 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
         return Math.max(0f, Math.min(1f, score));
     }
 
+    /** Applies the gamma LUT in place; one pass, no Mat round trip. */
+    private static void applyGamma(byte[] pixels, int[] lut) {
+        if (pixels == null || lut == null) {
+            return;
+        }
+        for (int i = 0; i < pixels.length; i++) {
+            pixels[i] = (byte) lut[pixels[i] & 0xFF];
+        }
+    }
+
     private void ensureBuffers(int targetW, int targetH) {
         if (targetW == outW && targetH == outH && grayMat != null) {
             return;
@@ -318,12 +331,11 @@ public class OpenCvMog2MotionDetector implements MotionDetector, MotionDebugInfo
         if (hierarchy == null) {
             hierarchy = new Mat();
         }
-        gammaLut = new Mat(1, 256, CvType.CV_8UC1);
-        byte[] lut = new byte[256];
+        gammaLutValues = new int[256];
         for (int i = 0; i < 256; i++) {
-            lut[i] = (byte) Math.min(255, (int) Math.round(255.0 * Math.pow(i / 255.0, 0.72)));
+            gammaLutValues[i] = Math.min(255,
+                    (int) Math.round(255.0 * Math.pow(i / 255.0, 0.72)));
         }
-        gammaLut.put(0, 0, lut);
         openKernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(3, 3));
         closeKernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(5, 5));
     }

@@ -718,6 +718,8 @@ public abstract class Constants {
     public static final String PREF_MOTION_TRIGGER_MODE = "pref_motion_trigger_mode"; // any_motion|person_confirmed
     public static final String PREF_MOTION_SENSITIVITY = "pref_motion_sensitivity"; // 0-100
     public static final String PREF_MOTION_ANALYSIS_FPS = "pref_motion_analysis_fps";
+    /** Minimum gap between object-detection runs. 0 means "decide from measured speed". */
+    public static final String PREF_MOTION_AI_INTERVAL_MS = "pref_motion_ai_interval_ms";
     /** Analyzer frame height: 480, 720 or 1080. Width follows the camera aspect. */
     public static final String PREF_MOTION_ANALYSIS_RESOLUTION = "pref_motion_analysis_resolution"; // 2/3/5
     public static final String PREF_MOTION_DEBOUNCE_MS = "pref_motion_debounce_ms";

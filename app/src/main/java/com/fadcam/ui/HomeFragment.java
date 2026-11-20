@@ -1691,6 +1691,11 @@ public class HomeFragment extends BaseFragment {
         // This method only updates UI state
 
         recordingState = RecordingState.IN_PROGRESS;
+        // Recording is running: any paused state carried over from before is stale.
+        // Without this the paused overlay and the pausedWithLiveView flag survived a
+        // resume, so the overlay stayed on screen while the file was recording.
+        pausedWithLiveView = false;
+        hidePausedOverlay();
         latestElapsedDisplay = buildElapsedDisplayText(0L);
         recordingPauseStartedAt = 0L;
         recordingAccumulatedPausedDurationMs = 0L;
@@ -12822,10 +12827,12 @@ public class HomeFragment extends BaseFragment {
             hidePausedOverlay();
         }
             }
-            // Restore paused overlay if recording is still paused (live view excepted)
+            // Restore the overlay only when the session is genuinely paused without
+            // a live view. The previous branch hid it only when already paused, so a
+            // stale paused overlay stayed on screen while recording was running.
             if (isPaused() && !isPausedWithLiveView()) {
                 showPausedOverlay();
-            } else if (isPaused()) {
+            } else {
                 hidePausedOverlay();
             }
             

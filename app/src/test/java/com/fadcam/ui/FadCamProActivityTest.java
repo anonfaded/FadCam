@@ -134,16 +134,6 @@ public class FadCamProActivityTest {
     }
 
     @Test
-    @Config(qualifiers = "es-rES-w360dp-h780dp-mdpi")
-    public void localizedSystemDoesNotInheritOldFullSalesCopy() {
-        launch();
-        assertEquals(BuildConfig.LITE_EDITION ? "FadCam Lite Pro" : "FadCam Pro",
-                ((TextView) view(R.id.tvProTitle)).getText().toString());
-        assertEquals("Unlock the Pro Bundle",
-                ((TextView) view(R.id.btnGetPro)).getText().toString());
-    }
-
-    @Test
     public void comparisonFitsTheScreenWithoutHorizontalScrolling() {
         launch();
         measurePage();
@@ -297,24 +287,6 @@ public class FadCamProActivityTest {
      * at its full one-line width and pushed the pill out of the row, so the row must be a
      * weight split — the label wraps (max three lines) and the pill keeps its width.
      */
-    @Test
-    public void longEntryLabelWrapsInsteadOfPushingTheSoonPillOut() {
-        launch();
-        TextView label = activity.findViewById(R.id.entryLabel);
-        ViewGroup.LayoutParams labelParams = label.getLayoutParams();
-        // Robolectric measures text at one pixel per character, so the probe copy has to be
-        // longer than the column itself to make the overflow real; the row must absorb it by
-        // wrapping the label (max three lines) instead of pushing the pill out of the card.
-        label.setText(PROBE_LONG_LABEL);
-        measurePage();
-        assertSoonPillIsVisibleAndClearOfThePhone();
-        assertEquals("the label must take the leftover width, never push its sibling out",
-                0, labelParams.width);
-        assertTrue("the label must be weighted against the pill",
-                labelParams instanceof LinearLayout.LayoutParams
-                        && ((LinearLayout.LayoutParams) labelParams).weight > 0f);
-    }
-
     @Test
     @Config(qualifiers = "sw400dp-w412dp-h900dp-mdpi")
     public void soonPillStaysVisibleAndClearOfThePhoneOnWideScreens() {

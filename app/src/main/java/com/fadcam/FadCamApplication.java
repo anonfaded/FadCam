@@ -31,6 +31,16 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
         // still catches post-kill index writes (invocation is on Room's own
         // background invalidation thread either way).
         new Thread(this::registerSelfHealingScanObserver, "selfheal-observer").start();
+
+        // Motion Lab's live monitor flag is transient UI state. If the process was
+        // killed while the monitor was open, the persisted flag would otherwise stay
+        // true forever and make the service encode a JPEG every 900 ms for a screen
+        // nobody is looking at.
+        SharedPreferencesManager.getInstance(this).setMotionDebugUiActive(false);
+
+        // Start the object model now, when a feature needs it, rather than when a
+        // recording starts. The load runs on its own thread and never blocks startup.
+        com.fadcam.motion.domain.detector.ObjectDetectionRuntime.sync(this);
     }
 
     /**

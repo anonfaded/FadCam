@@ -88,7 +88,7 @@ public class GLRecordingPipeline {
     private final Object previewApplyLock = new Object();
     private final Object timestampLock = new Object();  // Synchronization lock for timestamp fields
     private final String orientation;
-    private final int sensorOrientation;
+    private volatile int sensorOrientation;
 
     // Surface dimensions for aspect ratio calculations
     private int mSurfaceWidth;
@@ -3665,6 +3665,33 @@ public class GLRecordingPipeline {
 
     public boolean isAudioMuted() {
         return audioMuted;
+    }
+
+    /** Records which physical camera is live so front/back logic is never stale. */
+    public void setLiveLensFacing(@Nullable Integer lensFacing) {
+        handler.post(() -> {
+            try {
+                if (glRenderer != null) {
+                    glRenderer.setLiveLensFacing(lensFacing);
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "setLiveLensFacing failed", e);
+            }
+        });
+    }
+
+    /** Forwards a new sensor angle to the renderer after a camera switch. */
+    public void setSensorOrientation(int degrees) {
+        this.sensorOrientation = degrees;
+        handler.post(() -> {
+            try {
+                if (glRenderer != null) {
+                    glRenderer.setSensorOrientation(degrees);
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "setSensorOrientation failed", e);
+            }
+        });
     }
 
     public void setFrontVideoMirrorEnabled(boolean enabled) {

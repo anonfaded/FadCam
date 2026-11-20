@@ -54,4 +54,5 @@ public interface AiEventSnapshotDao {
             long sinceEpochMs,
             int limitCount
     );
+
 }

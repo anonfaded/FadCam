@@ -232,8 +232,15 @@ public class ForensicsGalleryAdapter extends RecyclerView.Adapter<RecyclerView.V
      * The result is cached and accessible via {@link #getTotalImageBytes()}.
      */
     public void computeTotalImageBytesAsync(@Nullable Runnable onComplete) {
+        // Iterate a copy: this runs on a background executor while the main thread may
+        // replace the backing list. Walking the live list there is what threw
+        // ConcurrentModificationException.
+        java.util.List<ForensicsSnapshotWithMedia> snapshot;
+        synchronized (this) {
+            snapshot = new java.util.ArrayList<>(rows);
+        }
         long total = 0L;
-        for (ForensicsSnapshotWithMedia row : rows) {
+        for (ForensicsSnapshotWithMedia row : snapshot) {
             total += resolveImageSizeCached(row.imageUri);
         }
         cachedTotalBytes = total;

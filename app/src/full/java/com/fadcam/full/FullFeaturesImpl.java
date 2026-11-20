@@ -58,7 +58,7 @@ public final class FullFeaturesImpl implements FullFeatures {
     @Override
     public com.fadcam.motion.domain.detector.AiObjectDetector createAiDetector(Context ctx) {
         try {
-            return new com.fadcam.motion.domain.detector.EfficientDetLite1Detector(ctx);
+            return new com.fadcam.motion.domain.detector.RfDetrNanoDetector(ctx);
         } catch (Throwable t) {
             return null;
         }

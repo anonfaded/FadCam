@@ -15,6 +15,16 @@ public interface AiObjectDetector {
 
     boolean isAvailable();
 
+    /**
+     * User-facing explanation when {@link #isAvailable()} is false, or null when the
+     * detector is usable. Implementations must state the real cause (for example a
+     * missing GPU capability) rather than degrade silently.
+     */
+    @androidx.annotation.Nullable
+    default String unavailableReason() {
+        return null;
+    }
+
     List<DetectionResult> detect(FramePacket packet);
 
     float bestPersonConfidence(List<DetectionResult> detections);
@@ -22,6 +32,14 @@ public interface AiObjectDetector {
     boolean hasPerson(List<DetectionResult> detections);
 
     DetectionResult choosePrimary(List<DetectionResult> detections);
+
+    /**
+     * Releases the native model and its buffers. Called when the feature that
+     * needs detection is switched off, so the 56 MB model does not stay resident
+     * for a feature the user disabled.
+     */
+    default void close() {
+    }
 
     final class FramePacket {
         public final int width;
@@ -33,6 +51,18 @@ public interface AiObjectDetector {
         public final byte[] y;
         public final byte[] u;
         public final byte[] v;
+        /**
+         * Clockwise rotation that turns this sensor-oriented frame into the upright
+         * content orientation the model was trained on. Detections are mapped back
+         * to sensor coordinates, so every downstream consumer keeps using one space.
+         */
+        public final int rotationDegrees;
+        /**
+         * True for the front camera. Its analysis stream runs bottom-to-top relative to
+         * the content orientation, so both the overlay and the evidence snapshot apply
+         * the same vertical flip.
+         */
+        public final boolean frontFacing;
 
         private FramePacket(
                 int width,
@@ -43,7 +73,9 @@ public interface AiObjectDetector {
                 int uvPixelStride,
                 byte[] y,
                 byte[] u,
-                byte[] v
+                byte[] v,
+                int rotationDegrees,
+                boolean frontFacing
         ) {
             this.width = width;
             this.height = height;
@@ -54,9 +86,28 @@ public interface AiObjectDetector {
             this.y = y;
             this.u = u;
             this.v = v;
+            this.rotationDegrees = ((rotationDegrees % 360) + 360) % 360;
+            this.frontFacing = frontFacing;
         }
 
-        public static FramePacket copyFrom(Image image) {
+        /**
+         * A neutral frame for measuring model cost at load time. It carries no
+         * scene data; the numbers give a timing baseline, not a detection.
+         */
+        public static FramePacket syntheticWarmup(int width, int height) {
+            int ySize = width * height;
+            return new FramePacket(
+                    width, height,
+                    width, 1,
+                    width / 2, 1,
+                    new byte[ySize],
+                    new byte[ySize / 4],
+                    new byte[ySize / 4],
+                    0,
+                    false);
+        }
+
+        public static FramePacket copyFrom(Image image, int rotationDegrees, boolean frontFacing) {
             if (image == null || image.getPlanes() == null || image.getPlanes().length < 3) {
                 return null;
             }
@@ -91,7 +142,9 @@ public interface AiObjectDetector {
                     planes[1].getPixelStride(),
                     y,
                     u,
-                    v
+                    v,
+                    rotationDegrees,
+                    frontFacing
             );
         }
     }

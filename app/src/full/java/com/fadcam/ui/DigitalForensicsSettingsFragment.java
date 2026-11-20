@@ -25,6 +25,7 @@ public class DigitalForensicsSettingsFragment extends Fragment {
 
     private SharedPreferencesManager prefs;
 
+    private android.view.View rootView;
     private TextView valueStatus;
     private TextView valueEvidence;
     private TextView valueCaptureScope;
@@ -70,6 +71,7 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         previewBox = view.findViewById(R.id.forensics_preview_bbox);
         previewLabel = view.findViewById(R.id.forensics_preview_label);
 
+        this.rootView = view;
         bindCurrentValues();
         wireListeners(view);
         startPreviewLoop();
@@ -106,6 +108,33 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         rowCaptureScope = null;
     }
 
+    /**
+     * Explains, in the forensics screen itself, when this phone's GPU is too slow for
+     * the full detection cadence. Evidence still works; it is simply sampled less
+     * often. Shown from the measured value so it is never a guess about the hardware.
+     */
+    private void bindSlowDeviceNotice(Object view) {
+        if (!(view instanceof android.view.View)) {
+            return;
+        }
+        android.widget.TextView notice = ((android.view.View) view)
+                .findViewById(R.id.text_df_slow_device_notice);
+        if (notice == null) {
+            return;
+        }
+        String tooSlow = com.fadcam.motion.domain.detector.ObjectDetectionRuntime
+                .getTooSlowReason();
+        long measuredMs = com.fadcam.motion.domain.detector.ObjectDetectionRuntime
+                .getLastInferenceMs();
+        if (tooSlow == null || measuredMs <= 0L) {
+            notice.setVisibility(android.view.View.GONE);
+            return;
+        }
+        long seconds = Math.max(1L, Math.round(measuredMs / 1000.0));
+        notice.setText(getString(R.string.digital_forensics_slow_device_notice, seconds));
+        notice.setVisibility(android.view.View.VISIBLE);
+    }
+
     private void bindCurrentValues() {
         valueStatus.setText(enabledLabel(prefs.isDigitalForensicsEnabled()));
         boolean evidenceEnabled = prefs.isDfEvidenceCollectionEnabled();
@@ -119,6 +148,9 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         boolean motionLabEnabled = prefs.isMotionModeEnabled();
         if (motionLabBanner != null) {
             motionLabBanner.setVisibility(motionLabEnabled ? View.GONE : View.VISIBLE);
+        }
+        if (rootView != null) {
+            bindSlowDeviceNotice(rootView);
         }
     }
 
@@ -148,6 +180,7 @@ public class DigitalForensicsSettingsFragment extends Fragment {
                 value -> {
                     prefs.setDigitalForensicsEnabled(value);
                     bindCurrentValues();
+                    com.fadcam.motion.domain.detector.ObjectDetectionRuntime.sync(requireContext());
                 }
         ));
 
@@ -159,6 +192,7 @@ public class DigitalForensicsSettingsFragment extends Fragment {
                 value -> {
                     prefs.setDfEvidenceCollectionEnabled(value);
                     bindCurrentValues();
+                    com.fadcam.motion.domain.detector.ObjectDetectionRuntime.sync(requireContext());
                 }
         ));
 
@@ -172,6 +206,7 @@ public class DigitalForensicsSettingsFragment extends Fragment {
                 value -> {
                     prefs.setDfOverlayEnabled(value);
                     bindCurrentValues();
+                    com.fadcam.motion.domain.detector.ObjectDetectionRuntime.sync(requireContext());
                 }
         ));
     }

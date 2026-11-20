@@ -62,6 +62,18 @@ public class GLWatermarkRenderer {
     private int forensicsOverlayTextureId;
     private FloatBuffer forensicsOverlayRectBuffer;
     private String forensicsOverlayPayload = "";
+    private long lastOverlayDrawLogMs = 0L;
+    // Reused across every overlay redraw. Allocating Paints and re-parsing the
+    // Ubuntu typeface per detection was a measurable cost on long recordings.
+    private final Paint forensicsBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint forensicsLabelBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint forensicsLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF forensicsRect = new RectF();
+    private final RectF forensicsLabelRect = new RectF();
+    private static final int COLOR_PERSON = 0xFF33D17A;
+    private static final int COLOR_VEHICLE = 0xFF29B6F6;
+    private static final int COLOR_PET = 0xFFBA68C8;
+    private static final int COLOR_OBJECT = 0xFFFFB74D;
     private int previewOverlayVpX = 0;
     private int previewOverlayVpY = 0;
     private int previewOverlayVpW = 0;
@@ -208,7 +220,17 @@ public class GLWatermarkRenderer {
     private FloatBuffer watermarkTexCoordBuffer;
     private static final float[] WATERMARK_TEXCOORDS = { 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
 
-    private final int sensorOrientation;
+    /**
+     * Sensor mounting angle. NOT final: a live camera switch replaces the sensor, and
+     * every rotation in the renderer (and the detection overlay) is derived from it.
+     * When this stayed fixed, switching cameras left the overlay rotated with the
+     * previous sensor's angle.
+     */
+    private volatile int sensorOrientation;
+
+    /** Camera2 LENS_FACING of the camera currently delivering frames, if known. */
+    @Nullable
+    private volatile Integer liveLensFacing;
     private volatile boolean frontVideoMirrorEnabled = false;
     private int lastLoggedRotation = Integer.MIN_VALUE;
     private boolean lastLoggedFront = false;
@@ -1658,75 +1680,89 @@ public class GLWatermarkRenderer {
             return;
         }
 
-        // Detection coordinates are in the unrotated analysis (sensor) frame.
-        // The preview/encoder content is rotated to the app orientation, and the
-        // front preview may be mirrored. Map the box before drawing so it sits on
-        // the same pixels the detector saw instead of being stretched by the
-        // landscape→portrait bitmap swap.
-        float[] mapped = mapDetectionBoxToContent(cx, cy, boxW, boxH);
-        cx = mapped[0];
-        cy = mapped[1];
-        boxW = mapped[2];
-        boxH = mapped[3];
+        // The detector reports boxes in upright space, which is the same orientation
+        // as the preview and the recorded video. Only the mirror case needs a change,
+        // so there is no rotation here at all.
+        // Boxes arrive in the upright content frame, so no rotation is applied here.
+        //
+        // The front camera needs one extra correction, measured on a Pixel 7 Pro: a
+        // subject at the bottom of the frame was reported at the top, while the
+        // left/right position was correct. A wrong rotation angle would move both
+        // axes, so this is a vertical flip, not a rotation — the front camera's
+        // analysis stream runs bottom-to-top relative to the content orientation.
+        //
+        // Horizontal is untouched: the selfie mirror is handled separately below and
+        // flipping both here would move boxes to the opposite side again.
+        if (isFullscreenCameraFront()) {
+            cy = 1f - cy;
+        }
+        // Kept intentionally identical to the evidence-snapshot transform: the JPEG is
+        // rotated by the same angle and vertically flipped for the front camera, so
+        // preview boxes and saved pictures always describe the same pixels.
 
         float left = (cx - (boxW / 2f)) * overlayWidth;
         float top = (cy - (boxH / 2f)) * overlayHeight;
         float right = (cx + (boxW / 2f)) * overlayWidth;
         float bottom = (cy + (boxH / 2f)) * overlayHeight;
-        RectF rect = new RectF(
+        forensicsRect.set(
                 Math.max(0f, left),
                 Math.max(0f, top),
                 Math.min(overlayWidth, right),
                 Math.min(overlayHeight, bottom)
         );
+        RectF rect = forensicsRect;
 
-        Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(Math.max(2f, overlayWidth * 0.0022f));
-        stroke.setColor(colorForType(coarseType));
+        int typeColor = colorForType(coarseType);
+        forensicsBoxPaint.setStyle(Paint.Style.STROKE);
+        forensicsBoxPaint.setStrokeWidth(Math.max(2f, overlayWidth * 0.0022f));
+        forensicsBoxPaint.setColor(typeColor);
         float corner = Math.max(8f, overlayWidth * 0.010f);
-        canvas.drawRoundRect(rect, corner, corner, stroke);
+        canvas.drawRoundRect(rect, corner, corner, forensicsBoxPaint);
 
-        Paint labelBg = new Paint(Paint.ANTI_ALIAS_FLAG);
-        labelBg.setStyle(Paint.Style.FILL);
-        labelBg.setColor(adjustAlpha(colorForType(coarseType), 210));
-        Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        labelPaint.setColor(Color.WHITE);
-        labelPaint.setTextSize(Math.max(18f, overlayWidth * 0.030f));
-        try {
-            labelPaint.setTypeface(android.graphics.Typeface.createFromAsset(context.getAssets(), "ubuntu_regular.ttf"));
-        } catch (Exception ignored) {
-            labelPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.SANS_SERIF,
-                    android.graphics.Typeface.BOLD));
+        if (cachedUbuntuTypeface == null) {
+            try {
+                cachedUbuntuTypeface = android.graphics.Typeface.createFromAsset(
+                        context.getAssets(), "ubuntu_regular.ttf");
+            } catch (Exception ignored) {
+                cachedUbuntuTypeface = android.graphics.Typeface.create(
+                        android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD);
+            }
         }
-        labelPaint.setFakeBoldText(true);
-        labelPaint.setLetterSpacing(0.02f);
+        forensicsLabelBgPaint.setStyle(Paint.Style.FILL);
+        forensicsLabelBgPaint.setColor(adjustAlpha(typeColor, 210));
+        forensicsLabelPaint.setColor(Color.WHITE);
+        forensicsLabelPaint.setTextSize(Math.max(18f, overlayWidth * 0.030f));
+        forensicsLabelPaint.setTypeface(cachedUbuntuTypeface);
+        forensicsLabelPaint.setFakeBoldText(true);
+        forensicsLabelPaint.setLetterSpacing(0.02f);
         String prettyLabel = classLabel == null || classLabel.trim().isEmpty() ? "object" : classLabel.trim().toLowerCase();
         String label = String.format(java.util.Locale.US, "%s %d%%", prettyLabel, Math.round(confidence * 100f));
 
-        float textWidth = labelPaint.measureText(label);
+        float textWidth = forensicsLabelPaint.measureText(label);
         float labelPaddingX = Math.max(8f, overlayWidth * 0.008f);
         float labelPaddingY = Math.max(5f, overlayHeight * 0.010f);
-        float labelHeight = (labelPaint.getTextSize() + (labelPaddingY * 2f));
+        float labelHeight = (forensicsLabelPaint.getTextSize() + (labelPaddingY * 2f));
         float labelLeft = Math.max(0f, rect.left);
         float labelTop = Math.max(0f, rect.top - labelHeight - 5f);
-        RectF labelRect = new RectF(labelLeft, labelTop, labelLeft + textWidth + (labelPaddingX * 2f), labelTop + labelHeight);
-        canvas.drawRoundRect(labelRect, Math.max(6f, overlayWidth * 0.007f), Math.max(6f, overlayWidth * 0.007f), labelBg);
-        float baseline = labelRect.top + labelPaddingY - labelPaint.ascent();
-        canvas.drawText(label, labelRect.left + labelPaddingX, baseline, labelPaint);
+        forensicsLabelRect.set(labelLeft, labelTop,
+                labelLeft + textWidth + (labelPaddingX * 2f), labelTop + labelHeight);
+        canvas.drawRoundRect(forensicsLabelRect, Math.max(6f, overlayWidth * 0.007f),
+                Math.max(6f, overlayWidth * 0.007f), forensicsLabelBgPaint);
+        float baseline = forensicsLabelRect.top + labelPaddingY - forensicsLabelPaint.ascent();
+        canvas.drawText(label, forensicsLabelRect.left + labelPaddingX, baseline, forensicsLabelPaint);
     }
 
     private int colorForType(String coarseType) {
         if ("PERSON".equalsIgnoreCase(coarseType)) {
-            return Color.parseColor("#33D17A");
+            return COLOR_PERSON;
         }
         if ("VEHICLE".equalsIgnoreCase(coarseType)) {
-            return Color.parseColor("#29B6F6");
+            return COLOR_VEHICLE;
         }
         if ("PET".equalsIgnoreCase(coarseType)) {
-            return Color.parseColor("#BA68C8");
+            return COLOR_PET;
         }
-        return Color.parseColor("#FFB74D");
+        return COLOR_OBJECT;
     }
 
     private int adjustAlpha(int color, int alpha) {
@@ -1757,13 +1793,23 @@ public class GLWatermarkRenderer {
         if (payload != null && !payload.isEmpty()) {
             drawForensicsOverlay(canvas, payload);
         }
+        // Flip for GL texture coordinates. This is the original, verified transform:
+        // createBitmap applies the matrix and re-lays the flipped result inside the
+        // same bounds. Replacing it with a hand-managed Canvas transform mirrored the
+        // boxes vertically, which showed up as boxes drawn away from their objects.
         android.graphics.Matrix flipMatrix = new android.graphics.Matrix();
         flipMatrix.preScale(1.0f, -1.0f);
-        Bitmap flippedBitmap = Bitmap.createBitmap(forensicsOverlayBitmap, 0, 0, forensicsOverlayBitmap.getWidth(),
-                forensicsOverlayBitmap.getHeight(), flipMatrix, true);
+        Bitmap flippedBitmap = Bitmap.createBitmap(forensicsOverlayBitmap, 0, 0,
+                forensicsOverlayBitmap.getWidth(), forensicsOverlayBitmap.getHeight(),
+                flipMatrix, true);
+        long uploadStart = android.os.SystemClock.elapsedRealtime();
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, forensicsOverlayTextureId);
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, flippedBitmap, 0);
         flippedBitmap.recycle();
+        long uploadMs = android.os.SystemClock.elapsedRealtime() - uploadStart;
+        if (uploadMs >= 8L) {
+            FLog.w(TAG, "Overlay texture upload: " + uploadMs + " ms");
+        }
     }
 
     private float clamp01(float value) {
@@ -2089,6 +2135,37 @@ public class GLWatermarkRenderer {
     private void drawForensicsOverlayLayer() {
         if (forensicsOverlayPayload == null || forensicsOverlayPayload.isEmpty() || forensicsOverlayTextureId == 0) {
             return;
+        }
+        long nowLog = android.os.SystemClock.elapsedRealtime();
+        if (nowLog - lastOverlayDrawLogMs >= 5000L) {
+            lastOverlayDrawLogMs = nowLog;
+            int boxes = forensicsOverlayPayload.split(";").length;
+            String first = forensicsOverlayPayload.split(";")[0];
+            String[] f = first.split("\\|");
+            String geom = "-";
+            if (f.length == 7) {
+                float cx = clamp01(Float.parseFloat(f[2]));
+                float cy = clamp01(Float.parseFloat(f[3]));
+                float bw = clamp01(Float.parseFloat(f[4]));
+                float bh = clamp01(Float.parseFloat(f[5]));
+                float drawX = cx;
+                if (isFullscreenCameraFront() && frontVideoMirrorEnabled) {
+                    drawX = 1f - drawX;
+                }
+                int bw2 = forensicsOverlayBitmap == null ? 0 : forensicsOverlayBitmap.getWidth();
+                int bh2 = forensicsOverlayBitmap == null ? 0 : forensicsOverlayBitmap.getHeight();
+                geom = "box(" + String.format(java.util.Locale.US, "%.2f", drawX) + ","
+                        + String.format(java.util.Locale.US, "%.2f", cy) + ")"
+                        + " px(" + Math.round(drawX * bw2) + ","
+                        + Math.round(cy * bh2) + ")";
+            }
+            FLog.i(TAG, "Overlay drawn: boxes=" + boxes
+                    + " rotation=" + getRequiredRotation()
+                    + " sensorOrient=" + sensorOrientation
+                    + " " + geom
+                    + " viewport=" + previewOverlayVpW + "x" + previewOverlayVpH
+                    + " bitmap=" + (forensicsOverlayBitmap == null ? "null"
+                        : forensicsOverlayBitmap.getWidth() + "x" + forensicsOverlayBitmap.getHeight()));
         }
         int[] previousViewport = new int[4];
         GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, previousViewport, 0);
@@ -2753,6 +2830,21 @@ public class GLWatermarkRenderer {
         currentExposureCompensation = Math.max(-4.0f, Math.min(4.0f, evStops));
     }
 
+    /** Records which physical camera is live, so front/back logic cannot use a stale value. */
+    public void setLiveLensFacing(@Nullable Integer lensFacing) {
+        this.liveLensFacing = lensFacing;
+    }
+
+    /** Updates the sensor angle after a camera switch, so all derived rotations follow. */
+    public void setSensorOrientation(int degrees) {
+        int normalized = ((degrees % 360) + 360) % 360;
+        if (this.sensorOrientation == normalized) {
+            return;
+        }
+        this.sensorOrientation = normalized;
+        FLog.i(TAG, "sensorOrientation updated to " + normalized);
+    }
+
     public void setFrontVideoMirrorEnabled(boolean enabled) {
         if (frontVideoMirrorEnabled == enabled) {
             return;
@@ -2903,6 +2995,21 @@ public class GLWatermarkRenderer {
         }
     }
 
+    /**
+     * The rotation the detector analysed the frame with. Must stay identical to
+     * RecordingService#getUprightRotationDegrees: boxes come from that orientation,
+     * so converting them with any other angle places them on the wrong subject.
+     *
+     * <p>This is {@code (displayRotation - sensorOrientation)} and is deliberately
+     * NOT {@link #getRequiredRotation()}, which uses the opposite sign and an extra
+     * front-camera inversion for the camera texture.
+     */
+    private int getDetectorRotation() {
+        // Same value the video is rotated by, which is also what the detector was
+        // given. There is exactly one rotation in the app.
+        return getRequiredRotation();
+    }
+
     private int getRequiredRotation() {
         int displayRotationDegrees = getDisplayRotation();
         int rotation = (sensorOrientation - displayRotationDegrees + 360) % 360;
@@ -2924,6 +3031,13 @@ public class GLWatermarkRenderer {
     private boolean isFrontCamera() {
         // For dual camera, use the explicit flag set by session-level swap
         if (pipEnabled && fullscreenCameraIsFront) return true;
+        // Prefer the camera that is actually delivering frames. The saved preference
+        // is written by the UI and can lag a live switch by a frame or more, which
+        // made the overlay apply the front-camera flip to back-camera frames.
+        Integer liveFacing = liveLensFacing;
+        if (liveFacing != null) {
+            return liveFacing == android.hardware.camera2.CameraCharacteristics.LENS_FACING_FRONT;
+        }
         // Prefer user-selected camera source; sensor orientation alone is not reliable
         try {
             CameraType selected = SharedPreferencesManager.getInstance(context).getCameraSelection();

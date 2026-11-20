@@ -2435,7 +2435,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="motion_lab_debug_action_placeholder">Last action: -</string>
     <string name="motion_lab_debug_person_placeholder">Person: -</string>
     <string name="motion_lab_debug_metrics_placeholder">Area/Strong/Mean/BG/Max/Global: -</string>
-    <string name="motion_lab_debug_frame">Live analyzer frame preview</string>
+    <string name="motion_lab_debug_frame">Motion detection illustration</string>
     <string name="motion_lab_debug_copy_snapshot">Copy monitor snapshot</string>
     <string name="motion_lab_debug_copy_done">Motion snapshot copied</string>
     <string name="motion_lab_debug_no_snapshot">No motion snapshot is available yet.</string>

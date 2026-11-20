@@ -744,6 +744,11 @@ public class ForensicsGalleryFragment extends Fragment {
         isLoading = true;
         final android.content.Context context = requireContext().getApplicationContext();
         ensureExecutor().execute(() -> {
+            // Single load, as before. Paging added no benefit: a library of ~1250
+            // snapshots holds only about a dozen distinct recordings, so it split one
+            // cheap query into many and introduced a cross-thread list mutation that
+            // crashed the app. The slow part was never the row count — see
+            // reconcileMediaState.
             List<ForensicsSnapshotWithMedia> rows = ForensicsDatabase.getInstance(context)
                     .aiEventSnapshotDao()
                     .getGallerySnapshots(null, 0f, null, 0L, 3000);
@@ -1035,14 +1040,37 @@ public class ForensicsGalleryFragment extends Fragment {
         }
     }
 
+    /**
+     * Marks rows whose source recording no longer exists.
+     *
+     * <p>This used to run a ContentResolver-adjacent existence check and a database
+     * UPDATE for every row on every gallery load: ~1250 snapshots meant ~1250 writes
+     * to decide a property that is identical across a whole recording. There are only
+     * about a dozen distinct recordings, so the check is done once per media and the
+     * database is only touched when the stored value actually changes. That is what
+     * made a large library feel empty on a cold start.
+     */
     private void reconcileMediaState(@Nullable List<ForensicsSnapshotWithMedia> rows) {
         if (rows == null || rows.isEmpty() || !isAdded()) return;
         ForensicsDatabase db = ForensicsDatabase.getInstance(requireContext());
+        java.util.Map<String, Boolean> missingByMedia = new java.util.HashMap<>();
+        java.util.Set<String> alreadyWritten = new java.util.HashSet<>();
         for (ForensicsSnapshotWithMedia row : rows) {
-            boolean missing = isMediaMissing(row.mediaUri);
+            String mediaUid = row.mediaUid;
+            boolean missing = missingByMedia.get(mediaUid) != null
+                    ? missingByMedia.get(mediaUid)
+                    : isMediaMissing(row.mediaUri);
+            missingByMedia.put(mediaUid, missing);
+            // Respect the value the query already returned; only write on a change.
+            if (row.mediaMissing == missing) {
+                continue;
+            }
             row.mediaMissing = missing;
-            if (row.mediaUid != null && !row.mediaUid.isEmpty()) {
-                try { db.aiEventDao().updateMediaMissingByMediaUid(row.mediaUid, missing); } catch (Exception ignored) {}
+            if (mediaUid != null && !mediaUid.isEmpty() && alreadyWritten.add(mediaUid)) {
+                try {
+                    db.aiEventDao().updateMediaMissingByMediaUid(mediaUid, missing);
+                } catch (Exception ignored) {
+                }
             }
         }
     }

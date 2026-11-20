@@ -410,7 +410,7 @@ android {
             getByName(flavor).res.srcDir("src/liteCommon/res")
         }
         // Full-only source dir: heavy/native features that Lite must not package
-        // (Faditor/ffmpeg, motion detection/OpenCV/TFLite, forensics). Shared by ALL
+        // (Faditor/ffmpeg, motion detection, object detection, forensics). Shared by ALL
         // Full flavors; Lite flavors (lite + disguises) never compile this code.
         val fullOnlyDirs = listOf("default", "notesPro", "calcPro", "weatherPro")
         fullOnlyDirs.forEach { flavor ->
@@ -460,14 +460,6 @@ android {
     }
 }
 
-// tensorflow-lite-api is excluded for task-vision on ALL Full flavor configurations
-configurations {
-    listOf("defaultImplementation", "notesProImplementation", "calcProImplementation", "weatherProImplementation")
-        .forEach { name ->
-            getByName(name).exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
-        }
-}
-
 dependencies {
     // Backports for newer JDK APIs on old API levels — pairs with isCoreLibraryDesugaringEnabled.
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
@@ -500,12 +492,20 @@ dependencies {
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
     implementation(libs.okhttp)
-    // TensorFlow Lite (AI object detection) + OpenCV (MOG2 motion): FULL flavors only —
-    // detectors live in src/full, Lite keeps the pure-Java FrameDiff fallback.
+    // On-device object detection (RF-DETR Nano via LiteRT) + OpenCV (MOG2).
+    // FULL flavors only: Lite neither arms motion nor collects evidence.
+    //
+    // Model source (Apache-2.0):
+    //   https://huggingface.co/litert-community/RF-DETR-Nano-LiteRT
+    //   https://github.com/roboflow/rf-detr
+    // The two .tflite graphs are committed under app/src/full/assets/models/.
     val fullFlavors = listOf("default", "notesPro", "calcPro", "weatherPro")
     fullFlavors.forEach { flavor ->
-        add("${flavor}Implementation", libs.tensorflow.lite)
-        add("${flavor}Implementation", libs.tensorflow.lite.task.vision)
+        // RF-DETR needs the LiteRT CompiledModel GPU path; the legacy TFLite GPU
+        // delegate cannot execute this graph.
+        add("${flavor}Implementation", libs.litert)
+        add("${flavor}Implementation", libs.litert.api)
+        add("${flavor}Implementation", libs.litert.gpu)
         add("${flavor}Implementation", libs.opencv.android)
     }
     implementation(libs.osmdroid.android)

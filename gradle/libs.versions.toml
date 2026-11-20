@@ -29,8 +29,7 @@ osmdroidAndroid = "6.1.20"
 smartExceptionJava = "0.2.1"
 swiperefreshlayout = "1.2.0"
 viewpager2 = "1.1.0"
-tensorflowLite = "2.17.0"
-tensorflowLiteTaskVision = "0.4.4"
+litert = "2.3.2"
 opencvAndroid = "5.0.0.1"
 room = "2.8.4"
 
@@ -82,8 +81,9 @@ media3-session = { module = "androidx.media3:media3-session", version.ref = "med
 media3-transformer = { module = "androidx.media3:media3-transformer", version.ref = "media3" }
 media3-effect = { module = "androidx.media3:media3-effect", version.ref = "media3" }
 nanohttpd-core = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
-tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowLite" }
-tensorflow-lite-task-vision = { module = "org.tensorflow:tensorflow-lite-task-vision", version.ref = "tensorflowLiteTaskVision" }
+litert = { module = "com.google.ai.edge.litert:litert", version.ref = "litert" }
+litert-api = { module = "com.google.ai.edge.litert:litert-api", version.ref = "litert" }
+litert-gpu = { module = "com.google.ai.edge.litert:litert-gpu", version.ref = "litert" }
 opencv-android = { module = "org.opencv:opencv", version.ref = "opencvAndroid" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }

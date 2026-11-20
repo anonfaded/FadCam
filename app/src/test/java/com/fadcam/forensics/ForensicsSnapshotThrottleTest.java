@@ -2,102 +2,178 @@ package com.fadcam.forensics;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+
+import com.fadcam.util.CaptureThrottlePolicy;
 
 import org.junit.Test;
 
 /**
- * Regression tests for the evidence-gallery flood.
+ * Edge-case coverage for the evidence-gallery capture policy.
  *
- * <p>The original logic computed a minimum interval and then ignored it: both
- * branches of the final decision were identical, so a person standing in front of
- * the camera produced a snapshot every heartbeat (~1.6 s) — thousands per hour.
- * These tests encode the rule that must hold: a hard per-event floor that no
- * change signal can bypass.
+ * <p>These tests exercise the real production class ({@link CaptureThrottlePolicy}),
+ * not a copy of its rules.
+ *
+ * <p>Original bug: the recorder computed a minimum interval and then ignored it —
+ * both branches of the decision were identical — so a person standing in frame
+ * produced a snapshot on almost every 1.6 s heartbeat (thousands per hour).
  */
 public class ForensicsSnapshotThrottleTest {
 
-    /** Mirror of the recorder's policy constants. */
-    private static final long MIN_INTERVAL_MS = 6_000L;
-    private static final long HEARTBEAT_MS = 12_000L;
-    private static final int MAX_PER_EVENT = 15;
-    private static final long LOW_POWER_MS = 60_000L;
+    private static final long NEVER = -1L;
 
-    /**
-     * The recorder's decision, reproduced from the production rule so the test
-     * fails if the production logic regresses.
-     */
-    private static boolean shouldPersist(long elapsedMs, int snapshotCount,
-                                         boolean changed) {
-        if (elapsedMs < MIN_INTERVAL_MS) {
-            return false;
-        }
-        if (snapshotCount >= MAX_PER_EVENT) {
-            return elapsedMs >= LOW_POWER_MS;
-        }
-        if (elapsedMs >= HEARTBEAT_MS) {
-            return true;
-        }
-        return changed;
+    @Test
+    public void firstSightingAlwaysCapturesEvenIfInstantaneous() {
+        // A subject that appears and leaves inside one floor window must still be
+        // recorded. This is the fast walk-through case.
+        assertTrue(CaptureThrottlePolicy.shouldCapture(
+                NEVER, 0, /* motionChanged */ false, /* visualChanged */ false));
+        // Also when it arrives with everything "unchanged".
+        assertTrue(CaptureThrottlePolicy.shouldCapture(NEVER, 7, false, false));
     }
 
     @Test
-    public void aMovingPersonCannotBeCapturedMoreOftenThanTheFloor() {
-        // Simulate a person continuously moving: "changed" is true every sample at 1.6s.
-        int captured = 0;
-        int count = 0;
-        long lastCapturedAt = -1;
-        for (long t = 0; t <= 60_000; t += 1_600) {
-            long elapsed = lastCapturedAt < 0 ? Long.MAX_VALUE : t - lastCapturedAt;
-            if (shouldPersist(elapsed, count, /* changed= */ true)) {
-                captured++;
-                count++;
-                lastCapturedAt = t;
-            }
-        }
-        // 60 s at a 6 s floor can never yield more than 11 photos (was ~37).
-        assertTrue("a live subject must not flood the gallery; got " + captured,
-                captured <= 11);
+    public void changeSignalCannotBypassTheHardFloor() {
+        // 1 ms after the last capture, even a large change is refused.
+        assertFalse(CaptureThrottlePolicy.shouldCapture(
+                0L, 3, true, true));
+        assertFalse(CaptureThrottlePolicy.shouldCapture(
+                CaptureThrottlePolicy.MIN_INTERVAL_MS - 1, 3, true, true));
+        // At the floor it is allowed.
+        assertTrue(CaptureThrottlePolicy.shouldCapture(
+                CaptureThrottlePolicy.MIN_INTERVAL_MS, 3, true, true));
     }
 
     @Test
-    public void changeSignalCannotBypassTheFloor() {
-        // 1 s after the last snapshot, everything "changed" — still refused.
-        assertFalse(shouldPersist(1_000L, 5, true));
-        // At the floor, it is allowed.
-        assertTrue(shouldPersist(MIN_INTERVAL_MS, 5, true));
+    public void betweenFloorAndHeartbeatOnlyRealChangeQualifies() {
+        long between = CaptureThrottlePolicy.MIN_INTERVAL_MS + 1_000L;
+        assertFalse("no change must not produce a photo",
+                CaptureThrottlePolicy.shouldCapture(between, 3, false, false));
+        assertTrue("moved subject must produce a photo",
+                CaptureThrottlePolicy.shouldCapture(between, 3, true, false));
+        assertTrue("changed scene must produce a photo",
+                CaptureThrottlePolicy.shouldCapture(between, 3, false, true));
     }
 
     @Test
-    public void perEventBudgetThenSlowHeartbeat() {
-        // Budget spent: only the slow cadence produces evidence.
-        assertFalse(shouldPersist(10_000L, MAX_PER_EVENT, true));
-        assertTrue(shouldPersist(LOW_POWER_MS, MAX_PER_EVENT, true));
+    public void heartbeatKeepsLongStandingEventDocumented() {
+        assertFalse(CaptureThrottlePolicy.shouldCapture(
+                CaptureThrottlePolicy.HEARTBEAT_MS - 1, 3, false, false));
+        assertTrue(CaptureThrottlePolicy.shouldCapture(
+                CaptureThrottlePolicy.HEARTBEAT_MS, 3, false, false));
     }
 
     @Test
-    public void longStandingEventStillGetsPeriodicEvidence() {
-        // Between the floor and the heartbeat, with no change: no photo.
-        assertFalse(shouldPersist(MIN_INTERVAL_MS + 1_000L, 3, false));
-        // At the heartbeat: one photo, so evidence is not stale.
-        assertTrue(shouldPersist(HEARTBEAT_MS, 3, false));
+    public void perEventBudgetThenSlowCadence() {
+        int spent = CaptureThrottlePolicy.MAX_PER_EVENT;
+        // Budget spent: ordinary heartbeat no longer applies.
+        assertFalse(CaptureThrottlePolicy.shouldCapture(
+                CaptureThrottlePolicy.HEARTBEAT_MS, spent, true, true));
+        // Only the low-power cadence does.
+        assertFalse(CaptureThrottlePolicy.shouldCapture(
+                CaptureThrottlePolicy.LOW_POWER_INTERVAL_MS - 1, spent, true, true));
+        assertTrue(CaptureThrottlePolicy.shouldCapture(
+                CaptureThrottlePolicy.LOW_POWER_INTERVAL_MS, spent, true, true));
     }
 
     @Test
-    public void thousandPhotosPerFewMinutesIsImpossible() {
-        // The reported symptom: ~1000 photos in a few minutes. With the floor, a
-        // 10-minute continuous event caps at MAX_PER_EVENT + a few heartbeats.
+    public void continuousMotionCannotFloodPerMinute() {
         int captured = 0;
         int count = 0;
         long last = -1;
-        for (long t = 0; t <= 600_000L; t += 1_600) {
-            long elapsed = last < 0 ? Long.MAX_VALUE : t - last;
-            if (shouldPersist(elapsed, count, true)) {
+        // 1.6 s sampling, subject always "changing".
+        for (long t = 0; t <= 60_000L; t += 1_600) {
+            long elapsed = last < 0 ? NEVER : t - last;
+            if (CaptureThrottlePolicy.shouldCapture(elapsed, count, true, true)) {
                 captured++;
                 count++;
                 last = t;
             }
         }
-        assertTrue("10 minutes must not produce hundreds of photos; got " + captured,
-                captured <= 25);
+        // 60 s / 6 s floor = at most 11 captures (previously ~37).
+        assertTrue("one minute produced " + captured + " photos", captured <= 11);
+    }
+
+    @Test
+    public void tenMinutesOfPresenceStaysBounded() {
+        int captured = 0;
+        int count = 0;
+        long last = -1;
+        for (long t = 0; t <= 600_000L; t += 1_600) {
+            long elapsed = last < 0 ? NEVER : t - last;
+            if (CaptureThrottlePolicy.shouldCapture(elapsed, count, true, true)) {
+                captured++;
+                count++;
+                last = t;
+            }
+        }
+        // 15 budgeted captures + low-power heartbeat afterwards.
+        assertTrue("10 minutes produced " + captured + " photos (was ~1000)", captured <= 30);
+    }
+
+    @Test
+    public void aQuietSceneProducesAlmostNothing() {
+        int captured = 0;
+        int count = 0;
+        long last = -1;
+        for (long t = 0; t <= 600_000L; t += 1_600) {
+            long elapsed = last < 0 ? NEVER : t - last;
+            if (CaptureThrottlePolicy.shouldCapture(elapsed, count, false, false)) {
+                captured++;
+                count++;
+                last = t;
+            }
+        }
+        // First capture + one per heartbeat (12 s) = 1 + ~50 over 10 min.
+        assertTrue("quiet scene produced " + captured, captured <= 55);
+    }
+
+    // ── IoU event matching ──────────────────────────────────────────────────
+
+    @Test
+    public void samePersonMovingContinuesTheSameEvent() {
+        // Overlapping boxes => same event, so no new per-event budget is granted.
+        assertTrue(CaptureThrottlePolicy.continuesEvent(
+                0.50f, 0.50f, 0.20f, 0.40f,
+                0.54f, 0.51f, 0.20f, 0.40f));
+    }
+
+    @Test
+    public void smallShiftAcrossAFrameStillMatches() {
+        // A person walking: 4% horizontal shift, identical size.
+        assertTrue(CaptureThrottlePolicy.continuesEvent(
+                0.40f, 0.50f, 0.22f, 0.42f,
+                0.44f, 0.50f, 0.22f, 0.42f));
+    }
+
+    @Test
+    public void twoSeparatePeopleDoNotShareAnEvent() {
+        // Opposite sides of the frame, no overlap.
+        assertFalse(CaptureThrottlePolicy.continuesEvent(
+                0.20f, 0.50f, 0.15f, 0.30f,
+                0.80f, 0.50f, 0.15f, 0.30f));
+    }
+
+    @Test
+    public void aJumpedSubjectStartsANewEvent() {
+        // No overlap at all => new subject, new budget (intended).
+        assertFalse(CaptureThrottlePolicy.continuesEvent(
+                0.10f, 0.10f, 0.10f, 0.10f,
+                0.90f, 0.90f, 0.10f, 0.10f));
+    }
+
+    @Test
+    public void iouIsSymmetricAndBoundsCorrectly() {
+        float a = CaptureThrottlePolicy.iou(0.5f, 0.5f, 0.2f, 0.2f,
+                0.5f, 0.5f, 0.2f, 0.2f);
+        assertEquals("identical boxes must be 1.0", 1.0f, a, 1e-5f);
+        assertEquals("no overlap must be 0.0", 0.0f,
+                CaptureThrottlePolicy.iou(0.1f, 0.1f, 0.1f, 0.1f,
+                        0.9f, 0.9f, 0.1f, 0.1f), 1e-6f);
+        float ab = CaptureThrottlePolicy.iou(0.50f, 0.50f, 0.20f, 0.20f,
+                0.55f, 0.50f, 0.20f, 0.20f);
+        float ba = CaptureThrottlePolicy.iou(0.55f, 0.50f, 0.20f, 0.20f,
+                0.50f, 0.50f, 0.20f, 0.20f);
+        assertEquals("IoU must be symmetric", ab, ba, 1e-6f);
     }
 }

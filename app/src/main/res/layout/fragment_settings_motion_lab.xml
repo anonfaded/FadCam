@@ -169,16 +169,21 @@
                         android:textColor="#7CFF8A"
                         android:textSize="11sp" />
 
-                    <ImageView
-                        android:id="@+id/image_motion_debug_frame"
+                    <!-- The monitor shows the Motion Lab animation from onboarding,
+                         not a camera frame. A live frame here meant copying the YUV
+                         buffer, encoding a JPEG, broadcasting it, decoding it and
+                         drawing an overlay several times a second — measurable CPU,
+                         bandwidth and heat for a screen nobody records. This view
+                         costs nothing when it is not on screen. -->
+                    <com.fadcam.ui.animations.AnimationView
+                        android:id="@+id/animation_motion_debug"
                         android:layout_width="match_parent"
                         android:layout_height="180dp"
                         android:layout_marginTop="8dp"
                         android:background="@drawable/motion_lab_frame_bg"
                         android:clipToOutline="true"
                         android:contentDescription="@string/motion_lab_debug_frame"
-                        android:scaleType="fitCenter"
-                        android:src="@drawable/ic_photo" />
+                        app:sceneType="motion" />
                 </LinearLayout>
 
                 <LinearLayout

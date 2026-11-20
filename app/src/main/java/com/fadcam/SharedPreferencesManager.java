@@ -3090,6 +3090,28 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putInt(Constants.PREF_MOTION_ANALYSIS_FPS, Math.max(1, fps)).apply();
     }
 
+    /**
+     * Minimum interval between object detections, in milliseconds.
+     *
+     * <p>0 means automatic: the cadence is derived from the device's measured
+     * inference cost. A positive value is a user choice and is used as-is, so the
+     * setting is a real control rather than a hint the app silently overrides.
+     */
+    public int getMotionAiIntervalMs() {
+        int v = safeGetInt(Constants.PREF_MOTION_AI_INTERVAL_MS, 0);
+        if (v <= 0) {
+            return 0;
+        }
+        return Math.max(200, Math.min(10000, v));
+    }
+
+    public void setMotionAiIntervalMs(int ms) {
+        int clamped = ms <= 0 ? 0 : Math.max(200, Math.min(10000, ms));
+        sharedPreferences.edit()
+                .putInt(Constants.PREF_MOTION_AI_INTERVAL_MS, clamped)
+                .apply();
+    }
+
     public int getMotionDebounceMs() {
         return safeGetInt(Constants.PREF_MOTION_DEBOUNCE_MS, 220);
     }

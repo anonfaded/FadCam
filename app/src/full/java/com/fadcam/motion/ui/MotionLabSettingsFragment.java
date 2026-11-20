@@ -6,14 +6,10 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.view.LayoutInflater;
@@ -49,6 +45,7 @@ public class MotionLabSettingsFragment extends Fragment {
     private TextView valueSensitivity;
     private TextView valueTriggerMode;
     private TextView valueAnalysisFps;
+    private TextView valueAiInterval;
     private TextView valueAnalysisResolution;
     private TextView valueDebounce;
     private TextView valuePostRoll;
@@ -60,7 +57,7 @@ public class MotionLabSettingsFragment extends Fragment {
     private TextView valueDebugPerson;
     private TextView valueDebugMetrics;
     private TextView valueDebugSource;
-    private ImageView imageDebugFrame;
+    private com.fadcam.ui.animations.AnimationView animationMotionDebug;
     private View buttonDebugCopy;
     private AvatarToggleView switchMotionEnabled;
     private AvatarToggleView switchMotionAutoTorch;
@@ -106,6 +103,7 @@ public class MotionLabSettingsFragment extends Fragment {
         valueSensitivity = view.findViewById(R.id.value_motion_sensitivity);
         valueTriggerMode = view.findViewById(R.id.value_motion_trigger_mode);
         valueAnalysisFps = view.findViewById(R.id.value_motion_analysis_fps);
+        valueAiInterval = view.findViewById(R.id.value_motion_ai_interval);
         valueAnalysisResolution = view.findViewById(R.id.value_motion_analysis_resolution);
         valueDebounce = view.findViewById(R.id.value_motion_debounce);
         valuePostRoll = view.findViewById(R.id.value_motion_post_roll);
@@ -117,7 +115,11 @@ public class MotionLabSettingsFragment extends Fragment {
         valueDebugPerson = view.findViewById(R.id.value_motion_debug_person);
         valueDebugMetrics = view.findViewById(R.id.value_motion_debug_metrics);
         valueDebugSource = view.findViewById(R.id.value_motion_debug_source);
-        imageDebugFrame = view.findViewById(R.id.image_motion_debug_frame);
+        animationMotionDebug = view.findViewById(R.id.animation_motion_debug);
+        if (animationMotionDebug != null) {
+            animationMotionDebug.playOnce(0L);
+            animationMotionDebug.setAmbientEnabled(true);
+        }
         buttonDebugCopy = view.findViewById(R.id.button_motion_debug_copy);
         switchMotionEnabled = view.findViewById(R.id.switch_motion_enabled);
         switchMotionAutoTorch = view.findViewById(R.id.switch_motion_auto_torch);
@@ -138,6 +140,10 @@ public class MotionLabSettingsFragment extends Fragment {
         view.findViewById(R.id.row_motion_trigger_mode).setOnClickListener(v -> showTriggerModePicker());
         view.findViewById(R.id.row_motion_sensitivity).setOnClickListener(v -> showSensitivityInput());
         view.findViewById(R.id.row_motion_analysis_fps).setOnClickListener(v -> showAnalysisFpsPicker());
+        View aiIntervalRow = view.findViewById(R.id.row_motion_ai_interval);
+        if (aiIntervalRow != null) {
+            aiIntervalRow.setOnClickListener(v -> showAiIntervalPicker());
+        }
         view.findViewById(R.id.row_motion_analysis_resolution).setOnClickListener(v -> showAnalysisResolutionPicker());
         view.findViewById(R.id.row_motion_debounce).setOnClickListener(v -> showDebounceInput());
         view.findViewById(R.id.row_motion_post_roll).setOnClickListener(v -> showPostRollInput());
@@ -176,6 +182,12 @@ public class MotionLabSettingsFragment extends Fragment {
             valueTriggerMode.setText(triggerLabel);
         }
         valueAnalysisFps.setText(getString(R.string.motion_lab_fps_value, state.analysisFps));
+        if (valueAiInterval != null) {
+            int ms = SharedPreferencesManager.getInstance(requireContext()).getMotionAiIntervalMs();
+            valueAiInterval.setText(ms > 0
+                    ? getString(R.string.motion_lab_ai_interval_value, ms)
+                    : getString(R.string.motion_lab_ai_interval_auto));
+        }
         if (valueAnalysisResolution != null) {
             valueAnalysisResolution.setText(state.analysisResolution + "p");
         }
@@ -192,12 +204,28 @@ public class MotionLabSettingsFragment extends Fragment {
                 current == null ? com.fadcam.motion.domain.model.MotionTriggerMode.ANY_MOTION
                         : current.triggerMode;
 
-        // Person-confirmed mode is backed by the real EfficientDet-Lite1 model
-        // (90 COCO labels, "person" class). If that model is unavailable the option
-        // is shown disabled rather than silently behaving like any-motion.
-        boolean personDetectorAvailable =
-                com.fadcam.FeatureRegistry.features().hasOpenCvMotionBackend()
-                        && com.fadcam.FeatureRegistry.features().createAiDetector(requireContext()) != null;
+        // Person-confirmed mode is backed by RF-DETR Nano. Ask the process-wide
+        // runtime for its state; never construct the 56 MB model here just to check
+        // availability (the old code did that on the UI thread and leaked it).
+        com.fadcam.motion.domain.detector.ObjectDetectionRuntime.ensureStarted(requireContext());
+        com.fadcam.motion.domain.detector.ObjectDetectionRuntime.State aiState =
+                com.fadcam.motion.domain.detector.ObjectDetectionRuntime.getState();
+        String tooSlow = com.fadcam.motion.domain.detector.ObjectDetectionRuntime
+                .getTooSlowReason();
+        boolean personDetectorUnavailable =
+                aiState == com.fadcam.motion.domain.detector.ObjectDetectionRuntime.State.UNAVAILABLE
+                        || tooSlow != null;
+        String personSubtitle = getString(R.string.motion_lab_trigger_person_confirmed_desc);
+        if (tooSlow != null) {
+            // Measured on this device, not assumed from its model name.
+            personSubtitle = tooSlow;
+        } else if (personDetectorUnavailable) {
+            String reason = com.fadcam.motion.domain.detector.ObjectDetectionRuntime
+                    .getUnavailableReason();
+            if (reason != null && !reason.isEmpty()) {
+                personSubtitle = reason;
+            }
+        }
 
         ArrayList<OptionItem> items = new ArrayList<>();
         items.add(new OptionItem(
@@ -207,7 +235,9 @@ public class MotionLabSettingsFragment extends Fragment {
         items.add(new OptionItem(
                 com.fadcam.motion.domain.model.MotionTriggerMode.PERSON_CONFIRMED.getValue(),
                 getString(R.string.motion_lab_trigger_person_confirmed),
-                getString(R.string.motion_lab_trigger_person_confirmed_desc)));
+                personSubtitle,
+                null, null, null, null, null, null, null, null,
+                personDetectorUnavailable));
 
         final String resultKey = "motion_trigger_mode_picker";
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
@@ -217,6 +247,9 @@ public class MotionLabSettingsFragment extends Fragment {
             }
             viewModel.onTriggerModeChanged(
                     com.fadcam.motion.domain.model.MotionTriggerMode.fromValue(selected));
+            // Start the model when person-confirmed is selected; release it when the
+            // trigger no longer needs it and no forensic feature does either.
+            com.fadcam.motion.domain.detector.ObjectDetectionRuntime.sync(requireContext());
         });
 
         PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
@@ -227,6 +260,45 @@ public class MotionLabSettingsFragment extends Fragment {
             getString(R.string.motion_lab_trigger_mode_helper)
         );
         sheet.show(getParentFragmentManager(), resultKey + "_sheet");
+    }
+
+    /**
+     * Lets the user pin the detection interval instead of letting the app derive it
+     * from the device's measured speed. 0 (Automatic) restores the adaptive cadence.
+     */
+    private void showAiIntervalPicker() {
+        SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
+        int current = prefs.getMotionAiIntervalMs();
+        androidx.appcompat.app.AlertDialog.Builder builder =
+                new androidx.appcompat.app.AlertDialog.Builder(requireContext());
+        builder.setTitle(getString(R.string.motion_lab_ai_interval));
+        builder.setMessage(getString(R.string.motion_lab_ai_interval_hint));
+        final android.widget.EditText input = new android.widget.EditText(requireContext());
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setHint(getString(R.string.motion_lab_ai_interval_auto));
+        if (current > 0) {
+            input.setText(String.valueOf(current));
+            input.setSelection(input.getText().length());
+        }
+        int pad = Math.round(20 * getResources().getDisplayMetrics().density);
+        android.widget.FrameLayout wrap = new android.widget.FrameLayout(requireContext());
+        wrap.setPadding(pad, pad / 2, pad, 0);
+        wrap.addView(input);
+        builder.setView(wrap);
+        builder.setPositiveButton(android.R.string.ok, (d, w) -> {
+            String raw = input.getText() == null ? "" : input.getText().toString().trim();
+            int value = raw.isEmpty() ? 0 : Integer.parseInt(raw);
+            prefs.setMotionAiIntervalMs(value);
+            MotionLabViewState state = viewModel.getState().getValue();
+            render(state != null ? state : viewModel.getState().getValue());
+        });
+        builder.setNeutralButton(R.string.motion_lab_ai_interval_auto, (d, w) -> {
+            prefs.setMotionAiIntervalMs(0);
+            MotionLabViewState state = viewModel.getState().getValue();
+            render(state != null ? state : viewModel.getState().getValue());
+        });
+        builder.setNegativeButton(android.R.string.cancel, null);
+        builder.show();
     }
 
     private void showAnalysisFpsPicker() {
@@ -492,15 +564,6 @@ public class MotionLabSettingsFragment extends Fragment {
         int blobCount = intent.getIntExtra(Constants.EXTRA_MOTION_DEBUG_BLOB_COUNT, 0);
         float centerX = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_CENTER_X, 0.5f);
         float centerY = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_CENTER_Y, 0.5f);
-        int[] flatRects = intent.getIntArrayExtra(Constants.EXTRA_MOTION_DEBUG_BLOB_RECTS);
-        float minBlobRatio = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_MIN_BLOB_RATIO, 0f);
-        java.util.List<android.graphics.Rect> blobs = new java.util.ArrayList<>();
-        if (flatRects != null) {
-            for (int i = 0; i + 3 < flatRects.length; i += 4) {
-                blobs.add(new android.graphics.Rect(flatRects[i], flatRects[i + 1],
-                        flatRects[i + 2], flatRects[i + 3]));
-            }
-        }
         if (className == null || className.trim().isEmpty()) {
             className = eventType == null || eventType.trim().isEmpty() ? "-" : eventType.trim().toLowerCase();
         }
@@ -557,48 +620,6 @@ public class MotionLabSettingsFragment extends Fragment {
             + ", maxDelta=" + String.format(java.util.Locale.US, "%.3f", maxDelta)
             + ", globalSuppressed=" + (globalSuppressed ? "YES" : "NO");
 
-        byte[] frameJpeg = intent.getByteArrayExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG);
-        if (frameJpeg != null && frameJpeg.length > 0 && imageDebugFrame != null) {
-            Bitmap decoded = BitmapFactory.decodeByteArray(frameJpeg, 0, frameJpeg.length);
-            if (decoded != null) {
-                // Show the exact frame the detector receives: no rotation, no
-                // center-crop. FIT_CENTER letterboxes/pillarboxes it so the whole
-                // field of view is visible, and the detector overlay (blobs,
-                // centre, score bar) is drawn on top of the same pixels.
-                com.fadcam.motion.presentation.MotionFrameOverlay.Frame overlayFrame =
-                        new com.fadcam.motion.presentation.MotionFrameOverlay.Frame(
-                                analysisW > 0 ? analysisW : decoded.getWidth(),
-                                analysisH > 0 ? analysisH : decoded.getHeight(),
-                                blobs,
-                                minBlobRatio,
-                                centerX,
-                                centerY,
-                                raw,
-                                score,
-                                startThreshold,
-                                stopThreshold,
-                                changedArea,
-                                strongArea,
-                                meanDelta,
-                                bgDelta,
-                                maxDelta,
-                                state,
-                                backend,
-                                analysisFps,
-                                globalSuppressed);
-                Bitmap withOverlay = com.fadcam.motion.presentation.MotionFrameOverlay
-                        .render(decoded, overlayFrame);
-                if (withOverlay != decoded) {
-                    decoded.recycle();
-                }
-                imageDebugFrame.setImageBitmap(withOverlay);
-                imageDebugFrame.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                    imageDebugFrame.setImageTintList(null);
-                }
-                imageDebugFrame.clearColorFilter();
-            }
-        }
     }
 
     private void applyDebugTerminalColors(String state, String action, float score, boolean person, float personConf) {
