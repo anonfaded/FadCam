@@ -28,4 +28,7 @@ public interface StreamingBridge {
     void pauseRecording();
 
     void resumeRecording();
+
+    /** Motion detection state for the dashboard: off | armed | triggered. */
+    void setMotionState(String state);
 }

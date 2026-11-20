@@ -65,6 +65,10 @@ public class RemoteStreamManager {
     private File activeRecordingFile = null;
     private boolean recordingActive = false; // Separate flag for SAF mode where File is null
     private volatile boolean recordingPaused = false; // Tracks paused state for dashboard
+    /** Motion detection state for the dashboard: off | armed | triggered. */
+    private volatile String motionState = "off";
+    /** Wall-clock time of the newest fragment, for a real-time live indicator. */
+    private volatile long lastFragmentTimestampMs = 0L;
     
     // Metadata
     private int activeConnections = 0;
@@ -351,6 +355,20 @@ public class RemoteStreamManager {
     }
 
     /**
+     * Motion detection state for the dashboard: off | armed | triggered.
+     * Updated by RecordingService when the session arms, a trigger fires, or the
+     * engine goes idle again.
+     */
+    public void setMotionState(String state) {
+        this.motionState = state == null ? "off" : state;
+        invalidateStatusCache();
+    }
+
+    public String getMotionState() {
+        return motionState;
+    }
+
+    /**
      * Stop recording session.
      * Called when recording stops.
      * DOES NOT clear buffer - keeps fragments available for playback until next recording starts.
@@ -362,6 +380,8 @@ public class RemoteStreamManager {
             activeRecordingFile = null;
             recordingActive = false;
             recordingPaused = false;
+            motionState = "off";
+            lastFragmentTimestampMs = 0L;
             // DO NOT clear buffer here - let clients finish playback
             // Buffer will be cleared when next recording starts via startRecording()
         } finally {
@@ -449,6 +469,7 @@ public class RemoteStreamManager {
         if (!streamingEnabled) {
             return;
         }
+        lastFragmentTimestampMs = System.currentTimeMillis();
         
         bufferLock.writeLock().lock();
         try {
@@ -775,6 +796,12 @@ public class RemoteStreamManager {
             String message;
             boolean isRecording = recordingActive;
             boolean hasInit = (initializationSegment != null);
+            boolean liveView = streamingEnabled && isRecording && hasInit && bufferedCount >= 2;
+            boolean writingToDisk = isRecording && !recordingPaused
+                    && streamingMode == com.fadcam.StreamingMode.STREAM_AND_SAVE;
+            long lastFragmentAgeMs = lastFragmentTimestampMs > 0L
+                    ? Math.max(0L, System.currentTimeMillis() - lastFragmentTimestampMs)
+                    : -1L;
             
             if (!streamingEnabled) {
                 state = "disabled";
@@ -791,7 +818,13 @@ public class RemoteStreamManager {
                 message = "Init segment ready, waiting for more fragments (" + bufferedCount + "/2 ready).";
             } else {
                 state = "ready";
-                message = "Stream is ready for playback.";
+                if (recordingPaused) {
+                    message = "Live view is active. Recording to disk is paused.";
+                } else if (streamingMode == com.fadcam.StreamingMode.STREAM_ONLY) {
+                    message = "Live view is active. Stream only — nothing is saved to disk.";
+                } else {
+                    message = "Live view and recording are running.";
+                }
             }
             
             // Get uptime in seconds
@@ -871,8 +904,13 @@ public class RemoteStreamManager {
             SharedPreferencesManager spMgr = context != null ? SharedPreferencesManager.getInstance(context) : null;
             com.fadcam.CameraType activeCam = spMgr != null ? spMgr.getCameraSelection() : com.fadcam.CameraType.BACK;
             float zoomRatio = spMgr != null ? spMgr.getSpecificZoomRatio(activeCam) : 1.0f;
-            float zoomRatioMin = 0.5f;
+            // Authoritative camera range — the dashboard must never offer values
+            // the active camera cannot apply.
+            float zoomRatioMin = spMgr != null ? spMgr.getMinSupportedZoomRatio(activeCam) : 0.5f;
             float zoomRatioMax = spMgr != null ? spMgr.getMaxSupportedZoomRatio(activeCam) : 5.0f;
+            if (zoomRatioMin > zoomRatioMax) {
+                zoomRatioMin = zoomRatioMax;
+            }
             float panX = spMgr != null ? spMgr.getSpecificPanX(activeCam) : 0.0f;
             float panY = spMgr != null ? spMgr.getSpecificPanY(activeCam) : 0.0f;
             if (zoomRatio <= 1.0f) {
@@ -912,7 +950,9 @@ public class RemoteStreamManager {
             String result = String.format(java.util.Locale.US,
                 "{\"streaming\": %s, \"mode\": %s, \"state\": %s, \"message\": %s, " +
                 "\"lastUpdated\": %d, \"serverVersion\": %s, " +
-                "\"isRecording\": %s, \"isPaused\": %s, \"fragmentsBuffered\": %d, \"bufferSizeMb\": %.2f, " +
+                "\"isRecording\": %s, \"isPaused\": %s, " +
+                "\"liveView\": %s, \"writingToDisk\": %s, \"motionState\": %s, " +
+                "\"lastFragmentAgeMs\": %d, \"fragmentsBuffered\": %d, \"bufferSizeMb\": %.2f, " +
                 "\"latestSequence\": %d, \"oldestSequence\": %d, \"activeConnections\": %d, " +
                 "\"cloudViewers\": %d, \"cloudViewerTelemetryAvailable\": %s, " +
                 "\"hasInitSegment\": %s, \"uptimeSeconds\": %d, " +
@@ -943,6 +983,10 @@ public class RemoteStreamManager {
                 com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(serverVersion),
                 isRecording,
                 recordingPaused,
+                liveView,
+                writingToDisk,
+                com.fadcam.streaming.util.JsonEscaper.escapeToJsonString(motionState),
+                lastFragmentAgeMs,
                 bufferedCount,
                 totalBytes / (1024.0 * 1024.0),
                 fragmentSequence,

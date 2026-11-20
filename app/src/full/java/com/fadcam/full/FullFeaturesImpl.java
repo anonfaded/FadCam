@@ -66,11 +66,15 @@ public final class FullFeaturesImpl implements FullFeatures {
 
     @Override
     public com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector() {
-        try {
-            return new com.fadcam.motion.domain.detector.OpenCvMog2MotionDetector();
-        } catch (Throwable t) {
-            return null;
-        }
+        // Deliberately no catch: a Full build must use MOG2 or report the failure.
+        // Silently degrading to frame-diff produced inconsistent, less accurate
+        // behaviour without telling anyone.
+        return new com.fadcam.motion.domain.detector.OpenCvMog2MotionDetector();
+    }
+
+    @Override
+    public boolean hasOpenCvMotionBackend() {
+        return true;
     }
 
     @Override

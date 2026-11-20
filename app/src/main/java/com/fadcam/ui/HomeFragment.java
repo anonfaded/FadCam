@@ -530,6 +530,15 @@ public class HomeFragment extends BaseFragment {
     private CameraManager cameraManager;
     private String cameraId;
     private boolean isTorchOn = false;
+    /** Service-reported: the current PAUSED session keeps the live stream running. */
+    private boolean pausedWithLiveView = false;
+    /**
+     * Hardware torch callback. {@link Constants#PREF_TORCH_STATE} is only a cache:
+     * the torch can be turned off by the system tile, another app, or the camera
+     * being closed, so the button must follow the device, not a stale preference.
+     */
+    private CameraManager.TorchCallback homeTorchCallback;
+    private boolean homeTorchCallbackRegistered = false;
 
     private BroadcastReceiver torchReceiver;
     private GpsProviderReceiver gpsProviderReceiver;
@@ -1798,7 +1807,10 @@ public class HomeFragment extends BaseFragment {
         updateStorageInfo();
     }
 
-    private void onRecordingPaused() {
+    private void onRecordingPaused(boolean liveViewActive) {
+        // Remember the service's decision so tab switches / re-renders use the same
+        // rule instead of guessing "paused means frozen preview".
+        pausedWithLiveView = liveViewActive;
         recordingState = RecordingState.PAUSED;
 
         buttonPauseResume.setIcon(
@@ -1817,8 +1829,14 @@ public class HomeFragment extends BaseFragment {
         updateStorageInfo();
         updateElapsedHeroAppearance();
         
-        // Show paused overlay with fade-in, hide stale camera frame
-        showPausedOverlay();
+        if (liveViewActive) {
+            // The camera/encoder are still running for the live stream, so keep
+            // showing the live preview instead of the paused overlay.
+            hidePausedOverlay();
+        } else {
+            // Real pause: the preview is frozen/stale. Hide it behind the overlay.
+            showPausedOverlay();
+        }
     }
 
     private void showPausedOverlay() {
@@ -1860,6 +1878,7 @@ public class HomeFragment extends BaseFragment {
      * This method resets the UI to the IDLE state.
      */
     private void onRecordingStopped() {
+        pausedWithLiveView = false;
         // log removed
 
         // OPTIMIZATION: Re-enable debug logging now that recording has stopped
@@ -2251,8 +2270,8 @@ public class HomeFragment extends BaseFragment {
         // Trash could leave the old free-space/time-left values on screen indefinitely.
         StorageInfoCache.clearCache();
         updateStorageInfo();
-        isTorchOn = sharedPreferencesManager.sharedPreferences.getBoolean(Constants.PREF_TORCH_STATE, false);
-        updateTorchUI(isTorchOn);
+        ensureHomeTorchCallback();
+        reconcileTorchStateWithHardware();
         updateMirrorButtonVisibilityAndState(false); // instant on resume
         if (isRecordingOrPaused() || isPreviewOnlyActive) {
             pushFrontMirrorToService(sharedPreferencesManager.isFrontVideoMirrorEnabled());
@@ -2720,7 +2739,8 @@ public class HomeFragment extends BaseFragment {
                 public void onReceive(Context c, Intent i) {
                     if (isAdded()) {
                         applyRecordingTimelineFromIntent(i);
-                        onRecordingPaused();
+                        onRecordingPaused(i.getBooleanExtra(
+                                Constants.INTENT_EXTRA_RECORDING_LIVE_VIEW_ACTIVE, false));
                     }
                 }
             };
@@ -2896,7 +2916,7 @@ public class HomeFragment extends BaseFragment {
                     if (!isAdded()) return;
                     FLog.d(TAG, "⏸️ DUAL_RECORDING_PAUSED received");
                     applyRecordingTimelineFromIntent(i);
-                    onRecordingPaused();
+                    onRecordingPaused(false);
                 }
             };
         }
@@ -8420,7 +8440,10 @@ public class HomeFragment extends BaseFragment {
         Intent stopIntent = new Intent(getActivity(), RecordingService.class);
         stopIntent.setAction(Constants.INTENT_ACTION_PAUSE_RECORDING);
         requireActivity().startService(stopIntent);
-        showPausedOverlay();
+        // Do NOT show the paused overlay optimistically. The service decides whether
+        // the live preview keeps running (server on -> hide) or the frame freezes
+        // (server off -> show), and reports that in the pause broadcast. Painting it
+        // here first is what made the two cases inconsistent.
     }
 
     private void resumeRecording() {
@@ -9712,8 +9735,99 @@ public class HomeFragment extends BaseFragment {
         }
     }
 
+    /** Starts observing the real torch state of the device. Idempotent. */
+    private void ensureHomeTorchCallback() {
+        if (homeTorchCallbackRegistered) {
+            return;
+        }
+        if (cameraManager == null) {
+            try {
+                cameraManager = (CameraManager) requireContext()
+                        .getSystemService(Context.CAMERA_SERVICE);
+            } catch (Exception e) {
+                return;
+            }
+        }
+        if (cameraManager == null) {
+            return;
+        }
+        // Provisional value until the callback reports the hardware state (the
+        // registration delivers the current state, so a stale preference is
+        // corrected immediately).
+        isTorchOn = sharedPreferencesManager.sharedPreferences
+                .getBoolean(Constants.PREF_TORCH_STATE, false);
+        try {
+            homeTorchCallback = new CameraManager.TorchCallback() {
+                @Override
+                public void onTorchModeChanged(@NonNull String cameraId, boolean enabled) {
+                    if (!isAdded()) {
+                        return;
+                    }
+                    isTorchOn = enabled;
+                    sharedPreferencesManager.sharedPreferences
+                            .edit()
+                            .putBoolean(Constants.PREF_TORCH_STATE, enabled)
+                            .apply();
+                    updateTorchUI(enabled);
+                }
+
+                @Override
+                public void onTorchModeUnavailable(@NonNull String cameraId) {
+                    if (!isAdded() || !isTorchOn) {
+                        return;
+                    }
+                    // While recording, the RecordingService owns the torch; a camera
+                    // becoming unavailable there is transient and must not clear it.
+                    if (isRecordingOrPaused() || isPreviewOnlyActive) {
+                        return;
+                    }
+                    // Camera closed (recording stopped, app switched): the torch is
+                    // off in reality even though the preference still says on.
+                    isTorchOn = false;
+                    sharedPreferencesManager.sharedPreferences
+                            .edit()
+                            .putBoolean(Constants.PREF_TORCH_STATE, false)
+                            .apply();
+                    updateTorchUI(false);
+                }
+            };
+            cameraManager.registerTorchCallback(homeTorchCallback, null);
+            homeTorchCallbackRegistered = true;
+        } catch (Exception e) {
+            FLog.w(TAG, "Torch callback registration failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Reads the ACTUAL torch state from the device for every flash-capable camera
+     * and updates the button. Used on resume so a torch left on by a previous run
+     * (or switched off externally) is shown correctly.
+     */
+    private void reconcileTorchStateWithHardware() {
+        // Nothing to compute from a capability; the callback delivers the truth.
+        // This method exists so resume has one explicit entry point that paints the
+        // current value instead of trusting a preference read.
+
+        // The callback has already corrected the value if any torch is lit. Do not
+        // fabricate a state here; just paint what we believe.
+        updateTorchUI(isTorchOn);
+    }
+
+    private void teardownHomeTorchCallback() {
+        if (!homeTorchCallbackRegistered || cameraManager == null || homeTorchCallback == null) {
+            return;
+        }
+        try {
+            cameraManager.unregisterTorchCallback(homeTorchCallback);
+        } catch (Exception ignored) {
+        }
+        homeTorchCallbackRegistered = false;
+        homeTorchCallback = null;
+    }
+
     @Override
     public void onDestroyView() {
+        teardownHomeTorchCallback();
         // Clean up bubble rotation animation (legacy - ivBubbleBackground now null)
         if (ivBubbleBackground != null) {
             ivBubbleBackground.clearAnimation();
@@ -9784,6 +9898,15 @@ public class HomeFragment extends BaseFragment {
 
     public boolean isPaused() {
         return recordingState.equals(RecordingState.PAUSED);
+    }
+
+    /**
+     * True when the current pause keeps the camera/encoder alive because the remote
+     * server is streaming, so the preview must stay visible instead of showing the
+     * frozen-frame overlay.
+     */
+    private boolean isPausedWithLiveView() {
+        return recordingState.equals(RecordingState.PAUSED) && pausedWithLiveView;
     }
 
     private void initializeTorch() {
@@ -12480,32 +12603,9 @@ public class HomeFragment extends BaseFragment {
     }
 
     /**
-     * Override the onBackPressed method from BaseFragment
+     * Home uses the standard back behaviour (double back to exit). Recording is a
+     * foreground service and is not interrupted by leaving the screen.
      */
-    @Override
-    protected boolean onBackPressed() {
-        // Handle any special cases for the HomeFragment's back button
-        if (isRecordingOrPaused()) {
-            // If recording is in progress, show a confirmation dialog
-            AlertDialog exitDialog = new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Recording in Progress")
-                .setMessage("Do you want to stop recording and exit?")
-                .setPositiveButton("Stop and Exit", (dialog, which) -> {
-                    stopRecording();
-                    // Allow normal back behavior after stopping recording
-                    requireActivity()
-                        .getOnBackPressedDispatcher()
-                        .onBackPressed();
-                })
-                .setNegativeButton("Continue Recording", null)
-                .create();
-            showTrackedDialog(exitDialog);
-            return true; // We handled the back press
-        }
-
-        // For normal cases, let the base implementation handle it
-        return false;
-    }
 
     /**
      * Initializes the receiver for camera resource availability status updates
@@ -12714,16 +12814,19 @@ public class HomeFragment extends BaseFragment {
             if (isResumed()) {
         performResumeOperations();
         
-        // Restore paused overlay after resume (in case state callback was missed)
-        if (isPaused()) {
+        // Restore paused overlay after resume (in case state callback was missed).
+        // A paused session that keeps streaming must show the live preview.
+        if (isPaused() && !isPausedWithLiveView()) {
             showPausedOverlay();
         } else if (!isRecording()) {
             hidePausedOverlay();
         }
             }
-            // Restore paused overlay if recording is still paused
-            if (isPaused()) {
+            // Restore paused overlay if recording is still paused (live view excepted)
+            if (isPaused() && !isPausedWithLiveView()) {
                 showPausedOverlay();
+            } else if (isPaused()) {
+                hidePausedOverlay();
             }
             
             // Camera surface handling

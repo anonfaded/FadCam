@@ -9,6 +9,8 @@ public interface MotionSettingsRepository {
     void setTriggerMode(MotionTriggerMode mode);
     void setSensitivity(int sensitivity);
     void setAnalysisFps(int fps);
+
+    void setAnalysisResolution(int height);
     void setDebounceMs(int debounceMs);
     void setPostRollMs(int postRollMs);
     void setPreRollSeconds(int seconds);

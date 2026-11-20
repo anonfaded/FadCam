@@ -29,6 +29,7 @@ public class MotionLabViewModel extends ViewModel {
             s.getTriggerMode(),
             s.getSensitivity(),
             s.getAnalysisFps(),
+            s.getAnalysisResolution(),
             s.getDebounceMs(),
             s.getPostRollMs(),
             s.getPreRollSeconds(),
@@ -53,6 +54,11 @@ public class MotionLabViewModel extends ViewModel {
 
     public void onAnalysisFpsChanged(int fps) {
         repository.setAnalysisFps(fps);
+        load();
+    }
+
+    public void onAnalysisResolutionChanged(int height) {
+        repository.setAnalysisResolution(height);
         load();
     }
 

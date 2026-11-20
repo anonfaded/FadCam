@@ -1082,8 +1082,12 @@ import fi.iki.elonen.NanoHTTPD;
             com.fadcam.SharedPreferencesManager spManager =
                     com.fadcam.SharedPreferencesManager.getInstance(context);
             com.fadcam.CameraType cam = spManager.getCameraSelection();
+            float minZoomRatio = spManager.getMinSupportedZoomRatio(cam);
             float maxZoomRatio = spManager.getMaxSupportedZoomRatio(cam);
-            ratio = Math.max(0.5f, Math.min(maxZoomRatio, ratio));
+            // Clamp to what the camera can actually do. Returning the requested
+            // value while the service applies a clamped one made the dashboard
+            // show "Command timed out".
+            ratio = Math.max(minZoomRatio, Math.min(maxZoomRatio, ratio));
             if (ratio <= 1.0f) {
                 requestedPanX = 0.0f;
                 requestedPanY = 0.0f;
@@ -1103,7 +1107,10 @@ import fi.iki.elonen.NanoHTTPD;
 
             RemoteStreamManager.getInstance().invalidateStatusCache();
 
-            if (spManager.isRecordingInProgress()) {
+            // Dispatch while a session is active OR paused with live view. The
+            // paused state clears isRecordingInProgress(), but the camera session
+            // is still alive and must apply zoom/pan immediately.
+            if (spManager.isRecordingInProgress() || streamManager.isRecording()) {
                 android.content.Intent intent = new android.content.Intent(
                         context, com.fadcam.services.RecordingService.class);
                 intent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_ZOOM_RATIO);

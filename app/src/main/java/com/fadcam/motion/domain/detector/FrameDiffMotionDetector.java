@@ -22,8 +22,29 @@ public class FrameDiffMotionDetector implements MotionDetector, MotionDebugInfoP
     private static final float GLOBAL_MOTION_HARD_AREA_THRESHOLD = 0.85f;
     private static final float GLOBAL_MOTION_STRONG_AREA_THRESHOLD = 0.45f;
     private static final float GLOBAL_ADAPT_LEARNING_RATE = 0.22f;
+    /** Current sensitivity (0-100). Scales the trigger area floor at runtime. */
+    private volatile int sensitivity = -1;
+    /** Area floor derived from sensitivity; replaces the fixed constant. */
+    private volatile float minChangedAreaRatio = MIN_CHANGED_AREA_RATIO;
+
     private byte[] previous;
     private float[] background;
+
+    /**
+     * Maps sensitivity to the smallest accepted changed-area, mirroring the OpenCV
+     * backend's CCTV-style behaviour (high sensitivity = tiny/far targets). Without
+     * this the setting was silently ignored on the frame-diff backend.
+     */
+    @Override
+    public void setSensitivity(int sensitivity) {
+        int clamped = Math.max(0, Math.min(100, sensitivity));
+        if (clamped == this.sensitivity) {
+            return;
+        }
+        this.sensitivity = clamped;
+        float t = 1f - (clamped / 100f);
+        minChangedAreaRatio = 0.0004f + (float) Math.pow(t, 1.5) * 0.020f;
+    }
 
     private volatile float lastChangedAreaRatio = 0f;
     private volatile float lastMeanDelta = 0f;

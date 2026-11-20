@@ -340,7 +340,11 @@
                             <i class="fas fa-circle recording-icon-fa" id="recordingIcon"></i>
                             <!-- Text -->
                             <div class="torch-text">
-                                <div class="torch-label">Recording</div>
+                                <div class="torch-label">Recording
+                                    <i class="fas fa-info-circle recording-info" id="recordingInfo"
+                                       onclick="event.stopPropagation(); showRecordingInfo();"
+                                       title="Live view and motion status"></i>
+                                </div>
                                 <div class="torch-value" id="recordingState">STOPPED</div>
                             </div>
                             <!-- Pause/Resume Button (always visible, disabled when not recording) -->
@@ -527,7 +531,7 @@
                             <div class="spinner-ring"></div>
                         </div>
                         <div class="overlay-title" id="overlayTitle">Waiting for stream</div>
-                        <div class="overlay-text" id="overlayText">Stream will auto-start when recording begins</div>
+                        <div class="overlay-text" id="overlayText">Start recording to begin streaming</div>
                         <div class="overlay-divider"></div>
                         <div class="overlay-hint">
                             <span class="hint-label">Refresh if needed</span>
@@ -2521,10 +2525,6 @@
             const max = parseFloat(slider?.dataset.zoomMax || '10') || 10.0;
             let normalized = Math.max(min, Math.min(max, parseFloat(value) || min));
 
-            if (normalized < 1.0) {
-                normalized = normalized < 0.75 ? 0.5 : 1.0;
-            }
-
             if (snapToPreset) {
                 const snapThreshold = 0.05;
                 for (const preset of getZoomPresetLayout(min, max)) {
@@ -2627,6 +2627,9 @@
             try {
                 // Pass null pan – server preserves existing pan from SharedPreferences
                 await dashboardViewModel.setZoom(ratio, null, null);
+                // Applied ratio may be clamped by the camera; do not wait for the
+                // requested value to appear in /status (that caused a false timeout).
+                executingState.stop('zoomRatio');
             } catch (e) {
                 executingState.stop('zoomRatio');
                 showToast('Failed to set zoom');
@@ -2665,6 +2668,7 @@
                 const ratio = normalizeZoomSliderValue(document.getElementById('zoomSlider')?.value || 0, false);
                 executingState.start('zoomRatio', { ratio, panX: _pendingPanX, panY: _pendingPanY }, '.zoom-row');
                 dashboardViewModel.setZoom(ratio, _pendingPanX, _pendingPanY)
+                    .then(() => executingState.stop('zoomRatio'))
                     .catch(() => {
                         executingState.stop('zoomRatio');
                         showToast('Failed to set pan');
@@ -2689,6 +2693,7 @@
             executingState.start('zoomRatio', { ratio, panX: 0, panY: 0 }, '.zoom-row');
             try {
                 await dashboardViewModel.setZoom(ratio, 0, 0);
+                executingState.stop('zoomRatio');
             } catch (e) {
                 executingState.stop('zoomRatio');
                 showToast('Failed to reset pan');
@@ -2704,6 +2709,7 @@
             executingState.start('zoomRatio', { ratio: 1.0, panX: 0, panY: 0 }, '.zoom-row');
             try {
                 await dashboardViewModel.setZoom(1.0, 0, 0);
+                executingState.stop('zoomRatio');
             } catch (e) {
                 executingState.stop('zoomRatio');
                 showToast('Failed to reset zoom');
@@ -2902,6 +2908,21 @@
          * Toggle pause/resume recording.
          * When recording → pause. When paused → resume.
          */
+        /** Compact, non-blocking live/motion/file status for the Recording card. */
+        function showRecordingInfo() {
+            const s = currentStatus || {};
+            const live = s.liveView ? 'Live view: ON' : 'Live view: OFF';
+            const motion = s.motionState === 'triggered'
+                ? 'Motion: TRIGGERED'
+                : s.motionState === 'armed' ? 'Motion: ARMED' : 'Motion: OFF';
+            const file = s.isPaused
+                ? 'File: PAUSED'
+                : s.writingToDisk
+                    ? 'File: RECORDING'
+                    : (s.mode === 'stream_only' ? 'File: OFF (stream only)' : 'File: OFF');
+            showToast(live + ' · ' + motion + ' · ' + file, 4500);
+        }
+
         async function togglePauseRecording() {
             const isPaused = currentStatus?.isPaused;
             const isRecording = currentStatus?.isRecording;
@@ -3123,6 +3144,20 @@
             if (recordingStatusLabel) {
                 recordingStatusLabel.textContent = 'NOT RECORDING';
                 recordingStatusLabel.className = 'status-value offline-text';
+            }
+            const liveLED = document.getElementById('liveLED');
+            if (liveLED) liveLED.className = 'led-dot live-led';
+            const liveStatusLabel = document.getElementById('liveStatusLabel');
+            if (liveStatusLabel) {
+                liveStatusLabel.textContent = 'OFF';
+                liveStatusLabel.className = 'status-value offline-text';
+            }
+            const motionLED = document.getElementById('motionLED');
+            if (motionLED) motionLED.className = 'led-dot motion-led';
+            const motionStatusLabel = document.getElementById('motionStatusLabel');
+            if (motionStatusLabel) {
+                motionStatusLabel.textContent = 'OFF';
+                motionStatusLabel.className = 'status-value offline-text';
             }
             
             // Server Room values
@@ -3388,13 +3423,19 @@
                 overlayTitle.textContent = 'Stream offline';
                 overlayText.textContent = 'No recent video from device';
             } else if (status.isPaused) {
-                // Recording paused — show paused overlay over frozen frame
-                videoOverlay.classList.remove('hidden', 'loading');
-                videoOverlay.classList.add('disabled');
-                overlayIcon.style.display = '';
-                overlaySpinner.style.display = 'none';
-                overlayTitle.textContent = 'Recording paused';
-                overlayText.textContent = 'Resume recording to continue stream';
+                // Recording to disk is paused. If the live view is running, keep
+                // showing the video instead of a blocking overlay.
+                if (status.state === 'ready') {
+                    videoOverlay.classList.add('hidden');
+                    videoOverlay.classList.remove('loading', 'disabled');
+                } else {
+                    videoOverlay.classList.remove('hidden', 'loading');
+                    videoOverlay.classList.add('disabled');
+                    overlayIcon.style.display = '';
+                    overlaySpinner.style.display = 'none';
+                    overlayTitle.textContent = 'Live view starting';
+                    overlayText.textContent = 'Waiting for the live stream';
+                }
             } else if (status.state === 'initializing' && status.isRecording) {
                 videoOverlay.classList.add('disabled', 'loading');
                 overlayIcon.style.display = 'none';
@@ -3413,7 +3454,7 @@
                 overlayIcon.style.display = '';
                 overlaySpinner.style.display = 'none';
                 overlayTitle.textContent = 'Waiting for stream';
-                overlayText.textContent = 'Stream will auto-start when recording begins';
+                overlayText.textContent = 'Start recording to begin streaming';
             }
 
             // ===== SYNC RECORDING STATE FIRST (before auto-play check) =====
@@ -3598,21 +3639,34 @@
             const recordingLED = document.getElementById('recordingLED');
             const isRecording = isOffline ? false : status.isRecording;
             const isPaused = isOffline ? false : status.isPaused;
-            if (isPaused) {
+            const liveView = isOffline ? false : !!status.liveView;
+            const writingToDisk = isOffline ? false : !!status.writingToDisk;
+            const motionState = isOffline ? 'off' : (status.motionState || 'off');
+            if (isPaused || (isRecording && !writingToDisk)) {
                 recordingLED.className = 'led-dot recording-led paused';
             } else {
-                recordingLED.className = isRecording ? 'led-dot recording-led active' : 'led-dot recording-led';
+                recordingLED.className = writingToDisk
+                    ? 'led-dot recording-led active'
+                    : 'led-dot recording-led';
             }
-            
+
+
+
             // Update recording status label (skip if offline - already set to UNKNOWN)
             const recordingStatusLabel = document.getElementById('recordingStatusLabel');
             if (recordingStatusLabel && !isOffline) {
                 if (isPaused) {
-                    recordingStatusLabel.textContent = 'PAUSED';
+                    recordingStatusLabel.textContent = liveView ? 'PAUSED · LIVE' : 'PAUSED';
                     recordingStatusLabel.className = 'status-value recording-text-paused';
-                } else if (isRecording) {
+                } else if (writingToDisk) {
                     recordingStatusLabel.textContent = 'RECORDING';
                     recordingStatusLabel.className = 'status-value recording-text-active';
+                } else if (liveView && status.mode === 'stream_only') {
+                    recordingStatusLabel.textContent = 'STREAM ONLY';
+                    recordingStatusLabel.className = 'status-value online-text';
+                } else if (isRecording) {
+                    recordingStatusLabel.textContent = 'LIVE';
+                    recordingStatusLabel.className = 'status-value online-text';
                 } else {
                     recordingStatusLabel.textContent = 'NOT RECORDING';
                     recordingStatusLabel.className = 'status-value recording-text';
@@ -3770,14 +3824,22 @@
                         const nextZoomMax = Number.isFinite(Number(status.zoomRatioMax))
                             ? Number(status.zoomRatioMax).toFixed(1)
                             : (sliderEl.dataset.zoomMax || '10.0');
+                        const nextZoomMin = Number.isFinite(Number(status.zoomRatioMin))
+                            ? Number(status.zoomRatioMin).toFixed(2)
+                            : (sliderEl.dataset.staticMin || '0.5');
                         if (
                             sliderEl.min !== nextSliderMin ||
                             sliderEl.max !== nextSliderMax ||
-                            sliderEl.dataset.zoomMax !== nextZoomMax
+                            sliderEl.dataset.zoomMax !== nextZoomMax ||
+                            sliderEl.dataset.staticMin !== nextZoomMin
                         ) {
                             sliderEl.min = nextSliderMin;
                             sliderEl.max = nextSliderMax;
                             sliderEl.dataset.zoomMax = nextZoomMax;
+                            // Use the active camera's real minimum. Offering 0.5 on a
+                            // camera whose min is 0.9 made the phone clamp and the
+                            // dashboard wait for a value that never appears.
+                            sliderEl.dataset.staticMin = nextZoomMin;
                             renderZoomSliderPresets();
                         }
                         updateZoomSliderVisuals(parseFloat(status.zoomRatio));

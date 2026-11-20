@@ -36,9 +36,17 @@ public interface FullFeatures {
     @Nullable
     com.fadcam.motion.domain.detector.AiObjectDetector createAiDetector(Context ctx);
 
-    /** OpenCV MOG2 motion detector (Full-only); null in Lite (FrameDiff fallback stays). */
+    /** OpenCV MOG2 motion detector (Full-only); null in Lite (Lite uses frame-diff by design). */
     @Nullable
     com.fadcam.motion.domain.detector.MotionDetector createOpenCvMotionDetector();
+
+    /**
+     * True when this build ships the OpenCV motion backend (Full). Lite returns
+     * false and uses the lightweight frame-diff detector by design. There is no
+     * silent runtime fallback in Full: if OpenCV cannot initialize, the session
+     * reports a clear error instead of degrading to a weaker detector.
+     */
+    boolean hasOpenCvMotionBackend();
 
     /** Screen-recording home fragment (FadRec mode) — Full-only; null in Lite. */
     @Nullable

@@ -942,10 +942,12 @@ public class CloudStatusManager {
                     org.json.JSONObject params = command.getJSONObject("params");
                     float ratio = (float) params.optDouble("ratio", 1.0);
                     com.fadcam.CameraType zoomCameraType = spManager.getCameraSelection();
+                    float minZoomRatio = spManager.getMinSupportedZoomRatio(zoomCameraType);
                     float maxZoomRatio = spManager.getMaxSupportedZoomRatio(zoomCameraType);
-                    ratio = Math.max(0.5f, Math.min(maxZoomRatio, ratio));
+                    ratio = Math.max(minZoomRatio, Math.min(maxZoomRatio, ratio));
 
-                    if (spManager.isRecordingInProgress()) {
+                    if (spManager.isRecordingInProgress()
+                            || com.fadcam.streaming.RemoteStreamManager.getInstance().isRecording()) {
                         android.content.Intent zoomIntent = new android.content.Intent(
                                 context, com.fadcam.services.RecordingService.class);
                         zoomIntent.setAction(com.fadcam.Constants.INTENT_ACTION_SET_ZOOM_RATIO);

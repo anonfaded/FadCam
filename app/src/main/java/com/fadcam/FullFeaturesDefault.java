@@ -45,6 +45,11 @@ public final class FullFeaturesDefault implements FullFeatures {
     }
 
     @Override
+    public boolean hasOpenCvMotionBackend() {
+        return false;
+    }
+
+    @Override
     public androidx.fragment.app.Fragment createFadRecHomeFragment() {
         return null;
     }

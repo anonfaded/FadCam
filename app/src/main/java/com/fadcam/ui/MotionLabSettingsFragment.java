@@ -46,6 +46,7 @@ public class MotionLabSettingsFragment extends Fragment {
     private TextView valueMotionStatus;
     private TextView valueSensitivity;
     private TextView valueAnalysisFps;
+    private TextView valueAnalysisResolution;
     private TextView valueDebounce;
     private TextView valuePostRoll;
     private TextView valuePreRoll;
@@ -55,6 +56,7 @@ public class MotionLabSettingsFragment extends Fragment {
     private TextView valueDebugAction;
     private TextView valueDebugPerson;
     private TextView valueDebugMetrics;
+    private TextView valueDebugSource;
     private ImageView imageDebugFrame;
     private View buttonDebugCopy;
     private AvatarToggleView switchMotionEnabled;
@@ -100,6 +102,7 @@ public class MotionLabSettingsFragment extends Fragment {
         valueMotionStatus = view.findViewById(R.id.value_motion_status);
         valueSensitivity = view.findViewById(R.id.value_motion_sensitivity);
         valueAnalysisFps = view.findViewById(R.id.value_motion_analysis_fps);
+        valueAnalysisResolution = view.findViewById(R.id.value_motion_analysis_resolution);
         valueDebounce = view.findViewById(R.id.value_motion_debounce);
         valuePostRoll = view.findViewById(R.id.value_motion_post_roll);
         valuePreRoll = view.findViewById(R.id.value_motion_pre_roll);
@@ -109,6 +112,7 @@ public class MotionLabSettingsFragment extends Fragment {
         valueDebugAction = view.findViewById(R.id.value_motion_debug_action);
         valueDebugPerson = view.findViewById(R.id.value_motion_debug_person);
         valueDebugMetrics = view.findViewById(R.id.value_motion_debug_metrics);
+        valueDebugSource = view.findViewById(R.id.value_motion_debug_source);
         imageDebugFrame = view.findViewById(R.id.image_motion_debug_frame);
         buttonDebugCopy = view.findViewById(R.id.button_motion_debug_copy);
         switchMotionEnabled = view.findViewById(R.id.switch_motion_enabled);
@@ -129,6 +133,7 @@ public class MotionLabSettingsFragment extends Fragment {
 
         view.findViewById(R.id.row_motion_sensitivity).setOnClickListener(v -> showSensitivityInput());
         view.findViewById(R.id.row_motion_analysis_fps).setOnClickListener(v -> showAnalysisFpsPicker());
+        view.findViewById(R.id.row_motion_analysis_resolution).setOnClickListener(v -> showAnalysisResolutionPicker());
         view.findViewById(R.id.row_motion_debounce).setOnClickListener(v -> showDebounceInput());
         view.findViewById(R.id.row_motion_post_roll).setOnClickListener(v -> showPostRollInput());
         view.findViewById(R.id.row_motion_pre_roll).setOnClickListener(v -> showPreRollInput());
@@ -159,23 +164,88 @@ public class MotionLabSettingsFragment extends Fragment {
             : getString(R.string.motion_lab_status_disabled));
         valueSensitivity.setText(getString(R.string.motion_lab_percent_value, state.sensitivity));
         valueAnalysisFps.setText(getString(R.string.motion_lab_fps_value, state.analysisFps));
+        if (valueAnalysisResolution != null) {
+            valueAnalysisResolution.setText(state.analysisResolution + "p");
+        }
         valueDebounce.setText(getString(R.string.motion_lab_ms_value, state.debounceMs));
         valuePostRoll.setText(getString(R.string.motion_lab_seconds_value, state.postRollMs / 1000));
-        valuePreRoll.setText(getString(R.string.motion_lab_seconds_value, state.preRollSeconds));
+        if (valuePreRoll != null) {
+            valuePreRoll.setText(getString(R.string.motion_lab_seconds_value, state.preRollSeconds));
+        }
     }
 
     private void showAnalysisFpsPicker() {
         MotionLabViewState current = viewModel.getState().getValue();
-        int initial = current == null ? 6 : current.analysisFps;
+        int initial = current == null ? 10 : current.analysisFps;
+        // The engine analyses between 1 and 15 fps (OpenCV is additionally capped to
+        // 5-10 fps because a higher rate starves the encoder). Offering 120 here made
+        // the UI lie: the value was accepted and then silently clamped.
         showNumericInput(
             "rk_motion_analysis_fps",
             getString(R.string.motion_lab_analysis_fps),
             1,
-            120,
+            15,
             initial,
             getString(R.string.motion_lab_analysis_helper),
             value -> viewModel.onAnalysisFpsChanged(value)
         );
+    }
+
+    private void showPreRollInput() {
+        MotionLabViewState current = viewModel.getState().getValue();
+        int initial = current == null ? 2 : current.preRollSeconds;
+        showNumericInput(
+            "rk_motion_pre_roll",
+            getString(R.string.motion_lab_pre_roll),
+            initial,
+            0,
+            10,
+            getString(R.string.motion_lab_pre_roll_hint),
+            value -> viewModel.onPreRollSecondsChanged(value)
+        );
+    }
+
+    private void showAnalysisResolutionPicker() {
+        MotionLabViewState current = viewModel.getState().getValue();
+        int initial = current == null ? 720 : current.analysisResolution;
+
+        // Same bottom-sheet picker every other settings screen in the app uses.
+        int[] values = {480, 720, 1080};
+        String[] titles = {"480p", "720p", "1080p"};
+        String[] subtitles = {
+            getString(R.string.motion_lab_analysis_resolution_480_hint),
+            getString(R.string.motion_lab_analysis_resolution_720_hint),
+            getString(R.string.motion_lab_analysis_resolution_1080_hint)
+        };
+        ArrayList<OptionItem> items = new ArrayList<>();
+        for (int i = 0; i < values.length; i++) {
+            items.add(new OptionItem(
+                String.valueOf(values[i]),
+                titles[i],
+                subtitles[i]
+            ));
+        }
+
+        final String resultKey = "motion_analysis_resolution_picker";
+        getParentFragmentManager().setFragmentResultListener(resultKey, this, (key, bundle) -> {
+            String selected = bundle.getString(PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            if (selected == null) {
+                return;
+            }
+            try {
+                viewModel.onAnalysisResolutionChanged(Integer.parseInt(selected));
+            } catch (NumberFormatException ignored) {
+            }
+        });
+
+        PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstance(
+            getString(R.string.motion_lab_analysis_resolution),
+            items,
+            String.valueOf(initial),
+            resultKey,
+            getString(R.string.motion_lab_analysis_resolution_hint)
+        );
+        sheet.show(getParentFragmentManager(), resultKey + "_sheet");
     }
 
     private void showSensitivityInput() {
@@ -217,20 +287,6 @@ public class MotionLabSettingsFragment extends Fragment {
             initialSeconds,
             getString(R.string.motion_lab_post_roll_hint),
             value -> viewModel.onPostRollMsChanged(value * 1000)
-        );
-    }
-
-    private void showPreRollInput() {
-        MotionLabViewState current = viewModel.getState().getValue();
-        int initial = current == null ? 2 : current.preRollSeconds;
-        showNumericInput(
-            "rk_motion_pre_roll",
-            getString(R.string.motion_lab_pre_roll),
-            0,
-            120,
-            initial,
-            getString(R.string.motion_lab_pre_roll_hint),
-            value -> viewModel.onPreRollSecondsChanged(value)
         );
     }
 
@@ -374,6 +430,22 @@ public class MotionLabSettingsFragment extends Fragment {
         String className = intent.getStringExtra(Constants.EXTRA_MOTION_DEBUG_CLASS_NAME);
         float classConf = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_CLASS_CONF, 0f);
         String eventType = intent.getStringExtra(Constants.EXTRA_MOTION_DEBUG_EVENT_TYPE);
+        int analysisW = intent.getIntExtra(Constants.EXTRA_MOTION_DEBUG_ANALYSIS_WIDTH, 0);
+        int analysisH = intent.getIntExtra(Constants.EXTRA_MOTION_DEBUG_ANALYSIS_HEIGHT, 0);
+        String backend = intent.getStringExtra(Constants.EXTRA_MOTION_DEBUG_BACKEND);
+        float analysisFps = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_FPS, 0f);
+        int blobCount = intent.getIntExtra(Constants.EXTRA_MOTION_DEBUG_BLOB_COUNT, 0);
+        float centerX = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_CENTER_X, 0.5f);
+        float centerY = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_CENTER_Y, 0.5f);
+        int[] flatRects = intent.getIntArrayExtra(Constants.EXTRA_MOTION_DEBUG_BLOB_RECTS);
+        float minBlobRatio = intent.getFloatExtra(Constants.EXTRA_MOTION_DEBUG_MIN_BLOB_RATIO, 0f);
+        java.util.List<android.graphics.Rect> blobs = new java.util.ArrayList<>();
+        if (flatRects != null) {
+            for (int i = 0; i + 3 < flatRects.length; i += 4) {
+                blobs.add(new android.graphics.Rect(flatRects[i], flatRects[i + 1],
+                        flatRects[i + 2], flatRects[i + 3]));
+            }
+        }
         if (className == null || className.trim().isEmpty()) {
             className = eventType == null || eventType.trim().isEmpty() ? "-" : eventType.trim().toLowerCase();
         }
@@ -398,6 +470,19 @@ public class MotionLabSettingsFragment extends Fragment {
             maxDelta,
             globalSuppressed ? "YES" : "NO"
         ));
+        if (valueDebugSource != null) {
+            valueDebugSource.setText(String.format(
+                java.util.Locale.US,
+                "%s · %dx%d · %.0ffps · blobs %d · center %.2f/%.2f",
+                backend == null || backend.isEmpty() ? "-" : backend,
+                analysisW,
+                analysisH,
+                analysisFps,
+                blobCount,
+                centerX,
+                centerY
+            ));
+        }
         applyDebugTerminalColors(state, action, score, person, personConf);
 
         latestDebugSnapshot = "state=" + (state == null ? "-" : state)
@@ -421,21 +506,41 @@ public class MotionLabSettingsFragment extends Fragment {
         if (frameJpeg != null && frameJpeg.length > 0 && imageDebugFrame != null) {
             Bitmap decoded = BitmapFactory.decodeByteArray(frameJpeg, 0, frameJpeg.length);
             if (decoded != null) {
-                // Rotate to match recording orientation so portrait users see an upright preview
-                if (isAdded()) {
-                    SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(requireContext());
-                    if (prefs != null && SharedPreferencesManager.ORIENTATION_PORTRAIT.equals(prefs.getVideoOrientation())) {
-                        Matrix matrix = new Matrix();
-                        matrix.postRotate(90f);
-                        Bitmap rotated = Bitmap.createBitmap(decoded, 0, 0, decoded.getWidth(), decoded.getHeight(), matrix, true);
-                        if (rotated != decoded) {
-                            decoded.recycle();
-                            decoded = rotated;
-                        }
-                    }
+                // Show the exact frame the detector receives: no rotation, no
+                // center-crop. FIT_CENTER letterboxes/pillarboxes it so the whole
+                // field of view is visible, and the detector overlay (blobs,
+                // centre, score bar) is drawn on top of the same pixels.
+                com.fadcam.motion.presentation.MotionFrameOverlay.Frame overlayFrame =
+                        new com.fadcam.motion.presentation.MotionFrameOverlay.Frame(
+                                analysisW > 0 ? analysisW : decoded.getWidth(),
+                                analysisH > 0 ? analysisH : decoded.getHeight(),
+                                blobs,
+                                minBlobRatio,
+                                centerX,
+                                centerY,
+                                raw,
+                                score,
+                                startThreshold,
+                                stopThreshold,
+                                changedArea,
+                                strongArea,
+                                meanDelta,
+                                bgDelta,
+                                maxDelta,
+                                state,
+                                backend,
+                                analysisFps,
+                                globalSuppressed);
+                Bitmap withOverlay = com.fadcam.motion.presentation.MotionFrameOverlay
+                        .render(decoded, overlayFrame);
+                if (withOverlay != decoded) {
+                    decoded.recycle();
                 }
-                imageDebugFrame.setImageBitmap(decoded);
-                imageDebugFrame.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                imageDebugFrame.setImageBitmap(withOverlay);
+                imageDebugFrame.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                    imageDebugFrame.setImageTintList(null);
+                }
                 imageDebugFrame.clearColorFilter();
             }
         }
@@ -449,7 +554,8 @@ public class MotionLabSettingsFragment extends Fragment {
         int bright = Color.parseColor("#B2FF59");
 
         TextView[] views = new TextView[]{
-            valueDebugState, valueDebugScore, valueDebugThreshold, valueDebugAction, valueDebugPerson, valueDebugMetrics
+            valueDebugState, valueDebugScore, valueDebugThreshold, valueDebugAction,
+            valueDebugPerson, valueDebugMetrics, valueDebugSource
         };
         for (TextView tv : views) {
             if (tv != null) {

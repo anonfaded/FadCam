@@ -2206,6 +2206,26 @@ video {
     transition: color 300ms ease;
 }
 
+/* PAUSED card is amber: use dark text for readable contrast. */
+.recording-card.paused .torch-label,
+.recording-card.paused .torch-value,
+.recording-card.paused .recording-info {
+    color: #1f1f1f;
+    text-shadow: none;
+    opacity: 1;
+}
+.recording-info {
+    font-size: 10px;
+    margin-left: 5px;
+    opacity: 0.7;
+    cursor: pointer;
+} 
+
+.torch-card .recording-info:hover,
+.torch-card .recording-info:active {
+    opacity: 1;
+}
+
 .torch-card.on .torch-value {
     color: #ffffff;
 }
@@ -2308,6 +2328,15 @@ video {
     cursor: pointer;
     transition: background 200ms ease, transform 100ms ease, opacity 200ms ease;
     flex-shrink: 0;
+}
+
+.recording-card.paused .recording-pause-btn {
+    background: rgba(0, 0, 0, 0.20);
+    color: #1f1f1f;
+}
+
+.recording-card.paused .recording-pause-btn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.30);
 }
 
 .recording-pause-btn:hover:not(:disabled) {
@@ -3534,10 +3563,7 @@ input[type="range"].zoom-slider:focus {
     border-radius: 12px;
     padding: 14px 16px;
     padding-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25),
-                0 8px 32px rgba(0, 0, 0, 0.18),
-                0 20px 48px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     width: 100%;
     max-width: 100%;
     display: flex;
@@ -3576,6 +3602,7 @@ input[type="range"].zoom-slider:focus {
 }
 
 .toast-progress-bar {
+    display: none !important;
     height: 3px;
     background: linear-gradient(90deg, #3fb950 0%, #2ea043 50%, #238636 100%);
     width: calc(100% + 32px);
@@ -3585,7 +3612,6 @@ input[type="range"].zoom-slider:focus {
     margin-top: 8px;
     border-radius: 0 0 12px 12px;
     transition: width 30ms linear;
-    box-shadow: 0 0 8px rgba(63, 185, 80, 0.3);
 }
 
 .toast-close {
@@ -3770,6 +3796,32 @@ input[type="range"].zoom-slider:focus {
     background: #d29922;
     box-shadow: 0 0 10px rgba(210, 153, 34, 0.7);
     animation: pulse-warning 1.5s infinite;
+}
+
+/* Live view: green when frames are flowing, gray when off */
+.live-led {
+    background: #6e7681;
+}
+
+.live-led.active {
+    background: #3fb950;
+    box-shadow: 0 0 10px rgba(63, 185, 80, 0.7);
+}
+
+/* Motion: amber when armed, red when a trigger is active */
+.motion-led {
+    background: #6e7681;
+}
+
+.motion-led.armed {
+    background: #d29922;
+    box-shadow: 0 0 10px rgba(210, 153, 34, 0.5);
+}
+
+.motion-led.triggered {
+    background: #f85149;
+    box-shadow: 0 0 10px rgba(248, 81, 73, 0.7);
+    animation: pulse-warning 1.2s infinite;
 }
 
 .led-label {

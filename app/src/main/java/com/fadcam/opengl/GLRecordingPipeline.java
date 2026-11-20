@@ -30,6 +30,7 @@ import com.fadcam.DiagnosticsStore;
 import com.fadcam.VideoCodec;
 import com.fadcam.dualcam.DualCameraConfig;
 import com.fadcam.media.FragmentedMp4MuxerWrapper;
+import com.fadcam.media.MuxerTee;
 import com.fadcam.utils.VideoEncoderCapabilities;
 
 /**
@@ -53,7 +54,7 @@ public class GLRecordingPipeline {
     private GLWatermarkRenderer glRenderer;
     private MediaCodec videoEncoder;
     // Use FragmentedMp4MuxerWrapper for fMP4 streaming
-    private FragmentedMp4MuxerWrapper mediaMuxer;
+    private MuxerTee mediaMuxer;
     private Surface encoderInputSurface;
     private Surface cameraInputSurface;
     private boolean isRecording = false;
@@ -136,24 +137,68 @@ public class GLRecordingPipeline {
         if (isPaused) {
             return -1;  // Skip this frame
         }
-        
-        // Use System.nanoTime() reference (same as audio thread for sync)
-        // Initialize recording start time on first frame
-        if (recordingStartSystemTimeNanos == -1) {
+
+        // Video PTS = camera frame time relative to the first frame of the session.
+        //
+        // This used to be System.nanoTime() sampled at render time, which is not a
+        // per-frame clock: a queued/burst render of N cached frames produced N identical
+        // presentation times. The muxer wrote stts delta = 0 for them, players showed
+        // one frame per burst, and the saved file looked like it was dropping most
+        // frames even though all of them were in the mdat.
+        //
+        // SurfaceTexture#getTimestamp() is the camera's own per-frame timestamp: unique
+        // per frame, monotonic, and the real capture instant (so exposure jitter shows
+        // up as normal variable frame duration rather than as duplicate timestamps).
+        if (cameraTimestampNanos <= 0L) {
+            // No camera clock available (e.g. preview-only): fall back to elapsed time.
+            if (recordingStartSystemTimeNanos == -1L) {
+                synchronized (timestampLock) {
+                    if (recordingStartSystemTimeNanos == -1L) {
+                        recordingStartSystemTimeNanos = System.nanoTime();
+                    }
+                }
+            }
+            long elapsed = System.nanoTime() - recordingStartSystemTimeNanos - totalPauseDurationNanos;
+            return Math.max(0L, elapsed / 1000L);
+        }
+
+        if (recordingStartCameraTimeNanos == -1L) {
             synchronized (timestampLock) {
-                if (recordingStartSystemTimeNanos == -1) {
-                    recordingStartSystemTimeNanos = System.nanoTime();
-                    FLog.d(TAG, "[VIDEO_TIMESTAMP] Recording system time reference initialized: " + 
-                          recordingStartSystemTimeNanos + " nanos");
+                if (recordingStartCameraTimeNanos == -1L) {
+                    recordingStartCameraTimeNanos = cameraTimestampNanos;
+                    FLog.d(TAG, "[VIDEO_TIMESTAMP] Camera clock reference initialized");
                 }
             }
         }
-        
-        // Calculate relative timestamp from system time reference (same as audio!)
-        // This ensures both audio and video use the exact same timing base
-        long elapsedNanos = System.nanoTime() - recordingStartSystemTimeNanos - totalPauseDurationNanos;
-        long ptsUs = Math.max(0, elapsedNanos / 1000L);  // Convert to microseconds, ensure non-negative
-        
+
+        long elapsedNanos = cameraTimestampNanos - recordingStartCameraTimeNanos;
+        long ptsUs = Math.max(0L, elapsedNanos / 1000L);
+        long removedUs = totalPauseDurationNanos / 1000L;
+        ptsUs = Math.max(0L, ptsUs - removedUs);
+
+        // Some camera HALs freeze SurfaceTexture#getTimestamp() while the pipeline is
+        // busy and then jump forward by the whole burst (observed on this device:
+        // ~20 frames delivered with one identical timestamp, then a 0.6-0.8s jump).
+        // Feeding those through verbatim creates N samples with a 0 tick delta, and a
+        // player then renders one frame per burst — the "saved video drops most
+        // frames" symptom.
+        //
+        // While the camera clock is frozen/unwound, continue the timeline at the
+        // encoder's frame interval instead of repeating the same time. When the camera
+        // clock resumes ahead of the synthetic timeline we simply continue from there,
+        // so no extra frames are inserted and the real capture rate is preserved.
+        long frameIntervalUs = encoderFramerate > 0
+                ? Math.max(1L, 1_000_000L / encoderFramerate)
+                : 33_333L;
+        if (lastVideoPtsUs >= 0L) {
+            if (ptsUs <= lastVideoPtsUs) {
+                ptsUs = lastVideoPtsUs + frameIntervalUs;
+            } else if (ptsUs - lastVideoPtsUs < Math.max(1L, frameIntervalUs / 4L)) {
+                // Duplicate/near-duplicate timestamp inside the same burst.
+                ptsUs = lastVideoPtsUs + frameIntervalUs;
+            }
+        }
+        lastVideoPtsUs = ptsUs;
         return ptsUs;
     }
 
@@ -163,6 +208,13 @@ public class GLRecordingPipeline {
     private String currentOutputFilePath;
     private FileDescriptor currentOutputFd;
     private boolean muxerStarted = false;
+    /** Snapshot taken when the muxer is released, for post-stop session cleanup. */
+    private int lastWrittenFileFragmentCount = -1;
+    /**
+     * When true, the file sink starts suspended. Set by the service for a
+     * motion-armed session so no samples reach the file before the first trigger.
+     */
+    private volatile boolean suspendFileRecordingOnStart = false;
     // --- Dashcam splitting additions ---
     private long segmentBytesWritten = 0L; // Bytes written in current segment (video+audio)
     private static final double ROLLOVER_PREEMPT_THRESHOLD_RATIO = 0.95; // Request keyframe early
@@ -208,7 +260,7 @@ public class GLRecordingPipeline {
     // Cached formats so we can recreate muxer for segment rollover without
     // waiting for INFO_OUTPUT_FORMAT_CHANGED (only fired once per encoder start)
     private MediaFormat cachedVideoFormat;
-    private MediaFormat cachedAudioFormat;
+    private volatile MediaFormat cachedAudioFormat;
     private MediaFormat pendingHevcFormat;
     private ByteBuffer capturedHevcCsd0;
     private ByteBuffer capturedHevcCsd1;
@@ -266,6 +318,12 @@ public class GLRecordingPipeline {
     
     // Pause/resume tracking fields
     private long pauseStartTimeNanos = -1;           // System.nanoTime() when pause starts
+    private volatile long recordingStartCameraTimeNanos = -1L;
+    /** Previous video PTS, so a frozen camera clock cannot emit duplicate sample times. */
+    private long lastVideoPtsUs = -1L;
+    private long ptsDupSuppressed = 0L;
+
+    private long ptsLogCount = 0L;
     private long totalPauseDurationNanos = 0;        // Accumulated pause duration
     private volatile long currentPauseOffsetUs = 0;  // µs to subtract from sample PTS so timeline is contiguous after pause/resume
     private long lastVideoPtsBeforePauseUs = 0;      // Last video PTS before pause
@@ -874,6 +932,10 @@ public class GLRecordingPipeline {
 
                 // Mark as recording and set up audio first
                 isRecording = true;
+                if (suspendFileRecordingOnStart && mediaMuxer != null) {
+                    mediaMuxer.setFileRecordingEnabled(false, currentRecordingClockUs());
+                    FLog.i(TAG, "[IDLE-STREAM] file sink starts suspended (motion-armed session)");
+                }
                 setupAudio();
                 if (audioRecordingEnabled) {
                     startAudioThread();
@@ -1099,7 +1161,9 @@ public class GLRecordingPipeline {
                             // totalPauseDurationNanos before feeding frames to the encoder, so no
                             // additional correction is needed here.
                             mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
-                            segmentBytesWritten += bufferInfo.size;
+                            if (mediaMuxer.isFileFeedActive()) {
+                                segmentBytesWritten += bufferInfo.size;
+                            }
                         } catch (Exception e) {
                             FLog.e(TAG, "Error writing final video frame", e);
                         }
@@ -1237,6 +1301,7 @@ public class GLRecordingPipeline {
 
         // Always release the muxer (even if stop failed)
         try {
+            lastWrittenFileFragmentCount = mediaMuxer.getFileFragmentCount();
             mediaMuxer.release();
             // muxer log removed
         } catch (Exception e) {
@@ -1771,17 +1836,22 @@ public class GLRecordingPipeline {
     private void setupMuxer() throws IOException {
         // Use FragmentedMp4MuxerWrapper for fMP4 streaming
         // Native Android MediaMuxer does NOT support fragmented MP4 output!
-        // We must use Media3's FragmentedMp4Muxer
+        // We must use Media3's FragmentedMp4Muxer.
+        //
+        // The muxer is wrapped in a MuxerTee so a dedicated in-memory sink can
+        // feed the live HLS view independently of recording-to-disk. With no
+        // stream sink the tee is a pure pass-through (unchanged behaviour).
+        FragmentedMp4MuxerWrapper newFileMuxer;
         if (currentOutputFd != null) {
-            mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFd);
+            newFileMuxer = new FragmentedMp4MuxerWrapper(currentOutputFd);
         } else {
-            mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
+            newFileMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
         }
         // Diagnostic: let the wrapper know the output path even for fd-based
         // construction, so finalization failures can report exists()/length().
         try {
             if (currentOutputFilePath != null) {
-                mediaMuxer.setOutputPath(currentOutputFilePath);
+                newFileMuxer.setOutputPath(currentOutputFilePath);
             }
         } catch (Exception ignored) {}
 
@@ -1794,7 +1864,7 @@ public class GLRecordingPipeline {
         try {
             if (currentOutputFd != null && outputUri != null) {
                 final String uri = outputUri;
-                mediaMuxer.setFileReopener(new com.fadcam.media.FragmentedMp4MuxerWrapper.FileReopener() {
+                newFileMuxer.setFileReopener(new com.fadcam.media.FragmentedMp4MuxerWrapper.FileReopener() {
                     @Override
                     public java.io.FileOutputStream reopen() throws IOException {
                         if (reopenPfd != null) {
@@ -1822,9 +1892,20 @@ public class GLRecordingPipeline {
 
         // Set location metadata if available
         if (locationLatitude != null && locationLongitude != null) {
-            mediaMuxer.setLocation(locationLatitude.floatValue(), locationLongitude.floatValue());
+            newFileMuxer.setLocation(locationLatitude.floatValue(), locationLongitude.floatValue());
+        }
+
+        if (mediaMuxer == null) {
+            mediaMuxer = new MuxerTee(newFileMuxer);
+            // Streaming already on when the session starts: keep the stream sink
+            // ready so fragments flow even while the file is idle-paused.
+            if (com.fadcam.FeatureRegistry.streaming().isStreamingEnabled()) {
+                mediaMuxer.prepareStreamSink();
+            }
         } else {
-            // no location metadata
+            // Segment rollover: swap only the file sink; the stream sink keeps
+            // running so the live view never restarts.
+            mediaMuxer.replaceFileMuxer(newFileMuxer);
         }
 
         // Reset track indices
@@ -1837,6 +1918,7 @@ public class GLRecordingPipeline {
                 recordingStartTimeNanos = -1;
                 recordingStartSystemTimeNanos = -1;
             }
+            lastWrittenFileFragmentCount = -1;
         }
 
         // DO NOT start muxer here - wait for encoder formats to be available
@@ -1901,10 +1983,33 @@ public class GLRecordingPipeline {
         drainHandler.post(new DrainRunnable());
     }
 
+    /**
+     * Attaches the in-memory stream sink if the remote server was enabled after
+     * this recording session started. Runs on the drain thread, once formats are
+     * known, and only while streaming is actually enabled.
+     */
+    private void maybeAttachStreamSink() {
+        if (mediaMuxer == null || mediaMuxer.hasStreamSink()) {
+            return;
+        }
+        if (!com.fadcam.FeatureRegistry.streaming().isStreamingEnabled()) {
+            return;
+        }
+        MediaFormat videoFormat = cachedVideoFormat;
+        MediaFormat audioFormat = cachedAudioFormat;
+        if (videoFormat == null || (audioRecordingEnabled && audioFormat == null)) {
+            return;
+        }
+        mediaMuxer.ensureStreamSink(videoFormat, audioRecordingEnabled ? audioFormat : null);
+    }
+
     private final class DrainRunnable implements Runnable {
         @Override
         public void run() {
             if (isStopped || !isRecording) return;
+            // The remote server can be enabled after this session already started;
+            // attach the stream sink as soon as both encoder formats are known.
+            maybeAttachStreamSink();
             // Drain audio FIRST — audio encoder has finite input buffers.
             // If the drain thread spends too much time on video (especially
             // at 4K+ max quality), audio output backs up, blocking EOS at
@@ -1971,10 +2076,10 @@ public class GLRecordingPipeline {
 
             if (mediaMuxer != null) {
                 try {
-                    if (muxerStarted) mediaMuxer.stop();
-                    mediaMuxer.release();
+                    // Stop/release only the file sink. The in-memory stream sink
+                    // stays alive so a size rollover never restarts the live view.
+                    mediaMuxer.stopFileSinkForSwap();
                 } catch (Exception e) { FLog.e(TAG, "Error releasing muxer during async rollover", e); }
-                mediaMuxer = null;
                 muxerStarted = false;
             }
 
@@ -2311,7 +2416,9 @@ public class GLRecordingPipeline {
                                 }
                                 lastVideoPts = bufferInfo.presentationTimeUs;
                                 
-                                segmentBytesWritten += bufferInfo.size;
+                                if (mediaMuxer.isFileFeedActive()) {
+                                    segmentBytesWritten += bufferInfo.size;
+                                }
                                 if (!rolloverRequestedByDrain && awaitingKeyframeForRollover && isKeyframe && maxFileSizeBytes > 0 && segmentBytesWritten >= maxFileSizeBytes) {
                                     FLog.i(TAG, "Keyframe boundary reached with size >= limit (" + segmentBytesWritten + "); scheduling rollover");
                                     awaitingKeyframeForRollover = false;
@@ -2406,7 +2513,9 @@ public class GLRecordingPipeline {
                                         mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                                         videoSamplesWritten++;
                                         lastVideoPts = bufferInfo.presentationTimeUs;
-                                        segmentBytesWritten += bufferInfo.size;
+                                        if (mediaMuxer.isFileFeedActive()) {
+                                            segmentBytesWritten += bufferInfo.size;
+                                        }
                                         FLog.d(TAG, "[HEVC-CSD] Wrote extraction-source keyframe directly (pts=" + bufferInfo.presentationTimeUs + ")");
                                     } else {
                                         ByteBuffer copy = ByteBuffer.allocateDirect(bufferInfo.size);
@@ -2526,14 +2635,13 @@ public class GLRecordingPipeline {
                 try {
                     if (muxerStarted) {
                         FLog.d(TAG, "Stopping current muxer before segment callback");
-                        mediaMuxer.stop();
                     }
-                    FLog.d(TAG, "Releasing current muxer before segment callback");
-                    mediaMuxer.release();
+                    // Stop/release only the file sink. The live-stream sink keeps
+                    // running across the rollover.
+                    mediaMuxer.stopFileSinkForSwap();
                 } catch (Exception e) {
                     FLog.e(TAG, "Error releasing muxer during rollover", e);
                 }
-                mediaMuxer = null;
                 muxerStarted = false;
             }
 
@@ -3272,6 +3380,96 @@ public class GLRecordingPipeline {
         return cameraInputSurface;
     }
 
+    /** True while the pipeline is encoding frames (live view or file recording). */
+    public boolean isRecording() {
+        return isRecording && !isStopped;
+    }
+
+    /**
+     * Current position on the recording timeline in microseconds. This is the
+     * same clock the encoder samples use for PTS, excluding real encoder pauses
+     * but including live-idle periods.
+     */
+    private long currentRecordingClockUs() {
+        if (recordingStartSystemTimeNanos == -1L) {
+            return 0L;
+        }
+        long elapsedNanos = System.nanoTime() - recordingStartSystemTimeNanos - totalPauseDurationNanos;
+        return Math.max(0L, elapsedNanos / 1000L);
+    }
+
+    /**
+     * Requests that the file sink starts suspended once the pipeline starts.
+     * Used for a motion-armed session so the idle arm period never writes any
+     * samples (the live stream still runs).
+     */
+    public void suspendFileRecordingOnStart() {
+        suspendFileRecordingOnStart = true;
+    }
+
+    /**
+     * Suspends writes to the recording file only. The camera, encoder and audio
+     * keep running, so the live-stream sink stays continuous. On resume the file
+     * timeline is compressed by the idle duration, keeping one contiguous file
+     * per session with no blank lead-in.
+     */
+    public boolean suspendFileRecording() {
+        if (mediaMuxer == null) {
+            FLog.w(TAG, "suspendFileRecording: muxer not ready");
+            return false;
+        }
+        mediaMuxer.setFileRecordingEnabled(false, currentRecordingClockUs());
+        return true;
+    }
+
+    /**
+     * Resumes writes to the recording file after {@link #suspendFileRecording()}.
+     * A keyframe is requested so the first written frame is self-contained.
+     */
+    public void resumeFileRecording() {
+        if (mediaMuxer == null) {
+            FLog.w(TAG, "resumeFileRecording: muxer not ready");
+            return;
+        }
+        mediaMuxer.setFileRecordingEnabled(true, currentRecordingClockUs());
+        requestVideoSyncFrame("file-resume");
+    }
+
+    /** True while the encoder is running but the recording file is paused. */
+    public boolean isFileRecordingSuspended() {
+        return mediaMuxer != null && !mediaMuxer.isFileRecordingEnabled();
+    }
+
+    /**
+     * Seconds of already-encoded video to keep before a motion trigger, so the
+     * clip starts just before the person appears.
+     */
+    public void setPreRollSeconds(int seconds) {
+        if (mediaMuxer != null) {
+            mediaMuxer.setPreRollSeconds(seconds);
+        }
+    }
+
+    /** Media fragments written to the current file (0 means no usable media). */
+    public int getWrittenFileFragmentCount() {
+        return mediaMuxer != null ? mediaMuxer.getFileFragmentCount() : lastWrittenFileFragmentCount;
+    }
+
+    /** Forces the next encoded video frame to be an IDR keyframe. */
+    private void requestVideoSyncFrame(String reason) {
+        if (videoEncoder == null) {
+            return;
+        }
+        try {
+            android.os.Bundle params = new android.os.Bundle();
+            params.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
+            videoEncoder.setParameters(params);
+            FLog.i(TAG, "[SYNC-FRAME] IDR requested (" + reason + ")");
+        } catch (Exception e) {
+            FLog.w(TAG, "[SYNC-FRAME] request failed (" + reason + ")", e);
+        }
+    }
+
     /**
      * Pauses the recording pipeline with proper timestamp tracking.
      * During pause, we record the last known PTS values to maintain
@@ -3390,16 +3588,7 @@ public class GLRecordingPipeline {
 
         // Force an IDR (keyframe) on the very next video frame so that ExoPlayer
         // can seek into the post-resume segment without showing a still frame.
-        if (videoEncoder != null) {
-            try {
-                android.os.Bundle params = new android.os.Bundle();
-                params.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
-                videoEncoder.setParameters(params);
-                FLog.i(TAG, "[RESUME] Requested sync (IDR keyframe) from video encoder");
-            } catch (Exception e) {
-                FLog.w(TAG, "[RESUME] Failed to request sync frame from encoder", e);
-            }
-        }
+        requestVideoSyncFrame("resume");
 
         // Resume periodic watermark updates and force an immediate refresh.
         ensureWatermarkUpdaterRunning();

@@ -217,6 +217,24 @@ public abstract class Constants {
         "motion_debug_max_delta";
     public static final String EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED =
         "motion_debug_global_suppressed";
+    public static final String EXTRA_MOTION_DEBUG_ANALYSIS_WIDTH =
+        "motion_debug_analysis_width";
+    public static final String EXTRA_MOTION_DEBUG_ANALYSIS_HEIGHT =
+        "motion_debug_analysis_height";
+    public static final String EXTRA_MOTION_DEBUG_BACKEND =
+        "motion_debug_backend";
+    public static final String EXTRA_MOTION_DEBUG_FPS =
+        "motion_debug_fps";
+    public static final String EXTRA_MOTION_DEBUG_BLOB_COUNT =
+        "motion_debug_blob_count";
+    public static final String EXTRA_MOTION_DEBUG_CENTER_X =
+        "motion_debug_center_x";
+    public static final String EXTRA_MOTION_DEBUG_CENTER_Y =
+        "motion_debug_center_y";
+    public static final String EXTRA_MOTION_DEBUG_BLOB_RECTS =
+        "motion_debug_blob_rects";
+    public static final String EXTRA_MOTION_DEBUG_MIN_BLOB_RATIO =
+        "motion_debug_min_blob_ratio";
     public static final String BROADCAST_CAMERA_ERROR = "CAMERA_ACCESS_ERROR";
 
     public static final String INTENT_ACTION_STOP_RECORDING =
@@ -461,6 +479,13 @@ public abstract class Constants {
         "RECORDING_PAUSE_STARTED_AT";
     public static final String INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION =
         "RECORDING_ACCUMULATED_PAUSED_DURATION";
+    /**
+     * True when the recording file is paused but the camera/encoder keep running
+     * for the live stream. The phone can keep showing the live preview instead of
+     * the paused overlay.
+     */
+    public static final String INTENT_EXTRA_RECORDING_LIVE_VIEW_ACTIVE =
+        "RECORDING_LIVE_VIEW_ACTIVE";
     public static final String INTENT_EXTRA_TORCH_STATE = "torch_state";
     public static final String INTENT_EXTRA_TORCH_STATE_CHANGED =
         "TORCH_STATE_CHANGED";
@@ -692,7 +717,9 @@ public abstract class Constants {
     public static final String PREF_MOTION_MODE_ENABLED = "pref_motion_mode_enabled";
     public static final String PREF_MOTION_TRIGGER_MODE = "pref_motion_trigger_mode"; // any_motion|person_confirmed
     public static final String PREF_MOTION_SENSITIVITY = "pref_motion_sensitivity"; // 0-100
-    public static final String PREF_MOTION_ANALYSIS_FPS = "pref_motion_analysis_fps"; // 2/3/5
+    public static final String PREF_MOTION_ANALYSIS_FPS = "pref_motion_analysis_fps";
+    /** Analyzer frame height: 480, 720 or 1080. Width follows the camera aspect. */
+    public static final String PREF_MOTION_ANALYSIS_RESOLUTION = "pref_motion_analysis_resolution"; // 2/3/5
     public static final String PREF_MOTION_DEBOUNCE_MS = "pref_motion_debounce_ms";
     public static final String PREF_MOTION_POST_ROLL_MS = "pref_motion_post_roll_ms";
     public static final String PREF_MOTION_PRE_ROLL_SECONDS = "pref_motion_pre_roll_seconds";

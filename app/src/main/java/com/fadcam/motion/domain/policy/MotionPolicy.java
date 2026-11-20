@@ -30,8 +30,15 @@ public class MotionPolicy {
     }
 
     public float stopThresholdFromSensitivity(int sensitivity) {
-        // Hysteresis: keep some separation from start threshold, but not so low that
-        // quiet-scene noise keeps sessions stuck in RECORDING.
-        return Math.max(0.12f, startThresholdFromSensitivity(sensitivity) - 0.05f);
+        // Hysteresis: keep some separation from the start threshold, but not so low
+        // that quiet-scene noise keeps a session stuck in RECORDING.
+        float start = startThresholdFromSensitivity(sensitivity);
+        // Hysteresis band: 0.05 normally, narrowing only near the top of the
+        // sensitivity range. The absolute floor (0.06) sits below the lowest possible
+        // start threshold (0.08), so "stop" can never become stricter than "start".
+        // That inversion is what broke high-sensitivity sessions: at sensitivity 100
+        // the old 0.12 floor sat above the 0.08 start threshold, so a clip stopped
+        // the instant it began and nothing was ever recorded.
+        return Math.max(0.06f, start - 0.05f);
     }
 }

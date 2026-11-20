@@ -473,6 +473,11 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_security, () -> openSubFragment(new SecuritySettingsFragment()));
         bindRow(root, R.id.group_motion_lab, () -> openSubFragment(new MotionLabSettingsFragment()));
         if (com.fadcam.BuildConfig.LITE_EDITION) {
+            // Lite hides advanced features. Motion Lab + digital forensics depend
+            // on the Full-only OpenCV/AI stack, so both rows are hidden rather
+            // than exposing controls that cannot work.
+            android.view.View motionRow = root.findViewById(R.id.group_motion_lab);
+            if (motionRow != null) motionRow.setVisibility(android.view.View.GONE);
             android.view.View forensicsRow = root.findViewById(R.id.group_digital_forensics);
             if (forensicsRow != null) forensicsRow.setVisibility(android.view.View.GONE);
         } else {

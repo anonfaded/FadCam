@@ -68,4 +68,10 @@ public final class StreamingBridgeImpl implements StreamingBridge {
         com.fadcam.streaming.RemoteStreamManager m = manager();
         if (m != null) m.resumeRecording();
     }
+
+    @Override
+    public void setMotionState(String state) {
+        com.fadcam.streaming.RemoteStreamManager m = manager();
+        if (m != null) m.setMotionState(state);
+    }
 }

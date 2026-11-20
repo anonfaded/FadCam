@@ -495,6 +495,9 @@ public class GLWatermarkRenderer {
         suppressWatermarkForSnapshot = suppress;
     }
 
+    /** Last PTS handed to the encoder; guarantees strictly increasing sample times. */
+    private long lastSubmittedPtsUs = -1L;
+
     private void renderToEncoderInternal(boolean allowStaleFrame) {
         synchronized (renderLock) {
             // Check if we need to initialize or reinitialize EGL
@@ -675,25 +678,42 @@ public class GLWatermarkRenderer {
             // Update matrices for correct orientation
             updateMatrices();
 
-            // Set presentation time using synchronized timestamp
+            // Set presentation time using the CAMERA frame timestamp.
+            //
+            // This used to use System.nanoTime() taken at render time. That is not a
+            // per-frame clock: when the render loop is queued behind a slow frame it
+            // submits several cached frames within the same few microseconds, so many
+            // samples land on the SAME presentation time. The muxer then writes them
+            // with a zero sample duration (stts delta = 0) and players render one frame
+            // per burst — the recording looks like heavy frame drops even though every
+            // frame is present in the file.
+            //
+            // SurfaceTexture#getTimestamp() is the camera's per-frame timestamp, so
+            // every submitted frame has a distinct, monotonic PTS. It is also the true
+            // capture time, which is what a recording should carry.
             try {
-                long cameraTimestamp = cameraSurfaceTexture.getTimestamp();
                 long presentationTimeNanos;
 
-                // Get synchronized timestamp from recording pipeline if available
                 if (recordingPipeline != null) {
-                    // Convert synchronized timestamp (microseconds) to nanoseconds
+                    long cameraTimestamp = cameraSurfaceTexture.getTimestamp();
                     long ptsUs = recordingPipeline.getSynchronizedVideoTimestamp(cameraTimestamp);
-                    
-                    // If -1, skip this frame (frame rate limiting)
+
+                    // If -1, skip this frame (paused)
                     if (ptsUs < 0) {
                         return; // Skip this frame
                     }
-                    
+
+                    // Monotonic guard: the encoder rejects/aliases equal timestamps.
+                    // Only used for the camera-clock anomalies (duplicate camera ts).
+                    if (ptsUs <= lastSubmittedPtsUs) {
+                        ptsUs = lastSubmittedPtsUs + 1L;
+                    }
+                    lastSubmittedPtsUs = ptsUs;
+
                     presentationTimeNanos = ptsUs * 1000L;
                 } else {
                     // Fallback to camera timestamp (already in nanoseconds)
-                    presentationTimeNanos = cameraTimestamp;
+                    presentationTimeNanos = cameraSurfaceTexture.getTimestamp();
                 }
 
                 EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, presentationTimeNanos);
@@ -1567,6 +1587,44 @@ public class GLWatermarkRenderer {
         }
     }
 
+    /**
+     * Maps a detection box from the analysis/sensor orientation to the displayed
+     * content orientation. Rotation uses the same convention as
+     * {@link #getRequiredRotation()} / the camera texture; front mirroring is
+     * applied last.
+     */
+    private float[] mapDetectionBoxToContent(float cx, float cy, float w, float h) {
+        float dx = cx;
+        float dy = cy;
+        float dw = w;
+        float dh = h;
+        int rotation = getRequiredRotation();
+        switch (rotation) {
+            case 90:
+                dx = 1f - cy;
+                dy = cx;
+                dw = h;
+                dh = w;
+                break;
+            case 180:
+                dx = 1f - cx;
+                dy = 1f - cy;
+                break;
+            case 270:
+                dx = cy;
+                dy = 1f - cx;
+                dw = h;
+                dh = w;
+                break;
+            default:
+                break;
+        }
+        if (isFullscreenCameraFront() && frontVideoMirrorEnabled) {
+            dx = 1f - dx;
+        }
+        return new float[]{dx, dy, dw, dh};
+    }
+
     private void drawForensicsOverlayEntry(Canvas canvas, String payload) {
         if (payload == null || payload.isEmpty()) {
             return;
@@ -1600,6 +1658,17 @@ public class GLWatermarkRenderer {
             return;
         }
 
+        // Detection coordinates are in the unrotated analysis (sensor) frame.
+        // The preview/encoder content is rotated to the app orientation, and the
+        // front preview may be mirrored. Map the box before drawing so it sits on
+        // the same pixels the detector saw instead of being stretched by the
+        // landscape→portrait bitmap swap.
+        float[] mapped = mapDetectionBoxToContent(cx, cy, boxW, boxH);
+        cx = mapped[0];
+        cy = mapped[1];
+        boxW = mapped[2];
+        boxH = mapped[3];
+
         float left = (cx - (boxW / 2f)) * overlayWidth;
         float top = (cy - (boxH / 2f)) * overlayHeight;
         float right = (cx + (boxW / 2f)) * overlayWidth;
@@ -1623,7 +1692,7 @@ public class GLWatermarkRenderer {
         labelBg.setColor(adjustAlpha(colorForType(coarseType), 210));
         Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         labelPaint.setColor(Color.WHITE);
-        labelPaint.setTextSize(Math.max(14f, overlayWidth * 0.020f));
+        labelPaint.setTextSize(Math.max(18f, overlayWidth * 0.030f));
         try {
             labelPaint.setTypeface(android.graphics.Typeface.createFromAsset(context.getAssets(), "ubuntu_regular.ttf"));
         } catch (Exception ignored) {
@@ -1669,8 +1738,12 @@ public class GLWatermarkRenderer {
             return;
         }
         String payload = forensicsOverlayPayload;
-        int overlayWidth = Math.max(640, videoWidth > 0 ? videoWidth : 1280);
-        int overlayHeight = Math.max(360, videoHeight > 0 ? videoHeight : 720);
+        // Match the encoder content orientation (portrait when recording portrait).
+        // The old landscape size stretched every box into the portrait viewport.
+        int overlayWidth = Math.max(1,
+                encoderWidth > 0 ? encoderWidth : (videoWidth > 0 ? videoWidth : 1280));
+        int overlayHeight = Math.max(1,
+                encoderHeight > 0 ? encoderHeight : (videoHeight > 0 ? videoHeight : 720));
         if (forensicsOverlayBitmap == null
                 || forensicsOverlayBitmap.getWidth() != overlayWidth
                 || forensicsOverlayBitmap.getHeight() != overlayHeight) {

@@ -3066,8 +3066,24 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionAnalysisFps() {
-        int fps = safeGetInt(Constants.PREF_MOTION_ANALYSIS_FPS, 6);
-        return fps <= 0 ? 6 : fps;
+        int fps = safeGetInt(Constants.PREF_MOTION_ANALYSIS_FPS, 10);
+        return Math.max(1, Math.min(15, fps <= 0 ? 10 : fps));
+    }
+
+    /**
+     * Analyzer frame height in pixels. The width follows the selected camera
+     * aspect ratio, so the full field of view is always analysed.
+     * Default 720: OpenCV/CCTV reference pipelines process MOG2 at ~300–640 px
+     * wide, so 720p already samples above the standard while staying real-time.
+     */
+    public int getMotionAnalysisResolution() {
+        int h = safeGetInt(Constants.PREF_MOTION_ANALYSIS_RESOLUTION, 720);
+        return h == 480 || h == 1080 ? h : 720;
+    }
+
+    public void setMotionAnalysisResolution(int height) {
+        int clamped = (height == 480 || height == 1080) ? height : 720;
+        sharedPreferences.edit().putInt(Constants.PREF_MOTION_ANALYSIS_RESOLUTION, clamped).apply();
     }
 
     public void setMotionAnalysisFps(int fps) {

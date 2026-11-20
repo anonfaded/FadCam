@@ -5,6 +5,7 @@ public class MotionSettings {
     private final MotionTriggerMode triggerMode;
     private final int sensitivity;
     private final int analysisFps;
+    private final int analysisResolution;
     private final int debounceMs;
     private final int postRollMs;
     private final int preRollSeconds;
@@ -15,6 +16,7 @@ public class MotionSettings {
         MotionTriggerMode triggerMode,
         int sensitivity,
         int analysisFps,
+        int analysisResolution,
         int debounceMs,
         int postRollMs,
         int preRollSeconds,
@@ -24,6 +26,7 @@ public class MotionSettings {
         this.triggerMode = triggerMode;
         this.sensitivity = sensitivity;
         this.analysisFps = analysisFps;
+        this.analysisResolution = analysisResolution;
         this.debounceMs = debounceMs;
         this.postRollMs = postRollMs;
         this.preRollSeconds = preRollSeconds;
@@ -40,6 +43,10 @@ public class MotionSettings {
 
     public int getSensitivity() {
         return sensitivity;
+    }
+
+    public int getAnalysisResolution() {
+        return analysisResolution;
     }
 
     public int getAnalysisFps() {

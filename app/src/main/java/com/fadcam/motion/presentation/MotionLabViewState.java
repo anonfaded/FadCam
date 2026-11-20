@@ -7,6 +7,7 @@ public class MotionLabViewState {
     public final MotionTriggerMode triggerMode;
     public final int sensitivity;
     public final int analysisFps;
+    public final int analysisResolution;
     public final int debounceMs;
     public final int postRollMs;
     public final int preRollSeconds;
@@ -17,6 +18,7 @@ public class MotionLabViewState {
         MotionTriggerMode triggerMode,
         int sensitivity,
         int analysisFps,
+        int analysisResolution,
         int debounceMs,
         int postRollMs,
         int preRollSeconds,
@@ -26,6 +28,7 @@ public class MotionLabViewState {
         this.triggerMode = triggerMode;
         this.sensitivity = sensitivity;
         this.analysisFps = analysisFps;
+        this.analysisResolution = analysisResolution;
         this.debounceMs = debounceMs;
         this.postRollMs = postRollMs;
         this.preRollSeconds = preRollSeconds;

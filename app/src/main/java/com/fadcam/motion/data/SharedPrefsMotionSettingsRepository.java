@@ -19,6 +19,7 @@ public class SharedPrefsMotionSettingsRepository implements MotionSettingsReposi
             MotionTriggerMode.fromValue(prefs.getMotionTriggerMode()),
             prefs.getMotionSensitivity(),
             prefs.getMotionAnalysisFps(),
+            prefs.getMotionAnalysisResolution(),
             prefs.getMotionDebounceMs(),
             prefs.getMotionPostRollMs(),
             prefs.getMotionPreRollSeconds(),
@@ -44,6 +45,11 @@ public class SharedPrefsMotionSettingsRepository implements MotionSettingsReposi
     @Override
     public void setAnalysisFps(int fps) {
         prefs.setMotionAnalysisFps(fps);
+    }
+
+    @Override
+    public void setAnalysisResolution(int height) {
+        prefs.setMotionAnalysisResolution(height);
     }
 
     @Override

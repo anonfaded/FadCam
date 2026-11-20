@@ -46,4 +46,8 @@ public final class StreamingBridgeDefault implements StreamingBridge {
     @Override
     public void resumeRecording() {
     }
+
+    @Override
+    public void setMotionState(String state) {
+    }
 }
