@@ -1,7 +1,9 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
+    alias(libs.plugins.licenseReport)
 }
 
 android {
@@ -419,6 +421,14 @@ android {
         }
     }
 
+    configurations.configureEach {
+        // LiteRT declares Play Core's ai-delivery as a hard compile dependency, which
+        // drags Play Services Tasks and Basement into every Full build. The detector
+        // uses only the local interpreter and GPU delegate, never Play-delivered
+        // models, so the Play stack is excluded rather than shipped.
+        exclude(group = "com.google.android.play")
+    }
+
     packaging {
         jniLibs {
             excludes += listOf("**/x86/**", "**/x86_64/**", "**/mips/**", "**/mips64/**")
@@ -453,6 +463,16 @@ android {
     buildFeatures {
         buildConfig = true
     }
+
+    licenseReport {
+        // Reports are build artifacts. The plugin otherwise copies an HTML report
+        // into src/main/assets/, which dirties tracked source on every build.
+        copyHtmlReportToAssets = false
+        copyJsonReportToAssets = false
+        copyCsvReportToAssets = false
+        copyTextReportToAssets = false
+    }
+
 
     lint {
         checkReleaseBuilds = false
@@ -503,6 +523,10 @@ dependencies {
     fullFlavors.forEach { flavor ->
         // RF-DETR needs the LiteRT CompiledModel GPU path; the legacy TFLite GPU
         // delegate cannot execute this graph.
+        // LiteRT declares Play Core's ai-delivery as a hard compile dependency, which
+        // drags Play Services Tasks and Basement into every Full build. The detector
+        // uses only the local interpreter and GPU delegate, never Play-delivered
+        // models, so the Play stack is excluded rather than shipped.
         add("${flavor}Implementation", libs.litert)
         add("${flavor}Implementation", libs.litert.api)
         add("${flavor}Implementation", libs.litert.gpu)
@@ -553,4 +577,61 @@ dependencies {
     // Android Instrumented Testing (runs on device/emulator)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+}
+
+// ---------------------------------------------------------------------------
+// Open source licenses
+// ---------------------------------------------------------------------------
+// Each APK must list exactly the libraries it actually contains, so the report is
+// generated per variant rather than once for the whole project: a Lite build must
+// not credit the Full-only libraries, and a disguised Pro build must not either.
+//
+// Output goes to build/, never src/main/assets/, so building cannot dirty tracked
+// source.
+abstract class PrepareLicenseAsset : DefaultTask() {
+
+    @get:InputFile
+    abstract val report: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val out = outputDir.get().asFile
+        out.mkdirs()
+        report.get().asFile.copyTo(File(out, "open_source_licenses.json"), overwrite = true)
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        val cap = variant.name.replaceFirstChar { it.uppercase() }
+        // The plugin writes every variant's report into one shared directory by
+        // default. That makes the variants clash over the same output location, which
+        // Gradle rejects as an implicit dependency, so each variant is redirected to
+        // its own directory.
+        val reportDir = layout.buildDirectory.dir("reports/licenses/${variant.name}")
+        // Matched by name and configured reflectively: the plugin keeps its task type
+        // internal. outputDir is the only property needed, and it is public on the
+        // instance.
+        tasks.matching { it.name == "license${cap}Report" }.configureEach {
+            try {
+                javaClass.getMethod("setOutputDir", File::class.java)
+                    .invoke(this, reportDir.get().asFile)
+            } catch (e: NoSuchMethodException) {
+                logger.warn("License report task has no setOutputDir; reports may collide")
+            }
+        }
+
+        val prepare = tasks.register<PrepareLicenseAsset>("prepare${cap}LicenseAsset") {
+            group = "reporting"
+            description = "Copies the license report for the ${variant.name} variant onto its asset path."
+            dependsOn("license${cap}Report")
+            report.set(reportDir.map { it.file("license${cap}Report.json") })
+            outputDir.set(layout.buildDirectory.dir("generated/licenses/${variant.name}"))
+        }
+        // Registers the directory for this variant only; AGP wires the dependency.
+        variant.sources.assets?.addGeneratedSourceDirectory(prepare) { it.outputDir }
+    }
 }

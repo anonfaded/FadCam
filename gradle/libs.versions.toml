@@ -32,6 +32,7 @@ viewpager2 = "1.1.0"
 litert = "2.3.2"
 opencvAndroid = "5.1.0"
 room = "2.8.5"
+licensePlugin = "0.9.91"
 
 [libraries]
 appintro-v631 = { module = "com.github.AppIntro:AppIntro", version.ref = "appintroVersion" }
@@ -90,3 +91,4 @@ room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
+licenseReport = { id = "com.jaredsburrows.license", version.ref = "licensePlugin" }

@@ -357,6 +357,13 @@ public class AboutFragment extends BaseFragment {
         setupPrivacyInfo(privacyInfoCard, scrollView);
         view.findViewById(R.id.check_updates_button).setOnClickListener(v -> checkForUpdates());
 
+        View licensesRow = view.findViewById(R.id.open_source_licenses_card);
+        if (licensesRow != null) {
+            licensesRow.setOnClickListener(v -> OverlayNavUtil.show(
+                    requireActivity(), new OpenSourceLicensesFragment(),
+                    "OpenSourceLicensesFragment"));
+        }
+
         // Find text elements with specific content and set their colors
         ScrollView scrollViewObj = view.findViewById(R.id.scroll_view);
         if (scrollViewObj != null && scrollViewObj.getChildCount() > 0) {

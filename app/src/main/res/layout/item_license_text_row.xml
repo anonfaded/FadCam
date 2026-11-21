@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bundled license text for one group. Monospace and selectable so the notice can
+     be copied out, which is what the redistribution clauses ask for. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="4dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:id="@+id/license_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#12888888"
+        android:fontFamily="monospace"
+        android:lineSpacingMultiplier="1.1"
+        android:padding="12dp"
+        android:textIsSelectable="true"
+        android:textSize="11sp"
+        android:textColor="?android:attr/textColorPrimary" />
+</LinearLayout>

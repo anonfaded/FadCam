@@ -1830,6 +1830,17 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="prefs_import_export_title">Import / Export</string>
     <string name="prefs_import_export_subtitle">Backup, restore, reset</string>
     <string name="about_version_update_licenses">Version, update, licenses</string>
+
+    <!-- Open source licenses screen -->
+    <string name="open_source_licenses_title">Open source licenses</string>
+    <string name="open_source_licenses_row_title">Third-party licenses</string>
+    <string name="open_source_licenses_row_subtitle">Libraries this build is made of</string>
+    <string name="open_source_licenses_summary">%1$d libraries across %2$d license types. Tap a license to read it.</string>
+    <string name="open_source_licenses_expand">Show license text</string>
+    <string name="open_source_licenses_unavailable">License information is missing from this build.</string>
+    <string name="open_source_licenses_external_terms">These terms cannot be bundled and are available online:</string>
+    <string name="open_source_licenses_no_text">These terms are not redistributable and no online copy is recorded.</string>
+    <string name="open_source_licenses_footer">FadCam itself is licensed under GPL-3.0. The notices above cover the third-party code it is built on.</string>
     <string name="share_feedback">Share feedback</string>
     <string name="shortcuts_pin_to_home">Pin Start/Stop/Torch to Home</string>
     <string name="storage_location_internal">Internal App Storage (Default, Private)</string>
@@ -3473,4 +3484,8 @@ For the smoothest playback experience, you can use an external player like VLC. 
 
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">Hi!</string>
+    <plurals name="open_source_licenses_library_count">
+        <item quantity="one">%1$d library</item>
+        <item quantity="other">%1$d libraries</item>
+    </plurals>
 </resources>
