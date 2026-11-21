@@ -18,7 +18,7 @@ Related pages:
 
 | Model | Purpose | Runtime | Where |
 |---|---|---|---|
-| RF-DETR Nano | Recognises 90 object categories (people, vehicles, animals, objects) | LiteRT GPU | `app/src/full` only |
+| RF-DETR Nano | Recognises 80 object categories (people, vehicles, animals, objects) | LiteRT GPU | `app/src/full` only |
 | OpenCV MOG2 | Answers "did the pixels change?" | CPU (native OpenCV) | `app/src/full` only |
 
 Lite builds compile neither model. Lite has no motion triggers and no evidence
@@ -72,23 +72,33 @@ the overlay, the forensic crop and the event tracker all work in the same space.
 
 ### What it can detect
 
-The model is trained on COCO, so it recognises 90 everyday categories. The app
-groups them for UI and routing purposes only; the label and the score always come
-from the model.
+Motion detection, forensic evidence and the live overlay recognise **exactly 80
+classes** — the complete COCO category list this model was trained on, and nothing
+else. Those 80 names live in one table in `RfDetrNanoDetector`; the list below is
+that table, verbatim.
 
-| Group | Examples |
-|---|---|
-| `PERSON` | person |
-| `VEHICLE` | car, motorcycle, bicycle, bus, truck, train, boat, airplane |
-| `PET` | dog, cat, bird, horse, sheep, cow, elephant, bear, zebra, giraffe |
-| `OBJECT` | chair, couch, bench, bottle, cup, laptop, phone, tv, backpack, suitcase, … |
+The count is 80 rather than 90 because COCO category ids are not contiguous: the
+logits have 91 slots, id 0 and eleven gaps are unused, and the remaining 80 are the
+named categories.
 
-The group names match the forensic event categories (`PERSON`, `VEHICLE`, `PET`,
-`OBJECT`). There is no separate mapping table for animals: an animal is a `PET`
-everywhere in the app.
+| Group | Count | Classes |
+|---|---|---|
+| `PERSON` | 1 | person |
+| `VEHICLE` | 8 | airplane, bicycle, boat, bus, car, motorcycle, train, truck |
+| `PET` | 10 | bear, bird, cat, cow, dog, elephant, giraffe, horse, sheep, zebra |
+| `OBJECT` | 61 | apple, backpack, banana, baseball bat, baseball glove, bed, bench, bottle, bowl, book, broccoli, cake, carrot, cell phone, chair, clock, couch, cup, dining table, donut, fire hydrant, fork, frisbee, hair drier, handbag, hot dog, keyboard, kite, knife, laptop, microwave, mouse, orange, oven, parking meter, pizza, potted plant, refrigerator, remote, sandwich, scissors, sink, skateboard, skis, snowboard, spoon, sports ball, stop sign, suitcase, surfboard, teddy bear, tennis racket, tie, toaster, toilet, toothbrush, traffic light, tv, umbrella, vase, wine glass |
 
-Detection is not limited to people. Any of the 90 categories can produce an
-event, filtered by the capture scope chosen in Digital Forensics.
+The four groups exist for the forensic event categories (`PERSON`, `VEHICLE`, `PET`,
+`OBJECT`) and the capture-scope filter. They do not change detection: the class name
+and the score always come from the model. An animal is a `PET` everywhere in the
+app; there is no second mapping table.
+
+Detection is not limited to people. Any of the 80 classes above can produce a
+forensic event, subject to the capture scope chosen in Digital Forensics.
+
+Anything outside this list is not recognised at all. A face seen close up, a hand,
+or an object type COCO never contained will either go undetected or be mapped to the
+nearest class it does know — that is a property of the trained model, not a setting.
 
 ### Class labels
 

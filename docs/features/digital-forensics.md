@@ -64,6 +64,10 @@ images actually stored.
 Categories can be enabled individually, and capture scope can be limited to people,
 objects, or both.
 
+The recognised classes are fixed by the model: 80 COCO categories. The complete list
+is in [on-device AI and machine learning](../ai/on-device-models.md#what-it-can-detect),
+and that page is the single place to check whether a given object is supported.
+
 ## Live overlay
 
 When enabled, detected boxes are drawn on the **preview** while recording, with the
