@@ -1792,7 +1792,6 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="forensics_copy_done">Detail bukti disalin</string>
     <string name="digital_forensics_preview_title">Pratinjau Deteksi Langsung</string>
     <string name="digital_forensics_preview_subtitle">Pratinjau overlay simulasi agar pengguna memahami label, kepercayaan, dan pembingkaian bukti.</string>
-    <string name="digital_forensics_preview_default">ORANG 92%</string>
     <string name="settings_watermark_subtitle">Mode merek overlay</string>
     <string name="prefs_import_export_title">Impor / Ekspor</string>
     <string name="prefs_import_export_subtitle">Cadangan, pulihkan, reset</string>
@@ -3382,7 +3381,7 @@ Milikmu selamanya.</string>
     <string name="onboarding_payoff_support">Saatnya mengucapkan selamat tinggal pada aplikasi ekstra itu.</string>
     <string name="onboarding_lite_full_note">FadCam Full menggantikan 10 aplikasi.</string>
     <string name="onboarding_demo_person">ORANG</string>
-    <string name="onboarding_demo_gun">SENJATA</string>
+    <string name="onboarding_demo_car">MOBIL</string>
     <string name="onboarding_demo_knife">PISAU</string>
     <string name="onboarding_swipe_instruction">Geser untuk melanjutkan</string>
     <string name="onboarding_camera">Kamera</string>

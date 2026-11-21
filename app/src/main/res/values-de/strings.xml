@@ -1472,7 +1472,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="digital_forensics_picker_disabled_desc">Schalte diese Option aus.</string>
     <string name="digital_forensics_picker_enabled_desc">Schalte diese Option ein.</string>
     <string name="digital_forensics_picker_switch_label">Diese Option aktivieren</string>
-    <string name="digital_forensics_preview_default">PERSON 92%</string>
     <string name="digital_forensics_preview_subtitle">Simulierte Overlay-Vorschau, damit Benutzer Label, Konfidenz und Beweisbildverarbeitung verstehen.</string>
     <string name="digital_forensics_preview_title">Live-Erkennungsvorschau</string>
     <string name="digital_forensics_row_subtitle">Beweiszeitleiste, Identitätsverknüpfung und intelligente Erkenntnisse</string>
@@ -3069,7 +3068,7 @@ Für immer dein.</string>
     <string name="onboarding_payoff_support">Zeit, dich von diesen zusätzlichen Apps zu verabschieden.</string>
     <string name="onboarding_lite_full_note">FadCam Full ersetzt 10 Apps.</string>
     <string name="onboarding_demo_person">PERSON</string>
-    <string name="onboarding_demo_gun">WAFFE</string>
+    <string name="onboarding_demo_car">AUTO</string>
     <string name="onboarding_demo_knife">MESSER</string>
     <string name="onboarding_swipe_instruction">Wischen zum Fortfahren</string>
     <string name="onboarding_camera">Kamera</string>

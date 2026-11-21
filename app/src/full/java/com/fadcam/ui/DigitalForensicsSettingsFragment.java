@@ -1,10 +1,6 @@
 package com.fadcam.ui;
 
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.content.res.ColorStateList;
-import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,17 +28,8 @@ public class DigitalForensicsSettingsFragment extends Fragment {
     private TextView valueOverlay;
     private View motionLabBanner;
     private View rowCaptureScope;
-    private View previewBox;
-    private TextView previewLabel;
-    private final Handler previewHandler = new Handler(Looper.getMainLooper());
-    private int previewStep = 0;
-    private final Runnable previewLoop = new Runnable() {
-        @Override
-        public void run() {
-            animatePreviewStep();
-            previewHandler.postDelayed(this, 1200L);
-        }
-    };
+    /** Onboarding forensics animation shown at the top of this screen. */
+    private com.fadcam.ui.animations.AnimationView previewAnimation;
 
     @Nullable
     @Override
@@ -68,38 +55,35 @@ public class DigitalForensicsSettingsFragment extends Fragment {
         valueOverlay = view.findViewById(R.id.value_df_overlay);
         motionLabBanner = view.findViewById(R.id.motion_lab_dependency_banner);
         rowCaptureScope = view.findViewById(R.id.row_df_capture_scope);
-        previewBox = view.findViewById(R.id.forensics_preview_bbox);
-        previewLabel = view.findViewById(R.id.forensics_preview_label);
+        previewAnimation = view.findViewById(R.id.animation_forensics_preview);
+        if (previewAnimation != null) {
+            // Same two calls onboarding makes. playOnce() is what marks the view as
+            // started; without it shouldAnimate() stays false and the scene never
+            // attaches to the shared clock, so it renders a single frozen frame.
+            previewAnimation.setAmbientEnabled(true);
+            previewAnimation.playOnce(0L);
+        }
 
         this.rootView = view;
         bindCurrentValues();
         wireListeners(view);
-        startPreviewLoop();
     }
 
     @Override
     public void onResume() {
         super.onResume();
         bindCurrentValues();
-        startPreviewLoop();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        stopPreviewLoop();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        stopPreviewLoop();
-        // Cancel running animations to prevent withEndAction from firing after view is destroyed
-        if (previewBox != null) previewBox.animate().cancel();
-        if (previewLabel != null) previewLabel.animate().cancel();
-        // Null out view references to prevent handler callbacks from accessing stale views
-        previewBox = null;
-        previewLabel = null;
+        previewAnimation = null;
         valueStatus = null;
         valueEvidence = null;
         valueCaptureScope = null;
@@ -250,77 +234,6 @@ public class DigitalForensicsSettingsFragment extends Fragment {
             consumer.accept(enabled);
         });
         sheet.show(getParentFragmentManager(), resultKey + "_sheet");
-    }
-
-    private void startPreviewLoop() {
-        stopPreviewLoop();
-        previewHandler.post(previewLoop);
-    }
-
-    private void stopPreviewLoop() {
-        previewHandler.removeCallbacks(previewLoop);
-    }
-
-    private void animatePreviewStep() {
-        if (previewBox == null || previewLabel == null || !isAdded()) {
-            return;
-        }
-        final float x;
-        final float y;
-        final float scale;
-        final String label;
-        final int color;
-        switch (previewStep % 3) {
-            case 1:
-                x = dp(120);
-                y = dp(24);
-                scale = 0.86f;
-                label = "PERSON 92%";
-                color = 0xFF29B6F6;
-                break;
-            case 2:
-                x = dp(60);
-                y = dp(78);
-                scale = 0.96f;
-                label = "VEHICLE 87%";
-                color = 0xFFFFB300;
-                break;
-            default:
-                x = dp(20);
-                y = dp(36);
-                scale = 1.0f;
-                label = "PET 89%";
-                color = 0xFF4CAF50;
-                break;
-        }
-        previewStep++;
-        previewLabel.setText(label);
-        previewLabel.setBackgroundTintList(ColorStateList.valueOf(color));
-        if (previewBox.getBackground() instanceof GradientDrawable) {
-            ((GradientDrawable) previewBox.getBackground()).setStroke((int) dp(2), color);
-        }
-        previewBox.animate()
-                .translationX(x)
-                .translationY(y)
-                .scaleX(scale)
-                .scaleY(scale)
-                .setDuration(460L)
-                .start();
-        previewLabel.animate()
-                .translationX(x)
-                .translationY(y - dp(22))
-                .alpha(0.25f)
-                .setDuration(150L)
-                .withEndAction(() -> {
-                    if (previewLabel != null) {
-                        previewLabel.animate().alpha(1f).setDuration(220L).start();
-                    }
-                })
-                .start();
-    }
-
-    private float dp(int value) {
-        return value * requireContext().getResources().getDisplayMetrics().density;
     }
 
     private interface ToggleConsumer {

@@ -1374,7 +1374,6 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="digital_forensics_picker_switch_label">启用此选项</string>
 
 <!-- digital_forensics_preview_default -->
-<string name="digital_forensics_preview_default">人员 92%</string>
 
 <!-- digital_forensics_preview_subtitle -->
 <string name="digital_forensics_preview_subtitle">模拟叠加层预览，帮助用户理解标签、置信度和证据框架。</string>
@@ -5043,7 +5042,7 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <string name="onboarding_payoff_support">是时候和那些多余的应用说再见了。</string>
     <string name="onboarding_lite_full_note">FadCam Full 可替代 10 个应用。</string>
     <string name="onboarding_demo_person">人物</string>
-    <string name="onboarding_demo_gun">枪械</string>
+    <string name="onboarding_demo_car">汽车</string>
     <string name="onboarding_demo_knife">刀具</string>
     <string name="onboarding_swipe_instruction">滑动以继续</string>
     <string name="onboarding_camera">相机</string>

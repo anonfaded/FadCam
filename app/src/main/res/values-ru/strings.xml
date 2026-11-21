@@ -2654,7 +2654,6 @@ FadCam использует фрагментированный формат MP4 
     <string name="cloud_streaming_title">Облачная трансляция</string>
 
     <!-- Digital Forensics Preview -->
-    <string name="digital_forensics_preview_default">ЧЕЛОВЕК 92%</string>
     <string name="digital_forensics_preview_subtitle">Симуляция наложения предпросмотра, чтобы пользователи понимали метки, уверенность и кадрирование улик.</string>
     <string name="digital_forensics_preview_title">Живой предпросмотр обнаружений</string>
 
@@ -3794,7 +3793,7 @@ FadCam использует фрагментированный формат MP4 
     <string name="onboarding_payoff_support">Пора попрощаться с этими лишними приложениями.</string>
     <string name="onboarding_lite_full_note">FadCam Full заменяет 10 приложений.</string>
     <string name="onboarding_demo_person">ЧЕЛОВЕК</string>
-    <string name="onboarding_demo_gun">ОРУЖИЕ</string>
+    <string name="onboarding_demo_car">АВТОМОБИЛЬ</string>
     <string name="onboarding_demo_knife">НОЖ</string>
     <string name="onboarding_swipe_instruction">Смахните, чтобы продолжить</string>
     <string name="onboarding_camera">Камера</string>

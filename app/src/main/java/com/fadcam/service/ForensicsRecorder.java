@@ -13,6 +13,7 @@ public interface ForensicsRecorder {
             byte[] snapshotJpeg,
             boolean frontCamera,
             int sensorOrientationDegrees,
+            int snapshotRotationDegrees,
             String recordingOrientation,
             boolean mirrorHorizontally
     );

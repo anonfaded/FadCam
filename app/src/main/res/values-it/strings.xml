@@ -1630,7 +1630,6 @@
     <string name="forensics_copy_done">Dettagli prova copiati</string>
     <string name="digital_forensics_preview_title">Anteprima rilevazione live</string>
     <string name="digital_forensics_preview_subtitle">Anteprima overlay simulata</string>
-    <string name="digital_forensics_preview_default">PERSONA 92%%</string>
     <string name="settings_watermark_subtitle">Modalità overlay marchio</string>
     <string name="prefs_import_export_title">Importa / Esporta</string>
     <string name="prefs_import_export_subtitle">Backup, ripristino, reset</string>
@@ -3112,7 +3111,7 @@ Tue per sempre.</string>
     <string name="onboarding_payoff_support">È ora di dire addio a quelle app in più.</string>
     <string name="onboarding_lite_full_note">FadCam Full sostituisce 10 app.</string>
     <string name="onboarding_demo_person">PERSONA</string>
-    <string name="onboarding_demo_gun">ARMA</string>
+    <string name="onboarding_demo_car">AUTO</string>
     <string name="onboarding_demo_knife">COLTELLO</string>
     <string name="onboarding_swipe_instruction">Scorri per continuare</string>
     <string name="onboarding_camera">Fotocamera</string>

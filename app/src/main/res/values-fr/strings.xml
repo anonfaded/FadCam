@@ -2867,8 +2867,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="digital_forensics_preview_subtitle">Simulated overlay preview so users understand labels, confidence, and evidence framing.</string>
 
-<string name="digital_forensics_preview_default">PERSON 92%</string>
-
 <string name="settings_watermark_subtitle">Overlay branding mode</string>
 
 <string name="prefs_import_export_title">Import / Export</string>
@@ -4781,7 +4779,7 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="onboarding_payoff_support">Il est temps de dire adieu à ces applis en trop.</string>
     <string name="onboarding_lite_full_note">FadCam Full remplace 10 applis.</string>
     <string name="onboarding_demo_person">PERSONNE</string>
-    <string name="onboarding_demo_gun">ARME</string>
+    <string name="onboarding_demo_car">VOITURE</string>
     <string name="onboarding_demo_knife">COUTEAU</string>
     <string name="onboarding_swipe_instruction">Balayez pour continuer</string>
     <string name="onboarding_camera">Caméra</string>

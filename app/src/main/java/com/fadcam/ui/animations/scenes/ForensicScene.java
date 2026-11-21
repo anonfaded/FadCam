@@ -27,10 +27,11 @@ public final class ForensicScene implements Scene {
 
     public ForensicScene(Context context) {
         String person = context.getString(R.string.onboarding_demo_person);
-        String gun = context.getString(R.string.onboarding_demo_gun);
+        // Everyday categories a home security camera actually sees.
+        String car = context.getString(R.string.onboarding_demo_car);
         String knife = context.getString(R.string.onboarding_demo_knife);
         confidence[0] = context.getString(R.string.onboarding_demo_confidence, person, 96);
-        confidence[1] = context.getString(R.string.onboarding_demo_confidence, gun, 91);
+        confidence[1] = context.getString(R.string.onboarding_demo_confidence, car, 91);
         confidence[2] = context.getString(R.string.onboarding_demo_confidence, knife, 88);
         int[] scores = {96, 91, 88};
         int[] minutes = {2, 5, 9};
@@ -39,7 +40,9 @@ public final class ForensicScene implements Scene {
             time[i] = String.format(java.util.Locale.US, "02:%02d PM", minutes[i]);
         }
         icons[0] = ContextCompat.getDrawable(context, R.drawable.ic_detection_person);
-        icons[1] = ContextCompat.getDrawable(context, R.drawable.ic_detection_gun);
+        // Scene icons are untinted so they stay visible on the dark stage; the shared
+        // UI glyphs carry an opaque tint intended for light surfaces.
+        icons[1] = ContextCompat.getDrawable(context, R.drawable.ic_detection_car);
         icons[2] = ContextCompat.getDrawable(context, R.drawable.ic_detection_knife);
     }
 

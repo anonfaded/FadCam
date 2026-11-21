@@ -1826,7 +1826,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="forensics_copy_done">Evidence details copied</string>
     <string name="digital_forensics_preview_title">Live Detection Preview</string>
     <string name="digital_forensics_preview_subtitle">Simulated overlay preview so users understand labels, confidence, and evidence framing.</string>
-    <string name="digital_forensics_preview_default">PERSON 92%</string>
     <string name="settings_watermark_subtitle">Overlay branding mode</string>
     <string name="prefs_import_export_title">Import / Export</string>
     <string name="prefs_import_export_subtitle">Backup, restore, reset</string>
@@ -1919,7 +1918,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_payoff_support">Time to say goodbye to those extra apps.</string>
     <string name="onboarding_lite_full_note">FadCam Full replaces 10 apps.</string>
     <string name="onboarding_demo_person">PERSON</string>
-    <string name="onboarding_demo_gun">GUN</string>
+    <string name="onboarding_demo_car">CAR</string>
     <string name="onboarding_demo_knife">KNIFE</string>
     <string name="onboarding_demo_confidence">%1$s %2$d%%</string>
     <string name="onboarding_demo_score" translatable="false">%1$d%%</string>
@@ -2436,6 +2435,11 @@ For the smoothest playback experience, you can use an external player like VLC. 
     <string name="motion_lab_debug_person_placeholder">Person: -</string>
     <string name="motion_lab_debug_metrics_placeholder">Area/Strong/Mean/BG/Max/Global: -</string>
     <string name="motion_lab_debug_frame">Motion detection illustration</string>
+    <string name="motion_lab_ai_interval">Detection interval</string>
+    <string name="digital_forensics_slow_device_notice">This phone\'s GPU takes about %1$d s per detection, which is too slow to analyse every frame. Evidence is still recorded, just sampled less often, so an event may be captured a few seconds after it starts. Lowering the Motion Lab analysis resolution to 720p and using the any-motion trigger keeps the phone responsive.</string>
+    <string name="motion_lab_ai_interval_hint">How often objects and people are recognised. Automatic adapts to this phone\'s measured speed. A fixed value is used exactly as set, and applies immediately.</string>
+    <string name="motion_lab_ai_interval_auto">Automatic</string>
+    <string name="motion_lab_ai_interval_value">%1$d ms</string>
     <string name="motion_lab_debug_copy_snapshot">Copy monitor snapshot</string>
     <string name="motion_lab_debug_copy_done">Motion snapshot copied</string>
     <string name="motion_lab_debug_no_snapshot">No motion snapshot is available yet.</string>

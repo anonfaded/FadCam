@@ -1672,7 +1672,6 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="forensics_copy_done">Tõendi üksikasjad kopeeritud</string>
     <string name="digital_forensics_preview_title">Otsetuvastuse eelvaade</string>
     <string name="digital_forensics_preview_subtitle">Simuleeritud ülekatte eelvaade, et kasutajad mõistaksid silte, usaldusväärsust ja tõendite raamimist.</string>
-    <string name="digital_forensics_preview_default">ISIK 92%</string>
     <string name="settings_watermark_subtitle">Brändi ülekatte režiim</string>
     <string name="prefs_import_export_title">Import / Eksport</string>
     <string name="prefs_import_export_subtitle">Varunda, taasta, lähtesta</string>
@@ -3128,7 +3127,7 @@ Igavesti sinu.</string>
     <string name="onboarding_payoff_support">Aeg nende lisarakendustega hüvasti jätta.</string>
     <string name="onboarding_lite_full_note">FadCam Full asendab 10 rakendust.</string>
     <string name="onboarding_demo_person">INIMENE</string>
-    <string name="onboarding_demo_gun">RELV</string>
+    <string name="onboarding_demo_car">AUTO</string>
     <string name="onboarding_demo_knife">NUGU</string>
     <string name="onboarding_swipe_instruction">Jätkamiseks pühki</string>
     <string name="onboarding_camera">Kaamera</string>

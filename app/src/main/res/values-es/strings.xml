@@ -1745,7 +1745,6 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="forensics_copy_done">Detalles de evidencia copiados</string>
     <string name="digital_forensics_preview_title">Vista previa de detección en vivo</string>
     <string name="digital_forensics_preview_subtitle">Vista previa de superposición simulada para que los usuarios entiendan etiquetas, confianza y marco de evidencia.</string>
-    <string name="digital_forensics_preview_default">PERSONA 92%</string>
     <string name="settings_watermark_subtitle">Modo de marca de superposición</string>
     <string name="prefs_import_export_title">Importar / Exportar</string>
     <string name="prefs_import_export_subtitle">Respaldo, restaurar, restablecer</string>
@@ -3228,7 +3227,7 @@ Tuyas para siempre.</string>
     <string name="onboarding_payoff_support">Es hora de despedirse de esas apps extra.</string>
     <string name="onboarding_lite_full_note">FadCam Full sustituye a 10 apps.</string>
     <string name="onboarding_demo_person">PERSONA</string>
-    <string name="onboarding_demo_gun">ARMA</string>
+    <string name="onboarding_demo_car">COCHE</string>
     <string name="onboarding_demo_knife">CUCHILLO</string>
     <string name="onboarding_swipe_instruction">Desliza para continuar</string>
     <string name="onboarding_camera">Cámara</string>

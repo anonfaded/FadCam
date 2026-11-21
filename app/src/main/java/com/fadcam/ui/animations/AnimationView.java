@@ -210,6 +210,15 @@ public class AnimationView extends View implements AnimationClock.FrameListener 
             if (!clockAttached) {
                 AnimationClock.get().add(this);
                 clockAttached = true;
+                // Cheap, debug-only: records that this preview actually started and at
+                // what size, so a frozen animation is diagnosable from a bug report
+                // instead of guesswork.
+                if (com.fadcam.BuildConfig.DEBUG) {
+                    com.fadcam.FLog.d("AnimationView", "started scene="
+                            + scene.getClass().getSimpleName()
+                            + " size=" + getWidth() + "x" + getHeight()
+                            + " ambient=" + ambientEnabled);
+                }
             }
         } else {
             detachClock();
