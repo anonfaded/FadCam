@@ -132,7 +132,7 @@
     <string name="recording_controls_title">AF · Экспозиция · Зум</string>
     <string name="mainpage_camera_front">Фронтальная камера</string>
     <string name="mainpage_camera_back">Задняя камера</string>
-    <string name="storage_available_space">Доступное место</string>
+    <string name="storage_available_space">Оставшееся место</string>
     <string name="recording_estimated_time">Примерное время</string>
     <string name="recording_elapsed_time">Прошедшее время</string>
     <string name="recording_remaining_time">Оставшееся время</string>
@@ -1383,7 +1383,7 @@
 
     <string name="app_name" translatable="false">FadCam</string>
 
-    <string name="stats_label_videos">Видео:</string>
+    <string name="stats_label_videos">Файлы:</string>
 
     <string name="stats_label_used">Использовано:</string>
 
@@ -3259,6 +3259,13 @@
     <string name="setting_theme">Тема</string>
     <string name="setting_language">Язык</string>
     <string name="setting_app_icon">Иконка приложения</string>
+    <string name="setting_splash_screen">Экран запуска</string>
+    <string name="splash_screen_dialog_title">Выберите экран запуска</string>
+    <string name="splash_screen_helper">Выберите, что FadCam показывает при запуске.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Аватар просыпается, засыпает и опускается на главный экран</string>
+    <string name="splash_style_flag">Флаг FadSec Lab</string>
+    <string name="splash_style_flag_desc">Классический экран запуска с флагом</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Включено</string>
@@ -3641,7 +3648,18 @@
     <string name="pro_screen_custom_name_desc">Выберите собственное название для приложения.</string>
     <string name="pro_screen_direct_support">Поддержка разработчика</string>
     <string name="pro_screen_direct_support_desc">Получите помощь от разработчика в Discord.</string>
-    <string name="pro_screen_discord_invite">Вопросы, идеи или просто хотите поздороваться? Оставайтесь на связи с FadSec Lab.</string>
+        <string name="pro_screen_support_title">Другие способы поддержки</string>
+    <string name="pro_screen_support_body">Pro вам не интересен? Вы всё равно можете поддержать FadCam через Patreon или пожертвования в криптовалюте. Любой вклад помогает нам создавать больше свободного ПО с открытым исходным кодом.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Разовые пожертвования или ежемесячная подписка.</string>
+    <string name="pro_screen_crypto_title">Пожертвования в криптовалюте</string>
+    <string name="pro_screen_crypto_desc">Свяжитесь с нами через Discord или почту.</string>
+    <string name="pro_screen_stay_connected_title">Оставайтесь на связи</string>
+    <string name="pro_screen_stay_connected_body">Вопросы, отзывы или просто хотите поздороваться? Мы будем рады вам ответить.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">Почта</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">Запрос в поддержку FadCam</string>
     <string name="pro_screen_everything">Все бесплатные функции</string>
     <string name="pro_screen_everything_desc">Всё из бесплатной версии включено.</string>
     <string name="pro_screen_fan_desc">Вы верите в будущее приложений и решений с открытым кодом, где приватность на первом месте.</string>
@@ -3676,7 +3694,6 @@
     <string name="pro_screen_soon">Скоро</string>
     <string name="pro_screen_soon_legend">Тарифы Pro+ и Lab скоро появятся.</string>
     <string name="pro_screen_status_description">%1$s: %2$s</string>
-    <string name="pro_screen_support">Вступить в Discord</string>
     <string name="pro_screen_tier">Pro</string>
     <string name="pro_screen_tier_lab">Lab</string>
     <string name="pro_screen_tier_plus">Pro+</string>

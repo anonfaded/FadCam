@@ -46,6 +46,7 @@ import java.util.Locale;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import androidx.core.splashscreen.SplashScreen; // SplashScreen API
+import androidx.core.splashscreen.SplashScreenViewProvider;
 import android.view.WindowManager;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -58,7 +59,12 @@ import android.widget.HorizontalScrollView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private BottomNavigationView bottomNavigationView;
+    private NavigationBarView bottomNavigationView;
+    /** The landscape left rail. Same menu as the bottom pill; only one is visible at a time. */
+    private NavigationBarView railNavigationView;
+    private NavigationBarView.OnItemSelectedListener navItemSelectedListener;
+    /** nav_container's own padding before window insets are added on top. */
+    private int navBasePaddingStart, navBasePaddingTop, navBasePaddingEnd, navBasePaddingBottom;
     private int originalBottomNavColor = 0; // Store original bottom nav color
 
     private boolean doubleBackToExitPressedOnce = false;
@@ -68,6 +74,13 @@ public class MainActivity extends AppCompatActivity {
 
     // Add SharedPreferencesManager field
     private SharedPreferencesManager sharedPreferencesManager;
+    // Launch splash hand-off. The system SplashScreen view is kept on screen
+    // until the Home avatar is ready, then animated into place in one window.
+    private SplashScreen splashScreen;
+    private boolean splashReady = false;
+    private boolean splashAborted = false;
+    private HomeFragment splashHomeFragment;
+    private com.fadcam.ui.SplashAvatarOverlay splashAvatarOverlay;
     // Cloak overlay view reference
     private View cloakOverlay;
     private android.widget.ImageView cloakIconView;
@@ -121,6 +134,25 @@ public class MainActivity extends AppCompatActivity {
 
     // Removed Trash-specific visibility checks; overlay back handling is unified
     // below.
+
+    /**
+     * Re-shows the overlay container when FragmentManager restored an overlay screen.
+     *
+     * <p>The container's visibility lives in the layout as {@code gone} and is not part of
+     * the fragment state that is saved across an activity recreation. Without this, changing
+     * the app language (which recreates the activity) dropped the user out of the Settings
+     * sub-screen they were in and back onto the Settings tab.</p>
+     */
+    private void restoreOverlayContainerVisibility() {
+        View overlayContainer = findViewById(R.id.overlay_fragment_container);
+        if (overlayContainer == null) return;
+        Fragment overlayFragment = getSupportFragmentManager()
+                .findFragmentById(R.id.overlay_fragment_container);
+        if (overlayFragment != null) {
+            overlayContainer.setVisibility(View.VISIBLE);
+            overlayContainer.setAlpha(1f);
+        }
+    }
 
     /**
      * Utility so child fragments can request overlay dismissal after popping back
@@ -289,7 +321,16 @@ public class MainActivity extends AppCompatActivity {
                     com.google.android.material.badge.BadgeDrawable badge = 
                         bottomNavigationView.getOrCreateBadge(R.id.navigation_remote);
                     badge.setVisible(true);
-                    badge.setText("NEW"); // Show "NEW" text instead of number
+                    if (bottomNavigationView
+                            instanceof com.google.android.material.navigationrail.NavigationRailView) {
+                        // A text badge is wider than the rail: use the standard dot.
+                        badge.clearNumber();
+                        badge.clearText();
+                        badge.setHorizontalPadding(0);
+                        badge.setVerticalPadding(0);
+                    } else {
+                        badge.setText("NEW"); // Show "NEW" text instead of number
+                    }
                     badge.setBackgroundColor(androidx.core.content.ContextCompat.getColor(
                             this, R.color.pro_gold)); // Champagne gold NEW badge
                     badge.setBadgeTextColor(androidx.core.content.ContextCompat.getColor(
@@ -387,11 +428,20 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             FLog.w("UpdateCheck", "App identity log failed: " + e.getMessage());
         }
+        // Install the splash before super.onCreate so the platform/compat splash
+        // view is ours to animate; keep it on screen until Home is ready.
+        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        if (RuntimeCompat.shouldUseWatchUi(this)) {
+            startActivity(new Intent(this, com.fadcam.ui.WatchMainActivity.class));
+            finish();
+            return;
+        }
+        this.splashScreen = splashScreen;
+        splashScreen.setKeepOnScreenCondition(() -> !splashReady);
+        splashScreen.setOnExitAnimationListener(this::onSplashExit);
         swipeTouchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
 
-        // Install splash screen (shows the themed windowSplashScreenAnimatedIcon)
-        SplashScreen.installSplashScreen(this);
         // Apply user-selected theme AFTER splash so postSplashScreenTheme replaced by
         // dynamic choice
         applyTheme();
@@ -530,26 +580,25 @@ public class MainActivity extends AppCompatActivity {
 
         // Fragment container for tab navigation
         bottomNavigationView = findViewById(R.id.bottom_navigation);
+        railNavigationView = findViewById(R.id.rail_navigation);
         if (bottomNavigationView != null && com.fadcam.BuildConfig.LITE_EDITION) {
             // Lite edition: three tabs only — Records (left), Home (center), Settings (right).
             // The internal position engine (0-5) is untouched; the menu is just a selector.
-            android.view.Menu liteMenu = bottomNavigationView.getMenu();
-            liteMenu.clear();
-            liteMenu.add(android.view.Menu.NONE, R.id.navigation_records, 0,
-                    R.string.nav_records).setIcon(R.drawable.ic_records_selector);
-            liteMenu.add(android.view.Menu.NONE, R.id.navigation_home, 1,
-                    R.string.nav_home).setIcon(R.drawable.pilot_steering_white);
-            liteMenu.add(android.view.Menu.NONE, R.id.navigation_settings, 2,
-                    R.string.nav_settings).setIcon(R.drawable.ic_nav_settings);
-            // Compact dock: real nav stays as the invisible engine; a styled duplicate
-            // renders the 3 buttons with stable colors/shadows/animations.
-            android.widget.FrameLayout.LayoutParams navLp =
-                    (android.widget.FrameLayout.LayoutParams) bottomNavigationView.getLayoutParams();
-            navLp.height = 0;
-            bottomNavigationView.setLayoutParams(navLp);
-            bottomNavigationView.setVisibility(android.view.View.INVISIBLE);
+            applyLiteMenu(bottomNavigationView);
+            applyLiteMenu(railNavigationView);
+            if (!isLandscapeLayout()) {
+                // Compact dock: real nav stays as the invisible engine; a styled duplicate
+                // renders the 3 buttons with stable colors/shadows/animations. In landscape
+                // the rail is the only dock, so there is nothing to hide behind.
+                android.widget.FrameLayout.LayoutParams navLp =
+                        (android.widget.FrameLayout.LayoutParams) bottomNavigationView.getLayoutParams();
+                navLp.height = 0;
+                bottomNavigationView.setLayoutParams(navLp);
+                bottomNavigationView.setVisibility(android.view.View.INVISIBLE);
+            }
 
-            final android.view.View dock = findViewById(R.id.lite_dock);
+            final android.view.View dock = isLandscapeLayout()
+                    ? null : findViewById(R.id.lite_dock);
             if (dock != null) {
                 // Blob dock: side "tentacles" gradient from the bar color to black
                 // (black tucks into the circle) while the Home button keeps the bar color.
@@ -607,38 +656,9 @@ public class MainActivity extends AppCompatActivity {
                 dock.post(() -> updateLiteDockSelection());
             }
         }
-        if (bottomNavigationView != null) {
-            // Prevent Material from applying its own window insets to the nav view.
-            // The parent nav_container already handles insets; letting Material add its own
-            // bottom padding causes icons to shift above-center on gesture-nav devices.
-            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(
-                    bottomNavigationView, (v, insets) -> insets);
-            bottomNavigationView.setPadding(0, 0, 0, 0);
-
-            // Active-tab label mode: only the selected tab shows its label.
-            bottomNavigationView.setLabelVisibilityMode(NavigationBarView.LABEL_VISIBILITY_SELECTED);
-            bottomNavigationView.setItemActiveIndicatorEnabled(false);
-            // Center content (icon + label) vertically within the 64dp dock.
-            bottomNavigationView.setItemGravity(NavigationBarView.ITEM_GRAVITY_CENTER);
-            try {
-                bottomNavigationView.setItemActiveIndicatorColor(
-                        android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT));
-            } catch (Exception ignored) { }
-
-            // Apply rounded corners (24dp) via ViewOutlineProvider so the background and
-            // elevation shadow both follow the rounded pill shape reliably across themes.
-            // The background color is resolved from the XML attribute; we only set the shape.
-            final float cornerPx = android.util.TypedValue.applyDimension(
-                    android.util.TypedValue.COMPLEX_UNIT_DIP, 24,
-                    getResources().getDisplayMetrics());
-            bottomNavigationView.setOutlineProvider(new android.view.ViewOutlineProvider() {
-                @Override
-                public void getOutline(android.view.View view, android.graphics.Outline outline) {
-                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), cornerPx);
-                }
-            });
-            bottomNavigationView.setClipToOutline(true);
-        }
+        // Chooses the bottom pill or the landscape rail, styles it, and lays the
+        // fragment container out around it.
+        applyResponsiveNavLayout();
         
         // Initialize SharedPreferencesManager before using it in fragments
         sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
@@ -712,10 +732,25 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             // Fresh launch — load Home tab
             switchFragment(0, false); // Uses commitNow() for instant, synchronous load
+            prepareSplashAnimation();
             scheduleTabPrewarm();
         } else {
             // Configuration change / process death — FragmentManager restores all added fragments
             // We need to find which was the current one and ensure others are hidden
+            // The system splash belongs to a cold start only. prepareSplashAnimation() is the
+            // only path that sets splashReady=true, and it runs in the fresh-launch branch
+            // above. On a recreation (theme/language change, process restore) it was never
+            // called, so keepOnScreenCondition stayed true and the splash window covered the
+            // app forever — a full black screen with only dialogs visible on top. Release it
+            // immediately instead of replaying the intro.
+            splashAborted = true;
+            splashReady = true;
+            // Overlay screens (Settings sub-tabs such as Appearance) live in their own
+            // container that ships hidden in the XML. FragmentManager restores the fragment,
+            // but a view's visibility is a View property and is not part of that state, so
+            // the container stayed GONE and the recreation dropped the user back onto the
+            // Settings tab instead of the sub-screen they were editing.
+            restoreOverlayContainerVisibility();
             int restoredPosition = savedInstanceState.getInt("current_fragment_position", 0);
             androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
             
@@ -737,16 +772,29 @@ public class MainActivity extends AppCompatActivity {
             scheduleTabPrewarm();
         }
 
+        // Runs before the splash is released. Moving it after the first frame was
+        // measured to gain nothing (the first layout dominates), and running it
+        // during the launch animation would stall frames, so it stays here.
+        configureStartupUi();
+
+        // shortcuts)-----------
+        handleWidgetIntent();
+        // shortcuts)-----------
+    }
+
+    /** UI wiring that must not delay the first frame of the launch animation. */
+    private void configureStartupUi() {
+        if (isFinishing() || isDestroyed()) return;
         // A weekly-notification tap routes through Home first, so backing out of Pro
         // returns to the app (and the after-Pro confirmation) instead of the launcher.
-        bottomNavigationView.setOnItemSelectedListener(item -> {
+        navItemSelectedListener = item -> {
             int itemId = item.getItemId();
             int targetPosition = -1;
             
             if (itemId == R.id.navigation_home) {
                 targetPosition = 0;
                 // Keep the user's chosen icon applied (selection re-renders the item).
-                applyHomeNavIcon();
+        applyHomeNavIcon();
             } else if (itemId == R.id.navigation_records) {
                 targetPosition = 1;
             } else if (itemId == R.id.navigation_remote) {
@@ -765,7 +813,15 @@ public class MainActivity extends AppCompatActivity {
             }
             updateLiteDockSelection();
             return true;
-        });
+        };
+        // Both docks share the same menu ids; bind both so a rotation does not
+        // need to re-attach the listener.
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setOnItemSelectedListener(navItemSelectedListener);
+        }
+        if (railNavigationView != null) {
+            railNavigationView.setOnItemSelectedListener(navItemSelectedListener);
+        }
 
         // Dock reveal animation – REMOVED: the launch reveal (scale/fade/slide of
         // the bottom nav dock) consumed resources and delayed the dock's presence
@@ -853,10 +909,8 @@ public class MainActivity extends AppCompatActivity {
                 }, false /* non-recursive: only direct overlay_fragment_container children */);
         // dpad_settings)-----------
 
-        // shortcuts)-----------
-        handleWidgetIntent();
-        // shortcuts)-----------
     }
+
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
@@ -1234,8 +1288,49 @@ public class MainActivity extends AppCompatActivity {
             FLog.d("MainActivity", "Language is already set to " + languageCode + "; no need to change.");
             return;
         }
+        // A dialog open at this moment is restored by FragmentManager from its saved
+        // arguments, which hold the title and the checked id resolved in the *previous*
+        // locale. That is why the language sheet came back still showing the old language
+        // selected and titled in the old language. Close dialogs first so the recreation
+        // starts clean and the caller reopens the sheet in the new locale on demand.
+        dismissOpenDialogs();
         FLog.d("MainActivity", "Applying language: " + languageCode);
         androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(desired);
+    }
+
+    /**
+     * Dismisses every dialog currently attached to this activity (including dialogs owned
+     * by overlay sub-fragments). Used before a locale change, because restored dialogs keep
+     * the text and selection they were created with.
+     */
+    private void dismissOpenDialogs() {
+        try {
+            androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+            for (androidx.fragment.app.Fragment fragment :
+                    new java.util.ArrayList<>(fm.getFragments())) {
+                dismissDialogsRecursively(fragment);
+            }
+        } catch (Exception e) {
+            FLog.w("MainActivity", "dismissOpenDialogs failed", e);
+        }
+    }
+
+    private void dismissDialogsRecursively(androidx.fragment.app.Fragment fragment) {
+        if (fragment == null) return;
+        if (fragment instanceof androidx.fragment.app.DialogFragment) {
+            androidx.fragment.app.DialogFragment dialog =
+                    (androidx.fragment.app.DialogFragment) fragment;
+            if (dialog.isAdded() && !dialog.isRemoving()) {
+                dialog.dismissAllowingStateLoss();
+            }
+            return;
+        }
+        if (fragment.isAdded()) {
+            for (androidx.fragment.app.Fragment child :
+                    new java.util.ArrayList<>(fragment.getChildFragmentManager().getFragments())) {
+                dismissDialogsRecursively(child);
+            }
+        }
     }
 
     /**
@@ -1257,6 +1352,17 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
+        // If the user leaves mid-splash, restore the real Home avatar before the
+        // activity is hidden so returning to the app never shows a frozen frame.
+        splashAborted = true;
+        splashReady = true;
+        if (splashAvatarOverlay != null) {
+            splashAvatarOverlay.cancel();
+            splashAvatarOverlay = null;
+        } else if (splashHomeFragment != null
+                && splashHomeFragment.isSplashTransitionActive()) {
+            splashHomeFragment.cancelSplashTransition();
+        }
         super.onStop();
     }
 
@@ -1329,6 +1435,13 @@ public class MainActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                // Back during the launch avatar animation finishes the animation
+                // instead of leaving the app.
+                if (splashAvatarOverlay != null && splashAvatarOverlay.isShowing()) {
+                    splashAvatarOverlay.skip();
+                    return;
+                }
+
                 // Unified: handle any visible overlay fragment (trash or settings)
                 if (handleOverlayBack()) {
                     return;
@@ -1364,6 +1477,158 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    /**
+     * Keeps the system splash on screen until the Home avatar is laid out, then
+     * releases it. The exit listener owns the single-window avatar animation.
+     */
+    private void prepareSplashAnimation() {
+        if (isFinishing() || isDestroyed()) {
+            splashReady = true;
+            return;
+        }
+        Intent intent = getIntent();
+        if (intent != null && intent.getIntExtra("navigate_to_tab", -1) >= 0) {
+            splashReady = true;
+            return;
+        }
+        if (sharedPreferencesManager == null) {
+            sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        }
+        String style = sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_SPLASH_STYLE, Constants.SPLASH_STYLE_DEFAULT);
+        if (Constants.SPLASH_STYLE_FLAG.equals(style)) {
+            // The exit listener crossfades into the flag; no avatar to hide.
+            splashReady = true;
+            return;
+        }
+        // FadRec's Home has a different layout and no sleeping avatar.
+        if (Constants.MODE_FADREC.equals(sharedPreferencesManager.getCurrentRecordingMode())) {
+            splashReady = true;
+            return;
+        }
+        // Honour the system "remove animations" accessibility setting.
+        float animatorScale = android.provider.Settings.Global.getFloat(
+                getContentResolver(),
+                android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f);
+        if (animatorScale == 0f) {
+            splashReady = true;
+            return;
+        }
+        Fragment fragment = getSupportFragmentManager()
+                .findFragmentById(R.id.fragment_container);
+        if (!(fragment instanceof HomeFragment)) {
+            splashReady = true;
+            return;
+        }
+        splashHomeFragment = (HomeFragment) fragment;
+        // Attach the overlay NOW, inside onCreate, so the app's very first frame
+        // already contains the avatar. The system splash has been made blank, so
+        // dismissing it later simply reveals the same avatar with no gap.
+        splashAvatarOverlay = new com.fadcam.ui.SplashAvatarOverlay(
+                this, splashHomeFragment);
+        splashAvatarOverlay.start();
+        splashReady = true;
+    }
+
+    /**
+     * Called once the system splash is ready to leave the screen. Everything from
+     * here happens inside the splash window itself, so there is no activity cut.
+     */
+    private void onSplashExit(SplashScreenViewProvider provider) {
+        if (isFinishing() || isDestroyed() || splashAborted) {
+            if (splashHomeFragment != null && splashAvatarOverlay == null
+                    && splashHomeFragment.isSplashTransitionActive()) {
+                splashHomeFragment.cancelSplashTransition();
+            }
+            provider.remove();
+            return;
+        }
+        // The overlay is already attached underneath the system splash. Give it the
+        // exact size the system splash is showing before dropping the splash, so its
+        // first frame is the same image instead of a resized one.
+        if (splashAvatarOverlay != null) {
+            try {
+                android.view.View icon = provider.getIconView();
+                if (icon instanceof android.widget.ImageView) {
+                    android.graphics.drawable.Drawable d =
+                            ((android.widget.ImageView) icon).getDrawable();
+                    android.graphics.Rect bounds = new android.graphics.Rect();
+                    if (d != null) d.copyBounds(bounds);
+                    int canvas = Math.max(bounds.width(), icon.getWidth());
+                    if (d != null && canvas > 0) {
+                        splashAvatarOverlay.adoptSplashIcon(d, canvas);
+                    }
+                }
+            } catch (Exception e) {
+                com.fadcam.FLog.d("SplashAvatar", "splash icon hand-off failed: " + e);
+            }
+            provider.remove();
+            return;
+        }
+        String style = sharedPreferencesManager != null
+                ? sharedPreferencesManager.sharedPreferences.getString(
+                        Constants.PREF_SPLASH_STYLE, Constants.SPLASH_STYLE_DEFAULT)
+                : Constants.SPLASH_STYLE_DEFAULT;
+        if (Constants.SPLASH_STYLE_FLAG.equals(style) || splashHomeFragment == null) {
+            runFallbackSplashExit(provider);
+            return;
+        }
+        // Overlay was already attached in onCreate; just drop the system splash.
+        if (splashAvatarOverlay != null) {
+            provider.remove();
+            return;
+        }
+        runFallbackSplashExit(provider);
+    }
+    /**
+     * Flag style and non-Home launches: no avatar motion. Crossfade the flag (or
+     * simply fade the system splash) and reveal the already-laid-out Home.
+     */
+    private void runFallbackSplashExit(SplashScreenViewProvider provider) {
+        if (splashHomeFragment != null && splashAvatarOverlay == null
+                && splashHomeFragment.isSplashTransitionActive()) {
+            splashHomeFragment.cancelSplashTransition();
+        }
+        String style = sharedPreferencesManager != null
+                ? sharedPreferencesManager.sharedPreferences.getString(
+                        Constants.PREF_SPLASH_STYLE, Constants.SPLASH_STYLE_DEFAULT)
+                : Constants.SPLASH_STYLE_DEFAULT;
+        View splash = provider.getView();
+        if (splash == null) {
+            provider.remove();
+            return;
+        }
+        if (Constants.SPLASH_STYLE_FLAG.equals(style) && splash instanceof ViewGroup) {
+            View icon = provider.getIconView();
+            if (icon != null) {
+                icon.animate().alpha(0f).setDuration(180L).start();
+            }
+            android.widget.ImageView flag = new android.widget.ImageView(this);
+            flag.setImageResource(R.drawable.fadseclab_flag);
+            flag.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+            flag.setAlpha(0f);
+            android.widget.FrameLayout.LayoutParams lp =
+                    new android.widget.FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            android.view.Gravity.CENTER);
+            ((ViewGroup) splash).addView(flag, lp);
+            flag.animate().alpha(1f).setDuration(200L).start();
+            splash.postDelayed(() -> splash.animate()
+                    .alpha(0f)
+                    .setDuration(220L)
+                    .withEndAction(provider::remove)
+                    .start(), 900L);
+            return;
+        }
+        splash.animate()
+                .alpha(0f)
+                .setDuration(160L)
+                .withEndAction(provider::remove)
+                .start();
     }
 
     /**
@@ -1617,7 +1882,19 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
-        applyBandToFragment(fm.findFragmentById(R.id.fragment_container));
+        // Tabs use add/hide/show, so fragment_container can hold several fragments at once.
+        // findFragmentById() returns only one of them (often a hidden tab), which left the
+        // visible tab without its status-bar band after an activity recreation (e.g. an
+        // app-language change). Band every restored tab; HeaderInset remembers each view's
+        // base padding, so this is idempotent.
+        for (int i = 0; i < 6; i++) {
+            for (String tag : getFragmentTagsForPosition(i)) {
+                Fragment f = fm.findFragmentByTag(tag);
+                if (f != null) {
+                    applyBandToFragment(f);
+                }
+            }
+        }
         View overlay = findViewById(R.id.overlay_fragment_container);
         if (overlay != null && overlay.getVisibility() == View.VISIBLE) {
             applyBandToFragment(fm.findFragmentById(R.id.overlay_fragment_container));
@@ -1674,6 +1951,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onPostResume() {
         super.onPostResume();
         registerImmersiveDialogs();
+        // A language change recreates the activity and restores hidden tabs; make sure the
+        // restored visible screen gets the status-bar band even if the inset dispatch ran
+        // before FragmentManager finished restoring it.
+        applyBandToCurrentFragment();
         // Immersive shell, applied once the window is attached and focused. Running this from
         // onWindowFocusChanged re-triggered focus and looped before the first frame, which left
         // the window showing the theme background instead of the UI.
@@ -1827,6 +2108,15 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         // Clean up handler callbacks to prevent memory leaks
         backPressHandler.removeCallbacks(backPressRunnable);
+        splashAborted = true;
+        splashReady = true;
+        if (splashAvatarOverlay != null) {
+            splashAvatarOverlay.cancel();
+            splashAvatarOverlay = null;
+        } else if (splashHomeFragment != null
+                && splashHomeFragment.isSplashTransitionActive()) {
+            splashHomeFragment.cancelSplashTransition();
+        }
     }
 
     // Helper to resolve theme color attribute
@@ -1992,6 +2282,15 @@ public class MainActivity extends AppCompatActivity {
 
         // Notify all fragments about the orientation change
         notifyFragmentsOfOrientationChange(newConfig.orientation);
+        // The dock lives in the activity layout: portrait keeps the bottom pill,
+        // landscape turns it into the left rail.
+        applyResponsiveNavLayout();
+        syncNavSelection();
+        setupHomeIconCustomization();
+        // Some locale changes arrive as a live configuration change rather than a
+        // recreation; the detach/attach above re-inflated the tab views, so reapply the
+        // status-bar band to every restored tab.
+        applyBandToCurrentFragment();
     }
 
     /**
@@ -2064,6 +2363,161 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /** True when the activity is laid out in landscape. */
+    private boolean isLandscapeLayout() {
+        return getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+    }
+
+    /** Lite line menu: three tabs, same ids as the full menu. */
+    private void applyLiteMenu(NavigationBarView nav) {
+        if (nav == null) return;
+        android.view.Menu menu = nav.getMenu();
+        menu.clear();
+        menu.add(android.view.Menu.NONE, R.id.navigation_records, 0,
+                R.string.nav_records).setIcon(R.drawable.ic_records_selector);
+        menu.add(android.view.Menu.NONE, R.id.navigation_home, 1,
+                R.string.nav_home).setIcon(R.drawable.pilot_steering_white);
+        menu.add(android.view.Menu.NONE, R.id.navigation_settings, 2,
+                R.string.nav_settings).setIcon(R.drawable.ic_nav_settings);
+    }
+
+    /**
+     * Portrait: floating bottom pill, full-width content above it.
+     * Landscape: the same items as a vertical rail on the leading edge, so the
+     * short landscape height goes to the camera UI instead of the dock.
+     */
+    private void applyResponsiveNavLayout() {
+        View rootView = findViewById(R.id.main_root_layout);
+        View navContainer = findViewById(R.id.nav_container);
+        View fragmentContainer = findViewById(R.id.fragment_container);
+        View rail = findViewById(R.id.rail_navigation);
+        View bottom = findViewById(R.id.bottom_navigation);
+        if (!(rootView instanceof androidx.constraintlayout.widget.ConstraintLayout)
+                || navContainer == null || fragmentContainer == null) {
+            styleNavView(bottomNavigationView, false);
+            return;
+        }
+
+        boolean landscape = isLandscapeLayout();
+        androidx.constraintlayout.widget.ConstraintLayout root =
+                (androidx.constraintlayout.widget.ConstraintLayout) rootView;
+        androidx.constraintlayout.widget.ConstraintSet set =
+                new androidx.constraintlayout.widget.ConstraintSet();
+        set.clone(root);
+
+        final int parent = androidx.constraintlayout.widget.ConstraintSet.PARENT_ID;
+        final int start = androidx.constraintlayout.widget.ConstraintSet.START;
+        final int end = androidx.constraintlayout.widget.ConstraintSet.END;
+        final int top = androidx.constraintlayout.widget.ConstraintSet.TOP;
+        final int bottomEdge = androidx.constraintlayout.widget.ConstraintSet.BOTTOM;
+
+        if (landscape && rail instanceof NavigationBarView) {
+            int margin = getResources().getDimensionPixelSize(R.dimen.home_rail_dock_margin);
+            int railWidth = getResources().getDimensionPixelSize(R.dimen.home_rail_dock_width);
+            if (bottom != null) bottom.setVisibility(View.GONE);
+            rail.setVisibility(View.VISIBLE);
+            bottomNavigationView = (NavigationBarView) rail;
+
+            set.constrainWidth(R.id.nav_container, railWidth + margin * 2);
+            set.constrainHeight(R.id.nav_container,
+                    androidx.constraintlayout.widget.ConstraintSet.MATCH_CONSTRAINT);
+            set.connect(R.id.nav_container, top, parent, top, 0);
+            set.connect(R.id.nav_container, bottomEdge, parent, bottomEdge, 0);
+            set.connect(R.id.nav_container, start, parent, start, 0);
+            set.clear(R.id.nav_container, end);
+            // match_parent on a ConstraintLayout child ignores constraints; make the
+            // container a 0dp span so it really starts after the rail.
+            set.constrainWidth(R.id.fragment_container,
+                    androidx.constraintlayout.widget.ConstraintSet.MATCH_CONSTRAINT);
+            set.connect(R.id.fragment_container, end, parent, end, 0);
+            set.connect(R.id.fragment_container, start, R.id.nav_container, end, 0);
+
+            navBasePaddingStart = margin;
+            navBasePaddingTop = margin;
+            navBasePaddingEnd = 0;
+            navBasePaddingBottom = margin;
+        } else {
+            if (rail != null) rail.setVisibility(View.GONE);
+            if (bottom != null) bottom.setVisibility(View.VISIBLE);
+            bottomNavigationView = bottom instanceof NavigationBarView
+                    ? (NavigationBarView) bottom : bottomNavigationView;
+
+            int dockPad = getResources().getDimensionPixelSize(R.dimen.home_dock_padding);
+            set.constrainWidth(R.id.nav_container,
+                    androidx.constraintlayout.widget.ConstraintSet.MATCH_CONSTRAINT);
+            set.constrainHeight(R.id.nav_container,
+                    androidx.constraintlayout.widget.ConstraintSet.WRAP_CONTENT);
+            set.connect(R.id.nav_container, bottomEdge, parent, bottomEdge, 0);
+            set.connect(R.id.nav_container, start, parent, start, 0);
+            set.connect(R.id.nav_container, end, parent, end, 0);
+            set.clear(R.id.nav_container, top);
+            set.constrainWidth(R.id.fragment_container,
+                    androidx.constraintlayout.widget.ConstraintSet.MATCH_CONSTRAINT);
+            set.connect(R.id.fragment_container, start, parent, start, 0);
+            set.connect(R.id.fragment_container, end, parent, end, 0);
+
+            navBasePaddingStart = dockPad;
+            navBasePaddingTop = 0;
+            navBasePaddingEnd = dockPad;
+            navBasePaddingBottom = dockPad;
+        }
+        set.applyTo(root);
+        navContainer.setPadding(navBasePaddingStart, navBasePaddingTop,
+                navBasePaddingEnd, navBasePaddingBottom);
+
+        View focusScrim = findViewById(R.id.dock_focus_gradient_scrim);
+        if (focusScrim != null) {
+            focusScrim.setVisibility(landscape ? View.GONE : View.VISIBLE);
+        }
+
+        styleNavView(bottomNavigationView, landscape);
+        applyHomeNavIcon();
+        androidx.core.view.ViewCompat.requestApplyInsets(rootView);
+    }
+
+    /** Shared look for the bottom pill and the rail; only the corner radius differs. */
+    private void styleNavView(NavigationBarView nav, boolean rail) {
+        if (nav == null) return;
+        // Material must not add its own insets: the parent nav_container owns them.
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(nav, (v, insets) -> insets);
+        nav.setPadding(0, 0, 0, 0);
+        nav.setLabelVisibilityMode(rail
+                ? NavigationBarView.LABEL_VISIBILITY_UNLABELED
+                : NavigationBarView.LABEL_VISIBILITY_SELECTED);
+        nav.setItemActiveIndicatorEnabled(false);
+        nav.setItemGravity(NavigationBarView.ITEM_GRAVITY_CENTER);
+        try {
+            nav.setItemActiveIndicatorColor(
+                    android.content.res.ColorStateList.valueOf(android.graphics.Color.TRANSPARENT));
+        } catch (Exception ignored) { }
+
+        // Rounded pill: half the rail width leaves the ends fully round.
+        final float cornerPx = rail
+                ? getResources().getDimension(R.dimen.home_rail_dock_width) / 2f
+                : android.util.TypedValue.applyDimension(
+                        android.util.TypedValue.COMPLEX_UNIT_DIP, 24,
+                        getResources().getDisplayMetrics());
+        nav.setOutlineProvider(new android.view.ViewOutlineProvider() {
+            @Override
+            public void getOutline(android.view.View view, android.graphics.Outline outline) {
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), cornerPx);
+            }
+        });
+        nav.setClipToOutline(true);
+    }
+
+    /** Mirrors the current tab into the newly visible nav without firing navigation. */
+    private void syncNavSelection() {
+        if (bottomNavigationView == null || currentFragmentPosition < 0) return;
+        int id = getNavItemIdForPosition(currentFragmentPosition);
+        if (id == -1) return;
+        NavigationBarView.OnItemSelectedListener listener = navItemSelectedListener;
+        bottomNavigationView.setOnItemSelectedListener(null);
+        bottomNavigationView.setSelectedItemId(id);
+        bottomNavigationView.setOnItemSelectedListener(listener);
+    }
+
     /**
      * Enable edge-to-edge display following Android 15 guidelines
      */
@@ -2088,10 +2542,10 @@ public class MainActivity extends AppCompatActivity {
         View navContainer = findViewById(R.id.nav_container);
         View statusBarScrim = findViewById(R.id.status_bar_scrim);
         View dockGradientScrim = findViewById(R.id.dock_focus_gradient_scrim);
-        final int navBasePaddingStart = navContainer != null ? navContainer.getPaddingStart() : 0;
-        final int navBasePaddingTop = navContainer != null ? navContainer.getPaddingTop() : 0;
-        final int navBasePaddingEnd = navContainer != null ? navContainer.getPaddingEnd() : 0;
-        final int navBasePaddingBottom = navContainer != null ? navContainer.getPaddingBottom() : 0;
+        navBasePaddingStart = navContainer != null ? navContainer.getPaddingStart() : 0;
+        navBasePaddingTop = navContainer != null ? navContainer.getPaddingTop() : 0;
+        navBasePaddingEnd = navContainer != null ? navContainer.getPaddingEnd() : 0;
+        navBasePaddingBottom = navContainer != null ? navContainer.getPaddingBottom() : 0;
         // Base gradient height in pixels (180dp), extended by systemBars.bottom so it always
         // peeks above the nav pill on API 35+ edge-to-edge devices.
         final int dockGradientBaseHeightPx = Math.round(180 * getResources().getDisplayMetrics().density);
@@ -2122,7 +2576,12 @@ public class MainActivity extends AppCompatActivity {
             // way, which is what makes the band identical on every phone.
             int contentTopInset = Math.max(getPlatformStatusBarHeight(),
                     insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout()).top);
-            topBandPx = isFormFactorTV ? 0 : contentTopInset;
+            // Landscape is full screen on phones: the status bar is hidden, so a band
+            // would just push the header down and eat the scarce height.
+            boolean statusBarHidden = !insets.isVisible(
+                    androidx.core.view.WindowInsetsCompat.Type.statusBars());
+            topBandPx = (isFormFactorTV || (isLandscapeLayout() && statusBarHidden))
+                    ? 0 : contentTopInset;
             applyBandToCurrentFragment();
 
             // Apply insets to main content areas
@@ -2142,9 +2601,11 @@ public class MainActivity extends AppCompatActivity {
                 // Dock clearance is handled per-fragment via layout_marginBottom=72dp.
                 int contentBottomPadding = isFormFactorTV ? 0 : navBottom;
                 // The top band belongs to the screen itself (header or scroll container), so
-                // the container only carries the horizontal and bottom insets.
+                // the container only carries the horizontal and bottom insets. In landscape
+                // the rail already owns the start inset and the container starts after it.
+                boolean railLayout = isLandscapeLayout();
                 fragmentContainer.setPadding(
-                        navLeft, 0,
+                        railLayout ? 0 : navLeft, 0,
                         navRight, contentBottomPadding);
             }
             if (overlayContainer != null) {
@@ -2186,7 +2647,8 @@ public class MainActivity extends AppCompatActivity {
 
             // Extend gradient scrim height by systemBars.bottom so it always peeks above
             // the nav pill even on API 35+ where the window extends behind the nav bar.
-            if (dockGradientScrim != null) {
+            if (dockGradientScrim != null
+                    && dockGradientScrim.getVisibility() != View.GONE) {
                 ViewGroup.LayoutParams lp = dockGradientScrim.getLayoutParams();
                 int requiredHeight = dockGradientBaseHeightPx + navBottom;
                 if (lp != null && lp.height != requiredHeight) {
@@ -2341,6 +2803,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void scheduleTabPrewarm() {
+        if (splashAvatarOverlay != null) {
+            // Inflating another tab costs ~360ms on low-end phones. Doing it on a
+            // fixed 3s timer landed exactly on the launch animation's landing and
+            // stalled its final frames, so wait until the animation is over.
+            splashAvatarOverlay.setOnLanded(this::startTabPrewarmTimer);
+            // Fail-safe in case the overlay is cancelled (activity left mid-splash).
+            backPressHandler.postDelayed(this::startTabPrewarmTimer, 9000L);
+            return;
+        }
+        startTabPrewarmTimer();
+    }
+
+    private void startTabPrewarmTimer() {
         View container = findViewById(R.id.fragment_container);
         if (container == null) {
             return;
@@ -2350,7 +2825,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             prewarmFragmentIfMissing(1);
-        }, 400L);
+        }, 1200L);
     }
 
     private void prewarmFragmentIfMissing(int position) {
@@ -2427,7 +2902,12 @@ public class MainActivity extends AppCompatActivity {
         }
         
         currentFragmentPosition = position;
-        
+
+        // Re-apply the status-bar band to the tab that just became visible. Fragments are
+        // kept alive, so a tab shown after an activity recreation may not receive a new
+        // onFragmentViewCreated callback.
+        applyBandToCurrentFragment();
+
         // Handle tab-specific logic (same as old onPageSelected)
         handleTabSelected(position);
     }

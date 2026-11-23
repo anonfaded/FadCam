@@ -52,8 +52,8 @@ public class WhatsNewActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Same treatment as the Pro screen: transparent status bar, hidden by default and
-        // revealed transiently by a swipe over the content.
+        // Same treatment as the Pro screen: transparent system bars, both hidden by default
+        // and revealed transiently by a swipe over the content.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(android.graphics.Color.argb(1, 0, 0, 0));
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
@@ -131,7 +131,14 @@ public class WhatsNewActivity extends AppCompatActivity {
                         | WindowInsetsCompat.Type.displayCutout());
                 Insets safe = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars()
                         | WindowInsetsCompat.Type.displayCutout());
-                v.setPadding(bars.left, 0, bars.right, bars.bottom);
+                // Both bars are hidden, so this page deliberately reserves no bottom inset.
+                // A gesture-nav device keeps reporting the full navigation-bar height through
+                // mandatorySystemGestures even after the bar is gone, and a three-button device
+                // keeps reporting the bar itself — reserving either lifted the CTA and left a
+                // ~45dp empty strip under it. The page's own 8dp padding keeps the button off
+                // the edge, and a transiently swiped-in bar overlays the page by design.
+                // (Same decision as FadCamProActivity.)
+                v.setPadding(bars.left, 0, bars.right, 0);
                 if (headerPanel != null) {
                     headerPanel.setPadding(headerPanel.getPaddingLeft(), safe.top,
                             headerPanel.getPaddingRight(), headerPanel.getPaddingBottom());
@@ -146,7 +153,7 @@ public class WhatsNewActivity extends AppCompatActivity {
                     insetsRoot.getViewTreeObserver().removeOnPreDrawListener(this);
                     firstFrameDrawn = true;
                     insetsRoot.postOnAnimation(() -> {
-                        if (!isFinishing()) hideStatusBar(insetsRoot);
+                        if (!isFinishing()) hideSystemBars(insetsRoot);
                     });
                     return true;
                 }
@@ -340,20 +347,25 @@ public class WhatsNewActivity extends AppCompatActivity {
         return sb.toString();
     }
 
-    /** Hides the status bar with the same recipe as the Pro screen (transient swipe reveal). */
-    private void hideStatusBar(View root) {
+    /** Hides both system bars with the same recipe as the Pro screen (transient swipe reveal). */
+    private void hideSystemBars(View root) {
         getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
         View decor = getWindow().getDecorView();
         int systemUiVisibility = decor.getSystemUiVisibility();
         decor.setSystemUiVisibility(systemUiVisibility
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        // Both bars: the page paints its own background edge to edge, and either bar peeks in
+        // on a swipe from its edge. Hiding only the status bar left the navigation bar stuck on
+        // screen, unlike the Pro screen this layout is modelled on.
         WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
-                .hide(WindowInsetsCompat.Type.statusBars());
-        // Force a relayout so OEM window managers recompute the frame with the bar hidden.
+                .hide(WindowInsetsCompat.Type.statusBars() | WindowInsetsCompat.Type.navigationBars());
+        // Force a relayout so OEM window managers recompute the frame with the bars hidden.
         getWindow().setAttributes(getWindow().getAttributes());
         ViewCompat.requestApplyInsets(root);
     }
@@ -365,7 +377,7 @@ public class WhatsNewActivity extends AppCompatActivity {
             View root = findViewById(R.id.whatsNewRoot);
             if (root != null) ViewCompat.requestApplyInsets(root);
             if (root != null && firstFrameDrawn) root.postOnAnimation(() -> {
-                if (hasWindowFocus() && !isFinishing()) hideStatusBar(root);
+                if (hasWindowFocus() && !isFinishing()) hideSystemBars(root);
             });
         }
     }

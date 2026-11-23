@@ -103,6 +103,7 @@ import com.fadcam.utils.DebouncedRunnable;
 import com.fadcam.utils.DeviceHelper;
 import com.fadcam.utils.ServiceStartPolicy;
 import com.fadcam.utils.StorageInfoCache;
+import com.fadcam.utils.DisplayLocale;
 import com.fadcam.utils.VideoStatsCache;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
@@ -380,6 +381,14 @@ public class HomeFragment extends BaseFragment {
     private Runnable homeBlinkRunnable;
     private final Random homeBlinkRandom = new Random();
     private boolean homeAvatarLastEnabled = false;
+    /**
+     * True while MainActivity's splash overlay owns the avatar view. The Home
+     * avatar stays INVISIBLE and its idle animations are suppressed until the
+     * overlay lands exactly on top of it.
+     */
+    private boolean splashTransitionActive = false;
+    private final Handler splashHandoffHandler = new Handler(Looper.getMainLooper());
+    private Runnable splashHandoffTimeout;
 
     // ── Header Logo Avatar blink loop ────────────────────────────────────────
     private final Handler headerBlinkHandler = new Handler(Looper.getMainLooper());
@@ -4046,11 +4055,15 @@ public class HomeFragment extends BaseFragment {
         // frame-1 correct, zero relayouts, zero flicker, identical gap on
         // every screen (verified: 4dp short when padding was omitted; over by
         // the inset when live-measured).
+        // Landscape moves the dock to a left rail OUTSIDE the fragment container,
+        // so there is no bottom clearance to reserve there.
+        boolean landscapeDock = getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
         view.setPadding(
             view.getPaddingLeft(),
             view.getPaddingTop(),
             view.getPaddingRight(),
-            (int) (getResources().getDimension(R.dimen.home_dock_height)
+            landscapeDock ? 0 : (int) (getResources().getDimension(R.dimen.home_dock_height)
                     + getResources().getDimension(R.dimen.home_dock_padding))
         );
         
@@ -6603,7 +6616,7 @@ public class HomeFragment extends BaseFragment {
         // Update the time
         SimpleDateFormat timeFormat = new SimpleDateFormat(
             CLOCK_HOUR_FORMAT_24.equals(hourFormatPref) ? "HH:mm" : "hh:mm a",
-            Locale.getDefault()
+            DisplayLocale.get(getContext())
         );
         String currentTime = timeFormat.format(new Date());
         if (tvClock instanceof com.fadcam.ui.utils.AnimatedTextView) {
@@ -6649,9 +6662,11 @@ public class HomeFragment extends BaseFragment {
         tvDateArabic.setTextColor(textColor);
 
         // Update the date in English
+        // Use the locale's own field order (Arabic puts the day before the month) rather than
+        // the English-shaped "EEE, MMM d" pattern, and let it pick native digits.
         SimpleDateFormat dateFormatEnglish = new SimpleDateFormat(
-            "EEE, MMM d",
-            Locale.getDefault()
+            android.text.format.DateFormat.getBestDateTimePattern(DisplayLocale.get(getContext()), "EdMMM"),
+            DisplayLocale.get(getContext())
         );
         String currentDateEnglish = dateFormatEnglish.format(new Date());
 
@@ -7163,7 +7178,7 @@ public class HomeFragment extends BaseFragment {
         final String finalCameraLabel = cameraLabel;
         final String qualityText = getResolutionDisplayName(selectedRes);
         final String fpsText = String.format(
-            Locale.getDefault(),
+            DisplayLocale.get(getContext()),
             getString(R.string.home_fps_format),
             selectedFps
         );
@@ -7188,10 +7203,11 @@ public class HomeFragment extends BaseFragment {
         final String cameraSubtitle =
             qualityText + " • " + fpsText + " • " + orientationText;
 
-        Locale numberFormatLocale = (Locale.getDefault() != null &&
-                "fr".equalsIgnoreCase(Locale.getDefault().getLanguage()))
+        Locale displayLocale = DisplayLocale.get(getContext());
+        Locale numberFormatLocale = (displayLocale != null &&
+                "fr".equalsIgnoreCase(displayLocale.getLanguage()))
             ? Locale.US
-            : Locale.getDefault();
+            : displayLocale;
         final String availableSpace = String.format(
             numberFormatLocale,
             getString(R.string.home_storage_format),
@@ -7319,7 +7335,9 @@ public class HomeFragment extends BaseFragment {
                     }
                     if (tvSpaceTotal != null) {
                         // Show static "/ XX.X GB" — set once, never animate.
-                        String totalStr = String.format(numberFormatLocale, "/ %.2f GB", gbTotal);
+                        // Number only: the unit is already rendered just before the slash, and
+                        // repeating a long localized unit (e.g. "غيغابايت") overflowed the row.
+                        String totalStr = String.format(numberFormatLocale, "/ %.2f", gbTotal);
                         tvSpaceTotal.setText(totalStr);
                     }
                     applyStorageTotalVisibilityPreference();
@@ -7436,28 +7454,29 @@ public class HomeFragment extends BaseFragment {
         long minutes,
         long seconds
     ) {
+        // Durations read left-to-right even in RTL layouts, but the digits follow the UI
+        // language, so "13m 12s" becomes "١٣m ١٢s" in Arabic.
+        // Durations read left-to-right in every language, but both the digits and the
+        // unit letters follow the UI language: Arabic shows "١س ٩د" rather than "1h 9m".
         StringBuilder remainingTime = new StringBuilder();
         if (days > 0) {
-            remainingTime.append(
-                String.format(Locale.getDefault(), "%dd ", days)
-            );
+            remainingTime.append(durationPart(days, R.string.duration_unit_days)).append(' ');
         }
         if (hours > 0) {
-            remainingTime.append(
-                String.format(Locale.getDefault(), "%dh ", hours)
-            );
+            remainingTime.append(durationPart(hours, R.string.duration_unit_hours)).append(' ');
         }
         if (minutes > 0) {
-            remainingTime.append(
-                String.format(Locale.getDefault(), "%dm ", minutes)
-            );
+            remainingTime.append(durationPart(minutes, R.string.duration_unit_minutes)).append(' ');
         }
         if (seconds > 0 || remainingTime.length() == 0) {
-            remainingTime.append(
-                String.format(Locale.getDefault(), "%ds", seconds)
-            );
+            remainingTime.append(durationPart(seconds, R.string.duration_unit_seconds));
         }
         return remainingTime.toString().trim();
+    }
+
+    /** One duration component: localized digits plus the localized unit letter. */
+    private String durationPart(long value, int unitRes) {
+        return DisplayLocale.digits(String.valueOf(value), getContext()) + getString(unitRes);
     }
 
     protected String buildElapsedDisplayText(long elapsedTimeMs) {
@@ -7479,7 +7498,7 @@ public class HomeFragment extends BaseFragment {
      * "30m 15s" -> "25m 10s" does NOT have format change (units stay m,s).
      */
     protected boolean hasTimeUnitFormatChanged(String oldText, String newText) {
-        java.util.regex.Pattern unitPattern = java.util.regex.Pattern.compile("[dhms]");
+        java.util.regex.Pattern unitPattern = java.util.regex.Pattern.compile("\\p{L}+");
         java.util.regex.Matcher oldMatcher = unitPattern.matcher(oldText);
         java.util.regex.Matcher newMatcher = unitPattern.matcher(newText);
         
@@ -7502,9 +7521,9 @@ public class HomeFragment extends BaseFragment {
         long minutes = (totalSeconds % 3600L) / 60L;
         long seconds = totalSeconds % 60L;
         if (totalHours > 0) {
-            return String.format(Locale.getDefault(), "%02d:%02d:%02d", totalHours, minutes, seconds);
+            return String.format(DisplayLocale.get(getContext()), "%02d:%02d:%02d", totalHours, minutes, seconds);
         }
-        return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
+        return String.format(DisplayLocale.get(getContext()), "%02d:%02d", minutes, seconds);
     }
 
     protected boolean isElapsedCompactDisplayMode() {
@@ -7532,8 +7551,10 @@ public class HomeFragment extends BaseFragment {
             return false;
         }
         String value = text.toString().trim();
-        return value.matches("\\d+(?::\\d{2}){1,2}")
-                || value.matches("\\d+[dhms](?:\\s+\\d+[dhms])*$");
+        // \p{Nd} because Arabic-Indic digits are decimal digits too; \d alone would stop
+        // recognising the timer once the UI is in Arabic.
+        return value.matches("\\p{Nd}+(?::\\p{Nd}{2}){1,2}")
+                || value.matches("\\p{Nd}+\\p{L}+(?:\\s+\\p{Nd}+\\p{L}+)*$");
     }
 
     private boolean shouldAnimateElapsedTransition(String previous, String next) {
@@ -8200,14 +8221,14 @@ public class HomeFragment extends BaseFragment {
 
                 long totalSizeBytes = sizeInMB[0] * 1024L * 1024L;
                 String totalSizeFormatted = (getContext() != null)
-                    ? Formatter.formatFileSize(getContext(), totalSizeBytes)
-                    : String.format(Locale.US, "%.2f GB", totalSizeBytes / (1024.0 * 1024.0 * 1024.0));
+                    ? DisplayLocale.digits(Formatter.formatFileSize(getContext(), totalSizeBytes))
+                    : String.format(DisplayLocale.get(getContext()), "%.2f GB", totalSizeBytes / (1024.0 * 1024.0 * 1024.0));
 
                 lastAnimatedVideoCount = videoCount[0];
                 lastAnimatedSizeMB = sizeInMB[0];
 
                 // Video count — increases, animate UP.
-                String countText = String.valueOf(videoCount[0]);
+                String countText = DisplayLocale.digits(String.valueOf(videoCount[0]));
                 if (tvVideoCount instanceof com.fadcam.ui.utils.AnimatedTextView) {
                     ((com.fadcam.ui.utils.AnimatedTextView) tvVideoCount).animateSlot(countText, 400);
                 } else if (tvVideoCount != null) {
@@ -11043,8 +11064,140 @@ public class HomeFragment extends BaseFragment {
      * Home avatar is ALWAYS sleeping — it only shows when the camera feed is not visible,
      * so there is no "awake" state needed here.
      */
+    /**
+     * Called by the launch splash overlay before it starts moving. Hides the real
+     * avatar and freezes its idle animation so the overlay is the only visible
+     * avatar; returns the target view for exact bounds measurement.
+     */
+    public View beginSplashTransition() {
+        if (ivPreviewAvatar == null || getView() == null || isHidden()) {
+            com.fadcam.FLog.d("SplashAvatar", "begin: unavailable avatar="
+                    + (ivPreviewAvatar != null) + " view=" + (getView() != null)
+                    + " hidden=" + isHidden());
+            return null;
+        }
+        View avatarArea = getView().findViewById(R.id.fl_preview_avatar);
+        if (avatarArea == null) {
+            com.fadcam.FLog.d("SplashAvatar", "begin: no avatar container");
+            return null;
+        }
+        if (ivPreviewAvatar.getWidth() <= 0 || ivPreviewAvatar.getHeight() <= 0) {
+            com.fadcam.FLog.d("SplashAvatar", "begin: avatar not laid out "
+                    + ivPreviewAvatar.getWidth() + "x" + ivPreviewAvatar.getHeight());
+            return null;
+        }
+        // The avatar container may still be GONE on a cold start (it flips visible
+        // only after the service reports its preview state). It must be visible for
+        // the landing measurement, so show it here.
+        if (avatarArea.getVisibility() != View.VISIBLE) {
+            avatarArea.setVisibility(View.VISIBLE);
+        }
+
+        // Establish a still, sleeping Home state WITHOUT starting any animator.
+        // Calling applyHomeAvatarState() here started the moon twinkle and the
+        // avatar breathing while the overlay was still fading, which is what made
+        // the moon flash brighter than normal as Home was revealed.
+        stopHomeBlinkLoop();
+        stopHomeBreathing();
+        stopHomeFloatingZAnims();
+        if (ambianceTwinkleAnim != null) {
+            ambianceTwinkleAnim.cancel();
+            ambianceTwinkleAnim = null;
+        }
+        homeAvatarLastEnabled = false;
+        View ambiance = getView().findViewById(R.id.iv_sleep_ambiance);
+        if (ambiance != null) {
+            ambiance.animate().cancel();
+            ambiance.setScaleX(1f);
+            ambiance.setScaleY(1f);
+            ambiance.setAlpha(0.55f);
+        }
+        if (ivWakeSun != null) {
+            ivWakeSun.animate().cancel();
+            ivWakeSun.setAlpha(0f);
+        }
+        if (zzzHomeBadgeGroup != null) {
+            // Lay the badge out now, while the overlay still covers Home, and keep
+            // it at alpha 0. Making it VISIBLE at the landing frame instead forced
+            // a layout pass on the exact frame the avatar lands (a dropped frame).
+            resetHomeZLetters();
+            zzzHomeBadgeGroup.setAlpha(1f);
+            zzzHomeBadgeGroup.setVisibility(View.VISIBLE);
+            zzzHomeBadgeGroup.setAlpha(0f);
+        }
+        ivPreviewAvatar.setImageResource(R.drawable.toggle_off);
+        ivPreviewAvatar.setAlpha(1f);
+        ivPreviewAvatar.setScaleX(1f);
+        ivPreviewAvatar.setScaleY(1f);
+        ivPreviewAvatar.setTranslationY(0f);
+        ivPreviewAvatar.setVisibility(View.INVISIBLE);
+        splashTransitionActive = true;
+        if (splashHandoffTimeout != null) {
+            splashHandoffHandler.removeCallbacks(splashHandoffTimeout);
+        }
+        splashHandoffTimeout = () -> {
+            if (splashTransitionActive) cancelSplashTransition();
+        };
+        splashHandoffHandler.postDelayed(splashHandoffTimeout, 5000L);
+        return ivPreviewAvatar;
+    }
+
+    /** Called when the splash overlay has landed on the avatar's exact bounds. */
+    public void finishSplashTransition() {
+        if (!splashTransitionActive) return;
+        splashTransitionActive = false;
+        clearSplashHandoffTimeout();
+        if (ivPreviewAvatar == null) return;
+        // Match the first frame of startHomeBreathing() so the swap is invisible.
+        ivPreviewAvatar.setAlpha(0.62f);
+        ivPreviewAvatar.setScaleX(0.96f);
+        ivPreviewAvatar.setScaleY(0.96f);
+        ivPreviewAvatar.setTranslationY(0f);
+        ivPreviewAvatar.setVisibility(View.VISIBLE);
+        applyHomeAvatarState(false, false);
+        if (zzzHomeBadgeGroup != null) {
+            zzzHomeBadgeGroup.setAlpha(1f);
+        }
+    }
+
+    /**
+     * The real Home zzz badge, so the launch overlay can land its own badge on
+     * exactly the same pixels instead of approximating the offset.
+     */
+    public View getSplashHandoffZzzBadge() {
+        return zzzHomeBadgeGroup;
+    }
+
+    /** True while the launch overlay owns the avatar and it must not be touched. */
+    public boolean isSplashTransitionActive() {
+        return splashTransitionActive;
+    }
+
+    /** Restores the real avatar if the splash overlay is interrupted. */
+    public void cancelSplashTransition() {
+        splashTransitionActive = false;
+        clearSplashHandoffTimeout();
+        if (ivPreviewAvatar == null) return;
+        ivPreviewAvatar.setAlpha(1f);
+        ivPreviewAvatar.setScaleX(1f);
+        ivPreviewAvatar.setScaleY(1f);
+        ivPreviewAvatar.setTranslationY(0f);
+        ivPreviewAvatar.setVisibility(View.VISIBLE);
+        applyHomeAvatarState(false, false);
+    }
+
+    private void clearSplashHandoffTimeout() {
+        if (splashHandoffTimeout != null) {
+            splashHandoffHandler.removeCallbacks(splashHandoffTimeout);
+            splashHandoffTimeout = null;
+        }
+    }
+
     private void startBubbleRotation() {
         if (ivPreviewAvatar == null) return;
+        if (splashTransitionActive) return;
+        clearSplashHandoffTimeout();
+        ivPreviewAvatar.setVisibility(View.VISIBLE);
         applyHomeAvatarState(false, false); // always sleeping in home fragment
     }
 
@@ -11339,13 +11492,13 @@ public class HomeFragment extends BaseFragment {
     private static final java.util.Map<Integer, int[]> HOME_EYE_COLOR_DRAWABLES;
     static {
         java.util.Map<Integer, int[]> m = new java.util.HashMap<>();
-        m.put(0xFFFF1744, new int[]{ R.drawable.toggle_on_idle_ruby,    R.drawable.toggle_on_blink_ruby,    R.drawable.toggle_on_anim_ruby,    R.drawable.toggle_off_anim_ruby });
-        m.put(0xFF00E5FF, new int[]{ R.drawable.toggle_on_idle_cyan,    R.drawable.toggle_on_blink_cyan,    R.drawable.toggle_on_anim_cyan,    R.drawable.toggle_off_anim_cyan });
-        m.put(0xFFD500F9, new int[]{ R.drawable.toggle_on_idle_violet,  R.drawable.toggle_on_blink_violet,  R.drawable.toggle_on_anim_violet,  R.drawable.toggle_off_anim_violet });
-        m.put(0xFF2979FF, new int[]{ R.drawable.toggle_on_idle_cobalt,  R.drawable.toggle_on_blink_cobalt,  R.drawable.toggle_on_anim_cobalt,  R.drawable.toggle_off_anim_cobalt });
-        m.put(0xFFFFD740, new int[]{ R.drawable.toggle_on_idle_amber,   R.drawable.toggle_on_blink_amber,   R.drawable.toggle_on_anim_amber,   R.drawable.toggle_off_anim_amber });
-        m.put(0xFF00E676, new int[]{ R.drawable.toggle_on_idle_lime,    R.drawable.toggle_on_blink_lime,    R.drawable.toggle_on_anim_lime,    R.drawable.toggle_off_anim_lime });
-        m.put(0xFFF50057, new int[]{ R.drawable.toggle_on_idle_magenta, R.drawable.toggle_on_blink_magenta, R.drawable.toggle_on_anim_magenta, R.drawable.toggle_off_anim_magenta });
+        m.put(0xFFE60012, new int[]{ R.drawable.toggle_on_idle_ruby,    R.drawable.toggle_on_blink_ruby,    R.drawable.toggle_on_anim_ruby,    R.drawable.toggle_off_anim_ruby });
+        m.put(0xFF00B8D4, new int[]{ R.drawable.toggle_on_idle_cyan,    R.drawable.toggle_on_blink_cyan,    R.drawable.toggle_on_anim_cyan,    R.drawable.toggle_off_anim_cyan });
+        m.put(0xFFAA00FF, new int[]{ R.drawable.toggle_on_idle_violet,  R.drawable.toggle_on_blink_violet,  R.drawable.toggle_on_anim_violet,  R.drawable.toggle_off_anim_violet });
+        m.put(0xFF2962FF, new int[]{ R.drawable.toggle_on_idle_cobalt,  R.drawable.toggle_on_blink_cobalt,  R.drawable.toggle_on_anim_cobalt,  R.drawable.toggle_off_anim_cobalt });
+        m.put(0xFFFFAB00, new int[]{ R.drawable.toggle_on_idle_amber,   R.drawable.toggle_on_blink_amber,   R.drawable.toggle_on_anim_amber,   R.drawable.toggle_off_anim_amber });
+        m.put(0xFF00C853, new int[]{ R.drawable.toggle_on_idle_lime,    R.drawable.toggle_on_blink_lime,    R.drawable.toggle_on_anim_lime,    R.drawable.toggle_off_anim_lime });
+        m.put(0xFFC51162, new int[]{ R.drawable.toggle_on_idle_magenta, R.drawable.toggle_on_blink_magenta, R.drawable.toggle_on_anim_magenta, R.drawable.toggle_off_anim_magenta });
         HOME_EYE_COLOR_DRAWABLES = java.util.Collections.unmodifiableMap(m);
     }
 
@@ -13388,13 +13541,8 @@ public class HomeFragment extends BaseFragment {
         if (tvSpaceSubtitle != null) tvSpaceSubtitle.setTextColor(Color.WHITE);
         updateElapsedHeroAppearance();
 
-        // Keep the camera accent on-theme; the theme's rail accent is already tuned
-        // for contrast on the light card (dark gold for Premium Gold, etc.).
-        if (ivCameraIcon != null) {
-            android.util.TypedValue accent = new android.util.TypedValue();
-            requireContext().getTheme().resolveAttribute(R.attr.homeRailAccent, accent, true);
-            ivCameraIcon.setTextColor(accent.data);
-        }
+        // The camera icon follows the rail's primary text colour (white on dark
+        // cards, dark on the Snow Veil light card); no per-theme override here.
 
         // Handle other icons by finding them in the storage card
         if (cardStorage != null) {
@@ -13632,10 +13780,10 @@ public class HomeFragment extends BaseFragment {
 
         set.connect(R.id.leftPanel, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, dpToPxInt(6));
         set.connect(R.id.leftPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
-        set.connect(R.id.leftPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, dpToPxInt(72));
+        set.connect(R.id.leftPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
 
         set.connect(R.id.cardRailToggleLandscape, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
-        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, dpToPxInt(72));
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
         set.connect(R.id.rightPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
         set.connect(R.id.rightPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
         set.connect(R.id.rightPanel, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, dpToPxInt(6));

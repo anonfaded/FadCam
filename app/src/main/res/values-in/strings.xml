@@ -81,7 +81,7 @@
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Digunakan: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
-    <string name="stats_label_videos">Video:</string>
+    <string name="stats_label_videos">File:</string>
     <string name="stats_label_used">Digunakan:</string>
     <string name="button_start">Mulai</string>
     <string name="button_pause">Jeda</string>
@@ -162,7 +162,7 @@
     <string name="recording_controls_title">AF · Eksposur · Zoom</string>
     <string name="mainpage_camera_front">Kamera Depan</string>
     <string name="mainpage_camera_back">Kamera Belakang</string>
-    <string name="storage_available_space">Ruang tersedia</string>
+    <string name="storage_available_space">Sisa ruang</string>
     <string name="recording_estimated_time">Waktu perkiraan</string>
     <string name="recording_time_left">Sisa waktu</string>
     <string name="recording_elapsed_time">Waktu berjalan</string>
@@ -2843,6 +2843,13 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="setting_theme">Tema</string>
     <string name="setting_language">Bahasa</string>
     <string name="setting_app_icon">Ikon Aplikasi</string>
+    <string name="setting_splash_screen">Layar Pembuka</string>
+    <string name="splash_screen_dialog_title">Pilih Layar Pembuka</string>
+    <string name="splash_screen_helper">Pilih apa yang ditampilkan FadCam saat dimulai.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Avatar terbangun, tertidur, lalu mendarat di Beranda</string>
+    <string name="splash_style_flag">Bendera FadSec Lab</string>
+    <string name="splash_style_flag_desc">Layar pembuka bendera klasik</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Diaktifkan</string>
@@ -3229,7 +3236,18 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="pro_screen_custom_name_desc">Pilih nama kamu sendiri untuk aplikasi.</string>
     <string name="pro_screen_direct_support">Dukungan pengembang</string>
     <string name="pro_screen_direct_support_desc">Dapatkan bantuan dari pengembang di Discord.</string>
-    <string name="pro_screen_discord_invite">Punya pertanyaan, ide, atau sekadar ingin menyapa? Tetap terhubung dengan FadSec Lab.</string>
+        <string name="pro_screen_support_title">Cara lain untuk mendukung</string>
+    <string name="pro_screen_support_body">Tidak tertarik dengan Pro? Kamu tetap bisa mendukung FadCam lewat Patreon atau donasi mata uang kripto. Setiap kontribusi membantu kami membangun lebih banyak perangkat lunak bebas dan open source.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Donasi sekali atau keanggotaan bulanan.</string>
+    <string name="pro_screen_crypto_title">Donasi mata uang kripto</string>
+    <string name="pro_screen_crypto_desc">Hubungi kami lewat Discord atau email.</string>
+    <string name="pro_screen_stay_connected_title">Tetap terhubung</string>
+    <string name="pro_screen_stay_connected_body">Pertanyaan, masukan, atau sekadar ingin menyapa? Kami senang mendengar darimu.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">Email</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">Permintaan dukungan FadCam</string>
     <string name="pro_screen_everything">Semua fitur gratis</string>
     <string name="pro_screen_everything_desc">Semua yang ada di versi gratis sudah termasuk.</string>
     <string name="pro_screen_fan_desc">Kamu percaya pada masa depan aplikasi dan solusi open-source yang mengutamakan privasi.</string>
@@ -3264,7 +3282,6 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="pro_screen_soon">Segera</string>
     <string name="pro_screen_soon_legend">Tier Pro+ dan Lab segera hadir.</string>
     <string name="pro_screen_status_description">%1$s: %2$s</string>
-    <string name="pro_screen_support">Gabung Discord</string>
     <string name="pro_screen_tier">Pro</string>
     <string name="pro_screen_tier_lab">Lab</string>
     <string name="pro_screen_tier_plus">Pro+</string>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hero-sized copy of the exact Home avatar. Rendered at its largest size once,
+  then only scaled down, so the vector stays crisp for the whole motion.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/splash_avatar_root"
+    android:layout_width="@dimen/splash_avatar_hero_size"
+    android:layout_height="@dimen/splash_avatar_hero_size"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <ImageView
+        android:id="@+id/splash_avatar_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:src="@drawable/toggle_off"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/app_name" />
+
+</FrameLayout>

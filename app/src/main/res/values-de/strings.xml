@@ -649,7 +649,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="readme_discord_subtitle">Tritt der Community bei</string>
     <string name="website_title">Website</string>
     <string name="readme_website_subtitle">Offizielle Seite</string>
-    <string name="stats_label_videos">Videos:</string>
+    <string name="stats_label_videos">Dateien:</string>
     <string name="stats_label_used">Verwendet:</string>
     <string name="fadrec_start_screen_recording">Bildschirmaufnahme starten</string>
     <string name="fadrec_stop_screen_recording">Bildschirmaufnahme stoppen</string>
@@ -716,7 +716,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="recording_controls_title">AF · Belichtung · Zoom</string>
     <string name="mainpage_camera_front">Frontkamera</string>
     <string name="mainpage_camera_back">Rückkamera</string>
-    <string name="storage_available_space">Verfügbarer Speicher</string>
+    <string name="storage_available_space">Verbleibender Speicher</string>
     <string name="recording_estimated_time">Geschätzte Zeit</string>
     <string name="recording_time_left">Verbleibende Zeit</string>
     <string name="recording_elapsed_time">Verstrichene Zeit</string>
@@ -2530,6 +2530,13 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="setting_theme">Design</string>
     <string name="setting_language">Sprache</string>
     <string name="setting_app_icon">App-Symbol</string>
+    <string name="setting_splash_screen">Startbildschirm</string>
+    <string name="splash_screen_dialog_title">Startbildschirm wählen</string>
+    <string name="splash_screen_helper">Wähle, was FadCam beim Start anzeigt.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Der Avatar wacht auf, schläft ein und gleitet nach Hause</string>
+    <string name="splash_style_flag">FadSec-Lab-Flagge</string>
+    <string name="splash_style_flag_desc">Klassischer Startbildschirm mit Flagge</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Aktiviert</string>
@@ -2917,7 +2924,18 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="pro_screen_custom_name_desc">Wähle deinen eigenen Namen für die App.</string>
     <string name="pro_screen_direct_support">Entwickler-Support</string>
     <string name="pro_screen_direct_support_desc">Erhalte Hilfe vom Entwickler auf Discord.</string>
-    <string name="pro_screen_discord_invite">Fragen, Ideen oder einfach Hallo sagen? Bleib mit FadSec Lab verbunden.</string>
+        <string name="pro_screen_support_title">Weitere Wege zur Unterstützung</string>
+    <string name="pro_screen_support_body">Kein Interesse an Pro? Du kannst FadCam trotzdem über Patreon oder Krypto-Spenden unterstützen. Jeder Beitrag hilft uns, mehr freie Open-Source-Software zu entwickeln.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Einmalige Spenden oder monatliche Mitgliedschaften.</string>
+    <string name="pro_screen_crypto_title">Krypto-Spenden</string>
+    <string name="pro_screen_crypto_desc">Kontaktiere uns über Discord oder E-Mail.</string>
+    <string name="pro_screen_stay_connected_title">Bleib verbunden</string>
+    <string name="pro_screen_stay_connected_body">Fragen, Feedback oder einfach nur Hallo sagen? Wir freuen uns auf dich.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">E-Mail</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">FadCam Support-Anfrage</string>
     <string name="pro_screen_everything">Alle kostenlosen Funktionen</string>
     <string name="pro_screen_everything_desc">Alles aus der kostenlosen Version ist enthalten.</string>
     <string name="pro_screen_fan_desc">Du glaubst an eine Zukunft mit Open-Source-Apps und -Lösungen, bei denen Privatsphäre an erster Stelle steht.</string>
@@ -2952,7 +2970,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="pro_screen_soon">Bald</string>
     <string name="pro_screen_soon_legend">Pro+ und Lab kommen bald.</string>
     <string name="pro_screen_status_description">%1$s: %2$s</string>
-    <string name="pro_screen_support">Discord beitreten</string>
     <string name="pro_screen_tier">Pro</string>
     <string name="pro_screen_tier_lab">Lab</string>
     <string name="pro_screen_tier_plus">Pro+</string>

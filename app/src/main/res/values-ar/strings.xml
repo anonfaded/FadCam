@@ -507,7 +507,7 @@
         <item name="90">90</item>
     </integer-array>
 
-    <string name="stats_label_videos">مقاطع الفيديو:</string>
+    <string name="stats_label_videos">الملفات:</string>
 
     <string name="stats_label_used">مستخدم:</string>
 
@@ -638,7 +638,7 @@
 
     <string name="mainpage_camera_back">الكاميرا الخلفية</string>
 
-    <string name="storage_available_space">المساحة المتاحة</string>
+    <string name="storage_available_space">المساحة المتبقية</string>
 
     <string name="recording_estimated_time">الوقت المقدر</string>
 
@@ -1903,6 +1903,10 @@
     <string name="timer_1_hour">ساعة واحدة</string>
 
     <string name="timer_seconds_short">%1$dث</string>
+    <string name="duration_unit_days">ي</string>
+    <string name="duration_unit_hours">س</string>
+    <string name="duration_unit_minutes">د</string>
+    <string name="duration_unit_seconds">ث</string>
 
     <string name="timer_minutes_short">%1$dد</string>
 
@@ -4315,6 +4319,13 @@
     <string name="setting_theme">السمة</string>
     <string name="setting_language">اللغة</string>
     <string name="setting_app_icon">أيقونة التطبيق</string>
+    <string name="setting_splash_screen">شاشة البدء</string>
+    <string name="splash_screen_dialog_title">اختر شاشة البدء</string>
+    <string name="splash_screen_helper">اختر ما يعرضه FadCam عند بدء التشغيل.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">يستيقظ الأفاتار ثم ينام ويستقر في الشاشة الرئيسية</string>
+    <string name="splash_style_flag">علم FadSec Lab</string>
+    <string name="splash_style_flag_desc">شاشة البدء الكلاسيكية بالعلم</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">ممكّن</string>
@@ -4700,7 +4711,18 @@
     <string name="pro_screen_custom_name_desc">اختر اسمًا خاصًا بك للتطبيق.</string>
     <string name="pro_screen_direct_support">دعم المطور</string>
     <string name="pro_screen_direct_support_desc">احصل على المساعدة من المطور على ديسكورد.</string>
-    <string name="pro_screen_discord_invite">أسئلة أو أفكار أو تريد فقط إلقاء التحية؟ ابقَ على تواصل مع FadSec Lab.</string>
+        <string name="pro_screen_support_title">طرق أخرى للدعم</string>
+    <string name="pro_screen_support_body">لست مهتمًا بـ Pro؟ يمكنك دعم FadCam عبر Patreon أو التبرعات بالعملات الرقمية. كل مساهمة تساعدنا في بناء المزيد من البرامج الحرة مفتوحة المصدر.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">تبرعات لمرة واحدة أو عضويات شهرية.</string>
+    <string name="pro_screen_crypto_title">التبرعات بالعملات الرقمية</string>
+    <string name="pro_screen_crypto_desc">تواصل معنا عبر Discord أو البريد الإلكتروني.</string>
+    <string name="pro_screen_stay_connected_title">ابقَ على تواصل</string>
+    <string name="pro_screen_stay_connected_body">أسئلة أو ملاحظات أو تريد فقط إلقاء التحية؟ يسعدنا أن نسمع منك.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">البريد</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">استفسار دعم FadCam</string>
     <string name="pro_screen_everything">كل الميزات المجانية</string>
     <string name="pro_screen_everything_desc">كل ما في النسخة المجانية مشمول.</string>
     <string name="pro_screen_fan_desc">أنت تؤمن بمستقبل من التطبيقات والحلول مفتوحة المصدر التي تضع الخصوصية أولًا.</string>
@@ -4735,7 +4757,6 @@
     <string name="pro_screen_soon">قريبًا</string>
     <string name="pro_screen_soon_legend">إصدارا Pro+ وLab قادمان قريبًا.</string>
     <string name="pro_screen_status_description">%1$s: %2$s</string>
-    <string name="pro_screen_support">انضم إلى ديسكورد</string>
     <string name="pro_screen_tier">Pro</string>
     <string name="pro_screen_tier_lab">Lab</string>
     <string name="pro_screen_tier_plus">Pro+</string>

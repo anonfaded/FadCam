@@ -531,10 +531,10 @@
     <string name="fix_video_saf_export">Gerekirse, düzeltilen dosyayı uygulama depolamasından dışa aktarabilir veya paylaşabilirsiniz.</string>
     <string name="full_changelog_info">Tam değişiklik günlüğü için Ana Sayfa sekmesine gidin, hamburger menüsünü açın ve «Yenilikler»i seçin.</string>
     <string name="website_title">Web Sitesi</string>
-    <string name="stats_label_videos">Videolar:</string>
+    <string name="stats_label_videos">Dosyalar:</string>
     <string name="stats_label_used">Kullanılan:</string>
     <string name="snap_guides">Yakalama Kılavuzları</string>
-    <string name="storage_available_space">Kullanılabilir alan</string>
+    <string name="storage_available_space">Kalan alan</string>
     <string name="tips_title">İpuçları</string>
     <string name="tips_subtitle">Yardımcı kullanım ipuçları</string>
     <string name="whats_new_title">Yenilikler</string>
@@ -2492,6 +2492,13 @@
     <string name="setting_theme">Tema</string>
     <string name="setting_language">Dil</string>
     <string name="setting_app_icon">Uygulama Simgesi</string>
+    <string name="setting_splash_screen">Açılış Ekranı</string>
+    <string name="splash_screen_dialog_title">Açılış Ekranını Seç</string>
+    <string name="splash_screen_helper">FadCam açılırken ne göstersin seç.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Avatar uyanır, uykuya dalar ve Ana ekrana yerleşir</string>
+    <string name="splash_style_flag">FadSec Lab Bayrağı</string>
+    <string name="splash_style_flag_desc">Klasik bayraklı açılış ekranı</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Etkin</string>
@@ -2872,7 +2879,18 @@
     <string name="pro_screen_custom_name_desc">Uygulama için kendi adını seç.</string>
     <string name="pro_screen_direct_support">Geliştirici desteği</string>
     <string name="pro_screen_direct_support_desc">Discord\'da geliştiriciden yardım al.</string>
-    <string name="pro_screen_discord_invite">Sorular, fikirler ya da sadece merhaba mı demek istiyorsun? FadSec Lab ile bağlantıda kal.</string>
+        <string name="pro_screen_support_title">Diğer destek yolları</string>
+    <string name="pro_screen_support_body">Pro ilgini çekmiyor mu? FadCam\'i yine de Patreon veya kripto bağışlarıyla destekleyebilirsin. Her katkı daha fazla özgür, açık kaynak yazılım geliştirmemize yardımcı olur.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Tek seferlik bağış veya aylık üyelik.</string>
+    <string name="pro_screen_crypto_title">Kripto bağışları</string>
+    <string name="pro_screen_crypto_desc">Discord veya e-posta ile bize ulaş.</string>
+    <string name="pro_screen_stay_connected_title">Bağlantıda kal</string>
+    <string name="pro_screen_stay_connected_body">Soru, geri bildirim ya da sadece merhaba mı demek istiyorsun? Senden haber almak isteriz.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">E-posta</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">FadCam destek talebi</string>
     <string name="pro_screen_everything">Tüm ücretsiz özellikler</string>
     <string name="pro_screen_everything_desc">Ücretsiz sürümdeki her şey dahil.</string>
     <string name="pro_screen_fan_desc">Gizliliği ön planda tutan açık kaynaklı uygulama ve çözümlerin geleceğine inanıyorsun.</string>
@@ -2907,7 +2925,6 @@
     <string name="pro_screen_soon">Yakında</string>
     <string name="pro_screen_soon_legend">Pro+ ve Lab kademeleri yakında geliyor.</string>
     <string name="pro_screen_status_description">%1$s: %2$s</string>
-    <string name="pro_screen_support">Discord\'a katıl</string>
     <string name="pro_screen_tier">Pro</string>
     <string name="pro_screen_tier_lab">Lab</string>
     <string name="pro_screen_tier_plus">Pro+</string>

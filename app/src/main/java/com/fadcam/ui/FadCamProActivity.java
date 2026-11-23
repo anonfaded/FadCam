@@ -58,7 +58,10 @@ import java.util.Random;
 /** Product comparison and purchase information. Ownership always comes from this APK's tier. */
 public class FadCamProActivity extends AppCompatActivity {
     private static final String PATREON_SHOP_URL = "https://www.patreon.com/cw/Fadedx/shop";
+    /** Creator page for people who would rather support the project without buying the bundle. */
+    private static final String PATREON_SUPPORT_URL = "https://www.patreon.com/cw/Fadedx";
     private static final String DISCORD_URL = "https://discord.gg/kvAZvdkuuN";
+    private static final String SUPPORT_EMAIL = "contact@fadseclab.com";
     /** Same destination the What's New screen links to. */
     private static final String X_URL = "https://x.com/anon_faded";
     private static final String INCLUDED = "check";
@@ -117,7 +120,8 @@ public class FadCamProActivity extends AppCompatActivity {
     /** The hero's crown rain, reused as the sticky bar's backdrop once the page scrolls. */
     private View footerCrownRain;
     private View footerContent;
-    private int footerContentPadBottom;
+    private int ctaRestPadEnd;
+    private android.animation.ValueAnimator ctaPadAnimator;
     private float footerCrownRainAlpha = 0.16f;
     private boolean footerCrownRainShown;
     private View scrollTopButton;
@@ -221,35 +225,18 @@ public class FadCamProActivity extends AppCompatActivity {
             }
         });
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
-            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars()
-                    | WindowInsetsCompat.Type.displayCutout());
             // Keep interactive content below the status-bar/cutout safe area even while the bar
             // is hidden. The hero art flows under the bar: the hero frame grows by the safe
             // inset so the crown rain starts at the screen top while its content stays below.
             Insets safe = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars()
                     | WindowInsetsCompat.Type.displayCutout());
-            // Three-button navigation reports its height even while hidden. Only reserve the
-            // bottom inset when the bar is actually visible, otherwise the footer leaves an
-            // empty strip below the CTA.
-            int visibleNavBottom = insets.isVisible(
-                    WindowInsetsCompat.Type.navigationBars()) ? bars.bottom : 0;
-            int visibleNavLeft = insets.isVisible(
-                    WindowInsetsCompat.Type.navigationBars()) ? bars.left : 0;
-            int visibleNavRight = insets.isVisible(
-                    WindowInsetsCompat.Type.navigationBars()) ? bars.right : 0;
-            v.setPadding(visibleNavLeft, 0, visibleNavRight, 0);
-            // The page's bottom surface runs behind the navigation bar, exactly like the hero art
-            // runs behind the status bar. Only the bar's content keeps clear of it, so the CTA and
-            // its caption stay out of the gesture area while the plate and the rain reach the edge.
-            if (footerContent != null) {
-                // Only what the bar actually occupies: while it is hidden the bar's content drops
-                // to the bottom edge instead of reserving an empty strip.
-                int bottom = footerContentPadBottom + visibleNavBottom;
-                if (footerContent.getPaddingBottom() != bottom) {
-                    footerContent.setPadding(footerContent.getPaddingLeft(), footerContent.getPaddingTop(),
-                            footerContent.getPaddingRight(), bottom);
-                }
-            }
+            // Both system bars are hidden by this page, so the footer deliberately reserves no
+            // navigation-bar height. Three-button devices keep reporting the full bar (and even
+            // the mandatory-gesture area reports it) after the bar is gone, which used to lift
+            // the CTA by 48dp and leave an empty strip under the caption. The plate and the rain
+            // reach the bottom edge; the layout's own 12dp padding keeps the caption clear, and a
+            // transiently shown bar overlays the page by design.
+            v.setPadding(0, 0, 0, 0);
             if (closeButton != null) {
                 ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) closeButton.getLayoutParams();
                 int top = getResources().getDimensionPixelSize(R.dimen.pro_close_margin) + safe.top;
@@ -301,11 +288,11 @@ public class FadCamProActivity extends AppCompatActivity {
         featuresContainer = findViewById(R.id.featuresContainer);
         priceRow = findViewById(R.id.priceRow);
         btnGetPro = findViewById(R.id.btnGetPro);
+        ctaRestPadEnd = btnGetPro.getPaddingEnd();
         scrollHint = findViewById(R.id.scrollHint);
         scrollHintArrow = findViewById(R.id.scrollHintArrow);
         footerCrownRain = findViewById(R.id.footerCrownRain);
         footerContent = findViewById(R.id.footerContent);
-        if (footerContent != null) footerContentPadBottom = footerContent.getPaddingBottom();
         if (footerCrownRain != null) footerCrownRainAlpha = footerCrownRain.getAlpha();
         android.widget.ScrollView proScroll = findViewById(R.id.proScroll);
         scrollTopButton = findViewById(R.id.btnScrollTop);
@@ -358,6 +345,8 @@ public class FadCamProActivity extends AppCompatActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> leaveProScreen());
         findViewById(R.id.btnDiscord).setOnClickListener(v -> openLink(DISCORD_URL));
         findViewById(R.id.btnX).setOnClickListener(v -> openLink(X_URL));
+        findViewById(R.id.rowSupportPatreon).setOnClickListener(v -> openLink(PATREON_SUPPORT_URL));
+        findViewById(R.id.btnEmail).setOnClickListener(v -> sendSupportEmail());
         // In short windows or with very large text, a pinned footer would consume the viewport.
         // Keep every action reachable by letting it travel with the rest of the page instead.
         if (getResources().getConfiguration().screenHeightDp < 480
@@ -369,7 +358,6 @@ public class FadCamProActivity extends AppCompatActivity {
                     new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT));
             if (footerContent != null) {
-                footerContentPadBottom = dp(20);
                 footerContent.setPadding(0, dp(20), 0, 0);
             }
             ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) scroll.getLayoutParams();
@@ -1134,6 +1122,16 @@ public class FadCamProActivity extends AppCompatActivity {
         }
     }
 
+    private void sendSupportEmail() {
+        Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + SUPPORT_EMAIL));
+        intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.pro_screen_support_email_subject));
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException | SecurityException e) {
+            Toast.makeText(this, R.string.pro_screen_link_error, Toast.LENGTH_LONG).show();
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -1237,7 +1235,8 @@ public class FadCamProActivity extends AppCompatActivity {
         int[] location = new int[2];
         btnGetPro.getLocationOnScreen(location);
         float size = getResources().getDimension(R.dimen.pro_cta_avatar);
-        float right = location[0] + btnGetPro.getWidth() - dp(4);
+        float inset = getResources().getDimension(R.dimen.pro_cta_avatar_inset);
+        float right = location[0] + btnGetPro.getWidth() - inset;
         float bottom = location[1] + btnGetPro.getHeight();
         float top = bottom - size * 0.6f;
         return new android.graphics.RectF(right - size, top, right, top + size);
@@ -1277,6 +1276,31 @@ public class FadCamProActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * The resting avatar occupies the CTA's trailing edge. While the face is there, inset both
+     * sides equally so the label stays centred in the button and wraps instead of sliding left
+     * or running under the avatar. At rest the normal symmetric padding comes back.
+     */
+    private void animateCtaGutter(boolean toCta) {
+        if (btnGetPro == null || ctaRestPadEnd <= 0) return;
+        int target = toCta
+                ? getResources().getDimensionPixelSize(R.dimen.pro_cta_content_inset)
+                : ctaRestPadEnd;
+        int from = btnGetPro.getPaddingEnd();
+        if (ctaPadAnimator != null) ctaPadAnimator.cancel();
+        if (from == target) return;
+        ctaPadAnimator = android.animation.ValueAnimator.ofInt(from, target);
+        ctaPadAnimator.setDuration(640);
+        ctaPadAnimator.setInterpolator(
+                new android.view.animation.PathInterpolator(0.24f, 0f, 0.14f, 1f));
+        ctaPadAnimator.addUpdateListener(animation -> {
+            int inset = (int) animation.getAnimatedValue();
+            btnGetPro.setPaddingRelative(inset, btnGetPro.getPaddingTop(),
+                    inset, btnGetPro.getPaddingBottom());
+        });
+        ctaPadAnimator.start();
+    }
+
     /** No CTA in this configuration (owner): the avatar always rests in the header. */
     private void forceAvatarHeader(View header) {
         animationHandler.removeCallbacks(blink);
@@ -1294,6 +1318,14 @@ public class FadCamProActivity extends AppCompatActivity {
         header.setVisibility(View.VISIBLE);
         header.setAlpha(1f);
         avatarState = AVATAR_HEADER;
+        if (ctaPadAnimator != null) {
+            ctaPadAnimator.cancel();
+            ctaPadAnimator = null;
+        }
+        if (btnGetPro != null && ctaRestPadEnd > 0) {
+            btnGetPro.setPaddingRelative(ctaRestPadEnd, btnGetPro.getPaddingTop(),
+                    ctaRestPadEnd, btnGetPro.getPaddingBottom());
+        }
         rescheduleAvatarLife();
     }
 
@@ -1318,6 +1350,7 @@ public class FadCamProActivity extends AppCompatActivity {
         root.getLocationOnScreen(rootLocation);
 
         final boolean toCta = destinationState == AVATAR_MOVING_TO_CTA;
+        animateCtaGutter(toCta);
         float startCx, startCy, startSize, startRotation;
         if (avatarState == AVATAR_HEADER && toCta) {
             // Fresh handoff: overlay snaps exactly onto the header anchor before it is hidden.

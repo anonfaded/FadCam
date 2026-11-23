@@ -147,7 +147,7 @@
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="@dimen/home_row_padding_h" android:paddingTop="@dimen/home_row_padding_v" android:paddingEnd="@dimen/home_row_padding_h" android:paddingBottom="@dimen/home_row_padding_v" android:clipChildren="false" android:clipToPadding="false">
 
                         <FrameLayout android:layout_width="@dimen/home_row_icon_container_w" android:layout_height="@dimen/home_row_icon_container_h" android:layout_marginEnd="@dimen/home_row_icon_margin_end" android:clipChildren="false" android:clipToPadding="false">
-                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="@dimen/home_row_icon_size" android:layout_height="@dimen/home_row_icon_size" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="?attr/homeRailAccent" android:textSize="@dimen/home_text_row_icon" android:gravity="center" />
+                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="@dimen/home_row_icon_size" android:layout_height="@dimen/home_row_icon_size" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_text_row_icon" android:gravity="center" />
                         </FrameLayout>
 
                         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
@@ -186,7 +186,7 @@
 
                         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
 
-                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1h 30m" android:textColor="#F44336" android:textSize="@dimen/home_text_rail_title" android:textStyle="bold" />
+                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textDirection="ltr" android:text="1h 30m" android:textColor="#F44336" android:textSize="@dimen/home_text_rail_title" android:textStyle="bold" />
 
                             <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_time_left" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_text_rail_subtitle" />
 
@@ -286,7 +286,10 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:gravity="center"
-                    android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
+                    android:orientation="vertical"
+                    android:paddingTop="@dimen/home_hero_padding_v"
+                    android:paddingBottom="@dimen/home_hero_padding_v"
+                    android:clipChildren="false" android:clipToPadding="false">
 
                     <LinearLayout
                         android:id="@+id/layoutElapsedMetaRow"
@@ -321,6 +324,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
+                        android:layoutDirection="ltr"
+                        android:textDirection="ltr"
                         android:fontFamily="@font/ubuntu_regular"
                         android:includeFontPadding="false"
                         android:gravity="center"
@@ -681,6 +686,8 @@
                     android:id="@+id/textPreviewZoomHud"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layoutDirection="ltr"
+                    android:textDirection="ltr"
                     android:text="1.0x"
                     android:textColor="@android:color/white"
                     android:textSize="@dimen/home_zoom_hud_text"

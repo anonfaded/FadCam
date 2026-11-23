@@ -57,6 +57,10 @@
     <dimen name="home_control_start_min_w">52dp</dimen>
     <dimen name="home_controls_bottom_margin">2dp</dimen>
     <dimen name="home_avatar_size">80dp</dimen>
+    <dimen name="splash_avatar_hero_size">248dp</dimen>
+    <!-- Size the splash avatar is first drawn at (in the starting window / system
+         splash icon) and the size SplashAvatarOverlay's first frame starts from. -->
+    <dimen name="splash_avatar_start_size">74dp</dimen>
     <dimen name="home_preview_stroke_width">6dp</dimen>
     <dimen name="home_preview_hint_margin_bottom">32dp</dimen>
     <dimen name="home_fold_toggle_w">36dp</dimen>
@@ -128,13 +132,80 @@
     <dimen name="home_dock_side_width">78dp</dimen>
     <dimen name="home_dock_side_width_wide">94dp</dimen>
     <dimen name="home_dock_side_height">48dp</dimen>
+    <!-- Landscape left navigation rail -->
+    <dimen name="home_rail_dock_width">40dp</dimen>
+    <dimen name="home_rail_dock_icon">20dp</dimen>
+    <dimen name="home_rail_dock_item_height">40dp</dimen>
+    <dimen name="home_rail_dock_item_padding">1dp</dimen>
+    <dimen name="home_rail_dock_margin">4dp</dimen>
+    <!-- Defaults for the landscape-only names (layout-land) -->
+    <dimen name="home_land_header_padding_top">0dp</dimen>
+    <dimen name="home_land_header_padding_bottom">4dp</dimen>
+    <dimen name="home_land_panel_margin">6dp</dimen>
+    <dimen name="home_land_panel_margin_top">2dp</dimen>
+    <dimen name="home_land_card_padding">3dp</dimen>
+    <dimen name="home_land_scroll_padding_bottom">4dp</dimen>
+    <dimen name="home_land_controls_bottom">4dp</dimen>
+    <dimen name="home_land_header_padding_h">12dp</dimen>
+    <dimen name="home_land_text_micro">6sp</dimen>
+    <dimen name="home_land_text_tiny">8sp</dimen>
+    <dimen name="home_land_text_label">9sp</dimen>
+    <dimen name="home_land_text_caption">10sp</dimen>
+    <dimen name="home_land_text_small">11sp</dimen>
+    <dimen name="home_land_text_body">12sp</dimen>
+    <dimen name="home_land_text_clock">14sp</dimen>
+    <dimen name="home_land_text_hero">15sp</dimen>
+    <dimen name="home_land_text_zzz">16sp</dimen>
+    <dimen name="home_land_text_icon">19sp</dimen>
+    <dimen name="home_land_text_icon_lg">20sp</dimen>
+    <dimen name="home_land_text_placeholder">24sp</dimen>
+    <dimen name="home_land_text_pause">48sp</dimen>
+    <dimen name="home_land_stroke">1dp</dimen>
+    <dimen name="home_land_gap_xs">2dp</dimen>
+    <dimen name="home_land_gap_s">3dp</dimen>
+    <dimen name="home_land_gap">4dp</dimen>
+    <dimen name="home_land_gap_l">6dp</dimen>
+    <dimen name="home_land_gap_w">7dp</dimen>
+    <dimen name="home_land_gap_xl">8dp</dimen>
+    <dimen name="home_land_gap_2xl">10dp</dimen>
+    <dimen name="home_land_gap_3xl">12dp</dimen>
+    <dimen name="home_land_gap_neg_s">-2dp</dimen>
+    <dimen name="home_land_gap_neg">-4dp</dimen>
+    <dimen name="home_land_divider_indent">38dp</dimen>
+    <dimen name="home_land_avatar_inset">40dp</dimen>
+    <dimen name="home_land_elevation">8dp</dimen>
+    <dimen name="home_land_icon_xs">10dp</dimen>
+    <dimen name="home_land_icon_s">12dp</dimen>
+    <dimen name="home_land_icon_m">14dp</dimen>
+    <dimen name="home_land_icon">18dp</dimen>
+    <dimen name="home_land_icon_l">20dp</dimen>
+    <dimen name="home_land_touch_xs">22dp</dimen>
+    <dimen name="home_land_touch_s">24dp</dimen>
+    <dimen name="home_land_touch">26dp</dimen>
+    <dimen name="home_land_touch_m">28dp</dimen>
+    <dimen name="home_land_touch_ml">30dp</dimen>
+    <dimen name="home_land_touch_l">32dp</dimen>
+    <dimen name="home_land_touch_xl">36dp</dimen>
+    <dimen name="home_land_touch_2xl">44dp</dimen>
+    <dimen name="home_land_touch_3xl">48dp</dimen>
+    <dimen name="home_land_row_l">56dp</dimen>
+    <dimen name="home_land_button_min_w">84dp</dimen>
+    <dimen name="home_land_elapsed_min_h">46dp</dimen>
+    <dimen name="home_land_avatar">100dp</dimen>
+    <dimen name="home_land_header_logo_w">190dp</dimen>
+    <dimen name="home_land_header_logo_h">40dp</dimen>
+    <dimen name="home_land_zoom_map_w">42dp</dimen>
+    <dimen name="home_land_zoom_map_h">56dp</dimen>
 
     <!-- Pro screen: compact bucket (<400dp smallest width), tuned so the composition
          matches the large-phone layout without horizontal scrolling. -->
     <dimen name="pro_page_padding_h">18dp</dimen>
     <dimen name="pro_hero_frame_h">78dp</dimen>
     <dimen name="pro_cta_corner">16dp</dimen>
-    <dimen name="pro_cta_avatar">84dp</dimen>
+    <dimen name="pro_cta_avatar">56dp</dimen>
+    <!-- Space kept free inside the CTA for the avatar that rests against its trailing edge. -->
+    <dimen name="pro_cta_avatar_inset">4dp</dimen>
+    <dimen name="pro_cta_content_inset">60dp</dimen>
     <dimen name="pro_hero_avatar">72dp</dimen>
     <dimen name="pro_hero_title_size">26sp</dimen>
     <dimen name="pro_claim_title_size">15sp</dimen>
@@ -263,4 +334,8 @@
     <dimen name="records_content_margin_h_compact">3dp</dimen>
     <dimen name="records_meta_icon">10dp</dimen>
     <dimen name="records_progress_bar_height">3dp</dimen>
+    <!-- Extra bottom room inside the AF/exposure/zoom tiles so the centred
+         glyph never reaches the value badge in the corner. -->
+    <dimen name="home_tile_icon_pad_bottom">9dp</dimen>
+    <dimen name="home_hero_padding_v">4dp</dimen>
 </resources>

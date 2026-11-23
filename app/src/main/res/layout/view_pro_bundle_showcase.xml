@@ -19,6 +19,14 @@
         android:background="@drawable/bg_pro_bundle_paper_clip"
         android:clipToOutline="true" />
 
+    <!-- Champagne light behind the phone slot (focus set by ProBundleShowcaseView). It sits
+         over the grid so the paper texture softens under the device instead of running
+         through it, then the copy and the phone paint on top. -->
+    <com.fadcam.ui.widgets.ShowcaseAuraView
+        android:id="@+id/showcaseAura"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <LinearLayout
         android:id="@+id/showcaseContent"
         android:layout_width="match_parent"

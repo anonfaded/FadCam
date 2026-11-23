@@ -40,7 +40,7 @@
         <item>11/11 | Χρειάζεστε βοήθεια; Εγγραφείτε στο Discord μας μέσω της ενότητας Σχετικά.</item>
     </string-array>
     <string name="mainpage_video_info" formatted="false">\n                                            <![CDATA[    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Βίντεο: </b></font>    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Χρήση: </b></font>    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>    ]]>\n</string>
-    <string name="stats_label_videos">Βίντεο:</string>
+    <string name="stats_label_videos">Αρχεία:</string>
     <string name="stats_label_used">Χρήση:</string>
     <string name="button_start">Έναρξη</string>
     <string name="button_pause">Παύση</string>
@@ -118,7 +118,7 @@
     <string name="recording_controls_title">AF · Έκθεση · Ζουμ</string>
     <string name="mainpage_camera_front">Μπροστινή Κάμερα</string>
     <string name="mainpage_camera_back">Πίσω Κάμερα</string>
-    <string name="storage_available_space">Διαθέσιμος χώρος</string>
+    <string name="storage_available_space">Υπόλοιπος χώρος</string>
     <string name="recording_estimated_time">Εκτιμώμενος χρόνος</string>
     <string name="recording_time_left">Χρόνος που απομένει</string>
     <string name="recording_elapsed_time">Χρόνος που πέρασε</string>
@@ -2685,6 +2685,13 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="setting_theme">Θέμα</string>
     <string name="setting_language">Γλώσσα</string>
     <string name="setting_app_icon">Εικονίδιο εφαρμογής</string>
+    <string name="setting_splash_screen">Οθόνη εκκίνησης</string>
+    <string name="splash_screen_dialog_title">Επιλογή οθόνης εκκίνησης</string>
+    <string name="splash_screen_helper">Επιλέξτε τι εμφανίζει το FadCam κατά την εκκίνηση.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Ο avatar ξυπνά, κοιμάται και προσγειώνεται στην Αρχική</string>
+    <string name="splash_style_flag">Σημαία FadSec Lab</string>
+    <string name="splash_style_flag_desc">Κλασική οθόνη εκκίνησης με σημαία</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Ενεργοποιημένο</string>
@@ -3072,7 +3079,18 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="pro_screen_custom_name_desc">Διάλεξε το δικό σου όνομα για την εφαρμογή.</string>
     <string name="pro_screen_direct_support">Υποστήριξη από τον δημιουργό</string>
     <string name="pro_screen_direct_support_desc">Ζήτησε βοήθεια από τον δημιουργό στο Discord.</string>
-    <string name="pro_screen_discord_invite">Ερωτήσεις, ιδέες ή απλώς θέλεις να πεις γεια; Μείνε συνδεδεμένος με το FadSec Lab.</string>
+        <string name="pro_screen_support_title">Άλλοι τρόποι υποστήριξης</string>
+    <string name="pro_screen_support_body">Δεν σε ενδιαφέρει το Pro; Μπορείς να στηρίξεις το FadCam μέσω Patreon ή δωρεών σε κρυπτονόμισμα. Κάθε συνεισφορά μας βοηθά να φτιάχνουμε περισσότερο ελεύθερο λογισμικό ανοιχτού κώδικα.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Μεμονωμένες δωρεές ή μηνιαίες συνδρομές.</string>
+    <string name="pro_screen_crypto_title">Δωρεές σε κρυπτονόμισμα</string>
+    <string name="pro_screen_crypto_desc">Επικοινώνησε μέσω Discord ή email.</string>
+    <string name="pro_screen_stay_connected_title">Μείνε σε επαφή</string>
+    <string name="pro_screen_stay_connected_body">Ερωτήσεις, σχόλια ή απλώς θέλεις να πεις ένα γεια; Θα χαρούμε να σε ακούσουμε.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">Email</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">Αίτημα υποστήριξης FadCam</string>
     <string name="pro_screen_everything">Όλες οι δωρεάν δυνατότητες</string>
     <string name="pro_screen_everything_desc">Όλα όσα έχει η δωρεάν έκδοση περιλαμβάνονται.</string>
     <string name="pro_screen_fan_desc">Πιστεύεις σε ένα μέλλον με εφαρμογές και λύσεις ανοιχτού κώδικα που βάζουν την ιδιωτικότητα πρώτη.</string>
@@ -3107,7 +3125,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="pro_screen_soon">Σύντομα</string>
     <string name="pro_screen_soon_legend">Τα επίπεδα Pro+ και Lab έρχονται σύντομα.</string>
     <string name="pro_screen_status_description">%1$s: %2$s</string>
-    <string name="pro_screen_support">Μπες στο Discord</string>
     <string name="pro_screen_tier">Pro</string>
     <string name="pro_screen_tier_lab">Lab</string>
     <string name="pro_screen_tier_plus">Pro+</string>

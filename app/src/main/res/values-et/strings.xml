@@ -82,7 +82,7 @@
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Kasutatud: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
-    <string name="stats_label_videos">Videod:</string>
+    <string name="stats_label_videos">Failid:</string>
     <string name="stats_label_used">Kasutatud:</string>
     <string name="button_start">Alusta</string>
     <string name="button_pause">Paus</string>
@@ -163,7 +163,7 @@
     <string name="recording_controls_title">AF · Säri · Suum</string>
     <string name="mainpage_camera_front">Esikaamera</string>
     <string name="mainpage_camera_back">Tagakaamera</string>
-    <string name="storage_available_space">Saadaval ruum</string>
+    <string name="storage_available_space">Järelejäänud ruum</string>
     <string name="recording_estimated_time">Hinnanguline aeg</string>
     <string name="recording_time_left">Aega jäänud</string>
     <string name="recording_elapsed_time">Kulunud aeg</string>
@@ -2589,6 +2589,13 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="setting_theme">Teema</string>
     <string name="setting_language">Keel</string>
     <string name="setting_app_icon">Rakenduse ikoon</string>
+    <string name="setting_splash_screen">Avakuva</string>
+    <string name="splash_screen_dialog_title">Vali avakuva</string>
+    <string name="splash_screen_helper">Vali, mida FadCam käivitamisel näitab.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Avatar ärkab, jääb magama ja maandub avakuvale</string>
+    <string name="splash_style_flag">FadSec Labi lipp</string>
+    <string name="splash_style_flag_desc">Klassikaline lipuga avakuva</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Lubatud</string>
@@ -2976,7 +2983,18 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="pro_screen_custom_name_desc">Vali oma äpile oma nimi.</string>
     <string name="pro_screen_direct_support">Arendaja tugi</string>
     <string name="pro_screen_direct_support_desc">Küsi abi arendajalt Discordis.</string>
-    <string name="pro_screen_discord_invite">Küsimused, ideed või tahad lihtsalt tere öelda? Püsi FadSec Labiga ühendatud.</string>
+        <string name="pro_screen_support_title">Muud võimalused toetamiseks</string>
+    <string name="pro_screen_support_body">Pro sind ei huvita? Saad FadCami siiski toetada Patreoni või krüptovaluuta annetustega. Iga panus aitab meil luua rohkem vaba avatud lähtekoodiga tarkvara.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Ühekordsed annetused või igakuised liikmelisused.</string>
+    <string name="pro_screen_crypto_title">Krüptovaluuta annetused</string>
+    <string name="pro_screen_crypto_desc">Võta meiega ühendust Discordi või e-posti kaudu.</string>
+    <string name="pro_screen_stay_connected_title">Püsi ühenduses</string>
+    <string name="pro_screen_stay_connected_body">Küsimused, tagasiside või lihtsalt tere? Meil on hea meel sinust kuulda.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">E-post</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">FadCami toe päring</string>
     <string name="pro_screen_everything">Kõik tasuta funktsioonid</string>
     <string name="pro_screen_everything_desc">Kõik tasuta versiooni funktsioonid on kaasas.</string>
     <string name="pro_screen_fan_desc">Usud tulevikku, kus avatud lähtekoodiga rakendused ja lahendused seavad privaatsuse esikohale.</string>
@@ -3011,7 +3029,6 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="pro_screen_soon">Varsti</string>
     <string name="pro_screen_soon_legend">Pro+ ja Lab tasemed tulevad varsti.</string>
     <string name="pro_screen_status_description">%1$s: %2$s</string>
-    <string name="pro_screen_support">Liitu Discordiga</string>
     <string name="pro_screen_tier">Pro</string>
     <string name="pro_screen_tier_lab">Lab</string>
     <string name="pro_screen_tier_plus">Pro+</string>

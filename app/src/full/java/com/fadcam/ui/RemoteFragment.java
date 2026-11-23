@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.utils.DisplayLocale;
+
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.animation.ObjectAnimator;
@@ -752,19 +754,19 @@ public class RemoteFragment extends BaseFragment {
         // Display with breakdown if cloud viewers present
         if (cloudConnections > 0 && localConnections > 0) {
             // Both local and cloud: "3 (1 local, 2 cloud)"
-            connectionsText.setText(String.format("%d (%d local, %d cloud)", 
-                totalConnections, localConnections, cloudConnections));
+            connectionsText.setText(DisplayLocale.digits(String.format("%d (%d local, %d cloud)",
+                totalConnections, localConnections, cloudConnections), requireContext()));
         } else if (cloudConnections > 0) {
             // Cloud only: "2 (cloud)"
-            connectionsText.setText(String.format("%d (cloud)", cloudConnections));
+            connectionsText.setText(DisplayLocale.digits(String.format("%d (cloud)", cloudConnections), requireContext()));
         } else {
             // Local only or zero
-            connectionsText.setText(String.valueOf(localConnections));
+            connectionsText.setText(DisplayLocale.digits(String.valueOf(localConnections), requireContext()));
         }
         
         // Get battery percentage
         int battery = manager.getBatteryPercentage(requireContext());
-        String batteryDisplay = battery > 0 ? battery + "%" : "--";
+        String batteryDisplay = battery > 0 ? DisplayLocale.digits(battery + "%", requireContext()) : "--";
         
         // Check if battery warning should be shown
         String batteryDetailsJson = manager.getBatteryDetailsJson(requireContext());
@@ -786,7 +788,7 @@ public class RemoteFragment extends BaseFragment {
 
         // Get buffered fragments count
         int fragments = manager.getBufferedCount();
-        fragmentsText.setText(String.valueOf(fragments));
+        fragmentsText.setText(DisplayLocale.digits(String.valueOf(fragments), requireContext()));
         
         // Update system metrics with NetworkHealth model
         com.fadcam.streaming.model.NetworkHealth networkHealth = manager.getNetworkHealth();
@@ -807,7 +809,7 @@ public class RemoteFragment extends BaseFragment {
         }
         
         long dataMb = manager.getTotalDataTransferred() / (1024 * 1024);
-        dataTransferredText.setText(String.format("%d MB", dataMb));
+        dataTransferredText.setText(DisplayLocale.digits(String.format("%d MB", dataMb), requireContext()));
     }
 
     private void updateRemoteWifiBars(int level) {
@@ -834,14 +836,21 @@ public class RemoteFragment extends BaseFragment {
         long seconds = ms / 1000;
         long minutes = seconds / 60;
         long hours = minutes / 60;
-        
+
         if (hours > 0) {
-            return String.format("%dh %dm", hours, minutes % 60);
+            return unitValue(hours, R.string.duration_unit_hours)
+                    + " " + unitValue(minutes % 60, R.string.duration_unit_minutes);
         } else if (minutes > 0) {
-            return String.format("%dm %ds", minutes, seconds % 60);
+            return unitValue(minutes, R.string.duration_unit_minutes)
+                    + " " + unitValue(seconds % 60, R.string.duration_unit_seconds);
         } else {
-            return String.format("%ds", seconds);
+            return unitValue(seconds, R.string.duration_unit_seconds);
         }
+    }
+
+    /** "12س" style compact value: localized digits followed by the unit letter. */
+    private String unitValue(long value, int unitRes) {
+        return DisplayLocale.digits(String.valueOf(value), requireContext()) + getString(unitRes);
     }
     
     private void updateRequirementsDisplay() {
@@ -855,9 +864,9 @@ public class RemoteFragment extends BaseFragment {
         
         // Format: "High • 30fps cap • 5 Mbps"
         // (Resolution comes from normal recording settings)
-        String displayText = String.format("%s • %dfps cap • %s",
+        String displayText = String.format("%s • %s • %s",
             preset.getDisplayName(),
-            preset.getFps(),
+            DisplayLocale.digits(preset.getFps() + "fps", requireContext()),
             preset.getBitrateString()
         );
         
@@ -882,7 +891,9 @@ public class RemoteFragment extends BaseFragment {
             // Cloud mode: show simplified info (per-viewer details not available without IP tracking)
             int cloudViewers = manager.getCloudViewerCount();
             long totalBytes = manager.getTotalDataTransferred();
-            String dataStr = String.format(java.util.Locale.US, "%.1f MB", totalBytes / (1024.0 * 1024.0));
+            String dataStr = DisplayLocale.digits(
+                    String.format(DisplayLocale.get(requireContext()), "%.1f MB", totalBytes / (1024.0 * 1024.0)),
+                    requireContext());
             
             if (cloudViewers == 0) {
                 Toast.makeText(requireContext(), "No cloud viewers connected", Toast.LENGTH_SHORT).show();
@@ -1893,15 +1904,15 @@ public class RemoteFragment extends BaseFragment {
     /**
      * Format bytes to human-readable format (B, KB, MB, GB)
      */
-    private static String formatBytes(long bytes) {
+    private String formatBytes(long bytes) {
         if (bytes < 1024) {
             return bytes + " B";
         } else if (bytes < 1024 * 1024) {
-            return String.format("%.2f KB", bytes / 1024.0);
+            return DisplayLocale.digits(String.format(DisplayLocale.get(requireContext()), "%.2f KB", bytes / 1024.0), requireContext());
         } else if (bytes < 1024 * 1024 * 1024) {
-            return String.format("%.2f MB", bytes / (1024.0 * 1024.0));
+            return DisplayLocale.digits(String.format(DisplayLocale.get(requireContext()), "%.2f MB", bytes / (1024.0 * 1024.0)), requireContext());
         } else {
-            return String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0));
+            return DisplayLocale.digits(String.format(DisplayLocale.get(requireContext()), "%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0)), requireContext());
         }
     }
     

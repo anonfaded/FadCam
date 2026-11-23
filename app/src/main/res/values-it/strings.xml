@@ -82,7 +82,7 @@
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Usato: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
-    <string name="stats_label_videos">Video:</string>
+    <string name="stats_label_videos">File:</string>
     <string name="stats_label_used">Usato:</string>
     <string name="button_start">Avvia</string>
     <string name="button_pause">Pausa</string>
@@ -163,7 +163,7 @@
     <string name="recording_controls_title">AF · Esposizione · Zoom</string>
     <string name="mainpage_camera_front">Fotocamera frontale</string>
     <string name="mainpage_camera_back">Fotocamera posteriore</string>
-    <string name="storage_available_space">Spazio disponibile</string>
+    <string name="storage_available_space">Spazio rimanente</string>
     <string name="recording_estimated_time">Tempo stimato</string>
     <string name="recording_time_left">Tempo rimanente</string>
     <string name="recording_elapsed_time">Tempo trascorso</string>
@@ -2580,6 +2580,13 @@
     <string name="setting_theme">Tema</string>
     <string name="setting_language">Lingua</string>
     <string name="setting_app_icon">Icona app</string>
+    <string name="setting_splash_screen">Schermata iniziale</string>
+    <string name="splash_screen_dialog_title">Scegli schermata iniziale</string>
+    <string name="splash_screen_helper">Scegli cosa mostra FadCam all\'avvio.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">L\'avatar si sveglia, si addormenta e si posa nella Home</string>
+    <string name="splash_style_flag">Bandiera FadSec Lab</string>
+    <string name="splash_style_flag_desc">Schermata iniziale classica con bandiera</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Attivato</string>
@@ -2967,7 +2974,18 @@
     <string name="pro_screen_custom_name_desc">Scegli il tuo nome per l\'app.</string>
     <string name="pro_screen_direct_support">Supporto dello sviluppatore</string>
     <string name="pro_screen_direct_support_desc">Ricevi aiuto dallo sviluppatore su Discord.</string>
-    <string name="pro_screen_discord_invite">Domande, idee o solo voglia di salutare? Resta in contatto con FadSec Lab.</string>
+        <string name="pro_screen_support_title">Altri modi per sostenere</string>
+    <string name="pro_screen_support_body">Pro non ti interessa? Puoi comunque sostenere FadCam con Patreon o donazioni in criptovaluta. Ogni contributo ci aiuta a creare più software libero e open source.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Donazioni singole o abbonamenti mensili.</string>
+    <string name="pro_screen_crypto_title">Donazioni in criptovaluta</string>
+    <string name="pro_screen_crypto_desc">Contattaci su Discord o via email.</string>
+    <string name="pro_screen_stay_connected_title">Resta in contatto</string>
+    <string name="pro_screen_stay_connected_body">Domande, feedback o solo voglia di salutare? Ci farebbe piacere sentirti.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">Email</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">Richiesta di assistenza FadCam</string>
     <string name="pro_screen_everything">Tutte le funzioni gratuite</string>
     <string name="pro_screen_everything_desc">Tutto ciò che è nella versione gratuita è incluso.</string>
     <string name="pro_screen_fan_desc">Credi in un futuro di app e soluzioni open source che mettono la privacy al primo posto.</string>
@@ -3002,7 +3020,6 @@
     <string name="pro_screen_soon">Presto</string>
     <string name="pro_screen_soon_legend">I livelli Pro+ e Lab arriveranno presto.</string>
     <string name="pro_screen_status_description">%1$s: %2$s</string>
-    <string name="pro_screen_support">Unisciti a Discord</string>
     <string name="pro_screen_tier">Pro</string>
     <string name="pro_screen_tier_lab">Lab</string>
     <string name="pro_screen_tier_plus">Pro+</string>

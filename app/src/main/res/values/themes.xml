@@ -82,15 +82,40 @@
         <item name="android:windowBackground">@color/black</item>
         <item name="android:navigationBarColor">@color/black</item></style>
 
+    <!-- No window slide between the splash window and MainActivity. Both draw the
+         same avatar on black; only the avatar itself should move. -->
+    <style name="Animation.FadCam.None" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@null</item>
+        <item name="android:activityOpenExitAnimation">@null</item>
+        <item name="android:activityCloseEnterAnimation">@null</item>
+        <item name="android:activityCloseExitAnimation">@null</item>
+    </style>
+
     <!-- Splash theme leveraging AndroidX SplashScreen attributes (Fix Start Theme.FadCam.Splash) -->
     <style name="Theme.FadCam.Splash" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorSecondary">@color/colorPrimary</item>
-        <!-- Solid dark background -->
-        <item name="android:windowBackground">@color/black</item>
+        <!-- Starting-window background. On Android 11 and below there is no platform
+             splash API, so this drawable IS the splash: black with the dormant avatar
+             at exactly the pose the in-app animation starts from. Without it the
+             pre-31 starting window is plain black for the whole cold start. -->
+        <item name="android:windowBackground">@drawable/splash_window_background</item>
+        <item name="android:windowAnimationStyle">@style/Animation.FadCam.None</item>
         <!-- SplashScreen API attrs -->
         <item name="windowSplashScreenBackground">@color/black</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/fadseclab_flag</item>
+        <!-- androidx inflates its splash_screen_view when an exit-animation listener is
+             installed; that layout sizes its icon with ?attr/splashScreenIconSize. This theme
+             does not extend Theme.SplashScreen, so the attribute must be declared here or the
+             inflate throws and every launch/recreation dies with a black screen. -->
+        <item name="splashScreenIconSize">288dp</item>
+        <!-- Padded awake avatar. The OS masks the splash icon and scales it to a
+             288dp canvas, so the raw avatar rendered far too large with its eyes
+             looking wrong. This keeps it small and exactly the size the in-app
+             animation starts from, making the hand-off invisible. -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_avatar_icon</item>
+        <!-- Platform attrs (API 31+) so the system starting window matches too. -->
+        <item name="android:windowSplashScreenBackground">@color/black</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_avatar_icon</item>
         <item name="android:statusBarColor">@color/black</item>
         <item name="android:navigationBarColor">@color/black</item>
         <item name="android:windowLightStatusBar">false</item>

@@ -40,6 +40,7 @@
     <dimen name="home_control_start_min_w">84dp</dimen>
     <dimen name="home_controls_bottom_margin">2dp</dimen>
     <dimen name="home_avatar_size">120dp</dimen>
+    <dimen name="splash_avatar_hero_size">248dp</dimen>
     <dimen name="home_preview_stroke_width">15dp</dimen>
     <dimen name="home_preview_hint_margin_bottom">48dp</dimen>
     <dimen name="home_fold_toggle_w">48dp</dimen>
@@ -111,12 +112,20 @@
     <dimen name="home_dock_side_width">82dp</dimen>
     <dimen name="home_dock_side_width_wide">98dp</dimen>
     <dimen name="home_dock_side_height">56dp</dimen>
+    <!-- Landscape left navigation rail -->
+    <dimen name="home_rail_dock_width">40dp</dimen>
+    <dimen name="home_rail_dock_icon">20dp</dimen>
+    <dimen name="home_rail_dock_item_height">40dp</dimen>
+    <dimen name="home_rail_dock_item_padding">1dp</dimen>
+    <dimen name="home_rail_dock_margin">4dp</dimen>
 
     <!-- Pro screen: full bucket (>=400dp smallest width), the large-phone reference layout. -->
     <dimen name="pro_page_padding_h">20dp</dimen>
     <dimen name="pro_hero_frame_h">86dp</dimen>
     <dimen name="pro_cta_corner">16dp</dimen>
-    <dimen name="pro_cta_avatar">92dp</dimen>
+    <dimen name="pro_cta_avatar">72dp</dimen>
+    <dimen name="pro_cta_avatar_inset">4dp</dimen>
+    <dimen name="pro_cta_content_inset">76dp</dimen>
     <dimen name="pro_hero_avatar">80dp</dimen>
     <dimen name="pro_hero_title_size">30sp</dimen>
     <dimen name="pro_claim_title_size">16sp</dimen>
@@ -245,4 +254,8 @@
     <dimen name="records_content_margin_h_compact">5dp</dimen>
     <dimen name="records_meta_icon">13dp</dimen>
     <dimen name="records_progress_bar_height">4dp</dimen>
+    <!-- Extra bottom room inside the AF/exposure/zoom tiles so the centred
+         glyph never reaches the value badge in the corner. -->
+    <dimen name="home_tile_icon_pad_bottom">11dp</dimen>
+    <dimen name="home_hero_padding_v">5dp</dimen>
 </resources>

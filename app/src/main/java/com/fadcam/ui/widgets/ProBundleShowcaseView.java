@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.BatteryManager;
 import android.text.Editable;
@@ -67,6 +68,7 @@ public class ProBundleShowcaseView extends FrameLayout {
     private final TextView metaView;
     private final FrameLayout phoneWrapper;
     private final FrameLayout phoneContainer;
+    private final ShowcaseAuraView aura;
     private final BundlePhoneSurfaceView frontSurface;
     private final BundlePhoneSurfaceView backSurface;
     private final SimpleDateFormat clockFormat = new SimpleDateFormat("h:mm", Locale.getDefault());
@@ -209,6 +211,7 @@ public class ProBundleShowcaseView extends FrameLayout {
         metaView = findViewById(R.id.showcaseMeta);
         phoneWrapper = findViewById(R.id.showcasePhoneWrapper);
         phoneContainer = findViewById(R.id.showcasePhoneContainer);
+        aura = findViewById(R.id.showcaseAura);
         // The layout's weight is the tuned text:phone ratio; only the ratio is kept, because the
         // host rewrites the weight from the card's actual width (see applyPhoneSlotWidth).
         ViewGroup.LayoutParams slotParams = phoneWrapper.getLayoutParams();
@@ -424,6 +427,8 @@ public class ProBundleShowcaseView extends FrameLayout {
         if (row instanceof LinearLayout) {
             ((LinearLayout) row).setGravity(enabled ? Gravity.CENTER : Gravity.CENTER_VERTICAL);
         }
+        // The paper plate is gone in this variant, so there is no grid to clear — only light.
+        if (aura != null) aura.setClearsGrid(!enabled);
         if (phoneWrapper != null && phoneWrapper.getLayoutParams() instanceof LinearLayout.LayoutParams) {
             LinearLayout.LayoutParams lp =
                     (LinearLayout.LayoutParams) phoneWrapper.getLayoutParams();
@@ -1137,6 +1142,24 @@ public class ProBundleShowcaseView extends FrameLayout {
         super.onLayout(changed, l, t, r, b);
         wirePhoneParts();
         fitPrivacyMark();
+        aimAura();
+    }
+
+    /**
+     * The aura is centred on the phone slot, in the aura's own coordinates. The slot is fluid
+     * (its weight depends on the card's width and the layout direction), so this is recomputed
+     * from the live layout rather than from a fixed dp offset.
+     */
+    private void aimAura() {
+        if (aura == null || phoneWrapper == null) return;
+        if (phoneWrapper.getWidth() <= 0 || phoneWrapper.getHeight() <= 0) return;
+        Rect slot = new Rect(0, 0, phoneWrapper.getWidth(), phoneWrapper.getHeight());
+        offsetDescendantRectToMyCoords(phoneWrapper, slot);
+        aura.setPhoneBounds(
+                slot.left - aura.getLeft(), slot.top - aura.getTop(),
+                slot.width(), slot.height());
+        FLog.d("ShowcaseAura", "aura=" + aura.getWidth() + "x" + aura.getHeight()
+                + " slot=" + slot.left + "," + slot.top + " " + slot.width() + "x" + slot.height());
     }
 
     /**

@@ -80,6 +80,33 @@
             app:itemTextColor="@android:color/white"
             app:itemActiveIndicatorStyle="@null"
             app:menu="@menu/bottom_nav_menu" />
+
+        <!-- Landscape: the same menu as a vertical rail on the leading edge.
+             Portrait keeps the bottom pill; MainActivity swaps the two. -->
+        <com.google.android.material.navigationrail.NavigationRailView
+            android:id="@+id/rail_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            android:background="?attr/colorBottomNav"
+            android:clipToOutline="true"
+            android:elevation="12dp"
+            android:focusable="true"
+            android:focusableInTouchMode="false"
+            android:nextFocusUp="@+id/fragment_container"
+            android:nextFocusDown="@+id/rail_navigation"
+            android:visibility="gone"
+            app:itemActiveIndicatorStyle="@null"
+            app:itemIconSize="@dimen/home_rail_dock_icon"
+            app:itemIconTint="@color/bottom_nav_icon_tint"
+            app:itemMinHeight="@dimen/home_rail_dock_item_height"
+            app:itemPaddingBottom="@dimen/home_rail_dock_item_padding"
+            app:itemPaddingTop="@dimen/home_rail_dock_item_padding"
+            app:itemTextColor="@android:color/white"
+            app:labelVisibilityMode="unlabeled"
+            app:menu="@menu/bottom_nav_menu"
+            app:menuGravity="center" />
         <!-- Lite compact dock (enhanced duplicate; drives the hidden nav above) -->
         <LinearLayout
             android:id="@+id/lite_dock"

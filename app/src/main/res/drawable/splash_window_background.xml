@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Starting-window background for Android 11 and below.
+
+  windowSplashScreenAnimatedIcon is an API 31+ attribute, so on Android 11 the
+  system starting window ignored it and the user stared at a plain black screen
+  for the whole cold start. This drawable is what the pre-31 starting window
+  actually renders: the same black background with the same dormant avatar at
+  the same size and position as the in-app launch animation.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/black" />
+    <item
+        android:gravity="center"
+        android:drawable="@drawable/splash_avatar_icon" />
+</layer-list>

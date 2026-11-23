@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  TEST ASSET — splash-only red-eye avatar.
+
+  Same artwork, geometry, eye shape, position and blink/pivot behaviour as
+  toggle_on_idle.xml. Only the eye colour differs, and it is used by the launch
+  animation only; Home keeps the user's own eye colour.
+
+  Plain #E60012 fill, no gradient and no glow.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="52dp"
+    android:height="52dp"
+    android:viewportWidth="400"
+    android:viewportHeight="400">
+
+    <!-- Head sphere: unchanged from toggle_on_idle.xml -->
+    <path
+        android:name="head"
+        android:pathData="M 30,200 A 170,170 0 1,0 370,200 A 170,170 0 1,0 30,200 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="150"
+                android:centerY="100"
+                android:gradientRadius="280"
+                android:startColor="#c8c8c8"
+                android:endColor="#2e2e2e" />
+        </aapt:attr>
+    </path>
+
+    <!-- eye_group: fully awake (scaleY=1.0, translateY=0). pivotY=165 for animations. -->
+    <group
+        android:name="eye_group"
+        android:translateX="0"
+        android:translateY="0"
+        android:pivotX="200"
+        android:pivotY="165"
+        android:scaleY="1.0">
+
+        <path
+            android:name="left_eye"
+            android:pathData="M 90,165 A 40,40 0 0 0 170,165 Z"
+            android:fillColor="#E60012"
+            android:fillAlpha="1" />
+
+        <path
+            android:name="right_eye"
+            android:pathData="M 230,165 A 40,40 0 0 0 310,165 Z"
+            android:fillColor="#E60012"
+            android:fillAlpha="1" />
+
+    </group>
+
+</vector>

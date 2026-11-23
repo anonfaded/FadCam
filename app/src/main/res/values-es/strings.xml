@@ -82,7 +82,7 @@
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Usado: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
-    <string name="stats_label_videos">Videos:</string>
+    <string name="stats_label_videos">Archivos:</string>
     <string name="stats_label_used">Usado:</string>
     <string name="button_start">Iniciar</string>
     <string name="button_pause">Pausar</string>
@@ -163,7 +163,7 @@
     <string name="recording_controls_title">AF · Exposición · Zoom</string>
     <string name="mainpage_camera_front">Cámara frontal</string>
     <string name="mainpage_camera_back">Cámara trasera</string>
-    <string name="storage_available_space">Espacio disponible</string>
+    <string name="storage_available_space">Espacio restante</string>
     <string name="recording_estimated_time">Tiempo estimado</string>
     <string name="recording_time_left">Tiempo restante</string>
     <string name="recording_elapsed_time">Tiempo transcurrido</string>
@@ -2688,6 +2688,13 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="setting_theme">Tema</string>
     <string name="setting_language">Idioma</string>
     <string name="setting_app_icon">Icono de la app</string>
+    <string name="setting_splash_screen">Pantalla de inicio</string>
+    <string name="splash_screen_dialog_title">Elegir pantalla de inicio</string>
+    <string name="splash_screen_helper">Elige qué muestra FadCam al iniciarse.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">El avatar se despierta, se duerme y se posa en Inicio</string>
+    <string name="splash_style_flag">Bandera de FadSec Lab</string>
+    <string name="splash_style_flag_desc">Pantalla de inicio clásica con bandera</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Activado</string>
@@ -3075,7 +3082,18 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="pro_screen_custom_name_desc">Elige tu propio nombre para la app.</string>
     <string name="pro_screen_direct_support">Soporte del desarrollador</string>
     <string name="pro_screen_direct_support_desc">Obtén ayuda del desarrollador en Discord.</string>
-    <string name="pro_screen_discord_invite">¿Preguntas, ideas o solo quieres saludar? Mantente conectado con FadSec Lab.</string>
+        <string name="pro_screen_support_title">Otras formas de apoyar</string>
+    <string name="pro_screen_support_body">¿No te interesa Pro? Aun así puedes apoyar FadCam con Patreon o donaciones en criptomonedas. Cada aporte nos ayuda a crear más software libre y de código abierto.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Donaciones únicas o membresías mensuales.</string>
+    <string name="pro_screen_crypto_title">Donaciones en criptomonedas</string>
+    <string name="pro_screen_crypto_desc">Contáctanos por Discord o correo.</string>
+    <string name="pro_screen_stay_connected_title">Mantente en contacto</string>
+    <string name="pro_screen_stay_connected_body">¿Preguntas, comentarios o solo quieres saludar? Nos encantaría saber de ti.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">Correo</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">Consulta de soporte de FadCam</string>
     <string name="pro_screen_everything">Todas las funciones gratuitas</string>
     <string name="pro_screen_everything_desc">Todo lo de la versión gratuita está incluido.</string>
     <string name="pro_screen_fan_desc">Crees en un futuro de apps y soluciones de código abierto que ponen la privacidad primero.</string>
@@ -3110,7 +3128,6 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="pro_screen_soon">Pronto</string>
     <string name="pro_screen_soon_legend">Los niveles Pro+ y Lab llegarán pronto.</string>
     <string name="pro_screen_status_description">%1$s: %2$s</string>
-    <string name="pro_screen_support">Únete a Discord</string>
     <string name="pro_screen_tier">Pro</string>
     <string name="pro_screen_tier_lab">Lab</string>
     <string name="pro_screen_tier_plus">Pro+</string>

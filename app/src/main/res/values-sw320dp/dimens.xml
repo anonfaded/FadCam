@@ -37,6 +37,13 @@
     <dimen name="onboarding_scroll_hint_pad_h">9dp</dimen>
     <dimen name="onboarding_scroll_hint_pad_v">4dp</dimen>
     <dimen name="onboarding_scroll_hint_icon_size">13sp</dimen>
+    <!-- Pro CTA: the resting avatar needs a real gutter so long labels wrap instead of
+         running under it. -->
+    <dimen name="pro_cta_avatar">60dp</dimen>
+    <dimen name="pro_cta_avatar_inset">4dp</dimen>
+    <dimen name="pro_cta_content_inset">64dp</dimen>
+    <dimen name="pro_cta_text">14sp</dimen>
+
     <!-- Records grid card — normal phones (smallestWidth >= 320dp). -->
     <dimen name="records_item_margin">6dp</dimen>
     <dimen name="records_corner">8dp</dimen>
@@ -77,4 +84,8 @@
     <dimen name="records_content_margin_h_compact">4dp</dimen>
     <dimen name="records_meta_icon">12dp</dimen>
     <dimen name="records_progress_bar_height">3dp</dimen>
+    <!-- Extra bottom room inside the AF/exposure/zoom tiles so the centred
+         glyph never reaches the value badge in the corner. -->
+    <dimen name="home_tile_icon_pad_bottom">9dp</dimen>
+    <dimen name="home_hero_padding_v">4dp</dimen>
 </resources> 

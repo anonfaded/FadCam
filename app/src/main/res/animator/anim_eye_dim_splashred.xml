@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Eye dims: crimson (#E60012) → near-black, so the flat colour the animator
+  writes is the same colour the gradient body already has.
+  Plays on each eye path during sleep transition, synchronized with anim_eye_down (translateY).
+-->
+<objectAnimator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="420"
+    android:propertyName="fillColor"
+    android:valueFrom="#E60012"
+    android:valueTo="#2a2a2a"
+    android:valueType="colorType"
+    android:interpolator="@android:interpolator/accelerate_decelerate" />

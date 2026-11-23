@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Landscape-phone dimensions.
+
+  Landscape phones are wide (sw >= 400dp) but SHORT (often 360dp), so the
+  values-sw400dp bucket is selected and portrait-tuned spacing no longer fits.
+  These names are used only by layout-land/, so they are not overridden by the
+  sw buckets and stay compact in landscape. Tune landscape here, not in the
+  layout.
+-->
+<resources>
+    <dimen name="home_land_header_padding_top">2dp</dimen>
+    <dimen name="home_land_header_padding_bottom">4dp</dimen>
+    <dimen name="home_land_header_padding_h">12dp</dimen>
+    <dimen name="home_land_panel_margin">6dp</dimen>
+    <dimen name="home_land_panel_margin_top">2dp</dimen>
+    <dimen name="home_land_card_padding">3dp</dimen>
+    <dimen name="home_land_scroll_padding_bottom">4dp</dimen>
+    <dimen name="home_land_controls_bottom">4dp</dimen>
+
+    <!-- Text scale (landscape is short: one step tighter than portrait) -->
+    <dimen name="home_land_text_micro">6sp</dimen>
+    <dimen name="home_land_text_tiny">8sp</dimen>
+    <dimen name="home_land_text_label">9sp</dimen>
+    <dimen name="home_land_text_caption">10sp</dimen>
+    <dimen name="home_land_text_small">11sp</dimen>
+    <dimen name="home_land_text_body">12sp</dimen>
+    <dimen name="home_land_text_clock">14sp</dimen>
+    <dimen name="home_land_text_hero">15sp</dimen>
+    <dimen name="home_land_text_zzz">16sp</dimen>
+    <dimen name="home_land_text_icon">19sp</dimen>
+    <dimen name="home_land_text_icon_lg">20sp</dimen>
+    <dimen name="home_land_text_placeholder">24sp</dimen>
+    <dimen name="home_land_text_pause">48sp</dimen>
+
+    <!-- Gaps -->
+    <dimen name="home_land_stroke">1dp</dimen>
+    <dimen name="home_land_gap_xs">2dp</dimen>
+    <dimen name="home_land_gap_s">3dp</dimen>
+    <dimen name="home_land_gap">4dp</dimen>
+    <dimen name="home_land_gap_l">6dp</dimen>
+    <dimen name="home_land_gap_w">7dp</dimen>
+    <dimen name="home_land_gap_xl">8dp</dimen>
+    <dimen name="home_land_gap_2xl">10dp</dimen>
+    <dimen name="home_land_gap_3xl">12dp</dimen>
+    <dimen name="home_land_gap_neg_s">-2dp</dimen>
+    <dimen name="home_land_gap_neg">-4dp</dimen>
+    <dimen name="home_land_divider_indent">38dp</dimen>
+    <dimen name="home_land_avatar_inset">40dp</dimen>
+    <dimen name="home_land_elevation">8dp</dimen>
+
+    <!-- Component sizes -->
+    <dimen name="home_land_icon_xs">10dp</dimen>
+    <dimen name="home_land_icon_s">12dp</dimen>
+    <dimen name="home_land_icon_m">14dp</dimen>
+    <dimen name="home_land_icon">18dp</dimen>
+    <dimen name="home_land_icon_l">20dp</dimen>
+    <dimen name="home_land_touch_xs">22dp</dimen>
+    <dimen name="home_land_touch_s">24dp</dimen>
+    <dimen name="home_land_touch">26dp</dimen>
+    <dimen name="home_land_touch_m">28dp</dimen>
+    <dimen name="home_land_touch_ml">30dp</dimen>
+    <dimen name="home_land_touch_l">32dp</dimen>
+    <dimen name="home_land_touch_xl">36dp</dimen>
+    <dimen name="home_land_touch_2xl">44dp</dimen>
+    <dimen name="home_land_touch_3xl">48dp</dimen>
+    <dimen name="home_land_row_l">56dp</dimen>
+    <dimen name="home_land_button_min_w">84dp</dimen>
+    <dimen name="home_land_elapsed_min_h">46dp</dimen>
+    <dimen name="home_land_avatar">100dp</dimen>
+    <dimen name="home_land_header_logo_w">190dp</dimen>
+    <dimen name="home_land_header_logo_h">40dp</dimen>
+    <dimen name="home_land_zoom_map_w">42dp</dimen>
+    <dimen name="home_land_zoom_map_h">56dp</dimen>
+</resources>

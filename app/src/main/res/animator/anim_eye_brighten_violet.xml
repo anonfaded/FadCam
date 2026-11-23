@@ -8,6 +8,6 @@
     android:duration="420"
     android:propertyName="fillColor"
     android:valueFrom="#2a2a2a"
-    android:valueTo="#D500F9"
+    android:valueTo="#AA00FF"
     android:valueType="colorType"
     android:interpolator="@android:interpolator/decelerate_quint" />

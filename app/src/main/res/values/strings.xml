@@ -81,7 +81,7 @@
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Used: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
-    <string name="stats_label_videos">Videos:</string>
+    <string name="stats_label_videos">Files:</string>
     <string name="stats_label_used">Used:</string>
     <string name="button_start">Start</string>
     <string name="button_pause">Pause</string>
@@ -161,7 +161,7 @@
     <string name="recording_controls_title">AF · Exposure · Zoom</string>
     <string name="mainpage_camera_front">Front Camera</string>
     <string name="mainpage_camera_back">Back Camera</string>
-    <string name="storage_available_space">Available space</string>
+    <string name="storage_available_space">Space left</string>
     <string name="recording_estimated_time">Estimated time</string>
     <string name="recording_time_left">Time left</string>
     <string name="recording_elapsed_time">Elapsed time</string>
@@ -1019,6 +1019,10 @@
     <string name="timer_30_minutes">30 minutes</string>
     <string name="timer_1_hour">1 hour</string>
     <string name="timer_seconds_short">%1$ds</string>
+    <string name="duration_unit_days">d</string>
+    <string name="duration_unit_hours">h</string>
+    <string name="duration_unit_minutes">m</string>
+    <string name="duration_unit_seconds">s</string>
     <string name="timer_minutes_short">%1$dm</string>
     <string name="timer_hours_short">%1$dh</string>
     <string name="timer_custom_label">Custom...</string>
@@ -2935,6 +2939,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="setting_theme">Theme</string>
     <string name="setting_language">Language</string>
     <string name="setting_app_icon">App Icon</string>
+    <string name="setting_splash_screen">Splash Screen</string>
+    <string name="splash_screen_dialog_title">Choose Splash Screen</string>
+    <string name="splash_screen_helper">Choose what FadCam shows when it starts.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Awake avatar falls asleep and settles into Home</string>
+    <string name="splash_style_flag">FadSec Lab Flag</string>
+    <string name="splash_style_flag_desc">Classic flag splash screen</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Enabled</string>
@@ -3368,8 +3379,18 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="pro_screen_privacy_body">We believe privacy should be for everyone. That\'s why FadCam has no ads, trackers, or data collection. We don\'t even collect crash reports automatically.\n\nWe\'re 100% open source, so you can see how the app works. Essential privacy features will never be locked behind a paywall.</string>
     <string name="pro_screen_why_pro_title">Then why Pro?</string>
     <string name="pro_screen_why_pro_body">FadCam Free already includes features that many other apps charge for. We believe useful software shouldn\'t come at the cost of your privacy.\n\nIf you find FadCam valuable and want to support our work, Pro is a way to give back while getting even more in return: three standalone private apps, early updates, and other extras, on top of everything FadCam Free already offers.\n\nYour support also helps us continue building open-source, privacy-first apps and solutions at FadSec Lab.</string>
-    <string name="pro_screen_support">Join Discord</string>
-    <string name="pro_screen_discord_invite">Questions, ideas, or just want to say hi? Stay connected with FadSec Lab.</string>
+    <string name="pro_screen_support_title">Other ways to support</string>
+    <string name="pro_screen_support_body">Not interested in Pro? You can still support FadCam through Patreon or crypto donations. Every contribution helps us build more free, open-source software.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">One-time donations or monthly memberships.</string>
+    <string name="pro_screen_crypto_title">Crypto donations</string>
+    <string name="pro_screen_crypto_desc">Contact us through Discord or email.</string>
+    <string name="pro_screen_stay_connected_title">Stay connected</string>
+    <string name="pro_screen_stay_connected_body">Questions, feedback, or just want to say hi? We\'d love to hear from you.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">Email</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">FadCam support enquiry</string>
     <string name="pro_screen_everything">All free features</string>
     <string name="pro_screen_everything_desc">Everything in the free version is included.</string>
     <string name="pro_screen_notes_feature">Notes app</string>

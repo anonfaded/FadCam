@@ -655,6 +655,12 @@ public abstract class Constants {
     // ----- App Icon Preference -----
     public static final String PREF_APP_ICON = "app_icon";
 
+    // ----- Splash Screen Preference -----
+    public static final String PREF_SPLASH_STYLE = "pref_splash_style";
+    public static final String SPLASH_STYLE_AVATAR = "avatar";
+    public static final String SPLASH_STYLE_FLAG = "flag";
+    public static final String SPLASH_STYLE_DEFAULT = SPLASH_STYLE_AVATAR;
+
     // ----- Avatar Eye Color Preference -----
     /** Stored as an ARGB int; 0 = white / no tint (default). */
     public static final String PREF_AVATAR_EYE_COLOR = "pref_avatar_eye_color";

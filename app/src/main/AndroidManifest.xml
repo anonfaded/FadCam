@@ -89,16 +89,17 @@
         <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.provider" android:exported="false" android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
-        <activity android:name=".SplashActivity" android:exported="true" android:theme="@style/Theme.FadCam.Splash">
+        <activity android:name=".MainActivity" android:launchMode="singleTop" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" android:exported="false" android:theme="@style/Theme.FadCam.Splash" />
+
+        <!-- Default launcher entry. All custom icon aliases below point at MainActivity. -->
+        <activity-alias android:name=".MainActivity.DefaultIcon" android:enabled="true" android:exported="true" android:label="${appLabel}" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <!-- Android TV support -->
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <activity android:name=".MainActivity" android:launchMode="singleTop" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode" android:exported="false" />
+        </activity-alias>
 
         <!-- Watch-optimized activity for Wear OS round-screen devices -->
         <activity

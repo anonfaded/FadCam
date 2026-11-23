@@ -515,7 +515,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
         <item name="90">90</item>
     </integer-array>
 
-<string name="stats_label_videos">Videos:</string>
+<string name="stats_label_videos">Fichiers:</string>
 
 <string name="stats_label_used">Used:</string>
 
@@ -634,7 +634,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="mainpage_camera_back">Back Camera</string>
 
-<string name="storage_available_space">Available space</string>
+<string name="storage_available_space">Espace restant</string>
 
 <string name="recording_estimated_time">Estimated time</string>
 
@@ -4249,6 +4249,13 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="setting_theme">Thème</string>
     <string name="setting_language">Langue</string>
     <string name="setting_app_icon">Icône de l\'appli</string>
+    <string name="setting_splash_screen">Écran de démarrage</string>
+    <string name="splash_screen_dialog_title">Choisir l\'écran de démarrage</string>
+    <string name="splash_screen_helper">Choisissez ce que FadCam affiche au démarrage.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">L\'avatar se réveille, s\'endort et se pose sur l\'accueil</string>
+    <string name="splash_style_flag">Drapeau FadSec Lab</string>
+    <string name="splash_style_flag_desc">Écran de démarrage classique avec drapeau</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Activé</string>
@@ -4628,7 +4635,18 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="pro_screen_custom_name_desc">Choisis ton propre nom pour l\'appli.</string>
     <string name="pro_screen_direct_support">Support du développeur</string>
     <string name="pro_screen_direct_support_desc">Obtiens de l\'aide du développeur sur Discord.</string>
-    <string name="pro_screen_discord_invite">Des questions, des idées, ou juste envie de dire bonjour ? Reste connecté à FadSec Lab.</string>
+        <string name="pro_screen_support_title">D\'autres façons de soutenir</string>
+    <string name="pro_screen_support_body">Pro ne t\'intéresse pas ? Tu peux quand même soutenir FadCam via Patreon ou des dons en cryptomonnaie. Chaque contribution nous aide à créer davantage de logiciels libres et open source.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Dons ponctuels ou abonnements mensuels.</string>
+    <string name="pro_screen_crypto_title">Dons en cryptomonnaie</string>
+    <string name="pro_screen_crypto_desc">Contacte-nous via Discord ou par e-mail.</string>
+    <string name="pro_screen_stay_connected_title">Restons en contact</string>
+    <string name="pro_screen_stay_connected_body">Des questions, des retours ou juste envie de dire bonjour ? Nous serions ravis de te lire.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">E-mail</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">Demande d\'assistance FadCam</string>
     <string name="pro_screen_everything">Toutes les fonctions gratuites</string>
     <string name="pro_screen_everything_desc">Tout ce que propose la version gratuite est inclus.</string>
     <string name="pro_screen_fan_desc">Tu crois en un avenir d\'applis et de solutions open source qui placent la confidentialité en premier.</string>
@@ -4663,7 +4681,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="pro_screen_soon">Bientôt</string>
     <string name="pro_screen_soon_legend">Les niveaux Pro+ et Lab arrivent bientôt.</string>
     <string name="pro_screen_status_description">%1$s : %2$s</string>
-    <string name="pro_screen_support">Rejoindre Discord</string>
     <string name="pro_screen_tier">Pro</string>
     <string name="pro_screen_tier_lab">Lab</string>
     <string name="pro_screen_tier_plus">Pro+</string>

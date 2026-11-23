@@ -100,27 +100,82 @@
             </LinearLayout>
             <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="24dp"
                 android:layout_marginBottom="20dp" android:background="@color/pro_border" />
-            <TextView android:id="@+id/tvDiscordInvite" style="@style/ProBody" android:layout_marginTop="16dp"
-                android:text="@string/pro_screen_discord_invite" />
 
-            <!-- Community: two quiet inline links, deliberately lighter than the purchase CTA. -->
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="2dp" android:orientation="horizontal" android:gravity="center_vertical"
-                android:baselineAligned="false">
-                <LinearLayout android:id="@+id/btnDiscord" style="@style/ProCommunityAction">
-                    <ImageView style="@style/ProCommunityActionMark"
-                        android:src="@drawable/ic_discord_gold" />
-                    <TextView style="@style/ProCommunityActionLabel"
-                        android:text="@string/pro_screen_support" />
-                    <TextView style="@style/ProCommunityActionArrow" />
+            <!-- Support beyond Pro: a compact, factual alternative to the purchase CTA. -->
+            <LinearLayout android:id="@+id/supportBlock" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="volunteer_activism" android:fontFamily="@font/materialicons"
+                        android:textColor="@color/pro_text" android:textSize="18sp"
+                        android:layout_marginEnd="8dp" android:layout_marginTop="4dp"
+                        android:layout_gravity="top" android:importantForAccessibility="no" />
+                    <TextView style="@style/ProSectionTitle" android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="@string/pro_screen_support_title" android:accessibilityHeading="true" />
                 </LinearLayout>
-                <LinearLayout android:id="@+id/btnX" style="@style/ProCommunityAction"
-                    android:layout_marginStart="14dp">
-                    <ImageView style="@style/ProCommunityActionMark"
-                        android:src="@drawable/ic_x" android:tint="@color/pro_gold" />
-                    <TextView style="@style/ProCommunityActionLabel"
-                        android:text="@string/follow_on_x" />
-                    <TextView style="@style/ProCommunityActionArrow" />
+                <TextView android:id="@+id/tvSupportBody" style="@style/ProBody" android:layout_marginTop="10dp"
+                    android:text="@string/pro_screen_support_body" />
+                <LinearLayout android:id="@+id/supportCard" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_pro_card" android:clipToOutline="true">
+                    <LinearLayout android:id="@+id/rowSupportPatreon" style="@style/ProSupportRow">
+                        <ImageView style="@style/ProSupportRowIcon" android:src="@drawable/ic_patreon" />
+                        <LinearLayout style="@style/ProSupportRowText">
+                            <TextView style="@style/ProSupportRowTitle" android:text="@string/pro_screen_patreon_title" />
+                            <TextView style="@style/ProSupportRowDesc" android:text="@string/pro_screen_patreon_desc" />
+                        </LinearLayout>
+                        <TextView style="@style/ProSupportRowArrow" />
+                    </LinearLayout>
+                    <View style="@style/ProSupportDivider" />
+                    <!-- Informational only: the ways to reach us live in the links below. -->
+                    <LinearLayout android:id="@+id/rowSupportCrypto" style="@style/ProSupportRow"
+                        android:clickable="false" android:focusable="false"
+                        android:background="@android:color/transparent">
+                        <TextView style="@style/ProSupportRowIcon" android:text="currency_bitcoin"
+                            android:fontFamily="@font/materialicons" android:textColor="@color/pro_gold"
+                            android:textSize="20sp" android:gravity="center"
+                            android:importantForAccessibility="no" />
+                        <LinearLayout style="@style/ProSupportRowText">
+                            <TextView style="@style/ProSupportRowTitle" android:text="@string/pro_screen_crypto_title" />
+                            <TextView style="@style/ProSupportRowDesc" android:text="@string/pro_screen_crypto_desc" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="22dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="chat_bubble_outline" android:fontFamily="@font/materialicons"
+                        android:textColor="@color/pro_text" android:textSize="17sp"
+                        android:layout_marginEnd="8dp" android:layout_marginTop="3dp"
+                        android:layout_gravity="top" android:importantForAccessibility="no" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                        android:text="@string/pro_screen_stay_connected_title" android:textColor="@color/pro_text"
+                        android:textSize="15sp" android:fontFamily="sans-serif-medium"
+                        android:accessibilityHeading="true" />
+                </LinearLayout>
+                <TextView android:id="@+id/tvStayConnectedBody" style="@style/ProBody" android:layout_marginTop="8dp"
+                    android:text="@string/pro_screen_stay_connected_body" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp" android:orientation="horizontal" android:gravity="center_vertical"
+                    android:baselineAligned="false">
+                    <LinearLayout android:id="@+id/btnDiscord" style="@style/ProCommunityAction">
+                        <ImageView style="@style/ProCommunityActionMark" android:src="@drawable/ic_discord_gold" />
+                        <TextView style="@style/ProCommunityActionLabel" android:text="@string/pro_screen_link_discord" />
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/btnEmail" style="@style/ProCommunityAction"
+                        android:layout_marginStart="14dp">
+                        <ImageView style="@style/ProCommunityActionMark" android:src="@drawable/ic_email"
+                            android:tint="@color/pro_gold" />
+                        <TextView style="@style/ProCommunityActionLabel" android:text="@string/pro_screen_link_email" />
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/btnX" style="@style/ProCommunityAction"
+                        android:layout_marginStart="14dp">
+                        <ImageView style="@style/ProCommunityActionMark" android:src="@drawable/ic_x"
+                            android:tint="@color/pro_gold" />
+                        <TextView style="@style/ProCommunityActionLabel" android:text="@string/pro_screen_link_x" />
+                    </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -222,7 +277,10 @@
         </LinearLayout>
         <com.fadcam.ui.ShimmerButton android:id="@+id/btnGetPro"
             android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="@dimen/pro_cta_min_h"
-            android:paddingVertical="14dp" android:text="@string/pro_screen_purchase" android:textSize="@dimen/pro_cta_text"
+            android:paddingVertical="14dp" android:paddingStart="@dimen/pro_footer_pad_h"
+            android:paddingEnd="@dimen/pro_footer_pad_h"
+            android:maxLines="2" android:singleLine="false" android:gravity="center"
+            android:text="@string/pro_screen_purchase" android:textSize="@dimen/pro_cta_text"
             android:fontFamily="sans-serif-medium" android:textAllCaps="false" android:letterSpacing="0"
             android:textColor="@color/pro_background" android:elevation="0dp" android:stateListAnimator="@null"
             android:insetTop="0dp" android:insetBottom="0dp" app:backgroundTint="@color/pro_gold" app:cornerRadius="@dimen/pro_cta_corner"
