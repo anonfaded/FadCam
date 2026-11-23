@@ -11,6 +11,7 @@ import android.util.Size;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import com.fadcam.utils.DeviceHelper;
 
@@ -142,7 +143,9 @@ public class FrameRateHelper {
         Range<Integer> fpsRange = new Range<>(targetFrameRate, targetFrameRate);
         builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fpsRange);
         try {
-            if (DeviceHelper.isSamsung()) {
+            // applySamsungFrameRate() uses the public CaptureRequest.Key constructor (API 29);
+            // guard so older devices never reach it
+            if (DeviceHelper.isSamsung() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 appliedVendorSettings = applySamsungFrameRate(builder, targetFrameRate);
             }
         } catch (Exception e) {
@@ -151,8 +154,11 @@ public class FrameRateHelper {
         return appliedVendorSettings;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     private static boolean applySamsungFrameRate(CaptureRequest.Builder builder, int targetFrameRate) {
         try {
+            // The public CaptureRequest.Key(String, Class) constructor requires API 29;
+            // on API < 29 this would throw NoSuchMethodError (an Error, not caught by catch(Exception))
             CaptureRequest.Key<Integer> samsungMaxFpsKey =
                     new CaptureRequest.Key<>("samsung.android.control.recordingMaxFps", Integer.class);
             CaptureRequest.Key<Integer> samsungMinFpsKey =

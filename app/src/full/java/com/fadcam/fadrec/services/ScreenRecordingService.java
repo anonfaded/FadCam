@@ -245,7 +245,8 @@ public class ScreenRecordingService extends Service {
         }
 
         Notification notification = createNotification();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        // The 3-arg startForeground() (service types) was introduced in Android 10 (API 29)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
         } else {
             startForeground(NOTIFICATION_ID, notification);
@@ -309,7 +310,8 @@ public class ScreenRecordingService extends Service {
         recordingState = ScreenRecordingState.NONE;
         Notification notification = createNotification();
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        // The 3-arg startForeground() (service types) was introduced in Android 10 (API 29)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
         } else {
             startForeground(NOTIFICATION_ID, notification);
@@ -719,11 +721,16 @@ public class ScreenRecordingService extends Service {
                 acquireWakeLock();
                 
                 // Start foreground service with notification
+                // The 3-arg startForeground() (service types) was introduced in Android 10 (API 29)
                 int fgTypes = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
                 if (enableAudioForSession) {
                     fgTypes |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
                 }
-                startForeground(NOTIFICATION_ID, createNotification(), fgTypes);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    startForeground(NOTIFICATION_ID, createNotification(), fgTypes);
+                } else {
+                    startForeground(NOTIFICATION_ID, createNotification());
+                }
                 
                 // Start notification updates
                 startNotificationUpdates();

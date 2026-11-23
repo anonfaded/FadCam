@@ -1,5 +1,6 @@
 package com.fadcam.ui;
 
+import android.os.Build;
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.ClipData;
