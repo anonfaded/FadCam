@@ -177,7 +177,7 @@
                         android:layout_marginEnd="12dp"
                         android:tag="slider_row">
 
-                        <com.google.android.material.slider.Slider
+                        <com.fadcam.ui.custom.ThumbOnlySlider
                             android:id="@+id/picker_slider"
                             style="@style/Widget.FadCam.BottomSheetSlider"
                             android:layout_width="match_parent"

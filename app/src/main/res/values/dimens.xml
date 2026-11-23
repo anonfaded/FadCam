@@ -222,4 +222,45 @@
     <dimen name="onboarding_scroll_hint_pad_h">10dp</dimen>
     <dimen name="onboarding_scroll_hint_pad_v">5dp</dimen>
     <dimen name="onboarding_scroll_hint_icon_size">14sp</dimen>
+    <!-- Records grid card — baseline for small phones (smallestWidth < 320dp).
+         Key set must stay in sync with values-sw320dp and values-sw400dp. -->
+    <dimen name="records_item_margin">3dp</dimen>
+    <dimen name="records_corner">6dp</dimen>
+    <dimen name="records_content_margin_h">4dp</dimen>
+    <dimen name="records_content_margin_top">2dp</dimen>
+    <dimen name="records_content_margin_bottom">3dp</dimen>
+    <dimen name="records_title_full">13sp</dimen>
+    <dimen name="records_title_medium">10sp</dimen>
+    <dimen name="records_meta_text">8.5sp</dimen>
+    <dimen name="records_menu_box">36dp</dimen>
+    <dimen name="records_menu_medium_box">26dp</dimen>
+    <dimen name="records_menu_padding">7dp</dimen>
+    <dimen name="records_menu_medium_padding">5dp</dimen>
+    <dimen name="records_badge_text">8sp</dimen>
+    <dimen name="records_badge_pad_h">4dp</dimen>
+    <dimen name="records_badge_pad_v">1dp</dimen>
+    <dimen name="records_badge_gap">3dp</dimen>
+    <dimen name="records_badge_icon_text">8sp</dimen>
+    <dimen name="records_serial_text">8sp</dimen>
+    <dimen name="records_serial_pad_h">2dp</dimen>
+    <dimen name="records_serial_pad_v">1dp</dimen>
+    <dimen name="records_check_container">36dp</dimen>
+    <dimen name="records_check_bg">30dp</dimen>
+    <dimen name="records_check_icon">18dp</dimen>
+    <dimen name="records_check_container_compact">20dp</dimen>
+    <dimen name="records_check_bg_compact">16dp</dimen>
+    <dimen name="records_check_icon_compact">11dp</dimen>
+    <dimen name="records_overlay_text">7.5sp</dimen>
+    <dimen name="records_overlay_pad_h">4dp</dimen>
+    <dimen name="records_overlay_pad_v">2dp</dimen>
+    <dimen name="records_compact_menu_box">20dp</dimen>
+    <dimen name="records_content_margin_h_medium">4dp</dimen>
+    <dimen name="records_meta_text_medium">8.5sp</dimen>
+    <dimen name="records_badge_text_medium">8sp</dimen>
+    <dimen name="records_badge_pad_h_medium">3dp</dimen>
+    <dimen name="records_badge_pad_v_medium">1dp</dimen>
+    <dimen name="records_item_margin_medium">3dp</dimen>
+    <dimen name="records_content_margin_h_compact">3dp</dimen>
+    <dimen name="records_meta_icon">10dp</dimen>
+    <dimen name="records_progress_bar_height">3dp</dimen>
 </resources>

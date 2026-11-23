@@ -2381,12 +2381,22 @@ public class RecordsFragment extends BaseFragment implements
                 com.fadcam.Constants.PREF_APP_THEME, com.fadcam.Constants.DEFAULT_APP_THEME);
         recordsAdapter.setSnowVeilTheme("Snow Veil".equals(currentTheme));
         recordsAdapter.setGridSpan(currentGridSpan);
+        recordsAdapter.setHideMetadata(sharedPreferencesManager.isRecordsHideMetadataEnabled());
 
         // Set the layout manager
         setLayoutManager();
 
         // Set adapter
         recyclerView.setAdapter(recordsAdapter);
+
+        // Card metrics follow the measured cell width, so a width change (rotation, split
+        // screen) has to rebind even though the span count did not change.
+        recyclerView.addOnLayoutChangeListener((v, left, top, right, bottom,
+                                                oldLeft, oldTop, oldRight, oldBottom) -> {
+            boolean widthChanged = (right - left) != (oldRight - oldLeft);
+            if (!widthChanged || recordsAdapter == null) return;
+            recyclerView.post(recordsAdapter::refreshLayoutMetrics);
+        });
 
         // Set up month selection listener
         recordsAdapter.setOnMonthActionListener((monthKey, items) -> {
@@ -2598,9 +2608,18 @@ public class RecordsFragment extends BaseFragment implements
                 sharedPreferencesManager.setRecordsGridSpan(currentGridSpan);
             }
         } catch (Exception ignored) {}
-        setLayoutManager();
+        // Reuse the existing GridLayoutManager: replacing it detaches every view and throws the
+        // scroll position away, which made changing columns jump back to the top.
+        RecyclerView.LayoutManager existing = recyclerView != null ? recyclerView.getLayoutManager() : null;
+        if (existing instanceof GridLayoutManager) {
+            ((GridLayoutManager) existing).setSpanCount(currentGridSpan);
+        } else {
+            setLayoutManager();
+        }
         if (recordsAdapter != null) {
             recordsAdapter.setGridSpan(currentGridSpan);
+            // Card metrics depend on the resulting cell width, so every item must rebind.
+            recordsAdapter.refreshLayoutMetrics();
         }
         updateFabIcons();
     }
@@ -4825,6 +4844,13 @@ public class RecordsFragment extends BaseFragment implements
                     if (recordsAdapter != null) {
                         // Adapter will read prefs but force refresh
                         recordsAdapter.notifyDataSetChanged();
+                    }
+                    break;
+                case "hide_details_toggled":
+                    boolean hideDetails = bundle.getBoolean("hide_details", false);
+                    FLog.d(TAG, "Records sidebar: hide_details_toggled = " + hideDetails);
+                    if (recordsAdapter != null) {
+                        recordsAdapter.setHideMetadata(hideDetails);
                     }
                     break;
             }

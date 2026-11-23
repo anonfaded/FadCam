@@ -1417,6 +1417,15 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putInt(Constants.PREF_RECORDS_GRID_SPAN, span).apply();
     }
 
+    /** Whether the Records grid hides file names and metadata and shows thumbnails only. */
+    public boolean isRecordsHideMetadataEnabled() {
+        return safeGetBoolean(Constants.PREF_RECORDS_HIDE_METADATA, false);
+    }
+
+    public void setRecordsHideMetadataEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_RECORDS_HIDE_METADATA, enabled).apply();
+    }
+
     public boolean isWatermarkDayEnabled() {
         return safeGetBoolean(Constants.PREF_WATERMARK_DAY, true); // default ON
     }

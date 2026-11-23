@@ -3233,4 +3233,5 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">Γεια!</string>
     <string name="zoom_lens_unavailable_banner">Αυτό το τηλέφωνο δεν εκθέτει την υπερευρυγώνια κάμερα στις εφαρμογές. Το zoom κάτω από 1.0x θα παραμένει στο 1.0x.</string>
+    <string name="records_display_group_title">Εμφάνιση</string>
 </resources>

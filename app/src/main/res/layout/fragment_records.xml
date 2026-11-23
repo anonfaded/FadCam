@@ -337,12 +337,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Floating dock for filter chips: card hugs the chips and stays centered,
-         sort button stays right-aligned -->
-    <FrameLayout
+    <!-- Filter dock: the chip rail takes the remaining width so the select-mode
+         button can never sit on top of a chip. -->
+    <LinearLayout
         android:id="@+id/records_filter_row"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="6dp"
@@ -353,9 +355,9 @@
 
         <androidx.cardview.widget.CardView
             android:id="@+id/records_filter_card"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="center|center_vertical"
+            android:layout_weight="1"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp"
             app:cardBackgroundColor="?attr/colorTopBar">
@@ -438,15 +440,14 @@
             android:id="@+id/btn_filter_checklist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="end|center_vertical"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="8dp"
             android:fontFamily="@font/materialicons"
             android:text="checklist"
             android:textColor="#666666"
             android:textSize="20sp"
             android:padding="4dp"
             android:contentDescription="@string/records_filter_checklist_desc" />
-    </FrameLayout>
+    </LinearLayout>
 
     <!-- Floating dock for camera filter chips -->
     <LinearLayout

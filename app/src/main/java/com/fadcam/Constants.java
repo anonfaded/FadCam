@@ -17,6 +17,7 @@ public abstract class Constants {
         "video_resolution_width";
     public static final String PREF_RECORDS_SORT = "records_sort_option"; // LATEST_FIRST|OLDEST_FIRST|SMALLEST_FILES|LARGEST_FILES
     public static final String PREF_RECORDS_GRID_SPAN = "records_grid_span"; // 1|2|3|4|5
+    public static final String PREF_RECORDS_HIDE_METADATA = "records_hide_metadata";
     public static final String PREF_VIDEO_RESOLUTION_HEIGHT =
         "video_resolution_height";
     public static final String PREF_VIDEO_FRAME_RATE = "video_frame_rate";

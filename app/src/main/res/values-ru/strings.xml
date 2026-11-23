@@ -3803,4 +3803,5 @@ FadCam использует фрагментированный формат MP4 
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">Привет!</string>
     <string name="zoom_lens_unavailable_banner">Этот телефон не предоставляет сверхширокоугольную камеру приложениям. Зум ниже 1.0x останется на 1.0x.</string>
+    <string name="records_display_group_title">Отображение</string>
 </resources>

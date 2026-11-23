@@ -4861,4 +4861,5 @@
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">أهلًا!</string>
     <string name="zoom_lens_unavailable_banner">هذا الهاتف لا يتيح كاميرا واسعة الزاوية للتطبيقات. التقريب أقل من 1.0x سيبقى عند 1.0x.</string>
+    <string name="records_display_group_title">العرض</string>
 </resources>

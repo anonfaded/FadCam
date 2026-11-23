@@ -3237,4 +3237,5 @@ Tuyas para siempre.</string>
     <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
     <string name="onboarding_mascot_greeting_casual">¡Hola!</string>
     <string name="zoom_lens_unavailable_banner">Este teléfono no expone su cámara ultraangular a las apps. El zoom por debajo de 1.0x se quedará en 1.0x.</string>
+    <string name="records_display_group_title">Visualización</string>
 </resources>

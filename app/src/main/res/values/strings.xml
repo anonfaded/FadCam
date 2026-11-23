@@ -1960,6 +1960,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="records_grid_3">3 columns</string>
     <string name="records_grid_4">4 columns</string>
     <string name="records_grid_5">5 columns</string>
+    <string name="records_hide_details_title">Hide details</string>
+    <string name="records_hide_details_desc">Thumbnails only</string>
     <string name="records_grid_option">Grid Layout</string>
     <string name="records_grid_helper">Pick how many columns to show in gallery.</string>
     <string name="trash_item_thumbnail_desc">Trashed item thumbnail</string>
@@ -3488,4 +3490,5 @@ For the smoothest playback experience, you can use an external player like VLC. 
         <item quantity="one">%1$d library</item>
         <item quantity="other">%1$d libraries</item>
     </plurals>
+    <string name="records_display_group_title">Display</string>
 </resources>
