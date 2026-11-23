@@ -1580,10 +1580,106 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
+    private int platformStatusBarHeightPx = -1;
+
+    /** Status bar height from the platform, stable whether or not the bar is currently shown. */
+    private int getPlatformStatusBarHeight() {
+        if (platformStatusBarHeightPx < 0) {
+            int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
+            platformStatusBarHeightPx = id > 0 ? getResources().getDimensionPixelSize(id) : 0;
+        }
+        return platformStatusBarHeightPx;
+    }
+
+
+    private boolean immersiveDialogsRegistered = false;
+    // Status bar / cutout height in px, computed from the insets this activity receives.
+    private int topBandPx = 0;
+
+    /**
+     * Gives the band to the current screen: its header, its scroll container, or its root.
+     * Called from the inset dispatch and whenever a screen's view is created, so tab switches
+     * and sub-screens behave the same.
+     */
+    private void applyBandToCurrentFragment() {
+        // Both containers span the whole window, so neither may keep its own top padding:
+        // the screen inside applies the band, and its background fills it. Settings
+        // sub-screens live in the overlay container, which is why the band has to be pushed
+        // to both fragments rather than only the one in fragment_container.
+        for (int id : new int[]{R.id.fragment_container, R.id.overlay_fragment_container}) {
+            View container = findViewById(id);
+            if (container != null) {
+                container.setPadding(container.getPaddingLeft(), 0,
+                        container.getPaddingRight(), container.getPaddingBottom());
+            }
+        }
+        androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+        applyBandToFragment(fm.findFragmentById(R.id.fragment_container));
+        View overlay = findViewById(R.id.overlay_fragment_container);
+        if (overlay != null && overlay.getVisibility() == View.VISIBLE) {
+            applyBandToFragment(fm.findFragmentById(R.id.overlay_fragment_container));
+        }
+    }
+
+    /** Puts the band on a screen's header, scroll container or root, in that order. */
+    private void applyBandToFragment(androidx.fragment.app.Fragment fragment) {
+        if (fragment == null || fragment.getView() == null) return;
+        View root = fragment.getView();
+        View header = root.findViewById(R.id.header_bar);
+        if (header == null) header = root.findViewById(R.id.fixed_header);
+        if (header != null) {
+            // A header paints the band with its own colour; its content sits below the inset.
+            com.fadcam.ui.utils.HeaderInset.applyBand(header, topBandPx);
+            return;
+        }
+        View scroll = root.findViewById(R.id.screen_scroll);
+        if (scroll != null) {
+            // No header: put the band on the scroll container so the content can travel
+            // through it while scrolling instead of being clipped by a solid root padding.
+            com.fadcam.ui.utils.HeaderInset.applyScrollBand(scroll, topBandPx);
+            return;
+        }
+        com.fadcam.ui.utils.HeaderInset.applyBand(root, topBandPx);
+    }
+
+    /**
+     * Hides the bars on dialog windows and gives every new screen its top band.
+     *
+     * <p>Dialogs are handled by {@link com.fadcam.ui.utils.ImmersiveDialogs}, which is
+     * recursive so sheets shown through a fragment's child manager are covered too.</p>
+     */
+    private void registerImmersiveDialogs() {
+        if (immersiveDialogsRegistered) return;
+        immersiveDialogsRegistered = true;
+        com.fadcam.ui.utils.ImmersiveDialogs.install(this);
+        getSupportFragmentManager().registerFragmentLifecycleCallbacks(
+                new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+                    @Override
+                    public void onFragmentViewCreated(
+                            @androidx.annotation.NonNull androidx.fragment.app.FragmentManager fm,
+                            @androidx.annotation.NonNull androidx.fragment.app.Fragment f,
+                            @androidx.annotation.NonNull View v,
+                            @androidx.annotation.Nullable android.os.Bundle savedInstanceState) {
+                        if (f instanceof androidx.fragment.app.DialogFragment) return;
+                        // Push the band on the next frame, once the fragment has been laid out.
+                        v.post(MainActivity.this::applyBandToCurrentFragment);
+                    }
+                }, true);
+    }
+
+    @Override
+    protected void onPostResume() {
+        super.onPostResume();
+        registerImmersiveDialogs();
+        // Immersive shell, applied once the window is attached and focused. Running this from
+        // onWindowFocusChanged re-triggered focus and looped before the first frame, which left
+        // the window showing the theme background instead of the UI.
+        com.fadcam.ui.utils.ImmersiveMode.apply(this);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        // state)-----------
         applyCloakIfNeeded(false); // hide decoy overlay while active
         try {
             boolean cloak = SharedPreferencesManager.getInstance(this).isCloakRecentsEnabled();
@@ -2006,36 +2102,47 @@ public class MainActivity extends AppCompatActivity {
             boolean isWear = getPackageManager().hasSystemFeature("android.hardware.type.watch");
             boolean isFormFactorTV = isTV || isWear;
 
+            // The header keeps a painted band the height of the status bar area even while
+            // the bar itself is hidden, so the app never renders flush against the physical
+            // top edge or the display cutout. getInsetsIgnoringVisibility reports that height
+            // regardless of whether the bar is currently shown.
+            // A hidden status bar is reported inconsistently: 0 on some devices, the real
+            // height on others. The platform dimension plus the display cutout is stable either
+            // way, which is what makes the band identical on every phone.
+            int contentTopInset = Math.max(getPlatformStatusBarHeight(),
+                    insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout()).top);
+            topBandPx = isFormFactorTV ? 0 : contentTopInset;
+            applyBandToCurrentFragment();
+
             // Apply insets to main content areas
             View fragmentContainer = findViewById(R.id.fragment_container);
             View overlayContainer = findViewById(R.id.overlay_fragment_container);
             if (fragmentContainer != null) {
                 // fragment_container spans the full screen (behind the dock).
-                // paddingTop  → pushes content below the floating status_bar_scrim.
-                // paddingBottom → reserves space for the dock so layoutControls seats
-                //                 just above it; clipToPadding=false allows visual overflow
-                //                 behind/below the dock for the gradient and other effects.
+                // The top band is owned by the screen itself (header or scroll container),
+                // so the container only carries horizontal and bottom padding.
+                // clipToPadding=false allows visual overflow behind/below the dock.
                 // On TV/Wear: no status bar, no dock → all padding = 0.
                 ((ViewGroup) fragmentContainer).setClipToPadding(false);
                 ((ViewGroup) fragmentContainer).setClipChildren(false);
-                int contentTopPadding = isFormFactorTV ? 0 : systemBars.top;
                 // Fragment spans full screen (floating dock UX):
                 // paddingBottom = only the system gesture bar so the last interactive
                 // element is never hidden behind the gesture area.
                 // Dock clearance is handled per-fragment via layout_marginBottom=72dp.
                 int contentBottomPadding = isFormFactorTV ? 0 : systemBars.bottom;
+                // The top band belongs to the screen itself (header or scroll container), so
+                // the container only carries the horizontal and bottom insets.
                 fragmentContainer.setPadding(
-                        systemBars.left, contentTopPadding,
+                        systemBars.left, 0,
                         systemBars.right, contentBottomPadding);
             }
             if (overlayContainer != null) {
-                // Apply same insets to overlay container (for Trash, Settings sheets, etc.)
-                // These fragments appear on top and need proper padding for system bars.
-                // On TV/Wear force top=0 (no status bar) and bottom=0 (no nav bar pill).
-                int overlayTop = isFormFactorTV ? 0 : systemBars.top;
+                // Overlay screens (Settings sub-screens, Trash) apply the top band through
+                // their own header, so the container only carries the horizontal and bottom
+                // insets. Padding it here is what left a solid strip above the header.
                 int overlayBottom = isFormFactorTV ? 0 : systemBars.bottom;
                 overlayContainer.setPadding(
-                        systemBars.left, overlayTop,
+                        systemBars.left, 0,
                         systemBars.right, overlayBottom);
             }
 
@@ -2049,13 +2156,10 @@ public class MainActivity extends AppCompatActivity {
                     statusBarScrim.setVisibility(View.GONE);
                     FLog.i("MainActivity", "TV/Wear: status_bar_scrim set to GONE");
                 } else {
-                    statusBarScrim.setVisibility(View.VISIBLE);
-                    int scrimHeight = systemBars.top;
-                    ViewGroup.LayoutParams scrimLp = statusBarScrim.getLayoutParams();
-                    if (scrimLp != null && scrimLp.height != scrimHeight) {
-                        scrimLp.height = scrimHeight;
-                        statusBarScrim.setLayoutParams(scrimLp);
-                    }
+                    // Each screen paints the band itself: a header with its own colour, or a
+                    // scroll container that lets content travel through it. A separate scrim
+                    // would paint first and flash before the fragment attaches.
+                    statusBarScrim.setVisibility(View.GONE);
                 }
             }
 

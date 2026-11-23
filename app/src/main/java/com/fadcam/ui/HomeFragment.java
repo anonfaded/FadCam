@@ -10669,29 +10669,12 @@ public class HomeFragment extends BaseFragment {
             return;
         }
 
-        // Initial hidden state
-        ivAppTitle.setAlpha(0f);
-
-        // Defer until layout to ensure precise positioning, though SLIDE_DP is fixed
-        ivAppTitle.post(() -> {
-            if (!isAdded()) return;
-            
-            float density = getResources().getDisplayMetrics().density;
-            float slideY = 18f * density; // Match DockRevealAnimator.SLIDE_DP
-
-            ivAppTitle.setTranslationY(slideY);
-            ivAppTitle.setAlpha(0f);
-
-            sLogoAnimationPlayed = true; // Mark before starting — prevents double-fire
-
-            ivAppTitle.animate()
-                    .translationY(0f)
-                    .alpha(1f)
-                    .setDuration(450) // Match DockRevealAnimator.EXPAND_DURATION
-                    .setStartDelay(50) // Match DockRevealAnimator.START_DELAY_MS
-                    .setInterpolator(new android.view.animation.PathInterpolator(0.2f, 1.0f, 0.3f, 1.0f))
-                    .start();
-        });
+        // The logo is static. The slide-in started from alpha 0 after a layout post, which left
+        // the header empty for the first frames and read as a late-loading logo on slower
+        // devices.
+        sLogoAnimationPlayed = true;
+        ivAppTitle.setTranslationY(0f);
+        ivAppTitle.setAlpha(1f);
     }
 
     /**

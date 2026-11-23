@@ -7,4 +7,5 @@
     <item name="tag_page_index" type="id"/>
     <item name="tag_page_active" type="id"/>
     <item name="press_scale_attached" type="id"/>
+    <item name="screen_header" type="id"/>
 </resources> 

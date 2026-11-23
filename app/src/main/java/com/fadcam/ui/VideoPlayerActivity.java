@@ -208,6 +208,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
 
         super.onCreate(savedInstanceState);
+        // Sheets opened from the player are separate windows and would otherwise bring the
+        // status/navigation bars back over the fullscreen video.
+        com.fadcam.ui.utils.ImmersiveDialogs.install(this);
         setContentView(com.fadcam.R.layout.activity_video_player);
         
         // Ensure hardware volume buttons control media (STREAM_MUSIC) volume

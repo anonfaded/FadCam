@@ -104,7 +104,16 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     // ── Views ────────────────────────────────────────────────────────────────
     private FrameLayout rootLayout;
-    private int stableStatusBarHeight = 0;
+    private int platformStatusBarHeightPx = -1;
+
+    /** Status bar height from the platform, stable whether or not the bar is currently shown. */
+    private int getPlatformStatusBarHeight() {
+        if (platformStatusBarHeightPx < 0) {
+            int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
+            platformStatusBarHeightPx = id > 0 ? getResources().getDimensionPixelSize(id) : 0;
+        }
+        return platformStatusBarHeightPx;
+    }
     private TextureView textureView;
     private View topBar;
     private View bottomBar;
@@ -300,6 +309,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         applyRuntimeTheme();
 
         super.onCreate(savedInstanceState);
+        // Picker sheets are separate windows; keep the status/navigation bars hidden on them
+        // as well, otherwise they reappear the moment a control is opened.
+        com.fadcam.ui.utils.ImmersiveDialogs.install(this);
+        // Draw into the display cutout instead of letting Android letterbox it black. The top
+        // bar is still pushed below the band in setupSystemInsets().
+        androidx.core.view.WindowCompat.enableEdgeToEdge(getWindow());
         setContentView(R.layout.activity_fullscreen_preview);
 
         prefs = SharedPreferencesManager.getInstance(this);
@@ -860,15 +875,16 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         if (rootLayout == null) return;
         ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, insets) -> {
             androidx.core.graphics.Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            // Capture stable status bar height on first non-zero value.
-            // When immersive mode hides the status bar, bars.top may become 0 —
-            // always use the stable value so the layout doesn't jump.
-            if (bars.top > 0) stableStatusBarHeight = bars.top;
-            int topInset = stableStatusBarHeight > 0 ? stableStatusBarHeight : bars.top;
-            
+            // A hidden status bar reports an inconsistent top inset (0 on some phones, its real
+            // height on others), so the band is derived from the platform dimension and the
+            // display cutout. That keeps the controls below a notch on every device and stops
+            // the layout from jumping when the bars are swiped back in.
+            int topBand = Math.max(getPlatformStatusBarHeight(),
+                    insets.getInsets(WindowInsetsCompat.Type.displayCutout()).top);
+
             if (topBar != null && topBar.getLayoutParams() instanceof FrameLayout.LayoutParams) {
                 FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) topBar.getLayoutParams();
-                lp.topMargin = topInset + dp(12);
+                lp.topMargin = topBand + dp(12);
                 topBar.setLayoutParams(lp);
             }
             if (bottomBar != null) {
@@ -877,6 +893,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
             return insets;
         });
+        ViewCompat.requestApplyInsets(rootLayout);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

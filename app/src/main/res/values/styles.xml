@@ -103,7 +103,11 @@
 
     <style name="CustomBottomSheetDialogTheme" parent="Theme.MaterialComponents.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
-        <item name="android:navigationBarColor">@color/black</item>
+        <!-- The sheet is its own window; Material only goes edge-to-edge in it when this is
+             enabled and the navigation bar colour is translucent. An opaque colour here made
+             every sheet stop above the hidden navigation bar. -->
+        <item name="enableEdgeToEdge">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
@@ -114,7 +118,8 @@
 
     <style name="CustomSideSheetDialogTheme" parent="ThemeOverlay.Material3.SideSheetDialog">
         <item name="sideSheetModalStyle">@style/CustomSideSheetStyle</item>
-        <item name="android:navigationBarColor">@color/black</item>
+        <item name="enableEdgeToEdge">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>

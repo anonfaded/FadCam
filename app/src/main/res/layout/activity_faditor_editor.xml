@@ -25,8 +25,7 @@
         android:paddingStart="4dp"
         android:paddingEnd="12dp"
         android:background="@drawable/editor_top_bar_bg"
-        android:elevation="2dp"
-        android:fitsSystemWindows="true">
+        android:elevation="2dp">
 
         <!-- Close button (Material Icon) -->
         <TextView

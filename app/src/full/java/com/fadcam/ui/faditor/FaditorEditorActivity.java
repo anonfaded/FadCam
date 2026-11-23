@@ -391,9 +391,38 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
     // ── Lifecycle ────────────────────────────────────────────────────
 
+    /**
+     * Gives the top bar the status bar / cutout height without replacing its own padding.
+     *
+     * <p>{@code fitsSystemWindows} would call {@code setPadding()} with the raw insets, which
+     * zeroes the start/end padding around the close and export buttons. Composing the inset
+     * with the designed padding keeps those buttons off the screen edges and lets the top bar's
+     * background fill the cutout area instead of leaving a black strip.</p>
+     */
+    private void applyTopBarInset() {
+        View root = findViewById(R.id.editor_root);
+        View topBar = findViewById(R.id.editor_top_bar);
+        if (root == null || topBar == null) return;
+        final int baseTop = topBar.getPaddingTop();
+        final int baseLeft = topBar.getPaddingLeft();
+        final int baseRight = topBar.getPaddingRight();
+        final int baseBottom = topBar.getPaddingBottom();
+        ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars()
+                    | WindowInsetsCompat.Type.displayCutout());
+            topBar.setPadding(baseLeft, baseTop + bars.top, baseRight, baseBottom);
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(root);
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Sheets opened from the editor are separate windows; without this they bring the
+        // status and navigation bars back over the fullscreen editor.
+        com.fadcam.ui.utils.ImmersiveDialogs.install(this);
 
         // Register asset picker launchers (must be before onStart)
         registerAssetPickers();
@@ -402,11 +431,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         // ── True fullscreen: hide status bar and nav bar ────────────
+        WindowCompat.enableEdgeToEdge(getWindow());
         com.fadcam.util.SystemBarUtil.hideSystemBars(getWindow().getDecorView());
 
         setContentView(R.layout.activity_faditor_editor);
-
-        // fitsSystemWindows handles safe area automatically on topBar
+        applyTopBarInset();
 
         // Initialize preferences and remuxer
         prefsManager = SharedPreferencesManager.getInstance(this);
