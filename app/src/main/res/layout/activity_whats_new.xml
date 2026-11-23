@@ -223,8 +223,8 @@
                 android:layout_height="52dp"
                 android:text="Got It!"
                 android:textSize="15sp"
-                android:textColor="@android:color/white"
-                android:backgroundTint="#4CAF50"
+                android:textColor="@color/pro_background"
+                android:backgroundTint="@color/pro_gold"
                 app:cornerRadius="14dp"
                 android:enabled="false"
                 android:alpha="0.5" />

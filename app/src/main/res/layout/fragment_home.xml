@@ -40,7 +40,7 @@
                 android:text="Update"
                 android:textSize="8sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/white"
+                android:textColor="?attr/homeRailSegmentActiveText"
                 android:background="@drawable/badge_update_bg"
                 android:paddingHorizontal="4dp"
                 android:paddingVertical="1dp"
@@ -91,7 +91,7 @@
                 android:layout_gravity="top|end"
                 android:layout_marginTop="0dp"
                 android:layout_marginEnd="2dp"
-                android:background="@drawable/badge_update_bg"
+                android:background="@drawable/badge_dot_pro_alert"
                 android:visibility="gone" />
 
         </FrameLayout>
@@ -147,7 +147,7 @@
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="@dimen/home_row_padding_h" android:paddingTop="@dimen/home_row_padding_v" android:paddingEnd="@dimen/home_row_padding_h" android:paddingBottom="@dimen/home_row_padding_v" android:clipChildren="false" android:clipToPadding="false">
 
                         <FrameLayout android:layout_width="@dimen/home_row_icon_container_w" android:layout_height="@dimen/home_row_icon_container_h" android:layout_marginEnd="@dimen/home_row_icon_margin_end" android:clipChildren="false" android:clipToPadding="false">
-                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="@dimen/home_row_icon_size" android:layout_height="@dimen/home_row_icon_size" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="#4CAF50" android:textSize="@dimen/home_text_row_icon" android:gravity="center" />
+                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="@dimen/home_row_icon_size" android:layout_height="@dimen/home_row_icon_size" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="?attr/homeRailAccent" android:textSize="@dimen/home_text_row_icon" android:gravity="center" />
                         </FrameLayout>
 
                         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
@@ -501,7 +501,7 @@
             android:contentDescription="@string/universal_cancel" />
     </LinearLayout>
 
-    <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginStart="@dimen/home_preview_margin_h" android:layout_marginEnd="@dimen/home_preview_margin_h" android:layout_marginTop="@dimen/home_preview_margin_top" android:layout_marginBottom="@dimen/home_controls_bottom_margin" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:layout_constraintBottom_toTopOf="@id/layoutControls" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/banner_gps_warning" app:strokeColor="#4CAF50" app:strokeWidth="@dimen/home_preview_stroke_width" android:clipChildren="false" android:clipToPadding="false">
+    <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginStart="@dimen/home_preview_margin_h" android:layout_marginEnd="@dimen/home_preview_margin_h" android:layout_marginTop="@dimen/home_preview_margin_top" android:layout_marginBottom="@dimen/home_controls_bottom_margin" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:layout_constraintBottom_toTopOf="@id/layoutControls" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/banner_gps_warning" app:strokeColor="?attr/homeRailAccent" app:strokeWidth="@dimen/home_preview_stroke_width" android:clipChildren="false" android:clipToPadding="false">
 
         <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent" android:clipChildren="false" android:clipToPadding="false">
 

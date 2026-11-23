@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor;
 
+import com.fadcam.ui.faditor.util.FaditorPalette;
+
 import android.app.Dialog;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -168,7 +170,7 @@ public class SpeedPickerBottomSheet extends BottomSheetDialogFragment {
             icon.setText("fast_forward");
         }
         icon.setTextSize(20);
-        icon.setTextColor(isSelected ? 0xFF4CAF50 : 0xFF888888);
+        icon.setTextColor(isSelected ? FaditorPalette.ACCENT : 0xFF888888);
         LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(
                 (int) (28 * dp), (int) (28 * dp));
         iconLp.setMarginEnd((int) (16 * dp));
@@ -180,7 +182,7 @@ public class SpeedPickerBottomSheet extends BottomSheetDialogFragment {
         TextView label = new TextView(requireContext());
         label.setText(formatSpeed(speed));
         label.setTextSize(15);
-        label.setTextColor(isSelected ? 0xFF4CAF50 : 0xFFCCCCCC);
+        label.setTextColor(isSelected ? FaditorPalette.ACCENT : 0xFFCCCCCC);
         label.setTypeface(null, isSelected ? Typeface.BOLD : Typeface.NORMAL);
         LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
@@ -198,7 +200,7 @@ public class SpeedPickerBottomSheet extends BottomSheetDialogFragment {
             check.setTypeface(materialIcons);
             check.setText("check");
             check.setTextSize(20);
-            check.setTextColor(0xFF4CAF50);
+            check.setTextColor(FaditorPalette.ACCENT);
             check.setGravity(Gravity.CENTER);
             LinearLayout.LayoutParams checkLp = new LinearLayout.LayoutParams(
                     (int) (24 * dp), (int) (24 * dp));

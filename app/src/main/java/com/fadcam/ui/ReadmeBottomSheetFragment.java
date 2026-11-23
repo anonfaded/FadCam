@@ -58,7 +58,7 @@ public class ReadmeBottomSheetFragment extends BottomSheetDialogFragment {
                 linksCard.setId(View.generateViewId());
                 linksCard.setOrientation(LinearLayout.VERTICAL);
                 linksCard.setBackgroundResource(R.drawable.settings_group_card_bg);
-                int padH = dp(12); // mimic existing card internal horizontal padding
+                int padH = dp(16); // match the sheet content gutters
                 linksCard.setPadding(padH, dp(4), padH, dp(4));
 
                 // Website row (requested to be first)

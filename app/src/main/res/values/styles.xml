@@ -103,6 +103,23 @@
 
     <style name="CustomBottomSheetDialogTheme" parent="Theme.MaterialComponents.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
+        <!-- The dialog theme is a full theme, so it does not automatically inherit the app's
+             Material palette. Without these, controls inside sheets fall back to the default
+             Material purple. -->
+        <item name="colorPrimary">?attr/colorButton</item>
+        <item name="colorPrimaryVariant">?attr/colorButton</item>
+        <item name="colorSecondary">?attr/colorHeading</item>
+        <item name="colorSecondaryVariant">?attr/colorHeading</item>
+        <item name="colorAccent">?attr/colorHeading</item>
+        <item name="android:colorAccent">?attr/colorHeading</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+        <item name="colorSurface">?attr/colorDialog</item>
+        <item name="colorOnSurface">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">@android:color/darker_gray</item>
+        <item name="colorControlActivated">?attr/colorHeading</item>
+        <item name="colorControlNormal">@android:color/darker_gray</item>
         <!-- The sheet is its own window; Material only goes edge-to-edge in it when this is
              enabled and the navigation bar colour is translucent. An opaque colour here made
              every sheet stop above the hidden navigation bar. -->
@@ -118,6 +135,12 @@
 
     <style name="CustomSideSheetDialogTheme" parent="ThemeOverlay.Material3.SideSheetDialog">
         <item name="sideSheetModalStyle">@style/CustomSideSheetStyle</item>
+        <item name="colorPrimary">?attr/colorButton</item>
+        <item name="colorSecondary">?attr/colorHeading</item>
+        <item name="colorAccent">?attr/colorHeading</item>
+        <item name="android:colorAccent">?attr/colorHeading</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorOnSecondary">@android:color/white</item>
         <item name="enableEdgeToEdge">true</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">false</item>
@@ -275,23 +298,47 @@
         <item name="android:windowLightStatusBar">false</item>
     </style>
 
-    <!-- Faditor Editor dark immersive theme -->
+    <!-- What's New: fixed dark dossier surface with Pro gold accents. The activity runs on
+         its own theme so Material ripples/links never fall back to the stock purple baseline. -->
+    <style name="Theme.FadCam.WhatsNew" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/pro_gold</item>
+        <item name="colorPrimaryVariant">@color/pro_gold</item>
+        <item name="colorSecondary">@color/pro_gold</item>
+        <item name="colorSecondaryVariant">@color/pro_card_champagne</item>
+        <item name="colorAccent">@color/pro_gold</item>
+        <item name="colorOnPrimary">@color/pro_background</item>
+        <item name="colorOnSecondary">@color/pro_background</item>
+        <item name="colorSurface">@color/pro_surface</item>
+        <item name="colorOnSurface">@color/pro_text</item>
+        <item name="android:colorBackground">@color/pro_background</item>
+        <item name="android:windowBackground">@color/pro_background</item>
+        <item name="android:textColorPrimary">@color/pro_text</item>
+        <item name="android:textColorSecondary">@color/pro_text_secondary</item>
+        <item name="colorControlHighlight">#28E8C77B</item>
+        <item name="android:statusBarColor">#01000000</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/pro_background</item>
+    </style>
+
+    <!-- Faditor Editor dark immersive theme. Shares the Pro screen's champagne-gold
+         palette so the editor reads as part of the premium Faditor suite. -->
     <style name="Theme.FadCam.FaditorEditor" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorSurface">#FF1A1A1A</item>
+        <item name="colorSurface">@color/pro_surface</item>
         <item name="colorSurfaceVariant">#FF252525</item>
-        <item name="colorOnSurface">#FFFFFFFF</item>
-        <item name="colorOnSurfaceVariant">#FFAAAAAA</item>
-        <item name="colorPrimary">#FF4CAF50</item>
-        <item name="colorOnPrimary">#FF000000</item>
-        <item name="colorSecondaryContainer">#FF2E7D32</item>
-        <item name="android:windowBackground">#FF0D0D0D</item>
+        <item name="colorOnSurface">@color/pro_text</item>
+        <item name="colorOnSurfaceVariant">@color/pro_text_secondary</item>
+        <item name="colorPrimary">@color/pro_gold</item>
+        <item name="colorOnPrimary">@color/pro_background</item>
+        <item name="colorSecondary">@color/pro_card_champagne</item>
+        <item name="colorSecondaryContainer">@color/pro_card_badge_surface</item>
+        <item name="android:windowBackground">@color/pro_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">#FF1A1A1A</item>
+        <item name="android:navigationBarColor">@color/pro_surface</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <!-- Required for picker_bottom_sheet and InputActionBottomSheetFragment -->
         <item name="pickerTextSecondary">#999999</item>
         <item name="pickerTextPrimary">@android:color/white</item>
-        <item name="colorHeading">#FF4CAF50</item>
+        <item name="colorHeading">@color/pro_gold</item>
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF1A1A1A</item>
         <item name="pickerGradientEnd">#FF2A2A2A</item>

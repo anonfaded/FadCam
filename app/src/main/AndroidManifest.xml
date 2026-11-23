@@ -378,7 +378,7 @@
         </activity>
 
         <activity android:name=".ui.OnboardingActivity" android:theme="@style/Theme.FadCam.Onboarding" />
-        <activity android:name=".ui.WhatsNewActivity" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+        <activity android:name=".ui.WhatsNewActivity" android:theme="@style/Theme.FadCam.WhatsNew" />
 
         <activity 
             android:name=".ui.FadCamProActivity" 
@@ -408,6 +408,25 @@
 
         <!-- Screen Recording Service for FadRec feature -->
         <service android:name=".fadrec.services.ScreenRecordingService" android:enabled="true" android:exported="false" android:foregroundServiceType="mediaProjection|microphone" />
+
+        <!-- Quick Settings tile for FadRec screen recording start/stop -->
+        <service
+            android:name=".fadrec.services.ScreenRecordingTileService"
+            android:exported="true"
+            android:icon="@drawable/screen_recorder"
+            android:label="@string/qs_tile_fadrec_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <!-- Two-state tile: accessibility services expose it as a switch. -->
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+            <meta-data
+                android:name="android.service.quicksettings.TILE_CATEGORY"
+                android:value="android.service.quicksettings.CATEGORY_UTILITIES" />
+        </service>
 
         <!-- Floating controls overlay service for FadRec -->
         <service android:name=".fadrec.ui.FloatingControlsService" android:enabled="true" android:exported="false" />

@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor.timeline;
 
+import com.fadcam.ui.faditor.util.FaditorPalette;
+
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.Context;
@@ -169,21 +171,21 @@ public class TimelineView extends View {
         trackPaint.setStyle(Paint.Style.FILL);
 
         // Active region (subtle gradient will be set in onSizeChanged)
-        activePaint.setColor(0xFF263228);
+        activePaint.setColor(FaditorPalette.ACTIVE_REGION_FILL);
         activePaint.setStyle(Paint.Style.FILL);
 
         // Top/bottom borders of active region
-        activeTopBorderPaint.setColor(0xFF4CAF50);
+        activeTopBorderPaint.setColor(FaditorPalette.ACCENT);
         activeTopBorderPaint.setStyle(Paint.Style.FILL);
-        activeBottomBorderPaint.setColor(0xFF4CAF50);
+        activeBottomBorderPaint.setColor(FaditorPalette.ACCENT);
         activeBottomBorderPaint.setStyle(Paint.Style.FILL);
 
         // Trim handles — green pill
-        handlePaint.setColor(0xFF4CAF50);
+        handlePaint.setColor(FaditorPalette.ACCENT);
         handlePaint.setStyle(Paint.Style.FILL);
 
         // Handle notch (grip lines)
-        handleNotchPaint.setColor(0xCC1B5E20);
+        handleNotchPaint.setColor(FaditorPalette.HANDLE_NOTCH_SOLID);
         handleNotchPaint.setStyle(Paint.Style.FILL);
         handleNotchPaint.setStrokeCap(Paint.Cap.ROUND);
 

@@ -210,7 +210,7 @@
                             android:gravity="center"
                             android:fontFamily="@font/materialicons"
                             android:text="movie_edit"
-                            android:textColor="#4CAF50"
+                            android:textColor="@color/pro_gold"
                             android:textSize="28sp" />
                     </FrameLayout>
 
@@ -249,8 +249,9 @@
                     android:layout_marginTop="16dp"
                     android:text="@string/faditor_start_project"
                     android:textSize="14sp"
+                    android:textColor="@color/pro_background"
                     android:textAllCaps="false"
-                    app:backgroundTint="#4CAF50"
+                    app:backgroundTint="@color/pro_gold"
                     app:cornerRadius="12dp"
                     app:iconGravity="textStart"
                     app:iconPadding="8dp" />
@@ -395,7 +396,7 @@
                         android:layout_height="36dp"
                         android:gravity="center"
                         android:padding="0dp"
-                        app:buttonTint="#4CAF50" />
+                        app:buttonTint="@color/pro_gold" />
 
                     <TextView
                         android:id="@+id/tv_selection_count"

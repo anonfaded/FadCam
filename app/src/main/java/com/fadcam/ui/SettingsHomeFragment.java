@@ -268,11 +268,13 @@ public class SettingsHomeFragment extends Fragment {
         if (checkFadRec != null)
             checkFadRec.setText(mode == SettingsMode.FADREC ? "check_circle" : "radio_button_unchecked");
 
-        int green = 0xFF4CAF50;
+        android.util.TypedValue accentValue = new android.util.TypedValue();
+        requireContext().getTheme().resolveAttribute(R.attr.homeRailAccent, accentValue, true);
+        int accent = accentValue.data;
         int grey = 0xFF666666;
-        if (checkAll != null) checkAll.setTextColor(mode == SettingsMode.ALL ? green : grey);
-        if (checkFadCam != null) checkFadCam.setTextColor(mode == SettingsMode.FADCAM ? green : grey);
-        if (checkFadRec != null) checkFadRec.setTextColor(mode == SettingsMode.FADREC ? green : grey);
+        if (checkAll != null) checkAll.setTextColor(mode == SettingsMode.ALL ? accent : grey);
+        if (checkFadCam != null) checkFadCam.setTextColor(mode == SettingsMode.FADCAM ? accent : grey);
+        if (checkFadRec != null) checkFadRec.setTextColor(mode == SettingsMode.FADREC ? accent : grey);
     }
 
     /** Update the header button text/icon to reflect current mode. */
@@ -451,6 +453,12 @@ public class SettingsHomeFragment extends Fragment {
 
     /** Wire click handlers for all settings rows. */
     private void setupRowHandlers(View root) {
+        View searchBtn = root.findViewById(R.id.settings_search_btn);
+        if (searchBtn != null) {
+            searchBtn.setOnClickListener(v ->
+                    android.widget.Toast.makeText(requireContext(),
+                            R.string.settings_search_coming_soon, android.widget.Toast.LENGTH_SHORT).show());
+        }
         bindRow(root, R.id.row_haptics_settings,
                 () -> openSubFragment(new HapticsSettingsFragment()));
 

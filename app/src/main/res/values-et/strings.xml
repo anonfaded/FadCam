@@ -1894,15 +1894,6 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="fadcam_pro_feature_app_name">Kohandatud rakenduse nimi</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive pilve sünkroonimine</string>
     <string name="fadcam_pro_header_button">Hangi Pro</string>
-    <string name="player_info_title">Videoesitaja teave</string>
-    <string name="player_info_content"><![CDATA[
-<b>Killustatud MP4 vorming</b><br/><br/>
-FadCam kasutab salvestiste jaoks killustatud MP4 vormingut. See tähendab, et videod salvestatakse väikestesse segmentidesse ühe tervikliku faili asemel. Kasu on selles, et kui salvestamise ajal midagi läheb valesti, kaotad ainult viimased paar sekundit, mitte kogu video.<br/><br/>
-Kui video viimased paar sekundit tunduvad külmunud või vananenud, ära muretse — see ei ole viga! Salvestamise peatamisel võib praegune fragment veel oma tsükli lõpule viia (~3 sekundit), mis võib jätta lühikese vananenud kaadri lõppu.<br/><br/>
-<b>Esitaja piirangud</b><br/><br/>
-Sisseehitatud videoesitajal on mõned Androidi süsteemi piirangud. Võid märgata, et edenemisriba või helilaine kuju tundub veidi hüplik — see on normaalne käitumine ega ole viga.<br/><br/>
-Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siiski, integreeritud esitaja töötab igapäevaseks kasutamiseks hästi!
-    ]]></string>
     <string name="codec_hevc_incompatible_title">H.265 koodek ei ole otsevoogedastuse jaoks toetatud</string>
     <string name="codec_hevc_incompatible_message">📡 Otsevoogedastus HLS-i kaudu nõuab H.264 koodekit.\n\nH.265 ei ühildu brauseri mängijatega.\n\nKas soovid üle lülituda H.264-le ja alustada salvestamist?</string>
     <string name="codec_switch_and_record">Lülitu H.264-le ja salvesta</string>
@@ -2518,6 +2509,10 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="mini_apps_qr_scanner_reference">QR-skanneri viide</string>
 
     <string name="screen_recording_title">Ekraanisalvestus</string>
+    <string name="qs_tile_fadrec_subtitle">Salvesta ekraan</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Salvestamine</string>
+    <string name="qs_tile_fadrec_paused">Peatatud</string>
 
     <string name="screen_recording_notif_title">FadRec - Ekraanisalvestus</string>
 

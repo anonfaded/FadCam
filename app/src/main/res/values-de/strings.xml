@@ -1972,15 +1972,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="pattern_sos_desc">SOS-Morsecode-Muster: 3 kurze + 3 lange + 3 kurze Blitze</string>
     <string name="pattern_steady_desc">Dauerhaftes, gleichmäßiges Licht für normalen Taschenlampen-Gebrauch</string>
     <string name="pattern_strobe_desc">Schnelles Ein-Aus-Blinkmuster für Notsignalisierung</string>
-    <string name="player_info_content"><![CDATA[
-<b>Fragmentiertes MP4-Format</b><br/><br/>
-FadCam verwendet ein fragmentiertes MP4-Format für Aufnahmen. Das bedeutet, dass Videos in kleinen Segmenten statt einer einzigen Datei gespeichert werden. Der Vorteil ist, dass bei einem Problem während der Aufnahme nur die letzten Sekunden verloren gehen, nicht das gesamte Video.<br/><br/>
-Wenn die letzten Sekunden deines Videos eingefroren oder veraltet erscheinen, mach dir keine Sorgen – es ist kein Fehler! Wenn du die Aufnahme beendest, kann das aktuelle Fragment seinen Zyklus abschließen (~3 Sekunden), was ein kurzes Standbild am Ende hinterlassen kann.<br/><br/>
-<b>Player-Einschränkungen</b><br/><br/>
-Der integrierte Videoplayer unterliegt einigen Android-Systemeinschränkungen. Die Fortschrittsleiste oder Wellenform kann etwas sprunghaft erscheinen – dies ist normales Verhalten und kein Fehler.<br/><br/>
-Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwenden. Der integrierte Player funktioniert jedoch gut für den täglichen Gebrauch!
-    ]]></string>
-    <string name="player_info_title">Über den Videoplayer</string>
     <string name="prefs_import_export_subtitle">Backup, Wiederherstellung, Zurücksetzen</string>
     <string name="prefs_import_export_title">Import / Export</string>
     <string name="preview_dual_not_supported">Vorschau funktioniert nur mit Front-/Rückkameras</string>
@@ -2475,6 +2466,10 @@ Für die flüssigste Wiedergabe kannst du einen externen Player wie VLC verwende
     <string name="mini_apps_current_tools">Aktuelle Werkzeuge</string>
     <string name="mini_apps_qr_scanner_reference">QR-Scanner-Referenz</string>
     <string name="screen_recording_title">Bildschirmaufnahme</string>
+    <string name="qs_tile_fadrec_subtitle">Bildschirm aufnehmen</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Aufnahme</string>
+    <string name="qs_tile_fadrec_paused">Pausiert</string>
     <string name="screen_recording_notif_title">FadRec - Bildschirmaufnahme</string>
     <string name="screen_recording_saved">Bildschirmaufnahme gespeichert</string>
     <string name="screen_recording_tap_to_view">Tippe, um deine Aufnahme anzusehen</string>

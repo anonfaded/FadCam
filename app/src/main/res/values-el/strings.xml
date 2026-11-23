@@ -1944,15 +1944,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="fadcam_pro_feature_app_name">Προσαρμοσμένο Όνομα</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
     <string name="fadcam_pro_header_button">Απόκτησε το Pro</string>
-    <!-- Video Player Info Bottom Sheet -->
-    <string name="player_info_title">Σχετικά με τον Αναπαραγωγέα Βίντεο</string>
-    <string name="player_info_content"><![CDATA[
-<b>Κατακερματισμένη Μορφή MP4</b><br/><br/>
-Το FadCam χρησιμοποιεί κατακερματισμένη μορφή MP4 για εγγραφές.<br/><br/>
-<b>Περιορισμοί Αναπαραγωγής</b><br/><br/>
-Ο ενσωματωμένος αναπαραγωγέας έχει περιορισμούς συστήματος Android.<br/><br/>
-Για την πιο ομαλή εμπειρία, χρησιμοποιήστε εξωτερικό αναπαραγωγέα όπως VLC.
-    ]]></string>
     <!-- Codec Compatibility Strings -->
     <string name="codec_hevc_incompatible_title">Ο Κωδικοποιητής H.265 δεν Υποστηρίζεται για Ζωντανή Ροή</string>
     <string name="codec_hevc_incompatible_message">📡 Η ζωντανή ροή μέσω HLS απαιτεί H.264.
@@ -2614,6 +2605,10 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="mini_apps_qr_scanner_reference">Αναφορά Σαρωτή QR</string>
 
     <string name="screen_recording_title">Εγγραφή Οθόνης</string>
+    <string name="qs_tile_fadrec_subtitle">Εγγραφή οθόνης</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Εγγραφή</string>
+    <string name="qs_tile_fadrec_paused">Σε παύση</string>
 
     <string name="screen_recording_notif_title">FadRec - Εγγραφή Οθόνης</string>
 

@@ -1995,16 +1995,6 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="fadcam_pro_feature_faddrive">Sincronización en la nube FadDrive</string>
     <string name="fadcam_pro_header_button">Obtén Pro</string>
 
-    <!-- Video Player Info Bottom Sheet -->
-    <string name="player_info_title">Acerca del reproductor de video</string>
-    <string name="player_info_content"><![CDATA[
-<b>Formato MP4 fragmentado</b><br/><br/>
-FadCam usa un formato MP4 fragmentado para grabaciones. Esto significa que los videos se guardan en pequeños segmentos en lugar de un archivo completo. El beneficio es que si algo sale mal durante la grabación, solo pierdes los últimos segundos en lugar del video completo.<br/><br/>
-Si los últimos segundos de tu video parecen congelados o estáticos, no te preocupes — ¡no es un error! Cuando detienes la grabación, el fragmento actual puede completar su ciclo (~3 segundos), lo que puede dejar un breve marco estático al final.<br/><br/>
-<b>Limitaciones del reproductor</b><br/><br/>
-El reproductor de video integrado tiene algunas limitaciones del sistema Android. Puedes notar que la barra de progreso o la forma de onda aparecen ligeramente entrecortadas — este es un comportamiento normal y no un error.<br/><br/>
-Para la experiencia de reproducción más fluida, puedes usar un reproductor externo como VLC. ¡Dicho esto, el reproductor integrado funciona bien para uso cotidiano!
-    ]]></string>
 
     <!-- Codec Compatibility Strings -->
     <string name="codec_hevc_incompatible_title">Códec H.265 no soportado para transmisión en vivo</string>
@@ -2629,6 +2619,10 @@ Para la experiencia de reproducción más fluida, puedes usar un reproductor ext
 
     <!-- Screen Recording -->
     <string name="screen_recording_title">Grabación de pantalla</string>
+    <string name="qs_tile_fadrec_subtitle">Grabar pantalla</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Grabando</string>
+    <string name="qs_tile_fadrec_paused">Pausado</string>
     <string name="screen_recording_notif_title">FadRec - Grabación de pantalla</string>
     <string name="screen_recording_saved">Grabación de pantalla guardada</string>
     <string name="screen_recording_tap_to_view">Toca para ver tu grabación</string>

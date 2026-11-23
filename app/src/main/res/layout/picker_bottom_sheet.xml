@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/picker_root"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="8dp"
-    android:paddingBottom="20dp"
-    android:paddingStart="14dp"
-    android:paddingEnd="12dp">
+    android:fillViewport="true"
+    android:overScrollMode="ifContentScrolls"
+    android:clipToPadding="false">
+
+    <LinearLayout
+        android:id="@+id/picker_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="20dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="12dp">
 
     <!-- Header with close button and title -->
     <LinearLayout
@@ -54,130 +62,120 @@
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="12dp"/>
 
-    <!-- Scroll container to ensure long lists (e.g., zoom ratios) are scrollable -->
-    <ScrollView
-        android:id="@+id/picker_scroll"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:overScrollMode="ifContentScrolls"
-        android:fillViewport="true"
-        android:maxHeight="700dp"
-    android:clipToPadding="false"
->
+        android:orientation="vertical">
+        <!-- Card style container replicating settings group visual -->
         <LinearLayout
+            android:id="@+id/picker_card_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-            <!-- Card style container replicating settings group visual -->
+            android:orientation="vertical"
+            android:background="@drawable/settings_group_card_bg"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp">
+
+            <!-- Warning banner: shown when the caller provides one (e.g. unsupported feature) -->
             <LinearLayout
-                android:id="@+id/picker_card_container"
+                android:id="@+id/picker_banner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/picker_banner_bg"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginTop="10dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="10dp"
+                    android:fontFamily="@font/materialicons"
+                    android:gravity="center"
+                    android:text="block"
+                    android:textSize="18sp"
+                    android:textColor="#FFC107" />
+
+                <TextView
+                    android:id="@+id/picker_banner_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="#E8A33D"
+                    android:textSize="13sp"
+                    android:lineSpacingExtra="2dp"
+                    android:textAlignment="viewStart" />
+            </LinearLayout>
+
+            <!-- Switch row styled like other settings rows -->
+            <LinearLayout
+                android:id="@+id/picker_switch_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/settings_home_row_bg"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/picker_switch_label"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="?attr/pickerTextPrimary"
+                    android:textSize="16sp"
+                    android:textAlignment="viewStart" />
+
+                <com.fadcam.ui.AvatarToggleView
+                    android:id="@+id/picker_switch"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_gravity="center_vertical" />
+            </LinearLayout>
+
+            <!-- Divider below switch row to match settings dividers -->
+            <View
+                android:id="@+id/picker_switch_divider"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="12dp"
+                android:background="#404040"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/picker_list_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/settings_group_card_bg"
                 android:paddingStart="0dp"
-                android:paddingEnd="0dp">
-
-                <!-- Warning banner: shown when the caller provides one (e.g. unsupported feature) -->
-                <LinearLayout
-                    android:id="@+id/picker_banner"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="@drawable/picker_banner_bg"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginEnd="12dp"
-                    android:layout_marginTop="10dp"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="10dp"
-                        android:fontFamily="@font/materialicons"
-                        android:gravity="center"
-                        android:text="block"
-                        android:textSize="18sp"
-                        android:textColor="#FFC107" />
-
-                    <TextView
-                        android:id="@+id/picker_banner_text"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:textColor="#E8A33D"
-                        android:textSize="13sp"
-                        android:lineSpacingExtra="2dp"
-                        android:textAlignment="viewStart" />
-                </LinearLayout>
-
-                <!-- Switch row styled like other settings rows -->
-                <LinearLayout
-                    android:id="@+id/picker_switch_row"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:background="@drawable/settings_home_row_bg"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:id="@+id/picker_switch_label"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:textColor="?attr/pickerTextPrimary"
-                        android:textSize="16sp"
-                        android:textAlignment="viewStart" />
-
-                    <com.fadcam.ui.AvatarToggleView
-                        android:id="@+id/picker_switch"
-                        android:layout_width="52dp"
-                        android:layout_height="52dp"
-                        android:layout_gravity="center_vertical" />
-                </LinearLayout>
-
-                <!-- Divider below switch row to match settings dividers -->
-                <View
-                    android:id="@+id/picker_switch_divider"
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginStart="14dp"
-                    android:layout_marginEnd="12dp"
-                    android:background="#404040"
-                    android:visibility="gone" />
-
-                <LinearLayout
-                    android:id="@+id/picker_list_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"/>
-            </LinearLayout>
+                android:paddingEnd="0dp"/>
         </LinearLayout>
-    </ScrollView>
+    </LinearLayout>
 
-    <!-- Helper anchored below the scrollable options so it remains above system nav bars -->
-    <TextView
-        android:id="@+id/picker_helper"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:layout_marginBottom="10dp"
-        android:paddingStart="14dp"
-        android:paddingEnd="12dp"
-        android:textColor="@android:color/darker_gray"
-        android:textSize="13sp"
-        android:visibility="gone"
-        android:textAlignment="viewStart"/>
-</LinearLayout>
+<!-- Helper anchored below the scrollable options so it remains above system nav bars -->
+<TextView
+    android:id="@+id/picker_helper"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="10dp"
+    android:paddingStart="14dp"
+    android:paddingEnd="12dp"
+    android:textColor="@android:color/darker_gray"
+    android:textSize="13sp"
+    android:visibility="gone"
+    android:textAlignment="viewStart"/>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

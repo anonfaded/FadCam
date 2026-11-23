@@ -290,8 +290,10 @@ public class MainActivity extends AppCompatActivity {
                         bottomNavigationView.getOrCreateBadge(R.id.navigation_remote);
                     badge.setVisible(true);
                     badge.setText("NEW"); // Show "NEW" text instead of number
-                    badge.setBackgroundColor(0xFF4CAF50); // Green background
-                    badge.setBadgeTextColor(0xFFFFFFFF); // White text color
+                    badge.setBackgroundColor(androidx.core.content.ContextCompat.getColor(
+                            this, R.color.pro_gold)); // Champagne gold NEW badge
+                    badge.setBadgeTextColor(androidx.core.content.ContextCompat.getColor(
+                            this, R.color.pro_background)); // Dark ink on gold
                     FLog.d("MainActivity", "Badge shown for remote");
                 } catch (Exception e) {
                     FLog.e("MainActivity", "Error creating badge", e);
@@ -320,7 +322,8 @@ public class MainActivity extends AppCompatActivity {
                     badge.clearText();
                     badge.setHorizontalPadding(0);
                     badge.setVerticalPadding(0);
-                    badge.setBackgroundColor(0xFF4CAF50); // Green background
+                    badge.setBackgroundColor(androidx.core.content.ContextCompat.getColor(
+                            this, R.color.pro_gold)); // Champagne gold new-feature dot
                     FLog.d("MainActivity", "Badge shown for settings");
                 } catch (Exception e) {
                     FLog.e("MainActivity", "Error creating settings badge", e);
@@ -2095,6 +2098,14 @@ public class MainActivity extends AppCompatActivity {
         ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, insets) -> {
             androidx.core.graphics.Insets systemBars = insets
                     .getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+            // A hidden navigation bar still reports its height on some three-button devices.
+            // Only reserve its inset while it is actually visible, otherwise the dock and page
+            // content leave an empty strip at the bottom.
+            boolean navVisible = insets.isVisible(
+                    androidx.core.view.WindowInsetsCompat.Type.navigationBars());
+            int navLeft = navVisible ? systemBars.left : 0;
+            int navRight = navVisible ? systemBars.right : 0;
+            int navBottom = navVisible ? systemBars.bottom : 0;
 
             // Check if running on TV form factor (TV or Wear OS smartwatch)
             boolean isTV = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK)
@@ -2129,21 +2140,21 @@ public class MainActivity extends AppCompatActivity {
                 // paddingBottom = only the system gesture bar so the last interactive
                 // element is never hidden behind the gesture area.
                 // Dock clearance is handled per-fragment via layout_marginBottom=72dp.
-                int contentBottomPadding = isFormFactorTV ? 0 : systemBars.bottom;
+                int contentBottomPadding = isFormFactorTV ? 0 : navBottom;
                 // The top band belongs to the screen itself (header or scroll container), so
                 // the container only carries the horizontal and bottom insets.
                 fragmentContainer.setPadding(
-                        systemBars.left, 0,
-                        systemBars.right, contentBottomPadding);
+                        navLeft, 0,
+                        navRight, contentBottomPadding);
             }
             if (overlayContainer != null) {
                 // Overlay screens (Settings sub-screens, Trash) apply the top band through
                 // their own header, so the container only carries the horizontal and bottom
                 // insets. Padding it here is what left a solid strip above the header.
-                int overlayBottom = isFormFactorTV ? 0 : systemBars.bottom;
+                int overlayBottom = isFormFactorTV ? 0 : navBottom;
                 overlayContainer.setPadding(
-                        systemBars.left, 0,
-                        systemBars.right, overlayBottom);
+                        navLeft, 0,
+                        navRight, overlayBottom);
             }
 
             // Update status bar scrim height directly via LayoutParams.
@@ -2167,17 +2178,17 @@ public class MainActivity extends AppCompatActivity {
                 // In landscape, nav bar shifts to the right (systemBars.right > 0).
                 // Apply right inset alongside bottom so dock doesn't clip under the nav bar.
                 navContainer.setPadding(
-                        navBasePaddingStart + systemBars.left,
+                        navBasePaddingStart + navLeft,
                         navBasePaddingTop,
-                        navBasePaddingEnd + systemBars.right,
-                        navBasePaddingBottom + systemBars.bottom);
+                        navBasePaddingEnd + navRight,
+                        navBasePaddingBottom + navBottom);
             }
 
             // Extend gradient scrim height by systemBars.bottom so it always peeks above
             // the nav pill even on API 35+ where the window extends behind the nav bar.
             if (dockGradientScrim != null) {
                 ViewGroup.LayoutParams lp = dockGradientScrim.getLayoutParams();
-                int requiredHeight = dockGradientBaseHeightPx + systemBars.bottom;
+                int requiredHeight = dockGradientBaseHeightPx + navBottom;
                 if (lp != null && lp.height != requiredHeight) {
                     lp.height = requiredHeight;
                     dockGradientScrim.setLayoutParams(lp);

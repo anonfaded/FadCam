@@ -55,7 +55,7 @@
                     android:layout_height="18dp"
                     android:fontFamily="@font/materialicons"
                     android:text="check_circle"
-                    android:textColor="#4CAF50"
+                    android:textColor="?attr/homeRailAccent"
                     android:textSize="16sp"
                     android:gravity="center"/>
             </LinearLayout>

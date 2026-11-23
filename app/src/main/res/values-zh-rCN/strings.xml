@@ -1087,15 +1087,6 @@
     <string name="fadcam_pro_feature_user_icon">用户上传图标</string>
     <string name="fadcam_pro_feature_app_name">自定义应用名称</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive 云同步</string>
-    <string name="player_info_title">关于视频播放器</string>
-    <string name="player_info_content"><![CDATA[
-<b>分段式 MP4 格式</b><br/><br/>
-FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多个小片段，而不是一个完整的文件。这样做的好处是，如果在录制过程中出现问题，您只丢失最后几秒钟，而不是整个视频。<br/><br/>
-如果您视频的最后几秒看起来卡住或静止，请不要担心——这不是一个错误！当您停止录制时，当前片段可能仍在完成其循环（约 3 秒），这可能会在结尾留下一个短暂的静止画面。<br/><br/>
-<b>播放器限制</b><br/><br/>
-内置视频播放器存在一些安卓系统限制。您可能会注意到进度条或波形图看起来有些卡顿——这是正常行为，并非错误。<br/><br/>
-为了获得最流畅的播放体验，您可以使用像 VLC 这样的外部播放器。尽管如此，集成播放器在日常使用中也表现良好！
-    ]]></string>
     <string name="codec_hevc_incompatible_title">不支持 H.265 编解码器进行直播</string>
     <string name="codec_hevc_incompatible_message">📡 通过 HLS 进行直播需要 H.264 编解码器。\n\nH.265 与浏览器播放器不兼容。\n\n您想切换到 H.264 并开始录制吗？</string>
     <string name="codec_switch_and_record">切换到 H.264 并录制</string>
@@ -4450,6 +4441,10 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <string name="mini_apps_current_tools">当前工具</string>
     <string name="mini_apps_qr_scanner_reference">二维码扫描器参考</string>
     <string name="screen_recording_title">屏幕录制</string>
+    <string name="qs_tile_fadrec_subtitle">录制屏幕</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">录制中</string>
+    <string name="qs_tile_fadrec_paused">已暂停</string>
     <string name="screen_recording_notif_title">FadRec - 屏幕录制</string>
     <string name="screen_recording_saved">屏幕录制已保存</string>
     <string name="screen_recording_tap_to_view">点击查看您的录制内容</string>

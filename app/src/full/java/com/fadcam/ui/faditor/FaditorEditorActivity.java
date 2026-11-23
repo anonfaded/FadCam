@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor;
 
+import com.fadcam.ui.faditor.util.FaditorPalette;
+
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.ContentResolver;
@@ -1326,7 +1328,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             } else if (Math.abs(volume - 1f) < 0.01f) {
                 color = 0xFF888888; // default gray
             } else {
-                color = 0xFF4CAF50; // green for modified
+                color = FaditorPalette.ACCENT; // green for modified
             }
             toolMuteIcon.setTextColor(color);
 
@@ -1366,7 +1368,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void updateSpeedUI(float speed) {
         if (toolSpeedLabel != null) {
             toolSpeedLabel.setText(formatSpeed(speed));
-            int color = Math.abs(speed - 1f) < 0.001f ? 0xFF888888 : 0xFF4CAF50;
+            int color = Math.abs(speed - 1f) < 0.001f ? 0xFF888888 : FaditorPalette.ACCENT;
             toolSpeedLabel.setTextColor(color);
             TextView icon = findViewById(R.id.tool_speed_icon);
             if (icon != null) icon.setTextColor(color);
@@ -1393,7 +1395,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void updateRotateUI(int degrees) {
         boolean active = degrees != 0;
-        int color = active ? 0xFF4CAF50 : 0xFF888888;
+        int color = active ? FaditorPalette.ACCENT : 0xFF888888;
         if (toolRotateIcon != null) {
             toolRotateIcon.setTextColor(color);
             // Visually rotate the icon to show current rotation
@@ -1433,7 +1435,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void updateFlipUI(boolean flipH, boolean flipV) {
         boolean active = flipH || flipV;
-        int color = active ? 0xFF4CAF50 : 0xFF888888;
+        int color = active ? FaditorPalette.ACCENT : 0xFF888888;
         if (toolFlipIcon != null) {
             toolFlipIcon.setTextColor(color);
             // Mirror the icon when horizontally flipped
@@ -1672,7 +1674,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             View child = row.getChildAt(i);
             if (child instanceof TextView) {
                 boolean isActive = activeKey.equals(child.getTag());
-                ((TextView) child).setTextColor(isActive ? 0xFF4CAF50 : 0xFFCCCCCC);
+                ((TextView) child).setTextColor(isActive ? FaditorPalette.ACCENT : 0xFFCCCCCC);
                 ((TextView) child).setTypeface(null,
                         isActive ? Typeface.BOLD : Typeface.NORMAL);
             }
@@ -1774,7 +1776,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void updateCropUI(@NonNull String preset) {
         boolean active = !"none".equals(preset);
-        int color = active ? 0xFF4CAF50 : 0xFF888888;
+        int color = active ? FaditorPalette.ACCENT : 0xFF888888;
         if (toolCropIcon != null) {
             toolCropIcon.setTextColor(color);
         }
@@ -1824,7 +1826,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private void updateCanvasUI(@NonNull String preset) {
         boolean active = !"original".equals(preset);
-        int color = active ? 0xFF4CAF50 : 0xFF888888;
+        int color = active ? FaditorPalette.ACCENT : 0xFF888888;
         if (toolCanvasIcon != null) {
             toolCanvasIcon.setTextColor(color);
         }
@@ -2177,7 +2179,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private void updateAudioToolUI() {
         boolean hasAudio = project != null && project.getTimeline().hasAudioClips();
-        int color = hasAudio ? 0xFF4CAF50 : 0xFF888888;
+        int color = hasAudio ? FaditorPalette.ACCENT : 0xFF888888;
         if (toolAudioIcon != null) toolAudioIcon.setTextColor(color);
         if (toolAudioLabel != null) toolAudioLabel.setTextColor(color);
     }

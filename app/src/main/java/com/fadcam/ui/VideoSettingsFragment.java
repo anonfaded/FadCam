@@ -406,8 +406,13 @@ public class VideoSettingsFragment extends Fragment {
 
         // Lens row visibility — hide for Dual PiP and Front
         View lensRow = requireView().findViewById(R.id.row_lens);
+        View lensDivider = requireView().findViewById(R.id.divider_lens);
+        boolean showLens = cam == CameraType.BACK && availableBackCameras.size() > 0;
         if (lensRow != null) {
-            lensRow.setVisibility(cam == CameraType.BACK && availableBackCameras.size() > 0 ? View.VISIBLE : View.GONE);
+            lensRow.setVisibility(showLens ? View.VISIBLE : View.GONE);
+        }
+        if (lensDivider != null) {
+            lensDivider.setVisibility(showLens ? View.VISIBLE : View.GONE);
         }
     }
 

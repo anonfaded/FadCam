@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor;
 
+import com.fadcam.ui.faditor.util.FaditorPalette;
+
 import android.app.Dialog;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -123,17 +125,17 @@ public class FaditorInfoBottomSheet extends BottomSheetDialogFragment {
 
         // ── Info sections ───────────────────────────────────────
         addInfoSection(content, materialIcons, dp,
-                "movie_edit", 0xFF4CAF50,
+                "movie_edit", FaditorPalette.ACCENT,
                 R.string.faditor_info_how_title,
                 R.string.faditor_info_how_desc);
 
         addInfoSection(content, materialIcons, dp,
-                "sync", 0xFF42A5F5,
+                "sync", FaditorPalette.ACCENT,
                 R.string.faditor_info_convert_title,
                 R.string.faditor_info_convert_desc);
 
         addInfoSection(content, materialIcons, dp,
-                "save", 0xFFFF9800,
+                "save", FaditorPalette.ACCENT_DEEP,
                 R.string.faditor_info_export_title,
                 R.string.faditor_info_export_desc);
 
@@ -143,7 +145,7 @@ public class FaditorInfoBottomSheet extends BottomSheetDialogFragment {
                 R.string.faditor_info_temp_desc);
 
         addInfoSection(content, materialIcons, dp,
-                "history", 0xFFAB47BC,
+                "history", FaditorPalette.ACCENT,
                 R.string.faditor_info_projects_title,
                 R.string.faditor_info_projects_desc);
 

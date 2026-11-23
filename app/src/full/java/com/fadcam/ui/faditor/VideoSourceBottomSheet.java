@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor;
 
+import com.fadcam.ui.faditor.util.FaditorPalette;
+
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.app.Dialog;
@@ -220,7 +222,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         TextView icon = new TextView(requireContext());
         icon.setTypeface(iconFont);
         icon.setText("folder_open");
-        icon.setTextColor(0xFF42A5F5);
+        icon.setTextColor(FaditorPalette.ACCENT);
         icon.setTextSize(24);
         icon.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(
@@ -654,7 +656,7 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         TextView editIcon = new TextView(ctx);
         editIcon.setTypeface(iconFont);
         editIcon.setText("edit");
-        editIcon.setTextColor(0xFF4CAF50);
+        editIcon.setTextColor(FaditorPalette.ACCENT);
         editIcon.setTextSize(18);
         editIcon.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams editLp = new LinearLayout.LayoutParams(

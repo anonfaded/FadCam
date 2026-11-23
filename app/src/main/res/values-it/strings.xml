@@ -1851,8 +1851,6 @@
     <string name="fadcam_pro_feature_app_name">Nome app personalizzato</string>
     <string name="fadcam_pro_feature_faddrive">Sincronizzazione FadDrive</string>
     <string name="fadcam_pro_header_button">Ottieni Pro</string>
-    <string name="player_info_title">Info lettore video</string>
-    <string name="player_info_content">Codec supportati, risoluzione, bitrate, FPS.</string>
     <string name="codec_hevc_incompatible_title">H.265 non supportato per live streaming</string>
     <string name="codec_hevc_incompatible_message">H.265 non è compatibile con HLS. Passa a H.264.</string>
     <string name="codec_switch_and_record">Passa a H.264 e registra</string>
@@ -2502,6 +2500,10 @@
     <string name="mini_apps_qr_scanner_reference">Riferimento scanner QR</string>
 
     <string name="screen_recording_title">Registrazione schermo</string>
+    <string name="qs_tile_fadrec_subtitle">Registra schermo</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Registrazione</string>
+    <string name="qs_tile_fadrec_paused">In pausa</string>
 
     <string name="screen_recording_notif_title">FadRec - Registrazione schermo</string>
 

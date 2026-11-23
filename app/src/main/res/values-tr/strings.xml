@@ -2252,15 +2252,6 @@
     <string name="fadcam_pro_feature_app_name">Özel Uygulama Adı</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive Bulut Senkronizasyonu</string>
     <string name="fadcam_pro_header_button">Pro\'yu Al</string>
-    <string name="player_info_title">Video Oynatıcı Hakkında</string>
-    <string name="player_info_content"><![CDATA[
-<b>Parçalı MP4 Formatı</b><br/><br/>
-FadCam, kayıtlar için parçalı MP4 formatı kullanır. Bu, videoların tek bir tam dosya yerine küçük bölümler halinde kaydedildiği anlamına gelir. Bunun avantajı, kayıt sırasında bir sorun olursa, tüm video yerine yalnızca son birkaç saniyeyi kaybetmenizdir.<br/><br/>
-Videonuzun son birkaç saniyesi donuk veya eski görünüyorsa, endişelenmeyin — bu bir hata değil! Kaydı durdurduğunuzda, mevcut parça döngüsünü tamamlayabilir (~3 saniye), bu da sonunda kısa bir donuk kare bırakabilir.<br/><br/>
-<b>Oynatıcı Sınırlamaları</b><br/><br/>
-Yerleşik video oynatıcının bazı Android sistemi sınırlamaları vardır. İlerleme çubuğunun veya dalga formunun biraz hızlı göründüğünü fark edebilirsiniz — bu normal davranıştır ve bir hata değildir.<br/><br/>
-En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsiniz. Bununla birlikte, entegre oynatıcı günlük kullanım için iyi çalışır!
-    ]]></string>
     <string name="codec_hevc_incompatible_title">H.265 Kodek Canlı Yayın İçin Desteklenmiyor</string>
     <string name="codec_hevc_incompatible_message">📡 HLS üzerinden canlı yayın, H.264 kodek gerektirir.\n\nH.265, tarayıcı oynatıcılarla uyumlu değildir.\n\nH.264\'e geçip kayda başlamak ister misiniz?</string>
     <string name="codec_switch_and_record">H.264\'e Geç ve Kaydet</string>
@@ -2436,6 +2427,10 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="mini_apps_current_tools">Mevcut Araçlar</string>
     <string name="mini_apps_qr_scanner_reference">QR Tarayıcı referansı</string>
     <string name="screen_recording_title">Ekran Kaydı</string>
+    <string name="qs_tile_fadrec_subtitle">Ekranı kaydet</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Kaydediliyor</string>
+    <string name="qs_tile_fadrec_paused">Duraklatıldı</string>
     <string name="screen_recording_notif_title">FadRec - Ekran Kaydı</string>
     <string name="screen_recording_saved">Ekran Kaydı Kaydedildi</string>
     <string name="screen_recording_tap_to_view">Kaydınızı görüntülemek için dokunun</string>

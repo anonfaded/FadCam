@@ -6,16 +6,16 @@
             <solid android:color="@color/dark_card_background" />
         </shape>
     </item>
-    <!-- Filled progress uses the dossier red accent -->
+    <!-- Filled progress uses the Pro screen's champagne-gold ramp -->
     <item android:id="@android:id/progress">
         <clip>
             <shape android:shape="rectangle">
                 <gradient
                     android:type="linear"
                     android:angle="0"
-                    android:startColor="#B3322F"
-                    android:centerColor="#E43C3C"
-                    android:endColor="#FF6161" />
+                    android:startColor="#C6A66A"
+                    android:centerColor="#E8C77B"
+                    android:endColor="#FFD15C" />
             </shape>
         </clip>
     </item>

@@ -253,8 +253,8 @@ public class WhatsNewActivity extends AppCompatActivity {
                     if (changelogWebView != null) {
                         // Wrap HTML with proper styling and margins
                         String htmlContent = "<html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'><style>" +
-                            "body { color: #E0E0E0; background: transparent; font-family: sans-serif; margin: 0; padding: 0 12px; font-size: 12px; line-height: 1.4; } " +
-                            "a { color: #4CAF50; -webkit-tap-highlight-color: transparent; } " +
+                            "body { color: #B8B7B2; background: transparent; font-family: sans-serif; margin: 0; padding: 0 12px; font-size: 12px; line-height: 1.4; } " +
+                            "a { color: #E8C77B; -webkit-tap-highlight-color: transparent; } " +
                             ".social-btn { display: block; text-align: center; border-radius: 12px; padding: 12px; " +
                             "font-size: 14px; font-weight: 600; text-decoration: none; margin-bottom: 8px; " +
                             "-webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; } " +
@@ -393,22 +393,22 @@ public class WhatsNewActivity extends AppCompatActivity {
         public void updateProgress(int progress) {
             runOnUiThread(() -> {
                 if (scrollProgressBar != null) {
-                    // Smooth animation with color shift based on progress
+                    // Smooth animation with a champagne-gold shift based on progress
                     int targetProgress = Math.min(progress, 100);
                     scrollProgressBar.setProgress(targetProgress);
-                    
-                    // Add color shift: green -> bright green -> lime as progress increases
+
+                    // Follow the Pro screen's gold ramp: deep -> champagne -> bright.
                     if (targetProgress >= 80) {
                         scrollProgressBar.setProgressTintList(
-                            android.content.res.ColorStateList.valueOf(0xFF66BB6A) // Bright green
+                            android.content.res.ColorStateList.valueOf(0xFFFFD15C) // Pro check gold
                         );
                     } else if (targetProgress >= 50) {
                         scrollProgressBar.setProgressTintList(
-                            android.content.res.ColorStateList.valueOf(0xFF4CAF50) // Medium green
+                            android.content.res.ColorStateList.valueOf(0xFFE8C77B) // Pro gold
                         );
                     } else {
                         scrollProgressBar.setProgressTintList(
-                            android.content.res.ColorStateList.valueOf(0xFF45a049) // Dark green
+                            android.content.res.ColorStateList.valueOf(0xFFC6A66A) // Pro champagne
                         );
                     }
                 }

@@ -672,6 +672,8 @@
     <string name="discord_title">Discord Server</string>
     <string name="thankyou_msg">Thank you for using FadCam!</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_search_label">Search</string>
+    <string name="settings_search_coming_soon">Search is coming soon.</string>
     <string name="array_watermark_time_fadcam">Time with Fadcam</string>
     <string name="array_watermark_timeonly">Timestamp</string>
     <string name="array_watermark_nomark">No Watermark</string>
@@ -2173,17 +2175,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
     <string name="fadcam_pro_header_button">Get Pro</string>
 
-    <!-- Video Player Info Bottom Sheet -->
-    <string name="player_info_title">About the Video Player</string>
-    <string name="player_info_content"><![CDATA[
-<b>Fragmented MP4 Format</b><br/><br/>
-FadCam uses a fragmented MP4 format for recordings. This means videos are saved in small segments instead of one complete file. The benefit is that if something goes wrong during recording, you only lose the last few seconds instead of the entire video.<br/><br/>
-If the last few seconds of your video appear frozen or stale, don\'t worry — it\'s not a bug! When you stop recording, the current fragment may still complete its cycle (~3 seconds), which can leave a brief stale frame at the end.<br/><br/>
-<b>Player Limitations</b><br/><br/>
-The built-in video player has some Android system limitations. You may notice the progress bar or waveform appearing slightly snappy — this is normal behavior and not a bug.<br/><br/>
-For the smoothest playback experience, you can use an external player like VLC. That said, the integrated player works well for everyday use!
-    ]]></string>
-
     <!-- Codec Compatibility Strings -->
     <string name="codec_hevc_incompatible_title">H.265 Codec Not Supported for Live Streaming</string>
     <string name="codec_hevc_incompatible_message">📡 Live streaming via HLS requires H.264 codec.\n\nH.265 is not compatible with browser players.\n\nWould you like to switch to H.264 and start recording?</string>
@@ -2871,6 +2862,10 @@ For the smoothest playback experience, you can use an external player like VLC. 
 
     <!-- Screen Recording -->
     <string name="screen_recording_title">Screen Recording</string>
+    <string name="qs_tile_fadrec_subtitle">Record screen</string>
+    <string name="qs_tile_fadrec_recording">Recording</string>
+    <string name="qs_tile_fadrec_paused">Paused</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
     <string name="screen_recording_notif_title">FadRec - Screen Recording</string>
     <string name="screen_recording_saved">Screen Recording Saved</string>
     <string name="screen_recording_tap_to_view">Tap to view your recording</string>

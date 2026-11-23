@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor;
 
+import com.fadcam.ui.faditor.util.FaditorPalette;
+
 import android.app.Dialog;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -131,7 +133,7 @@ public class CropPickerBottomSheet extends BottomSheetDialogFragment {
             iconView.setTypeface(materialIcons);
             iconView.setText(icon);
             iconView.setTextSize(20);
-            iconView.setTextColor(selected ? 0xFF4CAF50 : 0xFF888888);
+            iconView.setTextColor(selected ? FaditorPalette.ACCENT : 0xFF888888);
             LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(
                     (int) (28 * dp), (int) (28 * dp));
             iconLp.setMarginEnd((int) (16 * dp));
@@ -143,7 +145,7 @@ public class CropPickerBottomSheet extends BottomSheetDialogFragment {
             TextView labelView = new TextView(requireContext());
             labelView.setText(label);
             labelView.setTextSize(15);
-            labelView.setTextColor(selected ? 0xFF4CAF50 : 0xFFCCCCCC);
+            labelView.setTextColor(selected ? FaditorPalette.ACCENT : 0xFFCCCCCC);
             labelView.setTypeface(null, selected ? Typeface.BOLD : Typeface.NORMAL);
             LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(
                     0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
@@ -156,7 +158,7 @@ public class CropPickerBottomSheet extends BottomSheetDialogFragment {
                 check.setTypeface(materialIcons);
                 check.setText("check");
                 check.setTextSize(20);
-                check.setTextColor(0xFF4CAF50);
+                check.setTextColor(FaditorPalette.ACCENT);
                 check.setGravity(Gravity.CENTER);
                 LinearLayout.LayoutParams checkLp = new LinearLayout.LayoutParams(
                         (int) (24 * dp), (int) (24 * dp));

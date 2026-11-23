@@ -88,9 +88,27 @@ public class QRScannerActivity extends AppCompatActivity {
     private androidx.camera.core.Camera camera;
     private ActivityResultLauncher<String> galleryLauncher;
 
+    private int platformStatusBarHeightPx = -1;
+
+    /** Status bar height from the platform, stable whether the bar is shown or hidden. */
+    private int getPlatformStatusBarHeight() {
+        if (platformStatusBarHeightPx < 0) {
+            int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
+            platformStatusBarHeightPx = id > 0 ? getResources().getDimensionPixelSize(id) : 0;
+        }
+        return platformStatusBarHeightPx;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        com.fadcam.ui.utils.ImmersiveMode.apply(this);
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        androidx.core.view.WindowCompat.enableEdgeToEdge(getWindow());
         setContentView(R.layout.activity_qr_scanner);
         ivTorch = findViewById(R.id.qr_torch);
         ImageView ivClose = findViewById(R.id.qr_close);
@@ -115,13 +133,31 @@ public class QRScannerActivity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 this::onGalleryImagePicked);
 
+        View root = findViewById(android.R.id.content);
         View headerBar = findViewById(R.id.qr_header_bar);
-        if (headerBar != null) headerBar.setOnApplyWindowInsetsListener((v, ins) -> {
-            int top = ins.getInsets(android.view.WindowInsets.Type.systemBars()).top;
-            v.setPadding(v.getPaddingLeft(), v.getPaddingTop() + top,
-                    v.getPaddingRight(), v.getPaddingBottom());
-            return ins;
-        });
+        View bottomBar = findViewById(R.id.qr_bottom_bar);
+        if (root != null && headerBar != null) {
+            final int headerBaseTop = headerBar.getPaddingTop();
+            final int bottomBaseBottom = bottomBar != null ? bottomBar.getPaddingBottom() : 0;
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root, (v, ins) -> {
+                androidx.core.graphics.Insets bars = ins.getInsets(
+                        androidx.core.view.WindowInsetsCompat.Type.systemBars());
+                int band = Math.max(getPlatformStatusBarHeight(),
+                        ins.getInsets(androidx.core.view.WindowInsetsCompat.Type.displayCutout()).top);
+                headerBar.setPadding(headerBar.getPaddingLeft(), headerBaseTop + band,
+                        headerBar.getPaddingRight(), headerBar.getPaddingBottom());
+                if (bottomBar != null) {
+                    int navBottom = ins.isVisible(
+                            androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+                            ? bars.bottom : 0;
+                    bottomBar.setPadding(bottomBar.getPaddingLeft(), bottomBar.getPaddingTop(),
+                            bottomBar.getPaddingRight(), bottomBaseBottom + navBottom);
+                }
+                return ins;
+            });
+            androidx.core.view.ViewCompat.requestApplyInsets(root);
+        }
+        com.fadcam.ui.utils.ImmersiveMode.apply(this);
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, RC_CAMERA);

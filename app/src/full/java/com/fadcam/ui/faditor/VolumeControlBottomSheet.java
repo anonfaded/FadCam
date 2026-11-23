@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor;
 
+import com.fadcam.ui.faditor.util.FaditorPalette;
+
 import android.app.Dialog;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -357,7 +359,7 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
             icon.setTextColor(0xFF888888);
         } else if (volume <= 1.0f) {
             icon.setText("volume_up");
-            icon.setTextColor(0xFF4CAF50);
+            icon.setTextColor(FaditorPalette.ACCENT);
         } else {
             icon.setText("volume_up");
             icon.setTextColor(0xFFF44336);
@@ -374,8 +376,8 @@ public class VolumeControlBottomSheet extends BottomSheetDialogFragment {
             trackColor = 0xFFF44336;
             thumbColor = 0xFFF44336;
         } else {
-            trackColor = 0xFF4CAF50;
-            thumbColor = 0xFF4CAF50;
+            trackColor = FaditorPalette.ACCENT;
+            thumbColor = FaditorPalette.ACCENT;
         }
 
         slider.setTrackActiveTintList(

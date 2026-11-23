@@ -2046,16 +2046,6 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="fadcam_pro_feature_faddrive">Sinkronisasi Cloud FadDrive</string>
     <string name="fadcam_pro_header_button">Dapatkan Pro</string>
 
-    <!-- Video Player Info Bottom Sheet -->
-    <string name="player_info_title">Tentang Pemutar Video</string>
-    <string name="player_info_content"><![CDATA[
-<b>Format MP4 Terfragmentasi</b><br/><br/>
-FadCam menggunakan format MP4 terfragmentasi untuk rekaman. Artinya video disimpan dalam segmen kecil alih-alih satu file lengkap. Keuntungannya adalah jika terjadi kesalahan selama perekaman, Anda hanya kehilangan beberapa detik terakhir, bukan seluruh video.<br/><br/>
-Jika beberapa detik terakhir video Anda tampak beku atau tidak berubah, jangan khawatir — itu bukan bug! Saat Anda menghentikan perekaman, fragmen saat ini mungkin masih menyelesaikan siklusnya (~3 detik), yang dapat meninggalkan bingkai beku singkat di akhir.<br/><br/>
-<b>Keterbatasan Pemutar</b><br/><br/>
-Pemutar video bawaan memiliki beberapa keterbatasan sistem Android. Anda mungkin melihat bilah progres atau gelombang audio tampak sedikit tersentak — ini adalah perilaku normal dan bukan bug.<br/><br/>
-Untuk pengalaman pemutaran paling mulus, Anda dapat menggunakan pemutar eksternal seperti VLC. Meskipun demikian, pemutar terintegrasi bekerja dengan baik untuk penggunaan sehari-hari!
-    ]]></string>
 
     <!-- Codec Compatibility Strings -->
     <string name="codec_hevc_incompatible_title">Codec H.265 Tidak Didukung untuk Streaming Langsung</string>
@@ -2773,6 +2763,10 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="mini_apps_qr_scanner_reference">Referensi pemindai QR</string>
 
     <string name="screen_recording_title">Rekaman Layar</string>
+    <string name="qs_tile_fadrec_subtitle">Rekam layar</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Merekam</string>
+    <string name="qs_tile_fadrec_paused">Dijeda</string>
 
     <string name="screen_recording_notif_title">FadRec - Rekaman Layar</string>
 

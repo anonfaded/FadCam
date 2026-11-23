@@ -1440,15 +1440,6 @@ Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programm
     <string name="playback_speed_label">Playback Suraat</string>
     <string name="playback_speed_subtitle">Change playback speed for da video</string>
     <string name="playback_speed_title">Playback Suraat</string>
-    <string name="player_info_content"><![CDATA[
-<b>Fragmented MP4 Format</b><br/><br/>
-FadCam uses a fragmented MP4 format for recordings. This means videos are saved in small segments instead of one complete file. The benefit is that if something goes wrong during recording, you only lose the last few seconds instead of the entire video.<br/><br/>
-If the last few seconds of your video appear frozen or stale, don\'t worry — it\'s not a bug! When you stop recording, the current fragment may still complete its cycle (~3 seconds), which can leave a brief stale frame at the end.<br/><br/>
-<b>Player Limitations</b><br/><br/>
-The built-in video player has some Android system limitations. You may notice the progress bar or waveform appearing slightly snappy — this is normal behavior and not a bug.<br/><br/>
-For the smoothest playback experience, you can use an external player like VLC. That said, the integrated player works well for everyday use!
-    ]]></string>
-    <string name="player_info_title">Maloomat the Video Player</string>
     <string name="prefs_backup_title">Da Preferences Backup</string>
     <string name="prefs_export_failed">Export fail sho</string>
     <string name="prefs_export_label">Preferences Export Ka</string>
@@ -2538,6 +2529,10 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="mini_apps_qr_scanner_reference">QR Scanner hawalay</string>
 
     <string name="screen_recording_title">Screen Recording</string>
+    <string name="qs_tile_fadrec_subtitle">سکرین ثبت کړئ</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">ثبت</string>
+    <string name="qs_tile_fadrec_paused">توقف شوی</string>
 
     <string name="screen_recording_notif_title">FadRec - Screen Recording</string>
 

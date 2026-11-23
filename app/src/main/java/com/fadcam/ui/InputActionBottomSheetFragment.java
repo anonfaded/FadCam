@@ -294,7 +294,9 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         // ── Summary chip (rounded, matches picker banner style) ──────
         TextView summaryChip = new TextView(requireContext());
         summaryChip.setText(getString(R.string.prefs_preview_ready, entries.size()));
-        summaryChip.setTextColor(0xFF4CAF50);
+        android.util.TypedValue accentValue = new android.util.TypedValue();
+        requireContext().getTheme().resolveAttribute(R.attr.homeRailAccent, accentValue, true);
+        summaryChip.setTextColor(accentValue.data);
         summaryChip.setTextSize(13f);
         summaryChip.setGravity(android.view.Gravity.CENTER_VERTICAL);
         summaryChip.setPadding(dp(14), dp(10), dp(14), dp(10));

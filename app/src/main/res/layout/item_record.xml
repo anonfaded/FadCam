@@ -90,7 +90,7 @@
                     android:paddingVertical="@dimen/records_badge_pad_v"
                     android:maxLines="1"
                     android:text="@string/badge_new"
-                    android:textColor="@color/white"
+                    android:textColor="@color/pro_background"
                     android:textSize="@dimen/records_badge_text"
                     android:textStyle="bold"
                     android:visibility="gone" />

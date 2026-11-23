@@ -13388,10 +13388,12 @@ public class HomeFragment extends BaseFragment {
         if (tvSpaceSubtitle != null) tvSpaceSubtitle.setTextColor(Color.WHITE);
         updateElapsedHeroAppearance();
 
-        // Keep semantic colors for icons but ensure they're visible on light background
+        // Keep the camera accent on-theme; the theme's rail accent is already tuned
+        // for contrast on the light card (dark gold for Premium Gold, etc.).
         if (ivCameraIcon != null) {
-            // Keep green color for camera icon but use a darker shade for better contrast
-            ivCameraIcon.setTextColor(Color.parseColor("#2E7D32")); // Darker green for better contrast
+            android.util.TypedValue accent = new android.util.TypedValue();
+            requireContext().getTheme().resolveAttribute(R.attr.homeRailAccent, accent, true);
+            ivCameraIcon.setTextColor(accent.data);
         }
 
         // Handle other icons by finding them in the storage card

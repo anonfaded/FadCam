@@ -228,14 +228,23 @@ public class FadCamProActivity extends AppCompatActivity {
             // inset so the crown rain starts at the screen top while its content stays below.
             Insets safe = insets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars()
                     | WindowInsetsCompat.Type.displayCutout());
-            v.setPadding(bars.left, 0, bars.right, 0);
+            // Three-button navigation reports its height even while hidden. Only reserve the
+            // bottom inset when the bar is actually visible, otherwise the footer leaves an
+            // empty strip below the CTA.
+            int visibleNavBottom = insets.isVisible(
+                    WindowInsetsCompat.Type.navigationBars()) ? bars.bottom : 0;
+            int visibleNavLeft = insets.isVisible(
+                    WindowInsetsCompat.Type.navigationBars()) ? bars.left : 0;
+            int visibleNavRight = insets.isVisible(
+                    WindowInsetsCompat.Type.navigationBars()) ? bars.right : 0;
+            v.setPadding(visibleNavLeft, 0, visibleNavRight, 0);
             // The page's bottom surface runs behind the navigation bar, exactly like the hero art
             // runs behind the status bar. Only the bar's content keeps clear of it, so the CTA and
             // its caption stay out of the gesture area while the plate and the rain reach the edge.
             if (footerContent != null) {
                 // Only what the bar actually occupies: while it is hidden the bar's content drops
                 // to the bottom edge instead of reserving an empty strip.
-                int bottom = footerContentPadBottom + bars.bottom;
+                int bottom = footerContentPadBottom + visibleNavBottom;
                 if (footerContent.getPaddingBottom() != bottom) {
                     footerContent.setPadding(footerContent.getPaddingLeft(), footerContent.getPaddingTop(),
                             footerContent.getPaddingRight(), bottom);

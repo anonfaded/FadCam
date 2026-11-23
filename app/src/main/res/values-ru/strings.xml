@@ -1287,16 +1287,6 @@
     <string name="fadcam_pro_feature_faddrive">Облачный синк FadDrive</string>
     <string name="fadcam_pro_header_button">Получить Pro</string>
 
-    <!-- Video Player Info Bottom Sheet -->
-    <string name="player_info_title">О видеоплеере</string>
-    <string name="player_info_content"><![CDATA[
-<b>Формат фрагментированного MP4</b><br/><br/>
-FadCam использует фрагментированный формат MP4 для записей. Это означает, что видео сохраняются в небольших сегментах вместо одного полного файла. Преимущество в том, что если что-то пойдёт не так во время записи, вы потеряете только последние несколько секунд вместо всего видео.<br/><br/>
-Если последние несколько секунд вашего видео кажутся замороженными или устаревшими, не волнуйтесь — это не баг! Когда вы останавливаете запись, текущий фрагмент может ещё завершать свой цикл (~3 секунды), что может оставить краткий устаревший кадр в конце.<br/><br/>
-<b>Ограничения плеера</b><br/><br/>
-Встроенный видеоплеер имеет некоторые системные ограничения Android. Вы можете заметить, что полоса прогресса или волновая форма появляются слегка неуклюже — это нормальное поведение и не баг.<br/><br/>
-Для максимально плавного воспроизведения вы можете использовать внешний плеер, такой как VLC. Тем не менее, интегрированный плеер работает хорошо для повседневного использования!
-    ]]></string>
 
     <!-- Codec Compatibility Strings -->
     <string name="codec_hevc_incompatible_title">Кодек H.265 не поддерживается для живого стриминга</string>
@@ -3204,6 +3194,10 @@ FadCam использует фрагментированный формат MP4 
     <string name="mini_apps_current_tools">Текущие инструменты</string>
     <string name="mini_apps_qr_scanner_reference">Справочник QR-сканера</string>
     <string name="screen_recording_title">Запись экрана</string>
+    <string name="qs_tile_fadrec_subtitle">Записать экран</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Запись</string>
+    <string name="qs_tile_fadrec_paused">Приостановлено</string>
     <string name="screen_recording_notif_title">FadRec - Запись экрана</string>
     <string name="screen_recording_saved">Запись экрана сохранена</string>
     <string name="screen_recording_tap_to_view">Нажмите, чтобы просмотреть запись</string>

@@ -62,7 +62,7 @@
             android:gravity="center"
             android:fontFamily="@font/materialicons"
             android:text="upload"
-            android:textColor="#FF4CAF50"
+            android:textColor="@color/pro_gold"
             android:textSize="24sp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/faditor_export" />
@@ -720,7 +720,7 @@
                 android:gravity="center"
                 android:fontFamily="@font/materialicons"
                 android:text="check"
-                android:textColor="#FF4CAF50"
+                android:textColor="@color/pro_gold"
                 android:textSize="28sp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
@@ -753,7 +753,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/materialicons"
                 android:text="sync"
-                android:textColor="#4CAF50"
+                android:textColor="@color/pro_gold"
                 android:textSize="36sp"
                 android:layout_marginBottom="16dp" />
 
@@ -762,7 +762,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:indeterminate="true"
-                app:indicatorColor="#4CAF50"
+                app:indicatorColor="@color/pro_gold"
                 app:trackColor="#333333"
                 app:trackCornerRadius="4dp"
                 app:trackThickness="6dp" />
@@ -837,7 +837,7 @@
                 android:gravity="center"
                 android:fontFamily="@font/materialicons"
                 android:text="check"
-                android:textColor="#4CAF50"
+                android:textColor="@color/pro_gold"
                 android:textSize="24sp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:visibility="invisible"
@@ -861,7 +861,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/materialicons"
                 android:text="movie"
-                android:textColor="#4CAF50"
+                android:textColor="@color/pro_gold"
                 android:textSize="48sp"
                 android:layout_marginBottom="24dp" />
 
@@ -884,7 +884,7 @@
                 android:indeterminate="false"
                 android:max="100"
                 android:progress="0"
-                app:indicatorColor="#4CAF50"
+                app:indicatorColor="@color/pro_gold"
                 app:trackColor="#333333"
                 app:trackCornerRadius="4dp"
                 app:trackThickness="8dp" />

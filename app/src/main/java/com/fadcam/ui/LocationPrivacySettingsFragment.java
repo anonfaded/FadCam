@@ -14,7 +14,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -99,7 +98,7 @@ public class LocationPrivacySettingsFragment extends Fragment {
     }
 
     private void showPermissionDialog(boolean embedding, Runnable proceed){
-        new AlertDialog.Builder(requireContext(), com.google.android.material.R.style.MaterialAlertDialog_Material3)
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.location_permission_title)
                 .setMessage(R.string.location_permission_description)
                 .setPositiveButton("Grant", (d,w)->{

@@ -164,7 +164,7 @@
                                 android:textStyle="bold" android:textSize="12sp"/>
                             <TextView android:layout_width="wrap_content" android:layout_height="16dp"
                                 android:layout_marginStart="6dp" android:paddingHorizontal="6dp"
-                                android:text="@string/badge_new" android:textColor="#FFFFFF"
+                                android:text="@string/badge_new" android:textColor="@color/pro_background"
                                 android:textSize="8sp" android:textStyle="bold"
                                 android:gravity="center"
                                 android:background="@drawable/bg_badge_stable"/>
@@ -222,7 +222,7 @@
                                 android:textStyle="bold" android:textSize="12sp"/>
                             <TextView android:layout_width="wrap_content" android:layout_height="16dp"
                                 android:layout_marginStart="6dp" android:paddingHorizontal="6dp"
-                                android:text="@string/badge_new" android:textColor="#FFFFFF"
+                                android:text="@string/badge_new" android:textColor="@color/pro_background"
                                 android:textSize="8sp" android:textStyle="bold"
                                 android:gravity="center"
                                 android:background="@drawable/bg_badge_beta"/>
@@ -280,7 +280,7 @@
                                 android:textStyle="bold" android:textSize="12sp"/>
                              <TextView android:layout_width="wrap_content" android:layout_height="16dp"
                                 android:layout_marginStart="6dp" android:paddingHorizontal="6dp"
-                                android:text="@string/badge_new" android:textColor="#1A1A1A"
+                                android:text="@string/badge_new" android:textColor="@color/pro_background"
                                 android:textSize="8sp" android:textStyle="bold"
                                 android:gravity="center"
                                 android:background="@drawable/bg_badge_pro"/>
@@ -1417,11 +1417,11 @@
                             android:layout_height="16dp"
                             android:paddingHorizontal="6dp"
                             android:text="@string/badge_new"
-                            android:textColor="@android:color/white"
+                            android:textColor="@color/pro_background"
                             android:textSize="9sp"
                             android:textStyle="bold"
                             android:gravity="center"
-                            android:background="@drawable/bg_coming_soon_badge"
+                            android:background="@drawable/new_badge_background"
                             android:layout_marginStart="0dp"
                             android:visibility="gone" />
 

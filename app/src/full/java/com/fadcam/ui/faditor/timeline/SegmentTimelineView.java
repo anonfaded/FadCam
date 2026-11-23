@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor.timeline;
 
+import com.fadcam.ui.faditor.util.FaditorPalette;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -66,8 +68,8 @@ public class SegmentTimelineView extends View {
 
     // ── Colors ───────────────────────────────────────────────────────
     private static final int COLOR_SEGMENT_DEFAULT = 0xFF2A2A2A;
-    private static final int COLOR_SEGMENT_SELECTED = 0xFF1E3A22;
-    private static final int COLOR_BORDER_SELECTED = 0xFF4CAF50;
+    private static final int COLOR_SEGMENT_SELECTED = FaditorPalette.SELECTED_FILL;
+    private static final int COLOR_BORDER_SELECTED = FaditorPalette.ACCENT;
     private static final int COLOR_PLAYHEAD = 0xFFFFFFFF;
     private static final int COLOR_LABEL = 0xAAFFFFFF;
 

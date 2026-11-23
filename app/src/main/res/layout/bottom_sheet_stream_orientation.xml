@@ -68,7 +68,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@drawable/ic_check_circle"
-            android:tint="@android:color/holo_green_dark"
+            android:tint="?attr/homeRailAccent"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -116,7 +116,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@drawable/ic_check_circle"
-            android:tint="@android:color/holo_green_dark"
+            android:tint="?attr/homeRailAccent"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -163,7 +163,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@drawable/ic_check_circle"
-            android:tint="@android:color/holo_green_dark"
+            android:tint="?attr/homeRailAccent"
             android:visibility="gone" />
     </LinearLayout>
 

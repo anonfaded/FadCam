@@ -126,7 +126,7 @@
             android:layout_height="20dp"
             android:layout_gravity="center"
             android:src="@drawable/ic_check"
-            android:tint="#9CCC65" />
+            android:tint="?attr/homeRailAccent" />
         </FrameLayout>
     </LinearLayout>
 </LinearLayout>

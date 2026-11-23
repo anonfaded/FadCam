@@ -1,5 +1,7 @@
 package com.fadcam.ui;
 
+import com.fadcam.ui.faditor.util.FaditorPalette;
+
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.app.Activity;
@@ -517,7 +519,7 @@ public class FaditorMiniFragment extends BaseFragment {
         // ── Checkbox (only in selection mode) ────────────────────
         CheckBox cb = new CheckBox(requireContext());
         cb.setTag("checkbox");
-        cb.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+        cb.setButtonTintList(android.content.res.ColorStateList.valueOf(FaditorPalette.ACCENT));
         cb.setMinWidth(0);
         cb.setMinHeight(0);
         cb.setPadding(0, 0, 0, 0);

@@ -28,7 +28,13 @@ public class SplashActivity extends Activity {
             Class<?> destination = RuntimeCompat.shouldUseWatchUi(SplashActivity.this)
                     ? WatchMainActivity.class
                     : MainActivity.class;
-            startActivity(new Intent(SplashActivity.this, destination));
+            Intent next = new Intent(SplashActivity.this, destination);
+            // Keep notification/widget extras (e.g. navigate_to_tab) when the launcher
+            // entry point is the splash screen instead of MainActivity.
+            if (getIntent() != null) {
+                next.putExtras(getIntent());
+            }
+            startActivity(next);
             // Apply fade transition instead of default activity animation
             com.fadcam.Utils.overridePendingTransitionCompat(this, R.anim.fade_in, R.anim.fade_out);
             finish();

@@ -3205,16 +3205,7 @@
 
     <string name="fadcam_pro_header_button">احصل على برو</string>
 
-    <string name="player_info_title">حول مشغل الفيديو</string>
 
-    <string name="player_info_content"><![CDATA[
-<b>تنسيق MP4 المجزأ</b><br/><br/>
-يستخدم FadCam تنسيق MP4 مجزأ للتسجيلات. هذا يعني أن الفيديوهات تُحفظ في أجزاء صغيرة بدلاً من ملف واحد كامل. الفائدة هي أنه إذا حدث خطأ أثناء التسجيل، تفقد آخر بضع ثوانٍ فقط بدلاً من الفيديو بأكمله.<br/><br/>
-إذا كانت آخر بضع ثوانٍ من الفيديو تبدو مجمدة أو قديمة، لا تقلق — ليس خطأ! عند إيقاف التسجيل، قد يكمل الجزء الحالي دورته (~3 ثوانٍ)، مما يترك إطارًا قديمًاBrief في النهاية.<br/><br/>
-<b>قيود المشغل</b><br/><br/>
-يحتوي مشغل الفيديو المدمج على بعض قيود نظام Android. قد تلاحظ أن شريط التقدم أو الموجة يبدو متقطعًا قليلاً — هذا سلوك طبيعي وليس خطأ.<br/><br/>
-لتجربة تشغيل أكثر سلاسة، يمكنك استخدام مشغل خارجي مثل VLC. مع ذلك، المشغل المدمج يعمل جيدًا للاستخدام اليومي!
-    ]]></string>
 
     <string name="codec_hevc_incompatible_title">ترميز H.265 غير مدعوم للبث المباشر</string>
 
@@ -4244,6 +4235,10 @@
     <string name="mini_apps_qr_scanner_reference">مرجع ماسح QR</string>
 
     <string name="screen_recording_title">تسجيل الشاشة</string>
+    <string name="qs_tile_fadrec_subtitle">سجّل الشاشة</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">جارٍ التسجيل</string>
+    <string name="qs_tile_fadrec_paused">متوقف مؤقتًا</string>
 
     <string name="screen_recording_notif_title">FadRec - تسجيل الشاشة</string>
 

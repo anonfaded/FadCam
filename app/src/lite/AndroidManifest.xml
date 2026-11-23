@@ -50,6 +50,9 @@
             android:name="com.fadcam.fadrec.services.ScreenRecordingService"
             tools:node="remove" />
         <service
+            android:name="com.fadcam.fadrec.services.ScreenRecordingTileService"
+            tools:node="remove" />
+        <service
             android:name="com.fadcam.fadrec.ui.FloatingControlsService"
             tools:node="remove" />
         <service

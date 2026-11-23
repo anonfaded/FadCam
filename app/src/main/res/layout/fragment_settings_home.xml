@@ -81,6 +81,42 @@ app:layout_constraintTop_toTopOf="parent"
                 android:src="@drawable/ic_arrow_right"
                 android:tint="#A0A0A0"/>
         </LinearLayout>
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
+        <FrameLayout
+            android:id="@+id/settings_search_btn"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@string/settings_search_label">
+            <TextView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:text="search"
+                android:fontFamily="@font/materialicons"
+                android:textColor="#E0E0E0"
+                android:textSize="21sp"
+                android:background="?attr/selectableItemBackgroundBorderless"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
+                android:paddingTop="1dp"
+                android:paddingBottom="1dp"
+                android:text="SOON"
+                android:textColor="?attr/colorHeading"
+                android:textSize="6sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.08"
+                android:background="@drawable/badge_bg_neutral"/>
+        </FrameLayout>
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -319,8 +355,8 @@ app:layout_constraintTop_toTopOf="parent"
                     android:id="@+id/watermark_new_badge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/remote_coming_soon_badge"
-                    android:textColor="@android:color/white"
+                    android:text="@string/badge_new"
+                    android:textColor="@color/pro_background"
                     android:textSize="9sp"
                     android:textStyle="bold"
                     android:background="@drawable/new_badge_background"

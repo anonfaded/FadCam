@@ -42,7 +42,7 @@
                 android:text="Update"
                 android:textSize="8sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/white"
+                android:textColor="?attr/homeRailSegmentActiveText"
                 android:background="@drawable/badge_update_bg"
                 android:paddingHorizontal="4dp"
                 android:paddingVertical="1dp"
@@ -92,7 +92,7 @@
                 android:layout_gravity="top|end"
                 android:layout_marginTop="0dp"
                 android:layout_marginEnd="2dp"
-                android:background="@drawable/badge_update_bg"
+                android:background="@drawable/badge_dot_pro_alert"
                 android:visibility="gone" />
 
         </FrameLayout>
@@ -141,7 +141,7 @@
                             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="2dp" android:paddingTop="1dp" android:paddingEnd="2dp" android:paddingBottom="1dp">
 
                                 <FrameLayout android:layout_width="32dp" android:layout_height="28dp" android:layout_marginEnd="6dp">
-                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="#4CAF50" android:textSize="20sp" android:gravity="center" />
+                                    <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="28dp" android:layout_height="28dp" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="?attr/homeRailAccent" android:textSize="20sp" android:gravity="center" />
                                 </FrameLayout>
 
                                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
@@ -451,7 +451,7 @@
     <LinearLayout android:id="@+id/rightPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="3dp" android:layout_marginTop="4dp" android:layout_marginEnd="6dp" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toEndOf="@+id/cardRailToggleLandscape" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
         <!-- Camera Preview Area -->
-        <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:strokeColor="#4CAF50" app:strokeWidth="15dp">
+        <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:strokeColor="?attr/homeRailAccent" app:strokeWidth="15dp">
 
             <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent">
 

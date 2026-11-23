@@ -1,5 +1,7 @@
 package com.fadcam.ui.faditor.timeline;
 
+import com.fadcam.ui.faditor.util.FaditorPalette;
+
 import com.fadcam.Log;
 import com.fadcam.FLog;
 import android.content.Context;
@@ -86,19 +88,19 @@ public class EditorTimelineView extends View {
     private static final int COLOR_RULER_TICK     = 0xFF444444;
     private static final int COLOR_TRACK_BG       = 0xFF1A1A1A;
     private static final int COLOR_SEGMENT        = 0xFF2D2D2D;
-    private static final int COLOR_SEGMENT_SEL    = 0xFF1B3A20;
-    private static final int COLOR_BORDER_SEL     = 0xFF4CAF50;
-    private static final int COLOR_HANDLE         = 0xFF4CAF50;
-    private static final int COLOR_HANDLE_NOTCH   = 0xBB1B5E20;
+    private static final int COLOR_SEGMENT_SEL    = FaditorPalette.SELECTED_FILL;
+    private static final int COLOR_BORDER_SEL     = FaditorPalette.ACCENT;
+    private static final int COLOR_HANDLE         = FaditorPalette.ACCENT;
+    private static final int COLOR_HANDLE_NOTCH   = FaditorPalette.HANDLE_NOTCH;
     private static final int COLOR_PLAYHEAD       = 0xFFFFFFFF;
     private static final int COLOR_LABEL          = 0xBBFFFFFF;
-    private static final int COLOR_DRAG_GHOST     = 0x664CAF50;
-    private static final int COLOR_AUDIO_BG       = 0xFF1E2A1E;
-    private static final int COLOR_AUDIO_BG_SEL   = 0xFF1B3A20;
-    private static final int COLOR_AUDIO_WAVE     = 0xFF4CAF50;
+    private static final int COLOR_DRAG_GHOST     = FaditorPalette.ACCENT_GHOST;
+    private static final int COLOR_AUDIO_BG       = 0xFF1E1A12; // warm charcoal (gold family)
+    private static final int COLOR_AUDIO_BG_SEL   = FaditorPalette.SELECTED_FILL;
+    private static final int COLOR_AUDIO_WAVE     = FaditorPalette.ACCENT;
     private static final int COLOR_AUDIO_WAVE_MUTED = 0xFF555555;
-    private static final int COLOR_AUDIO_WAVE_DIM = 0x404CAF50; // Faded version for mirror half
-    private static final int COLOR_AUDIO_CENTERLINE = 0x334CAF50;
+    private static final int COLOR_AUDIO_WAVE_DIM = FaditorPalette.ACCENT_FAINT; // Faded version for mirror half
+    private static final int COLOR_AUDIO_CENTERLINE = FaditorPalette.ACCENT_SOFT;
     private static final int COLOR_AUDIO_LABEL    = 0xBBFFFFFF;
     private static final int COLOR_AUDIO_TRACK_BG = 0xFF151515;
 
@@ -399,7 +401,7 @@ public class EditorTimelineView extends View {
         dragGhostPaint.setStyle(Paint.Style.FILL);
         trimOverlayPaint.setColor(0x80000000);
         trimOverlayPaint.setStyle(Paint.Style.FILL);
-        trimRecoverPaint.setColor(0x404CAF50);
+        trimRecoverPaint.setColor(FaditorPalette.ACCENT_FAINT);
         trimRecoverPaint.setStyle(Paint.Style.FILL);
         edgeScrollZonePx = EDGE_SCROLL_ZONE_DP * density;
         edgeScrollMaxSpeedPx = EDGE_SCROLL_MAX_SPEED_DP * density;
@@ -1083,7 +1085,7 @@ public class EditorTimelineView extends View {
 
         // Darken overlay for selected segment (green tint)
         if (selected) {
-            segmentPaint.setColor(0x40004400);
+            segmentPaint.setColor(FaditorPalette.SELECTED_TINT);
             canvas.drawRect(rect, segmentPaint);
         } else {
             // Slight darken for unselected to make labels readable

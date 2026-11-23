@@ -511,6 +511,9 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
     }
 
     private String getFormattedFileSize() {
+        if (fileSize <= 0) {
+            return getString(R.string.video_info_unknown);
+        }
         return formatFileSize(fileSize);
     }
 
@@ -569,6 +572,9 @@ public class VideoInfoBottomSheet extends BottomSheetDialogFragment {
     }
 
     private String getFormattedLastModified() {
+        if (lastModified <= 0) {
+            return getString(R.string.video_info_unknown);
+        }
         Date d = new Date(lastModified);
         String abs = new SimpleDateFormat("MMM dd, yyyy  hh:mm:ss a", Locale.getDefault()).format(d);
         String rel = getRelativeTime(d);

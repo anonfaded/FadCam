@@ -370,7 +370,7 @@
                         android:paddingTop="2dp"
                         android:paddingBottom="2dp"
                         android:text="@string/badge_new"
-                        android:textColor="#FFFFFF"
+                        android:textColor="@color/pro_background"
                         android:textSize="9sp"
                         android:textStyle="bold"
                         android:visibility="visible" />

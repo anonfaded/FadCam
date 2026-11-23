@@ -51,7 +51,7 @@
             android:paddingTop="3dp"
             android:paddingEnd="8dp"
             android:paddingBottom="3dp"
-            android:textColor="@android:color/white"
+            android:textColor="@color/pro_background"
             android:textSize="10sp"
             android:textStyle="bold" />
 

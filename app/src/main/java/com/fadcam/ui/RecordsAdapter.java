@@ -1380,7 +1380,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (!isImage) {
             items.add(OptionItem.withLigatureBadge("action_upload_faddrive",
                     ctx.getString(R.string.video_menu_upload_faddrive, "Upload to FadDrive"), "cloud",
-                    ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
+                    ctx.getString(R.string.remote_coming_soon_badge),
+                    R.drawable.badge_background_coming_soon, true, null));
         }
         // Edit with Faditor Mini (Full-only; Lite v1 hides the entry)
         if (!isImage && !com.fadcam.BuildConfig.LITE_EDITION) {
