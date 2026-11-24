@@ -67,6 +67,13 @@ public class OnboardingActivity extends AppIntro
     private View dockScrollHint;
     private View dockContainer;
     private int dockBaseBottom;
+    /**
+     * Horizontal offset that keeps the dock on the same centre line as the slide content.
+     * The dock lives in the activity root, which spans the whole window, while each slide is
+     * padded by the system bar insets — landscape leaves a taskbar/nav strip on one side, so
+     * centring on the window put the dock off the content's axis.
+     */
+    private float dockInsetShiftX;
     private int dockHeightPx;
     private int scrollHintGapPx;
     private View scrollHintArrow;
@@ -777,7 +784,7 @@ public class OnboardingActivity extends AppIntro
         boolean rtl = getResources().getConfiguration().getLayoutDirection()
                 == View.LAYOUT_DIRECTION_RTL;
         float offsetX = dockWidth / 2f + scrollHintGapPx + hintWidth / 2f;
-        dockScrollHint.setTranslationX(rtl ? -offsetX : offsetX);
+        dockScrollHint.setTranslationX(dockInsetShiftX + (rtl ? -offsetX : offsetX));
         dockScrollHint.setTranslationY(
                 (dockScrollHint.getHeight() - dockHeightPx) / 2f);
     }
@@ -1032,10 +1039,15 @@ public class OnboardingActivity extends AppIntro
 
         ViewCompat.setOnApplyWindowInsetsListener(dock, (v, insets) -> {
             FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
-            lp.bottomMargin = dockBottom + insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars()).bottom;
+            androidx.core.graphics.Insets bars = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                            | WindowInsetsCompat.Type.displayCutout());
+            lp.bottomMargin = dockBottom + bars.bottom;
             v.setLayoutParams(lp);
             dockBaseBottom = lp.bottomMargin;
+            // Match the slide padding exactly, so the dock shares the content's centre line.
+            dockInsetShiftX = (bars.left - bars.right) / 2f;
+            v.setTranslationX(dockInsetShiftX);
             positionScrollHint();
             return insets;
         });

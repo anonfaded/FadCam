@@ -3139,6 +3139,8 @@ Igavesti sinu.</string>
     <string name="onboarding_payoff_support">Aeg nende lisarakendustega hüvasti jätta.</string>
     <string name="onboarding_lite_full_note">FadCam Full asendab 10 rakendust.</string>
     <string name="onboarding_demo_person">INIMENE</string>
+    <string name="onboarding_demo_evidence_gallery">TÕENDITE GALERII</string>
+    <string name="onboarding_demo_saved">SALVESTATUD</string>
     <string name="onboarding_demo_car">AUTO</string>
     <string name="onboarding_demo_knife">NUGU</string>
     <string name="onboarding_swipe_instruction">Jätkamiseks pühki</string>

@@ -212,7 +212,7 @@
                             android:text="@string/pro_showcase_privacy_mark"
                             android:fontFamily="monospace"
                             android:textColor="@color/dossier_olive_bright"
-                            android:textSize="11sp"
+                            android:textSize="@dimen/pro_showcase_privacy_label_size"
                             android:letterSpacing="0.16"
                             android:textAllCaps="true" />
                     </LinearLayout>

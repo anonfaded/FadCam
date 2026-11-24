@@ -3235,6 +3235,8 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="onboarding_payoff_support">Ώρα να αποχαιρετήσετε αυτές τις επιπλέον εφαρμογές.</string>
     <string name="onboarding_lite_full_note">Το FadCam Full αντικαθιστά 10 εφαρμογές.</string>
     <string name="onboarding_demo_person">ΑΤΟΜΟ</string>
+    <string name="onboarding_demo_evidence_gallery">ΣΥΛΛΟΓΗ ΑΠΟΔΕΙΞΕΩΝ</string>
+    <string name="onboarding_demo_saved">ΑΠΟΘΗΚΕΥΜΕΝΟ</string>
     <string name="onboarding_demo_car">ΑΥΤΟΚΙΝΗΤΟ</string>
     <string name="onboarding_demo_knife">ΜΑΧΑΙΡΙ</string>
     <string name="onboarding_swipe_instruction">Σύρετε για να συνεχίσετε</string>

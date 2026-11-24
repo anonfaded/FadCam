@@ -54,5 +54,7 @@
     <declare-styleable name="ShowcaseGridLightView">
         <!-- Sibling view whose bounds become the light source (the phone slot, an avatar). -->
         <attr name="lightSubject" format="reference" />
+        <!-- Corner registration marks; off inside small preview stages that already have a frame. -->
+        <attr name="cornerMarks" format="boolean" />
     </declare-styleable>
 </resources>

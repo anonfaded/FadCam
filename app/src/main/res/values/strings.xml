@@ -4,8 +4,6 @@
     <string name="check_for_updates">Check for Updates</string>
     <string name="accessibility_thumbnail_progress">%1$d%% watched</string>
     <string name="fadsec_info">FadCam is part of the FadSec Lab suite. For more information, click on \'view source code\' below.</string>
-
-
     <string name="app_description">
         <![CDATA[
     FadCam is an ad-free, open-source video recording app that prioritizes privacy by not tracking or collecting any data. It is available exclusively on GitHub and through the official links mentioned in the README.
@@ -1935,10 +1933,14 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="onboarding_payoff_support">Time to say goodbye to those extra apps.</string>
     <string name="onboarding_lite_full_note">FadCam Full replaces 10 apps.</string>
     <string name="onboarding_demo_person">PERSON</string>
+
+
     <string name="onboarding_demo_car">CAR</string>
     <string name="onboarding_demo_knife">KNIFE</string>
     <string name="onboarding_demo_confidence">%1$s %2$d%%</string>
     <string name="onboarding_demo_score" translatable="false">%1$d%%</string>
+    <string name="onboarding_demo_evidence_gallery">EVIDENCE GALLERY</string>
+    <string name="onboarding_demo_saved">SAVED</string>
     <string name="onboarding_demo_qr_value" translatable="false">fadseclab.com</string>
 
     <string name="onboarding_swipe_instruction">Swipe to continue</string>

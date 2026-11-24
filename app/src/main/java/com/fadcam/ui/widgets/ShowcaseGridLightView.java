@@ -32,7 +32,14 @@ import com.fadcam.R;
  */
 public class ShowcaseGridLightView extends View {
 
+    /**
+     * Reference step at the bundle card's width. The rendered step is this scaled by the view's
+     * own width, so a small preview stage gets proportionally smaller boxes instead of the same
+     * 24dp cells filling it with a handful of oversized squares.
+     */
     private static final float GRID_STEP_DP = 24f;
+    private static final float GRID_REFERENCE_DP = 330f;
+    private static final float GRID_MIN_STEP_DP = 9f;
     private static final float GRID_STROKE_DP = 0.5f;
 
     /** White graph paper, deliberately faint. */
@@ -69,19 +76,24 @@ public class ShowcaseGridLightView extends View {
     /** Optional sibling whose bounds drive the light; set through {@code app:lightSubject}. */
     private final int subjectId;
     private View subject;
+    /** Corner registration marks. Off for preview stages that already sit inside a card. */
+    private final boolean cornerMarks;
 
     public ShowcaseGridLightView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         density = getResources().getDisplayMetrics().density;
 
         int id = View.NO_ID;
+        boolean marks = true;
         if (attrs != null) {
             TypedArray a = context.obtainStyledAttributes(
                     attrs, R.styleable.ShowcaseGridLightView);
             id = a.getResourceId(R.styleable.ShowcaseGridLightView_lightSubject, View.NO_ID);
+            marks = a.getBoolean(R.styleable.ShowcaseGridLightView_cornerMarks, true);
             a.recycle();
         }
         subjectId = id;
+        cornerMarks = marks;
 
         baseGridPaint.setStyle(Paint.Style.STROKE);
         baseGridPaint.setStrokeWidth(GRID_STROKE_DP * density);
@@ -127,7 +139,11 @@ public class ShowcaseGridLightView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldW, int oldH) {
         super.onSizeChanged(w, h, oldW, oldH);
-        float step = GRID_STEP_DP * density;
+        // Proportional cells: the reference card shows 24dp boxes; a 150dp preview shows
+        // about 11dp boxes, which reads as the same grid instead of four huge squares.
+        float step = GRID_STEP_DP * density
+                * Math.max(GRID_MIN_STEP_DP / GRID_STEP_DP,
+                        Math.min(1f, w / (GRID_REFERENCE_DP * density)));
         if (step <= 0f) return;
         int count = (int) (w / step);
         columns = new float[count];
@@ -232,7 +248,7 @@ public class ShowcaseGridLightView extends View {
             litGridPaint.setShader(null);
         }
 
-        drawRegistrationMarks(canvas, w, h);
+        if (cornerMarks) drawRegistrationMarks(canvas, w, h);
     }
 
     private void drawRegistrationMarks(Canvas canvas, float w, float h) {

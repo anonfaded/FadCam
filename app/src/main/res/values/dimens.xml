@@ -269,6 +269,7 @@
          instead of growing to dominate them. -->
     <dimen name="pro_showcase_privacy_mark_h">68dp</dimen>
     <dimen name="pro_showcase_privacy_mark_min_h">22dp</dimen>
+    <dimen name="pro_showcase_privacy_label_size">11sp</dimen>
     <dimen name="pro_showcase_visor_depth">6dp</dimen>
     <dimen name="pro_showcase_gap">10dp</dimen>
     <dimen name="pro_showcase_body_size">12sp</dimen>

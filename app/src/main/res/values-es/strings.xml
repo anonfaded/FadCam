@@ -3238,6 +3238,8 @@ Tuyas para siempre.</string>
     <string name="onboarding_payoff_support">Es hora de despedirse de esas apps extra.</string>
     <string name="onboarding_lite_full_note">FadCam Full sustituye a 10 apps.</string>
     <string name="onboarding_demo_person">PERSONA</string>
+    <string name="onboarding_demo_evidence_gallery">GALERÍA DE PRUEBAS</string>
+    <string name="onboarding_demo_saved">GUARDADO</string>
     <string name="onboarding_demo_car">COCHE</string>
     <string name="onboarding_demo_knife">CUCHILLO</string>
     <string name="onboarding_swipe_instruction">Desliza para continuar</string>

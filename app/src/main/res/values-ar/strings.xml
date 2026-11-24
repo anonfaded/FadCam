@@ -4867,6 +4867,8 @@
     <string name="onboarding_payoff_support">حان وقت توديع تلك التطبيقات الإضافية.</string>
     <string name="onboarding_lite_full_note">FadCam Full يستبدل 10 تطبيقات.</string>
     <string name="onboarding_demo_person">شخص</string>
+    <string name="onboarding_demo_evidence_gallery">معرض الأدلة</string>
+    <string name="onboarding_demo_saved">محفوظ</string>
     <string name="onboarding_demo_car">سيارة</string>
     <string name="onboarding_demo_knife">سكين</string>
     <string name="onboarding_swipe_instruction">اسحب للمتابعة</string>

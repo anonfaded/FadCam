@@ -3804,6 +3804,8 @@
     <string name="onboarding_payoff_support">Пора попрощаться с этими лишними приложениями.</string>
     <string name="onboarding_lite_full_note">FadCam Full заменяет 10 приложений.</string>
     <string name="onboarding_demo_person">ЧЕЛОВЕК</string>
+    <string name="onboarding_demo_evidence_gallery">ГАЛЕРЕЯ УЛИК</string>
+    <string name="onboarding_demo_saved">СОХРАНЕНО</string>
     <string name="onboarding_demo_car">АВТОМОБИЛЬ</string>
     <string name="onboarding_demo_knife">НОЖ</string>
     <string name="onboarding_swipe_instruction">Смахните, чтобы продолжить</string>

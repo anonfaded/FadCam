@@ -20,6 +20,19 @@ import com.fadcam.ui.animations.SceneStyle;
  */
 public final class ForensicScene implements Scene {
 
+    /** Scene metrics are design units on the shared 168x92 canvas, not dp. */
+    private static final float VIEWER_TEXT_X = 106f;
+    private static final float VIEWER_TEXT_TOP_Y = 65f;
+    private static final float VIEWER_TEXT_BOTTOM_Y = 74f;
+    /** The tick mark owns everything right of this, so text must stop before it. */
+    private static final float VIEWER_TEXT_RIGHT = 136f;
+    private static final float VIEWER_TEXT_SIZE = 6.4f;
+    private static final float VIEWER_TEXT_MIN_SIZE = 3.6f;
+
+    private final String evidenceGallery;
+    private final String savedLabel;
+    /** Saved-label size, resolved once: long translations get smaller type, never overlap. */
+    private float savedTextSize = VIEWER_TEXT_SIZE;
     private final String[] confidence = new String[3];
     private final String[] score = new String[3];
     private final String[] time = new String[3];
@@ -33,11 +46,22 @@ public final class ForensicScene implements Scene {
         confidence[0] = context.getString(R.string.onboarding_demo_confidence, person, 96);
         confidence[1] = context.getString(R.string.onboarding_demo_confidence, car, 91);
         confidence[2] = context.getString(R.string.onboarding_demo_confidence, knife, 88);
+        evidenceGallery = context.getString(R.string.onboarding_demo_evidence_gallery);
+        savedLabel = context.getString(R.string.onboarding_demo_saved);
+        savedTextSize = fitTextSize(savedLabel, VIEWER_TEXT_RIGHT - VIEWER_TEXT_X);
         int[] scores = {96, 91, 88};
         int[] minutes = {2, 5, 9};
+        // The mock log has to read like the device's own clock, otherwise the times stay
+        // Latin "02:02 PM" in Arabic.
+        java.text.DateFormat timeFormat = android.text.format.DateFormat.getTimeFormat(context);
+        java.util.Calendar clock = java.util.Calendar.getInstance();
         for (int i = 0; i < 3; i++) {
             score[i] = context.getString(R.string.onboarding_demo_score, scores[i]);
-            time[i] = String.format(java.util.Locale.US, "02:%02d PM", minutes[i]);
+            clock.set(java.util.Calendar.HOUR_OF_DAY, 14);
+            clock.set(java.util.Calendar.MINUTE, minutes[i]);
+            clock.set(java.util.Calendar.SECOND, 0);
+            time[i] = com.fadcam.utils.DisplayLocale.digits(
+                    timeFormat.format(clock.getTime()), context);
         }
         icons[0] = ContextCompat.getDrawable(context, R.drawable.ic_detection_person);
         // Scene icons are untinted so they stay visible on the dark stage; the shared
@@ -99,18 +123,26 @@ public final class ForensicScene implements Scene {
         canvas.drawLine(152f, 56f, 147f, 56f, paint);
         canvas.drawLine(152f, 56f, 152f, 51f, paint);
 
-        kit.label(canvas, confidence[idx], 106f, 65f, 6.4f, style.accent,
-                Paint.Align.LEFT, true);
-        kit.label(canvas, "SAVED", 106f, 74f, 6.4f,
-                AnimationMath.withAlpha(style.ink, 235), Paint.Align.LEFT, true);
+        kit.label(canvas, confidence[idx], VIEWER_TEXT_X, VIEWER_TEXT_TOP_Y,
+                VIEWER_TEXT_SIZE, style.accent, Paint.Align.LEFT, true);
+        kit.label(canvas, savedLabel, VIEWER_TEXT_X, VIEWER_TEXT_BOTTOM_Y,
+                savedTextSize, AnimationMath.withAlpha(style.ink, 235), Paint.Align.LEFT, true);
+        // Same rounded tick as the QR result card, at the viewer's smaller scale.
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1.2f);
+        paint.setStrokeWidth(1.1f);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStrokeJoin(Paint.Join.ROUND);
         paint.setColor(style.accent);
-        canvas.drawLine(140f, 71f, 143f, 74f, paint);
-        canvas.drawLine(143f, 74f, 149f, 67f, paint);
+        kit.path.reset();
+        kit.path.moveTo(142.5f, 71.5f);
+        kit.path.lineTo(144.5f, 73.5f);
+        kit.path.lineTo(147.5f, 69.5f);
+        canvas.drawPath(kit.path, paint);
+        paint.setStrokeCap(Paint.Cap.BUTT);
+        paint.setStrokeJoin(Paint.Join.MITER);
 
         // Evidence log; names stay in the viewer, the log carries time and score.
-        kit.label(canvas, "EVIDENCE GALLERY", 14f, 22f, 6f, style.accent,
+        kit.label(canvas, evidenceGallery, 14f, 22f, 6f, style.accent,
                 Paint.Align.LEFT, true);
         for (int i = 0; i < 3; i++) {
             float reveal = frame.ambient ? 1f
@@ -132,6 +164,22 @@ public final class ForensicScene implements Scene {
                     AnimationMath.withAlpha(selected ? style.accent : style.muted, alpha),
                     Paint.Align.RIGHT, true);
         }
+    }
+
+    /**
+     * Largest size at which {@code text} fits {@code width}, capped at the default size.
+     * Measured once per scene: "SAVED" fits at full size, "GESPEICHERT" and
+     * "ΑΠΟΘΗΚΕΥΜΕΝΟ" need smaller type so they never reach the tick mark.
+     */
+    private static float fitTextSize(String text, float width) {
+        if (text == null || text.isEmpty() || width <= 0f) return VIEWER_TEXT_SIZE;
+        Paint measure = new Paint(Paint.ANTI_ALIAS_FLAG);
+        measure.setTypeface(android.graphics.Typeface.create(
+                android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD));
+        measure.setTextSize(VIEWER_TEXT_SIZE);
+        float natural = measure.measureText(text);
+        if (natural <= width || natural <= 0f) return VIEWER_TEXT_SIZE;
+        return Math.max(VIEWER_TEXT_MIN_SIZE, VIEWER_TEXT_SIZE * width / natural);
     }
 
     private void drawIcon(CanvasKit kit, Canvas c, int idx,

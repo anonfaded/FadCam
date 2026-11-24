@@ -5054,6 +5054,8 @@
     <string name="onboarding_payoff_support">是时候和那些多余的应用说再见了。</string>
     <string name="onboarding_lite_full_note">FadCam Full 可替代 10 个应用。</string>
     <string name="onboarding_demo_person">人物</string>
+    <string name="onboarding_demo_evidence_gallery">证据图库</string>
+    <string name="onboarding_demo_saved">已保存</string>
     <string name="onboarding_demo_car">汽车</string>
     <string name="onboarding_demo_knife">刀具</string>
     <string name="onboarding_swipe_instruction">滑动以继续</string>

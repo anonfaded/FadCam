@@ -107,7 +107,8 @@
 
                         <com.fadcam.ui.widgets.ShowcaseGridLightView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            app:cornerMarks="false" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -160,7 +161,8 @@
 
                         <com.fadcam.ui.widgets.ShowcaseGridLightView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            app:cornerMarks="false" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -213,7 +215,8 @@
 
                         <com.fadcam.ui.widgets.ShowcaseGridLightView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            app:cornerMarks="false" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -266,7 +269,8 @@
 
                         <com.fadcam.ui.widgets.ShowcaseGridLightView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            app:cornerMarks="false" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -319,7 +323,8 @@
 
                         <com.fadcam.ui.widgets.ShowcaseGridLightView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            app:cornerMarks="false" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -372,7 +377,8 @@
 
                         <com.fadcam.ui.widgets.ShowcaseGridLightView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            app:cornerMarks="false" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -426,7 +432,8 @@
 
                         <com.fadcam.ui.widgets.ShowcaseGridLightView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            app:cornerMarks="false" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -479,7 +486,8 @@
 
                         <com.fadcam.ui.widgets.ShowcaseGridLightView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            app:cornerMarks="false" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -565,7 +573,8 @@
 
                         <com.fadcam.ui.widgets.ShowcaseGridLightView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            app:cornerMarks="false" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -618,7 +627,8 @@
 
                         <com.fadcam.ui.widgets.ShowcaseGridLightView
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent" />
+                            android:layout_height="match_parent"
+                            app:cornerMarks="false" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"

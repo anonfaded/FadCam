@@ -3392,6 +3392,8 @@ Milikmu selamanya.</string>
     <string name="onboarding_payoff_support">Saatnya mengucapkan selamat tinggal pada aplikasi ekstra itu.</string>
     <string name="onboarding_lite_full_note">FadCam Full menggantikan 10 aplikasi.</string>
     <string name="onboarding_demo_person">ORANG</string>
+    <string name="onboarding_demo_evidence_gallery">GALERI BUKTI</string>
+    <string name="onboarding_demo_saved">TERSIMPAN</string>
     <string name="onboarding_demo_car">MOBIL</string>
     <string name="onboarding_demo_knife">PISAU</string>
     <string name="onboarding_swipe_instruction">Geser untuk melanjutkan</string>

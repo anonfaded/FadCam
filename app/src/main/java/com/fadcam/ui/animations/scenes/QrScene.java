@@ -78,7 +78,9 @@ public final class QrScene implements Scene {
             }
         }
 
-        float sweep = frame.ambient ? frame.phase : AnimationMath.seg(frame.progress, 0.12f, 0.6f);
+        // The scan and the result used to land at 60% and 72% of a 4.2s reveal, so the
+        // card showed up around three seconds in. Both now resolve in the first half.
+        float sweep = frame.ambient ? frame.phase : AnimationMath.seg(frame.progress, 0.06f, 0.34f);
         if (sweep > 0f && sweep < 1f) {
             float y = top + size * sweep;
             paint.setStyle(Paint.Style.FILL);
@@ -91,7 +93,7 @@ public final class QrScene implements Scene {
         }
 
         // Result card: the scanned value, then a saved check.
-        float saved = AnimationMath.seg(frame.progress, 0.72f, 0.92f);
+        float saved = AnimationMath.seg(frame.progress, 0.34f, 0.52f);
         if (saved > 0f) {
             int alpha = (int) (255f * saved);
             kit.fillRound(canvas, 64f, 16f, 116f, 44f, 2f,

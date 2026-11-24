@@ -4791,6 +4791,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="onboarding_payoff_support">Il est temps de dire adieu à ces applis en trop.</string>
     <string name="onboarding_lite_full_note">FadCam Full remplace 10 applis.</string>
     <string name="onboarding_demo_person">PERSONNE</string>
+    <string name="onboarding_demo_evidence_gallery">GALERIE DE PREUVES</string>
+    <string name="onboarding_demo_saved">ENREGISTRÉ</string>
     <string name="onboarding_demo_car">VOITURE</string>
     <string name="onboarding_demo_knife">COUTEAU</string>
     <string name="onboarding_swipe_instruction">Balayez pour continuer</string>

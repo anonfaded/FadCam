@@ -240,7 +240,12 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
     private void setPayoff(View root, int count) {
         TextView title = root.findViewById(R.id.onboarding_payoff_title);
         if (title == null) return;
-        String text = getString(R.string.onboarding_payoff_title, count);
+        // Resource formatting resolves plain "ar" to Latin digits, so the job count is
+        // formatted first and then mapped onto the language's own numerals.
+        String text = com.fadcam.utils.DisplayLocale.digits(
+                String.format(java.util.Locale.US,
+                        getString(R.string.onboarding_payoff_title), count),
+                requireContext());
         SpannableString styled = new SpannableString(text);
         int gold = ContextCompat.getColor(requireContext(), R.color.pro_gold);
         int start = -1;

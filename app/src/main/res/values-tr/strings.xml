@@ -3035,6 +3035,8 @@ Sonsuza dek senin.</string>
     <string name="onboarding_payoff_support">O fazladan uygulamalara veda etme zamanı.</string>
     <string name="onboarding_lite_full_note">FadCam Full 10 uygulamanın yerini alır.</string>
     <string name="onboarding_demo_person">KİŞİ</string>
+    <string name="onboarding_demo_evidence_gallery">KANIT GALERİSİ</string>
+    <string name="onboarding_demo_saved">KAYDEDİLDİ</string>
     <string name="onboarding_demo_car">ARAÇ</string>
     <string name="onboarding_demo_knife">BIÇAK</string>
     <string name="onboarding_swipe_instruction">Devam etmek için kaydırın</string>

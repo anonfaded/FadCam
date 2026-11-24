@@ -1150,9 +1150,18 @@ public class ProBundleShowcaseView extends FrameLayout {
         View label = findViewById(R.id.showcasePrivacyLabel);
         View column = findViewById(R.id.showcaseTextColumn);
         if (band == null || mark == null || label == null) return;
-        if (band.getHeight() <= 0 || label.getMeasuredHeight() <= 0) return;
+        if (band.getHeight() <= 0) return;
         float density = getResources().getDisplayMetrics().density;
-        int available = band.getHeight() - label.getMeasuredHeight() - Math.round(2f * density);
+
+        // The caption can measure as 0 on the first pass: the initial 68dp shield fills the
+        // whole band, leaving no height for the text. Use the line height instead so this
+        // method can shrink the shield and let the caption exist at all.
+        int labelHeight = label.getMeasuredHeight();
+        if (labelHeight <= 0 && label instanceof TextView) {
+            labelHeight = ((TextView) label).getLineHeight();
+        }
+        if (labelHeight <= 0) labelHeight = Math.round(14f * density);
+
         // Keep the shield at the same share of the copy column it has on a wide card. A fixed
         // cap let it dominate a narrow card and pushed its caption out of the band.
         int max = getResources().getDimensionPixelSize(R.dimen.pro_showcase_privacy_mark_h);
@@ -1160,7 +1169,20 @@ public class ProBundleShowcaseView extends FrameLayout {
             max = Math.min(max, Math.round(column.getWidth() * 0.27f));
         }
         int min = getResources().getDimensionPixelSize(R.dimen.pro_showcase_privacy_mark_min_h);
-        int target = Math.max(min, Math.min(max, Math.round(available * 0.55f)));
+
+        // The caption follows the same proportion on every card: at the reference copy
+        // column it is 11sp, and it shrinks with the column on narrow phones instead of
+        // filling the whole width.
+        if (column != null && column.getWidth() > 0 && label instanceof TextView) {
+            float ratio = column.getWidth() / (252f * density);
+            ratio = Math.max(0.72f, Math.min(1f, ratio));
+            TextView caption = (TextView) label;
+            caption.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 11f * ratio);
+            caption.setLetterSpacing(0.16f * ratio);
+        }
+
+        int available = band.getHeight() - labelHeight - Math.round(4f * density);
+        int target = Math.max(Math.min(min, available), Math.min(max, available));
         ViewGroup.LayoutParams params = mark.getLayoutParams();
         if (params.height != target) {
             params.height = target;
