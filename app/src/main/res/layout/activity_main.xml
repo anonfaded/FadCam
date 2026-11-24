@@ -86,7 +86,7 @@
         <com.google.android.material.navigationrail.NavigationRailView
             android:id="@+id/rail_navigation"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:minWidth="0dp"
             android:padding="0dp"
             android:background="?attr/colorBottomNav"

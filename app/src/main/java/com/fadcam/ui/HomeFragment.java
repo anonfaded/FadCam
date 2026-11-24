@@ -13778,24 +13778,34 @@ public class HomeFragment extends BaseFragment {
         set.clear(R.id.cardRailToggleLandscape, ConstraintSet.END);
         set.clear(R.id.rightPanel, ConstraintSet.START);
 
-        set.connect(R.id.leftPanel, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, dpToPxInt(6));
-        set.connect(R.id.leftPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
+        final int panelMargin = getResources().getDimensionPixelSize(
+                R.dimen.home_land_panel_margin);
+        final int panelMarginTop = getResources().getDimensionPixelSize(
+                R.dimen.home_land_panel_margin_top);
+        final int toggleGap = getResources().getDimensionPixelSize(
+                R.dimen.home_land_gap_s);
+
+        set.connect(R.id.leftPanel, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, panelMargin);
+        set.connect(R.id.leftPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, panelMarginTop);
         set.connect(R.id.leftPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
 
-        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, panelMarginTop);
         set.connect(R.id.cardRailToggleLandscape, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
-        set.connect(R.id.rightPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, dpToPxInt(4));
+        set.connect(R.id.rightPanel, ConstraintSet.TOP, R.id.header_bar, ConstraintSet.BOTTOM, panelMarginTop);
         set.connect(R.id.rightPanel, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM, 0);
-        set.connect(R.id.rightPanel, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, dpToPxInt(6));
+        set.connect(R.id.rightPanel, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END, panelMargin);
 
         if (folded) {
-            set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, dpToPxInt(6));
+            set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START, panelMargin);
         } else {
             set.connect(R.id.leftPanel, ConstraintSet.END, R.id.cardRailToggleLandscape, ConstraintSet.START, 0);
             set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, R.id.leftPanel, ConstraintSet.END, 0);
         }
-        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.END, R.id.rightPanel, ConstraintSet.START, dpToPxInt(3));
-        set.connect(R.id.rightPanel, ConstraintSet.START, R.id.cardRailToggleLandscape, ConstraintSet.END, dpToPxInt(3));
+        // The handle is the fixed link in the weighted chain, flush with the rail
+        // card and the preview. The old 3dp margins on both sides made it float.
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.START, R.id.leftPanel, ConstraintSet.END, 0);
+        set.connect(R.id.cardRailToggleLandscape, ConstraintSet.END, R.id.rightPanel, ConstraintSet.START, 0);
+        set.connect(R.id.rightPanel, ConstraintSet.START, R.id.cardRailToggleLandscape, ConstraintSet.END, 0);
         set.applyTo(homeRootLayout);
     }
 

@@ -2911,7 +2911,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="pro_screen_calc_feature">Taschenrechner-App</string>
     <string name="pro_screen_calculator">Taschenrechner</string>
     <string name="pro_screen_claim_body">Angetrieben von FadCams exklusiver Hybrid-MP4-Pipeline – speziell für Android entwickelt, damit Aufnahmen bei Abstürzen, leerem Akku und plötzlichem Herunterfahren bis zur letzten Sekunde abspielbar bleiben.</string>
-    <string name="pro_screen_claim_title">Der #1-Hintergrund-Videorekorder</string>
+    <string name="pro_screen_claim_title">Der Hintergrund-Videorekorder Nr. 1</string>
     <string name="pro_screen_cloud">FadDrive-Sync</string>
     <string name="pro_screen_cloud_desc">Sichere deine Aufnahmen verschlüsselt in unserer Cloud.</string>
     <string name="pro_screen_coming_soon_status">Demnächst</string>
@@ -3047,7 +3047,7 @@ Für immer dein.</string>
     <string name="onboarding_permissions_kicker">ZUGRIFF // ERFORDERLICH</string>
     <string name="onboarding_human_kicker">EID // NUTZUNGSREGELN</string>
     <string name="onboarding_dossier_kicker">FADCAM // PRIVATER REKORDER</string>
-    <string name="onboarding_dossier_title">Der Nr.-1-Rekorder für Hintergrundvideos.</string>
+    <string name="onboarding_dossier_title">Der Rekorder Nr. 1 für Hintergrundvideos.</string>
     <string name="onboarding_dossier_lede">Angetrieben von FadCams Hybrid-MP4-Pipeline. Deine Aufnahmen überstehen Abstürze, leere Akkus und plötzliches Herunterfahren — abspielbar bis zur letzten Sekunde.</string>
     <string name="onboarding_capabilities_kicker">FADCAM // MULTIMEDIA-SUITE</string>
     <string name="onboarding_capabilities_title">Zeit, ein paar\nApps zu deinstallieren.</string>

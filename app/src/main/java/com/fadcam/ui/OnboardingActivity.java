@@ -206,7 +206,7 @@ public class OnboardingActivity extends AppIntro
                                         // Decide from the page the gesture started
                                         // on, never from the item the pager happens
                                         // to be crossing mid-swipe.
-                                        return isPagePolicyRespected(settledPage);
+                                        return isPagePolicyRespected(toLogicalPage(settledPage));
                                     }
 
                                     @Override
@@ -238,18 +238,20 @@ public class OnboardingActivity extends AppIntro
 
                 @Override
                 public void onPageSelected(int position) {
-                    if (position > acceptedPage && !isPagePolicyRespected(acceptedPage)) {
-                        viewPager.setCurrentItem(acceptedPage, true);
+                    int logical = toLogicalPage(position);
+                    int acceptedLogical = toLogicalPage(acceptedPage);
+                    if (logical > acceptedLogical && !isPagePolicyRespected(acceptedLogical)) {
+                        viewPager.setCurrentItem(toAdapterPage(acceptedLogical), true);
                         return;
                     }
                     acceptedPage = position;
                     updateNavigationButtons(position);
                     viewPager.post(() -> notifyCapabilitiesPage(
-                            viewPager.getCurrentItem() == 1));
+                            toLogicalPage(viewPager.getCurrentItem()) == 1));
                     viewPager.postDelayed(() -> notifyCapabilitiesPage(
-                            viewPager.getCurrentItem() == 1), 220L);
+                            toLogicalPage(viewPager.getCurrentItem()) == 1), 220L);
                     viewPager.post(() -> {
-                        if (viewPager.getCurrentItem() == 2) notifyPermissionsPage();
+                        if (toLogicalPage(viewPager.getCurrentItem()) == 2) notifyPermissionsPage();
                     });
                 }
 
@@ -291,7 +293,7 @@ public class OnboardingActivity extends AppIntro
         }
 
         // Update navigation buttons initially
-        updateNavigationButtons(0);
+        updateNavigationButtons(toAdapterPage(0));
 
         getSupportFragmentManager().registerFragmentLifecycleCallbacks(
                 new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
@@ -302,7 +304,7 @@ public class OnboardingActivity extends AppIntro
                         super.onFragmentResumed(fm, f);
                         if (!(f instanceof OnboardingCapabilitiesFragment)) return;
                         ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
-                        if (pager != null && pager.getCurrentItem() == 1) {
+                        if (pager != null && toLogicalPage(pager.getCurrentItem()) == 1) {
                             pager.post(((OnboardingCapabilitiesFragment) f)::onPageBecameVisible);
                         }
                     }
@@ -328,17 +330,39 @@ public class OnboardingActivity extends AppIntro
                                     });
                             androidx.core.view.ViewCompat.requestApplyInsets(slideContent);
                         }
+                        final TextView pageCounter = v.findViewById(R.id.onboardingPage);
+                        if (pageCounter != null) {
+                            // The page number is a numeral, so it has to follow the language's
+                            // digits the way every other number in the app does. Building it
+                            // from the adapter count also keeps the total honest if a slide is
+                            // ever added.
+                            final androidx.viewpager.widget.ViewPager counterPager =
+                                    findViewById(com.github.appintro.R.id.view_pager);
+                            final int slideTotal = counterPager != null
+                                    && counterPager.getAdapter() != null
+                                            ? counterPager.getAdapter().getCount() : 0;
+                            final int logicalSlide = logicalSlideIndex(f);
+                            if (slideTotal > 0 && logicalSlide >= 0) {
+                                String counter = String.format(java.util.Locale.US,
+                                        "%02d / %02d", logicalSlide + 1, slideTotal);
+                                // Only digits and a slash carry no strong direction, so in RTL
+                                // the pair would resolve right-to-left and read "total / page".
+                                // The leading mark fixes the paragraph direction for both runs.
+                                pageCounter.setText("\u200E" + com.fadcam.utils.DisplayLocale.digits(
+                                        counter, OnboardingActivity.this));
+                            }
+                        }
                         final TextView heroTitle = v.findViewById(R.id.onboardingHeroTitle);
                         if (heroTitle != null) {
                             String heroText = heroTitle.getText().toString();
-                            int marker = heroText.indexOf("#1");
-                            if (marker >= 0) {
+                            int[] marker = com.fadcam.util.RankMarker.locate(heroText);
+                            if (marker != null) {
                                 android.text.SpannableString styled =
                                         new android.text.SpannableString(heroText);
                                 styled.setSpan(new android.text.style.ForegroundColorSpan(
                                                 androidx.core.content.ContextCompat.getColor(
                                                         OnboardingActivity.this, R.color.pro_gold)),
-                                        marker, marker + 2,
+                                        marker[0], marker[1],
                                         android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                 heroTitle.setText(styled);
                             }
@@ -384,7 +408,8 @@ public class OnboardingActivity extends AppIntro
                             sleepBreath.addUpdateListener(a -> {
                                 if (!ivOnboardingAvatar.isAttachedToWindow()) return;
                                 float t = (float) a.getAnimatedValue();
-                                ivOnboardingAvatar.setAlpha(0.52f + 0.30f * t);
+                                // The avatar stays fully opaque: a translucent view let the
+                                // page grid show straight through it while breathing.
                                 float sc = 0.96f + 0.04f * t;
                                 ivOnboardingAvatar.setScaleX(sc); ivOnboardingAvatar.setScaleY(sc);
                             });
@@ -413,7 +438,6 @@ public class OnboardingActivity extends AppIntro
                                             idleBreath.addUpdateListener(a2 -> {
                                                 if (!ivOnboardingAvatar.isAttachedToWindow()) return;
                                                 float t2 = (float) a2.getAnimatedValue();
-                                                ivOnboardingAvatar.setAlpha(0.85f + 0.15f * t2);
                                                 float sc2 = 0.97f + 0.03f * t2;
                                                 ivOnboardingAvatar.setScaleX(sc2); ivOnboardingAvatar.setScaleY(sc2);
                                             });
@@ -556,12 +580,50 @@ public class OnboardingActivity extends AppIntro
     }
 
     // Method to update navigation buttons based on current position
+    /**
+     * AppIntro's addSlide() inserts at index 0 in RTL, so the adapter list is reversed:
+     * adapter 0 is the LAST slide and adapter (count-1) is the first. Everything in this
+     * activity reasons about logical slide order (0 = first), so adapter values must be
+     * converted at the boundary. Without this the dock painted last-slide state on slide 1.
+     */
+    private int toLogicalPage(int adapterPage) {
+        ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
+        int count = pager != null && pager.getAdapter() != null
+                ? pager.getAdapter().getCount() : 0;
+        if (count <= 0) return adapterPage;
+        boolean rtl = getResources().getConfiguration().getLayoutDirection()
+                == View.LAYOUT_DIRECTION_RTL;
+        return rtl ? (count - 1 - adapterPage) : adapterPage;
+    }
+
+    /**
+     * Logical position (0 = first slide) of the slide whose view is being created.
+     *
+     * <p>AppIntro does not expose the position to the fragment, so it is derived from the slide
+     * class. Adapter order cannot be used here: it is reversed in RTL.</p>
+     *
+     * @return the logical index, or -1 when the fragment is not one of the onboarding slides.
+     */
+    private int logicalSlideIndex(Fragment fragment) {
+        if (fragment instanceof AppIntroCustomLayoutFragment) return 0;
+        if (fragment instanceof OnboardingCapabilitiesFragment) return 1;
+        if (fragment instanceof OnboardingPermissionsFragment) return 2;
+        if (fragment instanceof OnboardingHumanFragment) return 3;
+        return -1;
+    }
+
+    /** Inverse of {@link #toLogicalPage(int)} — maps logical order back to an adapter index. */
+    private int toAdapterPage(int logicalPage) {
+        return toLogicalPage(logicalPage); // same symmetric mapping
+    }
+
     private void updateNavigationButtons(int position) {
         ViewPager viewPager = findViewById(com.github.appintro.R.id.view_pager);
         if (viewPager == null) return;
 
         // The pager adapter can arrive after the first resume; the flow always has 4 slides.
         int slideCount = viewPager.getAdapter() == null ? 4 : viewPager.getAdapter().getCount();
+        position = toLogicalPage(position);
         isFirstSlide = position == 0;
         isLastSlide = position == slideCount - 1;
 
@@ -756,7 +818,7 @@ public class OnboardingActivity extends AppIntro
         // The gate is live: scrolling back up brings the cue and the quiet arrow back.
         capabilitiesNextRevealed = atBottom;
         ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
-        if (pager != null && pager.getCurrentItem() == 1) {
+        if (pager != null && toLogicalPage(pager.getCurrentItem()) == 1) {
             updateNavigationButtons(1);
         }
     }
@@ -841,7 +903,9 @@ public class OnboardingActivity extends AppIntro
         back.setOnClickListener(v -> {
             if (pager == null) return;
             int current = pager.getCurrentItem();
-            if (current > 0) pager.setCurrentItem(current - 1, true);
+            if (toLogicalPage(current) > 0) {
+                pager.setCurrentItem(toAdapterPage(toLogicalPage(current) - 1), true);
+            }
         });
 
         dockIndicator = new SquircleIndicatorController();
@@ -870,8 +934,9 @@ public class OnboardingActivity extends AppIntro
         next.setOnClickListener(v -> {
             if (pager == null) return;
             int current = pager.getCurrentItem();
-            if (pager.getAdapter() != null && current < pager.getAdapter().getCount() - 1) {
-                pager.setCurrentItem(current + 1, true);
+            if (pager.getAdapter() != null
+                    && toLogicalPage(current) < pager.getAdapter().getCount() - 1) {
+                pager.setCurrentItem(toAdapterPage(toLogicalPage(current) + 1), true);
             }
         });
 
@@ -1081,10 +1146,10 @@ public class OnboardingActivity extends AppIntro
         if (pager != null) {
             pager.post(() -> updateNavigationButtons(pager.getCurrentItem()));
             pager.postDelayed(() -> updateNavigationButtons(pager.getCurrentItem()), 240L);
-            pager.post(() -> notifyCapabilitiesPage(pager.getCurrentItem() == 1));
-            pager.postDelayed(() -> notifyCapabilitiesPage(pager.getCurrentItem() == 1), 240L);
+            pager.post(() -> notifyCapabilitiesPage(toLogicalPage(pager.getCurrentItem()) == 1));
+            pager.postDelayed(() -> notifyCapabilitiesPage(toLogicalPage(pager.getCurrentItem()) == 1), 240L);
             pager.post(() -> {
-                if (pager.getCurrentItem() == 2) notifyPermissionsPage();
+                if (toLogicalPage(pager.getCurrentItem()) == 2) notifyPermissionsPage();
             });
         }
     }
@@ -1096,7 +1161,8 @@ public class OnboardingActivity extends AppIntro
 
     private OnboardingPermissionsFragment findPermissionsFragment() {
         Fragment target = getSupportFragmentManager().findFragmentByTag(
-                "android:switcher:" + com.github.appintro.R.id.view_pager + ":2");
+                "android:switcher:" + com.github.appintro.R.id.view_pager + ":"
+                        + toAdapterPage(2));
         if (target instanceof OnboardingPermissionsFragment) {
             return (OnboardingPermissionsFragment) target;
         }
@@ -1111,14 +1177,15 @@ public class OnboardingActivity extends AppIntro
     /** Called by the permission slide whenever the grant state changes. */
     public void onPermissionsStateChanged() {
         ViewPager pager = findViewById(com.github.appintro.R.id.view_pager);
-        if (pager != null && pager.getCurrentItem() == 2) {
+        if (pager != null && toLogicalPage(pager.getCurrentItem()) == 2) {
             updateNavigationButtons(2);
         }
     }
 
     private OnboardingCapabilitiesFragment findCapabilitiesFragment() {
         Fragment target = getSupportFragmentManager().findFragmentByTag(
-                "android:switcher:" + com.github.appintro.R.id.view_pager + ":1");
+                "android:switcher:" + com.github.appintro.R.id.view_pager + ":"
+                        + toAdapterPage(1));
         if (target instanceof OnboardingCapabilitiesFragment) {
             return (OnboardingCapabilitiesFragment) target;
         }

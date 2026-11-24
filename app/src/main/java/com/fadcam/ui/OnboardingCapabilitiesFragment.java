@@ -24,6 +24,7 @@ import com.fadcam.BuildConfig;
 import com.fadcam.ui.animations.AnimationView;
 import com.fadcam.ui.animations.SceneStyle;
 import com.fadcam.ui.animations.PayoffFlowView;
+import com.fadcam.ui.widgets.ShowcaseGridLightView;
 import com.fadcam.R;
 import com.github.appintro.SlidePolicy;
 
@@ -96,11 +97,12 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         }
         // The cards already frame the preview; the stage corner ticks repeated the
         // screen chrome four times and ate space the illustration needs.
+        // The preview stage now paints the shared grid-and-light surface behind the
+        // animation, so the scene itself draws only its artwork on a transparent stage.
         SceneStyle quietStage = SceneStyle.defaults().toBuilder()
                 .cornerTicks(false)
-                // A touch lighter than the card surface, so the preview reads as a
-                // window inside the card instead of a black hole in it.
-                .background(ContextCompat.getColor(requireContext(), R.color.onboarding_stage))
+                .stageGrid(false)
+                .background(android.graphics.Color.TRANSPARENT)
                 .line(0xFF3A3D3F)
                 .dim(0xFF6E7273)
                 .build();
@@ -115,6 +117,7 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
                     getResources().getDimension(R.dimen.onboarding_payoff_icon_margin));
             payoffFlow.setIcon(BitmapFactory.decodeResource(
                     getResources(), R.drawable.payoff_icon));
+            aimSurfaceAtPayoff(view);
         }
 
         scrollView = view.findViewById(R.id.onboarding_scroll);
@@ -125,9 +128,32 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
         view.post(this::reportScrollState);
     }
 
+    /**
+     * Points the page's grid light at the payoff icon, so the grid is revealed inside the same
+     * glow the converging streams fall into.
+     */
+    private void aimSurfaceAtPayoff(View root) {
+        final ShowcaseGridLightView surface = root.findViewById(R.id.onboardingSurface);
+        if (surface == null || payoffFlow == null) return;
+        final float iconSize = getResources().getDimension(R.dimen.onboarding_payoff_icon_size);
+        final float iconMargin = getResources().getDimension(R.dimen.onboarding_payoff_icon_margin);
+        payoffFlow.addOnLayoutChangeListener((v, left, top, right, bottom,
+                                              oldLeft, oldTop, oldRight, oldBottom) -> {
+            View parent = (View) surface.getParent();
+            if (!(parent instanceof ViewGroup)) return;
+            android.graphics.Rect rect = new android.graphics.Rect(
+                    0, 0, right - left, bottom - top);
+            ((ViewGroup) parent).offsetDescendantRectToMyCoords(payoffFlow, rect);
+            float cx = rect.centerX() - surface.getLeft();
+            // PayoffFlowView pins the icon to the bottom of its own frame.
+            float cy = rect.top + rect.height() - iconMargin - iconSize * 0.5f
+                    - surface.getTop();
+            surface.setLight(cx, cy, iconSize, iconSize);
+        });
+    }
+
     /** Called by the host when this page becomes the current slide. */
-    public void onPageBecameVisible() {
-        View view = getView();
+    public void onPageBecameVisible() {        View view = getView();
         if (view == null) return;
         view.post(() -> {
             // A re-entry starts at the top, exactly like a fresh visit to this slide.

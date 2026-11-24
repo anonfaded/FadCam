@@ -10,7 +10,7 @@
 -->
 <resources>
     <dimen name="home_land_header_padding_top">2dp</dimen>
-    <dimen name="home_land_header_padding_bottom">4dp</dimen>
+    <dimen name="home_land_header_padding_bottom">0dp</dimen>
     <dimen name="home_land_header_padding_h">12dp</dimen>
     <dimen name="home_land_panel_margin">6dp</dimen>
     <dimen name="home_land_panel_margin_top">2dp</dimen>
@@ -46,7 +46,7 @@
     <dimen name="home_land_gap_neg_s">-2dp</dimen>
     <dimen name="home_land_gap_neg">-4dp</dimen>
     <dimen name="home_land_divider_indent">38dp</dimen>
-    <dimen name="home_land_avatar_inset">40dp</dimen>
+    <dimen name="home_land_avatar_inset">4dp</dimen>
     <dimen name="home_land_elevation">8dp</dimen>
 
     <!-- Component sizes -->
@@ -67,9 +67,25 @@
     <dimen name="home_land_row_l">56dp</dimen>
     <dimen name="home_land_button_min_w">84dp</dimen>
     <dimen name="home_land_elapsed_min_h">46dp</dimen>
-    <dimen name="home_land_avatar">100dp</dimen>
+    <dimen name="home_land_avatar">72dp</dimen>
     <dimen name="home_land_header_logo_w">190dp</dimen>
     <dimen name="home_land_header_logo_h">40dp</dimen>
     <dimen name="home_land_zoom_map_w">42dp</dimen>
     <dimen name="home_land_zoom_map_h">56dp</dimen>
+    <!-- Main camera controls (torch / start / pause / mirror) -->
+    <dimen name="home_land_control_size">36dp</dimen>
+    <dimen name="home_land_control_icon">18dp</dimen>
+    <dimen name="home_land_control_icon_s">16dp</dimen>
+    <dimen name="home_land_control_start_w">76dp</dimen>
+    <dimen name="home_land_control_start_h">40dp</dimen>
+    <dimen name="home_land_control_icon_start">14dp</dimen>
+    <dimen name="home_land_card_radius">8dp</dimen>
+    <dimen name="home_land_card_radius_m">10dp</dimen>
+    <dimen name="home_land_card_radius_l">12dp</dimen>
+    <dimen name="home_land_card_elevation_s">1dp</dimen>
+    <dimen name="home_land_card_elevation_m">2dp</dimen>
+    <dimen name="home_land_card_elevation_l">3dp</dimen>
+    <dimen name="home_land_card_stroke">1dp</dimen>
+    <dimen name="home_land_preview_stroke">15dp</dimen>
+    <dimen name="home_land_icon_ms">16dp</dimen>
 </resources>

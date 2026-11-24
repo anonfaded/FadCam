@@ -4834,7 +4834,7 @@
     <string name="onboarding_permissions_kicker">الوصول // مطلوب</string>
     <string name="onboarding_human_kicker">قسم // قواعد الاستخدام</string>
     <string name="onboarding_dossier_kicker">FADCAM // مسجّل خاص</string>
-    <string name="onboarding_dossier_title">مسجّل الفيديو رقم 1 في الخلفية.</string>
+    <string name="onboarding_dossier_title">مسجّل الفيديو رقم ١ في الخلفية.</string>
     <string name="onboarding_dossier_lede">مدعوم بخط أنابيب Hybrid MP4 من FadCam. تسجيلاتك تصمد أمام الأعطال والبطاريات الفارغة والإغلاق المفاجئ — قابلة للتشغيل حتى آخر ثانية.</string>
     <string name="onboarding_capabilities_kicker">FADCAM // حزمة الوسائط المتعددة</string>
     <string name="onboarding_capabilities_title">حان وقت إزالة\nبعض التطبيقات.</string>

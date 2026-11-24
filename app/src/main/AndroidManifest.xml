@@ -343,7 +343,6 @@
             android:exported="true"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:windowSoftInputMode="stateAlwaysHidden"
-            android:screenOrientation="portrait"
             android:documentLaunchMode="never"
             android:clearTaskOnLaunch="true"
             android:taskAffinity=""

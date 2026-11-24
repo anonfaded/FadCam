@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.BatteryManager;
 import android.text.Editable;
@@ -68,7 +67,6 @@ public class ProBundleShowcaseView extends FrameLayout {
     private final TextView metaView;
     private final FrameLayout phoneWrapper;
     private final FrameLayout phoneContainer;
-    private final ShowcaseAuraView aura;
     private final BundlePhoneSurfaceView frontSurface;
     private final BundlePhoneSurfaceView backSurface;
     private final SimpleDateFormat clockFormat = new SimpleDateFormat("h:mm", Locale.getDefault());
@@ -211,7 +209,6 @@ public class ProBundleShowcaseView extends FrameLayout {
         metaView = findViewById(R.id.showcaseMeta);
         phoneWrapper = findViewById(R.id.showcasePhoneWrapper);
         phoneContainer = findViewById(R.id.showcasePhoneContainer);
-        aura = findViewById(R.id.showcaseAura);
         // The layout's weight is the tuned text:phone ratio; only the ratio is kept, because the
         // host rewrites the weight from the card's actual width (see applyPhoneSlotWidth).
         ViewGroup.LayoutParams slotParams = phoneWrapper.getLayoutParams();
@@ -427,8 +424,6 @@ public class ProBundleShowcaseView extends FrameLayout {
         if (row instanceof LinearLayout) {
             ((LinearLayout) row).setGravity(enabled ? Gravity.CENTER : Gravity.CENTER_VERTICAL);
         }
-        // The paper plate is gone in this variant, so there is no grid to clear — only light.
-        if (aura != null) aura.setClearsGrid(!enabled);
         if (phoneWrapper != null && phoneWrapper.getLayoutParams() instanceof LinearLayout.LayoutParams) {
             LinearLayout.LayoutParams lp =
                     (LinearLayout.LayoutParams) phoneWrapper.getLayoutParams();
@@ -1142,24 +1137,6 @@ public class ProBundleShowcaseView extends FrameLayout {
         super.onLayout(changed, l, t, r, b);
         wirePhoneParts();
         fitPrivacyMark();
-        aimAura();
-    }
-
-    /**
-     * The aura is centred on the phone slot, in the aura's own coordinates. The slot is fluid
-     * (its weight depends on the card's width and the layout direction), so this is recomputed
-     * from the live layout rather than from a fixed dp offset.
-     */
-    private void aimAura() {
-        if (aura == null || phoneWrapper == null) return;
-        if (phoneWrapper.getWidth() <= 0 || phoneWrapper.getHeight() <= 0) return;
-        Rect slot = new Rect(0, 0, phoneWrapper.getWidth(), phoneWrapper.getHeight());
-        offsetDescendantRectToMyCoords(phoneWrapper, slot);
-        aura.setPhoneBounds(
-                slot.left - aura.getLeft(), slot.top - aura.getTop(),
-                slot.width(), slot.height());
-        FLog.d("ShowcaseAura", "aura=" + aura.getWidth() + "x" + aura.getHeight()
-                + " slot=" + slot.left + "," + slot.top + " " + slot.width() + "x" + slot.height());
     }
 
     /**
@@ -1171,12 +1148,19 @@ public class ProBundleShowcaseView extends FrameLayout {
         View band = findViewById(R.id.showcasePrivacy);
         View mark = findViewById(R.id.showcasePrivacyMark);
         View label = findViewById(R.id.showcasePrivacyLabel);
+        View column = findViewById(R.id.showcaseTextColumn);
         if (band == null || mark == null || label == null) return;
         if (band.getHeight() <= 0 || label.getMeasuredHeight() <= 0) return;
         float density = getResources().getDisplayMetrics().density;
         int available = band.getHeight() - label.getMeasuredHeight() - Math.round(2f * density);
-        int target = Math.max(Math.round(25f * density),
-                Math.min(Math.round(68f * density), Math.round(available * 0.55f)));
+        // Keep the shield at the same share of the copy column it has on a wide card. A fixed
+        // cap let it dominate a narrow card and pushed its caption out of the band.
+        int max = getResources().getDimensionPixelSize(R.dimen.pro_showcase_privacy_mark_h);
+        if (column != null && column.getWidth() > 0) {
+            max = Math.min(max, Math.round(column.getWidth() * 0.27f));
+        }
+        int min = getResources().getDimensionPixelSize(R.dimen.pro_showcase_privacy_mark_min_h);
+        int target = Math.max(min, Math.min(max, Math.round(available * 0.55f)));
         ViewGroup.LayoutParams params = mark.getLayoutParams();
         if (params.height != target) {
             params.height = target;
@@ -1785,8 +1769,8 @@ public class ProBundleShowcaseView extends FrameLayout {
         if (divider != null) divider.setVisibility(View.INVISIBLE);
         View footer = findViewById(R.id.showcaseFooter);
         if (footer != null) footer.setVisibility(View.INVISIBLE);
-        View paper = findViewById(R.id.showcasePaper);
-        if (paper != null) paper.setVisibility(View.INVISIBLE);
+        View surfaceView = findViewById(R.id.showcaseSurface);
+        if (surfaceView != null) surfaceView.setVisibility(View.INVISIBLE);
         View root = findViewById(R.id.showcaseRoot);
         if (root != null) root.setBackground(null);
         // The supersample bump is the most expensive step of the whole flight: re-rendering
@@ -1864,8 +1848,8 @@ public class ProBundleShowcaseView extends FrameLayout {
                     if (divider != null) divider.setVisibility(View.VISIBLE);
                     View footer = findViewById(R.id.showcaseFooter);
                     if (footer != null) footer.setVisibility(View.VISIBLE);
-                    View paper = findViewById(R.id.showcasePaper);
-                    if (paper != null) paper.setVisibility(View.VISIBLE);
+                    View surfaceView = findViewById(R.id.showcaseSurface);
+                    if (surfaceView != null) surfaceView.setVisibility(View.VISIBLE);
                     View root = findViewById(R.id.showcaseRoot);
                     if (root != null) root.setBackgroundResource(R.drawable.bg_pro_bundle_dossier);
                     if (fullscreenListener != null) fullscreenListener.onFullscreenActive(false);

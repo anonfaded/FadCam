@@ -64,6 +64,7 @@ public class AnimatedTextView extends AppCompatTextView {
     // glyphs paint above the line and overlap the row above ("rows jumping").
     private float slotWindowTop;
     private float slotWindowBottom;
+    private float slotBaselineY;
     private boolean slotHasDifferentialRegions;
 
 
@@ -285,22 +286,28 @@ public class AnimatedTextView extends AppCompatTextView {
                 && resting.getLineCount() == 1
                 && slotOldLayout.getLineCount() == 1
                 && slotNewLayout.getLineCount() == 1;
-        if (singleLine) {
-            int boxH = Math.max(0, getHeight() - getExtendedPaddingTop()
-                    - getExtendedPaddingBottom());
-            int vOffset = 0;
-            int vGravity = getGravity() & Gravity.VERTICAL_GRAVITY_MASK;
-            if (vGravity == Gravity.CENTER_VERTICAL) {
-                vOffset = Math.max(0, (boxH - resting.getHeight()) / 2);
-            } else if (vGravity == Gravity.BOTTOM) {
-                vOffset = Math.max(0, boxH - resting.getHeight());
-            }
-            slotWindowTop = getExtendedPaddingTop() + vOffset + resting.getLineTop(0);
-            slotWindowBottom = getExtendedPaddingTop() + vOffset + resting.getLineBottom(0);
-        } else {
-            slotWindowTop = getExtendedPaddingTop();
-            slotWindowBottom = getHeight() - getExtendedPaddingBottom();
+        // Resting baseline of the text, exactly as TextView.onDraw() would place it.
+        int boxH = Math.max(0, getHeight() - getExtendedPaddingTop()
+                - getExtendedPaddingBottom());
+        int vOffset = 0;
+        int vGravity = getGravity() & Gravity.VERTICAL_GRAVITY_MASK;
+        if (vGravity == Gravity.CENTER_VERTICAL) {
+            vOffset = Math.max(0, (boxH - resting.getHeight()) / 2);
+        } else if (vGravity == Gravity.BOTTOM) {
+            vOffset = Math.max(0, boxH - resting.getHeight());
         }
+        slotBaselineY = getExtendedPaddingTop() + vOffset + resting.getLineBaseline(0);
+
+        // Clip to the union of both strings' real ink extents. Font metrics are not usable:
+        // Arabic glyphs (ث, ج, ي) overshoot the nominal descent, and the view box includes
+        // font padding — either one leaves the outgoing digit visible above the line, which
+        // is what made the row look like it was jumping.
+        android.graphics.Rect oldInk = new android.graphics.Rect();
+        android.graphics.Rect newInk = new android.graphics.Rect();
+        paint.getTextBounds(oldStr, 0, oldStr.length(), oldInk);
+        paint.getTextBounds(newStr, 0, newStr.length(), newInk);
+        slotWindowTop = slotBaselineY + Math.min(oldInk.top, newInk.top);
+        slotWindowBottom = slotBaselineY + Math.max(oldInk.bottom, newInk.bottom) + 1;
 
         slotHasDifferentialRegions = hasDiff;
         slotLayoutWidth = layoutW;
@@ -477,15 +484,6 @@ public class AnimatedTextView extends AppCompatTextView {
         }
     }
 
-    @Override
-    public void requestLayout() {
-        if (suppressLayoutRequest) {
-            // Suppress layout pass during animation completion to prevent oscillation
-            return;
-        }
-        super.requestLayout();
-    }
-
     private void cancelSlotAnimation() {
         if (slotAnimator != null) {
             slotAnimator.removeAllListeners();
@@ -513,16 +511,12 @@ public class AnimatedTextView extends AppCompatTextView {
         int top    = getExtendedPaddingTop();
         int bottom = getHeight() - getExtendedPaddingBottom();
 
-        // Rest origin per layout, not one origin for both. A "minLines" box is taller than a
-        // one-line value, so the short incoming text must be centred by its OWN height — sharing
-        // the tallest layout's origin drew it at the top of the box and it snapped to the centre
-        // when the animation ended.
         int oldHeight = slotOldLayout.getHeight();
         int newHeight = slotNewLayout.getHeight();
-        // Both layouts are positioned so their own first line lands on the resting line,
-        // which keeps the baseline identical before, during and after the slide.
-        float oldRest = slotWindowTop - slotOldLayout.getLineTop(0);
-        float newRest = slotWindowTop - slotNewLayout.getLineTop(0);
+        // Both layers are drawn so their own baseline lands on the resting baseline, which
+        // keeps the glyphs pixel-identical before, during and after the slide.
+        float oldRest = slotBaselineY - slotOldLayout.getLineBaseline(0);
+        float newRest = slotBaselineY - slotNewLayout.getLineBaseline(0);
 
         // Slide distance = the text line height; the window clips it to a single line.
         int slideDistance = Math.round(Math.max(1f, slotWindowBottom - slotWindowTop));

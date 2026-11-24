@@ -12,20 +12,16 @@
     android:clipChildren="false"
     android:clipToPadding="false">
 
-    <com.fadcam.ui.widgets.DossierPaperView
-        android:id="@+id/showcasePaper"
+    <!-- One surface for the whole card: the faint base grid, the warm grid highlight around
+         the phone and the registration marks are all drawn here from a single light source. -->
+    <com.fadcam.ui.widgets.ShowcaseGridLightView
+        android:id="@+id/showcaseSurface"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_margin="1dp"
         android:background="@drawable/bg_pro_bundle_paper_clip"
-        android:clipToOutline="true" />
-
-    <!-- Champagne light behind the phone slot (focus set by ProBundleShowcaseView). It sits
-         over the grid so the paper texture softens under the device instead of running
-         through it, then the copy and the phone paint on top. -->
-    <com.fadcam.ui.widgets.ShowcaseAuraView
-        android:id="@+id/showcaseAura"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:clipToOutline="true"
+        app:lightSubject="@id/showcasePhoneWrapper" />
 
     <LinearLayout
         android:id="@+id/showcaseContent"
@@ -204,7 +200,7 @@
                         <com.fadcam.ui.widgets.PrivacyConvergenceView
                             android:id="@+id/showcasePrivacyMark"
                             android:layout_width="match_parent"
-                            android:layout_height="68dp"
+                            android:layout_height="@dimen/pro_showcase_privacy_mark_h"
                             android:importantForAccessibility="no" />
 
                         <TextView

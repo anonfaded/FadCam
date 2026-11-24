@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Landscape bottom sheets: the window must appear already in place so the
+      sheet panel can slide inside it. Any window animation (the platform's
+      default scale/fade or a translate) produces the diagonal "dance".
+    -->
+    <style name="FadCamSideSheetAnimation">
+        <item name="android:windowEnterAnimation">@anim/side_sheet_none</item>
+        <item name="android:windowExitAnimation">@anim/side_sheet_none</item>
+    </style>
+</resources>

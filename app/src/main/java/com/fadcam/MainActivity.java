@@ -785,6 +785,49 @@ public class MainActivity extends AppCompatActivity {
     /** UI wiring that must not delay the first frame of the launch animation. */
     private void configureStartupUi() {
         if (isFinishing() || isDestroyed()) return;
+
+        // Landscape presents every bottom sheet as a full-height trailing panel.
+        // Registering here keeps it a single window-level adapter: existing sheets
+        // are untouched, and any new BottomSheetDialogFragment gets it for free.
+        getSupportFragmentManager().registerFragmentLifecycleCallbacks(
+                new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+                    @Override
+                    public void onFragmentCreated(
+                            @NonNull androidx.fragment.app.FragmentManager fm,
+                            @NonNull androidx.fragment.app.Fragment f,
+                            android.os.Bundle savedInstanceState) {
+                        if (f instanceof com.google.android.material.bottomsheet.BottomSheetDialogFragment) {
+                            // Runs before DialogFragment.show() paints anything.
+                            com.fadcam.ui.SideSheet.applyIfLandscape(
+                                    ((com.google.android.material.bottomsheet.BottomSheetDialogFragment) f)
+                                            .getDialog());
+                        }
+                    }
+
+                    @Override
+                    public void onFragmentViewCreated(
+                            @NonNull androidx.fragment.app.FragmentManager fm,
+                            @NonNull androidx.fragment.app.Fragment f,
+                            @NonNull View v,
+                            android.os.Bundle savedInstanceState) {
+                        if (f instanceof com.google.android.material.bottomsheet.BottomSheetDialogFragment) {
+                            com.fadcam.ui.SideSheet.applyIfLandscape(
+                                    ((com.google.android.material.bottomsheet.BottomSheetDialogFragment) f)
+                                            .getDialog());
+                        }
+                    }
+
+                    @Override
+                    public void onFragmentStarted(
+                            @NonNull androidx.fragment.app.FragmentManager fm,
+                            @NonNull androidx.fragment.app.Fragment f) {
+                        if (f instanceof com.google.android.material.bottomsheet.BottomSheetDialogFragment) {
+                            com.fadcam.ui.SideSheet.applyIfLandscape(
+                                    ((com.google.android.material.bottomsheet.BottomSheetDialogFragment) f)
+                                            .getDialog());
+                        }
+                    }
+                }, true);
         // A weekly-notification tap routes through Home first, so backing out of Pro
         // returns to the app (and the after-Pro confirmation) instead of the launcher.
         navItemSelectedListener = item -> {
@@ -1901,6 +1944,30 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Records, Faditor, Settings and Lab keep a fixed content height below the status
+     * band so the four headers are visually identical. {@code minHeight} alone is not
+     * honoured once the band is pushed in as padding, so the total height is set
+     * explicitly: band + {@code app_header_content_height}.
+     */
+    private void uniformTabHeaderHeight(View header) {
+        boolean isTabHeader =
+                header.findViewById(R.id.records_header_stats_row) != null
+                        || header.findViewById(R.id.faditor_export_dock) != null
+                        || header.findViewById(R.id.header_settings_title) != null
+                        || header.findViewById(R.id.text_lab_title) != null;
+        if (!isTabHeader) return;
+        int content = getResources().getDimensionPixelSize(
+                R.dimen.app_header_content_height);
+        ViewGroup.LayoutParams lp = header.getLayoutParams();
+        if (lp == null) return;
+        int wanted = topBandPx + content;
+        if (lp.height != wanted) {
+            lp.height = wanted;
+            header.setLayoutParams(lp);
+        }
+    }
+
     /** Puts the band on a screen's header, scroll container or root, in that order. */
     private void applyBandToFragment(androidx.fragment.app.Fragment fragment) {
         if (fragment == null || fragment.getView() == null) return;
@@ -1910,6 +1977,7 @@ public class MainActivity extends AppCompatActivity {
         if (header != null) {
             // A header paints the band with its own colour; its content sits below the inset.
             com.fadcam.ui.utils.HeaderInset.applyBand(header, topBandPx);
+            uniformTabHeaderHeight(header);
             return;
         }
         View scroll = root.findViewById(R.id.screen_scroll);
@@ -2287,6 +2355,7 @@ public class MainActivity extends AppCompatActivity {
         applyResponsiveNavLayout();
         syncNavSelection();
         setupHomeIconCustomization();
+        restoreBarColorsForCurrentTab();
         // Some locale changes arrive as a live configuration change rather than a
         // recreation; the detach/attach above re-inflated the tab views, so reapply the
         // status-bar band to every restored tab.
@@ -2420,8 +2489,9 @@ public class MainActivity extends AppCompatActivity {
             bottomNavigationView = (NavigationBarView) rail;
 
             set.constrainWidth(R.id.nav_container, railWidth + margin * 2);
+            // Wrap the rail's items: a full-height rail looked like a second screen edge.
             set.constrainHeight(R.id.nav_container,
-                    androidx.constraintlayout.widget.ConstraintSet.MATCH_CONSTRAINT);
+                    androidx.constraintlayout.widget.ConstraintSet.WRAP_CONTENT);
             set.connect(R.id.nav_container, top, parent, top, 0);
             set.connect(R.id.nav_container, bottomEdge, parent, bottomEdge, 0);
             set.connect(R.id.nav_container, start, parent, start, 0);
@@ -2435,7 +2505,7 @@ public class MainActivity extends AppCompatActivity {
 
             navBasePaddingStart = margin;
             navBasePaddingTop = margin;
-            navBasePaddingEnd = 0;
+            navBasePaddingEnd = margin;
             navBasePaddingBottom = margin;
         } else {
             if (rail != null) rail.setVisibility(View.GONE);
@@ -2473,7 +2543,35 @@ public class MainActivity extends AppCompatActivity {
 
         styleNavView(bottomNavigationView, landscape);
         applyHomeNavIcon();
+        if (landscape && rail instanceof NavigationBarView) {
+            sizeRailToMenu((NavigationBarView) rail);
+        }
         androidx.core.view.ViewCompat.requestApplyInsets(rootView);
+    }
+
+    /**
+     * A NavigationRailView measures itself to the available height even with
+     * wrap_content. Give it an explicit height equal to its items so the pill
+     * wraps the buttons instead of running the full screen edge.
+     */
+    private void sizeRailToMenu(NavigationBarView rail) {
+        if (rail == null) return;
+        int count = rail.getMenu().size();
+        if (count <= 0) return;
+        int itemHeight = getResources().getDimensionPixelSize(
+                R.dimen.home_rail_dock_item_height);
+        // The rail menu starts one content-inset below the pill's top. Reserving the
+        // same inset at the bottom keeps the first and last buttons equally padded
+        // (without it the last item overflows the pill by one inset).
+        int inset = getResources().getDimensionPixelSize(
+                R.dimen.home_rail_dock_content_inset);
+        int height = itemHeight * count + inset * 2
+                + rail.getPaddingTop() + rail.getPaddingBottom();
+        ViewGroup.LayoutParams lp = rail.getLayoutParams();
+        if (lp != null && lp.height != height) {
+            lp.height = height;
+            rail.setLayoutParams(lp);
+        }
     }
 
     /** Shared look for the bottom pill and the rail; only the corner radius differs. */
@@ -2561,6 +2659,15 @@ public class MainActivity extends AppCompatActivity {
             int navRight = navVisible ? systemBars.right : 0;
             int navBottom = navVisible ? systemBars.bottom : 0;
 
+            // A punch-hole / notch is reported as a display cutout, not as a system bar.
+            // In landscape the camera sits on the left or right edge, so the cutout has
+            // to be treated as a horizontal safe area too — not only as the top band.
+            androidx.core.graphics.Insets cutout = insets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.displayCutout());
+            int safeLeft = Math.max(navLeft, cutout.left);
+            int safeRight = Math.max(navRight, cutout.right);
+            int safeBottom = Math.max(navBottom, cutout.bottom);
+
             // Check if running on TV form factor (TV or Wear OS smartwatch)
             boolean isTV = getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK)
                     || getPackageManager().hasSystemFeature("android.hardware.type.television");
@@ -2580,7 +2687,11 @@ public class MainActivity extends AppCompatActivity {
             // would just push the header down and eat the scarce height.
             boolean statusBarHidden = !insets.isVisible(
                     androidx.core.view.WindowInsetsCompat.Type.statusBars());
-            topBandPx = (isFormFactorTV || (isLandscapeLayout() && statusBarHidden))
+            boolean landscapeNow = isLandscapeLayout();
+            // Only suppress the band in landscape when there is no cutout on the top edge
+            // either; a notch there still needs its height reserved.
+            topBandPx = (isFormFactorTV
+                    || (landscapeNow && statusBarHidden && cutout.top == 0))
                     ? 0 : contentTopInset;
             applyBandToCurrentFragment();
 
@@ -2599,23 +2710,23 @@ public class MainActivity extends AppCompatActivity {
                 // paddingBottom = only the system gesture bar so the last interactive
                 // element is never hidden behind the gesture area.
                 // Dock clearance is handled per-fragment via layout_marginBottom=72dp.
-                int contentBottomPadding = isFormFactorTV ? 0 : navBottom;
+                int contentBottomPadding = isFormFactorTV ? 0 : safeBottom;
                 // The top band belongs to the screen itself (header or scroll container), so
                 // the container only carries the horizontal and bottom insets. In landscape
                 // the rail already owns the start inset and the container starts after it.
-                boolean railLayout = isLandscapeLayout();
+                boolean railLayout = landscapeNow;
                 fragmentContainer.setPadding(
-                        railLayout ? 0 : navLeft, 0,
-                        navRight, contentBottomPadding);
+                        railLayout ? 0 : safeLeft, 0,
+                        safeRight, contentBottomPadding);
             }
             if (overlayContainer != null) {
                 // Overlay screens (Settings sub-screens, Trash) apply the top band through
                 // their own header, so the container only carries the horizontal and bottom
                 // insets. Padding it here is what left a solid strip above the header.
-                int overlayBottom = isFormFactorTV ? 0 : navBottom;
+                int overlayBottom = isFormFactorTV ? 0 : safeBottom;
                 overlayContainer.setPadding(
-                        navLeft, 0,
-                        navRight, overlayBottom);
+                        safeLeft, 0,
+                        safeRight, overlayBottom);
             }
 
             // Update status bar scrim height directly via LayoutParams.
@@ -2636,13 +2747,25 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (navContainer != null) {
-                // In landscape, nav bar shifts to the right (systemBars.right > 0).
-                // Apply right inset alongside bottom so dock doesn't clip under the nav bar.
+                // In landscape the rail lives on the leading edge, so the cutout is carried
+                // as a margin (padding would squeeze the 40dp rail). Portrait takes it as
+                // normal padding.
+                ViewGroup.LayoutParams navLp = navContainer.getLayoutParams();
+                if (navLp instanceof ViewGroup.MarginLayoutParams) {
+                    ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) navLp;
+                    int wantedLeft = landscapeNow ? safeLeft : 0;
+                    int wantedRight = landscapeNow ? 0 : safeRight;
+                    if (mlp.leftMargin != wantedLeft || mlp.rightMargin != wantedRight) {
+                        mlp.leftMargin = wantedLeft;
+                        mlp.rightMargin = wantedRight;
+                        navContainer.setLayoutParams(mlp);
+                    }
+                }
                 navContainer.setPadding(
-                        navBasePaddingStart + navLeft,
+                        navBasePaddingStart + (landscapeNow ? 0 : safeLeft),
                         navBasePaddingTop,
-                        navBasePaddingEnd + navRight,
-                        navBasePaddingBottom + navBottom);
+                        navBasePaddingEnd + (landscapeNow ? 0 : safeRight),
+                        navBasePaddingBottom + safeBottom);
             }
 
             // Extend gradient scrim height by systemBars.bottom so it always peeks above
@@ -2650,7 +2773,7 @@ public class MainActivity extends AppCompatActivity {
             if (dockGradientScrim != null
                     && dockGradientScrim.getVisibility() != View.GONE) {
                 ViewGroup.LayoutParams lp = dockGradientScrim.getLayoutParams();
-                int requiredHeight = dockGradientBaseHeightPx + navBottom;
+                int requiredHeight = dockGradientBaseHeightPx + safeBottom;
                 if (lp != null && lp.height != requiredHeight) {
                     lp.height = requiredHeight;
                     dockGradientScrim.setLayoutParams(lp);
@@ -2735,6 +2858,15 @@ public class MainActivity extends AppCompatActivity {
         if (bottomNavigationView == null) return;
         bottomNavigationView.post(() -> {
             try {
+                // Both the bottom bar and the rail give each item view the menu id.
+                View directHome = bottomNavigationView.findViewById(R.id.navigation_home);
+                if (directHome != null) {
+                    directHome.setOnLongClickListener(v -> {
+                        showHomeIconPicker();
+                        return true;
+                    });
+                    return;
+                }
                 if (bottomNavigationView.getChildCount() == 0) return;
                 View menuView = bottomNavigationView.getChildAt(0);
                 if (!(menuView instanceof ViewGroup)) return;

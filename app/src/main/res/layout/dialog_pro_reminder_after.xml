@@ -18,7 +18,7 @@
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardBackgroundColor="@color/dossier_paper"
+        app:cardBackgroundColor="@color/pro_showcase_background"
         app:cardCornerRadius="6dp"
         app:cardElevation="0dp"
         app:cardPreventCornerOverlap="true"
@@ -29,9 +29,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <com.fadcam.ui.widgets.DossierPaperView
+            <com.fadcam.ui.widgets.ShowcaseGridLightView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                app:lightSubject="@id/proAfterAvatar" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -55,6 +56,7 @@
                     android:background="@color/dossier_line" />
 
                 <com.fadcam.ui.widgets.PreviewAvatarView
+                    android:id="@+id/proAfterAvatar"
                     android:layout_width="92dp"
                     android:layout_height="92dp"
                     android:layout_gravity="center_horizontal"

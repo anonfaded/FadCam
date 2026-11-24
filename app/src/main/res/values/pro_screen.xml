@@ -55,6 +55,12 @@
     <color name="onboarding_mascot_glow_core">#6BE8C77B</color>
     <color name="onboarding_mascot_glow_mid">#3AE8C77B</color>
 
+    <!-- Bundle card surface: a deep neutral sheet so the faint grid and the phone's light are
+         the only things that lift it off the page. -->
+    <color name="pro_showcase_background">#111315</color>
+    <!-- Feature row label, a touch brighter than the muted dossier ink for small screens. -->
+    <color name="pro_showcase_label">#CCC8BD</color>
+
     <!-- One feature row of the bundle card: small outline glyph, typed label. -->
     <style name="ProShowcaseFeatureIcon">
         <item name="android:layout_width">16dp</item>
@@ -66,7 +72,7 @@
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:fontFamily">monospace</item>
-        <item name="android:textColor">@color/dossier_muted</item>
+        <item name="android:textColor">@color/pro_showcase_label</item>
         <item name="android:textSize">11sp</item>
         <item name="android:lineSpacingExtra">2dp</item>
     </style>

@@ -802,14 +802,14 @@ public class FadCamProActivity extends AppCompatActivity {
     private CharSequence styledClaimTitle() {
         String text = getString(R.string.pro_screen_claim_title);
         SpannableString styled = new SpannableString(text);
-        int at = text.indexOf("#1");
-        if (at >= 0) {
-            styled.setSpan(new ForegroundColorSpan(color(R.color.pro_check_gold)), at, at + 2,
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            styled.setSpan(new TypefaceSpan("sans-serif-black"), at, at + 2,
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            styled.setSpan(new RelativeSizeSpan(1.08f), at, at + 2,
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        int[] marker = com.fadcam.util.RankMarker.locate(text);
+        if (marker != null) {
+            styled.setSpan(new ForegroundColorSpan(color(R.color.pro_check_gold)),
+                    marker[0], marker[1], Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            styled.setSpan(new TypefaceSpan("sans-serif-black"),
+                    marker[0], marker[1], Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            styled.setSpan(new RelativeSizeSpan(1.08f),
+                    marker[0], marker[1], Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
         return styled;
     }

@@ -15,7 +15,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.fadcam.ui.widgets.DossierPaperView
+        <com.fadcam.ui.widgets.ShowcaseGridLightView
+            android:id="@+id/onboardingSurface"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
@@ -101,8 +102,12 @@
                     <com.fadcam.ui.widgets.AspectRatioFrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/onboarding_stage"
+                        android:background="@color/pro_showcase_background"
                         app:aspectRatio="0.5476">
+
+                        <com.fadcam.ui.widgets.ShowcaseGridLightView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -150,8 +155,12 @@
                     <com.fadcam.ui.widgets.AspectRatioFrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/onboarding_stage"
+                        android:background="@color/pro_showcase_background"
                         app:aspectRatio="0.5476">
+
+                        <com.fadcam.ui.widgets.ShowcaseGridLightView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -199,8 +208,12 @@
                     <com.fadcam.ui.widgets.AspectRatioFrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/onboarding_stage"
+                        android:background="@color/pro_showcase_background"
                         app:aspectRatio="0.5476">
+
+                        <com.fadcam.ui.widgets.ShowcaseGridLightView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -248,8 +261,12 @@
                     <com.fadcam.ui.widgets.AspectRatioFrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/onboarding_stage"
+                        android:background="@color/pro_showcase_background"
                         app:aspectRatio="0.5476">
+
+                        <com.fadcam.ui.widgets.ShowcaseGridLightView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -297,8 +314,12 @@
                     <com.fadcam.ui.widgets.AspectRatioFrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/onboarding_stage"
+                        android:background="@color/pro_showcase_background"
                         app:aspectRatio="0.5476">
+
+                        <com.fadcam.ui.widgets.ShowcaseGridLightView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -346,8 +367,12 @@
                     <com.fadcam.ui.widgets.AspectRatioFrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/onboarding_stage"
+                        android:background="@color/pro_showcase_background"
                         app:aspectRatio="0.5476">
+
+                        <com.fadcam.ui.widgets.ShowcaseGridLightView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -396,8 +421,12 @@
                     <com.fadcam.ui.widgets.AspectRatioFrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/onboarding_stage"
+                        android:background="@color/pro_showcase_background"
                         app:aspectRatio="0.5476">
+
+                        <com.fadcam.ui.widgets.ShowcaseGridLightView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -445,8 +474,12 @@
                     <com.fadcam.ui.widgets.AspectRatioFrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/onboarding_stage"
+                        android:background="@color/pro_showcase_background"
                         app:aspectRatio="0.5476">
+
+                        <com.fadcam.ui.widgets.ShowcaseGridLightView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -527,8 +560,12 @@
                     <com.fadcam.ui.widgets.AspectRatioFrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/onboarding_stage"
+                        android:background="@color/pro_showcase_background"
                         app:aspectRatio="0.5333">
+
+                        <com.fadcam.ui.widgets.ShowcaseGridLightView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"
@@ -576,8 +613,12 @@
                     <com.fadcam.ui.widgets.AspectRatioFrameLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/onboarding_stage"
+                        android:background="@color/pro_showcase_background"
                         app:aspectRatio="0.5333">
+
+                        <com.fadcam.ui.widgets.ShowcaseGridLightView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
                         <com.fadcam.ui.animations.AnimationView
                             android:layout_width="match_parent"

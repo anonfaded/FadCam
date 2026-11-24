@@ -120,12 +120,12 @@
                 <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="0dp" android:layout_marginBottom="0dp" />
 
                 <!-- 2-Column Layout within Left Panel -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <com.fadcam.ui.widgets.EqualHeightRowLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
 
                 <!-- Left Column: Original Storage Widget -->
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="@dimen/home_land_gap_s" android:orientation="vertical">
 
-                <com.google.android.material.card.MaterialCardView android:id="@+id/cardStorage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="12dp" app:cardElevation="3dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
+                <com.google.android.material.card.MaterialCardView android:id="@+id/cardStorage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius_l" app:cardElevation="@dimen/home_land_card_elevation_l" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="@dimen/home_land_card_stroke">
 
                     <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="@dimen/home_land_gap_l">
 
@@ -140,7 +140,7 @@
                             android:nextFocusDown="@+id/rowEstimateTime"
                             android:nextFocusUp="@+id/btnGetPro"
                             app:cardBackgroundColor="@android:color/transparent" 
-                            app:cardCornerRadius="10dp" 
+                            app:cardCornerRadius="@dimen/home_land_card_radius_m" 
                             app:cardElevation="0dp" 
                             app:rippleColor="#22FFFFFF" 
                             app:strokeWidth="0dp">
@@ -182,7 +182,7 @@
                             android:nextFocusUp="@+id/rowCamera"
                             android:nextFocusDown="@+id/rowStorageAvailable"
                             app:cardBackgroundColor="@android:color/transparent" 
-                            app:cardCornerRadius="10dp" 
+                            app:cardCornerRadius="@dimen/home_land_card_radius_m" 
                             app:cardElevation="0dp" 
                             app:rippleColor="#22FFFFFF" 
                             app:strokeWidth="0dp">
@@ -223,7 +223,7 @@
                             android:nextFocusUp="@+id/rowEstimateTime"
                             android:nextFocusDown="@+id/cardRailToggleLandscape"
                             app:cardBackgroundColor="@android:color/transparent" 
-                            app:cardCornerRadius="10dp" 
+                            app:cardCornerRadius="@dimen/home_land_card_radius_m" 
                             app:cardElevation="0dp" 
                             app:rippleColor="#22FFFFFF" 
                             app:strokeWidth="0dp">
@@ -259,7 +259,7 @@
                     android:clickable="true"
                     android:focusable="true"
                     app:cardBackgroundColor="@android:color/transparent"
-                    app:cardCornerRadius="12dp"
+                    app:cardCornerRadius="@dimen/home_land_card_radius_l"
                     app:cardElevation="0dp"
                     app:rippleColor="#22FFFFFF"
                     app:strokeWidth="0dp">
@@ -375,7 +375,7 @@
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="@dimen/home_land_gap_s" android:orientation="vertical">
 
                     <!-- Clock Card -->
-                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:strokeWidth="0dp">
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardClock" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="@dimen/home_land_card_elevation_m" app:strokeWidth="0dp">
 
                         <LinearLayout android:id="@+id/layoutClockInner" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="@dimen/home_land_gap">
 
@@ -393,7 +393,7 @@
                     </com.google.android.material.card.MaterialCardView>
 
                     <!-- Stats Card -->
-                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="2dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardStats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" android:clickable="true" android:focusable="true" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="@dimen/home_land_card_elevation_m" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="@dimen/home_land_card_stroke">
 
                         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="@dimen/home_land_gap">
 
@@ -415,9 +415,9 @@
                     </com.google.android.material.card.MaterialCardView>
 
                     <!-- Recording Controls Card -->
-                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
+                    <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="@dimen/home_land_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="@dimen/home_land_card_elevation_s" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="@dimen/home_land_card_stroke">
 
-                        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="@dimen/home_land_gap_l">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:padding="@dimen/home_land_gap_l">
 
                             <TextView android:id="@+id/tv_recording_controls_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/recording_controls_title" android:textSize="@dimen/home_land_text_small" android:textStyle="bold" android:textColor="?attr/sectionHeaderColor" android:gravity="center" android:paddingStart="@dimen/home_land_gap" android:paddingEnd="@dimen/home_land_gap" android:paddingTop="0dp" android:paddingBottom="@dimen/home_land_gap_l" android:includeFontPadding="false" />
 
@@ -425,9 +425,9 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
+                </com.fadcam.ui.widgets.EqualHeightRowLayout>
                 <!-- Close 2-column container -->
                 </LinearLayout>
-            </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 
     </LinearLayout>
@@ -445,6 +445,7 @@
         android:nextFocusUp="@+id/rowStorageAvailable"
         android:nextFocusDown="@+id/buttonTorchSwitch"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/rightPanel"
         app:layout_constraintStart_toEndOf="@id/leftPanel"
         app:layout_constraintTop_toBottomOf="@id/header_bar">
 
@@ -462,7 +463,7 @@
     <LinearLayout android:id="@+id/rightPanel" android:layout_width="0dp" android:layout_height="0dp" android:layout_marginStart="@dimen/home_land_gap_s" android:layout_marginTop="@dimen/home_land_gap" android:layout_marginEnd="@dimen/home_land_gap_l" android:layout_marginBottom="0dp" android:orientation="vertical" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_weight="1" app:layout_constraintStart_toEndOf="@+id/cardRailToggleLandscape" app:layout_constraintTop_toBottomOf="@id/header_bar">
 
         <!-- Camera Preview Area -->
-        <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:strokeColor="?attr/homeRailAccent" app:strokeWidth="15dp">
+        <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="@dimen/home_land_card_radius" app:cardElevation="0dp" app:strokeColor="?attr/homeRailAccent" app:strokeWidth="@dimen/home_land_preview_stroke">
 
             <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent">
 
@@ -862,15 +863,15 @@
                         android:minWidth="0dp"
                         android:padding="0dp"
                         app:backgroundTint="#5A0D1015"
-                        app:cornerRadius="10dp"
+                        app:cornerRadius="@dimen/home_land_card_radius_m"
                         app:icon="@drawable/ic_zoom_out_map"
                         app:iconGravity="textStart"
                         app:iconPadding="0dp"
-                        app:iconSize="16dp"
+                        app:iconSize="@dimen/home_land_icon_ms"
                         app:iconTint="@android:color/white"
                         app:rippleColor="#33FFFFFF"
                         app:strokeColor="#2AFFFFFF"
-                        app:strokeWidth="1dp" />
+                        app:strokeWidth="@dimen/home_land_card_stroke" />
                 </LinearLayout>
 
                 <!-- Hint text for long press to enable preview — INSIDE the preview
@@ -885,11 +886,11 @@
 
         <FrameLayout
             android:id="@+id/torch_btn_wrapper"
-            android:layout_width="@dimen/home_land_touch_3xl"
-            android:layout_height="@dimen/home_land_touch_3xl"
+            android:layout_width="@dimen/home_land_control_size"
+            android:layout_height="@dimen/home_land_control_size"
             android:layout_marginEnd="@dimen/home_land_gap" android:clipChildren="false" android:clipToPadding="false">
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonTorchSwitch" android:layout_width="match_parent" android:layout_height="match_parent" style="@style/Widget.MaterialComponents.Button.OutlinedButton" app:icon="@drawable/ic_flashlight_on" app:iconSize="24dp" app:iconTint="@color/button_icon_tint_selector" app:iconGravity="textStart" app:iconPadding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:paddingStart="0dp" android:paddingEnd="0dp" app:rippleColor="#22FFFFFF" android:background="@drawable/control_button_bg" android:enabled="false" app:cornerRadius="15dp"
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonTorchSwitch" android:layout_width="match_parent" android:layout_height="match_parent" style="@style/Widget.MaterialComponents.Button.OutlinedButton" app:icon="@drawable/ic_flashlight_on" app:iconSize="@dimen/home_land_control_icon" app:iconTint="@color/button_icon_tint_selector" app:iconGravity="textStart" app:iconPadding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:paddingStart="0dp" android:paddingEnd="0dp" app:rippleColor="#22FFFFFF" android:background="@drawable/control_button_bg" android:enabled="false" app:cornerRadius="@dimen/home_land_preview_stroke"
             android:nextFocusUp="@+id/cardRailToggleLandscape"
             android:nextFocusDown="@+id/buttonStartStop" />
 
@@ -913,14 +914,21 @@
 
         <com.fadcam.ui.utils.AnimatedMaterialButton
             android:id="@+id/buttonStartStop"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="@dimen/home_land_control_start_h"
             android:layout_marginEnd="@dimen/home_land_gap"
-            android:minWidth="@dimen/home_land_button_min_w"
+            android:minHeight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="@dimen/home_land_gap_l"
+            android:paddingEnd="@dimen/home_land_gap_l"
+            android:minWidth="0dp"
             android:maxLines="1"
             android:ellipsize="end"
             app:icon="@drawable/play_button_rounded"
-            app:iconSize="14dp"
+            app:iconSize="@dimen/home_land_control_icon_start"
+            app:iconPadding="0dp"
             android:enabled="false"
             android:background="@drawable/control_button_bg_green"
             app:iconTint="@color/white"
@@ -929,18 +937,18 @@
             android:nextFocusUp="@+id/cardRailToggleLandscape"
             android:nextFocusDown="@+id/buttonPauseResume" />
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="@dimen/home_land_touch_3xl" android:layout_height="@dimen/home_land_touch_3xl" android:layout_marginStart="@dimen/home_land_gap" app:icon="@drawable/pause_rounded" app:iconSize="16dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="15dp"
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonPauseResume" android:layout_width="@dimen/home_land_control_size" android:layout_height="@dimen/home_land_control_size" android:layout_marginStart="@dimen/home_land_gap" app:icon="@drawable/pause_rounded" app:iconSize="@dimen/home_land_control_icon_s" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="@dimen/home_land_preview_stroke"
             android:nextFocusUp="@+id/cardRailToggleLandscape"
             android:nextFocusDown="@+id/buttonCamSwitch" />
 
                 <FrameLayout
             android:id="@+id/fadrec_mute_wrapper"
-            android:layout_width="@dimen/home_land_touch_3xl"
-            android:layout_height="@dimen/home_land_touch_3xl"
+            android:layout_width="@dimen/home_land_control_size"
+            android:layout_height="@dimen/home_land_control_size"
             android:layout_marginStart="@dimen/home_land_gap"
             android:visibility="gone" android:clipChildren="false" android:clipToPadding="false">
 
-<com.google.android.material.button.MaterialButton android:id="@+id/buttonFadRecMute" android:layout_width="match_parent" android:layout_height="match_parent" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone" />
+<com.google.android.material.button.MaterialButton android:id="@+id/buttonFadRecMute" android:layout_width="match_parent" android:layout_height="match_parent" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="@dimen/home_land_preview_stroke" android:visibility="gone" />
 
             <TextView
                 android:id="@+id/fadrec_mute_icon"
@@ -969,7 +977,7 @@
         </FrameLayout>
 
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="@dimen/home_land_touch_3xl" android:layout_height="@dimen/home_land_touch_3xl" android:layout_marginStart="@dimen/home_land_gap" app:icon="@drawable/cam_switch" app:iconTint="@color/white" app:iconSize="24dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="15dp"
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="@dimen/home_land_control_size" android:layout_height="@dimen/home_land_control_size" android:layout_marginStart="@dimen/home_land_gap" app:icon="@drawable/cam_switch" app:iconTint="@color/white" app:iconSize="@dimen/home_land_control_icon" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="@dimen/home_land_preview_stroke"
             android:nextFocusUp="@+id/cardRailToggleLandscape"
             android:nextFocusDown="@+id/buttonMirrorSwitch" />
 
@@ -977,11 +985,11 @@
 
                 <FrameLayout
             android:id="@+id/mirror_btn_wrapper"
-            android:layout_width="@dimen/home_land_touch_3xl"
-            android:layout_height="@dimen/home_land_touch_3xl"
+            android:layout_width="@dimen/home_land_control_size"
+            android:layout_height="@dimen/home_land_control_size"
             android:layout_marginStart="@dimen/home_land_gap" android:clipChildren="false" android:clipToPadding="false">
 
-<com.google.android.material.button.MaterialButton android:id="@+id/buttonMirrorSwitch" android:layout_width="match_parent" android:layout_height="match_parent" app:icon="@drawable/ic_mirror_video" app:iconSize="22dp" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:iconTint="@color/white" app:cornerRadius="15dp" android:visibility="gone"
+<com.google.android.material.button.MaterialButton android:id="@+id/buttonMirrorSwitch" android:layout_width="match_parent" android:layout_height="match_parent" app:icon="@drawable/ic_mirror_video" app:iconSize="@dimen/home_land_control_icon_s" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:iconTint="@color/white" app:cornerRadius="@dimen/home_land_preview_stroke" android:visibility="gone"
             android:nextFocusUp="@+id/cardRailToggleLandscape"
             android:nextFocusDown="@+id/buttonMirrorSwitch" />
 

@@ -50,4 +50,9 @@
         <attr name="edgeShadowAlpha" format="float" />
         <attr name="seedKey" format="string" />
     </declare-styleable>
+
+    <declare-styleable name="ShowcaseGridLightView">
+        <!-- Sibling view whose bounds become the light source (the phone slot, an avatar). -->
+        <attr name="lightSubject" format="reference" />
+    </declare-styleable>
 </resources>
