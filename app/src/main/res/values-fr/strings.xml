@@ -4787,7 +4787,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="onboarding_mini_heading">Et ce n\'est pas fini.</string>
     <string name="onboarding_mini_support">Mini-apps. Des outils du quotidien, intégrés directement à FadCam.</string>
     <string name="onboarding_mini_more">D\'autres mini-apps arrivent bientôt.</string>
-    <string name="onboarding_payoff_title">%1$d TÂCHES. UN SEUL FADCAM.</string>
+    <string name="onboarding_payoff_title">%1$d tâches. Un seul FadCam.</string>
     <string name="onboarding_payoff_support">Il est temps de dire adieu à ces applis en trop.</string>
     <string name="onboarding_lite_full_note">FadCam Full remplace 10 applis.</string>
     <string name="onboarding_demo_person">PERSONNE</string>

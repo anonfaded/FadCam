@@ -5050,7 +5050,7 @@
     <string name="onboarding_mini_heading">还没结束。</string>
     <string name="onboarding_mini_support">迷你应用。日常工具，直接内置在 FadCam 中。</string>
     <string name="onboarding_mini_more">更多迷你应用即将推出。</string>
-    <string name="onboarding_payoff_title">%1$d 项工作。一个 FADCAM。</string>
+    <string name="onboarding_payoff_title">%1$d 项工作。一个 FadCam。</string>
     <string name="onboarding_payoff_support">是时候和那些多余的应用说再见了。</string>
     <string name="onboarding_lite_full_note">FadCam Full 可替代 10 个应用。</string>
     <string name="onboarding_demo_person">人物</string>

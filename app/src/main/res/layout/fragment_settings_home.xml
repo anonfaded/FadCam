@@ -6,7 +6,7 @@
     android:background="?android:attr/colorBackground">
 
     <!-- Fixed Header (no scroll) -->
-    <LinearLayout
+    <com.fadcam.ui.widgets.TabHeaderLayout
         android:id="@+id/fixed_header"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -118,7 +118,7 @@ app:layout_constraintTop_toTopOf="parent"
                 android:letterSpacing="0.08"
                 android:background="@drawable/badge_bg_neutral"/>
         </FrameLayout>
-    </LinearLayout>
+    </com.fadcam.ui.widgets.TabHeaderLayout>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/content_scroll"

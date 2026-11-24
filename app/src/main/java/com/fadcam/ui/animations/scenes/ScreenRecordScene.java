@@ -50,13 +50,6 @@ public final class ScreenRecordScene implements Scene {
         canvas.save();
         kit.clipRound(canvas, 14f, 8f, 154f, 62f, 3f);
 
-        // Canvas grid.
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(0.4f);
-        paint.setColor(0x12FFFFFF);
-        for (float x = 24f; x < 126f; x += 16f) canvas.drawLine(x, 12f, x, 58f, paint);
-        for (float y = 18f; y < 58f; y += 12f) canvas.drawLine(18f, y, 126f, y, paint);
-
         int activeLayer = frame.ambient ? ((int) (frame.phase * 3f)) % 3 : 0;
 
         // Layer 1: freehand pen stroke.

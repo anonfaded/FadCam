@@ -8,7 +8,7 @@
     android:background="?android:colorBackground">
 
     <!-- Fixed Header -->
-    <LinearLayout
+    <com.fadcam.ui.widgets.TabHeaderLayout
         android:id="@+id/header_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -325,7 +325,7 @@
                 android:contentDescription="@string/records_repair_banner_dismiss"
                 android:background="?attr/selectableItemBackgroundBorderless" />
         </LinearLayout>
-    </LinearLayout>
+    </com.fadcam.ui.widgets.TabHeaderLayout>
 
     <!-- Subtle loading progress indicator - only shown if loading takes >200ms -->
     <ProgressBar

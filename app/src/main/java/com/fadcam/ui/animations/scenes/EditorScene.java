@@ -61,14 +61,17 @@ public final class EditorScene implements Scene {
         clipStrip(kit, canvas, 48f, 70f, 0xFF1A1D1F, style.line, false, style);
         clipStrip(kit, canvas, 72f, 106f, 0xFF2A2415, style.accent, true, style);
 
-        // Trim handles on the selected clip.
+        // Trim handles on the selected clip: rounded grips with a centre groove, so they
+        // read as handles you can drag rather than two stray vertical lines.
+        float handleTop = 54.5f;
+        float handleBottom = 73.5f;
+        kit.fillRound(canvas, 70.8f, handleTop, 73.2f, handleBottom, 1.2f, style.accent);
+        kit.fillRound(canvas, 104.8f, handleTop, 107.2f, handleBottom, 1.2f, style.accent);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1.8f);
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setColor(style.accent);
-        canvas.drawLine(72f, 53f, 72f, 73f, paint);
-        canvas.drawLine(106f, 53f, 106f, 73f, paint);
-        paint.setStrokeCap(Paint.Cap.BUTT);
+        paint.setStrokeWidth(0.5f);
+        paint.setColor(0xFF2A2415);
+        canvas.drawLine(72f, 58f, 72f, 70f, paint);
+        canvas.drawLine(106f, 58f, 106f, 70f, paint);
 
         // Playhead.
         float head = 76f + 28f * playhead;

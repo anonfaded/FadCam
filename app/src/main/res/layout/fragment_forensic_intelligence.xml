@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <LinearLayout
+    <com.fadcam.ui.widgets.TabHeaderLayout
         android:id="@+id/header_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -128,7 +128,7 @@
                     android:visibility="invisible" />
             </FrameLayout>
         </FrameLayout>
-    </LinearLayout>
+    </com.fadcam.ui.widgets.TabHeaderLayout>
 
     <FrameLayout
         android:id="@+id/forensics_content_container"

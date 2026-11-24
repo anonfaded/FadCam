@@ -102,9 +102,16 @@ public final class QrScene implements Scene {
                     AnimationMath.withAlpha(style.ink, alpha), Paint.Align.LEFT, false);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(1.2f);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setStrokeJoin(Paint.Join.ROUND);
             paint.setColor(AnimationMath.withAlpha(style.accent, alpha));
-            canvas.drawLine(106f, 36f, 109f, 39f, paint);
-            canvas.drawLine(109f, 39f, 113f, 33f, paint);
+            kit.path.reset();
+            kit.path.moveTo(106f, 36f);
+            kit.path.lineTo(109f, 39f);
+            kit.path.lineTo(113f, 33f);
+            canvas.drawPath(kit.path, paint);
+            paint.setStrokeCap(Paint.Cap.BUTT);
+            paint.setStrokeJoin(Paint.Join.MITER);
         }
     }
 

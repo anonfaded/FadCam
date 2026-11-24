@@ -256,9 +256,9 @@ public class OnboardingCapabilitiesFragment extends Fragment implements SlidePol
             styled.setSpan(new ForegroundColorSpan(gold), start, end,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
-        int brand = text.indexOf("FADCAM");
+        int brand = text.toLowerCase(java.util.Locale.ROOT).indexOf("fadcam");
         if (brand >= 0) {
-            styled.setSpan(new ForegroundColorSpan(gold), brand, brand + 6,
+            styled.setSpan(new ForegroundColorSpan(gold), brand, brand + "FadCam".length(),
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
         title.setText(styled);

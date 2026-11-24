@@ -1950,24 +1950,6 @@ public class MainActivity extends AppCompatActivity {
      * honoured once the band is pushed in as padding, so the total height is set
      * explicitly: band + {@code app_header_content_height}.
      */
-    private void uniformTabHeaderHeight(View header) {
-        boolean isTabHeader =
-                header.findViewById(R.id.records_header_stats_row) != null
-                        || header.findViewById(R.id.faditor_export_dock) != null
-                        || header.findViewById(R.id.header_settings_title) != null
-                        || header.findViewById(R.id.text_lab_title) != null;
-        if (!isTabHeader) return;
-        int content = getResources().getDimensionPixelSize(
-                R.dimen.app_header_content_height);
-        ViewGroup.LayoutParams lp = header.getLayoutParams();
-        if (lp == null) return;
-        int wanted = topBandPx + content;
-        if (lp.height != wanted) {
-            lp.height = wanted;
-            header.setLayoutParams(lp);
-        }
-    }
-
     /** Puts the band on a screen's header, scroll container or root, in that order. */
     private void applyBandToFragment(androidx.fragment.app.Fragment fragment) {
         if (fragment == null || fragment.getView() == null) return;
@@ -1977,7 +1959,6 @@ public class MainActivity extends AppCompatActivity {
         if (header != null) {
             // A header paints the band with its own colour; its content sits below the inset.
             com.fadcam.ui.utils.HeaderInset.applyBand(header, topBandPx);
-            uniformTabHeaderHeight(header);
             return;
         }
         View scroll = root.findViewById(R.id.screen_scroll);

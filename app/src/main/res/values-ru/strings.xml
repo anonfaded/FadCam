@@ -3800,7 +3800,7 @@
     <string name="onboarding_mini_heading">И это ещё не всё.</string>
     <string name="onboarding_mini_support">Мини-приложения. Повседневные инструменты прямо в FadCam.</string>
     <string name="onboarding_mini_more">Новые мини-приложения уже скоро.</string>
-    <string name="onboarding_payoff_title">%1$d В ОДНОМ FADCAM.</string>
+    <string name="onboarding_payoff_title">%1$d задач. Один FadCam.</string>
     <string name="onboarding_payoff_support">Пора попрощаться с этими лишними приложениями.</string>
     <string name="onboarding_lite_full_note">FadCam Full заменяет 10 приложений.</string>
     <string name="onboarding_demo_person">ЧЕЛОВЕК</string>

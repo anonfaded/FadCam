@@ -9,7 +9,7 @@
     android:background="?android:attr/colorBackground">
 
     <!-- Header bar (consistent with other tabs) -->
-    <LinearLayout
+    <com.fadcam.ui.widgets.TabHeaderLayout
         android:id="@+id/header_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -165,7 +165,7 @@
                 android:paddingBottom="4dp"
                 tools:text="1.2 GB / 2.5 GB" />
         </LinearLayout>
-    </LinearLayout>
+    </com.fadcam.ui.widgets.TabHeaderLayout>
 
     <ScrollView
         android:layout_width="match_parent"

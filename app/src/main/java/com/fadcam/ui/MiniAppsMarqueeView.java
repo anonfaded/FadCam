@@ -136,7 +136,7 @@ public class MiniAppsMarqueeView extends View implements AnimationClock.FrameLis
         if (!running || labels.isEmpty() || getWidth() == 0) {
             return;
         }
-        if (!animationsEnabled() || contentWidth <= getWidth() - 2f * edgeFade) {
+        if (!animationsEnabled() || contentWidth <= 0f) {
             offset = 0f;
             invalidate();
             return;
@@ -199,13 +199,14 @@ public class MiniAppsMarqueeView extends View implements AnimationClock.FrameLis
         // edge fades so nothing leaks past the padded content area.
         canvas.clipRect(0f, 0f, getWidth(), getHeight());
         float top = (getHeight() - chipHeight) * 0.5f;
-        boolean staticTrack = contentWidth <= getWidth() - 2f * edgeFade;
-        if (staticTrack) {
-            drawCopy(canvas, top, 0f);
-            return;
+        // Tile enough copies to cover the viewport even when every chip fits. A short
+        // (e.g. Arabic) list used to sit still and look broken; it now keeps drifting.
+        int copies = contentWidth > 0f
+                ? Math.max(2, (int) Math.ceil(getWidth() / contentWidth) + 2)
+                : 1;
+        for (int k = 0; k < copies; k++) {
+            drawCopy(canvas, top, k * contentWidth);
         }
-        drawCopy(canvas, top, 0f);
-        drawCopy(canvas, top, contentWidth);
 
         float fade = Math.min(edgeFade, getWidth() / 4f);
         if (leftFade != null && rightFade != null) {
