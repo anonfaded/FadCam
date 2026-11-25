@@ -295,6 +295,41 @@ public class FaditorEditorActivity extends AppCompatActivity {
         return project.getTimeline().getClip(selectedClipIndex);
     }
 
+    /**
+     * Rebuilds the timeline strip after the clip list itself changed.
+     *
+     * <p>Selection-only changes must not rebuild (that re-centres the strip), but
+     * duplicate/split/delete/reorder change the list, and without this the view kept
+     * drawing the old segments — the new clip was in the model and in the total
+     * duration, yet invisible on the strip.</p>
+     */
+    private void refreshTimelineAfterStructuralChange() {
+        if (project == null) return;
+        if (selectedClipIndex >= project.getTimeline().getClipCount()) {
+            selectedClipIndex = -1;
+            playbackClipIndex = 0;
+        }
+        editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
+        editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
+        updateToolAvailability();
+        refreshTotalTimeDisplay();
+        FLog.d(TAG, "Timeline rebuilt: clips=" + project.getTimeline().getClipCount()
+                + " selected=" + selectedClipIndex + " playback=" + playbackClipIndex);
+    }
+
+    /**
+     * Where a newly added asset belongs: right after the selected clip, otherwise right
+     * after the clip under the playhead, otherwise at the end.
+     */
+    private int insertionIndexForNewClip() {
+        Timeline tl = project.getTimeline();
+        int anchor = selectedClipIndex;
+        if (anchor < 0) anchor = editorTimeline.getSegmentAtPlayhead();
+        if (anchor < 0) anchor = playbackClipIndex;
+        if (anchor < 0 || anchor >= tl.getClipCount()) return tl.getClipCount();
+        return anchor + 1;
+    }
+
     /** Clip loaded in the player, mirroring the playhead. Defaults to the first clip. */
     @Nullable
     private Clip getPlaybackClip() {
@@ -736,6 +771,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 undoManager.recordAction(new EditActions.ReorderClipAction(
                         tl, fromIndex, toIndex));
                 tl.moveClip(fromIndex, toIndex);
+                refreshTimelineAfterStructuralChange();
                 selectSegment(toIndex);
                 saveProjectNow();
             }
@@ -3716,16 +3752,18 @@ public class FaditorEditorActivity extends AppCompatActivity {
             imageClip.setImageClip(true);
             imageClip.setAudioMuted(true); // Images have no audio
 
-            // Insert after the currently selected segment
+            // Insert after the selected clip; with nothing selected, after the clip
+            // under the playhead; if that is also unavailable, append.
             Timeline timeline = project.getTimeline();
-            int insertIndex = selectedClipIndex + 1;
+            int insertIndex = insertionIndexForNewClip();
             timeline.addClip(insertIndex, imageClip);
 
             // Record undo action
             undoManager.recordAction(new EditActions.AddClipAction(
                     timeline, imageClip, insertIndex));
 
-            // Select the new clip
+            // Show the inserted clip, then select it.
+            refreshTimelineAfterStructuralChange();
             selectSegment(insertIndex);
             refreshTotalTimeDisplay();
             saveProjectNow();
@@ -3762,16 +3800,18 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             Clip videoClip = new Clip(videoUri, durationMs);
 
-            // Insert after the currently selected segment
+            // Insert after the selected clip; with nothing selected, after the clip
+            // under the playhead; if that is also unavailable, append.
             Timeline timeline = project.getTimeline();
-            int insertIndex = selectedClipIndex + 1;
+            int insertIndex = insertionIndexForNewClip();
             timeline.addClip(insertIndex, videoClip);
 
             // Record undo action
             undoManager.recordAction(new EditActions.AddClipAction(
                     timeline, videoClip, insertIndex));
 
-            // Select the new clip
+            // Show the inserted clip, then select it.
+            refreshTimelineAfterStructuralChange();
             selectSegment(insertIndex);
             refreshTotalTimeDisplay();
             saveProjectNow();
@@ -3846,6 +3886,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 playerManager.seekTo(trimmedMs - 1);
             }
 
+            // The clip list changed: the strip must be rebuilt before the highlight is
+            // moved, otherwise the two halves never appear.
+            refreshTimelineAfterStructuralChange();
             selectSegment(selectedClipIndex);
             saveProjectNow();
             Toast.makeText(this, R.string.faditor_split_success, Toast.LENGTH_SHORT).show();
@@ -3942,6 +3985,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             int newIndex = Math.min(deleteIndex, timeline.getClipCount() - 1);
             selectedClipIndex = newIndex;
+            playbackClipIndex = Math.min(playbackClipIndex, timeline.getClipCount() - 1);
+            refreshTimelineAfterStructuralChange();
             selectSegment(newIndex);
             saveProjectNow();
             Toast.makeText(this, R.string.faditor_segment_deleted, Toast.LENGTH_SHORT).show();
@@ -3991,6 +4036,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
             undoManager.recordAction(new EditActions.DuplicateClipAction(
                     timeline, duplicated, newIndex));
 
+            // Show the copy before selecting it, so the highlight lands on the new clip
+            // instead of on the neighbour that still occupied that index on screen.
+            refreshTimelineAfterStructuralChange();
             selectSegment(newIndex);
             saveProjectNow();
             Toast.makeText(this, R.string.faditor_segment_duplicated, Toast.LENGTH_SHORT).show();

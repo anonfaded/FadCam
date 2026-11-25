@@ -188,6 +188,15 @@ public class EditorTimelineView extends View {
     private float dragStartSegLeft, dragStartSegRight;
     private float trimDragX;                  // Timeline-space x of handle during trim drag
     private float trimDragStartFrac;          // Start fraction computed during trim drag
+    /**
+     * Finger position when the handle was grabbed. Trim deltas are measured from here,
+     * not from the clip edge: pressing anywhere inside the handle's hit area used to
+     * snap the edge straight to the finger, so a tap shrank the clip by the width of
+     * the handle. Pro editors only move once you actually drag.
+     */
+    private float trimDragOriginX;
+    /** True once the finger has moved far enough to count as a drag, not a tap. */
+    private boolean trimDragArmed;
     private float trimDragEndFrac;            // End fraction computed during trim drag
     private float lastTrimFingerScreenX;      // Last finger screen X during trim drag (for edge scroll)
     private static final long LONG_PRESS_MS = 400;
@@ -693,7 +702,10 @@ public class EditorTimelineView extends View {
 
         for (int i = 0; i < segments.size(); i++) {
             SegmentData sd = segments.get(i);
-            float segW = Math.max(minSegmentPx, (sd.effectiveMs / 1000f) * dpPerSecondPx);
+            // Strictly proportional. A minimum-width floor silently stretched short
+            // clips, which desynchronised the ruler from the time axis; short clips are
+            // meant to be thin, and pinch-zoom is how you make them grabbable.
+            float segW = Math.max(2f, (sd.effectiveMs / 1000f) * dpPerSecondPx);
             segRects.add(new RectF(x, tTop, x + segW, tTop + trackHeightPx));
             x += segW + segmentGapPx;
         }
@@ -712,7 +724,7 @@ public class EditorTimelineView extends View {
             for (AudioClip ac : audioClips) {
                 float clipStartX = edgePaddingPx
                         + (ac.getOffsetMs() / 1000f) * dpPerSecondPx;
-                float clipW = Math.max(minSegmentPx,
+                float clipW = Math.max(2f,
                         (ac.getTrimmedDurationMs() / 1000f) * dpPerSecondPx);
                 RectF audioRect = new RectF(
                         clipStartX, audioTop,
@@ -805,9 +817,11 @@ public class EditorTimelineView extends View {
     private void drawRuler(Canvas canvas, int viewW) {
         if (totalEffectiveMs <= 0) return;
         
-        // Dynamic label interval based on zoom (like professional editors)
-        // Calculate minimum pixels between labels to avoid overlap (~60dp)
-        float minLabelGapPx = 60f * density;
+        // Dynamic label interval based on zoom (like professional editors).
+        // The gap only has to clear a label's glyphs, not 60dp of air: at the default
+        // 50dp/s that threshold skipped the 1s tier entirely and jumped to 2s labels,
+        // so a 3s timeline showed a single "2s" and a 1s timeline showed no label.
+        float minLabelGapPx = 44f * density;
         long labelInterval = calculateDynamicLabelInterval(minLabelGapPx);
         
         // Calculate tick hierarchy intervals to avoid conflicts
@@ -866,7 +880,7 @@ public class EditorTimelineView extends View {
     /** Calculate label interval dynamically based on zoom level to prevent overlap */
     private long calculateDynamicLabelInterval(float minLabelGapPx) {
         // Available intervals in ascending order
-        long[] intervals = {100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000};
+        long[] intervals = {100, 200, 250, 500, 1000, 2000, 5000, 10000, 30000, 60000};
         
         // Find smallest interval that gives enough pixel spacing
         for (long interval : intervals) {
@@ -1777,6 +1791,8 @@ public class EditorTimelineView extends View {
                 trimDragStartFrac = sd.sourceDurationMs > 0 ? (float) sd.inPointMs / sd.sourceDurationMs : 0f;
                 trimDragEndFrac = sd.sourceDurationMs > 0 ? (float) sd.outPointMs / sd.sourceDurationMs : 1f;
                 trimDragX = scrolledX;
+                trimDragOriginX = scrolledX;
+                trimDragArmed = false;
                 getParent().requestDisallowInterceptTouchEvent(true);
                 return true;
             }
@@ -1839,6 +1855,14 @@ public class EditorTimelineView extends View {
 
         if (activeDrag == Drag.LEFT_HANDLE || activeDrag == Drag.RIGHT_HANDLE) {
             lastTrimFingerScreenX = x;  // store screen-space X for edge scroll
+            float travel = Math.abs(scrolledX - trimDragOriginX);
+            if (!trimDragArmed && travel <= touchSlopPx) {
+                // Still inside the tap slop: don't touch the clip yet. This is what
+                // makes the handles feel solid instead of jumping on contact.
+                FLog.d(TAG, "trim: waiting, travel=" + travel + "px");
+                return true;
+            }
+            trimDragArmed = true;
             doTrimDrag(scrolledX);
             // Start/stop edge auto-scroll based on finger proximity to screen edges
             startOrStopEdgeScroll(x);
@@ -1911,7 +1935,8 @@ public class EditorTimelineView extends View {
         pendingAudioIndex = -1;
 
         if (last == Drag.LEFT_HANDLE || last == Drag.RIGHT_HANDLE) {
-            boolean moved = Math.abs(x - downX) > touchSlopPx
+            boolean moved = trimDragArmed
+                    || Math.abs(x - downX) > touchSlopPx
                     || Math.abs(trimDragStartFrac - trimDragEndFrac) > 0.0001f;
             if (!moved && isUp) {
                 // The finger landed on a handle but never dragged. Treat it as a tap so
@@ -1958,6 +1983,7 @@ public class EditorTimelineView extends View {
         
         activeDrag = Drag.NONE;
         downSegIndex = -1;
+        trimDragArmed = false;
         getParent().requestDisallowInterceptTouchEvent(false);
         return true;
     }
@@ -2031,7 +2057,7 @@ public class EditorTimelineView extends View {
 
         if (isLeft) {
             float endFrac = (float) dragStartOutMs / sd.sourceDurationMs;
-            float deltaX = x - dragStartSegLeft;
+            float deltaX = x - trimDragOriginX;
             float deltaSrcMs = deltaX / pxPerSrcMs;
             long newInMs = Math.max(0, Math.min(dragStartOutMs - 500, dragStartInMs + (long) deltaSrcMs));
             trimDragStartFrac = (float) newInMs / sd.sourceDurationMs;
@@ -2039,7 +2065,7 @@ public class EditorTimelineView extends View {
             trimDragEndFrac = endFrac;
         } else {
             float startFrac = (float) dragStartInMs / sd.sourceDurationMs;
-            float deltaX = x - dragStartSegRight;
+            float deltaX = x - trimDragOriginX;
             float deltaSrcMs = deltaX / pxPerSrcMs;
             long newOutMs = Math.max(dragStartInMs + 500,
                     Math.min(sd.sourceDurationMs, dragStartOutMs + (long) deltaSrcMs));
@@ -2054,7 +2080,11 @@ public class EditorTimelineView extends View {
         float pxPerSrcMs2 = (dpPerSecondPx / 1000f) / sd.speed;
         float minTrimX = dragStartSegLeft - (dragStartInMs * pxPerSrcMs2);
         float maxTrimX = dragStartSegRight + ((sd.sourceDurationMs - dragStartOutMs) * pxPerSrcMs2);
-        trimDragX = Math.max(minTrimX, Math.min(x, maxTrimX));
+        // Move the drawn handle by the same delta the trim uses, so it stays under the
+        // finger instead of snapping to it on the first pixel of movement.
+        float handleBaseX = isLeft ? dragStartSegLeft : dragStartSegRight;
+        trimDragX = Math.max(minTrimX,
+                Math.min(handleBaseX + (x - trimDragOriginX), maxTrimX));
 
         // Segment data and rects are NOT updated — visual feedback comes from
         // the trim overlay drawn in drawTrimHandles. Data is committed in onUp.
