@@ -81,10 +81,17 @@ public final class FaditorCompositionPlayer {
 
     /** Detaches the surface and clears the player output. */
     public void unbindSurfaceView() {
-        if (surfaceView != null && player != null) {
-            player.setVideoSurfaceView(null);
-        }
+        SurfaceView view = surfaceView;
         surfaceView = null;
+        if (view == null || player == null) return;
+        // On destroy the view's surface is often already gone; media3 asserts when asked
+        // to clear an output that no longer exists.
+        if (!view.getHolder().getSurface().isValid()) return;
+        try {
+            player.setVideoSurfaceView(null);
+        } catch (IllegalArgumentException ignored) {
+            // Surface torn down between the check and the clear.
+        }
     }
 
     /**

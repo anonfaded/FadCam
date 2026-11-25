@@ -996,7 +996,7 @@
                 android:layout_gravity="center"
                 android:text="mic"
                 android:textColor="@android:color/white"
-                android:textSize="@dimen/home_quick_mute_icon"
+                android:textSize="@dimen/home_control_icon_mute"
                 android:fontFamily="@font/materialicons"/>
 
             <TextView

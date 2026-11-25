@@ -63,6 +63,7 @@
     <dimen name="home_control_icon_pause">16dp</dimen>
     <dimen name="home_control_icon_cam">24dp</dimen>
     <dimen name="home_control_icon_mirror">22dp</dimen>
+    <dimen name="home_control_icon_mute">20sp</dimen>
     <dimen name="home_control_status_size">6.5sp</dimen>
     <dimen name="home_control_status_margin_b">6dp</dimen>
     <dimen name="home_control_status_margin_e">7dp</dimen>

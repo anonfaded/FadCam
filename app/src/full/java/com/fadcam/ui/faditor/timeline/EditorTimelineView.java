@@ -123,6 +123,8 @@ public class EditorTimelineView extends View {
     private final Paint labelPaint         = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint speedLabelPaint    = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint reorderLabelPaint  = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint reorderNumPaint    = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint reorderNumBgPaint  = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint reorderThumbScrimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint dragGhostPaint     = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint trimOverlayPaint    = new Paint();
@@ -245,6 +247,10 @@ public class EditorTimelineView extends View {
     private float reorderRowStartX;            // X of first block
     private float reorderRowCenterY;           // Y center of block row
     private float reorderGapPx;               // gap between blocks
+    private float reorderScrollX;              // horizontal scroll of the tile row
+    private float reorderContentWidth;         // total width of the tile row
+    private float reorderDownScrollX;          // scroll at gesture start
+    private boolean reorderScrolling;          // row is being scrolled, not dragged
     private static final float REORDER_BAR_HEIGHT_DP = 36f;
     private static final float REORDER_BTN_PADDING_DP = 14f;
     private static final float REORDER_BLOCK_CORNER_DP = 8f;
@@ -467,6 +473,12 @@ public class EditorTimelineView extends View {
         reorderLabelPaint.setTextSize(10f * density);
         reorderLabelPaint.setTextAlign(Paint.Align.CENTER);
         reorderLabelPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        reorderNumPaint.setColor(0xFFFFFFFF);
+        reorderNumPaint.setTextSize(10f * density);
+        reorderNumPaint.setTextAlign(Paint.Align.CENTER);
+        reorderNumPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        reorderNumBgPaint.setColor(0xB3000000);
+        reorderNumBgPaint.setStyle(Paint.Style.FILL);
         reorderThumbScrimPaint.setColor(0x66000000);
         reorderThumbScrimPaint.setStyle(Paint.Style.FILL);
         dragGhostPaint.setColor(COLOR_DRAG_GHOST);
@@ -1647,18 +1659,19 @@ public class EditorTimelineView extends View {
         canvas.drawText("Reorder", w / 2f, btnY, reorderBtnTextPaint);
         reorderBtnTextPaint.setColor(COLOR_HANDLE);
 
-        // Tiles fill the timeline height, matching the strip below.
+        // Square tiles in a horizontally scrollable row.
         float pad = 8f * density;
-        float availW = w - reorderBtnPaddingPx * 2f;
+        float availW = w - pad * 2f;
         float availH = h - reorderBarHeightPx - pad * 2f;
-        reorderGapPx = Math.min(segmentGapPx * 2f,
-                Math.max(2f * density, availW * 0.12f / Math.max(1, n)));
-        float tileWidth = (availW - (n - 1) * reorderGapPx) / n;
-        reorderBlockWidth = Math.max(12f * density,
-                Math.min(tileWidth, availH * 0.78f));
         reorderBlockHeight = Math.max(36f * density, availH);
-        float totalRowW = n * reorderBlockWidth + (n - 1) * reorderGapPx;
-        reorderRowStartX = (w - totalRowW) / 2f;
+        reorderBlockWidth = reorderBlockHeight;
+        reorderGapPx = Math.max(3f * density, 6f * density);
+        reorderContentWidth = n * reorderBlockWidth + (n - 1) * reorderGapPx;
+
+        float maxScroll = Math.max(0f, reorderContentWidth - availW);
+        reorderScrollX = clamp(reorderScrollX, 0f, maxScroll);
+        boolean scrollable = maxScroll > 0f;
+        reorderRowStartX = (scrollable ? pad : (w - reorderContentWidth) / 2f) - reorderScrollX;
         reorderRowCenterY = reorderBarHeightPx + pad + reorderBlockHeight / 2f;
 
         int dropTarget = -1;
@@ -1681,7 +1694,7 @@ public class EditorTimelineView extends View {
             float by = reorderRowCenterY - reorderBlockHeight / 2f;
             RectF blockRect = new RectF(bx, by,
                     bx + reorderBlockWidth, by + reorderBlockHeight);
-            drawReorderTile(canvas, blockRect, reorderOrder.get(i));
+            drawReorderTile(canvas, blockRect, reorderOrder.get(i), (int) visualPos + 1);
             drawIdx++;
         }
 
@@ -1702,7 +1715,10 @@ public class EditorTimelineView extends View {
             float by = reorderDragCenterY - reorderBlockHeight / 2f;
             RectF dragRect = new RectF(bx, by,
                     bx + reorderBlockWidth, by + reorderBlockHeight);
-            drawReorderTile(canvas, dragRect, reorderOrder.get(reorderDragIdx));
+            int dropNumber = dropTarget >= 0
+                    ? Math.min(n, Math.max(1, dropTarget + (reorderDragIdx < dropTarget ? 0 : 1)))
+                    : reorderDragIdx + 1;
+            drawReorderTile(canvas, dragRect, reorderOrder.get(reorderDragIdx), dropNumber);
             canvas.drawRoundRect(dragRect, reorderBlockCornerPx, reorderBlockCornerPx,
                     reorderBlockSelectedPaint);
         }
@@ -1710,7 +1726,7 @@ public class EditorTimelineView extends View {
 
     /** Draws one reorder tile using the clip's cached thumbnail plus duration/speed. */
     private void drawReorderTile(@NonNull Canvas canvas, @NonNull RectF rect,
-                                 int segmentIndex) {
+                                 int segmentIndex, int serialNumber) {
         canvas.save();
         clipPath.reset();
         clipPath.addRoundRect(rect, reorderBlockCornerPx, reorderBlockCornerPx,
@@ -1742,6 +1758,18 @@ public class EditorTimelineView extends View {
 
         if (rect.width() < 24f * density) return;
 
+        // Serial number of the card's current position.
+        String serial = String.valueOf(serialNumber);
+        float serialW = reorderNumPaint.measureText(serial);
+        float chipH = 16f * density;
+        float chipW = Math.max(chipH, serialW + 8f * density);
+        float chipLeft = rect.left + 4f * density;
+        float chipTop = rect.top + 4f * density;
+        RectF chip = new RectF(chipLeft, chipTop, chipLeft + chipW, chipTop + chipH);
+        canvas.drawRoundRect(chip, chipH / 2f, chipH / 2f, reorderNumBgPaint);
+        canvas.drawText(serial, chip.centerX(),
+                chipTop + chipH / 2f + reorderNumPaint.getTextSize() / 3f, reorderNumPaint);
+
         float ty = rect.bottom - 4f * density;
         canvas.drawText(sd.durationLabel, rect.centerX(), ty, reorderLabelPaint);
         if (sd.speedLabel != null) {
@@ -1769,6 +1797,8 @@ public class EditorTimelineView extends View {
         reorderOrder.clear();
         for (int i = 0; i < segments.size(); i++) reorderOrder.add(i);
         reorderDragIdx = -1;
+        reorderScrollX = 0f;
+        reorderScrolling = false;
         if (listener != null) listener.onReorderModeChanged(true);
         invalidate();
     }
@@ -1820,6 +1850,8 @@ public class EditorTimelineView extends View {
                 }
                 reorderDownX = x;
                 reorderDownY = y;
+                reorderDownScrollX = reorderScrollX;
+                reorderScrolling = false;
                 reorderPendingIdx = -1;
                 reorderDragIdx = -1;
                 for (int i = 0; i < n; i++) {
@@ -1845,6 +1877,15 @@ public class EditorTimelineView extends View {
                 if (reorderDragIdx >= 0) {
                     reorderDragCenterX = x;
                     reorderDragCenterY = reorderRowCenterY;
+                    // Auto-scroll while dragging near the row edges.
+                    float edge = 36f * density;
+                    if (x < edge) {
+                        reorderScrollX = clamp(reorderScrollX - 10f * density,
+                                0f, maxReorderScroll());
+                    } else if (x > getWidth() - edge) {
+                        reorderScrollX = clamp(reorderScrollX + 10f * density,
+                                0f, maxReorderScroll());
+                    }
                     invalidate();
                 } else if (reorderPendingIdx >= 0) {
                     float travel = Math.abs(x - reorderDownX);
@@ -1852,8 +1893,13 @@ public class EditorTimelineView extends View {
                         // Scrolling intent, not a reorder.
                         longPressHandler.removeCallbacks(reorderLongPressRunnable);
                         reorderPendingIdx = -1;
-                        invalidate();
+                        reorderScrolling = true;
                     }
+                }
+                if (reorderScrolling) {
+                    reorderScrollX = clamp(reorderDownScrollX - (x - reorderDownX),
+                            0f, maxReorderScroll());
+                    invalidate();
                 }
                 return true;
 
@@ -1871,10 +1917,20 @@ public class EditorTimelineView extends View {
                 }
                 reorderDragIdx = -1;
                 reorderPendingIdx = -1;
+                reorderScrolling = false;
                 invalidate();
                 return true;
         }
         return true;
+    }
+
+    private float maxReorderScroll() {
+        float viewport = getWidth() - 16f * density;
+        return Math.max(0f, reorderContentWidth - viewport);
+    }
+
+    private float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(value, max));
     }
 
     // ══════════════════════════════════════════════════════════════════
