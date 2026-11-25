@@ -88,14 +88,66 @@ public class ProjectStorage {
             return false;
         }
 
+        // Write to a temp file and rename it into place. FileWriter truncates the real
+        // file the moment it opens, so any interruption (process death, a second save
+        // racing the autosave) left a 0-byte project.json — which listProjects() then
+        // skips as unreadable, making the project vanish from Recent Projects.
         File file = new File(projectDir, PROJECT_FILE);
-        try (FileWriter writer = new FileWriter(file)) {
+        File temp = new File(projectDir, PROJECT_FILE + ".tmp");
+        try (java.io.FileOutputStream out = new java.io.FileOutputStream(temp)) {
+            java.io.Writer writer = new java.io.OutputStreamWriter(out, "UTF-8");
             gson.toJson(project, writer);
+            writer.flush();
+            out.getFD().sync();
+            out.close();
+            if (!temp.renameTo(file)) {
+                // Rename can fail on some filesystems; fall back to a direct copy.
+                FLog.w(TAG, "Atomic rename failed, copying directly: " + project.getId());
+                java.nio.file.Files.copy(temp.toPath(), file.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                temp.delete();
+            }
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             FLog.e(TAG, "Failed to save project: " + project.getId(), e);
+            temp.delete();
             return false;
         }
+    }
+
+    /**
+     * Rebuilds a project whose {@code project.json} was lost or left empty, using the
+     * newest snapshot in its undo history. The snapshots are complete project JSON, so
+     * an interrupted save no longer means the project is gone.
+     *
+     * @return the recovered project (already written back to disk), or null
+     */
+    @Nullable
+    private FaditorProject recoverFromUndoHistory(@NonNull String projectId) {
+        File file = new File(getProjectDir(projectId), UNDO_HISTORY_FILE);
+        if (!file.exists()) return null;
+        try (FileReader reader = new FileReader(file)) {
+            JsonArray history = gson.fromJson(reader, JsonArray.class);
+            if (history == null || history.size() == 0) return null;
+            // Walk backwards: the newest snapshot that parses wins.
+            for (int i = history.size() - 1; i >= 0; i--) {
+                JsonObject entry = history.get(i).getAsJsonObject();
+                if (!entry.has("snapshot")) continue;
+                String snapshot = entry.get("snapshot").getAsString();
+                if (snapshot == null || snapshot.isEmpty()) continue;
+                FaditorProject recovered = gson.fromJson(snapshot, FaditorProject.class);
+                if (recovered != null && !recovered.getTimeline().isEmpty()) {
+                    save(recovered);
+                    FLog.w(TAG, "Recovered project " + projectId
+                            + " from undo snapshot #" + i
+                            + " (" + recovered.getTimeline().getClipCount() + " clips)");
+                    return recovered;
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Undo-history recovery failed for " + projectId, e);
+        }
+        return null;
     }
 
     /**
@@ -113,11 +165,12 @@ public class ProjectStorage {
         }
 
         try (FileReader reader = new FileReader(file)) {
-            return gson.fromJson(reader, FaditorProject.class);
+            FaditorProject project = gson.fromJson(reader, FaditorProject.class);
+            if (project != null) return project;
         } catch (Exception e) {
             FLog.e(TAG, "Failed to load project: " + projectId, e);
-            return null;
         }
+        return recoverFromUndoHistory(projectId);
     }
 
     /**
@@ -138,7 +191,19 @@ public class ProjectStorage {
 
             try (FileReader reader = new FileReader(file)) {
                 JsonObject json = gson.fromJson(reader, JsonObject.class);
-                if (json == null) continue;
+                if (json == null) {
+                    // Empty file: a save was interrupted before the atomic write landed.
+                    FLog.w(TAG, "Project file is empty, attempting recovery: " + dir.getName());
+                    FaditorProject recovered = recoverFromUndoHistory(dir.getName());
+                    if (recovered != null) {
+                        result.add(new ProjectSummary(recovered.getId(), recovered.getName(),
+                                recovered.getCreatedAt(), recovered.getLastModified(),
+                                recovered.getTimeline().getClipCount() > 0
+                                        ? recovered.getTimeline().getClip(0)
+                                            .getSourceUri().toString() : null));
+                    }
+                    continue;
+                }
 
                 String id = json.has("id") ? json.get("id").getAsString() : dir.getName();
                 String name = json.has("name") ? json.get("name").getAsString() : "Untitled";
@@ -166,7 +231,15 @@ public class ProjectStorage {
 
                 result.add(new ProjectSummary(id, name, createdAt, lastModified, videoUri));
             } catch (Exception e) {
-                FLog.w(TAG, "Skipping corrupt project: " + dir.getName(), e);
+                FLog.w(TAG, "Project unreadable, attempting recovery: " + dir.getName(), e);
+                FaditorProject recovered = recoverFromUndoHistory(dir.getName());
+                if (recovered != null) {
+                    result.add(new ProjectSummary(recovered.getId(), recovered.getName(),
+                            recovered.getCreatedAt(), recovered.getLastModified(),
+                            recovered.getTimeline().getClipCount() > 0
+                                    ? recovered.getTimeline().getClip(0)
+                                        .getSourceUri().toString() : null));
+                }
             }
         }
 
@@ -346,7 +419,9 @@ public class ProjectStorage {
         }
 
         File file = new File(projectDir, UNDO_HISTORY_FILE);
-        try (FileWriter writer = new FileWriter(file)) {
+        File temp = new File(projectDir, UNDO_HISTORY_FILE + ".tmp");
+        try (java.io.FileOutputStream out = new java.io.FileOutputStream(temp)) {
+            java.io.Writer writer = new java.io.OutputStreamWriter(out, "UTF-8");
             JsonArray historyArray = new JsonArray();
             int count = Math.min(descriptions.size(), snapshots.size());
             for (int i = 0; i < count; i++) {
@@ -356,10 +431,19 @@ public class ProjectStorage {
                 historyArray.add(entry);
             }
             gson.toJson(historyArray, writer);
+            writer.flush();
+            out.getFD().sync();
+            out.close();
+            if (!temp.renameTo(file)) {
+                java.nio.file.Files.copy(temp.toPath(), file.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                temp.delete();
+            }
             FLog.d(TAG, "Saved " + count + " undo history entries for: " + projectId);
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             FLog.e(TAG, "Failed to save undo history: " + projectId, e);
+            temp.delete();
             return false;
         }
     }

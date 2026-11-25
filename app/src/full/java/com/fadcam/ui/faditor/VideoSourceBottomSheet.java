@@ -225,7 +225,9 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         // Icon
         TextView icon = new TextView(requireContext());
         icon.setTypeface(iconFont);
-        icon.setText("folder_open");
+        // Browse Device opens the system picker, so the row keeps the external/open
+        // glyph rather than a thematic gallery icon.
+        icon.setText("open_in_new");
         icon.setTextColor(FaditorPalette.ACCENT);
         icon.setTextSize(24);
         icon.setGravity(Gravity.CENTER);
@@ -660,7 +662,8 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         // ── Edit icon ────────────────────────────────────────────
         TextView editIcon = new TextView(ctx);
         editIcon.setTypeface(iconFont);
-        editIcon.setText("edit");
+        // Opening a recording in the editor, not editing/renaming it.
+        editIcon.setText("open_in_new");
         editIcon.setTextColor(FaditorPalette.ACCENT);
         editIcon.setTextSize(18);
         editIcon.setGravity(Gravity.CENTER);

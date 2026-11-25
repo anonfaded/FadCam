@@ -278,12 +278,13 @@
             android:overScrollMode="always"
             android:fadingEdge="none">
 
+            <!-- No side margins: the timeline is a full-bleed surface. The 8dp inset
+                 that used to live here made the ruler and the clip row stop short of
+                 the screen edges. -->
             <com.fadcam.ui.faditor.timeline.EditorTimelineView
                 android:id="@+id/editor_timeline_view"
-                android:layout_width="wrap_content"
-                android:layout_height="140dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
+                android:layout_width="match_parent"
+                android:layout_height="140dp" />
         </HorizontalScrollView>
 
 

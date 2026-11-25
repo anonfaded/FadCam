@@ -49,6 +49,11 @@ import java.util.concurrent.Executors;
 public class EditorTimelineView extends View {
 
     private static final String TAG = "EditorTimelineView";
+    /**
+     * Per-frame and per-touch tracing. Off: it produced thousands of lines per second,
+     * which buries real problems and costs frames. One-shot lifecycle events still log.
+     */
+    private static final boolean VERBOSE = false;
 
     // ── Scale & layout constants (dp) ────────────────────────────────
     private static final float BASE_DP_PER_SECOND = 50f;
@@ -505,7 +510,7 @@ public class EditorTimelineView extends View {
             return;
         }
         fitScale = Math.min(target / natural, 12f);
-        FLog.d(TAG, "fitScale=" + fitScale + " natural=" + natural + " viewport=" + viewport);
+        if (VERBOSE) FLog.d(TAG, "fitScale=" + fitScale + " natural=" + natural + " viewport=" + viewport);
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -662,7 +667,7 @@ public class EditorTimelineView extends View {
         localMs = (long) (localMs / sd.speed);
         playheadPositionMs = segmentStartMs + localMs;
         lastPlaybackIndex = segmentIndex;
-        FLog.d(TAG, "setPlayheadFraction: index=" + segmentIndex
+        if (VERBOSE) FLog.d(TAG, "setPlayheadFraction: index=" + segmentIndex
                 + " frac=" + sourceFraction + " playhead=" + playheadPositionMs + "ms");
         centerPlayhead();
         invalidate();
@@ -692,7 +697,7 @@ public class EditorTimelineView extends View {
         float centerX = getWidth() / 2f;
         float playheadX = timeToX(playheadPositionMs);
         scrollOffsetPx = playheadX - centerX;
-        FLog.d(TAG, "centerPlayhead: centerX=" + centerX + " playheadX=" + playheadX + " scrollOffset=" + scrollOffsetPx);
+        if (VERBOSE) FLog.d(TAG, "centerPlayhead: centerX=" + centerX + " playheadX=" + playheadX + " scrollOffset=" + scrollOffsetPx);
         clampScroll();
     }
 
@@ -1781,7 +1786,7 @@ public class EditorTimelineView extends View {
             // Fling completed — notify listener so userDragging gets reset
             flingJustFinished = false;
             if (listener != null) {
-                FLog.d(TAG, "computeScroll: fling finished, calling onPlayheadDragFinished");
+                if (VERBOSE) FLog.d(TAG, "computeScroll: fling finished, calling onPlayheadDragFinished");
                 listener.onPlayheadDragFinished();
             }
         }
@@ -1794,7 +1799,7 @@ public class EditorTimelineView extends View {
             return handleReorderTouch(e);
         }
 
-        FLog.d(TAG, "onTouchEvent: action=" + e.getActionMasked() + " x=" + e.getX() + " isScaling=" + isScaling + " activeDrag=" + activeDrag);
+        if (VERBOSE) FLog.d(TAG, "onTouchEvent: action=" + e.getActionMasked() + " x=" + e.getX() + " isScaling=" + isScaling + " activeDrag=" + activeDrag);
         
         // Let scale detector process ALL events (it needs to track for pinch detection)
         scaleDetector.onTouchEvent(e);
@@ -1811,7 +1816,7 @@ public class EditorTimelineView extends View {
             // Let gesture detector process events only when no active drag
             boolean gestureEvent = gestureDetector.onTouchEvent(e);
             if (gestureEvent) {
-                FLog.d(TAG, "onTouchEvent: consumed by gesture detector");
+                if (VERBOSE) FLog.d(TAG, "onTouchEvent: consumed by gesture detector");
                 return true;
             }
         }
@@ -1833,7 +1838,7 @@ public class EditorTimelineView extends View {
     }
 
     private boolean onDown(float x, float y) {
-        FLog.d(TAG, "onDown: x=" + x + " y=" + y
+        if (VERBOSE) FLog.d(TAG, "onDown: x=" + x + " y=" + y
                 + " selected=" + selectedIndex
                 + " scrollOffset=" + scrollOffsetPx);
         downX = x;
@@ -1843,13 +1848,13 @@ public class EditorTimelineView extends View {
 
         // Adjust x for scroll offset
         float scrolledX = x + scrollOffsetPx;
-        FLog.d(TAG, "onDown: scrolledX=" + scrolledX + " scrollOffset=" + scrollOffsetPx);
+        if (VERBOSE) FLog.d(TAG, "onDown: scrolledX=" + scrolledX + " scrollOffset=" + scrollOffsetPx);
         
         // Check trim handles first
         if (selectedIndex >= 0 && selectedIndex < segRects.size()) {
             Drag h = hitTestHandle(scrolledX, y);
             if (h != Drag.NONE) {
-                FLog.d(TAG, "onDown: hit handle " + h);
+                if (VERBOSE) FLog.d(TAG, "onDown: hit handle " + h);
                 activeDrag = h;
                 SegmentData sd = segments.get(selectedIndex);
                 dragStartInMs = sd.inPointMs;
@@ -1869,13 +1874,13 @@ public class EditorTimelineView extends View {
         }
 
         downSegIndex = hitTestSegment(scrolledX, y);
-        FLog.d(TAG, "onDown: hit segment " + downSegIndex);
+        if (VERBOSE) FLog.d(TAG, "onDown: hit segment " + downSegIndex);
 
         // Check audio trim handles (before audio body hit test)
         if (selectedAudioIndex >= 0 && selectedAudioIndex < audioClipRects.size()) {
             Drag ah = hitTestAudioHandle(scrolledX, y);
             if (ah != Drag.NONE) {
-                FLog.d(TAG, "onDown: hit audio handle " + ah);
+                if (VERBOSE) FLog.d(TAG, "onDown: hit audio handle " + ah);
                 activeDrag = ah;
                 getParent().requestDisallowInterceptTouchEvent(true);
                 return true;
@@ -1886,7 +1891,7 @@ public class EditorTimelineView extends View {
         if (downSegIndex < 0) {
             int audioHit = hitTestAudioClip(scrolledX, y);
             if (audioHit >= 0) {
-                FLog.d(TAG, "onDown: hit audio clip " + audioHit);
+                if (VERBOSE) FLog.d(TAG, "onDown: hit audio clip " + audioHit);
                 pendingAudioIndex = audioHit;
                 audioLongPressTriggered = false;
                 // Schedule audio long-press for drag
@@ -2302,14 +2307,14 @@ public class EditorTimelineView extends View {
      */
     private void updatePlayheadFromX(float x, boolean recenter) {
         float playheadX = x;
-        FLog.d(TAG, "updatePlayheadFromX: x=" + x);
+        if (VERBOSE) FLog.d(TAG, "updatePlayheadFromX: x=" + x);
         
         long timelineEndMs = getTimelineEndMs();
         long newPlayheadMs = xToTime(playheadX);
         newPlayheadMs = Math.max(0, Math.min(newPlayheadMs, timelineEndMs));
         playheadPositionMs = newPlayheadMs;
         
-        FLog.d(TAG, "updatePlayheadFromX: playheadPositionMs=" + playheadPositionMs + "ms");
+        if (VERBOSE) FLog.d(TAG, "updatePlayheadFromX: playheadPositionMs=" + playheadPositionMs + "ms");
         
         if (listener != null && !segments.isEmpty()) {
             // Find which segment's RECTANGLE this X falls into (visually, not time-based)
@@ -2361,7 +2366,7 @@ public class EditorTimelineView extends View {
             float sourceFrac = sd.sourceDurationMs > 0 ? (float)sourceMs / sd.sourceDurationMs : 0f;
             sourceFrac = Math.max(0f, Math.min(sourceFrac, 1f));
             
-            FLog.d(TAG, "updatePlayheadFromX: targetSegment=" + targetSegment 
+            if (VERBOSE) FLog.d(TAG, "updatePlayheadFromX: targetSegment=" + targetSegment
                     + " posInSegmentMs=" + posInSegmentMs + " sourceFrac=" + sourceFrac);
             
             // Pass isDragging=true to prevent loading new clips during active drag
@@ -2440,12 +2445,12 @@ public class EditorTimelineView extends View {
         
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            FLog.d(TAG, "GestureListener.onScroll: distanceX=" + distanceX + " activeDrag=" + activeDrag);
+            if (VERBOSE) FLog.d(TAG, "GestureListener.onScroll: distanceX=" + distanceX + " activeDrag=" + activeDrag);
             // Cancel long press — user is scrolling, not holding
             longPressHandler.removeCallbacks(longPressRunnable);
             // Only handle scroll if not dragging handles
             if (activeDrag != Drag.NONE) {
-                FLog.d(TAG, "GestureListener.onScroll: ignoring, activeDrag=" + activeDrag);
+                if (VERBOSE) FLog.d(TAG, "GestureListener.onScroll: ignoring, activeDrag=" + activeDrag);
                 return false;
             }
             

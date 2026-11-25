@@ -677,6 +677,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
             @Override
             public void onPlayheadSeeked(int segmentIndex, float fractionInSegment, boolean isDragging) {
                 userDragging = true;
+                if (isDragging && imagePlaybackActive) {
+                    stopImagePlayback();
+                }
                 audioTailActive = false;  // Cancel audio-tail on seek
                 // Get clip directly — DON'T call selectSegment() during scrubbing.
                 // selectSegment triggers setPlayheadFraction → centerPlayhead which
@@ -699,8 +702,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     // seeking has the right bounds. It must never touch the selection —
                     // dragging across clips used to re-target the toolbar behind the
                     // user's back.
-                    FLog.d(TAG, "scrub: playbackClipIndex=" + segmentIndex
-                            + " (selection stays " + selectedClipIndex + ")");
+
                 }
                 // The player is only reloaded once the drag has settled; doing it on
                 // every move made the preview snap between clips mid-gesture.
@@ -727,11 +729,20 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 if (!clip.isImageClip()) {
                     // Only seek ExoPlayer for video clips.
                     if (isDragging) {
+                        // Stop the running queue the moment a scrub begins: otherwise
+                        // it keeps playing (and advancing) underneath the finger and the
+                        // playhead poll drags the line back to the player's position.
+                        if (playerManager.isPlayingNow()) {
+                            playerManager.pause();
+                            updatePlayPauseButton(false);
+                            playbackFinished = true;
+                            FLog.d(TAG, "scrub: paused playback so the drag owns the playhead");
+                        }
                         // Scrubbing used to seek on every move. That re-buffered the
                         // player continuously (log showed a seek every ~7 ms), which is
                         // exactly the stutter and the playhead fighting the finger.
                         // The preview catches up once on drag end.
-                        FLog.d(TAG, "scrub: preview seek deferred until release");
+
                     } else {
                         // Pause FIRST so ExoPlayer renders the decoded frame to
                         // TextureView (the frame only becomes visible with
@@ -755,6 +766,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
             @Override
             public void onPlayheadDragFinished() {
                 userDragging = false;
+                // Scrubbing always ends playback. Any engine left running here produced
+                // a stale pause icon and a preview that kept moving on its own.
+                if (imagePlaybackActive) stopImagePlayback();
+                if (playerManager.isPlayingNow()) playerManager.pause();
+                playbackFinished = true;
+                updatePlayPauseButton(false);
                 
                 // Now that drag is finished, check if we crossed into a different segment
                 // If so, load that clip now (we skipped it during the drag to avoid snapping)
@@ -1457,6 +1474,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
         long videoEndMs = totalEffectiveMs();
         long timelineEndMs = editorTimeline.getTimelineEndMs();
 
+        // Sitting on the end means "play again from the start", like every editor.
+        // Otherwise the seek lands on the last frame and only the final moments replay.
+        if (videoEndMs > 0 && playheadMs >= videoEndMs - 1 && timelineEndMs <= videoEndMs + 1) {
+            playheadMs = 0;
+            editorTimeline.setPlayheadPositionMs(0);
+            FLog.d(TAG, "play: playhead was at the end, restarting from 0");
+        }
+
         // Playhead past the video but within an audio tail: play only audio.
         if (playheadMs >= videoEndMs && timelineEndMs > videoEndMs) {
             audioTailActive = true;
@@ -1491,6 +1516,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     ? playerManager.getLoadedClip().getId() : "none"));
 
         if (clip.isImageClip()) {
+            // A queued playlist from a previous press would keep advancing underneath
+            // the still image — that is what made the playhead jump to the end.
+            if (playerManager.isPlayingNow() || playerManager.isPlaylistMode()) {
+                playerManager.pause();
+                playerManager.exitPlaylistMode();
+            }
             showImagePreview(clip.getSourceUri());
             startImagePlayback(localEffectiveMs);
             updatePlayPauseButton(true);
@@ -1720,11 +1751,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void initToolbar() {
         // Play/Pause button
         btnPlayPause.setOnClickListener(v -> {
-            if (audioTailActive || playerManager.isPlaying()) {
+            // Image clips play on their own timer, not on ExoPlayer, so they must be
+            // part of the "is something playing" test — otherwise pause did nothing
+            // while a still image was previewing.
+            if (audioTailActive || imagePlaybackActive || playerManager.isPlayingNow()) {
                 audioTailActive = false;
                 playerManager.pause();
+                if (imagePlaybackActive) stopImagePlayback();
                 pauseAudioPlayer();
+                playbackFinished = true;
                 updatePlayPauseButton(false);
+                FLog.d(TAG, "pause requested (image=" + imagePlaybackActive + ")");
                 return;
             }
             startPlaybackFromPlayhead();
@@ -3309,8 +3346,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void updateCurrentTimeDisplay(long positionInCurrentSegmentMs) {
         long absoluteMs = getAbsolutePlayheadMs(positionInCurrentSegmentMs);
         timeCurrent.setText(TimeFormatter.formatAuto(absoluteMs));
-        // Keep the absolute read-out honest even if a caller passes a stale local value.
-        FLog.d(TAG, "timeCurrent=" + absoluteMs + "ms (playbackClip=" + playbackClipIndex + ")");
     }
 
     // ── Image preview helpers ────────────────────────────────────────
@@ -3372,15 +3407,32 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     /** Applies a clip's audio and visual state while it is the one being previewed. */
     private void applyPlayingClipState(@NonNull Clip clip) {
-        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+        // Only touch the renderers when the value actually changes. Re-applying the
+        // same speed at every media-item transition makes ExoPlayer reconfigure the
+        // audio/video pipeline right at the cut, which is audible as a hitch.
+        if (Math.abs(clip.getSpeedMultiplier() - appliedPlaybackSpeed) > 0.001f) {
+            appliedPlaybackSpeed = clip.getSpeedMultiplier();
+            playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+        }
+        float wantedVolume = clip.isAudioMuted() ? 0f : clip.getVolumeLevel();
+        if (Math.abs(wantedVolume - appliedPlaybackVolume) > 0.001f) {
+            appliedPlaybackVolume = wantedVolume;
+            playerManager.setVolume(wantedVolume);
+        }
         updatePreviewTransforms(clip);
     }
 
+    /** Last values pushed to the player, so transitions do not reconfigure needlessly. */
+    private float appliedPlaybackSpeed = 1f;
+    private float appliedPlaybackVolume = -1f;
+
     private void updatePlayheadPosition() {
         if (playerManager == null || project == null || project.getTimeline().isEmpty()) return;
-        // Never let a finished player drive the playhead.
+        // Never let a stopped player drive the playhead. Without this the poll kept
+        // reading the player's position after the user had dragged elsewhere, so the
+        // playhead snapped back to wherever the queue had advanced to.
         if (playbackFinished) return;
+        if (!audioTailActive && !imagePlaybackActive && !playerManager.isPlayingNow()) return;
 
         // ── Audio-tail mode: playhead continues past video end ───────
         if (audioTailActive) {
