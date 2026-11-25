@@ -167,6 +167,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private android.content.Context receiverRegisteredContext = null;
 
     private static final String TAG = "RecordsAdapter";
+
+    // A DiffUtil pass over a very large list can enqueue tens of thousands of
+    // interleaved insert/move ops. RecyclerView's AdapterHelper then walks those
+    // pending ops quadratically (findPositionOffset) and can ANR the main thread.
+    // Past these sizes a full rebind is cheaper and only touches visible holders.
+    private static final int LARGE_UPDATE_ENTRY_THRESHOLD = 1500;
+    private static final int LARGE_UPDATE_DELTA_THRESHOLD = 400;
+
     private final ExecutorService executorService; // Add ExecutorService
     private final SharedPreferencesManager sharedPreferencesManager;
     private final RecordActionListener actionListener; // Add the listener interface
@@ -1059,8 +1067,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         String uriString = videoUri.toString();
 
-        // Try to get cached thumbnail first
-        byte[] cachedThumbnail = com.fadcam.utils.VideoSessionCache.getThumbnailWithFallback(context, uriString);
+        // Only use the in-memory bytes here. The previous fallback also probed
+        // and decoded a per-URI file from disk on the UI thread, which is pure
+        // jank while scrolling a large gallery. Glide owns the disk cache and
+        // decodes off the main thread.
+        byte[] cachedThumbnail = com.fadcam.utils.VideoSessionCache.getCachedThumbnail(uriString);
         if (cachedThumbnail != null) {
             // Load from cache - instant display
             try {
@@ -1086,7 +1097,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         // Create optimized request options with different strategies based on scrolling
         RequestOptions options = new RequestOptions()
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                // The source is a local file, so caching the original bytes is
+                // wasted I/O (and with 1 MB photos it churns the disk cache).
+                // Cache only the small decoded thumbnail instead.
+                .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
                 .skipMemoryCache(false)
                 .centerCrop()
                 .override(thumbnailSize, thumbnailSize)
@@ -1103,12 +1117,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 .asBitmap()
                 .load(videoUri)
                 .apply(options)
-                .thumbnail(
-                        Glide.with(context)
-                                .asBitmap()
-                                .load(videoUri)
-                                .apply(options)
-                                .override(96, 96))
                 .into(new com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
                     @Override
                     public void onResourceReady(@NonNull android.graphics.Bitmap resource,
@@ -1124,10 +1132,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                                 resource.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, baos);
                                 byte[] thumbnailData = baos.toByteArray();
 
-                                // Cache in memory and disk
+                                // Cache in memory only. This custom disk copy was
+                                // written for every thumbnail but is no longer read
+                                // on bind (Glide owns disk caching), so it was pure
+                                // background I/O.
                                 com.fadcam.utils.VideoSessionCache.cacheThumbnail(uriString, thumbnailData);
-                                com.fadcam.utils.VideoSessionCache.saveThumbnailToDisk(context, uriString,
-                                        thumbnailData);
 
                             } catch (Exception e) {
                                 FLog.w(TAG, "Error caching thumbnail", e);
@@ -2358,6 +2367,26 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             this.entries = newEntries;
             notifyDataSetChanged();
             FLog.d(TAG, "updateRecords: used immediate first-fill path, entries=" + entries.size());
+            return;
+        }
+
+        // Large collections (or large batch imports) must not go through
+        // DiffUtil: dispatching thousands of individual updates makes
+        // RecyclerView's AdapterHelper O(n²) and hangs the main thread.
+        // A full refresh keeps the work proportional to what is on screen.
+        boolean largeUpdate =
+                oldEntries.size() > LARGE_UPDATE_ENTRY_THRESHOLD
+                        || newEntries.size() > LARGE_UPDATE_ENTRY_THRESHOLD
+                        || Math.abs(newEntries.size() - oldEntries.size())
+                                > LARGE_UPDATE_DELTA_THRESHOLD;
+        if (largeUpdate) {
+            this.records = new ArrayList<>(newRecords);
+            this.entries = newEntries;
+            notifyDataSetChanged();
+            FLog.d(
+                    TAG,
+                    "updateRecords: large update (" + oldEntries.size() + " -> "
+                            + newEntries.size() + " entries), using full refresh");
             return;
         }
 
@@ -3817,7 +3846,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         holder.selectContainer.setEnabled(isSelectionModeActive);
 
         // Check if all items in this month are selected
-        List<VideoItem> monthItems = getItemsForMonth(header.monthKey);
+        List<VideoItem> monthItems = getItemsForMonthAt(position);
         boolean allSelected = !monthItems.isEmpty();
         for (VideoItem item : monthItems) {
             if (!currentSelectedUris.contains(item.uri)) {
@@ -3832,6 +3861,21 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 monthActionListener.onMonthSelectAll(header.monthKey, monthItems);
             }
         } : null);
+    }
+
+    /**
+     * Collects the contiguous month range that follows a header. Walking the
+     * month's own entries avoids the old O(all entries) scan on every header
+     * bind — with 30k items that ran on the UI thread during scroll.
+     */
+    private List<VideoItem> getItemsForMonthAt(int headerPosition) {
+        List<VideoItem> result = new ArrayList<>();
+        for (int i = headerPosition + 1; i < entries.size(); i++) {
+            Object entry = entries.get(i);
+            if (!(entry instanceof VideoItemEntry)) break;
+            result.add(((VideoItemEntry) entry).item);
+        }
+        return result;
     }
 
     /**

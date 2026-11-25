@@ -2,6 +2,7 @@ package com.fadcam.ui.animations.scenes;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.RectF;
 import android.graphics.Paint;
 
 import com.fadcam.R;
@@ -33,6 +34,11 @@ public final class QrScene implements Scene {
     @Override
     public float designHeight() {
         return 64f;
+    }
+
+    @Override
+    public void focusRect(RectF out) {
+        out.set(10f, 4f, 120f, 60f);
     }
 
     private void buildMatrix() {

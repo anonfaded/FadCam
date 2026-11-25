@@ -1,6 +1,7 @@
 package com.fadcam.ui.animations.scenes;
 
 import android.graphics.Canvas;
+import android.graphics.RectF;
 import android.graphics.Paint;
 
 import com.fadcam.ui.animations.AnimationMath;
@@ -23,6 +24,11 @@ public final class EditorScene implements Scene {
     @Override
     public float designHeight() {
         return 92f;
+    }
+
+    @Override
+    public void focusRect(RectF out) {
+        out.set(6f, 4f, 119f, 88f);
     }
 
     @Override

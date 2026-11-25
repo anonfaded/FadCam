@@ -2441,10 +2441,9 @@ public class MainActivity extends AppCompatActivity {
             setStatusBarColor(0xFF000000);
             setNavigationBarColor(0xFF000000);
         } else if (currentFragmentPosition == 3) {
-            // Faditor keeps the same black chrome as the Remote tab: the champagne is an
-            // accent on type and controls, not a panel colour, so it stays a highlight
-            // instead of washing out the whole chrome.
-            setBottomNavColor(0xFF000000);
+            // Faditor uses the same surface as its header so the dock and the top bar
+            // read as one chrome layer; champagne stays an accent on type and controls.
+            setBottomNavColor(getResources().getColor(R.color.amoled_card, getTheme()));
             setStatusBarColor(0xFF000000);
             setNavigationBarColor(0xFF000000);
         } else {

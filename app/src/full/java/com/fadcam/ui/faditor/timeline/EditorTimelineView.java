@@ -20,6 +20,8 @@ import android.view.GestureDetector;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
+import android.view.VelocityTracker;
+import android.view.ViewConfiguration;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
@@ -350,6 +352,8 @@ public class EditorTimelineView extends View {
     private GestureDetector gestureDetector;
     private OverScroller flingScroller;
     private boolean flingJustFinished = false;  // Tracks when fling ends so we can reset userDragging
+    private OverScroller reorderFlingScroller;  // inertia for the reorder tile row
+    private VelocityTracker reorderVelocityTracker;
 
     @Nullable private OnSegmentActionListener listener;
 
@@ -537,6 +541,7 @@ public class EditorTimelineView extends View {
         scaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
         gestureDetector = new GestureDetector(getContext(), new GestureListener());
         flingScroller = new OverScroller(getContext());
+        reorderFlingScroller = new OverScroller(getContext());
     }
     
     private void updateDpPerSecond() {
@@ -1694,7 +1699,7 @@ public class EditorTimelineView extends View {
             float by = reorderRowCenterY - reorderBlockHeight / 2f;
             RectF blockRect = new RectF(bx, by,
                     bx + reorderBlockWidth, by + reorderBlockHeight);
-            drawReorderTile(canvas, blockRect, reorderOrder.get(i), (int) visualPos + 1);
+            drawReorderTile(canvas, blockRect, reorderOrder.get(i), reorderOrder.get(i) + 1);
             drawIdx++;
         }
 
@@ -1715,10 +1720,8 @@ public class EditorTimelineView extends View {
             float by = reorderDragCenterY - reorderBlockHeight / 2f;
             RectF dragRect = new RectF(bx, by,
                     bx + reorderBlockWidth, by + reorderBlockHeight);
-            int dropNumber = dropTarget >= 0
-                    ? Math.min(n, Math.max(1, dropTarget + (reorderDragIdx < dropTarget ? 0 : 1)))
-                    : reorderDragIdx + 1;
-            drawReorderTile(canvas, dragRect, reorderOrder.get(reorderDragIdx), dropNumber);
+            drawReorderTile(canvas, dragRect, reorderOrder.get(reorderDragIdx),
+                    reorderOrder.get(reorderDragIdx) + 1);
             canvas.drawRoundRect(dragRect, reorderBlockCornerPx, reorderBlockCornerPx,
                     reorderBlockSelectedPaint);
         }
@@ -1758,7 +1761,8 @@ public class EditorTimelineView extends View {
 
         if (rect.width() < 24f * density) return;
 
-        // Serial number of the card's current position.
+        // Serial number of the clip's original order; it stays fixed while the row moves, so
+        // the user can tell which clip is being relocated before committing.
         String serial = String.valueOf(serialNumber);
         float serialW = reorderNumPaint.measureText(serial);
         float chipH = 16f * density;
@@ -1805,6 +1809,11 @@ public class EditorTimelineView extends View {
 
     private void exitReorderMode(boolean commit) {
         longPressHandler.removeCallbacks(reorderLongPressRunnable);
+        if (reorderVelocityTracker != null) {
+            reorderVelocityTracker.recycle();
+            reorderVelocityTracker = null;
+        }
+        if (reorderFlingScroller != null) reorderFlingScroller.abortAnimation();
         reorderPendingIdx = -1;
         isReorderMode = false;
         if (commit && listener != null) {
@@ -1854,6 +1863,13 @@ public class EditorTimelineView extends View {
                 reorderScrolling = false;
                 reorderPendingIdx = -1;
                 reorderDragIdx = -1;
+                if (reorderFlingScroller != null) reorderFlingScroller.abortAnimation();
+                if (reorderVelocityTracker == null) {
+                    reorderVelocityTracker = VelocityTracker.obtain();
+                } else {
+                    reorderVelocityTracker.clear();
+                }
+                reorderVelocityTracker.addMovement(e);
                 for (int i = 0; i < n; i++) {
                     float bx = reorderRowStartX + i * (reorderBlockWidth + reorderGapPx);
                     float by = reorderRowCenterY - reorderBlockHeight / 2f;
@@ -1874,6 +1890,17 @@ public class EditorTimelineView extends View {
                 return true;
 
             case MotionEvent.ACTION_MOVE:
+                if (reorderVelocityTracker != null) reorderVelocityTracker.addMovement(e);
+                float dx = x - reorderDownX;
+                if (reorderDragIdx < 0 && !reorderScrolling
+                        && Math.abs(dx) > touchSlopPx
+                        && Math.abs(dx) > Math.abs(y - reorderDownY)) {
+                    // Horizontal swipe anywhere on the row scrolls it; a tile only
+                    // becomes draggable after the long press fires.
+                    longPressHandler.removeCallbacks(reorderLongPressRunnable);
+                    reorderPendingIdx = -1;
+                    reorderScrolling = true;
+                }
                 if (reorderDragIdx >= 0) {
                     reorderDragCenterX = x;
                     reorderDragCenterY = reorderRowCenterY;
@@ -1887,17 +1914,9 @@ public class EditorTimelineView extends View {
                                 0f, maxReorderScroll());
                     }
                     invalidate();
-                } else if (reorderPendingIdx >= 0) {
-                    float travel = Math.abs(x - reorderDownX);
-                    if (travel > touchSlopPx) {
-                        // Scrolling intent, not a reorder.
-                        longPressHandler.removeCallbacks(reorderLongPressRunnable);
-                        reorderPendingIdx = -1;
-                        reorderScrolling = true;
-                    }
                 }
                 if (reorderScrolling) {
-                    reorderScrollX = clamp(reorderDownScrollX - (x - reorderDownX),
+                    reorderScrollX = clamp(reorderDownScrollX - dx,
                             0f, maxReorderScroll());
                     invalidate();
                 }
@@ -1906,6 +1925,8 @@ public class EditorTimelineView extends View {
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 longPressHandler.removeCallbacks(reorderLongPressRunnable);
+                boolean wasDragging = reorderDragIdx >= 0;
+                boolean wasScrolling = reorderScrolling;
                 if (reorderDragIdx >= 0) {
                     int dropTarget = computeReorderDropTarget(x);
                     dropTarget = Math.max(0, Math.min(dropTarget, n));
@@ -1914,6 +1935,24 @@ public class EditorTimelineView extends View {
                     if (reorderDragIdx < dropTarget) insertAt--;
                     insertAt = Math.max(0, Math.min(insertAt, reorderOrder.size()));
                     reorderOrder.add(insertAt, movedItem);
+                }
+                if (reorderVelocityTracker != null) {
+                    if (e.getActionMasked() == MotionEvent.ACTION_UP
+                            && wasScrolling && !wasDragging && maxReorderScroll() > 0) {
+                        reorderVelocityTracker.computeCurrentVelocity(1000);
+                        float vx = reorderVelocityTracker.getXVelocity();
+                        ViewConfiguration vc = ViewConfiguration.get(getContext());
+                        if (Math.abs(vx) > vc.getScaledMinimumFlingVelocity()) {
+                            float v = Math.max(-vc.getScaledMaximumFlingVelocity(),
+                                    Math.min(vx, vc.getScaledMaximumFlingVelocity()));
+                            reorderFlingScroller.fling(Math.round(reorderScrollX), 0,
+                                    Math.round(-v), 0,
+                                    0, Math.round(maxReorderScroll()), 0, 0);
+                            postInvalidateOnAnimation();
+                        }
+                    }
+                    reorderVelocityTracker.recycle();
+                    reorderVelocityTracker = null;
                 }
                 reorderDragIdx = -1;
                 reorderPendingIdx = -1;
@@ -1940,7 +1979,15 @@ public class EditorTimelineView extends View {
     @Override
     public void computeScroll() {
         super.computeScroll();
-        
+
+        if (isReorderMode) {
+            if (reorderFlingScroller.computeScrollOffset()) {
+                reorderScrollX = reorderFlingScroller.getCurrX();
+                postInvalidateOnAnimation();
+            }
+            return;
+        }
+
         // Handle fling animation
         if (flingScroller.computeScrollOffset()) {
             // The scroller already stores the scroll offset itself, so assign it and

@@ -108,6 +108,7 @@
     <dimen name="home_elapsed_state_icon">10dp</dimen>
     <dimen name="home_dock_height">64dp</dimen>
     <dimen name="home_dock_icon">22dp</dimen>
+    <dimen name="home_dock_label_size">10sp</dimen>
     <dimen name="home_dock_padding">8dp</dimen>
     <dimen name="home_dock_side_inset">48dp</dimen>
     <dimen name="home_dock_gap">16dp</dimen>

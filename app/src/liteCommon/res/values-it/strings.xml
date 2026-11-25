@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lite Pro page: localized product copy. Kept in the Lite flavor so the Full
+     locale files never need to know about the Lite product line. -->
+<resources>
+    <string name="pro_screen_title">FadCam Lite Pro</string>
+    <string name="fadcam_pro_title">FadCam Lite Pro</string>
+    <string name="pro_screen_tier">Lite Pro</string>
+    <string name="pro_screen_price_detail">3 app private Lite Pro · Aggiornamenti a vita</string>
+    <string name="pro_screen_owned_subtitle">Tutte e tre le app sbloccate.</string>
+</resources>

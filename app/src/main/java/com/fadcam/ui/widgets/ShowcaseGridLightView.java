@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import androidx.annotation.Nullable;
 
 import com.fadcam.R;
+import com.fadcam.ui.animations.AnimationView;
 
 /**
  * The Pro bundle card's surface: one lighting system for the whole sheet.
@@ -53,6 +54,16 @@ public class ShowcaseGridLightView extends View {
     private static final float GLOW_RX = 0.86f;
     private static final float GLOW_RY = 0.64f;
 
+    /**
+     * Light ellipse around an animation's artwork. The scene reports its real art bounds,
+     * so a compact phone demo gets a compact halo while a wide editor/road demo gets a
+     * wide one — instead of every stage lighting the same fixed 62% of its card. The
+     * radius stays outside the art so the halo reads as light around the animation,
+     * not a fill tucked underneath it.
+     */
+    private static final float FOCUS_RX = 0.84f;
+    private static final float FOCUS_RY = 0.90f;
+
     private final Paint baseGridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint litGridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint bracketPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -76,6 +87,7 @@ public class ShowcaseGridLightView extends View {
     /** Optional sibling whose bounds drive the light; set through {@code app:lightSubject}. */
     private final int subjectId;
     private View subject;
+    private final Rect subjectRect = new Rect();
     /** Corner registration marks. Off for preview stages that already sit inside a card. */
     private final boolean cornerMarks;
 
@@ -118,8 +130,15 @@ public class ShowcaseGridLightView extends View {
      */
     public void setLight(float centerX, float centerY, float phoneWidth, float phoneHeight) {
         if (phoneWidth <= 0f || phoneHeight <= 0f) return;
-        float rx = phoneWidth * LIT_RX;
-        float ry = phoneHeight * LIT_RY;
+        applyLight(centerX, centerY, phoneWidth * LIT_RX, phoneHeight * LIT_RY);
+    }
+
+    private void setFocusedLight(float centerX, float centerY, float width, float height) {
+        if (width <= 0f || height <= 0f) return;
+        applyLight(centerX, centerY, width * FOCUS_RX, height * FOCUS_RY);
+    }
+
+    private void applyLight(float centerX, float centerY, float rx, float ry) {
         if (hasLight
                 && Math.abs(lightX - centerX) < 0.5f
                 && Math.abs(lightY - centerY) < 0.5f
@@ -153,7 +172,9 @@ public class ShowcaseGridLightView extends View {
         for (int i = 0; i < count; i++) rows[i] = (i + 1) * step;
         // A surface without an explicit subject lights its own centre, so a preview stage
         // gets the same soft reveal behind its animation as the card gets behind the phone.
-        if (subjectId == View.NO_ID) {
+        // If the stage hosts an AnimationView, the light waits for that view's real art
+        // bounds instead of briefly painting the old full-size centre glow.
+        if (subjectId == View.NO_ID && !hasAnimationSibling()) {
             setLight(w * 0.5f, h * 0.5f, w * 0.62f, h * 0.62f);
         }
         buildShaders();
@@ -174,13 +195,33 @@ public class ShowcaseGridLightView extends View {
 
     /** Resolves the declared subject once the whole host layout exists. */
     private void bindSubject() {
-        if (subjectId == View.NO_ID || !(getParent() instanceof ViewGroup)) return;
-        View found = ((ViewGroup) getParent()).findViewById(subjectId);
+        if (!(getParent() instanceof ViewGroup)) return;
+        ViewGroup parent = (ViewGroup) getParent();
+        View found = subjectId != View.NO_ID
+                ? parent.findViewById(subjectId)
+                : findAnimation(parent);
         if (found == null || found == subject) return;
         if (subject != null) subject.removeOnLayoutChangeListener(subjectLayoutListener);
         subject = found;
         subject.addOnLayoutChangeListener(subjectLayoutListener);
         aimAtSubject();
+    }
+
+    /** The stage's animation is the default subject: its art, not the card, gets the light. */
+    private boolean hasAnimationSibling() {
+        return getParent() instanceof ViewGroup && findAnimation((ViewGroup) getParent()) != null;
+    }
+
+    private static View findAnimation(ViewGroup group) {
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View child = group.getChildAt(i);
+            if (child instanceof AnimationView) return child;
+            if (child instanceof ViewGroup) {
+                View nested = findAnimation((ViewGroup) child);
+                if (nested != null) return nested;
+            }
+        }
+        return null;
     }
 
     private final View.OnLayoutChangeListener subjectLayoutListener =
@@ -189,10 +230,20 @@ public class ShowcaseGridLightView extends View {
     private void aimAtSubject() {
         if (subject == null || !(getParent() instanceof ViewGroup)) return;
         if (subject.getWidth() <= 0 || subject.getHeight() <= 0) return;
-        Rect rect = new Rect(0, 0, subject.getWidth(), subject.getHeight());
+        Rect rect = subjectRect;
+        boolean focused = subject instanceof AnimationView
+                && ((AnimationView) subject).getFocusInView(rect);
+        if (!focused) {
+            rect.set(0, 0, subject.getWidth(), subject.getHeight());
+        }
         ((ViewGroup) getParent()).offsetDescendantRectToMyCoords(subject, rect);
-        setLight(rect.centerX() - getLeft(), rect.centerY() - getTop(),
-                rect.width(), rect.height());
+        if (focused) {
+            setFocusedLight(rect.centerX() - getLeft(), rect.centerY() - getTop(),
+                    rect.width(), rect.height());
+        } else {
+            setLight(rect.centerX() - getLeft(), rect.centerY() - getTop(),
+                    rect.width(), rect.height());
+        }
     }
 
     private void buildShaders() {

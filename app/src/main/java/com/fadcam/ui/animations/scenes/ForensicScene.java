@@ -2,6 +2,7 @@ package com.fadcam.ui.animations.scenes;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.RectF;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 
@@ -78,6 +79,11 @@ public final class ForensicScene implements Scene {
     @Override
     public float designHeight() {
         return 92f;
+    }
+
+    @Override
+    public void focusRect(RectF out) {
+        out.set(6f, 10f, 162f, 82f);
     }
 
     @Override

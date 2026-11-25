@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.provider.Settings;
 import android.util.AttributeSet;
 import android.view.View;
@@ -41,6 +42,7 @@ public class AnimationView extends View implements AnimationClock.FrameListener 
     private final CanvasKit kit;
     private final boolean animationsEnabled;
     private final Rect visibleRect = new Rect();
+    private final RectF sceneFocus = new RectF();
     private final ViewTreeObserver.OnScrollChangedListener scrollListener =
             this::updateClockAttachment;
     private final ViewTreeObserver.OnGlobalLayoutListener layoutListener =
@@ -98,6 +100,28 @@ public class AnimationView extends View implements AnimationClock.FrameListener 
     public void setStyle(SceneStyle style) {
         frame.style = style != null ? style : SceneStyle.defaults();
         invalidate();
+    }
+
+    /**
+     * Maps the current scene's artwork bounds into this view's pixel space. A card that
+     * wants to place a light around the animation (rather than around the whole stage)
+     * asks the scene where its art actually is. Returns false until the view is laid out.
+     */
+    public boolean getFocusInView(Rect out) {
+        if (scene == null || getWidth() <= 0 || getHeight() <= 0) return false;
+        float designW = scene.designWidth();
+        float designH = scene.designHeight();
+        if (designW <= 0f || designH <= 0f) return false;
+        float scale = Math.min(getWidth() / designW, getHeight() / designH);
+        float ox = (getWidth() - designW * scale) * 0.5f;
+        float oy = (getHeight() - designH * scale) * 0.5f;
+        scene.focusRect(sceneFocus);
+        out.set(
+                Math.round(ox + sceneFocus.left * scale),
+                Math.round(oy + sceneFocus.top * scale),
+                Math.round(ox + sceneFocus.right * scale),
+                Math.round(oy + sceneFocus.bottom * scale));
+        return out.width() > 0 && out.height() > 0;
     }
 
     /** Overrides how long the one-shot reveal runs. */

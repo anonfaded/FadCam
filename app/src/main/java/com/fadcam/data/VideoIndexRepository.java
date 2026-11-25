@@ -73,6 +73,11 @@ public class VideoIndexRepository {
      */
     private final ConcurrentHashMap<String, Long> durationCache = new ConcurrentHashMap<>();
 
+    private static final String SCAN_STATE_PREFS = "video_index_scan_v1";
+    private static final String KEY_INTERNAL_DIR_SIGNATURE = "internal_dir_signature";
+    /** Persisted fingerprint of the internal storage tree from the last scan. */
+    private final android.content.SharedPreferences scanStatePrefs;
+
     /**
      * One-time flag: set to true after stale MMR-based durations have been cleared.
      * MMR is unreliable for fragmented MP4 (FadCam's recording format) — it reads the
@@ -97,6 +102,18 @@ public class VideoIndexRepository {
         this.dao = VideoIndexDatabase.getInstance(appContext).videoIndexDao();
         this.scanner = new FastFileScanner(appContext);
         this.enrichmentExecutor = Executors.newFixedThreadPool(2);
+        this.scanStatePrefs = appContext.getSharedPreferences(
+                SCAN_STATE_PREFS, Context.MODE_PRIVATE);
+
+        // Warm the count so a direct launch into Records takes the DB fast path
+        // instead of the cold/skeleton path just because no stats screen has
+        // touched the repository yet.
+        enrichmentExecutor.submit(() -> {
+            try {
+                cachedCount.set(dao.getCount());
+            } catch (Exception ignored) {
+            }
+        });
     }
 
     /**
@@ -135,7 +152,7 @@ public class VideoIndexRepository {
         // unchanged files, unlike the old deleteAll() approach.
         if (indexInvalidated.compareAndSet(true, false)) {
             FLog.i(TAG, "Index invalidated — running delta scan to re-sync");
-            return deltaScan(prefs);
+            return deltaScan(prefs, true);
         }
 
         int dbCount = dao.getCount();
@@ -162,6 +179,21 @@ public class VideoIndexRepository {
         long elapsed = System.currentTimeMillis() - start;
         FLog.i(TAG, "Cold start complete: " + items.size() + " items in " + elapsed + "ms");
         return items;
+    }
+
+    /**
+     * First screenful of the newest rows. Used by Records to paint before the
+     * full list read finishes. Does not touch the count/duration caches.
+     */
+    @NonNull
+    public List<VideoItem> getVideosFirstPage(int limit) {
+        try {
+            List<VideoIndexEntity> entities = dao.getNewestPage(limit);
+            return entitiesToVideoItems(entities);
+        } catch (Exception e) {
+            FLog.w(TAG, "First page read failed", e);
+            return new ArrayList<>();
+        }
     }
 
     /**
@@ -195,6 +227,26 @@ public class VideoIndexRepository {
     }
 
     /**
+     * True when the internal storage tree fingerprint matches the last scan.
+     * A few directory stats replace a full 30k-file enumeration in the common
+     * "nothing changed" refresh case.
+     */
+    public boolean isIndexFresh(@NonNull SharedPreferencesManager prefs) {
+        if (indexInvalidated.get()) {
+            return false;
+        }
+        long signature = scanner.computeInternalDirectorySignature(prefs);
+        return signature != 0
+                && signature == scanStatePrefs.getLong(KEY_INTERNAL_DIR_SIGNATURE, 0L);
+    }
+
+    private void rememberDirectorySignature(long signature) {
+        if (signature != 0) {
+            scanStatePrefs.edit().putLong(KEY_INTERNAL_DIR_SIGNATURE, signature).apply();
+        }
+    }
+
+    /**
      * Perform a delta scan: compare current files on disk with the DB index.
      * Adds new files, removes deleted files, updates changed files.
      * <p>
@@ -205,7 +257,29 @@ public class VideoIndexRepository {
      */
     @NonNull
     public List<VideoItem> deltaScan(@NonNull SharedPreferencesManager prefs) {
+        return deltaScan(prefs, false);
+    }
+
+    /**
+     * @param force true after an explicit invalidation/recording completion,
+     *              bypassing the unchanged-directory shortcut.
+     */
+    @NonNull
+    public List<VideoItem> deltaScan(
+            @NonNull SharedPreferencesManager prefs, boolean force) {
         long start = System.currentTimeMillis();
+        long signatureBeforeScan = scanner.computeInternalDirectorySignature(prefs);
+
+        if (!force
+                && signatureBeforeScan != 0
+                && signatureBeforeScan
+                        == scanStatePrefs.getLong(KEY_INTERNAL_DIR_SIGNATURE, 0L)) {
+            FLog.i(TAG, "Delta scan skipped: storage signature unchanged");
+            List<VideoIndexEntity> entities = dao.getAllNewestFirst();
+            List<VideoItem> items = entitiesToVideoItems(entities);
+            updateInMemoryCaches(entities, items.size());
+            return items;
+        }
 
         // Scan current files on disk
         List<VideoIndexEntity> currentFiles = scanner.scanAll(prefs);
@@ -276,6 +350,12 @@ public class VideoIndexRepository {
         if (!toInsert.isEmpty()) {
             dao.insertOrReplaceAll(toInsert);
         }
+
+        // The disk walk is done and the DB is in sync — remember the
+        // fingerprint *from before the scan* so changes that arrived during
+        // the walk force another scan instead of being silently skipped.
+        rememberDirectorySignature(signatureBeforeScan);
+        indexInvalidated.set(false);
 
         // Return fresh list from DB
         List<VideoIndexEntity> allEntities = dao.getAllNewestFirst();
@@ -490,8 +570,13 @@ public class VideoIndexRepository {
      */
     public void invalidateIndex() {
         indexInvalidated.set(true);
-        cachedCount.set(0);
-        durationCache.clear();
+        // Force the next delta scan to walk the tree even if the previous
+        // fingerprint still matches (recording completion, storage change).
+        scanStatePrefs.edit().remove(KEY_INTERNAL_DIR_SIGNATURE).apply();
+        // Keep cachedCount and durationCache: the DB still holds valid rows.
+        // Zeroing the count made Records take the cold-start path and block on
+        // a full re-scan after every invalidation (e.g. every tab revisit),
+        // even though a fast DB read could have painted immediately.
         FLog.i(TAG, "Index marked for invalidation (flag set)");
     }
 

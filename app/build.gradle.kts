@@ -102,7 +102,12 @@ android {
                 "proguard-rules.pro"
             )
             isDebuggable = false
-            signingConfig = signingConfigs.getByName("release")
+            // F-Droid (and any CI without a local keystore) builds an unsigned
+            // release; signing is applied only when local.properties points at a
+            // real keystore. This removes the old F-Droid prebuild patch.
+            if (releaseSigningConfigValid) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         
         create("pro") {
@@ -174,13 +179,14 @@ android {
     //   Lite Pro  -> UPDATE_REPO=FadCam-LitePro, UPDATE_PRO_REPO=FadCam-LitePro (own repo)
     // Each build reads ITS line's repos; the home sidebar renders a card per
     // available update (Lite stable / Lite beta / Lite Pro from the respective repo).
-    // Current values are 0.0.0 / code 1 so the fresh v0.1.0 tags on the Lite repos
-    // are detected as updates during testing.
-    val liteVersionCode = 1
-    val liteVersionName = "0.0.0"
+    // Current values: Lite free and Lite Pro both ship as v1.0.0. The version is
+    // intentionally independent from the Full line (4.x) — each app has its own
+    // applicationId, update repo and tag prefix (`lite-v*` for Lite tags).
+    val liteVersionCode = 2
+    val liteVersionName = "1.0.0"
     val liteRepo = "FadCam-Lite"          // Lite (primary/stable) update feed
-    val liteProVersionCode = 1
-    val liteProVersionName = "0.0.0"
+    val liteProVersionCode = 2
+    val liteProVersionName = "1.0.0"
     val liteProRepo = "FadCam-LitePro"    // Lite Pro (secondary) update feed
 
     // ── Release-time workflow (simple, per-line) ────────────────────────

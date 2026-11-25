@@ -2,6 +2,7 @@ package com.fadcam.ui.animations.scenes;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.RectF;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Shader;
@@ -54,6 +55,11 @@ public final class FlashlightScene implements Scene {
     @Override
     public float designHeight() {
         return 64f;
+    }
+
+    @Override
+    public void focusRect(RectF out) {
+        out.set(6f, 2f, 118f, 62f);
     }
 
     @Override

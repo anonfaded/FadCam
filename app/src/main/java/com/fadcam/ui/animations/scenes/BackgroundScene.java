@@ -1,6 +1,7 @@
 package com.fadcam.ui.animations.scenes;
 
 import android.graphics.Canvas;
+import android.graphics.RectF;
 import android.graphics.Paint;
 
 import com.fadcam.ui.animations.AnimationMath;
@@ -28,6 +29,11 @@ public final class BackgroundScene implements Scene {
     @Override
     public float designHeight() {
         return 92f;
+    }
+
+    @Override
+    public void focusRect(RectF out) {
+        out.set(56f, 7f, 112f, 85f);
     }
 
     @Override

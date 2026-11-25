@@ -4,6 +4,9 @@
      and the table describe what Lite Pro adds on top of the free Lite app. -->
 <resources>
     <string name="pro_screen_title">FadCam Lite Pro</string>
+    <string name="pro_screen_tier">Lite Pro</string>
+    <string name="pro_screen_price_detail">3 private Lite Pro apps · Lifetime updates</string>
+    <string name="pro_screen_owned_subtitle">All three apps unlocked.</string>
     <string name="pro_screen_bundle">Three private apps. Yours forever.</string>
     <string name="pro_screen_everything">All free features</string>
     <string name="pro_screen_everything_desc">Everything in the free version is included.</string>

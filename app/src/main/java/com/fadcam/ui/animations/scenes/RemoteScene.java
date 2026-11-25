@@ -1,6 +1,7 @@
 package com.fadcam.ui.animations.scenes;
 
 import android.graphics.Canvas;
+import android.graphics.RectF;
 import android.graphics.Paint;
 
 import com.fadcam.ui.animations.AnimationMath;
@@ -28,6 +29,11 @@ public final class RemoteScene implements Scene {
     @Override
     public float designHeight() {
         return 92f;
+    }
+
+    @Override
+    public void focusRect(RectF out) {
+        out.set(8f, 4f, 162f, 78f);
     }
 
     @Override

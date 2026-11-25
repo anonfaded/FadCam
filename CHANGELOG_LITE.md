@@ -7,7 +7,7 @@ FORMAT GUIDELINES:
 
 # FadCam Lite Changelog
 
-## 0.1.0
+## 1.0.0
 - Initial FadCam Lite release.
 
 <!-- Manage this file in the FadCam repo — used by Lite and all Lite flavours. -->

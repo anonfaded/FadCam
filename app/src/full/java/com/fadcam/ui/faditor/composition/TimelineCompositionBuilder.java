@@ -86,7 +86,8 @@ public final class TimelineCompositionBuilder {
         List<EditedMediaItem> videoItems = new ArrayList<>(timeline.getClipCount());
         for (int i = 0; i < timeline.getClipCount(); i++) {
             Clip clip = timeline.getClip(i);
-            EditedMediaItem item = buildItem(context, clip, croplessClipId);
+            EditedMediaItem item = buildItem(context, clip, croplessClipId,
+                    exportSettings == null && i == 0);
             if (item == null) {
                 FLog.w(TAG, "Skipping clip " + i + ": no usable source");
                 continue;
@@ -149,7 +150,8 @@ public final class TimelineCompositionBuilder {
     @Nullable
     private static EditedMediaItem buildItem(@Nullable Context context,
                                              @NonNull Clip clip,
-                                             @Nullable String croplessClipId) {
+                                             @Nullable String croplessClipId,
+                                             boolean previewFirstClip) {
         String uri = resolvePlayableUri(clip);
         if (uri == null) return null;
 
@@ -185,15 +187,20 @@ public final class TimelineCompositionBuilder {
         List<Effect> videoEffects = new ArrayList<>();
 
         if (Math.abs(speed - 1f) > 0.001f) {
-            // This is the composition-safe speed API. CompositionPlayer recognizes the
-            // TimestampAdjustment and wraps the item in a SpeedChangingMediaSource, so the
-            // player clock, declared duration and seek positions all use the same timebase.
-            // SpeedChangeEffect only retimes video and leaves the player position in source time.
-            android.util.Pair<AudioProcessor, Effect> speedEffects =
-                    Effects.createExperimentalSpeedChangingEffect(
-                            new ConstantSpeedProvider(speed));
-            audioProcessors.add(speedEffects.first);
-            videoEffects.add(speedEffects.second);
+            if (previewFirstClip) {
+                // CompositionPlayer 1.8 deadlocks when the first item feeds a duration-
+                // changing audio processor. Retime video only and mute this item in the
+                // preview; export keeps the interlinked audio effect below.
+                videoEffects.add(Effects.createExperimentalSpeedChangingEffect(
+                        new ConstantSpeedProvider(speed)).second);
+                item.setRemoveAudio(true);
+            } else {
+                android.util.Pair<AudioProcessor, Effect> speedEffects =
+                        Effects.createExperimentalSpeedChangingEffect(
+                                new ConstantSpeedProvider(speed));
+                audioProcessors.add(speedEffects.first);
+                videoEffects.add(speedEffects.second);
+            }
         }
 
         if (clip.isAudioMuted()) {

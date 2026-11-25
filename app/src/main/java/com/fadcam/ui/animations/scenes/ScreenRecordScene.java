@@ -1,6 +1,7 @@
 package com.fadcam.ui.animations.scenes;
 
 import android.graphics.Canvas;
+import android.graphics.RectF;
 import android.graphics.Paint;
 import android.graphics.PathMeasure;
 
@@ -28,6 +29,11 @@ public final class ScreenRecordScene implements Scene {
     @Override
     public float designHeight() {
         return 92f;
+    }
+
+    @Override
+    public void focusRect(RectF out) {
+        out.set(10f, 4f, 158f, 82f);
     }
 
     public ScreenRecordScene() {

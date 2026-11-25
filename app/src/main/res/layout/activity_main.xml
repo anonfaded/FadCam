@@ -159,8 +159,10 @@
                     android:paddingTop="2dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
                     android:text="@string/nav_home"
-                    android:textColor="#FFFFFF" />
+                    android:textColor="#FFFFFF"
+                    android:textSize="@dimen/home_dock_label_size" />
             </LinearLayout>
 
 <LinearLayout

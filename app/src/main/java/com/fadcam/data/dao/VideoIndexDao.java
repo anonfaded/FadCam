@@ -30,6 +30,13 @@ public interface VideoIndexDao {
     List<VideoIndexEntity> getAllNewestFirst();
 
     /**
+     * First screenful only. The Records tab paints this before the full
+     * 30k-row read completes, so the list is never blank on entry.
+     */
+    @Query("SELECT * FROM video_index ORDER BY last_modified DESC LIMIT :limit")
+    List<VideoIndexEntity> getNewestPage(int limit);
+
+    /**
      * Get all indexed videos ordered by last_modified ascending (oldest first).
      */
     @Query("SELECT * FROM video_index ORDER BY last_modified ASC")

@@ -212,6 +212,8 @@
         <item name="labelVisibilityMode">selected</item>
         <item name="itemPaddingTop">0dp</item>
         <item name="itemPaddingBottom">0dp</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.FadCam.BottomNav.Active</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.FadCam.BottomNav.Inactive</item>
     </style>
 
     <style name="ThemeOverlay.FadCam.Amoled.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
@@ -821,13 +823,13 @@
     </style>
 
     <style name="TextAppearance.FadCam.BottomNav.Active" parent="TextAppearance.MaterialComponents.Caption">
-        <item name="android:textSize">10sp</item>
+        <item name="android:textSize">@dimen/home_dock_label_size</item>
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:includeFontPadding">true</item>
     </style>
 
     <style name="TextAppearance.FadCam.BottomNav.Inactive" parent="TextAppearance.MaterialComponents.Caption">
-        <item name="android:textSize">10sp</item>
+        <item name="android:textSize">@dimen/home_dock_label_size</item>
         <item name="android:fontFamily">sans-serif</item>
         <item name="android:includeFontPadding">true</item>
     </style>

@@ -381,8 +381,15 @@ public class RecordsFragment extends BaseFragment implements
     private Runnable showProgressRunnable; // Runnable to show progress after delay
     private Runnable deferredRecordsWarmupRunnable;
     private Runnable deferredRecordsDeltaScanRunnable;
+    /** Coalesces delta scans — each one walks every file on disk. */
+    private final java.util.concurrent.atomic.AtomicBoolean deltaScanInFlight =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final java.util.concurrent.atomic.AtomicBoolean deltaScanPending =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
     private static final long RECORDS_INITIAL_METADATA_DELAY_MS = 350L;
     private static final long RECORDS_INITIAL_DELTA_SCAN_DELAY_MS = 1200L;
+    /** Rows painted before the full index read completes. */
+    private static final int RECORDS_FIRST_PAGE_SIZE = 120;
     private TextView titleText;
     private TextView statsPhotosText;
     private TextView statsVideosText;
@@ -1895,7 +1902,7 @@ public class RecordsFragment extends BaseFragment implements
         // Setup SwipeRefreshLayout
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setOnRefreshListener(() -> {
-                FLog.d(TAG, "Swipe to refresh triggered — silent background refresh (no skeleton)");
+                FLog.d(TAG, "Swipe to refresh — keep list, sync in background");
                 // Self-healing scan alongside the refresh (issue #332) — DB-driven,
                 // only touches pending rows, then refreshes the banner.
                 try {
@@ -1905,66 +1912,29 @@ public class RecordsFragment extends BaseFragment implements
                     FLog.w(TAG, "Self-healing scan on refresh failed", e);
                 }
 
-                // Production pattern: keep existing data visible, refresh silently
-                // in background, swap data when ready. No skeleton, no UI thrashing.
-
-                // Cancel any in-progress delta scan from a previous refresh
-                if (deltaExecutor != null && !deltaExecutor.isShutdown()) {
-                    deltaExecutor.shutdownNow();
-                }
-                deltaExecutor = Executors.newSingleThreadExecutor();
-
-                // Invalidate stats cache
                 com.fadcam.utils.VideoStatsCache.invalidateStats(sharedPreferencesManager);
 
-                // Silent background refresh — keep current content visible
-                final com.fadcam.data.VideoIndexRepository repo =
-                        com.fadcam.data.VideoIndexRepository.getInstance(requireContext());
+                if (isLoading) {
+                    if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
+                    return;
+                }
+                if (videoItems.isEmpty()) {
+                    // Nothing on screen yet — fall back to the normal first load.
+                    loadRecordsList(true);
+                    return;
+                }
 
-                deltaExecutor.submit(() -> {
-                    try {
-                        // Phase 1: Quick DB read (sub-50ms) — no skeleton needed
-                        List<VideoItem> dbItems = repo.getVideos(sharedPreferencesManager);
-                        List<VideoItem> normalized = normalizeVideoCategories(dbItems);
-                        sortItems(normalized, currentSortOption);
-
-                        // Phase 2: Delta scan for freshness (picks up new/deleted files)
-                        List<VideoItem> deltaItems = repo.deltaScan(sharedPreferencesManager);
-                        List<VideoItem> deltaNormalized = normalizeVideoCategories(deltaItems);
-                        sortItems(deltaNormalized, currentSortOption);
-                        totalItems = deltaNormalized.size();
-
-                        // Keep caches in sync
-                        com.fadcam.utils.VideoSessionCache.updateSessionCache(deltaNormalized);
-
-                        // Push final data to UI in one smooth update
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            if (!isAdded()) return;
-
-                            allLoadedItems.clear();
-                            allLoadedItems.addAll(deltaNormalized);
-                            applyActiveFilterToUi();
-
-                            if (swipeRefreshLayout != null) {
-                                swipeRefreshLayout.setRefreshing(false);
-                            }
-                            FLog.i(TAG, "Silent refresh complete: " + deltaNormalized.size() + " items");
-                        });
-
-                        // Enrich any new unresolved durations
-                        repo.startBackgroundEnrichment((uri, dur) ->
-                            FLog.d(TAG, "Duration enriched: " + uri + " → " + dur + "ms"));
-
-                    } catch (Exception e) {
-                        FLog.w(TAG, "Silent refresh failed: " + e.getMessage());
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            if (swipeRefreshLayout != null) {
-                                swipeRefreshLayout.setRefreshing(false);
-                            }
-                        });
-                    }
-                });
-
+                // The list is already on screen. Do not block the refresh spinner
+                // on a full 7–10s disk walk: start the coalesced delta scan and
+                // stop the spinner immediately. The thin progress bar tracks sync.
+                if (loadingProgress != null) loadingProgress.setVisibility(View.VISIBLE);
+                scheduleRecordsDeltaScan(
+                        com.fadcam.data.VideoIndexRepository.getInstance(requireContext()), 0L);
+                if (swipeRefreshLayout != null) {
+                    swipeRefreshLayout.postDelayed(() -> {
+                        if (swipeRefreshLayout != null) swipeRefreshLayout.setRefreshing(false);
+                    }, 300);
+                }
             });
         } else {
             FLog.e(TAG, "SwipeRefreshLayout is null after findViewById!");
@@ -2198,10 +2168,12 @@ public class RecordsFragment extends BaseFragment implements
         
         if (!hidden && isResumed() && isAdded() && getContext() != null) {
             FLog.d(TAG, "onHiddenChanged: Fragment shown, checking for data refresh");
-            
+
+            boolean pendingRefresh = false;
             // Check pending refresh (e.g., Faditor export)
             if (sPendingRefresh) {
                 sPendingRefresh = false;
+                pendingRefresh = true;
                 FLog.i(TAG, "onHiddenChanged: Pending refresh flag set, invalidating index");
                 com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
                 if (recordsAdapter != null) {
@@ -2220,14 +2192,19 @@ public class RecordsFragment extends BaseFragment implements
             }
             syncDeletionUiFromStore(true);
             
-            // Always delta-scan on reappear to pick up new files (QR scans, shots, etc.)
-            // Invalidate the index FIRST so the delta scan finds new files even
-            // when videoItems is not empty (loadRecordsList skips if list is non-empty
-            // and forceReload is false).
-            com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
+            // Refresh in the background on tab re-entry. Do NOT invalidate the
+            // whole index here: that forced the next load down the cold-start
+            // path and made every visit block on a full 30s+ disk scan even
+            // though the DB already had the list.
             if (!isLoading && recordsAdapter != null && recordsAdapter.getItemCount() > 0) {
-                FLog.d(TAG, "onHiddenChanged: running delta scan for new items");
-                loadRecordsList(true);
+                if (pendingRefresh) {
+                    FLog.d(TAG, "onHiddenChanged: running reload after pending refresh");
+                    loadRecordsList(true);
+                } else {
+                    FLog.d(TAG, "onHiddenChanged: scheduling background delta scan");
+                    scheduleRecordsDeltaScan(
+                            com.fadcam.data.VideoIndexRepository.getInstance(requireContext()));
+                }
             } else if (!isLoading) {
                 FLog.i(TAG, "onHiddenChanged: Need to refresh data");
                 loadRecordsList();
@@ -2343,8 +2320,12 @@ public class RecordsFragment extends BaseFragment implements
         loadingIndicator = getView().findViewById(R.id.loading_indicator);
 
         // Apply optimized layout settings
-        recyclerView.setItemViewCacheSize(20); // Increase view cache size
-        recyclerView.setHasFixedSize(false); // Mixed item types (month headers + records)
+        recyclerView.setItemViewCacheSize(24);
+        // The list itself is match_parent; adapter changes never resize the
+        // RecyclerView. Treating it as fixed skips whole-layout passes on every
+        // data swap (month headers are still allowed — this flag is about the
+        // RecyclerView's own size, not item heights).
+        recyclerView.setHasFixedSize(true);
 
         recyclerView.addItemDecoration(itemDecoration = new SpacesItemDecoration(4)); // Default spacing
 
@@ -2628,6 +2609,8 @@ public class RecordsFragment extends BaseFragment implements
     private static final int BATCH_SIZE = 15; // Load items in smaller batches
     private static final int SCROLL_THRESHOLD = 8; // Load more when user is this many items from the end
     private boolean isLoading = false;
+    /** True while only the first DB page is painted; totals are not real yet. */
+    private boolean firstPagePartial = false;
     private boolean isInitialLoad = true;
     private boolean pendingForcedRealtimeReload = false;
     @Nullable
@@ -3609,10 +3592,28 @@ public class RecordsFragment extends BaseFragment implements
                 filteredItems.add(item);
             }
         }
-        videoItems.clear();
-        videoItems.addAll(filteredItems);
-        if (recordsAdapter != null) {
-            recordsAdapter.updateRecords(videoItems);
+        // Re-applying the same filter on tab re-entry should not tear down and
+        // rebind the whole adapter (with 30k items that is a visible hitch).
+        boolean sameItems = filteredItems.size() == videoItems.size();
+        if (sameItems) {
+            for (int i = 0; i < filteredItems.size(); i++) {
+                VideoItem a = filteredItems.get(i);
+                VideoItem b = videoItems.get(i);
+                if (a == null || b == null
+                        || !Objects.equals(a.uri, b.uri)
+                        || a.size != b.size
+                        || a.lastModified != b.lastModified) {
+                    sameItems = false;
+                    break;
+                }
+            }
+        }
+        if (!sameItems) {
+            videoItems.clear();
+            videoItems.addAll(filteredItems);
+            if (recordsAdapter != null) {
+                recordsAdapter.updateRecords(videoItems);
+            }
         }
         updateFilterChipLabels();
         updateFilterChipUi();
@@ -4004,6 +4005,28 @@ public class RecordsFragment extends BaseFragment implements
     private void setChipLabelWithCount(@Nullable com.fadcam.ui.utils.AnimatedChip chip, int baseLabelRes, int count) {
         if (chip == null) return;
         chip.animateSlot(makeChipLabel(getString(baseLabelRes), count), 300);
+    }
+
+    /**
+     * First-page state: show chip names without counts instead of flashing
+     * "0" for every category until the full 31k list arrives.
+     */
+    private void showFilterChipsPending() {
+        setChipLabelPending(chipFilterAll, R.string.records_filter_all);
+        setChipLabelPending(chipFilterCamera, R.string.records_filter_camera);
+        setChipLabelPending(chipFilterScreen, R.string.records_filter_screen);
+        setChipLabelPending(chipFilterFaditor, R.string.records_filter_faditor);
+        setChipLabelPending(chipFilterStream, R.string.records_filter_stream);
+        setChipLabelPending(chipFilterShot, R.string.records_filter_shot);
+        if (chipFilterMiniApps != null) {
+            chipFilterMiniApps.animateSlot("Mini Apps", 0);
+        }
+    }
+
+    private void setChipLabelPending(
+            @Nullable com.fadcam.ui.utils.AnimatedChip chip, int baseLabelRes) {
+        if (chip == null) return;
+        chip.animateSlot(getString(baseLabelRes), 0);
     }
 
     /** Builds a SpannableString with pill badge for any chip label + count. */
@@ -5184,6 +5207,9 @@ public class RecordsFragment extends BaseFragment implements
     private void setLayoutManager() {
         if (recyclerView != null) {
             GridLayoutManager grid = new GridLayoutManager(getContext(), currentGridSpan);
+            // Pre-bind a few rows offscreen during the first layout so the
+            // initial paint does not bind everything in the viewport serially.
+            grid.setInitialPrefetchItemCount(Math.max(6, currentGridSpan * 4));
             grid.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
                 @Override
                 public int getSpanSize(int position) {
@@ -5272,6 +5298,12 @@ public class RecordsFragment extends BaseFragment implements
     }
 
     private void updateHeaderStats() {
+        // The first page only knows the newest 120 rows; showing its split
+        // would flash wrong totals (e.g. 9 videos / 111 photos instead of
+        // 1,304 / 30,001). Keep the last known totals until the full load.
+        if (firstPagePartial) {
+            return;
+        }
         if (getContext() == null) return;
         List<VideoItem> source = allLoadedItems == null || allLoadedItems.isEmpty() ? videoItems : allLoadedItems;
         int photos = 0;
@@ -5518,6 +5550,25 @@ public class RecordsFragment extends BaseFragment implements
                     FLog.d(TAG, "Duration enriched: " + uriString + " → " + durationMs + "ms"));
         };
 
+        scheduleRecordsDeltaScan(repository);
+
+        progressHandler.postDelayed(deferredRecordsWarmupRunnable, RECORDS_INITIAL_METADATA_DELAY_MS);
+    }
+
+    /**
+     * Schedules one background delta scan. Scans are coalesced: if one is
+     * already running, a single follow-up is queued instead of stacking
+     * multiple full walks of the storage tree.
+     */
+    private void scheduleRecordsDeltaScan(@NonNull com.fadcam.data.VideoIndexRepository repository) {
+        scheduleRecordsDeltaScan(repository, RECORDS_INITIAL_DELTA_SCAN_DELAY_MS);
+    }
+
+    private void scheduleRecordsDeltaScan(
+            @NonNull com.fadcam.data.VideoIndexRepository repository, long delayMs) {
+        if (progressHandler == null) {
+            return;
+        }
         if (deferredRecordsDeltaScanRunnable != null) {
             progressHandler.removeCallbacks(deferredRecordsDeltaScanRunnable);
         }
@@ -5529,35 +5580,54 @@ public class RecordsFragment extends BaseFragment implements
                 deltaExecutor = Executors.newSingleThreadExecutor();
             }
             final ExecutorService currentDeltaExec = deltaExecutor;
-            final int expectedCount = totalItems;
             currentDeltaExec.submit(() -> {
+                if (!deltaScanInFlight.compareAndSet(false, true)) {
+                    deltaScanPending.set(true);
+                    FLog.d(TAG, "Delta scan already running — coalescing");
+                    return;
+                }
                 try {
-                    List<VideoItem> deltaItems = repository.deltaScan(sharedPreferencesManager);
-                    if (deltaItems.size() != expectedCount) {
-                        List<VideoItem> deltaNormalized = normalizeVideoCategories(deltaItems);
-                        sortItems(deltaNormalized, currentSortOption);
-                        totalItems = deltaNormalized.size();
-                        FLog.i(TAG, "Delta scan detected changes: " + deltaNormalized.size() + " items");
-                        com.fadcam.utils.VideoSessionCache.updateSessionCache(deltaNormalized);
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            if (!isAdded()) {
-                                return;
-                            }
-                            allLoadedItems.clear();
-                            allLoadedItems.addAll(deltaNormalized);
-                            applyActiveFilterToUi();
-                        });
-                    } else {
-                        FLog.d(TAG, "Delta scan: no changes detected");
+                    if (repository.isIndexFresh(sharedPreferencesManager)) {
+                        FLog.d(TAG, "Delta scan skipped: storage signature unchanged");
+                        return;
                     }
-                } catch (Exception e) {
-                    FLog.w(TAG, "Delta scan failed (non-fatal): " + e.getMessage());
+                    do {
+                        deltaScanPending.set(false);
+                        final int expectedCount = totalItems;
+                        try {
+                            List<VideoItem> deltaItems = repository.deltaScan(sharedPreferencesManager);
+                            if (deltaItems.size() != expectedCount) {
+                                List<VideoItem> deltaNormalized = normalizeVideoCategories(deltaItems);
+                                sortItems(deltaNormalized, currentSortOption);
+                                totalItems = deltaNormalized.size();
+                                FLog.i(TAG, "Delta scan detected changes: " + deltaNormalized.size() + " items");
+                                com.fadcam.utils.VideoSessionCache.updateSessionCache(deltaNormalized);
+                                new Handler(Looper.getMainLooper()).post(() -> {
+                                    if (!isAdded()) {
+                                        return;
+                                    }
+                                    allLoadedItems.clear();
+                                    allLoadedItems.addAll(deltaNormalized);
+                                    applyActiveFilterToUi();
+                                });
+                            } else {
+                                FLog.d(TAG, "Delta scan: no changes detected");
+                            }
+                        } catch (Exception e) {
+                            FLog.w(TAG, "Delta scan failed (non-fatal): " + e.getMessage());
+                        }
+                    } while (deltaScanPending.get());
+                } finally {
+                    deltaScanInFlight.set(false);
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (loadingProgress != null && !isLoading) {
+                            loadingProgress.setVisibility(View.GONE);
+                        }
+                    });
                 }
             });
         };
-
-        progressHandler.postDelayed(deferredRecordsWarmupRunnable, RECORDS_INITIAL_METADATA_DELAY_MS);
-        progressHandler.postDelayed(deferredRecordsDeltaScanRunnable, RECORDS_INITIAL_DELTA_SCAN_DELAY_MS);
+        progressHandler.postDelayed(deferredRecordsDeltaScanRunnable, delayMs);
     }
 
     private void loadRecordsList() {
@@ -5618,6 +5688,38 @@ public class RecordsFragment extends BaseFragment implements
                 try {
                     long loadStart = System.currentTimeMillis();
 
+                    // Paint a small newest-first page immediately (tens of ms)
+                    // instead of leaving the tab blank for the full ~2s read of
+                    // 30k rows. Only safe for the default unfiltered view.
+                    if (activeFilter == VideoItem.Category.ALL) {
+                        long pageStart = System.currentTimeMillis();
+                        List<VideoItem> firstPage =
+                                repository.getVideosFirstPage(RECORDS_FIRST_PAGE_SIZE);
+                        if (!firstPage.isEmpty()) {
+                            List<VideoItem> firstNormalized =
+                                    normalizeVideoCategories(firstPage);
+                            sortItems(firstNormalized, currentSortOption);
+                            FLog.i(TAG, "loadRecordsList: first page "
+                                    + firstNormalized.size() + " items in "
+                                    + (System.currentTimeMillis() - pageStart) + "ms");
+                            final List<VideoItem> firstSnapshot = firstNormalized;
+                            new Handler(Looper.getMainLooper()).post(() -> {
+                                if (!isAdded() || !allLoadedItems.isEmpty()) return;
+                                firstPagePartial = true;
+                                allLoadedItems.clear();
+                                allLoadedItems.addAll(firstSnapshot);
+                                videoItems.clear();
+                                videoItems.addAll(firstSnapshot);
+                                totalItems = indexedCount;
+                                showFilterChipsPending();
+                                if (recordsAdapter != null) {
+                                    recordsAdapter.updateRecords(videoItems);
+                                }
+                                updateUiVisibility();
+                            });
+                        }
+                    }
+
                     // DB read on background thread (Room requires this)
                     List<VideoItem> items = repository.getVideos(sharedPreferencesManager);
                     List<VideoItem> normalized = normalizeVideoCategories(items);
@@ -5643,6 +5745,7 @@ public class RecordsFragment extends BaseFragment implements
                         allLoadedItems.clear();
                         allLoadedItems.addAll(normalized);
                         isLoading = false;
+                        firstPagePartial = false;
                         applyActiveFilterToUi();
                         updateUiVisibility();
                         isInitialLoad = false;

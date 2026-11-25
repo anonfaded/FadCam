@@ -57,4 +57,28 @@
         <!-- Corner registration marks; off inside small preview stages that already have a frame. -->
         <attr name="cornerMarks" format="boolean" />
     </declare-styleable>
+
+    <!-- Reusable icon button with a tiny ON/OFF-style label in the corner.
+         Used by the torch, mirror and FadRec mute controls so they share one
+         measurement/label implementation instead of three duplicated layouts. -->
+    <declare-styleable name="StatusControlButton">
+        <attr name="scb_icon" format="reference" />
+        <attr name="scb_iconSize" format="dimension" />
+        <attr name="scb_iconTint" format="color" />
+        <attr name="scb_background" format="reference" />
+        <attr name="scb_buttonGone" format="boolean" />
+        <attr name="scb_buttonId" format="reference" />
+        <attr name="scb_statusId" format="reference" />
+        <attr name="scb_centerIconId" format="reference" />
+        <attr name="scb_statusText" format="string" />
+        <attr name="scb_statusTextColor" format="color" />
+        <attr name="scb_statusTextSize" format="dimension" />
+        <attr name="scb_statusMarginBottom" format="dimension" />
+        <attr name="scb_statusMarginEnd" format="dimension" />
+        <attr name="scb_centerIconText" format="string" />
+        <attr name="scb_centerIconSize" format="dimension" />
+        <attr name="scb_centerIconColor" format="color" />
+        <attr name="scb_nextFocusUp" format="reference" />
+        <attr name="scb_nextFocusDown" format="reference" />
+    </declare-styleable>
 </resources>

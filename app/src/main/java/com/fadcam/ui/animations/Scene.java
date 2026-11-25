@@ -1,6 +1,7 @@
 package com.fadcam.ui.animations;
 
 import android.graphics.Canvas;
+import android.graphics.RectF;
 
 /**
  * A self-contained Canvas animation drawn in its own design space.
@@ -16,6 +17,15 @@ public interface Scene {
 
     /** Height of the local coordinate space. */
     float designHeight();
+
+    /**
+     * Bounds of the actual artwork in design space, used by hosts that need to
+     * place a light or a crop around the animation rather than the whole stage.
+     * Defaults to the full canvas; scenes with a compact subject should tighten it.
+     */
+    default void focusRect(RectF out) {
+        out.set(0f, 0f, designWidth(), designHeight());
+    }
 
     /**
      * Draws one frame. The canvas is already scaled into the design space.

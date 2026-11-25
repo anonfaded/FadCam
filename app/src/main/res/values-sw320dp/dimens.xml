@@ -31,6 +31,7 @@
     <dimen name="onboarding_dock_dot_margin">3dp</dimen>
     <dimen name="onboarding_dock_bottom_margin">12dp</dimen>
     <dimen name="onboarding_dock_padding">6dp</dimen>
+    <dimen name="home_dock_label_size">8sp</dimen>
     <dimen name="onboarding_scroll_hint_text_size">8sp</dimen>
     <dimen name="onboarding_bottom_fade_height">108dp</dimen>
     <dimen name="onboarding_scroll_hint_gap">8dp</dimen>
@@ -92,11 +93,9 @@
          24sp value from values-sw400dp. -->
     <dimen name="home_tile_icon_size">16sp</dimen>
 
-    <!-- Same treatment for control buttons that carry a corner ON/OFF label
-         (torch, mirror, FadRec mute). The label lives in the bottom-right, so
-         a smaller glyph keeps both readable on small phones. -->
-    <dimen name="home_control_icon_torch">14dp</dimen>
-    <dimen name="home_control_icon_mirror">12dp</dimen>
-    <dimen name="home_control_icon_mute">14sp</dimen>
+    <!-- Keep ON/OFF labels off the rounded edge without padding them away
+         from the bottom-right corner. The glyph sizes stay at their normal
+         values; the wider label inset is what creates the breathing room. -->
+    <dimen name="home_control_status_margin_e">7dp</dimen>
     <dimen name="home_hero_padding_v">4dp</dimen>
 </resources> 
