@@ -90,6 +90,15 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         return R.style.CustomBottomSheetDialogTheme;
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        View view = getView();
+        if (view != null) {
+            com.fadcam.ui.utils.SideSheet.applyIfLandscape(requireDialog(), view);
+        }
+    }
+
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -185,20 +194,24 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         emptyState.setVisibility(View.GONE);
         root.addView(emptyState);
 
-        // Scrollable recordings list
-        ScrollView scrollView = new ScrollView(requireContext());
-        scrollView.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, (int) (320 * dp)));
-
+        // The recordings list grows naturally; the whole sheet is the scroll container
+        // below. A fixed 320dp inner box was the only scrollable part, so in landscape
+        // the title and options above it could not be reached at all.
         recordingsContainer = new LinearLayout(requireContext());
         recordingsContainer.setOrientation(LinearLayout.VERTICAL);
-        scrollView.addView(recordingsContainer);
-        root.addView(scrollView);
+        root.addView(recordingsContainer);
 
         // Start background scan
         loadRecordings();
 
-        return root;
+        androidx.core.widget.NestedScrollView scroller =
+                new androidx.core.widget.NestedScrollView(requireContext());
+        scroller.setFillViewport(true);
+        scroller.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
+        scroller.addView(root, new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT));
+        return scroller;
     }
 
     // ── "Browse Device" row ──────────────────────────────────────────

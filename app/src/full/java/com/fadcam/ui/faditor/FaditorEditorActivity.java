@@ -681,6 +681,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 boolean playbackClipChanged = segmentIndex != playbackClipIndex;
                 if (playbackClipChanged) {
                     playbackClipIndex = segmentIndex;
+                    editorTimeline.setPlaybackIndex(segmentIndex);
                     // Scrubbing follows the playhead: it loads the clip under it so
                     // seeking has the right bounds. It must never touch the selection —
                     // dragging across clips used to re-target the toolbar behind the
@@ -724,7 +725,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 // Only update playhead fraction when NOT dragging to avoid calculated-position jumping
                 // During drag, updatePlayheadFromX already set correct playheadPositionMs
                 if (!isDragging) {
-                    editorTimeline.setPlayheadFraction(fractionInSegment);
+                    editorTimeline.setPlayheadFraction(segmentIndex, fractionInSegment);
                 }
                 updateCurrentTimeDisplay(seekPosition);
             }
@@ -739,6 +740,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 int segmentAtPlayhead = editorTimeline.getSegmentAtPlayhead();
                 if (segmentAtPlayhead >= 0 && segmentAtPlayhead != playbackClipIndex) {
                     playbackClipIndex = segmentAtPlayhead;
+                    editorTimeline.setPlaybackIndex(segmentAtPlayhead);
                     FLog.d(TAG, "drag finished: playbackClipIndex=" + segmentAtPlayhead
                             + " (selection stays " + selectedClipIndex + ")");
                     Clip clip = tl.getClip(segmentAtPlayhead);
@@ -894,6 +896,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolSplit = findViewById(R.id.tool_split);
         toolDelete = findViewById(R.id.tool_delete);
         toolDuplicate = findViewById(R.id.tool_duplicate);
+
+        // Landscape re-parents the preview and the tool strip; do it once the whole
+        // hierarchy exists and before anything measures.
+        applyEditorOrientationLayout();
 
         // Undo/Redo buttons with count badges
         btnUndo = findViewById(R.id.btn_undo);
@@ -1370,6 +1376,198 @@ public class FaditorEditorActivity extends AppCompatActivity {
         playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
     }
 
+    /**
+     * Starts playback exactly where the playhead is.
+     *
+     * <p>The playhead is the single source of truth. The clip under it is resolved
+     * from the timeline at press time, loaded into the player if it is not already
+     * there, and the player is seeked to the matching source position. Relying on a
+     * cached index here is what used to make play jump to the last clip: the player
+     * still held clip 0 while the playhead sat at 9s, the seek clamped to the end of
+     * clip 0, and the "at trim end" handler then auto-advanced clip after clip.</p>
+     */
+    private void startPlaybackFromPlayhead() {
+        if (project == null || project.getTimeline().isEmpty()) return;
+
+        long playheadMs = editorTimeline.getPlayheadPositionMs();
+        long videoEndMs = totalEffectiveMs();
+        long timelineEndMs = editorTimeline.getTimelineEndMs();
+
+        // Playhead past the video but within an audio tail: play only audio.
+        if (playheadMs >= videoEndMs && timelineEndMs > videoEndMs) {
+            audioTailActive = true;
+            audioTailStartWall = android.os.SystemClock.elapsedRealtime();
+            audioTailStartMs = playheadMs;
+            btnPlayPause.setText("pause");
+            syncAndPlayAudioPlayer();
+            playheadHandler.post(playheadUpdater);
+            FLog.d(TAG, "Play from audio tail: playhead=" + playheadMs + "ms");
+            return;
+        }
+
+        int index = editorTimeline.getSegmentIndexAtTime(playheadMs);
+        if (index < 0) index = 0;
+        Clip clip = clipAt(index);
+        if (clip == null) return;
+        playbackClipIndex = index;
+        editorTimeline.setPlaybackIndex(index);
+
+        long segmentStartMs = editorTimeline.getSegmentStartTimeMs(index);
+        long localEffectiveMs = Math.max(0, playheadMs - segmentStartMs);
+        // The playhead counts timeline (effective) time; the player counts source time.
+        long localSourceMs = clip.getInPointMs()
+                + (long) (localEffectiveMs * clip.getSpeedMultiplier());
+        localSourceMs = Math.max(clip.getInPointMs(),
+                Math.min(localSourceMs, clip.getOutPointMs()));
+
+        FLog.d(TAG, "play: playhead=" + playheadMs + "ms index=" + index
+                + " segStart=" + segmentStartMs + " localEff=" + localEffectiveMs
+                + " localSrc=" + localSourceMs
+                + " loadedClip=" + (playerManager.getLoadedClip() != null
+                    ? playerManager.getLoadedClip().getId() : "none"));
+
+        if (clip.isImageClip()) {
+            showImagePreview(clip.getSourceUri());
+            startImagePlayback(localEffectiveMs);
+            updatePlayPauseButton(true);
+            playheadHandler.post(playheadUpdater);
+            return;
+        }
+
+        hideImagePreview();
+        if (playerManager.getLoadedClip() != clip) {
+            // Different source (or a different trim state): load it before seeking.
+            playerManager.loadClip(clip);
+        }
+        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+        updatePreviewTransforms();
+
+        playerManager.seekTo(localSourceMs - clip.getInPointMs());
+        playerManager.play();
+        updatePlayPauseButton(true);
+        syncAndPlayAudioPlayer();
+        playheadHandler.post(playheadUpdater);
+    }
+
+    /**
+     * Re-arranges the editor for the current orientation.
+     *
+     * <p>Portrait keeps the vertical stack: preview, then time row, timeline and a
+     * horizontal tool strip. Landscape has very little height, so the same views are
+     * re-parented instead of duplicating an 800-line layout: the preview takes the
+     * whole left side, the tool strip becomes a vertical column on the right, and only
+     * the time row + timeline stay along the bottom. That gives the preview the space
+     * it needs while every control stays reachable.</p>
+     */
+    private void applyEditorOrientationLayout() {
+        LinearLayout root = findViewById(R.id.editor_root);
+        View player = findViewById(R.id.player_container);
+        android.view.ViewGroup controls = findViewById(R.id.controls_section);
+        android.view.ViewGroup toolbarScroll = findViewById(R.id.tool_toolbar_scroll);
+        LinearLayout toolbarRow = findViewById(R.id.tool_toolbar_row);
+        if (root == null || player == null || controls == null
+                || toolbarScroll == null || toolbarRow == null) return;
+
+        boolean landscape = getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+
+        // ── Reset to the portrait arrangement first, so rotating back is clean ────
+        View existingMain = root.findViewById(R.id.editor_main_area);
+        if (existingMain instanceof android.view.ViewGroup) {
+            android.view.ViewGroup mainGroup = (android.view.ViewGroup) existingMain;
+            // Pull the player and the tool row back out before dropping the container.
+            if (toolbarRow.getParent() instanceof android.view.ViewGroup
+                    && toolbarRow.getParent() != toolbarScroll) {
+                ((android.view.ViewGroup) toolbarRow.getParent()).removeView(toolbarRow);
+            }
+            if (player.getParent() == mainGroup) mainGroup.removeView(player);
+            root.removeView(mainGroup);
+        }
+        if (toolbarRow.getParent() != toolbarScroll) {
+            if (toolbarRow.getParent() instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) toolbarRow.getParent()).removeView(toolbarRow);
+            }
+            toolbarRow.setOrientation(LinearLayout.HORIZONTAL);
+            toolbarScroll.addView(toolbarRow);
+        }
+        toolbarRow.setOrientation(LinearLayout.HORIZONTAL);
+        if (player.getParent() == null) {
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
+            root.addView(player, Math.min(1, root.getChildCount()), lp);
+        }
+        if (toolbarScroll.getParent() != controls) {
+            if (toolbarScroll.getParent() instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) toolbarScroll.getParent()).removeView(toolbarScroll);
+            }
+            controls.addView(toolbarScroll);
+        }
+        setToolLabelsVisible(true);
+
+        if (!landscape) {
+            FLog.d(TAG, "Editor layout: portrait");
+            return;
+        }
+
+        // ── Landscape: preview left, vertical tool column right ──────────────────
+        root.removeView(player);
+
+        LinearLayout main = new LinearLayout(this);
+        main.setId(R.id.editor_main_area);
+        main.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams mainLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
+        root.addView(main, Math.min(1, root.getChildCount()), mainLp);
+
+        main.addView(player, new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
+
+        androidx.core.widget.NestedScrollView column = new androidx.core.widget.NestedScrollView(this);
+        column.setFillViewport(false);
+        column.setBackgroundColor(0xFF141414);
+        column.setVerticalScrollBarEnabled(false);
+        LinearLayout.LayoutParams colLp = new LinearLayout.LayoutParams(
+                dp(92), LinearLayout.LayoutParams.MATCH_PARENT);
+        main.addView(column, colLp);
+
+        // Move the tool row itself, not the horizontal scroller: a vertical list inside
+        // a horizontal scroller cannot scroll.
+        toolbarScroll.removeView(toolbarRow);
+        toolbarRow.setOrientation(LinearLayout.VERTICAL);
+        column.addView(toolbarRow, new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT));
+        // The column is the scroller now; keep the old scroller out of the way.
+        controls.removeView(toolbarScroll);
+
+        // Labels cost height in a column that has little of it; the icons are enough and
+        // the tool names remain discoverable through the tooltips/content descriptions.
+        setToolLabelsVisible(false);
+        FLog.d(TAG, "Editor layout: landscape (preview left, tools right)");
+    }
+
+    /** Shows/hides the text labels under the tool icons. */
+    private void setToolLabelsVisible(boolean visible) {
+        int[] ids = {R.id.tool_trim_label, R.id.tool_speed_label, R.id.tool_mute_label,
+                R.id.tool_rotate_label, R.id.tool_flip_label, R.id.tool_crop_label,
+                R.id.tool_canvas_label, R.id.tool_audio_label, R.id.tool_split_label,
+                R.id.tool_delete_label, R.id.tool_duplicate_label,
+                R.id.tool_add_asset_label};
+        for (int id : ids) {
+            View label = findViewById(id);
+            if (label != null) label.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(@androidx.annotation.NonNull
+            android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // The activity handles orientation itself, so re-apply the arrangement here.
+        applyEditorOrientationLayout();
+    }
+
     private void initTimeline() {
         // Open with no clip highlighted, like any professional editor: the tools come
         // alive on the first tap. The player still shows clip 0 at the playhead.
@@ -1389,60 +1587,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void initToolbar() {
         // Play/Pause button
         btnPlayPause.setOnClickListener(v -> {
-            Clip c = getSelectedClip();
-            if (c == null) c = clipAt(editorTimeline.getSegmentAtPlayhead());
-            if (c == null) c = clipAt(0);
-            if (c == null) return;
-            if (c.isImageClip()) {
-                // Image clip: toggle internal timer playback
-                if (imagePlaybackActive) {
-                    // Pause: record current position
-                    imagePlaybackStartOffsetMs = getImagePlaybackPositionMs();
-                    stopImagePlayback();
-                } else {
-                    // Compute current position from playhead
-                    long currentPos = imagePlaybackStartOffsetMs;
-                    long clipDuration = c.getTrimmedDurationMs();
-                    if (currentPos >= clipDuration) {
-                        // At end: restart from beginning
-                        currentPos = 0;
-                    }
-                    startImagePlayback(currentPos);
-                }
-            } else {
-                // Video clip: use ExoPlayer
-                if (playerManager.isPlaying() || audioTailActive) {
-                    audioTailActive = false;
-                    playerManager.pause();
-                    pauseAudioPlayer();
-                    updatePlayPauseButton(false);
-                } else {
-                    long playheadMs = editorTimeline.getPlayheadPositionMs();
-                    long videoEndMs = totalEffectiveMs();
-                    long timelineEndMs = editorTimeline.getTimelineEndMs();
-
-                    if (playheadMs >= videoEndMs && timelineEndMs > videoEndMs) {
-                        // Playhead is in audio-only region past video
-                        // Enter audio-tail mode directly
-                        audioTailActive = true;
-                        audioTailStartWall = android.os.SystemClock.elapsedRealtime();
-                        audioTailStartMs = playheadMs;
-                        btnPlayPause.setText("pause");
-                        syncAndPlayAudioPlayer();
-                        playheadHandler.post(playheadUpdater);
-                        FLog.d(TAG, "Play from audio-tail region: playhead=" + playheadMs + " videoEnd=" + videoEndMs);
-                    } else {
-                        // CRITICAL: Ensure player position matches timeline playhead before play
-                        // This fixes the "jumps to start" issue when resuming from a seeked position
-                        long segmentStartMs = editorTimeline.getSegmentStartTimeMs(playbackClipIndex);
-                        long relativePlayheadMs = Math.max(0, playheadMs - segmentStartMs);
-                        playerManager.seekTo(relativePlayheadMs);
-                        
-                        playerManager.play();
-                        syncAndPlayAudioPlayer();
-                    }
-                }
+            if (audioTailActive || playerManager.isPlaying()) {
+                audioTailActive = false;
+                playerManager.pause();
+                pauseAudioPlayer();
+                updatePlayPauseButton(false);
+                return;
             }
+            startPlaybackFromPlayhead();
         });
 
         // Volume control (replaces simple mute toggle)
@@ -3149,7 +3301,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             float fraction = (float) (clip.getInPointMs() + positionMs) / sourceDuration;
             fraction = Math.max(0f, Math.min(fraction, 1f));
             lastUserPlayheadFraction = fraction;
-            editorTimeline.setPlayheadFraction(fraction);
+            editorTimeline.setPlayheadFraction(playbackClipIndex, fraction);
             updateCurrentTimeDisplay(positionMs);
             return;
         }
@@ -3205,7 +3357,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             fraction = Math.max(0f, Math.min(fraction, 1f));
 
             lastUserPlayheadFraction = fraction;
-            editorTimeline.setPlayheadFraction(fraction);
+            editorTimeline.setPlayheadFraction(playbackClipIndex, fraction);
             updateCurrentTimeDisplay(position);
         }
         // ── While PAUSED: do NOT overwrite the user's playhead position ──
@@ -3229,6 +3381,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         Timeline timeline = project.getTimeline();
         playbackClipIndex = nextIndex;
+        editorTimeline.setPlaybackIndex(nextIndex);
         Clip nextClip = timeline.getClip(nextIndex);
         if (nextClip == null) return;
 
@@ -3258,7 +3411,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         float startFraction = (float) nextClip.getInPointMs() / nextClip.getSourceDurationMs();
-        editorTimeline.setPlayheadFraction(startFraction);
+        editorTimeline.setPlayheadFraction(nextIndex, startFraction);
         updateCurrentTimeDisplay(0);
     }
 

@@ -149,6 +149,13 @@ public class EditorTimelineView extends View {
     
     // Timeline zoom and scroll state
     private float zoomLevel = 1f;
+    /**
+     * Extra scale applied when the whole project is narrower than the view, so a few
+     * seconds of video still use the full width instead of huddling around the centre
+     * line. Disabled as soon as the user pinches, because then the zoom is theirs.
+     */
+    private float fitScale = 1f;
+    private boolean userZoomed;
     private float scrollOffsetPx = 0f;
     
     // Thumbnails cache (key: content-based cacheKey, value: list of thumbnails)
@@ -469,7 +476,34 @@ public class EditorTimelineView extends View {
     }
     
     private void updateDpPerSecond() {
-        dpPerSecondPx = BASE_DP_PER_SECOND * zoomLevel * density;
+        dpPerSecondPx = BASE_DP_PER_SECOND * zoomLevel * fitScale * density;
+    }
+
+    /**
+     * Chooses {@link #fitScale} so a project shorter than the view still spans it.
+     * Capped so a single very short clip does not turn into a giant thumbnail.
+     */
+    private void updateFitScale() {
+        if (userZoomed || totalEffectiveMs <= 0) {
+            fitScale = 1f;
+            return;
+        }
+        int viewport = getWidth() - getPaddingLeft() - getPaddingRight();
+        if (viewport <= 0) {
+            fitScale = 1f;
+            return;
+        }
+        float natural = (totalEffectiveMs / 1000f) * BASE_DP_PER_SECOND * zoomLevel * density
+                + Math.max(0, segments.size() - 1) * segmentGapPx
+                + edgePaddingPx * 2;
+        // Leave a little breathing room so the last clip does not touch the edge.
+        float target = viewport * 0.96f;
+        if (natural <= 0f || natural >= target) {
+            fitScale = 1f;
+            return;
+        }
+        fitScale = Math.min(target / natural, 3f);
+        FLog.d(TAG, "fitScale=" + fitScale + " natural=" + natural + " viewport=" + viewport);
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -503,9 +537,12 @@ public class EditorTimelineView extends View {
             thumbnailsLoading.remove(key);
         }
         selectedIndex = selected;  // Allow -1 for no selection
-        if (selected >= 0) {
-            lastPlaybackIndex = selected;  // Track for playback continuation
-        }
+        // NOTE: lastPlaybackIndex is deliberately NOT taken from the selection here.
+        // Selection and playback are independent; deriving one from the other made the
+        // playhead jump to whichever clip happened to be highlighted.
+        // The project's length changed, so re-evaluate the fit scale.
+        updateFitScale();
+        updateDpPerSecond();
         computeRects();
         
         // Center timeline on current playhead position
@@ -569,6 +606,22 @@ public class EditorTimelineView extends View {
      * Scans through segments and returns the index of the segment containing playheadPositionMs.
      * Returns -1 if no segment contains the playhead (e.g., playhead is past all segments).
      */
+    /**
+     * Segment that contains {@code timeMs}. At an exact cut the later clip wins, so
+     * pressing play on a boundary advances rather than replaying the previous clip.
+     */
+    public int getSegmentIndexAtTime(long timeMs) {
+        if (segments.isEmpty()) return -1;
+        long accum = 0;
+        for (int i = 0; i < segments.size(); i++) {
+            long end = accum + segments.get(i).effectiveMs;
+            if (timeMs < end) return i;
+            if (timeMs == end) return Math.min(i + 1, segments.size() - 1);
+            accum = end;
+        }
+        return segments.size() - 1;
+    }
+
     public int getSegmentAtPlayhead() {
         long cumulMs = 0;
         for (int i = 0; i < segments.size(); i++) {
@@ -589,35 +642,40 @@ public class EditorTimelineView extends View {
     }
 
     /**
-     * Accept a source-absolute fraction (0..1 of source duration).
-     * Converts to absolute ms position in timeline.
-     * Works regardless of UI selection state - uses last known playing segment.
+     * Sets the playhead inside a specific clip from a source-absolute fraction
+     * (0..1 of that clip's untrimmed duration).
+     *
+     * <p>Always pass the clip that is actually playing. The old single-argument form
+     * derived the index from the <em>selection</em>, so as soon as a clip was
+     * highlighted the playhead was forced into that clip's time range — which is why
+     * the white line jumped to the selected clip on play.</p>
      */
-    public void setPlayheadFraction(float sourceFraction) {
-        // Use last valid index for playback if currently deselected
-        int playbackIndex = selectedIndex >= 0 ? selectedIndex : lastPlaybackIndex;
-        
-        FLog.d(TAG, "setPlayheadFraction: fraction=" + sourceFraction + " selectedIndex=" + selectedIndex + " playbackIndex=" + playbackIndex);
-        
-        if (playbackIndex >= 0 && playbackIndex < segments.size()) {
-            SegmentData sd = segments.get(playbackIndex);
-            long selectedSegmentStartMs = getSegmentStartTime(playbackIndex);
-            long localMs = (long)(sourceFraction * sd.sourceDurationMs);
-            // Convert from source position to trimmed position
-            localMs = Math.max(sd.inPointMs, Math.min(localMs, sd.outPointMs)) - sd.inPointMs;
-            // Adjust for speed
-            localMs = (long)(localMs / sd.speed);
-            playheadPositionMs = selectedSegmentStartMs + localMs;
-            
-            // Remember this index for playback continuation
-            lastPlaybackIndex = playbackIndex;
-            
-            FLog.d(TAG, "setPlayheadFraction: playheadPositionMs=" + playheadPositionMs);
-            
-            // Auto-scroll to keep playhead centered (always, not just when not dragging)
-            centerPlayhead();
-        }
+    public void setPlayheadFraction(int segmentIndex, float sourceFraction) {
+        if (segmentIndex < 0 || segmentIndex >= segments.size()) return;
+        SegmentData sd = segments.get(segmentIndex);
+        long segmentStartMs = getSegmentStartTime(segmentIndex);
+        long localMs = (long) (sourceFraction * sd.sourceDurationMs);
+        // source position → offset inside the trim → timeline (effective) time
+        localMs = Math.max(sd.inPointMs, Math.min(localMs, sd.outPointMs)) - sd.inPointMs;
+        localMs = (long) (localMs / sd.speed);
+        playheadPositionMs = segmentStartMs + localMs;
+        lastPlaybackIndex = segmentIndex;
+        FLog.d(TAG, "setPlayheadFraction: index=" + segmentIndex
+                + " frac=" + sourceFraction + " playhead=" + playheadPositionMs + "ms");
+        centerPlayhead();
         invalidate();
+    }
+
+    /** Backwards-compatible form: uses the clip last reported as playing. */
+    public void setPlayheadFraction(float sourceFraction) {
+        setPlayheadFraction(lastPlaybackIndex, sourceFraction);
+    }
+
+    /** Tells the view which clip is playing, independent of the UI selection. */
+    public void setPlaybackIndex(int index) {
+        if (index >= 0 && index < segments.size()) {
+            lastPlaybackIndex = index;
+        }
     }
     
     private long getSegmentStartTime(int index) {
@@ -751,6 +809,8 @@ public class EditorTimelineView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        updateFitScale();
+        updateDpPerSecond();
         computeRects();
         
         // Center timeline on current playhead position when view size changes
@@ -1958,6 +2018,23 @@ public class EditorTimelineView extends View {
             if (listener != null) {
                 listener.onAudioTrimFinished(selectedAudioIndex, audioTrimDragInMs, audioTrimDragOutMs);
             }
+        } else if (isUp && downSegIndex < 0) {
+            // A tap on empty space (ruler, gaps, blank track) clears the selection.
+            // Without this a very short clip is impossible to deselect, because you can
+            // never reliably hit the same 3px sliver twice.
+            if (Math.abs(x - downX) < touchSlopPx) {
+                boolean hadSelection = selectedIndex >= 0 || selectedAudioIndex >= 0;
+                selectedIndex = -1;
+                selectedAudioIndex = -1;
+                if (hadSelection) {
+                    invalidate();
+                    FLog.d(TAG, "tap empty timeline: selection cleared");
+                    if (listener != null) {
+                        listener.onSegmentSelected(-1);
+                        listener.onAudioClipSelected(-1);
+                    }
+                }
+            }
         } else if (isUp && downSegIndex >= 0) {
             if (Math.abs(x - downX) < touchSlopPx) {
                 // A tap toggles selection only. It must not touch scrollOffsetPx or the
@@ -2316,6 +2393,9 @@ public class EditorTimelineView extends View {
             scaleAccumulator *= detector.getScaleFactor();
             zoomLevel = initialZoom * scaleAccumulator;
             zoomLevel = Math.max(MIN_ZOOM, Math.min(zoomLevel, MAX_ZOOM));
+            // The user is choosing the scale; stop auto-fitting under their fingers.
+            userZoomed = true;
+            fitScale = 1f;
             
             FLog.d(TAG, "ScaleListener.onScale: scaleFactor=" + detector.getScaleFactor() + " zoomLevel=" + zoomLevel);
             

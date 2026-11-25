@@ -636,6 +636,17 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        View view = getView();
+        if (view != null) {
+            // Landscape: a side panel, so it does not cover the short screen.
+            com.fadcam.ui.utils.SideSheet.applyIfLandscape(
+                    requireDialog(), view);
+        }
+    }
+
+    @Override
     public android.app.Dialog onCreateDialog(Bundle savedInstanceState) {
         android.app.Dialog dialog = super.onCreateDialog(savedInstanceState);
         dialog.setOnShowListener(d -> {

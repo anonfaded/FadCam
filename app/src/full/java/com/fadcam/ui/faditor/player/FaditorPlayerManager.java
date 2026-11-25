@@ -199,6 +199,12 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         FLog.d(TAG, "Trim end updated (no seek): trimEnd=" + newTrimEndMs + "ms");
     }
 
+    /** The clip currently prepared in the player, or null when nothing is loaded. */
+    @Nullable
+    public Clip getLoadedClip() {
+        return currentClip;
+    }
+
     public void play() {
         if (player != null) {
             long pos = player.getCurrentPosition();
