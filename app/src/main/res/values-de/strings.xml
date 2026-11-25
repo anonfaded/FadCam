@@ -152,14 +152,6 @@
     <string name="ui_preview_area">Vorschaubereich</string>
     <string name="preview_enabled">Vorschau aktiviert</string>
     <string name="preview_disabled">Vorschau deaktiviert</string>
-    <string-array name="easter_eggs_array">
-        <item>Alarm! Dies ist ein eingeschränkter Bereich. Starte die Aufnahme, um Zugang zu erhalten.</item>
-        <item>Du hast den geheimen Knopf gefunden! Er macht nichts, lol.</item>
-        <item>Beeil dich! Das System explodiert gleich … oder vielleicht braucht es nur eine Aufnahme, um sich zu beruhigen.</item>
-        <item>Na ja, das ist jetzt peinlich …</item>
-        <item>Welche Farbe hat dein Bugatti?</item>
-        <item>Ich wurde nicht dafür programmiert, das zu tun, was du tust. Warte, versuchst du, mich zu hacken?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>HAFTUNGSAUSSCHLUSS</item>
         <item>Sammelt FadCam irgendwelche Nutzerdaten?</item>
@@ -271,13 +263,6 @@
     <string name="torch_shortcut_long_label">Taschenlampe umschalten</string>
     <string name="torch_shortcut_disabled">Taschenlampen-Umschaltung ist derzeit nicht verfügbar</string>
     <!-- Torch Error Messages -->
-    <string-array name="torch_error_messages">
-        <item>Taschenlampe wird kompiliert... bitte nicht warten 🖥️</item>
-        <item>Kamera sagt: Heute kein Blitz 🚦</item>
-        <item>Torch.exe antwortet nicht 🔦</item>
-        <item>Fehlerbehebung verzögert... Entwickler hat einen mentalen Haltepunkt erreicht, lol 🧠</item>
-        <item>Patch kommt bald™... Entwickler debuggt das Leben 🐛</item>
-    </string-array>
     <string name="more_options">Weitere Optionen</string>
     <string name="records_options_title">Aufnahmeoptionen</string>
     <string name="setting_theme_title">App-Theme</string>
@@ -489,8 +474,8 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="applock_enable">Tab-Sperre aktivieren</string>
     <string name="applock_disable">Tab-Sperre deaktivieren</string>
     <string name="applock_set_pin">PIN festlegen</string>
-    <string name="applock_change_pin">PIN ändern</string>
-    <string name="applock_remove_pin">PIN entfernen</string>
+    <string name="applock_change_pin">Sperre ändern</string>
+    <string name="applock_remove_pin">Sperre entfernen</string>
     <string name="applock_pin_created">PIN erfolgreich erstellt</string>
     <string name="applock_pin_removed">PIN erfolgreich entfernt</string>
     <!-- App Lock Verification Messages -->
@@ -1099,7 +1084,6 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="exposure_title">Belichtungskorrektur (EV)</string>
     <string name="note_from_developer_title">Hinweis vom Entwickler</string>
     <string name="note_from_developer_subtitle">README, Links &amp; Updates</string>
-    <string name="watermark_preview_funny">Im Ernst? :( \n    ＞﹏＜</string>
     <string name="quick_speed_title">Schnell-Geschwindigkeit</string>
     <string name="quick_speed_option_default">2x (Standard)</string>
     <string name="quick_speed_option_1_25">1,25x</string>
@@ -1377,7 +1361,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="tab_lock_screen_message">Zum Fortfahren entsperren</string>
     <string name="tab_lock_unlock">Entsperren</string>
     <string name="applock_helper_manage_disabled">Tab-Sperre-PIN ist festgelegt. Schalte sie ein, um für ausgewählte Tabs die PIN zu verlangen.</string>
-    <string name="applock_set_pin_enable">PIN festlegen &amp; aktivieren</string>
+    <string name="applock_set_pin_enable">Einrichten &amp; aktivieren</string>
     <string name="audio_bitrate_recommended_line">Empfohlen: 192000 bps</string>
     <string name="audio_device_type_ble_headset">BLE-Headset</string>
     <string name="audio_device_type_bt_a2dp">Bluetooth (A2DP)</string>
@@ -2303,6 +2287,8 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="setting_video_stabilization_title">Video-Stabilisierung</string>
     <string name="setting_not_supported">Auf diesem Gerät nicht unterstützt</string>
     <string name="video_stabilization_footer">Sorgt für ruhige Videos, indem Handbewegungen per elektronischer (EIS) und optischer (OIS) Stabilisierung ausgeglichen werden. Ein kleiner Bildausschnitt wird dafür benötigt.</string>
+    <string name="video_stabilization_unsupported_banner">Stabilisierung: wird auf deinem Kartoffel-Handy nicht unterstützt. Gib der Hardware die Schuld, nicht uns.</string>
+    <string name="video_stabilization_unsupported_short">Nicht unterstützt</string>
     <string name="view_mode_grid">Raster</string>
     <string name="view_mode_list">Liste</string>
     <string name="watch_audio_label">Audio</string>
@@ -3106,4 +3092,16 @@ Für immer dein.</string>
     <string name="faditor_rename_helper">Das exportierte Video wird unter diesem Namen gespeichert.</string>
     <string name="faditor_export_name_preview">Gespeichert als: %1$s.mp4</string>
     <string name="faditor_select_segment_first">Kein Clip unter dem Abspielkopf</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Verwende einen in Android registrierten Fingerabdruck, um diese App zu schützen.</string>
+    <string name="applock__description_unlock_fingerprint">Berühre den Fingerabdrucksensor</string>
+    <string name="applock__create_chooser_option_fingerprint">Fingerabdruck</string>
+    <string name="applock__fingerprint_error_not_enrolled">Der Fingerabdruck ist in FadCam noch nicht aktiviert. Öffne die Tab-Sperre und richte ihn ein.</string>
+    <string name="applock__fingerprint_error_unrecognized">Dein Fingerabdruck wurde nicht erkannt.</string>
+    <string name="applock__fingerprint_error_unknown">Die Fingerabdruck-Anmeldung konnte nicht abgeschlossen werden. Versuche es erneut oder richte sie in den Android-Einstellungen ein.</string>
+    <string name="applock__fingerprint_error_none">In Android ist noch kein Fingerabdruck eingerichtet. Füge einen in den Android-Einstellungen hinzu und versuche es erneut.</string>
+    <string name="applock__fingerprint_error_hardware">Der Fingerabdruck ist gerade nicht verfügbar. Richte einen Fingerabdruck in den Android-Einstellungen ein und versuche es erneut.</string>
+    <string name="applock__action_settings">Android-Einstellungen öffnen</string>
+    <string name="watermark_preview_funny">Im Ernst? :( \n    ＞﹏＜</string>
 </resources>

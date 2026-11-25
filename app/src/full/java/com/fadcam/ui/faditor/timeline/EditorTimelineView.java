@@ -257,7 +257,6 @@ public class EditorTimelineView extends View {
     private final Paint reorderBlockPaint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint reorderBlockDragPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint reorderBlockSelectedPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint reorderNumPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint reorderBtnTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint reorderBarPaint = new Paint();
     private final Paint reorderDropIndicatorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -494,10 +493,6 @@ public class EditorTimelineView extends View {
         reorderBlockSelectedPaint.setColor(COLOR_BORDER_SEL);
         reorderBlockSelectedPaint.setStyle(Paint.Style.STROKE);
         reorderBlockSelectedPaint.setStrokeWidth(2.5f * density);
-        reorderNumPaint.setColor(0xDDFFFFFF);
-        reorderNumPaint.setTextSize(14f * density);
-        reorderNumPaint.setTextAlign(Paint.Align.CENTER);
-        reorderNumPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
         reorderBtnTextPaint.setColor(COLOR_HANDLE);
         reorderBtnTextPaint.setTextSize(14f * density);
         reorderBtnTextPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
@@ -1170,7 +1165,7 @@ public class EditorTimelineView extends View {
             canvas.drawRoundRect(drawTmpRect, segmentCornerPx, segmentCornerPx, borderPaint);
         }
 
-        if (r.width() > labelPaint.getTextSize() * 3f) {
+        {
             // Sticky duration label: stays against the visible edge of the clip while the
             // strip scrolls under the fixed playhead, so short/long clips remain readable.
             String label = sd.durationLabel;

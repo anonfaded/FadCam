@@ -87,5 +87,9 @@
     <!-- Extra bottom room inside the AF/exposure/zoom tiles so the centred
          glyph never reaches the value badge in the corner. -->
     <dimen name="home_tile_icon_pad_bottom">9dp</dimen>
+    <!-- Narrower tiles on small phones: scale the glyph down so the corner
+         value badge ("+0.0", "1.0x") keeps clear space. Wide phones use the
+         24sp value from values-sw400dp. -->
+    <dimen name="home_tile_icon_size">16sp</dimen>
     <dimen name="home_hero_padding_v">4dp</dimen>
 </resources> 

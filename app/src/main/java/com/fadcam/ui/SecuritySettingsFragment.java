@@ -142,7 +142,7 @@ public class SecuritySettingsFragment extends Fragment {
                 items.add(new com.fadcam.ui.picker.OptionItem(
                         "tab_lock_remote",
                         getString(R.string.nav_remote),
-                        R.drawable.unknown_icon0,
+                        R.drawable.ic_remote_tab_lock,
                         sharedPreferencesManager.isTabLockRemoteEnabled()));
                 items.add(new com.fadcam.ui.picker.OptionItem(
                         "tab_lock_faditor",

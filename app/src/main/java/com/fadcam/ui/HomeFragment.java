@@ -5,7 +5,6 @@ import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
-import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
@@ -116,7 +115,6 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet; // For combining lists
 import java.util.List;
@@ -471,11 +469,6 @@ public class HomeFragment extends BaseFragment {
     private int afMode =
         android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO;
 
-    private List<String> messageQueue;
-    private List<String> recentlyShownMessages;
-    private final Random random = new Random();
-    private static final int RECENT_MESSAGE_LIMIT = 3; // Adjust as needed
-
     private static final int REQUEST_PERMISSIONS = 1;
     // deleted WakeLock field
     // private static final String PREF_FIRST_LAUNCH = "first_launch";
@@ -650,135 +643,6 @@ public class HomeFragment extends BaseFragment {
     }
 
     // deleted acquireWakeLock and releaseWakeLock methods
-
-    private void initializeMessages() {
-        messageQueue = new ArrayList<>(
-            Arrays.asList(
-                getResources().getStringArray(R.array.easter_eggs_array)
-            )
-        );
-        recentlyShownMessages = new ArrayList<>();
-        Collections.shuffle(messageQueue); // Shuffle the list initially
-    }
-
-    private void showRandomMessage() {
-        if (messageQueue == null || messageQueue.isEmpty()) {
-            initializeMessages(); // Reinitialize and shuffle if queue is empty or null
-        }
-        // Remove recently shown messages from the queue
-        messageQueue.removeAll(recentlyShownMessages);
-        // Ensure there are still messages to choose from
-        if (!messageQueue.isEmpty()) {
-            String randomMessage = messageQueue.remove(
-                random.nextInt(messageQueue.size())
-            );
-            tvPreviewPlaceholder.setPadding(
-                40,
-                tvPreviewPlaceholder.getPaddingTop(),
-                40,
-                tvPreviewPlaceholder.getPaddingBottom()
-            );
-            tvPreviewPlaceholder.setText(randomMessage);
-            AnimatorSet animatorSet = new AnimatorSet();
-            ObjectAnimator scaleDownX = ObjectAnimator.ofFloat(
-                tvPreviewPlaceholder,
-                "scaleX",
-                0.7f
-            );
-            ObjectAnimator scaleDownY = ObjectAnimator.ofFloat(
-                tvPreviewPlaceholder,
-                "scaleY",
-                0.7f
-            );
-            scaleDownX.setDuration(150);
-            scaleDownY.setDuration(150);
-            ObjectAnimator scaleUpX = ObjectAnimator.ofFloat(
-                tvPreviewPlaceholder,
-                "scaleX",
-                1.0f
-            );
-            ObjectAnimator scaleUpY = ObjectAnimator.ofFloat(
-                tvPreviewPlaceholder,
-                "scaleY",
-                1.0f
-            );
-            scaleUpX.setDuration(150);
-            scaleUpY.setDuration(150);
-            ObjectAnimator rotateLeft = ObjectAnimator.ofFloat(
-                tvPreviewPlaceholder,
-                "rotation",
-                0f,
-                -3f
-            );
-            rotateLeft.setDuration(80);
-            ObjectAnimator rotateRight = ObjectAnimator.ofFloat(
-                tvPreviewPlaceholder,
-                "rotation",
-                -3f,
-                3f
-            );
-            rotateRight.setDuration(80);
-            ObjectAnimator rotateCenter = ObjectAnimator.ofFloat(
-                tvPreviewPlaceholder,
-                "rotation",
-                3f,
-                0f
-            );
-            rotateCenter.setDuration(80);
-            final Drawable originalBackground = cardPreview.getBackground();
-            // -----
-            String themeName =
-                sharedPreferencesManager.sharedPreferences.getString(
-                    com.fadcam.Constants.PREF_APP_THEME,
-                    Constants.DEFAULT_APP_THEME
-                );
-            boolean isAmoledLocal =
-                "AMOLED".equalsIgnoreCase(themeName) ||
-                "Amoled".equalsIgnoreCase(themeName) ||
-                "Faded Night".equalsIgnoreCase(themeName);
-            int flashColor = isAmoledLocal
-                ? Color.parseColor("#232323")
-                : Color.parseColor("#302745");
-            ValueAnimator colorAnim = ValueAnimator.ofObject(
-                new ArgbEvaluator(),
-                flashColor,
-                Color.RED,
-                flashColor
-            );
-            // -----
-            colorAnim.setDuration(300);
-            colorAnim.addUpdateListener(animator -> {
-                int color = (int) animator.getAnimatedValue();
-                cardPreview.setBackgroundColor(color);
-            });
-            colorAnim.addListener(
-                new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        cardPreview.setBackground(originalBackground);
-                    }
-                }
-            );
-            AnimatorSet bounceSet = new AnimatorSet();
-            bounceSet.playTogether(scaleDownX, scaleDownY);
-            AnimatorSet expandSet = new AnimatorSet();
-            expandSet.playTogether(scaleUpX, scaleUpY);
-            AnimatorSet wobbleSet = new AnimatorSet();
-            wobbleSet.playSequentially(rotateLeft, rotateRight, rotateCenter);
-            animatorSet.playSequentially(bounceSet, expandSet, wobbleSet);
-            animatorSet.start();
-            colorAnim.start();
-            recentlyShownMessages.add(randomMessage);
-            if (recentlyShownMessages.size() > RECENT_MESSAGE_LIMIT) {
-                recentlyShownMessages.remove(0); // Remove the oldest message
-            }
-            Collections.shuffle(messageQueue);
-        } else {
-            tvPreviewPlaceholder.setText(
-                "Oops! No messages available right now."
-            );
-        }
-    }
 
     private void setupLongPressListener() {
         // Attach long-press to the preview card to preserve original behavior
@@ -4785,9 +4649,6 @@ public class HomeFragment extends BaseFragment {
         setupLongPressListener(); // Re-enabled for preview toggle during recording
         setupClockClickListener(); // For display options on clock
         setupAppLogoLongPressListener(view); // <<< CALL NEW METHOD
-
-        // Initialize easter egg messages and setup listener for preview placeholder
-        initializeMessages();
 
         CardView cardPreview = view.findViewById(R.id.cardPreview);
 

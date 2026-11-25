@@ -614,14 +614,6 @@
     <string name="ae_lock_helper">Cuando está habilitado, la autoexposición se mantiene en el brillo actual para que la cámara no reajuste la exposición durante la grabación. Usa el mosaico Exposición para hacer ajustes manuales de exposición.</string>
     <string name="ae_lock_switch_label">Bloquear AE</string>
     <string name="exposure_title">Compensación de exposición (EV)</string>
-    <string-array name="easter_eggs_array">
-        <item>¡Alerta! Esta es un área restringida. Inicia grabación para obtener acceso.</item>
-        <item>¡Encontraste el botón secreto! No hace nada lol</item>
-        <item>¡Rápido! El sistema está a punto de explotar… o quizás solo necesita una grabación para calmarse.</item>
-        <item>Bueno, esto es incómodo ahora…</item>
-        <item>¿De qué color es tu Bugatti?</item>
-        <item>No estaba programado para hacer lo que estás haciendo. Espera, ¿estás intentando hackearme?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>AVISO LEGAL</item>
         <item>¿FadCam recopila datos de usuario?</item>
@@ -676,7 +668,6 @@
     <string name="array_watermark_time_fadcam">Hora con FadCam</string>
     <string name="array_watermark_timeonly">Marca de tiempo</string>
     <string name="array_watermark_nomark">Sin marca de agua</string>
-    <string name="watermark_preview_funny">¿En serio? :( \n    ＞﹏＜</string>
     <string name="toast_video_not_found">Error: Video no encontrado</string>
     <string name="quick_speed_title">Velocidad rápida</string>
     <string name="quick_speed_option_default">2x (predeterminado)</string>
@@ -1045,13 +1036,6 @@
     <string name="widget_customize_action_label">Personalizar</string>
     <string name="widget_customize_action_subtitle">Hora, fecha, opciones de tema</string>
     <!-- Torch Error Messages -->
-    <string-array name="torch_error_messages">
-        <item>La linterna se está compilando... por favor no esperes 🖥️</item>
-        <item>La cámara dice: Sin flash hoy 🚦</item>
-        <item>Torch.exe no responde 🔦</item>
-        <item>Parche retrasado... El desarrollador alcanzó un punto de ruptura mental lol 🧠</item>
-        <item>Parche próximamente™... El desarrollador está depurando la vida 🐛</item>
-    </string-array>
     <string name="more_options">Más opciones</string>
     <string name="records_options_title">Opciones de Registros</string>
     <string name="setting_theme_title">Tema de la app</string>
@@ -1328,6 +1312,8 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="setting_video_stabilization_title">Estabilización de video</string>
     <string name="setting_not_supported">No compatible con este dispositivo</string>
     <string name="video_stabilization_footer">Mantiene estables tus videos compensando el movimiento de la mano con estabilización electrónica (EIS) y óptica (OIS). Para lograrlo se recorta una pequeña parte del encuadre.</string>
+    <string name="video_stabilization_unsupported_banner">Estabilización: no compatible con tu teléfono patata. La culpa es del hardware, no nuestra.</string>
+    <string name="video_stabilization_unsupported_short">No compatible</string>
     <string name="video_setting_location_embed_enabled">Habilitado</string>
     <string name="video_setting_location_embed_disabled">Desactivado</string>
     <string name="helper_watermark_option">Elige contenido de superposición: marca de tiempo + marca, solo marca de tiempo, o ninguno.</string>
@@ -1497,11 +1483,11 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="applock_enable">Habilitar bloqueo de pestaña</string>
     <string name="applock_disable">Desactivar bloqueo de pestaña</string>
     <string name="applock_set_pin">Establecer PIN</string>
-    <string name="applock_change_pin">Cambiar PIN</string>
-    <string name="applock_remove_pin">Eliminar PIN</string>
+    <string name="applock_change_pin">Cambiar bloqueo</string>
+    <string name="applock_remove_pin">Eliminar bloqueo</string>
     <string name="applock_pin_created">PIN creado exitosamente</string>
     <string name="applock_pin_removed">PIN eliminado exitosamente</string>
-    <string name="applock_set_pin_enable">Establecer PIN y habilitar</string>
+    <string name="applock_set_pin_enable">Configurar y habilitar</string>
     <string name="applock_helper_create">Crea protección para las pestañas que elijas con un PIN de 4 dígitos, contraseña o huella digital. Se bloquearán automáticamente cuando la app pase a segundo plano.</string>
     <string name="applock_helper_manage_disabled">El PIN de Bloqueo de pestañas está configurado. Actívalo para pedir el PIN en las pestañas seleccionadas.</string>
     <string name="applock_helper_enabled">El Bloqueo de pestañas está activo. Las pestañas seleccionadas piden el PIN después de salir de la app. Registros está protegido por defecto.</string>
@@ -3264,4 +3250,16 @@ Tuyas para siempre.</string>
     <string name="faditor_rename_helper">El vídeo exportado se guarda con este nombre.</string>
     <string name="faditor_export_name_preview">Guardado como: %1$s.mp4</string>
     <string name="faditor_select_segment_first">Ningún clip bajo el cursor de reproducción</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Usa una huella registrada en Android para proteger esta app.</string>
+    <string name="applock__description_unlock_fingerprint">Toca el sensor de huellas</string>
+    <string name="applock__create_chooser_option_fingerprint">Huella digital</string>
+    <string name="applock__fingerprint_error_not_enrolled">La huella aún no está activada en FadCam. Abre Bloqueo de pestañas y configúrala.</string>
+    <string name="applock__fingerprint_error_unrecognized">No se reconoció tu huella.</string>
+    <string name="applock__fingerprint_error_unknown">No se pudo completar la huella. Inténtalo de nuevo o configúrala en los ajustes de Android.</string>
+    <string name="applock__fingerprint_error_none">Aún no hay una huella configurada en Android. Añade una en los ajustes de Android e inténtalo de nuevo.</string>
+    <string name="applock__fingerprint_error_hardware">La huella no está disponible ahora. Configura una huella en los ajustes de Android e inténtalo de nuevo.</string>
+    <string name="applock__action_settings">Abrir ajustes de Android</string>
+    <string name="watermark_preview_funny">¿En serio? :( \n    ＞﹏＜</string>
 </resources>

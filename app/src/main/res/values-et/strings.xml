@@ -614,14 +614,6 @@
     <string name="ae_lock_helper">Kui lubatud, hoitakse automaatsäri praegusel heledustasemel, nii et kaamera ei kohanda säri salvestamise ajal uuesti. Kasuta säri paani käsitsi säri kohandamiseks.</string>
     <string name="ae_lock_switch_label">Lukusta AE</string>
     <string name="exposure_title">Särikompensatsioon (EV)</string>
-    <string-array name="easter_eggs_array">
-        <item>Hoiatus! See on piiratud ala. Alusta salvestamist ligipääsu saamiseks.</item>
-        <item>Oled leidnud salajase nupu! See ei tee midagi lol</item>
-        <item>Kiiresti! Süsteem on plahvatamas… või võib-olla vajab lihtsalt salvestamist rahunemiseks.</item>
-        <item>Noh, see on nüüd piinlik…</item>
-        <item>Mis värvi on sinu Bugatti?</item>
-        <item>Mind ei programmeeritud tegema seda, mida sa teed. Oota, kas sa üritad mind häkkida?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>TÄHELEPANU</item>
         <item>Kas FadCam kogub kasutajaandmeid?</item>
@@ -676,7 +668,6 @@
     <string name="array_watermark_time_fadcam">Aeg FadCamiga</string>
     <string name="array_watermark_timeonly">Ajatempel</string>
     <string name="array_watermark_nomark">Vesimärk puudub</string>
-    <string name="watermark_preview_funny">Tõsiselt? :( \n    ＞﹏＜</string>
     <string name="toast_video_not_found">Viga: Videot ei leitud</string>
     <string name="quick_speed_title">Kiirkiirus</string>
     <string name="quick_speed_option_default">2x (vaikimisi)</string>
@@ -1028,13 +1019,6 @@
     <string name="shortcut_purpose_screenshot">See otsetee jäädvustab ekraanipildi ja salvestab selle FadCam/FadShot asukohta (luba juurdepääsetavuse luba seadetes > Privaatsus > Juurdepääsetavus).</string>
     <string name="widget_customize_action_label">Kohanda</string>
     <string name="widget_customize_action_subtitle">Aeg, kuupäev, teema valikud</string>
-    <string-array name="torch_error_messages">
-        <item>Taskulamp kompileerib... palun ära oota 🖥️</item>
-        <item>Kaamera ütleb: Täna välku ei ole 🚦</item>
-        <item>Torch.exe ei vasta 🔦</item>
-        <item>Parandus hiljem... Arendaja tabas vaimse murdepunkti lol 🧠</item>
-        <item>Parandus tulemas™... Arendaja silub elu 🐛</item>
-    </string-array>
     <string name="more_options">Rohkem valikuid</string>
     <string name="records_options_title">Salvestiste valikud</string>
     <string name="setting_theme_title">Rakenduse teema</string>
@@ -1299,6 +1283,8 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="setting_video_stabilization_title">Videostabiliseerimine</string>
     <string name="setting_not_supported">Selles seadmes ei toetata</string>
     <string name="video_stabilization_footer">Hoiab videod stabiilsena, kompenseerides käe värinat elektroonilise (EIS) ja optilise (OIS) stabiliseerimisega. Selleks kärbitakse kaadrit veidi.</string>
+    <string name="video_stabilization_unsupported_banner">Stabiliseerimine: sinu kartulitelefonis pole toetatud. Süüdistage riistvara, mitte meid.</string>
+    <string name="video_stabilization_unsupported_short">Pole toetatud</string>
     <string name="video_setting_location_embed_enabled">Lubatud</string>
     <string name="video_setting_location_embed_disabled">Keelatud</string>
     <string name="helper_watermark_option">Vali ülekatte sisu: ajatempel + bränd, ainult ajatempel või puudub.</string>
@@ -1444,11 +1430,11 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="applock_enable">Luba vahekaardi lukustus</string>
     <string name="applock_disable">Keela vahekaardi lukustus</string>
     <string name="applock_set_pin">Määra PIN</string>
-    <string name="applock_change_pin">Muuda PIN-i</string>
-    <string name="applock_remove_pin">Eemalda PIN</string>
+    <string name="applock_change_pin">Muuda lukku</string>
+    <string name="applock_remove_pin">Eemalda lukk</string>
     <string name="applock_pin_created">PIN edukalt loodud</string>
     <string name="applock_pin_removed">PIN edukalt eemaldatud</string>
-    <string name="applock_set_pin_enable">Määra PIN ja luba</string>
+    <string name="applock_set_pin_enable">Seadista ja luba</string>
     <string name="applock_helper_create">Loo valitud vahekaartidele kaitse 4-kohalise PIN-koodi, parooli või sõrmejäljega. Need lukustuvad automaatselt, kui rakendus läheb taustale.</string>
     <string name="applock_helper_manage_disabled">Vahekaartide luku PIN on seatud. Lülita see sisse, et nõuda valitud vahekaartidel PIN-koodi.</string>
     <string name="applock_helper_enabled">Vahekaartide lukk on aktiivne. Valitud vahekaardid nõuavad PIN-koodi pärast rakendusest lahkumist. Salvestised on vaikimisi kaitstud.</string>
@@ -3165,4 +3151,16 @@ Igavesti sinu.</string>
     <string name="faditor_rename_helper">Eksporditud video salvestatakse selle nimega.</string>
     <string name="faditor_export_name_preview">Salvestatakse nimega: %1$s.mp4</string>
     <string name="faditor_select_segment_first">Esituspeal ei ole klippi</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Kasuta selle rakenduse kaitsmiseks Androidis registreeritud sõrmejälge.</string>
+    <string name="applock__description_unlock_fingerprint">Puuduta sõrmejäljeandurit</string>
+    <string name="applock__create_chooser_option_fingerprint">Sõrmejälg</string>
+    <string name="applock__fingerprint_error_not_enrolled">Sõrmejälg ei ole FadCamis veel lubatud. Ava Tab Lock ja seadista see.</string>
+    <string name="applock__fingerprint_error_unrecognized">Sinu sõrmejälge ei tuvastatud.</string>
+    <string name="applock__fingerprint_error_unknown">Sõrmejäljega sisselogimist ei õnnestunud lõpetada. Proovi uuesti või seadista see Androidi seadetes.</string>
+    <string name="applock__fingerprint_error_none">Androidis ei ole veel sõrmejälge seadistatud. Lisa see Androidi seadetes ja proovi uuesti.</string>
+    <string name="applock__fingerprint_error_hardware">Sõrmejälg ei ole praegu saadaval. Seadista sõrmejälg Androidi seadetes ja proovi uuesti.</string>
+    <string name="applock__action_settings">Ava Androidi seaded</string>
+    <string name="watermark_preview_funny">Tõsiselt? :( \n    ＞﹏＜</string>
 </resources>

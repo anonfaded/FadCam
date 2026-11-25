@@ -94,14 +94,6 @@
     <string name="dialog_clock_englishtime">English Tarikh aw wakh</string>
     <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
     <string name="ui_preview_area">Katalo zay</string>
-    <string-array name="easter_eggs_array">
-        <item>Oo! Dalta nashi ratlay. Recording shuru ka pehla che access darkam.</item>
-        <item>Ta yo khaas button omuntalo! kho da sam nakai lol</item>
-        <item>Zarrr sha! Sta system alutoo wala de… ya kideshi sirf recording shuru kolo sara theek shi.</item>
-        <item>Asi, ajeeba kas ye yara…</item>
-        <item>Sta da Bugatti kam rung de?</item>
-        <item>Za de dapara na ym program shwe sa che rasara ta ke lagya. Yo minute, ta ma hack ke kho na?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>DISCLAIMER</item>
         <item>FadCam da user data jama kai zan sara?</item>
@@ -207,8 +199,8 @@
     <string name="applock_enable">Tab Lock Faal Ka</string>
     <string name="applock_disable">Tab Lock Ghair Faal Ka</string>
     <string name="applock_set_pin">PIN Tanzim Ka</string>
-    <string name="applock_change_pin">PIN Badal Ka</string>
-    <string name="applock_remove_pin">PIN Lere Ka</string>
+    <string name="applock_change_pin">Lock badal ka</string>
+    <string name="applock_remove_pin">Lock laare ka</string>
     <string name="applock_pin_created">PIN pa bryalitob sara jor sho</string>
     <string name="applock_pin_removed">PIN pa bryalitob sara lere sho</string>
     <!-- App Lock Verification Messages -->
@@ -510,7 +502,7 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="tab_lock_screen_message">Khol krai tse pe jari</string>
     <string name="tab_lock_unlock">Khol krai</string>
     <string name="applock_helper_manage_disabled">Tab Lock PIN tanzim sho. Toggle on ka, tse pa khwakh tabs PIN darkar wi.</string>
-    <string name="applock_set_pin_enable">PIN Tanzim Ka &amp; Faal Ka</string>
+    <string name="applock_set_pin_enable">Tanzim ka &amp; faal ka</string>
     <string name="arabic_date_description_default">Full Arabic (Default)</string>
     <string name="arabic_date_description_english">Full English</string>
     <string name="arabic_date_description_full_arabic">Full Arabic (٧ صفر ١٤٤٧)</string>
@@ -2068,13 +2060,6 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="torch_brightness">Brightness</string>
     <string name="torch_cancel">Laghwa Ka</string>
     <string name="torch_color">Color</string>
-    <string-array name="torch_error_messages">
-        <item>Torch is compiling... please don\'t wait 🖥️</item>
-        <item>Camera says: No flash today 🚦</item>
-        <item>Torch.exe not responding 🔦</item>
-        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
-        <item>Patch coming soon™... Developer is debugging life 🐛</item>
-    </string-array>
     <string name="torch_front">Makhki Torch</string>
     <string name="torch_options_title">Torch Intikhabuna</string>
     <string name="torch_pattern_morse">Morse Code</string>
@@ -2216,6 +2201,8 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="setting_video_stabilization_title">Video Stabilization</string>
     <string name="setting_not_supported">Da da wusiya bana mowlari na she</string>
     <string name="video_stabilization_footer">Da las rasedawal pa electronic (EIS) aw optical (OIS) stabilization sar sta videoyono sabata sata. Da dai kaar de lapara da frame yawa kach portion prun keegi.</string>
+    <string name="video_stabilization_unsupported_banner">Stabilization: sta da kachalu pa telefon ke na mlatir kigi. Da hardware gunah da, da mung na.</string>
+    <string name="video_stabilization_unsupported_short">Na mlatir shway</string>
     <string name="view_mode_grid">Grid</string>
     <string name="view_mode_list">Fehrist</string>
     <string name="warning_temp_file_detail"><![CDATA[
@@ -2299,7 +2286,6 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="watermark_noise_on">On — Ambient sound level from microphone</string>
     <string name="watermark_noise_title">Da Shor Kappan (dB)</string>
     <string name="watermark_options_heading">Intikhabuna</string>
-    <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
     <string name="watermark_preview_heading">Preview</string>
     <string name="watermark_preview_sample_fadcam">Captured by FadCam - %1$s</string>
     <string name="watermark_preview_sample_timeonly">%1$s</string>
@@ -3206,4 +3192,16 @@ Da tase da hamisha paara.</string>
     <string name="faditor_select_segment_first">Da playhead laandi hich clip nishta</string>
     <string name="onboarding_demo_evidence_gallery">DA SANADO GALERI</string>
     <string name="onboarding_demo_saved">SAATY SHWA</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Da FadCam mahfooz kolo dapara pa Android ke register shawi fingerprint istemal ka.</string>
+    <string name="applock__description_unlock_fingerprint">Fingerprint sensor ta lams ka</string>
+    <string name="applock__create_chooser_option_fingerprint">Fingerprint</string>
+    <string name="applock__fingerprint_error_not_enrolled">Fingerprint la FadCam ke bya nishta faal. Tab Lock khola aw bya setup ka.</string>
+    <string name="applock__fingerprint_error_unrecognized">Sta fingerprint wanashnastel shwa.</string>
+    <string name="applock__fingerprint_error_unknown">Fingerprint login mukammal nashwa. Bya koshish ka, ya pa Android settings ke yay tanzim ka.</string>
+    <string name="applock__fingerprint_error_none">Pa Android ke bya fingerprint nishta tanzim shawi. Pa Android settings ke yaw fingerprint izafa ka, bia koshish ka.</string>
+    <string name="applock__fingerprint_error_hardware">Fingerprint agha wakht da stargi nishta. Pa Android settings ke fingerprint tanzim ka, bia koshish ka.</string>
+    <string name="applock__action_settings">Android settings khola</string>
+    <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
 </resources>

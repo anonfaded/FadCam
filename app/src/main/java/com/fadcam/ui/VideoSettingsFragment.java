@@ -171,10 +171,9 @@ public class VideoSettingsFragment extends Fragment {
             }
         });
 
+        // The banner carries the explanation now, so the helper stays focused on how the
+        // feature works instead of repeating "not supported" a second time.
         String helper = getString(R.string.video_stabilization_footer);
-        if (!supported) {
-            helper += "\n\n" + getString(R.string.setting_not_supported);
-        }
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstanceWithSwitch(
@@ -192,7 +191,7 @@ public class VideoSettingsFragment extends Fragment {
             // Clear warning banner so users see the limitation immediately.
             sheet.getArguments().putString(
                     com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_BANNER_TEXT,
-                    getString(R.string.setting_not_supported));
+                    getString(R.string.video_stabilization_unsupported_banner));
         }
         sheet.show(getParentFragmentManager(), "video_stabilization_picker");
     }
@@ -310,7 +309,7 @@ public class VideoSettingsFragment extends Fragment {
                     ? (prefs.isVideoStabilizationEnabled()
                             ? getString(R.string.setting_enabled_msg)
                             : getString(R.string.setting_disabled_msg))
-                    : getString(R.string.setting_not_supported));
+                    : getString(R.string.video_stabilization_unsupported_short));
         }
 
         // Show/hide Dual Camera Settings row and its divider

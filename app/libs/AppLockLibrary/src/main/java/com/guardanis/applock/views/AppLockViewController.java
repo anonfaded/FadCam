@@ -180,14 +180,29 @@ public abstract class AppLockViewController implements LifeCycleUtils.AppLockAct
      */
     public Intent getSettingsIntent(int errorCode) {
         switch (errorCode) {
-            case AppLock.ERROR_CODE_FINGERPRINTS_PERMISSION_REQUIRED:
-                // TODO: App settings?
             case AppLock.ERROR_CODE_FINGERPRINTS_EMPTY:
             case AppLock.ERROR_CODE_FINGERPRINTS_MISSING_HARDWARE:
-                return new Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS);
+                // Apps cannot enroll fingerprints themselves: the sensor and the
+                // templates are owned by the OS. Send the user to Android's
+                // biometric enrollment screen and retry when they return.
+                return biometricEnrollmentIntent();
             default:
                 return null;
         }
+    }
+
+    private Intent biometricEnrollmentIntent() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            Intent enroll = new Intent(android.provider.Settings.ACTION_BIOMETRIC_ENROLL);
+            enroll.putExtra(
+                    android.provider.Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED,
+                    android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG);
+            return enroll;
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            return new Intent(android.provider.Settings.ACTION_FINGERPRINT_ENROLL);
+        }
+        return new Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS);
     }
 
     public void unregisterReceivers() {

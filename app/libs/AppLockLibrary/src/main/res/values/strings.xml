@@ -7,7 +7,7 @@
     <string name="applock__description_create_pin_reattempt">PINs didn\'t match. Try again:</string>
     <string name="applock__description_create_password">Create a password</string>
     <string name="applock__description_create_password_reattempt">Passwords didn\'t match. Try again:</string>
-    <string name="applock__description_create_fingerprint">Scan your fingerprint to secure this application.</string>
+    <string name="applock__description_create_fingerprint">Use a fingerprint enrolled in Android to secure this app.</string>
     <string name="applock__description_create_fingerprint_paused">Fingerprint authentication paused.</string>
     <string name="applock__description_confirm">Confirm entry</string>
     <string name="applock__description_unlock_pin">Enter your PIN</string>
@@ -29,15 +29,15 @@
 
     <string name="applock__password_char">●</string>
 
-    <string name="applock__action_settings">Settings</string>
+    <string name="applock__action_settings">Open Android settings</string>
 
     <string name="applock__fingerprint_alias">AppLock</string>
 
-    <string name="applock__fingerprint_error_not_enrolled">You haven\'t setup fingerprint unlocking.</string>
+    <string name="applock__fingerprint_error_not_enrolled">Fingerprint isn\'t enabled in FadCam yet. Open Tab Lock and set it up.</string>
     <string name="applock__fingerprint_error_unrecognized">Your fingerprint wasn\'t recognized.</string>
-    <string name="applock__fingerprint_error_unknown">Something weird happened.</string>
-    <string name="applock__fingerprint_error_none">No fingerprints found! Enable them in your system settings.</string>
-    <string name="applock__fingerprint_error_hardware">Missing fingerprint hardware?</string>
+    <string name="applock__fingerprint_error_unknown">Fingerprint could not complete. Try again, or set it up in Android system settings.</string>
+    <string name="applock__fingerprint_error_none">No fingerprint is set up in Android yet. Add one in Android system settings, then try again.</string>
+    <string name="applock__fingerprint_error_hardware">Fingerprint isn\'t available right now. Set up a fingerprint in Android system settings, then try again.</string>
     <string name="applock__fingerprint_error_permission">Fingerprint permission required</string>
     <string name="applock__fingerprint_error_permission_multiple">Fingerprint authentication requires fingerprint permission to be granted</string>
     <string name="applock__fingerprint_error_enrolled">No local fingerprints enrolled</string>

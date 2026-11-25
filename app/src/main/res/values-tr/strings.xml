@@ -134,14 +134,6 @@
     <string name="dialog_clock_englishtime">İngilizce Tarih ve Saat</string>
     <string name="dialog_clock_Islamic_calendar">İslami Takvim Tarihi</string>
     <string name="ui_preview_area">Önizleme Alanı</string>
-    <string-array name="easter_eggs_array">
-        <item>Uyarı! Burası kısıtlı bir alan. Erişim için kayıt yapmaya başlayın.</item>
-        <item>Gizli düğmeyi buldunuz! Hiçbir şey yapmıyor haha</item>
-        <item>Acele edin! Sistem patlamak üzere… ya da belki sadece sakinleşmek için bir kayda ihtiyacı var.</item>
-        <item>Şimdi bu biraz garip oldu…</item>
-        <item>Bugatti\'nizin rengi ne?</item>
-        <item>Ben sizin yaptığınızı yapmak için programlanmadım. Bekleyin, beni hacklemeye mi çalışıyorsunuz?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>FERAGATNAME</item>
         <item>FadCam kullanıcı verisi topluyor mu?</item>
@@ -245,13 +237,6 @@
     <string name="torch_shortcut_long_label">Feneri Değiştir</string>
     <string name="torch_shortcut_disabled">Fener değiştirme şu anda kullanılamıyor</string>
     <!-- Torch Error Messages -->
-    <string-array name="torch_error_messages">
-        <item>Fener derleniyor... lütfen beklemeyin 🖥️</item>
-        <item>Kamera diyor ki: Bugün flaş yok 🚦</item>
-        <item>Fener.exe yanıt vermiyor 🔦</item>
-        <item>Gecikme düzeltildi... Geliştirici zihinsel bir kesme noktasına çarptı haha 🧠</item>
-        <item>Yama yakında geliyor™... Geliştirici hayatı hata ayıklıyor 🐛</item>
-    </string-array>
     <string name="more_options">Daha Fazla Seçenek</string>
     <string name="records_options_title">Kayıt Seçenekleri</string>
     <string name="setting_theme_title">Uygulama Teması</string>
@@ -327,8 +312,8 @@
     <string name="applock_enable">Sekme Kilidini Etkinleştir</string>
     <string name="applock_disable">Sekme Kilidini Devre Dışı Bırak</string>
     <string name="applock_set_pin">PIN Belirle</string>
-    <string name="applock_change_pin">PIN Değiştir</string>
-    <string name="applock_remove_pin">PIN Kaldır</string>
+    <string name="applock_change_pin">Kilidi değiştir</string>
+    <string name="applock_remove_pin">Kilidi kaldır</string>
     <string name="applock_pin_created">PIN başarıyla oluşturuldu</string>
     <string name="applock_pin_removed">PIN başarıyla kaldırıldı</string>
     <!-- App Lock Verification Messages -->
@@ -567,7 +552,6 @@
     <string name="zoom_not_available_toast">Yakınlaştırma kullanılamıyor</string>
     <string name="zoom_slider_title">Yakınlaştırma Oranı</string>
     <string name="zoom_slider_helper">Kayıt için yakınlaştırma seviyesini ayarlayın. Ultra geniş lens kayıtları için, ultra geniş görüş alanıyla kaydetmek üzere 0.5x seçeneğini kullanın.</string>
-    <string name="watermark_preview_funny">Gerçekten mi? :( \n    ＞｜＜</string>
     <string name="universal_confirm">Onayla</string>
     <string name="settings_video_title">Video Kaydı</string>
     <string name="settings_audio_title">Ses Ayarları</string>
@@ -1919,6 +1903,8 @@
 <string name="setting_video_stabilization_title">Video sabitleme</string>
 <string name="setting_not_supported">Bu cihazda desteklenmiyor</string>
 <string name="video_stabilization_footer">Elektronik (EIS) ve optik (OIS) sabitleme ile el titremesini dengeleyerek videolarınızı sabit tutar. Bunun için çerçevenin küçük bir kısmı kırpılır.</string>
+    <string name="video_stabilization_unsupported_banner">Sabitleme: patates telefonunda desteklenmiyor. Suç donanımın, bizim değil.</string>
+    <string name="video_stabilization_unsupported_short">Desteklenmiyor</string>
 <string name="video_setting_location_embed_enabled">Etkin</string>
 <string name="video_setting_location_embed_disabled">Devre Dışı</string>
 <string name="delete_video_dialog_title">Video Silinsin mi?</string>
@@ -1946,7 +1932,7 @@
 <string name="kofi_button_text">Bana bir Ko-fi ısmarla</string>
 <string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
 <string name="choose_language">Dil Seç</string>
-<string name="applock_set_pin_enable">PIN Belirle &amp; Etkinleştir</string>
+<string name="applock_set_pin_enable">Ayarla &amp; etkinleştir</string>
 <string name="applock_helper_create">Seçtiğiniz sekmeler için 4 haneli PIN, parola veya parmak iziyle koruma oluşturun. Uygulama arka plana geçtiğinde otomatik olarak kilitlenirler.</string>
 <string name="applock_helper_manage_disabled">Sekme Kilidi PIN’i ayarlandı. Seçili sekmeler için PIN istemek üzere açın.</string>
 <string name="applock_helper_enabled">Sekme Kilidi etkin. Seçili sekmeler uygulamadan ayrıldıktan sonra PIN ister. Kayıtlar varsayılan olarak korunur.</string>
@@ -3061,4 +3047,16 @@ Sonsuza dek senin.</string>
     <string name="faditor_rename_helper">Dışa aktarılan video bu adla kaydedilir.</string>
     <string name="faditor_export_name_preview">Şu adla kaydedilir: %1$s.mp4</string>
     <string name="faditor_select_segment_first">Oynatma başlığının altında klip yok</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Bu uygulamayı korumak için Android’e kayıtlı bir parmak izi kullanın.</string>
+    <string name="applock__description_unlock_fingerprint">Parmak izi sensörüne dokunun</string>
+    <string name="applock__create_chooser_option_fingerprint">Parmak izi</string>
+    <string name="applock__fingerprint_error_not_enrolled">Parmak izi FadCam’de henüz etkin değil. Sekme Kilidi’ni açıp ayarlayın.</string>
+    <string name="applock__fingerprint_error_unrecognized">Parmak iziniz tanınmadı.</string>
+    <string name="applock__fingerprint_error_unknown">Parmak iziyle giriş tamamlanamadı. Tekrar deneyin veya Android ayarlarında ayarlayın.</string>
+    <string name="applock__fingerprint_error_none">Android’de henüz parmak izi ayarlanmamış. Android ayarlarından bir parmak izi ekleyip tekrar deneyin.</string>
+    <string name="applock__fingerprint_error_hardware">Parmak izi şu anda kullanılamıyor. Android ayarlarında bir parmak izi ayarlayıp tekrar deneyin.</string>
+    <string name="applock__action_settings">Android ayarlarını aç</string>
+    <string name="watermark_preview_funny">Gerçekten mi? :( \n    ＞｜＜</string>
 </resources>

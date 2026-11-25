@@ -252,14 +252,6 @@
     <string name="ae_lock_helper">При включении автоэкспозиция фиксируется на текущей яркости, поэтому камера не будет перенастраивать экспозицию во время записи. Используйте плитку Экспозиция для ручной настройки экспозиции.</string>
     <string name="ae_lock_switch_label">Заблокировать AE</string>
     <string name="exposure_title">Компенсация экспозиции (EV)</string>
-    <string-array name="easter_eggs_array">
-        <item>Тревога! Это ограниченная зона. Начните запись, чтобы получить доступ.</item>
-        <item>Вы нашли секретную кнопку! Она ничего не делает lol</item>
-        <item>Спешите! Система вот-вот взорвётся… или ей просто нужна запись, чтобы успокоиться.</item>
-        <item>Ну, это неловко сейчас…</item>
-        <item>Какого цвета ваш Bugatti?</item>
-        <item>Я не был запрограммирован делать то, что вы делаете. Подождите, вы пытаетесь меня взломать?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>ОТКАЗ ОТ ОТВЕТСТВЕННОСТИ</item>
         <item>Собирает ли FadCam какие-либо пользовательские данные?</item>
@@ -314,7 +306,6 @@
     <string name="array_watermark_time_fadcam">Время с Fadcam</string>
     <string name="array_watermark_timeonly">Временная метка</string>
     <string name="array_watermark_nomark">Без водяного знака</string>
-    <string name="watermark_preview_funny">По-настоящему? :( \n    ＞﹏＜</string>
     <string name="toast_video_not_found">Ошибка: Видео не найдено</string>
     <string name="quick_speed_title">Быстрая скорость</string>
     <string name="quick_speed_option_default">2x (По умолчанию)</string>
@@ -674,13 +665,6 @@
     <string name="widget_customize_action_label">Настроить</string>
     <string name="widget_customize_action_subtitle">Время, дата, параметры темы</string>
     <!-- Torch Error Messages -->
-    <string-array name="torch_error_messages">
-        <item>Фонарик компилируется... пожалуйста, не ждите 🖥️</item>
-        <item>Камера говорит: Сегодня без вспышки 🚦</item>
-        <item>Torch.exe не отвечает 🔦</item>
-        <item>Исправление задержано... Разработчик дошёл до ментального breakpoint lol 🧠</item>
-        <item>Патч скоро™... Разработчик отлаживает жизнь 🐛</item>
-    </string-array>
     <string name="more_options">Больше параметров</string>
     <string name="records_options_title">Параметры записей</string>
     <string name="setting_theme_title">Тема приложения</string>
@@ -772,6 +756,8 @@
     <string name="setting_video_stabilization_title">Стабилизация видео</string>
     <string name="setting_not_supported">Не поддерживается на этом устройстве</string>
     <string name="video_stabilization_footer">Делает видео стабильным, компенсируя дрожание рук электронной (EIS) и оптической (OIS) стабилизацией. Для этого кадр слегка обрезается.</string>
+    <string name="video_stabilization_unsupported_banner">Стабилизация: не поддерживается на твоём картофельном телефоне. Виновато железо, а не мы.</string>
+    <string name="video_stabilization_unsupported_short">Не поддерживается</string>
     <string name="video_setting_location_embed_enabled">Включено</string>
     <string name="video_setting_location_embed_disabled">Отключено</string>
     <string name="helper_watermark_option">Выберите содержимое наложения: временная метка + бренд, только временная метка или ничего.</string>
@@ -964,12 +950,12 @@
     <string name="applock_enable">Включить блокировку вкладки</string>
     <string name="applock_disable">Отключить блокировку вкладки</string>
     <string name="applock_set_pin">Установить PIN</string>
-    <string name="applock_change_pin">Изменить PIN</string>
-    <string name="applock_remove_pin">Удалить PIN</string>
+    <string name="applock_change_pin">Изменить блокировку</string>
+    <string name="applock_remove_pin">Удалить блокировку</string>
     <string name="applock_pin_created">PIN успешно создан</string>
     <string name="applock_pin_removed">PIN успешно удалён</string>
     <!-- Enhanced Tab Lock UX strings -->
-    <string name="applock_set_pin_enable">Установить PIN и включить</string>
+    <string name="applock_set_pin_enable">Настроить и включить</string>
     <string name="applock_helper_create">Создайте защиту для выбранных вкладок с помощью 4-значного PIN-кода, пароля или отпечатка пальца. Они будут автоматически блокироваться, когда приложение уходит в фон.</string>
     <string name="applock_helper_manage_disabled">PIN-код блокировки вкладок установлен. Включите его, чтобы требовать PIN для выбранных вкладок.</string>
     <string name="applock_helper_enabled">Блокировка вкладок включена. Выбранные вкладки требуют PIN-код после выхода из приложения. Записи защищены по умолчанию.</string>
@@ -3830,4 +3816,16 @@
     <string name="faditor_rename_helper">Экспортируемое видео сохраняется под этим именем.</string>
     <string name="faditor_export_name_preview">Сохранено как: %1$s.mp4</string>
     <string name="faditor_select_segment_first">Под курсором воспроизведения нет клипа</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Используйте отпечаток, зарегистрированный в Android, для защиты приложения.</string>
+    <string name="applock__description_unlock_fingerprint">Прикоснитесь к сканеру отпечатков</string>
+    <string name="applock__create_chooser_option_fingerprint">Отпечаток пальца</string>
+    <string name="applock__fingerprint_error_not_enrolled">Отпечаток ещё не включён в FadCam. Откройте блокировку вкладок и настройте его.</string>
+    <string name="applock__fingerprint_error_unrecognized">Ваш отпечаток не распознан.</string>
+    <string name="applock__fingerprint_error_unknown">Не удалось завершить вход по отпечатку. Повторите попытку или настройте его в настройках Android.</string>
+    <string name="applock__fingerprint_error_none">В Android ещё не настроен отпечаток. Добавьте его в настройках Android и повторите попытку.</string>
+    <string name="applock__fingerprint_error_hardware">Отпечаток сейчас недоступен. Настройте отпечаток в настройках Android и повторите попытку.</string>
+    <string name="applock__action_settings">Открыть настройки Android</string>
+    <string name="watermark_preview_funny">По-настоящему? :( \n    ＞﹏＜</string>
 </resources>

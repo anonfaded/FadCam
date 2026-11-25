@@ -617,14 +617,6 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="ae_lock_helper">Saat diaktifkan, eksposur otomatis dikunci pada kecerahan saat ini sehingga kamera tidak akan menyesuaikan ulang eksposur selama perekaman. Gunakan tile Eksposur untuk melakukan penyesuaian eksposur secara manual.</string>
     <string name="ae_lock_switch_label">Kunci AE</string>
     <string name="exposure_title">Kompensasi Eksposur (EV)</string>
-    <string-array name="easter_eggs_array">
-        <item>Alert! This is a restricted area. Start recording to gain access.</item>
-        <item>You\'ve found the secret button! It does nothing lol</item>
-        <item>Hurry! The system is about to explode… or maybe it just needs a recording to calm down.</item>
-        <item>Well, this is awkward now…</item>
-        <item>What color is your Bugatti?</item>
-        <item>I was not programmed to do what you are doing. Wait, are you trying to hack me?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>DISCLAIMER</item>
         <item>Does FadCam collect any user data?</item>
@@ -679,7 +671,6 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="array_watermark_time_fadcam">Waktu dengan Fadcam</string>
     <string name="array_watermark_timeonly">Cap waktu</string>
     <string name="array_watermark_nomark">Tidak ada Watermark</string>
-    <string name="watermark_preview_funny">Masa iya? :( \n ＞﹏＜</string>
     <string name="toast_video_not_found">Error: Video tidak ditemukan</string>
     <string name="quick_speed_title">Kecepatan Cepat</string>
     <string name="quick_speed_option_default">2x (Default)</string>
@@ -1052,13 +1043,6 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="widget_customize_action_label">Kustomisasi</string>
     <string name="widget_customize_action_subtitle">Opsi waktu, tanggal, tema</string>
     <!-- Torch Error Messages -->
-    <string-array name="torch_error_messages">
-        <item>Torch is compiling... please don\'t wait 🖥️</item>
-        <item>Camera says: No flash today 🚦</item>
-        <item>Torch.exe not responding 🔦</item>
-        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
-        <item>Patch coming soon™... Developer is debugging life 🐛</item>
-    </string-array>
     <string name="more_options">Opsi Lainnya</string>
     <string name="records_options_title">Opsi Rekaman</string>
     <string name="setting_theme_title">Tema Aplikasi</string>
@@ -1338,6 +1322,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="setting_video_stabilization_title">Stabilisasi video</string>
     <string name="setting_not_supported">Tidak didukung di perangkat ini</string>
     <string name="video_stabilization_footer">Menjaga rekaman video tetap stabil dengan mengimbangi getaran tangan melalui stabilisasi elektronik (EIS) dan optik (OIS). Sebagian kecil bingkai dipotong untuk mencapai hal ini.</string>
+    <string name="video_stabilization_unsupported_banner">Stabilisasi: tidak didukung di ponsel kentangmu. Salahkan perangkat kerasnya, bukan kami.</string>
+    <string name="video_stabilization_unsupported_short">Tidak didukung</string>
     <string name="video_setting_location_embed_enabled">Diaktifkan</string>
     <string name="video_setting_location_embed_disabled">Dinonaktifkan</string>
     <string name="helper_watermark_option">Pilih konten overlay: stempel waktu + merek, stempel waktu saja, atau tidak ada.</string>
@@ -1530,12 +1516,12 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="applock_enable">Aktifkan Kunci Tab</string>
     <string name="applock_disable">Nonaktifkan Kunci Tab</string>
     <string name="applock_set_pin">Atur PIN</string>
-    <string name="applock_change_pin">Ubah PIN</string>
-    <string name="applock_remove_pin">Hapus PIN</string>
+    <string name="applock_change_pin">Ubah kunci</string>
+    <string name="applock_remove_pin">Hapus kunci</string>
     <string name="applock_pin_created">PIN berhasil dibuat</string>
     <string name="applock_pin_removed">PIN berhasil dihapus</string>
     <!-- Enhanced Tab Lock UX strings -->
-    <string name="applock_set_pin_enable">Atur PIN &amp; Aktifkan</string>
+    <string name="applock_set_pin_enable">Atur &amp; aktifkan</string>
     <string name="applock_helper_create">Buat perlindungan untuk tab pilihan Anda dengan PIN 4 digit, kata sandi, atau sidik jari. Tab akan terkunci otomatis saat aplikasi masuk ke latar belakang.</string>
     <string name="applock_helper_manage_disabled">PIN Kunci Tab sudah diatur. Aktifkan untuk meminta PIN pada tab yang dipilih.</string>
     <string name="applock_helper_enabled">Kunci Tab aktif. Tab yang dipilih meminta PIN setelah Anda meninggalkan aplikasi. Rekaman dilindungi secara default.</string>
@@ -3418,4 +3404,16 @@ Milikmu selamanya.</string>
     <string name="faditor_rename_helper">Video yang diekspor disimpan dengan nama ini.</string>
     <string name="faditor_export_name_preview">Disimpan sebagai: %1$s.mp4</string>
     <string name="faditor_select_segment_first">Tidak ada klip di bawah playhead</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Gunakan sidik jari yang terdaftar di Android untuk mengamankan aplikasi ini.</string>
+    <string name="applock__description_unlock_fingerprint">Sentuh sensor sidik jari</string>
+    <string name="applock__create_chooser_option_fingerprint">Sidik jari</string>
+    <string name="applock__fingerprint_error_not_enrolled">Sidik jari belum diaktifkan di FadCam. Buka Kunci Tab dan atur.</string>
+    <string name="applock__fingerprint_error_unrecognized">Sidik jari Anda tidak dikenali.</string>
+    <string name="applock__fingerprint_error_unknown">Login sidik jari tidak dapat diselesaikan. Coba lagi atau atur di pengaturan Android.</string>
+    <string name="applock__fingerprint_error_none">Belum ada sidik jari yang diatur di Android. Tambahkan di pengaturan Android lalu coba lagi.</string>
+    <string name="applock__fingerprint_error_hardware">Sidik jari tidak tersedia saat ini. Atur sidik jari di pengaturan Android lalu coba lagi.</string>
+    <string name="applock__action_settings">Buka pengaturan Android</string>
+    <string name="watermark_preview_funny">Masa iya? :( \n ＞﹏＜</string>
 </resources>

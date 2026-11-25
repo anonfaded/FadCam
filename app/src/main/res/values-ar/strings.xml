@@ -79,14 +79,6 @@
     <string name="dialog_clock_englishtime">تاريخ ووقت بالنظام الإنجليزي</string>
     <string name="dialog_clock_Islamic_calendar">التقويم الإسلامي</string>
     <string name="ui_preview_area">منطقة المعاينة</string>
-    <string-array name="easter_eggs_array">
-        <item>تحذير! هذه منطقة وصول محدود. بدء تسجيل الفيديو للوصول.</item>
-        <item>لقد وجدت الزر السري! لكنه لا يفعل شيئًا ههههه</item>
-        <item>اهرب! الهاتف على وشك الانفجار... أو ربما يحتاج فقط إلى بدء التسجيل ليهدأ.</item>
-        <item>أوه، محرج...</item>
-        <item>ما هو لون بوغاتي الخاصة بك؟ (❁´◡`❁) </item>
-        <item>لم أكتب الكود بهذه الطريقة. هل تحاول أن تخترقني؟</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>إخلاء المسؤولية</item>
         <item>هل يجمع FadCam بيانات المستخدمين؟</item>
@@ -192,8 +184,8 @@
     <string name="applock_enable">تفعيل قفل التبويب</string>
     <string name="applock_disable">تعطيل قفل التبويب</string>
     <string name="applock_set_pin">تعيين رمز PIN</string>
-    <string name="applock_change_pin">تغيير رمز PIN</string>
-    <string name="applock_remove_pin">إزالة رمز PIN</string>
+    <string name="applock_change_pin">تغيير القفل</string>
+    <string name="applock_remove_pin">إزالة القفل</string>
     <string name="applock_pin_created">تم إنشاء رمز PIN بنجاح</string>
     <string name="applock_pin_removed">تمت إزالة رمز PIN بنجاح</string>
     <!-- App Lock Verification Messages -->
@@ -1420,7 +1412,6 @@
 
     <string name="note_from_developer_subtitle">README، الروابط &amp; التحديثات</string>
 
-    <string name="watermark_preview_funny">حقًا؟ :( \n    ＞﹏＜</string>
 
     <string name="quick_speed_title">السرعة السريعة</string>
 
@@ -1984,13 +1975,6 @@
 
     <string name="widget_customize_action_subtitle">خيارات الوقت والتاريخ والسمة</string>
 
-    <string-array name="torch_error_messages">
-        <item>الفلاش قيد التجميع... يرجى عدم الانتظار 🖥️</item>
-        <item>الكاميرا تقول: لا فلاش اليوم 🚦</item>
-        <item>Torch.exe لا يستجيب 🔦</item>
-        <item>تأخير الإصلاح... المطور وصل إلى نقطة توقف عقلية lol 🧠</item>
-        <item>رقعة قادمة قريبًا™... المطور يصحح الحياة 🐛</item>
-    </string-array>
 
     <string name="start_recording">بدء</string>
 
@@ -2428,6 +2412,8 @@
     <string name="setting_video_stabilization_title">تثبيت الفيديو</string>
     <string name="setting_not_supported">غير مدعوم على هذا الجهاز</string>
     <string name="video_stabilization_footer">يثبّت مقاطع الفيديو بمعادلة اهتزاز اليد باستخدام التثبيت الإلكتروني (EIS) والبصري (OIS). يتطلب ذلك اقتصاصًا طفيفًا للإطار.</string>
+    <string name="video_stabilization_unsupported_banner">التثبيت: غير مدعوم على هاتفك البطاطس. اللوم على العتاد، لا علينا.</string>
+    <string name="video_stabilization_unsupported_short">غير مدعوم</string>
 
     <string name="video_setting_location_embed_enabled">مفعّل</string>
 
@@ -2505,7 +2491,7 @@
 
     <string name="choose_language">اختر اللغة</string>
 
-    <string name="applock_set_pin_enable">تعيين رمز PIN &amp; تمكين</string>
+    <string name="applock_set_pin_enable">إعداد &amp; تمكين</string>
 
     <string name="applock_helper_create">أنشئ حماية للتبويبات التي تختارها باستخدام رمز PIN من 4 أرقام أو كلمة مرور أو بصمة. ستُقفل تلقائيًا عند انتقال التطبيق إلى الخلفية.</string>
 
@@ -4893,4 +4879,16 @@
     <string name="faditor_rename_helper">يُحفظ الفيديو المصدَّر بهذا الاسم.</string>
     <string name="faditor_export_name_preview">يُحفظ باسم: %1$s.mp4</string>
     <string name="faditor_select_segment_first">لا يوجد مقطع تحت مؤشر التشغيل</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">استخدم بصمة مسجلة في Android لتأمين هذا التطبيق.</string>
+    <string name="applock__description_unlock_fingerprint">المس مستشعر البصمة</string>
+    <string name="applock__create_chooser_option_fingerprint">بصمة الإصبع</string>
+    <string name="applock__fingerprint_error_not_enrolled">لم يتم تفعيل البصمة في FadCam بعد. افتح قفل التبويبات وأعد إعدادها.</string>
+    <string name="applock__fingerprint_error_unrecognized">لم يتم التعرف على بصمتك.</string>
+    <string name="applock__fingerprint_error_unknown">تعذر إكمال التحقق بالبصمة. حاول مرة أخرى أو أعد إعدادها من إعدادات Android.</string>
+    <string name="applock__fingerprint_error_none">لم يتم إعداد بصمة في Android بعد. أضف بصمة من إعدادات Android ثم حاول مرة أخرى.</string>
+    <string name="applock__fingerprint_error_hardware">البصمة غير متاحة حاليًا. أعد إعداد بصمة من إعدادات Android ثم حاول مرة أخرى.</string>
+    <string name="applock__action_settings">فتح إعدادات Android</string>
+    <string name="watermark_preview_funny">حقًا؟ :( \n    ＞﹏＜</string>
 </resources>

@@ -461,10 +461,28 @@ public class FaditorEditorActivity extends AppCompatActivity {
         final int baseLeft = topBar.getPaddingLeft();
         final int baseRight = topBar.getPaddingRight();
         final int baseBottom = topBar.getPaddingBottom();
+        final View cropBar = findViewById(R.id.crop_toolbar);
+        final View controls = findViewById(R.id.controls_section);
+        final int cropLeft = cropBar != null ? cropBar.getPaddingLeft() : 0;
+        final int cropRight = cropBar != null ? cropBar.getPaddingRight() : 0;
+        final int cropBottom = cropBar != null ? cropBar.getPaddingBottom() : 0;
+        final int controlsLeft = controls != null ? controls.getPaddingLeft() : 0;
+        final int controlsRight = controls != null ? controls.getPaddingRight() : 0;
+        final int controlsBottom = controls != null ? controls.getPaddingBottom() : 0;
+
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars()
                     | WindowInsetsCompat.Type.displayCutout());
             topBar.setPadding(baseLeft, baseTop + bars.top, baseRight, baseBottom);
+            // Bottom controls must clear gesture/navigation insets; otherwise taps land
+            // in the system home/back area instead of on Cancel / Done / the tool strip.
+            if (cropBar != null) {
+                cropBar.setPadding(cropLeft, 0, cropRight, cropBottom + bars.bottom);
+            }
+            if (controls != null) {
+                controls.setPadding(controlsLeft, 0, controlsRight,
+                        controlsBottom + bars.bottom);
+            }
             return insets;
         });
         ViewCompat.requestApplyInsets(root);
@@ -1458,6 +1476,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 if (playbackState == Player.STATE_ENDED) {
                     playbackFinished = true;
                     stopPlayheadUpdates();
+                    // Media3 keeps playWhenReady=true at ENDED. Clearing it gives the next
+                    // play() a real false->true edge instead of a no-op that shows a pause icon.
+                    if (compositionPlayer != null) compositionPlayer.pause();
                     updatePlayPauseButton(false);
                     long end = compositionDurationMs;
                     editorTimeline.setPlayheadPositionMs(end);
@@ -1521,6 +1542,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // seek when the player is genuinely somewhere else (or idle/ended).
         long playerPosition = compositionPlayer.getPositionMs();
         int state = compositionPlayer.getPlaybackState();
+        // Always start from a clean false playWhenReady edge. ENDED and some seek
+        // paths leave playWhenReady=true, where play() is a no-op even though the
+        // UI has already switched to the pause icon.
+        if (compositionPlayer.getPlayWhenReady()) compositionPlayer.pause();
         boolean needsSeek = state != Player.STATE_READY
                 || Math.abs(playerPosition - playheadMs) > 50;
         if (needsSeek) seekCompositionTo(playheadMs);
@@ -2045,6 +2070,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
         Clip clip = getSelectedClip();
         if (inCropMode || clip == null) return;
         inCropMode = true;
+        com.fadcam.util.SystemBarUtil.hideSystemBars(getWindow().getDecorView());
+        ViewCompat.requestApplyInsets(findViewById(R.id.editor_root));
 
         // Save current state for cancel restoration
         preCropPreset = clip.getCropPreset();
@@ -2119,6 +2146,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void exitCropMode(boolean apply) {
         if (!inCropMode) return;
         inCropMode = false;
+        com.fadcam.util.SystemBarUtil.hideSystemBars(getWindow().getDecorView());
+        ViewCompat.requestApplyInsets(findViewById(R.id.editor_root));
 
         Clip clip = getSelectedClip();
 
@@ -2280,8 +2309,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // the surface is already sized to that frame's aspect ratio.
         playerSurface.post(() -> {
             android.graphics.RectF videoRect = computeVideoContentRect();
-            FLog.d(TAG, "activateFreeCrop: videoRect=" + videoRect
-                    + ", cropOverlay size=" + cropOverlay.getWidth() + "x" + cropOverlay.getHeight());
             cropOverlay.setVideoContentRect(videoRect);
 
             Clip clip = getSelectedClip();
@@ -2290,16 +2317,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     && (clip.getCropLeft() > 0 || clip.getCropTop() > 0
                     || clip.getCropRight() < 1 || clip.getCropBottom() < 1)) {
                 // Restore previous custom crop bounds
-                FLog.d(TAG, "activateFreeCrop: restoring bounds ["
-                        + clip.getCropLeft() + "," + clip.getCropTop()
-                        + "," + clip.getCropRight() + "," + clip.getCropBottom() + "]");
                 cropOverlay.activate(
                         clip.getCropLeft(), clip.getCropTop(),
                         clip.getCropRight(), clip.getCropBottom());
             } else {
-                FLog.d(TAG, "activateFreeCrop: full frame (no prior custom bounds)");
                 cropOverlay.activate();
             }
+            // Keep the overlay above the SurfaceView window layer.
+            cropOverlay.bringToFront();
 
             cropOverlay.setOnCropChangeListener((left, top, right, bottom) -> {
                 clip.setCustomCropBounds(left, top, right, bottom);
@@ -2321,14 +2346,20 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     private void updateCropUI(@NonNull String preset) {
-        boolean active = !"none".equals(preset);
+        Clip clip = getSelectedClip();
+        boolean fullFrameCustom = "custom".equals(preset) && clip != null
+                && Math.abs(clip.getCropLeft()) < 0.01f
+                && Math.abs(clip.getCropTop()) < 0.01f
+                && Math.abs(clip.getCropRight() - 1f) < 0.01f
+                && Math.abs(clip.getCropBottom() - 1f) < 0.01f;
+        boolean active = !"none".equals(preset) && !fullFrameCustom;
         int color = active ? FaditorPalette.ACCENT : 0xFF888888;
         if (toolCropIcon != null) {
             toolCropIcon.setTextColor(color);
         }
         if (toolCropLabel != null) {
             String label;
-            if ("custom".equals(preset)) {
+            if (active && "custom".equals(preset)) {
                 label = getString(R.string.faditor_tool_crop_free);
             } else if (active) {
                 label = preset;

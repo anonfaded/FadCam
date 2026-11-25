@@ -572,14 +572,6 @@
     <string name="ae_lock_helper">Όταν είναι ενεργοποιημένο, η αυτόματη έκθεση διατηρείται στην τρέχουσα φωτεινότητα, ώστε η κάμερα να μην επαναρυθμίζει την έκθεση κατά την εγγραφή. Χρησιμοποιήστε το πλακίδιο Έκθεσης για μη αυτόματες ρυθμίσεις έκθεσης.</string>
     <string name="ae_lock_switch_label">Κλείδωμα AE</string>
     <string name="exposure_title">Αντιστάθμιση Έκθεσης (EV)</string>
-    <string-array name="easter_eggs_array">
-        <item>Alert! This is a restricted area. Start recording to gain access.</item>
-        <item>You\'ve found the secret button! It does nothing lol</item>
-        <item>Hurry! The system is about to explode… or maybe it just needs a recording to calm down.</item>
-        <item>Well, this is awkward now…</item>
-        <item>What color is your Bugatti?</item>
-        <item>I was not programmed to do what you are doing. Wait, are you trying to hack me?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>DISCLAIMER</item>
         <item>Does FadCam collect any user data?</item>
@@ -633,8 +625,6 @@
     <string name="array_watermark_time_fadcam">Ώρα με FadCam</string>
     <string name="array_watermark_timeonly">Χρονική Σήμανση</string>
     <string name="array_watermark_nomark">Χωρίς Υδατογράφημα</string>
-    <string name="watermark_preview_funny">Αλήθεια; :( 
-    ＞﹏＜</string>
     <string name="toast_video_not_found">Σφάλμα: Το βίντεο δεν βρέθηκε</string>
     <string name="quick_speed_title">Γρήγορη Ταχύτητα</string>
     <string name="quick_speed_option_default">2x (Προεπιλογή)</string>
@@ -1008,13 +998,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="widget_customize_action_label">Προσαρμογή</string>
     <string name="widget_customize_action_subtitle">Επιλογές ώρας, ημερομηνίας, θέματος</string>
     <!-- Torch Error Messages -->
-    <string-array name="torch_error_messages">
-        <item>Torch is compiling... please don\'t wait 🖥️</item>
-        <item>Camera says: No flash today 🚦</item>
-        <item>Torch.exe not responding 🔦</item>
-        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
-        <item>Patch coming soon™... Developer is debugging life 🐛</item>
-    </string-array>
     <string name="more_options">Περισσότερες Επιλογές</string>
     <string name="records_options_title">Επιλογές Εγγραφών</string>
     <string name="setting_theme_title">Θέμα Εφαρμογής</string>
@@ -1285,6 +1268,8 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="setting_video_stabilization_title">Σταθεροποίηση βίντεο</string>
     <string name="setting_not_supported">Δεν υποστηρίζεται σε αυτή τη συσκευή</string>
     <string name="video_stabilization_footer">Σταθεροποιεί τα βίντεό σας αντισταθμίζοντας το τρέμουλο του χεριού με ηλεκτρονική (EIS) και οπτική (OIS) σταθεροποίηση. Απαιτείται ελαφρύ περικόψιμο του κάδρου.</string>
+    <string name="video_stabilization_unsupported_banner">Σταθεροποίηση: δεν υποστηρίζεται στο τηλέφωνο-πατάτα σου. Φταίει το hardware, όχι εμείς.</string>
+    <string name="video_stabilization_unsupported_short">Μη υποστηριζόμενο</string>
     <string name="video_setting_location_embed_enabled">Ενεργοποιημένο</string>
     <string name="video_setting_location_embed_disabled">Απενεργοποιημένο</string>
     <string name="helper_watermark_option">Επιλέξτε περιεχόμενο επικάλυψης.</string>
@@ -1462,12 +1447,12 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="applock_enable">Ενεργοποίηση Κλειδώματος Καρτέλας</string>
     <string name="applock_disable">Απενεργοποίηση Κλειδώματος Καρτέλας</string>
     <string name="applock_set_pin">Ορισμός PIN</string>
-    <string name="applock_change_pin">Αλλαγή PIN</string>
-    <string name="applock_remove_pin">Αφαίρεση PIN</string>
+    <string name="applock_change_pin">Αλλαγή κλειδώματος</string>
+    <string name="applock_remove_pin">Αφαίρεση κλειδώματος</string>
     <string name="applock_pin_created">Το PIN δημιουργήθηκε επιτυχώς</string>
     <string name="applock_pin_removed">Το PIN αφαιρέθηκε επιτυχώς</string>
     <!-- Enhanced Tab Lock UX strings -->
-    <string name="applock_set_pin_enable">Ορισμός PIN &amp; Ενεργοποίηση</string>
+    <string name="applock_set_pin_enable">Ρύθμιση &amp; ενεργοποίηση</string>
     <string name="applock_helper_create">Δημιουργήστε προστασία για τις καρτέλες που επιλέγετε με 4ψήφιο PIN, κωδικό πρόσβασης ή δακτυλικό αποτύπωμα. Θα κλειδώνονται αυτόματα όταν η εφαρμογή πάει στο παρασκήνιο.</string>
     <string name="applock_helper_manage_disabled">Το PIN Tab Lock έχει οριστεί. Ενεργοποιήστε το για να απαιτείται PIN για τις επιλεγμένες καρτέλες.</string>
     <string name="applock_helper_enabled">Το Tab Lock είναι ενεργό. Οι επιλεγμένες καρτέλες απαιτούν PIN αφού φύγετε από την εφαρμογή. Το Records είναι προστατευμένο από προεπιλογή.</string>
@@ -3261,4 +3246,17 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="faditor_rename_helper">Το εξαγόμενο βίντεο αποθηκεύεται με αυτό το όνομα.</string>
     <string name="faditor_export_name_preview">Αποθηκεύεται ως: %1$s.mp4</string>
     <string name="faditor_select_segment_first">Κανένα κλιπ κάτω από τον δείκτη αναπαραγωγής</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Χρησιμοποιήστε δακτυλικό αποτύπωμα καταχωρισμένο στο Android για να ασφαλίσετε αυτήν την εφαρμογή.</string>
+    <string name="applock__description_unlock_fingerprint">Αγγίξτε τον αισθητήρα δακτυλικού αποτυπώματος</string>
+    <string name="applock__create_chooser_option_fingerprint">Δακτυλικό αποτύπωμα</string>
+    <string name="applock__fingerprint_error_not_enrolled">Το δακτυλικό αποτύπωμα δεν είναι ενεργό στο FadCam ακόμη. Ανοίξτε το Tab Lock και ρυθμίστε το.</string>
+    <string name="applock__fingerprint_error_unrecognized">Το δακτυλικό σας αποτύπωμα δεν αναγνωρίστηκε.</string>
+    <string name="applock__fingerprint_error_unknown">Η σύνδεση με δακτυλικό αποτύπωμα δεν ολοκληρώθηκε. Δοκιμάστε ξανά ή ρυθμίστε το στις ρυθμίσεις Android.</string>
+    <string name="applock__fingerprint_error_none">Δεν έχει ρυθμιστεί δακτυλικό αποτύπωμα στο Android ακόμη. Προσθέστε ένα στις ρυθμίσεις Android και δοκιμάστε ξανά.</string>
+    <string name="applock__fingerprint_error_hardware">Το δακτυλικό αποτύπωμα δεν είναι διαθέσιμο τώρα. Ρυθμίστε ένα στις ρυθμίσεις Android και δοκιμάστε ξανά.</string>
+    <string name="applock__action_settings">Άνοιγμα ρυθμίσεων Android</string>
+    <string name="watermark_preview_funny">Αλήθεια; :( 
+    ＞﹏＜</string>
 </resources>

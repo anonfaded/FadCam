@@ -186,7 +186,7 @@ public class CropOverlayView extends View {
     public void setLockedAspectRatio(float ratio) {
         this.lockedAspectRatio = ratio;
         if (ratio > 0 && active) {
-            enforceAspectRatio();
+            fitCenteredAspectRatio();
             invalidate();
             notifyCropChanged();
         }
@@ -437,20 +437,118 @@ public class CropOverlayView extends View {
         }
     }
 
-    /** Enforce the locked aspect ratio by adjusting height to match width. */
-    private void enforceAspectRatio() {
+    /** Fits a crop rectangle of the locked ratio centered inside the current selection. */
+    private void fitCenteredAspectRatio() {
         if (lockedAspectRatio <= 0) return;
+        float maxW = cropRect.width();
+        float maxH = cropRect.height();
+        if (maxW <= 0 || maxH <= 0) return;
 
-        float currentW = cropRect.width();
-        float desiredH = currentW / lockedAspectRatio;
-
-        // Ensure it fits within video bounds
-        if (cropRect.top + desiredH > videoRect.bottom) {
-            desiredH = videoRect.bottom - cropRect.top;
-            float desiredW = desiredH * lockedAspectRatio;
-            cropRect.right = cropRect.left + desiredW;
+        float w = maxW;
+        float h = w / lockedAspectRatio;
+        if (h > maxH) {
+            h = maxH;
+            w = h * lockedAspectRatio;
         }
-        cropRect.bottom = cropRect.top + desiredH;
+        float cx = cropRect.centerX();
+        float cy = cropRect.centerY();
+        cropRect.set(cx - w / 2f, cy - h / 2f, cx + w / 2f, cy + h / 2f);
+    }
+
+    /**
+     * Enforces the locked ratio around the anchor opposite the dragged handle, so every
+     * edge and corner resizes in both axes instead of only adjusting height.
+     */
+    private void enforceAspectRatio() {
+        if (lockedAspectRatio <= 0 || videoRect.isEmpty()) return;
+        float ratio = lockedAspectRatio;
+
+        switch (activeHandle) {
+            case TOP_LEFT: {
+                float w = cropRect.right - cropRect.left;
+                float h = w / ratio;
+                float maxH = cropRect.bottom - videoRect.top;
+                if (h > maxH) { h = maxH; w = h * ratio; }
+                cropRect.set(cropRect.right - w, cropRect.bottom - h,
+                        cropRect.right, cropRect.bottom);
+                break;
+            }
+            case TOP_RIGHT: {
+                float w = cropRect.right - cropRect.left;
+                float h = w / ratio;
+                float maxH = cropRect.bottom - videoRect.top;
+                if (h > maxH) { h = maxH; w = h * ratio; }
+                cropRect.set(cropRect.left, cropRect.bottom - h,
+                        cropRect.left + w, cropRect.bottom);
+                break;
+            }
+            case BOTTOM_LEFT: {
+                float w = cropRect.right - cropRect.left;
+                float h = w / ratio;
+                float maxH = videoRect.bottom - cropRect.top;
+                if (h > maxH) { h = maxH; w = h * ratio; }
+                cropRect.set(cropRect.right - w, cropRect.top,
+                        cropRect.right, cropRect.top + h);
+                break;
+            }
+            case BOTTOM_RIGHT: {
+                float w = cropRect.right - cropRect.left;
+                float h = w / ratio;
+                float maxH = videoRect.bottom - cropRect.top;
+                if (h > maxH) { h = maxH; w = h * ratio; }
+                cropRect.set(cropRect.left, cropRect.top,
+                        cropRect.left + w, cropRect.top + h);
+                break;
+            }
+            case TOP_EDGE: {
+                float h = cropRect.bottom - cropRect.top;
+                float w = h * ratio;
+                float maxW = videoRect.width();
+                if (w > maxW) { w = maxW; h = w / ratio; }
+                float cx = cropRect.centerX();
+                cropRect.set(cx - w / 2f, cropRect.bottom - h,
+                        cx + w / 2f, cropRect.bottom);
+                break;
+            }
+            case BOTTOM_EDGE: {
+                float h = cropRect.bottom - cropRect.top;
+                float w = h * ratio;
+                float maxW = videoRect.width();
+                if (w > maxW) { w = maxW; h = w / ratio; }
+                float cx = cropRect.centerX();
+                cropRect.set(cx - w / 2f, cropRect.top,
+                        cx + w / 2f, cropRect.top + h);
+                break;
+            }
+            case LEFT_EDGE: {
+                float w = cropRect.right - cropRect.left;
+                float h = w / ratio;
+                float maxH = videoRect.height();
+                if (h > maxH) { h = maxH; w = h * ratio; }
+                float cy = cropRect.centerY();
+                cropRect.set(cropRect.right - w, cy - h / 2f,
+                        cropRect.right, cy + h / 2f);
+                break;
+            }
+            case RIGHT_EDGE: {
+                float w = cropRect.right - cropRect.left;
+                float h = w / ratio;
+                float maxH = videoRect.height();
+                if (h > maxH) { h = maxH; w = h * ratio; }
+                float cy = cropRect.centerY();
+                cropRect.set(cropRect.left, cy - h / 2f,
+                        cropRect.left + w, cy + h / 2f);
+                break;
+            }
+            default:
+                return;
+        }
+
+        // Keep the adjusted rect inside the video content area.
+        if (cropRect.left < videoRect.left) cropRect.offset(videoRect.left - cropRect.left, 0);
+        if (cropRect.top < videoRect.top) cropRect.offset(0, videoRect.top - cropRect.top);
+        if (cropRect.right > videoRect.right) cropRect.offset(videoRect.right - cropRect.right, 0);
+        if (cropRect.bottom > videoRect.bottom) cropRect.offset(0, videoRect.bottom - cropRect.bottom);
     }
 
     private float clamp(float value, float min, float max) {

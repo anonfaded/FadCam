@@ -81,13 +81,17 @@ public class FingerprintLockService extends LockService {
             Log.d(TAG, "Not locally enrolled");
             return AppLock.ERROR_CODE_FINGERPRINTS_NOT_LOCALLY_ENROLLED;
         }
-        if (!isHardwarePresent(context)) {
-            Log.d(TAG, "Fingerprint hardware not present");
-            return AppLock.ERROR_CODE_FINGERPRINTS_MISSING_HARDWARE;
-        }
+        // Check enrollment before hardware. Some OEMs report isHardwareDetected()
+        // as false while the sensor simply has no enrolled fingerprint; showing
+        // "missing hardware" in that state is misleading. no enrolled prints is
+        // the actionable case: send the user to Android's enrollment screen.
         if (!manager.hasEnrolledFingerprints()) {
             Log.d(TAG, "No fingerprints enrolled in system");
             return AppLock.ERROR_CODE_FINGERPRINTS_EMPTY;
+        }
+        if (!isHardwarePresent(context)) {
+            Log.d(TAG, "Fingerprint hardware not present");
+            return AppLock.ERROR_CODE_FINGERPRINTS_MISSING_HARDWARE;
         }
         int permFingerprint = ContextCompat.checkSelfPermission(context, Manifest.permission.USE_FINGERPRINT);
         int permBiometric = ContextCompat.checkSelfPermission(context, Manifest.permission.USE_BIOMETRIC);

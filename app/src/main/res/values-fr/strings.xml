@@ -94,14 +94,6 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="dialog_clock_englishtime">Date Anglaise avec l\'heure</string>
     <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
     <string name="ui_preview_area">Zone Prévisualisation</string>
-    <string-array name="easter_eggs_array">
-        <item>Alerte ! C\'est une zone restreinte. Commencez à enregistrer pour accéder.</item>
-        <item>Vous avez trouvé le bouton secret ! Ça ne fait rien mdr</item>
-        <item>Vite ! Le système va exploser…ou peut-être qu\'il a juste besoin d\'un enregistrement pour se calmer.</item>
-        <item>Alors, c\'est gênant maintenant…</item>
-        <item>De quelle couleur est ta Bugatti ?</item>
-        <item>Je n\'étais pas programmé pour faire ce que vous faites. Attends, tu essaies de me pirater ?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>AVERTISSEMENT</item>
         <item>FadCam collecte-t-elle des données utilisateur ?</item>
@@ -222,8 +214,8 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="applock_enable">Activer le Verrouillage d\'Onglet</string>
     <string name="applock_disable">Désactiver le Verrouillage d\'Onglet</string>
     <string name="applock_set_pin">Définir le PIN</string>
-    <string name="applock_change_pin">Modifier le PIN</string>
-    <string name="applock_remove_pin">Supprimer le PIN</string>
+    <string name="applock_change_pin">Modifier le verrouillage</string>
+    <string name="applock_remove_pin">Supprimer le verrouillage</string>
     <string name="applock_pin_created">PIN créé avec succès</string>
     <string name="applock_pin_removed">PIN supprimé avec succès</string>
     <!-- App Lock Verification Messages -->
@@ -1395,7 +1387,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="note_from_developer_subtitle">README, links &amp; updates</string>
 
-<string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
 
 <string name="quick_speed_title">Quick Speed</string>
 
@@ -1935,13 +1926,6 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="widget_customize_action_subtitle">Time, date, theme options</string>
 
-<string-array name="torch_error_messages">
-        <item>Torch is compiling... please don\'t wait 🖥️</item>
-        <item>Camera says: No flash today 🚦</item>
-        <item>Torch.exe not responding 🔦</item>
-        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
-        <item>Patch coming soon™... Developer is debugging life 🐛</item>
-    </string-array>
 
 <string name="start_recording">Start</string>
 
@@ -2379,6 +2363,8 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 <string name="setting_video_stabilization_title">Stabilisation vidéo</string>
 <string name="setting_not_supported">Non pris en charge sur cet appareil</string>
 <string name="video_stabilization_footer">Stabilise vos vidéos en compensant les mouvements de main grâce à la stabilisation électronique (EIS) et optique (OIS). Une petite partie du cadre est recadrée pour y parvenir.</string>
+    <string name="video_stabilization_unsupported_banner">Stabilisation : non prise en charge sur ton téléphone patate. C\'est la faute du matériel, pas la nôtre.</string>
+    <string name="video_stabilization_unsupported_short">Non pris en charge</string>
 
 <string name="video_setting_location_embed_enabled">Enabled</string>
 
@@ -2452,7 +2438,7 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="choose_language">Choose Language</string>
 
-<string name="applock_set_pin_enable">Set PIN &amp; Enable</string>
+<string name="applock_set_pin_enable">Configurer et activer</string>
 
 <string name="applock_helper_create">Créez une protection pour les onglets choisis avec un code PIN à 4 chiffres, un mot de passe ou une empreinte. Ils se verrouilleront automatiquement lorsque l’application passe en arrière-plan.</string>
 
@@ -4817,4 +4803,16 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="faditor_rename_helper">La vidéo exportée est enregistrée sous ce nom.</string>
     <string name="faditor_export_name_preview">Enregistré sous : %1$s.mp4</string>
     <string name="faditor_select_segment_first">Aucun clip sous la tête de lecture</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Utilisez une empreinte enregistrée dans Android pour protéger cette application.</string>
+    <string name="applock__description_unlock_fingerprint">Touchez le capteur d’empreintes</string>
+    <string name="applock__create_chooser_option_fingerprint">Empreinte digitale</string>
+    <string name="applock__fingerprint_error_not_enrolled">L’empreinte n’est pas encore activée dans FadCam. Ouvrez le verrouillage des onglets et configurez-la.</string>
+    <string name="applock__fingerprint_error_unrecognized">Votre empreinte n’a pas été reconnue.</string>
+    <string name="applock__fingerprint_error_unknown">La connexion par empreinte n’a pas pu aboutir. Réessayez ou configurez-la dans les paramètres Android.</string>
+    <string name="applock__fingerprint_error_none">Aucune empreinte n’est encore configurée dans Android. Ajoutez-en une dans les paramètres Android, puis réessayez.</string>
+    <string name="applock__fingerprint_error_hardware">L’empreinte n’est pas disponible pour le moment. Configurez une empreinte dans les paramètres Android, puis réessayez.</string>
+    <string name="applock__action_settings">Ouvrir les paramètres Android</string>
+<string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
 </resources>
