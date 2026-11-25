@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Small alert dot for the Pro header button (kept red so it stays visible on gold). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/pro_brand_red" />
+    <size android:width="8dp" android:height="8dp" />
+</shape>

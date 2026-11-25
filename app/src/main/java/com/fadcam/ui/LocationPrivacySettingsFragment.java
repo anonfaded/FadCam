@@ -14,7 +14,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -34,7 +33,7 @@ public class LocationPrivacySettingsFragment extends Fragment {
     private TextView valueEmbed;
     private LocationHelper locationHelper; // start/stop as in legacy
 
-    private ActivityResultLauncher<String> permissionLauncher;
+    private ActivityResultLauncher<String[]> permissionLauncher;
     private Runnable pendingGrantAction;
 
     @Nullable
@@ -52,8 +51,10 @@ public class LocationPrivacySettingsFragment extends Fragment {
         view.findViewById(R.id.row_location_embed).setOnClickListener(v -> toggleLocationEmbed());
     View back = view.findViewById(R.id.back_button);
     if(back!=null){ back.setOnClickListener(v -> OverlayNavUtil.dismiss(requireActivity())); }
-        permissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-            if(granted){ onPermissionGrantedPostRequest(); } else { onPermissionDeniedPostRequest(); }
+        permissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+            boolean fine = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION));
+            boolean coarse = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+            if(fine || coarse){ onPermissionGrantedPostRequest(); } else { onPermissionDeniedPostRequest(); }
         });
         refreshValues();
     }
@@ -99,12 +100,14 @@ public class LocationPrivacySettingsFragment extends Fragment {
     }
 
     private void showPermissionDialog(boolean embedding, Runnable proceed){
-        new AlertDialog.Builder(requireContext(), com.google.android.material.R.style.MaterialAlertDialog_Material3)
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.location_permission_title)
                 .setMessage(R.string.location_permission_description)
                 .setPositiveButton("Grant", (d,w)->{
                     pendingGrantAction = proceed;
-                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+                    permissionLauncher.launch(new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION});
                 })
                 .setNegativeButton(R.string.universal_cancel, (d,w)->{})
                 .show();

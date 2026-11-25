@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Splash icon / window avatar for the "Fadex" style.
+
+  One single source of truth for the avatar the user sees before the app can
+  draw: this same drawable is used by the API 31+ platform splash icon and by
+  the pre-31 starting window, so every Android version opens on the identical
+  image at the identical size.
+
+  The avatar is kept at @dimen/splash_avatar_start_size (~74dp) instead of
+  filling the platform's 288dp splash canvas. SplashAvatarOverlay starts its
+  first frame from exactly this size, so the hand-off has no jump.
+
+  The scrim layer dims the avatar to SPLASH_START_ALPHA. That is the "dormant"
+  state: when the app is ready the overlay begins at the same dim pose and
+  brightens to full brightness as it grows, so motion starts from a continuous
+  state instead of snapping a static picture into life.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="@dimen/splash_avatar_start_size"
+        android:height="@dimen/splash_avatar_start_size"
+        android:gravity="center"
+        android:drawable="@drawable/toggle_on_idle_splashred" />
+    <item
+        android:width="@dimen/splash_avatar_start_size"
+        android:height="@dimen/splash_avatar_start_size"
+        android:gravity="center"
+        android:drawable="@drawable/splash_avatar_scrim" />
+</layer-list>

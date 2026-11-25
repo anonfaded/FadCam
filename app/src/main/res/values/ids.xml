@@ -3,8 +3,10 @@
     <item name="shimmer_animator_tag" type="id"/>
     <item name="skeleton_tag" type="id"/>
     <item name="tag_layer_index" type="id"/>
+    <item name="editor_main_area" type="id"/>
     <item name="tag_layer_active" type="id"/>
     <item name="tag_page_index" type="id"/>
     <item name="tag_page_active" type="id"/>
     <item name="press_scale_attached" type="id"/>
+    <item name="screen_header" type="id"/>
 </resources> 

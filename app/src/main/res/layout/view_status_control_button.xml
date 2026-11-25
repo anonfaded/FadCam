@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Shared body for StatusControlButton:
+  - MaterialButton renders the glass background, ripple and (optional) drawable icon.
+  - The centre icon is a material-icons ligature for buttons whose icon is text
+    (the FadRec audio-source button).
+  - The corner label is the tiny ON/OFF-style status, right-aligned with a
+    consistent inset from the rounded edge.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/status_control_button"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/control_button_bg"
+        android:enabled="false"
+        android:insetLeft="0dp"
+        android:insetTop="0dp"
+        android:insetRight="0dp"
+        android:insetBottom="0dp"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:rippleColor="#22FFFFFF" />
+
+    <TextView
+        android:id="@+id/status_control_center_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:fontFamily="@font/materialicons"
+        android:includeFontPadding="false"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/home_control_icon_mute"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/status_control_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="@dimen/home_control_status_margin_b"
+        android:layout_marginEnd="@dimen/home_control_status_margin_e"
+        android:fontFamily="monospace"
+        android:gravity="end"
+        android:includeFontPadding="false"
+        android:letterSpacing="0.08"
+        android:text="OFF"
+        android:textColor="#B0BEC5"
+        android:textSize="@dimen/home_control_status_size"
+        android:textStyle="bold" />
+
+</merge>

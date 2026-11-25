@@ -50,6 +50,7 @@ import java.util.TreeSet;
 import com.fadcam.Utils;
 import com.fadcam.utils.CameraXFrameRateUtil;
 import com.fadcam.utils.DeviceHelper;
+import com.fadcam.utils.VideoEncoderCapabilities;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import java.util.Collections;
 import java.util.Arrays;
@@ -170,10 +171,9 @@ public class VideoSettingsFragment extends Fragment {
             }
         });
 
+        // The banner carries the explanation now, so the helper stays focused on how the
+        // feature works instead of repeating "not supported" a second time.
         String helper = getString(R.string.video_stabilization_footer);
-        if (!supported) {
-            helper += "\n\n" + getString(R.string.setting_not_supported);
-        }
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstanceWithSwitch(
@@ -191,7 +191,7 @@ public class VideoSettingsFragment extends Fragment {
             // Clear warning banner so users see the limitation immediately.
             sheet.getArguments().putString(
                     com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_BANNER_TEXT,
-                    getString(R.string.setting_not_supported));
+                    getString(R.string.video_stabilization_unsupported_banner));
         }
         sheet.show(getParentFragmentManager(), "video_stabilization_picker");
     }
@@ -309,7 +309,7 @@ public class VideoSettingsFragment extends Fragment {
                     ? (prefs.isVideoStabilizationEnabled()
                             ? getString(R.string.setting_enabled_msg)
                             : getString(R.string.setting_disabled_msg))
-                    : getString(R.string.setting_not_supported));
+                    : getString(R.string.video_stabilization_unsupported_short));
         }
 
         // Show/hide Dual Camera Settings row and its divider
@@ -405,20 +405,29 @@ public class VideoSettingsFragment extends Fragment {
 
         // Lens row visibility — hide for Dual PiP and Front
         View lensRow = requireView().findViewById(R.id.row_lens);
+        View lensDivider = requireView().findViewById(R.id.divider_lens);
+        boolean showLens = cam == CameraType.BACK && availableBackCameras.size() > 0;
         if (lensRow != null) {
-            lensRow.setVisibility(cam == CameraType.BACK && availableBackCameras.size() > 0 ? View.VISIBLE : View.GONE);
+            lensRow.setVisibility(showLens ? View.VISIBLE : View.GONE);
+        }
+        if (lensDivider != null) {
+            lensDivider.setVisibility(showLens ? View.VISIBLE : View.GONE);
         }
     }
 
     private Runnable pendingLocationGrantedAction;
 
-    private final androidx.activity.result.ActivityResultLauncher<String> locationPermissionLauncher =
+    private final androidx.activity.result.ActivityResultLauncher<String[]> locationPermissionLauncher =
             registerForActivityResult(
-                    new androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-                    granted -> {
+                    new androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions(),
+                    result -> {
+                        boolean fine = Boolean.TRUE.equals(result.get(
+                                android.Manifest.permission.ACCESS_FINE_LOCATION));
+                        boolean coarse = Boolean.TRUE.equals(result.get(
+                                android.Manifest.permission.ACCESS_COARSE_LOCATION));
                         Runnable action = pendingLocationGrantedAction;
                         pendingLocationGrantedAction = null;
-                        if (granted && action != null) action.run();
+                        if ((fine || coarse) && action != null) action.run();
                     });
 
     private void showLocationEmbedSheet() {
@@ -453,7 +462,9 @@ public class VideoSettingsFragment extends Fragment {
             onGranted.run();
         } else {
             pendingLocationGrantedAction = onGranted;
-            locationPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION);
+            locationPermissionLauncher.launch(new String[]{
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION});
         }
     }
     // -------------- Additional methods for location embedding end -----------
@@ -490,6 +501,7 @@ public class VideoSettingsFragment extends Fragment {
                     cachedResolutionsFront.clear();
                     cachedResolutionsBack.clear();
 
+                    validateFrameRateForEncoder();
                     refreshAllValues();
                 }
 
@@ -608,7 +620,9 @@ public class VideoSettingsFragment extends Fragment {
 
     private void showFrameRateBottomSheet() {
         CameraType cam = prefs.getCameraSelection();
-        java.util.List<Integer> rates = getHardwareSupportedFrameRates(cam);
+        validateFrameRateForEncoder();
+        java.util.List<Integer> rates = getEncoderSupportedFrameRates(cam, prefs.getCameraResolution(),
+                prefs.getVideoCodec());
         int current = prefs.getSpecificVideoFrameRate(cam);
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
         String currentId = String.valueOf(current);
@@ -650,6 +664,7 @@ public class VideoSettingsFragment extends Fragment {
             String sel = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
             if (sel != null && !sel.equals(currentId)) {
                 prefs.sharedPreferences.edit().putString(Constants.PREF_VIDEO_CODEC, sel).apply();
+                validateFrameRateForEncoder();
                 refreshAllValues();
             }
         });
@@ -1492,7 +1507,115 @@ public class VideoSettingsFragment extends Fragment {
     }
 
     private void onResolutionOrFramerateChanged() {
+        // A camera can advertise 60 fps and still have no encoder that does 60 at the selected
+        // resolution (P30 Pro: 4K is 30 fps, 1080p is 60 fps). Never leave an impossible pair
+        // saved — the recorder would fail at configure().
+        validateFrameRateForEncoder();
         refreshAllValues();
+    }
+
+    /**
+     * Camera frame rates intersected with what the selected encoder advertises for the current
+     * resolution. Fail-open: if every capability query breaks, keep the camera list.
+     */
+    private List<Integer> getEncoderSupportedFrameRates(CameraType cam, Size size, VideoCodec codec) {
+        List<Integer> cameraRates = getHardwareSupportedFrameRates(cam);
+        if (size == null || codec == null || cameraRates.isEmpty()) {
+            return cameraRates;
+        }
+        List<VideoEncoderCapabilities.EncoderInfo> infos;
+        try {
+            // Mirror GLRecordingPipeline.initializeEncoder(): the encoder receives the
+            // post-orientation-swap size, not the raw camera size.
+            boolean appWantsPortrait = !prefs.isOrientationLandscape();
+            boolean sensorPortrait = size.getHeight() > size.getWidth();
+            boolean swap = appWantsPortrait != sensorPortrait;
+            int encoderW = swap ? size.getHeight() : size.getWidth();
+            int encoderH = swap ? size.getWidth() : size.getHeight();
+            infos = VideoEncoderCapabilities.inspectAll(codec.getMimeType(), encoderW, encoderH);
+        } catch (Throwable t) {
+            return cameraRates;
+        }
+        if (infos.isEmpty()) {
+            return cameraRates;
+        }
+        List<Integer> filtered = new ArrayList<>();
+        for (Integer rate : cameraRates) {
+            if (rate == null) {
+                continue;
+            }
+            for (VideoEncoderCapabilities.EncoderInfo info : infos) {
+                if (!info.surfaceSupported || info.frameRates == null) {
+                    continue;
+                }
+                if (VideoEncoderCapabilities.supportsFrameRate(info.frameRates, rate)) {
+                    filtered.add(rate);
+                    break;
+                }
+            }
+        }
+        if (filtered.isEmpty()) {
+            if (Log.isEnabled()) {
+                FLog.w(TAG, "FPS query returned no encoder match for " + codec + " " + size
+                        + "; keeping camera list");
+            }
+            return cameraRates;
+        }
+        if (Log.isEnabled()) {
+            FLog.i(TAG, "FPS " + codec + " " + size + ": camera=" + cameraRates + " encoder=" + filtered);
+        }
+        return filtered;
+    }
+
+    /** Re-saves the frame rate if the current resolution/codec cannot encode it. */
+    private void validateFrameRateForEncoder() {
+        CameraType cam = prefs.getCameraSelection();
+        Size size = prefs.getCameraResolution();
+        VideoCodec codec = prefs.getVideoCodec();
+        int current = prefs.getSpecificVideoFrameRate(cam);
+        double maxFps = getEncoderMaxFrameRate(size, codec);
+        if (maxFps <= 0 || current <= maxFps) {
+            return;
+        }
+        int fallback = (int) Math.floor(maxFps);
+        if (fallback < 1) {
+            fallback = 1;
+        }
+        prefs.setSpecificVideoFrameRate(cam, fallback);
+        if (Log.isEnabled()) {
+            FLog.w(TAG, "FPS " + current + " unsupported by " + codec + " at " + size
+                    + "; auto-corrected to " + fallback);
+        }
+    }
+
+    /**
+     * Highest frame rate any surface-capable encoder advertises for this size. Deliberately
+     * does not touch CameraX: validation must not unbind camera use cases just because the
+     * user changed resolution/codec.
+     */
+    private double getEncoderMaxFrameRate(Size size, VideoCodec codec) {
+        if (size == null || codec == null) {
+            return -1;
+        }
+        try {
+            boolean appWantsPortrait = !prefs.isOrientationLandscape();
+            boolean sensorPortrait = size.getHeight() > size.getWidth();
+            boolean swap = appWantsPortrait != sensorPortrait;
+            int encoderW = swap ? size.getHeight() : size.getWidth();
+            int encoderH = swap ? size.getWidth() : size.getHeight();
+            List<VideoEncoderCapabilities.EncoderInfo> infos =
+                    VideoEncoderCapabilities.inspectAll(codec.getMimeType(), encoderW, encoderH);
+            double max = -1;
+            for (VideoEncoderCapabilities.EncoderInfo info : infos) {
+                if (!info.surfaceSupported || info.frameRates == null) {
+                    continue;
+                }
+                max = Math.max(max, info.frameRates.getUpper());
+            }
+            return max;
+        } catch (Throwable t) {
+            return -1;
+        }
     }
 
     // Bitrate helper text mirroring thresholds used in dialog (low<3, high>100) but
@@ -1503,14 +1626,17 @@ public class VideoSettingsFragment extends Fragment {
     // ---- Zoom Ratio Migration ----
     private void showZoomRatioBottomSheet() {
         CameraType cam = prefs.getCameraSelection();
+        com.fadcam.utils.camera.ZoomCapabilities.logCameraReportOnce(requireContext());
         List<Float> ratios = buildZoomRatioOptions(cam);
         if (ratios.isEmpty())
             return;
         float current = prefs.getSpecificZoomRatio(cam);
         java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items = new java.util.ArrayList<>();
-        String currentId = String.format(Locale.getDefault(), "%.1f", current);
+        // IDs must be locale-independent: the picker sends them back and the
+        // result listener parses them with Float.parseFloat, which only accepts '.'.
+        String currentId = String.format(Locale.US, "%.1f", current);
         for (Float r : ratios) {
-            items.add(new com.fadcam.ui.picker.OptionItem(String.format(Locale.getDefault(), "%.1f", r),
+            items.add(new com.fadcam.ui.picker.OptionItem(String.format(Locale.US, "%.1f", r),
                     String.format(Locale.getDefault(), "%.1fx", r)));
         }
         final String resultKey = "picker_result_zoom_ratio";
@@ -1529,22 +1655,25 @@ public class VideoSettingsFragment extends Fragment {
         });
         // Create dynamic helper text explaining auto-selection behavior
         String helper = createZoomHelperText(cam);
+        boolean showZoomOutBanner =
+                com.fadcam.utils.camera.ZoomCapabilities.shouldShowZoomOutBanner(
+                        requireContext(), cam);
+        com.fadcam.utils.camera.ZoomCapabilities.logZoomDecision(
+                requireContext(), cam, showZoomOutBanner);
         com.fadcam.ui.picker.PickerBottomSheetFragment sheet = com.fadcam.ui.picker.PickerBottomSheetFragment
                 .newInstance(
                         getString(R.string.setting_zoom_ratio_title), items, currentId, resultKey, helper);
+        if (showZoomOutBanner) {
+            sheet.getArguments().putString(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.ARG_BANNER_TEXT,
+                    getString(R.string.zoom_lens_unavailable_banner));
+        }
         sheet.show(getParentFragmentManager(), "zoom_ratio_picker");
     }
 
     private List<Float> buildZoomRatioOptions(CameraType cam) {
-        List<Float> list = new ArrayList<>();
-        float max = getHardwareSupportedMaxZoomRatio(cam);
-        for (float z = 0.5f; z <= max + 0.001f; z += 0.5f) {
-            list.add(((float) Math.round(z * 10)) / 10f);
-        }
-        if (!list.contains(1.0f))
-            list.add(1.0f);
-        java.util.Collections.sort(list);
-        return list;
+        return com.fadcam.utils.camera.ZoomCapabilities.buildZoomRatioOptions(
+                getHardwareSupportedMaxZoomRatio(cam));
     }
 
     private float getHardwareSupportedMaxZoomRatio(CameraType cam) {

@@ -82,7 +82,7 @@
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Kasutatud: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
-    <string name="stats_label_videos">Videod:</string>
+    <string name="stats_label_videos">Failid:</string>
     <string name="stats_label_used">Kasutatud:</string>
     <string name="button_start">Alusta</string>
     <string name="button_pause">Paus</string>
@@ -163,7 +163,7 @@
     <string name="recording_controls_title">AF · Säri · Suum</string>
     <string name="mainpage_camera_front">Esikaamera</string>
     <string name="mainpage_camera_back">Tagakaamera</string>
-    <string name="storage_available_space">Saadaval ruum</string>
+    <string name="storage_available_space">Järelejäänud ruum</string>
     <string name="recording_estimated_time">Hinnanguline aeg</string>
     <string name="recording_time_left">Aega jäänud</string>
     <string name="recording_elapsed_time">Kulunud aeg</string>
@@ -241,7 +241,7 @@
     <string name="home_time_left_color_helper">Vali aktsentvärv aja-jäänud reale. Punane on vaikimisi.</string>
     <string name="home_time_left_color_choice_desc">Aktsentvärv %1$s</string>
     <string name="home_clock_customize_title">Kella välimus</string>
-    <string name="home_clock_customize_helper">Muuda kella kuva, värvi ja tunnivormingut.</string>
+    <string name="home_clock_customize_helper">Muuda kella kuva, värvi, tunnivormingut ja araabia kuupäeva stiili.</string>
     <string name="home_clock_display_option">Kella kuva</string>
     <string name="home_clock_display_option_desc">Vali, millised kuupäeva ja kella read kellakaardil kuvatakse</string>
     <string name="home_clock_display_helper">Vali kellakaardi paigutus.</string>
@@ -502,7 +502,7 @@
     <string name="nav_settings">Seaded</string>
     <string name="nav_about">Teave</string>
     <string name="nav_remote">Kaugjuhtimine</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
     <string name="nav_lab">Labor</string>
     <string name="button_settings_readme">Loe mind</string>
     <string name="setting_cam_title">Kaamera valik</string>
@@ -614,14 +614,6 @@
     <string name="ae_lock_helper">Kui lubatud, hoitakse automaatsäri praegusel heledustasemel, nii et kaamera ei kohanda säri salvestamise ajal uuesti. Kasuta säri paani käsitsi säri kohandamiseks.</string>
     <string name="ae_lock_switch_label">Lukusta AE</string>
     <string name="exposure_title">Särikompensatsioon (EV)</string>
-    <string-array name="easter_eggs_array">
-        <item>Hoiatus! See on piiratud ala. Alusta salvestamist ligipääsu saamiseks.</item>
-        <item>Oled leidnud salajase nupu! See ei tee midagi lol</item>
-        <item>Kiiresti! Süsteem on plahvatamas… või võib-olla vajab lihtsalt salvestamist rahunemiseks.</item>
-        <item>Noh, see on nüüd piinlik…</item>
-        <item>Mis värvi on sinu Bugatti?</item>
-        <item>Mind ei programmeeritud tegema seda, mida sa teed. Oota, kas sa üritad mind häkkida?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>TÄHELEPANU</item>
         <item>Kas FadCam kogub kasutajaandmeid?</item>
@@ -676,7 +668,6 @@
     <string name="array_watermark_time_fadcam">Aeg FadCamiga</string>
     <string name="array_watermark_timeonly">Ajatempel</string>
     <string name="array_watermark_nomark">Vesimärk puudub</string>
-    <string name="watermark_preview_funny">Tõsiselt? :( \n    ＞﹏＜</string>
     <string name="toast_video_not_found">Viga: Videot ei leitud</string>
     <string name="quick_speed_title">Kiirkiirus</string>
     <string name="quick_speed_option_default">2x (vaikimisi)</string>
@@ -1028,13 +1019,6 @@
     <string name="shortcut_purpose_screenshot">See otsetee jäädvustab ekraanipildi ja salvestab selle FadCam/FadShot asukohta (luba juurdepääsetavuse luba seadetes > Privaatsus > Juurdepääsetavus).</string>
     <string name="widget_customize_action_label">Kohanda</string>
     <string name="widget_customize_action_subtitle">Aeg, kuupäev, teema valikud</string>
-    <string-array name="torch_error_messages">
-        <item>Taskulamp kompileerib... palun ära oota 🖥️</item>
-        <item>Kaamera ütleb: Täna välku ei ole 🚦</item>
-        <item>Torch.exe ei vasta 🔦</item>
-        <item>Parandus hiljem... Arendaja tabas vaimse murdepunkti lol 🧠</item>
-        <item>Parandus tulemas™... Arendaja silub elu 🐛</item>
-    </string-array>
     <string name="more_options">Rohkem valikuid</string>
     <string name="records_options_title">Salvestiste valikud</string>
     <string name="setting_theme_title">Rakenduse teema</string>
@@ -1299,6 +1283,8 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="setting_video_stabilization_title">Videostabiliseerimine</string>
     <string name="setting_not_supported">Selles seadmes ei toetata</string>
     <string name="video_stabilization_footer">Hoiab videod stabiilsena, kompenseerides käe värinat elektroonilise (EIS) ja optilise (OIS) stabiliseerimisega. Selleks kärbitakse kaadrit veidi.</string>
+    <string name="video_stabilization_unsupported_banner">Stabiliseerimine: sinu kartulitelefonis pole toetatud. Süüdistage riistvara, mitte meid.</string>
+    <string name="video_stabilization_unsupported_short">Pole toetatud</string>
     <string name="video_setting_location_embed_enabled">Lubatud</string>
     <string name="video_setting_location_embed_disabled">Keelatud</string>
     <string name="helper_watermark_option">Vali ülekatte sisu: ajatempel + bränd, ainult ajatempel või puudub.</string>
@@ -1432,40 +1418,29 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="setting_onboarding_title">Kuva sissejuhatus</string>
     <string name="note_onboarding">Luba, et näha rakenduse sissejuhatust ja lubade juhendit järgmisel korral, kui avad FadCam\'i.</string>
     <string name="choose_language">Vali keel</string>
-    <string name="language_change_later_note">Saad seda hiljem seadetes muuta.</string>
-    <string name="permissions_required">Load on vajalikud</string>
-    <string name="permissions_description">FadCam vajab juurdepääsu kaamerale, mikrofonile ja mälule, et salvestada ja salvestada videoid.</string>
-    <string name="grant_permissions">Anna load</string>
-    <string name="permissions_note">Jätkamiseks pead andma kõik load.</string>
-    <string name="permissions_granted">Kõik load antud!</string>
-    <string name="open_settings">Ava seaded</string>
-    <string name="disable_battery_optimization">Keela aku optimeerimine</string>
-    <string name="onboarding_human_title">Kinnita, et oled inimene</string>
-    <string name="onboarding_human_desc">Hmmmm... olgu. Need reeglid pole läbiräägitavad. Kui sa nendega nõustuda ei saa, palun eemalda FadCam kohe.</string>
-    <string name="onboarding_human_checkbox1">Ma ei kasuta FadCam\'i seaduste rikkumiseks, kellegi privaatsuse riivamiseks ega käitu imelikult. Arendaja ei vastuta, kui ma midagi valesti teen. (See on minu vastutus.)</string>
-    <string name="onboarding_human_checkbox2">Ma juba armastan FadCam\'i enne selle kasutamist. (Pole valikuline)</string>
-    <string name="onboarding_human_checkbox3">Nõustun privaatsuspoliitikaga</string>
-    <string name="onboarding_human_button">Lase mind sisse!</string>
     <string name="trash_select_all">Vali kõik</string>
     <string name="location_permission_granted_manual_toggle">Luba antud! Saad nüüd asukoha funktsioonid seadetes lubada.</string>
     <string name="location_embedding_enabled">Asukoha lisamine lubatud</string>
     <string name="allow_location_access">Anna luba</string>
     <string name="location_permission_message">Asukoha luba on vajalik GPS-koordinaatide lisamiseks videotele. Palun anna luba selle funktsiooni kasutamiseks.</string>
     <string name="setting_applock_title">Vahekaardi lukustus</string>
-    <string name="setting_applock_desc">Turva oma videod PIN-lukuga Salvestiste vahekaardi jaoks. \nSinu turvalisuse huvides lukustub Salvestiste vahekaart automaatselt, kui rakendus läheb taustale või suletakse. Pead uuesti avama, kui naased.</string>
+    <string name="setting_applock_desc">Kaitse valitud vahekaarte PIN-koodi, parooli või sõrmejäljega. Kaitstud vahekaardid lukustuvad uuesti, kui rakendus läheb taustale või suletakse, ja tuleb naasmisel uuesti avada.</string>
     <string name="setting_applock_configure">Seadista</string>
     <string name="applock_dialog_title">Vahekaardi lukustuse valikud</string>
     <string name="applock_enable">Luba vahekaardi lukustus</string>
     <string name="applock_disable">Keela vahekaardi lukustus</string>
     <string name="applock_set_pin">Määra PIN</string>
-    <string name="applock_change_pin">Muuda PIN-i</string>
-    <string name="applock_remove_pin">Eemalda PIN</string>
+    <string name="applock_change_pin">Muuda lukku</string>
+    <string name="applock_remove_pin">Eemalda lukk</string>
     <string name="applock_pin_created">PIN edukalt loodud</string>
     <string name="applock_pin_removed">PIN edukalt eemaldatud</string>
-    <string name="applock_set_pin_enable">Määra PIN ja luba</string>
-    <string name="applock_helper_create">Loo Salvestiste vahekaardi kaitse 4-kohalise PIN-i, parooli või sõrmejäljega. See lukustub automaatselt, kui rakendus läheb taustale.</string>
-    <string name="applock_helper_manage_disabled">Vahekaardi lukustuse PIN on määratud. Lülita sisse, et nõuda PIN-i rakendusse naasmisel.</string>
-    <string name="applock_helper_enabled">Vahekaardi lukustus on aktiivne. Vajad PIN-i Salvestiste vahekaardi avamisel pärast rakendusest lahkumist.</string>
+    <string name="applock_set_pin_enable">Seadista ja luba</string>
+    <string name="applock_helper_create">Loo valitud vahekaartidele kaitse 4-kohalise PIN-koodi, parooli või sõrmejäljega. Need lukustuvad automaatselt, kui rakendus läheb taustale.</string>
+    <string name="applock_helper_manage_disabled">Vahekaartide luku PIN on seatud. Lülita see sisse, et nõuda valitud vahekaartidel PIN-koodi.</string>
+    <string name="applock_helper_enabled">Vahekaartide lukk on aktiivne. Valitud vahekaardid nõuavad PIN-koodi pärast rakendusest lahkumist. Salvestised on vaikimisi kaitstud.</string>
+    <string name="tab_lock_screen_title">Lukustatud</string>
+    <string name="tab_lock_screen_message">Jätkamiseks ava lukk</string>
+    <string name="tab_lock_unlock">Ava lukk</string>
     <string name="applock_verify_to_enable">Kinnita PIN vahekaardi lukustuse lubamiseks</string>
     <string name="applock_verify_to_disable">Kinnita PIN vahekaardi lukustuse keelamiseks</string>
     <string name="applock_verify_to_change">Kinnita praegune PIN</string>
@@ -1516,7 +1491,6 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
     <string name="app_icon_changed">Rakenduse ikoon muudetud</string>
     <string name="app_icon_preview">Rakenduse ikooni eelvaade</string>
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
     <string name="changelog_label">Mis on uut</string>
     <string name="setting_auto_update_check_title">Automaatne uuenduste kontroll</string>
     <string name="note_auto_update_check">Kui lubatud, kontrollib FadCam uuendusi iga kord, kui rakenduse avad. Lülita välja, et keelata automaatne uuenduste kontrollimisel käivitamisel.\n(vaikimisi: sees)</string>
@@ -1687,7 +1661,6 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="forensics_copy_done">Tõendi üksikasjad kopeeritud</string>
     <string name="digital_forensics_preview_title">Otsetuvastuse eelvaade</string>
     <string name="digital_forensics_preview_subtitle">Simuleeritud ülekatte eelvaade, et kasutajad mõistaksid silte, usaldusväärsust ja tõendite raamimist.</string>
-    <string name="digital_forensics_preview_default">ISIK 92%</string>
     <string name="settings_watermark_subtitle">Brändi ülekatte režiim</string>
     <string name="prefs_import_export_title">Import / Eksport</string>
     <string name="prefs_import_export_subtitle">Varunda, taasta, lähtesta</string>
@@ -1716,18 +1689,6 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="location_icon_description">Asukoha ikoon</string>
     <string name="location_embedding_icon_description">Asukoha lisamise ikoon</string>
     <string name="app_icon_minimal" translatable="false">FadCam</string>
-    <string name="onboarding_swipe_instruction">Pühkida paremale jätkamiseks</string>
-    <string name="onboarding_select_language">Vali eelistatud rakenduse keel.</string>
-    <string name="onboarding_camera">Kaamera</string>
-    <string name="onboarding_microphone">Mikrofon</string>
-    <string name="onboarding_storage">Mälu</string>
-    <string name="onboarding_or">VÕI</string>
-    <string name="onboarding_and">JA</string>
-    <string name="onboarding_open_settings">Ava seaded</string>
-    <string name="onboarding_intro_line1">multimeedia salvestaja—</string>
-    <string name="onboarding_intro_line2">taustavideo, ekraan ja otsevoog,</string>
-    <string name="onboarding_intro_line3">kaugkaamera juhtimine,</string>
-    <string name="onboarding_intro_line4">avatud lähtekood. reklaamivaba. sinu oma.</string>
     <string name="sort_by">Sorteeri</string>
     <string name="records_sort_helper">Vali, kuidas salvestised loendis järjestatakse.</string>
     <string name="records_sort_order_title">Sorteerimise järjekord</string>
@@ -1893,6 +1854,7 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="name_your_project">Nimeta oma projekt</string>
     <string name="project_naming_message">Anna oma projektile meeldejääv nimi ja kirjeldus, et salvestisi korraldada</string>
     <string name="fadrec_projects">FadRec projektid</string>
+    <string name="fadrec_projects_location">Projektid salvestatakse rakenduse privaatsesse mällu</string>
     <string name="delete_project">Kustuta projekt</string>
     <string name="delete_all">Kustuta kõik</string>
     <string name="new_project">Uus projekt</string>
@@ -1921,15 +1883,6 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="fadcam_pro_feature_app_name">Kohandatud rakenduse nimi</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive pilve sünkroonimine</string>
     <string name="fadcam_pro_header_button">Hangi Pro</string>
-    <string name="player_info_title">Videoesitaja teave</string>
-    <string name="player_info_content"><![CDATA[
-<b>Killustatud MP4 vorming</b><br/><br/>
-FadCam kasutab salvestiste jaoks killustatud MP4 vormingut. See tähendab, et videod salvestatakse väikestesse segmentidesse ühe tervikliku faili asemel. Kasu on selles, et kui salvestamise ajal midagi läheb valesti, kaotad ainult viimased paar sekundit, mitte kogu video.<br/><br/>
-Kui video viimased paar sekundit tunduvad külmunud või vananenud, ära muretse — see ei ole viga! Salvestamise peatamisel võib praegune fragment veel oma tsükli lõpule viia (~3 sekundit), mis võib jätta lühikese vananenud kaadri lõppu.<br/><br/>
-<b>Esitaja piirangud</b><br/><br/>
-Sisseehitatud videoesitajal on mõned Androidi süsteemi piirangud. Võid märgata, et edenemisriba või helilaine kuju tundub veidi hüplik — see on normaalne käitumine ega ole viga.<br/><br/>
-Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siiski, integreeritud esitaja töötab igapäevaseks kasutamiseks hästi!
-    ]]></string>
     <string name="codec_hevc_incompatible_title">H.265 koodek ei ole otsevoogedastuse jaoks toetatud</string>
     <string name="codec_hevc_incompatible_message">📡 Otsevoogedastus HLS-i kaudu nõuab H.264 koodekit.\n\nH.265 ei ühildu brauseri mängijatega.\n\nKas soovid üle lülituda H.264-le ja alustada salvestamist?</string>
     <string name="codec_switch_and_record">Lülitu H.264-le ja salvesta</string>
@@ -2196,6 +2149,8 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="screen_rec_settings_subtitle">Kvaliteet, heli ja väljundi seaded</string>
     <string name="screen_rec_resolution">Eraldusvõime</string>
     <string name="screen_rec_framerate">Kaadrisagedus</string>
+    <string name="screen_rec_codec">Koodek</string>
+    <string name="note_screen_codec">Vali ekraanikirje koodek\n(Vaikimisi: %1$s)\nNäpunäide: H.265 (HEVC) annab sama kvaliteedi juures väiksemad failid. Kui seadmes pole kasutatavat HEVC-kooderit, salvestab FadCam automaatselt H.264-s.</string>
     <string name="screen_rec_bitrate">Bitikiirus</string>
     <string name="screen_rec_orientation">Suund</string>
     <string name="screen_rec_bitrate_mode_auto">Automaatne (VBR)</string>
@@ -2543,6 +2498,10 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="mini_apps_qr_scanner_reference">QR-skanneri viide</string>
 
     <string name="screen_recording_title">Ekraanisalvestus</string>
+    <string name="qs_tile_fadrec_subtitle">Salvesta ekraan</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Salvestamine</string>
+    <string name="qs_tile_fadrec_paused">Peatatud</string>
 
     <string name="screen_recording_notif_title">FadRec - Ekraanisalvestus</string>
 
@@ -2619,6 +2578,13 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <string name="setting_theme">Teema</string>
     <string name="setting_language">Keel</string>
     <string name="setting_app_icon">Rakenduse ikoon</string>
+    <string name="setting_splash_screen">Avakuva</string>
+    <string name="splash_screen_dialog_title">Vali avakuva</string>
+    <string name="splash_screen_helper">Vali, mida FadCam käivitamisel näitab.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Avatar ärkab, jääb magama ja maandub avakuvale</string>
+    <string name="splash_style_flag">FadSec Labi lipp</string>
+    <string name="splash_style_flag_desc">Klassikaline lipuga avakuva</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Lubatud</string>
@@ -2921,4 +2887,280 @@ Sujuvama esitamise kogemuse jaoks saad kasutada välist esitajat nagu VLC. Siisk
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Näita Seadetes</string>
     <string name="trash_show_in_settings_desc">Lisab prügikasti rea Seadete lehele kiireks juurdepääsuks</string>
+    <string name="fadcam_full_title">FadCam Power User</string>
+    <string name="fadcam_full_subtitle">Kaugjuhtimine, liikumissalvestus, forensika ja palju muud. Proovi täisversiooni.</string>
+    <string name="github_get_on">Hangi</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Oled FadCami kasutanud juba %1$s</string>
+    <string name="app_usage_since_install_title">FadCam on kasutusel olnud</string>
+
+
+    <string name="app_age_a_while">mõnda aega</string>
+    <string name="app_usage_installed_on">Paigaldatud</string>
+    <string name="pro_dossier_header">FADSEC LAB // SISEMINE TOIMIK</string>
+    <string name="pro_dossier_eyes_only">KONFIDENTSIAALNE</string>
+    <string name="pro_dossier_subject">TEEMA // UUENDUSPROTOKOLL</string>
+    <string name="pro_dossier_file_no">TOIMIKU NR</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">JUURDEPÄÄS</string>
+    <string name="pro_dossier_clearance_value">AVALIK / TASUTA</string>
+    <string name="pro_dossier_status">STAATUS</string>
+    <string name="pro_dossier_status_value">OOTAB KINNITUST</string>
+    <string name="pro_dossier_ref">VIIDE: FADSEC/PR-07</string>
+    <string name="pro_dossier_page">LEHT 1/1</string>
+    <string name="pro_dossier_drag">LOHISTA UURIMISEKS // ESI</string>
+    <string name="pro_dossier_cycle">TSUKKEL %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // TEGEVUSJÄRGNE ARUANNE</string>
+    <string name="pro_dossier_after_stamp">DEBRIEF</string>
+    <string name="pro_dossier_after_subject">TEEMA // NÄDALANE KONTAKT</string>
+    <string name="pro_dossier_after_status">OTSUS</string>
+    <string name="pro_dossier_after_status_value">VAJAB KINNITUST</string>
+    <string name="pro_dossier_after_ref">VIIDE: FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">Selge</string>
+    <string name="pro_reminder_intro_title">Enne kui Pro hakkab draamat tegema</string>
+    <string name="pro_reminder_intro_subtitle">Oled FadCami kasutanud %1$s. Vaata, mida Pro pakub.</string>
+    <string name="pro_reminder_title_1">Meil on ajalugu</string>
+    <string name="pro_reminder_title_2">Pro on hakanud kadestama</string>
+    <string name="pro_reminder_title_3">Arva, kes on tagasi</string>
+    <string name="pro_reminder_title_4">See on nüüd meie oma asi</string>
+    <string name="pro_reminder_title_5">Palun tee üllatunud nägu</string>
+    <string name="pro_reminder_title_6">Järgmisel nädalal samal ajal?</string>
+    <string name="pro_reminder_subtitle_1">%1$s FadCamiga ja Pro pole sa ikka veel kohanud.</string>
+    <string name="pro_reminder_subtitle_2">Oled FadCami kasutanud %1$s. Pro hakkab end kõrvale jäetuna tundma.</string>
+    <string name="pro_reminder_subtitle_3">%1$s FadCamiga. Olen tagasi, et Pro sulle meelde tuletada.</string>
+    <string name="pro_reminder_subtitle_4">%1$s FadCamiga. Pro tahaks ka veidi tähelepanu.</string>
+    <string name="pro_reminder_subtitle_5">%1$s sees ja siin ma jälle olen. Tõin Pro.</string>
+    <string name="pro_reminder_subtitle_6">Möödunud on %1$s. Pro ütleb tere. Jälle.</string>
+    <string name="pro_reminder_notification_title_1">Pro tunneb end kõrvale jäetuna</string>
+    <string name="pro_reminder_notification_title_2">Väike katkestus</string>
+    <string name="pro_reminder_notification_title_3">Pro liitus vestlusega</string>
+    <string name="pro_reminder_notification_title_4">Arva, kes on tagasi</string>
+    <string name="pro_reminder_notification_body_1">%1$s koos. Pro tahaks kiiret tere.</string>
+    <string name="pro_reminder_notification_body_2">Ära muretse, see pole kiire. Pro lihtsalt ütleb tere.</string>
+    <string name="pro_reminder_notification_body_3">Möödunud on %1$s. Valmis kiireks pilguks?</string>
+    <string name="pro_reminder_notification_body_4">Jälle mina. Pro lubab, et see tuleb kiire.</string>
+    <string name="pro_reminder_button_continue">Jätka</string>
+    <string name="pro_reminder_button_countdown">Jätka %1$ds pärast</string>
+    <string name="pro_reminder_back_toast_1">Tubli katse. Jätka on kohe seal.</string>
+    <string name="pro_reminder_back_toast_2">Sisu pööre: Tagasi pole väljapääs.</string>
+    <string name="pro_reminder_back_toast_3">Peaaegu pääsesid. Lihtsalt vajuta Jätka.</string>
+    <string name="pro_reminder_after_title">Võta Pro, ja ma lõpetan lõpuks sinu tülitamise. Igavesti.</string>
+    <string name="pro_reminder_after_got_it">Selge</string>
+    <string name="pro_reminder_notification_channel_name">Pro meeldetuletused</string>
+    <string name="pro_reminder_notification_channel_description">Iganädalased meeldetuletused FadCam Pro kohta. Pro versioonis ei kuvata.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">Tulen tagasi %1$d päeva pärast. Naudi rahu, kuni see kestab.</item>
+        <item quantity="other">Tulen tagasi %1$d päeva pärast. Naudi rahu, kuni see kestab.</item>
+    </plurals>
+    <string name="follow_on_x">Jälgi X-is</string>
+    <string name="pro_screen_active">Aktiivne</string>
+    <string name="pro_screen_calc_desc">Eraldi äpp, mis näeb välja nagu kalkulaator.</string>
+    <string name="pro_screen_calc_feature">Kalkulaatori äpp</string>
+    <string name="pro_screen_calculator">Kalkulaator</string>
+    <string name="pro_screen_claim_body">Põhineb FadCami ainulaadsel Hybrid MP4 torustikul — Androidi jaoks eritellimusel loodud, et salvestused jääksid esitatavaks krahhide, tühja aku ja ootamatu väljalülitumise järel, kuni viimase sekundini.</string>
+    <string name="pro_screen_claim_title">Taustavideo salvestaja nr 1</string>
+    <string name="pro_screen_cloud">FadDrive\'i sünkroonimine</string>
+    <string name="pro_screen_cloud_desc">Varunda oma salvestused turvaliselt meie krüpteeritud pilve.</string>
+    <string name="pro_screen_coming_soon_status">Tulemas</string>
+    <string name="pro_screen_compare">Vaata, mis on sees</string>
+    <string name="pro_screen_compare_hint">Pühki versioonide võrdlemiseks</string>
+    <string name="pro_screen_compare_owned">Sinu Pro funktsioonid</string>
+    <string name="pro_screen_custom_icon">Kohandatud äpiikoon</string>
+    <string name="pro_screen_custom_icon_desc">Vali oma äpile oma ikoon.</string>
+    <string name="pro_screen_custom_name">Kohandatud äpinimi</string>
+    <string name="pro_screen_custom_name_desc">Vali oma äpile oma nimi.</string>
+    <string name="pro_screen_direct_support">Arendaja tugi</string>
+    <string name="pro_screen_direct_support_desc">Küsi abi arendajalt Discordis.</string>
+        <string name="pro_screen_support_title">Muud võimalused toetamiseks</string>
+    <string name="pro_screen_support_body">Pro sind ei huvita? Saad FadCami siiski toetada Patreoni või krüptovaluuta annetustega. Iga panus aitab meil luua rohkem vaba avatud lähtekoodiga tarkvara.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Ühekordsed annetused või igakuised liikmelisused.</string>
+    <string name="pro_screen_crypto_title">Krüptovaluuta annetused</string>
+    <string name="pro_screen_crypto_desc">Võta meiega ühendust Discordi või e-posti kaudu.</string>
+    <string name="pro_screen_stay_connected_title">Püsi ühenduses</string>
+    <string name="pro_screen_stay_connected_body">Küsimused, tagasiside või lihtsalt tere? Meil on hea meel sinust kuulda.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">E-post</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">FadCami toe päring</string>
+    <string name="pro_screen_everything">Kõik tasuta funktsioonid</string>
+    <string name="pro_screen_everything_desc">Kõik tasuta versiooni funktsioonid on kaasas.</string>
+    <string name="pro_screen_fan_desc">Usud tulevikku, kus avatud lähtekoodiga rakendused ja lahendused seavad privaatsuse esikohale.</string>
+    <string name="pro_screen_fan_feature">Armastad privaatsust</string>
+    <string name="pro_screen_features">Funktsioonid</string>
+    <string name="pro_screen_free">Tasuta</string>
+    <string name="pro_screen_included">Kaasas</string>
+    <string name="pro_screen_link_error">Linki ei saanud avada. Kontrolli, et brauser on saadaval, ja proovi uuesti.</string>
+    <string name="pro_screen_navigation">Avasta Pro</string>
+    <string name="pro_screen_navigation_owned">Sinu Pro</string>
+    <string name="pro_screen_no_ads">Ei reklaame ega jälgimist</string>
+    <string name="pro_screen_no_ads_desc">Ei reklaame. Ei jälgimist. Ei krahhilogide kogumist.</string>
+    <string name="pro_screen_no_nags">Ei uuendamise meeldetuletusi</string>
+    <string name="pro_screen_no_nags_desc">Ei iganädalasi meeldetuletusi Pro-le uuendamiseks.</string>
+    <string name="pro_screen_not_included">Pole kaasas</string>
+    <string name="pro_screen_notes">Märkmed</string>
+    <string name="pro_screen_notes_desc">Eraldi äpp, mis näeb välja nagu märkmikuäpp.</string>
+    <string name="pro_screen_notes_feature">Märkmete äpp</string>
+    <string name="pro_screen_notification">Teavituste ikoonid</string>
+    <string name="pro_screen_notification_desc">Vali salvestusteavitustele teistsugune ikoon.</string>
+    <string name="pro_screen_owned_status">%1$s · Selles äpis aktiivne</string>
+    <string name="pro_screen_owned_subtitle">Selle versiooniga kaasas</string>
+    <string name="pro_screen_owned_title">%1$s on aktiivne</string>
+    <string name="pro_screen_price_detail">3 privaatset Pro äppi · Eluaegsed uuendused</string>
+    <string name="pro_screen_price_terms">Ühekordne ost</string>
+    <string name="pro_screen_privacy_body">Usume, et privaatsus peaks olema kõigile. Seetõttu pole FadCamis reklaame, jälgijaid ega andmekogumist. Me ei kogu automaatselt isegi krahhiaruandeid.\n\nOleme 100% avatud lähtekoodiga, nii et näed, kuidas äpp töötab. Olulised privaatsusfunktsioonid ei jää kunagi maksumüüri taha.</string>
+    <string name="pro_screen_privacy_title">Privaatsus täna. Homme. Igavesti.</string>
+    <string name="pro_screen_purchase">Ava Pro pakett</string>
+    <string name="pro_screen_purchase_caption">Avab FadSec Labi poe</string>
+    <string name="pro_screen_scroll_hint">Keri edasi</string>
+    <string name="pro_screen_scroll_top">Keri üles</string>
+    <string name="pro_screen_soon">Varsti</string>
+    <string name="pro_screen_soon_legend">Pro+ ja Lab tasemed tulevad varsti.</string>
+    <string name="pro_screen_status_description">%1$s: %2$s</string>
+    <string name="pro_screen_tier">Pro</string>
+    <string name="pro_screen_tier_lab">Lab</string>
+    <string name="pro_screen_tier_plus">Pro+</string>
+    <string name="pro_screen_title">FadCam Pro</string>
+    <string name="pro_screen_updates">Varased uuendused</string>
+    <string name="pro_screen_updates_desc">Saa uued versioonid umbes 60 päeva enne kõiki teisi.</string>
+    <string name="pro_screen_weather">Ilm</string>
+    <string name="pro_screen_weather_desc">Eraldi äpp, mis näeb välja nagu ilmaäpp.</string>
+    <string name="pro_screen_weather_feature">Ilmaäpp</string>
+    <string name="pro_screen_why_pro_body">FadCam Free sisaldab juba funktsioone, mille eest paljud teised äpid küsivad raha. Usume, et kasulik tarkvara ei tohiks tulla sinu privaatsuse arvelt.\n\nKui pead FadCami väärtuslikuks ja tahad meie tööd toetada, on Pro viis vastu anda ja samal ajal rohkem saada: kolm eraldiseisvat privaatset äppi, varased uuendused ja muud lisad lisaks kõigele, mida FadCam Free juba pakub.\n\nSinu toetus aitab meil FadSec Labis jätkata avatud lähtekoodiga, privaatsust esikohale seadvate äppide ja lahenduste loomist.</string>
+    <string name="pro_screen_why_pro_title">Miks siis Pro?</string>
+    <string name="pro_screen_bundle">Kolm privaatset rakendust.
+Igavesti sinu.</string>
+    <string name="pro_showcase_label">PRO-PAKETT</string>
+    <string name="pro_showcase_supporting">Paigalda kõik kolm eraldi, eluaegsete uuendustega.</string>
+    <string name="pro_showcase_meta">Eraldi paigaldused · Eluaegsed uuendused</string>
+    <string name="pro_showcase_chip_installs">Kolm iseseisvat rakendust</string>
+    <string name="pro_showcase_chip_updates">Eluaegsed uuendused sisalduvad</string>
+    <string name="pro_showcase_chip_entry">Varjatud rakenduseliidesed</string>
+    <string name="pro_showcase_soon">VARSTI</string>
+    <string name="pro_showcase_hint">Ava lukk ja uuri rakendusi.</string>
+    <string name="pro_showcase_expand_desc">Ava telefon täisekraanil</string>
+    <string name="pro_showcase_collapse_desc">Välju täisekraanilt</string>
+    <string name="pro_showcase_phone_desc">FadSec Labi seadme makett. Ekraanil on kolm Pro rakendust. Pööramiseks lohista küljele.</string>
+    <string name="pro_showcase_privacy_mark">Privaatsus disainis</string>
+    <string name="pro_showcase_notes_hint">Märkuse lisamiseks kirjuta</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Niiskus</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Tuul</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Taaskäivita</string>
+    <string name="pro_showcase_torch">Taskulamp</string>
+    <string name="pro_showcase_access_title">Kaamera ja mikrofon</string>
+    <string name="pro_showcase_access_body">Ilmaäpp kasutab selles eelvaates kaamerat ja mikrofoni. See on FadCami märkamatu teavituse tootedemo – midagi ei salvestata.</string>
+    <string name="pro_showcase_access_ok">Selge</string>
+    <string name="pro_showcase_shutting_down">Lülitan välja…</string>
+    <string name="pro_showcase_starting">Käivitan</string>
+    <string name="pro_showcase_power_menu_title">Taaskäivitada seade?</string>
+    <string name="pro_showcase_power_menu_body">See taaskäivitab eelvaate seadme.</string>
+    <string name="pro_showcase_power_menu_cancel">Tühista</string>
+    <string name="pro_showcase_recents_hint">Uuesti avamiseks puuduta</string>
+    <string name="pro_showcase_recents_empty">Viimaseid äppe pole</string>
+    <string name="pro_showcase_fullscreen_hint">Pööramiseks lohista · Äpi avamiseks puuduta</string>
+    <string name="pro_showcase_weather_line">Päikeseline · 24°</string>
+    <string name="pro_showcase_notif_now">praegu</string>
+    <string name="pro_showcase_swipe_unlock">Avamiseks pühkige üles</string>
+    <string name="fadcam_pro_price_amount">$49</string>
+    <!-- Onboarding (redesigned) -->
+    <string name="permissions_required">Mõned load</string>
+    <string name="permissions_description">FadCam vajab videote salvestamiseks ja hoidmiseks mõningaid lube.</string>
+    <string name="grant_permissions">Anna load</string>
+    <string name="permissions_note">Jätkamiseks pead andma kõik load.</string>
+    <string name="permissions_granted">Kõik load on antud. Võid alustada!</string>
+    <string name="disable_battery_optimization">Keela aku optimeerimine</string>
+    <string name="battery_optimization_disabled">Aku optimeerimine on keelatud</string>
+    <string name="onboarding_human_title">Maja reeglid</string>
+    <string name="onboarding_human_desc">Kaks kiiret asja ja oled sees. Kui ei nõustu, desinstalli FadCam kohe.</string>
+    <string name="onboarding_human_button">Lase mind sisse!</string>
+    <string name="onboarding_permissions_section">Load</string>
+    <string name="onboarding_battery_section">Aku</string>
+    <string name="onboarding_permission_granted">Antud</string>
+    <string name="onboarding_permission_required">Nõutav</string>
+    <string name="onboarding_human_agreement_responsible">Kasutan FadCami vastutustundlikult ja austan teiste privaatsust.</string>
+    <string name="onboarding_human_agreement_legal">Nõustun: %1$s. Kinnitan: %2$s.</string>
+    <string name="onboarding_terms_of_use">Kasutustingimused</string>
+    <string name="onboarding_privacy_policy">Privaatsuspoliitika</string>
+    <string name="onboarding_cred_open">Avatud lähtekood</string>
+    <string name="onboarding_cred_ads">Reklaamideta</string>
+    <string name="onboarding_cred_track">Jälitajateta</string>
+    <string name="onboarding_mini_torch">Taskulamp</string>
+    <string name="onboarding_mini_torch_desc">Taskulamp, stroboskoop ja SOS-režiimid.</string>
+    <string name="onboarding_mini_qr">QR-skanner</string>
+    <string name="onboarding_mini_qr_desc">Skaneeri QR-koode ja salvesta skaneeringud salvestistesse.</string>
+    <string name="onboarding_permissions_kicker">JUURDEPÄÄS // NÕUTAV</string>
+    <string name="onboarding_human_kicker">VANNUTUS // KASUTUSREEGLID</string>
+    <string name="onboarding_dossier_kicker">FADCAM // PRIVAATNE SALVESTI</string>
+    <string name="onboarding_dossier_title">Nr 1 taustavideo salvestaja.</string>
+    <string name="onboarding_dossier_lede">Töötab FadCami Hybrid MP4 torujuhtme jõul. Sinu salvestised peavad vastu krahhidele, tühjadele akudele ja ootamatutele väljalülitustele — esitatavad kuni viimase sekundini.</string>
+    <string name="onboarding_capabilities_kicker">FADCAM // MULTIMEEDIA KOMPLEKT</string>
+    <string name="onboarding_capabilities_title">Aeg mõned\nrakendused desinstallida.</string>
+    <string name="onboarding_capabilities_lede">FadCam teeb ka nende tööd. Jah, kõiki neid. Ilma jälitajate ja tumedate mustriteta.</string>
+    <string name="onboarding_feature_background_title">Taustasalvestus</string>
+    <string name="onboarding_feature_background_desc">Salvesta ka väljalülitatud ekraaniga, tänu krahhikindlale Hybrid MP4 tehnoloogiale.</string>
+    <string name="onboarding_feature_screen_title">Ekraanisalvestus</string>
+    <string name="onboarding_feature_screen_desc">Salvesta ekraani joonistusvahendite, kihtide ja lehtedega.</string>
+    <string name="onboarding_feature_editor_title">Videoredaktor</string>
+    <string name="onboarding_feature_editor_desc">Lõika, jaga, kärbi, dubleeri või vaigista klippe.</string>
+    <string name="onboarding_feature_motion_title">Liikumistuvastus</string>
+    <string name="onboarding_feature_motion_desc">Salvestab ainult liikumise tuvastamisel. Pausib, kui liikumine lakkab.</string>
+    <string name="onboarding_feature_forensic_title">Kohtuekspertiisi intelligentsus</string>
+    <string name="onboarding_feature_forensic_desc">Seadmes olev AI tuvastab inimesi ja objekte. Salvestatakse tõendina.</string>
+    <string name="onboarding_feature_remote_title">Kaug-CCTV</string>
+    <string name="onboarding_feature_remote_desc">Muuda telefon kinnise ringluse televisiooni (CCTV) kaameraks. Edasta otse ja juhti kaugelt.</string>
+    <string name="onboarding_feature_bodycam_solo_title">Bodycam</string>
+    <string name="onboarding_feature_bodycam_solo_desc">Kanna seda isikliku turvalisuse ja käed-vabad salvestamise jaoks.</string>
+    <string name="onboarding_feature_dashcam_title">Dashcam</string>
+    <string name="onboarding_feature_dashcam_desc">Salvesta tee või motovlogid sujuvalt videostabilisaatoriga.</string>
+    <string name="onboarding_scroll_hint">Keri, et näha rohkem</string>
+    <string name="onboarding_scroll_short">Keri</string>
+    <string name="onboarding_back">Tagasi</string>
+    <string name="onboarding_next">Edasi</string>
+    <string name="onboarding_done">Valmis</string>
+    <string name="onboarding_mini_heading">Ja me pole veel valmis.</string>
+    <string name="onboarding_mini_support">Minirakendused. Igapäevased tööriistad, otse FadCami sees.</string>
+    <string name="onboarding_mini_more">Rohkem minirakendusi tuleb varsti.</string>
+    <string name="onboarding_payoff_title">%1$d tööd. Üks FadCam.</string>
+    <string name="onboarding_payoff_support">Aeg nende lisarakendustega hüvasti jätta.</string>
+    <string name="onboarding_lite_full_note">FadCam Full asendab 10 rakendust.</string>
+    <string name="onboarding_demo_person">INIMENE</string>
+    <string name="onboarding_demo_evidence_gallery">TÕENDITE GALERII</string>
+    <string name="onboarding_demo_saved">SALVESTATUD</string>
+    <string name="onboarding_demo_car">AUTO</string>
+    <string name="onboarding_demo_knife">NUGU</string>
+    <string name="onboarding_swipe_instruction">Jätkamiseks pühki</string>
+    <string name="onboarding_camera">Kaamera</string>
+    <string name="onboarding_microphone">Mikrofon</string>
+    <string name="onboarding_storage">Salvestusruum</string>
+    <string name="onboarding_open_settings">Ava seaded</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Tere!</string>
+    <string name="zoom_lens_unavailable_banner">See telefon ei ava rakendustele oma ülilainurkkaamerat. Alla 1.0x suumimine jääb 1.0x peale.</string>
+    <string name="records_display_group_title">Kuva</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Nimetu</string>
+    <string name="faditor_rename_project">Projekti nimi</string>
+    <string name="faditor_rename_hint">Projekti nimi</string>
+    <string name="faditor_rename_action">Nimeta ümber</string>
+    <string name="faditor_rename_subtitle">Kasutatakse eksporditava faili jaoks</string>
+    <string name="faditor_rename_helper">Eksporditud video salvestatakse selle nimega.</string>
+    <string name="faditor_export_name_preview">Salvestatakse nimega: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Esituspeal ei ole klippi</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Kasuta selle rakenduse kaitsmiseks Androidis registreeritud sõrmejälge.</string>
+    <string name="applock__description_unlock_fingerprint">Puuduta sõrmejäljeandurit</string>
+    <string name="applock__create_chooser_option_fingerprint">Sõrmejälg</string>
+    <string name="applock__fingerprint_error_not_enrolled">Sõrmejälg ei ole FadCamis veel lubatud. Ava Tab Lock ja seadista see.</string>
+    <string name="applock__fingerprint_error_unrecognized">Sinu sõrmejälge ei tuvastatud.</string>
+    <string name="applock__fingerprint_error_unknown">Sõrmejäljega sisselogimist ei õnnestunud lõpetada. Proovi uuesti või seadista see Androidi seadetes.</string>
+    <string name="applock__fingerprint_error_none">Androidis ei ole veel sõrmejälge seadistatud. Lisa see Androidi seadetes ja proovi uuesti.</string>
+    <string name="applock__fingerprint_error_hardware">Sõrmejälg ei ole praegu saadaval. Seadista sõrmejälg Androidi seadetes ja proovi uuesti.</string>
+    <string name="applock__action_settings">Ava Androidi seaded</string>
+    <string name="watermark_preview_funny">Tõsiselt? :( \n    ＞﹏＜</string>
 </resources>

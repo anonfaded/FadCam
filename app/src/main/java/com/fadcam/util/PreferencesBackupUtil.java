@@ -42,7 +42,13 @@ public final class PreferencesBackupUtil {
     static {
         java.util.HashSet<String> set = new java.util.HashSet<>();
         set.add(com.fadcam.Constants.PREF_IS_RECORDING_IN_PROGRESS); // runtime
-        set.add("applock_session_unlocked"); // session cache
+        set.add("applock_session_unlocked"); // legacy session cache
+        set.add("tab_lock_unlocked_home"); // per-tab session cache
+        set.add("tab_lock_unlocked_records");
+        set.add("tab_lock_unlocked_remote");
+        set.add("tab_lock_unlocked_faditor");
+        set.add("tab_lock_unlocked_settings");
+        set.add("tab_lock_unlocked_lab");
         // Recording session state — not persistent config
         set.add(com.fadcam.Constants.PREF_RECORDING_START_TIME);
         set.add(com.fadcam.Constants.PREF_RECORDING_PAUSE_STARTED_AT);

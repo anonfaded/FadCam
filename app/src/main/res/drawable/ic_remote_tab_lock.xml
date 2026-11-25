@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Remote tab uses a PNG in the bottom dock, tinted white by
+     bottom_nav_icon_tint. Picker rows clear their ImageView tint, so this
+     wrapper bakes the same white tint for the Tab Lock options row. -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/unknown_icon0"
+    android:tint="#FFFFFFFF" />

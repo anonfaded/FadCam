@@ -168,6 +168,15 @@ public class AnimatedMaterialButton extends MaterialButton {
         int maxNeededW = (int) Math.ceil(Math.max(
                 oldStr.isEmpty() ? 0f : paint.measureText(oldStr),
                 newStr.isEmpty() ? 0f : paint.measureText(newStr)));
+        // Paint.measureText() ignores TextPaint.letterSpacing, but StaticLayout applies it.
+        // On narrow layouts the missing trailing spacing is enough to push the last glyph
+        // onto a second line (seen on the 360dp Tecno build). Account for it explicitly.
+        float letterSpacingPx = paint.getLetterSpacing() * paint.getTextSize();
+        if (letterSpacingPx > 0f) {
+            int chars = Math.max(0, Math.max(oldStr.length(), newStr.length()) - 1);
+            maxNeededW += (int) Math.ceil(letterSpacingPx * chars);
+        }
+        maxNeededW += 2; // glyph rounding guard
         int layoutW = Math.max(usableW, maxNeededW);
 
         int prefixLen = 0;
@@ -180,19 +189,26 @@ public class AnimatedMaterialButton extends MaterialButton {
             hasDiff = (prefixLen > 0 || suffixLen > 0);
         }
 
-        Layout.Alignment alignment = hasDiff
-                ? Layout.Alignment.ALIGN_NORMAL
-                : resolveLayoutAlignment();
+        // Keep the button's own alignment in both modes; forcing ALIGN_NORMAL during the
+        // slide left-aligned a centred label and snapped it back afterwards.
+        Layout.Alignment alignment = resolveLayoutAlignment();
 
+        // Resolve bidi exactly like the button's own TextView, otherwise an Arabic value
+        // is laid out in a different order here than at rest and the label jiggles.
+        android.text.TextDirectionHeuristic heuristic = textDirectionHeuristic();
         slotOldLayout = StaticLayout.Builder
                 .obtain(oldStr, 0, oldStr.length(), paint, layoutW)
                 .setAlignment(alignment)
+                .setTextDirection(heuristic)
                 .setIncludePad(getIncludeFontPadding())
+                .setMaxLines(1)
                 .build();
         slotNewLayout = StaticLayout.Builder
                 .obtain(newStr, 0, newStr.length(), paint, layoutW)
                 .setAlignment(alignment)
+                .setTextDirection(heuristic)
                 .setIncludePad(getIncludeFontPadding())
+                .setMaxLines(1)
                 .build();
 
         if (!forceFull) {
@@ -209,6 +225,14 @@ public class AnimatedMaterialButton extends MaterialButton {
             slotHasDifferentialRegions = hasDiff;
             slotDrawBaseX = getCompoundPaddingLeft() + computeHorizontalOffset(usableW,
                     oldStr.isEmpty() ? 0f : paint.measureText(oldStr));
+            int overflowW = layoutW - usableW;
+            boolean centeredAlign = alignment == Layout.Alignment.ALIGN_CENTER;
+            boolean anchoredRight = centeredAlign
+                    || ((alignment == Layout.Alignment.ALIGN_OPPOSITE)
+                        != (getLayoutDirection() == LAYOUT_DIRECTION_RTL));
+            if (overflowW > 0 && anchoredRight && !centeredAlign) {
+                slotDrawBaseX -= overflowW;
+            }
         } else {
             slotPrefixWidth = 0f;
             slotColumnWidth = layoutW;
@@ -216,6 +240,16 @@ public class AnimatedMaterialButton extends MaterialButton {
             slotNewChangedWidth = layoutW;
             slotHasDifferentialRegions = false;
             slotDrawBaseX = getCompoundPaddingLeft();
+            // Keep the text visually centred in the button's content box when the
+            // layout had to be widened for letter spacing / rounding.
+            int extraW = layoutW - usableW;
+            if (extraW > 0) {
+                if (alignment == Layout.Alignment.ALIGN_CENTER) {
+                    slotDrawBaseX -= extraW / 2f;
+                } else if (alignment == Layout.Alignment.ALIGN_OPPOSITE) {
+                    slotDrawBaseX -= extraW;
+                }
+            }
         }
 
         slotPendingFinalText = newText;
@@ -332,10 +366,12 @@ public class AnimatedMaterialButton extends MaterialButton {
         canvas.save();
         canvas.clipRect(0, top, viewW, bottom);
 
-        // Static prefix (differential mode only)
-        if (slotHasDifferentialRegions && slotPrefixWidth > 0f) {
+        // Static text left of the animated column (differential mode only).
+        // Direction-agnostic: in RTL the unchanged Arabic units sit to the LEFT of the
+        // digits, so slicing a fixed "prefix" dropped them and the label flickered.
+        if (slotHasDifferentialRegions) {
             canvas.save();
-            canvas.clipRect(slotDrawBaseX, top, colLeft, bottom);
+            canvas.clipRect(0, top, colLeft, bottom);
             canvas.translate(slotDrawBaseX, top);
             slotNewLayout.draw(canvas);
             canvas.restore();
@@ -357,9 +393,9 @@ public class AnimatedMaterialButton extends MaterialButton {
 
         canvas.restore(); // end column clip
 
-        // Static suffix (differential mode only)
+        // Static text right of the animated column (differential mode only)
         if (slotHasDifferentialRegions) {
-            int suffixL = (int) Math.ceil(colLeft + slotOldChangedWidth);
+            int suffixL = (int) Math.ceil(colRight);
             int suffixR = viewW - getCompoundPaddingRight();
             if (suffixL < suffixR) {
                 canvas.save();
@@ -399,15 +435,41 @@ public class AnimatedMaterialButton extends MaterialButton {
         return Layout.Alignment.ALIGN_NORMAL;
     }
 
+    /** Mirrors the direction the button's text uses, so animated frames match the rest state. */
+    private android.text.TextDirectionHeuristic textDirectionHeuristic() {
+        switch (getTextDirection()) {
+            case TEXT_DIRECTION_LTR:
+                return android.text.TextDirectionHeuristics.LTR;
+            case TEXT_DIRECTION_RTL:
+                return android.text.TextDirectionHeuristics.RTL;
+            case TEXT_DIRECTION_LOCALE:
+                return android.text.TextDirectionHeuristics.LOCALE;
+            case TEXT_DIRECTION_ANY_RTL:
+                return android.text.TextDirectionHeuristics.ANYRTL_LTR;
+            case TEXT_DIRECTION_FIRST_STRONG:
+            default:
+                return android.text.TextDirectionHeuristics.FIRSTSTRONG_LTR;
+        }
+    }
+
     private float computeHorizontalOffset(int availableWidth, float textWidth) {
         int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
         if (gravity == Gravity.CENTER_HORIZONTAL) {
             return Math.max(0f, (availableWidth - textWidth) / 2f);
         }
-        if (gravity == Gravity.END) {
-            return Math.max(0f, availableWidth - textWidth);
+        boolean rtl = getLayoutDirection() == LAYOUT_DIRECTION_RTL;
+        boolean alignToRight;
+        if (gravity == Gravity.RIGHT) {
+            alignToRight = true;
+        } else if (gravity == Gravity.LEFT) {
+            alignToRight = false;
+        } else if (gravity == Gravity.END) {
+            alignToRight = !rtl;
+        } else {
+            // START / default
+            alignToRight = rtl;
         }
-        return 0f;
+        return alignToRight ? Math.max(0f, availableWidth - textWidth) : 0f;
     }
 
     private static int adjustPrefixForNumericUnit(

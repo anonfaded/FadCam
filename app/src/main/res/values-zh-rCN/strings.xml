@@ -82,14 +82,6 @@
     <string name="dialog_clock_englishtime">英制日期与时间</string>
     <string name="dialog_clock_Islamic_calendar">伊斯兰历法</string>
     <string name="ui_preview_area">预览区</string>
-    <string-array name="easter_eggs_array">
-        <item>警告! 这里是限制出入区域. 启动录像以访问.</item>
-        <item>你找到了秘密按钮! 但它啥也不会做哈哈哈</item>
-        <item>快跑! 手机要爆炸了… 或者它只是需要启动录像来冷静一下.</item>
-        <item>Oh尴尬了…</item>
-        <item>你的布加迪是什么颜色的？(❁´◡`❁)</item>
-        <item>我的代码不是这么写的. 桥豆麻袋, 你想黑了我?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>免责声明</item>
         <item>FadCam会收集用户数据吗?</item>
@@ -188,14 +180,14 @@
     <string name="app_icon_preview">应用图标预览</string>
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">标签锁</string>
-    <string name="setting_applock_desc">使用PIN码锁定录像标签页，保护您的视频。\n为了您的安全，当应用进入后台或关闭时，录像标签页将自动锁定。您返回时需要再次解锁</string>
+    <string name="setting_applock_desc">使用 PIN 码、密码或指纹保护选定的标签页。受保护的标签页会在应用进入后台或关闭时重新锁定，返回时需要再次解锁。</string>
     <string name="setting_applock_configure">配置</string>
     <string name="applock_dialog_title">标签锁选项</string>
     <string name="applock_enable">启用标签锁</string>
     <string name="applock_disable">禁用标签锁</string>
     <string name="applock_set_pin">设置PIN码</string>
-    <string name="applock_change_pin">更改PIN码</string>
-    <string name="applock_remove_pin">移除PIN码</string>
+    <string name="applock_change_pin">更改锁定</string>
+    <string name="applock_remove_pin">移除锁定</string>
     <string name="applock_pin_created">PIN码创建成功</string>
     <string name="applock_pin_removed">PIN码已移除</string>
     <!-- App Lock Verification Messages -->
@@ -311,31 +303,6 @@
     <string name="update_variation_2">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;已经过时了。&lt;br&gt;而&lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt;带着新功能和错误修复等待您的体验。升级以获得更好的体验！</string>
     <string name="update_variation_3">您的应用正在使用过去的&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;版本。&lt;br&gt;而&lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt;代表着未来——更快、更智能、更闪亮。何不加入呢？</string>
     <string name="update_variation_4">&lt;font color=\'#E43C3C\'&gt;v%1$s&lt;/font&gt;已经很好地为您服务，但&lt;font color=\'#77DD77\'&gt;v%2$s&lt;/font&gt;正在召唤您！&lt;br&gt;享受最新的改进和更流畅的体验——只需点击一下。</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">右滑继续</string>
-    <string name="onboarding_select_language">选择您偏好的应用语言。</string>
-    <string name="onboarding_camera">相机</string>
-    <string name="onboarding_microphone">麦克风</string>
-    <string name="onboarding_storage">存储</string>
-    <string name="onboarding_or">或者</string>
-    <string name="onboarding_and">以及</string>
-    <string name="onboarding_open_settings">打开设置</string>
-    <string name="onboarding_intro_line1">开源软件，</string>
-    <string name="onboarding_intro_line2">无广告，</string>
-    <string name="onboarding_intro_line3">为您而设计，而非广告商。</string>
-    <string name="language_change_later_note">您可以稍后在设置中更改此项。</string>
-    <string name="permissions_required">需要权限</string>
-    <string name="permissions_description">FadCam需要访问您的相机、麦克风和存储空间来录制和保存视频。</string>
-    <string name="grant_permissions">授予权限</string>
-    <string name="permissions_note">您必须授予所有权限才能继续。</string>
-    <string name="permissions_granted">所有权限已授予！</string>
-    <string name="open_settings">打开设置</string>
-    <string name="disable_battery_optimization">禁用电池优化</string>
-    <string name="onboarding_human_title">验证您是否为人类</string>
-    <string name="onboarding_human_desc">嗯... 好吧。这些规则是不可协商的。如果您不能同意，请立即卸载FadCam。</string>
-    <string name="onboarding_human_checkbox1">我不会使用FadCam违反任何法律、侵犯他人隐私或做令人不适的事情。如果我犯错，开发者概不负责。（那是我的责任。）</string>
-    <string name="onboarding_human_checkbox2">我在使用前就已经爱上了FadCam。（非可选）</string>
-    <string name="onboarding_human_button">让我进入！</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">排序方式</string>
     <string name="sort_latest_first">最新优先</string>
@@ -526,7 +493,6 @@
     <string name="exposure_title">曝光补偿（EV）</string>
     <string name="note_from_developer_title">开发者说明</string>
     <string name="note_from_developer_subtitle">自述文件，链接 &amp; 更新</string>
-    <string name="watermark_preview_funny">真的吗？ :( \n ＞﹏＜</string>
     <string name="quick_speed_option_default">2x (默认)</string>
     <string name="quick_speed_option_custom">自定义</string>
     <string name="rename_video_hint">输入新名称</string>
@@ -811,6 +777,8 @@
     <string name="setting_video_stabilization_title">视频防抖</string>
     <string name="setting_not_supported">此设备不支持</string>
     <string name="video_stabilization_footer">通过电子防抖（EIS）和光学防抖（OIS）补偿手部晃动，让视频保持稳定。为此会对画面进行轻微裁剪。</string>
+    <string name="video_stabilization_unsupported_banner">防抖：你的土豆手机不支持。怪硬件，别怪我们。</string>
+    <string name="video_stabilization_unsupported_short">不支持</string>
     <string name="video_setting_location_embed_enabled">已启用</string>
     <string name="video_setting_location_embed_disabled">已禁用</string>
     <string name="helper_watermark_option">选择叠加内容：时间戳+品牌、仅时间戳或无</string>
@@ -846,11 +814,13 @@
     <string name="kofi_button_text">请我喝杯咖啡 (Ko-fi)</string>
     <string name="kofi_footer_text">匠心打造于 FadSecLab</string>
     <string name="choose_language">选择语言</string>
-    <string name="onboarding_human_checkbox3">我同意隐私政策</string>
-    <string name="applock_set_pin_enable">设置PIN码并启用</string>
-    <string name="applock_helper_create">使用4位数字PIN码、密码或指纹为“录制”标签页创建保护。当应用进入后台时，该标签页将自动锁定。</string>
-    <string name="applock_helper_manage_disabled">标签页锁定PIN码已设置。开启切换开关，即可在返回应用时要求输入PIN码。</string>
-    <string name="applock_helper_enabled">标签页锁定已激活。离开应用后，当再次打开“录制”标签页时将需要输入PIN码。</string>
+    <string name="applock_set_pin_enable">设置并启用</string>
+    <string name="applock_helper_create">使用 4 位 PIN 码、密码或指纹为您选择的标签页创建保护。应用进入后台时，它们会自动锁定。</string>
+    <string name="applock_helper_manage_disabled">标签页锁定 PIN 码已设置。开启后即可要求选定标签页输入 PIN 码。</string>
+    <string name="applock_helper_enabled">标签页锁定已启用。离开应用后，选定标签页需要输入 PIN 码。默认保护“录制”标签页。</string>
+    <string name="tab_lock_screen_title">已锁定</string>
+    <string name="tab_lock_screen_message">解锁以继续</string>
+    <string name="tab_lock_unlock">解锁</string>
     <string name="edit_with_faditorx">使用 Faditor X 编辑</string>
     <string name="remote_coming_soon_badge">即将推出</string>
     <string name="changelog_label">更新日志</string>
@@ -1005,7 +975,7 @@
     <string name="settings_section_app">App</string>
     <string name="storage_helper_current_custom_uri_prefix">URI:</string>
     <string name="icon_zoom_in_ligature">zoom_in</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
     <string name="arabic_date_sample_full_arabic">٧ صفر ١٤٤٧</string>
     <string name="arabic_date_sample_mixed">7 صفر 1447</string>
     <string name="arabic_date_sample_english">7 Safar 1447</string>
@@ -1088,6 +1058,7 @@
     <string name="name_your_project">为您的项目命名</string>
     <string name="project_naming_message">为您的项目起一个容易记住的名字和描述，以便整理您的录制内容</string>
     <string name="fadrec_projects">FadRec 项目</string>
+    <string name="fadrec_projects_location">项目保存在应用的私有存储空间中</string>
     <string name="delete_project">删除项目</string>
     <string name="delete_all">删除全部</string>
     <string name="new_project">新建项目</string>
@@ -1112,15 +1083,6 @@
     <string name="fadcam_pro_feature_user_icon">用户上传图标</string>
     <string name="fadcam_pro_feature_app_name">自定义应用名称</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive 云同步</string>
-    <string name="player_info_title">关于视频播放器</string>
-    <string name="player_info_content"><![CDATA[
-<b>分段式 MP4 格式</b><br/><br/>
-FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多个小片段，而不是一个完整的文件。这样做的好处是，如果在录制过程中出现问题，您只丢失最后几秒钟，而不是整个视频。<br/><br/>
-如果您视频的最后几秒看起来卡住或静止，请不要担心——这不是一个错误！当您停止录制时，当前片段可能仍在完成其循环（约 3 秒），这可能会在结尾留下一个短暂的静止画面。<br/><br/>
-<b>播放器限制</b><br/><br/>
-内置视频播放器存在一些安卓系统限制。您可能会注意到进度条或波形图看起来有些卡顿——这是正常行为，并非错误。<br/><br/>
-为了获得最流畅的播放体验，您可以使用像 VLC 这样的外部播放器。尽管如此，集成播放器在日常使用中也表现良好！
-    ]]></string>
     <string name="codec_hevc_incompatible_title">不支持 H.265 编解码器进行直播</string>
     <string name="codec_hevc_incompatible_message">📡 通过 HLS 进行直播需要 H.264 编解码器。\n\nH.265 与浏览器播放器不兼容。\n\n您想切换到 H.264 并开始录制吗？</string>
     <string name="codec_switch_and_record">切换到 H.264 并录制</string>
@@ -1399,7 +1361,6 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="digital_forensics_picker_switch_label">启用此选项</string>
 
 <!-- digital_forensics_preview_default -->
-<string name="digital_forensics_preview_default">人员 92%</string>
 
 <!-- digital_forensics_preview_subtitle -->
 <string name="digital_forensics_preview_subtitle">模拟叠加层预览，帮助用户理解标签、置信度和证据框架。</string>
@@ -2452,7 +2413,7 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="home_clock_color_option_desc">选择时钟卡片的强调/背景色</string>
 
 <!-- home_clock_customize_helper -->
-<string name="home_clock_customize_helper">更改时钟显示、颜色和小时制式。</string>
+<string name="home_clock_customize_helper">更改时钟显示、颜色、小时制式和阿拉伯日期样式。</string>
 
 <!-- home_clock_customize_title -->
 <string name="home_clock_customize_title">时钟外观</string>
@@ -3198,7 +3159,6 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     </string-array>
 
 <!-- onboarding_intro_line4 -->
-<string name="onboarding_intro_line4">开源。无广告。属于你。</string>
 
 <!-- pattern_morse_desc -->
 <string name="pattern_morse_desc">用于高级信号传输的摩斯电码模式</string>
@@ -3790,6 +3750,8 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 
 <!-- screen_rec_framerate -->
 <string name="screen_rec_framerate">帧率</string>
+    <string name="screen_rec_codec">编码格式</string>
+    <string name="note_screen_codec">选择屏幕录制编码格式\n（默认：%1$s）\n提示：H.265 (HEVC) 在相同画质下文件更小。如果此设备没有可用的 HEVC 编码器，FadCam 将自动使用 H.264 录制。</string>
 
 <!-- screen_rec_orientation -->
 <string name="screen_rec_orientation">方向</string>
@@ -3892,10 +3854,10 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <string name="stats_label_used">已用：</string>
 
 <!-- stats_label_videos -->
-<string name="stats_label_videos">视频：</string>
+<string name="stats_label_videos">文件：</string>
 
 <!-- storage_available_space -->
-<string name="storage_available_space">可用空间</string>
+<string name="storage_available_space">剩余空间</string>
 
 <!-- stream_and_save_desc -->
 <string name="stream_and_save_desc">直播并保存录制到存储</string>
@@ -3978,14 +3940,6 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
 <!-- torch_color -->
 <string name="torch_color">颜色</string>
 
-<!-- torch_error_messages -->
-<string-array name="torch_error_messages">
-        <item>手电筒正在编译……请勿等待 🖥️</item>
-        <item>相机说：今天没有闪光灯 🚦</item>
-        <item>手电筒.exe 无响应 🔦</item>
-        <item>修复延迟……开发者遇到了精神断点 lol 🧠</item>
-        <item>补丁即将推出™……开发者正在调试人生 🐛</item>
-    </string-array>
 <!-- torch_pattern_morse -->
 <string name="torch_pattern_morse">摩斯电码</string>
 
@@ -4475,6 +4429,10 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <string name="mini_apps_current_tools">当前工具</string>
     <string name="mini_apps_qr_scanner_reference">二维码扫描器参考</string>
     <string name="screen_recording_title">屏幕录制</string>
+    <string name="qs_tile_fadrec_subtitle">录制屏幕</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">录制中</string>
+    <string name="qs_tile_fadrec_paused">已暂停</string>
     <string name="screen_recording_notif_title">FadRec - 屏幕录制</string>
     <string name="screen_recording_saved">屏幕录制已保存</string>
     <string name="screen_recording_tap_to_view">点击查看您的录制内容</string>
@@ -4535,6 +4493,13 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <string name="setting_theme">主题</string>
     <string name="setting_language">语言</string>
     <string name="setting_app_icon">应用图标</string>
+    <string name="setting_splash_screen">启动画面</string>
+    <string name="splash_screen_dialog_title">选择启动画面</string>
+    <string name="splash_screen_helper">选择 FadCam 启动时显示的内容。</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">头像醒来、入睡并落入主页</string>
+    <string name="splash_style_flag">FadSec Lab 旗帜</string>
+    <string name="splash_style_flag_desc">经典旗帜启动画面</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">已启用</string>
@@ -4837,4 +4802,279 @@ FadCam 为录制使用分段式 MP4 格式。这意味着视频被保存为多�
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">在设置中显示</string>
     <string name="trash_show_in_settings_desc">在设置页面添加回收站行以便快速访问</string>
+    <string name="fadcam_full_title">FadCam 高级用户</string>
+    <string name="fadcam_full_subtitle">远程控制、运动侦测录像、取证分析等功能。试用完整版。</string>
+    <string name="github_get_on">获取于</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">你已经使用 FadCam %1$s 了</string>
+    <string name="app_usage_since_install_title">已使用 FadCam</string>
+
+
+    <string name="app_age_a_while">一段时间</string>
+    <string name="app_usage_installed_on">安装于</string>
+    <string name="pro_dossier_header">FADSEC LAB // 内部档案</string>
+    <string name="pro_dossier_eyes_only">仅限内部</string>
+    <string name="pro_dossier_subject">事由 // 升级协议</string>
+    <string name="pro_dossier_file_no">档案编号</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">权限</string>
+    <string name="pro_dossier_clearance_value">公开 / 免费版</string>
+    <string name="pro_dossier_status">状态</string>
+    <string name="pro_dossier_status_value">等待确认</string>
+    <string name="pro_dossier_ref">参考：FADSEC/PR-07</string>
+    <string name="pro_dossier_page">第 1/1 页</string>
+    <string name="pro_dossier_drag">拖动查看 // 正面</string>
+    <string name="pro_dossier_cycle">周期 %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // 行动后报告</string>
+    <string name="pro_dossier_after_stamp">简报</string>
+    <string name="pro_dossier_after_subject">事由 // 每周联络</string>
+    <string name="pro_dossier_after_status">处置</string>
+    <string name="pro_dossier_after_status_value">需要确认</string>
+    <string name="pro_dossier_after_ref">参考：FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">知道了</string>
+    <string name="pro_reminder_intro_title">趁 Pro 还没开始演</string>
+    <string name="pro_reminder_intro_subtitle">你已经使用 FadCam %1$s 了。看看 Pro 能带来什么。</string>
+    <string name="pro_reminder_title_1">我们之间有故事</string>
+    <string name="pro_reminder_title_2">Pro 开始吃醋了</string>
+    <string name="pro_reminder_title_3">猜猜谁回来了</string>
+    <string name="pro_reminder_title_4">这已经是我们的默契</string>
+    <string name="pro_reminder_title_5">请装出惊讶的样子</string>
+    <string name="pro_reminder_title_6">下周同一时间？</string>
+    <string name="pro_reminder_subtitle_1">和 FadCam 相伴 %1$s，你却还没见过 Pro。</string>
+    <string name="pro_reminder_subtitle_2">你已经使用 FadCam %1$s 了。Pro 开始觉得自己被冷落了。</string>
+    <string name="pro_reminder_subtitle_3">和 FadCam 相伴 %1$s。我回来提醒你 Pro 的事了。</string>
+    <string name="pro_reminder_subtitle_4">和 FadCam 相伴 %1$s。Pro 也想要一点关注。</string>
+    <string name="pro_reminder_subtitle_5">%1$s 过去了，我又来了。我把 Pro 也带来了。</string>
+    <string name="pro_reminder_subtitle_6">已经 %1$s 了。Pro 来打个招呼。又来了。</string>
+    <string name="pro_reminder_notification_title_1">Pro 觉得自己被冷落了</string>
+    <string name="pro_reminder_notification_title_2">小小打扰一下</string>
+    <string name="pro_reminder_notification_title_3">Pro 加入了聊天</string>
+    <string name="pro_reminder_notification_title_4">猜猜谁回来了</string>
+    <string name="pro_reminder_notification_body_1">相伴 %1$s。Pro 想跟你打个招呼。</string>
+    <string name="pro_reminder_notification_body_2">别担心，不紧急。Pro 只是来打个招呼。</string>
+    <string name="pro_reminder_notification_body_3">已经 %1$s 了。准备好快速看一眼了吗？</string>
+    <string name="pro_reminder_notification_body_4">又是我。Pro 保证这次很快。</string>
+    <string name="pro_reminder_button_continue">继续</string>
+    <string name="pro_reminder_button_countdown">%1$d 秒后继续</string>
+    <string name="pro_reminder_back_toast_1">想得美。继续按钮就在那儿。</string>
+    <string name="pro_reminder_back_toast_2">剧情反转：返回不是出口。</string>
+    <string name="pro_reminder_back_toast_3">差点就逃掉了。点一下继续吧。</string>
+    <string name="pro_reminder_after_title">升级到 Pro，我终于不会再烦你了。永远。</string>
+    <string name="pro_reminder_after_got_it">知道了</string>
+    <string name="pro_reminder_notification_channel_name">Pro 提醒</string>
+    <string name="pro_reminder_notification_channel_description">关于 FadCam Pro 的每周提醒。Pro 版本不会显示。</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="other">我 %1$d 天后回来。趁安静好好享受。</item>
+    </plurals>
+    <string name="follow_on_x">在 X 上关注</string>
+    <string name="pro_screen_active">已激活</string>
+    <string name="pro_screen_calc_desc">一个看起来像计算器的独立应用。</string>
+    <string name="pro_screen_calc_feature">计算器应用</string>
+    <string name="pro_screen_calculator">计算器</string>
+    <string name="pro_screen_claim_body">由 FadCam 独家 Hybrid MP4 管线驱动——专为 Android 定制，让录制在崩溃、电量耗尽和突然关机后仍可播放，直到最后一秒。</string>
+    <string name="pro_screen_claim_title">排名第一的后台录像应用</string>
+    <string name="pro_screen_cloud">FadDrive 同步</string>
+    <string name="pro_screen_cloud_desc">将你的录制安全备份到我们的加密云端。</string>
+    <string name="pro_screen_coming_soon_status">即将推出</string>
+    <string name="pro_screen_compare">查看包含内容</string>
+    <string name="pro_screen_compare_hint">滑动比较各版本</string>
+    <string name="pro_screen_compare_owned">你的 Pro 功能</string>
+    <string name="pro_screen_custom_icon">自定义应用图标</string>
+    <string name="pro_screen_custom_icon_desc">选择你自己的应用图标。</string>
+    <string name="pro_screen_custom_name">自定义应用名称</string>
+    <string name="pro_screen_custom_name_desc">为应用选择你自己的名称。</string>
+    <string name="pro_screen_direct_support">开发者支持</string>
+    <string name="pro_screen_direct_support_desc">在 Discord 上获得开发者的帮助。</string>
+        <string name="pro_screen_support_title">其他支持方式</string>
+    <string name="pro_screen_support_body">对 Pro 不感兴趣？你仍然可以通过 Patreon 或加密货币捐赠支持 FadCam。每一份贡献都帮助我们打造更多免费的开源软件。</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">一次性捐赠或月度会员。</string>
+    <string name="pro_screen_crypto_title">加密货币捐赠</string>
+    <string name="pro_screen_crypto_desc">通过 Discord 或电子邮件联系我们。</string>
+    <string name="pro_screen_stay_connected_title">保持联系</string>
+    <string name="pro_screen_stay_connected_body">有问题、反馈，还是只想打个招呼？我们很乐意听到你的声音。</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">电子邮件</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">FadCam 支持咨询</string>
+    <string name="pro_screen_everything">所有免费功能</string>
+    <string name="pro_screen_everything_desc">免费版中的一切均已包含。</string>
+    <string name="pro_screen_fan_desc">你相信一个开源、隐私优先的应用与解决方案的未来。</string>
+    <string name="pro_screen_fan_feature">你热爱隐私</string>
+    <string name="pro_screen_features">功能</string>
+    <string name="pro_screen_free">免费</string>
+    <string name="pro_screen_included">已包含</string>
+    <string name="pro_screen_link_error">无法打开链接。请确认有可用的浏览器后重试。</string>
+    <string name="pro_screen_navigation">探索 Pro</string>
+    <string name="pro_screen_navigation_owned">你的 Pro</string>
+    <string name="pro_screen_no_ads">无广告、无追踪</string>
+    <string name="pro_screen_no_ads_desc">无广告。无追踪。不收集崩溃日志。</string>
+    <string name="pro_screen_no_nags">没有升级提醒</string>
+    <string name="pro_screen_no_nags_desc">没有每周升级到 Pro 的提醒。</string>
+    <string name="pro_screen_not_included">未包含</string>
+    <string name="pro_screen_notes">笔记</string>
+    <string name="pro_screen_notes_desc">一个看起来像笔记应用的独立应用。</string>
+    <string name="pro_screen_notes_feature">笔记应用</string>
+    <string name="pro_screen_notification">通知图标</string>
+    <string name="pro_screen_notification_desc">为录制通知选择不同的图标。</string>
+    <string name="pro_screen_owned_status">%1$s · 已在此应用中激活</string>
+    <string name="pro_screen_owned_subtitle">此版本已包含</string>
+    <string name="pro_screen_owned_title">%1$s 已激活</string>
+    <string name="pro_screen_price_detail">3 个私有 Pro 应用 · 终身更新</string>
+    <string name="pro_screen_price_terms">一次性购买</string>
+    <string name="pro_screen_privacy_body">我们相信隐私应属于每个人。因此 FadCam 没有广告、跟踪器或数据收集。我们甚至不会自动收集崩溃报告。\n\n我们 100% 开源，你可以看到应用如何运作。核心隐私功能永远不会被付费墙锁住。</string>
+    <string name="pro_screen_privacy_title">隐私，今天。明天。永远。</string>
+    <string name="pro_screen_purchase">解锁 Pro Bundle</string>
+    <string name="pro_screen_purchase_caption">打开 FadSec Lab 商店</string>
+    <string name="pro_screen_scroll_hint">滚动查看更多</string>
+    <string name="pro_screen_scroll_top">回到顶部</string>
+    <string name="pro_screen_soon">即将</string>
+    <string name="pro_screen_soon_legend">Pro+ 和 Lab 等级即将推出。</string>
+    <string name="pro_screen_status_description">%1$s: %2$s</string>
+    <string name="pro_screen_tier">Pro</string>
+    <string name="pro_screen_tier_lab">Lab</string>
+    <string name="pro_screen_tier_plus">Pro+</string>
+    <string name="pro_screen_title">FadCam Pro</string>
+    <string name="pro_screen_updates">抢先更新</string>
+    <string name="pro_screen_updates_desc">比其他人提前约 60 天获得新版本。</string>
+    <string name="pro_screen_weather">天气</string>
+    <string name="pro_screen_weather_desc">一个看起来像天气应用的独立应用。</string>
+    <string name="pro_screen_weather_feature">天气应用</string>
+    <string name="pro_screen_why_pro_body">FadCam 免费版已经包含许多其他应用收费的功能。我们相信好用的软件不应以你的隐私为代价。\n\n如果你觉得 FadCam 有价值并想支持我们的工作，Pro 是一种回馈方式，同时还能获得更多：三个独立的私有应用、抢先更新和其他额外内容，外加 FadCam 免费版已有的一切。\n\n你的支持也帮助我们在 FadSec Lab 继续打造开源、隐私优先的应用与解决方案。</string>
+    <string name="pro_screen_why_pro_title">那为什么还要 Pro？</string>
+    <string name="pro_screen_bundle">三款私密应用。
+永久属于你。</string>
+    <string name="pro_showcase_label">PRO 套装</string>
+    <string name="pro_showcase_supporting">三款应用分别安装，含终身更新。</string>
+    <string name="pro_showcase_meta">独立安装 · 终身更新</string>
+    <string name="pro_showcase_chip_installs">三款独立应用</string>
+    <string name="pro_showcase_chip_updates">含终身更新</string>
+    <string name="pro_showcase_chip_entry">伪装应用界面</string>
+    <string name="pro_showcase_soon">即将推出</string>
+    <string name="pro_showcase_hint">解锁并探索应用。</string>
+    <string name="pro_showcase_expand_desc">全屏打开手机</string>
+    <string name="pro_showcase_collapse_desc">退出全屏</string>
+    <string name="pro_showcase_phone_desc">FadSec Lab 设备模型。屏幕显示三款 Pro 应用。向侧面拖动可旋转手机。</string>
+    <string name="pro_showcase_privacy_mark">隐私源于设计</string>
+    <string name="pro_showcase_notes_hint">输入以添加备注</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">湿度</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">风力</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">重启</string>
+    <string name="pro_showcase_torch">手电筒</string>
+    <string name="pro_showcase_access_title">摄像头和麦克风</string>
+    <string name="pro_showcase_access_body">天气应用在此预览中正在使用你的摄像头和麦克风。这是 FadCam 隐蔽通知的产品演示——实际上不会录制任何内容。</string>
+    <string name="pro_showcase_access_ok">知道了</string>
+    <string name="pro_showcase_shutting_down">正在关机…</string>
+    <string name="pro_showcase_starting">正在启动</string>
+    <string name="pro_showcase_power_menu_title">重启设备？</string>
+    <string name="pro_showcase_power_menu_body">这将重启预览设备。</string>
+    <string name="pro_showcase_power_menu_cancel">取消</string>
+    <string name="pro_showcase_recents_hint">点按重新打开</string>
+    <string name="pro_showcase_recents_empty">没有最近的应用</string>
+    <string name="pro_showcase_fullscreen_hint">拖动旋转 · 点按应用</string>
+    <string name="pro_showcase_weather_line">晴 · 24°</string>
+    <string name="pro_showcase_notif_now">刚刚</string>
+    <string name="pro_showcase_swipe_unlock">上滑解锁</string>
+    <string name="fadcam_pro_price_amount">$49</string>
+    <!-- Onboarding (redesigned) -->
+    <string name="permissions_required">几项权限</string>
+    <string name="permissions_description">FadCam 需要几项权限来录制并保存你的视频。</string>
+    <string name="grant_permissions">授予权限</string>
+    <string name="permissions_note">你必须授予所有权限才能继续。</string>
+    <string name="permissions_granted">已授予所有权限。你可以开始了！</string>
+    <string name="disable_battery_optimization">关闭电池优化</string>
+    <string name="battery_optimization_disabled">电池优化已关闭</string>
+    <string name="onboarding_human_title">使用守则</string>
+    <string name="onboarding_human_desc">两件小事，之后即可进入。如果不同意，请立即卸载 FadCam。</string>
+    <string name="onboarding_human_button">让我进去！</string>
+    <string name="onboarding_permissions_section">权限</string>
+    <string name="onboarding_battery_section">电池</string>
+    <string name="onboarding_permission_granted">已授予</string>
+    <string name="onboarding_permission_required">必需</string>
+    <string name="onboarding_human_agreement_responsible">我会负责任地使用 FadCam，并尊重他人的隐私。</string>
+    <string name="onboarding_human_agreement_legal">我同意%1$s，并确认%2$s。</string>
+    <string name="onboarding_terms_of_use">使用条款</string>
+    <string name="onboarding_privacy_policy">隐私政策</string>
+    <string name="onboarding_cred_open">开源</string>
+    <string name="onboarding_cred_ads">无广告</string>
+    <string name="onboarding_cred_track">无追踪器</string>
+    <string name="onboarding_mini_torch">手电筒</string>
+    <string name="onboarding_mini_torch_desc">手电筒、频闪和 SOS 模式。</string>
+    <string name="onboarding_mini_qr">二维码扫描器</string>
+    <string name="onboarding_mini_qr_desc">扫描二维码并将扫描结果保存到录像。</string>
+    <string name="onboarding_permissions_kicker">访问 // 必需</string>
+    <string name="onboarding_human_kicker">誓言 // 使用规则</string>
+    <string name="onboarding_dossier_kicker">FADCAM // 私人录像机</string>
+    <string name="onboarding_dossier_title">排名第一的后台视频录像机。</string>
+    <string name="onboarding_dossier_lede">由 FadCam 的 Hybrid MP4 管线驱动。你的录像能经受崩溃、电量耗尽和突然关机——可播放到最后一秒。</string>
+    <string name="onboarding_capabilities_kicker">FADCAM // 多媒体套件</string>
+    <string name="onboarding_capabilities_title">是时候卸载\n几个应用了。</string>
+    <string name="onboarding_capabilities_lede">FadCam 也能完成它们的工作。是的，全部都能。没有任何追踪器或暗黑模式。</string>
+    <string name="onboarding_feature_background_title">后台录制</string>
+    <string name="onboarding_feature_background_desc">即使屏幕关闭也能录制，采用抗崩溃的 Hybrid MP4 技术。</string>
+    <string name="onboarding_feature_screen_title">屏幕录制</string>
+    <string name="onboarding_feature_screen_desc">使用绘图工具、图层和页面录制屏幕。</string>
+    <string name="onboarding_feature_editor_title">视频编辑器</string>
+    <string name="onboarding_feature_editor_desc">裁剪、分割、切边、复制或静音片段。</string>
+    <string name="onboarding_feature_motion_title">运动检测</string>
+    <string name="onboarding_feature_motion_desc">仅在检测到运动时录制。运动停止时暂停。</string>
+    <string name="onboarding_feature_forensic_title">取证智能</string>
+    <string name="onboarding_feature_forensic_desc">设备端 AI 检测人物和物体，并保存为证据。</string>
+    <string name="onboarding_feature_remote_title">远程监控</string>
+    <string name="onboarding_feature_remote_desc">将手机变成闭路电视（CCTV）摄像头。实时直播并远程控制。</string>
+    <string name="onboarding_feature_bodycam_solo_title">随身摄像头</string>
+    <string name="onboarding_feature_bodycam_solo_desc">佩戴它，保障个人安全并实现免手录制。</string>
+    <string name="onboarding_feature_dashcam_title">行车记录仪</string>
+    <string name="onboarding_feature_dashcam_desc">借助视频防抖，流畅录制道路或机车视频。</string>
+    <string name="onboarding_scroll_hint">滚动查看更多</string>
+    <string name="onboarding_scroll_short">滚动</string>
+    <string name="onboarding_back">返回</string>
+    <string name="onboarding_next">下一步</string>
+    <string name="onboarding_done">完成</string>
+    <string name="onboarding_mini_heading">还没结束。</string>
+    <string name="onboarding_mini_support">迷你应用。日常工具，直接内置在 FadCam 中。</string>
+    <string name="onboarding_mini_more">更多迷你应用即将推出。</string>
+    <string name="onboarding_payoff_title">%1$d 项工作。一个 FadCam。</string>
+    <string name="onboarding_payoff_support">是时候和那些多余的应用说再见了。</string>
+    <string name="onboarding_lite_full_note">FadCam Full 可替代 10 个应用。</string>
+    <string name="onboarding_demo_person">人物</string>
+    <string name="onboarding_demo_evidence_gallery">证据图库</string>
+    <string name="onboarding_demo_saved">已保存</string>
+    <string name="onboarding_demo_car">汽车</string>
+    <string name="onboarding_demo_knife">刀具</string>
+    <string name="onboarding_swipe_instruction">滑动以继续</string>
+    <string name="onboarding_camera">相机</string>
+    <string name="onboarding_microphone">麦克风</string>
+    <string name="onboarding_storage">存储</string>
+    <string name="onboarding_open_settings">打开设置</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">嗨！</string>
+    <string name="zoom_lens_unavailable_banner">此手机未向应用开放超广角摄像头。低于 1.0x 的变焦将保持在 1.0x。</string>
+    <string name="records_display_group_title">显示</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">未命名</string>
+    <string name="faditor_rename_project">项目名称</string>
+    <string name="faditor_rename_hint">项目名称</string>
+    <string name="faditor_rename_action">重命名</string>
+    <string name="faditor_rename_subtitle">用于导出的文件</string>
+    <string name="faditor_rename_helper">导出的视频将以该名称保存。</string>
+    <string name="faditor_export_name_preview">保存为：%1$s.mp4</string>
+    <string name="faditor_select_segment_first">播放头下没有剪辑</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">使用在 Android 中录入的指纹来保护此应用。</string>
+    <string name="applock__description_unlock_fingerprint">触摸指纹传感器</string>
+    <string name="applock__create_chooser_option_fingerprint">指纹</string>
+    <string name="applock__fingerprint_error_not_enrolled">FadCam 尚未启用指纹。请打开标签页锁定并进行设置。</string>
+    <string name="applock__fingerprint_error_unrecognized">无法识别您的指纹。</string>
+    <string name="applock__fingerprint_error_unknown">指纹登录未能完成。请重试，或在 Android 设置中进行设置。</string>
+    <string name="applock__fingerprint_error_none">Android 中尚未设置指纹。请在 Android 设置中添加指纹后重试。</string>
+    <string name="applock__fingerprint_error_hardware">指纹当前不可用。请在 Android 设置中设置指纹后重试。</string>
+    <string name="applock__action_settings">打开 Android 设置</string>
+    <string name="watermark_preview_funny">真的吗？ :( \n ＞﹏＜</string>
 </resources>

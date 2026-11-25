@@ -65,15 +65,10 @@ public class LockCreationViewController extends AppLockViewController
         if (activity == null)
             return;
 
-        FingerprintLockService fingerprintService = AppLock.getInstance(activity)
-                .getLockService(FingerprintLockService.class);
-
-        if (!fingerprintService.isEnrollmentEligible(activity)) {
-            setupPINCreation();
-
-            return;
-        }
-
+        // Always show every enrollment method. Password and PIN never depend on
+        // hardware; fingerprint reports its own eligibility when it is tapped
+        // (including offering the system enrollment settings). Skipping the
+        // chooser here was what made Tab Lock silently PIN-only.
         setupCreationChooser();
     }
 

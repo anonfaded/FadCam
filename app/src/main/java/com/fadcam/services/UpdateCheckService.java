@@ -15,9 +15,17 @@ import java.util.regex.Pattern;
 public class UpdateCheckService {
 
     private static final String TAG = "UpdateCheckService";
-    private static final String ORG = "anonfaded";
-    private static final String FREE_REPO = "FadCam";
-    private static final String PRO_REPO = "FadCamPro";
+    private static android.content.Context appContext;
+    private static final java.util.concurrent.locks.ReentrantLock cacheLock =
+            new java.util.concurrent.locks.ReentrantLock();
+
+    /** Called once from FadCamApplication so the result can be cached/persisted. */
+    public static void init(android.content.Context ctx) {
+        appContext = ctx.getApplicationContext();
+    }
+    private static final String ORG = com.fadcam.BuildConfig.UPDATE_ORG;
+    private static final String FREE_REPO = com.fadcam.BuildConfig.UPDATE_REPO;
+    private static final String PRO_REPO = com.fadcam.BuildConfig.UPDATE_PRO_REPO;
     private static final String FREE_FEED = feedUrl(FREE_REPO);
     private static final String PRO_FEED = feedUrl(PRO_REPO);
 
@@ -49,7 +57,11 @@ public class UpdateCheckService {
         public boolean hasAnyUpdate() { return hasStable || hasBeta || hasPro; }
     }
 
-    public static UpdateCheckResult getLastResult() { return lastResult; }
+    public static UpdateCheckResult getLastResult() {
+        UpdateCheckResult r = lastResult;
+        if (r == null) r = loadCachedResult();
+        return r;
+    }
 
     // ── Public API ───────────────────────────────────────────────────
 
@@ -78,21 +90,64 @@ public class UpdateCheckService {
         boolean hasBeta = freeLatest.betaVer != null
                 && isNewerThan(currentVersion, freeLatest.betaVer);
         // Pro: show when pro stable exists and is newer than free stable
-        boolean hasPro = proLatest.stableVer != null
+        boolean hasPro = proLatest != null && proLatest.stableVer != null
                 && (freeLatest.stableVer == null
                     || isNewerThan(freeLatest.stableVer, proLatest.stableVer));
 
         UpdateCheckResult result = new UpdateCheckResult(
                 freeLatest.stableVer, freeLatest.stableUrl,
                 freeLatest.betaVer, freeLatest.betaUrl,
-                proLatest.stableVer, proLatest.stableUrl,
+                proLatest != null ? proLatest.stableVer : null,
+                proLatest != null ? proLatest.stableUrl : null,
                 hasStable, hasBeta, hasPro, false);
         lastResult = result;
+        saveCachedResult(result);
 
         FLog.d(TAG, "Result: stable=" + hasStable + "(" + freeLatest.stableVer
                 + ") beta=" + hasBeta + "(" + freeLatest.betaVer
-                + ") pro=" + hasPro + "(" + proLatest.stableVer + ")");
+                + ") pro=" + hasPro + "(" + (proLatest != null ? proLatest.stableVer : "none") + ")");
         return result;
+    }
+
+    // ── Result cache (prefs) ─────────────────────────────────────────
+    // The result survives process restarts, so the sidebar/badge/sheet can always
+    // show the last known state even inside the hourly re-check window.
+
+    private static void saveCachedResult(UpdateCheckResult r) {
+        if (appContext == null) return;
+        try {
+            org.json.JSONObject o = new org.json.JSONObject();
+            o.put("sv", r.stableVersion); o.put("su", r.stableUrl);
+            o.put("bv", r.betaVersion); o.put("bu", r.betaUrl);
+            o.put("pv", r.proVersion); o.put("pu", r.proUrl);
+            o.put("hs", r.hasStable); o.put("hb", r.hasBeta); o.put("hp", r.hasPro);
+            o.put("err", r.errorOccurred);
+            appContext.getSharedPreferences("fadcam_update_cache", android.content.Context.MODE_PRIVATE)
+                    .edit().putString("result", o.toString()).apply();
+        } catch (Exception e) {
+            FLog.w(TAG, "saveCachedResult failed", e);
+        }
+    }
+
+    private static UpdateCheckResult loadCachedResult() {
+        if (appContext == null) return null;
+        try {
+            String json = appContext.getSharedPreferences("fadcam_update_cache",
+                    android.content.Context.MODE_PRIVATE).getString("result", null);
+            if (json == null) return null;
+            org.json.JSONObject o = new org.json.JSONObject(json);
+            UpdateCheckResult r = new UpdateCheckResult(
+                    o.optString("sv", null), o.optString("su", null),
+                    o.optString("bv", null), o.optString("bu", null),
+                    o.optString("pv", null), o.optString("pu", null),
+                    o.optBoolean("hs", false), o.optBoolean("hb", false),
+                    o.optBoolean("hp", false), o.optBoolean("err", true));
+            lastResult = r;
+            return r;
+        } catch (Exception e) {
+            FLog.w(TAG, "loadCachedResult failed", e);
+            return null;
+        }
     }
 
     // ── HTTP ─────────────────────────────────────────────────────────

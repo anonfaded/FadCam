@@ -175,6 +175,42 @@ app:layout_constraintTop_toTopOf="parent"
             </LinearLayout>
             <View style="@style/SettingsDivider" />
 
+            <!-- Splash Screen Row (compact) -->
+            <LinearLayout
+                android:id="@+id/row_splash_screen"
+                style="@style/SettingsGroupRow"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/ic_photo"
+                    android:tint="@android:color/darker_gray"/>
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/setting_splash_screen"
+                    android:textStyle="bold"
+                    android:textSize="15sp"
+                    android:textColor="?attr/colorHeading"/>
+                <TextView
+                    android:id="@+id/value_splash_screen"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="13sp"/>
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginStart="8dp"
+                    android:src="@drawable/ic_arrow_right"
+                    android:tint="@android:color/darker_gray"/>
+            </LinearLayout>
+            <View style="@style/SettingsDivider" />
+
             <!-- Eye Color Row (compact) -->
             <LinearLayout
                 android:id="@+id/row_eye_color"

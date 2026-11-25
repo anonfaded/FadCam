@@ -37,6 +37,41 @@ public class Utils {
     }
 
     /**
+     * Backward-compatible Bundle parcelable read.
+     *
+     * <p>The typed {@code Bundle.getParcelable(String, Class)} overload only exists from API 33.
+     * Calling it on an older device throws {@link NoSuchMethodError} at runtime (it compiles fine
+     * against a newer SDK), so every read has to go through this guard.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends android.os.Parcelable> T getParcelableCompat(
+            android.os.Bundle bundle, String name, Class<T> clazz) {
+        if (bundle == null) return null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            return bundle.getParcelable(name, clazz);
+        }
+        @SuppressWarnings("deprecation")
+        Object legacy = bundle.getParcelable(name);
+        return (T) legacy;
+    }
+
+    /**
+     * Backward-compatible Bundle parcelable-list read; {@code getParcelableArrayList(String,
+     * Class)} is API 33+ for the same reason as {@link #getParcelableCompat}.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends android.os.Parcelable> java.util.ArrayList<T> getParcelableArrayListCompat(
+            android.os.Bundle bundle, String name, Class<T> clazz) {
+        if (bundle == null) return null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            return bundle.getParcelableArrayList(name, clazz);
+        }
+        @SuppressWarnings("deprecation")
+        java.util.ArrayList<?> legacy = bundle.getParcelableArrayList(name);
+        return (java.util.ArrayList<T>) legacy;
+    }
+
+    /**
      * Backward-compatible Serializable read (the untyped
      * {@link android.content.Intent#getSerializableExtra(String)} was deprecated
      * in API 33 in favor of the typed overload).

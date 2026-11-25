@@ -25,8 +25,7 @@
         android:paddingStart="4dp"
         android:paddingEnd="12dp"
         android:background="@drawable/editor_top_bar_bg"
-        android:elevation="2dp"
-        android:fitsSystemWindows="true">
+        android:elevation="2dp">
 
         <!-- Close button (Material Icon) -->
         <TextView
@@ -41,19 +40,48 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/faditor_close" />
 
-        <!-- Title -->
-        <TextView
-            android:id="@+id/editor_title"
+        <!-- Project name: the export is named after this, so it is editable in place. -->
+        <LinearLayout
+            android:id="@+id/editor_title_group"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_weight="1"
-            android:text="@string/faditor_editor_title"
-            android:textColor="#FFFFFF"
-            android:textSize="17sp"
-            android:textStyle="bold"
+            android:orientation="horizontal"
             android:gravity="center"
-            android:singleLine="true"
-            android:ellipsize="middle" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@string/faditor_rename_project">
+
+            <TextView
+                android:id="@+id/editor_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:textAlignment="center"
+                android:text="@string/faditor_editor_title"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/btn_rename_project"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="6dp"
+                android:layout_gravity="center_vertical"
+                android:minWidth="28dp"
+                android:includeFontPadding="false"
+                android:gravity="center"
+                android:fontFamily="@font/materialicons"
+                android:text="edit"
+                android:textColor="@color/pro_gold"
+                android:textSize="16sp"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
 
         <!-- Export button (compact icon) -->
         <TextView
@@ -63,7 +91,7 @@
             android:gravity="center"
             android:fontFamily="@font/materialicons"
             android:text="upload"
-            android:textColor="#FF4CAF50"
+            android:textColor="@color/pro_gold"
             android:textSize="24sp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/faditor_export" />
@@ -79,26 +107,11 @@
         android:clipToPadding="false"
         android:background="@android:color/black">
 
-        <androidx.media3.ui.PlayerView
-            android:id="@+id/player_view"
+        <SurfaceView
+            android:id="@+id/player_surface"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_gravity="center"
-            app:show_buffering="when_playing"
-            app:surface_type="texture_view"
-            app:resize_mode="fit"
-            app:use_controller="false" />
-
-        <!-- Image preview overlay for still image clips -->
-        <ImageView
-            android:id="@+id/image_preview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:scaleType="fitCenter"
-            android:background="@android:color/black"
-            android:visibility="gone"
-            android:contentDescription="@string/faditor_add_asset_image" />
+            android:layout_gravity="center" />
 
         <!-- Crop overlay (on top of player, hidden by default) -->
         <com.fadcam.ui.faditor.crop.CropOverlayView
@@ -250,17 +263,19 @@
             android:overScrollMode="always"
             android:fadingEdge="none">
 
+            <!-- No side margins: the timeline is a full-bleed surface. The 8dp inset
+                 that used to live here made the ruler and the clip row stop short of
+                 the screen edges. -->
             <com.fadcam.ui.faditor.timeline.EditorTimelineView
                 android:id="@+id/editor_timeline_view"
-                android:layout_width="wrap_content"
-                android:layout_height="140dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
+                android:layout_width="match_parent"
+                android:layout_height="140dp" />
         </HorizontalScrollView>
 
 
         <!-- Bottom toolbar (scrollable) -->
         <HorizontalScrollView
+            android:id="@+id/tool_toolbar_scroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none"
@@ -268,6 +283,7 @@
             android:fillViewport="true">
 
             <LinearLayout
+                android:id="@+id/tool_toolbar_row"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -297,11 +313,16 @@
 
                 <TextView
                     android:id="@+id/tool_trim_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_trim"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -327,11 +348,16 @@
 
                 <TextView
                     android:id="@+id/tool_speed_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_speed"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -357,11 +383,16 @@
 
                 <TextView
                     android:id="@+id/tool_mute_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_sound"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -387,11 +418,16 @@
 
                 <TextView
                     android:id="@+id/tool_rotate_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_rotate"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -417,11 +453,16 @@
 
                 <TextView
                     android:id="@+id/tool_flip_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_flip"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -447,11 +488,16 @@
 
                 <TextView
                     android:id="@+id/tool_crop_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_crop"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -477,11 +523,16 @@
 
                 <TextView
                     android:id="@+id/tool_canvas_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_canvas"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -507,11 +558,16 @@
 
                 <TextView
                     android:id="@+id/tool_audio_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_audio"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -537,11 +593,16 @@
 
                 <TextView
                     android:id="@+id/tool_split_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_split"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -567,11 +628,16 @@
 
                 <TextView
                     android:id="@+id/tool_delete_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_delete"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -597,11 +663,16 @@
 
                 <TextView
                     android:id="@+id/tool_duplicate_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_duplicate"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -627,11 +698,16 @@
 
                 <TextView
                     android:id="@+id/tool_add_asset_label"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/faditor_tool_add"
                     android:textColor="#888888"
                     android:textSize="11sp"
+                    android:gravity="center"
+                    android:textAlignment="center"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
         </LinearLayout>
@@ -721,7 +797,7 @@
                 android:gravity="center"
                 android:fontFamily="@font/materialicons"
                 android:text="check"
-                android:textColor="#FF4CAF50"
+                android:textColor="@color/pro_gold"
                 android:textSize="28sp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
@@ -754,7 +830,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/materialicons"
                 android:text="sync"
-                android:textColor="#4CAF50"
+                android:textColor="@color/pro_gold"
                 android:textSize="36sp"
                 android:layout_marginBottom="16dp" />
 
@@ -763,7 +839,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:indeterminate="true"
-                app:indicatorColor="#4CAF50"
+                app:indicatorColor="@color/pro_gold"
                 app:trackColor="#333333"
                 app:trackCornerRadius="4dp"
                 app:trackThickness="6dp" />
@@ -838,7 +914,7 @@
                 android:gravity="center"
                 android:fontFamily="@font/materialicons"
                 android:text="check"
-                android:textColor="#4CAF50"
+                android:textColor="@color/pro_gold"
                 android:textSize="24sp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:visibility="invisible"
@@ -862,7 +938,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/materialicons"
                 android:text="movie"
-                android:textColor="#4CAF50"
+                android:textColor="@color/pro_gold"
                 android:textSize="48sp"
                 android:layout_marginBottom="24dp" />
 
@@ -885,7 +961,7 @@
                 android:indeterminate="false"
                 android:max="100"
                 android:progress="0"
-                app:indicatorColor="#4CAF50"
+                app:indicatorColor="@color/pro_gold"
                 app:trackColor="#333333"
                 app:trackCornerRadius="4dp"
                 app:trackThickness="8dp" />

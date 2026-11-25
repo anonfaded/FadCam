@@ -34,19 +34,42 @@ public class AdvancedSettingsFragment extends Fragment {
         }
         View motionLab = view.findViewById(R.id.row_motion_lab);
         if (motionLab != null) {
-            motionLab.setOnClickListener(v -> OverlayNavUtil.show(
-                requireActivity(),
-                new MotionLabSettingsFragment(),
-                "MotionLabSettingsFragment"
-            ));
+            if (com.fadcam.BuildConfig.LITE_EDITION) {
+                // Motion Lab and Digital Forensics are Full-only. The main Settings
+                // screen already hides them; this screen is a second entrance and was
+                // left open, so Lite could reach Motion Lab from Advanced.
+                motionLab.setVisibility(android.view.View.GONE);
+                    // The divider belongs to this row; hide it too so Lite cannot show
+                    // an orphan separator.
+                    View motionDivider = view.findViewById(R.id.divider_motion_lab);
+                    if (motionDivider != null) {
+                        motionDivider.setVisibility(android.view.View.GONE);
+                    }
+            } else {
+                motionLab.setOnClickListener(v -> {
+                    // Resolved through the feature registry so Lite never references the
+                    // Full-only fragment class.
+                    androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()
+                            .createMotionLabFragment();
+                    if (f != null) {
+                        OverlayNavUtil.show(requireActivity(), f, "MotionLabSettingsFragment");
+                    }
+                });
+            }
         }
         View digitalForensics = view.findViewById(R.id.row_digital_forensics);
         if (digitalForensics != null) {
-            digitalForensics.setOnClickListener(v -> OverlayNavUtil.show(
-                requireActivity(),
-                new DigitalForensicsSettingsFragment(),
-                "DigitalForensicsSettingsFragment"
-            ));
+            if (com.fadcam.BuildConfig.LITE_EDITION) {
+                digitalForensics.setVisibility(android.view.View.GONE);
+            } else {
+                digitalForensics.setOnClickListener(v -> {
+                    androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()
+                            .createForensicsSettingsFragment();
+                    if (f != null) {
+                        OverlayNavUtil.show(requireActivity(), f, "DigitalForensicsSettingsFragment");
+                    }
+                });
+            }
         }
         View thermalGuardian = view.findViewById(R.id.row_thermal_guardian);
         if (thermalGuardian != null) {

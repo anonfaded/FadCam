@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lite Pro page: localized product copy. Kept in the Lite flavor so the Full
+     locale files never need to know about the Lite product line. -->
+<resources>
+    <string name="pro_screen_title">FadCam Lite Pro</string>
+    <string name="fadcam_pro_title">FadCam Lite Pro</string>
+    <string name="pro_screen_tier">Lite Pro</string>
+    <string name="pro_screen_price_detail">3 款私密 Lite Pro 应用 · 终身更新</string>
+    <string name="pro_screen_owned_subtitle">三款应用均已解锁。</string>
+</resources>

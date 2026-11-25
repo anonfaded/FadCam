@@ -12,12 +12,66 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
     @Override
     public void onCreate() {
         super.onCreate();
+        installCrashLogger();
+        // Must run before Log.init(): the HTML log sink does not exist this early, which is
+        // exactly why the previous exit reason used to be written into the void.
+        DiagnosticsStore.captureExitReasons(this);
+        // Init the HTML sink here, not in HomeFragment: the service can be started directly
+        // from a shortcut/notification before any UI exists, and those are exactly the logs
+        // (encoder setup, #176) we need in the dossier.
+        Log.init(this);
+        if (BuildConfig.ENABLE_PRO_REMINDER) {
+            com.fadcam.pro.ProReminderManager.onProcessStart(this);
+            com.fadcam.pro.ProReminderScheduler.ensureScheduled(this);
+        }
+        com.fadcam.services.UpdateCheckService.init(this);
         ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
         // Room DB open + invalidation observer registration is deferred off the
         // main thread: cold start must not block on SQLite open. The observer
         // still catches post-kill index writes (invocation is on Room's own
         // background invalidation thread either way).
         new Thread(this::registerSelfHealingScanObserver, "selfheal-observer").start();
+
+        // Tab Lock unlocked state belongs to one foreground process session only.
+        // If the process died while a tab was unlocked, a persisted flag would let
+        // the next launch skip that tab's prompt. Reset every tab before UI reads it.
+        SharedPreferencesManager.getInstance(this).clearTabLockUnlocks();
+
+        // Motion Lab's live monitor flag is transient UI state. If the process was
+        // killed while the monitor was open, the persisted flag would otherwise stay
+        // true forever and make the service encode a JPEG every 900 ms for a screen
+        // nobody is looking at.
+        SharedPreferencesManager.getInstance(this).setMotionDebugUiActive(false);
+
+        // Start the object model now, when a feature needs it, rather than when a
+        // recording starts. The load runs on its own thread and never blocks startup.
+        com.fadcam.motion.domain.detector.ObjectDetectionRuntime.sync(this);
+    }
+
+    /**
+     * Captures uncaught exceptions into the app's own log (FLog) and a durable
+     * file, then delegates to the platform handler so logcat still records the
+     * crash. The file is ingested into the debug dossier on the next launch, so
+     * remote testers never need adb.
+     */
+    private void installCrashLogger() {
+        final Thread.UncaughtExceptionHandler previous =
+                Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                throwable.printStackTrace(new java.io.PrintWriter(sw));
+                String stack = sw.toString();
+                FLog.e("CrashLogger", "FATAL EXCEPTION on thread '" + thread.getName()
+                        + "'\n" + stack);
+                // filesDir, not cacheDir: a cache wipe would erase the only record of the crash.
+                DiagnosticsStore.recordCrash(this, thread.getName(), stack);
+            } catch (Exception ignored) {
+            }
+            if (previous != null) {
+                previous.uncaughtException(thread, throwable);
+            }
+        });
     }
 
     /**
@@ -52,8 +106,8 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
 
     @Override
     public void onStop(@androidx.annotation.NonNull LifecycleOwner owner) {
-        // App is in background, reset AppLock session
-        SharedPreferencesManager.getInstance(this).setAppLockSessionUnlocked(false);
+        // App is in background, re-lock every protected tab.
+        SharedPreferencesManager.getInstance(this).clearTabLockUnlocks();
         Intent intent = new Intent(this, com.fadcam.services.RecordingService.class);
         intent.setAction("ACTION_APP_BACKGROUND");
         startService(intent);

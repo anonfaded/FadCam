@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Expand control: a hairline square that belongs to the sheet, with a soft champagne
+     press ripple. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#33C6A66A">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#0FC6A66A" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/dossier_hairline" />
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+</ripple>

@@ -17,6 +17,7 @@ public abstract class Constants {
         "video_resolution_width";
     public static final String PREF_RECORDS_SORT = "records_sort_option"; // LATEST_FIRST|OLDEST_FIRST|SMALLEST_FILES|LARGEST_FILES
     public static final String PREF_RECORDS_GRID_SPAN = "records_grid_span"; // 1|2|3|4|5
+    public static final String PREF_RECORDS_HIDE_METADATA = "records_hide_metadata";
     public static final String PREF_VIDEO_RESOLUTION_HEIGHT =
         "video_resolution_height";
     public static final String PREF_VIDEO_FRAME_RATE = "video_frame_rate";
@@ -217,6 +218,24 @@ public abstract class Constants {
         "motion_debug_max_delta";
     public static final String EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED =
         "motion_debug_global_suppressed";
+    public static final String EXTRA_MOTION_DEBUG_ANALYSIS_WIDTH =
+        "motion_debug_analysis_width";
+    public static final String EXTRA_MOTION_DEBUG_ANALYSIS_HEIGHT =
+        "motion_debug_analysis_height";
+    public static final String EXTRA_MOTION_DEBUG_BACKEND =
+        "motion_debug_backend";
+    public static final String EXTRA_MOTION_DEBUG_FPS =
+        "motion_debug_fps";
+    public static final String EXTRA_MOTION_DEBUG_BLOB_COUNT =
+        "motion_debug_blob_count";
+    public static final String EXTRA_MOTION_DEBUG_CENTER_X =
+        "motion_debug_center_x";
+    public static final String EXTRA_MOTION_DEBUG_CENTER_Y =
+        "motion_debug_center_y";
+    public static final String EXTRA_MOTION_DEBUG_BLOB_RECTS =
+        "motion_debug_blob_rects";
+    public static final String EXTRA_MOTION_DEBUG_MIN_BLOB_RATIO =
+        "motion_debug_min_blob_ratio";
     public static final String BROADCAST_CAMERA_ERROR = "CAMERA_ACCESS_ERROR";
 
     public static final String INTENT_ACTION_STOP_RECORDING =
@@ -383,6 +402,12 @@ public abstract class Constants {
     public static final String PREF_SCREEN_RECORDING_RESOLUTION = "screen_recording_resolution"; // e.g. "1920x1080"
     public static final String PREF_SCREEN_RECORDING_FPS = "screen_recording_fps";
     public static final String PREF_SCREEN_RECORDING_BITRATE = "screen_recording_bitrate";
+    /**
+     * Screen recording video codec ({@link com.fadcam.VideoCodec#name()}).
+     * Separate from {@link #PREF_VIDEO_CODEC} on purpose: screen capture has different
+     * encoder constraints than camera capture, so the two are configured independently.
+     */
+    public static final String PREF_SCREEN_RECORDING_CODEC = "screen_recording_codec";
     public static final String PREF_SCREEN_RECORDING_ORIENTATION = "screen_recording_orientation";
     public static final int DEFAULT_SCREEN_RECORDING_WIDTH = 1920; // FHD
     public static final int DEFAULT_SCREEN_RECORDING_HEIGHT = 1080; // FHD
@@ -455,6 +480,13 @@ public abstract class Constants {
         "RECORDING_PAUSE_STARTED_AT";
     public static final String INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION =
         "RECORDING_ACCUMULATED_PAUSED_DURATION";
+    /**
+     * True when the recording file is paused but the camera/encoder keep running
+     * for the live stream. The phone can keep showing the live preview instead of
+     * the paused overlay.
+     */
+    public static final String INTENT_EXTRA_RECORDING_LIVE_VIEW_ACTIVE =
+        "RECORDING_LIVE_VIEW_ACTIVE";
     public static final String INTENT_EXTRA_TORCH_STATE = "torch_state";
     public static final String INTENT_EXTRA_TORCH_STATE_CHANGED =
         "TORCH_STATE_CHANGED";
@@ -559,6 +591,9 @@ public abstract class Constants {
         "com.fadcam.EXTRA_ERROR_MESSAGE";
     public static final String EXTRA_STACK_TRACE =
         "com.fadcam.EXTRA_STACK_TRACE";
+    /** Per-attempt encoder report (codec, format, exception) attached to a start failure. */
+    public static final String EXTRA_ENCODER_DIAGNOSTICS =
+        "com.fadcam.EXTRA_ENCODER_DIAGNOSTICS";
 
     // Broadcast action sent by RecordingService when a video segment is complete
     // (due to splitting)
@@ -619,6 +654,12 @@ public abstract class Constants {
 
     // ----- App Icon Preference -----
     public static final String PREF_APP_ICON = "app_icon";
+
+    // ----- Splash Screen Preference -----
+    public static final String PREF_SPLASH_STYLE = "pref_splash_style";
+    public static final String SPLASH_STYLE_AVATAR = "avatar";
+    public static final String SPLASH_STYLE_FLAG = "flag";
+    public static final String SPLASH_STYLE_DEFAULT = SPLASH_STYLE_AVATAR;
 
     // ----- Avatar Eye Color Preference -----
     /** Stored as an ARGB int; 0 = white / no tint (default). */
@@ -683,7 +724,11 @@ public abstract class Constants {
     public static final String PREF_MOTION_MODE_ENABLED = "pref_motion_mode_enabled";
     public static final String PREF_MOTION_TRIGGER_MODE = "pref_motion_trigger_mode"; // any_motion|person_confirmed
     public static final String PREF_MOTION_SENSITIVITY = "pref_motion_sensitivity"; // 0-100
-    public static final String PREF_MOTION_ANALYSIS_FPS = "pref_motion_analysis_fps"; // 2/3/5
+    public static final String PREF_MOTION_ANALYSIS_FPS = "pref_motion_analysis_fps";
+    /** Minimum gap between object-detection runs. 0 means "decide from measured speed". */
+    public static final String PREF_MOTION_AI_INTERVAL_MS = "pref_motion_ai_interval_ms";
+    /** Analyzer frame height: 480, 720 or 1080. Width follows the camera aspect. */
+    public static final String PREF_MOTION_ANALYSIS_RESOLUTION = "pref_motion_analysis_resolution"; // 2/3/5
     public static final String PREF_MOTION_DEBOUNCE_MS = "pref_motion_debounce_ms";
     public static final String PREF_MOTION_POST_ROLL_MS = "pref_motion_post_roll_ms";
     public static final String PREF_MOTION_PRE_ROLL_SECONDS = "pref_motion_pre_roll_seconds";

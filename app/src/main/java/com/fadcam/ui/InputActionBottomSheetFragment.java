@@ -36,6 +36,10 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
     private static final String ARG_INPUT_VALUE = "input_value";
     private static final String ARG_INPUT_HINT = "input_hint";
     private static final String ARG_HELPER_TEXT = "helper_text";
+    /** Confirmation rows are destructive (red) unless a caller says otherwise. */
+    private static final String ARG_DESTRUCTIVE = "destructive";
+    /** Optional live "will be saved as …" preview: a string format with one %1$s. */
+    private static final String ARG_FILENAME_PREVIEW = "filename_preview";
     private static final String MODE_PREVIEW = "preview";
     private static final String MODE_RESET = "reset";
     private static final String MODE_INPUT = "input";
@@ -104,6 +108,16 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
      */
     public static InputActionBottomSheetFragment newConfirm(String title, String actionTitle, String actionSubtitle,
             int actionIconRes, @Nullable String helperText) {
+        return newConfirm(title, actionTitle, actionSubtitle, actionIconRes, helperText, true);
+    }
+
+    /**
+     * Confirmation sheet whose action row can be styled as a normal row. Destructive
+     * actions (delete/reset) keep the red tint; anything that just proceeds — an export,
+     * for example — should not look like it is about to delete something.
+     */
+    public static InputActionBottomSheetFragment newConfirm(String title, String actionTitle,
+            String actionSubtitle, int actionIconRes, @Nullable String helperText, boolean destructive) {
         InputActionBottomSheetFragment f = new InputActionBottomSheetFragment();
         Bundle b = new Bundle();
         b.putString(ARG_MODE, MODE_CONFIRM);
@@ -111,6 +125,7 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         b.putString(ARG_ACTION_TITLE, actionTitle);
         b.putString(ARG_ACTION_SUBTITLE, actionSubtitle);
         b.putInt(ARG_ACTION_ICON, actionIconRes);
+        b.putBoolean(ARG_DESTRUCTIVE, destructive);
         if (helperText != null) b.putString(ARG_HELPER_TEXT, helperText);
         f.setArguments(b);
         return f;
@@ -132,6 +147,19 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         b.putString(ARG_ACTION_SUBTITLE, actionSubtitle);
         b.putInt(ARG_ACTION_ICON, actionIconRes);
         f.setArguments(b);
+        return f;
+    }
+
+    /**
+     * Input sheet that also previews the sanitised filename under the field, so the
+     * user sees exactly what the export will be called while they type.
+     */
+    public static InputActionBottomSheetFragment newFileNameInput(String title,
+            String initialValue, String hint, String actionTitle, String actionSubtitle,
+            int actionIconRes, String helperText, String previewFormat) {
+        InputActionBottomSheetFragment f = newInput(title, initialValue, hint,
+                actionTitle, actionSubtitle, actionIconRes, helperText);
+        f.getArguments().putString(ARG_FILENAME_PREVIEW, previewFormat);
         return f;
     }
 
@@ -220,8 +248,9 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         int actionIcon = args != null ? args.getInt(ARG_ACTION_ICON, R.drawable.ic_delete) : R.drawable.ic_delete;
         final String finalActionTitle = actionTitle != null ? actionTitle : getString(R.string.prefs_reset_label);
         final String finalActionSubtitle = actionSubtitle != null ? actionSubtitle : "";
-        // Destructive styling for confirm-only (used for delete/reset actions)
-        parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, true, v -> {
+        // Destructive styling is opt-out; see newConfirm(...).
+        boolean destructive = args == null || args.getBoolean(ARG_DESTRUCTIVE, true);
+        parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, destructive, v -> {
             // Dismiss first for snappy UX, then callback
             try { dismiss(); } catch (Exception ignored) {}
             if (callbacks != null) callbacks.onResetConfirmed();
@@ -239,12 +268,46 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         input.setPadding(dp(12), dp(10), dp(12), dp(10));
         input.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.white));
         input.setHintTextColor(0xFF777777);
+        applyThemedInputAccent(input);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.topMargin = dp(8);
         lp.leftMargin = dp(16);
         lp.rightMargin = dp(16);
         parent.addView(input, lp);
+
+        // Live "saved as" preview: the export name is derived from what is typed, so
+        // show the derived form rather than letting the file surprise the user.
+        Bundle previewArgs = getArguments();
+        final String previewFormat = previewArgs != null
+                ? previewArgs.getString(ARG_FILENAME_PREVIEW) : null;
+        if (previewFormat != null) {
+            final TextView preview = new TextView(requireContext());
+            preview.setTextSize(12f);
+            preview.setTextColor(0xFF9E9E9E);
+            preview.setPadding(dp(16), dp(6), dp(16), dp(2));
+            LinearLayout.LayoutParams previewLp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            parent.addView(preview, previewLp);
+            final java.util.function.Function<String, String> slug =
+                    com.fadcam.ui.faditor.util.FileNameSlug::slugify;
+            final Runnable refresh = () -> {
+                String safe = slug.apply(input.getText().toString());
+                if (safe.isEmpty()) {
+                    preview.setVisibility(View.GONE);
+                } else {
+                    preview.setVisibility(View.VISIBLE);
+                    preview.setText(String.format(previewFormat, safe));
+                }
+            };
+            input.addTextChangedListener(new android.text.TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+                @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+                @Override public void afterTextChanged(android.text.Editable s) { refresh.run(); }
+            });
+            refresh.run();
+        }
+
         parent.addView(makeDivider());
 
         // Allow callers to override the action row's title/subtitle/icon via arguments
@@ -258,6 +321,9 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
 
         parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, false, v -> {
             String val = input.getText().toString().trim();
+            // Close first, always. The caller may reload a list or save a project, and
+            // the sheet must never be left hovering over a completed action.
+            dismissAllowingStateLoss();
             if (callbacks != null) {
                 callbacks.onInputConfirmed(val);
             }
@@ -294,7 +360,9 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         // ── Summary chip (rounded, matches picker banner style) ──────
         TextView summaryChip = new TextView(requireContext());
         summaryChip.setText(getString(R.string.prefs_preview_ready, entries.size()));
-        summaryChip.setTextColor(0xFF4CAF50);
+        android.util.TypedValue accentValue = new android.util.TypedValue();
+        requireContext().getTheme().resolveAttribute(R.attr.homeRailAccent, accentValue, true);
+        summaryChip.setTextColor(accentValue.data);
         summaryChip.setTextSize(13f);
         summaryChip.setGravity(android.view.Gravity.CENTER_VERTICAL);
         summaryChip.setPadding(dp(14), dp(10), dp(14), dp(10));
@@ -441,6 +509,7 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         input.setPadding(dp(12), dp(10), dp(12), dp(10));
         input.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), android.R.color.white));
         input.setHintTextColor(0xFF777777);
+        applyThemedInputAccent(input);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.topMargin = dp(8);
@@ -510,7 +579,13 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         TextView primary = new TextView(requireContext());
         primary.setText(title);
         primary.setTypeface(primary.getTypeface(), android.graphics.Typeface.BOLD);
-        primary.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorHeading));
+        android.util.TypedValue heading = new android.util.TypedValue();
+        if (requireContext().getTheme().resolveAttribute(R.attr.colorHeading, heading, true)) {
+            primary.setTextColor(heading.data);
+        } else {
+            primary.setTextColor(androidx.core.content.ContextCompat.getColor(
+                    requireContext(), R.color.colorHeading));
+        }
         primary.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 15);
         TextView secondary = new TextView(requireContext());
         secondary.setText(subtitle);
@@ -534,6 +609,21 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
             } catch (Exception ignored) {}
         }
         return row;
+    }
+
+    /**
+     * Gives a text field the hosting theme's accent for its cursor, handles and
+     * selection. A bottom sheet is its own window and Material falls back to its
+     * purple defaults when nothing resolves the accent.
+     */
+    private void applyThemedInputAccent(@NonNull EditText input) {
+        android.util.TypedValue accent = new android.util.TypedValue();
+        if (!requireContext().getTheme().resolveAttribute(R.attr.colorHeading, accent, true)) {
+            return;
+        }
+        // ONLY the selection highlight. Tinting the background made the whole field
+        // look like a red/gold error state; the field keeps its own dark surface.
+        input.setHighlightColor((accent.data & 0x00FFFFFF) | 0x4D000000);
     }
 
     private int dp(int v) {

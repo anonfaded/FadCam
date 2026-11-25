@@ -1,4 +1,101 @@
 <resources>
+    <!-- Always-dark floating host for the weekly Pro reminder. The showcase card supplies
+         the visible surface; the window itself stays transparent. -->
+    <style name="ProReminderDialogTheme" parent="FadCamProTheme">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:colorAccent">@color/pro_card_champagne</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="ProDossierHeader">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textSize">9sp</item>
+        <item name="android:textColor">@color/dossier_olive_bright</item>
+        <item name="android:letterSpacing">0.18</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="ProDossierLabel">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textSize">9sp</item>
+        <item name="android:textColor">@color/dossier_muted</item>
+        <item name="android:letterSpacing">0.12</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="ProDossierValue">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textSize">11.5sp</item>
+        <item name="android:textColor">@color/dossier_ink</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <!-- Showcase card heading: the mono face stays, but bold gives it a clear step above
+         the description without enlarging it out of the narrow column. -->
+    <style name="ProDossierCardTitle" parent="ProDossierValue">
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <!-- Showcase card description: a touch warmer and lighter than the shared body text
+         so it stays readable against the charcoal tile. -->
+    <style name="ProDossierCardBody" parent="ProDossierBody">
+        <item name="android:textColor">@color/onboarding_card_desc</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+    </style>
+
+    <style name="ProDossierStamp">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textSize">8.5sp</item>
+        <item name="android:textColor">@color/dossier_red</item>
+        <item name="android:letterSpacing">0.14</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:background">@drawable/bg_pro_dossier_stamp</item>
+        <item name="android:paddingStart">7dp</item>
+        <item name="android:paddingEnd">7dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+    </style>
+
+    <style name="ProDossierTitle">
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">25sp</item>
+        <item name="android:textColor">@color/dossier_ink</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:lineSpacingExtra">1dp</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="ProDossierBody">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/dossier_muted</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+    </style>
+
+    <style name="ProDossierButton" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/dossier_olive_bright</item>
+        <item name="cornerRadius">2dp</item>
+        <item name="android:textColor">@color/dossier_paper</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+
     <style name="CustomBottomSheetStyle" parent="Widget.MaterialComponents.BottomSheet.Modal">
         <item name="background">@drawable/picker_bottom_sheet_gradient_bg_dynamic</item>
         <item name="backgroundTint">@null</item>
@@ -6,7 +103,28 @@
 
     <style name="CustomBottomSheetDialogTheme" parent="Theme.MaterialComponents.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
-        <item name="android:navigationBarColor">@color/black</item>
+        <!-- The dialog theme is a full theme, so it does not automatically inherit the app's
+             Material palette. Without these, controls inside sheets fall back to the default
+             Material purple. -->
+        <item name="colorPrimary">?attr/colorButton</item>
+        <item name="colorPrimaryVariant">?attr/colorButton</item>
+        <item name="colorSecondary">?attr/colorHeading</item>
+        <item name="colorSecondaryVariant">?attr/colorHeading</item>
+        <item name="colorAccent">?attr/colorHeading</item>
+        <item name="android:colorAccent">?attr/colorHeading</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+        <item name="colorSurface">?attr/colorDialog</item>
+        <item name="colorOnSurface">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">@android:color/darker_gray</item>
+        <item name="colorControlActivated">?attr/colorHeading</item>
+        <item name="colorControlNormal">@android:color/darker_gray</item>
+        <!-- The sheet is its own window; Material only goes edge-to-edge in it when this is
+             enabled and the navigation bar colour is translucent. An opaque colour here made
+             every sheet stop above the hidden navigation bar. -->
+        <item name="enableEdgeToEdge">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
@@ -17,7 +135,14 @@
 
     <style name="CustomSideSheetDialogTheme" parent="ThemeOverlay.Material3.SideSheetDialog">
         <item name="sideSheetModalStyle">@style/CustomSideSheetStyle</item>
-        <item name="android:navigationBarColor">@color/black</item>
+        <item name="colorPrimary">?attr/colorButton</item>
+        <item name="colorSecondary">?attr/colorHeading</item>
+        <item name="colorAccent">?attr/colorHeading</item>
+        <item name="android:colorAccent">?attr/colorHeading</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorOnSecondary">@android:color/white</item>
+        <item name="enableEdgeToEdge">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
@@ -151,28 +276,69 @@
         <item name="android:windowAnimationStyle">@null</item>
     </style>
 
-    <!-- FadCam Pro Activity Theme with Ubuntu Font -->
+    <!-- Isolated Pro palette: native feedback must not inherit Material's purple defaults. -->
     <style name="FadCamProTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="android:fontFamily">@font/ubuntu_regular</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:windowBackground">@color/pro_background</item>
+        <item name="android:colorAccent">@color/pro_gold</item>
+        <item name="colorAccent">@color/pro_gold</item>
+        <item name="colorPrimary">@color/pro_gold</item>
+        <item name="colorPrimaryVariant">@color/pro_gold</item>
+        <item name="colorSecondary">@color/pro_gold</item>
+        <item name="colorOnPrimary">@color/pro_background</item>
+        <item name="colorOnSecondary">@color/pro_background</item>
+        <item name="colorSurface">@color/pro_surface</item>
+        <item name="colorOnSurface">@color/pro_text</item>
+        <item name="colorControlHighlight">#28E8C77B</item>
+        <item name="android:statusBarColor">#01000000</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:navigationBarColor">@color/pro_background</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
-    <!-- Faditor Editor dark immersive theme -->
+    <!-- What's New: fixed dark dossier surface with Pro gold accents. The activity runs on
+         its own theme so Material ripples/links never fall back to the stock purple baseline. -->
+    <style name="Theme.FadCam.WhatsNew" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/pro_gold</item>
+        <item name="colorPrimaryVariant">@color/pro_gold</item>
+        <item name="colorSecondary">@color/pro_gold</item>
+        <item name="colorSecondaryVariant">@color/pro_card_champagne</item>
+        <item name="colorAccent">@color/pro_gold</item>
+        <item name="colorOnPrimary">@color/pro_background</item>
+        <item name="colorOnSecondary">@color/pro_background</item>
+        <item name="colorSurface">@color/pro_surface</item>
+        <item name="colorOnSurface">@color/pro_text</item>
+        <item name="android:colorBackground">@color/pro_background</item>
+        <item name="android:windowBackground">@color/pro_background</item>
+        <item name="android:textColorPrimary">@color/pro_text</item>
+        <item name="android:textColorSecondary">@color/pro_text_secondary</item>
+        <item name="colorControlHighlight">#28E8C77B</item>
+        <item name="android:statusBarColor">#01000000</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/pro_background</item>
+    </style>
+
+    <!-- Faditor Editor dark immersive theme. Shares the Pro screen's champagne-gold
+         palette so the editor reads as part of the premium Faditor suite. -->
     <style name="Theme.FadCam.FaditorEditor" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorSurface">#FF1A1A1A</item>
+        <item name="colorSurface">@color/pro_surface</item>
         <item name="colorSurfaceVariant">#FF252525</item>
-        <item name="colorOnSurface">#FFFFFFFF</item>
-        <item name="colorOnSurfaceVariant">#FFAAAAAA</item>
-        <item name="colorPrimary">#FF4CAF50</item>
-        <item name="colorOnPrimary">#FF000000</item>
-        <item name="colorSecondaryContainer">#FF2E7D32</item>
-        <item name="android:windowBackground">#FF0D0D0D</item>
+        <item name="colorOnSurface">@color/pro_text</item>
+        <item name="colorOnSurfaceVariant">@color/pro_text_secondary</item>
+        <item name="colorPrimary">@color/pro_gold</item>
+        <item name="colorOnPrimary">@color/pro_background</item>
+        <item name="colorSecondary">@color/pro_card_champagne</item>
+        <item name="colorSecondaryContainer">@color/pro_card_badge_surface</item>
+        <item name="android:windowBackground">@color/pro_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">#FF1A1A1A</item>
+        <item name="android:navigationBarColor">@color/pro_surface</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <!-- Required for picker_bottom_sheet and InputActionBottomSheetFragment -->
         <item name="pickerTextSecondary">#999999</item>
         <item name="pickerTextPrimary">@android:color/white</item>
-        <item name="colorHeading">#FF4CAF50</item>
+        <item name="colorHeading">@color/pro_gold</item>
         <item name="pickerGradientStart">@color/black</item>
         <item name="pickerGradientMid">#FF1A1A1A</item>
         <item name="pickerGradientEnd">#FF2A2A2A</item>
@@ -205,4 +371,43 @@
         <item name="android:textColor">?attr/homeRailTextSecondary</item>
     </style>
 
+
+    <!-- ── Pro screen: privacy bullet rows ────────────────────────────── -->
+    <style name="ProPrivacyPoint">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">11.5sp</item>
+        <item name="android:textColor">#E3D3A6</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:drawablePadding">8dp</item>
+    </style>
+
+    <!-- Dark, edge-to-edge intro. A light DayNight theme makes some OEMs paint the
+         three-button navigation bar white when it peeks in. -->
+    <style name="Theme.FadCam.Onboarding" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Keep the Material 3 dialog, but tint every M3 accent to the dossier
+             palette so ripples and surfaces never fall back to the purple baseline. -->
+        <item name="colorPrimary">@color/dossier_olive_bright</item>
+        <item name="colorOnPrimary">@color/dossier_paper</item>
+        <item name="colorPrimaryContainer">@color/dossier_olive</item>
+        <item name="colorOnPrimaryContainer">@color/dossier_ink</item>
+        <item name="colorSecondary">@color/dossier_olive_bright</item>
+        <item name="colorOnSecondary">@color/dossier_paper</item>
+        <item name="colorSecondaryContainer">@color/dossier_olive</item>
+        <item name="colorOnSecondaryContainer">@color/dossier_ink</item>
+        <item name="colorControlHighlight">#33C6A66A</item>
+        <item name="colorSurface">#10100F</item>
+        <item name="colorOnSurface">@color/dossier_ink</item>
+        <item name="colorSurfaceVariant">#1A1A18</item>
+        <item name="colorOnSurfaceVariant">@color/dossier_muted</item>
+        <item name="colorSurfaceContainer">#10100F</item>
+        <item name="colorSurfaceContainerHigh">#141413</item>
+        <item name="colorSurfaceContainerHighest">#181816</item>
+        <item name="colorOutline">@color/onboarding_card_stroke</item>
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
 </resources>

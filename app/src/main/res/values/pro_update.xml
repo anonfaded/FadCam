@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ProUpdateDialogTheme" parent="CustomBottomSheetDialogTheme">
+        <item name="bottomSheetStyle">@style/ProUpdateSheetStyle</item>
+        <item name="colorPrimary">@color/pro_gold</item>
+        <item name="colorSecondary">@color/pro_gold</item>
+        <item name="colorAccent">@color/pro_gold</item>
+        <item name="android:colorAccent">@color/pro_gold</item>
+        <item name="colorControlHighlight">#26E8C77B</item>
+        <item name="android:colorControlHighlight">#26E8C77B</item>
+        <item name="colorSurface">@color/pro_background</item>
+        <item name="colorOnSurface">@color/pro_text</item>
+        <item name="android:navigationBarColor">@color/pro_background</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="ProUpdateSheetStyle" parent="Widget.MaterialComponents.BottomSheet.Modal">
+        <item name="backgroundTint">@color/pro_background</item>
+        <item name="shapeAppearanceOverlay">@style/ProUpdateSheetShape</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+
+    <style name="ProUpdateSheetShape" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">24dp</item>
+        <item name="cornerSizeTopRight">24dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <style name="ProUpdatePrimaryButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:minHeight">52dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/pro_background</item>
+        <item name="backgroundTint">@color/pro_gold</item>
+        <item name="rippleColor">#40765A22</item>
+        <item name="cornerRadius">16dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:elevation">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <style name="ProUpdateSecondaryButton" parent="ProUpdatePrimaryButton">
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textColor">@color/pro_text_secondary</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="rippleColor">#26E8C77B</item>
+    </style>
+
+    <string name="pro_update_product_full">FadCam Pro</string>
+    <string name="pro_update_product_lite">FadCam Lite Pro</string>
+    <string name="pro_update_eyebrow">PRO RELEASE</string>
+    <string name="pro_update_title">New in %1$s</string>
+    <string name="pro_update_free_description">A newer Pro release is available. View the release details and access options for %1$s, a separate app.</string>
+    <string name="pro_update_owner_description">A newer release is available for %1$s. View the release details and download options.</string>
+    <string name="pro_update_installed">Installed version</string>
+    <string name="pro_update_available">Available Pro release</string>
+    <string name="pro_update_browser_hint">Opens the release page in your browser.</string>
+    <string name="pro_update_open_release">View release</string>
+    <string name="pro_update_not_now">Not now</string>
+    <string name="pro_update_link_unavailable">The release link is unavailable. Close this sheet and check for updates again.</string>
+    <string name="pro_update_browser_unavailable">The release page could not open. Enable a browser and try again.</string>
+</resources>

@@ -7,5 +7,9 @@
         android:startColor="?attr/pickerGradientStart"
         android:centerColor="?attr/pickerGradientMid"
         android:endColor="?attr/pickerGradientEnd" />
-    <corners android:radius="12dp" />
+    <!-- Square bottom corners so the sheet's own surface reaches the bottom edge;
+         rounded top corners keep the floating-sheet silhouette. -->
+    <corners
+        android:topLeftRadius="20dp"
+        android:topRightRadius="20dp" />
 </shape>

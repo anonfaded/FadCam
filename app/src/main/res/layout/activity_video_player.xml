@@ -38,7 +38,7 @@
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:padding="16dp"
         android:layout_margin="16dp"
-        android:contentDescription="@string/player_info_title"
+        android:contentDescription="@string/video_menu_info"
         app:tint="@android:color/white" />
         
     <!-- Reset zoom button (appears when video is zoomed) -->

@@ -81,7 +81,7 @@
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Digunakan: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
-    <string name="stats_label_videos">Video:</string>
+    <string name="stats_label_videos">File:</string>
     <string name="stats_label_used">Digunakan:</string>
     <string name="button_start">Mulai</string>
     <string name="button_pause">Jeda</string>
@@ -162,7 +162,7 @@
     <string name="recording_controls_title">AF · Eksposur · Zoom</string>
     <string name="mainpage_camera_front">Kamera Depan</string>
     <string name="mainpage_camera_back">Kamera Belakang</string>
-    <string name="storage_available_space">Ruang tersedia</string>
+    <string name="storage_available_space">Sisa ruang</string>
     <string name="recording_estimated_time">Waktu perkiraan</string>
     <string name="recording_time_left">Sisa waktu</string>
     <string name="recording_elapsed_time">Waktu berjalan</string>
@@ -240,7 +240,7 @@
     <string name="home_time_left_color_helper">Pilih warna aksen untuk baris sisa waktu. Merah adalah default.</string>
     <string name="home_time_left_color_choice_desc">Warna aksen %1$s</string>
     <string name="home_clock_customize_title">Tampilan Jam</string>
-    <string name="home_clock_customize_helper">Ubah tampilan jam, warna, dan format jam.</string>
+    <string name="home_clock_customize_helper">Ubah tampilan jam, warna, format jam, dan gaya tanggal Arab.</string>
     <string name="home_clock_display_option">Tampilan jam</string>
     <string name="home_clock_display_option_desc">Pilih baris tanggal dan waktu mana yang muncul di kartu jam</string>
     <string name="home_clock_display_helper">Pilih tata letak yang digunakan oleh kartu jam.</string>
@@ -617,14 +617,6 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="ae_lock_helper">Saat diaktifkan, eksposur otomatis dikunci pada kecerahan saat ini sehingga kamera tidak akan menyesuaikan ulang eksposur selama perekaman. Gunakan tile Eksposur untuk melakukan penyesuaian eksposur secara manual.</string>
     <string name="ae_lock_switch_label">Kunci AE</string>
     <string name="exposure_title">Kompensasi Eksposur (EV)</string>
-    <string-array name="easter_eggs_array">
-        <item>Alert! This is a restricted area. Start recording to gain access.</item>
-        <item>You\'ve found the secret button! It does nothing lol</item>
-        <item>Hurry! The system is about to explode… or maybe it just needs a recording to calm down.</item>
-        <item>Well, this is awkward now…</item>
-        <item>What color is your Bugatti?</item>
-        <item>I was not programmed to do what you are doing. Wait, are you trying to hack me?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>DISCLAIMER</item>
         <item>Does FadCam collect any user data?</item>
@@ -679,7 +671,6 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="array_watermark_time_fadcam">Waktu dengan Fadcam</string>
     <string name="array_watermark_timeonly">Cap waktu</string>
     <string name="array_watermark_nomark">Tidak ada Watermark</string>
-    <string name="watermark_preview_funny">Masa iya? :( \n ＞﹏＜</string>
     <string name="toast_video_not_found">Error: Video tidak ditemukan</string>
     <string name="quick_speed_title">Kecepatan Cepat</string>
     <string name="quick_speed_option_default">2x (Default)</string>
@@ -1052,13 +1043,6 @@ Tips: Dengan H.265 (HEVC), Anda dapat menggunakan sekitar setengah bitrate H.264
     <string name="widget_customize_action_label">Kustomisasi</string>
     <string name="widget_customize_action_subtitle">Opsi waktu, tanggal, tema</string>
     <!-- Torch Error Messages -->
-    <string-array name="torch_error_messages">
-        <item>Torch is compiling... please don\'t wait 🖥️</item>
-        <item>Camera says: No flash today 🚦</item>
-        <item>Torch.exe not responding 🔦</item>
-        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
-        <item>Patch coming soon™... Developer is debugging life 🐛</item>
-    </string-array>
     <string name="more_options">Opsi Lainnya</string>
     <string name="records_options_title">Opsi Rekaman</string>
     <string name="setting_theme_title">Tema Aplikasi</string>
@@ -1338,6 +1322,8 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="setting_video_stabilization_title">Stabilisasi video</string>
     <string name="setting_not_supported">Tidak didukung di perangkat ini</string>
     <string name="video_stabilization_footer">Menjaga rekaman video tetap stabil dengan mengimbangi getaran tangan melalui stabilisasi elektronik (EIS) dan optik (OIS). Sebagian kecil bingkai dipotong untuk mencapai hal ini.</string>
+    <string name="video_stabilization_unsupported_banner">Stabilisasi: tidak didukung di ponsel kentangmu. Salahkan perangkat kerasnya, bukan kami.</string>
+    <string name="video_stabilization_unsupported_short">Tidak didukung</string>
     <string name="video_setting_location_embed_enabled">Diaktifkan</string>
     <string name="video_setting_location_embed_disabled">Dinonaktifkan</string>
     <string name="helper_watermark_option">Pilih konten overlay: stempel waktu + merek, stempel waktu saja, atau tidak ada.</string>
@@ -1501,24 +1487,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <!-- Fix End: Add onboarding toggle strings -->
 
     <string name="choose_language">Pilih Bahasa</string>
-    <string name="language_change_later_note">Anda dapat mengubahnya nanti di Pengaturan.</string>
-
-    <string name="permissions_required">Izin Diperlukan</string>
-    <string name="permissions_description">FadCam memerlukan akses ke kamera, mikrofon, dan penyimpanan Anda untuk merekam dan menyimpan video.</string>
-    <string name="grant_permissions">Berikan Izin</string>
-    <string name="permissions_note">Anda harus memberikan semua izin untuk melanjutkan.</string>
-    <string name="permissions_granted">Semua izin diberikan!</string>
-
-    <string name="open_settings">Buka Pengaturan</string>
-
-    <string name="disable_battery_optimization">Nonaktifkan Optimisasi Baterai</string>
-
-    <string name="onboarding_human_title">Verifikasi jika Anda manusia</string>
-    <string name="onboarding_human_desc">Hmmmm... baiklah. Aturan ini tidak bisa ditawar. Jika Anda tidak bisa menyetujui, silakan copot FadCam sekarang.</string>
-    <string name="onboarding_human_checkbox1">Saya tidak akan menggunakan FadCam untuk melanggar hukum, menginvasi privasi siapapun, atau menjadi orang mencurigakan. Pengembang tidak bertanggung jawab jika saya melakukan kesalahan. (Itu tanggung jawab saya.)</string>
-    <string name="onboarding_human_checkbox2">Saya sudah mencintai FadCam bahkan sebelum menggunakannya. (Tidak opsional)</string>
-    <string name="onboarding_human_checkbox3">Saya menyetujui Kebijakan Privasi</string>
-    <string name="onboarding_human_button">Biarkan saya masuk!</string>
 
 
 
@@ -1542,22 +1510,25 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <!-- App Lock Strings -->
     <string name="setting_applock_title">Kunci Tab</string>
-    <string name="setting_applock_desc">Amankan video Anda dengan kunci PIN untuk tab Rekaman. \nUntuk keamanan Anda, tab Rekaman akan terkunci secara otomatis saat aplikasi masuk ke latar belakang atau ditutup. Anda harus membuka kunci lagi saat kembali</string>
+    <string name="setting_applock_desc">Lindungi tab yang dipilih dengan PIN, kata sandi, atau sidik jari. Tab yang dilindungi akan terkunci lagi saat aplikasi masuk ke latar belakang atau ditutup, dan harus dibuka kuncinya saat Anda kembali.</string>
     <string name="setting_applock_configure">Konfigurasi</string>
     <string name="applock_dialog_title">Opsi Kunci Tab</string>
     <string name="applock_enable">Aktifkan Kunci Tab</string>
     <string name="applock_disable">Nonaktifkan Kunci Tab</string>
     <string name="applock_set_pin">Atur PIN</string>
-    <string name="applock_change_pin">Ubah PIN</string>
-    <string name="applock_remove_pin">Hapus PIN</string>
+    <string name="applock_change_pin">Ubah kunci</string>
+    <string name="applock_remove_pin">Hapus kunci</string>
     <string name="applock_pin_created">PIN berhasil dibuat</string>
     <string name="applock_pin_removed">PIN berhasil dihapus</string>
     <!-- Enhanced Tab Lock UX strings -->
-    <string name="applock_set_pin_enable">Atur PIN &amp; Aktifkan</string>
-    <string name="applock_helper_create">Buat perlindungan untuk tab Rekaman menggunakan PIN 4 digit, kata sandi, atau sidik jari. Akan terkunci otomatis saat aplikasi berpindah ke latar belakang.</string>
-    <string name="applock_helper_manage_disabled">PIN Kunci Tab telah diatur. Aktifkan untuk memerlukan PIN saat kembali ke aplikasi.</string>
-    <string name="applock_helper_enabled">Kunci Tab aktif. Anda akan memerlukan PIN saat membuka tab Rekaman setelah meninggalkan aplikasi.</string>
+    <string name="applock_set_pin_enable">Atur &amp; aktifkan</string>
+    <string name="applock_helper_create">Buat perlindungan untuk tab pilihan Anda dengan PIN 4 digit, kata sandi, atau sidik jari. Tab akan terkunci otomatis saat aplikasi masuk ke latar belakang.</string>
+    <string name="applock_helper_manage_disabled">PIN Kunci Tab sudah diatur. Aktifkan untuk meminta PIN pada tab yang dipilih.</string>
+    <string name="applock_helper_enabled">Kunci Tab aktif. Tab yang dipilih meminta PIN setelah Anda meninggalkan aplikasi. Rekaman dilindungi secara default.</string>
 
+    <string name="tab_lock_screen_title">Terkunci</string>
+    <string name="tab_lock_screen_message">Buka kunci untuk melanjutkan</string>
+    <string name="tab_lock_unlock">Buka kunci</string>
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Verifikasi PIN untuk Mengaktifkan Kunci Tab</string>
     <string name="applock_verify_to_disable">Verifikasi PIN untuk Menonaktifkan Kunci Tab</string>
@@ -1624,7 +1595,6 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="app_icon_changed">Ikon aplikasi diubah</string>
     <string name="app_icon_preview">Pratinjau ikon aplikasi</string>
     <!-- Launcher alias label for the Black icon: use a single space to appear blank -->
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
 
     <!-- Misc -->
     <string name="changelog_label">Yang Baru</string>
@@ -1811,7 +1781,6 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="forensics_copy_done">Detail bukti disalin</string>
     <string name="digital_forensics_preview_title">Pratinjau Deteksi Langsung</string>
     <string name="digital_forensics_preview_subtitle">Pratinjau overlay simulasi agar pengguna memahami label, kepercayaan, dan pembingkaian bukti.</string>
-    <string name="digital_forensics_preview_default">ORANG 92%</string>
     <string name="settings_watermark_subtitle">Mode merek overlay</string>
     <string name="prefs_import_export_title">Impor / Ekspor</string>
     <string name="prefs_import_export_subtitle">Cadangan, pulihkan, reset</string>
@@ -1842,19 +1811,6 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
 
     <string name="app_icon_minimal" translatable="false">FadCam</string>
 
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Geser ke kanan untuk melanjutkan</string>
-    <string name="onboarding_select_language">Pilih bahasa aplikasi yang Anda inginkan.</string>
-    <string name="onboarding_camera">Kamera</string>
-    <string name="onboarding_microphone">Mikrofon</string>
-    <string name="onboarding_storage">Penyimpanan</string>
-    <string name="onboarding_or">ATAU</string>
-    <string name="onboarding_and">DAN</string>
-    <string name="onboarding_open_settings">Buka Pengaturan</string>
-    <string name="onboarding_intro_line1">perekam multimedia—</string>
-    <string name="onboarding_intro_line2">video latar belakang, layar &amp; stream langsung,</string>
-    <string name="onboarding_intro_line3">kontrol kamera jarak jauh,</string>
-    <string name="onboarding_intro_line4">sumber terbuka. bebas iklan. milik Anda.</string>
 
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Urutkan Berdasarkan</string>
@@ -2047,6 +2003,7 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="name_your_project">Beri Nama Proyek Anda</string>
     <string name="project_naming_message">Beri proyek Anda nama dan deskripsi yang mudah diingat untuk mengatur rekaman Anda</string>
     <string name="fadrec_projects">Proyek FadRec</string>
+    <string name="fadrec_projects_location">Proyek disimpan di penyimpanan privat aplikasi</string>
     <string name="delete_project">Hapus Proyek</string>
     <string name="delete_all">Hapus Semua</string>
     <string name="new_project">Proyek Baru</string>
@@ -2078,16 +2035,6 @@ Untuk item yang tertaut video, gunakan detail bukti di dalam penampil foto untuk
     <string name="fadcam_pro_feature_faddrive">Sinkronisasi Cloud FadDrive</string>
     <string name="fadcam_pro_header_button">Dapatkan Pro</string>
 
-    <!-- Video Player Info Bottom Sheet -->
-    <string name="player_info_title">Tentang Pemutar Video</string>
-    <string name="player_info_content"><![CDATA[
-<b>Format MP4 Terfragmentasi</b><br/><br/>
-FadCam menggunakan format MP4 terfragmentasi untuk rekaman. Artinya video disimpan dalam segmen kecil alih-alih satu file lengkap. Keuntungannya adalah jika terjadi kesalahan selama perekaman, Anda hanya kehilangan beberapa detik terakhir, bukan seluruh video.<br/><br/>
-Jika beberapa detik terakhir video Anda tampak beku atau tidak berubah, jangan khawatir — itu bukan bug! Saat Anda menghentikan perekaman, fragmen saat ini mungkin masih menyelesaikan siklusnya (~3 detik), yang dapat meninggalkan bingkai beku singkat di akhir.<br/><br/>
-<b>Keterbatasan Pemutar</b><br/><br/>
-Pemutar video bawaan memiliki beberapa keterbatasan sistem Android. Anda mungkin melihat bilah progres atau gelombang audio tampak sedikit tersentak — ini adalah perilaku normal dan bukan bug.<br/><br/>
-Untuk pengalaman pemutaran paling mulus, Anda dapat menggunakan pemutar eksternal seperti VLC. Meskipun demikian, pemutar terintegrasi bekerja dengan baik untuk penggunaan sehari-hari!
-    ]]></string>
 
     <!-- Codec Compatibility Strings -->
     <string name="codec_hevc_incompatible_title">Codec H.265 Tidak Didukung untuk Streaming Langsung</string>
@@ -2431,6 +2378,8 @@ Catatan: Setidaknya satu metode keluar harus tetap diaktifkan untuk mencegah ter
     <string name="screen_rec_settings_subtitle">Pengaturan kualitas, audio &amp; output</string>
     <string name="screen_rec_resolution">Resolusi</string>
     <string name="screen_rec_framerate">Kecepatan Bingkai</string>
+    <string name="screen_rec_codec">Codec</string>
+    <string name="note_screen_codec">Pilih codec perekaman layar\n(Default: %1$s)\nTips: H.265 (HEVC) menghasilkan file lebih kecil dengan kualitas sama. Jika perangkat ini tidak memiliki encoder HEVC yang dapat digunakan, FadCam akan merekam dalam H.264 secara otomatis.</string>
     <string name="screen_rec_bitrate">Bitrate</string>
     <string name="screen_rec_orientation">Orientasi</string>
     <string name="screen_rec_bitrate_mode_auto">Otomatis (VBR)</string>
@@ -2803,6 +2752,10 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="mini_apps_qr_scanner_reference">Referensi pemindai QR</string>
 
     <string name="screen_recording_title">Rekaman Layar</string>
+    <string name="qs_tile_fadrec_subtitle">Rekam layar</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Merekam</string>
+    <string name="qs_tile_fadrec_paused">Dijeda</string>
 
     <string name="screen_recording_notif_title">FadRec - Rekaman Layar</string>
 
@@ -2879,6 +2832,13 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <string name="setting_theme">Tema</string>
     <string name="setting_language">Bahasa</string>
     <string name="setting_app_icon">Ikon Aplikasi</string>
+    <string name="setting_splash_screen">Layar Pembuka</string>
+    <string name="splash_screen_dialog_title">Pilih Layar Pembuka</string>
+    <string name="splash_screen_helper">Pilih apa yang ditampilkan FadCam saat dimulai.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Avatar terbangun, tertidur, lalu mendarat di Beranda</string>
+    <string name="splash_style_flag">Bendera FadSec Lab</string>
+    <string name="splash_style_flag_desc">Layar pembuka bendera klasik</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Diaktifkan</string>
@@ -3181,4 +3141,279 @@ Dukungan otomasi berbasis intent (Tasker, MacroDroid, dll.) untuk memicu Aplikas
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Tampilkan di Pengaturan</string>
     <string name="trash_show_in_settings_desc">Menambahkan baris Sampah ke halaman Pengaturan untuk akses cepat</string>
+    <string name="fadcam_full_title">Pengguna Daya FadCam</string>
+    <string name="fadcam_full_subtitle">Kontrol jarak jauh, perekaman gerak, forensik, dan lainnya. Coba versi lengkapnya.</string>
+    <string name="github_get_on">Dapatkan di</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Kamu sudah menggunakan FadCam selama %1$s</string>
+    <string name="app_usage_since_install_title">Menggunakan FadCam selama</string>
+
+
+    <string name="app_age_a_while">beberapa saat</string>
+    <string name="app_usage_installed_on">Dipasang pada</string>
+    <string name="pro_dossier_header">FADSEC LAB // DOSIER INTERNAL</string>
+    <string name="pro_dossier_eyes_only">RAHASIA</string>
+    <string name="pro_dossier_subject">SUBJEK // PROTOKOL UPGRADE</string>
+    <string name="pro_dossier_file_no">NO. BERKAS</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">IZIN AKSES</string>
+    <string name="pro_dossier_clearance_value">PUBLIK / GRATIS</string>
+    <string name="pro_dossier_status">STATUS</string>
+    <string name="pro_dossier_status_value">MENUNGGU KONFIRMASI</string>
+    <string name="pro_dossier_ref">REF: FADSEC/PR-07</string>
+    <string name="pro_dossier_page">HALAMAN 1/1</string>
+    <string name="pro_dossier_drag">GESER UNTUK MEMERIKSA // DEPAN</string>
+    <string name="pro_dossier_cycle">SIKLUS %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // LAPORAN PASCA-AKSI</string>
+    <string name="pro_dossier_after_stamp">DEBRIEF</string>
+    <string name="pro_dossier_after_subject">SUBJEK // KONTAK MINGGUAN</string>
+    <string name="pro_dossier_after_status">DISPOSISI</string>
+    <string name="pro_dossier_after_status_value">KONFIRMASI DIPERLUKAN</string>
+    <string name="pro_dossier_after_ref">REF: FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">Mengerti</string>
+    <string name="pro_reminder_intro_title">Sebelum Pro jadi dramatis</string>
+    <string name="pro_reminder_intro_subtitle">Kamu sudah memakai FadCam selama %1$s. Ini yang ditawarkan Pro.</string>
+    <string name="pro_reminder_title_1">Kita punya sejarah</string>
+    <string name="pro_reminder_title_2">Pro mulai cemburu</string>
+    <string name="pro_reminder_title_3">Tebak siapa yang kembali</string>
+    <string name="pro_reminder_title_4">Ini sudah jadi kebiasaan kita</string>
+    <string name="pro_reminder_title_5">Tolong pura-pura kaget</string>
+    <string name="pro_reminder_title_6">Waktu yang sama minggu depan?</string>
+    <string name="pro_reminder_subtitle_1">%1$s dengan FadCam, dan kamu masih belum bertemu Pro.</string>
+    <string name="pro_reminder_subtitle_2">Kamu sudah memakai FadCam selama %1$s. Pro mulai merasa diabaikan.</string>
+    <string name="pro_reminder_subtitle_3">%1$s dengan FadCam. Aku kembali untuk mengingatkanmu tentang Pro.</string>
+    <string name="pro_reminder_subtitle_4">%1$s dengan FadCam. Pro juga ingin sedikit perhatian.</string>
+    <string name="pro_reminder_subtitle_5">%1$s sudah, dan aku di sini lagi. Aku bawa Pro.</string>
+    <string name="pro_reminder_subtitle_6">Sudah %1$s. Pro menyapa. Lagi.</string>
+    <string name="pro_reminder_notification_title_1">Pro merasa diabaikan</string>
+    <string name="pro_reminder_notification_title_2">Gangguan kecil</string>
+    <string name="pro_reminder_notification_title_3">Pro bergabung ke obrolan</string>
+    <string name="pro_reminder_notification_title_4">Tebak siapa yang kembali</string>
+    <string name="pro_reminder_notification_body_1">%1$s bersama. Pro ingin sapaan singkat.</string>
+    <string name="pro_reminder_notification_body_2">Tenang, ini tidak mendesak. Pro cuma menyapa.</string>
+    <string name="pro_reminder_notification_body_3">Sudah %1$s. Siap untuk lihat sebentar?</string>
+    <string name="pro_reminder_notification_body_4">Aku lagi. Pro janji ini akan cepat.</string>
+    <string name="pro_reminder_button_continue">Lanjutkan</string>
+    <string name="pro_reminder_button_countdown">Lanjutkan dalam %1$ds</string>
+    <string name="pro_reminder_back_toast_1">Niat baik. Lanjutkan ada di sana.</string>
+    <string name="pro_reminder_back_toast_2">Plot twist: Kembali bukan jalan keluar.</string>
+    <string name="pro_reminder_back_toast_3">Hampir kabur. Cukup ketuk Lanjutkan.</string>
+    <string name="pro_reminder_after_title">Beralih ke Pro, dan aku akhirnya berhenti mengganggumu. Selamanya.</string>
+    <string name="pro_reminder_after_got_it">Mengerti</string>
+    <string name="pro_reminder_notification_channel_name">Pengingat Pro</string>
+    <string name="pro_reminder_notification_channel_description">Pengingat mingguan tentang FadCam Pro. Tidak muncul di Pro.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="other">Aku kembali dalam %1$d hari. Nikmati ketenangan selama masih ada.</item>
+    </plurals>
+    <string name="follow_on_x">Ikuti di X</string>
+    <string name="pro_screen_active">Aktif</string>
+    <string name="pro_screen_calc_desc">Aplikasi terpisah yang tampak seperti kalkulator.</string>
+    <string name="pro_screen_calc_feature">Aplikasi kalkulator</string>
+    <string name="pro_screen_calculator">Kalkulator</string>
+    <string name="pro_screen_claim_body">Didukung pipeline Hybrid MP4 eksklusif FadCam — dirancang khusus untuk Android agar rekaman tetap bisa diputar setelah crash, baterai habis, dan mati mendadak, hingga detik terakhir.</string>
+    <string name="pro_screen_claim_title">Perekam video latar belakang #1</string>
+    <string name="pro_screen_cloud">Sinkronisasi FadDrive</string>
+    <string name="pro_screen_cloud_desc">Cadangkan rekamanmu dengan aman ke cloud terenkripsi kami.</string>
+    <string name="pro_screen_coming_soon_status">Segera hadir</string>
+    <string name="pro_screen_compare">Lihat apa yang termasuk</string>
+    <string name="pro_screen_compare_hint">Geser untuk membandingkan edisi</string>
+    <string name="pro_screen_compare_owned">Fitur Pro kamu</string>
+    <string name="pro_screen_custom_icon">Ikon aplikasi khusus</string>
+    <string name="pro_screen_custom_icon_desc">Pilih ikon aplikasi kamu sendiri.</string>
+    <string name="pro_screen_custom_name">Nama aplikasi khusus</string>
+    <string name="pro_screen_custom_name_desc">Pilih nama kamu sendiri untuk aplikasi.</string>
+    <string name="pro_screen_direct_support">Dukungan pengembang</string>
+    <string name="pro_screen_direct_support_desc">Dapatkan bantuan dari pengembang di Discord.</string>
+        <string name="pro_screen_support_title">Cara lain untuk mendukung</string>
+    <string name="pro_screen_support_body">Tidak tertarik dengan Pro? Kamu tetap bisa mendukung FadCam lewat Patreon atau donasi mata uang kripto. Setiap kontribusi membantu kami membangun lebih banyak perangkat lunak bebas dan open source.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Donasi sekali atau keanggotaan bulanan.</string>
+    <string name="pro_screen_crypto_title">Donasi mata uang kripto</string>
+    <string name="pro_screen_crypto_desc">Hubungi kami lewat Discord atau email.</string>
+    <string name="pro_screen_stay_connected_title">Tetap terhubung</string>
+    <string name="pro_screen_stay_connected_body">Pertanyaan, masukan, atau sekadar ingin menyapa? Kami senang mendengar darimu.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">Email</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">Permintaan dukungan FadCam</string>
+    <string name="pro_screen_everything">Semua fitur gratis</string>
+    <string name="pro_screen_everything_desc">Semua yang ada di versi gratis sudah termasuk.</string>
+    <string name="pro_screen_fan_desc">Kamu percaya pada masa depan aplikasi dan solusi open-source yang mengutamakan privasi.</string>
+    <string name="pro_screen_fan_feature">Kamu mencintai privasi</string>
+    <string name="pro_screen_features">Fitur</string>
+    <string name="pro_screen_free">Gratis</string>
+    <string name="pro_screen_included">Termasuk</string>
+    <string name="pro_screen_link_error">Tidak bisa membuka tautan. Pastikan ada browser yang tersedia dan coba lagi.</string>
+    <string name="pro_screen_navigation">Jelajahi Pro</string>
+    <string name="pro_screen_navigation_owned">Pro kamu</string>
+    <string name="pro_screen_no_ads">Tanpa iklan atau pelacakan</string>
+    <string name="pro_screen_no_ads_desc">Tanpa iklan. Tanpa pelacakan. Tanpa pengumpulan log crash.</string>
+    <string name="pro_screen_no_nags">Tanpa pengingat upgrade</string>
+    <string name="pro_screen_no_nags_desc">Tanpa pengingat mingguan untuk upgrade ke Pro.</string>
+    <string name="pro_screen_not_included">Tidak termasuk</string>
+    <string name="pro_screen_notes">Catatan</string>
+    <string name="pro_screen_notes_desc">Aplikasi terpisah yang tampak seperti aplikasi catatan.</string>
+    <string name="pro_screen_notes_feature">Aplikasi catatan</string>
+    <string name="pro_screen_notification">Ikon notifikasi</string>
+    <string name="pro_screen_notification_desc">Pilih ikon berbeda untuk notifikasi perekaman.</string>
+    <string name="pro_screen_owned_status">%1$s · Aktif di aplikasi ini</string>
+    <string name="pro_screen_owned_subtitle">Termasuk dengan edisi ini</string>
+    <string name="pro_screen_owned_title">%1$s aktif</string>
+    <string name="pro_screen_price_detail">3 aplikasi Pro privat · Pembaruan seumur hidup</string>
+    <string name="pro_screen_price_terms">Pembelian sekali bayar</string>
+    <string name="pro_screen_privacy_body">Kami percaya privasi harus untuk semua orang. Itu sebabnya FadCam tidak punya iklan, pelacak, atau pengumpulan data. Kami bahkan tidak mengumpulkan laporan crash secara otomatis.\n\nKami 100% open source, jadi kamu bisa melihat cara kerja aplikasi. Fitur privasi penting tidak akan pernah dikunci di balik pembayaran.</string>
+    <string name="pro_screen_privacy_title">Privasi hari ini. Besok. Selamanya.</string>
+    <string name="pro_screen_purchase">Buka Pro Bundle</string>
+    <string name="pro_screen_purchase_caption">Membuka toko FadSec Lab</string>
+    <string name="pro_screen_scroll_hint">Geser untuk selengkapnya</string>
+    <string name="pro_screen_scroll_top">Kembali ke atas</string>
+    <string name="pro_screen_soon">Segera</string>
+    <string name="pro_screen_soon_legend">Tier Pro+ dan Lab segera hadir.</string>
+    <string name="pro_screen_status_description">%1$s: %2$s</string>
+    <string name="pro_screen_tier">Pro</string>
+    <string name="pro_screen_tier_lab">Lab</string>
+    <string name="pro_screen_tier_plus">Pro+</string>
+    <string name="pro_screen_title">FadCam Pro</string>
+    <string name="pro_screen_updates">Pembaruan awal</string>
+    <string name="pro_screen_updates_desc">Dapatkan versi baru sekitar 60 hari sebelum orang lain.</string>
+    <string name="pro_screen_weather">Cuaca</string>
+    <string name="pro_screen_weather_desc">Aplikasi terpisah yang tampak seperti aplikasi cuaca.</string>
+    <string name="pro_screen_weather_feature">Aplikasi cuaca</string>
+    <string name="pro_screen_why_pro_body">FadCam Free sudah menyertakan fitur yang banyak ditagih aplikasi lain. Kami percaya perangkat lunak yang berguna tidak boleh mengorbankan privasimu.\n\nJika kamu merasa FadCam berharga dan ingin mendukung kerja kami, Pro adalah cara untuk memberi balik sekaligus mendapatkan lebih banyak: tiga aplikasi privat mandiri, pembaruan awal, dan ekstra lain, di atas semua yang sudah ditawarkan FadCam Free.\n\nDukunganmu juga membantu kami terus membangun aplikasi dan solusi open-source yang mengutamakan privasi di FadSec Lab.</string>
+    <string name="pro_screen_why_pro_title">Lalu kenapa Pro?</string>
+    <string name="pro_screen_bundle">Tiga aplikasi privat.
+Milikmu selamanya.</string>
+    <string name="pro_showcase_label">PAKET PRO</string>
+    <string name="pro_showcase_supporting">Pasang ketiganya secara terpisah dengan pembaruan seumur hidup.</string>
+    <string name="pro_showcase_meta">Instalasi terpisah · Pembaruan seumur hidup</string>
+    <string name="pro_showcase_chip_installs">Tiga aplikasi mandiri</string>
+    <string name="pro_showcase_chip_updates">Termasuk pembaruan seumur hidup</string>
+    <string name="pro_showcase_chip_entry">Antarmuka aplikasi menyamar</string>
+    <string name="pro_showcase_soon">SEGERA</string>
+    <string name="pro_showcase_hint">Buka kunci dan jelajahi aplikasinya.</string>
+    <string name="pro_showcase_expand_desc">Buka ponsel layar penuh</string>
+    <string name="pro_showcase_collapse_desc">Keluar dari layar penuh</string>
+    <string name="pro_showcase_phone_desc">Mockup perangkat FadSec Lab. Layar menampilkan tiga aplikasi Pro. Geser ke samping untuk memutar ponsel.</string>
+    <string name="pro_showcase_privacy_mark">Privasi sejak awal</string>
+    <string name="pro_showcase_notes_hint">Ketik untuk menambah catatan</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Kelembapan</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Angin</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Mulai ulang</string>
+    <string name="pro_showcase_torch">Senter</string>
+    <string name="pro_showcase_access_title">Kamera &amp; Mikrofon</string>
+    <string name="pro_showcase_access_body">Aplikasi Cuaca menggunakan kamera dan mikrofon Anda dalam pratinjau ini. Ini adalah demo notifikasi senyap FadCam — tidak ada yang benar-benar direkam.</string>
+    <string name="pro_showcase_access_ok">Mengerti</string>
+    <string name="pro_showcase_shutting_down">Mematikan…</string>
+    <string name="pro_showcase_starting">Memulai</string>
+    <string name="pro_showcase_power_menu_title">Mulai ulang perangkat?</string>
+    <string name="pro_showcase_power_menu_body">Ini akan memulai ulang perangkat pratinjau.</string>
+    <string name="pro_showcase_power_menu_cancel">Batal</string>
+    <string name="pro_showcase_recents_hint">Ketuk untuk membuka lagi</string>
+    <string name="pro_showcase_recents_empty">Tidak ada aplikasi terbaru</string>
+    <string name="pro_showcase_fullscreen_hint">Seret untuk memutar · Ketuk aplikasi</string>
+    <string name="pro_showcase_weather_line">Cerah · 24°</string>
+    <string name="pro_showcase_notif_now">sekarang</string>
+    <string name="pro_showcase_swipe_unlock">Geser ke atas untuk membuka kunci</string>
+    <string name="fadcam_pro_price_amount">$49</string>
+    <!-- Onboarding (redesigned) -->
+    <string name="permissions_required">Beberapa izin</string>
+    <string name="permissions_description">FadCam memerlukan beberapa izin untuk merekam dan menyimpan video Anda.</string>
+    <string name="grant_permissions">Berikan Izin</string>
+    <string name="permissions_note">Anda harus memberikan semua izin untuk melanjutkan.</string>
+    <string name="permissions_granted">Semua izin diberikan. Anda siap beraksi!</string>
+    <string name="disable_battery_optimization">Nonaktifkan optimasi baterai</string>
+    <string name="battery_optimization_disabled">Optimasi baterai dinonaktifkan</string>
+    <string name="onboarding_human_title">Aturan rumah</string>
+    <string name="onboarding_human_desc">Dua hal singkat, lalu Anda masuk. Jika tidak setuju, hapus FadCam sekarang.</string>
+    <string name="onboarding_human_button">Biarkan saya masuk!</string>
+    <string name="onboarding_permissions_section">Izin</string>
+    <string name="onboarding_battery_section">Baterai</string>
+    <string name="onboarding_permission_granted">Diberikan</string>
+    <string name="onboarding_permission_required">Diperlukan</string>
+    <string name="onboarding_human_agreement_responsible">Saya akan menggunakan FadCam secara bertanggung jawab dan menghormati privasi orang lain.</string>
+    <string name="onboarding_human_agreement_legal">Saya menyetujui %1$s dan mengakui %2$s.</string>
+    <string name="onboarding_terms_of_use">Ketentuan Penggunaan</string>
+    <string name="onboarding_privacy_policy">Kebijakan Privasi</string>
+    <string name="onboarding_cred_open">Open source</string>
+    <string name="onboarding_cred_ads">Tanpa iklan</string>
+    <string name="onboarding_cred_track">Tanpa pelacak</string>
+    <string name="onboarding_mini_torch">Senter</string>
+    <string name="onboarding_mini_torch_desc">Senter, strobo, dan mode SOS.</string>
+    <string name="onboarding_mini_qr">Pemindai QR</string>
+    <string name="onboarding_mini_qr_desc">Pindai kode QR dan simpan hasil pindai ke Rekaman.</string>
+    <string name="onboarding_permissions_kicker">AKSES // DIPERLUKAN</string>
+    <string name="onboarding_human_kicker">SUMPAH // ATURAN PENGGUNAAN</string>
+    <string name="onboarding_dossier_kicker">FADCAM // PEREKAM PRIBADI</string>
+    <string name="onboarding_dossier_title">Perekam video latar belakang nomor 1.</string>
+    <string name="onboarding_dossier_lede">Didukung pipeline Hybrid MP4 FadCam. Rekaman Anda bertahan dari crash, baterai habis, dan mati mendadak — dapat diputar hingga detik terakhir.</string>
+    <string name="onboarding_capabilities_kicker">FADCAM // SUITE MULTIMEDIA</string>
+    <string name="onboarding_capabilities_title">Saatnya menghapus\nbeberapa aplikasi.</string>
+    <string name="onboarding_capabilities_lede">FadCam juga melakukan pekerjaan mereka. Ya, semuanya. Tanpa pelacak atau pola gelap.</string>
+    <string name="onboarding_feature_background_title">Perekaman latar belakang</string>
+    <string name="onboarding_feature_background_desc">Rekam bahkan dengan layar mati, didukung teknologi Hybrid MP4 yang tahan crash.</string>
+    <string name="onboarding_feature_screen_title">Perekaman layar</string>
+    <string name="onboarding_feature_screen_desc">Rekam layar Anda dengan alat menggambar, lapisan, dan halaman.</string>
+    <string name="onboarding_feature_editor_title">Editor video</string>
+    <string name="onboarding_feature_editor_desc">Pangkas, bagi, potong, duplikat, atau bisukan klip.</string>
+    <string name="onboarding_feature_motion_title">Deteksi gerakan</string>
+    <string name="onboarding_feature_motion_desc">Hanya merekam saat gerakan terdeteksi. Berhenti saat gerakan berhenti.</string>
+    <string name="onboarding_feature_forensic_title">Intelijen forensik</string>
+    <string name="onboarding_feature_forensic_desc">AI di perangkat mendeteksi orang dan objek. Disimpan sebagai bukti.</string>
+    <string name="onboarding_feature_remote_title">CCTV jarak jauh</string>
+    <string name="onboarding_feature_remote_desc">Ubah ponsel menjadi kamera televisi sirkuit tertutup (CCTV). Siarkan langsung dan kendalikan dari jarak jauh.</string>
+    <string name="onboarding_feature_bodycam_solo_title">Bodycam</string>
+    <string name="onboarding_feature_bodycam_solo_desc">Kenakan untuk keamanan pribadi dan perekaman bebas genggam.</string>
+    <string name="onboarding_feature_dashcam_title">Dashcam</string>
+    <string name="onboarding_feature_dashcam_desc">Rekam jalan atau motovlog dengan mulus berkat stabilisasi video.</string>
+    <string name="onboarding_scroll_hint">Gulir untuk melihat lebih banyak</string>
+    <string name="onboarding_scroll_short">Gulir</string>
+    <string name="onboarding_back">Kembali</string>
+    <string name="onboarding_next">Berikutnya</string>
+    <string name="onboarding_done">Selesai</string>
+    <string name="onboarding_mini_heading">Dan kita belum selesai.</string>
+    <string name="onboarding_mini_support">Mini app. Alat sehari-hari, langsung di dalam FadCam.</string>
+    <string name="onboarding_mini_more">Lebih banyak mini app segera hadir.</string>
+    <string name="onboarding_payoff_title">%1$d pekerjaan. Satu FadCam.</string>
+    <string name="onboarding_payoff_support">Saatnya mengucapkan selamat tinggal pada aplikasi ekstra itu.</string>
+    <string name="onboarding_lite_full_note">FadCam Full menggantikan 10 aplikasi.</string>
+    <string name="onboarding_demo_person">ORANG</string>
+    <string name="onboarding_demo_evidence_gallery">GALERI BUKTI</string>
+    <string name="onboarding_demo_saved">TERSIMPAN</string>
+    <string name="onboarding_demo_car">MOBIL</string>
+    <string name="onboarding_demo_knife">PISAU</string>
+    <string name="onboarding_swipe_instruction">Geser untuk melanjutkan</string>
+    <string name="onboarding_camera">Kamera</string>
+    <string name="onboarding_microphone">Mikrofon</string>
+    <string name="onboarding_storage">Penyimpanan</string>
+    <string name="onboarding_open_settings">Buka Pengaturan</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Halo!</string>
+    <string name="zoom_lens_unavailable_banner">Ponsel ini tidak mengekspos kamera ultra-wide ke aplikasi. Zoom di bawah 1.0x akan tetap di 1.0x.</string>
+    <string name="records_display_group_title">Tampilan</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Tanpa judul</string>
+    <string name="faditor_rename_project">Nama proyek</string>
+    <string name="faditor_rename_hint">Nama proyek</string>
+    <string name="faditor_rename_action">Ganti nama</string>
+    <string name="faditor_rename_subtitle">Digunakan untuk file yang diekspor</string>
+    <string name="faditor_rename_helper">Video yang diekspor disimpan dengan nama ini.</string>
+    <string name="faditor_export_name_preview">Disimpan sebagai: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Tidak ada klip di bawah playhead</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Gunakan sidik jari yang terdaftar di Android untuk mengamankan aplikasi ini.</string>
+    <string name="applock__description_unlock_fingerprint">Sentuh sensor sidik jari</string>
+    <string name="applock__create_chooser_option_fingerprint">Sidik jari</string>
+    <string name="applock__fingerprint_error_not_enrolled">Sidik jari belum diaktifkan di FadCam. Buka Kunci Tab dan atur.</string>
+    <string name="applock__fingerprint_error_unrecognized">Sidik jari Anda tidak dikenali.</string>
+    <string name="applock__fingerprint_error_unknown">Login sidik jari tidak dapat diselesaikan. Coba lagi atau atur di pengaturan Android.</string>
+    <string name="applock__fingerprint_error_none">Belum ada sidik jari yang diatur di Android. Tambahkan di pengaturan Android lalu coba lagi.</string>
+    <string name="applock__fingerprint_error_hardware">Sidik jari tidak tersedia saat ini. Atur sidik jari di pengaturan Android lalu coba lagi.</string>
+    <string name="applock__action_settings">Buka pengaturan Android</string>
+    <string name="watermark_preview_funny">Masa iya? :( \n ＞﹏＜</string>
 </resources>

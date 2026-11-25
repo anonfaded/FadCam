@@ -2,6 +2,7 @@ package com.fadcam.services;
 
 import com.fadcam.Log;
 import com.fadcam.FLog;
+import com.fadcam.DiagnosticsStore;
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -63,7 +64,7 @@ import com.fadcam.utils.PhotoStorageHelper;
 import com.fadcam.utils.RecordingStoragePaths;
 import com.fadcam.utils.RuntimeCompat;
 import com.fadcam.utils.ServiceStartPolicy;
-import com.fadcam.forensics.service.DigitalForensicsEventRecorder;
+import com.fadcam.service.ForensicsRecorder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -120,7 +121,20 @@ public class RecordingService extends Service {
     private static final int NOTIFICATION_ID = 1;
     private static final String CHANNEL_ID = "RecordingServiceChannel";
     private static final String TAG = "RecordingService"; // Use standard Log TAG
-    private static final long FORENSICS_HEARTBEAT_INTERVAL_MS = 1600L;
+    /**
+     * Cadence for forensic sample submission while a subject is present.
+     *
+     * <p>Matches {@code CaptureThrottlePolicy.MEDIA_MIN_INTERVAL_MS}: the recorder
+     * cannot store evidence faster than that, so submitting more often only encodes
+     * JPEGs that are thrown away. It used to be 1600 ms, which is 37 encodes per
+     * minute for at most 15 stored snapshots — pure CPU, memory bandwidth and heat.
+     * A genuinely new appearance still submits immediately so a fast pass-through is
+     * not missed.
+     */
+    private static final long FORENSICS_HEARTBEAT_INTERVAL_MS =
+            com.fadcam.util.CaptureThrottlePolicy.MEDIA_MIN_INTERVAL_MS;
+    /** Delay before the motion backend warmup, so camera startup is never starved. */
+    private static final long MOTION_WARMUP_START_DELAY_MS = 3000L;
     private static volatile boolean isCameraResourceReleasing = false;
     
     private long lastStartAttemptTime = 0;
@@ -132,6 +146,12 @@ public class RecordingService extends Service {
     private CameraCharacteristics currentCameraCharacteristics;
     private Surface previewSurface; // Surface from UI if preview enabled
     private boolean previewSurfaceAdded = false; // Flag to track if preview surface was added to session
+    /**
+     * Crop window currently applied via SCALER_CROP_REGION, in sensor coordinates.
+     * Null means no crop has been applied (full active array is visible). Used by
+     * tap-to-focus so the AF/AE region lands inside the visible field of view.
+     */
+    private android.graphics.Rect lastCropRegion = null;
 
     private LocationHelper locationHelper;
     private LocationGeocoder locationGeocoder;
@@ -209,29 +229,80 @@ public class RecordingService extends Service {
     // Motion Lab (advanced, opt-in): sidecar analysis path. No control-flow impact unless explicitly wired later.
     private boolean motionLabEnabledForSession = false;
     private ImageReader motionAnalysisReader;
+    private volatile int motionAnalysisWidth = 0;
+    private volatile int motionAnalysisHeight = 0;
     private long motionAnalysisIntervalMs = 333L; // ~3fps default
     private long lastMotionAnalysisTimestampMs = 0L;
-    private volatile com.fadcam.motion.domain.detector.MotionDetector motionDetector =
-            new com.fadcam.motion.domain.detector.FrameDiffMotionDetector();
-    private volatile com.fadcam.motion.domain.detector.EfficientDetLite1Detector efficientDetDetector;
+    private volatile com.fadcam.motion.domain.detector.MotionDetector motionDetector;
+    private volatile com.fadcam.motion.domain.detector.AiObjectDetector efficientDetDetector;
     private com.fadcam.motion.domain.policy.MotionPolicy motionPolicy =
             new com.fadcam.motion.domain.policy.MotionPolicy();
     private com.fadcam.motion.domain.state.MotionStateMachine motionStateMachine;
     private boolean motionAutoPaused = false;
-    private boolean motionSafeMode = false;
+    /**
+     * True when the current PAUSED state was entered while the live stream stayed
+     * active. The encoder keeps running and only the recording file is suspended.
+     */
+    private boolean pausedWithLiveStream = false;
+    /** Set if any pause in this session used live-stream idle (for cleanup). */
+    private boolean liveIdleUsedThisSession = false;
+    /**
+     * Local File-backed outputs created by this session. SAF / custom-folder
+     * recordings are URI-backed and never appear here (they are cleaned by the
+     * live-idle block using their URI, and only when they provably contain no
+     * media). This list exists so a failed start cannot leave a 0-byte local
+     * file behind; only files that are exactly 0 bytes are ever deleted.
+     */
+    private final java.util.List<File> sessionCreatedLocalFiles =
+            java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+    /** Cached Motion Lab settings; listener-updated, read per frame without prefs I/O. */
+    private volatile com.fadcam.motion.domain.model.MotionRuntimeSettings motionRuntime;
     private int motionConsecutivePersonHits = 0;
     private long motionFramesAnalyzed = 0L;
     private long motionTriggerActionCount = 0L;
     private long motionSuppressedSignalCount = 0L;
     private float motionScoreEma = Float.NaN;
     private long motionLastDebugBroadcastMs = 0L;
+    private long motionLastAiDetectionMs = 0L;
+    /** Wall time of the last completed inference, used to adapt the AI cadence. */
+    private volatile long motionLastInferenceDurationMs = 0L;
+    /** Upper bound for the adapted inference interval; keeps evidence flowing. */
+    private static final long MAX_AI_INTERVAL_MS = 6000L;
+    /** Longest edge of the JPEG encoded for a forensic snapshot. */
+    private static final int FORENSICS_SNAPSHOT_MAX_EDGE = 1280;
+    /** Interval actually in use, for the Motion Lab readout. */
+    private volatile long motionEffectiveAiIntervalMs = 0L;
+    private volatile java.util.List<com.fadcam.motion.domain.detector.AiObjectDetector.DetectionResult>
+            motionLastDetections = java.util.Collections.emptyList();
     private long motionLastTelemetryLogMs = 0L;
     private long motionPersonLikelyUntilMs = 0L;
     private volatile boolean motionOpenCvActive = false;
     private volatile boolean motionDetectorWarmupScheduled = false;
     private volatile boolean motionDetectorWarmupCompleted = false;
     private java.util.concurrent.ExecutorService motionDetectorWarmupExecutor;
-    private DigitalForensicsEventRecorder digitalForensicsEventRecorder;
+    /**
+     * Inference runs here, never on the camera ImageReader thread. Holding a camera
+     * buffer for 100 ms of GPU work starves the capture session and drops encoder
+     * frames; the analyzer thread must only copy the frame and move on.
+     */
+    private java.util.concurrent.ExecutorService aiInferenceExecutor;
+    /**
+     * Motion analysis runs here, not on the camera callback thread. MOG2 at up to
+     * 1920 px between capture requests starves the encoder.
+     */
+    private java.util.concurrent.ExecutorService motionAnalysisExecutor;
+    /**
+     * Latest frame waiting for analysis. Single slot, not a queue: analysis always
+     * works on the newest frame, and the camera gets its buffer back immediately.
+     * A queue would hold camera buffers hostage and backpressure the HAL.
+     */
+    private final java.util.concurrent.atomic.AtomicReference<android.media.Image>
+            pendingAnalysisImage = new java.util.concurrent.atomic.AtomicReference<>();
+    private final java.util.concurrent.atomic.AtomicBoolean analysisDrainScheduled =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+    private final java.util.concurrent.atomic.AtomicBoolean aiInferenceInFlight =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+    private com.fadcam.service.ForensicsRecorder digitalForensicsEventRecorder;
     private boolean motionLastPersonDetected = false;
     private float motionLastPersonConfidence = 0f;
     private float motionLastScore = 0f;
@@ -246,7 +317,15 @@ public class RecordingService extends Service {
     private float motionLastDetectionConfidence = 0f;
     private boolean motionLastGlobalSuppressed = false;
     private long motionLastForensicsHeartbeatMs = 0L;
+    /**
+     * True when the previous motion sample had a subject worth collecting evidence
+     * for. Used to capture a NEW appearance immediately: the periodic heartbeat alone
+     * can miss someone who walks through in under one interval.
+     */
+    private boolean forensicsSubjectPresentLastSample = false;
     private String motionLastOverlayPayload = null;
+    private long lastOverlayPayloadLogMs = 0L;
+    private long lastUprightRotationLogMs = 0L;
     private long motionJpegAttemptCount = 0L;
     private long motionJpegSuccessCount = 0L;
     private long motionJpegSkipCount = 0L;
@@ -315,12 +394,15 @@ public class RecordingService extends Service {
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
         motionDetectorWarmupExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
+        aiInferenceExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
+        motionAnalysisExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
 
         // Initialize PowerManager and WakeLock
         android.os.PowerManager powerManager = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
         recordingWakeLock = powerManager.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "FadCam:RecordingService");
         try {
-            digitalForensicsEventRecorder = new DigitalForensicsEventRecorder(getApplicationContext());
+            digitalForensicsEventRecorder = com.fadcam.FeatureRegistry.features()
+                    .createForensicsRecorder(getApplicationContext());
         } catch (Exception e) {
             FLog.w(TAG, "Digital forensics event recorder init failed", e);
             digitalForensicsEventRecorder = null;
@@ -426,45 +508,60 @@ public class RecordingService extends Service {
         }
 
         motionDetectorWarmupScheduled = true;
-        motionDetectorWarmupExecutor.execute(() -> {
+        // Defer past camera/session startup: initialising OpenCV at the same moment
+        // the capture session comes up starves the camera and shows as a multi-second
+        // first-frame delay. The capture path has priority.
+        mainHandler.postDelayed(() -> motionDetectorWarmupExecutor.execute(() -> {
             long startMs = SystemClock.elapsedRealtime();
             FLog.i(TAG, "Motion detector warmup started off the recording hot path");
 
+            // The object model is owned by ObjectDetectionRuntime and loads when the
+            // feature is enabled, not when a recording starts. sync() is a no-op when
+            // it is already loaded and releases it when nothing needs it.
+            com.fadcam.motion.domain.detector.ObjectDetectionRuntime.sync(getApplicationContext());
             try {
-                if (efficientDetDetector == null) {
+                boolean openCvExpected =
+                        com.fadcam.FeatureRegistry.features().hasOpenCvMotionBackend();
+                if (openCvExpected) {
                     try {
-                        com.fadcam.motion.domain.detector.EfficientDetLite1Detector detector =
-                                new com.fadcam.motion.domain.detector.EfficientDetLite1Detector(getApplicationContext());
-                        if (detector.isAvailable()) {
-                            efficientDetDetector = detector;
-                            FLog.i(TAG, "EfficientDet detector available: true");
-                        } else {
-                            FLog.w(TAG, "EfficientDet detector warmup completed but detector is unavailable");
+                        com.fadcam.motion.domain.detector.MotionDetector backend =
+                                com.fadcam.FeatureRegistry.features().createOpenCvMotionDetector();
+                        if (backend == null) {
+                            throw new IllegalStateException("OpenCV factory returned null");
                         }
-                    } catch (Throwable t) {
-                        FLog.w(TAG, "EfficientDet warmup failed; continuing without AI detector", t);
-                    }
-                }
-
-                if (!motionOpenCvActive) {
-                    try {
-                        motionDetector = new com.fadcam.motion.domain.detector.OpenCvMog2MotionDetector();
+                        motionDetector = backend;
                         motionOpenCvActive = true;
                         FLog.i(TAG, "Motion detector backend: OpenCV MOG2");
                     } catch (Throwable t) {
-                        motionDetector = new com.fadcam.motion.domain.detector.FrameDiffMotionDetector();
+                        // No silent downgrade in Full. Motion is disabled for the
+                        // session and the failure is reported to the user.
+                        motionDetector = null;
                         motionOpenCvActive = false;
-                        FLog.w(TAG, "OpenCV backend unavailable; keeping FrameDiffMotionDetector", t);
+                        FLog.e(TAG, "MOTION BACKEND FAILURE: OpenCV MOG2 could not initialize; "
+                                + "motion detection disabled for this session", t);
+                        mainHandler.post(() -> {
+                            try {
+                                android.widget.Toast.makeText(RecordingService.this,
+                                        "Motion detection unavailable: the OpenCV backend failed to initialize.",
+                                        android.widget.Toast.LENGTH_LONG).show();
+                            } catch (Throwable ignored) {
+                            }
+                        });
+                        disableMotionProcessingForSession("opencv_unavailable");
                     }
                 }
+                // No else branch: motion only arms in Full (see configureMotionLabForSession)
+                // and Full always provides the OpenCV backend. Lite never runs motion, so
+                // there is no second detector to fall back to.
             } finally {
                 motionDetectorWarmupCompleted = true;
                 long elapsedMs = SystemClock.elapsedRealtime() - startMs;
                 FLog.i(TAG, "Motion detector warmup finished in " + elapsedMs
-                        + " ms, aiReady=" + (efficientDetDetector != null)
+                        + " ms, aiReady="
+                        + com.fadcam.motion.domain.detector.ObjectDetectionRuntime.isReady()
                         + ", openCv=" + motionOpenCvActive);
             }
-        });
+       }), MOTION_WARMUP_START_DELAY_MS);
     }
 
     // method(applyExposureCompensation)-----------
@@ -892,6 +989,13 @@ public class RecordingService extends Service {
             float minSupportedZoom = zoomRatioRange != null ? zoomRatioRange.getLower() : 1.0f;
             float maxSupportedZoom = zoomRatioRange != null ? zoomRatioRange.getUpper() : Math.max(1.0f, zoomRatio);
             float clampedZoom = Math.max(minSupportedZoom, Math.min(maxSupportedZoom, zoomRatio));
+            FLog.d(TAG, "applyZoomAndPan caps: requested=" + zoomRatio
+                    + " applied=" + clampedZoom
+                    + " min=" + minSupportedZoom
+                    + " max=" + maxSupportedZoom
+                    + " range=" + zoomRatioRange
+                    + " displayToSensor=" + getDisplayToSensorRotation()
+                    + " sensorOrientation=" + getCurrentSensorOrientationDegrees());
             float clampedPanX = Math.max(-1.0f, Math.min(1.0f, panX));
             float clampedPanY = Math.max(-1.0f, Math.min(1.0f, panY));
 
@@ -934,6 +1038,9 @@ public class RecordingService extends Service {
                                 activeArray);
                     }
                 }
+                // CONTROL_ZOOM_RATIO < 1 makes the active array represent the post-zoom FOV,
+                // so tap-to-focus must keep using the full active array here.
+                lastCropRegion = null;
 
                 captureRequestBuilder.set(
                         android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO,
@@ -976,6 +1083,7 @@ public class RecordingService extends Service {
                             cropLeft, cropTop, cropRight, cropBottom);
                     captureRequestBuilder.set(
                             android.hardware.camera2.CaptureRequest.SCALER_CROP_REGION, cropRegion);
+                    lastCropRegion = new android.graphics.Rect(cropRegion);
 
                     // On API ≥ 30 reset zoom ratio to 1 so crop is the sole zoom/pan mechanism
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -998,6 +1106,9 @@ public class RecordingService extends Service {
 
             // Fallback: API ≥ 30 zoom-ratio only (no pan), or warn for older APIs
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // With CONTROL_ZOOM_RATIO != 1 the active array is the post-zoom FOV,
+                // so tap-to-focus must not apply the stale crop window.
+                lastCropRegion = null;
                 captureRequestBuilder.set(
                         android.hardware.camera2.CaptureRequest.CONTROL_ZOOM_RATIO, clampedZoom);
                 captureSession.setRepeatingRequest(
@@ -1046,42 +1157,80 @@ public class RecordingService extends Service {
             return;
         }
 
-        float sensorNX = nx;
+        // The visible field of view is the current zoom/pan crop window, further
+        // cropped by the camera to the output stream's aspect ratio. Mapping straight
+        // to the active array would put the AF region outside what the user sees
+        // whenever zoom != 1 or the stream aspect differs from the sensor aspect.
+        Rect visibleRect = new Rect(lastCropRegion != null ? lastCropRegion : activeArray);
+        try {
+            if (sharedPreferencesManager != null) {
+                android.util.Size res = sharedPreferencesManager.getCameraResolution();
+                float streamAR = Math.max(res.getWidth(), res.getHeight())
+                        / (float) Math.max(1, Math.min(res.getWidth(), res.getHeight()));
+                float cropAR = visibleRect.width() / (float) Math.max(1, visibleRect.height());
+                if (cropAR > streamAR + 0.001f) {
+                    int w = Math.round(visibleRect.height() * streamAR);
+                    int left = visibleRect.left + (visibleRect.width() - w) / 2;
+                    visibleRect.set(left, visibleRect.top, left + w, visibleRect.bottom);
+                } else if (cropAR < streamAR - 0.001f) {
+                    int h = Math.round(visibleRect.width() / streamAR);
+                    int top = visibleRect.top + (visibleRect.height() - h) / 2;
+                    visibleRect.set(visibleRect.left, top, visibleRect.right, top + h);
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "tap-to-focus: stream aspect mapping failed: " + e.getMessage());
+        }
+
+        // A mirrored front preview shows the scene flipped, so mirror the tap too.
+        float displayNX = nx;
+        try {
+            if (sharedPreferencesManager != null
+                    && sharedPreferencesManager.getCameraSelection() == CameraType.FRONT
+                    && sharedPreferencesManager.isFrontVideoMirrorEnabled()) {
+                displayNX = 1f - nx;
+            }
+        } catch (Exception ignored) {
+        }
+
+        float sensorNX = displayNX;
         float sensorNY = ny;
         try {
             switch (getDisplayToSensorRotation()) {
                 case 90:
                     sensorNX = ny;
-                    sensorNY = 1f - nx;
+                    sensorNY = 1f - displayNX;
                     break;
                 case 180:
-                    sensorNX = 1f - nx;
+                    sensorNX = 1f - displayNX;
                     sensorNY = 1f - ny;
                     break;
                 case 270:
                     sensorNX = 1f - ny;
-                    sensorNY = nx;
+                    sensorNY = displayNX;
                     break;
                 default:
                     break; // 0°
             }
         } catch (Exception e) {
-            sensorNX = nx;
+            sensorNX = displayNX;
             sensorNY = ny;
         }
 
-        int x = activeArray.left + (int) (sensorNX * activeArray.width());
-        int y = activeArray.top + (int) (sensorNY * activeArray.height());
+        int x = visibleRect.left + Math.round(sensorNX * visibleRect.width());
+        int y = visibleRect.top + Math.round(sensorNY * visibleRect.height());
 
-        // Clamp coordinates to active array bounds before creating rectangle
+        // Clamp coordinates to the visible rect before creating the rectangle
         // This prevents IllegalArgumentException when normalized coords go out of bounds (>1.0)
-        x = Math.max(activeArray.left, Math.min(activeArray.right, x));
-        y = Math.max(activeArray.top, Math.min(activeArray.bottom, y));
+        x = Math.max(visibleRect.left, Math.min(visibleRect.right, x));
+        y = Math.max(visibleRect.top, Math.min(visibleRect.bottom, y));
 
-        FLog.d(TAG, "Mapped to sensor coords: " + x + ", " + y + " (active array: " + activeArray + ")");
+        FLog.d(TAG, "Mapped to sensor coords: " + x + ", " + y
+                + " (visible: " + visibleRect + ", active array: " + activeArray + ")");
 
-        // Create a small region around the tap point
-        int half = Math.max(10, Math.min(activeArray.width(), activeArray.height()) / 20);
+        // Create a small region around the tap point, sized from the visible field
+        // of view so it stays symmetric when zoomed in.
+        int half = Math.max(10, Math.min(visibleRect.width(), visibleRect.height()) / 20);
         Rect area = new Rect(
                 Math.max(activeArray.left, x - half),
                 Math.max(activeArray.top, y - half),
@@ -1179,7 +1328,20 @@ public class RecordingService extends Service {
             final android.content.Context app = context.getApplicationContext();
             final SharedPreferencesManager prefs = SharedPreferencesManager.getInstance(app);
             // Never scan while a recording is active — its file may be mid-write.
+            // FadCam's camera recorder owns isRecordingInProgress().
             if (prefs.isRecordingInProgress()) {
+                if (onDone != null) onDone.run();
+                return;
+            }
+            // Screen recording keeps its own state (it never sets isRecordingInProgress),
+            // so it must be checked separately — otherwise the scan can finalize a file
+            // that is still being written (issue #357).
+            //
+            // FadMic (coming soon) must register its own recording state and be added
+            // to this guard for exactly the same reason.
+            final String screenState = prefs.getScreenRecordingState();
+            if ("IN_PROGRESS".equals(screenState) || "PAUSED".equals(screenState)) {
+                FLog.d(TAG, "Self-healing scan skipped: screen recording is " + screenState);
                 if (onDone != null) onDone.run();
                 return;
             }
@@ -1222,6 +1384,15 @@ public class RecordingService extends Service {
             if (onDone != null) onDone.run();
         }
     }
+
+    /**
+     * URIs already attempted in this process. A second attempt is always refused:
+     * the finalizer is idempotent, so one pass is enough, and refusing a second one
+     * makes a repair loop impossible even if another path regresses (issue #357 —
+     * the same file was repaired 4× in 5.7 s because each write reset the DB state).
+     */
+    private static final java.util.Set<String> REPAIR_ATTEMPTED_THIS_PROCESS =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private static final java.util.concurrent.atomic.AtomicBoolean scanRunning =
             new java.util.concurrent.atomic.AtomicBoolean(false);
@@ -1291,8 +1462,21 @@ public class RecordingService extends Service {
                             if (IN_FLIGHT_FINALIZATIONS.contains(uriString)) {
                                 continue;
                             }
+                            if (!REPAIR_ATTEMPTED_THIS_PROCESS.add(uriString)) {
+                                // Normally unreachable now that the index preserves repair
+                                // state; kept as a hard stop so a future regression cannot
+                                // loop on the same file again.
+                                FLog.e(TAG, "Self-healing: already attempted " + uriString
+                                        + " in this session — refusing to touch it again");
+                                continue;
+                            }
                             android.net.Uri uri = android.net.Uri.parse(uriString);
                             String scheme = uri.getScheme();
+                            long attemptStartMs = System.currentTimeMillis();
+                            // Size before/after is the definitive write-loop evidence:
+                            // a repair must never grow a file it did not convert.
+                            long sizeBefore = -1L;
+                            long sizeAfter = -1L;
                             int result;
                             if ("file".equals(scheme)) {
                                 java.io.File f = new java.io.File(uri.getPath());
@@ -1300,6 +1484,7 @@ public class RecordingService extends Service {
                                     repo.markUnrepairableWithRetry(uriString, retryAfter);
                                     continue;
                                 }
+                                sizeBefore = f.length();
                                 java.nio.channels.FileChannel ch =
                                         new java.io.RandomAccessFile(f, "rw").getChannel();
                                 try {
@@ -1308,6 +1493,7 @@ public class RecordingService extends Service {
                                 } finally {
                                     try { ch.close(); } catch (Exception ignored) {}
                                 }
+                                sizeAfter = f.length();
                             } else if ("content".equals(scheme)) {
                                 android.os.ParcelFileDescriptor pfd =
                                         app.getContentResolver().openFileDescriptor(uri, "rw");
@@ -1316,6 +1502,8 @@ public class RecordingService extends Service {
                                     continue;
                                 }
                                 try {
+                                    try { sizeBefore = pfd.getStatSize(); }
+                                    catch (Exception ignored) {}
                                     // Two channels over the same fd: FileOutputStream's
                                     // channel is write-only (reads throw
                                     // NonReadableChannelException), so read via
@@ -1327,6 +1515,8 @@ public class RecordingService extends Service {
                                                             pfd.getFileDescriptor()).getChannel(),
                                                     new java.io.FileOutputStream(
                                                             pfd.getFileDescriptor()).getChannel());
+                                    try { sizeAfter = pfd.getStatSize(); }
+                                    catch (Exception ignored) {}
                                 } finally {
                                     try { pfd.close(); } catch (Exception ignored) {}
                                 }
@@ -1334,6 +1524,13 @@ public class RecordingService extends Service {
                                 repo.markUnrepairableWithRetry(uriString, retryAfter);
                                 continue;
                             }
+                            // Visible in the dossier so the next report shows exactly what
+                            // the scanner did, and never more than once per file/process.
+                            FLog.i(TAG, "Self-healing: " + fileNameFromUri(uriString)
+                                    + " → result=" + result
+                                    + " size=" + sizeBefore + "→" + sizeAfter
+                                    + " in " + (System.currentTimeMillis() - attemptStartMs) + "ms");
+
                             if (result == 1) {
                                 repo.markFinalized(uriString, 1);
                                 recordRepairEventStatic(prefs,
@@ -1581,11 +1778,8 @@ public class RecordingService extends Service {
             // (NOT during preview-only mode — prevents mic/sensor memory leaks)
             // setup log removed
 
-            // Shared watermark manager (DRY — used by both single and dual camera)
-            if (watermarkManager == null) {
-                watermarkManager = new com.fadcam.watermark.WatermarkManager(this, sharedPreferencesManager);
-            }
-            watermarkManager.initialize(locationHelper);
+            // Shared watermark manager (DRY — used by camera, dual camera and screen recording)
+            ensureWatermarkManager();
 
             // Only start sensor/noise/weather providers if the master watermark
             // is enabled AND individual features are turned on.
@@ -1621,7 +1815,7 @@ public class RecordingService extends Service {
             }
             
             // STREAM ENFORCEMENT GATE: Validate and gate streaming mode
-            boolean streamingEnabled = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            boolean streamingEnabled = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
             android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
             String presetName = fadcamPrefs.getString("quality_preset", "HIGH");
             int presetBitrate = fadcamPrefs.getInt("stream_bitrate", 5_000_000);
@@ -1695,6 +1889,9 @@ public class RecordingService extends Service {
                 // Clear a stale stopping flag from a previous recording that
                 // may still be cleaning up asynchronously on a background thread.
                 isStopping = false;
+                pausedWithLiveStream = false;
+                liveIdleUsedThisSession = false;
+                sessionCreatedLocalFiles.clear();
                 clearRecordingTimelineState();
                 sharedPreferencesManager.setRecordingInProgress(true);
                 CameraType selectedType = sharedPreferencesManager.getCameraSelection();
@@ -1851,7 +2048,14 @@ public class RecordingService extends Service {
                             .setContentTitle(getString(R.string.app_name))
                             .setContentText("Torch toggled")
                             .setSmallIcon(R.drawable.ic_notification_icon);
-                    startForeground(NOTIFICATION_ID, minimalBuilder.build());
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        // Explicit subset: never claim the optional location type for a torch
+                        // notification, so it works without location permission.
+                        startForeground(NOTIFICATION_ID, minimalBuilder.build(),
+                                ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA);
+                    } else {
+                        startForeground(NOTIFICATION_ID, minimalBuilder.build());
+                    }
                     // Stop the service immediately after torch toggle since we're not recording
                     new Handler(Looper.getMainLooper()).postDelayed(this::stopSelf, 100);
                 } catch (Exception e) {
@@ -1871,7 +2075,7 @@ public class RecordingService extends Service {
                 Constants.EXTRA_BROADCAST_EXPOSURE_COMPENSATION,
                 sharedPreferencesManager.getSavedExposureCompensation());
             sendBroadcast(exposureBroadcast.setPackage(getPackageName()));
-            com.fadcam.streaming.RemoteStreamManager.getInstance().invalidateStatusCache();
+            com.fadcam.FeatureRegistry.streaming().invalidateStatusCache();
             }
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_TOGGLE_AE_LOCK.equals(action)) {
@@ -1941,7 +2145,7 @@ public class RecordingService extends Service {
                     zoomBcast.putExtra(Constants.EXTRA_BROADCAST_PAN_Y, broadcastPanY);
                     this.sendBroadcast(zoomBcast.setPackage(this.getPackageName()));
                 }
-                com.fadcam.streaming.RemoteStreamManager.getInstance().invalidateStatusCache();
+                com.fadcam.FeatureRegistry.streaming().invalidateStatusCache();
             }
             return START_STICKY;
         } else if (Constants.INTENT_ACTION_SET_FRONT_VIDEO_MIRROR.equals(action)) {
@@ -2179,6 +2383,10 @@ public class RecordingService extends Service {
         // Safety net: drop any in-flight finalization guard (the process is
         // going away; a stale entry would block future repairs of this file).
         IN_FLIGHT_FINALIZATIONS.clear();
+        if (motionRuntime != null) {
+            motionRuntime.release();
+            motionRuntime = null;
+        }
         releaseDurationLimitController();
 
         // Stop any active reconnection attempts
@@ -2263,6 +2471,26 @@ public class RecordingService extends Service {
             motionDetectorWarmupExecutor = null;
         }
 
+        if (aiInferenceExecutor != null) {
+            try {
+                aiInferenceExecutor.shutdownNow();
+            } catch (Exception e) {
+                FLog.w(TAG, "Error shutting down AI inference executor", e);
+            }
+            aiInferenceExecutor = null;
+        }
+
+        discardPendingAnalysisImage();
+        if (motionAnalysisExecutor != null) {
+            try {
+                motionAnalysisExecutor.shutdownNow();
+            } catch (Exception e) {
+                FLog.w(TAG, "Error shutting down motion analysis executor", e);
+            }
+            motionAnalysisExecutor = null;
+        }
+        aiInferenceInFlight.set(false);
+
         FLog.d(TAG, "Service destroyed.");
         // Clean up GeotagHelper when service is destroyed
         super.onDestroy();
@@ -2327,7 +2555,6 @@ public class RecordingService extends Service {
             FLog.i(TAG, "MotionLab summary: frames=" + motionFramesAnalyzed
                     + ", actions=" + motionTriggerActionCount
                     + ", suppressed=" + motionSuppressedSignalCount
-                    + ", safeMode=" + motionSafeMode
                     + ", detectorAvailable=" + (efficientDetDetector != null && efficientDetDetector.isAvailable()));
         }
         if (digitalForensicsEventRecorder != null) {
@@ -2342,7 +2569,8 @@ public class RecordingService extends Service {
         
         // Notify RemoteStreamManager that recording stopped
         try {
-            com.fadcam.streaming.RemoteStreamManager.getInstance().stopRecording();
+            com.fadcam.FeatureRegistry.streaming().stopRecording();
+            com.fadcam.FeatureRegistry.streaming().setMotionState("off");
             FLog.i(TAG, "🛑 RemoteStreamManager notified: recording stopped");
             
         } catch (Exception e) {
@@ -2388,22 +2616,96 @@ public class RecordingService extends Service {
                 }
                 
                 // Stop and release the GL pipeline
+                boolean liveIdleSession = liveIdleUsedThisSession;
+                int fileFragmentsAfterStop = -1;
                 if (glRecordingPipeline != null) {
                     try {
                         FLog.d(TAG, "Stopping GLRecordingPipeline");
                         glRecordingPipeline.stopRecording();
+                        // Query AFTER stop: muxer.close() flushes pending samples
+                        // into a final fragment, so the pre-stop count under-reports.
+                        fileFragmentsAfterStop = glRecordingPipeline.getWrittenFileFragmentCount();
                     } catch (Exception e) {
                         FLog.e(TAG, "Error stopping GLRecordingPipeline", e);
                     } finally {
                         glRecordingPipeline = null;
                     }
                 }
+                pausedWithLiveStream = false;
+                liveIdleUsedThisSession = false;
+
+                // Remove only provably-empty outputs that THIS session created.
+                // A 0-byte file contains no media data by definition, so deleting it
+                // can never lose a recording. This covers both storage modes:
+                //   - local/default storage: File objects tracked above,
+                //   - custom folder / SD card: the content URI created this session.
+                if (liveIdleSession && fileFragmentsAfterStop == 0
+                        && currentSegmentFile != null && currentSegmentFile.exists()) {
+                    long length = currentSegmentFile.length();
+                    if (length <= 256L * 1024L) {
+                        boolean deleted = currentSegmentFile.delete();
+                        if (deleted) {
+                            FLog.i(TAG, "Live-idle session produced no media; removed empty file: "
+                                    + currentSegmentFile.getName() + " (" + length + "B)");
+                        } else {
+                            FLog.w(TAG, "Live-idle session empty file could not be removed: "
+                                    + currentSegmentFile.getAbsolutePath());
+                        }
+                    } else {
+                        FLog.w(TAG, "Live-idle session has 0 fragments but file is "
+                                + length + "B — leaving it untouched");
+                    }
+                }
+
+                java.util.List<File> createdSnapshot;
+                synchronized (sessionCreatedLocalFiles) {
+                    createdSnapshot = new java.util.ArrayList<>(sessionCreatedLocalFiles);
+                }
+                for (File created : createdSnapshot) {
+                    if (created == null || !created.exists()) {
+                        continue;
+                    }
+                    if (created.length() == 0L) {
+                        boolean deleted = created.delete();
+                        FLog.i(TAG, "Removed 0-byte session output: " + created.getName()
+                                + " deleted=" + deleted);
+                    }
+                }
+                sessionCreatedLocalFiles.clear();
+
+                // Custom folder / SD card (SAF): same rule, applied to the content
+                // URI this session created. Only when the muxer confirms zero media
+                // fragments, and only when the provider reports a tiny/zero size.
+                if (liveIdleSession && fileFragmentsAfterStop == 0
+                        && currentSegmentFile == null && currentSegmentUriString != null) {
+                    try {
+                        Uri uri = Uri.parse(currentSegmentUriString);
+                        if ("content".equals(uri.getScheme())) {
+                            androidx.documentfile.provider.DocumentFile doc =
+                                    androidx.documentfile.provider.DocumentFile
+                                            .fromSingleUri(this, uri);
+                            if (doc != null && doc.exists()) {
+                                long length = doc.length();
+                                if (length <= 256L * 1024L) {
+                                    boolean deleted = doc.delete();
+                                    FLog.i(TAG, "Live-idle session (SAF) produced no media; "
+                                            + "delete=" + deleted + " len=" + length + "B uri=" + uri);
+                                } else {
+                                    FLog.w(TAG, "Live-idle session (SAF) has 0 fragments but "
+                                            + "document is " + length + "B — leaving it untouched");
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        FLog.w(TAG, "Live-idle SAF cleanup failed (left untouched)", e);
+                    }
+                }
 
                 // Delete temporary file if in STREAM_ONLY mode
                 if (currentSegmentFile != null && currentSegmentFile.exists()) {
-                    com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
-                        com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
-                    if (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY) {
+                    com.fadcam.StreamingMode streamingMode = 
+                        com.fadcam.FeatureRegistry.streaming().getStreamingMode();
+                    if (streamingMode == com.fadcam.StreamingMode.STREAM_ONLY) {
                         boolean deleted = currentSegmentFile.delete();
                         if (deleted) {
                             FLog.i(TAG, "🗑️ STREAM_ONLY: Deleted temporary file: " + currentSegmentFile.getName());
@@ -2577,26 +2879,59 @@ public class RecordingService extends Service {
         }, "RecordingStopThread").start();
     }
 
+    /**
+     * True when pausing should keep the camera/encoder alive so the live view
+     * continues, and only stop writing the recording file. This is the case when
+     * the remote server is on. Never used for camera switches: that path tears the
+     * camera session down and must use the real pause.
+     */
+    private boolean shouldKeepLiveStreamWhilePaused() {
+        return glRecordingPipeline != null
+                && glRecordingPipeline.isRecording()
+                && !isSwitchingCamera
+                && com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+    }
+
     private void pauseRecording() {
         if (recordingState != RecordingState.IN_PROGRESS)
             return;
-        if (glRecordingPipeline != null)
+        boolean keepLive = shouldKeepLiveStreamWhilePaused();
+        if (glRecordingPipeline != null && keepLive) {
+            // Keep encoding so the HLS stream never stops; only the file pauses.
+            FLog.i(TAG, "Live stream active: suspending recording file only");
+            keepLive = glRecordingPipeline.suspendFileRecording();
+        }
+        if (glRecordingPipeline != null && !keepLive) {
             glRecordingPipeline.pauseRecording(); // if supported
+        }
+        pausedWithLiveStream = keepLive;
+        if (keepLive) {
+            liveIdleUsedThisSession = true;
+        }
         if (pauseStartedAt <= 0L) {
             pauseStartedAt = SystemClock.elapsedRealtime();
         }
         persistRecordingTimelineState();
         recordingState = RecordingState.PAUSED;
+        // Realign the motion state machine: it kept running while the file was
+        // paused, and its expired POST_ROLL timer would immediately pause the
+        // recording again on the first frame after a manual resume.
+        if (motionStateMachine != null) {
+            motionStateMachine.syncToRecording(false);
+        }
+        motionConsecutivePersonHits = 0;
+        motionAutoPaused = false;
         sharedPreferencesManager.setRecordingInProgress(false);
         if (durationLimitController != null && durationLimitController.pauseSession()) {
             FLog.d(TAG, "Paused maximum recording duration countdown");
         }
         // Notify RemoteStreamManager so status JSON reflects paused state
-        com.fadcam.streaming.RemoteStreamManager.getInstance().pauseRecording();
+        com.fadcam.FeatureRegistry.streaming().pauseRecording();
 
-        // Battery saving: release camera while paused (unless motion detection needs it).
-        // The GL pipeline stays alive (paused) so recording can resume instantly.
-        if (!motionLabEnabledForSession && !isSwitchingCamera) {
+        // Battery saving: release camera while paused (unless motion detection or
+        // the live view needs it). The GL pipeline stays alive (paused) so
+        // recording can resume instantly.
+        if (!keepLive && !motionLabEnabledForSession && !isSwitchingCamera) {
             FLog.d(TAG, "Releasing camera during pause (motion detection disabled)");
             releaseDummyBackgroundSurface();
             releaseMotionAnalysisReader();
@@ -2611,7 +2946,7 @@ public class RecordingService extends Service {
             sensorDataProvider.stop();
         }
         if (watermarkManager != null) watermarkManager.pauseSensors();
-        
+
         setupRecordingResumeNotification();
         showRecordingInPausedToast();
         broadcastOnRecordingPaused();
@@ -2621,42 +2956,61 @@ public class RecordingService extends Service {
         if (recordingState != RecordingState.PAUSED)
             return;
 
+        boolean resumeLive = pausedWithLiveStream;
+        pausedWithLiveStream = false;
+
         // Reopen camera if it was released during pause (motion detection disabled).
         // openCamera() is async — the pipeline handles frames arriving after resume.
-        if (!motionLabEnabledForSession && cameraDevice == null && !isSwitchingCamera) {
+        if (!resumeLive && !motionLabEnabledForSession && cameraDevice == null && !isSwitchingCamera) {
             FLog.d(TAG, "Reopening camera for resume (was released during pause)");
             openCamera();
         }
 
-        if (glRecordingPipeline != null)
-            glRecordingPipeline.resumeRecording(); // if supported
+        if (glRecordingPipeline != null) {
+            if (resumeLive) {
+                FLog.i(TAG, "Live stream active: resuming recording file only");
+                glRecordingPipeline.resumeFileRecording();
+            } else {
+                glRecordingPipeline.resumeRecording(); // if supported
+            }
+        }
         if (pauseStartedAt > 0L) {
             accumulatedPausedDurationMs += Math.max(0L, SystemClock.elapsedRealtime() - pauseStartedAt);
             pauseStartedAt = 0L;
         }
         persistRecordingTimelineState();
         recordingState = RecordingState.IN_PROGRESS;
+        // Realign the motion state machine to the state the recorder is now in, so a
+        // manual resume continues motion recording instead of being stopped by a
+        // stale POST_ROLL expiry.
+        if (motionStateMachine != null) {
+            motionStateMachine.syncToRecording(true);
+        }
+        motionConsecutivePersonHits = 0;
+        motionAutoPaused = false;
         sharedPreferencesManager.setRecordingInProgress(true);
         if (durationLimitController != null && durationLimitController.resumeSession()) {
             FLog.d(TAG, "Resumed maximum recording duration countdown");
         }
         // Notify RemoteStreamManager so status JSON reflects resumed (recording) state
-        com.fadcam.streaming.RemoteStreamManager.getInstance().resumeRecording();
-        
+        com.fadcam.FeatureRegistry.streaming().resumeRecording();
+
         // Resume noise monitor and sensors if they were enabled
-        if (sharedPreferencesManager != null && sharedPreferencesManager.isNoiseEnabled() && noiseMonitor != null) {
+        if (!resumeLive && sharedPreferencesManager != null && sharedPreferencesManager.isNoiseEnabled() && noiseMonitor != null) {
             noiseMonitor.start(this);
         }
-        if (sensorDataProvider != null) {
+        if (!resumeLive && sensorDataProvider != null) {
             // Seed with the REAL last fix (carries speed/altitude), not a
             // fabricated coords-only Location. Null is fine — the next live fix
             // updates the provider anyway.
             android.location.Location androidLoc = locationHelper != null ? locationHelper.getRawLocation() : null;
             sensorDataProvider.start(androidLoc);
         }
-        if (watermarkManager != null) watermarkManager.resumeSensors(locationHelper);
-        
-        setupRecordingInProgressNotification();
+        if (!resumeLive && watermarkManager != null) watermarkManager.resumeSensors(locationHelper);
+
+        // Coming back from PAUSED: update straight to the configured text instead
+        // of flashing "Initializing..." and waiting on the camera handler.
+        refreshRecordingNotificationAsync();
         showRecordingResumedToast();
         broadcastOnRecordingResumed();
     }
@@ -3005,10 +3359,20 @@ public class RecordingService extends Service {
     }
 
     private void configureMotionLabForSession() {
-        motionLabEnabledForSession = sharedPreferencesManager != null && sharedPreferencesManager.isMotionModeEnabled();
+        if (sharedPreferencesManager != null) {
+            if (motionRuntime != null) {
+                motionRuntime.release();
+            }
+            motionRuntime = new com.fadcam.motion.domain.model.MotionRuntimeSettings(sharedPreferencesManager);
+        }
+        // Lite has no Motion Lab: the preference is not exposed there, so arming on a
+        // restored/leftover value would run detection with no way to see or change it.
+        motionLabEnabledForSession = !com.fadcam.BuildConfig.LITE_EDITION
+                && sharedPreferencesManager != null
+                && sharedPreferencesManager.isMotionModeEnabled();
+        com.fadcam.FeatureRegistry.streaming().setMotionState(motionLabEnabledForSession ? "armed" : "off");
         lastMotionAnalysisTimestampMs = 0L;
         motionAutoPaused = false;
-        motionSafeMode = RuntimeCompat.shouldUseSafeMotionAnalysis(getApplicationContext());
         motionConsecutivePersonHits = 0;
         motionFramesAnalyzed = 0L;
         motionTriggerActionCount = 0L;
@@ -3018,11 +3382,15 @@ public class RecordingService extends Service {
         motionLastTelemetryLogMs = 0L;
         motionPersonLikelyUntilMs = 0L;
         motionLastForensicsHeartbeatMs = 0L;
+        forensicsSubjectPresentLastSample = false;
         motionJpegAttemptCount = 0L;
         motionJpegSuccessCount = 0L;
         motionJpegSkipCount = 0L;
         motionJpegEncodeTotalMs = 0L;
         motionLastPerfLogMs = 0L;
+        appliedAnalysisResolution = -1;
+        appliedPreRollSeconds = -1;
+        analysisSurfaceReconfigurePending = false;
         motionStateMachine = motionLabEnabledForSession
                 ? new com.fadcam.motion.domain.state.MotionStateMachine(motionPolicy)
                 : null;
@@ -3055,6 +3423,16 @@ public class RecordingService extends Service {
         }
     }
 
+    private void disableMotionProcessingForSession(String reason) {
+        motionLabEnabledForSession = false;
+        motionStateMachine = null;
+        motionAutoPaused = false;
+        com.fadcam.FeatureRegistry.streaming().setMotionState("off");
+        // Keep the ImageReader attached: the camera session is already live and
+        // detaching a surface mid-session is unsafe. It is released on stop.
+        FLog.w(TAG, "Motion processing disabled for this session. reason=" + reason);
+    }
+
     private void disableMotionLabForSession(String reason) {
         if (!motionLabEnabledForSession) {
             return;
@@ -3062,20 +3440,24 @@ public class RecordingService extends Service {
         motionLabEnabledForSession = false;
         motionStateMachine = null;
         motionAutoPaused = false;
+        com.fadcam.FeatureRegistry.streaming().setMotionState("off");
         releaseMotionAnalysisReader();
         FLog.w(TAG, "Motion Lab disabled for current session. reason=" + reason + "; continuing normal recording flow");
     }
 
     private Surface getOrCreateMotionAnalysisSurface() {
         try {
-            int analysisFps = sharedPreferencesManager != null ? sharedPreferencesManager.getMotionAnalysisFps() : 3;
-            if (motionOpenCvActive && !motionSafeMode) {
-                // Keep detector responsive while limiting CPU spikes.
-                analysisFps = Math.max(3, Math.min(6, analysisFps));
-            }
-            if (motionSafeMode) {
-                analysisFps = Math.min(2, analysisFps);
-            }
+            // Backend capability, not warmup state: the analysis surface is created
+            // before the detector is ready, and the size must match the backend.
+            boolean highResBackend =
+                    com.fadcam.FeatureRegistry.features().hasOpenCvMotionBackend();
+            // The user's value is the value. No hidden caps: a lower setting is a
+            // deliberate CPU choice, and silently running it faster would make the
+            // setting a lie.
+            int analysisFps = motionRuntime != null
+                    ? motionRuntime.getAnalysisFps()
+                    : (sharedPreferencesManager != null
+                        ? sharedPreferencesManager.getMotionAnalysisFps() : 10);
             motionAnalysisIntervalMs = Math.max(100L, 1000L / Math.max(1, analysisFps));
             Size selected = sharedPreferencesManager != null
                     ? sharedPreferencesManager.getCameraResolution()
@@ -3083,57 +3465,70 @@ public class RecordingService extends Service {
             // Scale divisor with recording resolution: MOG2 and EfficientDet both work
             // fine at lower resolutions, but the camera ISP has to produce YUV frames
             // for the analysis surface, which can starve the encoder at high res+fps.
-            int recordingHeight = selected.getHeight();
-            int divisor = motionSafeMode ? 6
-                    : (motionOpenCvActive
-                        ? (recordingHeight >= 2160 ? 4 : (recordingHeight >= 1080 ? 3 : 1))
-                        : 2);
-            int maxWidth = motionSafeMode ? 192 : (motionOpenCvActive ? 640 : 640);
-            int maxHeight = motionSafeMode ? 108 : (motionOpenCvActive ? 360 : 360);
-            int width = Math.max(96, Math.min(maxWidth, selected.getWidth() / divisor));
-            int height = Math.max(54, Math.min(maxHeight, selected.getHeight() / divisor));
+            // Analyzer frame size. The whole camera field of view is always
+            // analysed (no cropping); only the sampling grid changes. OpenCV's
+            // own MOG2 samples and production CCTV pipelines (CVEDIA ~300 px,
+            // Intel reference 640 px) run well below sensor resolution, so this
+            // is a quality/CPU trade-off, not a detail limit.
+            int requestedHeight = motionRuntime != null
+                    ? motionRuntime.getAnalysisResolution()
+                    : (sharedPreferencesManager != null
+                        ? sharedPreferencesManager.getMotionAnalysisResolution() : 720);
+            // The selected analyzer resolution is used verbatim (never above the
+            // camera's own output size). No hidden downgrade for low-RAM devices.
+            int width;
+            int height;
+            height = Math.min(requestedHeight, Math.max(240, selected.getHeight()));
+            width = Math.max(96, Math.round(
+                    height * selected.getWidth() / (float) selected.getHeight()));
+            if ((width & 1) != 0) width--;
+            if ((height & 1) != 0) height--;
             boolean recreate = motionAnalysisReader == null
                     || motionAnalysisReader.getWidth() != width
                     || motionAnalysisReader.getHeight() != height;
             if (recreate) {
                 releaseMotionAnalysisReader();
-                motionAnalysisReader = ImageReader.newInstance(width, height, android.graphics.ImageFormat.YUV_420_888, 2);
+                motionAnalysisReader = ImageReader.newInstance(width, height, android.graphics.ImageFormat.YUV_420_888, 4);
                 motionAnalysisReader.setOnImageAvailableListener(reader -> {
-                    Image image = null;
+                    // This callback runs on the camera's own thread. Doing the analysis
+                    // here meant MOG2 at up to 1920 px ran between capture requests,
+                    // which starves the encoder and shows up as frame gaps and lag.
+                    //
+                    // The frame goes into a single latest-value slot and is closed
+                    // immediately if a newer one replaces it. A work QUEUE here is
+                    // wrong: each queued item keeps a camera buffer checked out, the
+                    // HAL runs out of them, and the whole pipeline collapses to a few
+                    // frames per second.
+                    android.media.Image image;
                     try {
                         image = reader.acquireLatestImage();
-                        if (image == null) {
-                            return;
-                        }
-                        long now = SystemClock.elapsedRealtime();
-                        // When the motion state has been IDLE (no motion for a while), throttle analysis
-                        // to 1 fps to save power and reduce heat.  Cameras with a third output surface
-                        // (analysis YUV) keep the ISP active even when nothing is recording.
-                        long effectiveIntervalMs = motionAnalysisIntervalMs;
-                        if (motionStateMachine != null
-                                && motionStateMachine.getState() == com.fadcam.motion.domain.state.MotionSessionState.IDLE
-                                && recordingState == RecordingState.PAUSED) {
-                            effectiveIntervalMs = Math.max(effectiveIntervalMs, 1000L);
-                        }
-                        if (now - lastMotionAnalysisTimestampMs < effectiveIntervalMs) {
-                            return;
-                        }
-                        lastMotionAnalysisTimestampMs = now;
-                        float rawMotionScore = motionDetector.detectScore(image);
-                        com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket =
-                                com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket.copyFrom(image);
-                        image.close();
-                        image = null;
-                        processMotionFrame(rawMotionScore, framePacket, now);
                     } catch (Throwable t) {
-                        FLog.w(TAG, "Motion analysis frame processing failed", t);
-                    } finally {
-                        if (image != null) {
-                            image.close();
+                        FLog.w(TAG, "Motion analysis frame acquisition failed", t);
+                        return;
+                    }
+                    if (image == null) {
+                        return;
+                    }
+                    android.media.Image previous = pendingAnalysisImage.getAndSet(image);
+                    if (previous != null) {
+                        try {
+                            previous.close();
+                        } catch (Throwable ignored) {
                         }
                     }
+                    scheduleAnalysisDrain();
                 }, backgroundHandler);
-                FLog.d(TAG, "Created motion analysis reader: " + width + "x" + height + " @" + analysisFps + "fps");
+                FLog.d(TAG, "Created motion analysis reader: " + width + "x" + height
+                        + " @" + analysisFps + "fps");
+                motionAnalysisWidth = width;
+                motionAnalysisHeight = height;
+                // Record what this reader was built for. Without this the first
+                // analysed frame sees a "change" from the -1 sentinel and needlessly
+                // rebuilds the camera session once per recording start.
+                appliedAnalysisResolution = motionRuntime != null
+                        ? motionRuntime.getAnalysisResolution()
+                        : (sharedPreferencesManager != null
+                            ? sharedPreferencesManager.getMotionAnalysisResolution() : 720);
             }
             return motionAnalysisReader.getSurface();
         } catch (Throwable t) {
@@ -3143,12 +3538,343 @@ public class RecordingService extends Service {
         }
     }
 
+    /**
+     * Hands the newest pending analysis frame to the analysis thread, one at a time.
+     * If analysis is still busy the frame is simply left in the slot and replaced by
+     * the next one; nothing queues up and no camera buffer is held.
+     */
+    private void scheduleAnalysisDrain() {
+        if (motionAnalysisExecutor == null) {
+            android.media.Image orphan = pendingAnalysisImage.getAndSet(null);
+            if (orphan != null) {
+                try {
+                    orphan.close();
+                } catch (Throwable ignored) {
+                }
+            }
+            return;
+        }
+        if (!analysisDrainScheduled.compareAndSet(false, true)) {
+            return;
+        }
+        motionAnalysisExecutor.execute(() -> {
+            try {
+                android.media.Image image = pendingAnalysisImage.getAndSet(null);
+                if (image != null) {
+                    processMotionAnalysisImage(image);
+                }
+            } catch (Throwable t) {
+                FLog.w(TAG, "Motion analysis drain failed", t);
+            } finally {
+                analysisDrainScheduled.set(false);
+                // A frame may have arrived while this one was being analysed.
+                if (pendingAnalysisImage.get() != null) {
+                    scheduleAnalysisDrain();
+                }
+            }
+        });
+    }
+
+    /** Releases any frame still waiting for analysis. */
+    private void discardPendingAnalysisImage() {
+        android.media.Image image = pendingAnalysisImage.getAndSet(null);
+        if (image != null) {
+            try {
+                image.close();
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    /**
+     * One analysis iteration, on the dedicated analysis thread.
+     *
+     * <p>Owns the {@link Image} it is given and always closes it. Frames arriving
+     * while this is busy are dropped, which is correct: analysis works on the newest
+     * frame, never on a backlog.
+     */
+    private void processMotionAnalysisImage(@NonNull android.media.Image image) {
+        try {
+                        long now = SystemClock.elapsedRealtime();
+                        // Re-read the FPS every frame so a Motion Lab change applies
+                        // immediately, without restarting the session.
+                        com.fadcam.motion.domain.model.MotionRuntimeSettings runtime = motionRuntime;
+                        int requestedFps = runtime != null ? runtime.getAnalysisFps() : 10;
+                        boolean openCvBackend =
+                                com.fadcam.FeatureRegistry.features().hasOpenCvMotionBackend();
+                        // The configured rate is used as-is. The only bound is the
+                        // shared 1..15 range that the preference itself enforces; there
+                        // is no backend-specific or "low-RAM" override.
+                        int cappedFps = Math.max(1, Math.min(15, requestedFps));
+                        motionAnalysisIntervalMs = Math.max(50L, 1000L / Math.max(1, cappedFps));
+                        long effectiveIntervalMs = motionAnalysisIntervalMs;
+                        if (now - lastMotionAnalysisTimestampMs < effectiveIntervalMs) {
+                            return;
+                        }
+                        lastMotionAnalysisTimestampMs = now;
+                        com.fadcam.motion.domain.detector.MotionDetector activeDetector = motionDetector;
+                        if (activeDetector == null) {
+                            // Backend warmup not finished (or failed). Drop frames
+                            // instead of silently using a different detector.
+                            return;
+                        }
+                        activeDetector.setSensitivity(runtime != null ? runtime.getSensitivity() : 80);
+                        float rawMotionScore = activeDetector.detectScore(image);
+
+                        // Copying the full YUV frame at 10 fps and running the AI
+                        // model on every frame starves the camera/encoder and makes
+                        // the preview lag. The motion detector uses the Image
+                        // directly; only copy when AI (2 fps) or the visual monitor
+                        // (3 fps) actually needs a frame.
+                        applyAnalysisResolutionIfChanged();
+
+                        // The process-wide model may have finished loading after the
+                        // session started, or been released when the feature was
+                        // disabled. Re-read it every frame; never cache a dead handle.
+                        // A GPU measured too slow is still used, but at a cadence the
+                        // device can actually sustain. Disabling it entirely looked
+                        // attractive until it turned out to disable forensic evidence too:
+                        // without detections there are no events and nothing is stored.
+                        // The adaptive interval below handles the cost instead.
+                        efficientDetDetector =
+                                com.fadcam.motion.domain.detector.ObjectDetectionRuntime.get();
+                        // While the file is actually recording, the encoder shares the GPU
+                        // with inference, so sample half as often; when idle there is no
+                        // encoder to disturb and detection can run at the faster rate.
+                        // Back off when the device cannot keep up. A GPU that needs
+                        // ~1.5 s per inference (measured on a Tecno KG5k) cannot run at
+                        // 1 Hz; without this it occupies the device continuously and
+                        // makes the camera and UI worse. The cadence adapts to what the
+                        // hardware actually achieves instead of assuming a fast GPU.
+                        long baseAiIntervalMs = "IN_PROGRESS".equals(recordingState.name()) ? 1000L : 500L;
+                        // Keep inference within roughly a third of wall time. A device
+                        // needing 1.5 s per inference therefore analyses about once every
+                        // 4.5 s instead of continuously occupying its GPU. That is slow
+                        // but honest: evidence is still recorded, and the camera keeps
+                        // running. The budget is a measured property of the hardware, not
+                        // a hidden cap on what the feature can do.
+                        // A user-chosen interval wins. Otherwise derive one from the
+                        // measured cost, keeping inference to roughly a third of wall
+                        // time so a slow GPU does not occupy the device continuously.
+                        int userInterval = sharedPreferencesManager != null
+                                ? sharedPreferencesManager.getMotionAiIntervalMs() : 0;
+                        long aiIntervalMs;
+                        if (userInterval > 0) {
+                            aiIntervalMs = userInterval;
+                        } else {
+                            long observedAiMs = motionLastInferenceDurationMs;
+                            aiIntervalMs = baseAiIntervalMs;
+                            if (observedAiMs > 0L) {
+                                aiIntervalMs = Math.max(baseAiIntervalMs, observedAiMs * 3L);
+                                aiIntervalMs = Math.min(aiIntervalMs, MAX_AI_INTERVAL_MS);
+                            }
+                        }
+                        if (aiIntervalMs != motionEffectiveAiIntervalMs) {
+                            motionEffectiveAiIntervalMs = aiIntervalMs;
+                            FLog.i(TAG, "Detection interval: " + aiIntervalMs + " ms ("
+                                    + (userInterval > 0 ? "user setting" : "automatic")
+                                    + ", measured inference " + motionLastInferenceDurationMs + " ms)");
+                        }
+                        // Only analyse frames that actually contain motion. Running the
+                        // model on a static scene costs full GPU power for a result that
+                        // cannot change, and on a weak GPU it occupies the device
+                        // permanently (measured 1.5 s per inference on the Tecno).
+                        boolean sceneActive = rawMotionScore > motionPolicy.stopThresholdFromSensitivity(
+                                runtime != null ? runtime.getSensitivity()
+                                        : (sharedPreferencesManager != null
+                                            ? sharedPreferencesManager.getMotionSensitivity() : 80));
+                        boolean aiDue = efficientDetDetector != null
+                                && !aiInferenceInFlight.get()
+                                && (sceneActive || recordingState == RecordingState.PAUSED)
+                                && (now - motionLastAiDetectionMs) >= aiIntervalMs;
+                        // The frame copy is needed by the detector and, separately, by
+                        // forensic evidence capture. Evidence is decided later in the
+                        // pipeline (it depends on the detections), so when forensics is
+                        // armed the packet is captured up front; otherwise the once-a-
+                        // second JPEG would have no pixels to crop from.
+                        boolean forensicsArmed = sharedPreferencesManager != null
+                                && sharedPreferencesManager.isDigitalForensicsEnabled()
+                                && sharedPreferencesManager.isDfEvidenceCollectionEnabled();
+                        com.fadcam.motion.domain.detector.AiObjectDetector.FramePacket framePacket = null;
+                        if (aiDue || forensicsArmed) {
+                            // The sensor delivers a sideways frame in portrait. The model
+                            // was trained on upright photos, so hand it the rotation and
+                            // let it sample the frame upright in one pass.
+                            framePacket = com.fadcam.motion.domain.detector.AiObjectDetector
+                                    .FramePacket.copyFrom(image, getUprightRotationDegrees(),
+                                            isFrontCameraSelected());
+                        }
+                        image.close();
+                        image = null;
+                        // Run inference off this thread. The ImageReader callback holds
+                        // a camera buffer until it returns; 100 ms of GPU work here
+                        // backpressures the capture session and drops encoder frames.
+                        if (aiDue && framePacket != null) {
+                            submitAiInference(efficientDetDetector, framePacket);
+                        }
+                        processMotionFrame(rawMotionScore, framePacket, now);
+        } catch (Throwable t) {
+            FLog.w(TAG, "Motion analysis frame processing failed", t);
+        } finally {
+            try {
+                image.close();
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    /** Analyzer height the current ImageReader was built for. */
+    private int appliedAnalysisResolution = -1;
+    /** Set when the reader size changed and the camera session must be rebuilt. */
+    private volatile boolean analysisSurfaceReconfigurePending = false;
+
+    /**
+     * Applies a changed analyzer resolution.
+     *
+     * <p>The analysis ImageReader is a camera output surface, so its size cannot be
+     * changed in place: the reader has to be replaced and the capture session
+     * rebuilt around it. That rebuild is requested here and performed on the camera
+     * thread, so this method only detects the change and never touches the session.
+     */
+    private void applyAnalysisResolutionIfChanged() {
+        com.fadcam.motion.domain.model.MotionRuntimeSettings runtime = motionRuntime;
+        if (runtime == null) {
+            return;
+        }
+        int requested = runtime.getAnalysisResolution();
+        if (requested == appliedAnalysisResolution) {
+            return;
+        }
+        appliedAnalysisResolution = requested;
+        // Only meaningful once a reader exists (i.e. while a camera session is live).
+        if (motionAnalysisReader == null) {
+            return;
+        }
+        FLog.i(TAG, "Analyzer resolution changed to " + requested
+                + "p — rebuilding analysis surface");
+        analysisSurfaceReconfigurePending = true;
+        if (backgroundHandler != null) {
+            backgroundHandler.post(this::reconfigureAnalysisSurface);
+        }
+    }
+
+    /**
+     * Applies a changed analyzer resolution while a session is live.
+     *
+     * <p>Camera2 output surfaces are fixed for the lifetime of a capture session, so
+     * a new size always means a new session — there is no partial reconfigure to
+     * attempt and therefore no fallback path. The reader is rebuilt for the new size
+     * and the session is recreated once. If the rebuild cannot start (a camera switch
+     * is already running, or no camera device), the change is NOT applied silently:
+     * the user is told the new resolution takes effect on the next recording.
+     */
+    private void reconfigureAnalysisSurface() {
+        if (!analysisSurfaceReconfigurePending || isStopping) {
+            return;
+        }
+        analysisSurfaceReconfigurePending = false;
+        if (!motionLabEnabledForSession) {
+            return;
+        }
+        FLog.i(TAG, "Recreating analysis reader for " + appliedAnalysisResolution + "p");
+        releaseMotionAnalysisReader();
+        recreateCameraSessionForAnalysisChange();
+    }
+
+    private void recreateCameraSessionForAnalysisChange() {
+        if (isSwitchingCamera || cameraDevice == null) {
+            // Do not fail silently: the setting is stored, it just cannot be applied
+            // to the live session right now.
+            FLog.w(TAG, "Analyzer resolution: session rebuild skipped (switching="
+                    + isSwitchingCamera + ", camera=" + (cameraDevice != null) + ")");
+            notifyAnalyzerResolutionDeferred();
+            return;
+        }
+        isSwitchingCamera = true;
+        cameraSwitchPreviousType = sharedPreferencesManager.getCameraSelection();
+        cameraSwitchStartTimeNanos = System.nanoTime();
+        // No catch-and-continue: openCamera() owns its own failure reporting (it
+        // surfaces a recording error). Swallowing it here would leave the user with a
+        // dead preview and no explanation.
+        try {
+            FLog.i(TAG, "Analyzer resolution: rebuilding camera session");
+            closeCameraResourcesForSwitch();
+            openCamera();
+        } finally {
+            isSwitchingCamera = false;
+        }
+    }
+
+    /** Tells the user the analyzer change needs a fresh session. */
+    private void notifyAnalyzerResolutionDeferred() {
+        mainHandler.post(() -> {
+            try {
+                Utils.showQuickToast(getApplicationContext(),
+                        "Analyzer resolution will apply on the next recording");
+            } catch (Throwable ignored) {
+            }
+        });
+    }
+
+    /** Last pre-roll window pushed to the pipeline, so a change is applied once. */
+    private int appliedPreRollSeconds = -1;
+
+    /**
+     * Pushes the current pre-roll setting into the pipeline. Called when the value
+     * changes so a Motion Lab edit applies without restarting the session.
+     */
+    private void applyPreRollIfChanged() {
+        if (glRecordingPipeline == null || motionRuntime == null) {
+            return;
+        }
+        int seconds = motionRuntime.getPreRollSeconds();
+        if (seconds == appliedPreRollSeconds) {
+            return;
+        }
+        appliedPreRollSeconds = seconds;
+        glRecordingPipeline.setPreRollSeconds(seconds);
+        FLog.i(TAG, "Pre-roll applied live: " + seconds + "s");
+    }
+
+    /**
+     * Runs one detection on the dedicated inference thread. Only one inference is
+     * allowed in flight: a slow device must never build a queue of stale frames.
+     */
+    private void submitAiInference(
+            @Nullable com.fadcam.motion.domain.detector.AiObjectDetector detector,
+            @Nullable com.fadcam.motion.domain.detector.AiObjectDetector.FramePacket packet
+    ) {
+        if (detector == null || packet == null || aiInferenceExecutor == null) {
+            return;
+        }
+        if (!aiInferenceInFlight.compareAndSet(false, true)) {
+            return;
+        }
+        aiInferenceExecutor.execute(() -> {
+            long inferenceStart = SystemClock.elapsedRealtime();
+            try {
+                java.util.List<com.fadcam.motion.domain.detector.AiObjectDetector.DetectionResult> results =
+                        detector.detect(packet);
+                motionLastDetections = results != null
+                        ? results
+                        : java.util.Collections.emptyList();
+                motionLastAiDetectionMs = SystemClock.elapsedRealtime();
+            } catch (Throwable t) {
+                FLog.w(TAG, "Object inference failed; keeping previous detections", t);
+            } finally {
+                motionLastInferenceDurationMs = SystemClock.elapsedRealtime() - inferenceStart;
+                aiInferenceInFlight.set(false);
+            }
+        });
+    }
+
     private void processMotionFrame(
             float rawMotionScore,
-            @Nullable com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket,
+            @Nullable com.fadcam.motion.domain.detector.AiObjectDetector.FramePacket framePacket,
             long nowMs
     ) {
         motionFramesAnalyzed++;
+        applyPreRollIfChanged();
         // OpenCV MOG2 outputs are intentionally conservative; normalize to policy scale.
         if (motionOpenCvActive) {
             rawMotionScore = Math.min(1f, rawMotionScore * 1.35f);
@@ -3163,11 +3889,15 @@ public class RecordingService extends Service {
             motionScoreEma = (alpha * rawMotionScore) + ((1f - alpha) * motionScoreEma);
         }
         float motionScore = motionScoreEma;
-        List<com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult> detections =
-                (efficientDetDetector != null && framePacket != null)
-                        ? efficientDetDetector.detect(framePacket)
-                        : java.util.Collections.emptyList();
-        com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult primaryDetection =
+        List<com.fadcam.motion.domain.detector.AiObjectDetector.DetectionResult> detections;
+        if (efficientDetDetector != null) {
+            // Detection runs on aiInferenceExecutor. This motion frame uses the most
+            // recent completed result; a miss is at most one AI interval old.
+            detections = motionLastDetections;
+        } else {
+            detections = java.util.Collections.emptyList();
+        }
+        com.fadcam.motion.domain.detector.AiObjectDetector.DetectionResult primaryDetection =
                 efficientDetDetector != null ? efficientDetDetector.choosePrimary(detections) : null;
         float personConfidence = efficientDetDetector != null ? efficientDetDetector.bestPersonConfidence(detections) : 0f;
         boolean personDetectedRaw = efficientDetDetector != null && efficientDetDetector.hasPerson(detections);
@@ -3176,7 +3906,8 @@ public class RecordingService extends Service {
         } else {
             motionConsecutivePersonHits = Math.max(0, motionConsecutivePersonHits - 1);
         }
-        int requiredHits = motionSafeMode ? 3 : 2;
+        // Fixed confirmation depth: detection behaviour must not vary by device.
+        int requiredHits = 2;
         boolean personDetected = personDetectedRaw && motionConsecutivePersonHits >= requiredHits;
         if (personDetectedRaw && personConfidence >= 0.62f) {
             motionPersonLikelyUntilMs = nowMs + 2500L;
@@ -3195,6 +3926,11 @@ public class RecordingService extends Service {
         float debugMaxDelta = 0f;
         float debugCenterX = 0.5f;
         float debugCenterY = 0.5f;
+        int debugBlobCount = 0;
+        java.util.ArrayList<android.graphics.Rect> debugBlobRects = new java.util.ArrayList<>();
+        float debugMinBlobRatio = 0f;
+        int debugWorkingWidth = 0;
+        int debugWorkingHeight = 0;
         boolean debugGlobalSuppressed = false;
         if (motionDetector instanceof com.fadcam.motion.domain.detector.MotionDebugInfoProvider) {
             com.fadcam.motion.domain.detector.MotionDebugInfoProvider detector =
@@ -3206,133 +3942,42 @@ public class RecordingService extends Service {
             debugMaxDelta = detector.getLastMaxDelta();
             debugCenterX = detector.getLastMotionCenterX();
             debugCenterY = detector.getLastMotionCenterY();
+            debugBlobCount = detector.getLastBlobCount();
+            debugBlobRects = new java.util.ArrayList<>(detector.getLastBlobRects());
+            debugMinBlobRatio = detector.getMinBlobAreaRatio();
+            debugWorkingWidth = detector.getWorkingWidth();
+            debugWorkingHeight = detector.getWorkingHeight();
             debugGlobalSuppressed = detector.isLastGlobalMotionSuppressed();
         }
         com.fadcam.motion.domain.state.MotionSessionState stateBefore =
                 motionStateMachine != null ? motionStateMachine.getState() : null;
         if (motionStateMachine != null && sharedPreferencesManager != null) {
+            com.fadcam.motion.domain.model.MotionRuntimeSettings runtime = motionRuntime;
             com.fadcam.motion.domain.model.MotionSettings settings = new com.fadcam.motion.domain.model.MotionSettings(
-                    sharedPreferencesManager.isMotionModeEnabled(),
+                    runtime != null ? runtime.isEnabled() : sharedPreferencesManager.isMotionModeEnabled(),
                     com.fadcam.motion.domain.model.MotionTriggerMode.fromValue(
                             sharedPreferencesManager.getMotionTriggerMode()),
-                    sharedPreferencesManager.getMotionSensitivity(),
-                    sharedPreferencesManager.getMotionAnalysisFps(),
-                    sharedPreferencesManager.getMotionDebounceMs(),
-                    sharedPreferencesManager.getMotionPostRollMs(),
-                    sharedPreferencesManager.getMotionPreRollSeconds(),
-                    sharedPreferencesManager.isMotionAutoTorchEnabled());
+                    runtime != null ? runtime.getSensitivity() : sharedPreferencesManager.getMotionSensitivity(),
+                    runtime != null ? runtime.getAnalysisFps() : sharedPreferencesManager.getMotionAnalysisFps(),
+                    runtime != null ? runtime.getAnalysisResolution()
+                            : sharedPreferencesManager.getMotionAnalysisResolution(),
+                    runtime != null ? runtime.getDebounceMs() : sharedPreferencesManager.getMotionDebounceMs(),
+                    runtime != null ? runtime.getPostRollMs() : sharedPreferencesManager.getMotionPostRollMs(),
+                    runtime != null ? runtime.getPreRollSeconds() : sharedPreferencesManager.getMotionPreRollSeconds(),
+                    runtime != null ? runtime.isAutoTorchEnabled() : sharedPreferencesManager.isMotionAutoTorchEnabled());
             float startThreshold = motionPolicy.startThresholdFromSensitivity(settings.getSensitivity());
             com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction action =
                     motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
                             nowMs,
                             motionScore,
                             personDetected));
-            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
-                    && motionStateMachine.getState() != com.fadcam.motion.domain.state.MotionSessionState.RECORDING
-                    && !debugGlobalSuppressed
-                    && personLikely
-                    && personConfidence >= 0.70f
-                    && debugChangedArea >= 0.008f
-                    && debugMeanDelta >= 0.005f
-                    && debugStrongArea >= 0.008f) {
-                // Dedicated far-subject lane: small distant motion often has tiny changed area.
-                float farAssistFloor = Math.max(
-                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.02f,
-                        startThreshold * 0.88f
-                );
-                float farAssistScore = Math.max(motionScore, Math.min(1f, farAssistFloor));
-                if (farAssistScore > motionScore) {
-                    action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
-                            nowMs,
-                            farAssistScore,
-                            true));
-                    motionScore = farAssistScore;
-                }
-            }
-            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
-                    && motionStateMachine.getState() != com.fadcam.motion.domain.state.MotionSessionState.RECORDING
-                    && !debugGlobalSuppressed
-                    && motionOpenCvActive
-                    && debugChangedArea >= 0.004f
-                    && debugChangedArea <= 0.085f
-                    && debugMeanDelta >= 0.007f
-                    && (debugStrongArea >= 0.018f || debugMaxDelta >= 0.58f)
-                    && rawMotionScore >= 0.06f) {
-                // Edge-entry lane: catches partial face / hand / corner movement bursts.
-                float edgeAssistFloor = Math.max(
-                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.03f,
-                        startThreshold * 0.90f
-                );
-                float edgeAssistScore = Math.max(motionScore, Math.min(1f, edgeAssistFloor));
-                if (edgeAssistScore > motionScore) {
-                    action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
-                            nowMs,
-                            edgeAssistScore,
-                            personLikely));
-                    motionScore = edgeAssistScore;
-                }
-            }
-            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
-                    && motionStateMachine.getState() != com.fadcam.motion.domain.state.MotionSessionState.RECORDING
-                    && !debugGlobalSuppressed
-                    && motionOpenCvActive
-                    && personLikely
-                    && personConfidence >= 0.66f
-                    && debugMeanDelta >= 0.008f
-                    && debugMaxDelta >= 0.48f
-                    && (debugChangedArea >= 0.003f || debugStrongArea >= 0.010f)) {
-                // Micro-entry lane: partial face/hand at edge should start quickly.
-                float microEntryFloor = Math.max(
-                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.045f,
-                        startThreshold * 0.94f
-                );
-                float microEntryScore = Math.max(motionScore, Math.min(1f, microEntryFloor));
-                if (microEntryScore > motionScore) {
-                    action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
-                            nowMs,
-                            microEntryScore,
-                            true));
-                    motionScore = microEntryScore;
-                }
-            }
-            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
-                    && motionStateMachine.getState() != com.fadcam.motion.domain.state.MotionSessionState.RECORDING
-                    && !debugGlobalSuppressed
-                    && debugChangedArea >= 0.05f
-                    && debugMeanDelta >= 0.010f
-                    && debugStrongArea >= 0.020f
-                    && personLikely) {
-                // Assist far/low-contrast motion so starts are not missed when person is confirmed.
-                float assistedFloor = Math.max(startThreshold * 0.84f,
-                        motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()) + 0.015f);
-                float assistedScore = Math.max(motionScore, Math.min(1f, assistedFloor));
-                if (assistedScore > motionScore) {
-                    action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
-                            nowMs,
-                            assistedScore,
-                            personLikely));
-                    motionScore = assistedScore;
-                }
-            }
-            if (action == com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE
-                    && stateBefore == com.fadcam.motion.domain.state.MotionSessionState.IDLE
-                    && personDetectedRaw
-                    && personConfidence >= (debugGlobalSuppressed ? 0.78f : 0.60f)
-                    && (!debugGlobalSuppressed || debugChangedArea < 0.45f)) {
-                float boostedScore = Math.max(
-                        motionScore,
-                        startThreshold + (debugGlobalSuppressed ? 0.08f : 0.03f)
-                );
-                action = motionStateMachine.onSignal(settings, new com.fadcam.motion.domain.model.MotionSignal(
-                        nowMs,
-                        Math.min(1f, boostedScore),
-                        true
-                ));
-                if (action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE) {
-                    motionScore = boostedScore;
-                    personDetected = true;
-                }
-            }
+            // Detection decision comes ONLY from the detector score and the state
+            // machine above. The previous code contained four hand-tuned "assist
+            // lanes" plus a confidence boost that fabricated a passing score from
+            // hardcoded thresholds (changedArea/meanDelta/strongArea/personConf).
+            // Those overrode the model, produced false triggers, and made results
+            // impossible to reason about. Removed deliberately: the model decides.
+
             applyMotionTransitionAction(action);
             motionLastPersonDetected = personDetected;
             motionLastPersonConfidence = personConfidence;
@@ -3388,12 +4033,18 @@ public class RecordingService extends Service {
                 FLog.d(TAG, "MotionLab Live: state=" + motionStateMachine.getState()
                         + ", action=" + action
                         + ", backend=" + (motionOpenCvActive ? "opencv_mog2" : "frame_diff")
+                        + ", analysis=" + motionAnalysisWidth + "x" + motionAnalysisHeight
                         + ", raw=" + String.format(Locale.US, "%.3f", rawMotionScore)
                         + ", smoothed=" + String.format(Locale.US, "%.3f", motionScore)
                         + ", startThreshold=" + String.format(Locale.US, "%.3f", startThreshold)
                         + ", stopThreshold=" + String.format(Locale.US, "%.3f", motionPolicy.stopThresholdFromSensitivity(settings.getSensitivity()))
                         + ", person=" + personDetected
                         + ", personConf=" + String.format(Locale.US, "%.3f", personConfidence)
+                        + ", motionCenter=" + String.format(Locale.US, "%.2f/%.2f", debugCenterX, debugCenterY)
+                        + ", detCenter=" + (primaryDetection == null ? "-"
+                            : String.format(Locale.US, "%.2f/%.2f",
+                                primaryDetection.centerX, primaryDetection.centerY))
+                        + ", expectUpright=" + describeUprightCentre(debugCenterX, debugCenterY)
                         + ", area=" + String.format(Locale.US, "%.3f", debugChangedArea)
                         + ", strong=" + String.format(Locale.US, "%.3f", debugStrongArea)
                         + ", meanDelta=" + String.format(Locale.US, "%.3f", debugMeanDelta)
@@ -3404,29 +4055,36 @@ public class RecordingService extends Service {
             boolean forensicsCaptureEnabled = sharedPreferencesManager != null
                     && sharedPreferencesManager.isDigitalForensicsEnabled()
                     && sharedPreferencesManager.isDfEvidenceCollectionEnabled();
+            // A subject present now but not on the previous sample is a NEW appearance.
+            // Capture it immediately so a fast walk-through is not missed between
+            // heartbeats. Repeat captures are still bounded by the recorder's own
+            // per-event floor, so this cannot flood the gallery.
+            boolean subjectPresentNow = debugBlobCount > 0 || personDetected || personLikely;
+            boolean newAppearance = subjectPresentNow && !forensicsSubjectPresentLastSample;
+            forensicsSubjectPresentLastSample = subjectPresentNow;
+
             boolean shouldEmitForensicsSnapshot = digitalForensicsEventRecorder != null
                     && forensicsCaptureEnabled
                     && motionStateMachine.getState() == com.fadcam.motion.domain.state.MotionSessionState.RECORDING
-                    && (nowMs - motionLastForensicsHeartbeatMs) >= FORENSICS_HEARTBEAT_INTERVAL_MS;
-            boolean shouldEmitDebugFrame = (nowMs - motionLastDebugBroadcastMs) >= 900L
-                    || stateBefore != motionStateMachine.getState()
-                    || (action != null && action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE);
-            boolean shouldEncodeJpeg = shouldEncodeFrameJpeg(shouldEmitForensicsSnapshot, shouldEmitDebugFrame);
+                    && (newAppearance
+                        || (nowMs - motionLastForensicsHeartbeatMs) >= FORENSICS_HEARTBEAT_INTERVAL_MS);
+            // A JPEG is encoded only for forensic evidence. The Motion Lab monitor no
+            // longer receives camera frames at all: it draws the onboarding animation,
+            // so there is nothing to encode, broadcast, decode or composite.
             byte[] frameJpeg = null;
-            if (shouldEncodeJpeg) {
+            if (shouldEmitForensicsSnapshot) {
                 motionJpegAttemptCount++;
                 long encodeStart = SystemClock.elapsedRealtime();
-                frameJpeg = buildMotionDebugFrameJpeg(framePacket);
+                frameJpeg = buildForensicsSnapshotJpeg(framePacket);
                 motionJpegEncodeTotalMs += Math.max(0L, SystemClock.elapsedRealtime() - encodeStart);
                 if (frameJpeg != null && frameJpeg.length > 0) {
                     motionJpegSuccessCount++;
                 } else {
                     motionJpegSkipCount++;
                 }
-            } else {
-                motionJpegSkipCount++;
             }
-            maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personConfidence, stateBefore, frameJpeg, debugChangedArea, debugStrongArea, debugMeanDelta, debugBackgroundDelta, debugMaxDelta, debugGlobalSuppressed);
+            maybeBroadcastMotionDebug(rawMotionScore, motionScore, settings, motionStateMachine.getState(), action, personDetected, personConfidence, stateBefore, debugChangedArea, debugStrongArea, debugMeanDelta, debugBackgroundDelta, debugMaxDelta, debugGlobalSuppressed, debugCenterX, debugCenterY, debugBlobCount,
+                    debugBlobRects, debugMinBlobRatio, debugWorkingWidth, debugWorkingHeight);
 
             if (shouldEmitForensicsSnapshot) {
                 motionLastForensicsHeartbeatMs = nowMs;
@@ -3438,6 +4096,8 @@ public class RecordingService extends Service {
                         frameJpeg,
                         recordingSessionCameraSource == RecordingStoragePaths.CameraSource.FRONT,
                         getCurrentSensorOrientationDegrees(),
+                        // The same angle the snapshot JPEG was rotated by.
+                        framePacket != null ? framePacket.rotationDegrees : 0,
                         sharedPreferencesManager != null ? sharedPreferencesManager.getVideoOrientation() : "portrait",
                         shouldMirrorForensicsSnapshots()
                 );
@@ -3469,12 +4129,17 @@ public class RecordingService extends Service {
                 // stayed false and motion detection could NEVER auto-resume again.
                 if (recordingState == RecordingState.PAUSED) {
                     FLog.i(TAG, "MotionLab action START_RECORDING -> resuming recording");
+                    com.fadcam.FeatureRegistry.streaming().setMotionState("triggered");
                     motionTriggerActionCount++;
                     motionAutoPaused = false;
                     Intent resumeIntent = new Intent(getApplicationContext(), RecordingService.class);
                     resumeIntent.setAction(Constants.INTENT_ACTION_RESUME_RECORDING);
                     ServiceStartPolicy.startRecordingAction(getApplicationContext(), resumeIntent);
-                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                    com.fadcam.motion.domain.model.MotionRuntimeSettings rt = motionRuntime;
+                    boolean autoTorch = rt != null ? rt.isAutoTorchEnabled()
+                            : (sharedPreferencesManager != null
+                                && sharedPreferencesManager.isMotionAutoTorchEnabled());
+                    if (autoTorch) {
                         setMotionTorchState(true);
                     }
                 }
@@ -3484,12 +4149,17 @@ public class RecordingService extends Service {
                 reportForensicsMotionTransition(action);
                 if (recordingState == RecordingState.IN_PROGRESS) {
                     FLog.i(TAG, "MotionLab action STOP_RECORDING -> pausing recording");
+                    com.fadcam.FeatureRegistry.streaming().setMotionState("armed");
                     motionTriggerActionCount++;
                     motionAutoPaused = true;
                     Intent pauseIntent = new Intent(getApplicationContext(), RecordingService.class);
                     pauseIntent.setAction(Constants.INTENT_ACTION_PAUSE_RECORDING);
                     ServiceStartPolicy.startRecordingAction(getApplicationContext(), pauseIntent);
-                    if (sharedPreferencesManager != null && sharedPreferencesManager.isMotionAutoTorchEnabled()) {
+                    com.fadcam.motion.domain.model.MotionRuntimeSettings rt2 = motionRuntime;
+                    boolean autoTorch2 = rt2 != null ? rt2.isAutoTorchEnabled()
+                            : (sharedPreferencesManager != null
+                                && sharedPreferencesManager.isMotionAutoTorchEnabled());
+                    if (autoTorch2) {
                         setMotionTorchState(false);
                     }
                 }
@@ -3529,7 +4199,7 @@ public class RecordingService extends Service {
     }
 
     @Nullable
-    private String buildForensicsOverlayPayload() {
+    private String buildForensicsOverlayPayload(@NonNull String watermarkText) {
         if (sharedPreferencesManager == null || !sharedPreferencesManager.isDfOverlayEnabled()) {
             return null;
         }
@@ -3541,12 +4211,15 @@ public class RecordingService extends Service {
             return null;
         }
 
-        String watermarkText = buildBaseWatermarkText();
-        if (watermarkText == null) {
-            watermarkText = "";
-        }
         // Only sanitize the separator token; preserve newlines for proper watermark layout
-        watermarkText = watermarkText.replace("||wm||", " ");
+        watermarkText = watermarkText == null ? "" : watermarkText.replace("||wm||", " ");
+
+        long nowLog = SystemClock.elapsedRealtime();
+        if (nowLog - lastOverlayPayloadLogMs >= 5000L) {
+            lastOverlayPayloadLogMs = nowLog;
+            FLog.i(TAG, "DF overlay payload: boxes=" + (payload == null ? 0 : payload.split(";").length)
+                    + " sample=" + (payload == null ? "-" : payload.substring(0, Math.min(120, payload.length()))));
+        }
 
         return "__DF_OVERLAY__:" + payload
                 + "||wm||" + watermarkText;
@@ -3554,19 +4227,15 @@ public class RecordingService extends Service {
 
     @Nullable
     private String buildOverlayPayloadFromDetections(
-            @Nullable List<com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult> detections
+            @Nullable List<com.fadcam.motion.domain.detector.AiObjectDetector.DetectionResult> detections
     ) {
         if (detections == null || detections.isEmpty()) {
             return null;
         }
         StringBuilder out = new StringBuilder();
-        int emitted = 0;
-        for (com.fadcam.motion.domain.detector.EfficientDetLite1Detector.DetectionResult detection : detections) {
+        for (com.fadcam.motion.domain.detector.AiObjectDetector.DetectionResult detection : detections) {
             if (detection == null || detection.confidence < 0.45f) {
                 continue;
-            }
-            if (emitted >= 6) {
-                break;
             }
             if (out.length() > 0) {
                 out.append(';');
@@ -3579,82 +4248,64 @@ public class RecordingService extends Service {
                     .append(String.format(Locale.US, "%.4f", clampBox(detection.width))).append('|')
                     .append(String.format(Locale.US, "%.4f", clampBox(detection.height))).append('|')
                     .append(detection.coarseType == null ? "OBJECT" : detection.coarseType.toUpperCase(Locale.US));
-            emitted++;
         }
         return out.length() == 0 ? null : out.toString();
     }
 
-    private String buildBaseWatermarkText() {
-        if (sharedPreferencesManager == null) {
-            return "";
-        }
-        String watermarkOption = sharedPreferencesManager.getWatermarkOption();
-        String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
-        String customText = sharedPreferencesManager.getWatermarkCustomText();
-        String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
-        String finalText;
-        switch (watermarkOption) {
-            case "timestamp_fadcam":
-                finalText = "Captured by <FADCAM_ICON> - " + getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-                break;
-            case "badge_fadcam":
-                finalText = "Captured by <FADCAM_ICON>" + customTextLine;
-                break;
-            case "timestamp":
-                finalText = getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-                break;
-            case "no_watermark":
-                finalText = "";
-                break;
-            default:
-                finalText = "Captured by FadCam - " + getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-        }
-        if (!finalText.isEmpty()) {
-            finalText += getExtendedSensorData();
-            FLog.d(TAG, "🎬 Watermark text generated: [" + finalText.replace("\n", " | ") + "]");
-        } else {
-            finalText += getExtendedSensorData();
-        }
-        return finalText;
-    }
-
+    /**
+     * Single-camera provider: the shared {@link com.fadcam.watermark.WatermarkManager} owns the
+     * text (identical to dual camera and FadRec), and the digital-forensics overlay is wrapped
+     * around it when active.
+     */
     private void ensureWatermarkInfoProvider() {
         if (watermarkInfoProvider != null) return;
-        watermarkInfoProvider = new WatermarkInfoProvider() {
-            @Override
-            public String getWatermarkText() {
-                String dfOverlayPayload = buildForensicsOverlayPayload();
-                if (dfOverlayPayload != null) {
-                    return dfOverlayPayload;
-                }
-                String watermarkOption = sharedPreferencesManager.getWatermarkOption();
-                String locationText = sharedPreferencesManager.isLocalisationEnabled() ? getLocationData() : "";
-                String customText = sharedPreferencesManager.getWatermarkCustomText();
-                String customTextLine = (customText != null && !customText.isEmpty()) ? "\n" + customText : "";
-                String finalText;
-                switch (watermarkOption) {
-                    case "timestamp_fadcam":
-                        finalText = "Captured by <FADCAM_ICON> - " + getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-                        break;
-                    case "badge_fadcam":
-                        finalText = "Captured by <FADCAM_ICON>" + customTextLine;
-                        break;
-                    case "timestamp":
-                        finalText = getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-                        break;
-                    case "no_watermark":
-                        finalText = "";
-                        break;
-                    default:
-                        finalText = "Captured by FadCam - " + getCurrentTimestamp() + getTimezoneSuffix() + locationText + customTextLine;
-                }
-                if (!finalText.isEmpty()) {
-                    // Watermark text built; logging omitted (fires every second during recording)
-                }
-                finalText += getExtendedSensorData();
-                return finalText;
-            }
+        ensureWatermarkManager();
+        watermarkInfoProvider = () -> {
+            com.fadcam.watermark.WatermarkManager manager = watermarkManager;
+            if (manager == null) return "";
+            String watermarkText = manager.getWatermarkText();
+            String dfOverlayPayload = buildForensicsOverlayPayload(watermarkText);
+            return dfOverlayPayload != null ? dfOverlayPayload : watermarkText;
         };
+    }
+
+    /** Creates the shared manager once; later calls only adopt a refreshed LocationHelper. */
+    private void ensureWatermarkManager() {
+        if (watermarkManager == null) {
+            watermarkManager = new com.fadcam.watermark.WatermarkManager(this, sharedPreferencesManager);
+        }
+        watermarkManager.initialize(locationHelper);
+    }
+
+    /**
+     * Forward-rotates a sensor-space centre into upright content space, so the
+     * detector's reported centre can be compared with the motion blob's centre.
+     * Used only for the diagnostic line; it is the same transform the detector
+     * applies to the frame.
+     */
+    private String describeUprightCentre(float sensorX, float sensorY) {
+        int rotation = getUprightRotationDegrees();
+        float cx;
+        float cy;
+        switch (rotation) {
+            case 90:
+                cx = 1f - sensorY;
+                cy = sensorX;
+                break;
+            case 180:
+                cx = 1f - sensorX;
+                cy = 1f - sensorY;
+                break;
+            case 270:
+                cx = sensorY;
+                cy = 1f - sensorX;
+                break;
+            default:
+                cx = sensorX;
+                cy = sensorY;
+                break;
+        }
+        return String.format(Locale.US, "%.2f/%.2f", cx, cy);
     }
 
     private float clamp01(float value) {
@@ -3685,18 +4336,28 @@ public class RecordingService extends Service {
             boolean personDetected,
             float personConfidence,
             com.fadcam.motion.domain.state.MotionSessionState previousState,
-            @Nullable byte[] frameJpeg,
             float changedAreaRatio,
             float strongAreaRatio,
             float meanDelta,
             float backgroundDelta,
             float maxDelta,
-            boolean globalSuppressed
+            boolean globalSuppressed,
+            float centerX,
+            float centerY,
+            int blobCount,
+            @Nullable java.util.ArrayList<android.graphics.Rect> blobRects,
+            float minBlobRatio,
+            int workingWidth,
+            int workingHeight
     ) {
         long now = SystemClock.elapsedRealtime();
         boolean significant = previousState != currentState
                 || (action != null && action != com.fadcam.motion.domain.state.MotionStateMachine.TransitionAction.NONE);
-        if (!significant && (now - motionLastDebugBroadcastMs) < 900L) {
+        boolean monitorOpen = motionRuntime != null && motionRuntime.isDebugUiActive();
+        if (!monitorOpen && !significant && (now - motionLastDebugBroadcastMs) < 900L) {
+            return;
+        }
+        if (monitorOpen && !significant && (now - motionLastDebugBroadcastMs) < 200L) {
             return;
         }
         motionLastDebugBroadcastMs = now;
@@ -3737,16 +4398,26 @@ public class RecordingService extends Service {
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_BG_DELTA, backgroundDelta);
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_MAX_DELTA, maxDelta);
         debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_GLOBAL_SUPPRESSED, globalSuppressed);
-        if (frameJpeg != null && frameJpeg.length > 0) {
-            debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_FRAME_JPEG, frameJpeg);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_ANALYSIS_WIDTH, motionAnalysisWidth);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_ANALYSIS_HEIGHT, motionAnalysisHeight);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_BACKEND,
+                motionOpenCvActive ? "MOG2" : "FRAME_DIFF");
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_FPS,
+                motionAnalysisIntervalMs > 0 ? (1000f / motionAnalysisIntervalMs) : 0f);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_BLOB_COUNT, blobCount);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_CENTER_X, centerX);
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_CENTER_Y, centerY);
+        if (blobRects != null) {
+            // Flat int array: left, top, right, bottom per blob.
         }
+        debugIntent.putExtra(Constants.EXTRA_MOTION_DEBUG_MIN_BLOB_RATIO, minBlobRatio);
         debugIntent.setPackage(getPackageName());
         sendBroadcast(debugIntent);
     }
 
     @Nullable
-    private byte[] buildMotionDebugFrameJpeg(
-            @Nullable com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket
+    private byte[] buildForensicsSnapshotJpeg(
+            @Nullable com.fadcam.motion.domain.detector.AiObjectDetector.FramePacket framePacket
     ) {
         if (framePacket == null) {
             return null;
@@ -3757,23 +4428,71 @@ public class RecordingService extends Service {
             if (width <= 0 || height <= 0) {
                 return null;
             }
+            // The analysis reader buffer is in sensor orientation, but detection
+            // boxes are reported upright. Rotate the snapshot so the crop taken
+            // downstream uses the same orientation as the box it is cropping to.
+            // Without this the evidence snapshot cropped the wrong region.
+            int rotation = framePacket.rotationDegrees;
             byte[] nv21 = framePacketToNv21(framePacket);
             if (nv21 == null || nv21.length == 0) {
                 return null;
             }
+            // Encode the sensor-orientation frame, then rotate the decoded bitmap with
+            // the platform transform. Rotating the YUV bytes by hand meant a
+            // full-frame pixel loop for every snapshot on the capture path, which is
+            // pure CPU for something the graphics layer already does natively.
             android.graphics.YuvImage yuvImage = new android.graphics.YuvImage(
                     nv21,
                     android.graphics.ImageFormat.NV21,
-                    width,
-                    height,
+                    framePacket.width,
+                    framePacket.height,
                     null
             );
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            boolean encoded = yuvImage.compressToJpeg(new Rect(0, 0, width, height), 72, outputStream);
-            if (!encoded) {
+            // Encode at a bounded size. The evidence crop is a small region of this
+            // frame, so a full-resolution encode wastes 150 ms of CPU per snapshot
+            // for detail the crop throws away. 720p keeps the object recognisable
+            // while cutting that cost by roughly 3x on a 1080p analysis stream.
+            int encodeW = framePacket.width;
+            int encodeH = framePacket.height;
+            int maxEdge = FORENSICS_SNAPSHOT_MAX_EDGE;
+            if (Math.max(encodeW, encodeH) > maxEdge) {
+                float scale = maxEdge / (float) Math.max(encodeW, encodeH);
+                encodeW = Math.max(2, Math.round(encodeW * scale));
+                encodeH = Math.max(2, Math.round(encodeH * scale));
+                encodeW &= ~1;
+                encodeH &= ~1;
+            }
+            ByteArrayOutputStream rawOut = new ByteArrayOutputStream();
+            if (!yuvImage.compressToJpeg(new Rect(0, 0, encodeW, encodeH), 82, rawOut)) {
                 return null;
             }
-            return outputStream.toByteArray();
+            byte[] rawJpeg = rawOut.toByteArray();
+            if (rotation == 0) {
+                return rawJpeg;
+            }
+            android.graphics.Bitmap decoded = android.graphics.BitmapFactory
+                    .decodeByteArray(rawJpeg, 0, rawJpeg.length);
+            if (decoded == null) {
+                return rawJpeg;
+            }
+            android.graphics.Matrix matrix = new android.graphics.Matrix();
+            matrix.postRotate(rotation);
+            // The front camera's analysis buffer runs bottom-to-top relative to the
+            // content orientation. That is a vertical flip of the image itself, not a
+            // drawing detail: the evidence JPEG has to carry it too, otherwise saved
+            // front-camera snapshots are upside down while the preview is correct.
+            if (framePacket.frontFacing) {
+                matrix.postScale(1f, -1f, framePacket.width / 2f, framePacket.height / 2f);
+            }
+            android.graphics.Bitmap upright = android.graphics.Bitmap.createBitmap(
+                    decoded, 0, 0, decoded.getWidth(), decoded.getHeight(), matrix, true);
+            if (upright != decoded) {
+                decoded.recycle();
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            upright.compress(android.graphics.Bitmap.CompressFormat.JPEG, 84, out);
+            upright.recycle();
+            return out.toByteArray();
         } catch (IllegalStateException ignored) {
             return null;
         } catch (Throwable t) {
@@ -3781,18 +4500,24 @@ public class RecordingService extends Service {
         }
     }
 
-    private boolean shouldEncodeFrameJpeg(boolean shouldEmitForensicsSnapshot, boolean shouldEmitDebugFrame) {
-        if (shouldEmitForensicsSnapshot) {
-            return true;
+    /**
+     * Pushes the current sensor angle to the GL pipeline so the renderer's rotations
+     * (including the detection overlay mapping) match the camera actually in use.
+     */
+    private void pushSensorOrientationToRenderer() {
+        if (glRecordingPipeline == null) {
+            return;
         }
-        if (!shouldEmitDebugFrame) {
-            return false;
+        try {
+            glRecordingPipeline.setSensorOrientation(getCurrentSensorOrientationDegrees());
+            // Push the live lens facing as well: the overlay decides front/back from
+            // this, and the saved preference lags behind a live camera switch.
+            Integer facing = currentCameraCharacteristics == null ? null
+                    : currentCameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
+            glRecordingPipeline.setLiveLensFacing(facing);
+        } catch (Throwable t) {
+            FLog.w(TAG, "Failed to push sensor orientation to renderer", t);
         }
-        // Always encode the JPEG when a debug broadcast is due; the broadcast receiver
-        // is only registered while MotionLabSettingsFragment is on-screen, so the
-        // frame data is only consumed when the UI is visible.  The 900 ms throttle
-        // in maybeBroadcastMotionDebug already bounds encoding frequency.
-        return sharedPreferencesManager != null;
     }
 
     private int getCurrentSensorOrientationDegrees() {
@@ -3810,15 +4535,61 @@ public class RecordingService extends Service {
      * touch input (pan, tap-to-focus) into SCALER_CROP_REGION / metering region
      * coordinates.
      */
-    private int getDisplayToSensorRotation() {
-        int displayRotationDeg = 0;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            android.view.Display display = getDisplay();
-            if (display != null) {
-                displayRotationDeg = 90 * display.getRotation();
+    /**
+     * Clockwise rotation that turns the camera's sensor frame upright.
+     *
+     * <p>This mirrors {@code GLWatermarkRenderer#getRequiredRotation()} exactly: the
+     * encoder and preview rotate the sensor image by
+     * {@code sensorOrientation - displayRotation} (flipped for the front camera), so
+     * the detector must be handed the same angle. Without it the model analyses a
+     * sideways scene and mislabels objects — a face in the corner came back as
+     * "skateboard" on a portrait phone.
+     */
+    /**
+     * THE rotation of the app. Turns the sensor buffer into the upright orientation
+     * used by the recorded video, the preview, the detector and evidence snapshots.
+     *
+     * <p><b>This must equal GLWatermarkRenderer#getRequiredRotation exactly.</b> That
+     * is the angle the camera texture is rotated by to make the preview upright, so it
+     * is the orientation of the pixels on screen. If the detector analyses a different
+     * rotation, its boxes are wrong by the difference — and for the Pixel front camera
+     * the difference is exactly 180 degrees, which put a subject at the bottom of the
+     * frame at the top of the screen.
+     *
+     * <p>The front-camera inversion below is part of that transform. It looks like it
+     * should not be there for the sensor data, but it is what the renderer does, and
+     * the two must match.
+     */
+    private int getUprightRotationDegrees() {
+        int sensor = getCurrentSensorOrientationDegrees();
+        int display = getDisplayRotationDegrees();
+        int rotation = ((sensor - display) % 360 + 360) % 360;
+        if (currentCameraCharacteristics != null) {
+            Integer facing = currentCameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
+            if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                rotation = (360 - rotation) % 360;
             }
         }
-        int total = (getCurrentSensorOrientationDegrees() + displayRotationDeg) % 360;
+        long now = SystemClock.elapsedRealtime();
+        if (now - lastUprightRotationLogMs >= 10000L) {
+            lastUprightRotationLogMs = now;
+            FLog.i(TAG, "Upright rotation: " + rotation + " (sensor=" + sensor
+                    + ", display=" + display
+                    + ", front=" + (currentCameraCharacteristics != null
+                        && CameraCharacteristics.LENS_FACING_FRONT ==
+                           currentCameraCharacteristics.get(CameraCharacteristics.LENS_FACING))
+                    + ")");
+        }
+        return rotation;
+    }
+
+    private int getDisplayToSensorRotation() {
+        int displayRotationDeg = getDisplayRotationDegrees();
+        // Matches GLWatermarkRenderer#getRequiredRotation(): the preview rotates the
+        // sensor image by (sensorOrientation - displayRotation) to look upright, so the
+        // inverse mapping used here must use the same signed difference. Using a sum
+        // flips the mapping by 180° when the device is held in landscape.
+        int total = ((getCurrentSensorOrientationDegrees() - displayRotationDeg) % 360 + 360) % 360;
         if (currentCameraCharacteristics != null) {
             Integer facing = currentCameraCharacteristics.get(
                     CameraCharacteristics.LENS_FACING);
@@ -3827,6 +4598,55 @@ public class RecordingService extends Service {
             }
         }
         return total % 360;
+    }
+
+    /**
+     * Rotation of the display the preview is shown on, in degrees.
+     *
+     * <p>{@link Context#getDisplay()} cannot be used here: a Service is not associated with a
+     * display, so the call throws {@link UnsupportedOperationException} (and it does not exist
+     * below API 30). The exception used to be swallowed, silently reporting 0° for every
+     * device, which transposed pan/tap coordinates by 90° on portrait-mounted sensors.
+     */
+    /**
+     * True when the camera currently delivering frames is the front one.
+     *
+     * <p>Read from the live camera characteristics rather than
+     * {@code recordingSessionCameraSource}: that field is only assigned when a
+     * recording starts, so after a live camera switch it still described the previous
+     * camera. Evidence snapshots taken across a switch then applied the front-camera
+     * flip to back-camera frames and came out upside down — which is exactly the
+     * mixed-orientation gallery that was reported.
+     */
+    private boolean isFrontCameraSelected() {
+        if (currentCameraCharacteristics != null) {
+            try {
+                Integer facing = currentCameraCharacteristics.get(
+                        CameraCharacteristics.LENS_FACING);
+                if (facing != null) {
+                    return facing == CameraCharacteristics.LENS_FACING_FRONT;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return recordingSessionCameraSource == RecordingStoragePaths.CameraSource.FRONT;
+    }
+
+    private int getDisplayRotationDegrees() {
+        try {
+            android.hardware.display.DisplayManager displayManager =
+                    (android.hardware.display.DisplayManager) getSystemService(DISPLAY_SERVICE);
+            if (displayManager != null) {
+                android.view.Display display =
+                        displayManager.getDisplay(android.view.Display.DEFAULT_DISPLAY);
+                if (display != null) {
+                    return 90 * display.getRotation();
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "getDisplayRotationDegrees failed: " + e.getMessage());
+        }
+        return 0;
     }
 
     private boolean shouldMirrorForensicsSnapshots() {
@@ -3852,8 +4672,12 @@ public class RecordingService extends Service {
     }
 
     @Nullable
+    /**
+     * Rotates an NV21 buffer clockwise into the upright orientation the detector and
+     * the overlay work in, so evidence crops line up with the boxes.
+     */
     private byte[] framePacketToNv21(
-            @NonNull com.fadcam.motion.domain.detector.EfficientDetLite1Detector.FramePacket framePacket
+            @NonNull com.fadcam.motion.domain.detector.AiObjectDetector.FramePacket framePacket
     ) {
         int width = framePacket.width;
         int height = framePacket.height;
@@ -3891,6 +4715,7 @@ public class RecordingService extends Service {
     }
 
     private void releaseMotionAnalysisReader() {
+        discardPendingAnalysisImage();
         if (motionAnalysisReader != null) {
             try {
                 motionAnalysisReader.setOnImageAvailableListener(null, null);
@@ -4572,9 +5397,24 @@ public class RecordingService extends Service {
             // Use per-camera FPS setting and only choose HSR if selected resolution
             // supports it
             int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
+
+            // If the encoder had to clamp the frame rate (4K60 on a 4K30 encoder), the camera
+            // session must clamp too. Otherwise the encoder is configured for 30 while the
+            // camera keeps delivering 60.
+            try {
+                int encoderFps = glRecordingPipeline.getEncoderFramerate();
+                if (encoderFps > 0 && encoderFps != targetFrameRate) {
+                    if (Log.isEnabled()) {
+                        FLog.w(TAG, "[REC] camera FPS follows encoder clamp: " + targetFrameRate
+                                + " -> " + encoderFps);
+                    }
+                    targetFrameRate = encoderFps;
+                }
+            } catch (Exception ignored) {
+            }
             
             // Apply streaming FPS cap only when server is actually ON
-            boolean isStreamingForFps1 = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            boolean isStreamingForFps1 = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
             android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
             if (isStreamingForFps1) {
                 int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
@@ -4611,11 +5451,14 @@ public class RecordingService extends Service {
                 }
             }
 
+            currentCameraCharacteristics = characteristics;
+            // The renderer derives every rotation from the sensor angle. It is created
+            // once per pipeline, so a live camera switch must push the new angle or the
+            // overlay keeps rotating boxes for the previous sensor.
+            pushSensorOrientationToRenderer();
             if (useHighSpeedSession) {
-                currentCameraCharacteristics = characteristics;
                 createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
             } else {
-                currentCameraCharacteristics = characteristics;
                 createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
             }
             // method(createCameraPreviewSession)-----------
@@ -4656,7 +5499,7 @@ public class RecordingService extends Service {
             int targetFrameRate = sharedPreferencesManager.getSpecificVideoFrameRate(cameraType);
             
             // Apply streaming FPS cap only when server is actually ON
-            boolean isStreamingForFps2 = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            boolean isStreamingForFps2 = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
             android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
             if (isStreamingForFps2) {
                 int streamFpsCap = fadcamPrefs.getInt("stream_fps_cap", -1);
@@ -4711,13 +5554,13 @@ public class RecordingService extends Service {
             }
 
             // Create the appropriate type of session
+            currentCameraCharacteristics = characteristics;
+            pushSensorOrientationToRenderer();
             if (useHighSpeedSession) {
                 // For high-speed sessions
-                currentCameraCharacteristics = characteristics;
                 createHighSpeedSession(surfaces, characteristics, targetFrameRate, cameraType);
             } else {
                 // Create a standard session with appropriate frame rate settings
-                currentCameraCharacteristics = characteristics;
                 createStandardSession(surfaces, targetFrameRate, characteristics, cameraType);
             }
         } catch (CameraAccessException e) {
@@ -4793,6 +5636,17 @@ public class RecordingService extends Service {
                 // Start the GL pipeline only after session is configured and repeating request
                 // is set
                 if (glRecordingPipeline != null && !previewOnlyActive) {
+                    if (motionLabEnabledForSession
+                            && com.fadcam.FeatureRegistry.streaming().isStreamingEnabled()) {
+                        // Motion-armed + live view: do not write the arm period to the
+                        // file. The stream sink runs; the file starts on the first trigger.
+                        int preRollSeconds = motionRuntime != null
+                                ? motionRuntime.getPreRollSeconds()
+                                : (sharedPreferencesManager != null
+                                    ? sharedPreferencesManager.getMotionPreRollSeconds() : 0);
+                        glRecordingPipeline.setPreRollSeconds(preRollSeconds);
+                        glRecordingPipeline.suspendFileRecordingOnStart();
+                    }
                     glRecordingPipeline.startRecording();
                 }
                 // Handle recording state
@@ -5037,7 +5891,7 @@ public class RecordingService extends Service {
 
     private int getVideoBitrate() {
         int videoBitrate;
-        boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        boolean isStreaming = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
         
         if (isStreaming) {
             // Server is ON: enforce stream quality preset bitrate, ignore user settings
@@ -5270,10 +6124,14 @@ public class RecordingService extends Service {
             if (!cachedGpsProviderEnabled) {
                 FLog.d(TAG, "Extended: speed=GPS is off");
                 sb.append("\nSpeed: GPS is off");
-            } else {
+            } else if (sensorDataProvider.hasFreshFix()) {
                 float speed = sensorDataProvider.getSpeedKmh();
                 FLog.d(TAG, "Extended: speed=" + speed + " km/h");
                 sb.append("\nSpeed: ").append(String.format("%.0f", speed)).append(" km/h");
+            } else {
+                // No fresh fix: a held-over number would be a fabricated reading.
+                FLog.d(TAG, "Extended: speed=no fresh fix");
+                sb.append("\nSpeed: --");
             }
         }
 
@@ -5281,10 +6139,13 @@ public class RecordingService extends Service {
             if (!cachedGpsProviderEnabled) {
                 FLog.d(TAG, "Extended: altitude=GPS is off");
                 sb.append("\nAlt: GPS is off");
-            } else {
+            } else if (sensorDataProvider.hasFreshFix()) {
                 double alt = sensorDataProvider.getAltitude();
                 FLog.d(TAG, "Extended: altitude=" + alt + " m");
                 sb.append("\nAlt: ").append(String.format("%.0f", alt)).append("m");
+            } else {
+                FLog.d(TAG, "Extended: altitude=no fresh fix");
+                sb.append("\nAlt: --");
             }
         }
 
@@ -5408,6 +6269,7 @@ public class RecordingService extends Service {
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_START_TIME, recordingStartTime);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_PAUSE_STARTED_AT, pauseStartedAt);
         broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_ACCUMULATED_PAUSED_DURATION, accumulatedPausedDurationMs);
+        broadcastIntent.putExtra(Constants.INTENT_EXTRA_RECORDING_LIVE_VIEW_ACTIVE, pausedWithLiveStream);
         sendBroadcast(broadcastIntent);
     }
 
@@ -5503,6 +6365,9 @@ public class RecordingService extends Service {
                     } else {
                         FLog.w(TAG, "RECORD_AUDIO permission not granted, starting foreground without MICROPHONE type");
                     }
+                    // Optional location FGS type: only declare it when GPS data is actually
+                    // needed and granted, so recording never fails on Android 14+ without it.
+                    foregroundServiceType |= locationForegroundServiceType();
 
                     if (foregroundServiceType == 0) {
                         FLog.e(TAG, "Neither CAMERA nor RECORD_AUDIO permission granted, cannot start foreground service");
@@ -5545,6 +6410,7 @@ public class RecordingService extends Service {
             } else {
                 FLog.w(TAG, "RECORD_AUDIO permission not granted, starting foreground without MICROPHONE type");
             }
+            foregroundServiceType |= locationForegroundServiceType();
 
             if (foregroundServiceType == 0) {
                 FLog.e(TAG, "Neither CAMERA nor RECORD_AUDIO permission granted, cannot start foreground service");
@@ -5556,9 +6422,12 @@ public class RecordingService extends Service {
         } else {
             startForeground(NOTIFICATION_ID, immediateBuilder.build());
         }
-        // STEP 2: Build the full notification with custom icon on background thread
-        // (bitmap decode must NOT block the main/GL thread — this was causing Davey! frames)
-        backgroundHandler.post(() -> {
+        // STEP 2: Build the full notification with custom icon off the camera
+        // handler. Posting this to backgroundHandler queued it behind camera
+        // callbacks, so the notification could stay on "Initializing..." for a
+        // long time. A dedicated short-lived thread also keeps bitmap decoding
+        // off the main/GL thread (which caused Davey! frames).
+        new Thread(() -> {
             NotificationCompat.Builder fullNotificationBuilder = createBaseNotificationBuilder(); // This method
                                                                                                   // contains the slow
                                                                                                   // bitmap operations
@@ -5577,8 +6446,41 @@ public class RecordingService extends Service {
             }
 
             // STEP 3: Update the notification with the full content.
-            NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, fullNotificationBuilder.build());
-        });
+            try {
+                NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, fullNotificationBuilder.build());
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed to post full recording notification", e);
+            }
+        }, "recording-notification").start();
+    }
+
+    /**
+     * Rebuilds the recording notification with the user's configured title/text
+     * when returning from PAUSED. Runs off the camera handler so it applies
+     * immediately instead of waiting behind camera callbacks.
+     */
+    private void refreshRecordingNotificationAsync() {
+        if (ActivityCompat.checkSelfPermission(this,
+                android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        new Thread(() -> {
+            try {
+                NotificationCompat.Builder builder = createBaseNotificationBuilder();
+                String notificationText = sharedPreferencesManager.getNotificationText(false);
+                builder.setContentText(notificationText != null ? notificationText
+                        : getString(R.string.notification_video_recording_progress_description));
+                if (!sharedPreferencesManager.isNotificationStopButtonHidden()) {
+                    builder.clearActions().addAction(new NotificationCompat.Action(
+                            R.drawable.stop_rounded,
+                            getString(R.string.button_stop),
+                            createStopRecordingIntent()));
+                }
+                NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, builder.build());
+            } catch (Exception e) {
+                FLog.w(TAG, "Failed to refresh recording notification", e);
+            }
+        }, "recording-notification-resume").start();
     }
 
     private void setupRecordingResumeNotification() { // Notification shown when PAUSED
@@ -5947,10 +6849,10 @@ public class RecordingService extends Service {
         String storageMode = sharedPreferencesManager.getStorageMode();
         
         // Use "Stream_" prefix only if streaming is actually enabled (server running)
-        boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-        com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
-            com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
-        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+        boolean isStreamingActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+        com.fadcam.StreamingMode streamingMode = 
+            com.fadcam.FeatureRegistry.streaming().getStreamingMode();
+        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.StreamingMode.STREAM_AND_SAVE);
         String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
         
         if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
@@ -6223,6 +7125,12 @@ public class RecordingService extends Service {
             }
         }
 
+        // Keep the shared watermark manager on the same helper (or release it when all
+        // location features were switched off mid-session).
+        if (watermarkManager != null) {
+            watermarkManager.updateLocationHelper(locationHelper);
+        }
+
         FLog.d(TAG, "==== Location Helpers Reinitialization Complete ====");
     }
 
@@ -6232,6 +7140,20 @@ public class RecordingService extends Service {
      */
     private boolean needsLocationData() {
         return LocationFeedGate.needsLocationData(sharedPreferencesManager);
+    }
+
+    /**
+     * Adds the location foreground-service type only when GPS is actually needed and the
+     * runtime permission exists. Declaring it unconditionally would fail the foreground
+     * start on Android 14+ for users who keep location features disabled.
+     */
+    private int locationForegroundServiceType() {
+        if (sharedPreferencesManager == null || !needsLocationData()) return 0;
+        boolean fine = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean coarse = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        return (fine || coarse) ? ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION : 0;
     }
 
     /**
@@ -6316,6 +7238,9 @@ public class RecordingService extends Service {
     private void createStandardSession(List<Surface> surfaces, int targetFrameRate,
             CameraCharacteristics characteristics, CameraType cameraType) {
         try {
+            // A fresh session starts from the full active array; drop any stale
+            // crop window from a previous session so tap-to-focus stays aligned.
+            lastCropRegion = null;
             // Create standard request builder
             captureRequestBuilder = cameraDevice.createCaptureRequest(
                     previewOnlyActive ? CameraDevice.TEMPLATE_PREVIEW : CameraDevice.TEMPLATE_RECORD);
@@ -6684,6 +7609,7 @@ public class RecordingService extends Service {
     private void applyZoomSettings(CaptureRequest.Builder builder, CameraType cameraType) {
         // Get zoom ratio from settings for the specific camera type
         float zoomRatio = sharedPreferencesManager.getSpecificZoomRatio(cameraType);
+        FLog.d(TAG, "applyZoomSettings: type=" + cameraType + " savedZoom=" + zoomRatio);
 
         // Apply zoom ratio to the capture request
         // CONTROL_ZOOM_RATIO was added in Android 11 (API 30)
@@ -6782,8 +7708,7 @@ public class RecordingService extends Service {
                 // Notify RemoteStreamManager about active recording file
                 if (currentSegmentFile != null) {
                     try {
-                        com.fadcam.streaming.RemoteStreamManager.getInstance()
-                            .startRecording(currentSegmentFile);
+                        com.fadcam.FeatureRegistry.streaming().startRecording(currentSegmentFile);
                         FLog.i(TAG, "🎬 RemoteStreamManager notified: recording started");
                     } catch (Exception e) {
                         FLog.e(TAG, "Failed to notify RemoteStreamManager about recording start", e);
@@ -6951,10 +7876,10 @@ public class RecordingService extends Service {
         String segmentSuffix = ""; // No segment number for the initial file
         
         // Use "Stream_" prefix only if streaming is actually enabled (server running)
-        boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-        com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
-            com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
-        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+        boolean isStreamingActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+        com.fadcam.StreamingMode streamingMode = 
+            com.fadcam.FeatureRegistry.streaming().getStreamingMode();
+        boolean isStreamAndSave = isStreamingActive && (streamingMode == com.fadcam.StreamingMode.STREAM_AND_SAVE);
         String filenamePrefix = isStreamAndSave ? "Stream_" : Constants.RECORDING_DIRECTORY + "_";
         String baseFilename = filenamePrefix + timestamp + segmentSuffix + "."
                 + Constants.RECORDING_FILE_EXTENSION;
@@ -6983,11 +7908,11 @@ public class RecordingService extends Service {
                     stopRecording();
                     return;
                 }
-                boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode =
-                        com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isStreamingActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+                com.fadcam.StreamingMode streamingMode =
+                        com.fadcam.FeatureRegistry.streaming().getStreamingMode();
                 boolean isStreamAndSave = isStreamingActive
-                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+                        && (streamingMode == com.fadcam.StreamingMode.STREAM_AND_SAVE);
                 androidx.documentfile.provider.DocumentFile pickedDir = resolveSafRecordingVideoDir(
                         customUriString, isStreamAndSave);
                 if (pickedDir == null || !pickedDir.canWrite()) {
@@ -7013,7 +7938,7 @@ public class RecordingService extends Service {
                 com.fadcam.ActiveRecordingStats.rolloverToNewSegment(null, safUri.toString(), RecordingService.this);
                 // Track SAF URI for STREAM_ONLY cleanup during segment rollover
                 boolean isStreamOnlyRollover = isStreamingActive
-                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                        && (streamingMode == com.fadcam.StreamingMode.STREAM_ONLY);
                 if (isStreamOnlyRollover) {
                     streamOnlySafUris.add(safUri.toString());
                     FLog.i(TAG, "📺 STREAM_ONLY (SAF rollover): Tracking temp URI: " + safUri);
@@ -7104,6 +8029,7 @@ public class RecordingService extends Service {
                 
                 // Track this as current segment
                 currentSegmentFile = nextFile;
+                sessionCreatedLocalFiles.add(nextFile);
                 currentSegmentPath = nextFile.getAbsolutePath();
                 currentSegmentUriString = Uri.fromFile(nextFile).toString();
                 com.fadcam.ActiveRecordingStats.rolloverToNewSegment(nextFile.getAbsolutePath(), null, RecordingService.this);
@@ -7125,6 +8051,13 @@ public class RecordingService extends Service {
             FLog.e(TAG, "startRecording was called but state is " + recordingState + ", expected STARTING");
             return;
         }
+
+        // Durable, fsynced journal. The async HTML log loses its last 250 ms if the process dies
+        // during recorder setup; this file is how we will read the next Huawei report.
+        DiagnosticsStore.beginRecordingJournal(this, "recording-start-request state=" + recordingState
+                + " camera=" + sharedPreferencesManager.getCameraSelection()
+                + " codec=" + sharedPreferencesManager.getVideoCodec());
+        FLog.i(TAG, "[REC] ===== startRecording() requested =====");
 
         // Clear STREAM_ONLY temp file tracking from any previous session
         streamOnlyTempFiles.clear();
@@ -7171,7 +8104,7 @@ public class RecordingService extends Service {
             ensureWatermarkInfoProvider();
 
             // Re-fetch streaming state and config at actual recording start
-            boolean isStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+            boolean isStreamingActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
             android.content.SharedPreferences fadcamPrefs = getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
             
             // Resolution always from Recording Settings — presets only control bitrate + FPS
@@ -7229,6 +8162,27 @@ public class RecordingService extends Service {
 
             String storageMode = sharedPreferencesManager.getStorageMode();
             VideoCodec selectedCodec = sharedPreferencesManager.getVideoCodec();
+
+            // One consolidated snapshot: every line a future report needs in order to identify
+            // a codec/size/fps/bitrate mismatch without guessing.
+            if (Log.isEnabled()) {
+                String startSnapshot = "camera=" + cameraType
+                        + " cameraId=" + cameraId
+                        + " sensorOrientation=" + sensorOrientation
+                        + " codec=" + selectedCodec
+                        + " mime=" + selectedCodec.getMimeType()
+                        + " res=" + videoWidth + "x" + videoHeight
+                        + " fps=" + videoFramerate
+                        + " bitrate=" + videoBitrate
+                        + " orientation=" + orientation
+                        + " streaming=" + isStreamingActive
+                        + " storage=" + storageMode
+                        + " splitBytes=" + splitSizeBytes
+                        + " audio=" + sharedPreferencesManager.isRecordAudioEnabled()
+                        + " previewSurface=" + (previewSurface != null && previewSurface.isValid());
+                FLog.i(TAG, "[REC] snapshot " + startSnapshot);
+                DiagnosticsStore.appendRecordingJournal(this, "[REC] snapshot " + startSnapshot);
+            }
             if (SharedPreferencesManager.STORAGE_MODE_CUSTOM.equals(storageMode)) {
                 String customUriString = sharedPreferencesManager.getCustomStorageUri();
                 if (customUriString == null) {
@@ -7237,11 +8191,11 @@ public class RecordingService extends Service {
                     stopSelf();
                     return;
                 }
-                boolean isSafStreamingActive = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
-                    com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
+                boolean isSafStreamingActive = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+                com.fadcam.StreamingMode streamingMode = 
+                    com.fadcam.FeatureRegistry.streaming().getStreamingMode();
                 boolean isStreamAndSave = isSafStreamingActive
-                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE);
+                        && (streamingMode == com.fadcam.StreamingMode.STREAM_AND_SAVE);
                 androidx.documentfile.provider.DocumentFile pickedDir = resolveSafRecordingVideoDir(
                         customUriString, isStreamAndSave);
                 if (pickedDir == null || !pickedDir.canWrite()) {
@@ -7267,7 +8221,7 @@ public class RecordingService extends Service {
                 com.fadcam.ActiveRecordingStats.setActiveSegment(null, safUri.toString());
                 // Track SAF URI for STREAM_ONLY cleanup (0-byte files created but no data written)
                 boolean isStreamOnlySaf = isStreamingActive
-                        && (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                        && (streamingMode == com.fadcam.StreamingMode.STREAM_ONLY);
                 if (isStreamOnlySaf) {
                     streamOnlySafUris.add(safUri.toString());
                     FLog.i(TAG, "📺 STREAM_ONLY (SAF): Tracking temp URI for cleanup: " + safUri);
@@ -7321,9 +8275,9 @@ public class RecordingService extends Service {
                 }
                 
                 // Check streaming mode to determine output file handling
-                com.fadcam.streaming.RemoteStreamManager.StreamingMode streamingMode = 
-                    com.fadcam.streaming.RemoteStreamManager.getInstance().getStreamingMode();
-                boolean isStreamOnly = (streamingMode == com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_ONLY);
+                com.fadcam.StreamingMode streamingMode = 
+                    com.fadcam.FeatureRegistry.streaming().getStreamingMode();
+                boolean isStreamOnly = (streamingMode == com.fadcam.StreamingMode.STREAM_ONLY);
                 
                 File outputFile;
                 if (isStreamOnly) {
@@ -7339,6 +8293,7 @@ public class RecordingService extends Service {
                 
                 // Track initial segment file for streaming
                 currentSegmentFile = outputFile;
+                sessionCreatedLocalFiles.add(outputFile);
                 currentSegmentPath = outputFile.getAbsolutePath();
                 currentSegmentUriString = Uri.fromFile(outputFile).toString();
                 com.fadcam.ActiveRecordingStats.setActiveSegment(outputFile.getAbsolutePath(), null);
@@ -7355,12 +8310,12 @@ public class RecordingService extends Service {
             // Notify RemoteStreamManager that recording started
             try {
                 if (currentSegmentFile != null) {
-                    com.fadcam.streaming.RemoteStreamManager.getInstance().startRecording(currentSegmentFile);
+                    com.fadcam.FeatureRegistry.streaming().startRecording(currentSegmentFile);
                     FLog.i(TAG, "🎬 RemoteStreamManager notified: recording started for file: "
                             + currentSegmentFile.getAbsolutePath());
                 } else {
                     // SAF mode: no File object available, use flag-based notification
-                    com.fadcam.streaming.RemoteStreamManager.getInstance().startRecordingSaf();
+                    com.fadcam.FeatureRegistry.streaming().startRecordingSaf();
                 }
                 
             } catch (Exception e) {
@@ -7368,8 +8323,32 @@ public class RecordingService extends Service {
             }
 
             createCameraPreviewSession();
+            DiagnosticsStore.endRecordingJournal(this, "[REC] RESULT=OK");
+            FLog.i(TAG, "[REC] ===== startRecording() complete =====");
         } catch (Exception e) {
-            FLog.e(TAG, "CRITICAL FAILURE IN startRecording", e);
+            String failureDetail = e.getClass().getName()
+                    + (e.getMessage() == null ? "" : ": " + e.getMessage());
+            if (Log.isEnabled()) {
+                FLog.e(TAG, "[REC] CRITICAL FAILURE IN startRecording | " + failureDetail, e);
+            }
+            DiagnosticsStore.appendRecordingJournal(this, "[REC] START FAILED | " + failureDetail);
+
+            // Encoder attempts are the useful part of a recorder failure; keep them separate
+            // from the Java stack so the dialog and the copied report are readable.
+            String encoderDiagnostics = null;
+            try {
+                if (glRecordingPipeline != null) {
+                    encoderDiagnostics = glRecordingPipeline.getEncoderDiagnostics();
+                }
+            } catch (Throwable ignored) {
+            }
+            if (encoderDiagnostics != null && !encoderDiagnostics.trim().isEmpty()) {
+                if (Log.isEnabled()) {
+                    FLog.e(TAG, "[REC] encoder diagnostics:\n" + encoderDiagnostics);
+                }
+                DiagnosticsStore.appendRecordingJournal(this,
+                        "[REC] encoder diagnostics:\n" + encoderDiagnostics);
+            }
 
             // Broadcast the failure to the UI with details
             java.io.StringWriter sw = new java.io.StringWriter();
@@ -7380,11 +8359,16 @@ public class RecordingService extends Service {
             Intent failureIntent = new Intent(Constants.ACTION_RECORDING_FAILED);
             failureIntent.putExtra(Constants.EXTRA_ERROR_MESSAGE, e.getMessage());
             failureIntent.putExtra(Constants.EXTRA_STACK_TRACE, stackTrace);
+            if (encoderDiagnostics != null && !encoderDiagnostics.trim().isEmpty()) {
+                failureIntent.putExtra(Constants.EXTRA_ENCODER_DIAGNOSTICS, encoderDiagnostics);
+            }
             try {
                 sendBroadcast(failureIntent);
             } catch (Throwable t) {
                 FLog.e(TAG, "Failed to broadcast recording failure", t);
             }
+            DiagnosticsStore.endRecordingJournal(this, "[REC] RESULT=FAIL | " + failureDetail);
+            Log.flushNow();
 
             // Clean up and stop the service
             recordingState = RecordingState.NONE;

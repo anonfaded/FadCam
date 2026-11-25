@@ -62,6 +62,18 @@ public class GLWatermarkRenderer {
     private int forensicsOverlayTextureId;
     private FloatBuffer forensicsOverlayRectBuffer;
     private String forensicsOverlayPayload = "";
+    private long lastOverlayDrawLogMs = 0L;
+    // Reused across every overlay redraw. Allocating Paints and re-parsing the
+    // Ubuntu typeface per detection was a measurable cost on long recordings.
+    private final Paint forensicsBoxPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint forensicsLabelBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint forensicsLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF forensicsRect = new RectF();
+    private final RectF forensicsLabelRect = new RectF();
+    private static final int COLOR_PERSON = 0xFF33D17A;
+    private static final int COLOR_VEHICLE = 0xFF29B6F6;
+    private static final int COLOR_PET = 0xFFBA68C8;
+    private static final int COLOR_OBJECT = 0xFFFFB74D;
     private int previewOverlayVpX = 0;
     private int previewOverlayVpY = 0;
     private int previewOverlayVpW = 0;
@@ -169,6 +181,20 @@ public class GLWatermarkRenderer {
     };
 
     private volatile boolean frameAvailable = false;
+
+    // Render perf counters (stop-time summary logged by GLRecordingPipeline)
+    private final java.util.concurrent.atomic.AtomicLong renderCount = new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong renderTotalMs = new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong renderMaxMs = new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong frameWaitTimeoutCount = new java.util.concurrent.atomic.AtomicLong();
+
+    public String getRenderStats() {
+        long c = renderCount.get();
+        return "frames=" + c
+                + " avgMs=" + (c > 0 ? (renderTotalMs.get() / c) : 0)
+                + " maxMs=" + renderMaxMs.get()
+                + " frameWaitTimeouts=" + frameWaitTimeoutCount.get();
+    }
     private final Object frameSyncObject = new Object();
     private final float[] latestTexMatrix = new float[16];
     private final float[] pipLatestTexMatrix = new float[16]; // Saved PiP matrix for full-screen draw when swapped
@@ -194,7 +220,17 @@ public class GLWatermarkRenderer {
     private FloatBuffer watermarkTexCoordBuffer;
     private static final float[] WATERMARK_TEXCOORDS = { 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f };
 
-    private final int sensorOrientation;
+    /**
+     * Sensor mounting angle. NOT final: a live camera switch replaces the sensor, and
+     * every rotation in the renderer (and the detection overlay) is derived from it.
+     * When this stayed fixed, switching cameras left the overlay rotated with the
+     * previous sensor's angle.
+     */
+    private volatile int sensorOrientation;
+
+    /** Camera2 LENS_FACING of the camera currently delivering frames, if known. */
+    @Nullable
+    private volatile Integer liveLensFacing;
     private volatile boolean frontVideoMirrorEnabled = false;
     private int lastLoggedRotation = Integer.MIN_VALUE;
     private boolean lastLoggedFront = false;
@@ -267,6 +303,9 @@ public class GLWatermarkRenderer {
 
     private int dynamicBitmapWidth = 0;
     private int dynamicBitmapHeight = 48;
+    /** Hard ceiling of the watermark texture; lines wider than this must wrap, not clip. */
+    private static final int WATERMARK_MAX_BITMAP_WIDTH = 2048;
+    private static final int WATERMARK_MAX_BITMAP_HEIGHT = 1024;
     private int watermarkLineCount = 1; // Fixed small height for dashcam style
     private int lastWatermarkVpW = -1;
     private int lastWatermarkVpH = -1;
@@ -352,6 +391,9 @@ public class GLWatermarkRenderer {
             long encStart = System.nanoTime();
             renderToEncoderInternal(allowStaleFrame);
             long encMs = (System.nanoTime() - encStart) / 1_000_000L;
+            renderCount.incrementAndGet();
+            renderTotalMs.addAndGet(encMs);
+            if (encMs > renderMaxMs.get()) renderMaxMs.set(encMs);
             if (encMs > 80) {
                 long now = System.currentTimeMillis();
                 if (now - lastSlowRenderWarnMs > SLOW_RENDER_WARN_INTERVAL_MS) {
@@ -474,6 +516,9 @@ public class GLWatermarkRenderer {
     public void setSuppressWatermarkForSnapshot(boolean suppress) {
         suppressWatermarkForSnapshot = suppress;
     }
+
+    /** Last PTS handed to the encoder; guarantees strictly increasing sample times. */
+    private long lastSubmittedPtsUs = -1L;
 
     private void renderToEncoderInternal(boolean allowStaleFrame) {
         synchronized (renderLock) {
@@ -630,6 +675,7 @@ public class GLWatermarkRenderer {
                             try {
                                 frameSyncObject.wait(17); // one-frame budget at 60fps
                                 if (!frameAvailable) {
+                                    frameWaitTimeoutCount.incrementAndGet();
                                     FLog.w(TAG, "renderToEncoder: frame wait timed out");
                                     return;
                                 }
@@ -654,25 +700,42 @@ public class GLWatermarkRenderer {
             // Update matrices for correct orientation
             updateMatrices();
 
-            // Set presentation time using synchronized timestamp
+            // Set presentation time using the CAMERA frame timestamp.
+            //
+            // This used to use System.nanoTime() taken at render time. That is not a
+            // per-frame clock: when the render loop is queued behind a slow frame it
+            // submits several cached frames within the same few microseconds, so many
+            // samples land on the SAME presentation time. The muxer then writes them
+            // with a zero sample duration (stts delta = 0) and players render one frame
+            // per burst — the recording looks like heavy frame drops even though every
+            // frame is present in the file.
+            //
+            // SurfaceTexture#getTimestamp() is the camera's per-frame timestamp, so
+            // every submitted frame has a distinct, monotonic PTS. It is also the true
+            // capture time, which is what a recording should carry.
             try {
-                long cameraTimestamp = cameraSurfaceTexture.getTimestamp();
                 long presentationTimeNanos;
 
-                // Get synchronized timestamp from recording pipeline if available
                 if (recordingPipeline != null) {
-                    // Convert synchronized timestamp (microseconds) to nanoseconds
+                    long cameraTimestamp = cameraSurfaceTexture.getTimestamp();
                     long ptsUs = recordingPipeline.getSynchronizedVideoTimestamp(cameraTimestamp);
-                    
-                    // If -1, skip this frame (frame rate limiting)
+
+                    // If -1, skip this frame (paused)
                     if (ptsUs < 0) {
                         return; // Skip this frame
                     }
-                    
+
+                    // Monotonic guard: the encoder rejects/aliases equal timestamps.
+                    // Only used for the camera-clock anomalies (duplicate camera ts).
+                    if (ptsUs <= lastSubmittedPtsUs) {
+                        ptsUs = lastSubmittedPtsUs + 1L;
+                    }
+                    lastSubmittedPtsUs = ptsUs;
+
                     presentationTimeNanos = ptsUs * 1000L;
                 } else {
                     // Fallback to camera timestamp (already in nanoseconds)
-                    presentationTimeNanos = cameraTimestamp;
+                    presentationTimeNanos = cameraSurfaceTexture.getTimestamp();
                 }
 
                 EGLExt.eglPresentationTimeANDROID(eglDisplay, eglSurface, presentationTimeNanos);
@@ -1225,8 +1288,14 @@ public class GLWatermarkRenderer {
         // Ensures icons are visible while maintaining proper line spacing.
         float iconLineH = dynamicTextSize * 2.7f;
         
-        String[] lines = text.split("\n");
-        watermarkLineCount = lines.length;
+        // Wrap instead of clip: a long address (or any long line) used to be cut off at the
+        // texture edge because the bitmap width is capped. Lines wider than the cap are now flowed
+        // onto as many lines as needed, at word boundaries, and the texture grows in height.
+        float maxContentWidth = Math.max(64f, WATERMARK_MAX_BITMAP_WIDTH - (padding * 2f));
+        java.util.List<String> layoutLines = wrapWatermarkLines(text, maxContentWidth, iconLineH);
+        int lineCount = layoutLines.size();
+        watermarkLineCount = lineCount;
+        String[] lines = layoutLines.toArray(new String[0]);
 
         // Compute per-line heights: lines with icons need extra vertical
         // space (iconLineH ≈ 2.7× text height) while plain text lines use
@@ -1243,20 +1312,14 @@ public class GLWatermarkRenderer {
 
         float maxLineWidth = 0f;
         for (String line : lines) {
-            if (line == null) continue;
-            float lineW = watermarkPaint.measureText(line.replace("<ICON>", "").replace("<FADCAM_ICON>", ""));
-            if (line.contains("<ICON>")) {
-                lineW += measureIconWidth("fadrec", iconLineH) + (padding * 0.25f);
-            }
-            if (line.contains("<FADCAM_ICON>")) {
-                lineW += measureIconWidth("menu_icon_unknown", iconLineH) + (padding * 0.25f);
-            }
-            maxLineWidth = Math.max(maxLineWidth, lineW);
+            maxLineWidth = Math.max(maxLineWidth, measureWatermarkLineWidth(line, iconLineH, padding));
         }
         // Add top padding for vertical centering of watermark within its layout space
         float topPadding = Math.max(6f, padding * 0.5f);
-        dynamicBitmapWidth = Math.max(256, Math.min(2048, Math.round(maxLineWidth + (padding * 2f))));
-        dynamicBitmapHeight = Math.max(64, Math.min(1024, Math.round(totalTextHeight + topPadding + padding)));
+        dynamicBitmapWidth = Math.max(256, Math.min(WATERMARK_MAX_BITMAP_WIDTH,
+                Math.round(maxLineWidth + (padding * 2f))));
+        dynamicBitmapHeight = Math.max(64, Math.min(WATERMARK_MAX_BITMAP_HEIGHT,
+                Math.round(totalTextHeight + topPadding + padding)));
         if (watermarkBitmap == null || watermarkBitmap.getWidth() != dynamicBitmapWidth
                 || watermarkBitmap.getHeight() != dynamicBitmapHeight) {
             watermarkBitmap = Bitmap.createBitmap(dynamicBitmapWidth, dynamicBitmapHeight, Bitmap.Config.ARGB_8888);
@@ -1337,6 +1400,79 @@ public class GLWatermarkRenderer {
             return targetH * ((float) bmp.getWidth() / (float) bmp.getHeight());
         }
         return 0f;
+    }
+
+    /** Width of one laid-out line, accounting for inline icon placeholders. */
+    private float measureWatermarkLineWidth(String line, float iconLineH, int padding) {
+        if (line == null || line.isEmpty()) {
+            return 0f;
+        }
+        float width = watermarkPaint.measureText(
+                line.replace("<ICON>", "").replace("<FADCAM_ICON>", ""));
+        if (line.contains("<ICON>")) {
+            width += measureIconWidth("fadrec", iconLineH) + (padding * 0.25f);
+        }
+        if (line.contains("<FADCAM_ICON>")) {
+            width += measureIconWidth("menu_icon_unknown", iconLineH) + (padding * 0.25f);
+        }
+        return width;
+    }
+
+    /**
+     * Flows the watermark text into lines that fit {@code maxContentWidth}, breaking at word
+     * boundaries. Explicit newlines are honoured; tokens ({@code <ICON>}, {@code <FADCAM_ICON>})
+     * are never split. A single word wider than the limit is hard-wrapped by glyph so nothing is
+     * ever clipped.
+     */
+    private java.util.List<String> wrapWatermarkLines(String text, float maxContentWidth,
+                                                      float iconLineH) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        if (text == null || text.isEmpty()) {
+            return out;
+        }
+        for (String rawLine : text.split("\n")) {
+            String line = rawLine == null ? "" : rawLine.trim();
+            if (line.isEmpty()) {
+                out.add("");
+                continue;
+            }
+            if (measureWatermarkLineWidth(line, iconLineH, 0) <= maxContentWidth) {
+                out.add(line);
+                continue;
+            }
+            StringBuilder current = new StringBuilder();
+            for (String word : line.split(" ")) {
+                if (word.isEmpty()) {
+                    continue;
+                }
+                String candidate = current.length() == 0 ? word : current + " " + word;
+                if (measureWatermarkLineWidth(candidate, iconLineH, 0) <= maxContentWidth) {
+                    current.setLength(0);
+                    current.append(candidate);
+                    continue;
+                }
+                if (current.length() > 0) {
+                    out.add(current.toString());
+                    current.setLength(0);
+                }
+                // The word alone may still be too wide (long unbroken token) — split by glyphs
+                // so the bitmap never clips it.
+                String remainder = word;
+                while (measureWatermarkLineWidth(remainder, iconLineH, 0) > maxContentWidth) {
+                    int fit = watermarkPaint.breakText(remainder, true, maxContentWidth, null);
+                    if (fit <= 0 || fit >= remainder.length()) {
+                        break;
+                    }
+                    out.add(remainder.substring(0, fit));
+                    remainder = remainder.substring(fit);
+                }
+                current.append(remainder);
+            }
+            if (current.length() > 0) {
+                out.add(current.toString());
+            }
+        }
+        return out;
     }
 
     /**
@@ -1473,6 +1609,44 @@ public class GLWatermarkRenderer {
         }
     }
 
+    /**
+     * Maps a detection box from the analysis/sensor orientation to the displayed
+     * content orientation. Rotation uses the same convention as
+     * {@link #getRequiredRotation()} / the camera texture; front mirroring is
+     * applied last.
+     */
+    private float[] mapDetectionBoxToContent(float cx, float cy, float w, float h) {
+        float dx = cx;
+        float dy = cy;
+        float dw = w;
+        float dh = h;
+        int rotation = getRequiredRotation();
+        switch (rotation) {
+            case 90:
+                dx = 1f - cy;
+                dy = cx;
+                dw = h;
+                dh = w;
+                break;
+            case 180:
+                dx = 1f - cx;
+                dy = 1f - cy;
+                break;
+            case 270:
+                dx = cy;
+                dy = 1f - cx;
+                dw = h;
+                dh = w;
+                break;
+            default:
+                break;
+        }
+        if (isFullscreenCameraFront() && frontVideoMirrorEnabled) {
+            dx = 1f - dx;
+        }
+        return new float[]{dx, dy, dw, dh};
+    }
+
     private void drawForensicsOverlayEntry(Canvas canvas, String payload) {
         if (payload == null || payload.isEmpty()) {
             return;
@@ -1506,64 +1680,89 @@ public class GLWatermarkRenderer {
             return;
         }
 
+        // The detector reports boxes in upright space, which is the same orientation
+        // as the preview and the recorded video. Only the mirror case needs a change,
+        // so there is no rotation here at all.
+        // Boxes arrive in the upright content frame, so no rotation is applied here.
+        //
+        // The front camera needs one extra correction, measured on a Pixel 7 Pro: a
+        // subject at the bottom of the frame was reported at the top, while the
+        // left/right position was correct. A wrong rotation angle would move both
+        // axes, so this is a vertical flip, not a rotation — the front camera's
+        // analysis stream runs bottom-to-top relative to the content orientation.
+        //
+        // Horizontal is untouched: the selfie mirror is handled separately below and
+        // flipping both here would move boxes to the opposite side again.
+        if (isFullscreenCameraFront()) {
+            cy = 1f - cy;
+        }
+        // Kept intentionally identical to the evidence-snapshot transform: the JPEG is
+        // rotated by the same angle and vertically flipped for the front camera, so
+        // preview boxes and saved pictures always describe the same pixels.
+
         float left = (cx - (boxW / 2f)) * overlayWidth;
         float top = (cy - (boxH / 2f)) * overlayHeight;
         float right = (cx + (boxW / 2f)) * overlayWidth;
         float bottom = (cy + (boxH / 2f)) * overlayHeight;
-        RectF rect = new RectF(
+        forensicsRect.set(
                 Math.max(0f, left),
                 Math.max(0f, top),
                 Math.min(overlayWidth, right),
                 Math.min(overlayHeight, bottom)
         );
+        RectF rect = forensicsRect;
 
-        Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
-        stroke.setStyle(Paint.Style.STROKE);
-        stroke.setStrokeWidth(Math.max(2f, overlayWidth * 0.0022f));
-        stroke.setColor(colorForType(coarseType));
+        int typeColor = colorForType(coarseType);
+        forensicsBoxPaint.setStyle(Paint.Style.STROKE);
+        forensicsBoxPaint.setStrokeWidth(Math.max(2f, overlayWidth * 0.0022f));
+        forensicsBoxPaint.setColor(typeColor);
         float corner = Math.max(8f, overlayWidth * 0.010f);
-        canvas.drawRoundRect(rect, corner, corner, stroke);
+        canvas.drawRoundRect(rect, corner, corner, forensicsBoxPaint);
 
-        Paint labelBg = new Paint(Paint.ANTI_ALIAS_FLAG);
-        labelBg.setStyle(Paint.Style.FILL);
-        labelBg.setColor(adjustAlpha(colorForType(coarseType), 210));
-        Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        labelPaint.setColor(Color.WHITE);
-        labelPaint.setTextSize(Math.max(14f, overlayWidth * 0.020f));
-        try {
-            labelPaint.setTypeface(android.graphics.Typeface.createFromAsset(context.getAssets(), "ubuntu_regular.ttf"));
-        } catch (Exception ignored) {
-            labelPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.SANS_SERIF,
-                    android.graphics.Typeface.BOLD));
+        if (cachedUbuntuTypeface == null) {
+            try {
+                cachedUbuntuTypeface = android.graphics.Typeface.createFromAsset(
+                        context.getAssets(), "ubuntu_regular.ttf");
+            } catch (Exception ignored) {
+                cachedUbuntuTypeface = android.graphics.Typeface.create(
+                        android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD);
+            }
         }
-        labelPaint.setFakeBoldText(true);
-        labelPaint.setLetterSpacing(0.02f);
+        forensicsLabelBgPaint.setStyle(Paint.Style.FILL);
+        forensicsLabelBgPaint.setColor(adjustAlpha(typeColor, 210));
+        forensicsLabelPaint.setColor(Color.WHITE);
+        forensicsLabelPaint.setTextSize(Math.max(18f, overlayWidth * 0.030f));
+        forensicsLabelPaint.setTypeface(cachedUbuntuTypeface);
+        forensicsLabelPaint.setFakeBoldText(true);
+        forensicsLabelPaint.setLetterSpacing(0.02f);
         String prettyLabel = classLabel == null || classLabel.trim().isEmpty() ? "object" : classLabel.trim().toLowerCase();
         String label = String.format(java.util.Locale.US, "%s %d%%", prettyLabel, Math.round(confidence * 100f));
 
-        float textWidth = labelPaint.measureText(label);
+        float textWidth = forensicsLabelPaint.measureText(label);
         float labelPaddingX = Math.max(8f, overlayWidth * 0.008f);
         float labelPaddingY = Math.max(5f, overlayHeight * 0.010f);
-        float labelHeight = (labelPaint.getTextSize() + (labelPaddingY * 2f));
+        float labelHeight = (forensicsLabelPaint.getTextSize() + (labelPaddingY * 2f));
         float labelLeft = Math.max(0f, rect.left);
         float labelTop = Math.max(0f, rect.top - labelHeight - 5f);
-        RectF labelRect = new RectF(labelLeft, labelTop, labelLeft + textWidth + (labelPaddingX * 2f), labelTop + labelHeight);
-        canvas.drawRoundRect(labelRect, Math.max(6f, overlayWidth * 0.007f), Math.max(6f, overlayWidth * 0.007f), labelBg);
-        float baseline = labelRect.top + labelPaddingY - labelPaint.ascent();
-        canvas.drawText(label, labelRect.left + labelPaddingX, baseline, labelPaint);
+        forensicsLabelRect.set(labelLeft, labelTop,
+                labelLeft + textWidth + (labelPaddingX * 2f), labelTop + labelHeight);
+        canvas.drawRoundRect(forensicsLabelRect, Math.max(6f, overlayWidth * 0.007f),
+                Math.max(6f, overlayWidth * 0.007f), forensicsLabelBgPaint);
+        float baseline = forensicsLabelRect.top + labelPaddingY - forensicsLabelPaint.ascent();
+        canvas.drawText(label, forensicsLabelRect.left + labelPaddingX, baseline, forensicsLabelPaint);
     }
 
     private int colorForType(String coarseType) {
         if ("PERSON".equalsIgnoreCase(coarseType)) {
-            return Color.parseColor("#33D17A");
+            return COLOR_PERSON;
         }
         if ("VEHICLE".equalsIgnoreCase(coarseType)) {
-            return Color.parseColor("#29B6F6");
+            return COLOR_VEHICLE;
         }
         if ("PET".equalsIgnoreCase(coarseType)) {
-            return Color.parseColor("#BA68C8");
+            return COLOR_PET;
         }
-        return Color.parseColor("#FFB74D");
+        return COLOR_OBJECT;
     }
 
     private int adjustAlpha(int color, int alpha) {
@@ -1575,8 +1774,12 @@ public class GLWatermarkRenderer {
             return;
         }
         String payload = forensicsOverlayPayload;
-        int overlayWidth = Math.max(640, videoWidth > 0 ? videoWidth : 1280);
-        int overlayHeight = Math.max(360, videoHeight > 0 ? videoHeight : 720);
+        // Match the encoder content orientation (portrait when recording portrait).
+        // The old landscape size stretched every box into the portrait viewport.
+        int overlayWidth = Math.max(1,
+                encoderWidth > 0 ? encoderWidth : (videoWidth > 0 ? videoWidth : 1280));
+        int overlayHeight = Math.max(1,
+                encoderHeight > 0 ? encoderHeight : (videoHeight > 0 ? videoHeight : 720));
         if (forensicsOverlayBitmap == null
                 || forensicsOverlayBitmap.getWidth() != overlayWidth
                 || forensicsOverlayBitmap.getHeight() != overlayHeight) {
@@ -1590,13 +1793,23 @@ public class GLWatermarkRenderer {
         if (payload != null && !payload.isEmpty()) {
             drawForensicsOverlay(canvas, payload);
         }
+        // Flip for GL texture coordinates. This is the original, verified transform:
+        // createBitmap applies the matrix and re-lays the flipped result inside the
+        // same bounds. Replacing it with a hand-managed Canvas transform mirrored the
+        // boxes vertically, which showed up as boxes drawn away from their objects.
         android.graphics.Matrix flipMatrix = new android.graphics.Matrix();
         flipMatrix.preScale(1.0f, -1.0f);
-        Bitmap flippedBitmap = Bitmap.createBitmap(forensicsOverlayBitmap, 0, 0, forensicsOverlayBitmap.getWidth(),
-                forensicsOverlayBitmap.getHeight(), flipMatrix, true);
+        Bitmap flippedBitmap = Bitmap.createBitmap(forensicsOverlayBitmap, 0, 0,
+                forensicsOverlayBitmap.getWidth(), forensicsOverlayBitmap.getHeight(),
+                flipMatrix, true);
+        long uploadStart = android.os.SystemClock.elapsedRealtime();
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, forensicsOverlayTextureId);
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, flippedBitmap, 0);
         flippedBitmap.recycle();
+        long uploadMs = android.os.SystemClock.elapsedRealtime() - uploadStart;
+        if (uploadMs >= 8L) {
+            FLog.w(TAG, "Overlay texture upload: " + uploadMs + " ms");
+        }
     }
 
     private float clamp01(float value) {
@@ -1922,6 +2135,37 @@ public class GLWatermarkRenderer {
     private void drawForensicsOverlayLayer() {
         if (forensicsOverlayPayload == null || forensicsOverlayPayload.isEmpty() || forensicsOverlayTextureId == 0) {
             return;
+        }
+        long nowLog = android.os.SystemClock.elapsedRealtime();
+        if (nowLog - lastOverlayDrawLogMs >= 5000L) {
+            lastOverlayDrawLogMs = nowLog;
+            int boxes = forensicsOverlayPayload.split(";").length;
+            String first = forensicsOverlayPayload.split(";")[0];
+            String[] f = first.split("\\|");
+            String geom = "-";
+            if (f.length == 7) {
+                float cx = clamp01(Float.parseFloat(f[2]));
+                float cy = clamp01(Float.parseFloat(f[3]));
+                float bw = clamp01(Float.parseFloat(f[4]));
+                float bh = clamp01(Float.parseFloat(f[5]));
+                float drawX = cx;
+                if (isFullscreenCameraFront() && frontVideoMirrorEnabled) {
+                    drawX = 1f - drawX;
+                }
+                int bw2 = forensicsOverlayBitmap == null ? 0 : forensicsOverlayBitmap.getWidth();
+                int bh2 = forensicsOverlayBitmap == null ? 0 : forensicsOverlayBitmap.getHeight();
+                geom = "box(" + String.format(java.util.Locale.US, "%.2f", drawX) + ","
+                        + String.format(java.util.Locale.US, "%.2f", cy) + ")"
+                        + " px(" + Math.round(drawX * bw2) + ","
+                        + Math.round(cy * bh2) + ")";
+            }
+            FLog.i(TAG, "Overlay drawn: boxes=" + boxes
+                    + " rotation=" + getRequiredRotation()
+                    + " sensorOrient=" + sensorOrientation
+                    + " " + geom
+                    + " viewport=" + previewOverlayVpW + "x" + previewOverlayVpH
+                    + " bitmap=" + (forensicsOverlayBitmap == null ? "null"
+                        : forensicsOverlayBitmap.getWidth() + "x" + forensicsOverlayBitmap.getHeight()));
         }
         int[] previousViewport = new int[4];
         GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, previousViewport, 0);
@@ -2586,6 +2830,21 @@ public class GLWatermarkRenderer {
         currentExposureCompensation = Math.max(-4.0f, Math.min(4.0f, evStops));
     }
 
+    /** Records which physical camera is live, so front/back logic cannot use a stale value. */
+    public void setLiveLensFacing(@Nullable Integer lensFacing) {
+        this.liveLensFacing = lensFacing;
+    }
+
+    /** Updates the sensor angle after a camera switch, so all derived rotations follow. */
+    public void setSensorOrientation(int degrees) {
+        int normalized = ((degrees % 360) + 360) % 360;
+        if (this.sensorOrientation == normalized) {
+            return;
+        }
+        this.sensorOrientation = normalized;
+        FLog.i(TAG, "sensorOrientation updated to " + normalized);
+    }
+
     public void setFrontVideoMirrorEnabled(boolean enabled) {
         if (frontVideoMirrorEnabled == enabled) {
             return;
@@ -2736,6 +2995,21 @@ public class GLWatermarkRenderer {
         }
     }
 
+    /**
+     * The rotation the detector analysed the frame with. Must stay identical to
+     * RecordingService#getUprightRotationDegrees: boxes come from that orientation,
+     * so converting them with any other angle places them on the wrong subject.
+     *
+     * <p>This is {@code (displayRotation - sensorOrientation)} and is deliberately
+     * NOT {@link #getRequiredRotation()}, which uses the opposite sign and an extra
+     * front-camera inversion for the camera texture.
+     */
+    private int getDetectorRotation() {
+        // Same value the video is rotated by, which is also what the detector was
+        // given. There is exactly one rotation in the app.
+        return getRequiredRotation();
+    }
+
     private int getRequiredRotation() {
         int displayRotationDegrees = getDisplayRotation();
         int rotation = (sensorOrientation - displayRotationDegrees + 360) % 360;
@@ -2757,6 +3031,13 @@ public class GLWatermarkRenderer {
     private boolean isFrontCamera() {
         // For dual camera, use the explicit flag set by session-level swap
         if (pipEnabled && fullscreenCameraIsFront) return true;
+        // Prefer the camera that is actually delivering frames. The saved preference
+        // is written by the UI and can lag a live switch by a frame or more, which
+        // made the overlay apply the front-camera flip to back-camera frames.
+        Integer liveFacing = liveLensFacing;
+        if (liveFacing != null) {
+            return liveFacing == android.hardware.camera2.CameraCharacteristics.LENS_FACING_FRONT;
+        }
         // Prefer user-selected camera source; sensor orientation alone is not reliable
         try {
             CameraType selected = SharedPreferencesManager.getInstance(context).getCameraSelection();

@@ -2,6 +2,7 @@ package com.fadcam.ui;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -10,9 +11,8 @@ import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.Toast;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,15 +28,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * OnboardingPermissionsFragment handles permission requests and enforces policy for AppIntro.
+ * Onboarding slide 03: permission clearance.
+ *
+ * <p>Each permission tile shows its own state, and the action area is split into a
+ * permission block and a battery block. Completed states are compact rows with a
+ * checkmark; only genuine actions stay as buttons.</p>
  */
 public class OnboardingPermissionsFragment extends Fragment implements SlidePolicy {
+
+    private static final String PREFS = "onboarding_permissions";
+    private static final String KEY_REQUESTED = "requested_before";
+
     private boolean permissionsGranted = false;
-    private MaterialButton grantButton;
-    private int permissionRequestCount = 0; // Track how many times requested
     private boolean permanentlyDenied = false;
-    private TextView permissionStatusText; // Text view to show status instead of toasts
-    private boolean statusToastShown = false; // Flag to prevent multiple toasts
+
+    private MaterialButton grantButton;
+    private MaterialButton batteryButton;
+    private View permissionSuccessRow;
+    private View batterySuccessRow;
+    private TextView openSettingsLink;
+    private TextView noteText;
+    private TextView cameraStatus;
+    private TextView micStatus;
+    private TextView storageStatus;
 
     private final androidx.activity.result.ActivityResultLauncher<String[]> permissionLauncher =
             registerForActivityResult(
@@ -45,69 +59,56 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.onboarding_permissions_slide, container, false);
+
         grantButton = view.findViewById(R.id.permissions_grant_button);
-        permissionStatusText = view.findViewById(R.id.permission_status_text);
-        if (permissionStatusText != null) {
-            permissionStatusText.setVisibility(View.GONE); // Hide initially
-        }
-        grantButton.setEnabled(true);
-        grantButton.setAlpha(1f);
+        batteryButton = view.findViewById(R.id.disable_battery_optimization_button);
+        permissionSuccessRow = view.findViewById(R.id.permission_success_row);
+        batterySuccessRow = view.findViewById(R.id.battery_success_row);
+        openSettingsLink = view.findViewById(R.id.open_settings_link);
+        noteText = view.findViewById(R.id.permissionsNote);
+        cameraStatus = view.findViewById(R.id.permission_status_camera);
+        micStatus = view.findViewById(R.id.permission_status_microphone);
+        storageStatus = view.findViewById(R.id.permission_status_storage);
+
         grantButton.setOnClickListener(v -> {
-            if (permissionsGranted) {
-                // Do nothing, or optionally show a toast
-                showPermissionStatus(R.string.permissions_granted, true);
+            // Android only shows the dialog once per install. After a hard denial
+            // the button must still lead somewhere: send the user to Settings.
+            if (permanentlyDenied && hasRequestedBefore()) {
+                showManualPermissionDialog();
             } else {
-                // Always show the runtime permission dialog, even if permanently denied
                 requestAllPermissionsAlways();
             }
         });
+
+        openSettingsLink.setOnClickListener(v -> showManualPermissionDialog());
+
+        batteryButton.setOnClickListener(v -> {
+            Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(Uri.parse("package:" + requireContext().getPackageName()));
+            startActivity(intent);
+        });
+
         checkPermissionsAndUpdateUI();
-        if (!permissionsGranted && !permanentlyDenied) {
-            requestAllPermissionsAlways();
-        }
-
-        View openSettingsLink = view.findViewById(R.id.open_settings_link);
-        if (openSettingsLink != null) {
-            openSettingsLink.setOnClickListener(v2 -> {
-                showManualPermissionDialog();
-                showPermissionStatus(R.string.open_settings, false);
-            });
-        }
-
-        MaterialButton batteryOptButton = view.findViewById(R.id.disable_battery_optimization_button);
-        if (batteryOptButton != null) {
-            android.os.PowerManager pm = (android.os.PowerManager) requireContext().getSystemService(android.content.Context.POWER_SERVICE);
-            boolean isIgnoring = false;
-            if (pm != null) {
-                isIgnoring = pm.isIgnoringBatteryOptimizations(requireContext().getPackageName());
-            }
-            batteryOptButton.setEnabled(!isIgnoring);
-            batteryOptButton.setAlpha(isIgnoring ? 0.5f : 1f);
-            batteryOptButton.setOnClickListener(v3 -> {
-                Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                intent.setData(android.net.Uri.parse("package:" + requireContext().getPackageName()));
-                startActivity(intent);
-            });
-        }
         return view;
     }
 
-    private void showPermissionStatus(int stringResId, boolean success) {
-        if (permissionStatusText != null) {
-            permissionStatusText.setText(stringResId);
-            permissionStatusText.setTextColor(ContextCompat.getColor(requireContext(), 
-                success ? R.color.green : R.color.redPastel));
-            permissionStatusText.setVisibility(View.VISIBLE);
-        } else if (!statusToastShown) {
-            Toast.makeText(requireContext(), stringResId, Toast.LENGTH_SHORT).show();
-            statusToastShown = true;
-        }
+    /** Requests every permission the app needs; the system ignores ones already granted. */
+    private boolean hasRequestedBefore() {
+        SharedPreferences prefs = requireContext()
+                .getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE);
+        return prefs.getBoolean(KEY_REQUESTED, false);
+    }
+
+    private void markRequested() {
+        requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+                .edit().putBoolean(KEY_REQUESTED, true).apply();
     }
 
     private void requestAllPermissionsAlways() {
-        // Always request, system will ignore already granted
+        markRequested();
         List<String> permissions = new ArrayList<>();
         permissions.add(Manifest.permission.CAMERA);
         permissions.add(Manifest.permission.RECORD_AUDIO);
@@ -119,70 +120,113 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
             permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
         }
         permissionLauncher.launch(permissions.toArray(new String[0]));
-        permissionRequestCount++;
+    }
+
+    private boolean isGranted(String permission) {
+        return ContextCompat.checkSelfPermission(requireContext(), permission)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean storageGranted() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return isGranted(Manifest.permission.READ_MEDIA_VIDEO);
+        }
+        return isGranted(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                && isGranted(Manifest.permission.READ_EXTERNAL_STORAGE);
     }
 
     private boolean isAnyPermissionPermanentlyDenied() {
-        // Check for each permission if it's denied and shouldShowRequestPermissionRationale is false
         if (getActivity() == null) return false;
-        boolean denied = false;
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED &&
-                !ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.CAMERA)) denied = true;
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED &&
-                !ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.RECORD_AUDIO)) denied = true;
+        if (!isGranted(Manifest.permission.CAMERA)
+                && !ActivityCompat.shouldShowRequestPermissionRationale(
+                getActivity(), Manifest.permission.CAMERA)) return true;
+        if (!isGranted(Manifest.permission.RECORD_AUDIO)
+                && !ActivityCompat.shouldShowRequestPermissionRationale(
+                getActivity(), Manifest.permission.RECORD_AUDIO)) return true;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED &&
-                    !ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.READ_MEDIA_VIDEO)) denied = true;
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
-                    !ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.POST_NOTIFICATIONS)) denied = true;
+            if (!isGranted(Manifest.permission.READ_MEDIA_VIDEO)
+                    && !ActivityCompat.shouldShowRequestPermissionRationale(
+                    getActivity(), Manifest.permission.READ_MEDIA_VIDEO)) return true;
+            if (!isGranted(Manifest.permission.POST_NOTIFICATIONS)
+                    && !ActivityCompat.shouldShowRequestPermissionRationale(
+                    getActivity(), Manifest.permission.POST_NOTIFICATIONS)) return true;
         } else {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED &&
-                    !ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE)) denied = true;
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED &&
-                    !ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE)) denied = true;
+            if (!isGranted(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    && !ActivityCompat.shouldShowRequestPermissionRationale(
+                    getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE)) return true;
+            if (!isGranted(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    && !ActivityCompat.shouldShowRequestPermissionRationale(
+                    getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE)) return true;
         }
-        return denied;
+        return false;
     }
 
     private void showManualPermissionDialog() {
-        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle(R.string.permissions_required)
-            .setMessage(R.string.permissions_description)
-            .setPositiveButton(R.string.onboarding_open_settings, (dialog, which) -> {
-                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(Uri.parse("package:" + requireContext().getPackageName()));
-                startActivity(intent);
-            })
-            .setNegativeButton(android.R.string.cancel, null)
-            .show();
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.permissions_required)
+                .setMessage(R.string.permissions_description)
+                .setPositiveButton(R.string.onboarding_open_settings, (dialog, which) -> {
+                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    intent.setData(Uri.parse("package:" + requireContext().getPackageName()));
+                    startActivity(intent);
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     private void checkPermissionsAndUpdateUI() {
-        permissionsGranted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                && ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED)
-                || (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
-                && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED));
+        boolean camera = isGranted(Manifest.permission.CAMERA);
+        boolean mic = isGranted(Manifest.permission.RECORD_AUDIO);
+        boolean storage = storageGranted();
+
+        permissionsGranted = camera && mic && storage;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissionsGranted = permissionsGranted && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+            permissionsGranted = permissionsGranted
+                    && isGranted(Manifest.permission.POST_NOTIFICATIONS);
         }
         permanentlyDenied = isAnyPermissionPermanentlyDenied();
-        if (permissionsGranted) {
-            grantButton.setEnabled(false);
-            grantButton.setAlpha(0.5f);
-            grantButton.setText(R.string.permissions_granted);
-            showPermissionStatus(R.string.permissions_granted, true);
-        } else {
-            grantButton.setEnabled(true);
-            grantButton.setAlpha(1f);
-            grantButton.setText(R.string.grant_permissions);
-        }
-        
 
-        // Update battery optimization button status
-        updateBatteryOptimizationButton();
+        bindPermissionState(cameraStatus, camera);
+        bindPermissionState(micStatus, mic);
+        bindPermissionState(storageStatus, storage);
+
+        grantButton.setVisibility(permissionsGranted ? View.GONE : View.VISIBLE);
+        permissionSuccessRow.setVisibility(permissionsGranted ? View.VISIBLE : View.GONE);
+        // Always keep the manual escape hatch while anything is missing: on some
+        // devices the runtime dialog never appears again after a denial.
+        openSettingsLink.setVisibility(permissionsGranted ? View.GONE : View.VISIBLE);
+        noteText.setVisibility(permissionsGranted ? View.GONE : View.VISIBLE);
+
+        updateBatteryState();
+
+        if (getActivity() instanceof OnboardingActivity) {
+            ((OnboardingActivity) getActivity()).onPermissionsStateChanged();
+        }
+    }
+
+    private void bindPermissionState(TextView status, boolean granted) {
+        status.setText(granted
+                ? R.string.onboarding_permission_granted
+                : R.string.onboarding_permission_required);
+        status.setTextColor(ContextCompat.getColor(requireContext(),
+                granted ? R.color.onboarding_success : R.color.dossier_muted));
+    }
+
+    private void updateBatteryState() {
+        android.os.PowerManager pm = (android.os.PowerManager)
+                requireContext().getSystemService(android.content.Context.POWER_SERVICE);
+        boolean ignoring = pm != null
+                && pm.isIgnoringBatteryOptimizations(requireContext().getPackageName());
+
+        batteryButton.setVisibility(ignoring ? View.GONE : View.VISIBLE);
+        batterySuccessRow.setVisibility(ignoring ? View.VISIBLE : View.GONE);
+    }
+
+    /** The permission request must wait until this slide is actually visible. */
+    public void onSlideShown() {
+        // Never launch the system prompt on entry: the user starts it with the
+        // Grant Permissions button, so the slide opens quiet.
+        checkPermissionsAndUpdateUI();
     }
 
     @Override
@@ -193,140 +237,40 @@ public class OnboardingPermissionsFragment extends Fragment implements SlidePoli
 
     @Override
     public boolean isPolicyRespected() {
-        // Only allow Done if all permissions are granted
         return permissionsGranted;
     }
 
     @Override
     public void onUserIllegallyRequestedNextPage() {
-        showPermissionStatus(R.string.permissions_note, false);
-        if (grantButton != null) {
-            grantButton.performClick();
-        }
+        // Swiping past the gate only explains the requirement; it must not fire the
+        // runtime permission dialogs. Those start from the Grant Permissions button.
+        Toast.makeText(requireContext(), R.string.permissions_note, Toast.LENGTH_SHORT).show();
     }
 
-    /**
-     * Called to refresh language-specific UI elements when the language has changed
-     * without recreating the entire fragment
-     */
+    /** Refreshes language-specific text without recreating the fragment. */
     public void refreshLanguage() {
         View view = getView();
         if (view == null) return;
-        
-        // Update all text elements with their string resources
-        TextView titleText = view.findViewById(R.id.permissionsTitle);
-        if (titleText != null) {
-            titleText.setText(R.string.permissions_required);
-        }
-        
-        TextView descText = view.findViewById(R.id.permissionsDescription);
-        if (descText != null) {
-            descText.setText(R.string.permissions_description);
-        }
-        
-        if (grantButton != null) {
-            if (permissionsGranted) {
-                grantButton.setText(R.string.permissions_granted);
-            } else {
-                grantButton.setText(R.string.grant_permissions);
-            }
-        }
-        
-        MaterialButton batteryOptButton = view.findViewById(R.id.disable_battery_optimization_button);
-        if (batteryOptButton != null) {
-            batteryOptButton.setText(R.string.disable_battery_optimization);
-        }
-        
-        TextView settingsLink = view.findViewById(R.id.open_settings_link);
-        if (settingsLink != null) {
-            settingsLink.setText(R.string.open_settings);
-        }
-        
-        TextView noteText = view.findViewById(R.id.permissionsNote);
-        if (noteText != null) {
-            noteText.setText(R.string.permissions_note);
-        }
-        
-        // Find and update text in permission icons section
-        // These are in nested LinearLayouts inside permissionsListContainer
-        LinearLayout permissionsListContainer = view.findViewById(R.id.permissionsListContainer);
-        if (permissionsListContainer != null && permissionsListContainer.getChildCount() >= 3) {
-            // Camera text
-            LinearLayout cameraLayout = (LinearLayout) permissionsListContainer.getChildAt(0);
-            if (cameraLayout != null && cameraLayout.getChildCount() >= 2) {
-                TextView cameraText = (TextView) cameraLayout.getChildAt(1);
-                if (cameraText != null) {
-                    cameraText.setText(R.string.onboarding_camera);
-                }
-            }
-            
-            // Mic text
-            LinearLayout micLayout = (LinearLayout) permissionsListContainer.getChildAt(1);
-            if (micLayout != null && micLayout.getChildCount() >= 2) {
-                TextView micText = (TextView) micLayout.getChildAt(1);
-                if (micText != null) {
-                    micText.setText(R.string.onboarding_microphone);
-                }
-            }
-            
-            // Storage text
-            LinearLayout storageLayout = (LinearLayout) permissionsListContainer.getChildAt(2);
-            if (storageLayout != null && storageLayout.getChildCount() >= 2) {
-                TextView storageText = (TextView) storageLayout.getChildAt(1);
-                if (storageText != null) {
-                    storageText.setText(R.string.onboarding_storage);
-                }
-            }
-        }
-        
-        TextView andText = view.findViewById(R.id.and_text);
-        if (andText != null) {
-            andText.setText(R.string.onboarding_and);
-        }
-        
-        TextView orText = view.findViewById(R.id.or_text);
-        if (orText != null) {
-            orText.setText(R.string.onboarding_or);
-        }
-        
-        // If we had shown a status message, update it
-        if (permissionStatusText != null && permissionStatusText.getVisibility() == View.VISIBLE) {
-            // Re-check permissions and update UI
-            checkPermissionsAndUpdateUI();
-        }
-        
-        // Force layout refresh on all controls
-        if (view instanceof ViewGroup) {
-            ViewGroup root = (ViewGroup) view;
-            root.invalidate();
-            root.requestLayout();
-        }
-    }
 
-    /**
-     * Updates the battery optimization button state based on current status
-     */
-    private void updateBatteryOptimizationButton() {
-        View view = getView();
-        if (view == null) return;
-        
-        MaterialButton batteryOptButton = view.findViewById(R.id.disable_battery_optimization_button);
-        if (batteryOptButton != null) {
-            android.os.PowerManager pm = (android.os.PowerManager) requireContext().getSystemService(android.content.Context.POWER_SERVICE);
-            boolean isIgnoring = false;
-            if (pm != null) {
-                isIgnoring = pm.isIgnoringBatteryOptimizations(requireContext().getPackageName());
-            }
-            
-            if (isIgnoring) {
-                batteryOptButton.setEnabled(false);
-                batteryOptButton.setAlpha(0.5f);
-                batteryOptButton.setText(R.string.permissions_granted);
-            } else {
-                batteryOptButton.setEnabled(true);
-                batteryOptButton.setAlpha(1f);
-                batteryOptButton.setText(R.string.disable_battery_optimization);
-            }
-        }
+        TextView title = view.findViewById(R.id.permissionsTitle);
+        if (title != null) title.setText(R.string.permissions_required);
+        TextView description = view.findViewById(R.id.permissionsDescription);
+        if (description != null) description.setText(R.string.permissions_description);
+        if (grantButton != null) grantButton.setText(R.string.grant_permissions);
+        if (batteryButton != null) batteryButton.setText(R.string.disable_battery_optimization);
+        if (openSettingsLink != null) openSettingsLink.setText(R.string.onboarding_open_settings);
+        if (noteText != null) noteText.setText(R.string.permissions_note);
+
+        TextView cameraLabel = view.findViewById(R.id.permission_camera_label);
+        if (cameraLabel != null) cameraLabel.setText(R.string.onboarding_camera);
+        TextView micLabel = view.findViewById(R.id.permission_microphone_label);
+        if (micLabel != null) micLabel.setText(R.string.onboarding_microphone);
+        TextView storageLabel = view.findViewById(R.id.permission_storage_label);
+        if (storageLabel != null) storageLabel.setText(R.string.onboarding_storage);
+
+        checkPermissionsAndUpdateUI();
+
+        view.invalidate();
+        view.requestLayout();
     }
-} 
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Dims the dormant splash avatar to SPLASH_START_ALPHA (0.85).
+
+  Kept as a sibling layer instead of an alpha on the avatar so the artwork file
+  itself is untouched — the avatar is still drawn from @drawable/toggle_on_idle.
+
+  Alpha here is the inverse of the overlay's start alpha: keep
+  SplashAvatarOverlay.START_ALPHA and this colour in sync (0.15 black = 0.85).
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#26000000" />
+</shape>

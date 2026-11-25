@@ -40,7 +40,7 @@
         <item>11/11 | Χρειάζεστε βοήθεια; Εγγραφείτε στο Discord μας μέσω της ενότητας Σχετικά.</item>
     </string-array>
     <string name="mainpage_video_info" formatted="false">\n                                            <![CDATA[    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Βίντεο: </b></font>    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%d</font><br>    <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Χρήση: </b></font>    <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>    ]]>\n</string>
-    <string name="stats_label_videos">Βίντεο:</string>
+    <string name="stats_label_videos">Αρχεία:</string>
     <string name="stats_label_used">Χρήση:</string>
     <string name="button_start">Έναρξη</string>
     <string name="button_pause">Παύση</string>
@@ -118,7 +118,7 @@
     <string name="recording_controls_title">AF · Έκθεση · Ζουμ</string>
     <string name="mainpage_camera_front">Μπροστινή Κάμερα</string>
     <string name="mainpage_camera_back">Πίσω Κάμερα</string>
-    <string name="storage_available_space">Διαθέσιμος χώρος</string>
+    <string name="storage_available_space">Υπόλοιπος χώρος</string>
     <string name="recording_estimated_time">Εκτιμώμενος χρόνος</string>
     <string name="recording_time_left">Χρόνος που απομένει</string>
     <string name="recording_elapsed_time">Χρόνος που πέρασε</string>
@@ -196,7 +196,7 @@
     <string name="home_time_left_color_helper">Επιλέξτε το χρώμα έμφασης για τη γραμμή χρόνου που απομένει. Το κόκκινο είναι η προεπιλογή.</string>
     <string name="home_time_left_color_choice_desc">Χρώμα έμφασης %1$s</string>
     <string name="home_clock_customize_title">Εμφάνιση Ρολογιού</string>
-    <string name="home_clock_customize_helper">Αλλάξτε την εμφάνιση ρολογιού, το χρώμα και τη μορφή ώρας.</string>
+    <string name="home_clock_customize_helper">Αλλάξτε την εμφάνιση ρολογιού, το χρώμα, τη μορφή ώρας και το στυλ της αραβικής ημερομηνίας.</string>
     <string name="home_clock_display_option">Εμφάνιση ρολογιού</string>
     <string name="home_clock_display_option_desc">Επιλέξτε ποιες γραμμές ημερομηνίας και ώρας εμφανίζονται στην κάρτα ρολογιού</string>
     <string name="home_clock_display_helper">Επιλέξτε τη διάταξη που χρησιμοποιείται για την κάρτα ρολογιού.</string>
@@ -454,7 +454,7 @@
     <string name="nav_settings">Ρυθμίσεις</string>
     <string name="nav_about">Σχετικά</string>
     <string name="nav_remote">Απομακρυσμένη</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
     <string name="nav_lab">Εργαστήριο</string>
     <string name="button_settings_readme">Διαβάστε με</string>
     <string name="setting_cam_title">Επιλογή Κάμερας</string>
@@ -572,14 +572,6 @@
     <string name="ae_lock_helper">Όταν είναι ενεργοποιημένο, η αυτόματη έκθεση διατηρείται στην τρέχουσα φωτεινότητα, ώστε η κάμερα να μην επαναρυθμίζει την έκθεση κατά την εγγραφή. Χρησιμοποιήστε το πλακίδιο Έκθεσης για μη αυτόματες ρυθμίσεις έκθεσης.</string>
     <string name="ae_lock_switch_label">Κλείδωμα AE</string>
     <string name="exposure_title">Αντιστάθμιση Έκθεσης (EV)</string>
-    <string-array name="easter_eggs_array">
-        <item>Alert! This is a restricted area. Start recording to gain access.</item>
-        <item>You\'ve found the secret button! It does nothing lol</item>
-        <item>Hurry! The system is about to explode… or maybe it just needs a recording to calm down.</item>
-        <item>Well, this is awkward now…</item>
-        <item>What color is your Bugatti?</item>
-        <item>I was not programmed to do what you are doing. Wait, are you trying to hack me?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>DISCLAIMER</item>
         <item>Does FadCam collect any user data?</item>
@@ -633,8 +625,6 @@
     <string name="array_watermark_time_fadcam">Ώρα με FadCam</string>
     <string name="array_watermark_timeonly">Χρονική Σήμανση</string>
     <string name="array_watermark_nomark">Χωρίς Υδατογράφημα</string>
-    <string name="watermark_preview_funny">Αλήθεια; :( 
-    ＞﹏＜</string>
     <string name="toast_video_not_found">Σφάλμα: Το βίντεο δεν βρέθηκε</string>
     <string name="quick_speed_title">Γρήγορη Ταχύτητα</string>
     <string name="quick_speed_option_default">2x (Προεπιλογή)</string>
@@ -1008,13 +998,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="widget_customize_action_label">Προσαρμογή</string>
     <string name="widget_customize_action_subtitle">Επιλογές ώρας, ημερομηνίας, θέματος</string>
     <!-- Torch Error Messages -->
-    <string-array name="torch_error_messages">
-        <item>Torch is compiling... please don\'t wait 🖥️</item>
-        <item>Camera says: No flash today 🚦</item>
-        <item>Torch.exe not responding 🔦</item>
-        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
-        <item>Patch coming soon™... Developer is debugging life 🐛</item>
-    </string-array>
     <string name="more_options">Περισσότερες Επιλογές</string>
     <string name="records_options_title">Επιλογές Εγγραφών</string>
     <string name="setting_theme_title">Θέμα Εφαρμογής</string>
@@ -1285,6 +1268,8 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="setting_video_stabilization_title">Σταθεροποίηση βίντεο</string>
     <string name="setting_not_supported">Δεν υποστηρίζεται σε αυτή τη συσκευή</string>
     <string name="video_stabilization_footer">Σταθεροποιεί τα βίντεό σας αντισταθμίζοντας το τρέμουλο του χεριού με ηλεκτρονική (EIS) και οπτική (OIS) σταθεροποίηση. Απαιτείται ελαφρύ περικόψιμο του κάδρου.</string>
+    <string name="video_stabilization_unsupported_banner">Σταθεροποίηση: δεν υποστηρίζεται στο τηλέφωνο-πατάτα σου. Φταίει το hardware, όχι εμείς.</string>
+    <string name="video_stabilization_unsupported_short">Μη υποστηριζόμενο</string>
     <string name="video_setting_location_embed_enabled">Ενεργοποιημένο</string>
     <string name="video_setting_location_embed_disabled">Απενεργοποιημένο</string>
     <string name="helper_watermark_option">Επιλέξτε περιεχόμενο επικάλυψης.</string>
@@ -1437,20 +1422,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="note_onboarding">Ενεργοποιήστε για να δείτε την εισαγωγή την επόμενη φορά.</string>
     <!-- Fix End: Add onboarding toggle strings -->
     <string name="choose_language">Επιλογή Γλώσσας</string>
-    <string name="language_change_later_note">Μπορείτε να το αλλάξετε στις Ρυθμίσεις.</string>
-    <string name="permissions_required">Απαιτούνται Άδειες</string>
-    <string name="permissions_description">Το FadCam χρειάζεται πρόσβαση στην κάμερα, το μικρόφωνο και τον αποθηκευτικό χώρο.</string>
-    <string name="grant_permissions">Παραχώρηση Αδειών</string>
-    <string name="permissions_note">Πρέπει να παραχωρήσετε όλες τις άδειες.</string>
-    <string name="permissions_granted">Όλες οι άδειες παραχωρήθηκαν!</string>
-    <string name="open_settings">Άνοιγμα Ρυθμίσεων</string>
-    <string name="disable_battery_optimization">Απενεργοποίηση Βελτιστοποίησης Μπαταρίας</string>
-    <string name="onboarding_human_title">Επιβεβαιώστε ότι είστε άνθρωπος</string>
-    <string name="onboarding_human_desc">Αυτοί οι κανόνες είναι αδιαπραγμάτευτοι.</string>
-    <string name="onboarding_human_checkbox1">Δεν θα χρησιμοποιήσω το FadCam παράνομα.</string>
-    <string name="onboarding_human_checkbox2">Αγαπώ ήδη το FadCam πριν καν το χρησιμοποιήσω. (Δεν είναι προαιρετικό)</string>
-    <string name="onboarding_human_checkbox3">Συμφωνώ με την Πολιτική Απορρήτου</string>
-    <string name="onboarding_human_button">Αφήστε με να μπω!</string>
     <string name="trash_select_all">Επιλογή Όλων</string>
     <!-- Fix Start: Update location permission message -->
     <string name="location_permission_granted_manual_toggle">Η άδεια παραχωρήθηκε!</string>
@@ -1470,21 +1441,24 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
 
     <!-- App Lock Strings -->
     <string name="setting_applock_title">Κλείδωμα Καρτέλας</string>
-    <string name="setting_applock_desc">Ασφαλίστε τα βίντεό σας με PIN για την καρτέλα Εγγραφές.</string>
+    <string name="setting_applock_desc">Προστατέψτε τις επιλεγμένες καρτέλες με PIN, κωδικό πρόσβασης ή δακτυλικό αποτύπωμα. Οι προστατευμένες καρτέλες κλειδώνουν ξανά όταν η εφαρμογή πάει στο παρασκήνιο ή κλείσει και πρέπει να ξεκλειδωθούν ξανά όταν επιστρέψετε.</string>
     <string name="setting_applock_configure">Διαμόρφωση</string>
     <string name="applock_dialog_title">Επιλογές Κλειδώματος Καρτέλας</string>
     <string name="applock_enable">Ενεργοποίηση Κλειδώματος Καρτέλας</string>
     <string name="applock_disable">Απενεργοποίηση Κλειδώματος Καρτέλας</string>
     <string name="applock_set_pin">Ορισμός PIN</string>
-    <string name="applock_change_pin">Αλλαγή PIN</string>
-    <string name="applock_remove_pin">Αφαίρεση PIN</string>
+    <string name="applock_change_pin">Αλλαγή κλειδώματος</string>
+    <string name="applock_remove_pin">Αφαίρεση κλειδώματος</string>
     <string name="applock_pin_created">Το PIN δημιουργήθηκε επιτυχώς</string>
     <string name="applock_pin_removed">Το PIN αφαιρέθηκε επιτυχώς</string>
     <!-- Enhanced Tab Lock UX strings -->
-    <string name="applock_set_pin_enable">Ορισμός PIN &amp; Ενεργοποίηση</string>
-    <string name="applock_helper_create">Δημιουργήστε προστασία για την καρτέλα Εγγραφές.</string>
-    <string name="applock_helper_manage_disabled">Το PIN έχει οριστεί.</string>
-    <string name="applock_helper_enabled">Το Κλείδωμα Καρτέλας είναι ενεργό.</string>
+    <string name="applock_set_pin_enable">Ρύθμιση &amp; ενεργοποίηση</string>
+    <string name="applock_helper_create">Δημιουργήστε προστασία για τις καρτέλες που επιλέγετε με 4ψήφιο PIN, κωδικό πρόσβασης ή δακτυλικό αποτύπωμα. Θα κλειδώνονται αυτόματα όταν η εφαρμογή πάει στο παρασκήνιο.</string>
+    <string name="applock_helper_manage_disabled">Το PIN Tab Lock έχει οριστεί. Ενεργοποιήστε το για να απαιτείται PIN για τις επιλεγμένες καρτέλες.</string>
+    <string name="applock_helper_enabled">Το Tab Lock είναι ενεργό. Οι επιλεγμένες καρτέλες απαιτούν PIN αφού φύγετε από την εφαρμογή. Το Records είναι προστατευμένο από προεπιλογή.</string>
+    <string name="tab_lock_screen_title">Κλειδωμένο</string>
+    <string name="tab_lock_screen_message">Ξεκλειδώστε για συνέχεια</string>
+    <string name="tab_lock_unlock">Ξεκλείδωμα</string>
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Επαλήθευση PIN για Ενεργοποίηση</string>
     <string name="applock_verify_to_disable">Επαλήθευση PIN για Απενεργοποίηση</string>
@@ -1542,7 +1516,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="app_icon_changed">Το εικονίδιο άλλαξε</string>
     <string name="app_icon_preview">Προεπισκόπηση εικονιδίου</string>
     <!-- Launcher alias label for the Black icon: use a single space to appear blank -->
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
     <!-- Misc -->
     <string name="changelog_label">Τι Νέο</string>
     <!-- Fix Start: Add auto update check toggle strings -->
@@ -1721,7 +1694,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="forensics_copy_done">Οι λεπτομέρειες αντιγράφηκαν</string>
     <string name="digital_forensics_preview_title">Ζωντανή Προεπισκόπηση Ανίχνευσης</string>
     <string name="digital_forensics_preview_subtitle">Προσομοίωση επικάλυψης προεπισκόπησης.</string>
-    <string name="digital_forensics_preview_default">ΑΤΟΜΟ 92%</string>
     <string name="settings_watermark_subtitle">Λειτουργία επικάλυψης</string>
     <string name="prefs_import_export_title">Εισαγωγή / Εξαγωγή</string>
     <string name="prefs_import_export_subtitle">Αντίγραφο, επαναφορά, reset</string>
@@ -1750,19 +1722,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="location_icon_description">Εικονίδιο Τοποθεσίας</string>
     <string name="location_embedding_icon_description">Εικονίδιο Ενσωμάτωσης Τοποθεσίας</string>
     <string name="app_icon_minimal" translatable="false">FadCam</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Σύρετε δεξιά για συνέχεια</string>
-    <string name="onboarding_select_language">Επιλέξτε γλώσσα εφαρμογής.</string>
-    <string name="onboarding_camera">Κάμερα</string>
-    <string name="onboarding_microphone">Μικρόφωνο</string>
-    <string name="onboarding_storage">Αποθηκευτικός Χώρος</string>
-    <string name="onboarding_or">Ή</string>
-    <string name="onboarding_and">ΚΑΙ</string>
-    <string name="onboarding_open_settings">Άνοιγμα Ρυθμίσεων</string>
-    <string name="onboarding_intro_line1">μια πολυμεσική συσκευή εγγραφής—</string>
-    <string name="onboarding_intro_line2">βίντεο παρασκηνίου, οθόνη &amp; ζωντανή ροή,</string>
-    <string name="onboarding_intro_line3">απομακρυσμένος έλεγχος κάμερας,</string>
-    <string name="onboarding_intro_line4">ανοιχτού κώδικα. χωρίς διαφημίσεις. δικό σου.</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Ταξινόμηση κατά</string>
     <string name="records_sort_helper">Επιλέξτε σειρά εγγραφών.</string>
@@ -1943,6 +1902,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="name_your_project">Ονομάστε το Έργο σας</string>
     <string name="project_naming_message">Δώστε ένα όνομα στο έργο σας.</string>
     <string name="fadrec_projects">Έργα FadRec</string>
+    <string name="fadrec_projects_location">Τα έργα αποθηκεύονται στον ιδιωτικό χώρο αποθήκευσης της εφαρμογής</string>
     <string name="delete_project">Διαγραφή Έργου</string>
     <string name="delete_all">Διαγραφή Όλων</string>
     <string name="new_project">Νέο Έργο</string>
@@ -1972,15 +1932,6 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="fadcam_pro_feature_app_name">Προσαρμοσμένο Όνομα</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive Cloud Sync</string>
     <string name="fadcam_pro_header_button">Απόκτησε το Pro</string>
-    <!-- Video Player Info Bottom Sheet -->
-    <string name="player_info_title">Σχετικά με τον Αναπαραγωγέα Βίντεο</string>
-    <string name="player_info_content"><![CDATA[
-<b>Κατακερματισμένη Μορφή MP4</b><br/><br/>
-Το FadCam χρησιμοποιεί κατακερματισμένη μορφή MP4 για εγγραφές.<br/><br/>
-<b>Περιορισμοί Αναπαραγωγής</b><br/><br/>
-Ο ενσωματωμένος αναπαραγωγέας έχει περιορισμούς συστήματος Android.<br/><br/>
-Για την πιο ομαλή εμπειρία, χρησιμοποιήστε εξωτερικό αναπαραγωγέα όπως VLC.
-    ]]></string>
     <!-- Codec Compatibility Strings -->
     <string name="codec_hevc_incompatible_title">Ο Κωδικοποιητής H.265 δεν Υποστηρίζεται για Ζωντανή Ροή</string>
     <string name="codec_hevc_incompatible_message">📡 Η ζωντανή ροή μέσω HLS απαιτεί H.264.
@@ -2282,6 +2233,8 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="screen_rec_settings_subtitle">Ποιότητα, ήχος &amp; ρυθμίσεις εξόδου</string>
     <string name="screen_rec_resolution">Ανάλυση</string>
     <string name="screen_rec_framerate">Ρυθμός Καρέ</string>
+    <string name="screen_rec_codec">Κωδικοποιητής</string>
+    <string name="note_screen_codec">Επιλέξτε τον κωδικοποιητή εγγραφής οθόνης\n(Προεπιλογή: %1$s)\nΣυμβουλή: Το H.265 (HEVC) δίνει μικρότερα αρχεία στην ίδια ποιότητα. Αν η συσκευή δεν διαθέτει χρησιμοποιήσιμο κωδικοποιητή HEVC, το FadCam εγγράφει αυτόματα σε H.264.</string>
     <string name="screen_rec_bitrate">Ρυθμός Μετάδοσης</string>
     <string name="screen_rec_orientation">Προσανατολισμός</string>
     <string name="screen_rec_bitrate_mode_auto">Αυτόματο (VBR)</string>
@@ -2640,6 +2593,10 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="mini_apps_qr_scanner_reference">Αναφορά Σαρωτή QR</string>
 
     <string name="screen_recording_title">Εγγραφή Οθόνης</string>
+    <string name="qs_tile_fadrec_subtitle">Εγγραφή οθόνης</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Εγγραφή</string>
+    <string name="qs_tile_fadrec_paused">Σε παύση</string>
 
     <string name="screen_recording_notif_title">FadRec - Εγγραφή Οθόνης</string>
 
@@ -2716,6 +2673,13 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="setting_theme">Θέμα</string>
     <string name="setting_language">Γλώσσα</string>
     <string name="setting_app_icon">Εικονίδιο εφαρμογής</string>
+    <string name="setting_splash_screen">Οθόνη εκκίνησης</string>
+    <string name="splash_screen_dialog_title">Επιλογή οθόνης εκκίνησης</string>
+    <string name="splash_screen_helper">Επιλέξτε τι εμφανίζει το FadCam κατά την εκκίνηση.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Ο avatar ξυπνά, κοιμάται και προσγειώνεται στην Αρχική</string>
+    <string name="splash_style_flag">Σημαία FadSec Lab</string>
+    <string name="splash_style_flag_desc">Κλασική οθόνη εκκίνησης με σημαία</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Ενεργοποιημένο</string>
@@ -3018,4 +2982,281 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Εμφάνιση στις Ρυθμίσεις</string>
     <string name="trash_show_in_settings_desc">Προσθέτει μια γραμμή Απορριμμάτων στη σελίδα Ρυθμίσεων για γρήγορη πρόσβαση</string>
+    <string name="fadcam_full_title">FadCam Power User</string>
+    <string name="fadcam_full_subtitle">Τηλεχειρισμός, καταγραφή κίνησης, εγκληματολογία και άλλα. Δοκίμασε την πλήρη έκδοση.</string>
+    <string name="github_get_on">Διαθέσιμο στο</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Χρησιμοποιείς το FadCam εδώ και %1$s</string>
+    <string name="app_usage_since_install_title">Χρησιμοποιείτε το FadCam για</string>
+
+
+    <string name="app_age_a_while">λίγο καιρό</string>
+    <string name="app_usage_installed_on">Εγκαταστάθηκε στις</string>
+    <string name="pro_dossier_header">FADSEC LAB // ΕΣΩΤΕΡΙΚΟΣ ΦΑΚΕΛΟΣ</string>
+    <string name="pro_dossier_eyes_only">ΑΥΣΤΗΡΑ ΕΜΠΙΣΤΕΥΤΙΚΟ</string>
+    <string name="pro_dossier_subject">ΘΕΜΑ // ΠΡΩΤΟΚΟΛΛΟ ΑΝΑΒΑΘΜΙΣΗΣ</string>
+    <string name="pro_dossier_file_no">ΑΡ. ΦΑΚΕΛΟΥ</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">ΕΞΟΥΣΙΟΔΟΤΗΣΗ</string>
+    <string name="pro_dossier_clearance_value">ΔΗΜΟΣΙΟ / ΔΩΡΕΑΝ</string>
+    <string name="pro_dossier_status">ΚΑΤΑΣΤΑΣΗ</string>
+    <string name="pro_dossier_status_value">ΑΝΑΜΕΝΕΙ ΕΠΙΒΕΒΑΙΩΣΗ</string>
+    <string name="pro_dossier_ref">ΑΝΑΦ.: FADSEC/PR-07</string>
+    <string name="pro_dossier_page">ΣΕΛΙΔΑ 1/1</string>
+    <string name="pro_dossier_drag">ΣΥΡΕ ΓΙΑ ΕΛΕΓΧΟ // ΜΠΡΟΣΤΑ</string>
+    <string name="pro_dossier_cycle">ΚΥΚΛΟΣ %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // ΕΚΘΕΣΗ ΜΕΤΑ ΤΗ ΔΡΑΣΗ</string>
+    <string name="pro_dossier_after_stamp">ΕΝΗΜΕΡΩΣΗ</string>
+    <string name="pro_dossier_after_subject">ΘΕΜΑ // ΕΒΔΟΜΑΔΙΑΙΑ ΕΠΑΦΗ</string>
+    <string name="pro_dossier_after_status">ΔΙΑΘΕΣΗ</string>
+    <string name="pro_dossier_after_status_value">ΑΠΑΙΤΕΙΤΑΙ ΕΠΙΒΕΒΑΙΩΣΗ</string>
+    <string name="pro_dossier_after_ref">ΑΝΑΦ.: FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">Κατανοητό</string>
+    <string name="pro_reminder_intro_title">Πριν γίνει δραματικό το Pro</string>
+    <string name="pro_reminder_intro_subtitle">Χρησιμοποιείς το FadCam εδώ και %1$s. Δες τι προσφέρει το Pro.</string>
+    <string name="pro_reminder_title_1">Έχουμε ιστορία</string>
+    <string name="pro_reminder_title_2">Το Pro ζηλεύει</string>
+    <string name="pro_reminder_title_3">Μάντεψε ποιος επέστρεψε</string>
+    <string name="pro_reminder_title_4">Αυτό είναι πλέον το δικό μας</string>
+    <string name="pro_reminder_title_5">Κάνε πως ξαφνιάστηκες</string>
+    <string name="pro_reminder_title_6">Ίδια ώρα την επόμενη εβδομάδα;</string>
+    <string name="pro_reminder_subtitle_1">%1$s με το FadCam, και ακόμα δεν έχεις γνωρίσει το Pro.</string>
+    <string name="pro_reminder_subtitle_2">Χρησιμοποιείς το FadCam εδώ και %1$s. Το Pro αρχίζει να νιώθει παραμελημένο.</string>
+    <string name="pro_reminder_subtitle_3">%1$s με το FadCam. Επέστρεψα για να σου θυμίσω το Pro.</string>
+    <string name="pro_reminder_subtitle_4">%1$s με το FadCam. Και το Pro θέλει λίγη προσοχή.</string>
+    <string name="pro_reminder_subtitle_5">%1$s μαζί, και να είμαι πάλι εδώ. Έφερα το Pro.</string>
+    <string name="pro_reminder_subtitle_6">Πέρασαν %1$s. Το Pro λέει γεια. Ξανά.</string>
+    <string name="pro_reminder_notification_title_1">Το Pro νιώθει παραμελημένο</string>
+    <string name="pro_reminder_notification_title_2">Μια μικρή διακοπή</string>
+    <string name="pro_reminder_notification_title_3">Το Pro μπήκε στη συζήτηση</string>
+    <string name="pro_reminder_notification_title_4">Μάντεψε ποιος επέστρεψε</string>
+    <string name="pro_reminder_notification_body_1">%1$s μαζί. Το Pro θέλει ένα γρήγορο γεια.</string>
+    <string name="pro_reminder_notification_body_2">Μην ανησυχείς, δεν είναι επείγον. Το Pro λέει απλώς γεια.</string>
+    <string name="pro_reminder_notification_body_3">Πέρασαν %1$s. Έτοιμος για μια γρήγορη ματιά;</string>
+    <string name="pro_reminder_notification_body_4">Εγώ ξανά. Το Pro υπόσχεται πως θα είναι γρήγορο.</string>
+    <string name="pro_reminder_button_continue">Συνέχεια</string>
+    <string name="pro_reminder_button_countdown">Συνέχεια σε %1$d δευτ.</string>
+    <string name="pro_reminder_back_toast_1">Καλή προσπάθεια. Το Συνέχεια είναι εκεί.</string>
+    <string name="pro_reminder_back_toast_2">Ανατροπή: το Πίσω δεν είναι η έξοδος.</string>
+    <string name="pro_reminder_back_toast_3">Παραλίγο να ξεφύγεις. Απλώς πάτησε Συνέχεια.</string>
+    <string name="pro_reminder_after_title">Πήγαινε στο Pro, και επιτέλους θα σταματήσω να σε ενοχλώ. Για πάντα.</string>
+    <string name="pro_reminder_after_got_it">Κατανοητό</string>
+    <string name="pro_reminder_notification_channel_name">Υπενθυμίσεις Pro</string>
+    <string name="pro_reminder_notification_channel_description">Εβδομαδιαίες υπενθυμίσεις για το FadCam Pro. Δεν εμφανίζονται στο Pro.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">Επιστρέφω σε %1$d ημέρα. Απόλαυσε την ησυχία όσο κρατάει.</item>
+        <item quantity="other">Επιστρέφω σε %1$d ημέρες. Απόλαυσε την ησυχία όσο κρατάει.</item>
+    </plurals>
+    <string name="follow_on_x">Ακολούθησε στο X</string>
+    <string name="pro_screen_active">Ενεργό</string>
+    <string name="pro_screen_calc_desc">Μια ξεχωριστή εφαρμογή που μοιάζει με αριθμομηχανή.</string>
+    <string name="pro_screen_calc_feature">Εφαρμογή αριθμομηχανής</string>
+    <string name="pro_screen_calculator">Αριθμομηχανή</string>
+    <string name="pro_screen_claim_body">Με τον αποκλειστικό αγωγό Hybrid MP4 του FadCam — σχεδιασμένο ειδικά για Android ώστε οι εγγραφές να παραμένουν αναπαραγώγιμες μετά από κρασαρίσματα, άδεια μπαταρία και ξαφνικό τερματισμό, μέχρι το τελευταίο δευτερόλεπτο.</string>
+    <string name="pro_screen_claim_title">Ο νούμερο 1 καταγραφέας βίντεο στο παρασκήνιο</string>
+    <string name="pro_screen_cloud">Συγχρονισμός FadDrive</string>
+    <string name="pro_screen_cloud_desc">Ασφαλές backup των εγγραφών σου στο κρυπτογραφημένο cloud μας.</string>
+    <string name="pro_screen_coming_soon_status">Έρχεται σύντομα</string>
+    <string name="pro_screen_compare">Δες τι περιλαμβάνεται</string>
+    <string name="pro_screen_compare_hint">Σύρε για σύγκριση εκδόσεων</string>
+    <string name="pro_screen_compare_owned">Οι δυνατότητες Pro σου</string>
+    <string name="pro_screen_custom_icon">Προσαρμοσμένο εικονίδιο εφαρμογής</string>
+    <string name="pro_screen_custom_icon_desc">Διάλεξε το δικό σου εικονίδιο εφαρμογής.</string>
+    <string name="pro_screen_custom_name">Προσαρμοσμένο όνομα εφαρμογής</string>
+    <string name="pro_screen_custom_name_desc">Διάλεξε το δικό σου όνομα για την εφαρμογή.</string>
+    <string name="pro_screen_direct_support">Υποστήριξη από τον δημιουργό</string>
+    <string name="pro_screen_direct_support_desc">Ζήτησε βοήθεια από τον δημιουργό στο Discord.</string>
+        <string name="pro_screen_support_title">Άλλοι τρόποι υποστήριξης</string>
+    <string name="pro_screen_support_body">Δεν σε ενδιαφέρει το Pro; Μπορείς να στηρίξεις το FadCam μέσω Patreon ή δωρεών σε κρυπτονόμισμα. Κάθε συνεισφορά μας βοηθά να φτιάχνουμε περισσότερο ελεύθερο λογισμικό ανοιχτού κώδικα.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Μεμονωμένες δωρεές ή μηνιαίες συνδρομές.</string>
+    <string name="pro_screen_crypto_title">Δωρεές σε κρυπτονόμισμα</string>
+    <string name="pro_screen_crypto_desc">Επικοινώνησε μέσω Discord ή email.</string>
+    <string name="pro_screen_stay_connected_title">Μείνε σε επαφή</string>
+    <string name="pro_screen_stay_connected_body">Ερωτήσεις, σχόλια ή απλώς θέλεις να πεις ένα γεια; Θα χαρούμε να σε ακούσουμε.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">Email</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">Αίτημα υποστήριξης FadCam</string>
+    <string name="pro_screen_everything">Όλες οι δωρεάν δυνατότητες</string>
+    <string name="pro_screen_everything_desc">Όλα όσα έχει η δωρεάν έκδοση περιλαμβάνονται.</string>
+    <string name="pro_screen_fan_desc">Πιστεύεις σε ένα μέλλον με εφαρμογές και λύσεις ανοιχτού κώδικα που βάζουν την ιδιωτικότητα πρώτη.</string>
+    <string name="pro_screen_fan_feature">Αγαπάς την ιδιωτικότητα</string>
+    <string name="pro_screen_features">Δυνατότητες</string>
+    <string name="pro_screen_free">Δωρεάν</string>
+    <string name="pro_screen_included">Περιλαμβάνεται</string>
+    <string name="pro_screen_link_error">Δεν ήταν δυνατό το άνοιγμα του συνδέσμου. Βεβαιώσου ότι υπάρχει διαθέσιμο πρόγραμμα περιήγησης και δοκίμασε ξανά.</string>
+    <string name="pro_screen_navigation">Εξερεύνησε το Pro</string>
+    <string name="pro_screen_navigation_owned">Το Pro σου</string>
+    <string name="pro_screen_no_ads">Χωρίς διαφημίσεις ή παρακολούθηση</string>
+    <string name="pro_screen_no_ads_desc">Καμία διαφήμιση. Καμία παρακολούθηση. Καμία συλλογή αρχείων κατάρρευσης.</string>
+    <string name="pro_screen_no_nags">Χωρίς υπενθυμίσεις αναβάθμισης</string>
+    <string name="pro_screen_no_nags_desc">Καμία εβδομαδιαία υπενθύμιση για αναβάθμιση σε Pro.</string>
+    <string name="pro_screen_not_included">Δεν περιλαμβάνεται</string>
+    <string name="pro_screen_notes">Σημειώσεις</string>
+    <string name="pro_screen_notes_desc">Μια ξεχωριστή εφαρμογή που μοιάζει με εφαρμογή σημειώσεων.</string>
+    <string name="pro_screen_notes_feature">Εφαρμογή σημειώσεων</string>
+    <string name="pro_screen_notification">Εικονίδια ειδοποιήσεων</string>
+    <string name="pro_screen_notification_desc">Διάλεξε διαφορετικό εικονίδιο για τις ειδοποιήσεις εγγραφής.</string>
+    <string name="pro_screen_owned_status">%1$s · Ενεργό σε αυτήν την εφαρμογή</string>
+    <string name="pro_screen_owned_subtitle">Περιλαμβάνεται σε αυτήν την έκδοση</string>
+    <string name="pro_screen_owned_title">Το %1$s είναι ενεργό</string>
+    <string name="pro_screen_price_detail">3 ιδιωτικές εφαρμογές Pro · Ενημερώσεις για πάντα</string>
+    <string name="pro_screen_price_terms">Εφάπαξ αγορά</string>
+    <string name="pro_screen_privacy_body">Πιστεύουμε ότι η ιδιωτικότητα πρέπει να είναι για όλους. Για αυτό το FadCam δεν έχει διαφημίσεις, trackers ή συλλογή δεδομένων. Δεν συλλέγουμε ούτε αναφορές κατάρρευσης αυτόματα.\n\nΕίμαστε 100% ανοιχτού κώδικα, ώστε να βλέπεις πώς λειτουργεί η εφαρμογή. Οι βασικές δυνατότητες ιδιωτικότητας δεν θα κλειδωθούν ποτέ πίσω από πληρωμή.</string>
+    <string name="pro_screen_privacy_title">Ιδιωτικότητα σήμερα. Αύριο. Για πάντα.</string>
+    <string name="pro_screen_purchase">Ξεκλείδωσε το Pro Bundle</string>
+    <string name="pro_screen_purchase_caption">Ανοίγει το κατάστημα FadSec Lab</string>
+    <string name="pro_screen_scroll_hint">Κύλισε για περισσότερα</string>
+    <string name="pro_screen_scroll_top">Κύλιση στην κορυφή</string>
+    <string name="pro_screen_soon">Σύντομα</string>
+    <string name="pro_screen_soon_legend">Τα επίπεδα Pro+ και Lab έρχονται σύντομα.</string>
+    <string name="pro_screen_status_description">%1$s: %2$s</string>
+    <string name="pro_screen_tier">Pro</string>
+    <string name="pro_screen_tier_lab">Lab</string>
+    <string name="pro_screen_tier_plus">Pro+</string>
+    <string name="pro_screen_title">FadCam Pro</string>
+    <string name="pro_screen_updates">Πρώιμες ενημερώσεις</string>
+    <string name="pro_screen_updates_desc">Λάβε τις νέες εκδόσεις περίπου 60 ημέρες πριν από όλους.</string>
+    <string name="pro_screen_weather">Καιρός</string>
+    <string name="pro_screen_weather_desc">Μια ξεχωριστή εφαρμογή που μοιάζει με εφαρμογή καιρού.</string>
+    <string name="pro_screen_weather_feature">Εφαρμογή καιρού</string>
+    <string name="pro_screen_why_pro_body">Το FadCam Free περιλαμβάνει ήδη δυνατότητες για τις οποίες πολλές άλλες εφαρμογές χρεώνουν. Πιστεύουμε ότι το χρήσιμο λογισμικό δεν πρέπει να έρχεται εις βάρος της ιδιωτικότητάς σου.\n\nΑν βρίσκεις το FadCam χρήσιμο και θέλεις να στηρίξεις τη δουλειά μας, το Pro είναι ένας τρόπος να ανταποδώσεις και να πάρεις ακόμα περισσότερα: τρεις αυτόνομες ιδιωτικές εφαρμογές, πρώιμες ενημερώσεις και άλλα extras, πάνω σε όσα προσφέρει ήδη το FadCam Free.\n\nΗ υποστήριξή σου μας βοηθά να συνεχίσουμε να φτιάχνουμε εφαρμογές και λύσεις ανοιχτού κώδικα με την ιδιωτικότητα πρώτη στο FadSec Lab.</string>
+    <string name="pro_screen_why_pro_title">Τότε γιατί Pro;</string>
+    <string name="pro_screen_bundle">Τρεις ιδιωτικές εφαρμογές.
+Δικές σου για πάντα.</string>
+    <string name="pro_showcase_label">ΠΑΚΕΤΟ PRO</string>
+    <string name="pro_showcase_supporting">Εγκατέστησε και τις τρεις ξεχωριστά, με ενημερώσεις για πάντα.</string>
+    <string name="pro_showcase_meta">Ξεχωριστές εγκαταστάσεις · Ενημερώσεις για πάντα</string>
+    <string name="pro_showcase_chip_installs">Τρεις αυτόνομες εφαρμογές</string>
+    <string name="pro_showcase_chip_updates">Περιλαμβάνονται ενημερώσεις για πάντα</string>
+    <string name="pro_showcase_chip_entry">Μεταμφιεσμένα περιβάλλοντα εφαρμογών</string>
+    <string name="pro_showcase_soon">ΣΥΝΤΟΜΑ</string>
+    <string name="pro_showcase_hint">Ξεκλείδωσε και εξερεύνησε τις εφαρμογές.</string>
+    <string name="pro_showcase_expand_desc">Άνοιγμα τηλεφώνου σε πλήρη οθόνη</string>
+    <string name="pro_showcase_collapse_desc">Έξοδος από πλήρη οθόνη</string>
+    <string name="pro_showcase_phone_desc">Ομοίωμα συσκευής FadSec Lab. Η οθόνη δείχνει τις τρεις εφαρμογές Pro. Σύρε στο πλάι για να περιστρέψεις το τηλέφωνο.</string>
+    <string name="pro_showcase_privacy_mark">Ιδιωτικότητα εκ σχεδιασμού</string>
+    <string name="pro_showcase_notes_hint">Πληκτρολογήστε για να προσθέσετε σημείωση</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Υγρασία</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Άνεμος</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Επανεκκίνηση</string>
+    <string name="pro_showcase_torch">Φακός</string>
+    <string name="pro_showcase_access_title">Κάμερα &amp; Μικρόφωνο</string>
+    <string name="pro_showcase_access_body">Η εφαρμογή Weather χρησιμοποιεί την κάμερα και το μικρόφωνό σας σε αυτήν την προεπισκόπηση. Είναι επίδειξη των διακριτικών ειδοποιήσεων του FadCam — δεν καταγράφεται τίποτα.</string>
+    <string name="pro_showcase_access_ok">Κατανοητό</string>
+    <string name="pro_showcase_shutting_down">Τερματισμός…</string>
+    <string name="pro_showcase_starting">Εκκίνηση</string>
+    <string name="pro_showcase_power_menu_title">Επανεκκίνηση συσκευής;</string>
+    <string name="pro_showcase_power_menu_body">Αυτό επανεκκινεί τη συσκευή προεπισκόπησης.</string>
+    <string name="pro_showcase_power_menu_cancel">Άκυρο</string>
+    <string name="pro_showcase_recents_hint">Πατήστε για άνοιγμα</string>
+    <string name="pro_showcase_recents_empty">Καμία πρόσφατη εφαρμογή</string>
+    <string name="pro_showcase_fullscreen_hint">Σύρετε για περιστροφή · Πατήστε μια εφαρμογή</string>
+    <string name="pro_showcase_weather_line">Ηλιόλουστο · 24°</string>
+    <string name="pro_showcase_notif_now">τώρα</string>
+    <string name="pro_showcase_swipe_unlock">Σύρετε προς τα πάνω για ξεκλείδωμα</string>
+    <string name="fadcam_pro_price_amount">$49</string>
+    <!-- Onboarding (redesigned) -->
+    <string name="permissions_required">Λίγες άδειες</string>
+    <string name="permissions_description">Το FadCam χρειάζεται λίγες άδειες για να εγγράφει και να αποθηκεύει τα βίντεό σας.</string>
+    <string name="grant_permissions">Χορήγηση αδειών</string>
+    <string name="permissions_note">Πρέπει να χορηγήσετε όλες τις άδειες για να συνεχίσετε.</string>
+    <string name="permissions_granted">Όλες οι άδειες χορηγήθηκαν. Είστε έτοιμοι!</string>
+    <string name="disable_battery_optimization">Απενεργοποίηση βελτιστοποίησης μπαταρίας</string>
+    <string name="battery_optimization_disabled">Η βελτιστοποίηση μπαταρίας απενεργοποιήθηκε</string>
+    <string name="onboarding_human_title">Οι κανόνες του σπιτιού</string>
+    <string name="onboarding_human_desc">Δύο γρήγορα πράγματα και είστε μέσα. Αν δεν συμφωνείτε, απεγκαταστήστε το FadCam τώρα.</string>
+    <string name="onboarding_human_button">Αφήστε με να μπω!</string>
+    <string name="onboarding_permissions_section">Άδειες</string>
+    <string name="onboarding_battery_section">Μπαταρία</string>
+    <string name="onboarding_permission_granted">Χορηγήθηκε</string>
+    <string name="onboarding_permission_required">Απαιτείται</string>
+    <string name="onboarding_human_agreement_responsible">Θα χρησιμοποιώ το FadCam υπεύθυνα και θα σέβομαι την ιδιωτικότητα των άλλων.</string>
+    <string name="onboarding_human_agreement_legal">Αποδέχομαι τους %1$s και αναγνωρίζω την %2$s.</string>
+    <string name="onboarding_terms_of_use">Όροι Χρήσης</string>
+    <string name="onboarding_privacy_policy">Πολιτική Απορρήτου</string>
+    <string name="onboarding_cred_open">Ανοιχτός κώδικας</string>
+    <string name="onboarding_cred_ads">Χωρίς διαφημίσεις</string>
+    <string name="onboarding_cred_track">Χωρίς ιχνηλάτες</string>
+    <string name="onboarding_mini_torch">Φακός</string>
+    <string name="onboarding_mini_torch_desc">Φακός, στροβοσκόπιο και λειτουργίες SOS.</string>
+    <string name="onboarding_mini_qr">Σαρωτής QR</string>
+    <string name="onboarding_mini_qr_desc">Σαρώστε κωδικούς QR και αποθηκεύστε τις σαρώσεις στις Εγγραφές.</string>
+    <string name="onboarding_permissions_kicker">ΠΡΟΣΒΑΣΗ // ΑΠΑΙΤΕΙΤΑΙ</string>
+    <string name="onboarding_human_kicker">ΟΡΚΟΣ // ΚΑΝΟΝΕΣ ΧΡΗΣΗΣ</string>
+    <string name="onboarding_dossier_kicker">FADCAM // ΙΔΙΩΤΙΚΟΣ ΚΑΤΑΓΡΑΦΕΑΣ</string>
+    <string name="onboarding_dossier_title">Ο νούμερο 1 καταγραφέας βίντεο στο παρασκήνιο.</string>
+    <string name="onboarding_dossier_lede">Με την Hybrid MP4 ροή του FadCam. Οι εγγραφές σας αντέχουν σε κρασαρίσματα, άδειες μπαταρίες και ξαφνικούς τερματισμούς — αναπαράγονται μέχρι το τελευταίο δευτερόλεπτο.</string>
+    <string name="onboarding_capabilities_kicker">FADCAM // ΣΟΥΙΤΑ ΠΟΛΥΜΕΣΩΝ</string>
+    <string name="onboarding_capabilities_title">Ώρα να απεγκαταστήσετε\nμερικές εφαρμογές.</string>
+    <string name="onboarding_capabilities_lede">Το FadCam κάνει και τις δικές τους δουλειές. Ναι, όλες. Χωρίς ιχνηλάτες ή σκοτεινά μοτίβα.</string>
+    <string name="onboarding_feature_background_title">Εγγραφή στο παρασκήνιο</string>
+    <string name="onboarding_feature_background_desc">Εγγράψτε ακόμη και με κλειστή οθόνη, χάρη στην τεχνολογία Hybrid MP4 που αντέχει σε κρασαρίσματα.</string>
+    <string name="onboarding_feature_screen_title">Εγγραφή οθόνης</string>
+    <string name="onboarding_feature_screen_desc">Εγγράψτε την οθόνη σας με εργαλεία σχεδίασης, επίπεδα και σελίδες.</string>
+    <string name="onboarding_feature_editor_title">Επεξεργαστής βίντεο</string>
+    <string name="onboarding_feature_editor_desc">Κόψτε, διαιρέστε, περικόψτε, αντιγράψτε ή σιγάστε κλιπ.</string>
+    <string name="onboarding_feature_motion_title">Ανίχνευση κίνησης</string>
+    <string name="onboarding_feature_motion_desc">Εγγράφει μόνο όταν ανιχνεύεται κίνηση. Παύει όταν σταματήσει.</string>
+    <string name="onboarding_feature_forensic_title">Εγκληματολογική νοημοσύνη</string>
+    <string name="onboarding_feature_forensic_desc">Η AI στη συσκευή ανιχνεύει άτομα και αντικείμενα. Αποθηκεύονται ως αποδεικτικά στοιχεία.</string>
+    <string name="onboarding_feature_remote_title">Απομακρυσμένο CCTV</string>
+    <string name="onboarding_feature_remote_desc">Μετατρέψτε το τηλέφωνό σας σε κάμερα κλειστού κυκλώματος (CCTV). Κάντε ζωντανή μετάδοση και ελέγξτε την από απόσταση.</string>
+    <string name="onboarding_feature_bodycam_solo_title">Bodycam</string>
+    <string name="onboarding_feature_bodycam_solo_desc">Φορέστε την για προσωπική ασφάλεια και εγγραφή χωρίς χέρια.</string>
+    <string name="onboarding_feature_dashcam_title">Dashcam</string>
+    <string name="onboarding_feature_dashcam_desc">Εγγράψτε τον δρόμο ή motovlogs ομαλά με σταθεροποίηση βίντεο.</string>
+    <string name="onboarding_scroll_hint">Κάντε κύλιση για περισσότερα</string>
+    <string name="onboarding_scroll_short">Κύλιση</string>
+    <string name="onboarding_back">Πίσω</string>
+    <string name="onboarding_next">Επόμενο</string>
+    <string name="onboarding_done">Τέλος</string>
+    <string name="onboarding_mini_heading">Και δεν τελειώσαμε ακόμα.</string>
+    <string name="onboarding_mini_support">Μίνι εφαρμογές. Καθημερινά εργαλεία, ενσωματωμένα στο FadCam.</string>
+    <string name="onboarding_mini_more">Περισσότερες μίνι εφαρμογές έρχονται σύντομα.</string>
+    <string name="onboarding_payoff_title">%1$d Εργασίες. Ένα FadCam.</string>
+    <string name="onboarding_payoff_support">Ώρα να αποχαιρετήσετε αυτές τις επιπλέον εφαρμογές.</string>
+    <string name="onboarding_lite_full_note">Το FadCam Full αντικαθιστά 10 εφαρμογές.</string>
+    <string name="onboarding_demo_person">ΑΤΟΜΟ</string>
+    <string name="onboarding_demo_evidence_gallery">ΣΥΛΛΟΓΗ ΑΠΟΔΕΙΞΕΩΝ</string>
+    <string name="onboarding_demo_saved">ΑΠΟΘΗΚΕΥΜΕΝΟ</string>
+    <string name="onboarding_demo_car">ΑΥΤΟΚΙΝΗΤΟ</string>
+    <string name="onboarding_demo_knife">ΜΑΧΑΙΡΙ</string>
+    <string name="onboarding_swipe_instruction">Σύρετε για να συνεχίσετε</string>
+    <string name="onboarding_camera">Κάμερα</string>
+    <string name="onboarding_microphone">Μικρόφωνο</string>
+    <string name="onboarding_storage">Αποθήκευση</string>
+    <string name="onboarding_open_settings">Άνοιγμα ρυθμίσεων</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Γεια!</string>
+    <string name="zoom_lens_unavailable_banner">Αυτό το τηλέφωνο δεν εκθέτει την υπερευρυγώνια κάμερα στις εφαρμογές. Το zoom κάτω από 1.0x θα παραμένει στο 1.0x.</string>
+    <string name="records_display_group_title">Εμφάνιση</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Χωρίς τίτλο</string>
+    <string name="faditor_rename_project">Όνομα έργου</string>
+    <string name="faditor_rename_hint">Όνομα έργου</string>
+    <string name="faditor_rename_action">Μετονομασία</string>
+    <string name="faditor_rename_subtitle">Χρησιμοποιείται για το εξαγόμενο αρχείο</string>
+    <string name="faditor_rename_helper">Το εξαγόμενο βίντεο αποθηκεύεται με αυτό το όνομα.</string>
+    <string name="faditor_export_name_preview">Αποθηκεύεται ως: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Κανένα κλιπ κάτω από τον δείκτη αναπαραγωγής</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Χρησιμοποιήστε δακτυλικό αποτύπωμα καταχωρισμένο στο Android για να ασφαλίσετε αυτήν την εφαρμογή.</string>
+    <string name="applock__description_unlock_fingerprint">Αγγίξτε τον αισθητήρα δακτυλικού αποτυπώματος</string>
+    <string name="applock__create_chooser_option_fingerprint">Δακτυλικό αποτύπωμα</string>
+    <string name="applock__fingerprint_error_not_enrolled">Το δακτυλικό αποτύπωμα δεν είναι ενεργό στο FadCam ακόμη. Ανοίξτε το Tab Lock και ρυθμίστε το.</string>
+    <string name="applock__fingerprint_error_unrecognized">Το δακτυλικό σας αποτύπωμα δεν αναγνωρίστηκε.</string>
+    <string name="applock__fingerprint_error_unknown">Η σύνδεση με δακτυλικό αποτύπωμα δεν ολοκληρώθηκε. Δοκιμάστε ξανά ή ρυθμίστε το στις ρυθμίσεις Android.</string>
+    <string name="applock__fingerprint_error_none">Δεν έχει ρυθμιστεί δακτυλικό αποτύπωμα στο Android ακόμη. Προσθέστε ένα στις ρυθμίσεις Android και δοκιμάστε ξανά.</string>
+    <string name="applock__fingerprint_error_hardware">Το δακτυλικό αποτύπωμα δεν είναι διαθέσιμο τώρα. Ρυθμίστε ένα στις ρυθμίσεις Android και δοκιμάστε ξανά.</string>
+    <string name="applock__action_settings">Άνοιγμα ρυθμίσεων Android</string>
+    <string name="watermark_preview_funny">Αλήθεια; :( 
+    ＞﹏＜</string>
 </resources>

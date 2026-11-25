@@ -1806,9 +1806,19 @@ public class DualCameraRecordingService extends Service {
         createNotificationChannel();
         Notification notification = buildDualCameraNotification().build();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
-                            | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+            int fgType = ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+                    | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+            // Optional location type — only when GPS is needed and granted.
+            boolean needsLocation = prefs != null
+                    && com.fadcam.services.LocationFeedGate.needsLocationData(prefs);
+            boolean fine = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+            boolean coarse = ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+            if (needsLocation && (fine || coarse)) {
+                fgType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION;
+            }
+            startForeground(NOTIFICATION_ID, notification, fgType);
         } else {
             startForeground(NOTIFICATION_ID, notification);
         }

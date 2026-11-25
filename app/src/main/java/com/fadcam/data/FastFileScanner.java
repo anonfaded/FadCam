@@ -44,6 +44,10 @@ public class FastFileScanner {
 
     /** Number of parallel threads for scanning subdirectories. */
     private static final int SCAN_PARALLELISM = 4;
+    // A 30k-file collection takes well over 30s on FUSE storage. The old 30s
+    // cap silently returned a partial index, so Records kept seeing shifting
+    // counts and re-scanning. Keep a generous safety cap instead.
+    private static final int SCAN_TIMEOUT_SECONDS = 300;
 
     private final Context context;
 
@@ -109,9 +113,19 @@ public class FastFileScanner {
             return new ArrayList<>();
         }
 
-        // Parallel scan of all category directories
+        // Parallel scan of all category directories. Run the workers at
+        // background priority so a 30k-file scan cannot starve the UI thread
+        // while the user is already scrolling the list.
         CopyOnWriteArrayList<VideoIndexEntity> results = new CopyOnWriteArrayList<>();
-        ExecutorService scanner = Executors.newFixedThreadPool(SCAN_PARALLELISM);
+        ExecutorService scanner = Executors.newFixedThreadPool(SCAN_PARALLELISM, runnable -> {
+            Thread thread = new Thread(() -> {
+                android.os.Process.setThreadPriority(
+                        android.os.Process.THREAD_PRIORITY_BACKGROUND);
+                runnable.run();
+            }, "fadcam-file-scan");
+            thread.setDaemon(true);
+            return thread;
+        });
         CountDownLatch latch = new CountDownLatch(7); // 6 category submits + 1 extra countDown
 
         // Camera
@@ -181,15 +195,82 @@ public class FastFileScanner {
         // Extra latch count for the combined Camera+Dual task
         latch.countDown(); // Adjust — we used 7 but only 6 submits (Camera+Dual share one)
 
+        boolean completed = false;
         try {
-            latch.await(30, TimeUnit.SECONDS);
+            completed = latch.await(SCAN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             FLog.w(TAG, "Scan interrupted");
         }
-        scanner.shutdown();
+        if (!completed) {
+            FLog.w(TAG, "Scan timed out after " + SCAN_TIMEOUT_SECONDS
+                    + "s — returning partial results (" + results.size() + " files)");
+            scanner.shutdownNow();
+        } else {
+            scanner.shutdown();
+        }
 
         return new ArrayList<>(results);
+    }
+
+    /**
+     * Cheap fingerprint of the internal storage tree: the mtimes of the known
+     * category directories and their immediate subdirectories. If this is
+     * unchanged, a full 30k-file enumeration cannot discover anything new and
+     * the delta scan can be skipped entirely.
+     *
+     * @return 0 when SAF/custom storage is in use (callers must do a full scan)
+     */
+    public long computeInternalDirectorySignature(@NonNull SharedPreferencesManager prefs) {
+        String safUriString = prefs.getCustomStorageUri();
+        if (safUriString != null && !safUriString.isEmpty()) {
+            return 0;
+        }
+        File recordsDir = context.getExternalFilesDir(null);
+        if (recordsDir == null) {
+            return 0;
+        }
+        File baseDir = new File(recordsDir, Constants.RECORDING_DIRECTORY);
+        if (!baseDir.exists() || !baseDir.isDirectory()) {
+            return 0;
+        }
+
+        long signature = 1125899906842597L;
+        signature = signature * 31 + baseDir.lastModified();
+
+        String[] categories = {
+                Constants.RECORDING_SUBDIR_CAMERA,
+                Constants.RECORDING_SUBDIR_DUAL,
+                Constants.RECORDING_SUBDIR_SCREEN,
+                Constants.RECORDING_SUBDIR_FADITOR,
+                Constants.RECORDING_SUBDIR_STREAM,
+                Constants.RECORDING_SUBDIR_SHOT,
+                Constants.RECORDING_SUBDIR_MINIAPPS
+        };
+        for (String category : categories) {
+            File dir = new File(baseDir, category);
+            boolean exists = dir.exists();
+            signature = signature * 31 + (exists ? dir.lastModified() : 0L);
+            if (!exists) {
+                continue;
+            }
+            File[] children = dir.listFiles();
+            if (children == null) {
+                continue;
+            }
+            int childCount = 0;
+            long childSum = 0L;
+            for (File child : children) {
+                if (child == null || !child.isDirectory()) {
+                    continue;
+                }
+                childCount++;
+                childSum += child.lastModified() * 31L + child.getName().hashCode();
+            }
+            signature = signature * 31 + childCount;
+            signature = signature * 31 + childSum;
+        }
+        return signature == 0 ? 1 : signature;
     }
 
     /**

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Side sheet enters from the trailing edge, not from the bottom. -->
+<translate xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="240"
+    android:fromXDelta="100%"
+    android:interpolator="@android:interpolator/decelerate_cubic"
+    android:toXDelta="0%" />

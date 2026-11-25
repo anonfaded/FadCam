@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pro variant of the eye-direction AVD (white glowing eyes). Same animators, same targets. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/toggle_on_idle_pro">
+    <target android:name="eye_group" android:animation="@animator/anim_glance" />
+    <target android:name="light_group" android:animation="@animator/anim_glance_light" />
+    <target android:name="shadow_group" android:animation="@animator/anim_glance_shadow" />
+    <target android:name="head_shadow" android:animation="@animator/anim_glance_shadow_alpha" />
+</animated-vector>

@@ -11,4 +11,91 @@
     <!-- Home screen sizes — full/normal values for phones >= 320dp smallestWidth.
          Mirrors the exact numbers used before the dimens refactor (no visual change).
          Small phones (< 320dp) get the compact set from values/dimens.xml. -->
+    <dimen name="onboarding_dossier_pad">16dp</dimen>
+    <dimen name="onboarding_dossier_title_size">26sp</dimen>
+    <dimen name="onboarding_bottom_inset">96dp</dimen>
+    <dimen name="onboarding_human_top">12dp</dimen>
+    <dimen name="onboarding_human_icon">88dp</dimen>
+    <dimen name="onboarding_demo_height">90dp</dimen>
+    <dimen name="onboarding_card_title_size">11sp</dimen>
+    <dimen name="onboarding_card_desc_size">11.5sp</dimen>
+    <dimen name="onboarding_mini_demo_height">64dp</dimen>
+    <dimen name="onboarding_mini_desc_size">10.5sp</dimen>
+    <dimen name="onboarding_payoff_visual_height">165dp</dimen>
+    <dimen name="onboarding_payoff_icon_size">64dp</dimen>
+    <dimen name="onboarding_payoff_icon_margin">18dp</dimen>
+    <dimen name="onboarding_payoff_title_size">22sp</dimen>
+    <dimen name="onboarding_dock_height">48dp</dimen>
+    <dimen name="onboarding_dock_arrow">36dp</dimen>
+    <dimen name="onboarding_dock_dot">6dp</dimen>
+    <dimen name="onboarding_dock_dot_margin">3dp</dimen>
+    <dimen name="onboarding_dock_bottom_margin">12dp</dimen>
+    <dimen name="onboarding_dock_padding">6dp</dimen>
+    <dimen name="home_dock_label_size">8sp</dimen>
+    <dimen name="onboarding_scroll_hint_text_size">8sp</dimen>
+    <dimen name="onboarding_bottom_fade_height">108dp</dimen>
+    <dimen name="onboarding_scroll_hint_gap">8dp</dimen>
+    <dimen name="onboarding_scroll_hint_pad_h">9dp</dimen>
+    <dimen name="onboarding_scroll_hint_pad_v">4dp</dimen>
+    <dimen name="onboarding_scroll_hint_icon_size">13sp</dimen>
+    <!-- Pro CTA: the resting avatar needs a real gutter so long labels wrap instead of
+         running under it. -->
+    <dimen name="pro_cta_avatar">60dp</dimen>
+    <dimen name="pro_cta_avatar_inset">4dp</dimen>
+    <dimen name="pro_cta_content_inset">64dp</dimen>
+    <dimen name="pro_cta_text">14sp</dimen>
+
+    <!-- Records grid card — normal phones (smallestWidth >= 320dp). -->
+    <dimen name="records_item_margin">6dp</dimen>
+    <dimen name="records_corner">8dp</dimen>
+    <dimen name="records_content_margin_h">10dp</dimen>
+    <dimen name="records_content_margin_top">6dp</dimen>
+    <dimen name="records_content_margin_bottom">8dp</dimen>
+    <dimen name="records_title_full">14sp</dimen>
+    <dimen name="records_title_medium">11sp</dimen>
+    <dimen name="records_meta_text">10sp</dimen>
+    <dimen name="records_menu_box">40dp</dimen>
+    <dimen name="records_menu_medium_box">28dp</dimen>
+    <dimen name="records_menu_padding">8dp</dimen>
+    <dimen name="records_menu_medium_padding">6dp</dimen>
+    <dimen name="records_badge_text">9sp</dimen>
+    <dimen name="records_badge_pad_h">6dp</dimen>
+    <dimen name="records_badge_pad_v">2dp</dimen>
+    <dimen name="records_badge_gap">4dp</dimen>
+    <dimen name="records_badge_icon_text">9sp</dimen>
+    <dimen name="records_serial_text">9sp</dimen>
+    <dimen name="records_serial_pad_h">3dp</dimen>
+    <dimen name="records_serial_pad_v">1dp</dimen>
+    <dimen name="records_check_container">42dp</dimen>
+    <dimen name="records_check_bg">36dp</dimen>
+    <dimen name="records_check_icon">22dp</dimen>
+    <dimen name="records_check_container_compact">22dp</dimen>
+    <dimen name="records_check_bg_compact">17dp</dimen>
+    <dimen name="records_check_icon_compact">12dp</dimen>
+    <dimen name="records_overlay_text">8sp</dimen>
+    <dimen name="records_overlay_pad_h">4dp</dimen>
+    <dimen name="records_overlay_pad_v">2dp</dimen>
+    <dimen name="records_compact_menu_box">22dp</dimen>
+    <dimen name="records_content_margin_h_medium">6dp</dimen>
+    <dimen name="records_meta_text_medium">9sp</dimen>
+    <dimen name="records_badge_text_medium">8.5sp</dimen>
+    <dimen name="records_badge_pad_h_medium">4dp</dimen>
+    <dimen name="records_badge_pad_v_medium">1dp</dimen>
+    <dimen name="records_item_margin_medium">4dp</dimen>
+    <dimen name="records_content_margin_h_compact">4dp</dimen>
+    <dimen name="records_meta_icon">12dp</dimen>
+    <dimen name="records_progress_bar_height">3dp</dimen>
+    <!-- Extra bottom room inside the AF/exposure/zoom tiles so the centred
+         glyph never reaches the value badge in the corner. -->
+    <dimen name="home_tile_icon_pad_bottom">9dp</dimen>
+    <!-- Narrower tiles on small phones: scale the glyph down so the corner
+         value badge ("+0.0", "1.0x") keeps clear space. Wide phones use the
+         24sp value from values-sw400dp. -->
+    <dimen name="home_tile_icon_size">16sp</dimen>
+
+    <!-- Keep ON/OFF labels off the rounded edge without padding them away
+         from the bottom-right corner. The glyph sizes stay at their normal
+         values; the wider label inset is what creates the breathing room. -->
+    <dimen name="home_control_status_margin_e">7dp</dimen>
+    <dimen name="home_hero_padding_v">4dp</dimen>
 </resources> 

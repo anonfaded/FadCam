@@ -5,17 +5,18 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <LinearLayout
+    <com.fadcam.ui.widgets.TabHeaderLayout
         android:id="@+id/header_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:minHeight="@dimen/app_header_content_height"
         android:background="@drawable/header_bar_rounded_bg"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="16dp"
-        android:paddingTop="16dp"
+        android:paddingTop="0dp"
         android:paddingEnd="16dp"
-        android:paddingBottom="12dp"
+        android:paddingBottom="0dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -127,7 +128,7 @@
                     android:visibility="invisible" />
             </FrameLayout>
         </FrameLayout>
-    </LinearLayout>
+    </com.fadcam.ui.widgets.TabHeaderLayout>
 
     <FrameLayout
         android:id="@+id/forensics_content_container"

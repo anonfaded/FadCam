@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Shared pieces that landscape home includes: the mode switcher and the AF /
+  exposure / zoom tiles. They are used by both orientations, so their names
+  live in values + values-sw*. Smallest-width outranks orientation, which is
+  why these overrides need the combined sw400dp-land qualifier.
+-->
+<resources>
+    <dimen name="home_tile_height">36dp</dimen>
+    <dimen name="home_tile_icon_size">18sp</dimen>
+    <dimen name="home_tile_label_size">6.5sp</dimen>
+    <dimen name="home_tile_icon_pad_bottom">13dp</dimen>
+
+    <dimen name="home_tile_padding">4dp</dimen>
+    <dimen name="home_tile_gap">3dp</dimen>
+    <dimen name="home_tile_label_margin_bottom">4dp</dimen>
+    <dimen name="home_tile_label_margin_end">5dp</dimen>
+    <dimen name="home_tile_status_text">9sp</dimen>
+    <dimen name="home_switcher_height">24dp</dimen>
+    <dimen name="home_switcher_text">10sp</dimen>
+
+    <dimen name="home_quick_slot_w">44dp</dimen>
+    <dimen name="home_quick_btn_w">40dp</dimen>
+    <dimen name="home_quick_icon_size">32dp</dimen>
+    <dimen name="home_quick_icon_padding">5dp</dimen>
+    <dimen name="home_quick_label_size">8sp</dimen>
+    <dimen name="home_quick_value_size">7sp</dimen>
+    <dimen name="home_quick_mute_icon">18sp</dimen>
+    <dimen name="home_quick_row_padding_h">10dp</dimen>
+    <dimen name="home_quick_row_padding_v">3dp</dimen>
+    <dimen name="home_quick_row_margin">2dp</dimen>
+</resources>

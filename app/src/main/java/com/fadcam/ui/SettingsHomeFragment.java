@@ -57,6 +57,19 @@ public class SettingsHomeFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_settings_home, container, false);
+        configureLiteHides(root);
+        android.view.View fullPromo = root.findViewById(R.id.group_full_promo);
+        if (fullPromo != null) {
+            fullPromo.setOnClickListener(v -> {
+                try {
+                    android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://github.com/anonfaded/FadCam"));
+                    startActivity(i);
+                } catch (Exception e) {
+                    FLog.w("SettingsHome", "Failed to open GitHub link", e);
+                }
+            });
+        }
 
         setupModeSelector(root);
         setupRowHandlers(root);
@@ -87,11 +100,10 @@ public class SettingsHomeFragment extends Fragment {
         prefManager = prefs;
         prefListener = (sp, key) -> {
             if (!"show_trash_in_settings".equals(key)) return;
-            boolean show = prefs.isShowTrashInSettings();
-            FLog.d("TrashDebug", "prefListener fired: show=" + show);
+            FLog.d("TrashDebug", "prefListener fired: show=" + (prefManager != null && prefManager.isShowTrashInSettings()));
             View sectionTrash = getView() != null ? getView().findViewById(R.id.section_trash) : null;
             if (sectionTrash != null) {
-                sectionTrash.setVisibility(show ? View.VISIBLE : View.GONE);
+                sectionTrash.setVisibility(shouldShowTrashSection() ? View.VISIBLE : View.GONE);
             }
         };
         prefs.sharedPreferences.registerOnSharedPreferenceChangeListener(prefListener);
@@ -104,10 +116,9 @@ public class SettingsHomeFragment extends Fragment {
         FLog.d("TrashDebug", "onHiddenChanged hidden=" + hidden + " pref=" + (prefManager != null ? prefManager.isShowTrashInSettings() : "null"));
         if (!hidden && getView() != null && prefManager != null) {
             View sectionTrash = getView().findViewById(R.id.section_trash);
-            FLog.d("TrashDebug", "onHiddenChanged sectionTrash=" + (sectionTrash != null) + " show=" + prefManager.isShowTrashInSettings());
+            FLog.d("TrashDebug", "onHiddenChanged sectionTrash=" + (sectionTrash != null) + " show=" + shouldShowTrashSection());
             if (sectionTrash != null) {
-                sectionTrash.setVisibility(
-                    prefManager.isShowTrashInSettings() ? View.VISIBLE : View.GONE);
+                sectionTrash.setVisibility(shouldShowTrashSection() ? View.VISIBLE : View.GONE);
             }
         }
         if (!hidden) {
@@ -118,7 +129,32 @@ public class SettingsHomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        // The App Lock session can become locked while this tab is in the
+        // background. Recompute the Trash row so it is not advertised while
+        // Records is locked.
+        if (getView() != null) {
+            View sectionTrash = getView().findViewById(R.id.section_trash);
+            if (sectionTrash != null) {
+                sectionTrash.setVisibility(shouldShowTrashSection() ? View.VISIBLE : View.GONE);
+            }
+        }
         maybeScrollToMiniApps();
+    }
+
+    /**
+     * The Trash screen is part of the Records tab's protected area. While that
+     * area is locked, Settings must not advertise that Trash exists; after the
+     * session is unlocked the normal preference takes over again.
+     */
+    private boolean shouldShowTrashSection() {
+        if (prefManager == null && getContext() != null) {
+            prefManager = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        }
+        if (prefManager == null || !prefManager.isShowTrashInSettings()) {
+            return false;
+        }
+        return !com.fadcam.security.TabLock.isLocked(
+                requireContext(), com.fadcam.security.TabLock.TAB_RECORDS);
     }
 
     /** Scrolls the settings content to the Mini Apps section when requested by the home sidebar. */
@@ -192,13 +228,18 @@ public class SettingsHomeFragment extends Fragment {
             updateModeSelectorUI();
             applyModeFilter(currentMode);
         });
-        popupView.findViewById(R.id.mode_fadrec).setOnClickListener(v -> {
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            android.view.View fadRecOption = popupView.findViewById(R.id.mode_fadrec);
+            if (fadRecOption != null) fadRecOption.setVisibility(android.view.View.GONE);
+        } else {
+            popupView.findViewById(R.id.mode_fadrec).setOnClickListener(v -> {
             currentMode = SettingsMode.FADREC;
             updatePopupChecks(popupView, currentMode);
             animatePopupDismiss(popup, popupView);
             updateModeSelectorUI();
             applyModeFilter(currentMode);
         });
+        }
 
         // Position popup below the anchor button
         int[] anchorPos = new int[2];
@@ -250,11 +291,13 @@ public class SettingsHomeFragment extends Fragment {
         if (checkFadRec != null)
             checkFadRec.setText(mode == SettingsMode.FADREC ? "check_circle" : "radio_button_unchecked");
 
-        int green = 0xFF4CAF50;
+        android.util.TypedValue accentValue = new android.util.TypedValue();
+        requireContext().getTheme().resolveAttribute(R.attr.homeRailAccent, accentValue, true);
+        int accent = accentValue.data;
         int grey = 0xFF666666;
-        if (checkAll != null) checkAll.setTextColor(mode == SettingsMode.ALL ? green : grey);
-        if (checkFadCam != null) checkFadCam.setTextColor(mode == SettingsMode.FADCAM ? green : grey);
-        if (checkFadRec != null) checkFadRec.setTextColor(mode == SettingsMode.FADREC ? green : grey);
+        if (checkAll != null) checkAll.setTextColor(mode == SettingsMode.ALL ? accent : grey);
+        if (checkFadCam != null) checkFadCam.setTextColor(mode == SettingsMode.FADCAM ? accent : grey);
+        if (checkFadRec != null) checkFadRec.setTextColor(mode == SettingsMode.FADREC ? accent : grey);
     }
 
     /** Update the header button text/icon to reflect current mode. */
@@ -433,6 +476,12 @@ public class SettingsHomeFragment extends Fragment {
 
     /** Wire click handlers for all settings rows. */
     private void setupRowHandlers(View root) {
+        View searchBtn = root.findViewById(R.id.settings_search_btn);
+        if (searchBtn != null) {
+            searchBtn.setOnClickListener(v ->
+                    android.widget.Toast.makeText(requireContext(),
+                            R.string.settings_search_coming_soon, android.widget.Toast.LENGTH_SHORT).show());
+        }
         bindRow(root, R.id.row_haptics_settings,
                 () -> openSubFragment(new HapticsSettingsFragment()));
 
@@ -440,11 +489,46 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_video_quick, () -> openSubFragment(new VideoSettingsFragment()));
         bindRow(root, R.id.group_video_player_settings, () -> openSubFragment(new VideoPlayerSettingsFragment()));
         bindRow(root, R.id.group_audio_quick, () -> openSubFragment(new AudioSettingsFragment()));
-        bindRow(root, R.id.group_screen_recording, () -> openSubFragment(new com.fadcam.fadrec.ui.ScreenRecordingSettingsFragment()));
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            // Screen recording (FadRec) is Full-only in Lite
+            android.view.View screenRecRow = root.findViewById(R.id.group_screen_recording);
+            if (screenRecRow != null) screenRecRow.setVisibility(android.view.View.GONE);
+        } else {
+            bindRow(root, R.id.group_screen_recording, () -> {
+                androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()
+                        .createScreenRecordingSettingsFragment();
+                if (f != null) openSubFragment(f);
+            });
+        }
         bindRow(root, R.id.group_storage, () -> openSubFragment(new StorageSettingsFragment()));
         bindRow(root, R.id.group_security, () -> openSubFragment(new SecuritySettingsFragment()));
-        bindRow(root, R.id.group_motion_lab, () -> openSubFragment(new MotionLabSettingsFragment()));
-        bindRow(root, R.id.group_digital_forensics, () -> openSubFragment(new DigitalForensicsSettingsFragment()));
+        bindRow(root, R.id.group_motion_lab, () -> {
+            // Full-only screen; Lite already hides this row.
+            androidx.fragment.app.Fragment f =
+                    com.fadcam.FeatureRegistry.features().createMotionLabFragment();
+            if (f != null) {
+                openSubFragment(f);
+            }
+        });
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            // Lite hides advanced features. Motion Lab + digital forensics depend
+            // on the Full-only OpenCV/AI stack, so both rows are hidden rather
+            // than exposing controls that cannot work.
+            android.view.View motionRow = root.findViewById(R.id.group_motion_lab);
+            if (motionRow != null) motionRow.setVisibility(android.view.View.GONE);
+            android.view.View motionDivider = root.findViewById(R.id.divider_motion_lab);
+            if (motionDivider != null) motionDivider.setVisibility(android.view.View.GONE);
+            android.view.View forensicsRow = root.findViewById(R.id.group_digital_forensics);
+            if (forensicsRow != null) forensicsRow.setVisibility(android.view.View.GONE);
+            android.view.View forensicsDivider = root.findViewById(R.id.divider_digital_forensics);
+            if (forensicsDivider != null) forensicsDivider.setVisibility(android.view.View.GONE);
+        } else {
+            bindRow(root, R.id.group_digital_forensics, () -> {
+                androidx.fragment.app.Fragment f = com.fadcam.FeatureRegistry.features()
+                        .createForensicsSettingsFragment();
+                if (f != null) openSubFragment(f);
+            });
+        }
         bindRow(root, R.id.group_thermal_guardian, () -> {
             android.widget.Toast.makeText(requireContext(), R.string.mini_app_coming_soon_desc, android.widget.Toast.LENGTH_SHORT).show();
         });
@@ -470,6 +554,8 @@ public class SettingsHomeFragment extends Fragment {
         bindRow(root, R.id.group_watermark_quick, () -> openSubFragment(new WatermarkSettingsFragment()));
         bindRow(root, R.id.group_about, () -> openSubFragment(new AboutFragment()));
         bindRow(root, R.id.group_review, () -> launchReview());
+        bindRow(root, R.id.group_follow_x, () -> openUrl("https://x.com/anon_faded"));
+        bindRow(root, R.id.group_discord, () -> openUrl("https://discord.gg/kvAZvdkuuN"));
         bindRow(root, R.id.group_readme, () -> openReadmeDialog());
 
         // Tutorial YouTube CTA
@@ -487,9 +573,10 @@ public class SettingsHomeFragment extends Fragment {
 
         // Trash section
         com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        prefManager = prefs;
         View sectionTrash = root.findViewById(R.id.section_trash);
         if (sectionTrash != null) {
-            sectionTrash.setVisibility(prefs.isShowTrashInSettings() ? View.VISIBLE : View.GONE);
+            sectionTrash.setVisibility(shouldShowTrashSection() ? View.VISIBLE : View.GONE);
         }
 
         bindRow(root, R.id.group_trash, () -> {
@@ -529,12 +616,63 @@ public class SettingsHomeFragment extends Fragment {
         }
     }
 
+    /** Hides Full-only settings surfaces in the Lite edition. */
+    private void configureLiteHides(View root) {
+        if (!com.fadcam.BuildConfig.LITE_EDITION) return;
+        // The screen-recording row can be re-shown by the settings-mode animation later
+        root.post(() -> {
+            android.view.View screenRec = root.findViewById(R.id.group_screen_recording);
+            if (screenRec != null) screenRec.setVisibility(android.view.View.GONE);
+        });
+        int[] ids = {R.id.mode_selector_btn, R.id.group_screen_recording, R.id.group_digital_forensics,
+                R.id.header_advanced, R.id.group_card_advanced_nav, R.id.header_mini_apps,
+                R.id.group_mini_torch, R.id.group_mini_compass, R.id.group_mini_sound_meter,
+                R.id.group_mini_sensor, R.id.group_mini_speedometer, R.id.group_mini_clinometer,
+                R.id.group_mini_qr_scanner, R.id.group_mini_pedometer, R.id.group_mini_metal_detector,
+                R.id.group_mini_parking_marker, R.id.group_mini_qr_generator};
+        int[] miniIds = {R.id.group_mini_torch, R.id.group_mini_compass, R.id.group_mini_sound_meter,
+                R.id.group_mini_sensor, R.id.group_mini_speedometer, R.id.group_mini_clinometer,
+                R.id.group_mini_qr_scanner, R.id.group_mini_pedometer, R.id.group_mini_metal_detector,
+                R.id.group_mini_parking_marker, R.id.group_mini_qr_generator};
+        java.util.Set<android.view.View> miniParents = new java.util.HashSet<>();
+        for (int id : ids) {
+            android.view.View v = root.findViewById(id);
+            if (v == null) continue;
+            v.setVisibility(android.view.View.GONE);
+        }
+        // Only mini-app CARD includes hide their row container (so no empty boxes remain);
+        // regular rows just hide themselves to avoid collapsing larger sections.
+        for (int id : miniIds) {
+            android.view.View v = root.findViewById(id);
+            if (v == null) continue;
+            android.view.ViewParent p = v.getParent();
+            if (p instanceof android.view.ViewGroup) {
+                miniParents.add((android.view.View) p);
+            }
+        }
+        for (android.view.View p : miniParents) {
+            p.setVisibility(android.view.View.GONE);
+        }
+    }
+
     private void setupMiniAppCards(View root) {
+        // Mini apps are Full-only in Lite
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            android.view.View header = root.findViewById(R.id.header_mini_apps);
+            if (header != null) header.setVisibility(android.view.View.GONE);
+            int[] miniCardIds = {R.id.group_mini_torch, R.id.group_mini_compass, R.id.group_mini_sound_meter,
+                    R.id.group_mini_sensor, R.id.group_mini_speedometer, R.id.group_mini_clinometer,
+                    R.id.group_mini_qr_scanner, R.id.group_mini_pedometer, R.id.group_mini_metal_detector};
+            for (int id : miniCardIds) {
+                android.view.View card = root.findViewById(id);
+                if (card != null) card.setVisibility(android.view.View.GONE);
+            }
+            return;
+        }
         setupMiniCard(root, R.id.group_mini_torch, R.string.mini_app_torch_title,
                 R.string.mini_app_torch_desc, "flashlight_on", 0, () -> {
             try {
-                com.fadcam.ui.miniapps.TorchToolFragment torchTool = com.fadcam.ui.miniapps.TorchToolFragment.newInstance();
-                OverlayNavUtil.show(requireActivity(), torchTool, "torch_tool");
+                com.fadcam.FeatureRegistry.features().openTorchTool(requireActivity());
             } catch (Exception e) {
                 FLog.w("SettingsHome", "Failed to open torch", e);
             }
@@ -557,8 +695,7 @@ public class SettingsHomeFragment extends Fragment {
         setupMiniCard(root, R.id.group_mini_qr_scanner, R.string.mini_app_qr_scanner_title,
                 R.string.mini_app_qr_scanner_desc, "qr_code_scanner", 0, // no "Soon" badge — it's ready
                 () -> {
-                    Intent intent = new Intent(requireContext(), com.fadcam.ui.miniapps.QRScannerActivity.class);
-                    startActivity(intent);
+                    com.fadcam.FeatureRegistry.features().openQrScanner(requireContext());
                 });
         setupMiniCard(root, R.id.group_mini_pedometer, R.string.mini_app_pedometer_title,
                 R.string.mini_app_pedometer_desc, "directions_walk", R.string.mini_app_coming_soon,

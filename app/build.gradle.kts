@@ -1,7 +1,9 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.androidApplication)
+    alias(libs.plugins.licenseReport)
 }
 
 android {
@@ -9,7 +11,13 @@ android {
     compileSdk = 36
 
     val isBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
-    val isProBuild = gradle.startParameter.taskNames.any { it.lowercase().contains("pro") }
+    // arm64-only ABI policy applies to Full Pro-tier builds only ('pro'/'proPlus' task names).
+    // The LITE line ships UNIVERSAL (all ABIs + universal APK) so every device can install —
+    // Lite has ~no native code, so universal costs ~0 MB extra.
+    val isProBuild = gradle.startParameter.taskNames.any {
+        val t = it.lowercase()
+        t.contains("pro") && !t.contains("lite")
+    }
 
     splits {
         abi {
@@ -32,8 +40,23 @@ android {
         minSdk = 24
         targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 52
+        versionCode = 55
         versionName = "4.0.0"
+        buildConfigField("boolean", "LITE_EDITION", "false")
+        // Free-only weekly Pro reminder. PRO/PRO_PLUS variants compile the flag as false and
+        // disable the reminder receivers, so ownership builds never run the feature paths.
+        buildConfigField("boolean", "ENABLE_PRO_REMINDER", "true")
+        // Which tier this exact APK IS (not what it can upgrade to). Drives the Pro screen:
+        // FREE shows the upgrade pitch, PRO / PRO_PLUS show the owner view of the same table.
+        // Overridden per flavor/build type below — keep the two in sync with the variant filter.
+        buildConfigField("String", "TIER", "\"FREE\"")
+        buildConfigField("String", "UPDATE_ORG", "\"anonfaded\"")
+        buildConfigField("String", "UPDATE_REPO", "\"FadCam\"")
+        buildConfigField("String", "UPDATE_PRO_REPO", "\"FadCamPro\"")
+        // Launcher label per variant: defaultConfig is the base, flavors/build types override,
+        // onVariants() below sets the per-variant debug labels (Full beta vs Lite beta).
+        manifestPlaceholders["appLabel"] = "FadCam"
+        manifestPlaceholders["proReminderEnabled"] = "true"
         vectorDrawables.useSupportLibrary = true
         
         // Fix 16KB native library alignment for Android 15
@@ -67,7 +90,7 @@ android {
         debug {
             applicationIdSuffix = ".beta"
             isDebuggable = true
-            versionNameSuffix = "-beta10.6" // Increment the beta version suffix for each release. Use `beta1` for the first beta release, then `beta2`, etc.
+            versionNameSuffix = "-beta10.7.2" // Increment the beta version suffix for each release. Use `beta1` for the first beta release, then `beta2`, etc.
             resValue("string", "app_name", "FadCam Beta")
         }
         
@@ -79,7 +102,12 @@ android {
                 "proguard-rules.pro"
             )
             isDebuggable = false
-            signingConfig = signingConfigs.getByName("release")
+            // F-Droid (and any CI without a local keystore) builds an unsigned
+            // release; signing is applied only when local.properties points at a
+            // real keystore. This removes the old F-Droid prebuild patch.
+            if (releaseSigningConfigValid) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         
         create("pro") {
@@ -95,6 +123,8 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             versionNameSuffix = "-Pro"
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
         }
         
         create("proPlus") {
@@ -110,29 +140,146 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             versionNameSuffix = "-Pro+"
+            buildConfigField("String", "TIER", "\"PRO_PLUS\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             // Custom app name via gradle property
             val customAppName = project.findProperty("customAppName")?.toString() ?: "FadCam Pro+"
             resValue("string", "app_name", customAppName)
+            manifestPlaceholders["appLabel"] = customAppName
         }
     }
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // Product structure (ONE flavor dimension "pro"; single shared codebase):
+    //
+    //   FULL line (main FadCam app):
+    //     default         → com.fadcam              Free (debug/release; proPlus build type → com.fadcam.proplus)
+    //     notesPro/calcPro/weatherPro → com.fadcam.notes/.calc/.weather
+    //                       discreet whitelabel disguises (release only)
+    //
+    //   LITE line (same main code — Lite reskin/UI + size work lands in src/lite* later):
+    //     lite            → com.fadcam.lite          FadCam Lite Free (debug gets .beta → com.fadcam.lite.beta)
+    //     liteNotes/liteCalc/liteWeather → com.fadcam.lite.notes/.lite.calc/.lite.weather
+    //                       Lite Pro discreet disguises: SAME launcher icon + app name as the
+    //                       Full disguises (icons reused from src/notesPro|calcPro|weatherPro/res)
+    //
+    //   The 'pro' / 'proPlus' BUILD TYPES belong to the Full line only — Lite tiers are their
+    //   own flavors. The variant filter below decides which (flavor × build type) combos exist.
+    // ──────────────────────────────────────────────────────────────────────────
     flavorDimensions += "pro"
+
+    // ── Lite versioning (single place to edit) ──────────────────────────
+    // Lite Free only ever builds the 'lite' flavor; Lite Pro builds the three
+    // disguise flavors (liteNotes/liteCalc/liteWeather) which share one track.
+    //
+    // Update-check repo mapping (by design — mirrors Full):
+    //   Full  -> UPDATE_REPO=FadCam (stable+beta), UPDATE_PRO_REPO=FadCamPro (pro)
+    //   Lite Free -> UPDATE_REPO=FadCam-Lite (stable+beta), UPDATE_PRO_REPO=FadCam-LitePro (pro)
+    //   Lite Pro  -> UPDATE_REPO=FadCam-LitePro, UPDATE_PRO_REPO=FadCam-LitePro (own repo)
+    // Each build reads ITS line's repos; the home sidebar renders a card per
+    // available update (Lite stable / Lite beta / Lite Pro from the respective repo).
+    // Current values: Lite free and Lite Pro both ship as v1.0.0. The version is
+    // intentionally independent from the Full line (4.x) — each app has its own
+    // applicationId, update repo and tag prefix (`lite-v*` for Lite tags).
+    val liteVersionCode = 2
+    val liteVersionName = "1.0.0"
+    val liteRepo = "FadCam-Lite"          // Lite (primary/stable) update feed
+    val liteProVersionCode = 2
+    val liteProVersionName = "1.0.0"
+    val liteProRepo = "FadCam-LitePro"    // Lite Pro (secondary) update feed
+
+    // ── Release-time workflow (simple, per-line) ────────────────────────
+    // Lite line:  bump `liteVersionCode` + `liteVersionName` (and `litePro*`
+    //             for the Lite Pro disguises) right above. One edit per line.
+    // Full line:  bump `defaultConfig.versionCode` + `versionName` below.
+    // Debug builds share the "-beta10.6" suffix (build-type level, can't differ
+    // per flavor); release APKs carry the exact per-line version above.
 
     productFlavors {
         create("notesPro") {
+            buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             dimension = "pro"
             applicationIdSuffix = ".notes"
             resValue("string", "app_name", "Notes")
+            manifestPlaceholders["appLabel"] = "Notes"
         }
         create("calcPro") {
+            buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             dimension = "pro"
             applicationIdSuffix = ".calc"
             resValue("string", "app_name", "Calculator")
+            manifestPlaceholders["appLabel"] = "Calculator"
         }
         create("weatherPro") {
+            buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
             dimension = "pro"
             applicationIdSuffix = ".weather"
             resValue("string", "app_name", "Weather")
+            manifestPlaceholders["appLabel"] = "Weather"
+        }
+        // Lite line: Free = debug + release; Lite Pro disguises = release only.
+        // Lite tiers are flavors of their own — Full's 'pro'/'proPlus' build types
+        // stay on the default flavor and do not apply to the Lite line.
+        create("lite") {
+            dimension = "pro"
+            versionCode = liteVersionCode
+            versionName = liteVersionName
+            buildConfigField("String", "UPDATE_REPO", "\"$liteRepo\"")
+            buildConfigField("String", "UPDATE_PRO_REPO", "\"$liteProRepo\"")
+            applicationIdSuffix = ".lite"
+            resValue("string", "app_name", "FadCam Lite")
+            manifestPlaceholders["appLabel"] = "FadCam Lite"
+            buildConfigField("boolean", "LITE_EDITION", "true")
+        }
+        // Lite Pro discreet disguises (same icon/app name as the Full disguises, see sourceSets)
+        create("liteNotes") {
+            buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
+            dimension = "pro"
+            versionCode = liteProVersionCode
+            versionName = liteProVersionName
+            buildConfigField("String", "UPDATE_REPO", "\"$liteProRepo\"")
+            buildConfigField("String", "UPDATE_PRO_REPO", "\"$liteProRepo\"")
+            applicationIdSuffix = ".lite.notes"
+            resValue("string", "app_name", "Notes")
+            manifestPlaceholders["appLabel"] = "Notes"
+            buildConfigField("boolean", "LITE_EDITION", "true")
+        }
+        create("liteCalc") {
+            buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
+            dimension = "pro"
+            versionCode = liteProVersionCode
+            versionName = liteProVersionName
+            buildConfigField("String", "UPDATE_REPO", "\"$liteProRepo\"")
+            buildConfigField("String", "UPDATE_PRO_REPO", "\"$liteProRepo\"")
+            applicationIdSuffix = ".lite.calc"
+            resValue("string", "app_name", "Calculator")
+            manifestPlaceholders["appLabel"] = "Calculator"
+            buildConfigField("boolean", "LITE_EDITION", "true")
+        }
+        create("liteWeather") {
+            buildConfigField("String", "TIER", "\"PRO\"")
+            buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
+            manifestPlaceholders["proReminderEnabled"] = "false"
+            dimension = "pro"
+            versionCode = liteProVersionCode
+            versionName = liteProVersionName
+            buildConfigField("String", "UPDATE_REPO", "\"$liteProRepo\"")
+            buildConfigField("String", "UPDATE_PRO_REPO", "\"$liteProRepo\"")
+            applicationIdSuffix = ".lite.weather"
+            resValue("string", "app_name", "Weather")
+            manifestPlaceholders["appLabel"] = "Weather"
+            buildConfigField("boolean", "LITE_EDITION", "true")
         }
         create("default") {
             dimension = "pro"
@@ -144,6 +291,11 @@ android {
 // ./gradlew assembleCalcProRelease - Calculator Pro variant
 // ./gradlew assembleWeatherProRelease - Weather Pro variant
 // ./gradlew assembleDefaultProPlusRelease -PcustomAppName="Custom Name" - Pro+ custom build (standalone)
+// ./gradlew installLiteDebug - FadCam Lite Free (debug beta, com.fadcam.lite.beta)
+// ./gradlew assembleLiteRelease - FadCam Lite Free (com.fadcam.lite)
+// ./gradlew assembleLiteNotesRelease - Lite Pro disguise: Notes (com.fadcam.lite.notes)
+// ./gradlew assembleLiteCalcRelease - Lite Pro disguise: Calculator (com.fadcam.lite.calc)
+// ./gradlew assembleLiteWeatherRelease - Lite Pro disguise: Weather (com.fadcam.lite.weather)
 
     // Variant filter: only build specific variants (modern API — the old
     // variantFilter{} is deprecated since AGP 8.x).
@@ -151,6 +303,7 @@ android {
         beforeVariants { variant ->
             val isPreBuiltFlavor = variant.name.contains("notesPro") || variant.name.contains("calcPro") || variant.name.contains("weatherPro")
             val isDefaultFlavor = variant.name.contains("default")
+            val isLiteFlavor = variant.name.startsWith("lite")
 
             if (isPreBuiltFlavor) {
                 // Pre-built flavors: only 'release' build type
@@ -162,6 +315,22 @@ android {
                 if (variant.name.endsWith("Pro") && !variant.name.endsWith("ProPlus")) {
                     variant.enable = false
                 }
+            } else if (isLiteFlavor) {
+                // Lite line: Free = debug + release; Lite Pro disguises = release only
+                val allowed = setOf("liteDebug", "liteRelease", "liteNotesRelease", "liteCalcRelease", "liteWeatherRelease")
+                if (variant.name !in allowed) {
+                    variant.enable = false
+                }
+            }
+        }
+
+        // Per-variant launcher label for the debug channel: Full debug = "FadCam Beta",
+        // Lite debug = "FadCam Lite Beta". Runs after flavor/buildType merges, so it only
+        // touches the debug variants — all release variants keep their flavor appLabel.
+        onVariants { variant ->
+            if (variant.buildType == "debug") {
+                val label = if (variant.name.startsWith("lite")) "FadCam Lite Beta" else "FadCam Beta"
+                variant.manifestPlaceholders.put("appLabel", label)
             }
         }
     }
@@ -169,7 +338,10 @@ android {
     // Dynamic APK output names: FadCam_<flavor>_v<versionName><suffix>-<abi>.apk
     // (default flavor has no <flavor> part; universal APK gets the literal "-universal")
     applicationVariants.all {
-        val versionName = "${defaultConfig.versionName}${buildType.versionNameSuffix.orEmpty()}"
+        // Output-name version = the variant's real versionName (per-flavor 0.0.0 /
+        // 4.0.0 + buildType suffix). AGP doesn't allow per-flavor debug suffixes, so
+        // Lite debug carries the same "-beta10.6" suffix as Full debug.
+        val displayVersion = versionName
         val flavor = if (flavorName != "default") "${flavorName}_" else ""
         outputs.all {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
@@ -178,13 +350,18 @@ android {
                 ?.identifier
                 ?: "universal"
             output.outputFileName =
-                "FadCam_${flavor}v${versionName}-${abiType}.apk"
+                "FadCam_${flavor}v${displayVersion}-${abiType}.apk"
         }
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Core library desugaring: rewrites newer JDK APIs (java.time, java.util.stream,
+        // java.util.function, Optional…) into implementations that run on the old API levels we
+        // still support (minSdk 24). Without it, any java.time call throws NoClassDefFoundError
+        // on Android 7.x even though it compiles fine. Charges a few KB after R8 shrinking.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     testOptions {
@@ -218,6 +395,44 @@ android {
         getByName("weatherPro") {
             res.srcDir("src/weatherPro/res")
         }
+        // Lite Pro disguises reuse the SAME launcher icons as their Full counterparts
+        getByName("liteNotes") {
+            res.srcDir("src/notesPro/res")
+            manifest.srcFile("src/lite/AndroidManifest.xml")
+        }
+        getByName("liteCalc") {
+            res.srcDir("src/calcPro/res")
+            manifest.srcFile("src/lite/AndroidManifest.xml")
+        }
+        getByName("liteWeather") {
+            res.srcDir("src/weatherPro/res")
+            manifest.srcFile("src/lite/AndroidManifest.xml")
+        }
+        // Lite free: same component removals as the disguise flavors
+        getByName("lite") {
+            manifest.srcFile("src/lite/AndroidManifest.xml")
+        }
+        // Product copy belongs to every Lite tier; keep the free launcher artwork separate
+        // so the paid Notes / Calculator / Weather flavors retain their own icons.
+        listOf("lite", "liteNotes", "liteCalc", "liteWeather").forEach { flavor ->
+            getByName(flavor).res.srcDir("src/liteCommon/res")
+        }
+        // Full-only source dir: heavy/native features that Lite must not package
+        // (Faditor/ffmpeg, motion detection, object detection, forensics). Shared by ALL
+        // Full flavors; Lite flavors (lite + disguises) never compile this code.
+        val fullOnlyDirs = listOf("default", "notesPro", "calcPro", "weatherPro")
+        fullOnlyDirs.forEach { flavor ->
+            getByName(flavor).java.srcDir("src/full/java")
+            getByName(flavor).assets.srcDir("src/full/assets")
+        }
+    }
+
+    configurations.configureEach {
+        // LiteRT declares Play Core's ai-delivery as a hard compile dependency, which
+        // drags Play Services Tasks and Basement into every Full build. The detector
+        // uses only the local interpreter and GPU delegate, never Play-delivered
+        // models, so the Play stack is excluded rather than shipped.
+        exclude(group = "com.google.android.play")
     }
 
     packaging {
@@ -255,6 +470,16 @@ android {
         buildConfig = true
     }
 
+    licenseReport {
+        // Reports are build artifacts. The plugin otherwise copies an HTML report
+        // into src/main/assets/, which dirties tracked source on every build.
+        copyHtmlReportToAssets = false
+        copyJsonReportToAssets = false
+        copyCsvReportToAssets = false
+        copyTextReportToAssets = false
+    }
+
+
     lint {
         checkReleaseBuilds = false
         disable += "MissingTranslation"
@@ -262,6 +487,9 @@ android {
 }
 
 dependencies {
+    // Backports for newer JDK APIs on old API levels — pairs with isCoreLibraryDesugaringEnabled.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
     implementation(libs.activity)
     implementation(libs.appintro.v631)
     implementation(libs.appcompat)
@@ -278,7 +506,6 @@ dependencies {
     // Media3 ExoPlayer for playback (replacing deprecated exoplayer2)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
-    implementation(libs.media3.session)
     // Media3 Transformer + Effect for Faditor Mini video editing
     implementation(libs.media3.transformer)
     implementation(libs.media3.effect)
@@ -291,11 +518,26 @@ dependencies {
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
     implementation(libs.okhttp)
-    implementation(libs.tensorflow.lite)
-    implementation(libs.tensorflow.lite.task.vision) {
-        exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
+    // On-device object detection (RF-DETR Nano via LiteRT) + OpenCV (MOG2).
+    // FULL flavors only: Lite neither arms motion nor collects evidence.
+    //
+    // Model source (Apache-2.0):
+    //   https://huggingface.co/litert-community/RF-DETR-Nano-LiteRT
+    //   https://github.com/roboflow/rf-detr
+    // The two .tflite graphs are committed under app/src/full/assets/models/.
+    val fullFlavors = listOf("default", "notesPro", "calcPro", "weatherPro")
+    fullFlavors.forEach { flavor ->
+        // RF-DETR needs the LiteRT CompiledModel GPU path; the legacy TFLite GPU
+        // delegate cannot execute this graph.
+        // LiteRT declares Play Core's ai-delivery as a hard compile dependency, which
+        // drags Play Services Tasks and Basement into every Full build. The detector
+        // uses only the local interpreter and GPU delegate, never Play-delivered
+        // models, so the Play stack is excluded rather than shipped.
+        add("${flavor}Implementation", libs.litert)
+        add("${flavor}Implementation", libs.litert.api)
+        add("${flavor}Implementation", libs.litert.gpu)
+        add("${flavor}Implementation", libs.opencv.android)
     }
-    implementation(libs.opencv.android)
     implementation(libs.osmdroid.android)
     implementation(libs.osmdroid.wms)
     implementation(libs.swiperefreshlayout)
@@ -316,14 +558,18 @@ dependencies {
     
     // NanoHTTPD for HTTP streaming server
     implementation(libs.nanohttpd.core)
-    
-    // MP4Parser for reliable MP4 box structure parsing
-    implementation("com.googlecode.mp4parser:isoparser:1.1.22")
 
     annotationProcessor(libs.compiler)
     annotationProcessor(libs.room.compiler)
 
-    implementation(mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar"))
+    // ffmpeg-kit: FULL flavors only (src/full code: Faditor, remux, batch export/merge,
+    // duration probe, fix-video). Lite flavors never compile ffmpeg code, so the AAR is
+    // scoped per Full flavor instead of global — this is the biggest Lite APK size win.
+    val ffmpegAar = mapOf("name" to "ffmpeg-kit-full-6.0-2.LTS", "ext" to "aar")
+    add("defaultImplementation", ffmpegAar)
+    add("notesProImplementation", ffmpegAar)
+    add("calcProImplementation", ffmpegAar)
+    add("weatherProImplementation", ffmpegAar)
     implementation(libs.smart.exception.java)
     implementation(fileTree(mapOf("dir" to "libs/aar", "include" to listOf("*.aar"))))
 
@@ -337,4 +583,61 @@ dependencies {
     // Android Instrumented Testing (runs on device/emulator)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+}
+
+// ---------------------------------------------------------------------------
+// Open source licenses
+// ---------------------------------------------------------------------------
+// Each APK must list exactly the libraries it actually contains, so the report is
+// generated per variant rather than once for the whole project: a Lite build must
+// not credit the Full-only libraries, and a disguised Pro build must not either.
+//
+// Output goes to build/, never src/main/assets/, so building cannot dirty tracked
+// source.
+abstract class PrepareLicenseAsset : DefaultTask() {
+
+    @get:InputFile
+    abstract val report: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val out = outputDir.get().asFile
+        out.mkdirs()
+        report.get().asFile.copyTo(File(out, "open_source_licenses.json"), overwrite = true)
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        val cap = variant.name.replaceFirstChar { it.uppercase() }
+        // The plugin writes every variant's report into one shared directory by
+        // default. That makes the variants clash over the same output location, which
+        // Gradle rejects as an implicit dependency, so each variant is redirected to
+        // its own directory.
+        val reportDir = layout.buildDirectory.dir("reports/licenses/${variant.name}")
+        // Matched by name and configured reflectively: the plugin keeps its task type
+        // internal. outputDir is the only property needed, and it is public on the
+        // instance.
+        tasks.matching { it.name == "license${cap}Report" }.configureEach {
+            try {
+                javaClass.getMethod("setOutputDir", File::class.java)
+                    .invoke(this, reportDir.get().asFile)
+            } catch (e: NoSuchMethodException) {
+                logger.warn("License report task has no setOutputDir; reports may collide")
+            }
+        }
+
+        val prepare = tasks.register<PrepareLicenseAsset>("prepare${cap}LicenseAsset") {
+            group = "reporting"
+            description = "Copies the license report for the ${variant.name} variant onto its asset path."
+            dependsOn("license${cap}Report")
+            report.set(reportDir.map { it.file("license${cap}Report.json") })
+            outputDir.set(layout.buildDirectory.dir("generated/licenses/${variant.name}"))
+        }
+        // Registers the directory for this variant only; AGP wires the dependency.
+        variant.sources.assets?.addGeneratedSourceDirectory(prepare) { it.outputDir }
+    }
 }

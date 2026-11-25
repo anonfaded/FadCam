@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sleep AVD for the splash-only red-eye avatar.
+  Base: toggle_on_idle_splashred.xml (flat #E60012 eyes, translateY=0).
+  Animation: eye_group droops (translateY 0->25) while each eye dims to near-black.
+  After finish: swap to toggle_off.xml (translateY=25, dark - exact match).
+-->
+<animated-vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/toggle_on_idle_splashred">
+
+    <!-- Eye group droops down to sleep position -->
+    <target android:name="eye_group" android:animation="@animator/anim_eye_down" />
+
+    <!-- Eyes dim from #E60012 to near-black (same colour the animator starts from) -->
+    <target android:name="left_eye" android:animation="@animator/anim_eye_dim_splashred" />
+    <target android:name="right_eye" android:animation="@animator/anim_eye_dim_splashred" />
+
+    <!-- The same glow fade Home uses, so the red halo closes with the eyes. -->
+    <target android:name="left_glow_group" android:animation="@animator/anim_glow_out" />
+    <target android:name="right_glow_group" android:animation="@animator/anim_glow_out" />
+
+</animated-vector>

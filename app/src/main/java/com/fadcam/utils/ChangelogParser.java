@@ -18,8 +18,15 @@ import java.util.regex.Pattern;
  */
 public class ChangelogParser {
     private static final String TAG = "ChangelogParser";
-    private static final String CHANGELOG_URL = "https://raw.githubusercontent.com/anonfaded/FadCam/refs/heads/master/CHANGELOG.md";
-    private static final String HEADER_COLOR = "#E43C3C"; // Red color for headers
+    // Changelogs are managed in ONE place: the FadCam repo.
+    // Full uses CHANGELOG.md; Lite (and all Lite flavours) use CHANGELOG_LITE.md.
+    private static final String CHANGELOG_URL = "https://raw.githubusercontent.com/"
+            + com.fadcam.BuildConfig.UPDATE_ORG + "/FadCam/refs/heads/master/"
+            + (com.fadcam.BuildConfig.LITE_EDITION ? "CHANGELOG_LITE.md" : "CHANGELOG.md");
+    private static final String HEADER_COLOR = "#E8C77B"; // Pro champagne gold for headers
+    private static final String ACCENT_COLOR = "#E8C77B"; // Pro gold — links, highlights
+    private static final String ACCENT_BRIGHT = "#FFD15C"; // Pro check gold — the improvement column
+    private static final String ACCENT_RGB = "232,199,123"; // E8C77B as CSS rgb components
 
     /**
      * Fetches the changelog from GitHub and returns it as a CompletableFuture<String>
@@ -88,29 +95,29 @@ public class ChangelogParser {
         // No external CDN resources — everything is self-contained.
         html.append("<style>")
             .append("* { margin: 0; padding: 0; box-sizing: border-box; }")
-            .append("body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #E0E0E0; font-size: 13px; }")
+            .append("body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #B8B7B2; font-size: 13px; }")
             .append("table { width: 100%; border-collapse: collapse; margin: 12px 0; background: #1a1a1a; border-radius: 8px; overflow: hidden; font-size: 12px; }")
             .append("thead { background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%); position: sticky; top: 0; z-index: 10; }")
             .append("thead tr:first-child th:first-child { border-radius: 8px 0 0 0; }")
             .append("thead tr:first-child th:last-child { border-radius: 0 8px 0 0; }")
             .append("tbody tr:last-child td:first-child { border-radius: 0 0 0 8px; }")
             .append("tbody tr:last-child td:last-child { border-radius: 0 0 8px 0; }")
-            .append("th { padding: 8px 6px; text-align: left; color: #E43C3C; font-weight: 600; font-size: 12px; border-bottom: 2px solid #E43C3C; white-space: nowrap; }")
-            .append("th:last-child { color: #4CAF50; background: rgba(76, 175, 80, 0.12); border-bottom: 2px solid #4CAF50; }")
-            .append("td { padding: 6px 8px; border-bottom: 1px solid #333333; color: #E0E0E0; word-break: break-word; font-size: 12px; }")
-            .append("tbody tr:hover { background: rgba(228, 60, 60, 0.08); }")
-            .append("tbody tr:hover td.improvement-cell { background: rgba(76, 175, 80, 0.2) !important; }")
-            .append("tbody td.improvement-cell { background: rgba(76, 175, 80, 0.15) !important; color: #4CAF50; font-weight: 500; }")
+            .append("th { padding: 8px 6px; text-align: left; color: " + HEADER_COLOR + "; font-weight: 600; font-size: 12px; border-bottom: 2px solid " + HEADER_COLOR + "; white-space: nowrap; }")
+            .append("th:last-child { color: " + ACCENT_BRIGHT + "; background: rgba(" + ACCENT_RGB + ", 0.12); border-bottom: 2px solid " + ACCENT_BRIGHT + "; }")
+            .append("td { padding: 6px 8px; border-bottom: 1px solid #333333; color: #B8B7B2; word-break: break-word; font-size: 12px; }")
+            .append("tbody tr:hover { background: rgba(" + ACCENT_RGB + ", 0.08); }")
+            .append("tbody tr:hover td.improvement-cell { background: rgba(" + ACCENT_RGB + ", 0.2) !important; }")
+            .append("tbody td.improvement-cell { background: rgba(" + ACCENT_RGB + ", 0.15) !important; color: " + ACCENT_COLOR + "; font-weight: 500; }")
             .append("tbody tr:last-child td { border-bottom: none; }")
             .append(".thank-you-section { margin-top: 20px; padding: 20px 18px; text-align: center; animation: fadeSlideIn 0.8s ease-out forwards; opacity: 0; animation-delay: 800ms; }")
             .append(".thank-you-text { font-size: 14px; color: #A0A0A0; line-height: 1.6; }")
-            .append(".tree { background: linear-gradient(180deg, #AA1F1F, #661111, #AA1F1F); background-size: 100% 200%; animation: flow 4s ease-in-out infinite, glow 3s ease-in-out infinite; }")
+            .append(".tree { background: linear-gradient(180deg, #C6A66A, #8A7440, #C6A66A); background-size: 100% 200%; animation: flow 4s ease-in-out infinite, glow 3s ease-in-out infinite; }")
             .append(".fade-in { animation: fadeSlideIn 0.6s ease-out forwards; opacity: 0; }")
             .append("@keyframes fadeSlideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }")
             .append("@keyframes flow { 0%, 100% { background-position: 100% 0%; } 50% { background-position: 0% 100%; } }")
-            .append("@keyframes glow { 0%, 100% { text-shadow: 0 0 10px rgba(228, 60, 60, 0.5); } 50% { text-shadow: 0 0 20px rgba(228, 60, 60, 0.8); } }")
+            .append("@keyframes glow { 0%, 100% { text-shadow: 0 0 10px rgba(" + ACCENT_RGB + ", 0.5); } 50% { text-shadow: 0 0 20px rgba(" + ACCENT_RGB + ", 0.8); } }")
             .append(".table-container { margin: 12px 18px; overflow-x: auto; }")
-            .append("@keyframes progressPulse { 0% { box-shadow: inset 0 0 0px rgba(76, 175, 80, 0.5); } 50% { box-shadow: inset 0 0 20px rgba(76, 175, 80, 0.8); } 100% { box-shadow: inset 0 0 0px rgba(76, 175, 80, 0.5); } }")
+            .append("@keyframes progressPulse { 0% { box-shadow: inset 0 0 0px rgba(" + ACCENT_RGB + ", 0.5); } 50% { box-shadow: inset 0 0 20px rgba(" + ACCENT_RGB + ", 0.8); } 100% { box-shadow: inset 0 0 0px rgba(" + ACCENT_RGB + ", 0.5); } }")
             .append("@keyframes slideGradient { 0% { background-position: -200% 0%; } 100% { background-position: 200% 0%; } }")
             .append("</style>")
             .append("<script>")
@@ -257,12 +264,12 @@ public class ChangelogParser {
         // Process links first: [text](url) → <a href="url">text <i class="fas fa-external-link-alt"></i></a>
         // Pattern: [text](url)
         text = text.replaceAll("\\[([^\\]]+)\\]\\(([^\\)]+)\\)", 
-            "<a href='$2' style='color:#4CAF50;text-decoration:none;font-weight:bold;'>$1&nbsp;\u2197</a>");
+            "<a href='$2' style='color:" + ACCENT_COLOR + ";text-decoration:none;font-weight:bold;'>$1&nbsp;\u2197</a>");
         
         // Process backticks (code blocks)
         // Pattern: `code` → <code style="...">code</code>
         text = text.replaceAll("`([^`]+)`", 
-            "<code style='background-color:#333333;color:#00FF00;padding:2px 4px;border-radius:3px;font-family:monospace;font-size:11px;'>$1</code>");
+            "<code style='background-color:#333333;color:" + ACCENT_BRIGHT + ";padding:2px 4px;border-radius:3px;font-family:monospace;font-size:11px;'>$1</code>");
         
         // Process bold (**bold**) 
         // Pattern: **bold** → <b style="color:white;">bold</b>
@@ -397,7 +404,7 @@ public class ChangelogParser {
         for (int i = 0; i < headers.length; i++) {
             boolean isLastColumn = (i == headers.length - 1);
             if (isLastColumn) {
-                tableHtml.append("<th style='background: rgba(76, 175, 80, 0.12); color: #4CAF50;'>");
+                tableHtml.append("<th style='background: rgba(" + ACCENT_RGB + ", 0.12); color: " + ACCENT_COLOR + ";'>");
             } else {
                 tableHtml.append("<th>");
             }

@@ -58,7 +58,7 @@
         android:layout_marginBottom="20dp"
         android:padding="12dp"
         android:background="@drawable/bg_coming_soon_badge"
-        android:backgroundTint="#33FF9500">
+        android:backgroundTint="#333A4048">
 
         <TextView
             android:layout_width="wrap_content"

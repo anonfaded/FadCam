@@ -229,7 +229,7 @@
         app:cardCornerRadius="20dp"
         app:cardElevation="24dp"
         app:cardBackgroundColor="#EE0F0F0F"
-        app:strokeColor="#224CAF50"
+        app:strokeColor="#33E8C77B"
         app:strokeWidth="1dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -258,7 +258,7 @@
                     android:text="check_circle"
                     android:textSize="18sp"
                     android:fontFamily="@font/materialicons"
-                    android:textColor="#4CAF50"
+                    android:textColor="@color/pro_gold"
                     android:layout_marginEnd="8dp" />
 
                 <TextView
@@ -279,7 +279,7 @@
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
                     android:text="@string/qr_scanner_format_badge"
-                    android:textColor="#4CAF50"
+                    android:textColor="@color/pro_gold"
                     android:textSize="10sp"
                     android:textAllCaps="true"
                     android:letterSpacing="0.08"
@@ -339,13 +339,13 @@
                     android:layout_weight="1"
                     android:layout_marginEnd="6dp"
                     android:text="@string/button_copy"
-                    android:textColor="#4CAF50"
+                    android:textColor="@color/pro_gold"
                     android:textSize="13sp"
                     app:cornerRadius="12dp"
-                    app:strokeColor="#554CAF50"
+                    app:strokeColor="#88E8C77B"
                     app:strokeWidth="1dp"
                     app:icon="@drawable/ic_copy"
-                    app:iconTint="#4CAF50"
+                    app:iconTint="@color/pro_gold"
                     app:iconSize="16dp"
                     app:iconPadding="6dp" />
 
@@ -357,13 +357,13 @@
                     android:layout_weight="1"
                     android:layout_marginStart="6dp"
                     android:text="@string/button_share"
-                    android:textColor="#4CAF50"
+                    android:textColor="@color/pro_gold"
                     android:textSize="13sp"
                     app:cornerRadius="12dp"
-                    app:strokeColor="#554CAF50"
+                    app:strokeColor="#88E8C77B"
                     app:strokeWidth="1dp"
                     app:icon="@drawable/ic_share"
-                    app:iconTint="#4CAF50"
+                    app:iconTint="@color/pro_gold"
                     app:iconSize="16dp"
                     app:iconPadding="6dp" />
 
@@ -377,12 +377,12 @@
                 android:layout_height="48dp"
                 android:layout_marginTop="10dp"
                 android:text="@string/button_scan_again"
-                android:textColor="@android:color/white"
+                android:textColor="@color/pro_background"
                 android:textSize="14sp"
-                app:backgroundTint="#4CAF50"
+                app:backgroundTint="@color/pro_gold"
                 app:cornerRadius="14dp"
                 app:icon="@drawable/ic_scan_again"
-                app:iconTint="@android:color/white"
+                app:iconTint="@color/pro_background"
                 app:iconSize="16dp"
                 app:iconPadding="8dp" />
 

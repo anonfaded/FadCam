@@ -165,6 +165,30 @@ public class RecordsSidebarFragment extends DialogFragment {
         }
     // End hide thumbnails section
 
+        // Hide details row: collapses every card to its thumbnail.
+        View detailsRow = view.findViewById(R.id.row_hide_details);
+        com.fadcam.ui.AvatarToggleView detailsSwitch = view.findViewById(R.id.row_hide_details_switch);
+        TextView detailsState = view.findViewById(R.id.row_hide_details_state);
+        boolean currentDetailsHidden = prefs.isRecordsHideMetadataEnabled();
+        if (detailsSwitch != null) {
+            detailsSwitch.setChecked(currentDetailsHidden);
+            if (detailsState != null) {
+                detailsState.setText(currentDetailsHidden ? getString(R.string.enabled) : getString(R.string.disabled));
+            }
+            detailsSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                prefs.setRecordsHideMetadataEnabled(isChecked);
+                if (detailsState != null) {
+                    detailsState.setText(isChecked ? getString(R.string.enabled) : getString(R.string.disabled));
+                }
+                Bundle b = new Bundle();
+                b.putString("action", "hide_details_toggled");
+                b.putBoolean("hide_details", isChecked);
+                getParentFragmentManager().setFragmentResult(resultKey, b);
+            });
+        }
+        if (detailsRow != null && detailsSwitch != null) {
+            detailsRow.setOnClickListener(v -> detailsSwitch.performClick());
+        }
     }
 
     private void openViewModePicker(){

@@ -24,6 +24,9 @@ public class Log {
 
     private static final String TAG = "Log";
     private static final String DEBUG_FILE_NAME = "FADCAM_debug.html";
+    /** Stable URI of the rolling raw log, so each process does not insert a new MediaStore row. */
+    private static final String PREFS_LOG_STATE = "fadcam_debug_log_state";
+    private static final String KEY_LOG_URI = "log_uri";
     private static final int DEFAULT_MAX_LOG_LINES = 5000;
     private static final int TRIM_MARGIN = 120;
 
@@ -43,13 +46,27 @@ public class Log {
     private static Uri fileUri;
 
     private static boolean isDebugEnabled = false;
-    
+
+    /** One process-wide init; the service can log before HomeFragment is created. */
+    private static volatile boolean sessionInitialized = false;
+
+    /** Previous-run diagnostics are consumed into the log exactly once per process. */
+    private static volatile boolean diagnosticsIngested = false;
+
     // Recording state (used for markers in the debug log)
     private static volatile boolean recordingActive = false;
 
     public static void init(Context context)
     {
-        Log.context = context;
+        if (sessionInitialized) {
+            return;
+        }
+        sessionInitialized = true;
+        Log.context = context == null ? null : context.getApplicationContext();
+        if (Log.context == null) {
+            sessionInitialized = false;
+            return;
+        }
         
         // Check SharedPreferences for debug setting
         SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(context);
@@ -80,17 +97,85 @@ public class Log {
                             performTrimNow();
                         }
                         // Write a session header for easier diagnostics
-                        appendHtmlToFile(
-                            "<font color=\"#dc2626\" class=\"le severity-system\">" + getCurrentTimeStamp()
-                                + " SYSTEM: Debug logging enabled. App=" + BuildConfig.VERSION_NAME
-                                + " (" + BuildConfig.VERSION_CODE + "), Device=" + Build.MANUFACTURER + " " + Build.MODEL
-                                + ", Android=" + Build.VERSION.RELEASE
-                                + " (API " + Build.VERSION.SDK_INT + ")</font>"
-                        );
+                        writeSessionHeader();
+                        // Surface why the PREVIOUS process died (native crash / ANR / LMK).
+                        // Captured to a file in Application.onCreate, before this sink existed.
+                        ingestPreviousRunDiagnostics(context);
                     });
                 }
             }
         }
+    }
+
+    /**
+     * One header per enabled session: app/build/device/SOC/RAM. Written on the log worker so
+     * it is ordered before any user-triggered log lines. Also called when the user enables
+     * debugging mid-session, so that report still identifies the device.
+     */
+    private static void writeSessionHeader() {
+        if (!isDebugEnabled || context == null) {
+            return;
+        }
+        appendHtmlToFile(
+                "<font color=\"#dc2626\" class=\"le severity-system\">" + getCurrentTimeStamp()
+                        + " SYSTEM: Debug logging enabled. App=" + BuildConfig.VERSION_NAME
+                        + " (" + BuildConfig.VERSION_CODE + "), Device=" + Build.MANUFACTURER + " " + Build.MODEL
+                        + ", Android=" + Build.VERSION.RELEASE
+                        + " (API " + Build.VERSION.SDK_INT + ")</font>"
+        );
+        // Build/EMUI/SOC/RAM fingerprint — an OEM bug report is unreadable without this.
+        String deviceReport = DiagnosticsStore.buildDeviceReport(context);
+        for (String line : deviceReport.split("\n")) {
+            if (!line.trim().isEmpty()) {
+                appendHtmlToFile(buildLogEntry("system", "Device", line));
+            }
+        }
+    }
+
+    /**
+     * Appends the previous process' death record (exit reason + trace) and any fatal exception
+     * captured by the crash handler. Consumes the files so each death appears once.
+     *
+     * <p>Runs only once per process and only after the async log worker is live.
+     */
+    private static void ingestPreviousRunDiagnostics(Context ctx) {
+        if (ctx == null || diagnosticsIngested) {
+            return;
+        }
+        diagnosticsIngested = true;
+        try {
+            String block = DiagnosticsStore.consumeForDossier(ctx);
+            if (block == null || block.isEmpty()) {
+                return;
+            }
+            boolean inCrashBlock = false;
+            for (String raw : block.split("\n")) {
+                String line = raw.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                if (line.startsWith("SYSTEM:")) {
+                    inCrashBlock = false;
+                    appendHtmlToFile(buildLogEntry(
+                            "system", "PreviousRun", line.substring("SYSTEM:".length()).trim()));
+                } else if (line.startsWith("ERROR:")) {
+                    inCrashBlock = true;
+                    appendHtmlToFile(buildLogEntry(
+                            "error", "PreviousRun", line.substring("ERROR:".length()).trim()));
+                } else {
+                    // Continuation: stack frames belong to the crash block above them.
+                    appendHtmlToFile(buildLogEntry(
+                            inCrashBlock ? "error" : "system", "PreviousRun", line));
+                }
+            }
+        } catch (Throwable t) {
+            android.util.Log.w(TAG, "ingestPreviousRunDiagnostics failed", t);
+        }
+    }
+
+    /** True when the user enabled the debug log sink. Used to skip expensive diagnostics. */
+    public static boolean isEnabled() {
+        return isDebugEnabled;
     }
 
     public static void setDebugEnabled(boolean enabled) {
@@ -99,6 +184,12 @@ public class Log {
             // Ensure the single log file exists; do NOT wipe it. We keep a rolling window via trim.
             createHtmlFile(context, DEBUG_FILE_NAME);
             startWorkerIfNeeded();
+            if (logHandler != null) {
+                logHandler.post(() -> {
+                    writeSessionHeader();
+                    ingestPreviousRunDiagnostics(context);
+                });
+            }
         } else {
             stopWorkerAndFlush();
         }
@@ -180,6 +271,26 @@ public class Log {
                 .replace(">", "&gt;").replace("\n", "<br>");
     }
 
+    /** Wraps a plain-text block (e.g. the durable recording journal) in system log entries. */
+    private static String buildSystemBlock(String title, String text) {
+        StringBuilder sb = new StringBuilder(1024);
+        sb.append("<font color=\"#dc2626\" class=\"le severity-system\">")
+                .append(getCurrentTimeStamp()).append(" SYSTEM: ===== ")
+                .append(escapeHtml(title)).append(" =====</font><br>\n");
+        for (String line : text.split("\n")) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            sb.append("<font color=\"#dc2626\" class=\"le severity-system\">")
+                    .append(escapeHtml(trimmed)).append("</font><br>\n");
+        }
+        sb.append("<font color=\"#dc2626\" class=\"le severity-system\">")
+                .append(getCurrentTimeStamp()).append(" SYSTEM: ===== END ")
+                .append(escapeHtml(title)).append(" =====</font><br>\n");
+        return sb.toString();
+    }
+
     public static Uri createHtmlFile(Context context, String fileName) {
         try {
             // Use a static filename for debug log to simplify discovery
@@ -190,10 +301,20 @@ public class Log {
                 return fileUri;
             }
 
+            // Reuse the URI from a previous process. MediaStore auto-renames a second insert
+            // ("FADCAM_debug (1).html"), so without this every launch created a new raw log and
+            // the 5000-line trim never applied across them.
+            Uri saved = loadSavedLogUri(context);
+            if (saved != null && uriUsable(context, saved)) {
+                fileUri = saved;
+                return fileUri;
+            }
+
             // First, try MediaStore Downloads (preferred when available)
             Uri existingFileUri = checkIfFileExists(context, debugFileName);
-            if (existingFileUri != null) {
+            if (existingFileUri != null && uriUsable(context, existingFileUri)) {
                 fileUri = existingFileUri;
+                saveLogUri(context, fileUri);
                 return fileUri;
             }
 
@@ -222,11 +343,66 @@ public class Log {
                 fileUri = Uri.fromFile(file); // file:// scheme; handled specially when writing
             }
 
+            if (fileUri != null) {
+                saveLogUri(context, fileUri);
+            }
             return fileUri;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private static Uri loadSavedLogUri(Context context) {
+        try {
+            String value = context.getSharedPreferences(PREFS_LOG_STATE, Context.MODE_PRIVATE)
+                    .getString(KEY_LOG_URI, null);
+            return value == null ? null : Uri.parse(value);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static void saveLogUri(Context context, Uri uri) {
+        if (context == null || uri == null) {
+            return;
+        }
+        try {
+            context.getSharedPreferences(PREFS_LOG_STATE, Context.MODE_PRIVATE)
+                    .edit().putString(KEY_LOG_URI, uri.toString()).apply();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static void clearSavedLogUri(Context context) {
+        try {
+            context.getSharedPreferences(PREFS_LOG_STATE, Context.MODE_PRIVATE)
+                    .edit().remove(KEY_LOG_URI).apply();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static boolean uriUsable(Context context, Uri uri) {
+        if (context == null || uri == null) {
+            return false;
+        }
+        try {
+            if ("content".equalsIgnoreCase(uri.getScheme())) {
+                // Verify WRITE access, not just read: a file created by the other app variant
+                // (com.fadcam vs com.fadcam.beta) is visible but may not be writable. Reusing
+                // such a URI would disable logging on the first flush.
+                try (android.os.ParcelFileDescriptor pfd =
+                             context.getContentResolver().openFileDescriptor(uri, "wa")) {
+                    return pfd != null;
+                }
+            }
+            if ("file".equalsIgnoreCase(uri.getScheme())) {
+                File file = new File(uri.getPath());
+                return file.exists() && file.canWrite();
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
     }
 
     public static void appendHtmlToFile(String htmlContent) {
@@ -317,7 +493,10 @@ public class Log {
                 File f = new File(fileUri.getPath());
                 success = f.exists() && f.delete();
             }
-            if (success) fileUri = null;
+            if (success) {
+                fileUri = null;
+                clearSavedLogUri(ctx);
+            }
             return success;
         } catch (Exception e) {
             return false;
@@ -390,37 +569,56 @@ public class Log {
     }
 
     private static Uri checkIfFileExists(Context context, String fileName) {
-        Uri uri = null;
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            uri = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
-        } else {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             String downloadsPath = context.getExternalFilesDir(null).getPath() + "/Download";
             File downloadsDir = new File(downloadsPath);
-
-            if (!downloadsDir.exists()) {
-                boolean dirCreated = downloadsDir.mkdirs();
-                if (!dirCreated) {
-                    return null;
-                }
+            if (!downloadsDir.exists() && !downloadsDir.mkdirs()) {
+                return null;
             }
-
             File file = new File(downloadsDir, fileName);
-            uri = Uri.fromFile(file);
+            return file.exists() ? Uri.fromFile(file) : null;
         }
 
-        String[] projection = {MediaStore.MediaColumns._ID};
-        String selection = MediaStore.MediaColumns.DISPLAY_NAME + "=?";
-        String[] selectionArgs = new String[]{fileName};
-
+        // A previous version inserted a new row whenever it could not see the old one, producing
+        // FADCAM_debug (1).html ... (15).html. Reuse the newest matching file instead of adding
+        // another. The URI cache in createHtmlFile() handles the normal case; this handles a
+        // fresh install / cleared prefs.
+        Uri collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
         Cursor cursor = null;
         try {
             ContentResolver resolver = context.getContentResolver();
-            cursor = resolver.query(uri, projection, selection, selectionArgs, null);
-
+            String[] projection = {MediaStore.MediaColumns._ID};
+            String selection = MediaStore.MediaColumns.DISPLAY_NAME + " LIKE ? AND "
+                    + MediaStore.MediaColumns.RELATIVE_PATH + "=?";
+            String[] selectionArgs = new String[]{
+                    "FADCAM_debug%",
+                    Environment.DIRECTORY_DOWNLOADS + "/FadCam"
+            };
+            String sortOrder = MediaStore.MediaColumns.DATE_MODIFIED + " DESC";
+            cursor = resolver.query(collection, projection, selection, selectionArgs, sortOrder);
             if (cursor != null && cursor.moveToFirst()) {
                 long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
-                return ContentUris.withAppendedId(uri, id);
+                return ContentUris.withAppendedId(collection, id);
+            }
+        } catch (Exception e) {
+            // Fall through to the exact-name query below.
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+        // Last chance: exact canonical name (some OEM MediaStore implementations reject LIKE).
+        cursor = null;
+        try {
+            ContentResolver resolver = context.getContentResolver();
+            String[] projection = {MediaStore.MediaColumns._ID};
+            String selection = MediaStore.MediaColumns.DISPLAY_NAME + "=?";
+            String[] selectionArgs = new String[]{fileName};
+            cursor = resolver.query(collection, projection, selection, selectionArgs, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID));
+                return ContentUris.withAppendedId(collection, id);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -458,47 +656,7 @@ public class Log {
     private static final Runnable flushTask = new Runnable() {
         @Override public void run() {
             try {
-                if (!isDebugEnabled || context == null || fileUri == null) {
-                    // Re-check later; cheap idle
-                    reschedule(FLUSH_INTERVAL_MS);
-                    return;
-                }
-                java.util.ArrayList<String> batch = new java.util.ArrayList<>(FLUSH_MAX_BATCH + 2);
-                PENDING.drainTo(batch, FLUSH_MAX_BATCH);
-
-                // If we dropped lines earlier due to backpressure, record a single notice
-                if (droppedSinceLastNote > 0) {
-                    batch.add("<font color=\"#d97706\" class=\"le severity-warn\">" + getCurrentTimeStamp()
-                        + " WARN: Dropped " + droppedSinceLastNote + " debug lines due to backpressure</font><br>\n");
-                    droppedSinceLastNote = 0;
-                }
-
-                if (!batch.isEmpty()) {
-                    OutputStream os = null;
-                    try {
-                        if ("content".equalsIgnoreCase(fileUri.getScheme())) {
-                            os = context.getContentResolver().openOutputStream(fileUri, "wa");
-                        } else if ("file".equalsIgnoreCase(fileUri.getScheme())) {
-                            os = new java.io.FileOutputStream(new File(fileUri.getPath()), true);
-                        }
-                        if (os != null) {
-                            // Concatenate once to minimize writes
-                            StringBuilder sb = new StringBuilder(4096);
-                            for (String s : batch) sb.append(s);
-                            os.write(sb.toString().getBytes());
-                        }
-                    } catch (Exception e) {
-                        // Disable to avoid tight error loops
-                        isDebugEnabled = false;
-                    } finally {
-                        if (os != null) try { os.close(); } catch (Exception ignored) {}
-                    }
-                    int newCount = approxLines.addAndGet(batch.size());
-                    int maxLines = getMaxLines();
-                    if (newCount > maxLines + TRIM_MARGIN) {
-                        scheduleTrim();
-                    }
-                }
+                flushPending();
             } finally {
                 reschedule(FLUSH_INTERVAL_MS);
             }
@@ -508,6 +666,98 @@ public class Log {
             if (logHandler != null) logHandler.postDelayed(this, delayMs);
         }
     };
+
+    /**
+     * Writes every queued log line to the HTML file immediately, on the caller's thread.
+     *
+     * <p>The normal flusher runs every 250 ms. That window is exactly where issue #176's encoder
+     * diagnostics lived: when the process died during recorder setup, the lines were still in
+     * {@link #PENDING} and the dossier ended at the record-button tap. Call this before throwing
+     * out of recording start and before building a shareable dossier.
+     *
+     * <p>Safe from any thread. If called from the log worker itself it flushes inline; otherwise
+     * it serialises with the worker on its looper and waits (bounded) for the write.
+     */
+    public static void flushNow() {
+        if (!isDebugEnabled) {
+            return;
+        }
+        android.os.Handler handler = logHandler;
+        if (handler == null) {
+            flushPending();
+            return;
+        }
+        if (android.os.Looper.myLooper() == handler.getLooper()) {
+            flushPending();
+            return;
+        }
+        final java.util.concurrent.CountDownLatch latch =
+                new java.util.concurrent.CountDownLatch(1);
+        boolean posted = handler.post(() -> {
+            try {
+                flushPending();
+            } finally {
+                latch.countDown();
+            }
+        });
+        if (posted) {
+            try {
+                latch.await(600, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    /** Single writer shared by the periodic flusher, {@link #flushNow()} and stop. */
+    private static final Object WRITE_LOCK = new Object();
+
+    private static void flushPending() {
+        if (!isDebugEnabled || context == null || fileUri == null) {
+            return;
+        }
+        synchronized (WRITE_LOCK) {
+            java.util.ArrayList<String> batch = new java.util.ArrayList<>(FLUSH_MAX_BATCH + 2);
+            PENDING.drainTo(batch, FLUSH_MAX_BATCH);
+
+            // If we dropped lines earlier due to backpressure, record a single notice
+            if (droppedSinceLastNote > 0) {
+                batch.add("<font color=\"#d97706\" class=\"le severity-warn\">" + getCurrentTimeStamp()
+                        + " WARN: Dropped " + droppedSinceLastNote
+                        + " debug lines due to backpressure</font><br>\n");
+                droppedSinceLastNote = 0;
+            }
+
+            if (batch.isEmpty()) {
+                return;
+            }
+
+            OutputStream os = null;
+            try {
+                if ("content".equalsIgnoreCase(fileUri.getScheme())) {
+                    os = context.getContentResolver().openOutputStream(fileUri, "wa");
+                } else if ("file".equalsIgnoreCase(fileUri.getScheme())) {
+                    os = new java.io.FileOutputStream(new File(fileUri.getPath()), true);
+                }
+                if (os != null) {
+                    // Concatenate once to minimize writes
+                    StringBuilder sb = new StringBuilder(4096);
+                    for (String s : batch) sb.append(s);
+                    os.write(sb.toString().getBytes());
+                }
+            } catch (Exception e) {
+                // Disable to avoid tight error loops
+                isDebugEnabled = false;
+            } finally {
+                if (os != null) try { os.close(); } catch (Exception ignored) {}
+            }
+            int newCount = approxLines.addAndGet(batch.size());
+            int maxLines = getMaxLines();
+            if (newCount > maxLines + TRIM_MARGIN) {
+                scheduleTrim();
+            }
+        }
+    }
 
     private static void scheduleTrim() {
         if (!trimming.compareAndSet(false, true)) return;
@@ -563,26 +813,28 @@ public class Log {
         // Attempt a best-effort final flush synchronously
         if (logThread == null || logHandler == null) return;
         try {
-            java.util.ArrayList<String> rest = new java.util.ArrayList<>();
-            PENDING.drainTo(rest);
-            if (!rest.isEmpty() && context != null && fileUri != null) {
-                OutputStream os = null;
-                try {
-                    if ("content".equalsIgnoreCase(fileUri.getScheme())) {
-                        os = context.getContentResolver().openOutputStream(fileUri, "wa");
-                    } else if ("file".equalsIgnoreCase(fileUri.getScheme())) {
-                        os = new java.io.FileOutputStream(new File(fileUri.getPath()), true);
+            synchronized (WRITE_LOCK) {
+                java.util.ArrayList<String> rest = new java.util.ArrayList<>();
+                PENDING.drainTo(rest);
+                if (!rest.isEmpty() && context != null && fileUri != null) {
+                    OutputStream os = null;
+                    try {
+                        if ("content".equalsIgnoreCase(fileUri.getScheme())) {
+                            os = context.getContentResolver().openOutputStream(fileUri, "wa");
+                        } else if ("file".equalsIgnoreCase(fileUri.getScheme())) {
+                            os = new java.io.FileOutputStream(new File(fileUri.getPath()), true);
+                        }
+                        if (os != null) {
+                            StringBuilder sb = new StringBuilder(4096);
+                            for (String s : rest) sb.append(s);
+                            os.write(sb.toString().getBytes());
+                        }
+                    } catch (Exception ignored) {
+                    } finally {
+                        if (os != null) try { os.close(); } catch (Exception ignored2) {}
                     }
-                    if (os != null) {
-                        StringBuilder sb = new StringBuilder(4096);
-                        for (String s : rest) sb.append(s);
-                        os.write(sb.toString().getBytes());
-                    }
-                } catch (Exception ignored) {
-                } finally {
-                    if (os != null) try { os.close(); } catch (Exception ignored2) {}
+                    approxLines.addAndGet(rest.size());
                 }
-                approxLines.addAndGet(rest.size());
             }
         } finally {
             try { logHandler.removeCallbacksAndMessages(null); } catch (Exception ignored) {}
@@ -594,7 +846,14 @@ public class Log {
     }
 
     public static String buildFullHtmlPage(Context ctx) {
+        // The normal flusher runs on a 250 ms cadence. Without this, a dossier exported right
+        // after a failure would be missing the failure's own log lines.
+        flushNow();
         String raw = readLogAsHtml(ctx);
+        String journal = DiagnosticsStore.readRecordingJournal(ctx);
+        if (journal != null && !journal.trim().isEmpty()) {
+            raw = (raw == null ? "" : raw) + buildSystemBlock("LAST RECORDING START JOURNAL", journal);
+        }
         if (raw != null) {
             raw = raw.replaceAll("(?s)<!DOCTYPE[^>]*>", "")
                      .replaceAll("(?s)<html[^>]*>", "")

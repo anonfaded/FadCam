@@ -1,20 +1,25 @@
 package com.fadcam.ui;
 
-import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.ViewCompat;
+
+import com.fadcam.BuildConfig;
+import com.fadcam.R;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
-import com.fadcam.R;
 
+/** Release details shared by the Full and Lite Pro product lines. */
 public class ProUpdateBottomSheet extends BottomSheetDialogFragment {
 
     private static final String ARG_VERSION = "version";
@@ -22,63 +27,89 @@ public class ProUpdateBottomSheet extends BottomSheetDialogFragment {
     private static final String ARG_CURRENT = "current";
 
     public static ProUpdateBottomSheet newInstance(String version, String url, String current) {
-        ProUpdateBottomSheet f = new ProUpdateBottomSheet();
+        ProUpdateBottomSheet sheet = new ProUpdateBottomSheet();
         Bundle args = new Bundle();
         args.putString(ARG_VERSION, version);
         args.putString(ARG_URL, url);
         args.putString(ARG_CURRENT, current);
-        f.setArguments(args);
-        return f;
-    }
-
-    @NonNull @Override
-    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        Dialog dialog = super.onCreateDialog(savedInstanceState);
-        dialog.setOnShowListener(d -> {
-            View bottomSheet = ((com.google.android.material.bottomsheet.BottomSheetDialog) dialog)
-                    .findViewById(com.google.android.material.R.id.design_bottom_sheet);
-            if (bottomSheet != null) {
-                bottomSheet.setBackgroundResource(R.drawable.gradient_pro_bg);
-            }
-        });
-        return dialog;
+        sheet.setArguments(args);
+        return sheet;
     }
 
     @Override
     public int getTheme() {
-        return R.style.CustomBottomSheetDialogTheme;
+        return R.style.ProUpdateDialogTheme;
     }
 
-    @Nullable @Override
+    @Override
+    public void onStart() {
+        super.onStart();
+        BottomSheetDialog dialog = (BottomSheetDialog) getDialog();
+        if (dialog == null) return;
+        BottomSheetBehavior<?> behavior = dialog.getBehavior();
+        // A compact sheet at normal font sizes; long copy remains natively scrollable.
+        behavior.setMaxHeight(Math.round(getResources().getDisplayMetrics().heightPixels * 0.92f));
+        behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+    }
+
+    @Nullable
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.bottomsheet_pro_update, container, false);
+        View view = inflater.inflate(R.layout.bottomsheet_pro_update, container, false);
+        Bundle args = getArguments();
+        String version = argument(args, ARG_VERSION);
+        String current = argument(args, ARG_CURRENT);
+        String url = argument(args, ARG_URL);
+        boolean owner = "PRO".equals(BuildConfig.TIER) || "PRO_PLUS".equals(BuildConfig.TIER);
+        String product = getString(BuildConfig.LITE_EDITION
+                ? R.string.pro_update_product_lite : R.string.pro_update_product_full);
 
-        String ver = getArguments() != null ? getArguments().getString(ARG_VERSION, "") : "";
-        String url = getArguments() != null ? getArguments().getString(ARG_URL, "") : "";
-        String cur = getArguments() != null ? getArguments().getString(ARG_CURRENT, "") : "";
+        TextView title = view.findViewById(R.id.pro_update_title);
+        title.setText(getString(R.string.pro_update_title, product));
+        ViewCompat.setAccessibilityHeading(title, true);
+        TextView description = view.findViewById(R.id.pro_update_description);
+        description.setText(getString(owner ? R.string.pro_update_owner_description
+                : R.string.pro_update_free_description, product));
 
-        TextView tvVer = v.findViewById(R.id.tv_pro_sheet_version);
-        if (tvVer != null) {
-            String text = "v" + cur + "  >>  v" + ver;
-            android.text.SpannableString sp = new android.text.SpannableString(text);
-            int curEnd = ("v" + cur).length();
-            sp.setSpan(new android.text.style.ForegroundColorSpan(0xFFFFFFFF), 0, curEnd, 0);
-            sp.setSpan(new android.text.style.ForegroundColorSpan(0xFFFFB300), curEnd, text.length(), 0);
-            tvVer.setText(sp);
+        bindVersion(view, R.id.pro_update_current_row, R.id.pro_update_current_version, current);
+        bindVersion(view, R.id.pro_update_latest_row, R.id.tv_pro_sheet_version, version);
+        if (current.isEmpty() && version.isEmpty()) {
+            view.findViewById(R.id.pro_update_versions).setVisibility(View.GONE);
         }
 
-        Button btnGet = v.findViewById(R.id.btn_pro_get);
-        if (btnGet != null) {
-            btnGet.setOnClickListener(view -> {
-                try {
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                } catch (Exception ignored) {}
-                dismiss();
-            });
-        }
+        view.findViewById(R.id.picker_close_btn).setOnClickListener(v -> dismiss());
+        view.findViewById(R.id.btn_pro_dismiss).setOnClickListener(v -> dismiss());
+        view.findViewById(R.id.btn_pro_get).setOnClickListener(v -> openRelease(view, url));
+        return view;
+    }
 
-        v.findViewById(R.id.btn_pro_dismiss).setOnClickListener(view -> dismiss());
-        return v;
+    private static String argument(@Nullable Bundle args, String key) {
+        String value = args == null ? null : args.getString(key);
+        return value == null ? "" : value.trim();
+    }
+
+    private static void bindVersion(View view, int rowId, int valueId, String version) {
+        view.findViewById(rowId).setVisibility(version.isEmpty() ? View.GONE : View.VISIBLE);
+        ((TextView) view.findViewById(valueId)).setText(version);
+    }
+
+    private void openRelease(View view, String url) {
+        TextView error = view.findViewById(R.id.pro_update_error);
+        Uri uri = Uri.parse(url);
+        if ((!"https".equalsIgnoreCase(uri.getScheme())
+                && !"http".equalsIgnoreCase(uri.getScheme()))
+                || uri.getHost() == null || uri.getHost().isEmpty()) {
+            error.setText(R.string.pro_update_link_unavailable);
+            error.setVisibility(View.VISIBLE);
+            return;
+        }
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, uri));
+            dismiss();
+        } catch (ActivityNotFoundException | SecurityException exception) {
+            error.setText(R.string.pro_update_browser_unavailable);
+            error.setVisibility(View.VISIBLE);
+        }
     }
 }

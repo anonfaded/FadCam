@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.1"
+agp = "8.13.2"
 appintroVersion = "6.3.1"
 camerax = "1.6.2"
 zxing = "4.3.0"
@@ -7,33 +7,32 @@ coreKtx = "1.18.0"
 coreSplashscreen = "1.2.0"
 documentfile = "1.1.0"
 localbroadcastmanager = "1.1.0"
-exoplayerCore = "2.19.1"
 media3 = "1.8.0"
 nanohttpd = "2.3.1"
-glide = "5.0.5"
-gson = "2.14.0"
+glide = "5.0.7"
+gson = "2.15.0"
 junit = "4.13.2"
-robolectric = "4.16.1"
+robolectric = "4.18.1"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 appcompat = "1.8.0"
-lifecycleRuntime = "2.11.0"
-lifecycleViewModel = "2.11.0"
+lifecycleRuntime = "2.11.1"
+lifecycleViewModel = "2.11.1"
 lottie = "6.7.1"
 material = "1.14.0"
 activity = "1.13.0"
 constraintlayout = "2.2.2"
 gridlayout = "1.1.0"
-navigationUiKtx = "2.10.0"
-okhttp = "5.3.2"
+navigationUiKtx = "2.10.2"
+okhttp = "5.4.0"
 osmdroidAndroid = "6.1.20"
 smartExceptionJava = "0.2.1"
 swiperefreshlayout = "1.2.0"
 viewpager2 = "1.1.0"
-tensorflowLite = "2.17.0"
-tensorflowLiteTaskVision = "0.4.4"
-opencvAndroid = "4.13.0"
-room = "2.8.4"
+litert = "2.3.2"
+opencvAndroid = "5.1.0"
+room = "2.8.5"
+licensePlugin = "0.9.91"
 
 [libraries]
 appintro-v631 = { module = "com.github.AppIntro:AppIntro", version.ref = "appintroVersion" }
@@ -48,8 +47,6 @@ compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
-exoplayer-core = { module = "com.google.android.exoplayer:exoplayer-core", version.ref = "exoplayerCore" }
-exoplayer-ui = { module = "com.google.android.exoplayer:exoplayer-ui", version.ref = "exoplayerCore" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -85,11 +82,13 @@ media3-session = { module = "androidx.media3:media3-session", version.ref = "med
 media3-transformer = { module = "androidx.media3:media3-transformer", version.ref = "media3" }
 media3-effect = { module = "androidx.media3:media3-effect", version.ref = "media3" }
 nanohttpd-core = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
-tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowLite" }
-tensorflow-lite-task-vision = { module = "org.tensorflow:tensorflow-lite-task-vision", version.ref = "tensorflowLiteTaskVision" }
+litert = { module = "com.google.ai.edge.litert:litert", version.ref = "litert" }
+litert-api = { module = "com.google.ai.edge.litert:litert-api", version.ref = "litert" }
+litert-gpu = { module = "com.google.ai.edge.litert:litert-gpu", version.ref = "litert" }
 opencv-android = { module = "org.opencv:opencv", version.ref = "opencvAndroid" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
+licenseReport = { id = "com.jaredsburrows.license", version.ref = "licensePlugin" }

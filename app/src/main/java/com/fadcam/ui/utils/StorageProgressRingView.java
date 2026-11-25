@@ -7,7 +7,6 @@ import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Shader;
-import android.graphics.SweepGradient;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
@@ -26,7 +25,6 @@ public class StorageProgressRingView extends View {
 
     private static final float START_ANGLE = -90f;
     private static final float FULL_SWEEP = 360f;
-    private static final float GRADIENT_ROTATION_DEGREES = -88f;
     private static final float MIN_VISIBLE_SWEEP = 1f;
 
     private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -47,7 +45,6 @@ public class StorageProgressRingView extends View {
     private int gradientMidColor = Color.parseColor("#F7DC6F");
     private int gradientEndColor = Color.parseColor("#FF6B6B");
     private int textColor = Color.parseColor("#EAF4FF");
-    private SweepGradient sweepGradient;
     private LinearGradient barGradient;
     private LinearGradient verticalGradient;
     private int indicatorStyle = STYLE_RING;
@@ -77,7 +74,7 @@ public class StorageProgressRingView extends View {
         trackPaint.setColor(trackColor);
 
         progressPaint.setStyle(Paint.Style.STROKE);
-        progressPaint.setStrokeCap(Paint.Cap.BUTT);
+        progressPaint.setStrokeCap(Paint.Cap.ROUND);
         progressPaint.setStrokeWidth(strokeWidthPx);
 
         textPaint.setColor(textColor);
@@ -99,7 +96,6 @@ public class StorageProgressRingView extends View {
             return;
         }
         indicatorStyle = normalized;
-        sweepGradient = null;
         barGradient = null;
         verticalGradient = null;
         invalidate();
@@ -126,7 +122,6 @@ public class StorageProgressRingView extends View {
     public void setColorsInverted(boolean inverted) {
         if (invertColors == inverted) return;
         invertColors = inverted;
-        sweepGradient = null;
         barGradient = null;
         verticalGradient = null;
         updateGradientColors();
@@ -147,7 +142,6 @@ public class StorageProgressRingView extends View {
         gradientStartColor = lighten(baseColor, 0.22f);
         gradientMidColor = baseColor;
         gradientEndColor = darken(baseColor, 0.20f);
-        sweepGradient = null;
     }
 
     @Override
@@ -166,7 +160,6 @@ public class StorageProgressRingView extends View {
         float verticalLeft = (w - verticalWidth) / 2f;
         float verticalTop = (h - verticalHeight) / 2f;
         verticalTrackBounds.set(verticalLeft, verticalTop, verticalLeft + verticalWidth, verticalTop + verticalHeight);
-        sweepGradient = null;
         barGradient = null;
         verticalGradient = null;
     }
@@ -195,21 +188,12 @@ public class StorageProgressRingView extends View {
             return;
         }
 
-        if (sweepGradient == null) {
-            sweepGradient = new SweepGradient(
-                    getWidth() / 2f,
-                    getHeight() / 2f,
-                    new int[]{gradientStartColor, gradientMidColor, gradientEndColor},
-                    new float[]{0f, 0.55f, 1f}
-            );
-        }
-        progressPaint.setShader(sweepGradient);
-
-        canvas.save();
-        canvas.rotate(GRADIENT_ROTATION_DEGREES, getWidth() / 2f, getHeight() / 2f);
+        // One solid colour for the whole filled arc: the old sweep gradient made
+        // the ring look like several mismatched shades merged together.
+        progressPaint.setShader(null);
+        progressPaint.setColor(gradientMidColor);
         float sweep = Math.max(MIN_VISIBLE_SWEEP, FULL_SWEEP * progress);
-        canvas.drawArc(arcBounds, 0f, sweep, false, progressPaint);
-        canvas.restore();
+        canvas.drawArc(arcBounds, START_ANGLE, sweep, false, progressPaint);
 
         drawCenterText(canvas, textColor, dpToPx(7.5f));
     }
@@ -296,7 +280,8 @@ public class StorageProgressRingView extends View {
     }
 
     private void drawCenterText(Canvas canvas, int color, float sizePx) {
-        String percentText = Math.round(progress * 100f) + "%";
+        String percentText = com.fadcam.utils.DisplayLocale.digits(
+                Math.round(progress * 100f) + "%", getContext());
         textPaint.setColor(color);
         textPaint.setTextSize(sizePx);
         Paint.FontMetrics fontMetrics = textPaint.getFontMetrics();

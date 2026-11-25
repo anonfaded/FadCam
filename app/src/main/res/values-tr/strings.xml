@@ -134,14 +134,6 @@
     <string name="dialog_clock_englishtime">İngilizce Tarih ve Saat</string>
     <string name="dialog_clock_Islamic_calendar">İslami Takvim Tarihi</string>
     <string name="ui_preview_area">Önizleme Alanı</string>
-    <string-array name="easter_eggs_array">
-        <item>Uyarı! Burası kısıtlı bir alan. Erişim için kayıt yapmaya başlayın.</item>
-        <item>Gizli düğmeyi buldunuz! Hiçbir şey yapmıyor haha</item>
-        <item>Acele edin! Sistem patlamak üzere… ya da belki sadece sakinleşmek için bir kayda ihtiyacı var.</item>
-        <item>Şimdi bu biraz garip oldu…</item>
-        <item>Bugatti\'nizin rengi ne?</item>
-        <item>Ben sizin yaptığınızı yapmak için programlanmadım. Bekleyin, beni hacklemeye mi çalışıyorsunuz?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>FERAGATNAME</item>
         <item>FadCam kullanıcı verisi topluyor mu?</item>
@@ -245,13 +237,6 @@
     <string name="torch_shortcut_long_label">Feneri Değiştir</string>
     <string name="torch_shortcut_disabled">Fener değiştirme şu anda kullanılamıyor</string>
     <!-- Torch Error Messages -->
-    <string-array name="torch_error_messages">
-        <item>Fener derleniyor... lütfen beklemeyin 🖥️</item>
-        <item>Kamera diyor ki: Bugün flaş yok 🚦</item>
-        <item>Fener.exe yanıt vermiyor 🔦</item>
-        <item>Gecikme düzeltildi... Geliştirici zihinsel bir kesme noktasına çarptı haha 🧠</item>
-        <item>Yama yakında geliyor™... Geliştirici hayatı hata ayıklıyor 🐛</item>
-    </string-array>
     <string name="more_options">Daha Fazla Seçenek</string>
     <string name="records_options_title">Kayıt Seçenekleri</string>
     <string name="setting_theme_title">Uygulama Teması</string>
@@ -321,14 +306,14 @@
     <string name="app_icon_description">Uygulamanız için bir simge ve isim seçin. Bu, ana ekranınızda nasıl görüneceğini değiştirecektir.</string>
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">Sekme Kilidi</string>
-    <string name="setting_applock_desc">Kayıtlar sekmesini PIN kilidi ile koruyun. \nGüvenliğiniz için, uygulama arka plana geçtiğinde veya kapatıldığında Kayıtlar sekmesi otomatik olarak kilitlenecektir. Geri döndüğünüzde tekrar kilit açmanız gerekecek</string>
+    <string name="setting_applock_desc">Seçili sekmeleri PIN, parola veya parmak iziyle koruyun. Korumalı sekmeler uygulama arka plana geçtiğinde veya kapatıldığında yeniden kilitlenir ve geri döndüğünüzde tekrar açılmalıdır.</string>
     <string name="setting_applock_configure">Yapılandır</string>
     <string name="applock_dialog_title">Sekme Kilidi Seçenekleri</string>
     <string name="applock_enable">Sekme Kilidini Etkinleştir</string>
     <string name="applock_disable">Sekme Kilidini Devre Dışı Bırak</string>
     <string name="applock_set_pin">PIN Belirle</string>
-    <string name="applock_change_pin">PIN Değiştir</string>
-    <string name="applock_remove_pin">PIN Kaldır</string>
+    <string name="applock_change_pin">Kilidi değiştir</string>
+    <string name="applock_remove_pin">Kilidi kaldır</string>
     <string name="applock_pin_created">PIN başarıyla oluşturuldu</string>
     <string name="applock_pin_removed">PIN başarıyla kaldırıldı</string>
     <!-- App Lock Verification Messages -->
@@ -399,31 +384,6 @@
     <string name="location_embedding_icon_description">Konum Gömme İkonu</string>
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">Yeni bir kayıt başlatmadan önce lütfen bir süre bekleyin</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">Devam etmek için sağa kaydırın</string>
-    <string name="onboarding_select_language">Tercih ettiğiniz uygulama dilini seçin.</string>
-    <string name="onboarding_camera">Kamera</string>
-    <string name="onboarding_microphone">Mikrofon</string>
-    <string name="onboarding_storage">Depolama</string>
-    <string name="onboarding_or">VEYA</string>
-    <string name="onboarding_and">VE</string>
-    <string name="onboarding_open_settings">Ayarları Aç</string>
-    <string name="onboarding_intro_line1">Açık kaynak,</string>
-    <string name="onboarding_intro_line2">reklamsız,</string>
-    <string name="onboarding_intro_line3">ve reklamcılar için değil, sizin için oluşturuldu.</string>
-    <string name="language_change_later_note">Bunu daha sonra Ayarlar\'dan değiştirebilirsiniz.</string>
-    <string name="permissions_required">İzinler Gerekli</string>
-    <string name="permissions_description">FadCam, video kaydetmek ve kaydetmek için kameranıza, mikrofonunuza ve depolamanıza erişim gerektirir.</string>
-    <string name="grant_permissions">İzinleri Ver</string>
-    <string name="permissions_note">Devam etmek için tüm izinleri vermeniz gerekir.</string>
-    <string name="permissions_granted">Tüm izinler verildi!</string>
-    <string name="open_settings">Ayarları Aç</string>
-    <string name="disable_battery_optimization">Pil Optimizasyonunu Devre Dışı Bırak</string>
-    <string name="onboarding_human_title">İnsan olduğunuzu doğrulayın</string>
-    <string name="onboarding_human_desc">Hmmmm... tamam. Bu kurallar pazarlık edilemez. Kabul edemiyorsanız, lütfen FadCam\'i hemen kaldırın.</string>
-    <string name="onboarding_human_checkbox1">FadCam\'i herhangi bir yasayı çiğnemek, birinin mahremiyetine saldırmak veya ürkütücü olmak için kullanmayacağım. Eğer hata yaparsam, geliştirici sorumlu değildir. (Bu benim sorumluluğum.)</string>
-    <string name="onboarding_human_checkbox2">FadCam\'i kullanmadan önce bile seviyorum. (İsteğe bağlı değil)</string>
-    <string name="onboarding_human_button">İçeri girmeme izin ver!</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Sıralama Kriteri</string>
     <string name="sort_latest_first">En Yeniler Önce</string>
@@ -556,10 +516,10 @@
     <string name="fix_video_saf_export">Gerekirse, düzeltilen dosyayı uygulama depolamasından dışa aktarabilir veya paylaşabilirsiniz.</string>
     <string name="full_changelog_info">Tam değişiklik günlüğü için Ana Sayfa sekmesine gidin, hamburger menüsünü açın ve «Yenilikler»i seçin.</string>
     <string name="website_title">Web Sitesi</string>
-    <string name="stats_label_videos">Videolar:</string>
+    <string name="stats_label_videos">Dosyalar:</string>
     <string name="stats_label_used">Kullanılan:</string>
     <string name="snap_guides">Yakalama Kılavuzları</string>
-    <string name="storage_available_space">Kullanılabilir alan</string>
+    <string name="storage_available_space">Kalan alan</string>
     <string name="tips_title">İpuçları</string>
     <string name="tips_subtitle">Yardımcı kullanım ipuçları</string>
     <string name="whats_new_title">Yenilikler</string>
@@ -592,7 +552,6 @@
     <string name="zoom_not_available_toast">Yakınlaştırma kullanılamıyor</string>
     <string name="zoom_slider_title">Yakınlaştırma Oranı</string>
     <string name="zoom_slider_helper">Kayıt için yakınlaştırma seviyesini ayarlayın. Ultra geniş lens kayıtları için, ultra geniş görüş alanıyla kaydetmek üzere 0.5x seçeneğini kullanın.</string>
-    <string name="watermark_preview_funny">Gerçekten mi? :( \n    ＞｜＜</string>
     <string name="universal_confirm">Onayla</string>
     <string name="settings_video_title">Video Kaydı</string>
     <string name="settings_audio_title">Ses Ayarları</string>
@@ -1019,6 +978,8 @@
     <string name="screen_rec_settings_subtitle">Kalite, ses ve çıktı ayarları</string>
     <string name="screen_rec_resolution">Çözünürlük</string>
     <string name="screen_rec_framerate">Kare Hızı</string>
+    <string name="screen_rec_codec">Kodek</string>
+    <string name="note_screen_codec">Ekran kaydı kodekini seçin\n(Varsayılan: %1$s)\nİpucu: H.265 (HEVC) aynı kalitede daha küçük dosyalar üretir. Bu cihazda kullanılabilir bir HEVC kodlayıcı yoksa FadCam otomatik olarak H.264 ile kaydeder.</string>
     <string name="screen_rec_bitrate">Bit Hızı</string>
     <string name="screen_rec_orientation">Yön</string>
     <string name="screen_rec_bitrate_mode_auto">Otomatik (VBR)</string>
@@ -1334,7 +1295,7 @@
     <string name="home_time_left_color_helper">Kalan süre satırı için vurgu rengini seçin. Kırmızı varsayılandır.</string>
     <string name="home_time_left_color_choice_desc">Vurgu rengi %1$s</string>
     <string name="home_clock_customize_title">Saat Görünümü</string>
-    <string name="home_clock_customize_helper">Saat görüntüsünü, rengini ve saat biçimini değiştirin.</string>
+    <string name="home_clock_customize_helper">Saat görüntüsünü, rengini, saat biçimini ve Arapça tarih stilini değiştirin.</string>
     <string name="home_clock_display_option">Saat görüntüsü</string>
     <string name="home_clock_display_option_desc">Saat kartında hangi tarih ve saat satırlarının görüneceğini seçin</string>
     <string name="home_clock_display_helper">Saat kartı tarafından kullanılan düzeni seçin.</string>
@@ -1548,7 +1509,7 @@
     <string name="records_batch_export_done_title">Standart MP4 Dışa Aktarma Tamamlandı</string>
     <string name="records_batch_merge_done_title">Toplu Birleştirme Tamamlandı</string>
     <string name="records_hide_thumbnails_row_title">Gizle</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
     <string name="nav_lab">Lab</string>
     <string name="note_cam_dual_unsupported">Cihazınız eşzamanlı çift kamera kaydını desteklemiyor.</string>
     <string name="dual_recording_started">Çift kamera kaydı başladı</string>
@@ -1942,6 +1903,8 @@
 <string name="setting_video_stabilization_title">Video sabitleme</string>
 <string name="setting_not_supported">Bu cihazda desteklenmiyor</string>
 <string name="video_stabilization_footer">Elektronik (EIS) ve optik (OIS) sabitleme ile el titremesini dengeleyerek videolarınızı sabit tutar. Bunun için çerçevenin küçük bir kısmı kırpılır.</string>
+    <string name="video_stabilization_unsupported_banner">Sabitleme: patates telefonunda desteklenmiyor. Suç donanımın, bizim değil.</string>
+    <string name="video_stabilization_unsupported_short">Desteklenmiyor</string>
 <string name="video_setting_location_embed_enabled">Etkin</string>
 <string name="video_setting_location_embed_disabled">Devre Dışı</string>
 <string name="delete_video_dialog_title">Video Silinsin mi?</string>
@@ -1969,11 +1932,13 @@
 <string name="kofi_button_text">Bana bir Ko-fi ısmarla</string>
 <string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
 <string name="choose_language">Dil Seç</string>
-<string name="onboarding_human_checkbox3">Gizlilik Politikası\'nı kabul ediyorum</string>
-<string name="applock_set_pin_enable">PIN Belirle &amp; Etkinleştir</string>
-<string name="applock_helper_create">Kayıtlar sekmesi için 4 haneli PIN, şifre veya parmak izi kullanarak koruma oluşturun. Uygulama arka plana geçtiğinde otomatik kilitlenir.</string>
-<string name="applock_helper_manage_disabled">Sekme Kilidi PIN\'i ayarlandı. Uygulamaya dönerken PIN\'i gerektirmek için açın.</string>
-<string name="applock_helper_enabled">Sekme Kilidi aktif. Uygulamadan ayrıldıktan sonra Kayıtlar sekmesini açarken PIN\'e ihtiyacınız olacak.</string>
+<string name="applock_set_pin_enable">Ayarla &amp; etkinleştir</string>
+<string name="applock_helper_create">Seçtiğiniz sekmeler için 4 haneli PIN, parola veya parmak iziyle koruma oluşturun. Uygulama arka plana geçtiğinde otomatik olarak kilitlenirler.</string>
+<string name="applock_helper_manage_disabled">Sekme Kilidi PIN’i ayarlandı. Seçili sekmeler için PIN istemek üzere açın.</string>
+<string name="applock_helper_enabled">Sekme Kilidi etkin. Seçili sekmeler uygulamadan ayrıldıktan sonra PIN ister. Kayıtlar varsayılan olarak korunur.</string>
+    <string name="tab_lock_screen_title">Kilitli</string>
+    <string name="tab_lock_screen_message">Devam etmek için kilidi açın</string>
+    <string name="tab_lock_unlock">Kilidi aç</string>
 <string name="edit_with_faditorx">Faditor Mini ile Düzenle</string>
 <string name="remote_coming_soon_badge">Çok Yakında</string>
 <string name="update_visit_github">GitHub\'ı Ziyaret Et</string>
@@ -1995,7 +1960,6 @@
     <string name="app_icon_football" translatable="false">FootballX 2024</string>
     <string name="app_icon_car" translatable="false">ClutchX</string>
     <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
     <string name="changelog_label">Yenilikler</string>
     <string name="general">Genel</string>
     <string name="recording_quick_access">Hızlı Kayıt Erişimi</string>
@@ -2155,7 +2119,6 @@
     <string name="forensics_copy_done">Kanıt ayrıntıları kopyalandı</string>
     <string name="digital_forensics_preview_title">Canlı Tespit Önizlemesi</string>
     <string name="digital_forensics_preview_subtitle">Kullanıcıların etiketleri, güveni ve kanıt çerçevelemeyi anlaması için simüle edilmiş katman önizlemesi.</string>
-    <string name="digital_forensics_preview_default">KİŞİ 92%</string>
     <string name="prefs_import_export_title">İçe / Dışa Aktar</string>
     <string name="prefs_import_export_subtitle">Yedekle, geri yükle, sıfırla</string>
     <string name="about_version_update_licenses">Sürüm, güncelleme, lisanslar</string>
@@ -2163,7 +2126,6 @@
     <string name="storage_helper_current_custom_prefix">Mevcut özel klasör:</string>
     <string name="storage_helper_current_custom_uri_prefix">URI:</string>
     <string name="app_icon_minimal" translatable="false">FadCam</string>
-    <string name="onboarding_intro_line4">açık kaynak. reklamsız. senin.</string>
     <string name="records_sort_helper">Kayıtların listede nasıl sıralanacağını seçin.</string>
     <string name="records_sort_order_title">Sıralama düzeni</string>
     <string name="records_view_mode_title">Görüntüleme modu</string>
@@ -2250,6 +2212,7 @@
     <string name="name_your_project">Projenizi Adlandırın</string>
     <string name="project_naming_message">Kayıtlarınızı düzenlemek için projenize akılda kalıcı bir ad ve açıklama verin</string>
     <string name="fadrec_projects">FadRec Projeleri</string>
+    <string name="fadrec_projects_location">Projeler uygulamanın özel depolama alanında saklanır</string>
     <string name="delete_project">Projeyi Sil</string>
     <string name="delete_all">Tümünü Sil</string>
     <string name="new_project">Yeni Proje</string>
@@ -2278,15 +2241,6 @@
     <string name="fadcam_pro_feature_app_name">Özel Uygulama Adı</string>
     <string name="fadcam_pro_feature_faddrive">FadDrive Bulut Senkronizasyonu</string>
     <string name="fadcam_pro_header_button">Pro\'yu Al</string>
-    <string name="player_info_title">Video Oynatıcı Hakkında</string>
-    <string name="player_info_content"><![CDATA[
-<b>Parçalı MP4 Formatı</b><br/><br/>
-FadCam, kayıtlar için parçalı MP4 formatı kullanır. Bu, videoların tek bir tam dosya yerine küçük bölümler halinde kaydedildiği anlamına gelir. Bunun avantajı, kayıt sırasında bir sorun olursa, tüm video yerine yalnızca son birkaç saniyeyi kaybetmenizdir.<br/><br/>
-Videonuzun son birkaç saniyesi donuk veya eski görünüyorsa, endişelenmeyin — bu bir hata değil! Kaydı durdurduğunuzda, mevcut parça döngüsünü tamamlayabilir (~3 saniye), bu da sonunda kısa bir donuk kare bırakabilir.<br/><br/>
-<b>Oynatıcı Sınırlamaları</b><br/><br/>
-Yerleşik video oynatıcının bazı Android sistemi sınırlamaları vardır. İlerleme çubuğunun veya dalga formunun biraz hızlı göründüğünü fark edebilirsiniz — bu normal davranıştır ve bir hata değildir.<br/><br/>
-En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsiniz. Bununla birlikte, entegre oynatıcı günlük kullanım için iyi çalışır!
-    ]]></string>
     <string name="codec_hevc_incompatible_title">H.265 Kodek Canlı Yayın İçin Desteklenmiyor</string>
     <string name="codec_hevc_incompatible_message">📡 HLS üzerinden canlı yayın, H.264 kodek gerektirir.\n\nH.265, tarayıcı oynatıcılarla uyumlu değildir.\n\nH.264\'e geçip kayda başlamak ister misiniz?</string>
     <string name="codec_switch_and_record">H.264\'e Geç ve Kaydet</string>
@@ -2462,6 +2416,10 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="mini_apps_current_tools">Mevcut Araçlar</string>
     <string name="mini_apps_qr_scanner_reference">QR Tarayıcı referansı</string>
     <string name="screen_recording_title">Ekran Kaydı</string>
+    <string name="qs_tile_fadrec_subtitle">Ekranı kaydet</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Kaydediliyor</string>
+    <string name="qs_tile_fadrec_paused">Duraklatıldı</string>
     <string name="screen_recording_notif_title">FadRec - Ekran Kaydı</string>
     <string name="screen_recording_saved">Ekran Kaydı Kaydedildi</string>
     <string name="screen_recording_tap_to_view">Kaydınızı görüntülemek için dokunun</string>
@@ -2523,6 +2481,13 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <string name="setting_theme">Tema</string>
     <string name="setting_language">Dil</string>
     <string name="setting_app_icon">Uygulama Simgesi</string>
+    <string name="setting_splash_screen">Açılış Ekranı</string>
+    <string name="splash_screen_dialog_title">Açılış Ekranını Seç</string>
+    <string name="splash_screen_helper">FadCam açılırken ne göstersin seç.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Avatar uyanır, uykuya dalar ve Ana ekrana yerleşir</string>
+    <string name="splash_style_flag">FadSec Lab Bayrağı</string>
+    <string name="splash_style_flag_desc">Klasik bayraklı açılış ekranı</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Etkin</string>
@@ -2818,4 +2783,280 @@ En sorunsuz oynatma deneyimi için VLC gibi harici bir oynatıcı kullanabilirsi
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Ayarlarda Göster</string>
     <string name="trash_show_in_settings_desc">Hızlı erişim için Ayarlar sayfasına bir Çöp satırı ekler</string>
+    <string name="fadcam_full_title">FadCam Güç Kullanıcısı</string>
+    <string name="fadcam_full_subtitle">Uzaktan kumanda, hareket kaydı, adli bilişim ve daha fazlası. Tam sürümü deneyin.</string>
+    <string name="github_get_on">Şuradan edinin</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">FadCam\'i %1$s kullanıyorsun</string>
+    <string name="app_usage_since_install_title">FadCam\'i kullanalı</string>
+
+
+    <string name="app_age_a_while">bir süredir</string>
+    <string name="app_usage_installed_on">Yüklenme tarihi</string>
+    <string name="pro_dossier_header">FADSEC LAB // DAHİLİ DOSYA</string>
+    <string name="pro_dossier_eyes_only">SADECE YETKİLİ</string>
+    <string name="pro_dossier_subject">KONU // YÜKSELTME PROTOKOLÜ</string>
+    <string name="pro_dossier_file_no">DOSYA NO.</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">YETKİ SEVİYESİ</string>
+    <string name="pro_dossier_clearance_value">HERKESE AÇIK / ÜCRETSİZ</string>
+    <string name="pro_dossier_status">DURUM</string>
+    <string name="pro_dossier_status_value">ONAY BEKLENİYOR</string>
+    <string name="pro_dossier_ref">REF: FADSEC/PR-07</string>
+    <string name="pro_dossier_page">SAYFA 1/1</string>
+    <string name="pro_dossier_drag">İNCELEMEK İÇİN SÜRÜKLE // ÖN</string>
+    <string name="pro_dossier_cycle">DÖNGÜ %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // EYLEM SONRASI RAPOR</string>
+    <string name="pro_dossier_after_stamp">BRİFİNG</string>
+    <string name="pro_dossier_after_subject">KONU // HAFTALIK TEMAS</string>
+    <string name="pro_dossier_after_status">DİSPOZİSYON</string>
+    <string name="pro_dossier_after_status_value">ONAY GEREKLİ</string>
+    <string name="pro_dossier_after_ref">REF: FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">Anladım</string>
+    <string name="pro_reminder_intro_title">Pro dramatikleşmeden önce</string>
+    <string name="pro_reminder_intro_subtitle">FadCam\'i %1$s kullanıyorsun. Pro\'nun sunduklarına bir bak.</string>
+    <string name="pro_reminder_title_1">Bizim bir geçmişimiz var</string>
+    <string name="pro_reminder_title_2">Pro kıskanmaya başladı</string>
+    <string name="pro_reminder_title_3">Bil bakalım kim geri döndü</string>
+    <string name="pro_reminder_title_4">Artık bu bizim işimiz</string>
+    <string name="pro_reminder_title_5">Lütfen şaşırmış gibi yap</string>
+    <string name="pro_reminder_title_6">Gelecek hafta aynı saatte?</string>
+    <string name="pro_reminder_subtitle_1">FadCam ile %1$s geçirdin ve hâlâ Pro ile tanışmadın.</string>
+    <string name="pro_reminder_subtitle_2">FadCam\'i %1$s kullanıyorsun. Pro kendini dışlanmış hissetmeye başladı.</string>
+    <string name="pro_reminder_subtitle_3">FadCam ile %1$s. Sana Pro\'yu hatırlatmak için geri döndüm.</string>
+    <string name="pro_reminder_subtitle_4">FadCam ile %1$s. Pro da biraz ilgi istiyor.</string>
+    <string name="pro_reminder_subtitle_5">%1$s oldu ve yine buradayım. Pro\'yu getirdim.</string>
+    <string name="pro_reminder_subtitle_6">%1$s geçti. Pro selam söylüyor. Yine.</string>
+    <string name="pro_reminder_notification_title_1">Pro kendini dışlanmış hissediyor</string>
+    <string name="pro_reminder_notification_title_2">Küçük bir kesinti</string>
+    <string name="pro_reminder_notification_title_3">Pro sohbete katıldı</string>
+    <string name="pro_reminder_notification_title_4">Bil bakalım kim geri döndü</string>
+    <string name="pro_reminder_notification_body_1">%1$s birlikte. Pro kısa bir selam istiyor.</string>
+    <string name="pro_reminder_notification_body_2">Merak etme, acil değil. Pro sadece selam veriyor.</string>
+    <string name="pro_reminder_notification_body_3">%1$s geçti. Hızlıca bir göz atmaya hazır mısın?</string>
+    <string name="pro_reminder_notification_body_4">Yine ben. Pro bunun hızlı olacağına söz veriyor.</string>
+    <string name="pro_reminder_button_continue">Devam</string>
+    <string name="pro_reminder_button_countdown">Devam için %1$d sn</string>
+    <string name="pro_reminder_back_toast_1">Güzel deneme. Devam hemen orada.</string>
+    <string name="pro_reminder_back_toast_2">Sürpriz: Geri, çıkış değil.</string>
+    <string name="pro_reminder_back_toast_3">Neredeyse kaçıyordun. Sadece Devam\'a dokun.</string>
+    <string name="pro_reminder_after_title">Pro\'ya geç, ben de sonunda seni rahatsız etmeyi bırakayım. Sonsuza dek.</string>
+    <string name="pro_reminder_after_got_it">Anladım</string>
+    <string name="pro_reminder_notification_channel_name">Pro hatırlatmaları</string>
+    <string name="pro_reminder_notification_channel_description">FadCam Pro hakkında haftalık hatırlatmalar. Pro sürümünde gösterilmez.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">%1$d gün sonra döneceğim. Huzurun tadını çıkar.</item>
+        <item quantity="other">%1$d gün sonra döneceğim. Huzurun tadını çıkar.</item>
+    </plurals>
+    <string name="follow_on_x">X\'te takip et</string>
+    <string name="pro_screen_active">Etkin</string>
+    <string name="pro_screen_calc_desc">Hesap makinesi gibi görünen ayrı bir uygulama.</string>
+    <string name="pro_screen_calc_feature">Hesap makinesi uygulaması</string>
+    <string name="pro_screen_calculator">Hesap makinesi</string>
+    <string name="pro_screen_claim_body">FadCam\'in özel Hybrid MP4 hattıyla güçlendirildi — Android için özel olarak tasarlandı; kayıtlar çökmeler, biten pil ve ani kapanmalardan sonra bile son saniyeye kadar oynatılabilir kalır.</string>
+    <string name="pro_screen_claim_title">1 numaralı arka plan video kayıt uygulaması</string>
+    <string name="pro_screen_cloud">FadDrive senkronizasyonu</string>
+    <string name="pro_screen_cloud_desc">Kayıtlarını şifreli bulutumuzda güvenle yedekle.</string>
+    <string name="pro_screen_coming_soon_status">Yakında</string>
+    <string name="pro_screen_compare">Neler dahil gör</string>
+    <string name="pro_screen_compare_hint">Sürümleri karşılaştırmak için kaydır</string>
+    <string name="pro_screen_compare_owned">Pro özelliklerin</string>
+    <string name="pro_screen_custom_icon">Özel uygulama simgesi</string>
+    <string name="pro_screen_custom_icon_desc">Uygulama için kendi simgeni seç.</string>
+    <string name="pro_screen_custom_name">Özel uygulama adı</string>
+    <string name="pro_screen_custom_name_desc">Uygulama için kendi adını seç.</string>
+    <string name="pro_screen_direct_support">Geliştirici desteği</string>
+    <string name="pro_screen_direct_support_desc">Discord\'da geliştiriciden yardım al.</string>
+        <string name="pro_screen_support_title">Diğer destek yolları</string>
+    <string name="pro_screen_support_body">Pro ilgini çekmiyor mu? FadCam\'i yine de Patreon veya kripto bağışlarıyla destekleyebilirsin. Her katkı daha fazla özgür, açık kaynak yazılım geliştirmemize yardımcı olur.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Tek seferlik bağış veya aylık üyelik.</string>
+    <string name="pro_screen_crypto_title">Kripto bağışları</string>
+    <string name="pro_screen_crypto_desc">Discord veya e-posta ile bize ulaş.</string>
+    <string name="pro_screen_stay_connected_title">Bağlantıda kal</string>
+    <string name="pro_screen_stay_connected_body">Soru, geri bildirim ya da sadece merhaba mı demek istiyorsun? Senden haber almak isteriz.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">E-posta</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">FadCam destek talebi</string>
+    <string name="pro_screen_everything">Tüm ücretsiz özellikler</string>
+    <string name="pro_screen_everything_desc">Ücretsiz sürümdeki her şey dahil.</string>
+    <string name="pro_screen_fan_desc">Gizliliği ön planda tutan açık kaynaklı uygulama ve çözümlerin geleceğine inanıyorsun.</string>
+    <string name="pro_screen_fan_feature">Gizliliği seviyorsun</string>
+    <string name="pro_screen_features">Özellikler</string>
+    <string name="pro_screen_free">Ücretsiz</string>
+    <string name="pro_screen_included">Dahil</string>
+    <string name="pro_screen_link_error">Bağlantı açılamadı. Bir tarayıcının kullanılabilir olduğundan emin ol ve tekrar dene.</string>
+    <string name="pro_screen_navigation">Pro\'yu keşfet</string>
+    <string name="pro_screen_navigation_owned">Senin Pro\'n</string>
+    <string name="pro_screen_no_ads">Reklam ve izleme yok</string>
+    <string name="pro_screen_no_ads_desc">Reklam yok. İzleme yok. Çökme günlüğü toplama yok.</string>
+    <string name="pro_screen_no_nags">Yükseltme hatırlatması yok</string>
+    <string name="pro_screen_no_nags_desc">Pro\'ya yükseltme için haftalık hatırlatma yok.</string>
+    <string name="pro_screen_not_included">Dahil değil</string>
+    <string name="pro_screen_notes">Notlar</string>
+    <string name="pro_screen_notes_desc">Not uygulaması gibi görünen ayrı bir uygulama.</string>
+    <string name="pro_screen_notes_feature">Notlar uygulaması</string>
+    <string name="pro_screen_notification">Bildirim simgeleri</string>
+    <string name="pro_screen_notification_desc">Kayıt bildirimleri için farklı bir simge seç.</string>
+    <string name="pro_screen_owned_status">%1$s · Bu uygulamada etkin</string>
+    <string name="pro_screen_owned_subtitle">Bu sürümle birlikte gelir</string>
+    <string name="pro_screen_owned_title">%1$s etkin</string>
+    <string name="pro_screen_price_detail">3 özel Pro uygulaması · Ömür boyu güncellemeler</string>
+    <string name="pro_screen_price_terms">Tek seferlik satın alma</string>
+    <string name="pro_screen_privacy_body">Gizliliğin herkes için olması gerektiğine inanıyoruz. Bu yüzden FadCam\'de reklam, izleyici veya veri toplama yok. Çökme raporlarını bile otomatik olarak toplamıyoruz.\n\n%100 açık kaynağız, böylece uygulamanın nasıl çalıştığını görebilirsin. Temel gizlilik özellikleri asla bir ödeme duvarının arkasına kilitlenmeyecek.</string>
+    <string name="pro_screen_privacy_title">Gizlilik bugün. Yarın. Sonsuza dek.</string>
+    <string name="pro_screen_purchase">Pro Bundle\'ın kilidini aç</string>
+    <string name="pro_screen_purchase_caption">FadSec Lab mağazasını açar</string>
+    <string name="pro_screen_scroll_hint">Daha fazlası için kaydır</string>
+    <string name="pro_screen_scroll_top">Başa dön</string>
+    <string name="pro_screen_soon">Yakında</string>
+    <string name="pro_screen_soon_legend">Pro+ ve Lab kademeleri yakında geliyor.</string>
+    <string name="pro_screen_status_description">%1$s: %2$s</string>
+    <string name="pro_screen_tier">Pro</string>
+    <string name="pro_screen_tier_lab">Lab</string>
+    <string name="pro_screen_tier_plus">Pro+</string>
+    <string name="pro_screen_title">FadCam Pro</string>
+    <string name="pro_screen_updates">Erken güncellemeler</string>
+    <string name="pro_screen_updates_desc">Yeni sürümleri herkesten yaklaşık 60 gün önce al.</string>
+    <string name="pro_screen_weather">Hava durumu</string>
+    <string name="pro_screen_weather_desc">Hava durumu uygulaması gibi görünen ayrı bir uygulama.</string>
+    <string name="pro_screen_weather_feature">Hava durumu uygulaması</string>
+    <string name="pro_screen_why_pro_body">FadCam Free, birçok uygulamanın ücret aldığı özellikleri zaten içeriyor. Kullanışlı yazılımın gizliliğinden ödün vermemesi gerektiğine inanıyoruz.\n\nFadCam\'i değerli buluyor ve çalışmalarımızı desteklemek istiyorsan Pro, karşılık vermenin ve daha fazlasını almanın bir yolu: üç bağımsız özel uygulama, erken güncellemeler ve diğer ekstralar, FadCam Free\'nin sunduğu her şeyin üzerine.\n\nDesteğin ayrıca FadSec Lab\'de açık kaynaklı, gizlilik öncelikli uygulamalar ve çözümler geliştirmeye devam etmemize yardımcı olur.</string>
+    <string name="pro_screen_why_pro_title">O zaman neden Pro?</string>
+    <string name="pro_screen_bundle">Üç özel uygulama.
+Sonsuza dek senin.</string>
+    <string name="pro_showcase_label">PRO PAKET</string>
+    <string name="pro_showcase_supporting">Üçünü ayrı ayrı kur, ömür boyu güncellemelerle.</string>
+    <string name="pro_showcase_meta">Ayrı kurulumlar · Ömür boyu güncellemeler</string>
+    <string name="pro_showcase_chip_installs">Üç bağımsız uygulama</string>
+    <string name="pro_showcase_chip_updates">Ömür boyu güncellemeler dahil</string>
+    <string name="pro_showcase_chip_entry">Gizlenmiş uygulama arayüzleri</string>
+    <string name="pro_showcase_soon">YAKINDA</string>
+    <string name="pro_showcase_hint">Kilidi aç ve uygulamaları keşfet.</string>
+    <string name="pro_showcase_expand_desc">Telefonu tam ekran aç</string>
+    <string name="pro_showcase_collapse_desc">Tam ekrandan çık</string>
+    <string name="pro_showcase_phone_desc">FadSec Lab cihaz maketi. Ekranda üç Pro uygulaması var. Telefonu döndürmek için yana sürükle.</string>
+    <string name="pro_showcase_privacy_mark">Tasarımda gizlilik</string>
+    <string name="pro_showcase_notes_hint">Not eklemek için yazın</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Nem</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Rüzgar</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Yeniden başlat</string>
+    <string name="pro_showcase_torch">El feneri</string>
+    <string name="pro_showcase_access_title">Kamera ve Mikrofon</string>
+    <string name="pro_showcase_access_body">Hava Durumu uygulaması bu önizlemede kameranızı ve mikrofonunuzu kullanıyor. Bu, FadCam\'in sessiz bildirimlerinin bir demosudur — gerçekte hiçbir şey kaydedilmez.</string>
+    <string name="pro_showcase_access_ok">Anladım</string>
+    <string name="pro_showcase_shutting_down">Kapatılıyor…</string>
+    <string name="pro_showcase_starting">Başlatılıyor</string>
+    <string name="pro_showcase_power_menu_title">Cihaz yeniden başlatılsın mı?</string>
+    <string name="pro_showcase_power_menu_body">Bu, önizleme cihazını yeniden başlatır.</string>
+    <string name="pro_showcase_power_menu_cancel">İptal</string>
+    <string name="pro_showcase_recents_hint">Yeniden açmak için dokunun</string>
+    <string name="pro_showcase_recents_empty">Son uygulama yok</string>
+    <string name="pro_showcase_fullscreen_hint">Döndürmek için sürükleyin · Bir uygulamaya dokunun</string>
+    <string name="pro_showcase_weather_line">Güneşli · 24°</string>
+    <string name="pro_showcase_notif_now">şimdi</string>
+    <string name="pro_showcase_swipe_unlock">Kilidi açmak için yukarı kaydırın</string>
+    <string name="fadcam_pro_price_amount">$49</string>
+    <!-- Onboarding (redesigned) -->
+    <string name="permissions_required">Birkaç izin</string>
+    <string name="permissions_description">FadCam\'in videolarınızı kaydetmesi ve saklaması için birkaç izne ihtiyacı var.</string>
+    <string name="grant_permissions">İzin Ver</string>
+    <string name="permissions_note">Devam etmek için tüm izinleri vermelisiniz.</string>
+    <string name="permissions_granted">Tüm izinler verildi. Hazırsınız!</string>
+    <string name="disable_battery_optimization">Pil optimizasyonunu devre dışı bırak</string>
+    <string name="battery_optimization_disabled">Pil optimizasyonu devre dışı</string>
+    <string name="onboarding_human_title">Ev kuralları</string>
+    <string name="onboarding_human_desc">İki hızlı şey, sonra içeridesiniz. Kabul etmiyorsanız FadCam\'i hemen kaldırın.</string>
+    <string name="onboarding_human_button">Beni içeri al!</string>
+    <string name="onboarding_permissions_section">İzinler</string>
+    <string name="onboarding_battery_section">Pil</string>
+    <string name="onboarding_permission_granted">Verildi</string>
+    <string name="onboarding_permission_required">Gerekli</string>
+    <string name="onboarding_human_agreement_responsible">FadCam\'i sorumlu şekilde kullanacak ve başkalarının gizliliğine saygı duyacağım.</string>
+    <string name="onboarding_human_agreement_legal">%1$s belgesini kabul ediyor ve %2$s belgesini tanıyorum.</string>
+    <string name="onboarding_terms_of_use">Kullanım Koşulları</string>
+    <string name="onboarding_privacy_policy">Gizlilik Politikası</string>
+    <string name="onboarding_cred_open">Açık kaynak</string>
+    <string name="onboarding_cred_ads">Reklam yok</string>
+    <string name="onboarding_cred_track">İzleyici yok</string>
+    <string name="onboarding_mini_torch">El feneri</string>
+    <string name="onboarding_mini_torch_desc">El feneri, flaş ve SOS modları.</string>
+    <string name="onboarding_mini_qr">QR tarayıcı</string>
+    <string name="onboarding_mini_qr_desc">QR kodları tarayın ve taramaları Kayıtlar\'a kaydedin.</string>
+    <string name="onboarding_permissions_kicker">ERİŞİM // GEREKLİ</string>
+    <string name="onboarding_human_kicker">YEMİN // KULLANIM KURALLARI</string>
+    <string name="onboarding_dossier_kicker">FADCAM // ÖZEL KAYIT CIHAZI</string>
+    <string name="onboarding_dossier_title">1 numaralı arka plan video kayıt cihazı.</string>
+    <string name="onboarding_dossier_lede">FadCam\'in Hybrid MP4 hattıyla çalışır. Kayıtlarınız çökmelere, biten pillere ve ani kapanmalara dayanır — son saniyeye kadar oynatılabilir.</string>
+    <string name="onboarding_capabilities_kicker">FADCAM // MULTİMEDYA SETİ</string>
+    <string name="onboarding_capabilities_title">Birkaç uygulamayı\nkaldırma zamanı.</string>
+    <string name="onboarding_capabilities_lede">FadCam onların işini de yapar. Evet, hepsini. İzleyici veya karanlık desen olmadan.</string>
+    <string name="onboarding_feature_background_title">Arka plan kaydı</string>
+    <string name="onboarding_feature_background_desc">Çökme dirençli Hybrid MP4 teknolojisiyle ekran kapalıyken bile kaydedin.</string>
+    <string name="onboarding_feature_screen_title">Ekran kaydı</string>
+    <string name="onboarding_feature_screen_desc">Ekranınızı çizim araçları, katmanlar ve sayfalarla kaydedin.</string>
+    <string name="onboarding_feature_editor_title">Video düzenleyici</string>
+    <string name="onboarding_feature_editor_desc">Klipleri kırpın, bölün, kesin, çoğaltın veya sessize alın.</string>
+    <string name="onboarding_feature_motion_title">Hareket algılama</string>
+    <string name="onboarding_feature_motion_desc">Yalnızca hareket algılandığında kaydeder. Hareket durunca duraklar.</string>
+    <string name="onboarding_feature_forensic_title">Adli analiz</string>
+    <string name="onboarding_feature_forensic_desc">Cihazdaki yapay zekâ kişileri ve nesneleri algılar. Kanıt olarak kaydedilir.</string>
+    <string name="onboarding_feature_remote_title">Uzaktan CCTV</string>
+    <string name="onboarding_feature_remote_desc">Telefonunuzu kapalı devre televizyon (CCTV) kamerasına dönüştürün. Canlı yayınlayın ve uzaktan kontrol edin.</string>
+    <string name="onboarding_feature_bodycam_solo_title">Bodycam</string>
+    <string name="onboarding_feature_bodycam_solo_desc">Kişisel güvenlik ve eller serbest kayıt için takın.</string>
+    <string name="onboarding_feature_dashcam_title">Dashcam</string>
+    <string name="onboarding_feature_dashcam_desc">Yolu veya motovlogları video sabitleme ile akıcı şekilde kaydedin.</string>
+    <string name="onboarding_scroll_hint">Daha fazlası için kaydırın</string>
+    <string name="onboarding_scroll_short">Kaydır</string>
+    <string name="onboarding_back">Geri</string>
+    <string name="onboarding_next">İleri</string>
+    <string name="onboarding_done">Tamam</string>
+    <string name="onboarding_mini_heading">Ve daha bitmedi.</string>
+    <string name="onboarding_mini_support">Mini uygulamalar. Günlük araçlar, doğrudan FadCam\'in içinde.</string>
+    <string name="onboarding_mini_more">Daha fazla mini uygulama yakında.</string>
+    <string name="onboarding_payoff_title">%1$d iş. Tek FadCam.</string>
+    <string name="onboarding_payoff_support">O fazladan uygulamalara veda etme zamanı.</string>
+    <string name="onboarding_lite_full_note">FadCam Full 10 uygulamanın yerini alır.</string>
+    <string name="onboarding_demo_person">KİŞİ</string>
+    <string name="onboarding_demo_evidence_gallery">KANIT GALERİSİ</string>
+    <string name="onboarding_demo_saved">KAYDEDİLDİ</string>
+    <string name="onboarding_demo_car">ARAÇ</string>
+    <string name="onboarding_demo_knife">BIÇAK</string>
+    <string name="onboarding_swipe_instruction">Devam etmek için kaydırın</string>
+    <string name="onboarding_camera">Kamera</string>
+    <string name="onboarding_microphone">Mikrofon</string>
+    <string name="onboarding_storage">Depolama</string>
+    <string name="onboarding_open_settings">Ayarları aç</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Merhaba!</string>
+    <string name="zoom_lens_unavailable_banner">Bu telefon ultra geniş açılı kamerasını uygulamalara açmıyor. 1.0x altındaki yakınlaştırma 1.0x\'te kalır.</string>
+    <string name="records_display_group_title">Görünüm</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Adsız</string>
+    <string name="faditor_rename_project">Proje adı</string>
+    <string name="faditor_rename_hint">Proje adı</string>
+    <string name="faditor_rename_action">Yeniden adlandır</string>
+    <string name="faditor_rename_subtitle">Dışa aktarılan dosya için kullanılır</string>
+    <string name="faditor_rename_helper">Dışa aktarılan video bu adla kaydedilir.</string>
+    <string name="faditor_export_name_preview">Şu adla kaydedilir: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Oynatma başlığının altında klip yok</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Bu uygulamayı korumak için Android’e kayıtlı bir parmak izi kullanın.</string>
+    <string name="applock__description_unlock_fingerprint">Parmak izi sensörüne dokunun</string>
+    <string name="applock__create_chooser_option_fingerprint">Parmak izi</string>
+    <string name="applock__fingerprint_error_not_enrolled">Parmak izi FadCam’de henüz etkin değil. Sekme Kilidi’ni açıp ayarlayın.</string>
+    <string name="applock__fingerprint_error_unrecognized">Parmak iziniz tanınmadı.</string>
+    <string name="applock__fingerprint_error_unknown">Parmak iziyle giriş tamamlanamadı. Tekrar deneyin veya Android ayarlarında ayarlayın.</string>
+    <string name="applock__fingerprint_error_none">Android’de henüz parmak izi ayarlanmamış. Android ayarlarından bir parmak izi ekleyip tekrar deneyin.</string>
+    <string name="applock__fingerprint_error_hardware">Parmak izi şu anda kullanılamıyor. Android ayarlarında bir parmak izi ayarlayıp tekrar deneyin.</string>
+    <string name="applock__action_settings">Android ayarlarını aç</string>
+    <string name="watermark_preview_funny">Gerçekten mi? :( \n    ＞｜＜</string>
 </resources>

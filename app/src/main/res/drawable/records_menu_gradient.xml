@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Darkens only the bottom-right corner behind the menu button. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:type="radial"
+        android:centerX="1"
+        android:centerY="1"
+        android:gradientRadius="46dp"
+        android:startColor="#B3000000"
+        android:endColor="#00000000" />
+</shape>

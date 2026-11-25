@@ -8,15 +8,17 @@
     android:background="?android:colorBackground">
 
     <!-- Fixed Header -->
-    <LinearLayout
+    <com.fadcam.ui.widgets.TabHeaderLayout
         android:id="@+id/header_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:minHeight="@dimen/app_header_content_height"
         android:orientation="vertical"
+        android:gravity="center_vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="12dp"
+        android:paddingTop="0dp"
+        android:paddingBottom="0dp"
         android:background="@drawable/header_bar_rounded_bg"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -153,6 +155,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
             android:background="@drawable/bg_records_delete_dock"
             android:orientation="vertical"
             android:visibility="gone"
@@ -270,6 +273,7 @@
             android:paddingTop="10dp"
             android:paddingBottom="10dp"
             android:layout_marginTop="10dp"
+            android:layout_marginBottom="12dp"
             android:visibility="gone"
             android:clipChildren="false"
             android:clipToPadding="false">
@@ -323,7 +327,7 @@
                 android:contentDescription="@string/records_repair_banner_dismiss"
                 android:background="?attr/selectableItemBackgroundBorderless" />
         </LinearLayout>
-    </LinearLayout>
+    </com.fadcam.ui.widgets.TabHeaderLayout>
 
     <!-- Subtle loading progress indicator - only shown if loading takes >200ms -->
     <ProgressBar
@@ -337,13 +341,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Floating dock for filter chips -->
-    <LinearLayout
+    <!-- Filter dock: the pill hugs the chips when they fit and is centred; when the
+         rail is longer than the row it takes the available width and scrolls. The
+         checklist toggle overlays the end so it never pushes the pill off-centre. -->
+    <FrameLayout
         android:id="@+id/records_filter_row"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="6dp"
@@ -353,9 +357,10 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <androidx.cardview.widget.CardView
-            android:layout_width="0dp"
+            android:id="@+id/records_filter_card"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_gravity="center_horizontal"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp"
             app:cardBackgroundColor="?attr/colorTopBar">
@@ -438,14 +443,15 @@
             android:id="@+id/btn_filter_checklist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginStart="8dp"
             android:fontFamily="@font/materialicons"
             android:text="checklist"
             android:textColor="#666666"
             android:textSize="20sp"
             android:padding="4dp"
             android:contentDescription="@string/records_filter_checklist_desc" />
-    </LinearLayout>
+    </FrameLayout>
 
     <!-- Floating dock for camera filter chips -->
     <LinearLayout
@@ -454,7 +460,7 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:gravity="center"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="2dp"
@@ -464,14 +470,14 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp"
             app:cardBackgroundColor="?attr/colorTopBar">
 
             <HorizontalScrollView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:scrollbars="none"
                 android:overScrollMode="never"
@@ -900,19 +906,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Fix Start: AppLock full-screen overlay (initially gone)  -->
-    <FrameLayout
-        android:id="@+id/applock_overlay"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="#000"
-        android:visibility="gone"
-        android:elevation="24dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-    <!--  Fix End: AppLock full-screen overlay -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

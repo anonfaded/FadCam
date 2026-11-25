@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Warm light source behind the hero, so the screen reads as lit rather than flat black. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="radial"
+        android:centerX="0.5"
+        android:centerY="0.1"
+        android:gradientRadius="420"
+        android:startColor="#3DF2C14E"
+        android:centerColor="#14F2C14E"
+        android:endColor="#00F2C14E" />
+</shape>

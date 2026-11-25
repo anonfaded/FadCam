@@ -22,6 +22,7 @@ import androidx.media3.ui.PlayerView;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.security.TabLock;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -43,6 +44,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private float currentScale = 1.0f;
     private float currentTranslationX = 0f;
     private float currentTranslationY = 0f;
+    /** De-duplicates the Tab Lock prompt while the viewer is resumed. */
+    private boolean tabLockPromptShowing;
     private boolean isPinching = false;
     private ImageButton resetZoomButton;
     // Shared preferences runtime sync helpers
@@ -208,6 +211,9 @@ public class VideoPlayerActivity extends AppCompatActivity {
         }
 
         super.onCreate(savedInstanceState);
+        // Sheets opened from the player are separate windows and would otherwise bring the
+        // status/navigation bars back over the fullscreen video.
+        com.fadcam.ui.utils.ImmersiveDialogs.install(this);
         setContentView(com.fadcam.R.layout.activity_video_player);
         
         // Ensure hardware volume buttons control media (STREAM_MUSIC) volume
@@ -237,11 +243,11 @@ public class VideoPlayerActivity extends AppCompatActivity {
         Uri videoUri = getIntent().getData();
             this.currentVideoUri = videoUri; // Store for later use
             final long requestedSeekMs = getIntent().getLongExtra(
-                com.fadcam.forensics.ui.ForensicsEventsFragment.EXTRA_OPEN_AT_MS,
+                com.fadcam.ForensicsConstants.EXTRA_OPEN_AT_MS,
                 -1L
             );
             openPausedFromForensics = getIntent().getBooleanExtra(
-                com.fadcam.forensics.ui.ForensicsEventsFragment.EXTRA_OPEN_PAUSED,
+                com.fadcam.ForensicsConstants.EXTRA_OPEN_PAUSED,
                 false
             );
 
@@ -1688,11 +1694,125 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
     private void setupInfoButton() {
         if (infoButton != null) {
-            infoButton.setOnClickListener(v -> {
-                PlayerInfoBottomSheetFragment sheet = PlayerInfoBottomSheetFragment.newInstance();
-                sheet.show(getSupportFragmentManager(), "player_info_sheet");
-            });
+            infoButton.setOnClickListener(v -> showVideoInfoSheet());
         }
+    }
+
+    /**
+     * Opens the same file-information bottom sheet used by the Records tab's
+     * overflow menu (three-dot menu -> Info).
+     */
+    private void showVideoInfoSheet() {
+        Uri uri = currentVideoUri != null ? currentVideoUri : getIntent().getData();
+        if (uri == null) {
+            Toast.makeText(this, R.string.toast_video_not_found, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            VideoInfoBottomSheet sheet = VideoInfoBottomSheet.newInstance(
+                    buildVideoItemForInfo(uri));
+            sheet.show(getSupportFragmentManager(), "video_info_bottom_sheet");
+        } catch (Exception e) {
+            FLog.e(TAG, "Error showing video info bottom sheet", e);
+            Toast.makeText(this, R.string.records_error_video_info, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * Builds the {@link VideoItem} that {@link VideoInfoBottomSheet} expects.
+     * The Records tab already has this metadata; when the player is opened
+     * directly (notification, forensics, external intent) we resolve it from
+     * the URI instead.
+     */
+    private VideoItem buildVideoItemForInfo(Uri uri) {
+        String displayName = getIntent().getStringExtra("item_display_name");
+        long size = 0L;
+        long lastModified = 0L;
+
+        if ("file".equals(uri.getScheme())) {
+            try {
+                java.io.File file = new java.io.File(uri.getPath());
+                if (displayName == null || displayName.isEmpty()) {
+                    displayName = file.getName();
+                }
+                if (file.exists()) {
+                    size = file.length();
+                    lastModified = file.lastModified();
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "Could not read file metadata for " + uri, e);
+            }
+        } else if ("content".equals(uri.getScheme())) {
+            android.database.Cursor cursor = null;
+            try {
+                // Null projection avoids IllegalArgumentException on providers that
+                // do not expose a particular column.
+                cursor = getContentResolver().query(uri, null, null, null, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    int nameIndex = cursor.getColumnIndex(
+                            android.provider.OpenableColumns.DISPLAY_NAME);
+                    if ((displayName == null || displayName.isEmpty())
+                            && nameIndex >= 0 && !cursor.isNull(nameIndex)) {
+                        displayName = cursor.getString(nameIndex);
+                    }
+                    int sizeIndex = cursor.getColumnIndex(
+                            android.provider.OpenableColumns.SIZE);
+                    if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) {
+                        size = cursor.getLong(sizeIndex);
+                    }
+                    int modifiedIndex = cursor.getColumnIndex(
+                            android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED);
+                    if (modifiedIndex >= 0 && !cursor.isNull(modifiedIndex)) {
+                        lastModified = cursor.getLong(modifiedIndex);
+                    }
+                    if (lastModified <= 0) {
+                        int dateModifiedIndex = cursor.getColumnIndex(
+                                android.provider.MediaStore.MediaColumns.DATE_MODIFIED);
+                        if (dateModifiedIndex >= 0 && !cursor.isNull(dateModifiedIndex)) {
+                            lastModified = cursor.getLong(dateModifiedIndex) * 1000L;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "Could not query content metadata for " + uri, e);
+            } finally {
+                if (cursor != null) {
+                    try {
+                        cursor.close();
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+
+            if (size <= 0) {
+                try (android.os.ParcelFileDescriptor pfd =
+                             getContentResolver().openFileDescriptor(uri, "r")) {
+                    if (pfd != null && pfd.getStatSize() > 0) {
+                        size = pfd.getStatSize();
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        if (displayName == null || displayName.isEmpty()) {
+            displayName = getFileName(uri);
+        }
+        if (displayName == null || displayName.isEmpty()) {
+            displayName = getString(R.string.video_info_unknown);
+        }
+
+        VideoItem.Category category = VideoItem.Category.UNKNOWN;
+        String categoryName = getIntent().getStringExtra("item_category");
+        if (categoryName != null) {
+            try {
+                category = VideoItem.Category.valueOf(categoryName);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+
+        return new VideoItem(uri, displayName, Math.max(size, 0L),
+                Math.max(lastModified, 0L), category);
     }
 
     @Override
@@ -2920,9 +3040,38 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
 
     // --- Lifecycle Management ---
+    /**
+     * The player is a full-screen extension of the Records tab. If the user
+     * returns to it after the app session re-locked, ask for the credential
+     * before showing the video again. Cancelling closes the player.
+     */
+    private void enforceTabLock() {
+        if (tabLockPromptShowing) return;
+        if (!TabLock.isLocked(this, TabLock.TAB_RECORDS)) return;
+        tabLockPromptShowing = true;
+        try {
+            if (player != null) player.pause();
+        } catch (Throwable ignored) {
+        }
+        TabLock.unlockDialog(this,
+                () -> {
+                    tabLockPromptShowing = false;
+                    // Unlock only the Records area this player belongs to.
+                    TabLock.markUnlocked(this, TabLock.TAB_RECORDS);
+                },
+                () -> {
+                    tabLockPromptShowing = false;
+                    finish();
+                })
+                .show();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
+        // A player left open in the task must not expose protected recordings
+        // after the app session re-locks.
+        enforceTabLock();
         // Keep screen on during playback if enabled in settings
         boolean keepAwake = SharedPreferencesManager.getInstance(
             this

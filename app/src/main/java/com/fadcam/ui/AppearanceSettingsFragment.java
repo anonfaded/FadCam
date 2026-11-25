@@ -63,6 +63,7 @@ public class AppearanceSettingsFragment extends Fragment {
         setupThemeRow(view);
         setupLanguageRow(view);
         setupAppIconRow(view);
+        setupSplashScreenRow(view);
         setupEyeColorRow(view);
         setupLogoRow(view);
         View backBtn = view.findViewById(R.id.back_button);
@@ -294,6 +295,10 @@ public class AppearanceSettingsFragment extends Fragment {
                                     ((MainActivity) requireActivity()).applyLanguage(
                                         code
                                     );
+                                    // applyLanguage recreates the activity, so this row's
+                                    // view and resources are about to be replaced. Writing
+                                    // the label here would use the outgoing locale's strings.
+                                    return;
                                 }
                             }
                             String[] langs = getResources().getStringArray(
@@ -551,11 +556,86 @@ public class AppearanceSettingsFragment extends Fragment {
         sheet.show(getParentFragmentManager(), "app_icon_picker_sheet");
     }
 
+    // -------------- Splash Screen picker -----------
+    private void setupSplashScreenRow(View root) {
+        View row = root.findViewById(R.id.row_splash_screen);
+        TextView value = root.findViewById(R.id.value_splash_screen);
+        if (row == null || value == null) return;
+        String current =
+            sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_SPLASH_STYLE,
+                Constants.SPLASH_STYLE_DEFAULT
+            );
+        setSplashStyleText(value, current);
+        row.setOnClickListener(v -> showSplashStylePicker(value));
+    }
+
+    private void setSplashStyleText(TextView value, String key) {
+        value.setText(
+            Constants.SPLASH_STYLE_FLAG.equals(key)
+                ? getString(R.string.splash_style_flag)
+                : getString(R.string.splash_style_avatar)
+        );
+    }
+
+    private void showSplashStylePicker(TextView valueView) {
+        final String resultKey = "picker_result_splash_style";
+        getParentFragmentManager().setFragmentResultListener(
+                resultKey,
+                this,
+                (k, b) -> {
+                    String id = b.getString(
+                        com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID
+                    );
+                    if (id != null) {
+                        sharedPreferencesManager.sharedPreferences
+                            .edit()
+                            .putString(Constants.PREF_SPLASH_STYLE, id)
+                            .apply();
+                        setSplashStyleText(valueView, id);
+                    }
+                }
+            );
+        java.util.ArrayList<com.fadcam.ui.picker.OptionItem> items =
+            new java.util.ArrayList<>();
+        items.add(
+            new com.fadcam.ui.picker.OptionItem(
+                Constants.SPLASH_STYLE_AVATAR,
+                getString(R.string.splash_style_avatar),
+                getString(R.string.splash_style_avatar_desc)
+            )
+        );
+        items.add(
+            new com.fadcam.ui.picker.OptionItem(
+                Constants.SPLASH_STYLE_FLAG,
+                getString(R.string.splash_style_flag),
+                getString(R.string.splash_style_flag_desc)
+            )
+        );
+        String current =
+            sharedPreferencesManager.sharedPreferences.getString(
+                Constants.PREF_SPLASH_STYLE,
+                Constants.SPLASH_STYLE_DEFAULT
+            );
+        com.fadcam.ui.picker.PickerBottomSheetFragment sheet =
+            com.fadcam.ui.picker.PickerBottomSheetFragment.newInstance(
+                getString(R.string.splash_screen_dialog_title),
+                items,
+                current,
+                resultKey,
+                getString(R.string.splash_screen_helper)
+            );
+        sheet.show(
+            getParentFragmentManager(),
+            "splash_style_picker_sheet"
+        );
+    }
+
     private void updateAppIcon(String iconKey) {
         PackageManager pm = requireContext().getPackageManager();
         ComponentName defaultIcon = new ComponentName(
             requireContext(),
-            "com.fadcam.SplashActivity"
+            "com.fadcam.MainActivity.DefaultIcon"
         );
         ComponentName alternativeIcon = new ComponentName(
             requireContext(),
@@ -780,13 +860,13 @@ public class AppearanceSettingsFragment extends Fragment {
     private static final java.util.LinkedHashMap<String, Integer> EYE_COLORS = new java.util.LinkedHashMap<>();
     static {
         EYE_COLORS.put("white",    0);           // no tint (default)
-        EYE_COLORS.put("ruby",     0xFFFF1744);  // Material Red A400
-        EYE_COLORS.put("cyan",     0xFF00E5FF);  // Material Cyan A400
-        EYE_COLORS.put("violet",   0xFFD500F9);  // Material Purple A400
-        EYE_COLORS.put("cobalt",   0xFF2979FF);  // Material Blue A400
-        EYE_COLORS.put("amber",    0xFFFFD740);  // Material Amber A200
-        EYE_COLORS.put("lime",     0xFF00E676);  // Material Green A400
-        EYE_COLORS.put("magenta",  0xFFF50057);  // Material Pink A400
+        EYE_COLORS.put("ruby",     0xFFE60012);  // crimson
+        EYE_COLORS.put("cyan",     0xFF00B8D4);  // Cyan A700
+        EYE_COLORS.put("violet",   0xFFAA00FF);  // Purple A700
+        EYE_COLORS.put("cobalt",   0xFF2962FF);  // Blue A700
+        EYE_COLORS.put("amber",    0xFFFFAB00);  // Amber A700
+        EYE_COLORS.put("lime",     0xFF00C853);  // Green A700
+        EYE_COLORS.put("magenta",  0xFFC51162);  // Pink A700
     }
 
     private void setupEyeColorRow(View root) {

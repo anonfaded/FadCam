@@ -37,7 +37,7 @@ public class MotionStateMachine {
         boolean triggered = policy.isTriggerSatisfied(settings, signal, state);
         switch (state) {
             case IDLE:
-                if (cooldownUntilMs > 0 && signal.getTimestampMs() < cooldownUntilMs) {
+                if (cooldownUntilMs >= 0 && signal.getTimestampMs() < cooldownUntilMs) {
                     return TransitionAction.NONE;
                 }
                 if (triggered) {
@@ -50,14 +50,14 @@ public class MotionStateMachine {
             case PENDING:
                 if (triggered) {
                     pendingLastTriggeredAtMs = signal.getTimestampMs();
-                } else if (pendingLastTriggeredAtMs > 0
+                } else if (pendingLastTriggeredAtMs >= 0
                         && signal.getTimestampMs() - pendingLastTriggeredAtMs <= DEFAULT_PENDING_LOSS_GRACE_MS) {
                     return TransitionAction.NONE;
                 } else {
                     resetToIdle();
                     return TransitionAction.NONE;
                 }
-                if (pendingSinceMs > 0 && signal.getTimestampMs() - pendingSinceMs >= settings.getDebounceMs()) {
+                if (pendingSinceMs >= 0 && signal.getTimestampMs() - pendingSinceMs >= settings.getDebounceMs()) {
                     state = MotionSessionState.RECORDING;
                     recordingStartedAtMs = signal.getTimestampMs();
                     return TransitionAction.START_RECORDING;
@@ -98,8 +98,8 @@ public class MotionStateMachine {
                     return TransitionAction.NONE;
                 }
                 postRollTriggeredSinceMs = -1L;
-                if (postRollUntilMs > 0 && signal.getTimestampMs() >= postRollUntilMs) {
-                    if (recordingStartedAtMs > 0
+                if (postRollUntilMs >= 0 && signal.getTimestampMs() >= postRollUntilMs) {
+                    if (recordingStartedAtMs >= 0
                             && signal.getTimestampMs() - recordingStartedAtMs < DEFAULT_MIN_CLIP_MS) {
                         // Respect minimum clip duration to avoid rapid flap.
                         postRollUntilMs = recordingStartedAtMs + DEFAULT_MIN_CLIP_MS;
@@ -123,5 +123,29 @@ public class MotionStateMachine {
         postRollTriggeredSinceMs = -1L;
         recordingLossSinceMs = -1L;
         recordingStartedAtMs = -1L;
+    }
+
+    /**
+     * Re-aligns the machine with a recording state that was changed outside it.
+     *
+     * <p>The machine kept running while the user manually paused. It walked on into
+     * POST_ROLL with an expiry timestamp, and the first analysed frame after a manual
+     * resume satisfied that already-expired timer and fired STOP_RECORDING — so
+     * motion recording appeared to stop working after a manual pause or resume.
+     *
+     * <p>Called when the user pauses or resumes directly, so the machine starts from
+     * the state the recorder is actually in.
+     *
+     * @param recording true when the file is actively recording
+     */
+    public void syncToRecording(boolean recording) {
+        pendingSinceMs = -1L;
+        pendingLastTriggeredAtMs = -1L;
+        postRollUntilMs = -1L;
+        postRollTriggeredSinceMs = -1L;
+        recordingLossSinceMs = -1L;
+        cooldownUntilMs = -1L;
+        recordingStartedAtMs = -1L;
+        state = recording ? MotionSessionState.RECORDING : MotionSessionState.IDLE;
     }
 }

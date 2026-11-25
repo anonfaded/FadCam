@@ -82,7 +82,7 @@
     <font color=\'#FFFFFF\' style=\'font-size:12sp;\'><b>Usato: </b></font>
     <font color=\'#D3D3D3\' style=\'font-size:11sp;\'>%s</font>
     ]]>\n</string>
-    <string name="stats_label_videos">Video:</string>
+    <string name="stats_label_videos">File:</string>
     <string name="stats_label_used">Usato:</string>
     <string name="button_start">Avvia</string>
     <string name="button_pause">Pausa</string>
@@ -163,7 +163,7 @@
     <string name="recording_controls_title">AF · Esposizione · Zoom</string>
     <string name="mainpage_camera_front">Fotocamera frontale</string>
     <string name="mainpage_camera_back">Fotocamera posteriore</string>
-    <string name="storage_available_space">Spazio disponibile</string>
+    <string name="storage_available_space">Spazio rimanente</string>
     <string name="recording_estimated_time">Tempo stimato</string>
     <string name="recording_time_left">Tempo rimanente</string>
     <string name="recording_elapsed_time">Tempo trascorso</string>
@@ -241,7 +241,7 @@
     <string name="home_time_left_color_helper">Scegli il colore dell\'accento per la riga del tempo rimanente. Rosso è il predefinito.</string>
     <string name="home_time_left_color_choice_desc">Colore accento %1$s</string>
     <string name="home_clock_customize_title">Aspetto orologio</string>
-    <string name="home_clock_customize_helper">Cambia la visualizzazione dell\'orologio, il colore e il formato dell\'ora.</string>
+    <string name="home_clock_customize_helper">Cambia la visualizzazione dell\'orologio, il colore, il formato dell\'ora e lo stile della data araba.</string>
     <string name="home_clock_display_option">Visualizzazione orologio</string>
     <string name="home_clock_display_option_desc">Scegli quali righe di data e ora appaiono nella scheda dell\'orologio</string>
     <string name="home_clock_display_helper">Scegli il layout utilizzato dalla scheda dell\'orologio.</string>
@@ -502,7 +502,7 @@
     <string name="nav_settings">Impostazioni</string>
     <string name="nav_about">Informazioni</string>
     <string name="nav_remote">Remoto</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
     <string name="nav_lab">Lab</string>
     <string name="button_settings_readme">Leggimi</string>
     <string name="setting_cam_title">Selezione fotocamera</string>
@@ -614,14 +614,6 @@
     <string name="ae_lock_helper">Quando abilitato, l\'auto-esposizione viene mantenuta alla luminosità corrente così la fotocamera non ri-regolerà l\'esposizione durante la registrazione. Usa il tile Esposizione per regolazioni manuali dell\'esposizione.</string>
     <string name="ae_lock_switch_label">Blocca AE</string>
     <string name="exposure_title">Compensazione esposizione (EV)</string>
-    <string-array name="easter_eggs_array">
-        <item>Allarme! Questa è un\'area riservata. Avvia la registrazione per ottenere l\'accesso.</item>
-        <item>Hai trovato il pulsante segreto! Non fa niente lol</item>
-        <item>Veloce! Il sistema sta per esplodere… o forse ha solo bisogno di una registrazione per calmarsi.</item>
-        <item>Beh, ora è imbarazzante…</item>
-        <item>Di che colore è la tua Bugatti?</item>
-        <item>Non sono stato programmato per fare quello che stai facendo. Aspetta, stai cercando di hackerarmi?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>DISCLAIMER</item>
         <item>FadCam raccoglie dati utente?</item>
@@ -676,7 +668,6 @@
     <string name="array_watermark_time_fadcam">Ora con FadCam</string>
     <string name="array_watermark_timeonly">Timestamp</string>
     <string name="array_watermark_nomark">Nessuna filigrana</string>
-    <string name="watermark_preview_funny">Davvero? :( \n    ＞﹏＜</string>
     <string name="toast_video_not_found">Errore: Video non trovato</string>
     <string name="quick_speed_title">Velocità rapida</string>
     <string name="quick_speed_option_default">2x (Predefinito)</string>
@@ -1029,13 +1020,6 @@
     <string name="shortcut_purpose_screenshot">Screenshot</string>
     <string name="widget_customize_action_label">Personalizza widget</string>
     <string name="widget_customize_action_subtitle">Modifica formato e stile del widget orologio</string>
-    <string-array name="torch_error_messages">
-        <item>La torcia sta compilando... per favore non aspettare 🖥️</item>
-        <item>La fotocamera dice: Niente flash oggi 🚦</item>
-        <item>Torcia.exe non risponde 🔦</item>
-        <item>Riparazione ritardata... Lo sviluppatore ha colpito un breakpoint mentale lol 🧠</item>
-        <item>Prossimamente™... Lo sviluppatore sta facendo debug della vita 🐛</item>
-    </string-array>
     <string name="more_options">Altre opzioni</string>
     <string name="records_options_title">Opzioni registrazioni</string>
     <string name="setting_theme_title">Tema</string>
@@ -1283,6 +1267,8 @@
     <string name="setting_video_stabilization_title">Stabilizzazione video</string>
     <string name="setting_not_supported">Non supportato su questo dispositivo</string>
     <string name="video_stabilization_footer">Mantiene stabili i tuoi video compensando il tremolio della mano con la stabilizzazione elettronica (EIS) e ottica (OIS). Per ottenerlo viene ritagliata una piccola parte dell\'inquadratura.</string>
+    <string name="video_stabilization_unsupported_banner">Stabilizzazione: non supportata sul tuo telefono patata. La colpa è dell\'hardware, non nostra.</string>
+    <string name="video_stabilization_unsupported_short">Non supportata</string>
     <string name="video_setting_location_embed_enabled">Abilitato</string>
     <string name="video_setting_location_embed_disabled">Disabilitato</string>
     <string name="helper_watermark_option">Scegli lo stile della filigrana per i tuoi video.</string>
@@ -1416,40 +1402,29 @@
     <string name="note_onboarding">Mostra la configurazione guidata all\'avvio dell\'app
 (Predefinito: Abilitato)</string>
     <string name="choose_language">Scegli lingua</string>
-    <string name="language_change_later_note">Puoi cambiare lingua in qualsiasi momento dalle Impostazioni.</string>
-    <string name="permissions_required">Permessi richiesti</string>
-    <string name="permissions_description">FadCam ha bisogno dei seguenti permessi per funzionare:</string>
-    <string name="grant_permissions">Concedi permessi</string>
-    <string name="permissions_note">I permessi vengono utilizzati solo per le funzionalità descritte. Nessun dato viene raccolto o condiviso.</string>
-    <string name="permissions_granted">Permessi concessi</string>
-    <string name="open_settings">Apri impostazioni</string>
-    <string name="disable_battery_optimization">Disabilita ottimizzazione batteria</string>
-    <string name="onboarding_human_title">Verifica umana</string>
-    <string name="onboarding_human_desc">Per assicurarci che tu sia umano, risolvi questo semplice problema:</string>
-    <string name="onboarding_human_checkbox1">Non sono un robot</string>
-    <string name="onboarding_human_checkbox2">Ho letto e accetto i termini</string>
-    <string name="onboarding_human_checkbox3">Capisco che FadCam è software open-source</string>
-    <string name="onboarding_human_button">Conferma e continua</string>
     <string name="trash_select_all">Seleziona tutto</string>
     <string name="location_permission_granted_manual_toggle">Posizione: %1$s</string>
     <string name="location_embedding_enabled">Incorporazione posizione abilitata</string>
     <string name="allow_location_access">Consenti accesso posizione</string>
     <string name="location_permission_message">FadCam utilizza i dati di posizione per aggiungere coordinate GPS o indirizzo alla filigrana video. La posizione viene utilizzata esclusivamente per questa funzionalità.</string>
     <string name="setting_applock_title">Blocco app</string>
-    <string name="setting_applock_desc">Proteggi FadCam con un PIN</string>
+    <string name="setting_applock_desc">Proteggi le schede selezionate con PIN, password o impronta digitale. Le schede protette si bloccano di nuovo quando l’app va in background o viene chiusa e devono essere sbloccate al ritorno.</string>
     <string name="setting_applock_configure">Configura blocco app</string>
     <string name="applock_dialog_title">Blocco app</string>
     <string name="applock_enable">Abilita blocco app</string>
     <string name="applock_disable">Disabilita blocco app</string>
     <string name="applock_set_pin">Imposta PIN</string>
-    <string name="applock_change_pin">Cambia PIN</string>
-    <string name="applock_remove_pin">Rimuovi PIN</string>
+    <string name="applock_change_pin">Cambia blocco</string>
+    <string name="applock_remove_pin">Rimuovi blocco</string>
     <string name="applock_pin_created">PIN creato con successo</string>
     <string name="applock_pin_removed">PIN rimosso</string>
-    <string name="applock_set_pin_enable">Imposta e abilita</string>
-    <string name="applock_helper_create">Imposta un PIN per proteggere FadCam.</string>
-    <string name="applock_helper_manage_disabled">Abilita il blocco app per proteggere FadCam con un PIN.</string>
-    <string name="applock_helper_enabled">Il blocco app è attualmente attivo.</string>
+    <string name="applock_set_pin_enable">Configura e abilita</string>
+    <string name="applock_helper_create">Crea una protezione per le schede scelte con un PIN di 4 cifre, una password o un’impronta digitale. Si bloccheranno automaticamente quando l’app va in background.</string>
+    <string name="applock_helper_manage_disabled">Il PIN di Blocco schede è impostato. Attivalo per richiedere il PIN sulle schede selezionate.</string>
+    <string name="applock_helper_enabled">Il Blocco schede è attivo. Le schede selezionate richiedono il PIN dopo aver lasciato l’app. Registrazioni è protetto per impostazione predefinita.</string>
+    <string name="tab_lock_screen_title">Bloccato</string>
+    <string name="tab_lock_screen_message">Sblocca per continuare</string>
+    <string name="tab_lock_unlock">Sblocca</string>
     <string name="applock_verify_to_enable">Verifica identità per abilitare il blocco app</string>
     <string name="applock_verify_to_disable">Verifica identità per disabilitare il blocco app</string>
     <string name="applock_verify_to_change">Verifica identità per cambiare il PIN</string>
@@ -1644,7 +1619,6 @@
     <string name="forensics_copy_done">Dettagli prova copiati</string>
     <string name="digital_forensics_preview_title">Anteprima rilevazione live</string>
     <string name="digital_forensics_preview_subtitle">Anteprima overlay simulata</string>
-    <string name="digital_forensics_preview_default">PERSONA 92%%</string>
     <string name="settings_watermark_subtitle">Modalità overlay marchio</string>
     <string name="prefs_import_export_title">Importa / Esporta</string>
     <string name="prefs_import_export_subtitle">Backup, ripristino, reset</string>
@@ -1672,18 +1646,6 @@
     <string name="storage_icon_description">Icona archiviazione</string>
     <string name="location_icon_description">Icona posizione</string>
     <string name="location_embedding_icon_description">Icona incorporazione posizione</string>
-    <string name="onboarding_swipe_instruction">Scorri verso destra per continuare</string>
-    <string name="onboarding_select_language">Seleziona lingua preferita.</string>
-    <string name="onboarding_camera">Fotocamera</string>
-    <string name="onboarding_microphone">Microfono</string>
-    <string name="onboarding_storage">Archiviazione</string>
-    <string name="onboarding_or">OPPURE</string>
-    <string name="onboarding_and">E</string>
-    <string name="onboarding_open_settings">Apri impostazioni</string>
-    <string name="onboarding_intro_line1">un registratore multimediale</string>
-    <string name="onboarding_intro_line2">video in background, schermo e live streaming</string>
-    <string name="onboarding_intro_line3">controllo remoto fotocamera</string>
-    <string name="onboarding_intro_line4">open-source. senza pubblicità. tuo.</string>
     <string name="sort_by">Ordina per</string>
     <string name="records_sort_helper">Scegli ordinamento registrazioni.</string>
     <string name="records_sort_order_title">Ordinamento</string>
@@ -1849,6 +1811,7 @@
     <string name="name_your_project">Nome progetto</string>
     <string name="project_naming_message">Dai un nome al progetto.</string>
     <string name="fadrec_projects">Progetti FadRec</string>
+    <string name="fadrec_projects_location">I progetti vengono salvati nello spazio privato dell\'app</string>
     <string name="delete_project">Elimina progetto</string>
     <string name="delete_all">Elimina tutto</string>
     <string name="new_project">Nuovo progetto</string>
@@ -1877,8 +1840,6 @@
     <string name="fadcam_pro_feature_app_name">Nome app personalizzato</string>
     <string name="fadcam_pro_feature_faddrive">Sincronizzazione FadDrive</string>
     <string name="fadcam_pro_header_button">Ottieni Pro</string>
-    <string name="player_info_title">Info lettore video</string>
-    <string name="player_info_content">Codec supportati, risoluzione, bitrate, FPS.</string>
     <string name="codec_hevc_incompatible_title">H.265 non supportato per live streaming</string>
     <string name="codec_hevc_incompatible_message">H.265 non è compatibile con HLS. Passa a H.264.</string>
     <string name="codec_switch_and_record">Passa a H.264 e registra</string>
@@ -2144,6 +2105,8 @@
     <string name="screen_rec_settings_subtitle">Qualità e FPS</string>
     <string name="screen_rec_resolution">Risoluzione</string>
     <string name="screen_rec_framerate">FPS</string>
+    <string name="screen_rec_codec">Codec</string>
+    <string name="note_screen_codec">Scegli il codec per la registrazione dello schermo\n(Predefinito: %1$s)\nSuggerimento: H.265 (HEVC) produce file più piccoli a parità di qualità. Se questo dispositivo non dispone di un encoder HEVC utilizzabile, FadCam registra automaticamente in H.264.</string>
     <string name="screen_rec_bitrate">Bitrate</string>
     <string name="screen_rec_orientation">Orientamento</string>
     <string name="screen_rec_bitrate_mode_auto">Auto</string>
@@ -2353,7 +2316,6 @@
     <string name="app_icon_football" translatable="false">FootballX 2024</string>
     <string name="app_icon_car" translatable="false">ClutchX</string>
     <string name="app_icon_jet" translatable="false">JF-17: ThunderX</string>
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
     <string name="app_icon_minimal" translatable="false">FadCam</string>
     <string name="home_sidebar_copyright" translatable="false">© FadSec Lab 2024 – 2026</string>
     <string name="export_center">Centro Esportazione</string>
@@ -2527,6 +2489,10 @@
     <string name="mini_apps_qr_scanner_reference">Riferimento scanner QR</string>
 
     <string name="screen_recording_title">Registrazione schermo</string>
+    <string name="qs_tile_fadrec_subtitle">Registra schermo</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">Registrazione</string>
+    <string name="qs_tile_fadrec_paused">In pausa</string>
 
     <string name="screen_recording_notif_title">FadRec - Registrazione schermo</string>
 
@@ -2603,6 +2569,13 @@
     <string name="setting_theme">Tema</string>
     <string name="setting_language">Lingua</string>
     <string name="setting_app_icon">Icona app</string>
+    <string name="setting_splash_screen">Schermata iniziale</string>
+    <string name="splash_screen_dialog_title">Scegli schermata iniziale</string>
+    <string name="splash_screen_helper">Scegli cosa mostra FadCam all\'avvio.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">L\'avatar si sveglia, si addormenta e si posa nella Home</string>
+    <string name="splash_style_flag">Bandiera FadSec Lab</string>
+    <string name="splash_style_flag_desc">Schermata iniziale classica con bandiera</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Attivato</string>
@@ -2905,4 +2878,280 @@
     <!-- Trash: Show in Settings toggle -->
     <string name="trash_show_in_settings_title">Mostra nelle Impostazioni</string>
     <string name="trash_show_in_settings_desc">Aggiunge una riga Cestino alla pagina Impostazioni per accesso rapido</string>
+    <string name="fadcam_full_title">FadCam Power User</string>
+    <string name="fadcam_full_subtitle">Controllo remoto, registrazione su movimento, analisi forense e altro. Prova la versione completa.</string>
+    <string name="github_get_on">Scarica su</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Usi FadCam da %1$s</string>
+    <string name="app_usage_since_install_title">Usi FadCam da</string>
+
+
+    <string name="app_age_a_while">un po’</string>
+    <string name="app_usage_installed_on">Installato il</string>
+    <string name="pro_dossier_header">FADSEC LAB // DOSSIER INTERNO</string>
+    <string name="pro_dossier_eyes_only">RISERVATO</string>
+    <string name="pro_dossier_subject">OGGETTO // PROTOCOLLO DI UPGRADE</string>
+    <string name="pro_dossier_file_no">N. FASCICOLO</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">AUTORIZZAZIONE</string>
+    <string name="pro_dossier_clearance_value">PUBBLICO / GRATUITO</string>
+    <string name="pro_dossier_status">STATO</string>
+    <string name="pro_dossier_status_value">IN ATTESA DI CONFERMA</string>
+    <string name="pro_dossier_ref">RIF.: FADSEC/PR-07</string>
+    <string name="pro_dossier_page">PAGINA 1/1</string>
+    <string name="pro_dossier_drag">TRASCINA PER ISPEZIONARE // FRONTE</string>
+    <string name="pro_dossier_cycle">CICLO %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // RAPPORTO POST-AZIONE</string>
+    <string name="pro_dossier_after_stamp">DEBRIEFING</string>
+    <string name="pro_dossier_after_subject">OGGETTO // CONTATTO SETTIMANALE</string>
+    <string name="pro_dossier_after_status">DISPOSIZIONE</string>
+    <string name="pro_dossier_after_status_value">CONFERMA RICHIESTA</string>
+    <string name="pro_dossier_after_ref">RIF.: FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">Capito</string>
+    <string name="pro_reminder_intro_title">Prima che Pro diventi drammatico</string>
+    <string name="pro_reminder_intro_subtitle">Usi FadCam da %1$s. Ecco cosa offre Pro.</string>
+    <string name="pro_reminder_title_1">Abbiamo un passato</string>
+    <string name="pro_reminder_title_2">Pro sta diventando geloso</string>
+    <string name="pro_reminder_title_3">Indovina chi è tornato</string>
+    <string name="pro_reminder_title_4">Ora è una cosa nostra</string>
+    <string name="pro_reminder_title_5">Fai finta di essere sorpreso</string>
+    <string name="pro_reminder_title_6">Stessa ora la prossima settimana?</string>
+    <string name="pro_reminder_subtitle_1">%1$s con FadCam, e non hai ancora conosciuto Pro.</string>
+    <string name="pro_reminder_subtitle_2">Usi FadCam da %1$s. Pro inizia a sentirsi trascurato.</string>
+    <string name="pro_reminder_subtitle_3">%1$s con FadCam. Sono tornato per ricordarti di Pro.</string>
+    <string name="pro_reminder_subtitle_4">%1$s con FadCam. Anche Pro vorrebbe un po\' di attenzione.</string>
+    <string name="pro_reminder_subtitle_5">%1$s dentro, ed eccomi di nuovo. Ho portato Pro.</string>
+    <string name="pro_reminder_subtitle_6">Sono passati %1$s. Pro ti saluta. Di nuovo.</string>
+    <string name="pro_reminder_notification_title_1">Pro si sente trascurato</string>
+    <string name="pro_reminder_notification_title_2">Una piccola interruzione</string>
+    <string name="pro_reminder_notification_title_3">Pro è entrato nella chat</string>
+    <string name="pro_reminder_notification_title_4">Indovina chi è tornato</string>
+    <string name="pro_reminder_notification_body_1">%1$s insieme. A Pro piacerebbe un saluto veloce.</string>
+    <string name="pro_reminder_notification_body_2">Tranquillo, non è urgente. Pro dice solo ciao.</string>
+    <string name="pro_reminder_notification_body_3">Sono passati %1$s. Pronto per un\'occhiata veloce?</string>
+    <string name="pro_reminder_notification_body_4">Di nuovo io. Pro promette che sarà veloce.</string>
+    <string name="pro_reminder_button_continue">Continua</string>
+    <string name="pro_reminder_button_countdown">Continua tra %1$ds</string>
+    <string name="pro_reminder_back_toast_1">Bel tentativo. Continua è proprio lì.</string>
+    <string name="pro_reminder_back_toast_2">Colpo di scena: Indietro non è l\'uscita.</string>
+    <string name="pro_reminder_back_toast_3">Quasi fuggito. Basta toccare Continua.</string>
+    <string name="pro_reminder_after_title">Passa a Pro e smetterò finalmente di disturbarti. Per sempre.</string>
+    <string name="pro_reminder_after_got_it">Ho capito</string>
+    <string name="pro_reminder_notification_channel_name">Promemoria Pro</string>
+    <string name="pro_reminder_notification_channel_description">Promemoria settimanali su FadCam Pro. Non mostrati in Pro.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">Torno tra %1$d giorno. Goditi la pace finché dura.</item>
+        <item quantity="other">Torno tra %1$d giorni. Goditi la pace finché dura.</item>
+    </plurals>
+    <string name="follow_on_x">Segui su X</string>
+    <string name="pro_screen_active">Attivo</string>
+    <string name="pro_screen_calc_desc">Un\'app separata che sembra una calcolatrice.</string>
+    <string name="pro_screen_calc_feature">App calcolatrice</string>
+    <string name="pro_screen_calculator">Calcolatrice</string>
+    <string name="pro_screen_claim_body">Basato sulla pipeline Hybrid MP4 esclusiva di FadCam — progettata su misura per Android per mantenere le registrazioni riproducibili dopo crash, batteria scarica e spegnimenti improvvisi, fino all\'ultimo secondo.</string>
+    <string name="pro_screen_claim_title">Il registratore video in background n. 1</string>
+    <string name="pro_screen_cloud">Sincronizzazione FadDrive</string>
+    <string name="pro_screen_cloud_desc">Esegui il backup sicuro delle registrazioni nel nostro cloud crittografato.</string>
+    <string name="pro_screen_coming_soon_status">In arrivo</string>
+    <string name="pro_screen_compare">Scopri cosa è incluso</string>
+    <string name="pro_screen_compare_hint">Scorri per confrontare le edizioni</string>
+    <string name="pro_screen_compare_owned">Le tue funzioni Pro</string>
+    <string name="pro_screen_custom_icon">Icona app personalizzata</string>
+    <string name="pro_screen_custom_icon_desc">Scegli la tua icona per l\'app.</string>
+    <string name="pro_screen_custom_name">Nome app personalizzato</string>
+    <string name="pro_screen_custom_name_desc">Scegli il tuo nome per l\'app.</string>
+    <string name="pro_screen_direct_support">Supporto dello sviluppatore</string>
+    <string name="pro_screen_direct_support_desc">Ricevi aiuto dallo sviluppatore su Discord.</string>
+        <string name="pro_screen_support_title">Altri modi per sostenere</string>
+    <string name="pro_screen_support_body">Pro non ti interessa? Puoi comunque sostenere FadCam con Patreon o donazioni in criptovaluta. Ogni contributo ci aiuta a creare più software libero e open source.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Donazioni singole o abbonamenti mensili.</string>
+    <string name="pro_screen_crypto_title">Donazioni in criptovaluta</string>
+    <string name="pro_screen_crypto_desc">Contattaci su Discord o via email.</string>
+    <string name="pro_screen_stay_connected_title">Resta in contatto</string>
+    <string name="pro_screen_stay_connected_body">Domande, feedback o solo voglia di salutare? Ci farebbe piacere sentirti.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">Email</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">Richiesta di assistenza FadCam</string>
+    <string name="pro_screen_everything">Tutte le funzioni gratuite</string>
+    <string name="pro_screen_everything_desc">Tutto ciò che è nella versione gratuita è incluso.</string>
+    <string name="pro_screen_fan_desc">Credi in un futuro di app e soluzioni open source che mettono la privacy al primo posto.</string>
+    <string name="pro_screen_fan_feature">Ami la privacy</string>
+    <string name="pro_screen_features">Funzioni</string>
+    <string name="pro_screen_free">Gratis</string>
+    <string name="pro_screen_included">Incluso</string>
+    <string name="pro_screen_link_error">Impossibile aprire il link. Verifica che sia disponibile un browser e riprova.</string>
+    <string name="pro_screen_navigation">Esplora Pro</string>
+    <string name="pro_screen_navigation_owned">Il tuo Pro</string>
+    <string name="pro_screen_no_ads">Niente pubblicità né tracciamento</string>
+    <string name="pro_screen_no_ads_desc">Nessuna pubblicità. Nessun tracciamento. Nessuna raccolta di log di crash.</string>
+    <string name="pro_screen_no_nags">Nessun promemoria di upgrade</string>
+    <string name="pro_screen_no_nags_desc">Nessun promemoria settimanale per passare a Pro.</string>
+    <string name="pro_screen_not_included">Non incluso</string>
+    <string name="pro_screen_notes">Note</string>
+    <string name="pro_screen_notes_desc">Un\'app separata che sembra un\'app di note.</string>
+    <string name="pro_screen_notes_feature">App Note</string>
+    <string name="pro_screen_notification">Icone delle notifiche</string>
+    <string name="pro_screen_notification_desc">Scegli un\'icona diversa per le notifiche di registrazione.</string>
+    <string name="pro_screen_owned_status">%1$s · Attivo in questa app</string>
+    <string name="pro_screen_owned_subtitle">Incluso con questa edizione</string>
+    <string name="pro_screen_owned_title">%1$s è attivo</string>
+    <string name="pro_screen_price_detail">3 app Pro private · Aggiornamenti a vita</string>
+    <string name="pro_screen_price_terms">Acquisto una tantum</string>
+    <string name="pro_screen_privacy_body">Crediamo che la privacy debba essere per tutti. Per questo FadCam non ha pubblicità, tracker o raccolta dati. Non raccogliamo nemmeno automaticamente i rapporti di crash.\n\nSiamo 100% open source, così puoi vedere come funziona l\'app. Le funzioni essenziali per la privacy non saranno mai bloccate dietro un pagamento.</string>
+    <string name="pro_screen_privacy_title">Privacy oggi. Domani. Per sempre.</string>
+    <string name="pro_screen_purchase">Sblocca il Pro Bundle</string>
+    <string name="pro_screen_purchase_caption">Apre il negozio FadSec Lab</string>
+    <string name="pro_screen_scroll_hint">Scorri per altro</string>
+    <string name="pro_screen_scroll_top">Torna su</string>
+    <string name="pro_screen_soon">Presto</string>
+    <string name="pro_screen_soon_legend">I livelli Pro+ e Lab arriveranno presto.</string>
+    <string name="pro_screen_status_description">%1$s: %2$s</string>
+    <string name="pro_screen_tier">Pro</string>
+    <string name="pro_screen_tier_lab">Lab</string>
+    <string name="pro_screen_tier_plus">Pro+</string>
+    <string name="pro_screen_title">FadCam Pro</string>
+    <string name="pro_screen_updates">Aggiornamenti anticipati</string>
+    <string name="pro_screen_updates_desc">Ricevi le nuove versioni circa 60 giorni prima di tutti gli altri.</string>
+    <string name="pro_screen_weather">Meteo</string>
+    <string name="pro_screen_weather_desc">Un\'app separata che sembra un\'app meteo.</string>
+    <string name="pro_screen_weather_feature">App Meteo</string>
+    <string name="pro_screen_why_pro_body">FadCam Free include già funzioni per cui molte altre app fanno pagare. Crediamo che un software utile non debba andare a scapito della tua privacy.\n\nSe trovi FadCam prezioso e vuoi sostenere il nostro lavoro, Pro è un modo per ricambiare ricevendo ancora di più: tre app private autonome, aggiornamenti anticipati e altri extra, oltre a tutto ciò che FadCam Free offre già.\n\nIl tuo supporto ci aiuta anche a continuare a creare app e soluzioni open source che mettono la privacy al primo posto in FadSec Lab.</string>
+    <string name="pro_screen_why_pro_title">Allora perché Pro?</string>
+    <string name="pro_screen_bundle">Tre app private.
+Tue per sempre.</string>
+    <string name="pro_showcase_label">PACCHETTO PRO</string>
+    <string name="pro_showcase_supporting">Installa tutte e tre separatamente, con aggiornamenti a vita.</string>
+    <string name="pro_showcase_meta">Installazioni separate · Aggiornamenti a vita</string>
+    <string name="pro_showcase_chip_installs">Tre app autonome</string>
+    <string name="pro_showcase_chip_updates">Aggiornamenti a vita inclusi</string>
+    <string name="pro_showcase_chip_entry">Interfacce delle app camuffate</string>
+    <string name="pro_showcase_soon">PRESTO</string>
+    <string name="pro_showcase_hint">Sblocca ed esplora le app.</string>
+    <string name="pro_showcase_expand_desc">Apri il telefono a schermo intero</string>
+    <string name="pro_showcase_collapse_desc">Esci dallo schermo intero</string>
+    <string name="pro_showcase_phone_desc">Modello del dispositivo FadSec Lab. Lo schermo mostra le tre app Pro. Trascina di lato per ruotare il telefono.</string>
+    <string name="pro_showcase_privacy_mark">Privacy per design</string>
+    <string name="pro_showcase_notes_hint">Digita per aggiungere una nota</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Umidità</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Vento</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Riavvia</string>
+    <string name="pro_showcase_torch">Torcia</string>
+    <string name="pro_showcase_access_title">Fotocamera e microfono</string>
+    <string name="pro_showcase_access_body">L\'app Meteo sta usando fotocamera e microfono in questa anteprima. È una demo delle notifiche discrete di FadCam: non viene registrato nulla.</string>
+    <string name="pro_showcase_access_ok">Ho capito</string>
+    <string name="pro_showcase_shutting_down">Spegnimento…</string>
+    <string name="pro_showcase_starting">Avvio</string>
+    <string name="pro_showcase_power_menu_title">Riavviare il dispositivo?</string>
+    <string name="pro_showcase_power_menu_body">Questo riavvia il dispositivo di anteprima.</string>
+    <string name="pro_showcase_power_menu_cancel">Annulla</string>
+    <string name="pro_showcase_recents_hint">Tocca per riaprire</string>
+    <string name="pro_showcase_recents_empty">Nessuna app recente</string>
+    <string name="pro_showcase_fullscreen_hint">Trascina per ruotare · Tocca un\'app</string>
+    <string name="pro_showcase_weather_line">Soleggiato · 24°</string>
+    <string name="pro_showcase_notif_now">ora</string>
+    <string name="pro_showcase_swipe_unlock">Scorri verso l\'alto per sbloccare</string>
+    <string name="fadcam_pro_price_amount">$49</string>
+    <!-- Onboarding (redesigned) -->
+    <string name="permissions_required">Alcune autorizzazioni</string>
+    <string name="permissions_description">FadCam ha bisogno di alcune autorizzazioni per registrare e salvare i tuoi video.</string>
+    <string name="grant_permissions">Concedi autorizzazioni</string>
+    <string name="permissions_note">Devi concedere tutte le autorizzazioni per continuare.</string>
+    <string name="permissions_granted">Tutte le autorizzazioni concesse. Puoi iniziare!</string>
+    <string name="disable_battery_optimization">Disattiva ottimizzazione batteria</string>
+    <string name="battery_optimization_disabled">Ottimizzazione batteria disattivata</string>
+    <string name="onboarding_human_title">Le regole di casa</string>
+    <string name="onboarding_human_desc">Due cose veloci e sei dentro. Se non accetti, disinstalla FadCam subito.</string>
+    <string name="onboarding_human_button">Fammi entrare!</string>
+    <string name="onboarding_permissions_section">Autorizzazioni</string>
+    <string name="onboarding_battery_section">Batteria</string>
+    <string name="onboarding_permission_granted">Concesso</string>
+    <string name="onboarding_permission_required">Richiesto</string>
+    <string name="onboarding_human_agreement_responsible">Userò FadCam in modo responsabile e rispetterò la privacy degli altri.</string>
+    <string name="onboarding_human_agreement_legal">Accetto i %1$s e riconosco la %2$s.</string>
+    <string name="onboarding_terms_of_use">Termini di utilizzo</string>
+    <string name="onboarding_privacy_policy">Informativa sulla privacy</string>
+    <string name="onboarding_cred_open">Open source</string>
+    <string name="onboarding_cred_ads">Nessuna pubblicità</string>
+    <string name="onboarding_cred_track">Nessun tracker</string>
+    <string name="onboarding_mini_torch">Torcia</string>
+    <string name="onboarding_mini_torch_desc">Torcia, strobo e modalità SOS.</string>
+    <string name="onboarding_mini_qr">Scanner QR</string>
+    <string name="onboarding_mini_qr_desc">Scansiona codici QR e salva le scansioni in Registrazioni.</string>
+    <string name="onboarding_permissions_kicker">ACCESSO // RICHIESTO</string>
+    <string name="onboarding_human_kicker">GIURAMENTO // REGOLE D\'USO</string>
+    <string name="onboarding_dossier_kicker">FADCAM // REGISTRATORE PRIVATO</string>
+    <string name="onboarding_dossier_title">Il registratore video in background numero 1.</string>
+    <string name="onboarding_dossier_lede">Basato sulla pipeline Hybrid MP4 di FadCam. Le tue registrazioni sopravvivono a crash, batterie scariche e spegnimenti improvvisi — riproducibili fino all\'ultimo secondo.</string>
+    <string name="onboarding_capabilities_kicker">FADCAM // SUITE MULTIMEDIALE</string>
+    <string name="onboarding_capabilities_title">È ora di disinstallare\nqualche app.</string>
+    <string name="onboarding_capabilities_lede">FadCam fa anche il loro lavoro. Sì, tutto questo. Senza tracker né dark pattern.</string>
+    <string name="onboarding_feature_background_title">Registrazione in background</string>
+    <string name="onboarding_feature_background_desc">Registra anche a schermo spento, grazie alla tecnologia Hybrid MP4 resistente ai crash.</string>
+    <string name="onboarding_feature_screen_title">Registrazione schermo</string>
+    <string name="onboarding_feature_screen_desc">Registra lo schermo con strumenti di disegno, livelli e pagine.</string>
+    <string name="onboarding_feature_editor_title">Editor video</string>
+    <string name="onboarding_feature_editor_desc">Taglia, dividi, ritaglia, duplica o silenzia le clip.</string>
+    <string name="onboarding_feature_motion_title">Rilevamento del movimento</string>
+    <string name="onboarding_feature_motion_desc">Registra solo quando rileva movimento. Si mette in pausa quando si ferma.</string>
+    <string name="onboarding_feature_forensic_title">Intelligenza forense</string>
+    <string name="onboarding_feature_forensic_desc">L\'IA sul dispositivo rileva persone e oggetti. Salvati come prove.</string>
+    <string name="onboarding_feature_remote_title">CCTV remoto</string>
+    <string name="onboarding_feature_remote_desc">Trasforma il telefono in una telecamera a circuito chiuso (CCTV). Trasmetti in diretta e controllala da remoto.</string>
+    <string name="onboarding_feature_bodycam_solo_title">Bodycam</string>
+    <string name="onboarding_feature_bodycam_solo_desc">Indossala per sicurezza personale e registrazione a mani libere.</string>
+    <string name="onboarding_feature_dashcam_title">Dashcam</string>
+    <string name="onboarding_feature_dashcam_desc">Registra la strada o i motovlog in modo fluido con la stabilizzazione video.</string>
+    <string name="onboarding_scroll_hint">Scorri per vedere altro</string>
+    <string name="onboarding_scroll_short">Scorri</string>
+    <string name="onboarding_back">Indietro</string>
+    <string name="onboarding_next">Avanti</string>
+    <string name="onboarding_done">Fatto</string>
+    <string name="onboarding_mini_heading">E non abbiamo ancora finito.</string>
+    <string name="onboarding_mini_support">Mini app. Strumenti quotidiani, integrati in FadCam.</string>
+    <string name="onboarding_mini_more">Altre mini app in arrivo.</string>
+    <string name="onboarding_payoff_title">%1$d lavori. Un solo FadCam.</string>
+    <string name="onboarding_payoff_support">È ora di dire addio a quelle app in più.</string>
+    <string name="onboarding_lite_full_note">FadCam Full sostituisce 10 app.</string>
+    <string name="onboarding_demo_person">PERSONA</string>
+    <string name="onboarding_demo_evidence_gallery">GALLERIA PROVE</string>
+    <string name="onboarding_demo_saved">SALVATO</string>
+    <string name="onboarding_demo_car">AUTO</string>
+    <string name="onboarding_demo_knife">COLTELLO</string>
+    <string name="onboarding_swipe_instruction">Scorri per continuare</string>
+    <string name="onboarding_camera">Fotocamera</string>
+    <string name="onboarding_microphone">Microfono</string>
+    <string name="onboarding_storage">Archiviazione</string>
+    <string name="onboarding_open_settings">Apri impostazioni</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Ciao!</string>
+    <string name="zoom_lens_unavailable_banner">Questo telefono non espone la fotocamera ultra-grandangolare alle app. Lo zoom sotto 1.0x resterà a 1.0x.</string>
+    <string name="records_display_group_title">Visualizzazione</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Senza titolo</string>
+    <string name="faditor_rename_project">Nome progetto</string>
+    <string name="faditor_rename_hint">Nome progetto</string>
+    <string name="faditor_rename_action">Rinomina</string>
+    <string name="faditor_rename_subtitle">Usato per il file esportato</string>
+    <string name="faditor_rename_helper">Il video esportato viene salvato con questo nome.</string>
+    <string name="faditor_export_name_preview">Salvato come: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Nessuna clip sotto il cursore di riproduzione</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Usa un’impronta registrata in Android per proteggere questa app.</string>
+    <string name="applock__description_unlock_fingerprint">Tocca il sensore di impronte</string>
+    <string name="applock__create_chooser_option_fingerprint">Impronta digitale</string>
+    <string name="applock__fingerprint_error_not_enrolled">L’impronta non è ancora attiva in FadCam. Apri Blocco schede e configurala.</string>
+    <string name="applock__fingerprint_error_unrecognized">La tua impronta non è stata riconosciuta.</string>
+    <string name="applock__fingerprint_error_unknown">Impossibile completare l’accesso con impronta. Riprova o configurala nelle impostazioni Android.</string>
+    <string name="applock__fingerprint_error_none">Nessuna impronta è ancora configurata in Android. Aggiungine una nelle impostazioni Android e riprova.</string>
+    <string name="applock__fingerprint_error_hardware">L’impronta non è disponibile ora. Configura un’impronta nelle impostazioni Android e riprova.</string>
+    <string name="applock__action_settings">Apri impostazioni Android</string>
+    <string name="watermark_preview_funny">Davvero? :( \n    ＞﹏＜</string>
 </resources>

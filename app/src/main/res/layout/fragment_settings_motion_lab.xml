@@ -160,17 +160,40 @@
                         android:textColor="#7CFF8A"
                         android:textSize="11sp" />
 
-                    <ImageView
-                        android:id="@+id/image_motion_debug_frame"
+                    <TextView
+                        android:id="@+id/value_motion_debug_source"
                         android:layout_width="match_parent"
-                        android:layout_height="130dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="monospace"
+                        android:textColor="#7CFF8A"
+                        android:textSize="11sp" />
+
+                    <!-- The monitor shows the Motion Lab animation from onboarding,
+                         not a camera frame. A live frame here meant copying the YUV
+                         buffer, encoding a JPEG, broadcasting it, decoding it and
+                         drawing an overlay several times a second — measurable CPU,
+                         bandwidth and heat for a screen nobody records. This view
+                         costs nothing when it is not on screen. -->
+                    <!-- Wrapper pins the view to the scene's own 168:92 ratio (0.5476)
+                         so the drawing fills the card instead of being letterboxed by
+                         AnimationView's fit-inside scaling. Same structure the
+                         onboarding slide uses. -->
+                    <com.fadcam.ui.widgets.AspectRatioFrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:background="@drawable/motion_lab_frame_bg"
                         android:clipToOutline="true"
-                        android:contentDescription="@string/motion_lab_debug_frame"
-                        android:scaleType="center"
-                        android:src="@drawable/ic_photo"
-                        android:tint="#33888888" />
+                        app:aspectRatio="0.5476">
+
+                        <com.fadcam.ui.animations.AnimationView
+                            android:id="@+id/animation_motion_debug"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:contentDescription="@string/motion_lab_debug_frame"
+                            app:sceneType="motion" />
+                    </com.fadcam.ui.widgets.AspectRatioFrameLayout>
                 </LinearLayout>
 
                 <LinearLayout
@@ -221,7 +244,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_focus_target"
+                        android:src="@drawable/ic_motion_monitor"
                         android:tint="@android:color/darker_gray" />
 
                     <LinearLayout
@@ -257,7 +280,7 @@
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
-                    android:id="@+id/row_motion_sensitivity"
+                    android:id="@+id/row_motion_trigger_mode"
                     style="@style/SettingsGroupRow">
 
                     <ImageView
@@ -265,6 +288,43 @@
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_focus_target"
+                        android:tint="@android:color/darker_gray" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/motion_lab_trigger_mode"
+                        android:textColor="?attr/colorHeading"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/value_motion_trigger_mode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="13sp" />
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
+                </LinearLayout>
+
+                <View style="@style/SettingsDivider" />
+
+                <LinearLayout
+                    android:id="@+id/row_motion_sensitivity"
+                    style="@style/SettingsGroupRow">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_lens"
                         android:tint="@android:color/darker_gray" />
 
                     <TextView
@@ -294,6 +354,45 @@
                 <View style="@style/SettingsDivider" />
 
                 <LinearLayout
+                    android:id="@+id/row_motion_ai_interval"
+                    style="@style/SettingsGroupRow">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_schedule"
+                        android:tint="@android:color/darker_gray" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/motion_lab_ai_interval"
+                        android:textColor="?attr/colorHeading"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/value_motion_ai_interval"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="13sp" />
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
+                </LinearLayout>
+
+
+                <View style="@style/SettingsDivider" />
+
+
+                <LinearLayout
                     android:id="@+id/row_motion_analysis_fps"
                     style="@style/SettingsGroupRow">
 
@@ -301,7 +400,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_speed_24"
+                        android:src="@drawable/ic_fps"
                         android:tint="@android:color/darker_gray" />
 
                     <TextView
@@ -315,6 +414,43 @@
 
                     <TextView
                         android:id="@+id/value_motion_analysis_fps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
+                        android:textColor="@android:color/darker_gray"
+                        android:textSize="13sp" />
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_arrow_right"
+                        android:tint="@android:color/darker_gray" />
+                </LinearLayout>
+
+                <View style="@style/SettingsDivider" />
+
+                <LinearLayout
+                    android:id="@+id/row_motion_analysis_resolution"
+                    style="@style/SettingsGroupRow">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="16dp"
+                        android:src="@drawable/ic_photo"
+                        android:tint="@android:color/darker_gray" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/motion_lab_analysis_resolution"
+                        android:textColor="?attr/colorHeading"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/value_motion_analysis_resolution"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="10dp"

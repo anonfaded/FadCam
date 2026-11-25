@@ -30,6 +30,7 @@ public class PINInputView extends LinearLayout implements TextWatcher {
 
     private EditText editText;
     private String lastText = "";
+    private TextView.OnEditorActionListener editorActionListener;
 
     private boolean passwordCharactersEnabled = true;
     private String passwordCharacter;
@@ -173,6 +174,19 @@ public class PINInputView extends LinearLayout implements TextWatcher {
         else if(lastText.length() < text.length()){
             animateLastIn();
             this.lastText = text;
+
+            // A PIN is complete as soon as the last digit is typed. Submit it
+            // automatically instead of making the user press the keyboard's
+            // Enter/Done key. post() lets the last item finish animating first.
+            if (text.length() == inputViewsCount) {
+                editText.post(() -> {
+                    if (editorActionListener != null
+                            && editText.getText().length() == inputViewsCount) {
+                        editorActionListener.onEditorAction(
+                                editText, EditorInfo.IME_ACTION_DONE, null);
+                    }
+                });
+            }
         }
     }
 
@@ -213,6 +227,7 @@ public class PINInputView extends LinearLayout implements TextWatcher {
     }
 
     public void setOnEditorActionListener(TextView.OnEditorActionListener actionListener) {
+        this.editorActionListener = actionListener;
         editText.setOnEditorActionListener(actionListener);
     }
 

@@ -40,7 +40,7 @@
                 android:text="Update"
                 android:textSize="8sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/white"
+                android:textColor="?attr/homeRailSegmentActiveText"
                 android:background="@drawable/badge_update_bg"
                 android:paddingHorizontal="4dp"
                 android:paddingVertical="1dp"
@@ -61,7 +61,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" android:clipChildren="false" android:clipToPadding="false">
 
-            <com.fadcam.ui.ShimmerTextView 
+            <com.fadcam.ui.ShimmerTextView
                 android:id="@+id/btnGetPro"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/home_pro_btn_h"
@@ -91,7 +91,7 @@
                 android:layout_gravity="top|end"
                 android:layout_marginTop="0dp"
                 android:layout_marginEnd="2dp"
-                android:background="@drawable/badge_update_bg"
+                android:background="@drawable/badge_dot_pro_alert"
                 android:visibility="gone" />
 
         </FrameLayout>
@@ -120,7 +120,7 @@
     <!-- Mode Switcher (FadCam, FadRec, FadMic) -->
     <include android:id="@+id/mode_switcher" layout="@layout/mode_switcher_segmented" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="@dimen/home_switcher_margin_h" android:layout_marginEnd="@dimen/home_switcher_margin_h" android:layout_marginTop="0dp" android:clipChildren="false" />
 
-    <LinearLayout android:id="@+id/layoutCards" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="0dp" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false">
+    <com.fadcam.ui.widgets.EqualHeightRowLayout android:id="@+id/layoutCards" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="0dp" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false">
 
         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginEnd="@dimen/home_rail_gutter" android:layout_weight="1" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
 
@@ -147,7 +147,7 @@
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="@dimen/home_row_padding_h" android:paddingTop="@dimen/home_row_padding_v" android:paddingEnd="@dimen/home_row_padding_h" android:paddingBottom="@dimen/home_row_padding_v" android:clipChildren="false" android:clipToPadding="false">
 
                         <FrameLayout android:layout_width="@dimen/home_row_icon_container_w" android:layout_height="@dimen/home_row_icon_container_h" android:layout_marginEnd="@dimen/home_row_icon_margin_end" android:clipChildren="false" android:clipToPadding="false">
-                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="@dimen/home_row_icon_size" android:layout_height="@dimen/home_row_icon_size" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="#4CAF50" android:textSize="@dimen/home_text_row_icon" android:gravity="center" />
+                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/ivCameraIcon" android:layout_width="@dimen/home_row_icon_size" android:layout_height="@dimen/home_row_icon_size" android:layout_gravity="center" android:fontFamily="@font/materialicons" android:text="camera_alt" android:textColor="?attr/homeRailTextPrimary" android:textSize="@dimen/home_text_row_icon" android:gravity="center" />
                         </FrameLayout>
 
                         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
@@ -186,7 +186,7 @@
 
                         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
 
-                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1h 30m" android:textColor="#F44336" android:textSize="@dimen/home_text_rail_title" android:textStyle="bold" />
+                            <com.fadcam.ui.utils.AnimatedTextView android:id="@+id/tvEstimateTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textDirection="ltr" android:text="1h 30m" android:textColor="#F44336" android:textSize="@dimen/home_text_rail_title" android:textStyle="bold" />
 
                             <TextView android:id="@+id/tvEstimateSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/recording_time_left" android:textColor="?attr/homeRailTextSecondary" android:textSize="@dimen/home_text_rail_subtitle" />
 
@@ -286,7 +286,10 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:gravity="center"
-                    android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
+                    android:orientation="vertical"
+                    android:paddingTop="@dimen/home_hero_padding_v"
+                    android:paddingBottom="@dimen/home_hero_padding_v"
+                    android:clipChildren="false" android:clipToPadding="false">
 
                     <LinearLayout
                         android:id="@+id/layoutElapsedMetaRow"
@@ -321,6 +324,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="0dp"
+                        android:layoutDirection="ltr"
+                        android:textDirection="ltr"
                         android:fontFamily="@font/ubuntu_regular"
                         android:includeFontPadding="false"
                         android:gravity="center"
@@ -408,9 +413,9 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Recording controls card: small horizontal tiles row placed below Stats -->
-            <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_rail_card_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
+            <com.google.android.material.card.MaterialCardView android:id="@+id/cardRecordingControls" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="@dimen/home_rail_card_gap" app:cardBackgroundColor="?attr/homeRailCardSurface" app:cardCornerRadius="8dp" app:cardElevation="1dp" app:strokeColor="?attr/homeRailCardBorder" app:strokeWidth="1dp">
 
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/home_card_padding" android:clipChildren="false" android:clipToPadding="false">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical" android:padding="@dimen/home_card_padding" android:clipChildren="false" android:clipToPadding="false">
 
                     <TextView android:id="@+id/tv_recording_controls_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/recording_controls_title" android:textSize="@dimen/home_text_rail_section_title" android:textStyle="bold" android:textColor="?attr/sectionHeaderColor" android:gravity="center" android:paddingStart="4dp" android:paddingEnd="4dp" android:paddingTop="0dp" android:paddingBottom="@dimen/home_controls_title_pad_b" android:includeFontPadding="false" />
 
@@ -421,7 +426,7 @@
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
-    </LinearLayout>
+    </com.fadcam.ui.widgets.EqualHeightRowLayout>
     </LinearLayout>
 
     <FrameLayout
@@ -501,7 +506,7 @@
             android:contentDescription="@string/universal_cancel" />
     </LinearLayout>
 
-    <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginStart="@dimen/home_preview_margin_h" android:layout_marginEnd="@dimen/home_preview_margin_h" android:layout_marginTop="@dimen/home_preview_margin_top" android:layout_marginBottom="@dimen/home_controls_bottom_margin" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:layout_constraintBottom_toTopOf="@id/layoutControls" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/banner_gps_warning" app:strokeColor="#4CAF50" app:strokeWidth="@dimen/home_preview_stroke_width" android:clipChildren="false" android:clipToPadding="false">
+    <androidx.cardview.widget.CardView android:id="@+id/cardPreview" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginStart="@dimen/home_preview_margin_h" android:layout_marginEnd="@dimen/home_preview_margin_h" android:layout_marginTop="@dimen/home_preview_margin_top" android:layout_marginBottom="@dimen/home_controls_bottom_margin" app:cardBackgroundColor="@android:color/transparent" app:cardCornerRadius="8dp" app:cardElevation="0dp" app:layout_constraintBottom_toTopOf="@id/layoutControls" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/banner_gps_warning" app:strokeColor="?attr/homeRailAccent" app:strokeWidth="@dimen/home_preview_stroke_width" android:clipChildren="false" android:clipToPadding="false">
 
         <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="@android:color/transparent" android:clipChildren="false" android:clipToPadding="false">
 
@@ -681,6 +686,8 @@
                     android:id="@+id/textPreviewZoomHud"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layoutDirection="ltr"
+                    android:textDirection="ltr"
                     android:text="1.0x"
                     android:textColor="@android:color/white"
                     android:textSize="@dimen/home_zoom_hud_text"
@@ -923,32 +930,21 @@
 
     <LinearLayout android:id="@+id/layoutControls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/home_controls_margin_top" android:layout_marginBottom="@dimen/home_controls_bottom_margin" android:paddingTop="@dimen/home_controls_padding_v" android:paddingBottom="@dimen/home_controls_padding_v" android:gravity="center" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent">
 
-        <FrameLayout
+        <com.fadcam.ui.widgets.StatusControlButton
             android:id="@+id/torch_btn_wrapper"
             android:layout_width="@dimen/home_control_btn_size"
             android:layout_height="@dimen/home_control_btn_size"
-            android:layout_marginEnd="@dimen/home_control_gap" android:clipChildren="false" android:clipToPadding="false">
-
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonTorchSwitch" android:layout_width="match_parent" android:layout_height="match_parent" style="@style/Widget.MaterialComponents.Button.OutlinedButton" app:icon="@drawable/ic_flashlight_on" app:iconSize="@dimen/home_control_icon_torch" app:iconTint="@color/button_icon_tint_selector" app:iconGravity="textStart" app:iconPadding="0dp" android:insetLeft="0dp" android:insetTop="0dp" android:insetRight="0dp" android:insetBottom="0dp" android:paddingStart="0dp" android:paddingEnd="0dp" app:rippleColor="#22FFFFFF" android:background="@drawable/control_button_bg" android:enabled="false" app:cornerRadius="@dimen/home_control_corner"
-            android:nextFocusUp="@+id/cardElapsedHero"
-            android:nextFocusDown="@+id/buttonStartStop" />
-
-            <TextView
-                android:id="@+id/torch_status_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_marginBottom="@dimen/home_control_status_margin_b"
-                android:layout_marginEnd="@dimen/home_control_status_margin_e"
-                android:text="OFF"
-                android:textColor="#E43C3C"
-                android:textSize="@dimen/home_control_status_size"
-                android:fontFamily="monospace"
-                android:textStyle="bold"
-                android:letterSpacing="0.08"
-                android:includeFontPadding="false"
-/>
-        </FrameLayout>
+            android:layout_marginEnd="@dimen/home_control_gap"
+            app:scb_background="@drawable/control_button_bg"
+            app:scb_buttonId="@+id/buttonTorchSwitch"
+            app:scb_icon="@drawable/ic_flashlight_on"
+            app:scb_iconSize="@dimen/home_control_icon_torch"
+            app:scb_iconTint="@color/button_icon_tint_selector"
+            app:scb_nextFocusDown="@+id/buttonStartStop"
+            app:scb_nextFocusUp="@+id/cardElapsedHero"
+            app:scb_statusId="@+id/torch_status_label"
+            app:scb_statusText="OFF"
+            app:scb_statusTextColor="#E43C3C" />
 
 
         <com.fadcam.ui.utils.AnimatedMaterialButton
@@ -973,74 +969,46 @@
             android:nextFocusUp="@+id/cardElapsedHero"
             android:nextFocusDown="@+id/buttonCamSwitch" />
 
-                <FrameLayout
+        <com.fadcam.ui.widgets.StatusControlButton
             android:id="@+id/fadrec_mute_wrapper"
             android:layout_width="@dimen/home_control_btn_size"
             android:layout_height="@dimen/home_control_btn_size"
             android:layout_marginStart="@dimen/home_control_gap"
-            android:visibility="gone" android:clipChildren="false" android:clipToPadding="false">
-
-<com.google.android.material.button.MaterialButton android:id="@+id/buttonFadRecMute" android:layout_width="match_parent" android:layout_height="match_parent" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg_orange" app:iconTint="@color/white" app:cornerRadius="@dimen/home_control_corner" android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/fadrec_mute_icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="mic"
-                android:textColor="@android:color/white"
-                android:textSize="@dimen/home_quick_mute_icon"
-                android:fontFamily="@font/materialicons"/>
-
-            <TextView
-                android:id="@+id/fadrec_mute_status_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_marginBottom="@dimen/home_control_status_margin_b"
-                android:layout_marginEnd="@dimen/home_control_status_margin_e"
-                android:text="OFF"
-                android:textColor="#FFFFFF"
-                android:textSize="@dimen/home_control_status_size"
-                android:fontFamily="monospace"
-                android:textStyle="bold"
-                android:letterSpacing="0.08"
-                android:includeFontPadding="false"/>
-        </FrameLayout>
+            android:visibility="gone"
+            app:scb_background="@drawable/control_button_bg_orange"
+            app:scb_buttonGone="true"
+            app:scb_buttonId="@+id/buttonFadRecMute"
+            app:scb_centerIconId="@+id/fadrec_mute_icon"
+            app:scb_centerIconSize="@dimen/home_control_icon_mute"
+            app:scb_centerIconText="mic"
+            app:scb_iconTint="@android:color/white"
+            app:scb_statusId="@+id/fadrec_mute_status_label"
+            app:scb_statusText="OFF"
+            app:scb_statusTextColor="@android:color/white" />
 
 
-        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="@dimen/home_control_btn_size" android:layout_height="@dimen/home_control_btn_size" android:layout_marginStart="@dimen/home_control_gap" app:icon="@drawable/cam_switch" app:iconSize="@dimen/home_control_icon_cam" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="@dimen/home_control_corner"
+        <com.google.android.material.button.MaterialButton android:id="@+id/buttonCamSwitch" android:layout_width="@dimen/home_control_btn_size" android:layout_height="@dimen/home_control_btn_size" android:layout_marginStart="@dimen/home_control_gap" app:icon="@drawable/cam_switch" app:iconTint="@color/white" app:iconSize="@dimen/home_control_icon_cam" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:cornerRadius="@dimen/home_control_corner"
             android:nextFocusUp="@+id/cardElapsedHero"
             android:nextFocusDown="@+id/buttonMirrorSwitch" />
 
 
 
-                <FrameLayout
+        <com.fadcam.ui.widgets.StatusControlButton
             android:id="@+id/mirror_btn_wrapper"
             android:layout_width="@dimen/home_control_btn_size"
             android:layout_height="@dimen/home_control_btn_size"
-            android:layout_marginStart="@dimen/home_control_gap" android:clipChildren="false" android:clipToPadding="false">
-
-<com.google.android.material.button.MaterialButton android:id="@+id/buttonMirrorSwitch" android:layout_width="match_parent" android:layout_height="match_parent" app:icon="@drawable/ic_mirror_video" app:iconSize="@dimen/home_control_icon_mirror" app:iconGravity="textStart" app:iconPadding="0dp" android:enabled="false" android:background="@drawable/control_button_bg" app:iconTint="@color/white" app:cornerRadius="@dimen/home_control_corner" android:visibility="gone"
-            android:nextFocusUp="@+id/cardElapsedHero"
-            android:nextFocusDown="@+id/buttonMirrorSwitch" />
-
-            <TextView
-                android:id="@+id/mirror_status_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_marginBottom="@dimen/home_control_status_margin_b"
-                android:layout_marginEnd="@dimen/home_control_status_margin_e"
-                android:text="OFF"
-                android:textColor="#B0BEC5"
-                android:textSize="@dimen/home_control_status_size"
-                android:fontFamily="monospace"
-                android:textStyle="bold"
-                android:letterSpacing="0.08"
-                android:includeFontPadding="false"
-/>
-        </FrameLayout>
+            android:layout_marginStart="@dimen/home_control_gap"
+            app:scb_background="@drawable/control_button_bg"
+            app:scb_buttonGone="true"
+            app:scb_buttonId="@+id/buttonMirrorSwitch"
+            app:scb_icon="@drawable/ic_mirror_video"
+            app:scb_iconSize="@dimen/home_control_icon_mirror"
+            app:scb_iconTint="@android:color/white"
+            app:scb_nextFocusDown="@+id/buttonMirrorSwitch"
+            app:scb_nextFocusUp="@+id/cardElapsedHero"
+            app:scb_statusId="@+id/mirror_status_label"
+            app:scb_statusText="OFF"
+            app:scb_statusTextColor="#FFB0BEC5" />
 
 
     </LinearLayout>

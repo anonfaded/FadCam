@@ -1,17 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Root CardView for each video item -->
+<!-- Root CardView for each video item.
+
+     Every size that changes with the device comes from the records_* dimens, which follow the
+     same smallestWidth buckets as the home tab. Which of the three layouts is used (full,
+     medium, compact) is decided in RecordsAdapter.applyResponsiveLayout() from the measured
+     cell width, because five columns on a phone and five on a tablet are not comparable.
+
+     The thumbnail is square in every mode: a 16:9 frame leaves too little height for the
+     metadata once the tile gets narrow, and a square tile keeps the image readable at any
+     column count. -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="6dp"
+    android:layout_margin="@dimen/records_item_margin"
     android:clickable="true"
     android:focusable="true"
     android:foreground="@drawable/ripple_black_rounded"
+    app:cardCornerRadius="@dimen/records_corner"
     app:cardElevation="2dp"
-    app:cardCornerRadius="8dp"
     app:cardBackgroundColor="?attr/homeRailCardSurface"
     app:strokeColor="?attr/homeRailCardBorder"
     app:strokeWidth="1dp"
@@ -23,11 +32,10 @@
         android:layout_height="wrap_content">
 
         <!-- FrameLayout for Thumbnail and Overlays -->
-        <FrameLayout
+        <com.fadcam.ui.widgets.RatioFrameLayout
             android:id="@+id/thumbnail_container"
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:layout_constraintDimensionRatio="H,16:9"
+            android:layout_height="wrap_content"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -56,10 +64,10 @@
                 android:layout_gravity="top|start"
                 android:layout_margin="4dp"
                 android:background="@drawable/serial_number_bg"
-                android:paddingHorizontal="4dp"
-                android:paddingVertical="1dp"
+                android:paddingHorizontal="@dimen/records_serial_pad_h"
+                android:paddingVertical="@dimen/records_serial_pad_v"
                 android:textColor="@android:color/white"
-                android:textSize="10sp"
+                android:textSize="@dimen/records_serial_text"
                 android:textStyle="bold"
                 tools:text="99" />
 
@@ -76,13 +84,14 @@
                     android:id="@+id/text_view_new_badge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="4dp"
+                    android:layout_marginEnd="@dimen/records_badge_gap"
                     android:background="@drawable/new_badge_background"
-                    android:paddingHorizontal="6dp"
-                    android:paddingVertical="2dp"
-                    android:text="NEW"
-                    android:textColor="@color/white"
-                    android:textSize="9sp"
+                    android:paddingHorizontal="@dimen/records_badge_pad_h"
+                    android:paddingVertical="@dimen/records_badge_pad_v"
+                    android:maxLines="1"
+                    android:text="@string/badge_new"
+                    android:textColor="@color/pro_background"
+                    android:textSize="@dimen/records_badge_text"
                     android:textStyle="bold"
                     android:visibility="gone" />
 
@@ -90,9 +99,10 @@
                     android:id="@+id/text_view_status_badge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:paddingHorizontal="6dp"
-                    android:paddingVertical="2dp"
-                    android:textSize="9sp"
+                    android:paddingHorizontal="@dimen/records_badge_pad_h"
+                    android:paddingVertical="@dimen/records_badge_pad_v"
+                    android:maxLines="1"
+                    android:textSize="@dimen/records_badge_text"
                     android:textStyle="bold"
                     android:visibility="gone"
                     tools:background="@drawable/temp_badge_background"
@@ -111,22 +121,22 @@
 
             <FrameLayout
                 android:id="@+id/icon_check_container"
-                android:layout_width="42dp"
-                android:layout_height="42dp"
+                android:layout_width="@dimen/records_check_container"
+                android:layout_height="@dimen/records_check_container"
                 android:layout_gravity="center"
                 android:visibility="gone">
 
                 <View
                     android:id="@+id/icon_check_bg"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="@dimen/records_check_bg"
+                    android:layout_height="@dimen/records_check_bg"
                     android:layout_gravity="center"
                     android:background="@drawable/picker_check_background" />
 
                 <ImageView
                     android:id="@+id/icon_check"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
+                    android:layout_width="@dimen/records_check_icon"
+                    android:layout_height="@dimen/records_check_icon"
                     android:layout_gravity="center"
                     android:src="@drawable/avd_check_draw"
                     app:tint="?attr/colorPrimary"
@@ -145,14 +155,14 @@
                 android:indeterminateTint="@color/white"
                 android:visibility="gone"
                 tools:visibility="visible" />
-            
+
             <!-- Last-viewed thin progress bar (shows percent watched) -->
             <View
                 android:id="@+id/thumbnail_progress_bg"
                 android:layout_width="match_parent"
                 android:layout_height="4dp"
                 android:layout_gravity="bottom"
-                android:background="?attr/colorDialog"
+                android:background="@drawable/records_progress_track"
                 android:alpha="0.45"
                 android:visibility="visible"
                 android:importantForAccessibility="no" />
@@ -162,21 +172,43 @@
                 android:layout_width="0dp"
                 android:layout_height="4dp"
                 android:layout_gravity="bottom|start"
-                android:background="@color/redPastel"
+                android:background="@drawable/records_progress_fill"
                 android:visibility="gone"
                 android:importantForAccessibility="yes" />
-            <!-- *** END: Processing Overlay *** -->
 
-        </FrameLayout>
+            <!-- Thumbnail-only mode: the menu sits on a gradient so it still reads as a
+                 button when the whole metadata block is hidden. -->
+            <FrameLayout
+                android:id="@+id/menu_thumb_container"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="bottom|end"
+                android:background="@drawable/records_menu_gradient"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:id="@+id/menu_thumb_button"
+                    android:layout_width="@dimen/records_compact_menu_box"
+                    android:layout_height="@dimen/records_compact_menu_box"
+                    android:layout_gravity="bottom|end"
+                    android:layout_margin="4dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/desc_video_options"
+                    android:padding="3dp"
+                    android:src="@drawable/ic_more_vert" />
+            </FrameLayout>
+
+        </com.fadcam.ui.widgets.RatioFrameLayout>
 
         <LinearLayout
             android:id="@+id/record_content_container"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_marginTop="6dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginStart="@dimen/records_content_margin_h"
+            android:layout_marginTop="@dimen/records_content_margin_top"
+            android:layout_marginEnd="@dimen/records_content_margin_h"
+            android:layout_marginBottom="@dimen/records_content_margin_bottom"
             android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -187,7 +219,7 @@
                 android:id="@+id/record_title_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="top"
+                android:gravity="top|center_vertical"
                 android:orientation="horizontal">
 
                 <TextView
@@ -195,15 +227,16 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:ellipsize="end"
                     android:maxLines="2"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/records_title_full"
                     tools:text="My Important Renamed Video File Name Is Very Long" />
 
                 <FrameLayout
                     android:id="@+id/menu_button_container"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="4dp">
+                    android:layout_width="@dimen/records_menu_box"
+                    android:layout_height="@dimen/records_menu_box"
+                    android:layout_marginStart="2dp">
 
                     <ImageView
                         android:id="@+id/menu_button"
@@ -211,7 +244,7 @@
                         android:layout_height="match_parent"
                         android:background="?android:attr/selectableItemBackgroundBorderless"
                         android:contentDescription="@string/desc_video_options"
-                        android:padding="8dp"
+                        android:padding="@dimen/records_menu_padding"
                         android:src="@drawable/ic_more_vert" />
 
                     <ImageView
@@ -235,23 +268,23 @@
                 android:layout_marginBottom="4dp"
                 android:background="#33FFFFFF" />
 
-            <GridLayout
-                android:id="@+id/record_meta_grid"
+            <!-- Metadata. Full and medium keep the original two-line block: the time-ago spans
+                 on the left while the duration and the file size keep their own rows on the
+                 right. Compact stacks the same views into two full-width lines so nothing has
+                 to be ellipsized. -->
+            <LinearLayout
+                android:id="@+id/record_meta_row"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:alignmentMode="alignMargins"
-                android:columnCount="2"
-                android:orientation="horizontal"
-                android:useDefaultMargins="false">
+                android:layout_marginTop="3dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <LinearLayout
                     android:id="@+id/record_meta_row_time"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_row="0"
-                    android:layout_rowSpan="2"
-                    android:layout_column="0"
-                    android:layout_columnWeight="1"
+                    android:layout_weight="1"
                     android:gravity="center_vertical"
                     android:orientation="vertical">
 
@@ -267,63 +300,99 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
+                        android:maxLines="1"
                         android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="10sp"
+                        android:textSize="@dimen/records_meta_text"
                         tools:text="2 days ago" />
+
+                    <!-- Compact tiles put the per-item menu at the end of the first line. -->
+                    <FrameLayout
+                        android:id="@+id/menu_compact_container"
+                        android:layout_width="@dimen/records_compact_menu_box"
+                        android:layout_height="@dimen/records_compact_menu_box"
+                        android:layout_marginStart="4dp"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <ImageView
+                            android:id="@+id/menu_compact_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="?android:attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/desc_video_options"
+                            android:padding="3dp"
+                            android:src="@drawable/ic_more_vert" />
+
+                        <ImageView
+                            android:id="@+id/menu_compact_warning_dot"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:layout_gravity="top|end"
+                            android:src="@drawable/yellow_dot"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+                    </FrameLayout>
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/meta_duration_container"
+                    android:id="@+id/record_meta_right"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_row="0"
-                    android:layout_column="1"
-                    android:gravity="center_vertical|end"
-                    android:orientation="horizontal">
+                    android:gravity="end"
+                    android:orientation="vertical">
 
-                    <ImageView
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        android:src="@drawable/ic_stat_playback"
-                        android:tint="?android:attr/textColorSecondary" />
-
-                    <TextView
-                        android:id="@+id/text_view_file_time"
+                    <LinearLayout
+                        android:id="@+id/meta_duration_container"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="10sp"
-                        tools:text="1m 25s" />
-                </LinearLayout>
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
 
-                <LinearLayout
-                    android:id="@+id/record_meta_row_size"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_row="1"
-                    android:layout_column="1"
-                    android:layout_marginTop="2dp"
-                    android:gravity="center_vertical|end"
-                    android:orientation="horizontal">
+                        <ImageView
+                            android:id="@+id/icon_duration"
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:src="@drawable/ic_stat_playback"
+                            android:tint="?android:attr/textColorSecondary" />
 
-                    <ImageView
-                        android:id="@+id/icon_file_size"
-                        android:layout_width="12dp"
-                        android:layout_height="12dp"
-                        android:src="@drawable/database_24px"
-                        android:tint="?android:attr/textColorSecondary" />
+                        <TextView
+                            android:id="@+id/text_view_file_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:maxLines="1"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:textSize="@dimen/records_meta_text"
+                            tools:text="1m 25s" />
+                    </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/text_view_file_size"
+                    <LinearLayout
+                        android:id="@+id/record_meta_row_size"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="10sp"
-                        tools:text="123.4 MB" />
+                        android:layout_marginTop="1dp"
+                        android:gravity="center_vertical|end"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/icon_file_size"
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:src="@drawable/database_24px"
+                            android:tint="?android:attr/textColorSecondary" />
+
+                        <TextView
+                            android:id="@+id/text_view_file_size"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:maxLines="1"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:textSize="@dimen/records_meta_text"
+                            tools:text="123.4 MB" />
+                    </LinearLayout>
                 </LinearLayout>
-            </GridLayout>
+            </LinearLayout>
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

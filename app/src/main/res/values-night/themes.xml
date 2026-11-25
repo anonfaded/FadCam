@@ -4,6 +4,34 @@
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
         <item name="android:fontFamily">@font/ubuntu_regular</item>
+        <!-- Material 3 tokens: keep every M3 component on the app palette instead of
+             falling back to the purple baseline when the theme does not define them. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorPrimaryContainer">@color/colorPrimary</item>
+        <item name="colorOnPrimaryContainer">@color/black</item>
+        <item name="colorSecondary">@color/colorPrimary</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <item name="colorAccent">@color/colorPrimary</item>
+        <item name="android:colorAccent">@color/colorPrimary</item>
+        <item name="colorControlActivated">@color/colorPrimary</item>
+        <item name="colorControlNormal">@color/gray500</item>
+        <item name="colorSecondaryContainer">@color/colorPrimary</item>
+        <item name="colorOnSecondaryContainer">@color/black</item>
+        <item name="colorTertiary">@color/colorPrimary</item>
+        <item name="colorOnTertiary">@color/black</item>
+        <item name="colorTertiaryContainer">@color/colorPrimary</item>
+        <item name="colorOnTertiaryContainer">@color/black</item>
+        <item name="colorSurface">@color/gray</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="colorSurfaceVariant">@color/gray</item>
+        <item name="colorOnSurfaceVariant">@color/gray_text_light</item>
+        <item name="colorSurfaceContainer">@color/gray</item>
+        <item name="colorSurfaceContainerHigh">@color/gray</item>
+        <item name="colorSurfaceContainerHighest">@color/gray</item>
+        <item name="colorOutline">@color/gray500</item>
+        <item name="colorControlHighlight">#33FFFFFF</item>
+
 <!--        the color for statusbar at top-->
         <item name="android:statusBarColor">@color/gray</item>
         <item name="colorTopBar">@color/gray</item>

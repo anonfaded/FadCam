@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- zzz badge shown as the avatar settles into the Home slot. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/splash_zzz_group"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="bottom"
+    android:visibility="gone"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <TextView
+        android:id="@+id/splash_zzz_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="z"
+        android:textSize="@dimen/home_zzz_size_1"
+        android:textColor="#a8d8f0"
+        android:fontFamily="sans-serif-black"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/splash_zzz_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Z"
+        android:textSize="@dimen/home_zzz_size_2"
+        android:textColor="#ceecf8"
+        android:fontFamily="sans-serif-black"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/splash_zzz_3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Z"
+        android:textSize="@dimen/home_zzz_size_3"
+        android:textColor="#e8f5fd"
+        android:fontFamily="sans-serif-black"
+        android:textStyle="bold" />
+
+</LinearLayout>

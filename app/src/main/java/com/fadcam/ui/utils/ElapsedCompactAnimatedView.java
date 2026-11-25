@@ -10,6 +10,8 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.fadcam.R;
+
 import androidx.annotation.Nullable;
 
 import java.util.LinkedHashMap;
@@ -22,10 +24,13 @@ import java.util.regex.Pattern;
  */
 public class ElapsedCompactAnimatedView extends LinearLayout {
 
-    private static final Pattern TOKEN_PATTERN = Pattern.compile("(\\d+)([A-Za-z]+)");
+    // \p{Nd} keeps Arabic-Indic and Persian digits together with their unit, where a
+    // plain \d would skip them and leave the elapsed timer empty in Arabic.
+    private static final Pattern TOKEN_PATTERN = Pattern.compile("(\\p{Nd}+)(\\p{L}+)");
     private static final String[] UNIT_ORDER = new String[] {"d", "h", "m", "s"};
     private static final int[] UNIT_DIGIT_COUNTS = new int[] {3, 2, 2, 2};
 
+    private final String[] unitLabels = new String[UNIT_ORDER.length];
     private final LinearLayout[] slotContainers = new LinearLayout[UNIT_ORDER.length];
     private final AnimatedDigitStripView[] valueViews = new AnimatedDigitStripView[UNIT_ORDER.length];
     private final TextView[] unitViews = new TextView[UNIT_ORDER.length];
@@ -50,6 +55,17 @@ public class ElapsedCompactAnimatedView extends LinearLayout {
         setOrientation(HORIZONTAL);
         setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL);
         setBaselineAligned(false);
+        // "1d 2h 3m" is a duration, not a sentence: it must keep its slot order in RTL
+        // layouts. Without this the RTL layout direction reversed the slots and rendered
+        // the elapsed timer as "s3m2h1d".
+        setLayoutDirection(LAYOUT_DIRECTION_LTR);
+
+        // Localized short unit letters ("d/h/m/s", Arabic "ي/س/د/ث"). Parsing maps the
+        // rendered label back to its slot, so the timer keeps working in any language.
+        unitLabels[0] = context.getString(R.string.duration_unit_days);
+        unitLabels[1] = context.getString(R.string.duration_unit_hours);
+        unitLabels[2] = context.getString(R.string.duration_unit_minutes);
+        unitLabels[3] = context.getString(R.string.duration_unit_seconds);
 
         for (int index = 0; index < UNIT_ORDER.length; index++) {
             LinearLayout slot = new LinearLayout(context);
@@ -70,7 +86,7 @@ public class ElapsedCompactAnimatedView extends LinearLayout {
             unitView.setIncludeFontPadding(false);
             unitView.setMaxLines(1);
             unitView.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-            unitView.setText(UNIT_ORDER[index]);
+            unitView.setText(unitLabels[index]);
 
             slot.addView(valueView);
             slot.addView(unitView);
@@ -106,7 +122,7 @@ public class ElapsedCompactAnimatedView extends LinearLayout {
             String oldValue = valueView.getDigits() != null ? valueView.getDigits().toString() : "";
             String oldUnit = unitView.getText() != null ? unitView.getText().toString() : "";
             slot.setVisibility(VISIBLE);
-            unitView.setText(unit);
+            unitView.setText(unitLabels[index]);
 
             boolean canAnimate = animate
                     && unit.equals(oldUnit)
@@ -166,9 +182,29 @@ public class ElapsedCompactAnimatedView extends LinearLayout {
         Map<String, String> values = new LinkedHashMap<>();
         Matcher matcher = TOKEN_PATTERN.matcher(text);
         while (matcher.find()) {
-            values.put(matcher.group(2).toLowerCase(), matcher.group(1));
+            String canonical = canonicalUnitFor(matcher.group(2));
+            if (canonical != null) {
+                values.put(canonical, matcher.group(1));
+            }
         }
         return values;
+    }
+
+    /** Maps a rendered unit label (any language) back to its canonical slot key. */
+    private String canonicalUnitFor(String label) {
+        for (int index = 0; index < unitLabels.length; index++) {
+            if (unitLabels[index] != null && unitLabels[index].equalsIgnoreCase(label)) {
+                return UNIT_ORDER[index];
+            }
+        }
+        // Fallback for text produced before localization was applied.
+        String lower = label == null ? "" : label.toLowerCase(java.util.Locale.ROOT);
+        for (String canonical : UNIT_ORDER) {
+            if (canonical.equals(lower)) {
+                return canonical;
+            }
+        }
+        return null;
     }
 
     @Nullable

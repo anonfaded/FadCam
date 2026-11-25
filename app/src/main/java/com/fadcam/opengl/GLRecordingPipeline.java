@@ -9,6 +9,7 @@ import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.SystemClock;
 import android.view.Surface;
 
 import java.io.File;
@@ -17,14 +18,20 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.fadcam.DiagnosticsStore;
 import com.fadcam.VideoCodec;
 import com.fadcam.dualcam.DualCameraConfig;
 import com.fadcam.media.FragmentedMp4MuxerWrapper;
+import com.fadcam.media.MuxerTee;
+import com.fadcam.utils.VideoEncoderCapabilities;
 
 /**
  * GLRecordingPipeline manages the OpenGL pipeline for real-time watermarking
@@ -47,7 +54,7 @@ public class GLRecordingPipeline {
     private GLWatermarkRenderer glRenderer;
     private MediaCodec videoEncoder;
     // Use FragmentedMp4MuxerWrapper for fMP4 streaming
-    private FragmentedMp4MuxerWrapper mediaMuxer;
+    private MuxerTee mediaMuxer;
     private Surface encoderInputSurface;
     private Surface cameraInputSurface;
     private boolean isRecording = false;
@@ -81,7 +88,7 @@ public class GLRecordingPipeline {
     private final Object previewApplyLock = new Object();
     private final Object timestampLock = new Object();  // Synchronization lock for timestamp fields
     private final String orientation;
-    private final int sensorOrientation;
+    private volatile int sensorOrientation;
 
     // Surface dimensions for aspect ratio calculations
     private int mSurfaceWidth;
@@ -130,24 +137,68 @@ public class GLRecordingPipeline {
         if (isPaused) {
             return -1;  // Skip this frame
         }
-        
-        // Use System.nanoTime() reference (same as audio thread for sync)
-        // Initialize recording start time on first frame
-        if (recordingStartSystemTimeNanos == -1) {
+
+        // Video PTS = camera frame time relative to the first frame of the session.
+        //
+        // This used to be System.nanoTime() sampled at render time, which is not a
+        // per-frame clock: a queued/burst render of N cached frames produced N identical
+        // presentation times. The muxer wrote stts delta = 0 for them, players showed
+        // one frame per burst, and the saved file looked like it was dropping most
+        // frames even though all of them were in the mdat.
+        //
+        // SurfaceTexture#getTimestamp() is the camera's own per-frame timestamp: unique
+        // per frame, monotonic, and the real capture instant (so exposure jitter shows
+        // up as normal variable frame duration rather than as duplicate timestamps).
+        if (cameraTimestampNanos <= 0L) {
+            // No camera clock available (e.g. preview-only): fall back to elapsed time.
+            if (recordingStartSystemTimeNanos == -1L) {
+                synchronized (timestampLock) {
+                    if (recordingStartSystemTimeNanos == -1L) {
+                        recordingStartSystemTimeNanos = System.nanoTime();
+                    }
+                }
+            }
+            long elapsed = System.nanoTime() - recordingStartSystemTimeNanos - totalPauseDurationNanos;
+            return Math.max(0L, elapsed / 1000L);
+        }
+
+        if (recordingStartCameraTimeNanos == -1L) {
             synchronized (timestampLock) {
-                if (recordingStartSystemTimeNanos == -1) {
-                    recordingStartSystemTimeNanos = System.nanoTime();
-                    FLog.d(TAG, "[VIDEO_TIMESTAMP] Recording system time reference initialized: " + 
-                          recordingStartSystemTimeNanos + " nanos");
+                if (recordingStartCameraTimeNanos == -1L) {
+                    recordingStartCameraTimeNanos = cameraTimestampNanos;
+                    FLog.d(TAG, "[VIDEO_TIMESTAMP] Camera clock reference initialized");
                 }
             }
         }
-        
-        // Calculate relative timestamp from system time reference (same as audio!)
-        // This ensures both audio and video use the exact same timing base
-        long elapsedNanos = System.nanoTime() - recordingStartSystemTimeNanos - totalPauseDurationNanos;
-        long ptsUs = Math.max(0, elapsedNanos / 1000L);  // Convert to microseconds, ensure non-negative
-        
+
+        long elapsedNanos = cameraTimestampNanos - recordingStartCameraTimeNanos;
+        long ptsUs = Math.max(0L, elapsedNanos / 1000L);
+        long removedUs = totalPauseDurationNanos / 1000L;
+        ptsUs = Math.max(0L, ptsUs - removedUs);
+
+        // Some camera HALs freeze SurfaceTexture#getTimestamp() while the pipeline is
+        // busy and then jump forward by the whole burst (observed on this device:
+        // ~20 frames delivered with one identical timestamp, then a 0.6-0.8s jump).
+        // Feeding those through verbatim creates N samples with a 0 tick delta, and a
+        // player then renders one frame per burst — the "saved video drops most
+        // frames" symptom.
+        //
+        // While the camera clock is frozen/unwound, continue the timeline at the
+        // encoder's frame interval instead of repeating the same time. When the camera
+        // clock resumes ahead of the synthetic timeline we simply continue from there,
+        // so no extra frames are inserted and the real capture rate is preserved.
+        long frameIntervalUs = encoderFramerate > 0
+                ? Math.max(1L, 1_000_000L / encoderFramerate)
+                : 33_333L;
+        if (lastVideoPtsUs >= 0L) {
+            if (ptsUs <= lastVideoPtsUs) {
+                ptsUs = lastVideoPtsUs + frameIntervalUs;
+            } else if (ptsUs - lastVideoPtsUs < Math.max(1L, frameIntervalUs / 4L)) {
+                // Duplicate/near-duplicate timestamp inside the same burst.
+                ptsUs = lastVideoPtsUs + frameIntervalUs;
+            }
+        }
+        lastVideoPtsUs = ptsUs;
         return ptsUs;
     }
 
@@ -157,6 +208,13 @@ public class GLRecordingPipeline {
     private String currentOutputFilePath;
     private FileDescriptor currentOutputFd;
     private boolean muxerStarted = false;
+    /** Snapshot taken when the muxer is released, for post-stop session cleanup. */
+    private int lastWrittenFileFragmentCount = -1;
+    /**
+     * When true, the file sink starts suspended. Set by the service for a
+     * motion-armed session so no samples reach the file before the first trigger.
+     */
+    private volatile boolean suspendFileRecordingOnStart = false;
     // --- Dashcam splitting additions ---
     private long segmentBytesWritten = 0L; // Bytes written in current segment (video+audio)
     private static final double ROLLOVER_PREEMPT_THRESHOLD_RATIO = 0.95; // Request keyframe early
@@ -167,6 +225,10 @@ public class GLRecordingPipeline {
 
     private int encoderWidth;
     private int encoderHeight;
+    /** The frame rate actually accepted by the encoder (may be clamped from the request). */
+    private int encoderFramerate;
+    /** Last encoder-init report — shown in the "Recording Failed" dialog and the dossier. */
+    private volatile String lastEncoderDiagnostics = "";
     private int deviceOrientation = android.view.Surface.ROTATION_0;
     private volatile boolean frontVideoMirrorEnabled;
 
@@ -198,7 +260,7 @@ public class GLRecordingPipeline {
     // Cached formats so we can recreate muxer for segment rollover without
     // waiting for INFO_OUTPUT_FORMAT_CHANGED (only fired once per encoder start)
     private MediaFormat cachedVideoFormat;
-    private MediaFormat cachedAudioFormat;
+    private volatile MediaFormat cachedAudioFormat;
     private MediaFormat pendingHevcFormat;
     private ByteBuffer capturedHevcCsd0;
     private ByteBuffer capturedHevcCsd1;
@@ -256,6 +318,12 @@ public class GLRecordingPipeline {
     
     // Pause/resume tracking fields
     private long pauseStartTimeNanos = -1;           // System.nanoTime() when pause starts
+    private volatile long recordingStartCameraTimeNanos = -1L;
+    /** Previous video PTS, so a frozen camera clock cannot emit duplicate sample times. */
+    private long lastVideoPtsUs = -1L;
+    private long ptsDupSuppressed = 0L;
+
+    private long ptsLogCount = 0L;
     private long totalPauseDurationNanos = 0;        // Accumulated pause duration
     private volatile long currentPauseOffsetUs = 0;  // µs to subtract from sample PTS so timeline is contiguous after pause/resume
     private long lastVideoPtsBeforePauseUs = 0;      // Last video PTS before pause
@@ -476,7 +544,7 @@ public class GLRecordingPipeline {
     // ════════════════════════════════════════════════════════════════════
 
     private int getEffectiveVideoBitrate(Context context) {
-        boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
+        boolean isStreaming = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
         if (isStreaming) {
             android.content.SharedPreferences fadcamPrefs =
                     context.getSharedPreferences("FadCamPrefs", Context.MODE_PRIVATE);
@@ -581,13 +649,41 @@ public class GLRecordingPipeline {
     }
 
     /**
+     * The per-attempt encoder report from the last {@link #initializeEncoder()} run. Empty until
+     * encoder setup has been attempted; safe to read from the service thread after a failure.
+     */
+    public String getEncoderDiagnostics() {
+        return lastEncoderDiagnostics;
+    }
+
+    /**
+     * The frame rate the encoder actually accepted (after any capability clamp). The camera
+     * session must follow this, otherwise a 4K60 camera feeds a 30 fps encoder.
+     */
+    public int getEncoderFramerate() {
+        return encoderFramerate > 0 ? encoderFramerate : videoFramerate;
+    }
+
+    /**
      * Prepares the GL renderer and camera input surface for the camera session.
      * Call this after constructing the pipeline, before creating the camera
      * session.
      * Does NOT start encoding or the render loop.
      */
     public void prepareSurfaces() {
+        final long startedMs = SystemClock.elapsedRealtime();
+        String stage = "start";
+        if (Log.isEnabled()) {
+            FLog.i(TAG, "[GL_INIT] ===== prepareSurfaces START ===== codec=" + videoCodec
+                    + " requested=" + videoWidth + "x" + videoHeight + " fps=" + videoFramerate
+                    + " orientation=" + orientation + " previewSurface="
+                    + (previewSurface != null && previewSurface.isValid()));
+            DiagnosticsStore.appendRecordingJournal(context, "[GL_INIT] prepareSurfaces start codec="
+                    + videoCodec + " requested=" + videoWidth + "x" + videoHeight
+                    + " fps=" + videoFramerate + " orientation=" + orientation);
+        }
         try {
+            stage = "release-previous";
 
             // Make sure any previous resources are fully released
             if (glRenderer != null) {
@@ -595,14 +691,11 @@ public class GLRecordingPipeline {
                     glRenderer.release();
                 } catch (Exception e) {
                     FLog.e(TAG, "Error releasing previous renderer", e);
-                    try {
-                        FLog.e(TAG, "Error releasing previous renderer", e);
-                    } catch (Throwable ignore) {
-                    }
                 }
                 glRenderer = null;
             }
 
+            stage = "setup-encoder";
             if (encoderInputSurface == null) {
                 setupEncoder();
                 if (encoderInputSurface == null) {
@@ -610,7 +703,13 @@ public class GLRecordingPipeline {
                     throw new RuntimeException("Failed to create encoder input surface");
                 }
             }
+            if (Log.isEnabled()) {
+                FLog.i(TAG, "[GL_INIT] stage=setup-encoder OK in "
+                        + (SystemClock.elapsedRealtime() - startedMs) + "ms encoder="
+                        + encoderWidth + "x" + encoderHeight + " fps=" + encoderFramerate);
+            }
 
+            stage = "renderer-create";
             if (glRenderer == null) {
                 glRenderer = new GLWatermarkRenderer(context, encoderInputSurface, orientation, sensorOrientation,
                         videoWidth, videoHeight, false);
@@ -632,6 +731,7 @@ public class GLRecordingPipeline {
                 }
                 final java.util.concurrent.CountDownLatch initLatch = new java.util.concurrent.CountDownLatch(1);
                 final Throwable[] initError = new Throwable[1];
+                stage = "egl-init";
                 handler.post(() -> {
                     try {
                         glRenderer.initializeEGL();
@@ -704,12 +804,45 @@ public class GLRecordingPipeline {
                     FLog.e(TAG, "[GL_INIT] CRITICAL: Camera input surface is invalid after GL init (null=" + (cameraInputSurface == null) + ")");
                     throw new RuntimeException("Camera input surface invalid");
                 }
+                if (Log.isEnabled()) {
+                    FLog.i(TAG, "[GL_INIT] stage=egl-init OK in "
+                            + (SystemClock.elapsedRealtime() - startedMs) + "ms cameraSurface=valid");
+                }
+                stage = "frame-listener";
                 // Set up the frame listener to trigger rendering when new frames arrive
                 glRenderer.setOnFrameAvailableListener(new GLWatermarkRenderer.OnFrameAvailableListener() {
+                    long lastFrameNs = -1;
+                    int frameLogCount = 0;
                     @Override
                     public void onFrameAvailable() {
-                        if ((isRecording || previewOnlyRendering) && handler != null
-                                && renderRunnableQueued.compareAndSet(false, true)) {
+                        final long now = System.nanoTime();
+                        if (lastFrameNs > 0) {
+                            long deltaMs = (now - lastFrameNs) / 1_000_000L;
+                            // KEY diag: camera cadence — a ~2s gap here means the
+                            // camera session (not the muxer) stopped delivering frames.
+                            if (deltaMs > 500) {
+                                FLog.w(TAG, "[FRAME-GAP] camera frame gap of " + deltaMs
+                                        + "ms (frame#" + (frameLogCount + 1) + ")");
+                            }
+                        }
+                        lastFrameNs = now;
+                        frameLogCount++;
+                        if (frameLogCount <= 20 || frameLogCount % 300 == 0) {
+                            FLog.d(TAG, "[FRAME] camera frame #" + frameLogCount
+                                    + " at " + (now / 1_000_000L) + "ms");
+                        }
+                        if (isRecording || previewOnlyRendering) {
+                            if (handler == null) return;
+                            if (!renderRunnableQueued.compareAndSet(false, true)) {
+                                // Diag: if this fires constantly while render cadence is
+                                // ~1/2s, the render gate is stuck (runnable removed from
+                                // the GL handler queue before executing).
+                                if (frameLogCount <= 20 || frameLogCount % 300 == 0) {
+                                    FLog.d(TAG, "[FRAME] render gate busy — skipping post (frame#"
+                                            + frameLogCount + ")");
+                                }
+                                return;
+                            }
                             handler.post(renderRunnable);
                         }
                     }
@@ -725,8 +858,26 @@ public class GLRecordingPipeline {
                 }
 
             }
+
+            if (Log.isEnabled()) {
+                FLog.i(TAG, "[GL_INIT] ===== prepareSurfaces OK in "
+                        + (SystemClock.elapsedRealtime() - startedMs) + "ms encoder="
+                        + encoderWidth + "x" + encoderHeight + " fps=" + encoderFramerate + " =====");
+                DiagnosticsStore.appendRecordingJournal(context,
+                        "[GL_INIT] prepareSurfaces OK in "
+                                + (SystemClock.elapsedRealtime() - startedMs) + "ms encoder="
+                                + encoderWidth + "x" + encoderHeight + " fps=" + encoderFramerate);
+            }
         } catch (Exception e) {
-            FLog.e(TAG, "Error preparing surfaces", e);
+            long elapsed = SystemClock.elapsedRealtime() - startedMs;
+            if (Log.isEnabled()) {
+                FLog.e(TAG, "[GL_INIT] prepareSurfaces FAILED stage=" + stage
+                        + " after " + elapsed + "ms | " + describeException(e), e);
+            }
+            DiagnosticsStore.appendRecordingJournal(context,
+                    "[GL_INIT] prepareSurfaces FAILED stage=" + stage + " after " + elapsed
+                            + "ms | " + describeException(e));
+            Log.flushNow();
             // Clean up any resources we may have created
             if (glRenderer != null) {
                 try {
@@ -781,6 +932,10 @@ public class GLRecordingPipeline {
 
                 // Mark as recording and set up audio first
                 isRecording = true;
+                if (suspendFileRecordingOnStart && mediaMuxer != null) {
+                    mediaMuxer.setFileRecordingEnabled(false, currentRecordingClockUs());
+                    FLog.i(TAG, "[IDLE-STREAM] file sink starts suspended (motion-armed session)");
+                }
                 setupAudio();
                 if (audioRecordingEnabled) {
                     startAudioThread();
@@ -1006,7 +1161,9 @@ public class GLRecordingPipeline {
                             // totalPauseDurationNanos before feeding frames to the encoder, so no
                             // additional correction is needed here.
                             mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
-                            segmentBytesWritten += bufferInfo.size;
+                            if (mediaMuxer.isFileFeedActive()) {
+                                segmentBytesWritten += bufferInfo.size;
+                            }
                         } catch (Exception e) {
                             FLog.e(TAG, "Error writing final video frame", e);
                         }
@@ -1144,6 +1301,7 @@ public class GLRecordingPipeline {
 
         // Always release the muxer (even if stop failed)
         try {
+            lastWrittenFileFragmentCount = mediaMuxer.getFileFragmentCount();
             mediaMuxer.release();
             // muxer log removed
         } catch (Exception e) {
@@ -1168,136 +1326,72 @@ public class GLRecordingPipeline {
     }
 
     /**
-     * Configures basic encoder settings for maximum device compatibility.
-     * Only applies essential settings that all devices should support.
+     * Builds the encoder format from an explicit, auditable key set.
+     *
+     * <p>{@code KEY_CAPTURE_RATE} is only included in the first (legacy) rung. It describes
+     * the capture (slow-motion) rate, not constant-frame-rate encoding, and strict OEM
+     * encoders can reject a format that carries it.
+     *
+     * <p>{@code KEY_PREPEND_HEADER_TO_SYNC_FRAMES} is optional and API 29+ documents that
+     * "a video encoder may not support this feature; the component will fail to configure in
+     * that case." It is therefore passed as a rung of the configure ladder, never forced.
      */
-    private void configureBasicEncoder(MediaFormat format) {
-        // Essential settings that all encoders must support
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
+    private MediaFormat buildEncoderFormat(String mime, int width, int height, int framerate,
+            int bitrate, int bitrateMode, boolean captureRate, boolean prependHeader,
+            boolean realtimePriority) {
+        MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
+        format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
+                MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, bitrate);
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, framerate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VIDEO_IFRAME_INTERVAL);
-        // CRITICAL: Embed SPS/PPS before every keyframe so the decoder can
-        // restart after a seek even without re-reading the init segment.
-        // Without this, the decoder flush after seek (maybeDropBuffersToKeyframe)
-        // leaves the decoder without codec config → video freezes, audio plays.
-        try {
+        if (captureRate) {
+            format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) framerate);
+        }
+        if (bitrateMode >= 0) {
+            format.setInteger(MediaFormat.KEY_BITRATE_MODE, bitrateMode);
+        }
+        if (prependHeader) {
             format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 1);
-        } catch (Exception e) {
-            FLog.w(TAG, "KEY_PREPEND_HEADER_TO_SYNC_FRAMES not supported on this device");
         }
-
-        // ESSENTIAL: Bitrate mode — CBR for streaming (hard bandwidth cap), VBR for local recording (quality)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            try {
-                boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-                int bitrateMode = isStreaming
-                    ? MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR
-                    : MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR;
-                format.setInteger(MediaFormat.KEY_BITRATE_MODE, bitrateMode);
-                FLog.i(TAG, "[ENCODER] CBR=" + isStreaming + " | bitrate=" + (videoBitrate/1_000_000) + "Mbps | fps=" + videoFramerate);
-            } catch (Exception e) {
-                FLog.w(TAG, "Bitrate mode not supported", e);
-            }
+        if (realtimePriority && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            format.setInteger(MediaFormat.KEY_PRIORITY, 0); // real-time hint
         }
-
-        // ESSENTIAL: For constant framerate recording, especially on Samsung devices
-        // Force constant framerate mode to avoid variable framerate encoding
-        try {
-            // This helps ensure the encoder produces constant framerate output
-            format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
-        } catch (Exception e) {
-        }
-
-        // ESSENTIAL: Real-time priority for smooth recording (API 23+)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            try {
-                format.setInteger(MediaFormat.KEY_PRIORITY, 0); // Real-time priority
-            } catch (Exception e) {
-                FLog.w(TAG, "Priority setting not supported", e);
-            }
-        }
-
-        //     "bitrate=" + videoBitrate + ", framerate=" + videoFramerate + ", vbr=enabled, priority=realtime");
+        return format;
     }
 
     /**
-     * Configures MediaFormat with industry-standard settings for maximum
-     * compatibility
-     * and reliability across all Android devices. This prevents common issues like
-     * incorrect duration, static frames, audio problems, and video corruption.
-     * Uses user-configured settings from SharedPreferences.
+     * Encoder name for OEM-specific quirks and diagnostics.
+     *
+     * <p>{@code MediaCodec#getCanonicalName()} only exists from API 29. On older devices the call
+     * throws {@link NoSuchMethodError} — an {@link Error}, so a surrounding {@code catch
+     * (Exception)} does not stop it and the recording would die. Returns {@code null} when the
+     * name is unavailable.
      */
-    private void configureIndustryStandardEncoder(MediaFormat format, int width, int height) {
-        // Basic encoder settings using the effective bitrate/framerate selected for this recording.
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, VIDEO_IFRAME_INTERVAL);
-        // CRITICAL: Embed SPS/PPS before every keyframe so the decoder can
-        // restart after a seek even without re-reading the init segment.
-        // Without this, the decoder flush after seek (maybeDropBuffersToKeyframe)
-        // leaves the decoder without codec config → video freezes, audio plays.
+    private static String safeCodecName(MediaCodec codec) {
+        if (codec == null || android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+            return null;
+        }
         try {
-            format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 1);
-        } catch (Exception e) {
-            FLog.w(TAG, "KEY_PREPEND_HEADER_TO_SYNC_FRAMES not supported on this device");
+            return codec.getCanonicalName();
+        } catch (Throwable t) {
+            return null;
         }
-
-        // ESSENTIAL: For constant framerate recording, especially on Samsung devices
-        try {
-            format.setFloat(MediaFormat.KEY_CAPTURE_RATE, (float) videoFramerate);
-        } catch (Exception e) {
-        }
-
-        // Industry Standard: Enhanced encoder configuration for reliability
-        // These settings improve compatibility while respecting user's codec choice
-
-        // Set profile and level for better compatibility (API 21+)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            try {
-                String mimeType = videoCodec.getMimeType(); // Using user's selected codec
-                if (mimeType.equals(MediaFormat.MIMETYPE_VIDEO_AVC)) {
-                    // H.264 Baseline Profile for maximum compatibility
-                    format.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline);
-                    format.setInteger(MediaFormat.KEY_LEVEL, MediaCodecInfo.CodecProfileLevel.AVCLevel31);
-                } else if (mimeType.equals(MediaFormat.MIMETYPE_VIDEO_HEVC)) {
-                    // HEVC Main Profile
-                    format.setInteger(MediaFormat.KEY_PROFILE, MediaCodecInfo.CodecProfileLevel.HEVCProfileMain);
-                }
-            } catch (Exception e) {
-                FLog.w(TAG, "Profile/level settings not supported, using defaults", e);
-            }
-        }
-
-        // Set bitrate mode — CBR for streaming (hard bandwidth cap), VBR for local recording (quality)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            try {
-                boolean isStreaming = com.fadcam.streaming.RemoteStreamManager.getInstance().isStreamingEnabled();
-                int bitrateMode = isStreaming
-                    ? MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR
-                    : MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR;
-                format.setInteger(MediaFormat.KEY_BITRATE_MODE, bitrateMode);
-            } catch (Exception e) {
-                FLog.w(TAG, "Bitrate mode not supported", e);
-            }
-        }
-
-        // OPTIONAL: Set priority for real-time encoding (API 23+)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            try {
-                format.setInteger(MediaFormat.KEY_PRIORITY, 0); // Real-time priority
-            } catch (Exception e) {
-                FLog.w(TAG, "Priority setting not supported", e);
-            }
-        }
-
-        //     "codec=" + videoCodec + ", bitrate=" + videoBitrate + ", framerate=" + videoFramerate);
     }
 
     /**
      * Initializes the encoder and input surface once at the beginning.
-     * This should be called only once during the recording session.
+     *
+     * <p>When the debug log is enabled, every step is logged with an {@code [ENC]} prefix and
+     * mirrored into the durable recording journal. The configure path is a small ladder because
+     * an OEM encoder may reject an optional MediaFormat key. Issue #176 is the canonical
+     * example: Android documents that {@code KEY_PREPEND_HEADER_TO_SYNC_FRAMES} makes a
+     * non-supporting encoder fail {@code configure()}, and the reported device is a Huawei
+     * EMUI 10 handset. We no longer force that key; we try it first, then retry without it, and
+     * log exactly which rung died.
+     *
+     * <p>We also stop blindly trusting the requested size/rate/bitrate: on failure, the final
+     * rung clamps to what the encoder actually advertises instead of failing the recording.
      */
     private void initializeEncoder() throws IOException {
         // Use app's orientation setting, not device rotation
@@ -1313,114 +1407,424 @@ public class GLRecordingPipeline {
         encoderWidth = needsSwap ? videoHeight : videoWidth;
         encoderHeight = needsSwap ? videoWidth : videoHeight;
 
-        // Industry Standard: Try encoder configurations with progressive fallbacks
-        boolean encoderConfigured = false;
+        int requestedFps = videoFramerate > 0 ? videoFramerate : 30;
+        int requestedBitrate = videoBitrate > 0
+                ? videoBitrate
+                : com.fadcam.Utils.estimateBitrate(
+                        new android.util.Size(originalWidth, originalHeight), requestedFps);
+        if (requestedBitrate <= 0) {
+            requestedBitrate = 8_000_000;
+        }
+        boolean streaming = com.fadcam.FeatureRegistry.streaming().isStreamingEnabled();
+        int desiredMode = streaming
+                ? MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR
+                : MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR;
+
         String originalMimeType = videoCodec.getMimeType();
         String currentMimeType = originalMimeType;
 
-        // Strategy 1: Try user's preferred codec with minimal settings
-        try {
-            MediaFormat format = MediaFormat.createVideoFormat(currentMimeType, encoderWidth, encoderHeight);
-            configureBasicEncoder(format);
+        StringBuilder diag = new StringBuilder(2048);
+        diag.append("requested mime=").append(originalMimeType)
+                .append(" camera=").append(originalWidth).append('x').append(originalHeight)
+                .append(" encoder=").append(encoderWidth).append('x').append(encoderHeight)
+                .append(" fps=").append(requestedFps)
+                .append(" bitrate=").append(requestedBitrate)
+                .append(" mode=").append(modeLabel(desiredMode))
+                .append(" streaming=").append(streaming)
+                .append(" orientation=").append(orientation)
+                .append('\n');
 
-            videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
-            // QCOM OMX AVC quirk (S20 FE SM-G780G, Android 13): with
-            // KEY_PREPEND_HEADER_TO_SYNC_FRAMES=1 this encoder family omits
-            // csd-0/csd-1 from the output format and its inline-prepended
-            // SPS/PPS at IDR frames corrupts the Annex-B→AVCC conversion
-            // mid-file ("Invalid NAL length" on playback). Disabling the
-            // prepend makes QCOM expose csd in the format — the exact
-            // configuration that works on Android 10 QCOM devices and every
-            // other encoder family (Exynos/MTK/Unisoc). HEVC keeps prepend.
-            if (MediaFormat.MIMETYPE_VIDEO_AVC.equals(currentMimeType)) {
-                try {
-                    String codecName = videoEncoder.getCanonicalName();
-                    if (codecName != null && codecName.contains("qcom")) {
-                        format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 0);
-                        FLog.i(TAG, "[ENCODER] QCOM AVC: prepend-sps-pps-to-idr disabled so csd is exposed in the output format (S20 FE AVC fix)");
-                    }
-                } catch (Exception ignored) {}
-            }
-            videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            // Encoder identity — critical for OEM-specific CSD bugs (Samsung C2 vs Google C2 etc.)
-            try {
-                FLog.i(TAG, "[ENCODER] Video encoder: " + videoEncoder.getCanonicalName() + " | MIME=" + currentMimeType
-                        + " | " + encoderWidth + "x" + encoderHeight);
-            } catch (Exception ignored) {}
-            
-            encoderInputSurface = videoEncoder.createInputSurface();
-            
-            encoderConfigured = true;
-        } catch (Exception e) {
-            FLog.w(TAG, "[GL_INIT] Failed to configure " + currentMimeType + " encoder: " + e.getMessage(), e);
-            if (videoEncoder != null) {
-                try {
-                    videoEncoder.release();
-                } catch (Exception ignored) {
-                }
-                videoEncoder = null;
+        if (Log.isEnabled()) {
+            FLog.i(TAG, "[ENC] ===== ENCODER INIT =====");
+            FLog.i(TAG, "[ENC] " + diag.toString().trim());
+            DiagnosticsStore.appendRecordingJournal(context, "[ENC] init " + diag.toString().trim());
+        }
+
+        ConfiguredEncoder configured = null;
+        // Requested size first. The final rung of each codec's ladder clamps to what the
+        // encoder actually advertises, so a 4K60 request on a 4K30 device becomes 4K30 (or a
+        // supported 1080p-class size) instead of failing the recording.
+        for (String mime : mimesToTry(originalMimeType)) {
+            configured = tryConfigureMime(mime, encoderWidth, encoderHeight, requestedFps,
+                    requestedBitrate, desiredMode, diag);
+            if (configured != null) {
+                currentMimeType = mime;
+                break;
             }
         }
 
-        // Strategy 2: If HEVC failed, try H.264 as fallback
-        if (!encoderConfigured && currentMimeType.equals(MediaFormat.MIMETYPE_VIDEO_HEVC)) {
-            try {
-                currentMimeType = MediaFormat.MIMETYPE_VIDEO_AVC;
-                MediaFormat format = MediaFormat.createVideoFormat(currentMimeType, encoderWidth, encoderHeight);
-                configureBasicEncoder(format);
-
-                videoEncoder = MediaCodec.createEncoderByType(currentMimeType);
-                // Same QCOM AVC prepend-sps-pps quirk as Strategy 1 — see above.
-                if (MediaFormat.MIMETYPE_VIDEO_AVC.equals(currentMimeType)) {
-                    try {
-                        String codecName = videoEncoder.getCanonicalName();
-                        if (codecName != null && codecName.contains("qcom")) {
-                            format.setInteger(MediaFormat.KEY_PREPEND_HEADER_TO_SYNC_FRAMES, 0);
-                            FLog.i(TAG, "[ENCODER] QCOM AVC: prepend-sps-pps-to-idr disabled so csd is exposed in the output format (S20 FE AVC fix)");
-                        }
-                    } catch (Exception ignored) {}
-                }
-                videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-                try {
-                    FLog.i(TAG, "[ENCODER] Video encoder (H.264 fallback): " + videoEncoder.getCanonicalName()
-                            + " | MIME=" + currentMimeType + " | " + encoderWidth + "x" + encoderHeight);
-                } catch (Exception ignored) {}
-                
-                encoderInputSurface = videoEncoder.createInputSurface();
-                
-                encoderConfigured = true;
-            } catch (Exception e) {
-                FLog.e(TAG, "[GL_INIT] Failed to configure H.264 fallback encoder: " + e.getMessage(), e);
-                if (videoEncoder != null) {
-                    try {
-                        videoEncoder.release();
-                    } catch (Exception ignored) {
-                    }
-                    videoEncoder = null;
-                }
+        lastEncoderDiagnostics = diag.toString();
+        if (configured == null) {
+            if (Log.isEnabled()) {
+                FLog.e(TAG, "[ENC] CRITICAL: no encoder accepted the format.\n" + lastEncoderDiagnostics);
             }
+            DiagnosticsStore.appendRecordingJournal(context, "[ENC] FAILED\n" + lastEncoderDiagnostics);
+            Log.flushNow();
+            throw new IOException(
+                    "Failed to configure any video encoder. Device may not support video recording.\n\n"
+                            + lastEncoderDiagnostics);
         }
 
-        if (!encoderConfigured) {
-            FLog.e(TAG, "[GL_INIT] CRITICAL: Failed to configure ANY video encoder. Device may not support video recording.");
-            throw new IOException("Failed to configure any video encoder. Device may not support video recording.");
-        }
+        videoEncoder = configured.codec;
+        encoderInputSurface = configured.surface;
+        encoderWidth = configured.width;
+        encoderHeight = configured.height;
+        encoderFramerate = configured.framerate;
+        videoBitrate = configured.bitrate;
 
-        // Update the codec reference to reflect what was actually used
         if (!currentMimeType.equals(originalMimeType)) {
-            FLog.i(TAG, "Codec changed from " + originalMimeType + " to " + currentMimeType + " due to compatibility");
+            if (Log.isEnabled()) {
+                FLog.i(TAG, "[ENC] codec changed " + originalMimeType + " -> " + currentMimeType);
+            }
+            diag.append("codec-changed=").append(originalMimeType).append("->").append(currentMimeType).append('\n');
+            lastEncoderDiagnostics = diag.toString();
         }
 
-        // DEBUG: Log MediaCodec surface dimensions
-        try {
-        } catch (Exception e) {
-            FLog.e(TAG, "Error logging MediaCodec dimensions", e);
+        if (Log.isEnabled()) {
+            FLog.i(TAG, "[ENC] start codec=" + safeCodecName(videoEncoder)
+                    + " mime=" + currentMimeType + " " + encoderWidth + "x" + encoderHeight
+                    + " fps=" + encoderFramerate + " bitrate=" + videoBitrate);
+            DiagnosticsStore.appendRecordingJournal(context, "[ENC] start codec=" + safeCodecName(videoEncoder)
+                    + " mime=" + currentMimeType + " " + encoderWidth + "x" + encoderHeight
+                    + " fps=" + encoderFramerate + " bitrate=" + videoBitrate);
         }
 
         videoEncoder.start();
 
         if (glRenderer != null) {
             glRenderer.setEncoderDimensions(encoderWidth, encoderHeight);
+        }
+    }
+
+    /** Selected codec first, then H.264 only when the selection was HEVC (as before). */
+    private static String[] mimesToTry(String selected) {
+        if (MediaFormat.MIMETYPE_VIDEO_HEVC.equals(selected)) {
+            return new String[]{selected, MediaFormat.MIMETYPE_VIDEO_AVC};
+        }
+        return new String[]{selected};
+    }
+
+    /**
+     * Tries the encoder {@code createEncoderByType()} would pick first, with the requested
+     * values and the exact optional keys the previous code used. Only if that fails do we
+     * enumerate the rest and start dropping keys / clamping capabilities. On a healthy device
+     * this is the same one-codec, one-configure path as before.
+     */
+    private ConfiguredEncoder tryConfigureMime(String mime, int width, int height, int requestedFps,
+            int requestedBitrate, int desiredMode, StringBuilder diag) {
+        if (Log.isEnabled()) {
+            FLog.i(TAG, "[ENC] --- " + VideoEncoderCapabilities.mimeLabel(mime)
+                    + " " + width + "x" + height + " ---");
+        }
+        diag.append("  ").append(VideoEncoderCapabilities.mimeLabel(mime))
+                .append(' ').append(width).append('x').append(height).append('\n');
+        boolean verbose = Log.isEnabled();
+
+        MediaCodec defaultCodec = null;
+        String defaultName = null;
+        VideoEncoderCapabilities.EncoderInfo defaultInfo = null;
+        boolean defaultAttempted = false;
+        try {
+            defaultCodec = MediaCodec.createEncoderByType(mime);
+            MediaCodecInfo codecInfo = defaultCodec.getCodecInfo();
+            defaultName = codecInfo == null ? null : codecInfo.getName();
+            // Capability inspection costs several OEM JNI calls. Only do it when the user
+            // explicitly enabled the debug log; the normal path must stay as cheap as before.
+            if (verbose && codecInfo != null) {
+                defaultInfo = VideoEncoderCapabilities.inspect(codecInfo, mime, width, height);
+                FLog.i(TAG, "[ENC] default codec " + defaultInfo.describe());
+                diag.append("    default ").append(defaultInfo.describe()).append('\n');
+            }
+        } catch (Exception e) {
+            if (Log.isEnabled()) {
+                FLog.w(TAG, "[ENC] createEncoderByType(" + mime + ") failed: " + describeException(e));
+            }
+            diag.append("    createEncoderByType failed: ").append(describeException(e)).append('\n');
+            releaseEncoder(defaultCodec);
+            defaultCodec = null;
+        }
+
+        if (defaultName != null) {
+            defaultAttempted = true;
+            ConfiguredEncoder result = tryLadder(defaultCodec, defaultName, defaultInfo, mime,
+                    width, height, requestedFps, requestedBitrate, desiredMode, diag);
+            if (result != null) {
+                if (Log.isEnabled()) {
+                    FLog.i(TAG, "[ENC] selected codec=" + result.name + " mime=" + mime
+                            + " " + result.width + "x" + result.height + " fps=" + result.framerate
+                            + " bitrate=" + result.bitrate + " rung=" + result.rung);
+                }
+                diag.append("    SELECTED ").append(result.name).append(" mime=").append(mime)
+                        .append(" size=").append(result.width).append('x').append(result.height)
+                        .append(" fps=").append(result.framerate)
+                        .append(" bitrate=").append(result.bitrate)
+                        .append(" rung=").append(result.rung).append('\n');
+                return result;
+            }
+        } else if (defaultCodec != null) {
+            // Could not inspect the default codec; release it and let the name list try it.
+            releaseEncoder(defaultCodec);
+        }
+
+        // The default failed. Enumerate every advertised encoder and try the same ladder.
+        List<VideoEncoderCapabilities.EncoderInfo> infos =
+                VideoEncoderCapabilities.inspectAll(mime, width, height);
+        if (verbose) {
+            String report = VideoEncoderCapabilities.buildReport(mime, width, height);
+            FLog.i(TAG, "[ENC] capability report:\n" + report);
+            diag.append("  capability report:\n").append(report);
+        }
+        if (infos.isEmpty()) {
+            diag.append("    no encoder advertised this MIME\n");
+            return null;
+        }
+        for (VideoEncoderCapabilities.EncoderInfo info : infos) {
+            if (info.name == null || (defaultAttempted && info.name.equals(defaultName))) {
+                continue;
+            }
+            if (!info.surfaceSupported && info.error == null) {
+                diag.append("    ").append(info.name).append(": no COLOR_FormatSurface; skipping\n");
+                continue;
+            }
+            ConfiguredEncoder result = tryLadder(null, info.name, info, mime, width, height,
+                    requestedFps, requestedBitrate, desiredMode, diag);
+            if (result != null) {
+                if (Log.isEnabled()) {
+                    FLog.i(TAG, "[ENC] selected fallback codec=" + result.name + " mime=" + mime
+                            + " " + result.width + "x" + result.height + " fps=" + result.framerate
+                            + " bitrate=" + result.bitrate + " rung=" + result.rung);
+                }
+                diag.append("    SELECTED ").append(result.name).append(" mime=").append(mime)
+                        .append(" size=").append(result.width).append('x').append(result.height)
+                        .append(" fps=").append(result.framerate)
+                        .append(" bitrate=").append(result.bitrate)
+                        .append(" rung=").append(result.rung).append('\n');
+                return result;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The compatibility ladder for one encoder. Rungs are ordered from the exact legacy format
+     * to the most conservative one, so a healthy encoder only ever runs rung A.
+     */
+    private ConfiguredEncoder tryLadder(MediaCodec precreated, String name,
+            VideoEncoderCapabilities.EncoderInfo info, String mime, int width, int height,
+            int requestedFps, int requestedBitrate, int desiredMode, StringBuilder diag) {
+        boolean qcomAvc = MediaFormat.MIMETYPE_VIDEO_AVC.equals(mime)
+                && name.toLowerCase(Locale.US).contains("qcom");
+        boolean prepend = !qcomAvc;
+
+        // A: exact legacy format (requested values + capture-rate + priority + prepend).
+        ConfiguredEncoder result = tryConfigure(precreated, name, mime, width, height,
+                requestedFps, requestedBitrate, desiredMode, true, prepend, true, 1, diag);
+        if (result != null) {
+            return result;
+        }
+
+        // B: Android documents that a non-supporting encoder fails configure() for the optional
+        // prepend key (Huawei/EMUI 10, issue #176). Drop it.
+        if (prepend) {
+            result = tryConfigure(null, name, mime, width, height, requestedFps, requestedBitrate,
+                    desiredMode, true, false, true, 2, diag);
+            if (result != null) {
+                return result;
+            }
+        }
+
+        // C: also drop the capture-rate and realtime-priority hints.
+        result = tryConfigure(null, name, mime, width, height, requestedFps, requestedBitrate,
+                desiredMode, false, false, false, 3, diag);
+        if (result != null) {
+            return result;
+        }
+
+        // D: drop the bitrate mode as well.
+        result = tryConfigure(null, name, mime, width, height, requestedFps, requestedBitrate,
+                -1, false, false, false, 4, diag);
+        if (result != null) {
+            return result;
+        }
+
+        // E: capability-clamped minimal format. This is the last resort for a genuine
+        // resolution/fps/bitrate mismatch (e.g. 4K60 on a 4K30 Kirin 980).
+        VideoEncoderCapabilities.EncoderInfo capsInfo = info;
+        if (capsInfo == null) {
+            capsInfo = inspectByName(name, mime, width, height);
+        }
+        if (capsInfo == null) {
+            return null;
+        }
+        if (capsInfo.softwareOnly
+                && !Boolean.TRUE.equals(capsInfo.sizeSupported)
+                && !Boolean.TRUE.equals(capsInfo.sizeSupportedSwapped)) {
+            // Never silently downscale to a postage-stamp software encoder. If the hardware
+            // path failed, a tiny software fallback is worse than a clear error.
+            if (Log.isEnabled()) {
+                FLog.w(TAG, "[ENC] " + name + ": software encoder cannot handle "
+                        + width + "x" + height + "; not downscaling");
+            }
+            return null;
+        }
+        int[] size = VideoEncoderCapabilities.clampSize(capsInfo.codecInfo, mime, width, height);
+        int fps = VideoEncoderCapabilities.clampFps(capsInfo.frameRates, requestedFps);
+        int bitrate = VideoEncoderCapabilities.clampBitrate(capsInfo.bitrateRange, requestedBitrate);
+        int mode = VideoEncoderCapabilities.chooseBitrateMode(capsInfo.codecInfo, mime, desiredMode);
+        boolean changed = size[0] != width || size[1] != height || fps != requestedFps
+                || bitrate != requestedBitrate;
+        if (changed) {
+            String note = "capability clamp " + width + "x" + height + "/" + requestedFps
+                    + "fps/" + requestedBitrate + "bps -> " + size[0] + "x" + size[1] + "/"
+                    + fps + "fps/" + bitrate + "bps mode=" + modeLabel(mode);
+            if (Log.isEnabled()) {
+                FLog.w(TAG, "[ENC] " + name + ": " + note);
+            }
+            diag.append("    ").append(name).append(": ").append(note).append('\n');
+        }
+        return tryConfigure(null, name, mime, size[0], size[1], fps, bitrate, mode,
+                false, false, false, 5, diag);
+    }
+
+    private ConfiguredEncoder tryConfigure(MediaCodec precreated, String name, String mime,
+            int width, int height, int fps, int bitrate, int mode, boolean captureRate,
+            boolean prepend, boolean priority, int attemptNo, StringBuilder diag) {
+        MediaCodec codec = precreated;
+        boolean ownsCodec = precreated != null;
+        long started = SystemClock.elapsedRealtime();
+        MediaFormat format = buildEncoderFormat(mime, width, height, fps, bitrate, mode,
+                captureRate, prepend, priority);
+        String label = "rung " + attemptNo + " " + VideoEncoderCapabilities.mimeLabel(mime)
+                + " " + name + " " + width + "x" + height
+                + " fps=" + fps + " bitrate=" + bitrate + " mode=" + modeLabel(mode)
+                + " capture=" + captureRate + " prepend=" + prepend + " priority=" + priority;
+        if (Log.isEnabled()) {
+            FLog.i(TAG, "[ENC-TRY] " + label + " format=" + format);
+        }
+        diag.append("    ").append(label).append('\n');
+        // Written BEFORE configure(): if the codec kills the process, the journal still names
+        // the exact codec/format we were configuring.
+        DiagnosticsStore.appendRecordingJournal(context, "[ENC-TRY] START " + label);
+        try {
+            if (codec == null) {
+                codec = MediaCodec.createByCodecName(name);
+                ownsCodec = true;
+            }
+            codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            Surface surface = codec.createInputSurface();
+            long ms = SystemClock.elapsedRealtime() - started;
+            if (Log.isEnabled()) {
+                FLog.i(TAG, "[ENC-TRY] OK " + label + " in " + ms + "ms");
+            }
+            diag.append("      OK in ").append(ms).append("ms\n");
+            DiagnosticsStore.appendRecordingJournal(context, "[ENC-TRY] OK " + label);
+            return new ConfiguredEncoder(codec, surface, name, mime, width, height, fps, bitrate, attemptNo);
+        } catch (Exception e) {
+            long ms = SystemClock.elapsedRealtime() - started;
+            String detail = describeException(e);
+            if (Log.isEnabled()) {
+                FLog.e(TAG, "[ENC-TRY] FAILED " + label + " in " + ms + "ms | " + detail, e);
+            }
+            diag.append("      FAILED in ").append(ms).append("ms | ").append(detail).append('\n');
+            DiagnosticsStore.appendRecordingJournal(context,
+                    "[ENC-TRY] FAILED " + label + " | " + detail);
+            if (ownsCodec) {
+                releaseEncoder(codec);
+            }
+            return null;
+        }
+    }
+
+    /** Inspects an encoder by name without configuring it. Used only on a failed fast path. */
+    private VideoEncoderCapabilities.EncoderInfo inspectByName(String name, String mime,
+            int width, int height) {
+        MediaCodec codec = null;
+        try {
+            codec = MediaCodec.createByCodecName(name);
+            MediaCodecInfo info = codec.getCodecInfo();
+            return info == null ? null
+                    : VideoEncoderCapabilities.inspect(info, mime, width, height);
+        } catch (Exception e) {
+            return null;
+        } finally {
+            releaseEncoder(codec);
+        }
+    }
+
+    /** Best-effort, human-readable exception detail. Never throws. */
+    private static String describeException(Throwable t) {
+        if (t == null) {
+            return "unknown";
+        }
+        StringBuilder sb = new StringBuilder(180);
+        sb.append(t.getClass().getName());
+        if (t.getMessage() != null) {
+            sb.append(": ").append(t.getMessage());
+        }
+        if (t instanceof MediaCodec.CodecException) {
+            MediaCodec.CodecException ce = (MediaCodec.CodecException) t;
+            sb.append(" [codecError=").append(ce.getErrorCode())
+                    .append(" recoverable=").append(ce.isRecoverable())
+                    .append(" transient=").append(ce.isTransient());
+            String diagnostic = ce.getDiagnosticInfo();
+            if (diagnostic != null && !diagnostic.isEmpty()) {
+                sb.append(" diagnostic=").append(diagnostic);
+            }
+            sb.append(']');
+        }
+        Throwable cause = t.getCause();
+        if (cause != null && cause != t) {
+            sb.append(" causedBy=").append(cause.getClass().getSimpleName())
+                    .append(": ").append(cause.getMessage());
+        }
+        return sb.toString();
+    }
+
+    private static String modeLabel(int mode) {
+        if (mode == MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR) {
+            return "CBR";
+        }
+        if (mode == MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR) {
+            return "VBR";
+        }
+        if (mode == MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ) {
+            return "CQ";
+        }
+        return mode < 0 ? "omit" : String.valueOf(mode);
+    }
+
+    private static void releaseEncoder(MediaCodec codec) {
+        if (codec == null) {
+            return;
+        }
+        try {
+            codec.release();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private static final class ConfiguredEncoder {
+        final MediaCodec codec;
+        final Surface surface;
+        final String name;
+        final String mime;
+        final int width;
+        final int height;
+        final int framerate;
+        final int bitrate;
+        final int rung;
+
+        ConfiguredEncoder(MediaCodec codec, Surface surface, String name, String mime,
+                int width, int height, int framerate, int bitrate, int rung) {
+            this.codec = codec;
+            this.surface = surface;
+            this.name = name;
+            this.mime = mime;
+            this.width = width;
+            this.height = height;
+            this.framerate = framerate;
+            this.bitrate = bitrate;
+            this.rung = rung;
         }
     }
 
@@ -1432,17 +1836,22 @@ public class GLRecordingPipeline {
     private void setupMuxer() throws IOException {
         // Use FragmentedMp4MuxerWrapper for fMP4 streaming
         // Native Android MediaMuxer does NOT support fragmented MP4 output!
-        // We must use Media3's FragmentedMp4Muxer
+        // We must use Media3's FragmentedMp4Muxer.
+        //
+        // The muxer is wrapped in a MuxerTee so a dedicated in-memory sink can
+        // feed the live HLS view independently of recording-to-disk. With no
+        // stream sink the tee is a pure pass-through (unchanged behaviour).
+        FragmentedMp4MuxerWrapper newFileMuxer;
         if (currentOutputFd != null) {
-            mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFd);
+            newFileMuxer = new FragmentedMp4MuxerWrapper(currentOutputFd);
         } else {
-            mediaMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
+            newFileMuxer = new FragmentedMp4MuxerWrapper(currentOutputFilePath);
         }
         // Diagnostic: let the wrapper know the output path even for fd-based
         // construction, so finalization failures can report exists()/length().
         try {
             if (currentOutputFilePath != null) {
-                mediaMuxer.setOutputPath(currentOutputFilePath);
+                newFileMuxer.setOutputPath(currentOutputFilePath);
             }
         } catch (Exception ignored) {}
 
@@ -1455,7 +1864,7 @@ public class GLRecordingPipeline {
         try {
             if (currentOutputFd != null && outputUri != null) {
                 final String uri = outputUri;
-                mediaMuxer.setFileReopener(new com.fadcam.media.FragmentedMp4MuxerWrapper.FileReopener() {
+                newFileMuxer.setFileReopener(new com.fadcam.media.FragmentedMp4MuxerWrapper.FileReopener() {
                     @Override
                     public java.io.FileOutputStream reopen() throws IOException {
                         if (reopenPfd != null) {
@@ -1483,9 +1892,20 @@ public class GLRecordingPipeline {
 
         // Set location metadata if available
         if (locationLatitude != null && locationLongitude != null) {
-            mediaMuxer.setLocation(locationLatitude.floatValue(), locationLongitude.floatValue());
+            newFileMuxer.setLocation(locationLatitude.floatValue(), locationLongitude.floatValue());
+        }
+
+        if (mediaMuxer == null) {
+            mediaMuxer = new MuxerTee(newFileMuxer);
+            // Streaming already on when the session starts: keep the stream sink
+            // ready so fragments flow even while the file is idle-paused.
+            if (com.fadcam.FeatureRegistry.streaming().isStreamingEnabled()) {
+                mediaMuxer.prepareStreamSink();
+            }
         } else {
-            // no location metadata
+            // Segment rollover: swap only the file sink; the stream sink keeps
+            // running so the live view never restarts.
+            mediaMuxer.replaceFileMuxer(newFileMuxer);
         }
 
         // Reset track indices
@@ -1498,6 +1918,7 @@ public class GLRecordingPipeline {
                 recordingStartTimeNanos = -1;
                 recordingStartSystemTimeNanos = -1;
             }
+            lastWrittenFileFragmentCount = -1;
         }
 
         // DO NOT start muxer here - wait for encoder formats to be available
@@ -1521,8 +1942,12 @@ public class GLRecordingPipeline {
         // Set up the muxer
         setupMuxer();
 
-        // Log encoder and muxer status (removed for performance)
-        // setup log removed
+        if (Log.isEnabled()) {
+            FLog.i(TAG, "[GL_INIT] setupEncoder done: encoder=" + safeCodecName(videoEncoder)
+                    + " inputSurface=" + (encoderInputSurface != null && encoderInputSurface.isValid())
+                    + " muxer=" + (mediaMuxer != null)
+                    + " size=" + encoderWidth + "x" + encoderHeight);
+        }
     }
 
     private void startRenderLoop() {
@@ -1558,10 +1983,33 @@ public class GLRecordingPipeline {
         drainHandler.post(new DrainRunnable());
     }
 
+    /**
+     * Attaches the in-memory stream sink if the remote server was enabled after
+     * this recording session started. Runs on the drain thread, once formats are
+     * known, and only while streaming is actually enabled.
+     */
+    private void maybeAttachStreamSink() {
+        if (mediaMuxer == null || mediaMuxer.hasStreamSink()) {
+            return;
+        }
+        if (!com.fadcam.FeatureRegistry.streaming().isStreamingEnabled()) {
+            return;
+        }
+        MediaFormat videoFormat = cachedVideoFormat;
+        MediaFormat audioFormat = cachedAudioFormat;
+        if (videoFormat == null || (audioRecordingEnabled && audioFormat == null)) {
+            return;
+        }
+        mediaMuxer.ensureStreamSink(videoFormat, audioRecordingEnabled ? audioFormat : null);
+    }
+
     private final class DrainRunnable implements Runnable {
         @Override
         public void run() {
             if (isStopped || !isRecording) return;
+            // The remote server can be enabled after this session already started;
+            // attach the stream sink as soon as both encoder formats are known.
+            maybeAttachStreamSink();
             // Drain audio FIRST — audio encoder has finite input buffers.
             // If the drain thread spends too much time on video (especially
             // at 4K+ max quality), audio output backs up, blocking EOS at
@@ -1628,10 +2076,10 @@ public class GLRecordingPipeline {
 
             if (mediaMuxer != null) {
                 try {
-                    if (muxerStarted) mediaMuxer.stop();
-                    mediaMuxer.release();
+                    // Stop/release only the file sink. The in-memory stream sink
+                    // stays alive so a size rollover never restarts the live view.
+                    mediaMuxer.stopFileSinkForSwap();
                 } catch (Exception e) { FLog.e(TAG, "Error releasing muxer during async rollover", e); }
-                mediaMuxer = null;
                 muxerStarted = false;
             }
 
@@ -1734,7 +2182,8 @@ public class GLRecordingPipeline {
                     // Inject frame rate and bitrate into output format for proper metadata
                     // The encoder's output format often doesn't include these values
                     if (!newFormat.containsKey(MediaFormat.KEY_FRAME_RATE)) {
-                        newFormat.setInteger(MediaFormat.KEY_FRAME_RATE, videoFramerate);
+                        newFormat.setInteger(MediaFormat.KEY_FRAME_RATE,
+                                encoderFramerate > 0 ? encoderFramerate : videoFramerate);
                     }
                     if (!newFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
                         newFormat.setInteger(MediaFormat.KEY_BIT_RATE, videoBitrate);
@@ -1922,6 +2371,11 @@ public class GLRecordingPipeline {
                     }
 
                     if (bufferInfo.size > 0 && muxerStarted) {
+                        if (videoSamplesWritten % 60 == 0) {
+                            FLog.d(TAG, "[DRAIN] video sample#" + videoSamplesWritten
+                                    + " pts=" + (bufferInfo.presentationTimeUs / 1000L)
+                                    + "ms size=" + bufferInfo.size);
+                        }
                         // Ensure we have valid data in the buffer
                         if (encodedData.remaining() < bufferInfo.size) {
                             FLog.w(TAG, "Buffer size mismatch: remaining=" + encodedData.remaining() +
@@ -1942,25 +2396,29 @@ public class GLRecordingPipeline {
                                 
                                 videoSamplesWritten++;
                                 if (videoSamplesWritten <= 5) {
-                                    // Full AVC framing trace: flags + head bytes of the raw
-                                    // encoder sample as fed to the muxer, classified as
+                                    // Full framing trace (AVC + HEVC): flags + head bytes of the
+                                    // raw encoder sample as fed to the muxer, classified as
                                     // Annex-B (start code) or AVCC (length prefix). Mixed
                                     // framing across samples would be visible here.
                                     String framing = classifySampleFraming(encodedData,
                                             bufferInfo.offset, bufferInfo.size);
-                                    FLog.i(TAG, "[AVC-TRACE] sample#" + videoSamplesWritten
+                                    String traceTag = MediaFormat.MIMETYPE_VIDEO_HEVC.equals(
+                                            videoCodec.getMimeType()) ? "[HEVC-TRACE]" : "[AVC-TRACE]";
+                                    FLog.i(TAG, traceTag + " sample#" + videoSamplesWritten
                                             + " flags=0x" + Integer.toHexString(bufferInfo.flags)
                                             + " size=" + bufferInfo.size
                                             + " framing=" + framing
                                             + " head=" + hexHead(encodedData,
                                             bufferInfo.offset, bufferInfo.size, 32));
                                     if (videoSamplesWritten == 1) {
-                                        FLog.i(TAG, "[AVC-CSD] First video sample written OK — muxer header built, samples flowing");
+                                        FLog.i(TAG, "[" + (traceTag.contains("HEVC") ? "HEVC" : "AVC") + "-CSD] First video sample written OK — muxer header built, samples flowing");
                                     }
                                 }
                                 lastVideoPts = bufferInfo.presentationTimeUs;
                                 
-                                segmentBytesWritten += bufferInfo.size;
+                                if (mediaMuxer.isFileFeedActive()) {
+                                    segmentBytesWritten += bufferInfo.size;
+                                }
                                 if (!rolloverRequestedByDrain && awaitingKeyframeForRollover && isKeyframe && maxFileSizeBytes > 0 && segmentBytesWritten >= maxFileSizeBytes) {
                                     FLog.i(TAG, "Keyframe boundary reached with size >= limit (" + segmentBytesWritten + "); scheduling rollover");
                                     awaitingKeyframeForRollover = false;
@@ -2055,7 +2513,9 @@ public class GLRecordingPipeline {
                                         mediaMuxer.writeSampleData(videoTrackIndex, encodedData, bufferInfo);
                                         videoSamplesWritten++;
                                         lastVideoPts = bufferInfo.presentationTimeUs;
-                                        segmentBytesWritten += bufferInfo.size;
+                                        if (mediaMuxer.isFileFeedActive()) {
+                                            segmentBytesWritten += bufferInfo.size;
+                                        }
                                         FLog.d(TAG, "[HEVC-CSD] Wrote extraction-source keyframe directly (pts=" + bufferInfo.presentationTimeUs + ")");
                                     } else {
                                         ByteBuffer copy = ByteBuffer.allocateDirect(bufferInfo.size);
@@ -2175,14 +2635,13 @@ public class GLRecordingPipeline {
                 try {
                     if (muxerStarted) {
                         FLog.d(TAG, "Stopping current muxer before segment callback");
-                        mediaMuxer.stop();
                     }
-                    FLog.d(TAG, "Releasing current muxer before segment callback");
-                    mediaMuxer.release();
+                    // Stop/release only the file sink. The live-stream sink keeps
+                    // running across the rollover.
+                    mediaMuxer.stopFileSinkForSwap();
                 } catch (Exception e) {
                     FLog.e(TAG, "Error releasing muxer during rollover", e);
                 }
-                mediaMuxer = null;
                 muxerStarted = false;
             }
 
@@ -2568,8 +3027,15 @@ public class GLRecordingPipeline {
         isRecording = false;
         previewOnlyRendering = false;
 
+        if (glRenderer != null) {
+            FLog.i(TAG, "[RENDER-STATS] " + glRenderer.getRenderStats());
+        }
+
         if (handler != null) {
             handler.removeCallbacksAndMessages(null);
+            // Removing a posted-but-not-run renderRunnable leaves the CAS gate
+            // stuck true forever; frames then never post again. Reset it.
+            renderRunnableQueued.set(false);
         }
 
         // Proactively release preview EGL on the GL thread to ensure native disconnect
@@ -2914,6 +3380,96 @@ public class GLRecordingPipeline {
         return cameraInputSurface;
     }
 
+    /** True while the pipeline is encoding frames (live view or file recording). */
+    public boolean isRecording() {
+        return isRecording && !isStopped;
+    }
+
+    /**
+     * Current position on the recording timeline in microseconds. This is the
+     * same clock the encoder samples use for PTS, excluding real encoder pauses
+     * but including live-idle periods.
+     */
+    private long currentRecordingClockUs() {
+        if (recordingStartSystemTimeNanos == -1L) {
+            return 0L;
+        }
+        long elapsedNanos = System.nanoTime() - recordingStartSystemTimeNanos - totalPauseDurationNanos;
+        return Math.max(0L, elapsedNanos / 1000L);
+    }
+
+    /**
+     * Requests that the file sink starts suspended once the pipeline starts.
+     * Used for a motion-armed session so the idle arm period never writes any
+     * samples (the live stream still runs).
+     */
+    public void suspendFileRecordingOnStart() {
+        suspendFileRecordingOnStart = true;
+    }
+
+    /**
+     * Suspends writes to the recording file only. The camera, encoder and audio
+     * keep running, so the live-stream sink stays continuous. On resume the file
+     * timeline is compressed by the idle duration, keeping one contiguous file
+     * per session with no blank lead-in.
+     */
+    public boolean suspendFileRecording() {
+        if (mediaMuxer == null) {
+            FLog.w(TAG, "suspendFileRecording: muxer not ready");
+            return false;
+        }
+        mediaMuxer.setFileRecordingEnabled(false, currentRecordingClockUs());
+        return true;
+    }
+
+    /**
+     * Resumes writes to the recording file after {@link #suspendFileRecording()}.
+     * A keyframe is requested so the first written frame is self-contained.
+     */
+    public void resumeFileRecording() {
+        if (mediaMuxer == null) {
+            FLog.w(TAG, "resumeFileRecording: muxer not ready");
+            return;
+        }
+        mediaMuxer.setFileRecordingEnabled(true, currentRecordingClockUs());
+        requestVideoSyncFrame("file-resume");
+    }
+
+    /** True while the encoder is running but the recording file is paused. */
+    public boolean isFileRecordingSuspended() {
+        return mediaMuxer != null && !mediaMuxer.isFileRecordingEnabled();
+    }
+
+    /**
+     * Seconds of already-encoded video to keep before a motion trigger, so the
+     * clip starts just before the person appears.
+     */
+    public void setPreRollSeconds(int seconds) {
+        if (mediaMuxer != null) {
+            mediaMuxer.setPreRollSeconds(seconds);
+        }
+    }
+
+    /** Media fragments written to the current file (0 means no usable media). */
+    public int getWrittenFileFragmentCount() {
+        return mediaMuxer != null ? mediaMuxer.getFileFragmentCount() : lastWrittenFileFragmentCount;
+    }
+
+    /** Forces the next encoded video frame to be an IDR keyframe. */
+    private void requestVideoSyncFrame(String reason) {
+        if (videoEncoder == null) {
+            return;
+        }
+        try {
+            android.os.Bundle params = new android.os.Bundle();
+            params.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
+            videoEncoder.setParameters(params);
+            FLog.i(TAG, "[SYNC-FRAME] IDR requested (" + reason + ")");
+        } catch (Exception e) {
+            FLog.w(TAG, "[SYNC-FRAME] request failed (" + reason + ")", e);
+        }
+    }
+
     /**
      * Pauses the recording pipeline with proper timestamp tracking.
      * During pause, we record the last known PTS values to maintain
@@ -3032,16 +3588,7 @@ public class GLRecordingPipeline {
 
         // Force an IDR (keyframe) on the very next video frame so that ExoPlayer
         // can seek into the post-resume segment without showing a still frame.
-        if (videoEncoder != null) {
-            try {
-                android.os.Bundle params = new android.os.Bundle();
-                params.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
-                videoEncoder.setParameters(params);
-                FLog.i(TAG, "[RESUME] Requested sync (IDR keyframe) from video encoder");
-            } catch (Exception e) {
-                FLog.w(TAG, "[RESUME] Failed to request sync frame from encoder", e);
-            }
-        }
+        requestVideoSyncFrame("resume");
 
         // Resume periodic watermark updates and force an immediate refresh.
         ensureWatermarkUpdaterRunning();
@@ -3118,6 +3665,33 @@ public class GLRecordingPipeline {
 
     public boolean isAudioMuted() {
         return audioMuted;
+    }
+
+    /** Records which physical camera is live so front/back logic is never stale. */
+    public void setLiveLensFacing(@Nullable Integer lensFacing) {
+        handler.post(() -> {
+            try {
+                if (glRenderer != null) {
+                    glRenderer.setLiveLensFacing(lensFacing);
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "setLiveLensFacing failed", e);
+            }
+        });
+    }
+
+    /** Forwards a new sensor angle to the renderer after a camera switch. */
+    public void setSensorOrientation(int degrees) {
+        this.sensorOrientation = degrees;
+        handler.post(() -> {
+            try {
+                if (glRenderer != null) {
+                    glRenderer.setSensorOrientation(degrees);
+                }
+            } catch (Exception e) {
+                FLog.w(TAG, "setSensorOrientation failed", e);
+            }
+        });
     }
 
     public void setFrontVideoMirrorEnabled(boolean enabled) {
@@ -3482,7 +4056,7 @@ public class GLRecordingPipeline {
                 }
             }
             
-            // Disable SBR mode to avoid corruption on some devices (e.g., TECNO with Codec2)
+            // Disable SBR mode to avoid corruption on some devices (e.g. certain Codec2 builds)
             // SBR (Spectral Band Replication) mode 3 can cause "Reserved bit set" errors
             try {
                 audioFormat.setInteger("aac-sbr-mode", 0); // Disable SBR

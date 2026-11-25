@@ -44,6 +44,8 @@ public class AnimatedDigitStripView extends LinearLayout {
         setOrientation(HORIZONTAL);
         setGravity(Gravity.CENTER_VERTICAL);
         setBaselineAligned(false);
+        // Digits within a value are always ordered left-to-right, in every language.
+        setLayoutDirection(LAYOUT_DIRECTION_LTR);
         digitViews = new AnimatedTextView[digitCount];
         init(context);
     }
@@ -93,10 +95,7 @@ public class AnimatedDigitStripView extends LinearLayout {
             // Restore fixed width for visible digits
             LayoutParams params = (LayoutParams) digitView.getLayoutParams();
             Paint paint = new Paint(digitView.getPaint());
-            float widestDigit = 0f;
-            for (char digit = '0'; digit <= '9'; digit++) {
-                widestDigit = Math.max(widestDigit, paint.measureText(String.valueOf(digit)));
-            }
+            float widestDigit = widestDigitWidth(paint);
             int widthPx = (int) Math.ceil(widestDigit + dpToPx(1));
             params.width = widthPx;
             digitView.setLayoutParams(params);
@@ -168,16 +167,38 @@ public class AnimatedDigitStripView extends LinearLayout {
         }
 
         Paint paint = new Paint(digitViews[0].getPaint());
-        float widestDigit = 0f;
-        for (char digit = '0'; digit <= '9'; digit++) {
-            widestDigit = Math.max(widestDigit, paint.measureText(String.valueOf(digit)));
-        }
+        float widestDigit = widestDigitWidth(paint);
         int widthPx = (int) Math.ceil(widestDigit + dpToPx(1));
         for (AnimatedTextView digitView : digitViews) {
             LayoutParams params = (LayoutParams) digitView.getLayoutParams();
             params.width = widthPx;
             digitView.setLayoutParams(params);
         }
+    }
+
+    /**
+     * Widest glyph among the digits this view can be asked to show. Arabic-Indic and
+     * Persian digits are not the same width as ASCII ones, so measure both the ASCII
+     * range and the zero digit of the current locale.
+     */
+    private float widestDigitWidth(Paint paint) {
+        float widest = 0f;
+        for (char digit = '0'; digit <= '9'; digit++) {
+            widest = Math.max(widest, paint.measureText(String.valueOf(digit)));
+        }
+        char zero;
+        try {
+            zero = java.text.DecimalFormatSymbols
+                    .getInstance(com.fadcam.utils.DisplayLocale.get(getContext())).getZeroDigit();
+        } catch (Exception ignored) {
+            zero = '0';
+        }
+        if (zero != '0') {
+            for (int offset = 0; offset < 10; offset++) {
+                widest = Math.max(widest, paint.measureText(String.valueOf((char) (zero + offset))));
+            }
+        }
+        return widest;
     }
 
     private String leftPad(String input, int width) {

@@ -53,6 +53,7 @@ import com.fadcam.R;
 import com.fadcam.RecordingState;
 import com.fadcam.RecordingControlIntents;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.security.TabLock;
 import com.fadcam.dualcam.service.DualCameraRecordingService;
 import com.fadcam.services.RecordingService;
 import com.fadcam.ui.picker.OptionItem;
@@ -92,19 +93,30 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     private static final java.util.Map<Integer, int[]> FULLSCREEN_EYE_COLOR_DRAWABLES;
     static {
         java.util.Map<Integer, int[]> m = new java.util.HashMap<>();
-        m.put(0xFFFF1744, new int[]{ R.drawable.toggle_on_idle_ruby,    R.drawable.toggle_on_blink_ruby,    R.drawable.toggle_on_anim_ruby,    R.drawable.toggle_off_anim_ruby });
-        m.put(0xFF00E5FF, new int[]{ R.drawable.toggle_on_idle_cyan,    R.drawable.toggle_on_blink_cyan,    R.drawable.toggle_on_anim_cyan,    R.drawable.toggle_off_anim_cyan });
-        m.put(0xFFD500F9, new int[]{ R.drawable.toggle_on_idle_violet,  R.drawable.toggle_on_blink_violet,  R.drawable.toggle_on_anim_violet,  R.drawable.toggle_off_anim_violet });
-        m.put(0xFF2979FF, new int[]{ R.drawable.toggle_on_idle_cobalt,  R.drawable.toggle_on_blink_cobalt,  R.drawable.toggle_on_anim_cobalt,  R.drawable.toggle_off_anim_cobalt });
-        m.put(0xFFFFD740, new int[]{ R.drawable.toggle_on_idle_amber,   R.drawable.toggle_on_blink_amber,   R.drawable.toggle_on_anim_amber,   R.drawable.toggle_off_anim_amber });
-        m.put(0xFF00E676, new int[]{ R.drawable.toggle_on_idle_lime,    R.drawable.toggle_on_blink_lime,    R.drawable.toggle_on_anim_lime,    R.drawable.toggle_off_anim_lime });
-        m.put(0xFFF50057, new int[]{ R.drawable.toggle_on_idle_magenta, R.drawable.toggle_on_blink_magenta, R.drawable.toggle_on_anim_magenta, R.drawable.toggle_off_anim_magenta });
+        m.put(0xFFE60012, new int[]{ R.drawable.toggle_on_idle_ruby,    R.drawable.toggle_on_blink_ruby,    R.drawable.toggle_on_anim_ruby,    R.drawable.toggle_off_anim_ruby });
+        m.put(0xFF00B8D4, new int[]{ R.drawable.toggle_on_idle_cyan,    R.drawable.toggle_on_blink_cyan,    R.drawable.toggle_on_anim_cyan,    R.drawable.toggle_off_anim_cyan });
+        m.put(0xFFAA00FF, new int[]{ R.drawable.toggle_on_idle_violet,  R.drawable.toggle_on_blink_violet,  R.drawable.toggle_on_anim_violet,  R.drawable.toggle_off_anim_violet });
+        m.put(0xFF2962FF, new int[]{ R.drawable.toggle_on_idle_cobalt,  R.drawable.toggle_on_blink_cobalt,  R.drawable.toggle_on_anim_cobalt,  R.drawable.toggle_off_anim_cobalt });
+        m.put(0xFFFFAB00, new int[]{ R.drawable.toggle_on_idle_amber,   R.drawable.toggle_on_blink_amber,   R.drawable.toggle_on_anim_amber,   R.drawable.toggle_off_anim_amber });
+        m.put(0xFF00C853, new int[]{ R.drawable.toggle_on_idle_lime,    R.drawable.toggle_on_blink_lime,    R.drawable.toggle_on_anim_lime,    R.drawable.toggle_off_anim_lime });
+        m.put(0xFFC51162, new int[]{ R.drawable.toggle_on_idle_magenta, R.drawable.toggle_on_blink_magenta, R.drawable.toggle_on_anim_magenta, R.drawable.toggle_off_anim_magenta });
         FULLSCREEN_EYE_COLOR_DRAWABLES = java.util.Collections.unmodifiableMap(m);
     }
 
     // ── Views ────────────────────────────────────────────────────────────────
     private FrameLayout rootLayout;
-    private int stableStatusBarHeight = 0;
+    private int platformStatusBarHeightPx = -1;
+    /** De-duplicates the Tab Lock prompt while the preview is resumed. */
+    private boolean tabLockPromptShowing;
+
+    /** Status bar height from the platform, stable whether or not the bar is currently shown. */
+    private int getPlatformStatusBarHeight() {
+        if (platformStatusBarHeightPx < 0) {
+            int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
+            platformStatusBarHeightPx = id > 0 ? getResources().getDimensionPixelSize(id) : 0;
+        }
+        return platformStatusBarHeightPx;
+    }
     private TextureView textureView;
     private View topBar;
     private View bottomBar;
@@ -293,6 +305,27 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     // Lifecycle
     // ─────────────────────────────────────────────────────────────────────────
 
+    /**
+     * Full-screen preview is an extension of Home. If Home is protected and the
+     * app session re-locked while the preview stayed in the task, do not show the
+     * live camera until the credential is verified. Cancelling closes the preview.
+     */
+    private void enforceTabLock() {
+        if (tabLockPromptShowing) return;
+        if (!TabLock.isLocked(this, TabLock.TAB_HOME)) return;
+        tabLockPromptShowing = true;
+        TabLock.unlockDialog(this,
+                () -> {
+                    tabLockPromptShowing = false;
+                    TabLock.markUnlocked(this, TabLock.TAB_HOME);
+                },
+                () -> {
+                    tabLockPromptShowing = false;
+                    finish();
+                })
+                .show();
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         // Apply the user's selected theme BEFORE setContentView so bottom sheet
@@ -300,6 +333,12 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         applyRuntimeTheme();
 
         super.onCreate(savedInstanceState);
+        // Picker sheets are separate windows; keep the status/navigation bars hidden on them
+        // as well, otherwise they reappear the moment a control is opened.
+        com.fadcam.ui.utils.ImmersiveDialogs.install(this);
+        // Draw into the display cutout instead of letting Android letterbox it black. The top
+        // bar is still pushed below the band in setupSystemInsets().
+        androidx.core.view.WindowCompat.enableEdgeToEdge(getWindow());
         setContentView(R.layout.activity_fullscreen_preview);
 
         prefs = SharedPreferencesManager.getInstance(this);
@@ -333,6 +372,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        enforceTabLock();
         enterImmersiveMode();
         updateMirrorButtonVisibilityAndState();
         isTorchOn = prefs.sharedPreferences.getBoolean(Constants.PREF_TORCH_STATE, false);
@@ -638,9 +678,18 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
 
             if (tapToFocusEnabled && (isRecordingActive || isPreviewOnlyActive)) {
-                float normX = event.getX() / Math.max(1f, v.getWidth());
-                float normY = event.getY() / Math.max(1f, v.getHeight());
-                Intent intent = RecordingControlIntents.tapToFocus(this, normX, normY);
+                com.fadcam.utils.camera.PreviewGeometry.Tap tap =
+                        com.fadcam.utils.camera.PreviewGeometry.mapTap(
+                                this,
+                                event.getX(),
+                                event.getY(),
+                                v.getWidth(),
+                                v.getHeight());
+                if (tap == null) {
+                    // Tap landed on the letterbox/pillarbox bars.
+                    return true;
+                }
+                Intent intent = RecordingControlIntents.tapToFocus(this, tap.nx, tap.ny);
                 intent.setClass(this, getTargetServiceClass());
                 startService(intent);
                 showFocusIndicator(event.getX(), event.getY());
@@ -851,15 +900,16 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         if (rootLayout == null) return;
         ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, insets) -> {
             androidx.core.graphics.Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            // Capture stable status bar height on first non-zero value.
-            // When immersive mode hides the status bar, bars.top may become 0 —
-            // always use the stable value so the layout doesn't jump.
-            if (bars.top > 0) stableStatusBarHeight = bars.top;
-            int topInset = stableStatusBarHeight > 0 ? stableStatusBarHeight : bars.top;
-            
+            // A hidden status bar reports an inconsistent top inset (0 on some phones, its real
+            // height on others), so the band is derived from the platform dimension and the
+            // display cutout. That keeps the controls below a notch on every device and stops
+            // the layout from jumping when the bars are swiped back in.
+            int topBand = Math.max(getPlatformStatusBarHeight(),
+                    insets.getInsets(WindowInsetsCompat.Type.displayCutout()).top);
+
             if (topBar != null && topBar.getLayoutParams() instanceof FrameLayout.LayoutParams) {
                 FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) topBar.getLayoutParams();
-                lp.topMargin = topInset + dp(12);
+                lp.topMargin = topBand + dp(12);
                 topBar.setLayoutParams(lp);
             }
             if (bottomBar != null) {
@@ -868,6 +918,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
             }
             return insets;
         });
+        ViewCompat.requestApplyInsets(rootLayout);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1270,6 +1321,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
         if (tileZoom != null) {
             tileZoom.setOnClickListener(v -> {
                 CameraType currentCam = prefs.getCameraSelection();
+                com.fadcam.utils.camera.ZoomCapabilities.logCameraReportOnce(this);
                 List<Float> zoomRatios = buildZoomRatioOptions(currentCam);
                 if (zoomRatios.isEmpty()) {
                     Toast.makeText(this, getString(R.string.zoom_not_available_toast),
@@ -1277,9 +1329,19 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
                     return;
                 }
                 float currentZoom = prefs.getSpecificZoomRatio(currentCam);
+                boolean showZoomOutBanner =
+                        com.fadcam.utils.camera.ZoomCapabilities.shouldShowZoomOutBanner(
+                                this, currentCam);
+                com.fadcam.utils.camera.ZoomCapabilities.logZoomDecision(
+                        this, currentCam, showZoomOutBanner);
                 PickerBottomSheetFragment sheet = PickerBottomSheetFragment.newInstanceSliderZoom(
                         getString(R.string.zoom_slider_title), zoomRatios, currentZoom,
                         Constants.RK_ZOOM_RATIO, getString(R.string.zoom_slider_helper));
+                if (showZoomOutBanner) {
+                    sheet.getArguments().putString(
+                            PickerBottomSheetFragment.ARG_BANNER_TEXT,
+                            getString(R.string.zoom_lens_unavailable_banner));
+                }
                 sheet.show(getSupportFragmentManager(), "zoom_slider_sheet");
             });
         }
@@ -1404,14 +1466,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
 
     @NonNull
     private List<Float> buildZoomRatioOptions(CameraType cam) {
-        List<Float> list = new ArrayList<>();
-        float max = getMaxZoomRatio(cam);
-        for (float z = 0.5f; z <= max + 0.001f; z += 0.5f) {
-            list.add(((float) Math.round(z * 10)) / 10f);
-        }
-        if (!list.contains(1.0f)) list.add(1.0f);
-        Collections.sort(list);
-        return list;
+        return com.fadcam.utils.camera.ZoomCapabilities.buildZoomRatioOptions(
+                getMaxZoomRatio(cam));
     }
 
     private void applyPinchZoom(float scaleFactor) {

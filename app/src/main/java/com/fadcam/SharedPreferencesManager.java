@@ -275,32 +275,90 @@ public class SharedPreferencesManager {
     // App Lock preferences
     private static final String PREF_APP_LOCK_ENABLED = "applock_enabled";
 
+    // Per-tab protection. Records stays on by default so the behaviour existing
+    // users already have (Records + Trash locked) does not change. Every other
+    // tab is opt-in; locking Home turns Tab Lock into a full app lock because
+    // Home is the launch tab.
+    public static final String PREF_TAB_LOCK_HOME = "tab_lock_home";
+    public static final String PREF_TAB_LOCK_RECORDS = "tab_lock_records";
+    public static final String PREF_TAB_LOCK_REMOTE = "tab_lock_remote";
+    public static final String PREF_TAB_LOCK_FADITOR = "tab_lock_faditor";
+    public static final String PREF_TAB_LOCK_SETTINGS = "tab_lock_settings";
+    public static final String PREF_TAB_LOCK_LAB = "tab_lock_lab";
+
+    // Each protected tab has its own unlock state. Unlocking Lab must never
+    // unlock Records or Home. These flags live for one foreground session and
+    // are cleared on background and on process start.
+    private static final String KEY_TAB_UNLOCKED_HOME = "tab_lock_unlocked_home";
+    private static final String KEY_TAB_UNLOCKED_RECORDS = "tab_lock_unlocked_records";
+    private static final String KEY_TAB_UNLOCKED_REMOTE = "tab_lock_unlocked_remote";
+    private static final String KEY_TAB_UNLOCKED_FADITOR = "tab_lock_unlocked_faditor";
+    private static final String KEY_TAB_UNLOCKED_SETTINGS = "tab_lock_unlocked_settings";
+    private static final String KEY_TAB_UNLOCKED_LAB = "tab_lock_unlocked_lab";
+    /** Written by older builds. Removed so a stale global flag cannot linger. */
     private static final String KEY_APPLOCK_SESSION_UNLOCKED =
         "applock_session_unlocked";
-    private volatile boolean sessionUnlockedCache = false;
 
-    /**
-     * Returns true if the AppLock has been unlocked for this session.
-     */
-    public boolean isAppLockSessionUnlocked() {
-        if (sessionUnlockedCache) return true;
-        sessionUnlockedCache = safeGetBoolean(
-            KEY_APPLOCK_SESSION_UNLOCKED,
-            false
-        );
-        return sessionUnlockedCache;
+    public boolean isTabLockUnlockedHome() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_HOME, false);
     }
 
-    /**
-     * Sets the AppLock session unlock state.
-     *
-     * @param unlocked true if unlocked, false to reset
-     */
-    public void setAppLockSessionUnlocked(boolean unlocked) {
-        sessionUnlockedCache = unlocked;
+    public void setTabLockUnlockedHome(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_HOME, unlocked).apply();
+    }
+
+    public boolean isTabLockUnlockedRecords() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_RECORDS, false);
+    }
+
+    public void setTabLockUnlockedRecords(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_RECORDS, unlocked).apply();
+    }
+
+    public boolean isTabLockUnlockedRemote() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_REMOTE, false);
+    }
+
+    public void setTabLockUnlockedRemote(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_REMOTE, unlocked).apply();
+    }
+
+    public boolean isTabLockUnlockedFaditor() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_FADITOR, false);
+    }
+
+    public void setTabLockUnlockedFaditor(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_FADITOR, unlocked).apply();
+    }
+
+    public boolean isTabLockUnlockedSettings() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_SETTINGS, false);
+    }
+
+    public void setTabLockUnlockedSettings(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_SETTINGS, unlocked).apply();
+    }
+
+    public boolean isTabLockUnlockedLab() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_LAB, false);
+    }
+
+    public void setTabLockUnlockedLab(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_LAB, unlocked).apply();
+    }
+
+    /** Re-locks every protected tab. Called on background, process start and
+     *  whenever the Tab Lock configuration changes. */
+    public void clearTabLockUnlocks() {
         sharedPreferences
             .edit()
-            .putBoolean(KEY_APPLOCK_SESSION_UNLOCKED, unlocked)
+            .putBoolean(KEY_TAB_UNLOCKED_HOME, false)
+            .putBoolean(KEY_TAB_UNLOCKED_RECORDS, false)
+            .putBoolean(KEY_TAB_UNLOCKED_REMOTE, false)
+            .putBoolean(KEY_TAB_UNLOCKED_FADITOR, false)
+            .putBoolean(KEY_TAB_UNLOCKED_SETTINGS, false)
+            .putBoolean(KEY_TAB_UNLOCKED_LAB, false)
+            .remove(KEY_APPLOCK_SESSION_UNLOCKED)
             .apply();
     }
 
@@ -422,6 +480,21 @@ public class SharedPreferencesManager {
         sharedPreferences
             .edit()
             .putString(Constants.PREF_HOME_ICON, choice)
+            .apply();
+    }
+
+    // --- Pro showcase mockup ---
+    /** The mini Notes app's draft. Lives in app_prefs so settings backup/export carries it too. */
+    public static final String PREF_PRO_SHOWCASE_NOTE = "pro_showcase_note";
+
+    public String getProShowcaseNote() {
+        return sharedPreferences.getString(PREF_PRO_SHOWCASE_NOTE, "");
+    }
+
+    public void setProShowcaseNote(String note) {
+        sharedPreferences
+            .edit()
+            .putString(PREF_PRO_SHOWCASE_NOTE, note == null ? "" : note)
             .apply();
     }
 
@@ -827,19 +900,19 @@ public class SharedPreferencesManager {
      * Get the current streaming mode (STREAM_ONLY or STREAM_AND_SAVE).
      * Defaults to STREAM_AND_SAVE.
      */
-    public com.fadcam.streaming.RemoteStreamManager.StreamingMode getStreamingMode() {
+    public com.fadcam.StreamingMode getStreamingMode() {
         String mode = sharedPreferences.getString(PREF_KEY_STREAMING_MODE, "STREAM_AND_SAVE");
         try {
-            return com.fadcam.streaming.RemoteStreamManager.StreamingMode.valueOf(mode);
+            return com.fadcam.StreamingMode.valueOf(mode);
         } catch (IllegalArgumentException e) {
-            return com.fadcam.streaming.RemoteStreamManager.StreamingMode.STREAM_AND_SAVE;
+            return com.fadcam.StreamingMode.STREAM_AND_SAVE;
         }
     }
     
     /**
      * Set the streaming mode (STREAM_ONLY or STREAM_AND_SAVE).
      */
-    public void setStreamingMode(com.fadcam.streaming.RemoteStreamManager.StreamingMode mode) {
+    public void setStreamingMode(com.fadcam.StreamingMode mode) {
         sharedPreferences
             .edit()
             .putString(PREF_KEY_STREAMING_MODE, mode.toString())
@@ -1402,6 +1475,15 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putInt(Constants.PREF_RECORDS_GRID_SPAN, span).apply();
     }
 
+    /** Whether the Records grid hides file names and metadata and shows thumbnails only. */
+    public boolean isRecordsHideMetadataEnabled() {
+        return safeGetBoolean(Constants.PREF_RECORDS_HIDE_METADATA, false);
+    }
+
+    public void setRecordsHideMetadataEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(Constants.PREF_RECORDS_HIDE_METADATA, enabled).apply();
+    }
+
     public boolean isWatermarkDayEnabled() {
         return safeGetBoolean(Constants.PREF_WATERMARK_DAY, true); // default ON
     }
@@ -1949,6 +2031,63 @@ public class SharedPreferencesManager {
             .edit()
             .putBoolean(PREF_APP_LOCK_ENABLED, enabled)
             .apply();
+    }
+
+    /** True when the Home tab should require the App Lock credential. */
+    public boolean isTabLockHomeEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_HOME, false);
+    }
+
+    public void setTabLockHomeEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_HOME, enabled).apply();
+    }
+
+    /**
+     * True when Records (and its Trash screen) should require the App Lock
+     * credential. Defaults to true to preserve the previous behaviour.
+     */
+    public boolean isTabLockRecordsEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_RECORDS, true);
+    }
+
+    public void setTabLockRecordsEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_RECORDS, enabled).apply();
+    }
+
+    /** True when the Remote tab should require the App Lock credential. */
+    public boolean isTabLockRemoteEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_REMOTE, false);
+    }
+
+    public void setTabLockRemoteEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_REMOTE, enabled).apply();
+    }
+
+    /** True when the Faditor Mini tab should require the App Lock credential. */
+    public boolean isTabLockFaditorEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_FADITOR, false);
+    }
+
+    public void setTabLockFaditorEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_FADITOR, enabled).apply();
+    }
+
+    /** True when the Settings tab should require the App Lock credential. */
+    public boolean isTabLockSettingsEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_SETTINGS, false);
+    }
+
+    public void setTabLockSettingsEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_SETTINGS, enabled).apply();
+    }
+
+    /** True when the Lab tab should require the App Lock credential. */
+    public boolean isTabLockLabEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_LAB, false);
+    }
+
+    public void setTabLockLabEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_LAB, enabled).apply();
     }
 
     public static final String PREF_PRIVACY_BLACK_MODE_ENABLED = "privacy_black_mode_enabled";
@@ -2647,6 +2786,52 @@ public class SharedPreferencesManager {
     // interrupted recording was automatically repaired. Only ever written when
     // the file conversion ACTUALLY succeeded — no false positives.
 
+    // ── Persisted Faditor export result ─────────────────────────────
+    // The Faditor tab's export dock used to live only in static memory, so it survived
+    // a rotation but vanished if the process was killed while the export ran. The
+    // Records repair banner already persists its notice; this does the same for exports
+    // so the result is still waiting when the user comes back.
+
+    private static final String PREF_KEY_EXPORT_RESULT = "faditor_export_result_v1";
+
+    /** Records a finished export so the tab can show it after a cold start. */
+    public void setFaditorExportResult(@androidx.annotation.Nullable String outputPath,
+                                       @androidx.annotation.Nullable String errorMessage) {
+        try {
+            if (outputPath == null && errorMessage == null) {
+                sharedPreferences.edit().remove(PREF_KEY_EXPORT_RESULT).apply();
+                return;
+            }
+            org.json.JSONObject obj = new org.json.JSONObject();
+            obj.put("time", System.currentTimeMillis());
+            if (outputPath != null) obj.put("path", outputPath);
+            if (errorMessage != null) obj.put("error", errorMessage);
+            sharedPreferences.edit().putString(PREF_KEY_EXPORT_RESULT, obj.toString()).apply();
+        } catch (Exception ignored) {}
+    }
+
+    /** Drops the persisted export result once its dock has been dismissed. */
+    public void clearFaditorExportResult() {
+        sharedPreferences.edit().remove(PREF_KEY_EXPORT_RESULT).apply();
+    }
+
+    /** @return {timeMs, outputPath, errorMessage} or null when there is nothing pending. */
+    @androidx.annotation.Nullable
+    public String[] getFaditorExportResult() {
+        try {
+            String raw = sharedPreferences.getString(PREF_KEY_EXPORT_RESULT, null);
+            if (raw == null || raw.isEmpty()) return null;
+            org.json.JSONObject obj = new org.json.JSONObject(raw);
+            return new String[]{
+                    String.valueOf(obj.optLong("time", 0L)),
+                    obj.optString("path", null),
+                    obj.optString("error", null)
+            };
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private static final String PREF_KEY_REPAIR_EVENTS = "recording_repair_events_v1";
     private static final int MAX_REPAIR_EVENTS = 5;
 
@@ -2821,6 +3006,32 @@ public class SharedPreferencesManager {
     public void setScreenRecordingFrameRate(int fps) {
         sharedPreferences.edit()
             .putInt(Constants.PREF_SCREEN_RECORDING_FPS, fps)
+            .apply();
+    }
+
+    /**
+     * Gets the screen recording video codec. Defaults to H.264: it is the only codec with a
+     * guaranteed software fallback, so a fresh install can always record.
+     */
+    public VideoCodec getScreenRecordingCodec() {
+        String saved = sharedPreferences.getString(
+            Constants.PREF_SCREEN_RECORDING_CODEC,
+            VideoCodec.AVC.name()
+        );
+        try {
+            return VideoCodec.valueOf(saved);
+        } catch (Exception e) {
+            return VideoCodec.AVC;
+        }
+    }
+
+    /**
+     * Sets the screen recording video codec preference.
+     */
+    public void setScreenRecordingCodec(VideoCodec codec) {
+        sharedPreferences.edit()
+            .putString(Constants.PREF_SCREEN_RECORDING_CODEC,
+                (codec == null ? VideoCodec.AVC : codec).name())
             .apply();
     }
 
@@ -3025,12 +3236,50 @@ public class SharedPreferencesManager {
     }
 
     public int getMotionAnalysisFps() {
-        int fps = safeGetInt(Constants.PREF_MOTION_ANALYSIS_FPS, 6);
-        return fps <= 0 ? 6 : fps;
+        int fps = safeGetInt(Constants.PREF_MOTION_ANALYSIS_FPS, 10);
+        return Math.max(1, Math.min(15, fps <= 0 ? 10 : fps));
+    }
+
+    /**
+     * Analyzer frame height in pixels. The width follows the selected camera
+     * aspect ratio, so the full field of view is always analysed.
+     * Default 720: OpenCV/CCTV reference pipelines process MOG2 at ~300–640 px
+     * wide, so 720p already samples above the standard while staying real-time.
+     */
+    public int getMotionAnalysisResolution() {
+        int h = safeGetInt(Constants.PREF_MOTION_ANALYSIS_RESOLUTION, 720);
+        return h == 480 || h == 1080 ? h : 720;
+    }
+
+    public void setMotionAnalysisResolution(int height) {
+        int clamped = (height == 480 || height == 1080) ? height : 720;
+        sharedPreferences.edit().putInt(Constants.PREF_MOTION_ANALYSIS_RESOLUTION, clamped).apply();
     }
 
     public void setMotionAnalysisFps(int fps) {
         sharedPreferences.edit().putInt(Constants.PREF_MOTION_ANALYSIS_FPS, Math.max(1, fps)).apply();
+    }
+
+    /**
+     * Minimum interval between object detections, in milliseconds.
+     *
+     * <p>0 means automatic: the cadence is derived from the device's measured
+     * inference cost. A positive value is a user choice and is used as-is, so the
+     * setting is a real control rather than a hint the app silently overrides.
+     */
+    public int getMotionAiIntervalMs() {
+        int v = safeGetInt(Constants.PREF_MOTION_AI_INTERVAL_MS, 0);
+        if (v <= 0) {
+            return 0;
+        }
+        return Math.max(200, Math.min(10000, v));
+    }
+
+    public void setMotionAiIntervalMs(int ms) {
+        int clamped = ms <= 0 ? 0 : Math.max(200, Math.min(10000, ms));
+        sharedPreferences.edit()
+                .putInt(Constants.PREF_MOTION_AI_INTERVAL_MS, clamped)
+                .apply();
     }
 
     public int getMotionDebounceMs() {

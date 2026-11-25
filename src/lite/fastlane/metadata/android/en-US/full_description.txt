@@ -1,0 +1,25 @@
+<p>FadCam Lite is the lightweight build of FadCam: a privacy-focused, open-source video recorder built for long, uninterrupted recording. No ads, no trackers, no accounts.</p>
+
+<p><b>What you can do with it</b></p>
+<ul>
+<li><b>Record in the background</b> with the screen off or the app closed</li>
+<li><b>Use it as a bodycam</b> — wear it for personal security and hands-free recording</li>
+<li><b>Use it as a dashcam</b> — record the road or motovlogs smoothly with video stabilization</li>
+<li><b>Front, back and dual camera</b> recording where your device supports it</li>
+<li><b>Add a watermark</b> — timestamp, location, logo or your own text</li>
+<li><b>Split long recordings</b> by size or duration</li>
+<li><b>Start, stop or toggle recording</b> from a home screen shortcut without opening the app</li>
+<li><b>Lock the app or individual tabs</b> for privacy</li>
+</ul>
+
+<p><b>Crash-safe recording</b></p>
+<p>Recordings use Hybrid MP4: they stay playable even after a crash, dead battery or forced shutdown, and become a normal seekable MP4 when you stop recording.</p>
+
+<p><b>Lite vs the full app</b></p>
+<p>FadCam Lite leaves out the heavy modules: the video editor, screen recording, mini apps, remote streaming, motion detection and on-device AI. That keeps the app small and fast. Everything needed for reliable recording is still here.</p>
+
+<p><b>Network use</b></p>
+<p>FadCam Lite has no ads, no analytics and no trackers. It does not collect or upload your recordings. The app only contacts GitHub when it checks for updates on launch; you can turn that off in Settings.</p>
+
+<p><b>Open source</b></p>
+<p>Licensed GPL-3.0. Source code is published in the FadCam repository.</p>

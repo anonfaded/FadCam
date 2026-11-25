@@ -94,14 +94,6 @@
     <string name="dialog_clock_englishtime">English Tarikh aw wakh</string>
     <string name="dialog_clock_Islamic_calendar">تاريخ التقويم الإسلامي</string>
     <string name="ui_preview_area">Katalo zay</string>
-    <string-array name="easter_eggs_array">
-        <item>Oo! Dalta nashi ratlay. Recording shuru ka pehla che access darkam.</item>
-        <item>Ta yo khaas button omuntalo! kho da sam nakai lol</item>
-        <item>Zarrr sha! Sta system alutoo wala de… ya kideshi sirf recording shuru kolo sara theek shi.</item>
-        <item>Asi, ajeeba kas ye yara…</item>
-        <item>Sta da Bugatti kam rung de?</item>
-        <item>Za de dapara na ym program shwe sa che rasara ta ke lagya. Yo minute, ta ma hack ke kho na?</item>
-    </string-array>
     <string-array name="questions_array" tools:ignore="InconsistentArrays">
         <item>DISCLAIMER</item>
         <item>FadCam da user data jama kai zan sara?</item>
@@ -201,14 +193,14 @@
     <string name="app_icon_preview">App icon namoona</string>
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">Tab Lock</string>
-    <string name="setting_applock_desc">Khpal videos pa PIN lock sara da Records tab ke masoon ka. \nSta amniyat da para, kala che app background ta zy ya band shi, Records tab ba automatic lock kegi. Kala che bewapas razy, no ta ba byaa unlock kaway</string>
+    <string name="setting_applock_desc">Khpal khwakh tabs pa PIN, password, ya fingerprint sara mahfooz ka. Mahfooz tabs ba automatic lock shi kala che app background ta zy ya band shi, aw kala che bewapas razy no ba byaa unlock kaway.</string>
     <string name="setting_applock_configure">Tanzim</string>
     <string name="applock_dialog_title">Da Tab Lock Entikhabuna</string>
     <string name="applock_enable">Tab Lock Faal Ka</string>
     <string name="applock_disable">Tab Lock Ghair Faal Ka</string>
     <string name="applock_set_pin">PIN Tanzim Ka</string>
-    <string name="applock_change_pin">PIN Badal Ka</string>
-    <string name="applock_remove_pin">PIN Lere Ka</string>
+    <string name="applock_change_pin">Lock badal ka</string>
+    <string name="applock_remove_pin">Lock laare ka</string>
     <string name="applock_pin_created">PIN pa bryalitob sara jor sho</string>
     <string name="applock_pin_removed">PIN pa bryalitob sara lere sho</string>
     <!-- App Lock Verification Messages -->
@@ -319,31 +311,6 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="location_embedding_icon_description">Da Mawqeiyat Shamil Kawlo Icon</string>
     <!-- Camera Messages -->
     <string name="camera_resources_cooldown">Meharbaani wka da naway recording shoroo kolo na wrandy yaw lahza sabr wka</string>
-    <!-- Onboarding Strings -->
-    <string name="onboarding_swipe_instruction">د دوام لپاره ښي خواته وښويئ</string>
-    <string name="onboarding_select_language">خپله خوښه د ایپ ژبه غوره کړئ.</string>
-    <string name="onboarding_camera">کامره</string>
-    <string name="onboarding_microphone">مایکروفون</string>
-    <string name="onboarding_storage">زېرمتون</string>
-    <string name="onboarding_or">یا</string>
-    <string name="onboarding_and">او</string>
-    <string name="onboarding_open_settings">تنظیمات خلاص کړئ</string>
-    <string name="onboarding_intro_line1">خلاص کوډ،</string>
-    <string name="onboarding_intro_line2">له اعلاناتو پرته،</string>
-    <string name="onboarding_intro_line3">او ستاسو لپاره جوړ شوی - نه د اعلان ورکوونکو لپاره.</string>
-    <string name="language_change_later_note">تاسو کولای شئ دا وروسته په تنظیماتو کې بدل کړئ.</string>
-    <string name="permissions_required">اجازې ته اړتیا ده</string>
-    <string name="permissions_description">FadCam د ویډیو ثبتولو او ساتلو لپاره ستاسو کامرې، مایکروفون، او زېرمتون ته لاسرسي ته اړتیا لري.</string>
-    <string name="grant_permissions">اجازې ورکړئ</string>
-    <string name="permissions_note">د دوام لپاره تاسو باید ټولې اجازې ورکړئ.</string>
-    <string name="permissions_granted">ټولې اجازې ورکړل شوې!</string>
-    <string name="open_settings">تنظیمات خلاص کړئ</string>
-    <string name="disable_battery_optimization">د بیټرۍ آپټیمایزيشن غیر فعاله کړئ</string>
-    <string name="onboarding_human_title">تصدیق کړئ که تاسو انسان یاست</string>
-    <string name="onboarding_human_desc">هممم... سمه ده. دا قواعد غیر قابل مذاکره دي. که تاسو نشئ منلی، مهرباني وکړئ FadCam همدا اوس له منځه یوسئ.</string>
-    <string name="onboarding_human_checkbox1">زه به FadCam د کوم قانون ماتولو، د چا محرمیت ته تېری کولو، یا د عجیبه کارونو لپاره نه کاروم. که چېرې زه غلطي وکړم، د پروګرام جوړوونکی مسؤل نه دی. (دا زما مسؤلیت دی).</string>
-    <string name="onboarding_human_checkbox2">زه لا له کارولو مخکې له FadCam سره مینه لرم. (اختیاري نه دی)</string>
-    <string name="onboarding_human_button">اجازه راکړئ ننوځم!</string>
     <!-- Records Options and Empty State Strings -->
     <string name="sort_by">Tartib ka</string>
     <string name="sort_latest_first">Tar tolo taza awalan</string>
@@ -513,7 +480,6 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="annotations">Annotashun</string>
     <string name="app_icon_alternative" translatable="false">Camera</string>
     <string name="app_icon_bat" translatable="false">FadCam</string>
-    <string name="app_icon_black_alias_label" translatable="false">\u0020</string>
     <string name="app_icon_calculator" translatable="false">Calculator</string>
     <string name="app_icon_car" translatable="false">ClutchX</string>
     <string name="app_icon_clock" translatable="false">Clock</string>
@@ -530,10 +496,13 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_weather" translatable="false">Weather</string>
     <string name="app_name" translatable="false">FadCam</string>
-    <string name="applock_helper_create">Da Records tab dapara mahfuziat jor ka: 4-digit PIN, password, ya fingerprint sara. Kala che app pasmanzar ta shi, ba khpala lock shi.</string>
-    <string name="applock_helper_enabled">Tab Lock chalu de. Kala che app na wrusta razy, Records tab kholo dapara PIN ba darkar wi.</string>
-    <string name="applock_helper_manage_disabled">Tab Lock PIN tanzim sho. Kala che app ta wapas razy PIN darkar walo dapara de toggle on ka.</string>
-    <string name="applock_set_pin_enable">PIN Tanzim Ka &amp; Faal Ka</string>
+    <string name="applock_helper_create">Da khpal khwakh tabs dapara mahfuziat jor ka: 4-digit PIN, password, ya fingerprint sara. Kala che app pasmanzar ta shi, ba khpala lock shi.</string>
+    <string name="applock_helper_enabled">Tab Lock chalu de. Kala che app na wrusta razy, pa khwakh tabs PIN ba darkar wi. Records ba default mahfooz de.</string>
+    <string name="tab_lock_screen_title">Band</string>
+    <string name="tab_lock_screen_message">Khol krai tse pe jari</string>
+    <string name="tab_lock_unlock">Khol krai</string>
+    <string name="applock_helper_manage_disabled">Tab Lock PIN tanzim sho. Toggle on ka, tse pa khwakh tabs PIN darkar wi.</string>
+    <string name="applock_set_pin_enable">Tanzim ka &amp; faal ka</string>
     <string name="arabic_date_description_default">Full Arabic (Default)</string>
     <string name="arabic_date_description_english">Full English</string>
     <string name="arabic_date_description_full_arabic">Full Arabic (٧ صفر ١٤٤٧)</string>
@@ -691,7 +660,6 @@ Would you like to switch to H.264 and start recording?</string>
     <string name="digital_forensics_picker_disabled_desc">Turn da option off.</string>
     <string name="digital_forensics_picker_enabled_desc">Turn da option on.</string>
     <string name="digital_forensics_picker_switch_label">Faal Ka da option</string>
-    <string name="digital_forensics_preview_default">PERSON 92%</string>
     <string name="digital_forensics_preview_subtitle">Simulated overlay preview che users labels, confidence, aw evidence framing pohe shi.</string>
     <string name="digital_forensics_preview_title">Live Detection Preview</string>
     <string name="digital_forensics_row_subtitle">Evidence timeline, identity relink, and smart insights</string>
@@ -979,6 +947,7 @@ Export runs as a background service — you can close the app and it will keep e
     <string name="fadrec_preview_enable_hint">Hold to show preview</string>
     <string name="fadrec_preview_not_available">Live screen preview enham FadRec ke wired na shwi</string>
     <string name="fadrec_projects">FadRec Projects</string>
+    <string name="fadrec_projects_location">Projey da app pa khpal khaas storage ke zakhira kee</string>
     <string name="fadrec_ready_to_record">Screen capture kolo lapara tayar</string>
     <string name="fadrec_ready_to_record_subtitle">Tap to begin</string>
     <string name="fadrec_record_muted">Khamosh Record Ka</string>
@@ -1153,7 +1122,7 @@ Fun fact: 10/Jul/2024 04:47 PM wakht ke FadCam v1.0 first shipped.</string>
     <string name="home_clock_color_helper">Da Kor palette na yao clock card rang intikhab ka.</string>
     <string name="home_clock_color_option">Clock color</string>
     <string name="home_clock_color_option_desc">Da clock card istemal shwi accent/background rang intikhab ka</string>
-    <string name="home_clock_customize_helper">Change the clock display, color, and hour format.</string>
+    <string name="home_clock_customize_helper">Da clock display, rang, hour format aw Arabi date style badal krai.</string>
     <string name="home_clock_customize_title">Clock Appearance</string>
     <string name="home_clock_display_english_desc">Show time with the English date line</string>
     <string name="home_clock_display_helper">Da clock card istemal shwi layout intikhab ka.</string>
@@ -1430,7 +1399,7 @@ Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programm
     <string name="mute_playback_subtitle">Video awaz band sara chalao</string>
     <string name="mute_playback_title">Playback khamosh ka</string>
     <string name="name_your_project">Num Your Project</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
     <string name="nav_lab">Lab</string>
     <string name="nav_remote">Lirai</string>
     <string name="new_project">Nawai Project</string>
@@ -1452,8 +1421,6 @@ Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programm
     <string name="notification_stop_button_row_title">Bandawalo Button</string>
     <string name="notification_stop_button_visible">Zaher</string>
     <string name="notification_style_row_title">Da Notification Style</string>
-    <string name="onboarding_human_checkbox3">Za da Privacy Policy sara mutafiq yam</string>
-    <string name="onboarding_intro_line4">open-source. ad-free. yours.</string>
     <string name="pattern_morse_desc">Morse code pattern for advanced signaling</string>
     <string name="pattern_sos_desc">SOS Morse code pattern: 3 lag + 3 loong + 3 lag flashes</string>
     <string name="pattern_steady_desc">Continuous steady light for normal flashlight use</string>
@@ -1468,15 +1435,6 @@ Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programm
     <string name="playback_speed_label">Playback Suraat</string>
     <string name="playback_speed_subtitle">Change playback speed for da video</string>
     <string name="playback_speed_title">Playback Suraat</string>
-    <string name="player_info_content"><![CDATA[
-<b>Fragmented MP4 Format</b><br/><br/>
-FadCam uses a fragmented MP4 format for recordings. This means videos are saved in small segments instead of one complete file. The benefit is that if something goes wrong during recording, you only lose the last few seconds instead of the entire video.<br/><br/>
-If the last few seconds of your video appear frozen or stale, don\'t worry — it\'s not a bug! When you stop recording, the current fragment may still complete its cycle (~3 seconds), which can leave a brief stale frame at the end.<br/><br/>
-<b>Player Limitations</b><br/><br/>
-The built-in video player has some Android system limitations. You may notice the progress bar or waveform appearing slightly snappy — this is normal behavior and not a bug.<br/><br/>
-For the smoothest playback experience, you can use an external player like VLC. That said, the integrated player works well for everyday use!
-    ]]></string>
-    <string name="player_info_title">Maloomat the Video Player</string>
     <string name="prefs_backup_title">Da Preferences Backup</string>
     <string name="prefs_export_failed">Export fail sho</string>
     <string name="prefs_export_label">Preferences Export Ka</string>
@@ -1833,6 +1791,8 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="screen_rec_bitrate_mode_manual">Manual (CBR)</string>
     <string name="screen_rec_bitrate_range">1 \u2013 50 Mbps</string>
     <string name="screen_rec_framerate">Frame Rate</string>
+    <string name="screen_rec_codec">Codec</string>
+    <string name="note_screen_codec">Da skrin sabt codec wutaka\n(Talawala: %1$s)\nLarxhowuna: H.265 (HEVC) pa warta kayfiyat ke kochni fayluna war-kawi. Ka da wasila da karawalo war HEVC encoder wan-lari, FadCam ba pa automatiki dol H.264 ke sabt kri.</string>
     <string name="screen_rec_orientation">Samt</string>
     <string name="screen_rec_orientation_landscape">Landscape</string>
     <string name="screen_rec_orientation_portrait">Portrait</string>
@@ -1961,9 +1921,9 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="sound_heading">Ghag during playback</string>
     <string name="start_recording">Shuru</string>
     <string name="stats_label_used">Used:</string>
-    <string name="stats_label_videos">Videos:</string>
+    <string name="stats_label_videos">Fayl:</string>
     <string name="stop_recording">Band</string>
-    <string name="storage_available_space">Available space</string>
+    <string name="storage_available_space">Patey zaya</string>
     <string name="storage_helper_current_custom_prefix">Current custom folder:</string>
     <string name="storage_helper_current_custom_uri_prefix">URI:</string>
     <string name="storage_helper_primary">Intikhab ka che nawi recordings cherta save shi. Dakhili zakhira videos app ta private sawi; custom folder (SD card ya shared storage) no apps (masalan Gallery) ta zaher kai.</string>
@@ -2100,13 +2060,6 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="torch_brightness">Brightness</string>
     <string name="torch_cancel">Laghwa Ka</string>
     <string name="torch_color">Color</string>
-    <string-array name="torch_error_messages">
-        <item>Torch is compiling... please don\'t wait 🖥️</item>
-        <item>Camera says: No flash today 🚦</item>
-        <item>Torch.exe not responding 🔦</item>
-        <item>Fix delayed... Developer hit a mental breakpoint lol 🧠</item>
-        <item>Patch coming soon™... Developer is debugging life 🐛</item>
-    </string-array>
     <string name="torch_front">Makhki Torch</string>
     <string name="torch_options_title">Torch Intikhabuna</string>
     <string name="torch_pattern_morse">Morse Code</string>
@@ -2248,6 +2201,8 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="setting_video_stabilization_title">Video Stabilization</string>
     <string name="setting_not_supported">Da da wusiya bana mowlari na she</string>
     <string name="video_stabilization_footer">Da las rasedawal pa electronic (EIS) aw optical (OIS) stabilization sar sta videoyono sabata sata. Da dai kaar de lapara da frame yawa kach portion prun keegi.</string>
+    <string name="video_stabilization_unsupported_banner">Stabilization: sta da kachalu pa telefon ke na mlatir kigi. Da hardware gunah da, da mung na.</string>
+    <string name="video_stabilization_unsupported_short">Na mlatir shway</string>
     <string name="view_mode_grid">Grid</string>
     <string name="view_mode_list">Fehrist</string>
     <string name="warning_temp_file_detail"><![CDATA[
@@ -2331,7 +2286,6 @@ Yadona: La na yao exit method faal pati shi che bended na shi!</string>
     <string name="watermark_noise_on">On — Ambient sound level from microphone</string>
     <string name="watermark_noise_title">Da Shor Kappan (dB)</string>
     <string name="watermark_options_heading">Intikhabuna</string>
-    <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
     <string name="watermark_preview_heading">Preview</string>
     <string name="watermark_preview_sample_fadcam">Captured by FadCam - %1$s</string>
     <string name="watermark_preview_sample_timeonly">%1$s</string>
@@ -2564,6 +2518,10 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="mini_apps_qr_scanner_reference">QR Scanner hawalay</string>
 
     <string name="screen_recording_title">Screen Recording</string>
+    <string name="qs_tile_fadrec_subtitle">سکرین ثبت کړئ</string>
+    <string name="qs_tile_fadrec_label">FadRec</string>
+    <string name="qs_tile_fadrec_recording">ثبت</string>
+    <string name="qs_tile_fadrec_paused">توقف شوی</string>
 
     <string name="screen_recording_notif_title">FadRec - Screen Recording</string>
 
@@ -2640,6 +2598,13 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="setting_theme">Theme</string>
     <string name="setting_language">Zhaba</string>
     <string name="setting_app_icon">App Icon</string>
+    <string name="setting_splash_screen">Da Start Screen</string>
+    <string name="splash_screen_dialog_title">Start Screen Wacha</string>
+    <string name="splash_screen_helper">Wacha che FadCam da start pa waqt sa nishanee.</string>
+    <string name="splash_style_avatar">Fadex</string>
+    <string name="splash_style_avatar_desc">Avatar paida kegi, khwab wali shi, ao Home ta rasi</string>
+    <string name="splash_style_flag">FadSec Lab Bayraq</string>
+    <string name="splash_style_flag_desc">Zaghlai bayraq wala start screen</string>
 
     <!-- Audio Settings -->
     <string name="setting_enabled">Faal De</string>
@@ -2943,4 +2908,300 @@ How to read: "Zone 42N — 372,684m E, 3,512,334m N" = Zone 42 pa Northern hemis
     <string name="trash_show_in_settings_title">Settings ke Woyai</string>
     <string name="trash_show_in_settings_desc">Settings page ke Trash row zayed kai che ta jaldi rasai woyai</string>
 
+    <string name="fadcam_full_title">FadCam Qudrat User</string>
+    <string name="fadcam_full_subtitle">Larwaen kontorol, mozment recording, forensic ao noor. Full version wahaarai.</string>
+    <string name="github_get_on">Get it on</string>
+    <string name="github_badge_text">GitHub</string>
+    <string name="fadcam_card_title">FadCam</string>
+    <string name="app_usage_since_install">Tase FadCam %1$s da paara kaari</string>
+    <string name="app_usage_since_install_title">Tase FadCam karawal</string>
+
+    <string name="app_age_a_while">yawa wakht</string>
+    <!-- Roman Pashto age units: ICU's ps data is Arabic script, so these are written by hand. -->
+    <plurals name="app_age_year">
+        <item quantity="one">%1$s kal</item>
+        <item quantity="other">%1$s kala</item>
+    </plurals>
+    <plurals name="app_age_month">
+        <item quantity="one">%1$s myasht</item>
+        <item quantity="other">%1$s myashte</item>
+    </plurals>
+    <plurals name="app_age_day">
+        <item quantity="one">%1$s wradz</item>
+        <item quantity="other">%1$s wredzi</item>
+    </plurals>
+    <plurals name="app_age_hour">
+        <item quantity="one">%1$s saat</item>
+        <item quantity="other">%1$s saata</item>
+    </plurals>
+    <plurals name="app_age_minute">
+        <item quantity="one">%1$s daqiqa</item>
+        <item quantity="other">%1$s daqiqe</item>
+    </plurals>
+    <string name="app_usage_installed_on">Install nita</string>
+    <string name="pro_dossier_header">FADSEC LAB // DAKHILI DOSIER</string>
+    <string name="pro_dossier_eyes_only">SIRRI</string>
+    <string name="pro_dossier_subject">MAWZU // UPGRADE PROTOCOL</string>
+    <string name="pro_dossier_file_no">DA FILE SHUMERA</string>
+    <string name="pro_dossier_file_value">FC-PR-%1$02d</string>
+    <string name="pro_dossier_clearance">Ijazat</string>
+    <string name="pro_dossier_clearance_value">AWAMI / FREE</string>
+    <string name="pro_dossier_status">HALAT</string>
+    <string name="pro_dossier_status_value">DA TAYID INTEZAR</string>
+    <string name="pro_dossier_ref">REF: FADSEC/PR-07</string>
+    <string name="pro_dossier_page">PANA 1/1</string>
+    <string name="pro_dossier_drag">DA KATALO LAPARA WARKAWA // MAKH</string>
+    <string name="pro_dossier_cycle">DAWRA %1$02d/06</string>
+    <string name="pro_dossier_after_header">FADSEC LAB // PAS AZ AMAL REPORT</string>
+    <string name="pro_dossier_after_stamp">TAFSEEL</string>
+    <string name="pro_dossier_after_subject">MAWZU // HAFTAWAR CONTACT</string>
+    <string name="pro_dossier_after_status">FAISLA</string>
+    <string name="pro_dossier_after_status_value">TAYID ZAROORI DA</string>
+    <string name="pro_dossier_after_ref">REF: FADSEC/PR-07-AAR</string>
+    <string name="pro_dossier_got_it">Poh shwa</string>
+    <string name="pro_reminder_intro_title">Pro da drama start kolo mukhpoh</string>
+    <string name="pro_reminder_intro_subtitle">Tase %1$s FadCam kaari. Pro da de features lari.</string>
+    <string name="pro_reminder_title_1">Mung tareekh laro</string>
+    <string name="pro_reminder_title_2">Pro rashk kawi</string>
+    <string name="pro_reminder_title_3">Waya sok bia raghai</string>
+    <string name="pro_reminder_title_4">Da os zamung she</string>
+    <string name="pro_reminder_title_5">Lutfan hairaan sha</string>
+    <string name="pro_reminder_title_6">Bia hafta hamda wakht?</string>
+    <string name="pro_reminder_subtitle_1">%1$s FadCam sara, aw tase la Pro sara na lidel.</string>
+    <string name="pro_reminder_subtitle_2">Tase %1$s FadCam kaari. Pro khpal zan pateel.</string>
+    <string name="pro_reminder_subtitle_3">%1$s FadCam sara. Za bia raghai da Pro yaad wraka.</string>
+    <string name="pro_reminder_subtitle_4">%1$s FadCam sara. Pro ham yaw tsa attention ghwarri.</string>
+    <string name="pro_reminder_subtitle_5">%1$s tag shwe, aw za bia dalta yam. Pro me raawrai.</string>
+    <string name="pro_reminder_subtitle_6">%1$s tag shwe. Pro salaam kawi. Bia.</string>
+    <string name="pro_reminder_notification_title_1">Pro khpal zan pateel</string>
+    <string name="pro_reminder_notification_title_2">Yaw wro interrupt</string>
+    <string name="pro_reminder_notification_title_3">Pro chat ta raghai</string>
+    <string name="pro_reminder_notification_title_4">Waya sok bia raghai</string>
+    <string name="pro_reminder_notification_body_1">%1$s sara. Pro yaw tsat salaam ghwarri.</string>
+    <string name="pro_reminder_notification_body_2">Gham ma kawa, da urgent nasta. Pro yawazi salaam kawi.</string>
+    <string name="pro_reminder_notification_body_3">%1$s tag shwe. Yaw wro katlo la paara tayar yase?</string>
+    <string name="pro_reminder_notification_body_4">Za bia yam. Pro wada kawi daa wro katlo de.</string>
+    <string name="pro_reminder_button_continue">Dwam kawa</string>
+    <string name="pro_reminder_button_countdown">Dwam kawa %1$ds</string>
+    <string name="pro_reminder_back_toast_1">Khpal koshish. Dwam dalta de.</string>
+    <string name="pro_reminder_back_toast_2">Plot twist: Back barwanda nasta.</string>
+    <string name="pro_reminder_back_toast_3">Nazde wotlase. Yawazi Dwam ta tap kawa.</string>
+    <string name="pro_reminder_after_title">Pro ta upgrade kawa, aw za bia takleef na kawama. Da hamesha la paara.</string>
+    <string name="pro_reminder_after_got_it">Poh shod</string>
+    <string name="pro_reminder_notification_channel_name">Pro yaad wrakawi</string>
+    <string name="pro_reminder_notification_channel_description">Da FadCam Pro da paara awrtaize yaad wrakawi. Pa Pro ke na khkari.</string>
+    <plurals name="pro_reminder_after_body">
+        <item quantity="one">Za bia %1$d wradze ke raazma. Khpal sokali wogora.</item>
+        <item quantity="other">Za bia %1$d wradze ke raazma. Khpal sokali wogora.</item>
+    </plurals>
+    <string name="follow_on_x">Pa X ke follow kawa</string>
+    <string name="pro_screen_active">Active</string>
+    <string name="pro_screen_calc_desc">Yaw juda app che calculator ghwandi.</string>
+    <string name="pro_screen_calc_feature">Calculator app</string>
+    <string name="pro_screen_calculator">Calculator</string>
+    <string name="pro_screen_claim_body">Da FadCam da khaas Hybrid MP4 pipeline pa zari — da Android da paara khaas jor shwe, da dasee che recordings da crash, da battery khatma aw naa khati bandedo la wrusta ham, ter wrusti sekand porsa da katlo wradi.</string>
+    <string name="pro_screen_claim_title">Da background video recorder #1</string>
+    <string name="pro_screen_cloud">FadDrive sync</string>
+    <string name="pro_screen_cloud_desc">Khpal recordings pa khaas encrypted cloud ke safely backup kawa.</string>
+    <string name="pro_screen_coming_soon_status">Nzdi ke razi</string>
+    <string name="pro_screen_compare">Wogora che tsal shamil de</string>
+    <string name="pro_screen_compare_hint">Da editions da compare kolo la paara swipe kawa</string>
+    <string name="pro_screen_compare_owned">Khpal Pro features</string>
+    <string name="pro_screen_custom_icon">Khpal app icon</string>
+    <string name="pro_screen_custom_icon_desc">Khpal app da paara khpal icon wakhla.</string>
+    <string name="pro_screen_custom_name">Khpal app name</string>
+    <string name="pro_screen_custom_name_desc">Da app da paara khpal name wakhla.</string>
+    <string name="pro_screen_direct_support">Da developer support</string>
+    <string name="pro_screen_direct_support_desc">Pa Discord ke la developer mrasta wakhla.</string>
+        <string name="pro_screen_support_title">Da support nor lare</string>
+    <string name="pro_screen_support_body">Pro ta alaqa nasta? Taso FadCam la Patreon ya crypto donation pa wasila support kawali shi. Hara contribution pa mrasta bia ziyat free, open-source software جوړوو.</string>
+    <string name="pro_screen_patreon_title">Patreon</string>
+    <string name="pro_screen_patreon_desc">Yaw wari donation ya miashtani membership.</string>
+    <string name="pro_screen_crypto_title">Crypto donation</string>
+    <string name="pro_screen_crypto_desc">La mung sara pa Discord ya email ke pa yaw tab ke osa.</string>
+    <string name="pro_screen_stay_connected_title">Pa yaw tab ke osa</string>
+    <string name="pro_screen_stay_connected_body">Pawsto, feedback ya yawazi salaam? Mung ba khwara khe da taso pa khwa poha kawu.</string>
+    <string name="pro_screen_link_discord">Discord</string>
+    <string name="pro_screen_link_email">Email</string>
+    <string name="pro_screen_link_x">X</string>
+    <string name="pro_screen_support_email_subject">Da FadCam support poxshtna</string>
+    <string name="pro_screen_everything">Tsel free features</string>
+    <string name="pro_screen_everything_desc">Tsal che pa free version ke de, ham shamil de.</string>
+    <string name="pro_screen_fan_desc">Tase da open-source, privacy-first apps aw solutions da rhatoonke baawar lari.</string>
+    <string name="pro_screen_fan_feature">Tase privacy khwazhi</string>
+    <string name="pro_screen_features">Khasiyat</string>
+    <string name="pro_screen_free">Watra</string>
+    <string name="pro_screen_included">Shamil</string>
+    <string name="pro_screen_link_error">Link na wakatalo. Wogora che browser de aw bia koshish kawa.</string>
+    <string name="pro_screen_navigation">Pro wogora</string>
+    <string name="pro_screen_navigation_owned">Khpal Pro</string>
+    <string name="pro_screen_no_ads">Bela ads aw tracking</string>
+    <string name="pro_screen_no_ads_desc">Bela ads. Bela tracking. Bela crash log collection.</string>
+    <string name="pro_screen_no_nags">Bela upgrade reminders</string>
+    <string name="pro_screen_no_nags_desc">Bela awrtaize reminders da Pro ta upgrade kolo la paara.</string>
+    <string name="pro_screen_not_included">Nishta shamil</string>
+    <string name="pro_screen_notes">Yadasht</string>
+    <string name="pro_screen_notes_desc">Yaw juda app che notes app ghwandi.</string>
+    <string name="pro_screen_notes_feature">Yadasht app</string>
+    <string name="pro_screen_notification">Notification icons</string>
+    <string name="pro_screen_notification_desc">Da recording notifications da paara bal icon wakhla.</string>
+    <string name="pro_screen_owned_status">%1$s · Pa de app ke active</string>
+    <string name="pro_screen_owned_subtitle">Da de edition sara shamil</string>
+    <string name="pro_screen_owned_title">%1$s active de</string>
+    <string name="pro_screen_price_detail">3 khaas Pro apps · Da umar updates</string>
+    <string name="pro_screen_price_terms">Yawwari purchase</string>
+    <string name="pro_screen_privacy_body">Mung baawar laro che privacy da hargaw kha da. Da de sabab de che FadCam ads, trackers ya data collection nishta. Mung automatically crash reports ham na raghawaro.\n\nMung 100% open source yaw, no daasee che tase wogori app chirang kaar kawi. Muhim privacy features ba hich kala da payment la wrusta band na si.</string>
+    <string name="pro_screen_privacy_title">Privacy non. Sabaa. Da hamesha la paara.</string>
+    <string name="pro_screen_purchase">Pro Bundle prani kawa</string>
+    <string name="pro_screen_purchase_caption">Da FadSec Lab shop prani kawi</string>
+    <string name="pro_screen_scroll_hint">Da ziyat la paara scroll kawa</string>
+    <string name="pro_screen_scroll_top">Bara ta scroll kawa</string>
+    <string name="pro_screen_soon">Nzdi ke</string>
+    <string name="pro_screen_soon_legend">Pro+ aw Lab tiers nzdi ke razi.</string>
+    <string name="pro_screen_status_description">%1$s: %2$s</string>
+    <string name="pro_screen_tier">Pro</string>
+    <string name="pro_screen_tier_lab">Lab</string>
+    <string name="pro_screen_tier_plus">Pro+</string>
+    <string name="pro_screen_title">FadCam Pro</string>
+    <string name="pro_screen_updates">Wradi updates</string>
+    <string name="pro_screen_updates_desc">Nawi versions la hargaw wrusta nzde 60 wradze mukhpoh wakhla.</string>
+    <string name="pro_screen_weather">Mausam</string>
+    <string name="pro_screen_weather_desc">Yaw juda app che weather app ghwandi.</string>
+    <string name="pro_screen_weather_feature">Mausam app</string>
+    <string name="pro_screen_why_pro_body">FadCam Free ham daase features lari che bal apps pa hoy paisa ghwari. Mung baawar laro che ghat war software ba da khpal privacy pa qeemat na razi.\n\nKa tase FadCam ghat war wogori aw da zamung kar mlatr kawal ghwari, no Pro yaw lari da che pa badal ke ziyat things wakhla: dre juda khaas apps, wradi updates aw bal extras, da FadCam Free pa tsal features sara.\n\nSta mlatr zamung sara komak kawi che pa FadSec Lab ke da open-source, privacy-first apps aw solutions jorolo ta yawazi wradi.</string>
+    <string name="pro_screen_why_pro_title">No wale Pro?</string>
+    <string name="pro_screen_bundle">Dre zaati apps.
+Da tase da hamisha paara.</string>
+    <string name="pro_showcase_label">PRO PAKET</string>
+    <string name="pro_showcase_supporting">Dre wa separate install kawa, da umar updates sara.</string>
+    <string name="pro_showcase_meta">Juda installs · Da umar updates</string>
+    <string name="pro_showcase_chip_installs">Dre mustaqil apps</string>
+    <string name="pro_showcase_chip_updates">Da umar updates shamil di</string>
+    <string name="pro_showcase_chip_entry">Da apps petawe interfaces</string>
+    <string name="pro_showcase_soon">ZHAR</string>
+    <string name="pro_showcase_hint">Unlock kawa aw apps wogori.</string>
+    <string name="pro_showcase_expand_desc">Phone full screen kawa</string>
+    <string name="pro_showcase_collapse_desc">Da full screen woza</string>
+    <string name="pro_showcase_phone_desc">Da FadSec Lab device mockup. Screen dre Pro apps show kawi. Phone droundolo da paara tsale kae.</string>
+    <string name="pro_showcase_privacy_mark">Privacy pa design</string>
+    <string name="pro_showcase_notes_hint">Da note ziyatolo la paara type kae</string>
+    <string name="pro_showcase_weather_temp">24°</string>
+    <string name="pro_showcase_weather_row1">Lambdi</string>
+    <string name="pro_showcase_weather_row1_value">62%</string>
+    <string name="pro_showcase_weather_row2">Baad</string>
+    <string name="pro_showcase_weather_row2_value">8 km/h</string>
+    <string name="pro_showcase_restart">Restart</string>
+    <string name="pro_showcase_torch">Torch</string>
+    <string name="pro_showcase_access_title">Camera aw Microphone</string>
+    <string name="pro_showcase_access_body">Weather app pa de preview ke sta camera aw microphone kari. Da FadCam da petawe notifications product demo de — pa raseedanee hich tsal na kegee.</string>
+    <string name="pro_showcase_access_ok">Poh shod</string>
+    <string name="pro_showcase_shutting_down">Off kegee…</string>
+    <string name="pro_showcase_starting">Start kegee</string>
+    <string name="pro_showcase_power_menu_title">Device restart kawu?</string>
+    <string name="pro_showcase_power_menu_body">Da preview device restart kawi.</string>
+    <string name="pro_showcase_power_menu_cancel">Cancel</string>
+    <string name="pro_showcase_recents_hint">Da bia praanyolo la paara tap kae</string>
+    <string name="pro_showcase_recents_empty">Hich recent apps nestu</string>
+    <string name="pro_showcase_fullscreen_hint">Droundolo da paara tsale kae · Yaw app tap kae</string>
+    <string name="pro_showcase_weather_line">Sweelee · 24°</string>
+    <string name="pro_showcase_notif_now">wos</string>
+    <string name="pro_showcase_swipe_unlock">Da unlock la paara bara tsale kae</string>
+    <string name="fadcam_pro_price_amount">$49</string>
+    <!-- Onboarding (redesigned) -->
+    <string name="permissions_required">Yaw chand ejazat</string>
+    <string name="permissions_description">FadCam ta da staso videos recording aw save kawalo lapara yaw chand ejazat darkar de.</string>
+    <string name="grant_permissions">Ejazat Werka</string>
+    <string name="permissions_note">Da dwam lapara bayad tol ejazat werka.</string>
+    <string name="permissions_granted">Tol ejazat warkel shwe. Os shuru kawali shi!</string>
+    <string name="disable_battery_optimization">Battery Optimization Ghair Faal Ka</string>
+    <string name="battery_optimization_disabled">Battery optimization ghair faal shu</string>
+    <string name="onboarding_human_title">Da Kor Qawaneed</string>
+    <string name="onboarding_human_desc">Dwa chatek khabare, bia ba dakhil ye. Ka razi na ye, FadCam os uninstall ka.</string>
+    <string name="onboarding_human_button">Dakhil me ka!</string>
+    <string name="onboarding_permissions_section">Ejazat</string>
+    <string name="onboarding_battery_section">Battery</string>
+    <string name="onboarding_permission_granted">Warkel shwe</string>
+    <string name="onboarding_permission_required">Zaroori</string>
+    <string name="onboarding_human_agreement_responsible">Za ba FadCam pa masulyat sara karawam aw da noro privacy ba manam.</string>
+    <string name="onboarding_human_agreement_legal">Za %1$s ta razee yam aw %2$s manam.</string>
+    <string name="onboarding_terms_of_use">Da Estefada Sharte</string>
+    <string name="onboarding_privacy_policy">Privacy Policy</string>
+    <string name="onboarding_cred_open">Open Source</string>
+    <string name="onboarding_cred_ads">No Ads</string>
+    <string name="onboarding_cred_track">No Trackers</string>
+    <string name="onboarding_mini_torch">Flashlight</string>
+    <string name="onboarding_mini_torch_desc">Flashlight, strobe aw SOS modes.</string>
+    <string name="onboarding_mini_qr">QR Scanner</string>
+    <string name="onboarding_mini_qr_desc">QR codes scan ka aw scans Records ke save ka.</string>
+    <string name="onboarding_permissions_kicker">ACCESS // ZAROORI</string>
+    <string name="onboarding_human_kicker">OATH // DA ESTEFADA QAWANEED</string>
+    <string name="onboarding_dossier_kicker">FADCAM // PRIVATE RECORDER</string>
+    <string name="onboarding_dossier_title">Da background video no. 1 recorder.</string>
+    <string name="onboarding_dossier_lede">Da FadCam da Hybrid MP4 pipeline pa maddad chalu. Sta recordings crashes, khali batteries aw nagahani shutdowns ta muqawimat kawi — da akhri second pory playable.</string>
+    <string name="onboarding_capabilities_kicker">FADCAM // MULTIMEDIA SUITE</string>
+    <string name="onboarding_capabilities_title">Wakht rasedale chi yaw chand\napps uninstall ka.</string>
+    <string name="onboarding_capabilities_lede">FadCam da haghwi karuna ham kawi. Ho, tol. Bela trackers aw dark patterns.</string>
+    <string name="onboarding_feature_background_title">Background recording</string>
+    <string name="onboarding_feature_background_desc">Hatta chi screen off wi ham recording ka, da crash-resistant Hybrid MP4 technology pa maddad.</string>
+    <string name="onboarding_feature_screen_title">Screen recording</string>
+    <string name="onboarding_feature_screen_desc">Khpal screen da drawing tools, layers aw pages sara recording ka.</string>
+    <string name="onboarding_feature_editor_title">Video editor</string>
+    <string name="onboarding_feature_editor_desc">Clips trim, split, crop, duplicate ya mute ka.</string>
+    <string name="onboarding_feature_motion_title">Motion detection</string>
+    <string name="onboarding_feature_motion_desc">Yawazi recording kawi kala che movement detect shi. Kala chi band shi, pause kegi.</string>
+    <string name="onboarding_feature_forensic_title">Forensic intelligence</string>
+    <string name="onboarding_feature_forensic_desc">Da device AI khalq aw objects detect kawi. Da evidence pa tora save kegi.</string>
+    <string name="onboarding_feature_remote_title">Remote CCTV</string>
+    <string name="onboarding_feature_remote_desc">Khpal phone da Closed-Circuit Television (CCTV) camera ta badla ka. Live stream ka aw pa remote control ka.</string>
+    <string name="onboarding_feature_bodycam_solo_title">Bodycam</string>
+    <string name="onboarding_feature_bodycam_solo_desc">Da shakhsi security aw hands-free recording lapara ye waghunda ka.</string>
+    <string name="onboarding_feature_dashcam_title">Dashcam</string>
+    <string name="onboarding_feature_dashcam_desc">Sarak ya motovlogs da video stabilization sara smoothly recording ka.</string>
+    <string name="onboarding_scroll_hint">Da noro lapara scroll ka</string>
+    <string name="onboarding_scroll_short">Scroll</string>
+    <string name="onboarding_back">Shata</string>
+    <string name="onboarding_next">Bela</string>
+    <string name="onboarding_done">Mukammal</string>
+    <string name="onboarding_mini_heading">Aw mung la os khatam na yu.</string>
+    <string name="onboarding_mini_support">Mini apps. Da harge wara tools, da FadCam dakhil ke.</string>
+    <string name="onboarding_mini_more">Noro mini apps zur razee.</string>
+    <string name="onboarding_payoff_title">%1$d karuna. Yaw FadCam.</string>
+    <string name="onboarding_payoff_support">Wakht rasedale chi da haghwi extra apps ta khuda hafiz wai.</string>
+    <string name="onboarding_lite_full_note">FadCam Full da 10 apps badal kawi.</string>
+    <string name="onboarding_demo_person">PERSON</string>
+    <string name="onboarding_demo_car">GAREY</string>
+    <string name="onboarding_demo_knife">CHAKU</string>
+    <string name="onboarding_swipe_instruction">Da dwam lapara swipe ka.</string>
+    <string name="onboarding_camera">Camera</string>
+    <string name="onboarding_microphone">Microphone</string>
+    <string name="onboarding_storage">Zakhira</string>
+    <string name="onboarding_open_settings">Settings Khola</string>
+    <!-- Onboarding mascot: casual localized hello (the Salam stays untranslated). -->
+    <string name="onboarding_mascot_greeting_casual">Helo!</string>
+    <string name="zoom_lens_unavailable_banner">دا تلیفون خپله پراخه کمره اپلیکیشنونو ته نه ښیي. له 1.0x څخه ټیټ زوم به 1.0x پاتې شي.</string>
+    <string name="records_display_group_title">Nishodana</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Belta</string>
+    <string name="faditor_rename_project">Da projekt nom</string>
+    <string name="faditor_rename_hint">Da projekt nom</string>
+    <string name="faditor_rename_action">Nom badal kawal</string>
+    <string name="faditor_rename_subtitle">Da export shwy file lara karel kigi</string>
+    <string name="faditor_rename_helper">Export shwy video da nom sara saati kigi.</string>
+    <string name="faditor_export_name_preview">Saaty shwa: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Da playhead laandi hich clip nishta</string>
+    <string name="onboarding_demo_evidence_gallery">DA SANADO GALERI</string>
+    <string name="onboarding_demo_saved">SAATY SHWA</string>
+
+    <!-- AppLock fingerprint guidance (overrides library defaults) -->
+    <string name="applock__description_create_fingerprint">Da FadCam mahfooz kolo dapara pa Android ke register shawi fingerprint istemal ka.</string>
+    <string name="applock__description_unlock_fingerprint">Fingerprint sensor ta lams ka</string>
+    <string name="applock__create_chooser_option_fingerprint">Fingerprint</string>
+    <string name="applock__fingerprint_error_not_enrolled">Fingerprint la FadCam ke bya nishta faal. Tab Lock khola aw bya setup ka.</string>
+    <string name="applock__fingerprint_error_unrecognized">Sta fingerprint wanashnastel shwa.</string>
+    <string name="applock__fingerprint_error_unknown">Fingerprint login mukammal nashwa. Bya koshish ka, ya pa Android settings ke yay tanzim ka.</string>
+    <string name="applock__fingerprint_error_none">Pa Android ke bya fingerprint nishta tanzim shawi. Pa Android settings ke yaw fingerprint izafa ka, bia koshish ka.</string>
+    <string name="applock__fingerprint_error_hardware">Fingerprint agha wakht da stargi nishta. Pa Android settings ke fingerprint tanzim ka, bia koshish ka.</string>
+    <string name="applock__action_settings">Android settings khola</string>
+    <string name="watermark_preview_funny">For Real? :( \n    ＞﹏＜</string>
 </resources>

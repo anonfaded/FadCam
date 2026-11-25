@@ -49,7 +49,22 @@ public class AnimatedTextView extends AppCompatTextView {
     private float slotColumnWidth;     // px width of animated column = max(oldChangedW, newChangedW)
     private float slotOldChangedWidth; // px width of old changed text (stable suffix anchor)
     private float slotNewChangedWidth; // px width of new changed text (marks where suffix starts)
+    // Visual (post-bidi / post-shaping) bounds of the changed column, in layout
+    // coordinates. measureText(prefix) is a LOGICAL width: Arabic joins change glyph
+    // advances and bidi reorders the runs, so the measured prefix does not match where
+    // the changed glyphs actually land and the clip window drifts frame to frame.
+    private float slotNewChangedLeft;
+    private float slotNewChangedRight;
+    private float slotOldChangedLeft;
+    private float slotOldChangedRight;
     private float slotDrawBaseX;       // draw origin for the animated layouts
+    private int slotLayoutWidth;       // width of the built layouts (may exceed the view)
+    // Vertical window the slide is confined to: the real text line, not the view box.
+    // The view box includes font padding, so confining to it let the incoming/outgoing
+    // glyphs paint above the line and overlap the row above ("rows jumping").
+    private float slotWindowTop;
+    private float slotWindowBottom;
+    private float slotBaselineY;
     private boolean slotHasDifferentialRegions;
 
 
@@ -205,38 +220,137 @@ public class AnimatedTextView extends AppCompatTextView {
         int maxNeededW = (int) Math.ceil(Math.max(
                 oldStr.isEmpty() ? 0f : paint.measureText(oldStr),
                 newStr.isEmpty() ? 0f : paint.measureText(newStr)));
+
+        // A view with a fixed width (match_parent, a weight column) owns the wrap: forcing a
+        // single-line layout there draws one long clipped line first and then reflows to the
+        // real multi-line layout when the animation ends. Only wrap_content views need the
+        // widened layout, because they are still sized to the old, shorter text.
+        android.view.ViewGroup.LayoutParams lp = getLayoutParams();
+        boolean wrapContent = lp != null
+                && lp.width == android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+        if (!wrapContent) maxNeededW = usableW;
         int layoutW = Math.max(usableW, maxNeededW);
+        boolean centered = (getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK)
+                == Gravity.CENTER_HORIZONTAL;
 
         // Always build FULL-STRING layouts so every region (prefix, column, suffix) is
         // rendered by the same StaticLayout engine — identical baselines everywhere.
         // Using partial-string layouts for the column caused a per-pixel Y mismatch with
         // canvas.drawText() for the prefix/suffix due to StaticLayout includeFontPadding,
         // which manifested as the whole row jiggling during animation.
-        Layout.Alignment alignment = hasDiff
-                ? Layout.Alignment.ALIGN_NORMAL
-                : resolveLayoutAlignment();
+        // Keep the view's normal alignment in BOTH modes. Forcing ALIGN_NORMAL for the
+        // differential case left-aligned a centred (or RTL start-aligned) label during the
+        // animation and snapped it back afterwards — the "label jumping around" effect.
+        Layout.Alignment alignment = centered
+                ? Layout.Alignment.ALIGN_CENTER
+                : Layout.Alignment.ALIGN_NORMAL;
 
+        // Match the TextView's own bidi resolution. TextView lays the text out with the
+        // direction set by android:textDirection, but StaticLayout defaults to
+        // FIRSTSTRONG_LTR, which resolves from the first strong character instead. On an
+        // Arabic value (letters + Arabic-Indic digits) that produced a DIFFERENT glyph order
+        // than the resting text, so each animated frame disagreed with the final frame and
+        // the label appeared to jiggle and flicker.
+        android.text.TextDirectionHeuristic heuristic = textDirectionHeuristic();
         slotOldLayout = StaticLayout.Builder
                 .obtain(oldStr, 0, oldStr.length(), paint, layoutW)
                 .setAlignment(alignment)
+                .setTextDirection(heuristic)
                 .setIncludePad(includePad)
                 .build();
         slotNewLayout = StaticLayout.Builder
                 .obtain(newStr, 0, newStr.length(), paint, layoutW)
                 .setAlignment(alignment)
+                .setTextDirection(heuristic)
                 .setIncludePad(includePad)
                 .build();
 
+        // Resolve the changed column from the built layouts rather than from measured
+        // logical widths. This is bidi-safe: for Arabic (letters plus Arabic-Indic digits)
+        // the run order is resolved by the layout, and the returned span already reflects
+        // that, so the clip window stays pinned to the glyphs actually being animated.
+        float[] newBounds = changedBounds(
+                slotNewLayout, prefixLen, prefixLen + newChanged.length());
+        float[] oldBounds = changedBounds(
+                slotOldLayout, prefixLen, prefixLen + oldChanged.length());
+        boolean boundsUsable = newBounds != null && oldBounds != null;
+        if (hasDiff && !boundsUsable) {
+            // Could not resolve a safe single-run column (unexpected bidi reordering) —
+            // slide the whole string instead of clipping at a guessed position.
+            hasDiff = false;
+        }
+
+        // Window = the line the text actually occupies at rest (same origin TextView uses).
+        Layout resting = getLayout();
+        if (resting == null || resting.getLineCount() == 0) {
+            // The view can be attached with a size but no TextLayout yet (e.g. the home stats
+            // row is updated by a posted runnable right as the fragment returns from recording).
+            // There is no baseline to animate against — settle on the new value.
+            setText(newText);
+            return;
+        }
+        boolean singleLine = resting.getLineCount() == 1
+                && slotOldLayout.getLineCount() == 1
+                && slotNewLayout.getLineCount() == 1;
+        // Resting baseline of the text, exactly as TextView.onDraw() would place it.
+        int boxH = Math.max(0, getHeight() - getExtendedPaddingTop()
+                - getExtendedPaddingBottom());
+        int vOffset = 0;
+        int vGravity = getGravity() & Gravity.VERTICAL_GRAVITY_MASK;
+        if (vGravity == Gravity.CENTER_VERTICAL) {
+            vOffset = Math.max(0, (boxH - resting.getHeight()) / 2);
+        } else if (vGravity == Gravity.BOTTOM) {
+            vOffset = Math.max(0, boxH - resting.getHeight());
+        }
+        slotBaselineY = getExtendedPaddingTop() + vOffset + resting.getLineBaseline(0);
+
+        // Clip to the union of both strings' real ink extents. Font metrics are not usable:
+        // Arabic glyphs (ث, ج, ي) overshoot the nominal descent, and the view box includes
+        // font padding — either one leaves the outgoing digit visible above the line, which
+        // is what made the row look like it was jumping.
+        android.graphics.Rect oldInk = new android.graphics.Rect();
+        android.graphics.Rect newInk = new android.graphics.Rect();
+        paint.getTextBounds(oldStr, 0, oldStr.length(), oldInk);
+        paint.getTextBounds(newStr, 0, newStr.length(), newInk);
+        slotWindowTop = slotBaselineY + Math.min(oldInk.top, newInk.top);
+        slotWindowBottom = slotBaselineY + Math.max(oldInk.bottom, newInk.bottom) + 1;
+
         slotHasDifferentialRegions = hasDiff;
-        slotDrawBaseX = getCompoundPaddingLeft() + (hasDiff
-                ? computeHorizontalOffset(usableW, newStr.isEmpty() ? 0f : paint.measureText(newStr))
-                : 0f);
+        slotLayoutWidth = layoutW;
+        // ALIGN_CENTER already centres inside the layout box, and a wrap_content box hugs
+        // the text, so only fixed-width start/end-aligned views need an extra offset.
+        float restedTextW = newStr.isEmpty() ? 0f : paint.measureText(newStr);
+        slotDrawBaseX = getCompoundPaddingLeft();
+        if (!wrapContent && !centered) {
+            slotDrawBaseX += computeHorizontalOffset(usableW, restedTextW);
+        }
+
+        // ALIGN_NORMAL anchors text to the START edge of the *layout* box. When the incoming
+        // string is wider, layoutW exceeds the view, so in RTL the whole run was shifted right
+        // by (layoutW - usableW) for the duration of the slide and back again afterwards.
+        // That is the horizontal "jumping" of the label. Shift the draw origin by the same
+        // overflow so the anchored edge stays exactly where the resting text has it.
+        int overflowW = layoutW - usableW;
+        if (overflowW > 0) {
+            boolean rtl = getLayoutDirection() == LAYOUT_DIRECTION_RTL;
+            boolean anchoredRight = centered
+                    ? true
+                    : (alignment == Layout.Alignment.ALIGN_OPPOSITE) != rtl;
+            if (anchoredRight) {
+                slotDrawBaseX -= overflowW;
+            }
+        }
         if (hasDiff) {
             // Partial animation: only the column between prefix and suffix slides.
-            slotPrefixWidth     = prefixW;
-            slotColumnWidth     = columnW;       // max(oldChangedW, newChangedW)
-            slotOldChangedWidth = oldChangedW;
-            slotNewChangedWidth = newChangedW;   // suffix starts here inside new layout
+            slotNewChangedLeft  = newBounds[0];
+            slotNewChangedRight = newBounds[1];
+            slotOldChangedLeft  = oldBounds[0];
+            slotOldChangedRight = oldBounds[1];
+            // Union of both columns keeps the moving glyphs fully visible while they slide.
+            slotPrefixWidth = Math.min(slotNewChangedLeft, slotOldChangedLeft);
+            slotColumnWidth = Math.max(slotNewChangedRight, slotOldChangedRight) - slotPrefixWidth;
+            slotOldChangedWidth = slotOldChangedRight - slotOldChangedLeft;
+            slotNewChangedWidth = slotNewChangedRight - slotNewChangedLeft;
         } else {
             // Full-string animation — no stable prefix or suffix.
             slotPrefixWidth     = 0f;
@@ -361,10 +475,10 @@ public class AnimatedTextView extends AppCompatTextView {
             slotNewLayout = null;
             slotAnimator = null;
             slotProgress = 1f;
-            // Suppress layout request during setText to prevent parent remeasure/reposition
-            suppressLayoutRequest = true;
+            // Let the view remeasure: setText() nulls the internal Layout, and a
+            // wrap_content box must grow/shrink to the new string or the final frame keeps
+            // the old width and clips the trailing glyphs.
             setText(pending);
-            suppressLayoutRequest = false;
             // setText already schedules a redraw; no extra invalidate needed.
         } else {
             isSlotAnimating = false;
@@ -374,15 +488,6 @@ public class AnimatedTextView extends AppCompatTextView {
             slotAnimator = null;
             invalidate();
         }
-    }
-
-    @Override
-    public void requestLayout() {
-        if (suppressLayoutRequest) {
-            // Suppress layout pass during animation completion to prevent oscillation
-            return;
-        }
-        super.requestLayout();
     }
 
     private void cancelSlotAnimation() {
@@ -409,31 +514,34 @@ public class AnimatedTextView extends AppCompatTextView {
 
         int left   = getCompoundPaddingLeft();
         int right  = getWidth() - getCompoundPaddingRight();
-        // Use the same Y origin that TextView.onDraw() uses for the canvas translation:
-        // extendedPaddingTop for default (top) gravity.  This eliminates the 1-frame
-        // snap that occurred when super.onDraw() took over at animation end.
         int top    = getExtendedPaddingTop();
         int bottom = getHeight() - getExtendedPaddingBottom();
 
-        // Slide distance = height of the taller layout (keeps text fully visible during slide).
-        int slideDistance = Math.max(slotOldLayout.getHeight(), slotNewLayout.getHeight());
-        if (slideDistance == 0) slideDistance = bottom - top;
+        int oldHeight = slotOldLayout.getHeight();
+        int newHeight = slotNewLayout.getHeight();
+        // Both layers are drawn so their own baseline lands on the resting baseline, which
+        // keeps the glyphs pixel-identical before, during and after the slide.
+        float oldRest = slotBaselineY - slotOldLayout.getLineBaseline(0);
+        float newRest = slotBaselineY - slotNewLayout.getLineBaseline(0);
 
-        // Compute Y positions for the two animating layers.
+        // Slide distance = the text line height; the window clips it to a single line.
+        int slideDistance = Math.round(Math.max(1f, slotWindowBottom - slotWindowTop));
+
+        // Compute Y positions for the two animating layers around their own rest origins.
         float oldY, newY;
         if (slotUpward) {
-            oldY = top - slideDistance * slotProgress;
-            newY = top + slideDistance * (1f - slotProgress);
+            oldY = oldRest - slideDistance * slotProgress;
+            newY = newRest + slideDistance * (1f - slotProgress);
         } else {
-            oldY = top + slideDistance * slotProgress;
-            newY = top - slideDistance * (1f - slotProgress);
+            oldY = oldRest + slideDistance * slotProgress;
+            newY = newRest - slideDistance * (1f - slotProgress);
         }
 
         // Column bounds derived from prefix/changed-text widths.
         float colLeft     = slotDrawBaseX + slotPrefixWidth;
         float colRight    = colLeft + slotColumnWidth;
-        // Keep suffix pinned to the CURRENT/old boundary while sliding so only digits move.
-        float suffixStart = colLeft + slotOldChangedWidth;
+        // Suffix starts at the right edge of the union column so nothing to its right moves.
+        float suffixStart = slotDrawBaseX + Math.max(slotOldChangedRight, slotNewChangedRight);
 
         // Clip Y to view bounds (never bleed above/below), but do NOT restrict X to
         // the view's current measured width — the new text may be wider than the current
@@ -443,13 +551,24 @@ public class AnimatedTextView extends AppCompatTextView {
         // Outer Y-only clip — keep all drawing within the text row.
         // Use actual pixel boundaries; never use Integer.MIN/MAX_VALUE on a HW canvas.
         canvas.save();
-        canvas.clipRect(0, top, getWidth(), bottom);
+        // Cover the full layout, not just getWidth(): a wrap_content view is still sized to
+        // the OLD (narrower) string while the new one animates in, and clamping to getWidth()
+        // sliced the trailing unit letter off for the whole slide — the value appeared to
+        // flicker and drop its last glyph every second.
+        int drawRight = Math.max(getWidth(), (int) Math.ceil(slotDrawBaseX + slotLayoutWidth) + 2);
+        int clipTop = (int) Math.floor(slotWindowTop);
+        int clipBottom = (int) Math.ceil(slotWindowBottom);
+        canvas.clipRect(0, clipTop, drawRight, clipBottom);
 
-        // 1. Static PREFIX (differential mode only)
-        if (slotHasDifferentialRegions && slotPrefixWidth > 0f) {
+        // 1. Static text outside the animated column (differential mode only).
+        //    Clipping "everything except the column" is direction-agnostic: in LTR the
+        //    unchanged prefix sits left of the digits, while in RTL the unchanged Arabic
+        //    units sit to their LEFT. Slicing a left prefix and a right suffix dropped the
+        //    units in RTL, which is what made the value flicker/disappear each second.
+        if (slotHasDifferentialRegions) {
             canvas.save();
-            canvas.clipRect(slotDrawBaseX, top, colLeft, bottom);
-            canvas.translate(slotDrawBaseX, top);
+            canvas.clipRect(0, top, colLeft, bottom);
+            canvas.translate(slotDrawBaseX, newRest);
             slotNewLayout.draw(canvas);
             canvas.restore();
         }
@@ -470,16 +589,49 @@ public class AnimatedTextView extends AppCompatTextView {
 
         canvas.restore(); // end column clip
 
-        // 3. Static SUFFIX (differential mode only)
+        // 3. Static text to the right of the column (differential mode only)
         if (slotHasDifferentialRegions) {
             canvas.save();
-            canvas.clipRect(suffixStart, top, right, bottom);
-            canvas.translate(slotDrawBaseX, top);
+            canvas.clipRect(colRight, top, drawRight, bottom);
+            canvas.translate(slotDrawBaseX, newRest);
             slotNewLayout.draw(canvas);
             canvas.restore();
         }
 
         canvas.restore(); // end Y clip
+    }
+
+    /**
+     * Visual x-range [left, right] of {@code [start, end)} inside {@code layout}.
+     * Returns null when the range is degenerate or cannot be resolved to one run.
+     */
+    private static float[] changedBounds(Layout layout, int start, int end) {
+        if (layout == null || end <= start) {
+            return null;
+        }
+        int length = layout.getText().length();
+        if (start < 0 || end > length) {
+            return null;
+        }
+        try {
+            // getSelectionPath() is the same primitive text selection uses, so it returns the
+            // true visual rectangle of the range after bidi reordering. Measuring from
+            // getPrimaryHorizontal(start/end) instead is wrong across a bidi boundary: with
+            // "١٠٧٫٧٩ غيغابايت" one changed digit reported a 75px span because the two logical
+            // offsets sit on opposite sides of the Arabic run. That over-wide column then
+            // clipped the unit letters away and the value flickered every tick.
+            android.graphics.Path path = new android.graphics.Path();
+            layout.getSelectionPath(start, end, path);
+            android.graphics.RectF bounds = new android.graphics.RectF();
+            path.computeBounds(bounds, true);
+            if (!Float.isFinite(bounds.left) || !Float.isFinite(bounds.right)
+                    || bounds.right - bounds.left < 0.5f) {
+                return null;
+            }
+            return new float[] {bounds.left, bounds.right};
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     /** Maps view gravity to {@link Layout.Alignment} for StaticLayout. */
@@ -490,15 +642,42 @@ public class AnimatedTextView extends AppCompatTextView {
         return Layout.Alignment.ALIGN_NORMAL;
     }
 
+    /** Mirrors the direction the TextView itself uses for this view's text. */
+    private android.text.TextDirectionHeuristic textDirectionHeuristic() {
+        switch (getTextDirection()) {
+            case TEXT_DIRECTION_LTR:
+                return android.text.TextDirectionHeuristics.LTR;
+            case TEXT_DIRECTION_RTL:
+                return android.text.TextDirectionHeuristics.RTL;
+            case TEXT_DIRECTION_LOCALE:
+                return android.text.TextDirectionHeuristics.LOCALE;
+            case TEXT_DIRECTION_FIRST_STRONG:
+                return android.text.TextDirectionHeuristics.FIRSTSTRONG_LTR;
+            case TEXT_DIRECTION_ANY_RTL:
+                return android.text.TextDirectionHeuristics.ANYRTL_LTR;
+            default:
+                return android.text.TextDirectionHeuristics.FIRSTSTRONG_LTR;
+        }
+    }
+
     private float computeHorizontalOffset(int availableWidth, float textWidth) {
         int gravity = getGravity() & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK;
+        boolean rtl = getLayoutDirection() == LAYOUT_DIRECTION_RTL;
+        boolean alignToRight;
         if (gravity == Gravity.CENTER_HORIZONTAL) {
             return Math.max(0f, (availableWidth - textWidth) / 2f);
+        } else if (gravity == Gravity.RIGHT) {
+            alignToRight = true;
+        } else if (gravity == Gravity.LEFT) {
+            alignToRight = false;
+        } else if (gravity == Gravity.END) {
+            // END is on the right in LTR and on the left in RTL.
+            alignToRight = !rtl;
+        } else {
+            // START (and the default): right edge in RTL, left edge in LTR.
+            alignToRight = rtl;
         }
-        if (gravity == Gravity.END) {
-            return Math.max(0f, availableWidth - textWidth);
-        }
-        return 0f;
+        return alignToRight ? Math.max(0f, availableWidth - textWidth) : 0f;
     }
 
     /** Cancel any running animation and reset state. */

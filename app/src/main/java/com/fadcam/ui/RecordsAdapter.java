@@ -2,11 +2,13 @@ package com.fadcam.ui;
 
 import com.fadcam.Log;
 import com.fadcam.FLog;
+import com.fadcam.FeatureRegistry;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -30,7 +32,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -41,6 +42,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.core.widget.TextViewCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
@@ -83,8 +86,6 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.core.app.ShareCompat;
 import android.content.ContentResolver;
 import androidx.core.content.FileProvider;
-import com.arthenica.ffmpegkit.FFmpegKit;
-import com.arthenica.ffmpegkit.ReturnCode;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
@@ -166,6 +167,14 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private android.content.Context receiverRegisteredContext = null;
 
     private static final String TAG = "RecordsAdapter";
+
+    // A DiffUtil pass over a very large list can enqueue tens of thousands of
+    // interleaved insert/move ops. RecyclerView's AdapterHelper then walks those
+    // pending ops quadratically (findPositionOffset) and can ANR the main thread.
+    // Past these sizes a full rebind is cheaper and only touches visible holders.
+    private static final int LARGE_UPDATE_ENTRY_THRESHOLD = 1500;
+    private static final int LARGE_UPDATE_DELTA_THRESHOLD = 400;
+
     private final ExecutorService executorService; // Add ExecutorService
     private final SharedPreferencesManager sharedPreferencesManager;
     private final RecordActionListener actionListener; // Add the listener interface
@@ -186,6 +195,19 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private boolean isSkeletonMode = false;
     // Grid span for dynamic sizing at high column counts
     private int currentGridSpan = 2;
+    // Cell width thresholds (dp) that decide how much of the card can carry text.
+    private static final int CELL_FULL_MIN_DP = 160;
+    private static final int CELL_MEDIUM_MIN_DP = 116;
+    private static final int CELL_COMPACT_MIN_DP = 80;
+    private static final int CARD_FULL = 0;
+    private static final int CARD_MEDIUM = 1;
+    private static final int CARD_COMPACT = 2;
+    private static final int CARD_MICRO = 3;
+    // Set from onAttachedToRecyclerView so card metrics follow the real available width.
+    @Nullable
+    private RecyclerView recyclerView;
+    // Thumbnail-only grid, driven by the Records sidebar toggle.
+    private boolean hideMetadata;
 
     // --- Interfaces Updated ---
     public interface OnVideoClickListener {
@@ -409,6 +431,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             if (holder.menuButton != null) {
                 holder.menuButton.setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN);
             }
+            if (holder.menuCompactButton != null) {
+                holder.menuCompactButton.setColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN);
+            }
 
             // Ensure metadata has good contrast on white cards.
             if (holder.textViewFileSize != null) holder.textViewFileSize.setTextColor(Color.BLACK);
@@ -433,6 +458,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
             if (holder.menuButton != null) {
                 holder.menuButton.setColorFilter(secondaryText, PorterDuff.Mode.SRC_IN);
+            }
+            if (holder.menuCompactButton != null) {
+                holder.menuCompactButton.setColorFilter(secondaryText, PorterDuff.Mode.SRC_IN);
             }
 
             if (holder.textViewRecord != null) {
@@ -475,14 +503,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     textLp.topMargin = dpToPx(2);
                     holder.textViewFileSize.setLayoutParams(textLp);
                 }
-                if (holder.recordMetaRowSize != null) {
-                    ViewGroup.LayoutParams layoutParams = holder.recordMetaRowSize.getLayoutParams();
-                    if (layoutParams instanceof GridLayout.LayoutParams) {
-                        GridLayout.LayoutParams gridLayoutParams = (GridLayout.LayoutParams) layoutParams;
-                        gridLayoutParams.rowSpec = GridLayout.spec(0);
-                        holder.recordMetaRowSize.setLayoutParams(gridLayoutParams);
-                    }
-                }
             } else {
                 if (holder.metaDurationContainer != null) holder.metaDurationContainer.setVisibility(View.VISIBLE);
                 holder.textViewFileTime.setVisibility(View.VISIBLE);
@@ -501,14 +521,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     textLp.setMarginStart(dpToPx(4));
                     textLp.topMargin = 0;
                     holder.textViewFileSize.setLayoutParams(textLp);
-                }
-                if (holder.recordMetaRowSize != null) {
-                    ViewGroup.LayoutParams layoutParams = holder.recordMetaRowSize.getLayoutParams();
-                    if (layoutParams instanceof GridLayout.LayoutParams) {
-                        GridLayout.LayoutParams gridLayoutParams = (GridLayout.LayoutParams) layoutParams;
-                        gridLayoutParams.rowSpec = GridLayout.spec(1);
-                        holder.recordMetaRowSize.setLayoutParams(gridLayoutParams);
-                    }
                 }
                 // Check in-memory URI cache first (avoids even DB read on rebind)
                 String cachedDuration = loadedThumbnailCache.get(uriString);
@@ -663,31 +675,32 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (holder.textViewStatusBadge != null && context != null) {
             if (isProcessing) {
                 holder.textViewStatusBadge.setVisibility(View.GONE); // Hide all badges during processing
+                holder.statusBadgeLigature = null;
                 if (holder.textViewNewBadge != null) {
                     holder.textViewNewBadge.setVisibility(View.GONE);
                 }
             } else if (isImage) {
                 int badgeRes = getImageBadgeLabelRes(videoItem);
+                holder.statusBadgeLigature = badgeLigatureFor(videoItem);
                 holder.textViewStatusBadge.setText(context.getString(badgeRes).toUpperCase(Locale.US));
                 holder.textViewStatusBadge
-                        .setBackground(ContextCompat.getDrawable(context, R.drawable.badge_bg_gray));
+                        .setBackground(ContextCompat.getDrawable(context, R.drawable.badge_bg_neutral));
                 holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white));
                 holder.textViewStatusBadge.setVisibility(View.VISIBLE);
                 if (holder.textViewNewBadge != null) {
                     holder.textViewNewBadge.setVisibility(showNewBadge ? View.VISIBLE : View.GONE);
                 }
             } else if (showNewBadge) {
-                // Show NEW badge
-                holder.textViewStatusBadge.setText(context.getString(R.string.badge_new));
-                holder.textViewStatusBadge
-                        .setBackground(ContextCompat.getDrawable(context, R.drawable.new_badge_background));
-                holder.textViewStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.white));
-                holder.textViewStatusBadge.setVisibility(View.VISIBLE);
+                // Always the same view as the image case, so the NEW chip cannot end up a
+                // different size on a video card than on a photo card.
+                holder.statusBadgeLigature = null;
+                holder.textViewStatusBadge.setVisibility(View.GONE);
                 if (holder.textViewNewBadge != null) {
-                    holder.textViewNewBadge.setVisibility(View.GONE);
+                    holder.textViewNewBadge.setVisibility(View.VISIBLE);
                 }
             } else {
                 // Hide badge
+                holder.statusBadgeLigature = null;
                 holder.textViewStatusBadge.setVisibility(View.GONE);
                 if (holder.textViewNewBadge != null) {
                     holder.textViewNewBadge.setVisibility(View.GONE);
@@ -708,6 +721,12 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 holder.menuButton.setAlpha(allowMenuClick ? 1.0f : 0.4f); // Dim if disabled
         } else {
             FLog.w(TAG, "menuButtonContainer is null at pos " + position);
+        }
+        if (holder.menuCompactContainer != null) {
+            holder.menuCompactContainer.setEnabled(allowMenuClick);
+            holder.menuCompactContainer.setClickable(allowMenuClick);
+            if (holder.menuCompactButton != null)
+                holder.menuCompactButton.setAlpha(allowMenuClick ? 1.0f : 0.4f);
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -764,12 +783,31 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             });
         }
+        if (holder.menuThumbButton != null) {
+            holder.menuThumbButton.setOnClickListener(v -> {
+                boolean isStillAllowMenuClick = !this.currentlyProcessingUris.contains(videoItem.uri)
+                        && !this.isSelectionModeActive;
+                if (isStillAllowMenuClick) {
+                    showVideoActionsSheet(holder, videoItem);
+                }
+            });
+        }
+        // Compact tiles move the menu into the meta row; both entry points stay wired.
+        if (holder.menuCompactContainer != null) {
+            holder.menuCompactContainer.setOnClickListener(v -> {
+                boolean isStillAllowMenuClick = !this.currentlyProcessingUris.contains(videoItem.uri)
+                        && !this.isSelectionModeActive;
+                if (isStillAllowMenuClick) {
+                    showVideoActionsSheet(holder, videoItem);
+                }
+            });
+        }
         applyPressFeedback(holder.itemView, holder.itemView);
         applyPressFeedback(holder.imageViewThumbnail, holder.itemView);
         applyPressFeedback(holder.thumbnailContainer, holder.itemView);
 
-        // --- Adapt card content for current grid span ---
-        applyGridSizing(holder);
+        // --- Adapt card content for available cell width ---
+        applyResponsiveLayout(holder, isImage);
 
     } // End onBindViewHolder
 
@@ -795,6 +833,28 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (context == null) return dp;
         float density = context.getResources().getDisplayMetrics().density;
         return Math.round(dp * density);
+    }
+
+    /**
+     * Ligature shown instead of the badge text when a tile is too small for words.
+     * Only ligatures already used elsewhere in the app are used, so the icon font has them.
+     */
+    @Nullable
+    private String badgeLigatureFor(@NonNull VideoItem videoItem) {
+        VideoItem.ShotSubtype subtype = videoItem.shotSubtype == null
+                ? VideoItem.ShotSubtype.UNKNOWN
+                : videoItem.shotSubtype;
+        switch (subtype) {
+            case SELFIE:
+                return "person";
+            case FADREC:
+                return "videocam";
+            case BACK:
+            case UNKNOWN:
+            case ALL:
+            default:
+                return "camera_alt";
+        }
     }
 
     private int getImageBadgeLabelRes(@NonNull VideoItem videoItem) {
@@ -1007,8 +1067,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         String uriString = videoUri.toString();
 
-        // Try to get cached thumbnail first
-        byte[] cachedThumbnail = com.fadcam.utils.VideoSessionCache.getThumbnailWithFallback(context, uriString);
+        // Only use the in-memory bytes here. The previous fallback also probed
+        // and decoded a per-URI file from disk on the UI thread, which is pure
+        // jank while scrolling a large gallery. Glide owns the disk cache and
+        // decodes off the main thread.
+        byte[] cachedThumbnail = com.fadcam.utils.VideoSessionCache.getCachedThumbnail(uriString);
         if (cachedThumbnail != null) {
             // Load from cache - instant display
             try {
@@ -1034,7 +1097,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         // Create optimized request options with different strategies based on scrolling
         RequestOptions options = new RequestOptions()
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                // The source is a local file, so caching the original bytes is
+                // wasted I/O (and with 1 MB photos it churns the disk cache).
+                // Cache only the small decoded thumbnail instead.
+                .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
                 .skipMemoryCache(false)
                 .centerCrop()
                 .override(thumbnailSize, thumbnailSize)
@@ -1051,12 +1117,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 .asBitmap()
                 .load(videoUri)
                 .apply(options)
-                .thumbnail(
-                        Glide.with(context)
-                                .asBitmap()
-                                .load(videoUri)
-                                .apply(options)
-                                .override(96, 96))
                 .into(new com.bumptech.glide.request.target.CustomTarget<android.graphics.Bitmap>() {
                     @Override
                     public void onResourceReady(@NonNull android.graphics.Bitmap resource,
@@ -1072,10 +1132,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                                 resource.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, baos);
                                 byte[] thumbnailData = baos.toByteArray();
 
-                                // Cache in memory and disk
+                                // Cache in memory only. This custom disk copy was
+                                // written for every thumbnail but is no longer read
+                                // on bind (Glide owns disk caching), so it was pure
+                                // background I/O.
                                 com.fadcam.utils.VideoSessionCache.cacheThumbnail(uriString, thumbnailData);
-                                com.fadcam.utils.VideoSessionCache.saveThumbnailToDisk(context, uriString,
-                                        thumbnailData);
 
                             } catch (Exception e) {
                                 FLog.w(TAG, "Error caching thumbnail", e);
@@ -1231,8 +1292,17 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     @Override
+    public void onAttachedToRecyclerView(@NonNull androidx.recyclerview.widget.RecyclerView rv) {
+        super.onAttachedToRecyclerView(rv);
+        this.recyclerView = rv;
+    }
+
+    @Override
     public void onDetachedFromRecyclerView(@NonNull androidx.recyclerview.widget.RecyclerView recyclerView) {
         super.onDetachedFromRecyclerView(recyclerView);
+        if (this.recyclerView == recyclerView) {
+            this.recyclerView = null;
+        }
         try {
             if (receiverRegisteredContext != null) {
                 receiverRegisteredContext.unregisterReceiver(playbackPositionReceiver);
@@ -1302,9 +1372,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 null,
                 null,
                 null));
-        // Temporarily hide Fix Video from UI; keep feature intact for later re-enable
-        // items.add(OptionItem.withLigature("action_fix_video",
-        // ctx.getString(R.string.fix_video_menu_title), "build"));
+        // Fix Video (ffmpeg repair) removed: hybrid-MP4 recordings self-heal via the
+        // patched media3 finalization — the manual repair feature was abandoned.
         items.add(OptionItem.withLigature("action_rename", ctx.getString(R.string.video_menu_rename),
                 "drive_file_rename_outline"));
         items.add(OptionItem.withLigature("action_info", ctx.getString(R.string.video_menu_info), "info"));
@@ -1320,10 +1389,11 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (!isImage) {
             items.add(OptionItem.withLigatureBadge("action_upload_faddrive",
                     ctx.getString(R.string.video_menu_upload_faddrive, "Upload to FadDrive"), "cloud",
-                    ctx.getString(R.string.remote_coming_soon_badge), R.drawable.badge_background_green, true, null));
+                    ctx.getString(R.string.remote_coming_soon_badge),
+                    R.drawable.badge_background_coming_soon, true, null));
         }
-        // Edit with Faditor Mini
-        if (!isImage) {
+        // Edit with Faditor Mini (Full-only; Lite v1 hides the entry)
+        if (!isImage && !com.fadcam.BuildConfig.LITE_EDITION) {
             items.add(OptionItem.withLigature("action_edit_faditorx", ctx.getString(R.string.edit_with_faditorx),
                     "content_cut"));
         }
@@ -1347,9 +1417,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     break;
                 case "action_save":
                     showSaveOptionsSheet(videoItem, ctx);
-                    break;
-                case "action_fix_video":
-                    fixVideoFile(videoItem);
                     break;
                 case "action_rename":
                     showRenameDialog(videoItem);
@@ -1550,9 +1617,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 return true;
             } else if (id == R.id.action_save) {
                 saveVideoToGalleryInternal(videoItem);
-                return true;
-            } else if (id == R.id.action_fix_video) {
-                fixVideoFile(videoItem);
                 return true;
             } else if (id == R.id.action_rename) {
                 showRenameDialog(videoItem);
@@ -2026,13 +2090,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
      */
     private void launchFaditorMini(@NonNull Context ctx, @NonNull VideoItem videoItem) {
         if (videoItem.uri == null) return;
-        try {
-            Intent intent = new Intent(ctx, com.fadcam.ui.faditor.FaditorEditorActivity.class);
-            intent.setData(videoItem.uri);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            ctx.startActivity(intent);
-        } catch (Exception e) {
-            FLog.e(TAG, "Failed to launch Faditor Mini", e);
+        if (!FeatureRegistry.features().launchFaditorEditor(ctx, videoItem.uri)) {
             Toast.makeText(ctx, ctx.getString(R.string.records_cannot_open_editor), Toast.LENGTH_SHORT).show();
         }
     }
@@ -2312,6 +2370,26 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             return;
         }
 
+        // Large collections (or large batch imports) must not go through
+        // DiffUtil: dispatching thousands of individual updates makes
+        // RecyclerView's AdapterHelper O(n²) and hangs the main thread.
+        // A full refresh keeps the work proportional to what is on screen.
+        boolean largeUpdate =
+                oldEntries.size() > LARGE_UPDATE_ENTRY_THRESHOLD
+                        || newEntries.size() > LARGE_UPDATE_ENTRY_THRESHOLD
+                        || Math.abs(newEntries.size() - oldEntries.size())
+                                > LARGE_UPDATE_DELTA_THRESHOLD;
+        if (largeUpdate) {
+            this.records = new ArrayList<>(newRecords);
+            this.entries = newEntries;
+            notifyDataSetChanged();
+            FLog.d(
+                    TAG,
+                    "updateRecords: large update (" + oldEntries.size() + " -> "
+                            + newEntries.size() + " entries), using full refresh");
+            return;
+        }
+
         // Use DiffUtil to calculate the differences on entries
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new DiffUtil.Callback() {
             @Override
@@ -2500,7 +2578,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
-    // Get video duration from URI (Helper) using FFprobeKit for reliability
+    // Get video duration from URI. Full uses the ffprobe helper (RecordsFfmpegOps in src/full);
+    // Lite falls straight back to the shared MediaMetadataRetriever path.
     private long getVideoDuration(Uri videoUri) {
         if (context == null || videoUri == null)
             return 0;
@@ -2514,57 +2593,13 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             return getVideoDurationWithMmr(videoUri, "safe_mmr");
         }
 
-        // Get file path for FFprobe - try multiple approaches for content:// URIs
-        String filePath = getFFprobePathForUri(videoUri);
-        
-        // Use FFprobeKit to get accurate duration (direct file path)
-        if (!filePath.startsWith("saf:")) {
-            try {
-                com.arthenica.ffmpegkit.MediaInformationSession session = 
-                    com.arthenica.ffmpegkit.FFprobeKit.getMediaInformation(filePath);
-                com.arthenica.ffmpegkit.MediaInformation info = session.getMediaInformation();
-                
-                if (info != null) {
-                    String durationStr = info.getDuration();
-                    if (durationStr != null) {
-                        double durationSec = Double.parseDouble(durationStr);
-                        long durationMs = (long) (durationSec * 1000);
-                        FLog.d(TAG, "Duration from FFprobe (path): " + durationMs + "ms");
-                        return durationMs;
-                    }
-                }
-            } catch (Throwable e) {
-                FLog.e(TAG, "Error getting duration from FFprobe for path: " + filePath, e);
-            }
+        long probeMs = FeatureRegistry.features().probeDurationMs(context, videoUri);
+        if (probeMs > 0) {
+            FLog.d(TAG, "Duration from native probe: " + probeMs + "ms");
+            return probeMs;
         }
 
-        // For content:// URIs where path reconstruction failed, use FD-based FFprobe
-        if ("content".equals(videoUri.getScheme())) {
-            try {
-                ParcelFileDescriptor pfd = context.getContentResolver()
-                        .openFileDescriptor(videoUri, "r");
-                if (pfd != null) {
-                    try {
-                        String fdPath = "/proc/self/fd/" + pfd.getFd();
-                        com.arthenica.ffmpegkit.MediaInformationSession session =
-                                com.arthenica.ffmpegkit.FFprobeKit.getMediaInformation(fdPath);
-                        com.arthenica.ffmpegkit.MediaInformation info = session.getMediaInformation();
-                        if (info != null && info.getDuration() != null) {
-                            double durationSec = Double.parseDouble(info.getDuration());
-                            long durationMs = (long) (durationSec * 1000);
-                            FLog.d(TAG, "Duration from FFprobe (fd): " + durationMs + "ms");
-                            return durationMs;
-                        }
-                    } finally {
-                        pfd.close();
-                    }
-                }
-            } catch (Throwable e) {
-                FLog.w(TAG, "FFprobe FD-based duration failed for: " + videoUri, e);
-            }
-        }
-
-        return getVideoDurationWithMmr(videoUri, "ffprobe_fallback_mmr");
+        return getVideoDurationWithMmr(videoUri, "native_probe_fallback_mmr");
     }
 
     private long getVideoDurationWithMmr(@NonNull Uri videoUri, @NonNull String source) {
@@ -2703,6 +2738,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         View metaDurationContainer;
         View recordMetaRowSize;
         ImageView iconFileSize;
+        ImageView iconDuration;
         ImageView menuButton; // Reference to the 3-dot icon itself
         TextView textViewStatusBadge; // *** ADDED: Reference for the single status badge ***
         TextView textViewNewBadge;
@@ -2721,11 +2757,22 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         View recordContentContainer;
         View recordTitleRow;
         View recordMetaDivider;
-        View recordMetaGrid;
+        View recordMetaRow;
         View recordMetaRowTime;
+        View recordMetaRight;
+        LinearLayout statusBadgeContainer;
+        ImageView iconTimeAgo;
+        FrameLayout menuCompactContainer;
+        ImageView menuCompactButton;
+        ImageView menuCompactWarningDot;
+        View menuThumbContainer;
+        ImageView menuThumbButton;
+        /** Material ligature for the image badge, used when the badge shrinks to an icon. */
+        String statusBadgeLigature;
 
         RecordViewHolder(View itemView) {
             super(itemView);
+            thumbnailContainer = itemView.findViewById(R.id.thumbnail_container);
             imageViewThumbnail = itemView.findViewById(R.id.image_view_thumbnail);
             textViewRecord = itemView.findViewById(R.id.text_view_record);
             textViewFileSize = itemView.findViewById(R.id.text_view_file_size);
@@ -2737,6 +2784,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             metaDurationContainer = itemView.findViewById(R.id.meta_duration_container);
             recordMetaRowSize = itemView.findViewById(R.id.record_meta_row_size);
             iconFileSize = itemView.findViewById(R.id.icon_file_size);
+            iconDuration = itemView.findViewById(R.id.icon_duration);
             menuButton = itemView.findViewById(R.id.menu_button);
 
             menuWarningDot = itemView.findViewById(R.id.menu_warning_dot); // *** Find the warning dot ***
@@ -2754,8 +2802,16 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             recordContentContainer = itemView.findViewById(R.id.record_content_container);
             recordTitleRow = itemView.findViewById(R.id.record_title_row);
             recordMetaDivider = itemView.findViewById(R.id.record_meta_divider);
-            recordMetaGrid = itemView.findViewById(R.id.record_meta_grid);
+            recordMetaRow = itemView.findViewById(R.id.record_meta_row);
             recordMetaRowTime = itemView.findViewById(R.id.record_meta_row_time);
+            recordMetaRight = itemView.findViewById(R.id.record_meta_right);
+            statusBadgeContainer = itemView.findViewById(R.id.status_badge_container);
+            iconTimeAgo = itemView.findViewById(R.id.icon_time_ago);
+            menuCompactContainer = itemView.findViewById(R.id.menu_compact_container);
+            menuCompactButton = itemView.findViewById(R.id.menu_compact_button);
+            menuCompactWarningDot = itemView.findViewById(R.id.menu_compact_warning_dot);
+            menuThumbContainer = itemView.findViewById(R.id.menu_thumb_container);
+            menuThumbButton = itemView.findViewById(R.id.menu_thumb_button);
 
             // *** Store the default text color ***
             if (textViewRecord != null) {
@@ -2857,6 +2913,28 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return isSkeletonMode;
     }
 
+    /** Collapses every card to its thumbnail; the per-item menu stays on the image. */
+    @SuppressLint("NotifyDataSetChanged")
+    public void setHideMetadata(boolean hide) {
+        if (this.hideMetadata == hide) return;
+        this.hideMetadata = hide;
+        notifyDataSetChanged();
+    }
+
+    public boolean isHideMetadata() {
+        return hideMetadata;
+    }
+
+    /**
+     * Re-applies responsive card metrics after the available cell width changes.
+     * Called by the fragment when the GridLayoutManager span count or the RecyclerView
+     * width changes, since the card layout is driven by measured width rather than span alone.
+     */
+    @SuppressLint("NotifyDataSetChanged")
+    public void refreshLayoutMetrics() {
+        notifyDataSetChanged();
+    }
+
     /**
      * Updates the grid span count and refreshes all items for dynamic sizing.
      *
@@ -2871,95 +2949,471 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     /**
-     * Adapts card content visibility and text sizes for the current grid span.
-     * At higher column counts, content is progressively reduced to fit.
+     * Adapts the card to the width available for one grid cell.
+     *
+     * <p>The column count alone cannot decide this: five columns on a 360dp phone leaves a
+     * 60dp tile, while five columns on a tablet leaves 130dp. The measured cell width picks one
+     * of four layouts, and the sizes come from the records_* dimens so the same layout still
+     * grows with the device.</p>
+     *
+     * <ul>
+     *   <li>FULL (&ge; 160dp): the original card at its original sizes.</li>
+     *   <li>MEDIUM (&ge; 116dp): the original card with smaller text and a narrower menu.</li>
+     *   <li>COMPACT (&ge; 80dp): the same structure with a square thumbnail, which is the only
+     *       thing that changes here. Square starts at four columns because the tile is too
+     *       short for the metadata below it otherwise.</li>
+     *   <li>MICRO (&lt; 80dp): square thumbnail with the metadata stacked into two full-width
+     *       lines, the subtype badge reduced to its icon and the menu moved next to the
+     *       time-ago so nothing has to be dropped.</li>
+     * </ul>
      */
-    private void applyGridSizing(@NonNull RecordViewHolder holder) {
-        float titleSp;
-        float metaSp;
-        boolean showTitleRow;
-        boolean showMetaDivider;
-        boolean showTimeAgo;
-        boolean showContentContainer;
-        int titleMaxLines;
+    private void applyResponsiveLayout(@NonNull RecordViewHolder holder, boolean isImage) {
+        // Driven by the column count, not the measured width: the same column count has to
+        // look the same on every device, and a width-driven mode made five columns render
+        // differently on a phone than on a wider phone.
+        int mode;
+        if (currentGridSpan <= 2) {
+            mode = CARD_FULL;
+        } else if (currentGridSpan == 3) {
+            mode = CARD_MEDIUM;
+        } else if (currentGridSpan == 4) {
+            mode = CARD_COMPACT;
+        } else {
+            mode = CARD_MICRO;
+        }
+        bindCard(holder, isImage, mode);
+    }
 
-        switch (currentGridSpan) {
-            case 1: // List mode — full content
-                titleSp = 14f;
-                metaSp = 10f;
-                showTitleRow = true;
-                showMetaDivider = true;
-                showTimeAgo = true;
-                showContentContainer = true;
-                titleMaxLines = 10;
-                break;
-            case 3:
-                titleSp = 12f;
-                metaSp = 9f;
-                showTitleRow = true;
-                showMetaDivider = true;
-                showTimeAgo = true;
-                showContentContainer = true;
-                titleMaxLines = 10;
-                break;
-            case 4:
-                titleSp = 10f;
-                metaSp = 8f;
-                showTitleRow = false;
-                showMetaDivider = false;
-                showTimeAgo = false;
-                showContentContainer = true;
-                titleMaxLines = 10;
-                break;
-            case 5:
-                titleSp = 9f;
-                metaSp = 7.5f;
-                showTitleRow = false;
-                showMetaDivider = false;
-                showTimeAgo = false;
-                showContentContainer = true;
-                titleMaxLines = 10;
-                break;
-            default: // 2 columns — default
-                titleSp = 14f;
-                metaSp = 10f;
-                showTitleRow = true;
-                showMetaDivider = true;
-                showTimeAgo = true;
-                showContentContainer = true;
-                titleMaxLines = 10;
-                break;
+    /** Width of a single grid cell in dp, using the RecyclerView width when it is laid out. */
+    private int resolveCellWidthDp() {
+        if (context == null) return 180;
+        int widthPx;
+        if (recyclerView != null && recyclerView.getWidth() > 0) {
+            widthPx = recyclerView.getWidth()
+                    - recyclerView.getPaddingLeft()
+                    - recyclerView.getPaddingRight();
+        } else {
+            widthPx = context.getResources().getDisplayMetrics().widthPixels;
+        }
+        float density = context.getResources().getDisplayMetrics().density;
+        if (density <= 0f) return 180;
+        int cellDp = Math.round((widthPx / density) / Math.max(1, currentGridSpan));
+        return Math.max(cellDp, 1);
+    }
+
+    private void bindCard(@NonNull RecordViewHolder holder, boolean isImage, int mode) {
+        Resources res = context.getResources();
+        boolean micro = mode == CARD_MICRO;
+        boolean square = mode == CARD_COMPACT || micro;
+
+        setTileAspect(holder, mode);
+
+        int itemMargin = mode == CARD_FULL
+                ? res.getDimensionPixelSize(R.dimen.records_item_margin)
+                : mode == CARD_MEDIUM
+                ? res.getDimensionPixelSize(R.dimen.records_item_margin_medium)
+                : res.getDimensionPixelSize(R.dimen.records_item_margin);
+        setItemMargins(holder, itemMargin);
+
+        setContentHMargins(holder, res.getDimensionPixelSize(
+                mode == CARD_FULL ? R.dimen.records_content_margin_h
+                        : mode == CARD_MEDIUM ? R.dimen.records_content_margin_h_medium
+                        : R.dimen.records_content_margin_h_compact));
+
+        boolean thumbOnly = hideMetadata;
+        setTitleVisible(holder, !thumbOnly);
+        setContentVisible(holder, !thumbOnly);
+        if (mode == CARD_FULL) {
+            setTitleStyle(holder, res.getDimension(R.dimen.records_title_full), 2);
+        } else if (mode == CARD_MEDIUM) {
+            setTitleStyle(holder, res.getDimension(R.dimen.records_title_medium), 2);
+        } else if (mode == CARD_COMPACT) {
+            setTitleStyle(holder, res.getDimension(R.dimen.records_title_medium), 2);
+        } else {
+            // Two lines here as well: the menu no longer shares this row, so the second
+            // line is the cheapest way to show more of the file name.
+            setTitleStyle(holder, res.getDimension(R.dimen.records_meta_text), 2);
         }
 
-        // Content container
+        int menuBox = res.getDimensionPixelSize(
+                mode == CARD_FULL ? R.dimen.records_menu_box
+                        : mode == CARD_MEDIUM ? R.dimen.records_menu_medium_box
+                        : mode == CARD_COMPACT ? R.dimen.records_compact_menu_box
+                        : R.dimen.records_compact_menu_box);
+        int menuPadding = mode == CARD_FULL
+                ? res.getDimensionPixelSize(R.dimen.records_menu_padding)
+                : mode == CARD_MEDIUM
+                ? res.getDimensionPixelSize(R.dimen.records_menu_medium_padding)
+                : dpToPx(3);
+        setMenuBox(holder, menuBox, menuPadding);
+        // Thumbnail-only cards keep the menu on the image; the micro card moves it next to
+        // the time-ago; everything wider keeps it in the title row.
+        // At five columns the menu moves onto the thumbnail; keeping it inline stole the
+        // width the time-ago needs to stay whole.
+        setMenusVisible(holder,
+                !thumbOnly && !micro,
+                false,
+                thumbOnly || (!thumbOnly && micro));
+
+        setDividerVisible(holder, !micro);
+        setProgressBarHeight(holder, res.getDimensionPixelSize(R.dimen.records_progress_bar_height));
+        // Applied last so a recycled video holder cannot leave the strip behind on a photo.
+        setProgressVisibility(holder, !isImage);
+        setMetaLayout(holder, isImage, mode);
+        setBadgeDensity(holder, mode);
+        setCheckSize(holder, square);
+        setSerialVisible(holder, true);
+    }
+
+    /**
+     * The frame gets taller as the tile narrows: 16:9 keeps the old look at one to three
+     * columns, four columns gains a little height, and five columns needs a square to stay
+     * readable. Square everywhere wasted too much width on wide cards.
+     */
+    private void setTileAspect(@NonNull RecordViewHolder holder, int mode) {
+        if (!(holder.thumbnailContainer instanceof com.fadcam.ui.widgets.RatioFrameLayout)) return;
+        float ratio = mode == CARD_MICRO || mode == CARD_COMPACT ? 1f : 16f / 9f;
+        ((com.fadcam.ui.widgets.RatioFrameLayout) holder.thumbnailContainer).setRatio(ratio);
+    }
+
+    private void setProgressVisibility(@NonNull RecordViewHolder holder, boolean visible) {
+        View bg = holder.itemView.findViewById(R.id.thumbnail_progress_bg);
+        View fill = holder.itemView.findViewById(R.id.thumbnail_progress_fill);
+        if (bg != null) bg.setVisibility(visible ? View.VISIBLE : View.GONE);
+        if (fill != null && !visible) fill.setVisibility(View.GONE);
+    }
+
+    /** The watched-progress strip shrinks with the card instead of a fixed 4dp. */
+    private void setProgressBarHeight(@NonNull RecordViewHolder holder, int heightPx) {
+        resizeHeight(holder.itemView.findViewById(R.id.thumbnail_progress_bg), heightPx);
+        resizeHeight(holder.itemView.findViewById(R.id.thumbnail_progress_fill), heightPx);
+    }
+
+    private static void resizeHeight(@Nullable View view, int heightPx) {
+        if (view == null) return;
+        ViewGroup.LayoutParams lp = view.getLayoutParams();
+        if (lp.height == heightPx) return;
+        lp.height = heightPx;
+        view.setLayoutParams(lp);
+    }
+
+    private void setContentVisible(@NonNull RecordViewHolder holder, boolean visible) {
         if (holder.recordContentContainer != null) {
-            holder.recordContentContainer.setVisibility(showContentContainer ? View.VISIBLE : View.GONE);
+            holder.recordContentContainer.setVisibility(visible ? View.VISIBLE : View.GONE);
         }
-        // Title row (filename + 3-dot menu)
+    }
+
+    private void setMenusVisible(@NonNull RecordViewHolder holder,
+                                 boolean titleMenu, boolean microMenu, boolean thumbMenu) {
+        if (holder.menuButtonContainer != null) {
+            holder.menuButtonContainer.setVisibility(titleMenu ? View.VISIBLE : View.GONE);
+        }
+        if (holder.menuCompactContainer != null) {
+            holder.menuCompactContainer.setVisibility(microMenu ? View.VISIBLE : View.GONE);
+        }
+        if (holder.menuThumbContainer != null) {
+            holder.menuThumbContainer.setVisibility(thumbMenu ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void setItemMargins(@NonNull RecordViewHolder holder, int sizePx) {
+        ViewGroup.LayoutParams lp = holder.itemView.getLayoutParams();
+        if (!(lp instanceof ViewGroup.MarginLayoutParams)) return;
+        ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+        if (mlp.leftMargin == sizePx && mlp.topMargin == sizePx
+                && mlp.rightMargin == sizePx && mlp.bottomMargin == sizePx) {
+            return;
+        }
+        mlp.setMargins(sizePx, sizePx, sizePx, sizePx);
+        holder.itemView.setLayoutParams(mlp);
+    }
+
+    private void setContentHMargins(@NonNull RecordViewHolder holder, int sizePx) {
+        if (holder.recordContentContainer == null) return;
+        ViewGroup.LayoutParams lp = holder.recordContentContainer.getLayoutParams();
+        if (!(lp instanceof ViewGroup.MarginLayoutParams)) return;
+        ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+        if (mlp.getMarginStart() == sizePx && mlp.getMarginEnd() == sizePx) return;
+        mlp.setMarginStart(sizePx);
+        mlp.setMarginEnd(sizePx);
+        holder.recordContentContainer.setLayoutParams(mlp);
+    }
+
+    private void setTitleVisible(@NonNull RecordViewHolder holder, boolean visible) {
         if (holder.recordTitleRow != null) {
-            holder.recordTitleRow.setVisibility(showTitleRow ? View.VISIBLE : View.GONE);
+            holder.recordTitleRow.setVisibility(visible ? View.VISIBLE : View.GONE);
         }
-        // Divider
+    }
+
+    private void setTitleStyle(@NonNull RecordViewHolder holder, float sizePx, int maxLines) {
+        if (holder.textViewRecord == null) return;
+        holder.textViewRecord.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, sizePx);
+        holder.textViewRecord.setMaxLines(maxLines);
+    }
+
+    private void setMenuBox(@NonNull RecordViewHolder holder, int boxPx, int iconPaddingPx) {
+        resizeView(holder.menuButtonContainer, boxPx);
+        resizeView(holder.menuCompactContainer, boxPx);
+        resizeView(holder.menuThumbButton, boxPx);
+        if (holder.menuButton != null) {
+            holder.menuButton.setPadding(iconPaddingPx, iconPaddingPx, iconPaddingPx, iconPaddingPx);
+        }
+        if (holder.menuCompactButton != null) {
+            holder.menuCompactButton.setPadding(iconPaddingPx, iconPaddingPx,
+                    iconPaddingPx, iconPaddingPx);
+        }
+    }
+
+    private static void resizeView(@Nullable View view, int sizePx) {
+        if (view == null) return;
+        ViewGroup.LayoutParams lp = view.getLayoutParams();
+        if (lp.width == sizePx && lp.height == sizePx) return;
+        lp.width = sizePx;
+        lp.height = sizePx;
+        view.setLayoutParams(lp);
+    }
+
+    private void setDividerVisible(@NonNull RecordViewHolder holder, boolean visible) {
         if (holder.recordMetaDivider != null) {
-            holder.recordMetaDivider.setVisibility(showMetaDivider ? View.VISIBLE : View.GONE);
+            holder.recordMetaDivider.setVisibility(visible ? View.VISIBLE : View.GONE);
         }
-        // Time ago row
-        if (holder.recordMetaRowTime != null) {
-            holder.recordMetaRowTime.setVisibility(showTimeAgo ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * FULL, MEDIUM and COMPACT keep the original metadata block: time-ago on the left spanning
+     * two rows, duration above the file size on the right. MICRO cannot fit that split, so the
+     * same views stack into two full-width lines and drop their leading icons.
+     */
+    private void setMetaLayout(@NonNull RecordViewHolder holder, boolean isImage, int mode) {
+        Resources res = context.getResources();
+        boolean stacked = mode == CARD_MICRO;
+
+        float textPx = mode == CARD_FULL
+                ? res.getDimension(R.dimen.records_meta_text)
+                : mode == CARD_MEDIUM
+                ? res.getDimension(R.dimen.records_meta_text_medium)
+                : mode == CARD_COMPACT
+                ? res.getDimension(R.dimen.records_meta_text_medium)
+                : android.util.TypedValue.applyDimension(
+                        android.util.TypedValue.COMPLEX_UNIT_SP, 7.5f,
+                        res.getDisplayMetrics());
+        setMetaTextSize(holder, textPx);
+
+        int gravityStart = android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL;
+        if (holder.recordMetaRow instanceof LinearLayout) {
+            LinearLayout row = (LinearLayout) holder.recordMetaRow;
+            row.setOrientation(stacked ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+            row.setGravity(stacked ? android.view.Gravity.START
+                    : android.view.Gravity.CENTER_VERTICAL);
         }
-        // Text sizes
-        if (holder.textViewRecord != null) {
-            holder.textViewRecord.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, titleSp);
-            holder.textViewRecord.setMaxLines(titleMaxLines);
-        }
-        if (holder.textViewFileTime != null) {
-            holder.textViewFileTime.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
-        }
-        if (holder.textViewFileSize != null) {
-            holder.textViewFileSize.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
+
+        if (holder.recordMetaRowTime instanceof LinearLayout) {
+            LinearLayout time = (LinearLayout) holder.recordMetaRowTime;
+            time.setOrientation(stacked ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+            time.setGravity(gravityStart);
+            LinearLayout.LayoutParams lp =
+                    (LinearLayout.LayoutParams) time.getLayoutParams();
+            int targetWeight = stacked ? 0 : 1;
+            int targetWidth = stacked ? ViewGroup.LayoutParams.MATCH_PARENT : 0;
+            if (lp.weight != targetWeight || lp.width != targetWidth) {
+                lp.weight = targetWeight;
+                lp.width = targetWidth;
+                time.setLayoutParams(lp);
+            }
         }
         if (holder.textViewTimeAgo != null) {
-            holder.textViewTimeAgo.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, metaSp);
+            LinearLayout.LayoutParams lp =
+                    (LinearLayout.LayoutParams) holder.textViewTimeAgo.getLayoutParams();
+            int marginStart = stacked ? dpToPx(3) : 0;
+            int marginTop = stacked ? 0 : dpToPx(2);
+            int targetWidth = ViewGroup.LayoutParams.WRAP_CONTENT;
+            int targetWeight = 0;
+            if (lp.getMarginStart() != marginStart || lp.topMargin != marginTop
+                    || lp.width != targetWidth || lp.weight != targetWeight) {
+                lp.setMarginStart(marginStart);
+                lp.topMargin = marginTop;
+                lp.width = targetWidth;
+                lp.weight = targetWeight;
+                holder.textViewTimeAgo.setLayoutParams(lp);
+            }
+        }
+
+        if (holder.recordMetaRight instanceof LinearLayout) {
+            LinearLayout right = (LinearLayout) holder.recordMetaRight;
+            // Always a column: on the narrowest cards duration and size need their own lines
+            // so both keep their icon instead of losing it to save width.
+            right.setOrientation(LinearLayout.VERTICAL);
+            right.setGravity(stacked ? android.view.Gravity.START : android.view.Gravity.END);
+        }
+        if (holder.recordMetaRowSize != null) {
+            LinearLayout.LayoutParams lp =
+                    (LinearLayout.LayoutParams) holder.recordMetaRowSize.getLayoutParams();
+            int marginTop = dpToPx(1);
+            int marginStart = 0;
+            if (lp.topMargin != marginTop || lp.getMarginStart() != marginStart) {
+                lp.topMargin = marginTop;
+                lp.setMarginStart(marginStart);
+                holder.recordMetaRowSize.setLayoutParams(lp);
+            }
+        }
+
+        // Every value keeps its icon; the icons are scaled down through dimens instead.
+        if (holder.iconTimeAgo != null) holder.iconTimeAgo.setVisibility(View.VISIBLE);
+        if (holder.iconFileSize != null) holder.iconFileSize.setVisibility(View.VISIBLE);
+        if (holder.iconDuration != null) holder.iconDuration.setVisibility(View.VISIBLE);
+        int iconPx = res.getDimensionPixelSize(R.dimen.records_meta_icon);
+        resizeView(holder.iconTimeAgo, iconPx);
+        resizeView(holder.iconDuration, iconPx);
+        resizeView(holder.iconFileSize, iconPx);
+
+        setMetaClusterOrientation(holder, !stacked && isImage);
+    }
+
+    private void setMetaTextSize(@NonNull RecordViewHolder holder, float sizePx) {
+        int unit = android.util.TypedValue.COMPLEX_UNIT_PX;
+        if (holder.textViewFileTime != null) holder.textViewFileTime.setTextSize(unit, sizePx);
+        if (holder.textViewFileSize != null) holder.textViewFileSize.setTextSize(unit, sizePx);
+        if (holder.textViewTimeAgo != null) holder.textViewTimeAgo.setTextSize(unit, sizePx);
+    }
+
+    /**
+     * Images stack the size icon above the value, which is how the block looked before the
+     * responsive work and keeps the right column balanced against the time-ago column.
+     */
+    private void setMetaClusterOrientation(@NonNull RecordViewHolder holder, boolean vertical) {
+        if (!(holder.recordMetaRowSize instanceof LinearLayout)) return;
+        LinearLayout row = (LinearLayout) holder.recordMetaRowSize;
+        int orientation = vertical ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL;
+        if (row.getOrientation() != orientation) {
+            row.setOrientation(orientation);
+            row.setGravity(vertical
+                    ? android.view.Gravity.END
+                    : android.view.Gravity.CENTER_VERTICAL | android.view.Gravity.END);
+        }
+        if (holder.textViewFileSize != null) {
+            LinearLayout.LayoutParams textLp =
+                    (LinearLayout.LayoutParams) holder.textViewFileSize.getLayoutParams();
+            int start = vertical ? 0 : dpToPx(4);
+            int top = vertical ? dpToPx(2) : 0;
+            if (textLp.getMarginStart() != start || textLp.topMargin != top) {
+                textLp.setMarginStart(start);
+                textLp.topMargin = top;
+                holder.textViewFileSize.setLayoutParams(textLp);
+            }
+        }
+    }
+
+    /**
+     * Badge sizes come from dimens so they shrink with the card. Only the MICRO card turns the
+     * subtype badge into an icon and stacks the pair, because two labels side by side would
+     * cover most of a sub-80dp thumbnail.
+     */
+    private void setBadgeDensity(@NonNull RecordViewHolder holder, int mode) {
+        Resources res = context.getResources();
+        int padH;
+        int padV;
+        float textPx;
+        boolean micro = mode == CARD_MICRO;
+
+        if (mode == CARD_FULL) {
+            padH = res.getDimensionPixelSize(R.dimen.records_badge_pad_h);
+            padV = res.getDimensionPixelSize(R.dimen.records_badge_pad_v);
+            textPx = res.getDimension(R.dimen.records_badge_text);
+        } else if (mode == CARD_MEDIUM) {
+            padH = res.getDimensionPixelSize(R.dimen.records_badge_pad_h_medium);
+            padV = res.getDimensionPixelSize(R.dimen.records_badge_pad_v_medium);
+            textPx = res.getDimension(R.dimen.records_badge_text_medium);
+        } else if (mode == CARD_COMPACT) {
+            padH = dpToPx(3);
+            padV = dpToPx(1);
+            textPx = res.getDimension(R.dimen.records_badge_text_medium);
+        } else {
+            padH = dpToPx(2);
+            padV = dpToPx(1);
+            textPx = android.util.TypedValue.applyDimension(
+                    android.util.TypedValue.COMPLEX_UNIT_SP, 6.5f,
+                    res.getDisplayMetrics());
+        }
+        int unit = android.util.TypedValue.COMPLEX_UNIT_PX;
+
+        // Two labels side by side stop fitting well before the tile runs out of width, and
+        // localised labels are long ("NOUVEAU", "Rückseite", "Задняя"). Stacking them gives each one the full tile width.
+        boolean stackBadges = micro || mode == CARD_COMPACT;
+        if (holder.statusBadgeContainer != null) {
+            holder.statusBadgeContainer.setOrientation(
+                    stackBadges ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+            holder.statusBadgeContainer.setGravity(stackBadges
+                    ? android.view.Gravity.END
+                    : android.view.Gravity.CENTER_VERTICAL);
+        }
+
+        // Shrink to fit rather than clip: translations such as "NOUVEAU" are much wider
+        // than "NEW", and there is no shorter form to fall back to.
+        float maxSp = textPx / res.getDisplayMetrics().scaledDensity;
+
+        TextView newBadge = holder.textViewNewBadge;
+        if (newBadge != null) {
+            newBadge.setPadding(padH, padV, padH, padV);
+            newBadge.setTextSize(unit, textPx);
+            newBadge.setText(R.string.badge_new);
+            LinearLayout.LayoutParams lp =
+                    (LinearLayout.LayoutParams) newBadge.getLayoutParams();
+            int gap = dpToPx(3);
+            int marginEnd = stackBadges ? 0 : gap;
+            int marginBottom = stackBadges ? gap : 0;
+            if (lp.getMarginEnd() != marginEnd || lp.bottomMargin != marginBottom) {
+                lp.setMarginEnd(marginEnd);
+                lp.bottomMargin = marginBottom;
+                newBadge.setLayoutParams(lp);
+            }
+        }
+
+        TextView status = holder.textViewStatusBadge;
+        if (status != null) {
+            status.setPadding(padH, padV, padH, padV);
+            status.setTextSize(unit, textPx);
+            if (micro && holder.statusBadgeLigature != null) {
+                status.setTypeface(ResourcesCompat.getFont(context, R.font.materialicons));
+                status.setText(holder.statusBadgeLigature);
+            } else {
+                // The bind writes the label; only the face needs restoring after a micro bind.
+                status.setTypeface(Typeface.DEFAULT_BOLD);
+            }
+        }
+
+        // A ligature is one glyph, so it needs a larger size than the label it replaces to
+        // stay recognisable at the same chip size.
+        if (status != null && micro && holder.statusBadgeLigature != null) {
+            // One glyph in a square chip: equal padding and centre gravity keep it optically
+            // centred instead of sitting on the text baseline.
+            status.setGravity(android.view.Gravity.CENTER);
+            int box = dpToPx(16);
+            status.setMinWidth(box);
+            status.setMinHeight(box);
+            status.setPadding(0, 0, 0, 0);
+            status.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,
+                    android.util.TypedValue.applyDimension(
+                            android.util.TypedValue.COMPLEX_UNIT_SP, 12f,
+                            res.getDisplayMetrics()));
+        }
+    }
+
+    private void setCheckSize(@NonNull RecordViewHolder holder, boolean compact) {
+        Resources res = context.getResources();
+        resizeView(holder.iconCheckContainer, res.getDimensionPixelSize(compact
+                ? R.dimen.records_check_container_compact
+                : R.dimen.records_check_container));
+        resizeView(holder.iconCheckBg, res.getDimensionPixelSize(compact
+                ? R.dimen.records_check_bg_compact
+                : R.dimen.records_check_bg));
+        resizeView(holder.checkIcon, res.getDimensionPixelSize(compact
+                ? R.dimen.records_check_icon_compact
+                : R.dimen.records_check_icon));
+    }
+
+    private void setSerialVisible(@NonNull RecordViewHolder holder, boolean visible) {
+        if (holder.textViewSerialNumber != null) {
+            holder.textViewSerialNumber.setVisibility(visible ? View.VISIBLE : View.GONE);
         }
     }
 
@@ -2986,6 +3440,10 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         // -----------
         // Tag this ViewHolder so we know it needs skeleton cleanup when rebound with real data.
         holder.itemView.setTag(R.id.skeleton_tag, Boolean.TRUE);
+
+        // Skeleton placeholders follow the same responsive geometry as real cards, otherwise a
+        // recycled holder keeps the row visibility of whatever span it was last bound at.
+        applyResponsiveLayout(holder, false);
 
         // Step 1: Clear any existing content and animations
         holder.itemView.clearAnimation();
@@ -3016,6 +3474,9 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
         if (holder.menuButtonContainer != null) {
             holder.menuButtonContainer.setVisibility(View.GONE);
+        }
+        if (holder.menuCompactContainer != null) {
+            holder.menuCompactContainer.setVisibility(View.GONE);
         }
         if (holder.textViewTimeAgo != null) {
             holder.textViewTimeAgo.setText("███████");
@@ -3248,149 +3709,6 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
-    private void fixVideoFile(VideoItem videoItem) {
-        if (videoItem == null || videoItem.uri == null) {
-            Toast.makeText(context, context.getString(R.string.fix_video_invalid), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        String scheme = videoItem.uri.getScheme();
-        File inputFile = null;
-        File outputFile;
-        String outputName = "FIXED_" + videoItem.displayName;
-        boolean isSAF;
-        File safTempInput = null;
-        File safTempOutput;
-        if ("file".equals(scheme)) {
-            safTempOutput = null;
-            isSAF = false;
-            inputFile = new File(videoItem.uri.getPath());
-            if (!inputFile.exists()) {
-                Toast.makeText(context, context.getString(R.string.fix_video_file_not_exist), Toast.LENGTH_SHORT)
-                        .show();
-                return;
-            }
-            outputFile = new File(inputFile.getParent(), outputName);
-            if (outputFile.exists()) {
-                Toast.makeText(context, context.getString(R.string.fix_video_fixed_exists), Toast.LENGTH_SHORT).show();
-                return;
-            }
-        } else if ("content".equals(scheme)) {
-            isSAF = true;
-            try {
-                safTempInput = File.createTempFile("saf_repair_", ".mp4", context.getCacheDir());
-                inputFile = safTempInput;
-                try (InputStream in = context.getContentResolver().openInputStream(videoItem.uri);
-                        OutputStream out = new FileOutputStream(inputFile)) {
-                    byte[] buf = new byte[8192];
-                    int len;
-                    while ((len = in.read(buf)) > 0) {
-                        out.write(buf, 0, len);
-                    }
-                }
-            } catch (Exception e) {
-                FLog.e(TAG, "Failed to copy SAF video for repair", e);
-                Toast.makeText(context, context.getString(R.string.fix_video_saf_copy_fail), Toast.LENGTH_LONG).show();
-                if (safTempInput != null && safTempInput.exists())
-                    safTempInput.delete();
-                return;
-            }
-            safTempOutput = new File(context.getCacheDir(), outputName);
-            outputFile = safTempOutput;
-        } else {
-            safTempOutput = null;
-            outputFile = null;
-            isSAF = false;
-            Toast.makeText(context, context.getString(R.string.fix_video_internal_only), Toast.LENGTH_LONG).show();
-            return;
-        }
-        String inputPath = inputFile.getAbsolutePath();
-        String outputPath = outputFile.getAbsolutePath();
-        String ffmpegCmd = String.format("-y -i %s -c copy %s", inputPath, outputPath);
-        Toast.makeText(context, context.getString(R.string.fix_video_repairing), Toast.LENGTH_SHORT).show();
-        File finalSafTempInput = safTempInput;
-        FFmpegKit.executeAsync(ffmpegCmd, session -> {
-            if (ReturnCode.isSuccess(session.getReturnCode())) {
-                if (isSAF) {
-                    boolean wroteToSAF = false;
-                    try {
-                        // Use the SAF folder URI from preferences, just like RecordingService
-                        String safFolderUriString = sharedPreferencesManager.getCustomStorageUri();
-                        if (safFolderUriString != null) {
-                            Uri safFolderUri = Uri.parse(safFolderUriString);
-                            DocumentFile safFolder = DocumentFile.fromTreeUri(context, safFolderUri);
-                            if (safFolder != null && safFolder.canWrite()) {
-                                DocumentFile fixedDoc = safFolder.createFile("video/mp4", outputName);
-                                if (fixedDoc != null) {
-                                    try (OutputStream out = context.getContentResolver()
-                                            .openOutputStream(fixedDoc.getUri());
-                                            InputStream in = new FileInputStream(outputFile)) {
-                                        byte[] buf = new byte[8192];
-                                        int len;
-                                        while ((len = in.read(buf)) > 0) {
-                                            out.write(buf, 0, len);
-                                        }
-                                    }
-                                    wroteToSAF = true;
-                                    new Handler(Looper.getMainLooper()).post(() -> {
-                                        Toast.makeText(context,
-                                                context.getString(R.string.fix_video_saf_success, outputName),
-                                                Toast.LENGTH_LONG).show();
-                                    });
-                                }
-                            }
-                        }
-                        if (!wroteToSAF) {
-                            new Handler(Looper.getMainLooper()).post(() -> {
-                                Toast.makeText(context, context.getString(R.string.fix_video_saf_write_fail),
-                                        Toast.LENGTH_LONG).show();
-                                Toast.makeText(context,
-                                        "Cannot write to this folder. This may be due to SD card, USB, or cloud storage permissions. The repaired file is saved in app storage.",
-                                        Toast.LENGTH_LONG).show();
-                                Toast.makeText(context, context.getString(R.string.fix_video_saf_export),
-                                        Toast.LENGTH_LONG).show();
-                                // TODO: Offer share/export dialog for the fixed file in app storage
-                            });
-                        }
-                    } catch (Exception e) {
-                        FLog.e(TAG, "Failed to write repaired file to SAF folder", e);
-                        new Handler(Looper.getMainLooper()).post(() -> {
-                            Toast.makeText(context, context.getString(R.string.fix_video_saf_write_fail),
-                                    Toast.LENGTH_LONG).show();
-                            Toast.makeText(context,
-                                    "Cannot write to this folder. This may be due to SD card, USB, or cloud storage permissions. The repaired file is saved in app storage.",
-                                    Toast.LENGTH_LONG).show();
-                            Toast.makeText(context, context.getString(R.string.fix_video_saf_export), Toast.LENGTH_LONG)
-                                    .show();
-                            // TODO: Offer share/export dialog for the fixed file in app storage
-                        });
-                    } finally {
-                        // Clean up temp files
-                        if (finalSafTempInput != null && finalSafTempInput.exists())
-                            finalSafTempInput.delete();
-                        if (safTempOutput != null && safTempOutput.exists())
-                            safTempOutput.delete();
-                    }
-                } else {
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        Toast.makeText(context, context.getString(R.string.fix_video_success, outputFile.getName()),
-                                Toast.LENGTH_LONG).show();
-                    });
-                }
-            } else {
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    Toast.makeText(context, context.getString(R.string.fix_video_fail), Toast.LENGTH_LONG).show();
-                });
-                // Clean up temp files on failure as well
-                if (isSAF) {
-                    if (finalSafTempInput != null && finalSafTempInput.exists())
-                        finalSafTempInput.delete();
-                    if (safTempOutput != null && safTempOutput.exists())
-                        safTempOutput.delete();
-                }
-            }
-        });
-    }
-
     /**
      * Generates a unique filename in the given directory to prevent overwriting existing files.
      * If a file with the requested name already exists, appends a counter like " (1)", " (2)", etc.
@@ -3528,7 +3846,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         holder.selectContainer.setEnabled(isSelectionModeActive);
 
         // Check if all items in this month are selected
-        List<VideoItem> monthItems = getItemsForMonth(header.monthKey);
+        List<VideoItem> monthItems = getItemsForMonthAt(position);
         boolean allSelected = !monthItems.isEmpty();
         for (VideoItem item : monthItems) {
             if (!currentSelectedUris.contains(item.uri)) {
@@ -3543,6 +3861,21 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 monthActionListener.onMonthSelectAll(header.monthKey, monthItems);
             }
         } : null);
+    }
+
+    /**
+     * Collects the contiguous month range that follows a header. Walking the
+     * month's own entries avoids the old O(all entries) scan on every header
+     * bind — with 30k items that ran on the UI thread during scroll.
+     */
+    private List<VideoItem> getItemsForMonthAt(int headerPosition) {
+        List<VideoItem> result = new ArrayList<>();
+        for (int i = headerPosition + 1; i < entries.size(); i++) {
+            Object entry = entries.get(i);
+            if (!(entry instanceof VideoItemEntry)) break;
+            result.add(((VideoItemEntry) entry).item);
+        }
+        return result;
     }
 
     /**

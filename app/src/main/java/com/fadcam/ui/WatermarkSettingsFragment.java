@@ -23,7 +23,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
@@ -58,7 +57,7 @@ public class WatermarkSettingsFragment extends Fragment {
     private PreviewPagerAdapter previewAdapter;
     private View dotFadCam, dotFadRec;
     private LocationHelper locationHelper;
-    private ActivityResultLauncher<String> permissionLauncher;
+    private ActivityResultLauncher<String[]> permissionLauncher;
     private Runnable pendingGrantAction;
     private View locationRow;
     private GpsProviderReceiver gpsProviderReceiver;
@@ -281,8 +280,10 @@ public class WatermarkSettingsFragment extends Fragment {
                 android.location.LocationManager.PROVIDERS_CHANGED_ACTION);
         requireContext().registerReceiver(gpsProviderReceiver, gpsFilter);
 
-        permissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-            if (granted) {
+        permissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+            boolean fine = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION));
+            boolean coarse = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+            if (fine || coarse) {
                 onPermissionGrantedPostRequest();
             } else {
                 onPermissionDeniedPostRequest();
@@ -294,6 +295,14 @@ public class WatermarkSettingsFragment extends Fragment {
         dotFadCam = view.findViewById(R.id.dot_fadcam);
         dotFadRec = view.findViewById(R.id.dot_fadrec);
         previewAdapter = new PreviewPagerAdapter();
+        if (com.fadcam.BuildConfig.LITE_EDITION) {
+            // Lite: FadCam preview only — hide the tab strip + FadRec dot and lock the pager
+            android.view.View tabsRow = view.findViewById(R.id.preview_mode_tabs);
+            if (tabsRow != null) tabsRow.setVisibility(android.view.View.GONE);
+            if (dotFadCam != null) dotFadCam.setVisibility(android.view.View.GONE);
+            if (dotFadRec != null) dotFadRec.setVisibility(android.view.View.GONE);
+            if (previewPager != null) previewPager.setUserInputEnabled(false);
+        }
         if (previewPager != null) {
             previewPager.setAdapter(previewAdapter);
             previewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -413,12 +422,14 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     private void showPermissionDialog(Runnable proceed) {
-        new AlertDialog.Builder(requireContext(), com.google.android.material.R.style.MaterialAlertDialog_Material3)
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.location_permission_title)
                 .setMessage(R.string.location_permission_description)
                 .setPositiveButton("Grant", (d, w) -> {
                     pendingGrantAction = proceed;
-                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+                    permissionLauncher.launch(new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION});
                 })
                 .setNegativeButton(R.string.universal_cancel, (d, w) -> { })
                 .show();
@@ -487,12 +498,13 @@ public class WatermarkSettingsFragment extends Fragment {
 
     private void updateLocationRowState(){
         if(locationRow==null) return;
+        // Never destroy the user's location choice here. Turning the master watermark off
+        // temporarily (e.g. to test "No Watermark") used to persist location_data=false, so
+        // switching back to a timestamp style left videos without coordinates or UTM forever.
+        // The row is only greyed out while "No Watermark" is selected; the setting itself is
+        // preserved and takes effect again as soon as a watermark style is chosen.
         boolean watermarkNone = "no_watermark".equals(prefs.getWatermarkOption());
         if(watermarkNone){
-            if(prefs.isLocalisationEnabled()){
-                prefs.setLocationEnabled(false);
-                refreshLocationValue();
-            }
             locationRow.setEnabled(false);
             locationRow.setAlpha(0.4f);
         } else {
@@ -502,6 +514,7 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     private void updateDots(int page) {
+        if (com.fadcam.BuildConfig.LITE_EDITION) return; // dots hidden in Lite (FadCam preview only)
         if (dotFadCam != null && dotFadRec != null) {
             dotFadCam.setBackgroundResource(page == 0
                     ? R.drawable.indicator_dot_active : R.drawable.indicator_dot_inactive);
@@ -944,7 +957,7 @@ public class WatermarkSettingsFragment extends Fragment {
     }
 
     private void showNetworkWarningDialog(Runnable onConfirm) {
-        new AlertDialog.Builder(requireContext(), com.google.android.material.R.style.MaterialAlertDialog_Material3)
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.watermark_network_warning_title)
                 .setMessage(R.string.watermark_network_warning_message)
                 .setPositiveButton(R.string.watermark_network_warning_enable, (d, w) -> {

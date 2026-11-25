@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="AnimationView">
+        <attr name="sceneType" format="enum">
+            <enum name="background" value="0" />
+            <enum name="screen" value="1" />
+            <enum name="editor" value="2" />
+            <enum name="motion" value="3" />
+            <enum name="remote" value="4" />
+            <enum name="flashlight" value="6" />
+            <enum name="qr" value="7" />
+            <enum name="bodycam_solo" value="8" />
+            <enum name="dashcam" value="9" />
+            <enum name="forensic" value="10" />
+        </attr>
+    </declare-styleable>
+</resources>
