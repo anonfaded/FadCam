@@ -792,47 +792,10 @@ public class MainActivity extends AppCompatActivity {
         if (isFinishing() || isDestroyed()) return;
 
         // Landscape presents every bottom sheet as a full-height trailing panel.
-        // Registering here keeps it a single window-level adapter: existing sheets
-        // are untouched, and any new BottomSheetDialogFragment gets it for free.
-        getSupportFragmentManager().registerFragmentLifecycleCallbacks(
-                new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
-                    @Override
-                    public void onFragmentCreated(
-                            @NonNull androidx.fragment.app.FragmentManager fm,
-                            @NonNull androidx.fragment.app.Fragment f,
-                            android.os.Bundle savedInstanceState) {
-                        if (f instanceof com.google.android.material.bottomsheet.BottomSheetDialogFragment) {
-                            // Runs before DialogFragment.show() paints anything.
-                            com.fadcam.ui.SideSheet.applyIfLandscape(
-                                    ((com.google.android.material.bottomsheet.BottomSheetDialogFragment) f)
-                                            .getDialog());
-                        }
-                    }
+        // Registered through the shared adapter so the editor window can install the
+        // same behaviour without duplicating it.
+        com.fadcam.ui.SideSheet.install(getSupportFragmentManager());
 
-                    @Override
-                    public void onFragmentViewCreated(
-                            @NonNull androidx.fragment.app.FragmentManager fm,
-                            @NonNull androidx.fragment.app.Fragment f,
-                            @NonNull View v,
-                            android.os.Bundle savedInstanceState) {
-                        if (f instanceof com.google.android.material.bottomsheet.BottomSheetDialogFragment) {
-                            com.fadcam.ui.SideSheet.applyIfLandscape(
-                                    ((com.google.android.material.bottomsheet.BottomSheetDialogFragment) f)
-                                            .getDialog());
-                        }
-                    }
-
-                    @Override
-                    public void onFragmentStarted(
-                            @NonNull androidx.fragment.app.FragmentManager fm,
-                            @NonNull androidx.fragment.app.Fragment f) {
-                        if (f instanceof com.google.android.material.bottomsheet.BottomSheetDialogFragment) {
-                            com.fadcam.ui.SideSheet.applyIfLandscape(
-                                    ((com.google.android.material.bottomsheet.BottomSheetDialogFragment) f)
-                                            .getDialog());
-                        }
-                    }
-                }, true);
         // A weekly-notification tap routes through Home first, so backing out of Pro
         // returns to the app (and the after-Pro confirmation) instead of the launcher.
         navItemSelectedListener = item -> {

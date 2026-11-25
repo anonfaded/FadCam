@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.FrameLayout;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -40,6 +41,53 @@ public final class SideSheet {
     private static final int MIN_WIDTH_DP = 320;
 
     private SideSheet() {
+    }
+
+    /**
+     * Installs the side-sheet behaviour for every bottom sheet shown by a fragment
+     * manager. One call per activity is enough; sheets created later inherit it.
+     *
+     * <p>Call this from any activity that hosts its own {@link
+     * com.google.android.material.bottomsheet.BottomSheetDialogFragment}s — the editor
+     * hosts rename/export/add-asset sheets in its own window and is not covered by the
+     * main activity's installation.</p>
+     */
+    public static void install(@NonNull androidx.fragment.app.FragmentManager fm) {
+        fm.registerFragmentLifecycleCallbacks(
+                new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+                    @Override
+                    public void onFragmentCreated(
+                            @NonNull androidx.fragment.app.FragmentManager manager,
+                            @NonNull androidx.fragment.app.Fragment f,
+                            android.os.Bundle savedInstanceState) {
+                        applyFor(f);
+                    }
+
+                    @Override
+                    public void onFragmentViewCreated(
+                            @NonNull androidx.fragment.app.FragmentManager manager,
+                            @NonNull androidx.fragment.app.Fragment f,
+                            @NonNull View v,
+                            android.os.Bundle savedInstanceState) {
+                        applyFor(f);
+                    }
+
+                    @Override
+                    public void onFragmentStarted(
+                            @NonNull androidx.fragment.app.FragmentManager manager,
+                            @NonNull androidx.fragment.app.Fragment f) {
+                        applyFor(f);
+                    }
+                }, true);
+    }
+
+    private static void applyFor(@NonNull androidx.fragment.app.Fragment f) {
+        if (f instanceof com.google.android.material.bottomsheet.BottomSheetDialogFragment) {
+            // Runs before/while show() paints, so the window is positioned early.
+            applyIfLandscape(
+                    ((com.google.android.material.bottomsheet.BottomSheetDialogFragment) f)
+                            .getDialog());
+        }
     }
 
     public static boolean isLandscape(Context context) {

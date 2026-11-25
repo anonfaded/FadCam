@@ -1825,10 +1825,6 @@ public class PickerBottomSheetFragment extends BottomSheetDialogFragment {
     @Override
     public void onStart() {
         super.onStart();
-        // Landscape: dock to the side so the short screen stays usable.
-        if (getView() != null) {
-            com.fadcam.ui.utils.SideSheet.applyIfLandscape(requireDialog(), getView());
-        }
         if (getActivity() != null && getActivity().getWindow() != null
                 && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
             android.view.Window window = getActivity().getWindow();

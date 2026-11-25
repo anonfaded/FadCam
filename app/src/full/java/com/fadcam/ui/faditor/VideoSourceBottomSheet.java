@@ -90,15 +90,6 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         return R.style.CustomBottomSheetDialogTheme;
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        View view = getView();
-        if (view != null) {
-            com.fadcam.ui.utils.SideSheet.applyIfLandscape(requireDialog(), view);
-        }
-    }
-
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {

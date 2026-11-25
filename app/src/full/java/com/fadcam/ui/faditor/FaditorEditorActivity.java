@@ -211,6 +211,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private int playbackClipIndex = 0;
 
+    /** Player position we expect after a seek; -1 when no guard is active. */
+    private long playbackSeekTargetMs = -1;
+    private long playbackSeekDeadlineMs = 0;
+
     // ── Audio extraction ─────────────────────────────────────────────
     private final ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
 
@@ -309,6 +313,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
             selectedClipIndex = -1;
             playbackClipIndex = 0;
         }
+        // The clip list changed, so any queued playlist is stale.
+        playerManager.exitPlaylistMode();
         editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
         editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
         updateToolAvailability();
@@ -466,6 +472,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_faditor_editor);
         applyTopBarInset();
+
+        // The editor is its own window, so it installs the shared side-sheet adapter
+        // that MainActivity uses: rename, export and add-asset sheets all dock to the
+        // trailing edge in landscape.
+        com.fadcam.ui.SideSheet.install(getSupportFragmentManager());
 
         // Initialize preferences and remuxer
         prefsManager = SharedPreferencesManager.getInstance(this);
@@ -1357,9 +1368,25 @@ public class FaditorEditorActivity extends AppCompatActivity {
             }
 
             @Override
+            public void onMediaItemTransition(@Nullable androidx.media3.common.MediaItem mediaItem,
+                                              int reason) {
+                if (!playerManager.isPlaylistMode()) return;
+                int index = playerManager.getCurrentPlaylistIndex();
+                Clip playing = playerManager.getCurrentPlaylistClip();
+                if (index < 0 || playing == null) return;
+                playbackClipIndex = index;
+                editorTimeline.setPlaybackIndex(index);
+                applyPlayingClipState(playing);
+                FLog.d(TAG, "media item transition: clip=" + index + " reason=" + reason);
+            }
+
+            @Override
             public void onPlaybackStateChanged(int playbackState) {
                 if (playbackState == Player.STATE_ENDED && !audioTailActive) {
                     updatePlayPauseButton(false);
+                    // Queue finished: drop back to the idle preview model so a later
+                    // trim/seek behaves like a single-clip edit again.
+                    playbackSeekTargetMs = -1;
                 }
                 // Once ExoPlayer is READY, correct the duration if needed.
                 // MediaMetadataRetriever is unreliable for fragmented MP4;
@@ -1435,19 +1462,52 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         hideImagePreview();
+        updatePreviewTransforms(clip);
+
+        // Queue the entire video track. ExoPlayer then plays clip → clip without a
+        // setMediaItem()+prepare() stall, which was the visible pause at every cut.
+        // Timelines containing still images cannot be queued (an image has no media
+        // item), so those fall back to the single-clip path below.
+        java.util.List<Clip> clips = project.getTimeline().getClips();
+        boolean queued = playerManager.loadTimelineForPlayback(
+                clips, index, localSourceMs - clip.getInPointMs());
+        if (queued) {
+            playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+            playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+            // Guard the first frames: until the seek has actually landed the player
+            // still reports its old position, and using it yanked the playhead to the
+            // clip's start on short clips.
+            armPlaybackSeekGuard(localSourceMs - clip.getInPointMs());
+            updatePlayPauseButton(true);
+            syncAndPlayAudioPlayer();
+            playheadHandler.post(playheadUpdater);
+            FLog.d(TAG, "play: playlist queued at index=" + index
+                    + " offset=" + (localSourceMs - clip.getInPointMs()) + "ms");
+            return;
+        }
+
         if (playerManager.getLoadedClip() != clip) {
             // Different source (or a different trim state): load it before seeking.
             playerManager.loadClip(clip);
         }
         playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
         playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-        updatePreviewTransforms();
 
         playerManager.seekTo(localSourceMs - clip.getInPointMs());
+        armPlaybackSeekGuard(localSourceMs - clip.getInPointMs());
         playerManager.play();
         updatePlayPauseButton(true);
         syncAndPlayAudioPlayer();
         playheadHandler.post(playheadUpdater);
+    }
+
+    /**
+     * After a seek the player keeps reporting its previous position for a frame or two.
+     * Ignoring the playhead for that window stops it snapping to the clip start.
+     */
+    private void armPlaybackSeekGuard(long expectedRelativeMs) {
+        playbackSeekTargetMs = Math.max(0, expectedRelativeMs);
+        playbackSeekDeadlineMs = android.os.SystemClock.elapsedRealtime() + 600L;
     }
 
     /**
@@ -1492,6 +1552,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             toolbarScroll.addView(toolbarRow);
         }
         toolbarRow.setOrientation(LinearLayout.HORIZONTAL);
+        toolbarRow.setGravity(android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL);
         if (player.getParent() == null) {
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
@@ -1535,6 +1596,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // a horizontal scroller cannot scroll.
         toolbarScroll.removeView(toolbarRow);
         toolbarRow.setOrientation(LinearLayout.VERTICAL);
+        // Centre the fixed-width tool items inside the narrow column.
+        toolbarRow.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
         column.addView(toolbarRow, new android.widget.FrameLayout.LayoutParams(
                 android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
                 android.widget.FrameLayout.LayoutParams.WRAP_CONTENT));
@@ -2767,8 +2830,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
      * Apply rotation, flip, and crop transforms to the PlayerView for live preview.
      */
     private void updatePreviewTransforms() {
+        updatePreviewTransforms(getSelectedClip());
+    }
+
+    /**
+     * Applies rotation/flip/crop for a specific clip. Playback passes the clip the
+     * player is showing, which is not necessarily the selected one.
+     */
+    private void updatePreviewTransforms(@Nullable Clip clip) {
         if (project == null || project.getTimeline().isEmpty()) return;
-        Clip clip = getSelectedClip();
         if (clip == null) return;
 
         int degrees = clip.getRotationDegrees();
@@ -3230,6 +3300,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
         return imagePlaybackStartOffsetMs + elapsed;
     }
 
+    /** Applies a clip's audio and visual state while it is the one being previewed. */
+    private void applyPlayingClipState(@NonNull Clip clip) {
+        playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
+        playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
+        updatePreviewTransforms(clip);
+    }
+
     private void updatePlayheadPosition() {
         if (playerManager == null || project == null || project.getTimeline().isEmpty()) return;
 
@@ -3250,6 +3327,46 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             editorTimeline.setPlayheadPositionMs(playheadMs);
             timeCurrent.setText(TimeFormatter.formatAuto(playheadMs));
+            return;
+        }
+
+        // ── Gapless playlist playback ───────────────────────────────
+        // The queue advances by itself, so nothing here may "advance a segment".
+        // The playhead is derived from the item the player is on plus its position.
+        if (playerManager.isPlaylistMode()) {
+            if (userDragging) return;
+            int index = playerManager.getCurrentPlaylistIndex();
+            Clip playing = playerManager.getCurrentPlaylistClip();
+            if (index < 0 || playing == null) return;
+
+            if (index != playbackClipIndex) {
+                playbackClipIndex = index;
+                editorTimeline.setPlaybackIndex(index);
+                applyPlayingClipState(playing);
+                FLog.d(TAG, "playlist: now on clip " + index);
+            }
+
+            long positionSourceMs = playerManager.getCurrentPosition();
+            if (playbackSeekTargetMs >= 0) {
+                boolean landed = Math.abs(positionSourceMs - playbackSeekTargetMs) <= 250;
+                boolean expired = android.os.SystemClock.elapsedRealtime()
+                        > playbackSeekDeadlineMs;
+                if (!landed && !expired) {
+                    // The seek has not landed yet; keeping the UI still beats showing
+                    // the clip's start and then jumping.
+                    return;
+                }
+                playbackSeekTargetMs = -1;
+            }
+            long localEffectiveMs =
+                    (long) (positionSourceMs / Math.max(0.1f, playing.getSpeedMultiplier()));
+            long segmentStartMs = editorTimeline.getSegmentStartTimeMs(index);
+            long playheadMs = segmentStartMs + Math.max(0, localEffectiveMs);
+
+            editorTimeline.setPlayheadPositionMs(playheadMs);
+            timeCurrent.setText(TimeFormatter.formatAuto(playheadMs));
+            lastUserPlayheadFraction = (float) (playing.getInPointMs() + positionSourceMs)
+                    / Math.max(1, playing.getSourceDurationMs());
             return;
         }
 
@@ -3352,6 +3469,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
             }
 
             long position = playerManager.getCurrentPosition(); // 0-based within trim
+            if (playbackSeekTargetMs >= 0) {
+                boolean landed = Math.abs(position - playbackSeekTargetMs) <= 250;
+                boolean expired = android.os.SystemClock.elapsedRealtime()
+                        > playbackSeekDeadlineMs;
+                if (!landed && !expired) {
+                    return;   // seek still in flight; do not move the playhead yet
+                }
+                playbackSeekTargetMs = -1;
+            }
             long absoluteMs = clip.getInPointMs() + position;
             float fraction = (float) absoluteMs / sourceDuration;
             fraction = Math.max(0f, Math.min(fraction, 1f));

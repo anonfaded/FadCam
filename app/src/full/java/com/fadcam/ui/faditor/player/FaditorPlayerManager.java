@@ -57,6 +57,14 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
     /** Whether the media source needs re-preparation (URI changed). */
     private boolean needsPrepare = true;
 
+    // ── Playlist (gapless preview) ───────────────────────────────────
+    // ExoPlayer can hold the whole edit as one queue of clipped media items. That is
+    // how professional editors play a multi-clip timeline without a visible gap:
+    // the next clip is already buffered when the current one ends, so there is no
+    // setMediaItem()+prepare() stall and no "pause between clips".
+    private boolean playlistMode;
+    @NonNull private final java.util.List<Clip> playlistClips = new java.util.ArrayList<>();
+
     /** Internal listener for handling pending seeks and playback state. */
     private final Player.Listener internalListener = new Player.Listener() {
         @Override
@@ -136,12 +144,103 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
         }
     }
 
+    /** True while the whole timeline is queued in the player as one playlist. */
+    public boolean isPlaylistMode() {
+        return playlistMode;
+    }
+
+    /** Clips queued in playlist mode, in timeline order. */
+    @NonNull
+    public java.util.List<Clip> getPlaylistClips() {
+        return playlistClips;
+    }
+
+    /** Index of the clip currently playing in playlist mode, or -1. */
+    public int getCurrentPlaylistIndex() {
+        if (!playlistMode || player == null) return -1;
+        return player.getCurrentMediaItemIndex();
+    }
+
+    /** Clip currently playing in playlist mode, or null. */
+    @Nullable
+    public Clip getCurrentPlaylistClip() {
+        int index = getCurrentPlaylistIndex();
+        if (index < 0 || index >= playlistClips.size()) return null;
+        return playlistClips.get(index);
+    }
+
+    /**
+     * Queues every video clip as one gapless playlist, starting inside
+     * {@code startClipIndex} at {@code startLocalMs} (0 = the clip's in-point).
+     *
+     * <p>Returns false when the timeline cannot be queued — image clips have no media
+     * item, and a timeline containing one falls back to the single-clip path so the
+     * preview never lies about the edit.</p>
+     */
+    public boolean loadTimelineForPlayback(@NonNull java.util.List<Clip> clips,
+                                           int startClipIndex,
+                                           long startLocalMs) {
+        if (player == null) initializePlayer();
+        if (player == null || clips.isEmpty()) return false;
+        for (Clip c : clips) {
+            if (c.isImageClip()) return false;
+        }
+        if (startClipIndex < 0 || startClipIndex >= clips.size()) startClipIndex = 0;
+
+        java.util.List<MediaItem> items = new java.util.ArrayList<>(clips.size());
+        for (Clip c : clips) {
+            items.add(new MediaItem.Builder()
+                    .setUri(resolveFileUri(c.getSourceUri()))
+                    .setMediaId(c.getId())
+                    .setClippingConfiguration(
+                            new MediaItem.ClippingConfiguration.Builder()
+                                    .setStartPositionMs(c.getInPointMs())
+                                    .setEndPositionMs(c.getOutPointMs())
+                                    .build())
+                    .build());
+        }
+
+        playlistMode = true;
+        playlistClips.clear();
+        playlistClips.addAll(clips);
+        currentClip = clips.get(startClipIndex);
+        // Trim bounds are per media item now; keep the single-clip bounds neutral so
+        // arithmetic in the single-clip path cannot leak into playlist playback.
+        trimStartMs = 0;
+        trimEndMs = Long.MAX_VALUE;
+        pendingSeekMs = -1;
+
+        player.setMediaItems(items, startClipIndex, Math.max(0, startLocalMs));
+        player.prepare();
+        player.setPlayWhenReady(true);
+        FLog.d(TAG, "Playlist queued: items=" + items.size()
+                + " startIndex=" + startClipIndex + " offset=" + startLocalMs + "ms");
+        return true;
+    }
+
+    /** Moves playlist playback to a clip + offset (0 = that clip's in-point). */
+    public void seekInPlaylist(int clipIndex, long positionInClipMs) {
+        if (!playlistMode || player == null) return;
+        int index = Math.max(0, Math.min(clipIndex, Math.max(0, playlistClips.size() - 1)));
+        player.seekTo(index, Math.max(0, positionInClipMs));
+        pendingSeekMs = -1;
+        FLog.d(TAG, "Playlist seek: index=" + index + " pos=" + positionInClipMs + "ms");
+    }
+
+    /** Leaves playlist mode so single-clip operations (trim preview) behave as before. */
+    public void exitPlaylistMode() {
+        playlistMode = false;
+        playlistClips.clear();
+    }
+
     /**
      * Load a clip for playback. No ClippingConfiguration — trim bounds
      * are managed manually via seek + position check so fragmented MP4
      * and non-seekable content:// sources work reliably.
      */
     public void loadClip(@NonNull Clip clip) {
+        // Single-clip loading means the queue is no longer authoritative.
+        exitPlaylistMode();
         this.currentClip = clip;
         this.trimStartMs = clip.getInPointMs();
         this.trimEndMs = clip.getOutPointMs();
@@ -160,6 +259,9 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
      * and seeks to the start of the new trimmed region.</p>
      */
     public void updateTrimBounds(@NonNull Clip clip) {
+        // Trim bounds are a single-clip concept; a queued playlist would still play the
+        // old in/out points.
+        exitPlaylistMode();
         this.currentClip = clip;
         this.trimStartMs = clip.getInPointMs();
         this.trimEndMs = clip.getOutPointMs();
