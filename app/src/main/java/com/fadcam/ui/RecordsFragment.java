@@ -1569,10 +1569,12 @@ public class RecordsFragment extends BaseFragment implements
                                 recordsAdapter.clearCaches();
                                 FLog.d(TAG, "Cleared adapter caches for new recording");
                             }
-                            // Invalidate cache so loadRecordsList will load fresh data including the new video
-                            FLog.d(TAG, "New recording complete, delta scan will pick it up");
-                            // Delta scan will pick up the new file automatically
-                            loadRecordsList(); // This will delta-scan and find the new video.
+                            // A new file is on disk, so the index is stale by definition.
+                            // Invalidate and force the reload: loadRecordsList() without
+                            // forceReload returns immediately when the list already has
+                            // items, which left freshly recorded files invisible until the
+                            // next cold start.
+                            reloadAfterNewFile("recording complete");
                         } else if (!success) {
                             FLog.w(TAG, "ACTION_RECORDING_COMPLETE: Failed or no URI. URI: " + finalUriString
                                     + ". Refreshing list.");
@@ -1583,7 +1585,7 @@ public class RecordsFragment extends BaseFragment implements
                             }
                             FLog.d(TAG, "Failed recording, refreshing via delta scan");
                             // Still refresh, as a temp file might need its processing state cleared
-                            loadRecordsList();
+                            reloadAfterNewFile("failed recording");
                         } else if (success && finalUriString == null) {
                             // Recording was successful but no specific URI provided - refresh anyway
                             FLog.d(TAG, "ACTION_RECORDING_COMPLETE: Success without URI. Refreshing list to detect new video.");
@@ -1593,7 +1595,7 @@ public class RecordsFragment extends BaseFragment implements
                                 FLog.d(TAG, "Cleared adapter caches for successful recording without URI");
                             }
                             FLog.d(TAG, "Successful recording without URI, delta scan will find it");
-                            loadRecordsList(); // This will delta-scan and find the new video
+                            reloadAfterNewFile("recording complete (no URI)");
                         }
                     }
                 };
@@ -1927,6 +1929,16 @@ public class RecordsFragment extends BaseFragment implements
                 // The list is already on screen. Do not block the refresh spinner
                 // on a full 7–10s disk walk: start the coalesced delta scan and
                 // stop the spinner immediately. The thin progress bar tracks sync.
+                // An explicit pull-to-refresh is the user asking for fresh data, so the
+                // index must be invalidated first — otherwise isIndexFresh() sees the
+                // unchanged directory signature and skips the scan entirely, making the
+                // gesture a no-op.
+                try {
+                    com.fadcam.data.VideoIndexRepository.getInstance(requireContext())
+                            .invalidateIndex();
+                } catch (Exception e) {
+                    FLog.w(TAG, "Swipe refresh: invalidateIndex failed", e);
+                }
                 if (loadingProgress != null) loadingProgress.setVisibility(View.VISIBLE);
                 scheduleRecordsDeltaScan(
                         com.fadcam.data.VideoIndexRepository.getInstance(requireContext()), 0L);
@@ -5553,6 +5565,25 @@ public class RecordsFragment extends BaseFragment implements
         scheduleRecordsDeltaScan(repository);
 
         progressHandler.postDelayed(deferredRecordsWarmupRunnable, RECORDS_INITIAL_METADATA_DELAY_MS);
+    }
+
+    /**
+     * Called whenever a new media file has just landed on disk (recording finished, photo
+     * captured). Invalidates the index and forces a reload — a plain loadRecordsList()
+     * bails out early when the list already has items, so new files stayed invisible
+     * until the next cold start.
+     */
+    private void reloadAfterNewFile(@NonNull String reason) {
+        FLog.i(TAG, "reloadAfterNewFile: " + reason);
+        try {
+            com.fadcam.data.VideoIndexRepository.getInstance(requireContext()).invalidateIndex();
+        } catch (Exception e) {
+            FLog.w(TAG, "reloadAfterNewFile: invalidateIndex failed", e);
+        }
+        if (recordsAdapter != null) {
+            recordsAdapter.clearCaches();
+        }
+        loadRecordsList(true);
     }
 
     /**

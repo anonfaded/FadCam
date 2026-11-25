@@ -214,12 +214,18 @@ public class FastFileScanner {
     }
 
     /**
-     * Cheap fingerprint of the internal storage tree: the mtimes of the known
-     * category directories and their immediate subdirectories. If this is
-     * unchanged, a full 30k-file enumeration cannot discover anything new and
-     * the delta scan can be skipped entirely.
+     * Cheap fingerprint of the internal storage tree: the mtimes and sizes of the
+     * known category directories, their immediate subdirectories, and the files inside
+     * them. If this is unchanged, a full 30k-file enumeration cannot discover anything
+     * new and the delta scan can be skipped entirely.
      *
-     * @return 0 when SAF/custom storage is in use (callers must do a full scan)
+     * <p>Files are included, not just subdirectories: a new FadShot or recording dropped
+     * straight into {@code FadShot/} or {@code Camera/} creates no folder, so hashing only
+     * directories left the fingerprint unchanged and the new file was never indexed until
+     * the next cold start.</p>
+     *
+     * @return 0 when SAF/custom storage is in use (callers must do a full scan), or when
+     *         the tree is missing — both cases force the caller down the full-scan path.
      */
     public long computeInternalDirectorySignature(@NonNull SharedPreferencesManager prefs) {
         String safUriString = prefs.getCustomStorageUri();
@@ -234,7 +240,14 @@ public class FastFileScanner {
         if (!baseDir.exists() || !baseDir.isDirectory()) {
             return 0;
         }
+        return computeDirectorySignature(baseDir);
+    }
 
+    /**
+     * Pure fingerprint of one tree root. Extracted so the hashing rules are unit-testable
+     * without an Android context.
+     */
+    static long computeDirectorySignature(@NonNull File baseDir) {
         long signature = 1125899906842597L;
         signature = signature * 31 + baseDir.lastModified();
 
@@ -261,11 +274,32 @@ public class FastFileScanner {
             int childCount = 0;
             long childSum = 0L;
             for (File child : children) {
-                if (child == null || !child.isDirectory()) {
+                if (child == null) {
                     continue;
                 }
-                childCount++;
-                childSum += child.lastModified() * 31L + child.getName().hashCode();
+                if (child.isDirectory()) {
+                    childCount++;
+                    childSum += child.lastModified() * 31L + child.getName().hashCode();
+                    // Files one level deeper (Camera/Back, FadShot/Selfie, …) must count too.
+                    File[] nested = child.listFiles();
+                    if (nested == null) continue;
+                    for (File f : nested) {
+                        if (f == null) continue;
+                        childCount++;
+                        childSum += f.lastModified() * 31L
+                                + f.length()
+                                + f.getName().hashCode();
+                    }
+                } else {
+                    // Files matter too. Hashing only subdirectories meant a new recording or
+                    // FadShot dropped straight into Camera/ or FadShot/ (no new folder) left
+                    // the signature unchanged, so isIndexFresh() reported "unchanged" and the
+                    // new file was never indexed until a cold start.
+                    childCount++;
+                    childSum += child.lastModified() * 31L
+                            + child.length()
+                            + child.getName().hashCode();
+                }
             }
             signature = signature * 31 + childCount;
             signature = signature * 31 + childSum;
