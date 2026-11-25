@@ -1491,7 +1491,7 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
 
     <!-- App Lock Strings -->
     <string name="setting_applock_title">Bloqueo de pestaña</string>
-    <string name="setting_applock_desc">Asegura tus videos con bloqueo PIN para la pestaña Registros. \nPor tu seguridad, la pestaña Registros se bloqueará automáticamente cada vez que la app vaya al fondo o se cierre. Necesitarás desbloquear de nuevo cuando regreses</string>
+    <string name="setting_applock_desc">Protege las pestañas seleccionadas con PIN, contraseña o huella digital. Las pestañas protegidas se vuelven a bloquear cuando la app pasa a segundo plano o se cierra, y deben desbloquearse de nuevo al volver.</string>
     <string name="setting_applock_configure">Configurar</string>
     <string name="applock_dialog_title">Opciones de bloqueo de pestaña</string>
     <string name="applock_enable">Habilitar bloqueo de pestaña</string>
@@ -1502,10 +1502,13 @@ Recomendado: 192000 bps, 48000 Hz para la mayoría de usuarios.</string>
     <string name="applock_pin_created">PIN creado exitosamente</string>
     <string name="applock_pin_removed">PIN eliminado exitosamente</string>
     <string name="applock_set_pin_enable">Establecer PIN y habilitar</string>
-    <string name="applock_helper_create">Crea protección para la pestaña Registros usando un PIN de 4 dígitos, contraseña o huella digital. Se bloqueará automáticamente cuando la app vaya al fondo.</string>
-    <string name="applock_helper_manage_disabled">El PIN de bloqueo de pestaña está establecido. Actívalo para requerir el PIN al regresar a la app.</string>
-    <string name="applock_helper_enabled">El bloqueo de pestaña está activo. Necesitarás el PIN al abrir la pestaña Registros después de salir de la app.</string>
+    <string name="applock_helper_create">Crea protección para las pestañas que elijas con un PIN de 4 dígitos, contraseña o huella digital. Se bloquearán automáticamente cuando la app pase a segundo plano.</string>
+    <string name="applock_helper_manage_disabled">El PIN de Bloqueo de pestañas está configurado. Actívalo para pedir el PIN en las pestañas seleccionadas.</string>
+    <string name="applock_helper_enabled">El Bloqueo de pestañas está activo. Las pestañas seleccionadas piden el PIN después de salir de la app. Registros está protegido por defecto.</string>
 
+    <string name="tab_lock_screen_title">Bloqueado</string>
+    <string name="tab_lock_screen_message">Desbloquea para continuar</string>
+    <string name="tab_lock_unlock">Desbloquear</string>
     <string name="applock_verify_to_enable">Verificar PIN para habilitar bloqueo de pestaña</string>
     <string name="applock_verify_to_disable">Verificar PIN para desactivar bloqueo de pestaña</string>
     <string name="applock_verify_to_change">Verificar PIN actual</string>

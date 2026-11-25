@@ -1422,7 +1422,7 @@
     <string name="allow_location_access">Consenti accesso posizione</string>
     <string name="location_permission_message">FadCam utilizza i dati di posizione per aggiungere coordinate GPS o indirizzo alla filigrana video. La posizione viene utilizzata esclusivamente per questa funzionalità.</string>
     <string name="setting_applock_title">Blocco app</string>
-    <string name="setting_applock_desc">Proteggi FadCam con un PIN</string>
+    <string name="setting_applock_desc">Proteggi le schede selezionate con PIN, password o impronta digitale. Le schede protette si bloccano di nuovo quando l’app va in background o viene chiusa e devono essere sbloccate al ritorno.</string>
     <string name="setting_applock_configure">Configura blocco app</string>
     <string name="applock_dialog_title">Blocco app</string>
     <string name="applock_enable">Abilita blocco app</string>
@@ -1433,9 +1433,12 @@
     <string name="applock_pin_created">PIN creato con successo</string>
     <string name="applock_pin_removed">PIN rimosso</string>
     <string name="applock_set_pin_enable">Imposta e abilita</string>
-    <string name="applock_helper_create">Imposta un PIN per proteggere FadCam.</string>
-    <string name="applock_helper_manage_disabled">Abilita il blocco app per proteggere FadCam con un PIN.</string>
-    <string name="applock_helper_enabled">Il blocco app è attualmente attivo.</string>
+    <string name="applock_helper_create">Crea una protezione per le schede scelte con un PIN di 4 cifre, una password o un’impronta digitale. Si bloccheranno automaticamente quando l’app va in background.</string>
+    <string name="applock_helper_manage_disabled">Il PIN di Blocco schede è impostato. Attivalo per richiedere il PIN sulle schede selezionate.</string>
+    <string name="applock_helper_enabled">Il Blocco schede è attivo. Le schede selezionate richiedono il PIN dopo aver lasciato l’app. Registrazioni è protetto per impostazione predefinita.</string>
+    <string name="tab_lock_screen_title">Bloccato</string>
+    <string name="tab_lock_screen_message">Sblocca per continuare</string>
+    <string name="tab_lock_unlock">Sblocca</string>
     <string name="applock_verify_to_enable">Verifica identità per abilitare il blocco app</string>
     <string name="applock_verify_to_disable">Verifica identità per disabilitare il blocco app</string>
     <string name="applock_verify_to_change">Verifica identità per cambiare il PIN</string>

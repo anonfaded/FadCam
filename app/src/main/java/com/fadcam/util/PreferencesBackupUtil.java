@@ -45,6 +45,9 @@ public final class PreferencesBackupUtil {
         set.add("applock_session_unlocked"); // legacy session cache
         set.add("tab_lock_unlocked_home"); // per-tab session cache
         set.add("tab_lock_unlocked_records");
+        set.add("tab_lock_unlocked_remote");
+        set.add("tab_lock_unlocked_faditor");
+        set.add("tab_lock_unlocked_settings");
         set.add("tab_lock_unlocked_lab");
         // Recording session state — not persistent config
         set.add(com.fadcam.Constants.PREF_RECORDING_START_TIME);

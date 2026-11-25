@@ -1438,7 +1438,7 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="allow_location_access">Anna luba</string>
     <string name="location_permission_message">Asukoha luba on vajalik GPS-koordinaatide lisamiseks videotele. Palun anna luba selle funktsiooni kasutamiseks.</string>
     <string name="setting_applock_title">Vahekaardi lukustus</string>
-    <string name="setting_applock_desc">Turva oma videod PIN-lukuga Salvestiste vahekaardi jaoks. \nSinu turvalisuse huvides lukustub Salvestiste vahekaart automaatselt, kui rakendus läheb taustale või suletakse. Pead uuesti avama, kui naased.</string>
+    <string name="setting_applock_desc">Kaitse valitud vahekaarte PIN-koodi, parooli või sõrmejäljega. Kaitstud vahekaardid lukustuvad uuesti, kui rakendus läheb taustale või suletakse, ja tuleb naasmisel uuesti avada.</string>
     <string name="setting_applock_configure">Seadista</string>
     <string name="applock_dialog_title">Vahekaardi lukustuse valikud</string>
     <string name="applock_enable">Luba vahekaardi lukustus</string>
@@ -1449,9 +1449,12 @@ Soovitatav: 192000 bps, 48000 Hz enamikele kasutajatele.</string>
     <string name="applock_pin_created">PIN edukalt loodud</string>
     <string name="applock_pin_removed">PIN edukalt eemaldatud</string>
     <string name="applock_set_pin_enable">Määra PIN ja luba</string>
-    <string name="applock_helper_create">Loo Salvestiste vahekaardi kaitse 4-kohalise PIN-i, parooli või sõrmejäljega. See lukustub automaatselt, kui rakendus läheb taustale.</string>
-    <string name="applock_helper_manage_disabled">Vahekaardi lukustuse PIN on määratud. Lülita sisse, et nõuda PIN-i rakendusse naasmisel.</string>
-    <string name="applock_helper_enabled">Vahekaardi lukustus on aktiivne. Vajad PIN-i Salvestiste vahekaardi avamisel pärast rakendusest lahkumist.</string>
+    <string name="applock_helper_create">Loo valitud vahekaartidele kaitse 4-kohalise PIN-koodi, parooli või sõrmejäljega. Need lukustuvad automaatselt, kui rakendus läheb taustale.</string>
+    <string name="applock_helper_manage_disabled">Vahekaartide luku PIN on seatud. Lülita see sisse, et nõuda valitud vahekaartidel PIN-koodi.</string>
+    <string name="applock_helper_enabled">Vahekaartide lukk on aktiivne. Valitud vahekaardid nõuavad PIN-koodi pärast rakendusest lahkumist. Salvestised on vaikimisi kaitstud.</string>
+    <string name="tab_lock_screen_title">Lukustatud</string>
+    <string name="tab_lock_screen_message">Jätkamiseks ava lukk</string>
+    <string name="tab_lock_unlock">Ava lukk</string>
     <string name="applock_verify_to_enable">Kinnita PIN vahekaardi lukustuse lubamiseks</string>
     <string name="applock_verify_to_disable">Kinnita PIN vahekaardi lukustuse keelamiseks</string>
     <string name="applock_verify_to_change">Kinnita praegune PIN</string>

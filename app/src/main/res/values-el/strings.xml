@@ -1456,7 +1456,7 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
 
     <!-- App Lock Strings -->
     <string name="setting_applock_title">Κλείδωμα Καρτέλας</string>
-    <string name="setting_applock_desc">Ασφαλίστε τα βίντεό σας με PIN για την καρτέλα Εγγραφές.</string>
+    <string name="setting_applock_desc">Προστατέψτε τις επιλεγμένες καρτέλες με PIN, κωδικό πρόσβασης ή δακτυλικό αποτύπωμα. Οι προστατευμένες καρτέλες κλειδώνουν ξανά όταν η εφαρμογή πάει στο παρασκήνιο ή κλείσει και πρέπει να ξεκλειδωθούν ξανά όταν επιστρέψετε.</string>
     <string name="setting_applock_configure">Διαμόρφωση</string>
     <string name="applock_dialog_title">Επιλογές Κλειδώματος Καρτέλας</string>
     <string name="applock_enable">Ενεργοποίηση Κλειδώματος Καρτέλας</string>
@@ -1468,9 +1468,12 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="applock_pin_removed">Το PIN αφαιρέθηκε επιτυχώς</string>
     <!-- Enhanced Tab Lock UX strings -->
     <string name="applock_set_pin_enable">Ορισμός PIN &amp; Ενεργοποίηση</string>
-    <string name="applock_helper_create">Δημιουργήστε προστασία για την καρτέλα Εγγραφές.</string>
-    <string name="applock_helper_manage_disabled">Το PIN έχει οριστεί.</string>
-    <string name="applock_helper_enabled">Το Κλείδωμα Καρτέλας είναι ενεργό.</string>
+    <string name="applock_helper_create">Δημιουργήστε προστασία για τις καρτέλες που επιλέγετε με 4ψήφιο PIN, κωδικό πρόσβασης ή δακτυλικό αποτύπωμα. Θα κλειδώνονται αυτόματα όταν η εφαρμογή πάει στο παρασκήνιο.</string>
+    <string name="applock_helper_manage_disabled">Το PIN Tab Lock έχει οριστεί. Ενεργοποιήστε το για να απαιτείται PIN για τις επιλεγμένες καρτέλες.</string>
+    <string name="applock_helper_enabled">Το Tab Lock είναι ενεργό. Οι επιλεγμένες καρτέλες απαιτούν PIN αφού φύγετε από την εφαρμογή. Το Records είναι προστατευμένο από προεπιλογή.</string>
+    <string name="tab_lock_screen_title">Κλειδωμένο</string>
+    <string name="tab_lock_screen_message">Ξεκλειδώστε για συνέχεια</string>
+    <string name="tab_lock_unlock">Ξεκλείδωμα</string>
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Επαλήθευση PIN για Ενεργοποίηση</string>
     <string name="applock_verify_to_disable">Επαλήθευση PIN για Απενεργοποίηση</string>

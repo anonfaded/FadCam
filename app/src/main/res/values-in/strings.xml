@@ -1524,7 +1524,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <!-- App Lock Strings -->
     <string name="setting_applock_title">Kunci Tab</string>
-    <string name="setting_applock_desc">Amankan video Anda dengan kunci PIN untuk tab Rekaman. \nUntuk keamanan Anda, tab Rekaman akan terkunci secara otomatis saat aplikasi masuk ke latar belakang atau ditutup. Anda harus membuka kunci lagi saat kembali</string>
+    <string name="setting_applock_desc">Lindungi tab yang dipilih dengan PIN, kata sandi, atau sidik jari. Tab yang dilindungi akan terkunci lagi saat aplikasi masuk ke latar belakang atau ditutup, dan harus dibuka kuncinya saat Anda kembali.</string>
     <string name="setting_applock_configure">Konfigurasi</string>
     <string name="applock_dialog_title">Opsi Kunci Tab</string>
     <string name="applock_enable">Aktifkan Kunci Tab</string>
@@ -1536,10 +1536,13 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="applock_pin_removed">PIN berhasil dihapus</string>
     <!-- Enhanced Tab Lock UX strings -->
     <string name="applock_set_pin_enable">Atur PIN &amp; Aktifkan</string>
-    <string name="applock_helper_create">Buat perlindungan untuk tab Rekaman menggunakan PIN 4 digit, kata sandi, atau sidik jari. Akan terkunci otomatis saat aplikasi berpindah ke latar belakang.</string>
-    <string name="applock_helper_manage_disabled">PIN Kunci Tab telah diatur. Aktifkan untuk memerlukan PIN saat kembali ke aplikasi.</string>
-    <string name="applock_helper_enabled">Kunci Tab aktif. Anda akan memerlukan PIN saat membuka tab Rekaman setelah meninggalkan aplikasi.</string>
+    <string name="applock_helper_create">Buat perlindungan untuk tab pilihan Anda dengan PIN 4 digit, kata sandi, atau sidik jari. Tab akan terkunci otomatis saat aplikasi masuk ke latar belakang.</string>
+    <string name="applock_helper_manage_disabled">PIN Kunci Tab sudah diatur. Aktifkan untuk meminta PIN pada tab yang dipilih.</string>
+    <string name="applock_helper_enabled">Kunci Tab aktif. Tab yang dipilih meminta PIN setelah Anda meninggalkan aplikasi. Rekaman dilindungi secara default.</string>
 
+    <string name="tab_lock_screen_title">Terkunci</string>
+    <string name="tab_lock_screen_message">Buka kunci untuk melanjutkan</string>
+    <string name="tab_lock_unlock">Buka kunci</string>
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Verifikasi PIN untuk Mengaktifkan Kunci Tab</string>
     <string name="applock_verify_to_disable">Verifikasi PIN untuk Menonaktifkan Kunci Tab</string>

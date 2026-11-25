@@ -188,7 +188,7 @@
     <string name="app_icon_preview">应用图标预览</string>
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">标签锁</string>
-    <string name="setting_applock_desc">使用PIN码锁定录像标签页，保护您的视频。\n为了您的安全，当应用进入后台或关闭时，录像标签页将自动锁定。您返回时需要再次解锁</string>
+    <string name="setting_applock_desc">使用 PIN 码、密码或指纹保护选定的标签页。受保护的标签页会在应用进入后台或关闭时重新锁定，返回时需要再次解锁。</string>
     <string name="setting_applock_configure">配置</string>
     <string name="applock_dialog_title">标签锁选项</string>
     <string name="applock_enable">启用标签锁</string>
@@ -822,9 +822,12 @@
     <string name="kofi_footer_text">匠心打造于 FadSecLab</string>
     <string name="choose_language">选择语言</string>
     <string name="applock_set_pin_enable">设置PIN码并启用</string>
-    <string name="applock_helper_create">使用4位数字PIN码、密码或指纹为“录制”标签页创建保护。当应用进入后台时，该标签页将自动锁定。</string>
-    <string name="applock_helper_manage_disabled">标签页锁定PIN码已设置。开启切换开关，即可在返回应用时要求输入PIN码。</string>
-    <string name="applock_helper_enabled">标签页锁定已激活。离开应用后，当再次打开“录制”标签页时将需要输入PIN码。</string>
+    <string name="applock_helper_create">使用 4 位 PIN 码、密码或指纹为您选择的标签页创建保护。应用进入后台时，它们会自动锁定。</string>
+    <string name="applock_helper_manage_disabled">标签页锁定 PIN 码已设置。开启后即可要求选定标签页输入 PIN 码。</string>
+    <string name="applock_helper_enabled">标签页锁定已启用。离开应用后，选定标签页需要输入 PIN 码。默认保护“录制”标签页。</string>
+    <string name="tab_lock_screen_title">已锁定</string>
+    <string name="tab_lock_screen_message">解锁以继续</string>
+    <string name="tab_lock_unlock">解锁</string>
     <string name="edit_with_faditorx">使用 Faditor X 编辑</string>
     <string name="remote_coming_soon_badge">即将推出</string>
     <string name="changelog_label">更新日志</string>

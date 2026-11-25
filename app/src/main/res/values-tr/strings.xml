@@ -321,7 +321,7 @@
     <string name="app_icon_description">Uygulamanız için bir simge ve isim seçin. Bu, ana ekranınızda nasıl görüneceğini değiştirecektir.</string>
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">Sekme Kilidi</string>
-    <string name="setting_applock_desc">Kayıtlar sekmesini PIN kilidi ile koruyun. \nGüvenliğiniz için, uygulama arka plana geçtiğinde veya kapatıldığında Kayıtlar sekmesi otomatik olarak kilitlenecektir. Geri döndüğünüzde tekrar kilit açmanız gerekecek</string>
+    <string name="setting_applock_desc">Seçili sekmeleri PIN, parola veya parmak iziyle koruyun. Korumalı sekmeler uygulama arka plana geçtiğinde veya kapatıldığında yeniden kilitlenir ve geri döndüğünüzde tekrar açılmalıdır.</string>
     <string name="setting_applock_configure">Yapılandır</string>
     <string name="applock_dialog_title">Sekme Kilidi Seçenekleri</string>
     <string name="applock_enable">Sekme Kilidini Etkinleştir</string>
@@ -1947,9 +1947,12 @@
 <string name="kofi_footer_text">Made with    at FadSec Lab in   </string>
 <string name="choose_language">Dil Seç</string>
 <string name="applock_set_pin_enable">PIN Belirle &amp; Etkinleştir</string>
-<string name="applock_helper_create">Kayıtlar sekmesi için 4 haneli PIN, şifre veya parmak izi kullanarak koruma oluşturun. Uygulama arka plana geçtiğinde otomatik kilitlenir.</string>
-<string name="applock_helper_manage_disabled">Sekme Kilidi PIN\'i ayarlandı. Uygulamaya dönerken PIN\'i gerektirmek için açın.</string>
-<string name="applock_helper_enabled">Sekme Kilidi aktif. Uygulamadan ayrıldıktan sonra Kayıtlar sekmesini açarken PIN\'e ihtiyacınız olacak.</string>
+<string name="applock_helper_create">Seçtiğiniz sekmeler için 4 haneli PIN, parola veya parmak iziyle koruma oluşturun. Uygulama arka plana geçtiğinde otomatik olarak kilitlenirler.</string>
+<string name="applock_helper_manage_disabled">Sekme Kilidi PIN’i ayarlandı. Seçili sekmeler için PIN istemek üzere açın.</string>
+<string name="applock_helper_enabled">Sekme Kilidi etkin. Seçili sekmeler uygulamadan ayrıldıktan sonra PIN ister. Kayıtlar varsayılan olarak korunur.</string>
+    <string name="tab_lock_screen_title">Kilitli</string>
+    <string name="tab_lock_screen_message">Devam etmek için kilidi açın</string>
+    <string name="tab_lock_unlock">Kilidi aç</string>
 <string name="edit_with_faditorx">Faditor Mini ile Düzenle</string>
 <string name="remote_coming_soon_badge">Çok Yakında</string>
 <string name="update_visit_github">GitHub\'ı Ziyaret Et</string>

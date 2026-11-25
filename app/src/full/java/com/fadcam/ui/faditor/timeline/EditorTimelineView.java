@@ -237,7 +237,11 @@ public class EditorTimelineView extends View {
     private int reorderDragIdx = -1;           // index within reorderOrder being dragged
     private float reorderDragCenterX;          // drag center X in view coords
     private float reorderDragCenterY;          // drag center Y in view coords
-    private float reorderBlockSize;            // computed block side length
+    private float reorderBlockWidth;           // computed tile width
+    private float reorderBlockHeight;          // computed tile height
+    private int reorderPendingIdx = -1;        // tile awaiting long-press
+    private float reorderDownX, reorderDownY;  // finger down position in reorder mode
+    private static final long REORDER_LONG_PRESS_MS = 350L;
     private float reorderRowStartX;            // X of first block
     private float reorderRowCenterY;           // Y center of block row
     private float reorderGapPx;               // gap between blocks
@@ -289,6 +293,20 @@ public class EditorTimelineView extends View {
                 getParent().requestDisallowInterceptTouchEvent(true);
                 invalidate();
             }
+        }
+    };
+    private final Runnable reorderLongPressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (reorderPendingIdx < 0 || reorderPendingIdx >= reorderOrder.size()) return;
+            reorderDragIdx = reorderPendingIdx;
+            reorderDragCenterX = reorderDownX;
+            reorderDragCenterY = reorderDownY;
+            reorderPendingIdx = -1;
+            if (com.fadcam.Utils.hapticsAllowedForUi(EditorTimelineView.this.getContext())) {
+                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+            }
+            invalidate();
         }
     };
     private final Runnable edgeScrollRunnable = new Runnable() {
@@ -440,6 +458,18 @@ public class EditorTimelineView extends View {
         labelPaint.setColor(COLOR_LABEL);
         labelPaint.setTextSize(LABEL_SIZE_DP * density);
         labelPaint.setTextAlign(Paint.Align.CENTER);
+
+        speedLabelPaint.setColor(FaditorPalette.ACCENT);
+        speedLabelPaint.setTextSize(LABEL_SIZE_DP * density);
+        speedLabelPaint.setTextAlign(Paint.Align.CENTER);
+        speedLabelPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+
+        reorderLabelPaint.setColor(0xEEFFFFFF);
+        reorderLabelPaint.setTextSize(10f * density);
+        reorderLabelPaint.setTextAlign(Paint.Align.CENTER);
+        reorderLabelPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        reorderThumbScrimPaint.setColor(0x66000000);
+        reorderThumbScrimPaint.setStyle(Paint.Style.FILL);
         dragGhostPaint.setColor(COLOR_DRAG_GHOST);
         dragGhostPaint.setStyle(Paint.Style.FILL);
         trimOverlayPaint.setColor(0x80000000);
@@ -1141,27 +1171,38 @@ public class EditorTimelineView extends View {
         }
 
         if (r.width() > labelPaint.getTextSize() * 3f) {
-            // Show segment duration at the bottom-right — sticky to visible portion
+            // Sticky duration label: stays against the visible edge of the clip while the
+            // strip scrolls under the fixed playhead, so short/long clips remain readable.
             String label = sd.durationLabel;
             float ty = r.bottom - 4f * density;
-
-            // Compute visible portion of this segment for sticky positioning
-            float viewLeft = scrollOffsetPx;
-            float viewRight = scrollOffsetPx + getWidth();
-            float visRight = Math.min(r.right, viewRight);
-
-            float labelWidth = labelPaint.measureText(label);
             float padding = 6f * density;
-            // Position at right edge of visible portion
-            float cx = visRight - padding - labelWidth / 2f;
-            // Clamp within segment bounds
-            cx = Math.max(r.left + labelWidth / 2f + padding, cx);
-            cx = Math.min(r.right - labelWidth / 2f - padding, cx);
 
-            // Shadow for better visibility
-            labelPaint.setShadowLayer(2f * density, 0, 0, 0xFF000000);
-            canvas.drawText(label, cx, ty, labelPaint);
-            labelPaint.clearShadowLayer();
+            float visLeft = Math.max(r.left, scrollOffsetPx);
+            float visRight = Math.min(r.right, scrollOffsetPx + getWidth());
+            if (visRight - visLeft > labelPaint.getTextSize() * 2f) {
+                float labelWidth = labelPaint.measureText(label);
+                float cx = visRight - padding - labelWidth / 2f;
+                cx = Math.max(visLeft + labelWidth / 2f + padding, cx);
+
+                labelPaint.setShadowLayer(2f * density, 0, 0, 0xFF000000);
+                canvas.drawText(label, cx, ty, labelPaint);
+                labelPaint.clearShadowLayer();
+
+                // A non-normal speed is shown directly above the duration so a modified
+                // clip is recognisable without opening the speed tool.
+                if (sd.speedLabel != null) {
+                    String speedText = sd.speedLabel;
+                    float speedWidth = speedLabelPaint.measureText(speedText);
+                    float speedCx = Math.max(visLeft + speedWidth / 2f + padding, cx);
+                    speedCx = Math.min(visRight - speedWidth / 2f - padding, speedCx);
+                    float speedY = ty - labelPaint.getTextSize() - 2f * density;
+                    if (speedY > r.top + speedLabelPaint.getTextSize()) {
+                        speedLabelPaint.setShadowLayer(2f * density, 0, 0, 0xFF000000);
+                        canvas.drawText(speedText, speedCx, speedY, speedLabelPaint);
+                        speedLabelPaint.clearShadowLayer();
+                    }
+                }
+            }
         }
     }
     
@@ -1590,51 +1631,50 @@ public class EditorTimelineView extends View {
         // Dark overlay background
         canvas.drawRect(0, 0, w, h, reorderBgPaint2);
 
-        // ── Top bar ──
+        // Top bar
         canvas.drawRect(0, 0, w, reorderBarHeightPx, reorderBarPaint);
 
-        // Cancel "✕" on left
         reorderBtnTextPaint.setTextAlign(Paint.Align.LEFT);
         float btnY = reorderBarHeightPx / 2f + reorderBtnTextPaint.getTextSize() / 3f;
         canvas.drawText("✕  Cancel", reorderBtnPaddingPx, btnY, reorderBtnTextPaint);
         float cancelTextW = reorderBtnTextPaint.measureText("✕  Cancel");
-        reorderCancelRect.set(0, 0, reorderBtnPaddingPx + cancelTextW + reorderBtnPaddingPx, reorderBarHeightPx);
+        reorderCancelRect.set(0, 0,
+                reorderBtnPaddingPx + cancelTextW + reorderBtnPaddingPx, reorderBarHeightPx);
 
-        // "Done" on right
         reorderBtnTextPaint.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText("Done", w - reorderBtnPaddingPx, btnY, reorderBtnTextPaint);
         float doneTextW = reorderBtnTextPaint.measureText("Done");
-        reorderDoneRect.set(w - reorderBtnPaddingPx - doneTextW - reorderBtnPaddingPx, 0, w, reorderBarHeightPx);
+        reorderDoneRect.set(w - reorderBtnPaddingPx - doneTextW - reorderBtnPaddingPx,
+                0, w, reorderBarHeightPx);
 
-        // Title "Reorder" in center
         reorderBtnTextPaint.setTextAlign(Paint.Align.CENTER);
         reorderBtnTextPaint.setColor(0xAAFFFFFF);
         canvas.drawText("Reorder", w / 2f, btnY, reorderBtnTextPaint);
-        reorderBtnTextPaint.setColor(COLOR_HANDLE);  // restore
+        reorderBtnTextPaint.setColor(COLOR_HANDLE);
 
-        // ── Compute block layout ──
-        float availW = w - reorderBtnPaddingPx * 2;
-        float availH = h - reorderBarHeightPx - 16f * density;  // vertical space for blocks
-        reorderGapPx = segmentGapPx * 2;
-        reorderBlockSize = Math.min(availH * 0.8f,
-                (availW - (n - 1) * reorderGapPx) / n);
-        reorderBlockSize = Math.max(reorderBlockSize, 36f * density);  // minimum size
-        float totalRowW = n * reorderBlockSize + (n - 1) * reorderGapPx;
+        // Tiles fill the timeline height, matching the strip below.
+        float pad = 8f * density;
+        float availW = w - reorderBtnPaddingPx * 2f;
+        float availH = h - reorderBarHeightPx - pad * 2f;
+        reorderGapPx = Math.min(segmentGapPx * 2f,
+                Math.max(2f * density, availW * 0.12f / Math.max(1, n)));
+        float tileWidth = (availW - (n - 1) * reorderGapPx) / n;
+        reorderBlockWidth = Math.max(12f * density,
+                Math.min(tileWidth, availH * 0.78f));
+        reorderBlockHeight = Math.max(36f * density, availH);
+        float totalRowW = n * reorderBlockWidth + (n - 1) * reorderGapPx;
         reorderRowStartX = (w - totalRowW) / 2f;
-        reorderRowCenterY = reorderBarHeightPx + (h - reorderBarHeightPx) / 2f;
+        reorderRowCenterY = reorderBarHeightPx + pad + reorderBlockHeight / 2f;
 
-        // ── Compute drop position if dragging ──
         int dropTarget = -1;
         if (reorderDragIdx >= 0) {
             dropTarget = computeReorderDropTarget(reorderDragCenterX);
         }
 
-        // ── Draw blocks ──
         float drawIdx = 0;
         for (int i = 0; i < n; i++) {
-            if (i == reorderDragIdx) continue; // Skip the dragged block (drawn later)
+            if (i == reorderDragIdx) continue;
 
-            // If a block is being dragged, shift blocks to show drop gap
             float visualPos = drawIdx;
             if (reorderDragIdx >= 0 && dropTarget >= 0) {
                 int adjustedDrop = dropTarget;
@@ -1642,52 +1682,91 @@ public class EditorTimelineView extends View {
                 if (drawIdx >= adjustedDrop) visualPos = drawIdx + 1;
             }
 
-            float bx = reorderRowStartX + visualPos * (reorderBlockSize + reorderGapPx);
-            float by = reorderRowCenterY - reorderBlockSize / 2f;
-            RectF blockRect = new RectF(bx, by, bx + reorderBlockSize, by + reorderBlockSize);
-
-            canvas.drawRoundRect(blockRect, reorderBlockCornerPx, reorderBlockCornerPx, reorderBlockPaint2);
-
-            // Segment number
-            int segNum = reorderOrder.get(i) + 1;
-            canvas.drawText(String.valueOf(segNum), blockRect.centerX(),
-                    blockRect.centerY() + reorderNumPaint.getTextSize() / 3f, reorderNumPaint);
-
+            float bx = reorderRowStartX + visualPos * (reorderBlockWidth + reorderGapPx);
+            float by = reorderRowCenterY - reorderBlockHeight / 2f;
+            RectF blockRect = new RectF(bx, by,
+                    bx + reorderBlockWidth, by + reorderBlockHeight);
+            drawReorderTile(canvas, blockRect, reorderOrder.get(i));
             drawIdx++;
         }
 
-        // ── Draw drop indicator line ──
         if (reorderDragIdx >= 0 && dropTarget >= 0) {
             int adjustedDrop = dropTarget;
             if (reorderDragIdx < dropTarget) adjustedDrop--;
-            float indicatorX = reorderRowStartX + adjustedDrop * (reorderBlockSize + reorderGapPx) - reorderGapPx / 2f;
-            float indicatorTop = reorderRowCenterY - reorderBlockSize / 2f - 4f * density;
-            float indicatorBot = reorderRowCenterY + reorderBlockSize / 2f + 4f * density;
-            canvas.drawLine(indicatorX, indicatorTop, indicatorX, indicatorBot, reorderDropIndicatorPaint);
+            float indicatorX = reorderRowStartX
+                    + adjustedDrop * (reorderBlockWidth + reorderGapPx)
+                    - reorderGapPx / 2f;
+            float indicatorTop = reorderRowCenterY - reorderBlockHeight / 2f - 4f * density;
+            float indicatorBot = reorderRowCenterY + reorderBlockHeight / 2f + 4f * density;
+            canvas.drawLine(indicatorX, indicatorTop, indicatorX, indicatorBot,
+                    reorderDropIndicatorPaint);
         }
 
-        // ── Draw dragged block last (on top) ──
         if (reorderDragIdx >= 0 && reorderDragIdx < n) {
-            float bx = reorderDragCenterX - reorderBlockSize / 2f;
-            float by = reorderDragCenterY - reorderBlockSize / 2f;
-            RectF dragRect = new RectF(bx, by, bx + reorderBlockSize, by + reorderBlockSize);
+            float bx = reorderDragCenterX - reorderBlockWidth / 2f;
+            float by = reorderDragCenterY - reorderBlockHeight / 2f;
+            RectF dragRect = new RectF(bx, by,
+                    bx + reorderBlockWidth, by + reorderBlockHeight);
+            drawReorderTile(canvas, dragRect, reorderOrder.get(reorderDragIdx));
+            canvas.drawRoundRect(dragRect, reorderBlockCornerPx, reorderBlockCornerPx,
+                    reorderBlockSelectedPaint);
+        }
+    }
 
-            canvas.drawRoundRect(dragRect, reorderBlockCornerPx, reorderBlockCornerPx, reorderBlockDragPaint);
-            canvas.drawRoundRect(dragRect, reorderBlockCornerPx, reorderBlockCornerPx, reorderBlockSelectedPaint);
+    /** Draws one reorder tile using the clip's cached thumbnail plus duration/speed. */
+    private void drawReorderTile(@NonNull Canvas canvas, @NonNull RectF rect,
+                                 int segmentIndex) {
+        canvas.save();
+        clipPath.reset();
+        clipPath.addRoundRect(rect, reorderBlockCornerPx, reorderBlockCornerPx,
+                Path.Direction.CW);
+        canvas.clipPath(clipPath);
 
-            int segNum = reorderOrder.get(reorderDragIdx) + 1;
-            canvas.drawText(String.valueOf(segNum), dragRect.centerX(),
-                    dragRect.centerY() + reorderNumPaint.getTextSize() / 3f, reorderNumPaint);
+        SegmentData sd = segments.get(segmentIndex);
+        List<Bitmap> thumbs = thumbnailsCache.get(sd.cacheKey);
+        if (thumbs != null && !thumbs.isEmpty()) {
+            Bitmap thumb = thumbs.get(0);
+            if (thumb != null && !thumb.isRecycled()) {
+                float scale = Math.max(rect.width() / thumb.getWidth(),
+                        rect.height() / thumb.getHeight());
+                float dw = thumb.getWidth() * scale;
+                float dh = thumb.getHeight() * scale;
+                drawTmpDest.set(rect.centerX() - dw / 2f, rect.centerY() - dh / 2f,
+                        rect.centerX() + dw / 2f, rect.centerY() + dh / 2f);
+                canvas.drawBitmap(thumb, null, drawTmpDest, null);
+            }
+        } else {
+            canvas.drawRect(rect, reorderBlockPaint2);
+        }
+
+        // Darken the bottom so duration text stays readable over any thumbnail.
+        float labelBand = Math.min(rect.height() * 0.34f, 22f * density);
+        canvas.drawRect(rect.left, rect.bottom - labelBand, rect.right, rect.bottom,
+                reorderThumbScrimPaint);
+        canvas.restore();
+
+        if (rect.width() < 24f * density) return;
+
+        float ty = rect.bottom - 4f * density;
+        canvas.drawText(sd.durationLabel, rect.centerX(), ty, reorderLabelPaint);
+        if (sd.speedLabel != null) {
+            float speedY = ty - reorderLabelPaint.getTextSize() - 1f * density;
+            if (speedY > rect.top + speedLabelPaint.getTextSize()) {
+                speedLabelPaint.setTextSize(9f * density);
+                canvas.drawText(sd.speedLabel, rect.centerX(), speedY, speedLabelPaint);
+                speedLabelPaint.setTextSize(LABEL_SIZE_DP * density);
+            }
         }
     }
 
     private int computeReorderDropTarget(float fingerX) {
         int n = reorderOrder.size();
         for (int i = 0; i < n; i++) {
-            float blockCenterX = reorderRowStartX + i * (reorderBlockSize + reorderGapPx) + reorderBlockSize / 2f;
+            float blockCenterX = reorderRowStartX
+                    + i * (reorderBlockWidth + reorderGapPx) + reorderBlockWidth / 2f;
             if (fingerX < blockCenterX) return i;
         }
-        return n; // drop at end
+        return n;
     }
 
     private void enterReorderMode() {
@@ -1700,6 +1779,8 @@ public class EditorTimelineView extends View {
     }
 
     private void exitReorderMode(boolean commit) {
+        longPressHandler.removeCallbacks(reorderLongPressRunnable);
+        reorderPendingIdx = -1;
         isReorderMode = false;
         if (commit && listener != null) {
             // Apply the permutation using a sequence of moveClip operations
@@ -1729,62 +1810,73 @@ public class EditorTimelineView extends View {
         float x = e.getX(), y = e.getY();
         int n = reorderOrder.size();
 
-        // Prevent parent (HorizontalScrollView) from intercepting
+        // Prevent the parent HorizontalScrollView from stealing the gesture.
         getParent().requestDisallowInterceptTouchEvent(true);
 
         switch (e.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                // Check cancel button
                 if (reorderCancelRect.contains(x, y)) {
                     exitReorderMode(false);
                     return true;
                 }
-                // Check done button
                 if (reorderDoneRect.contains(x, y)) {
                     exitReorderMode(true);
                     return true;
                 }
-                // Check if touching a block
+                reorderDownX = x;
+                reorderDownY = y;
+                reorderPendingIdx = -1;
+                reorderDragIdx = -1;
                 for (int i = 0; i < n; i++) {
-                    float bx = reorderRowStartX + i * (reorderBlockSize + reorderGapPx);
-                    float by = reorderRowCenterY - reorderBlockSize / 2f;
-                    if (x >= bx && x <= bx + reorderBlockSize
-                            && y >= by && y <= by + reorderBlockSize) {
-                        reorderDragIdx = i;
-                        reorderDragCenterX = bx + reorderBlockSize / 2f;
-                        reorderDragCenterY = by + reorderBlockSize / 2f;
-                        if (com.fadcam.Utils.hapticsAllowedForUi(EditorTimelineView.this.getContext())) {
-                    performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-                }
-                        invalidate();
-                        return true;
+                    float bx = reorderRowStartX + i * (reorderBlockWidth + reorderGapPx);
+                    float by = reorderRowCenterY - reorderBlockHeight / 2f;
+                    if (x >= bx && x <= bx + reorderBlockWidth
+                            && y >= by && y <= by + reorderBlockHeight) {
+                        reorderPendingIdx = i;
+                        break;
                     }
                 }
+                // A tile only becomes draggable after a long press, so a plain tap or a
+                // horizontal swipe cannot reorder clips by accident.
+                if (reorderPendingIdx >= 0) {
+                    longPressHandler.removeCallbacks(reorderLongPressRunnable);
+                    longPressHandler.postDelayed(reorderLongPressRunnable,
+                            REORDER_LONG_PRESS_MS);
+                }
+                invalidate();
                 return true;
 
             case MotionEvent.ACTION_MOVE:
                 if (reorderDragIdx >= 0) {
                     reorderDragCenterX = x;
-                    reorderDragCenterY = y;
+                    reorderDragCenterY = reorderRowCenterY;
                     invalidate();
+                } else if (reorderPendingIdx >= 0) {
+                    float travel = Math.abs(x - reorderDownX);
+                    if (travel > touchSlopPx) {
+                        // Scrolling intent, not a reorder.
+                        longPressHandler.removeCallbacks(reorderLongPressRunnable);
+                        reorderPendingIdx = -1;
+                        invalidate();
+                    }
                 }
                 return true;
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                longPressHandler.removeCallbacks(reorderLongPressRunnable);
                 if (reorderDragIdx >= 0) {
                     int dropTarget = computeReorderDropTarget(x);
-                    // Clamp
                     dropTarget = Math.max(0, Math.min(dropTarget, n));
-                    // Perform the visual reorder
                     int movedItem = reorderOrder.remove(reorderDragIdx);
                     int insertAt = dropTarget;
                     if (reorderDragIdx < dropTarget) insertAt--;
                     insertAt = Math.max(0, Math.min(insertAt, reorderOrder.size()));
                     reorderOrder.add(insertAt, movedItem);
-                    reorderDragIdx = -1;
-                    invalidate();
                 }
+                reorderDragIdx = -1;
+                reorderPendingIdx = -1;
+                invalidate();
                 return true;
         }
         return true;
@@ -2510,6 +2602,7 @@ public class EditorTimelineView extends View {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        longPressHandler.removeCallbacks(reorderLongPressRunnable);
         // Shut down thumbnail loader
         thumbnailExecutor.shutdownNow();
         thumbnailsLoading.clear();

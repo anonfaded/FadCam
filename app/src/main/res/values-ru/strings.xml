@@ -958,7 +958,7 @@
 
     <!-- App Lock Strings -->
     <string name="setting_applock_title">Блокировка вкладки</string>
-    <string name="setting_applock_desc">Защитите свои видео PIN-блокировкой для вкладки Записи. \nДля вашей безопасности вкладка Записи будет автоматически блокироваться, когда приложение уходит в фон или закрывается. Вам нужно будет разблокировать снова при возвращении</string>
+    <string name="setting_applock_desc">Защитите выбранные вкладки с помощью PIN-кода, пароля или отпечатка пальца. Защищённые вкладки снова блокируются, когда приложение уходит в фон или закрывается, и требуют разблокировки при возвращении.</string>
     <string name="setting_applock_configure">Настроить</string>
     <string name="applock_dialog_title">Параметры блокировки вкладки</string>
     <string name="applock_enable">Включить блокировку вкладки</string>
@@ -970,10 +970,13 @@
     <string name="applock_pin_removed">PIN успешно удалён</string>
     <!-- Enhanced Tab Lock UX strings -->
     <string name="applock_set_pin_enable">Установить PIN и включить</string>
-    <string name="applock_helper_create">Создайте защиту для вкладки Записи с помощью 4-значного PIN, пароля или отпечатка пальца. Она будет автоматически блокироваться при уходе приложения в фон.</string>
-    <string name="applock_helper_manage_disabled">PIN блокировки вкладки установлен. Включите его, чтобы требовать PIN при возвращении в приложение.</string>
-    <string name="applock_helper_enabled">Блокировка вкладки активна. Вам понадобится PIN при открытии вкладки Записи после ухода из приложения.</string>
+    <string name="applock_helper_create">Создайте защиту для выбранных вкладок с помощью 4-значного PIN-кода, пароля или отпечатка пальца. Они будут автоматически блокироваться, когда приложение уходит в фон.</string>
+    <string name="applock_helper_manage_disabled">PIN-код блокировки вкладок установлен. Включите его, чтобы требовать PIN для выбранных вкладок.</string>
+    <string name="applock_helper_enabled">Блокировка вкладок включена. Выбранные вкладки требуют PIN-код после выхода из приложения. Записи защищены по умолчанию.</string>
 
+    <string name="tab_lock_screen_title">Заблокировано</string>
+    <string name="tab_lock_screen_message">Разблокируйте, чтобы продолжить</string>
+    <string name="tab_lock_unlock">Разблокировать</string>
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Подтвердить PIN для включения блокировки вкладки</string>
     <string name="applock_verify_to_disable">Подтвердить PIN для отключения блокировки вкладки</string>

@@ -186,7 +186,7 @@
     <string name="app_icon_description">اختر أيقونة واسم لتطبيقك. هذا سيغير كيف يظهر في الشاشة الرئيسية.</string>
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">قفل التبويب</string>
-    <string name="setting_applock_desc">قم بتأمين مقاطع الفيديو الخاصة بك بقفل رمز PIN لتبويب التسجيلات. \nلحماية خصوصيتك، سيتم قفل تبويب التسجيلات تلقائيًا عندما يتم تشغيل التطبيق في الخلفية أو إغلاقه. ستحتاج إلى فتح القفل مرة أخرى عند العودة</string>
+    <string name="setting_applock_desc">احمِ التبويبات المحددة باستخدام رمز PIN أو كلمة مرور أو بصمة. تُقفل التبويبات المحمية تلقائيًا عند انتقال التطبيق إلى الخلفية أو إغلاقه، وتحتاج إلى فتح القفل مرة أخرى عند العودة.</string>
     <string name="setting_applock_configure">تكوين</string>
     <string name="applock_dialog_title">خيارات قفل التبويب</string>
     <string name="applock_enable">تفعيل قفل التبويب</string>
@@ -2507,12 +2507,15 @@
 
     <string name="applock_set_pin_enable">تعيين رمز PIN &amp; تمكين</string>
 
-    <string name="applock_helper_create">أنشئ حماية لتبويب التسجيلات باستخدام رمز PIN من 4 أرقام أو كلمة مرور أو بصمة. سيتم القفل تلقائيًا عند انتقال التطبيق للخلفية.</string>
+    <string name="applock_helper_create">أنشئ حماية للتبويبات التي تختارها باستخدام رمز PIN من 4 أرقام أو كلمة مرور أو بصمة. ستُقفل تلقائيًا عند انتقال التطبيق إلى الخلفية.</string>
 
-    <string name="applock_helper_manage_disabled">رمز PIN لقفل التبويب مضبوط. بدّله لتطلب رمز PIN عند العودة للتطبيق.</string>
+    <string name="applock_helper_manage_disabled">رمز PIN لقفل التبويبات مضبوط. شغّله لتطلب رمز PIN للتبويبات المحددة.</string>
 
-    <string name="applock_helper_enabled">قفل التبويب نشط. ستحتاج رمز PIN عند فتح تبويب التسجيلات بعد مغادرة التطبيق.</string>
+    <string name="applock_helper_enabled">قفل التبويبات نشط. تتطلب التبويبات المحددة رمز PIN بعد مغادرة التطبيق. تبويب التسجيلات محمي افتراضيًا.</string>
 
+    <string name="tab_lock_screen_title">مقفل</string>
+    <string name="tab_lock_screen_message">افتح القفل للمتابعة</string>
+    <string name="tab_lock_unlock">فتح القفل</string>
     <string name="version_format">v%s</string>
 
     <string name="edit_with_faditorx">تحرير بـ Faditor Mini</string>

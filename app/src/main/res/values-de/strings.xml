@@ -483,7 +483,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
 
     <!-- App Lock Strings -->
     <string name="setting_applock_title">Tab-Sperre</string>
-    <string name="setting_applock_desc">Sichere deine Videos mit einer PIN-Sperre für den Aufnahmen-Tab. \nZu deiner Sicherheit wird der Aufnahmen-Tab automatisch gesperrt, wenn die App in den Hintergrund wechselt oder geschlossen wird. Du musst sie bei deiner Rückkehr erneut entsperren.</string>
+    <string name="setting_applock_desc">Schütze ausgewählte Tabs mit PIN, Passwort oder Fingerabdruck. Geschützte Tabs werden automatisch gesperrt, wenn die App in den Hintergrund wechselt oder geschlossen wird, und müssen bei der Rückkehr erneut entsperrt werden.</string>
     <string name="setting_applock_configure">Konfigurieren</string>
     <string name="applock_dialog_title">Tab-Sperroptionen</string>
     <string name="applock_enable">Tab-Sperre aktivieren</string>
@@ -1371,9 +1371,12 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="timer_custom_description">Gib die Anzahl der Minuten ein. Beispiele: 5 = 5 Minuten (300 Sekunden). Der Timer stoppt die Wiedergabe nach dieser Anzahl Minuten.</string>
     <string name="timer_custom_placeholder">z.B. 5 (Minuten)</string>
     <string name="about_version_update_licenses">Version, Update, Lizenzen</string>
-    <string name="applock_helper_create">Erstelle einen Schutz für den Aufnahmen-Tab mit einer 4-stelligen PIN, einem Passwort oder Fingerabdruck. Er wird automatisch gesperrt, wenn die App in den Hintergrund geht.</string>
-    <string name="applock_helper_enabled">Tab-Sperre ist aktiv. Du benötigst die PIN beim Öffnen des Aufnahmen-Tabs nach Verlassen der App.</string>
-    <string name="applock_helper_manage_disabled">Tab-Sperre-PIN ist festgelegt. Schalte sie ein, um die PIN bei der Rückkehr zur App zu benötigen.</string>
+    <string name="applock_helper_create">Erstelle einen Schutz für die gewählten Tabs mit einer 4-stelligen PIN, einem Passwort oder Fingerabdruck. Sie werden automatisch gesperrt, wenn die App in den Hintergrund geht.</string>
+    <string name="applock_helper_enabled">Tab-Sperre ist aktiv. Ausgewählte Tabs verlangen die PIN, nachdem du die App verlassen hast. Aufnahmen ist standardmäßig geschützt.</string>
+    <string name="tab_lock_screen_title">Gesperrt</string>
+    <string name="tab_lock_screen_message">Zum Fortfahren entsperren</string>
+    <string name="tab_lock_unlock">Entsperren</string>
+    <string name="applock_helper_manage_disabled">Tab-Sperre-PIN ist festgelegt. Schalte sie ein, um für ausgewählte Tabs die PIN zu verlangen.</string>
     <string name="applock_set_pin_enable">PIN festlegen &amp; aktivieren</string>
     <string name="audio_bitrate_recommended_line">Empfohlen: 192000 bps</string>
     <string name="audio_device_type_ble_headset">BLE-Headset</string>

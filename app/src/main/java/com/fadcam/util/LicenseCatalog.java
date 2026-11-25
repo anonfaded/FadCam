@@ -124,6 +124,32 @@ public final class LicenseCatalog {
             return new LinkedHashMap<>();
         }
 
+        // The AppLock library is compiled from app/libs/AppLockLibrary instead of
+        // being resolved as a Gradle dependency, so the generated report cannot see
+        // it. Credit its Apache-2.0 license and copyright explicitly. Kept out of
+        // the empty-report path so a missing asset still reads as a packaging bug.
+        if (!byLicense.isEmpty()) {
+            boolean hasAppLock = false;
+            for (List<String[]> rows : byLicense.values()) {
+                for (String[] row : rows) {
+                    if (row.length > 1 && row[1] != null
+                            && row[1].toLowerCase(Locale.US).contains("applock")) {
+                        hasAppLock = true;
+                        break;
+                    }
+                }
+                if (hasAppLock) break;
+            }
+            if (!hasAppLock) {
+                byLicense.computeIfAbsent("Apache License 2.0", k -> new ArrayList<>())
+                        .add(new String[]{
+                                "AppLock (Guardanis)",
+                                "com.guardanis:applock:3.0.2 · Copyright 2016 Matthew Silber",
+                                "http://www.apache.org/licenses/LICENSE-2.0"
+                        });
+            }
+        }
+
         Map<String, List<String[]>> ordered = new LinkedHashMap<>();
         for (String license : ORDER) {
             List<String[]> items = byLicense.remove(license);

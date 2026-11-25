@@ -1480,11 +1480,10 @@ public class MainActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                // A locked current tab owns the whole screen. Back cannot navigate
-                // away (the dock is covered); it only sends the locked app to the
-                // background, and returning re-prompts.
+                // A locked current tab owns the whole screen. Back returns Home,
+                // or closes the app when Home itself is the locked tab.
                 if (tabLockOverlay != null && tabLockOverlay.getVisibility() == View.VISIBLE) {
-                    moveTaskToBack(true);
+                    handleTabLockScreenBack();
                     return;
                 }
 
@@ -3161,6 +3160,10 @@ public class MainActivity extends AppCompatActivity {
         if (unlockButton != null) {
             unlockButton.setOnClickListener(v -> requestCurrentTabUnlock());
         }
+        View closeButton = findViewById(R.id.tab_lock_close_button);
+        if (closeButton != null) {
+            closeButton.setOnClickListener(v -> handleTabLockScreenBack());
+        }
     }
 
     /**
@@ -3200,6 +3203,33 @@ public class MainActivity extends AppCompatActivity {
     /** True while the opaque app-wide Tab Lock screen is covering the content. */
     public boolean isTabLockScreenVisible() {
         return tabLockOverlay != null && tabLockOverlay.getVisibility() == View.VISIBLE;
+    }
+
+    /**
+     * Back / X on the lock screen. Home is the root screen, so leaving it closes
+     * the app. From Records or Lab, the app returns Home without unlocking the
+     * tab that was left; if Home is protected too, its own gate takes over.
+     */
+    private void handleTabLockScreenBack() {
+        if (currentFragmentPosition < 0
+                || currentFragmentPosition == TabLock.TAB_HOME) {
+            FLog.d("TabLock", "Lock screen close on Home: finishing app");
+            finishAndRemoveTask();
+            return;
+        }
+
+        FLog.d("TabLock", "Lock screen close: leaving tab " + currentFragmentPosition);
+        // Switch behind the lock screen first so the protected tab never flashes.
+        switchFragmentUnlocked(TabLock.TAB_HOME, true);
+        if (TabLock.isLocked(this, TabLock.TAB_HOME)) {
+            showTabLockScreen();
+            requestTabUnlock(
+                    TabLock.TAB_HOME,
+                    () -> hideTabLockScreen(),
+                    null);
+        } else {
+            hideTabLockScreen();
+        }
     }
 
     /**
@@ -3252,6 +3282,12 @@ public class MainActivity extends AppCompatActivity {
         tabLockOverlay.setVisibility(View.VISIBLE);
         tabLockOverlay.setAlpha(1f);
         tabLockOverlay.bringToFront();
+        // The shell is already immersive. Re-apply it so the lock screen is always
+        // edge to edge, with both bars hidden and revealed only by a swipe, instead
+        // of reserving permanent black system-bar strips.
+        setStatusBarIconsLight(false);
+        setNavigationBarIconsLight(false);
+        com.fadcam.ui.utils.ImmersiveMode.apply(this);
         // Nothing behind the black screen may be exposed to TalkBack.
         setLockedContentAccessibility(true);
     }
@@ -3261,6 +3297,10 @@ public class MainActivity extends AppCompatActivity {
         if (tabLockOverlay.getVisibility() == View.GONE) return;
         tabLockOverlay.setVisibility(View.GONE);
         setLockedContentAccessibility(false);
+        // Restore the current tab's normal status/navigation bar treatment and the
+        // immersive shell (swipe reveals the transient blue/black bars on demand).
+        restoreBarColorsForCurrentTab();
+        com.fadcam.ui.utils.ImmersiveMode.apply(this);
     }
 
     private void setLockedContentAccessibility(boolean locked) {

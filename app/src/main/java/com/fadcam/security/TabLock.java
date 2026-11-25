@@ -23,6 +23,9 @@ public final class TabLock {
     /** Fragment positions used by MainActivity. */
     public static final int TAB_HOME = 0;
     public static final int TAB_RECORDS = 1;
+    public static final int TAB_REMOTE = 2;
+    public static final int TAB_FADITOR = 3;
+    public static final int TAB_SETTINGS = 4;
     public static final int TAB_LAB = 5;
 
     private TabLock() {
@@ -37,6 +40,12 @@ public final class TabLock {
                 return prefs.isTabLockHomeEnabled();
             case TAB_RECORDS:
                 return prefs.isTabLockRecordsEnabled();
+            case TAB_REMOTE:
+                return prefs.isTabLockRemoteEnabled();
+            case TAB_FADITOR:
+                return prefs.isTabLockFaditorEnabled();
+            case TAB_SETTINGS:
+                return prefs.isTabLockSettingsEnabled();
             case TAB_LAB:
                 return prefs.isTabLockLabEnabled();
             default:
@@ -56,6 +65,12 @@ public final class TabLock {
                 return prefs.isTabLockUnlockedHome();
             case TAB_RECORDS:
                 return prefs.isTabLockUnlockedRecords();
+            case TAB_REMOTE:
+                return prefs.isTabLockUnlockedRemote();
+            case TAB_FADITOR:
+                return prefs.isTabLockUnlockedFaditor();
+            case TAB_SETTINGS:
+                return prefs.isTabLockUnlockedSettings();
             case TAB_LAB:
                 return prefs.isTabLockUnlockedLab();
             default:
@@ -73,6 +88,15 @@ public final class TabLock {
                 break;
             case TAB_RECORDS:
                 prefs.setTabLockUnlockedRecords(true);
+                break;
+            case TAB_REMOTE:
+                prefs.setTabLockUnlockedRemote(true);
+                break;
+            case TAB_FADITOR:
+                prefs.setTabLockUnlockedFaditor(true);
+                break;
+            case TAB_SETTINGS:
+                prefs.setTabLockUnlockedSettings(true);
                 break;
             case TAB_LAB:
                 prefs.setTabLockUnlockedLab(true);

@@ -216,7 +216,7 @@ Astuce : Avec H.265 (HEVC), vous pouvez utiliser environ la moitié du débit de
     <string name="app_icon_description">Choisissez une icône et un nom pour votre application. Cela changera son apparence sur votre écran d\'accueil.</string>
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">Verrouillage d\'Onglet</string>
-    <string name="setting_applock_desc">Sécurisez vos vidéos avec un code PIN pour l\'onglet Enregistrements. \nPour votre sécurité, l\'onglet Enregistrements se verrouillera automatiquement lorsque l\'application passe en arrière-plan ou est fermée. Vous devrez déverrouiller à nouveau lors de votre retour</string>
+    <string name="setting_applock_desc">Protégez les onglets sélectionnés avec un code PIN, un mot de passe ou une empreinte. Les onglets protégés se reverrouillent lorsque l’application passe en arrière-plan ou se ferme, et doivent être déverrouillés à nouveau à votre retour.</string>
     <string name="setting_applock_configure">Configurer</string>
     <string name="applock_dialog_title">Options de Verrouillage d\'Onglet</string>
     <string name="applock_enable">Activer le Verrouillage d\'Onglet</string>
@@ -2454,12 +2454,15 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
 
 <string name="applock_set_pin_enable">Set PIN &amp; Enable</string>
 
-<string name="applock_helper_create">Create protection for the Records tab using a 4‑digit PIN, password, or fingerprint. It will auto‑lock when the app goes to background.</string>
+<string name="applock_helper_create">Créez une protection pour les onglets choisis avec un code PIN à 4 chiffres, un mot de passe ou une empreinte. Ils se verrouilleront automatiquement lorsque l’application passe en arrière-plan.</string>
 
-<string name="applock_helper_manage_disabled">Tab Lock PIN is set. Toggle it on to require the PIN when returning to the app.</string>
+<string name="applock_helper_manage_disabled">Le code PIN du verrouillage des onglets est défini. Activez-le pour exiger le code PIN sur les onglets sélectionnés.</string>
 
-<string name="applock_helper_enabled">Tab Lock is active. You will need the PIN when opening the Records tab after leaving the app.</string>
+<string name="applock_helper_enabled">Le verrouillage des onglets est actif. Les onglets sélectionnés demandent le code PIN après avoir quitté l’application. Enregistrements est protégé par défaut.</string>
 
+    <string name="tab_lock_screen_title">Verrouillé</string>
+    <string name="tab_lock_screen_message">Déverrouillez pour continuer</string>
+    <string name="tab_lock_unlock">Déverrouiller</string>
 <string name="version_format">v%s</string>
 
 <string name="edit_with_faditorx">Edit with Faditor Mini</string>

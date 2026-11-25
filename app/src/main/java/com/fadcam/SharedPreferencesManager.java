@@ -276,11 +276,14 @@ public class SharedPreferencesManager {
     private static final String PREF_APP_LOCK_ENABLED = "applock_enabled";
 
     // Per-tab protection. Records stays on by default so the behaviour existing
-    // users already have (Records + Trash locked) does not change. Home and Lab
-    // are opt-in: locking Home turns Tab Lock into a full app lock because Home
-    // is the launch tab.
+    // users already have (Records + Trash locked) does not change. Every other
+    // tab is opt-in; locking Home turns Tab Lock into a full app lock because
+    // Home is the launch tab.
     public static final String PREF_TAB_LOCK_HOME = "tab_lock_home";
     public static final String PREF_TAB_LOCK_RECORDS = "tab_lock_records";
+    public static final String PREF_TAB_LOCK_REMOTE = "tab_lock_remote";
+    public static final String PREF_TAB_LOCK_FADITOR = "tab_lock_faditor";
+    public static final String PREF_TAB_LOCK_SETTINGS = "tab_lock_settings";
     public static final String PREF_TAB_LOCK_LAB = "tab_lock_lab";
 
     // Each protected tab has its own unlock state. Unlocking Lab must never
@@ -288,6 +291,9 @@ public class SharedPreferencesManager {
     // are cleared on background and on process start.
     private static final String KEY_TAB_UNLOCKED_HOME = "tab_lock_unlocked_home";
     private static final String KEY_TAB_UNLOCKED_RECORDS = "tab_lock_unlocked_records";
+    private static final String KEY_TAB_UNLOCKED_REMOTE = "tab_lock_unlocked_remote";
+    private static final String KEY_TAB_UNLOCKED_FADITOR = "tab_lock_unlocked_faditor";
+    private static final String KEY_TAB_UNLOCKED_SETTINGS = "tab_lock_unlocked_settings";
     private static final String KEY_TAB_UNLOCKED_LAB = "tab_lock_unlocked_lab";
     /** Written by older builds. Removed so a stale global flag cannot linger. */
     private static final String KEY_APPLOCK_SESSION_UNLOCKED =
@@ -309,6 +315,30 @@ public class SharedPreferencesManager {
         sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_RECORDS, unlocked).apply();
     }
 
+    public boolean isTabLockUnlockedRemote() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_REMOTE, false);
+    }
+
+    public void setTabLockUnlockedRemote(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_REMOTE, unlocked).apply();
+    }
+
+    public boolean isTabLockUnlockedFaditor() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_FADITOR, false);
+    }
+
+    public void setTabLockUnlockedFaditor(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_FADITOR, unlocked).apply();
+    }
+
+    public boolean isTabLockUnlockedSettings() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_SETTINGS, false);
+    }
+
+    public void setTabLockUnlockedSettings(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_SETTINGS, unlocked).apply();
+    }
+
     public boolean isTabLockUnlockedLab() {
         return safeGetBoolean(KEY_TAB_UNLOCKED_LAB, false);
     }
@@ -324,6 +354,9 @@ public class SharedPreferencesManager {
             .edit()
             .putBoolean(KEY_TAB_UNLOCKED_HOME, false)
             .putBoolean(KEY_TAB_UNLOCKED_RECORDS, false)
+            .putBoolean(KEY_TAB_UNLOCKED_REMOTE, false)
+            .putBoolean(KEY_TAB_UNLOCKED_FADITOR, false)
+            .putBoolean(KEY_TAB_UNLOCKED_SETTINGS, false)
             .putBoolean(KEY_TAB_UNLOCKED_LAB, false)
             .remove(KEY_APPLOCK_SESSION_UNLOCKED)
             .apply();
@@ -2019,6 +2052,33 @@ public class SharedPreferencesManager {
 
     public void setTabLockRecordsEnabled(boolean enabled) {
         sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_RECORDS, enabled).apply();
+    }
+
+    /** True when the Remote tab should require the App Lock credential. */
+    public boolean isTabLockRemoteEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_REMOTE, false);
+    }
+
+    public void setTabLockRemoteEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_REMOTE, enabled).apply();
+    }
+
+    /** True when the Faditor Mini tab should require the App Lock credential. */
+    public boolean isTabLockFaditorEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_FADITOR, false);
+    }
+
+    public void setTabLockFaditorEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_FADITOR, enabled).apply();
+    }
+
+    /** True when the Settings tab should require the App Lock credential. */
+    public boolean isTabLockSettingsEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_SETTINGS, false);
+    }
+
+    public void setTabLockSettingsEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_SETTINGS, enabled).apply();
     }
 
     /** True when the Lab tab should require the App Lock credential. */

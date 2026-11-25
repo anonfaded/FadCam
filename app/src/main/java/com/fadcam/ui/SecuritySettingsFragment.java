@@ -135,11 +135,33 @@ public class SecuritySettingsFragment extends Fragment {
                     getString(R.string.nav_records),
                     R.drawable.ic_records_selector,
                     sharedPreferencesManager.isTabLockRecordsEnabled()));
+            // Lite has three tabs (Records, Home, Settings). Remote, Faditor Mini
+            // and Lab only exist in Full, so do not offer protection for tabs that
+            // are not present there.
+            if (!com.fadcam.BuildConfig.LITE_EDITION) {
+                items.add(new com.fadcam.ui.picker.OptionItem(
+                        "tab_lock_remote",
+                        getString(R.string.nav_remote),
+                        R.drawable.unknown_icon0,
+                        sharedPreferencesManager.isTabLockRemoteEnabled()));
+                items.add(new com.fadcam.ui.picker.OptionItem(
+                        "tab_lock_faditor",
+                        getString(R.string.nav_faditor_mini),
+                        R.drawable.movie_edit_24px,
+                        sharedPreferencesManager.isTabLockFaditorEnabled()));
+            }
             items.add(new com.fadcam.ui.picker.OptionItem(
-                    "tab_lock_lab",
-                    getString(R.string.nav_lab),
-                    R.drawable.biotech_24px,
-                    sharedPreferencesManager.isTabLockLabEnabled()));
+                    "tab_lock_settings",
+                    getString(R.string.nav_settings),
+                    R.drawable.ic_nav_settings,
+                    sharedPreferencesManager.isTabLockSettingsEnabled()));
+            if (!com.fadcam.BuildConfig.LITE_EDITION) {
+                items.add(new com.fadcam.ui.picker.OptionItem(
+                        "tab_lock_lab",
+                        getString(R.string.nav_lab),
+                        R.drawable.biotech_24px,
+                        sharedPreferencesManager.isTabLockLabEnabled()));
+            }
 
             items.add(new com.fadcam.ui.picker.OptionItem("change_pin", getString(R.string.applock_change_pin)));
             items.add(new com.fadcam.ui.picker.OptionItem("remove_pin", getString(R.string.applock_remove_pin)));
@@ -168,6 +190,24 @@ public class SecuritySettingsFragment extends Fragment {
                     case "tab_lock_records":
                         if (selectedActionHasSwitch) {
                             sharedPreferencesManager.setTabLockRecordsEnabled(actionSwitchState);
+                            sharedPreferencesManager.clearTabLockUnlocks();
+                        }
+                        break;
+                    case "tab_lock_remote":
+                        if (selectedActionHasSwitch) {
+                            sharedPreferencesManager.setTabLockRemoteEnabled(actionSwitchState);
+                            sharedPreferencesManager.clearTabLockUnlocks();
+                        }
+                        break;
+                    case "tab_lock_faditor":
+                        if (selectedActionHasSwitch) {
+                            sharedPreferencesManager.setTabLockFaditorEnabled(actionSwitchState);
+                            sharedPreferencesManager.clearTabLockUnlocks();
+                        }
+                        break;
+                    case "tab_lock_settings":
+                        if (selectedActionHasSwitch) {
+                            sharedPreferencesManager.setTabLockSettingsEnabled(actionSwitchState);
                             sharedPreferencesManager.clearTabLockUnlocks();
                         }
                         break;

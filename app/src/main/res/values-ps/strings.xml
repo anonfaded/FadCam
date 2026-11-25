@@ -201,7 +201,7 @@
     <string name="app_icon_preview">App icon namoona</string>
     <!-- Tab Lock Strings -->
     <string name="setting_applock_title">Tab Lock</string>
-    <string name="setting_applock_desc">Khpal videos pa PIN lock sara da Records tab ke masoon ka. \nSta amniyat da para, kala che app background ta zy ya band shi, Records tab ba automatic lock kegi. Kala che bewapas razy, no ta ba byaa unlock kaway</string>
+    <string name="setting_applock_desc">Khpal khwakh tabs pa PIN, password, ya fingerprint sara mahfooz ka. Mahfooz tabs ba automatic lock shi kala che app background ta zy ya band shi, aw kala che bewapas razy no ba byaa unlock kaway.</string>
     <string name="setting_applock_configure">Tanzim</string>
     <string name="applock_dialog_title">Da Tab Lock Entikhabuna</string>
     <string name="applock_enable">Tab Lock Faal Ka</string>
@@ -504,9 +504,12 @@ Tawsiya shwee: 192000 bps, 48000 Hz da aksar karwonko lapara.</string>
     <string name="app_icon_redbinary" translatable="false">$ ~/r00t</string>
     <string name="app_icon_weather" translatable="false">Weather</string>
     <string name="app_name" translatable="false">FadCam</string>
-    <string name="applock_helper_create">Da Records tab dapara mahfuziat jor ka: 4-digit PIN, password, ya fingerprint sara. Kala che app pasmanzar ta shi, ba khpala lock shi.</string>
-    <string name="applock_helper_enabled">Tab Lock chalu de. Kala che app na wrusta razy, Records tab kholo dapara PIN ba darkar wi.</string>
-    <string name="applock_helper_manage_disabled">Tab Lock PIN tanzim sho. Kala che app ta wapas razy PIN darkar walo dapara de toggle on ka.</string>
+    <string name="applock_helper_create">Da khpal khwakh tabs dapara mahfuziat jor ka: 4-digit PIN, password, ya fingerprint sara. Kala che app pasmanzar ta shi, ba khpala lock shi.</string>
+    <string name="applock_helper_enabled">Tab Lock chalu de. Kala che app na wrusta razy, pa khwakh tabs PIN ba darkar wi. Records ba default mahfooz de.</string>
+    <string name="tab_lock_screen_title">Band</string>
+    <string name="tab_lock_screen_message">Khol krai tse pe jari</string>
+    <string name="tab_lock_unlock">Khol krai</string>
+    <string name="applock_helper_manage_disabled">Tab Lock PIN tanzim sho. Toggle on ka, tse pa khwakh tabs PIN darkar wi.</string>
     <string name="applock_set_pin_enable">PIN Tanzim Ka &amp; Faal Ka</string>
     <string name="arabic_date_description_default">Full Arabic (Default)</string>
     <string name="arabic_date_description_english">Full English</string>

@@ -636,6 +636,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
         playerSurface = findViewById(R.id.player_surface);
         cropOverlay = findViewById(R.id.crop_overlay);
         controlsSection = findViewById(R.id.controls_section);
+        if (playerSurface != null && cropOverlay != null) {
+            // Crop handles are positioned against the surface, so they must follow any
+            // relayout of the preview (crop mode hides the controls and grows the preview).
+            playerSurface.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+                if (cropOverlay.isActive()) {
+                    cropOverlay.setVideoContentRect(computeVideoContentRect());
+                }
+            });
+        }
         cropToolbar = findViewById(R.id.crop_toolbar);
         editorTimeline = findViewById(R.id.editor_timeline_view);
         editorTimeline.setOnSegmentActionListener(new EditorTimelineView.OnSegmentActionListener() {
@@ -1375,7 +1384,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     /** Schedules a debounced rebuild for property edits (sliders, canvas, volume). */
     private void scheduleCompositionRebuild() {
-        if (project == null || compositionPlayer == null || userDragging) return;
+        if (project == null || compositionPlayer == null || userDragging || inCropMode) return;
         autoSaveHandler.removeCallbacks(compositionRefreshRunnable);
         autoSaveHandler.postDelayed(compositionRefreshRunnable, COMPOSITION_REBUILD_DELAY_MS);
     }
@@ -2052,15 +2061,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
             updatePlayPauseButton(false);
         }
 
-        // Show the full uncropped frame while the crop UI is open. The rest of the
-        // composition stays intact, so entering crop never changes the edit.
-        croplessPreviewClipId = clip != null ? clip.getId() : null;
-        rebuildComposition();
-
-        // Swap UI FIRST so the layout reflows before we compute the video rect.
-        // The player_container grows taller when controls_section is hidden.
+        // Swap UI FIRST: the player_container grows taller when controls_section is
+        // hidden, and the preview surface must be measured against that new size.
         if (controlsSection != null) controlsSection.setVisibility(View.GONE);
         if (cropToolbar != null) cropToolbar.setVisibility(View.VISIBLE);
+
+        // Show the full uncropped frame while the crop UI is open. The rest of the
+        // composition stays intact, so entering crop never changes the edit.
+        croplessPreviewClipId = clip.getId();
+        rebuildComposition();
 
         // Build aspect preset chips and wire buttons
         buildCropPresetChips();
@@ -2090,7 +2099,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     @Override
                     public void onGlobalLayout() {
                         container.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                        activateFreeCrop();
+                        // The controls just disappeared; re-fit the surface before
+                        // computing the crop rect, then let one frame settle.
+                        applyPreviewAspect();
+                        playerSurface.post(FaditorEditorActivity.this::activateFreeCrop);
                     }
                 });
 
@@ -2118,8 +2130,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     && Math.abs(clip.getCropRight() - 1f) < 0.01f
                     && Math.abs(clip.getCropBottom() - 1f) < 0.01f;
             if (isFullFrame) {
-                clip.setCropPreset("none");
+                // setCustomCropBounds() forces the preset to "custom"; reset the
+                // preset afterwards so a full-frame result is genuinely neutral.
                 clip.setCustomCropBounds(0f, 0f, 1f, 1f);
+                clip.setCropPreset("none");
             }
             // Record undo action for crop change
             String newPreset = clip.getCropPreset();
@@ -2141,8 +2155,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
         } else {
             // Revert to saved state
             if (clip != null) {
+                // Same ordering rule: restore bounds first, then the original preset.
+                clip.setCustomCropBounds(preCropLeft, preCropTop,
+                        preCropRight, preCropBottom);
                 clip.setCropPreset(preCropPreset);
-                clip.setCustomCropBounds(preCropLeft, preCropTop, preCropRight, preCropBottom);
             }
             Toast.makeText(this, R.string.faditor_crop_cancelled, Toast.LENGTH_SHORT).show();
             FLog.d(TAG, "Crop cancelled, reverted to: " + preCropPreset);
@@ -2385,6 +2401,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
             return;
         }
 
+        // Crop mode keeps the preview inset so its corner handles never sit on the
+        // screen edge (where system gestures and the nav bar swallow them).
+        int cropMargin = inCropMode ? dp(20) : 0;
+        int availableW = Math.max(1, containerW - cropMargin * 2);
+        int availableH = Math.max(1, containerH - cropMargin * 2);
+
         int[] output = TimelineCompositionBuilder.previewOutputSize(this, project);
         if (output == null) {
             FrameLayout.LayoutParams full = new FrameLayout.LayoutParams(
@@ -2398,15 +2420,15 @@ public class FaditorEditorActivity extends AppCompatActivity {
         int outW = output[0];
         int outH = output[1];
         float aspect = (float) outW / outH;
-        float containerAspect = (float) containerW / containerH;
+        float containerAspect = (float) availableW / availableH;
         int targetW;
         int targetH;
         if (aspect > containerAspect) {
-            targetW = containerW;
-            targetH = Math.round(containerW / aspect);
+            targetW = availableW;
+            targetH = Math.round(availableW / aspect);
         } else {
-            targetH = containerH;
-            targetW = Math.round(containerH * aspect);
+            targetH = availableH;
+            targetW = Math.round(availableH * aspect);
         }
 
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(targetW, targetH);
