@@ -121,19 +121,6 @@ public class ModeSwitcherComponent {
                 }
             });
 
-            // Show/hide FadRec NEW badge based on NewFeatureManager
-            View badgeFadRec = rootView.findViewById(R.id.badge_fadrec);
-            if (badgeFadRec != null) {
-                try {
-                    boolean shouldShowFadRecBadge = com.fadcam.ui.utils.NewFeatureManager.shouldShowBadge(context, "fadrec");
-                    badgeFadRec.setVisibility(shouldShowFadRecBadge ? View.VISIBLE : View.GONE);
-                    FLog.d(TAG, "FadRec badge visibility: " + (shouldShowFadRecBadge ? "VISIBLE" : "GONE"));
-                } catch (Exception e) {
-                    FLog.e(TAG, "Error managing FadRec badge visibility", e);
-                    badgeFadRec.setVisibility(View.GONE);
-                }
-            }
-
             // Resolve persisted mode (fallback if invalid / coming soon)
             String persisted = sharedPreferencesManager.getCurrentRecordingMode();
             if (Constants.MODE_FADMIC.equals(persisted)) persisted = Constants.MODE_FADCAM;
@@ -141,7 +128,6 @@ public class ModeSwitcherComponent {
             if (com.fadcam.BuildConfig.LITE_EDITION) {
                 if (Constants.MODE_FADREC.equals(persisted)) persisted = Constants.MODE_FADCAM;
                 segmentFadRec.setVisibility(android.view.View.GONE);
-                if (badgeFadRec != null) badgeFadRec.setVisibility(android.view.View.GONE);
             }
             currentMode = persisted;
 
@@ -497,15 +483,6 @@ public class ModeSwitcherComponent {
                     listener.onModeSelected(mode);
                     break;
                 case Constants.MODE_FADREC:
-                    try {
-                        com.fadcam.ui.utils.NewFeatureManager.markFeatureAsSeen(context, "fadrec");
-                        View badgeFadRec = segmentFadRec.getRootView().findViewById(R.id.badge_fadrec);
-                        if (badgeFadRec != null) {
-                            badgeFadRec.setVisibility(View.GONE);
-                        }
-                    } catch (Exception e) {
-                        FLog.e(TAG, "Error marking FadRec badge as seen", e);
-                    }
                     listener.onModeSelected(mode);
                     break;
                 default:

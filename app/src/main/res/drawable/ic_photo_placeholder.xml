@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder for photo entries when thumbnails are hidden. Mirrors
+     ic_video_placeholder (same tint, size and weight) so a records list that mixes
+     photos and videos reads as one consistent set of icons. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+  <path
+      android:fillColor="@android:color/white"
+      android:pathData="M21,19V5A2,2 0 0,0 19,3H5A2,2 0 0,0 3,5v14a2,2 0 0,0 2,2h14a2,2 0 0,0 2,-2zM8.5,13.5l2.5,3.01L14.5,12l4.5,6H5l3.5,-4.5z"/>
+</vector>

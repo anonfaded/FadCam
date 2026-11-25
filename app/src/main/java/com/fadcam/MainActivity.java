@@ -325,44 +325,6 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             
-            // Handle Remote badge
-            boolean shouldShowRemoteBadge = NewFeatureManager.shouldShowBadge(this, "remote");
-            FLog.d("MainActivity", "updateFeatureBadgeVisibility: shouldShowRemoteBadge=" + shouldShowRemoteBadge);
-            
-            if (shouldShowRemoteBadge) {
-                // Show badge on Remote nav item
-                try {
-                    com.google.android.material.badge.BadgeDrawable badge = 
-                        bottomNavigationView.getOrCreateBadge(R.id.navigation_remote);
-                    badge.setVisible(true);
-                    if (bottomNavigationView
-                            instanceof com.google.android.material.navigationrail.NavigationRailView) {
-                        // A text badge is wider than the rail: use the standard dot.
-                        badge.clearNumber();
-                        badge.clearText();
-                        badge.setHorizontalPadding(0);
-                        badge.setVerticalPadding(0);
-                    } else {
-                        badge.setText("NEW"); // Show "NEW" text instead of number
-                    }
-                    badge.setBackgroundColor(androidx.core.content.ContextCompat.getColor(
-                            this, R.color.pro_gold)); // Champagne gold NEW badge
-                    badge.setBadgeTextColor(androidx.core.content.ContextCompat.getColor(
-                            this, R.color.pro_background)); // Dark ink on gold
-                    FLog.d("MainActivity", "Badge shown for remote");
-                } catch (Exception e) {
-                    FLog.e("MainActivity", "Error creating badge", e);
-                }
-            } else {
-                // Remove badge from Remote nav item
-                try {
-                    bottomNavigationView.removeBadge(R.id.navigation_remote);
-                    FLog.d("MainActivity", "Badge removed for remote");
-                } catch (Exception e) {
-                    FLog.e("MainActivity", "Error removing badge", e);
-                }
-            }
-            
             // Handle Settings Nav Badge (separate from watermark option inside settings)
             boolean shouldShowSettingsNavBadge = NewFeatureManager.shouldShowBadge(this, "settings_nav");
             FLog.d("MainActivity", "updateFeatureBadgeVisibility: shouldShowSettingsNavBadge=" + shouldShowSettingsNavBadge);

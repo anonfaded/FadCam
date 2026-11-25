@@ -587,7 +587,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         // Only set the thumbnail if holder view is visible (important optimization)
         if (holder.imageViewThumbnail != null && holder.itemView.getVisibility() == View.VISIBLE) {
-            setThumbnail(holder, videoUri);
+            setThumbnail(holder, videoUri, isImage);
         }
 
         // --- Last-viewed progress bar handling (optimized with caching) ---
@@ -1045,14 +1045,24 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     // Update the setThumbnail method to consider scrolling state with caching
-    private void setThumbnail(RecordViewHolder holder, Uri videoUri) {
+    /**
+     * Placeholder shown in the thumbnail slot when no frame is available (hidden
+     * thumbnails, skeleton rows, load errors). Photos and videos get distinct icons so a
+     * mixed records list stays scannable; both share the same vectors' 24dp weight.
+     */
+    private int placeholderFor(boolean isImage) {
+        return isImage ? R.drawable.ic_photo_placeholder : R.drawable.ic_video_placeholder;
+    }
+
+    private void setThumbnail(RecordViewHolder holder, Uri videoUri, boolean isImage) {
         if (holder.imageViewThumbnail == null || context == null)
             return;
         // Honor user preference: hide thumbnails if requested
         try {
             if (sharedPreferencesManager != null && sharedPreferencesManager.isHideThumbnailsEnabled()) {
-                // Hide the thumbnail view and show a lightweight placeholder background
-                holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+                // Hide the thumbnail view and show a media-type placeholder: photos get a
+                // picture icon, videos a film-strip icon, so a mixed list stays readable.
+                holder.imageViewThumbnail.setImageResource(placeholderFor(isImage));
                 holder.imageViewThumbnail.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
                 return;
             }
@@ -1061,7 +1071,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         // Skip Glide loading for skeleton URIs
         if ("skeleton".equals(videoUri.getScheme())) {
-            holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+            holder.imageViewThumbnail.setImageResource(placeholderFor(isImage));
             return;
         }
 
@@ -1104,8 +1114,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 .skipMemoryCache(false)
                 .centerCrop()
                 .override(thumbnailSize, thumbnailSize)
-                .placeholder(R.drawable.ic_video_placeholder)
-                .error(R.drawable.ic_video_placeholder);
+                .placeholder(placeholderFor(isImage))
+                .error(placeholderFor(isImage));
 
         if (isScrolling) {
             // During scrolling, use low-quality thumbnails for speed
@@ -1148,7 +1158,7 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     public void onLoadCleared(
                             @androidx.annotation.Nullable android.graphics.drawable.Drawable placeholder) {
                         // Set placeholder if load is cleared
-                        holder.imageViewThumbnail.setImageResource(R.drawable.ic_video_placeholder);
+                        holder.imageViewThumbnail.setImageResource(placeholderFor(isImage));
                     }
                 });
     }
@@ -1184,7 +1194,8 @@ public class RecordsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         && entries.get(position) instanceof VideoItemEntry) {
                     VideoItem videoItem = ((VideoItemEntry) entries.get(position)).item;
                     if (videoItem != null && videoItem.uri != null) {
-                        setThumbnail(holder, videoItem.uri);
+                        setThumbnail(holder, videoItem.uri,
+                                videoItem.mediaType == VideoItem.MediaType.IMAGE);
                     }
                 }
                 return;

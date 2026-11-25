@@ -94,13 +94,6 @@ public class WatermarkSettingsFragment extends Fragment {
         View rowCustomText = view.findViewById(R.id.row_custom_text);
         if(rowCustomText!=null){ 
             rowCustomText.setOnClickListener(v -> {
-                // Mark custom text badge as seen when clicking this specific row
-                NewFeatureManager.markFeatureAsSeen(requireContext(), "watermark_custom_text");
-                // Hide badge immediately
-                TextView badgeCustomText = view.findViewById(R.id.badge_custom_text);
-                if (badgeCustomText != null) {
-                    badgeCustomText.setVisibility(View.GONE);
-                }
                 // Show the bottom sheet
                 showCustomTextBottomSheet();
             });
@@ -335,13 +328,6 @@ public class WatermarkSettingsFragment extends Fragment {
                 @Override public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
             });
         }
-        
-    // Manage badge visibility for custom text row
-    TextView badgeCustomText = view.findViewById(R.id.badge_custom_text);
-    if (badgeCustomText != null) {
-        boolean shouldShowCustomTextBadge = NewFeatureManager.shouldShowBadge(requireContext(), "watermark_custom_text");
-        badgeCustomText.setVisibility(shouldShowCustomTextBadge ? View.VISIBLE : View.GONE);
-    }
         
     refreshLocationValue();
     refreshWatermarkStyleValue();
