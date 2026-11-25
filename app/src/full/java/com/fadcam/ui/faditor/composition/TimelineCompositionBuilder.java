@@ -7,14 +7,15 @@ import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.media3.common.C;
 import androidx.media3.common.Effect;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.audio.AudioProcessor;
-import androidx.media3.common.audio.SonicAudioProcessor;
+import androidx.media3.common.audio.SpeedProvider;
+import androidx.media3.common.util.UnstableApi;
 import androidx.media3.effect.Crop;
 import androidx.media3.effect.Presentation;
 import androidx.media3.effect.ScaleAndRotateTransformation;
-import androidx.media3.effect.SpeedChangeEffect;
 import androidx.media3.transformer.Composition;
 import androidx.media3.transformer.EditedMediaItem;
 import androidx.media3.transformer.EditedMediaItemSequence;
@@ -45,6 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * exporter both consume the composition returned here, so framing, crop, rotation, speed,
  * volume and still images cannot drift between what is shown and what is written.</p>
  */
+@androidx.annotation.OptIn(markerClass = UnstableApi.class)
 public final class TimelineCompositionBuilder {
 
     private static final String TAG = "TimelineCompositionBuilder";
@@ -180,28 +182,30 @@ public final class TimelineCompositionBuilder {
 
         float speed = clip.getSpeedMultiplier();
         List<AudioProcessor> audioProcessors = new ArrayList<>();
+        List<Effect> videoEffects = new ArrayList<>();
+
+        if (Math.abs(speed - 1f) > 0.001f) {
+            // This is the composition-safe speed API. CompositionPlayer recognizes the
+            // TimestampAdjustment and wraps the item in a SpeedChangingMediaSource, so the
+            // player clock, declared duration and seek positions all use the same timebase.
+            // SpeedChangeEffect only retimes video and leaves the player position in source time.
+            android.util.Pair<AudioProcessor, Effect> speedEffects =
+                    Effects.createExperimentalSpeedChangingEffect(
+                            new ConstantSpeedProvider(speed));
+            audioProcessors.add(speedEffects.first);
+            videoEffects.add(speedEffects.second);
+        }
+
         if (clip.isAudioMuted()) {
             // A muted clip must not contribute audio to the composition.
             item.setRemoveAudio(true);
         } else {
-            // Speed must be applied to audio as well; SpeedChangeEffect only retimes video.
-            if (Math.abs(speed - 1f) > 0.001f) {
-                SonicAudioProcessor sonic = new SonicAudioProcessor();
-                sonic.setSpeed(speed);
-                audioProcessors.add(sonic);
-            }
             float volume = clip.getVolumeLevel();
             if (Math.abs(volume - 1f) > 0.001f) {
                 VolumeAudioProcessor volumeProcessor = new VolumeAudioProcessor();
                 volumeProcessor.setVolume(volume);
                 audioProcessors.add(volumeProcessor);
             }
-        }
-
-        List<Effect> videoEffects = new ArrayList<>();
-        // Speed first: later effects operate on the retimed frames.
-        if (Math.abs(speed - 1f) > 0.001f) {
-            videoEffects.add(new SpeedChangeEffect(speed));
         }
 
         int rotation = clip.getRotationDegrees();
@@ -508,5 +512,24 @@ public final class TimelineCompositionBuilder {
     /** Total presented duration of the timeline, including an audio tail. */
     public static long compositionDurationMs(@NonNull Timeline timeline) {
         return Math.max(0L, timeline.getTotalDurationMs());
+    }
+
+    /** Constant-rate provider for the interlinked speed effect. */
+    private static final class ConstantSpeedProvider implements SpeedProvider {
+        private final float speed;
+
+        ConstantSpeedProvider(float speed) {
+            this.speed = speed;
+        }
+
+        @Override
+        public float getSpeed(long timeUs) {
+            return speed;
+        }
+
+        @Override
+        public long getNextSpeedChangeTimeUs(long timeUs) {
+            return C.TIME_UNSET;
+        }
     }
 }

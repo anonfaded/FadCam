@@ -760,7 +760,9 @@ public class ProBundleShowcaseView extends FrameLayout {
             }
             return;
         }
-        if (frontSurface.isLocked()) return;
+        // Overlays that a locked phone may legitimately own must be handled BEFORE the lock
+        // gate: the long-press power menu and the shade's access dialog both open on the lock
+        // screen, so their buttons have to stay live there (a locked phone still restarts).
         if (frontSurface.isPowerMenuOpen()) {
             int action = frontSurface.powerMenuActionAt(x, y);
             if (action == 1) {
@@ -784,6 +786,7 @@ public class ProBundleShowcaseView extends FrameLayout {
             }
             return;
         }
+        if (frontSurface.isLocked()) return;
         if (frontSurface.getShadeProgress() > 0.01f) {
             // A half-open shade left by a small pull snaps shut instead of sticking.
             frontSurface.animateShade(0f);

@@ -725,7 +725,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     if (compositionPlayer != null) {
                         compositionPlayer.pause();
                         scrubbing = false;
-                        if (lastSeekTargetMs != playheadMs) seekCompositionTo(playheadMs);
+                        if (lastSeekTargetMs != playheadMs
+                                || Math.abs(compositionPlayer.getPositionMs() - playheadMs) > 50) {
+                            seekCompositionTo(playheadMs);
+                        }
                     }
                     updatePlayPauseButton(false);
                 }
@@ -1450,7 +1453,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     long end = compositionDurationMs;
                     editorTimeline.setPlayheadPositionMs(end);
                     updateCurrentTimeDisplay();
-                    FLog.d(TAG, "playback finished at " + end + "ms");
+                    FLog.d(TAG, "playback finished: modelEnd=" + end
+                            + " playerEnd=" + compositionPlayer.getDurationMs()
+                            + " pos=" + compositionPlayer.getPositionMs());
                 } else if (playbackState == Player.STATE_READY
                         || playbackState == Player.STATE_BUFFERING) {
                     playbackFinished = false;
@@ -1513,8 +1518,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
         compositionPlayer.play();
         updatePlayPauseButton(true);
         startPlayheadUpdates();
-        FLog.d(TAG, "play: composition at " + playheadMs + "ms"
-                + (needsSeek ? " (seek)" : " (buffered)"));
+        FLog.d(TAG, "play: at=" + playheadMs + " modelEnd=" + end
+                + " playerEnd=" + compositionPlayer.getDurationMs()
+                + " pos=" + playerPosition + " state=" + state
+                + (needsSeek ? " seek" : " buffered"));
     }
 
     private void startPlayheadUpdates() {
