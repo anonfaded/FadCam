@@ -29,6 +29,7 @@ import com.bumptech.glide.request.target.Target;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.security.TabLock;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -66,6 +67,30 @@ public class ImageViewerActivity extends AppCompatActivity {
     private long capturedAt = 0L;
     @Nullable
     private String sourceLabel;
+
+    /** De-duplicates the Tab Lock prompt while the image is resumed. */
+    private boolean tabLockPromptShowing;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Photos and extracted frames belong to the Records area. If the viewer
+        // survived in the task while the app session re-locked, hide it until the
+        // credential is verified. Cancelling closes the viewer.
+        if (tabLockPromptShowing) return;
+        if (!TabLock.isLocked(this, TabLock.TAB_RECORDS)) return;
+        tabLockPromptShowing = true;
+        TabLock.unlockDialog(this,
+                () -> {
+                    tabLockPromptShowing = false;
+                    TabLock.markUnlocked(this, TabLock.TAB_RECORDS);
+                },
+                () -> {
+                    tabLockPromptShowing = false;
+                    finish();
+                })
+                .show();
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

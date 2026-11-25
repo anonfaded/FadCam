@@ -88,10 +88,6 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 
-// Add AppLock imports
-import com.guardanis.applock.AppLock;
-import com.guardanis.applock.dialogs.UnlockDialogBuilder;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -342,8 +338,6 @@ public class RecordsFragment extends BaseFragment implements
     private FloatingActionButton fabScrollNavigation; // Navigation FAB for scroll to top/bottom
     private boolean isScrollingDown = true; // Track scroll direction for FAB icon
     private ObjectAnimator currentRotationAnimator; // Smooth rotation animation for FAB icon
-
-    private View applockOverlay;
 
     // Use VideoItem and store Uris for selection
     private List<VideoItem> videoItems = new ArrayList<>();
@@ -1894,7 +1888,6 @@ public class RecordsFragment extends BaseFragment implements
         emptyStateContainer = view.findViewById(R.id.empty_state_container);
         fabDeleteSelected = view.findViewById(R.id.fab_delete_selected);
         fabScrollNavigation = view.findViewById(R.id.fab_scroll_navigation);
-        applockOverlay = view.findViewById(R.id.applock_overlay);
 
         setupRecyclerView();
         setupFabListeners();
@@ -2021,15 +2014,6 @@ public class RecordsFragment extends BaseFragment implements
             applyActiveFilterToUi();
             updateUiVisibility();
         }
-        // unlocked (session-based) -----
-        boolean isAppLockEnabled = sharedPreferencesManager.isAppLockEnabled();
-        boolean isSessionUnlocked = sharedPreferencesManager.isAppLockSessionUnlocked();
-        if (isAppLockEnabled && !isSessionUnlocked && com.guardanis.applock.AppLock.isEnrolled(requireContext())) {
-            fadeOverlay(true);
-        } else {
-            fadeOverlay(false);
-        }
-        // (session-based) -----
 
         // RecordsFragment -----
         // Apply theme to top bar - header bar background is handled by
@@ -2131,13 +2115,7 @@ public class RecordsFragment extends BaseFragment implements
             }
         }
 
-        // Always update toolbar/menu and AppLock state
-        if (getActivity() instanceof com.fadcam.MainActivity) {
-            com.fadcam.MainActivity mainActivity = (com.fadcam.MainActivity) getActivity();
-            if (mainActivity.getCurrentFragmentPosition() == 1 && isVisible()) {
-                checkAppLock();
-            }
-        }
+        // Always update toolbar/menu state
         // Update title text
         if (titleText != null) {
             CharSequence normalTitle = originalToolbarTitle != null ? originalToolbarTitle : getString(R.string.records_title);
@@ -2230,9 +2208,6 @@ public class RecordsFragment extends BaseFragment implements
                     recordsAdapter.clearCaches();
                 }
             }
-            
-            // Update AppLock state
-            checkAppLock();
             
             // Update title
             if (titleText != null) {
@@ -5376,75 +5351,6 @@ public class RecordsFragment extends BaseFragment implements
         // Clear adapter cache
         if (recordsAdapter != null) {
             recordsAdapter.clearCaches();
-        }
-    }
-
-    private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
-
-    /**
-     * Checks if app lock is enabled and shows the unlock dialog if needed
-     */
-    private void checkAppLock() {
-        SharedPreferencesManager sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-        boolean isAppLockEnabled = sharedPreferencesManager.isAppLockEnabled();
-        boolean isSessionUnlocked = sharedPreferencesManager.isAppLockSessionUnlocked();
-
-        if (isAppLockEnabled && !isSessionUnlocked && AppLock.isEnrolled(requireContext())) {
-            // correctly -----
-            new UnlockDialogBuilder(requireActivity())
-                    .onUnlocked(() -> {
-                        sharedPreferencesManager.setAppLockSessionUnlocked(true);
-                        fadeOverlay(false);
-                        updateUiVisibility();
-                        updateFabIcons();
-                    })
-                    .onCanceled(() -> {
-                        if (getActivity() instanceof MainActivity) {
-                            ((MainActivity) getActivity()).skipNextBackExitHandling();
-                            requireActivity().getOnBackPressedDispatcher().onBackPressed();
-                        }
-                    })
-                    .show();
-            // correctly -----
-        } else {
-            fadeOverlay(false);
-            updateUiVisibility();
-            updateFabIcons();
-        }
-    }
-
-    /**
-     * Sets the visibility of all sensitive content in the Records tab.
-     * 
-     * @param visible true to show, false to hide (set INVISIBLE)
-     */
-    private void setSensitiveContentVisibility(boolean visible) {
-        int vis = visible ? View.VISIBLE : View.INVISIBLE;
-        if (recyclerView != null)
-            recyclerView.setVisibility(vis);
-        if (emptyStateContainer != null)
-            emptyStateContainer.setVisibility(vis);
-        // FAB removed
-        if (fabDeleteSelected != null)
-            fabDeleteSelected.setVisibility(vis);
-    }
-
-    /**
-     * Fades the AppLock overlay in or out with animation.
-     * 
-     * @param show true to fade in (show), false to fade out (hide)
-     */
-    private void fadeOverlay(final boolean show) {
-        if (applockOverlay == null)
-            return;
-        if (show) {
-            applockOverlay.setAlpha(0f);
-            applockOverlay.setVisibility(View.VISIBLE);
-            applockOverlay.animate().alpha(1f).setDuration(250).start();
-        } else {
-            applockOverlay.animate().alpha(0f).setDuration(250)
-                    .withEndAction(() -> applockOverlay.setVisibility(View.GONE))
-                    .start();
         }
     }
 

@@ -203,4 +203,23 @@
         app:layout_constraintEnd_toEndOf="parent" />
     <!-- ********************************************************** -->
 
+    <!-- Opaque lock screen for the current tab. Sits above the fragment,
+         the dock and overlay fragments so a locked tab cannot flash its
+         content and cannot be interacted with or exposed to accessibility
+         before the App Lock credential is verified. -->
+    <FrameLayout
+        android:id="@+id/tab_lock_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:elevation="40dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <include layout="@layout/view_tab_lock_screen" />
+
+    </FrameLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

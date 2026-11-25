@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Opaque Tab Lock screen. It covers the fragment container, the dock and any
+    overlay fragment while the current tab is locked, so no content is drawn or
+    read by accessibility services before the credential is verified.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tab_lock_screen_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingStart="32dp"
+    android:paddingTop="32dp"
+    android:paddingEnd="32dp"
+    android:paddingBottom="32dp">
+
+    <ImageView
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_lock"
+        android:tint="#FFFFFFFF" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:fontFamily="@font/ubuntu_regular"
+        android:text="@string/tab_lock_screen_title"
+        android:textColor="#FFFFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:fontFamily="@font/ubuntu_regular"
+        android:gravity="center"
+        android:text="@string/tab_lock_screen_message"
+        android:textColor="#B3FFFFFF"
+        android:textSize="15sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/tab_lock_unlock_button"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:backgroundTint="?attr/colorToggle"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        android:text="@string/tab_lock_unlock"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFFFF"
+        android:textSize="15sp" />
+
+</LinearLayout>

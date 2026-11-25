@@ -169,6 +169,7 @@
     </com.fadcam.ui.widgets.TabHeaderLayout>
 
     <ScrollView
+        android:id="@+id/faditor_scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"

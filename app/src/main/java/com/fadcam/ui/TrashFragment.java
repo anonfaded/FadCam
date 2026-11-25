@@ -48,8 +48,7 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 
 // Add AppLock imports
-import com.guardanis.applock.AppLock;
-import com.guardanis.applock.dialogs.UnlockDialogBuilder;
+import com.fadcam.security.TabLock;
 
 import android.widget.ArrayAdapter;
 import androidx.core.content.ContextCompat;
@@ -106,8 +105,7 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
         EVIDENCE
     }
 
-    private static final String PREF_APPLOCK_ENABLED = "applock_enabled";
-    private boolean isUnlocked = false;
+    private boolean lockPromptShowing;
 
     public TrashFragment() {
         // Required empty public constructor
@@ -1255,59 +1253,81 @@ public class TrashFragment extends BaseFragment implements TrashAdapter.OnTrashI
     }
 
     /**
-     * Checks if app lock is enabled and shows the unlock dialog if needed
+     * The Trash screen belongs to the Records tab and inherits its protection.
+     * It is an overlay fragment, so MainActivity's tab gate does not see it;
+     * it must enforce the same policy on first show and on every resume.
      */
     private void checkAppLock() {
-        if (getContext() == null)
+        if (getContext() == null || getView() == null)
             return;
 
         sharedPreferencesManager = SharedPreferencesManager.getInstance(requireContext());
-        boolean isAppLockEnabled = sharedPreferencesManager.isAppLockEnabled();
+        View content = getView().findViewById(R.id.constraint_layout_root);
+        if (content == null)
+            return;
 
-        if (isAppLockEnabled && !isUnlocked && AppLock.isEnrolled(requireContext())) {
-            // We'll show unlock dialog and handle visibility in callbacks
-            new UnlockDialogBuilder(requireActivity())
-                    .onUnlocked(() -> {
-                        // Show content when unlocked
-                        isUnlocked = true;
-                        // Make content visible after successful unlock
-                        if (getView() != null) {
-                            getView().findViewById(R.id.constraint_layout_root).setVisibility(View.VISIBLE);
-                        }
-                    })
-                    .onCanceled(() -> {
-                        // Close the trash fragment if unlock is canceled
-                        if (getActivity() instanceof MainActivity) {
-                            MainActivity mainActivity = (MainActivity) getActivity();
-                            View overlayContainer = mainActivity.findViewById(R.id.overlay_fragment_container);
+        // MainActivity's app-wide lock screen (shown when the current tab is
+        // protected) covers this overlay and owns the single prompt. Showing a
+        // second dialog here would stack two PIN prompts.
+        if (getActivity() instanceof MainActivity
+                && ((MainActivity) getActivity()).isTabLockScreenVisible()) {
+            return;
+        }
 
-                            if (overlayContainer != null) {
-                                // Animate fading out
-                                overlayContainer.animate()
-                                        .alpha(0f)
-                                        .setDuration(250)
-                                        .withEndAction(() -> {
-                                            overlayContainer.setVisibility(View.GONE);
-                                            overlayContainer.setAlpha(1f);
-                                        })
-                                        .start();
-                            }
-                        }
+        if (!TabLock.isLocked(requireContext(), TabLock.TAB_RECORDS)) {
+            content.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        // Locked: never leave the list or stats visible behind the prompt.
+        content.setVisibility(View.INVISIBLE);
+        if (lockPromptShowing)
+            return;
+
+        lockPromptShowing = true;
+        FLog.d(TAG, "Trash is locked; showing unlock prompt");
+        TabLock.unlockDialog(requireActivity(),
+                () -> {
+                    lockPromptShowing = false;
+                    // Unlock only the Records area, which Trash belongs to.
+                    TabLock.markUnlocked(requireContext(), TabLock.TAB_RECORDS);
+                    if (getView() != null) {
+                        getView().findViewById(R.id.constraint_layout_root)
+                                .setVisibility(View.VISIBLE);
+                    }
+                },
+                () -> {
+                    lockPromptShowing = false;
+                    // Cancelled: do not reveal the screen or its contents.
+                    closeTrashOverlay();
+                })
+                .show();
+    }
+
+    private void closeTrashOverlay() {
+        if (!(getActivity() instanceof MainActivity))
+            return;
+        MainActivity mainActivity = (MainActivity) getActivity();
+        View overlayContainer = mainActivity.findViewById(R.id.overlay_fragment_container);
+        if (overlayContainer != null) {
+            overlayContainer.animate()
+                    .alpha(0f)
+                    .setDuration(250)
+                    .withEndAction(() -> {
+                        overlayContainer.setVisibility(View.GONE);
+                        overlayContainer.setAlpha(1f);
                     })
-                    .show();
-        } else {
-            // If no lock needed, make content visible immediately
-            if (getView() != null) {
-                getView().findViewById(R.id.constraint_layout_root).setVisibility(View.VISIBLE);
-            }
+                    .start();
         }
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-        // Reset unlock state when leaving the fragment
-        isUnlocked = false;
+    public void onResume() {
+        super.onResume();
+        // The app session is locked again after the process goes to background.
+        // Re-check so an already-open Trash overlay cannot survive a resume
+        // showing its contents.
+        checkAppLock();
     }
 
     // TODO: Create TrashAdapter class

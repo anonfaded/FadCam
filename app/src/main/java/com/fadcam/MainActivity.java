@@ -29,6 +29,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
 import com.fadcam.pro.ProReminderManager;
+import com.fadcam.security.TabLock;
 import com.fadcam.ui.RecordsFragment;
 import com.fadcam.ui.HomeFragment;
 import com.fadcam.FeatureRegistry;
@@ -71,6 +72,14 @@ public class MainActivity extends AppCompatActivity {
     private boolean skipNextBackHandling = false; // New flag to skip toast on next back press
     private Handler backPressHandler = new Handler(android.os.Looper.getMainLooper());
     private static final int BACK_PRESS_DELAY = 2000; // 2 seconds
+
+    // Tab Lock: one gate for every navigation path and one opaque screen for
+    // the current tab, so no protected content can be shown or read before the
+    // App Lock credential is verified.
+    private View tabLockOverlay;
+    private boolean tabLockPromptShowing;
+    /** True while a tab selection is applied programmatically. */
+    private boolean suppressReselectScroll;
 
     // Add SharedPreferencesManager field
     private SharedPreferencesManager sharedPreferencesManager;
@@ -544,6 +553,8 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        initTabLockUi();
+
         // Enable edge-to-edge display for Android 15 compatibility
         enableEdgeToEdge();
 
@@ -834,6 +845,22 @@ public class MainActivity extends AppCompatActivity {
             railNavigationView.setOnItemSelectedListener(navItemSelectedListener);
         }
 
+        // Material only calls the selected listener when the item changes;
+        // reselecting the active tab is delivered to this listener.
+        NavigationBarView.OnItemReselectedListener navItemReselectedListener = item -> {
+            if (suppressReselectScroll) return;
+            int position = internalPositionForItemId(item.getItemId());
+            if (position != -1) {
+                scrollTabToTop(position);
+            }
+        };
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setOnItemReselectedListener(navItemReselectedListener);
+        }
+        if (railNavigationView != null) {
+            railNavigationView.setOnItemReselectedListener(navItemReselectedListener);
+        }
+
         // Dock reveal animation – REMOVED: the launch reveal (scale/fade/slide of
         // the bottom nav dock) consumed resources and delayed the dock's presence
         // on every cold start. The dock now simply renders in place.
@@ -925,6 +952,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
+        // The opaque lock screen owns all touches. In particular, skip the
+        // activity-level tab swipe handler so it cannot open the Home sidebar
+        // or navigate behind the lock.
+        if (tabLockOverlay != null && tabLockOverlay.getVisibility() == View.VISIBLE) {
+            return super.dispatchTouchEvent(ev);
+        }
+
         // Disable tab swipe when overlay fragment is visible.
         View overlayContainer = findViewById(R.id.overlay_fragment_container);
         boolean overlayVisible = overlayContainer != null && overlayContainer.getVisibility() == View.VISIBLE;
@@ -1446,6 +1480,14 @@ public class MainActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                // A locked current tab owns the whole screen. Back cannot navigate
+                // away (the dock is covered); it only sends the locked app to the
+                // background, and returning re-prompts.
+                if (tabLockOverlay != null && tabLockOverlay.getVisibility() == View.VISIBLE) {
+                    moveTaskToBack(true);
+                    return;
+                }
+
                 // Back during the launch avatar animation finishes the animation
                 // instead of leaving the app.
                 if (splashAvatarOverlay != null && splashAvatarOverlay.isShowing()) {
@@ -1506,6 +1548,13 @@ public class MainActivity extends AppCompatActivity {
         }
         if (sharedPreferencesManager == null) {
             sharedPreferencesManager = SharedPreferencesManager.getInstance(this);
+        }
+        // If the landing Home tab is locked, the opaque lock screen is the first
+        // thing that must be seen. Playing the avatar intro behind it would only
+        // delay the credential prompt and waste frames.
+        if (TabLock.isLocked(this, TabLock.TAB_HOME)) {
+            splashReady = true;
+            return;
         }
         String style = sharedPreferencesManager.sharedPreferences.getString(
                 Constants.PREF_SPLASH_STYLE, Constants.SPLASH_STYLE_DEFAULT);
@@ -1802,6 +1851,7 @@ public class MainActivity extends AppCompatActivity {
      * preference is enabled. Falls back to disabled on any error.
      */
     private boolean isVolumeShutterActive() {
+        if (tabLockOverlay != null && tabLockOverlay.getVisibility() == View.VISIBLE) return false;
         if (getCurrentFragmentPosition() != 0) return false;
         try {
             if (sharedPreferencesManager == null) {
@@ -2016,6 +2066,10 @@ public class MainActivity extends AppCompatActivity {
         // With hide/show navigation, fragments stay alive and don't re-trigger color setup
         // So we must restore the correct colors when app returns from background
         restoreBarColorsForCurrentTab();
+
+        // Tab Lock: the session is reset by FadCamApplication.onStop. Returning to a
+        // protected tab must not reveal it for even one frame.
+        enforceCurrentTabLockIfNeeded();
 
         // Update badge visibility for new features
         updateFeatureBadgeVisibility();
@@ -2577,13 +2631,60 @@ public class MainActivity extends AppCompatActivity {
 
     /** Mirrors the current tab into the newly visible nav without firing navigation. */
     private void syncNavSelection() {
-        if (bottomNavigationView == null || currentFragmentPosition < 0) return;
+        if (currentFragmentPosition < 0) return;
         int id = getNavItemIdForPosition(currentFragmentPosition);
         if (id == -1) return;
+        syncNavSelection(bottomNavigationView, id);
+        // Landscape uses the rail, not the bottom pill. Both are kept in sync so a
+        // cancelled unlock can never leave the guarded tab visibly selected.
+        syncNavSelection(railNavigationView, id);
+    }
+
+    private void syncNavSelection(NavigationBarView nav, int itemId) {
+        if (nav == null || nav.getMenu().findItem(itemId) == null) return;
         NavigationBarView.OnItemSelectedListener listener = navItemSelectedListener;
-        bottomNavigationView.setOnItemSelectedListener(null);
-        bottomNavigationView.setSelectedItemId(id);
-        bottomNavigationView.setOnItemSelectedListener(listener);
+        boolean wasSuppressed = suppressReselectScroll;
+        suppressReselectScroll = true;
+        try {
+            nav.setOnItemSelectedListener(null);
+            nav.setSelectedItemId(itemId);
+            nav.setOnItemSelectedListener(listener);
+        } finally {
+            suppressReselectScroll = wasSuppressed;
+        }
+    }
+
+    /**
+     * Reselecting the active tab scrolls it to the top. The three scrollable
+     * tabs use different ids because their layouts are independent.
+     */
+    private void scrollTabToTop(int position) {
+        FLog.d("TabNav", "Reselect scroll to top: position=" + position);
+        Fragment fragment = findVisibleFragmentForPosition(
+                getSupportFragmentManager(), position);
+        if (fragment == null || fragment.getView() == null) return;
+
+        int scrollId;
+        switch (position) {
+            case 2:
+                scrollId = R.id.screen_scroll;   // Remote
+                break;
+            case 3:
+                scrollId = R.id.faditor_scroll;  // Faditor Mini
+                break;
+            case 4:
+                scrollId = R.id.content_scroll;  // Settings
+                break;
+            default:
+                return;
+        }
+
+        View scroll = fragment.getView().findViewById(scrollId);
+        if (scroll instanceof androidx.core.widget.NestedScrollView) {
+            ((androidx.core.widget.NestedScrollView) scroll).smoothScrollTo(0, 0);
+        } else if (scroll instanceof android.widget.ScrollView) {
+            ((android.widget.ScrollView) scroll).smoothScrollTo(0, 0);
+        }
     }
 
     /**
@@ -2960,6 +3061,40 @@ public class MainActivity extends AppCompatActivity {
      * @param animate Whether to animate the transition
      */
     public void switchFragment(int position, boolean animate) {
+        if (position < 0 || position > 5) {
+            return;
+        }
+
+        // While the opaque lock screen is up, nothing may change tabs — this also
+        // covers programmatic navigation from fragments and notification intents.
+        if (tabLockOverlay != null && tabLockOverlay.getVisibility() == View.VISIBLE) {
+            FLog.d("TabLock", "switchFragment blocked while app is locked");
+            return;
+        }
+
+        if (position == currentFragmentPosition) {
+            return; // Already showing this fragment
+        }
+
+        // The very first fragment (Home on a fresh launch) is created immediately
+        // so the splash has something to land on; onResume enforces its lock.
+        if (currentFragmentPosition >= 0 && TabLock.isLocked(this, position)) {
+            FLog.i("TabLock", "Unlock required before showing tab " + position);
+            requestTabUnlock(
+                    position,
+                    () -> switchFragmentUnlocked(position, animate),
+                    () -> {
+                        // Cancelled: the old tab must stay selected in every dock.
+                        syncNavSelection();
+                        updateLiteDockSelection();
+                    });
+            return;
+        }
+
+        switchFragmentUnlocked(position, animate);
+    }
+
+    private void switchFragmentUnlocked(int position, boolean animate) {
         if (position == currentFragmentPosition) {
             return; // Already showing this fragment
         }
@@ -3012,6 +3147,137 @@ public class MainActivity extends AppCompatActivity {
 
         // Handle tab-specific logic (same as old onPageSelected)
         handleTabSelected(position);
+    }
+
+    // ========== Tab Lock enforcement ==========
+
+    private void initTabLockUi() {
+        tabLockOverlay = findViewById(R.id.tab_lock_overlay);
+        View lockScreen = findViewById(R.id.tab_lock_screen_root);
+        if (lockScreen != null) {
+            lockScreen.setOnClickListener(v -> requestCurrentTabUnlock());
+        }
+        View unlockButton = findViewById(R.id.tab_lock_unlock_button);
+        if (unlockButton != null) {
+            unlockButton.setOnClickListener(v -> requestCurrentTabUnlock());
+        }
+    }
+
+    /**
+     * Called from onResume. If the tab that is currently restored/visible is
+     * protected, an opaque screen is placed over the whole app and the credential
+     * prompt is shown. Cancelling leaves the lock screen up, so the content stays
+     * hidden and the user can tap Unlock to try again.
+     */
+    private void enforceCurrentTabLockIfNeeded() {
+        if (isFinishing() || isDestroyed() || currentFragmentPosition < 0) {
+            return;
+        }
+        if (!TabLock.isLocked(this, currentFragmentPosition)) {
+            hideTabLockScreen();
+            return;
+        }
+        showTabLockScreen();
+        requestTabUnlock(
+                currentFragmentPosition,
+                () -> hideTabLockScreen(),
+                null);
+    }
+
+    private void requestCurrentTabUnlock() {
+        if (currentFragmentPosition < 0) return;
+        if (!TabLock.isLocked(this, currentFragmentPosition)) {
+            hideTabLockScreen();
+            return;
+        }
+        showTabLockScreen();
+        requestTabUnlock(
+                currentFragmentPosition,
+                () -> hideTabLockScreen(),
+                null);
+    }
+
+    /** True while the opaque app-wide Tab Lock screen is covering the content. */
+    public boolean isTabLockScreenVisible() {
+        return tabLockOverlay != null && tabLockOverlay.getVisibility() == View.VISIBLE;
+    }
+
+    /**
+     * Shows the standard App Lock prompt. Exactly one prompt can exist at a time;
+     * a successful unlock marks only the requested tab, so unlocking Lab never
+     * unlocks Records or Home.
+     */
+    private void requestTabUnlock(int position, Runnable onUnlocked, Runnable onCanceled) {
+        if (tabLockPromptShowing) {
+            return;
+        }
+        if (!com.guardanis.applock.AppLock.isEnrolled(this)) {
+            // The master switch cannot be turned on without enrolling, but a
+            // restored preference bundle could be inconsistent. Never strand the
+            // user on an unlockable screen.
+            if (onUnlocked != null) onUnlocked.run();
+            return;
+        }
+
+        tabLockPromptShowing = true;
+        FLog.i("TabLock", "Showing unlock prompt; tab=" + position);
+        try {
+            android.app.Dialog dialog = TabLock.unlockDialog(
+                    this,
+                    () -> {
+                        tabLockPromptShowing = false;
+                        TabLock.markUnlocked(this, position);
+                        FLog.i("TabLock", "Unlocked tab " + position + " only");
+                        if (onUnlocked != null) onUnlocked.run();
+                    },
+                    () -> {
+                        tabLockPromptShowing = false;
+                        FLog.i("TabLock", "Unlock cancelled; tab=" + position);
+                        if (onCanceled != null) onCanceled.run();
+                    })
+                    .show();
+            if (dialog == null) {
+                tabLockPromptShowing = false;
+                FLog.w("TabLock", "Unlock prompt returned no dialog");
+            }
+        } catch (Throwable t) {
+            tabLockPromptShowing = false;
+            FLog.e("TabLock", "Unable to show unlock prompt", t);
+        }
+    }
+
+    private void showTabLockScreen() {
+        if (tabLockOverlay == null) return;
+        if (tabLockOverlay.getVisibility() == View.VISIBLE) return;
+        tabLockOverlay.setVisibility(View.VISIBLE);
+        tabLockOverlay.setAlpha(1f);
+        tabLockOverlay.bringToFront();
+        // Nothing behind the black screen may be exposed to TalkBack.
+        setLockedContentAccessibility(true);
+    }
+
+    private void hideTabLockScreen() {
+        if (tabLockOverlay == null) return;
+        if (tabLockOverlay.getVisibility() == View.GONE) return;
+        tabLockOverlay.setVisibility(View.GONE);
+        setLockedContentAccessibility(false);
+    }
+
+    private void setLockedContentAccessibility(boolean locked) {
+        int mode = locked
+                ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO;
+        setAccessibilityMode(R.id.fragment_container, mode);
+        setAccessibilityMode(R.id.nav_container, mode);
+        setAccessibilityMode(R.id.overlay_fragment_container, mode);
+        setAccessibilityMode(R.id.status_bar_scrim, mode);
+    }
+
+    private void setAccessibilityMode(int viewId, int mode) {
+        View view = findViewById(viewId);
+        if (view != null) {
+            view.setImportantForAccessibility(mode);
+        }
     }
     
     /**
@@ -3068,7 +3334,13 @@ public class MainActivity extends AppCompatActivity {
         // Update bottom nav selection
         int navItemId = getNavItemIdForPosition(position);
         if (navItemId != -1) {
-            bottomNavigationView.setSelectedItemId(navItemId);
+            boolean wasSuppressed = suppressReselectScroll;
+            suppressReselectScroll = true;
+            try {
+                bottomNavigationView.setSelectedItemId(navItemId);
+            } finally {
+                suppressReselectScroll = wasSuppressed;
+            }
         }
         updateLiteDockSelection();
         

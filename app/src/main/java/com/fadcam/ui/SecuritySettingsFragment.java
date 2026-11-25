@@ -122,37 +122,78 @@ public class SecuritySettingsFragment extends Fragment {
         if(!isEnrolled){
             items.add(new com.fadcam.ui.picker.OptionItem("set_pin_enable", getString(R.string.applock_set_pin_enable)));
         } else {
+            // Which tabs this credential protects. Records is deliberately one
+            // row: its Trash screen is part of the same area and is never named
+            // here, so the sheet does not advertise that Trash exists.
+            items.add(new com.fadcam.ui.picker.OptionItem(
+                    "tab_lock_home",
+                    getString(R.string.nav_home),
+                    R.drawable.ic_house,
+                    sharedPreferencesManager.isTabLockHomeEnabled()));
+            items.add(new com.fadcam.ui.picker.OptionItem(
+                    "tab_lock_records",
+                    getString(R.string.nav_records),
+                    R.drawable.ic_records_selector,
+                    sharedPreferencesManager.isTabLockRecordsEnabled()));
+            items.add(new com.fadcam.ui.picker.OptionItem(
+                    "tab_lock_lab",
+                    getString(R.string.nav_lab),
+                    R.drawable.biotech_24px,
+                    sharedPreferencesManager.isTabLockLabEnabled()));
+
             items.add(new com.fadcam.ui.picker.OptionItem("change_pin", getString(R.string.applock_change_pin)));
             items.add(new com.fadcam.ui.picker.OptionItem("remove_pin", getString(R.string.applock_remove_pin)));
         }
 
         getParentFragmentManager().setFragmentResultListener(resultKey, this, (requestKey, bundle) -> {
-            if(bundle.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)){
+            String selectedAction = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
+            boolean selectedActionHasSwitch = bundle.containsKey(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
+            boolean actionSwitchState = bundle.getBoolean(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE, false);
+
+            if (selectedAction == null && bundle.containsKey(
+                    com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE)) {
                 boolean newState = bundle.getBoolean(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SWITCH_STATE);
                 handleEnableDisable(newState);
             }
-            if(bundle.containsKey(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID)){
-                String action = bundle.getString(com.fadcam.ui.picker.PickerBottomSheetFragment.BUNDLE_SELECTED_ID);
-                if(action!=null){
-                    switch(action){
-                        case "set_pin_enable":
-                            // Create PIN then auto-enable
-                            showPinCreationDialog(true);
-                            break;
-                        case "change_pin":
-                            verifyPinThenExecute(() -> showPinCreationDialog(isEnabled), R.string.applock_verify_to_change);
-                            break;
-                        case "remove_pin":
-                            verifyPinThenExecute(() -> {
-                                AppLock appLock = AppLock.getInstance(requireContext());
-                                appLock.invalidateEnrollments();
-                                setAppLockEnabled(false);
-                                Toast.makeText(requireContext(), R.string.applock_pin_removed, Toast.LENGTH_SHORT).show();
-                                // Re-open sheet with updated state for clarity
-                                row_tab_lock_postRefreshOpen();
-                            }, R.string.applock_verify_to_remove);
-                            break;
-                    }
+            if (selectedAction != null) {
+                switch (selectedAction) {
+                    case "tab_lock_home":
+                        if (selectedActionHasSwitch) {
+                            sharedPreferencesManager.setTabLockHomeEnabled(actionSwitchState);
+                            sharedPreferencesManager.clearTabLockUnlocks();
+                        }
+                        break;
+                    case "tab_lock_records":
+                        if (selectedActionHasSwitch) {
+                            sharedPreferencesManager.setTabLockRecordsEnabled(actionSwitchState);
+                            sharedPreferencesManager.clearTabLockUnlocks();
+                        }
+                        break;
+                    case "tab_lock_lab":
+                        if (selectedActionHasSwitch) {
+                            sharedPreferencesManager.setTabLockLabEnabled(actionSwitchState);
+                            sharedPreferencesManager.clearTabLockUnlocks();
+                        }
+                        break;
+                    case "set_pin_enable":
+                        // Create PIN then auto-enable
+                        showPinCreationDialog(true);
+                        break;
+                    case "change_pin":
+                        verifyPinThenExecute(() -> showPinCreationDialog(isEnabled), R.string.applock_verify_to_change);
+                        break;
+                    case "remove_pin":
+                        verifyPinThenExecute(() -> {
+                            AppLock appLock = AppLock.getInstance(requireContext());
+                            appLock.invalidateEnrollments();
+                            setAppLockEnabled(false);
+                            Toast.makeText(requireContext(), R.string.applock_pin_removed, Toast.LENGTH_SHORT).show();
+                            // Re-open sheet with updated state for clarity
+                            row_tab_lock_postRefreshOpen();
+                        }, R.string.applock_verify_to_remove);
+                        break;
                 }
             }
         });
@@ -372,6 +413,9 @@ public class SecuritySettingsFragment extends Fragment {
 
     private void setAppLockEnabled(boolean enabled) {
         sharedPreferencesManager.setAppLockEnabled(enabled);
+        // Turning the master switch on or off changes the policy: every tab must
+        // authenticate again under the new policy.
+        sharedPreferencesManager.clearTabLockUnlocks();
         String message = enabled ? getString(R.string.applock_enable) + " " + getString(R.string.universal_ok)
                 : getString(R.string.applock_disable) + " " + getString(R.string.universal_ok);
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();

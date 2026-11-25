@@ -1585,7 +1585,7 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
 
     <!-- App Lock Strings -->
     <string name="setting_applock_title">Tab Lock</string>
-    <string name="setting_applock_desc">Secure your videos with PIN lock for Records tab. \nFor your security, the Records tab will auto-lock whenever the app goes to the background or is closed. You will need to unlock again when you return</string>
+    <string name="setting_applock_desc">Protect selected tabs with a PIN, password, or fingerprint. Locked tabs re-lock whenever the app goes to the background or is closed, and must be unlocked again when you return.</string>
     <string name="setting_applock_configure">Configure</string>
     <string name="applock_dialog_title">Tab Lock Options</string>
     <string name="applock_enable">Enable Tab Lock</string>
@@ -1597,9 +1597,14 @@ Recommended: 192000 bps, 48000 Hz for most users.</string>
     <string name="applock_pin_removed">PIN successfully removed</string>
     <!-- Enhanced Tab Lock UX strings -->
     <string name="applock_set_pin_enable">Set PIN &amp; Enable</string>
-    <string name="applock_helper_create">Create protection for the Records tab using a 4‑digit PIN, password, or fingerprint. It will auto‑lock when the app goes to background.</string>
-    <string name="applock_helper_manage_disabled">Tab Lock PIN is set. Toggle it on to require the PIN when returning to the app.</string>
-    <string name="applock_helper_enabled">Tab Lock is active. You will need the PIN when opening the Records tab after leaving the app.</string>
+    <string name="applock_helper_create">Create protection for the tabs you choose using a 4‑digit PIN, password, or fingerprint. They will auto‑lock when the app goes to background.</string>
+    <string name="applock_helper_manage_disabled">Tab Lock PIN is set. Toggle it on to require the PIN for selected tabs.</string>
+    <string name="applock_helper_enabled">Tab Lock is active. Selected tabs require the PIN after you leave the app. Records is protected by default.</string>
+
+    <!-- Tab Lock screen -->
+    <string name="tab_lock_screen_title">Locked</string>
+    <string name="tab_lock_screen_message">Unlock to continue</string>
+    <string name="tab_lock_unlock">Unlock</string>
 
     <!-- App Lock Verification Messages -->
     <string name="applock_verify_to_enable">Verify PIN to Enable Tab Lock</string>

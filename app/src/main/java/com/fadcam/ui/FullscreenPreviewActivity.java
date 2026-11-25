@@ -53,6 +53,7 @@ import com.fadcam.R;
 import com.fadcam.RecordingState;
 import com.fadcam.RecordingControlIntents;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.security.TabLock;
 import com.fadcam.dualcam.service.DualCameraRecordingService;
 import com.fadcam.services.RecordingService;
 import com.fadcam.ui.picker.OptionItem;
@@ -105,6 +106,8 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     // ── Views ────────────────────────────────────────────────────────────────
     private FrameLayout rootLayout;
     private int platformStatusBarHeightPx = -1;
+    /** De-duplicates the Tab Lock prompt while the preview is resumed. */
+    private boolean tabLockPromptShowing;
 
     /** Status bar height from the platform, stable whether or not the bar is currently shown. */
     private int getPlatformStatusBarHeight() {
@@ -302,6 +305,27 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     // Lifecycle
     // ─────────────────────────────────────────────────────────────────────────
 
+    /**
+     * Full-screen preview is an extension of Home. If Home is protected and the
+     * app session re-locked while the preview stayed in the task, do not show the
+     * live camera until the credential is verified. Cancelling closes the preview.
+     */
+    private void enforceTabLock() {
+        if (tabLockPromptShowing) return;
+        if (!TabLock.isLocked(this, TabLock.TAB_HOME)) return;
+        tabLockPromptShowing = true;
+        TabLock.unlockDialog(this,
+                () -> {
+                    tabLockPromptShowing = false;
+                    TabLock.markUnlocked(this, TabLock.TAB_HOME);
+                },
+                () -> {
+                    tabLockPromptShowing = false;
+                    finish();
+                })
+                .show();
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         // Apply the user's selected theme BEFORE setContentView so bottom sheet
@@ -348,6 +372,7 @@ public class FullscreenPreviewActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        enforceTabLock();
         enterImmersiveMode();
         updateMirrorButtonVisibilityAndState();
         isTorchOn = prefs.sharedPreferences.getBoolean(Constants.PREF_TORCH_STATE, false);

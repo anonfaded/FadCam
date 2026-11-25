@@ -275,32 +275,57 @@ public class SharedPreferencesManager {
     // App Lock preferences
     private static final String PREF_APP_LOCK_ENABLED = "applock_enabled";
 
+    // Per-tab protection. Records stays on by default so the behaviour existing
+    // users already have (Records + Trash locked) does not change. Home and Lab
+    // are opt-in: locking Home turns Tab Lock into a full app lock because Home
+    // is the launch tab.
+    public static final String PREF_TAB_LOCK_HOME = "tab_lock_home";
+    public static final String PREF_TAB_LOCK_RECORDS = "tab_lock_records";
+    public static final String PREF_TAB_LOCK_LAB = "tab_lock_lab";
+
+    // Each protected tab has its own unlock state. Unlocking Lab must never
+    // unlock Records or Home. These flags live for one foreground session and
+    // are cleared on background and on process start.
+    private static final String KEY_TAB_UNLOCKED_HOME = "tab_lock_unlocked_home";
+    private static final String KEY_TAB_UNLOCKED_RECORDS = "tab_lock_unlocked_records";
+    private static final String KEY_TAB_UNLOCKED_LAB = "tab_lock_unlocked_lab";
+    /** Written by older builds. Removed so a stale global flag cannot linger. */
     private static final String KEY_APPLOCK_SESSION_UNLOCKED =
         "applock_session_unlocked";
-    private volatile boolean sessionUnlockedCache = false;
 
-    /**
-     * Returns true if the AppLock has been unlocked for this session.
-     */
-    public boolean isAppLockSessionUnlocked() {
-        if (sessionUnlockedCache) return true;
-        sessionUnlockedCache = safeGetBoolean(
-            KEY_APPLOCK_SESSION_UNLOCKED,
-            false
-        );
-        return sessionUnlockedCache;
+    public boolean isTabLockUnlockedHome() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_HOME, false);
     }
 
-    /**
-     * Sets the AppLock session unlock state.
-     *
-     * @param unlocked true if unlocked, false to reset
-     */
-    public void setAppLockSessionUnlocked(boolean unlocked) {
-        sessionUnlockedCache = unlocked;
+    public void setTabLockUnlockedHome(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_HOME, unlocked).apply();
+    }
+
+    public boolean isTabLockUnlockedRecords() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_RECORDS, false);
+    }
+
+    public void setTabLockUnlockedRecords(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_RECORDS, unlocked).apply();
+    }
+
+    public boolean isTabLockUnlockedLab() {
+        return safeGetBoolean(KEY_TAB_UNLOCKED_LAB, false);
+    }
+
+    public void setTabLockUnlockedLab(boolean unlocked) {
+        sharedPreferences.edit().putBoolean(KEY_TAB_UNLOCKED_LAB, unlocked).apply();
+    }
+
+    /** Re-locks every protected tab. Called on background, process start and
+     *  whenever the Tab Lock configuration changes. */
+    public void clearTabLockUnlocks() {
         sharedPreferences
             .edit()
-            .putBoolean(KEY_APPLOCK_SESSION_UNLOCKED, unlocked)
+            .putBoolean(KEY_TAB_UNLOCKED_HOME, false)
+            .putBoolean(KEY_TAB_UNLOCKED_RECORDS, false)
+            .putBoolean(KEY_TAB_UNLOCKED_LAB, false)
+            .remove(KEY_APPLOCK_SESSION_UNLOCKED)
             .apply();
     }
 
@@ -1973,6 +1998,36 @@ public class SharedPreferencesManager {
             .edit()
             .putBoolean(PREF_APP_LOCK_ENABLED, enabled)
             .apply();
+    }
+
+    /** True when the Home tab should require the App Lock credential. */
+    public boolean isTabLockHomeEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_HOME, false);
+    }
+
+    public void setTabLockHomeEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_HOME, enabled).apply();
+    }
+
+    /**
+     * True when Records (and its Trash screen) should require the App Lock
+     * credential. Defaults to true to preserve the previous behaviour.
+     */
+    public boolean isTabLockRecordsEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_RECORDS, true);
+    }
+
+    public void setTabLockRecordsEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_RECORDS, enabled).apply();
+    }
+
+    /** True when the Lab tab should require the App Lock credential. */
+    public boolean isTabLockLabEnabled() {
+        return safeGetBoolean(PREF_TAB_LOCK_LAB, false);
+    }
+
+    public void setTabLockLabEnabled(boolean enabled) {
+        sharedPreferences.edit().putBoolean(PREF_TAB_LOCK_LAB, enabled).apply();
     }
 
     public static final String PREF_PRIVACY_BLACK_MODE_ENABLED = "privacy_black_mode_enabled";

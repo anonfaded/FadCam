@@ -100,11 +100,10 @@ public class SettingsHomeFragment extends Fragment {
         prefManager = prefs;
         prefListener = (sp, key) -> {
             if (!"show_trash_in_settings".equals(key)) return;
-            boolean show = prefs.isShowTrashInSettings();
-            FLog.d("TrashDebug", "prefListener fired: show=" + show);
+            FLog.d("TrashDebug", "prefListener fired: show=" + (prefManager != null && prefManager.isShowTrashInSettings()));
             View sectionTrash = getView() != null ? getView().findViewById(R.id.section_trash) : null;
             if (sectionTrash != null) {
-                sectionTrash.setVisibility(show ? View.VISIBLE : View.GONE);
+                sectionTrash.setVisibility(shouldShowTrashSection() ? View.VISIBLE : View.GONE);
             }
         };
         prefs.sharedPreferences.registerOnSharedPreferenceChangeListener(prefListener);
@@ -117,10 +116,9 @@ public class SettingsHomeFragment extends Fragment {
         FLog.d("TrashDebug", "onHiddenChanged hidden=" + hidden + " pref=" + (prefManager != null ? prefManager.isShowTrashInSettings() : "null"));
         if (!hidden && getView() != null && prefManager != null) {
             View sectionTrash = getView().findViewById(R.id.section_trash);
-            FLog.d("TrashDebug", "onHiddenChanged sectionTrash=" + (sectionTrash != null) + " show=" + prefManager.isShowTrashInSettings());
+            FLog.d("TrashDebug", "onHiddenChanged sectionTrash=" + (sectionTrash != null) + " show=" + shouldShowTrashSection());
             if (sectionTrash != null) {
-                sectionTrash.setVisibility(
-                    prefManager.isShowTrashInSettings() ? View.VISIBLE : View.GONE);
+                sectionTrash.setVisibility(shouldShowTrashSection() ? View.VISIBLE : View.GONE);
             }
         }
         if (!hidden) {
@@ -131,7 +129,32 @@ public class SettingsHomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        // The App Lock session can become locked while this tab is in the
+        // background. Recompute the Trash row so it is not advertised while
+        // Records is locked.
+        if (getView() != null) {
+            View sectionTrash = getView().findViewById(R.id.section_trash);
+            if (sectionTrash != null) {
+                sectionTrash.setVisibility(shouldShowTrashSection() ? View.VISIBLE : View.GONE);
+            }
+        }
         maybeScrollToMiniApps();
+    }
+
+    /**
+     * The Trash screen is part of the Records tab's protected area. While that
+     * area is locked, Settings must not advertise that Trash exists; after the
+     * session is unlocked the normal preference takes over again.
+     */
+    private boolean shouldShowTrashSection() {
+        if (prefManager == null && getContext() != null) {
+            prefManager = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        }
+        if (prefManager == null || !prefManager.isShowTrashInSettings()) {
+            return false;
+        }
+        return !com.fadcam.security.TabLock.isLocked(
+                requireContext(), com.fadcam.security.TabLock.TAB_RECORDS);
     }
 
     /** Scrolls the settings content to the Mini Apps section when requested by the home sidebar. */
@@ -550,9 +573,10 @@ public class SettingsHomeFragment extends Fragment {
 
         // Trash section
         com.fadcam.SharedPreferencesManager prefs = com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        prefManager = prefs;
         View sectionTrash = root.findViewById(R.id.section_trash);
         if (sectionTrash != null) {
-            sectionTrash.setVisibility(prefs.isShowTrashInSettings() ? View.VISIBLE : View.GONE);
+            sectionTrash.setVisibility(shouldShowTrashSection() ? View.VISIBLE : View.GONE);
         }
 
         bindRow(root, R.id.group_trash, () -> {

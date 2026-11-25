@@ -32,6 +32,11 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
         // background invalidation thread either way).
         new Thread(this::registerSelfHealingScanObserver, "selfheal-observer").start();
 
+        // Tab Lock unlocked state belongs to one foreground process session only.
+        // If the process died while a tab was unlocked, a persisted flag would let
+        // the next launch skip that tab's prompt. Reset every tab before UI reads it.
+        SharedPreferencesManager.getInstance(this).clearTabLockUnlocks();
+
         // Motion Lab's live monitor flag is transient UI state. If the process was
         // killed while the monitor was open, the persisted flag would otherwise stay
         // true forever and make the service encode a JPEG every 900 ms for a screen
@@ -101,8 +106,8 @@ public class FadCamApplication extends Application implements DefaultLifecycleOb
 
     @Override
     public void onStop(@androidx.annotation.NonNull LifecycleOwner owner) {
-        // App is in background, reset AppLock session
-        SharedPreferencesManager.getInstance(this).setAppLockSessionUnlocked(false);
+        // App is in background, re-lock every protected tab.
+        SharedPreferencesManager.getInstance(this).clearTabLockUnlocks();
         Intent intent = new Intent(this, com.fadcam.services.RecordingService.class);
         intent.setAction("ACTION_APP_BACKGROUND");
         startService(intent);

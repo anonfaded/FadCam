@@ -22,6 +22,7 @@ import androidx.media3.ui.PlayerView;
 import com.fadcam.Constants;
 import com.fadcam.R;
 import com.fadcam.SharedPreferencesManager;
+import com.fadcam.security.TabLock;
 import com.fadcam.ui.picker.OptionItem;
 import com.fadcam.ui.picker.PickerBottomSheetFragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -43,6 +44,8 @@ public class VideoPlayerActivity extends AppCompatActivity {
     private float currentScale = 1.0f;
     private float currentTranslationX = 0f;
     private float currentTranslationY = 0f;
+    /** De-duplicates the Tab Lock prompt while the viewer is resumed. */
+    private boolean tabLockPromptShowing;
     private boolean isPinching = false;
     private ImageButton resetZoomButton;
     // Shared preferences runtime sync helpers
@@ -3037,9 +3040,38 @@ public class VideoPlayerActivity extends AppCompatActivity {
 
 
     // --- Lifecycle Management ---
+    /**
+     * The player is a full-screen extension of the Records tab. If the user
+     * returns to it after the app session re-locked, ask for the credential
+     * before showing the video again. Cancelling closes the player.
+     */
+    private void enforceTabLock() {
+        if (tabLockPromptShowing) return;
+        if (!TabLock.isLocked(this, TabLock.TAB_RECORDS)) return;
+        tabLockPromptShowing = true;
+        try {
+            if (player != null) player.pause();
+        } catch (Throwable ignored) {
+        }
+        TabLock.unlockDialog(this,
+                () -> {
+                    tabLockPromptShowing = false;
+                    // Unlock only the Records area this player belongs to.
+                    TabLock.markUnlocked(this, TabLock.TAB_RECORDS);
+                },
+                () -> {
+                    tabLockPromptShowing = false;
+                    finish();
+                })
+                .show();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
+        // A player left open in the task must not expose protected recordings
+        // after the app session re-locks.
+        enforceTabLock();
         // Keep screen on during playback if enabled in settings
         boolean keepAwake = SharedPreferencesManager.getInstance(
             this

@@ -121,6 +121,9 @@ public class EditorTimelineView extends View {
     private final Paint playheadPaint      = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint playheadCirclePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint labelPaint         = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint speedLabelPaint    = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint reorderLabelPaint  = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint reorderThumbScrimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint dragGhostPaint     = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint trimOverlayPaint    = new Paint();
     private final Paint trimRecoverPaint    = new Paint();
@@ -340,6 +343,9 @@ public class EditorTimelineView extends View {
         float speed;
         long effectiveMs;
         final String durationLabel;
+        /** Non-null only when the clip is not at normal speed. */
+        @Nullable
+        final String speedLabel;
 
         SegmentData(int i, @NonNull Clip clip) {
             this.index = i;
@@ -352,9 +358,16 @@ public class EditorTimelineView extends View {
             this.speed = clip.getSpeedMultiplier();
             this.effectiveMs = Math.max(1, (long)(trimmedMs / speed));
             this.durationLabel = formatDurationCompact(effectiveMs);
+            this.speedLabel = Math.abs(speed - 1f) < 0.01f
+                    ? null : formatSpeedLabel(speed);
             // Content-based key: same media + same trim = same thumbnails
             this.cacheKey = sourceUri.hashCode() + "_" + inPointMs + "_" + outPointMs;
         }
+    }
+
+    private static String formatSpeedLabel(float speed) {
+        if (speed == (int) speed) return (int) speed + "x";
+        return String.format(Locale.US, "%.2gx", speed);
     }
 
     // ── Listener interface ───────────────────────────────────────────
