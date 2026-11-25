@@ -55,7 +55,7 @@ public class EditorTimelineView extends View {
     private static final float MIN_ZOOM = 0.5f;
     private static final float MAX_ZOOM = 8f;
     private static final float MIN_SEGMENT_DP = 80f;
-    private static final float EDGE_PADDING_DP = 20f;
+    private static final float EDGE_PADDING_DP = 0f;
 
     private static final float RULER_HEIGHT_DP = 22f;
     private static final float TRACK_HEIGHT_DP = 56f;
@@ -882,7 +882,13 @@ public class EditorTimelineView extends View {
         // 50dp/s that threshold skipped the 1s tier entirely and jumped to 2s labels,
         // so a 3s timeline showed a single "2s" and a 1s timeline showed no label.
         float minLabelGapPx = 44f * density;
-        long labelInterval = calculateDynamicLabelInterval(minLabelGapPx);
+        // Measure the pixels-per-second the layout actually produced. Using the nominal
+        // dpPerSecondPx made the ruler disagree with the clip widths (ticks spread over
+        // the full width while the clips stayed narrow).
+        float pxPerSecond = totalEffectiveMs > 0
+                ? (timeToX(totalEffectiveMs) - timeToX(0)) / (totalEffectiveMs / 1000f)
+                : dpPerSecondPx;
+        long labelInterval = calculateDynamicLabelInterval(minLabelGapPx, pxPerSecond);
         
         // Calculate tick hierarchy intervals to avoid conflicts
         long minorInterval;
@@ -938,13 +944,13 @@ public class EditorTimelineView extends View {
     }
     
     /** Calculate label interval dynamically based on zoom level to prevent overlap */
-    private long calculateDynamicLabelInterval(float minLabelGapPx) {
+    private long calculateDynamicLabelInterval(float minLabelGapPx, float pxPerSecond) {
         // Available intervals in ascending order
         long[] intervals = {100, 200, 250, 500, 1000, 2000, 5000, 10000, 30000, 60000};
         
         // Find smallest interval that gives enough pixel spacing
         for (long interval : intervals) {
-            float pixelGap = (interval / 1000f) * dpPerSecondPx;
+            float pixelGap = (interval / 1000f) * pxPerSecond;
             if (pixelGap >= minLabelGapPx) {
                 return interval;
             }

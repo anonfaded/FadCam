@@ -739,7 +739,8 @@ public class FaditorMiniFragment extends BaseFragment {
         if (!selectionMode) {
             TextView arrow = new TextView(requireContext());
             arrow.setTypeface(iconFont);
-            arrow.setText("chevron_right");
+            // "Open in editor" must read as opening, not as a second edit/rename control.
+            arrow.setText("open_in_new");
             arrow.setTextColor(0xFF444444);
             arrow.setTextSize(18);
             arrow.setGravity(Gravity.CENTER);

@@ -724,10 +724,19 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 long seekPosition = Math.max(0, Math.min(sourceMs - clip.getInPointMs(), trimDuration));
                 if (!clip.isImageClip()) {
                     // Only seek ExoPlayer for video clips.
-                    // Pause FIRST so ExoPlayer renders the decoded frame to TextureView
-                    // (frame only becomes visible when playWhenReady=false and seek completes)
-                    playerManager.pause();
-                    playerManager.seekTo(seekPosition);
+                    if (isDragging) {
+                        // Scrubbing used to seek on every move. That re-buffered the
+                        // player continuously (log showed a seek every ~7 ms), which is
+                        // exactly the stutter and the playhead fighting the finger.
+                        // The preview catches up once on drag end.
+                        FLog.d(TAG, "scrub: preview seek deferred until release");
+                    } else {
+                        // Pause FIRST so ExoPlayer renders the decoded frame to
+                        // TextureView (the frame only becomes visible with
+                        // playWhenReady=false and a completed seek).
+                        playerManager.pause();
+                        playerManager.seekTo(seekPosition);
+                    }
                 } else {
                     // For image clips: store the seek position for playback resumption
                     imagePlaybackStartOffsetMs = seekPosition;
@@ -769,6 +778,24 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     }
                 }
                 
+                // Commit exactly one seek now that the finger is up. Everything the
+                // scrub did was visual; this is where the player catches up.
+                Clip playing = clipAt(segmentAtPlayhead >= 0 ? segmentAtPlayhead : playbackClipIndex);
+                if (playing != null && !playing.isImageClip()) {
+                    long playheadMs = editorTimeline.getPlayheadPositionMs();
+                    long segStartMs = editorTimeline.getSegmentStartTimeMs(playbackClipIndex);
+                    long localEff = Math.max(0, playheadMs - segStartMs);
+                    long localSrc = playing.getInPointMs()
+                            + (long) (localEff * playing.getSpeedMultiplier());
+                    localSrc = Math.max(playing.getInPointMs(),
+                            Math.min(localSrc, playing.getOutPointMs()));
+                    playerManager.pause();
+                    playerManager.seekTo(localSrc - playing.getInPointMs());
+                    armPlaybackSeekGuard(localSrc - playing.getInPointMs());
+                    FLog.d(TAG, "drag end: single seek to " + (localSrc - playing.getInPointMs())
+                            + "ms in clip " + playbackClipIndex);
+                }
+
                 // The toolbar reflects the selection, which scrubbing does not change.
                 // It only needs refreshing if a clip is actually selected.
                 Clip selected = getSelectedClip();
@@ -1586,8 +1613,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         androidx.core.widget.NestedScrollView column = new androidx.core.widget.NestedScrollView(this);
         column.setFillViewport(false);
-        column.setBackgroundColor(0xFF141414);
+        // Rounded rail, matching the editor's top bar and controls section.
+        column.setBackgroundResource(R.drawable.bg_editor_tool_rail);
         column.setVerticalScrollBarEnabled(false);
+        // A little inner padding keeps the tool icons off the rounded edge.
+        int railPad = dp(6);
+        column.setPadding(0, railPad, 0, railPad);
+        column.setClipToPadding(false);
         LinearLayout.LayoutParams colLp = new LinearLayout.LayoutParams(
                 dp(92), LinearLayout.LayoutParams.MATCH_PARENT);
         main.addView(column, colLp);
