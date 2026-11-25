@@ -484,6 +484,15 @@ android {
         // list applies APK-wide, bloated res/ by ~1 MB. Only keep extensions that are
         // genuinely memory-mapped (none here: assets are plain opens).
         additionalParameters.add("--no-version-vectors")
+        // Ship only the locales this app actually translates. Without this, the merged
+        // resources drag in ~80 extra translations that come from libraries (ExoPlayer
+        // player controls, AppCompat action-mode labels, Material badge descriptions).
+        // Our own UI has no values-* dirs for those languages, so those users already
+        // fall back to English; this just stops bundling strings they cannot reach.
+        // `resourceConfigurations` was removed in AGP 8.8; `localeFilters` replaces it.
+        localeFilters.addAll(listOf(
+            "en", "ar", "de", "el", "es", "et", "fr", "in", "it", "ps", "ru", "tr", "zh-rCN"
+        ))
     }
 
     buildFeatures {
