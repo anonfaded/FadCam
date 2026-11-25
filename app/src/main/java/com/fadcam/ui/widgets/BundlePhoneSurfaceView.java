@@ -43,7 +43,8 @@ import java.util.Locale;
  * apps (with page dots), a lock screen (status bar + camera + real time + usage Easter egg +
  * animated swipe-up hint), a minimal notification shade with a discreet weather-style
  * recording notification, a volume HUD, and tappable mini app previews (Notes with real
- * typing, a working Calculator, a Weather card). Back: camera visor + etched FadSec Lab flag.
+ * typing, a working Calculator, a Weather card). Back: camera visor + etched FadSec Phone x1
+ * wordmark under the flag.
  */
 public class BundlePhoneSurfaceView extends View {
     public static final int SIDE_FRONT = 0;
@@ -57,9 +58,13 @@ public class BundlePhoneSurfaceView extends View {
 
     private static final float ASPECT = 2.05f;
     /** The boot theater: logo + "Starting" + loader, then the status bar and the icon pop. */
-    private static final float BOOT_MS = 3600f;
+    private static final float BOOT_MS = 6000f;
     /** The shutdown phase that precedes a restart boot. */
-    private static final float SHUTDOWN_MS = 1600f;
+    private static final float SHUTDOWN_MS = 2400f;
+
+    /** Boot wordmark under the flag and the discreet footer stamp. */
+    private static final String BOOT_OS_NAME = "FadSecOS";
+    private static final String BOOT_FOOTER = "powered by FadSecOS";
 
     private static final String[] CALC_KEYS = {"7", "8", "9", "÷", "4", "5", "6", "×",
             "1", "2", "3", "−", "C", "0", "=", "+"};
@@ -1035,12 +1040,19 @@ public class BundlePhoneSurfaceView extends View {
         canvas.drawRoundRect(screen, screenR, screenR, paint);
 
         // The theater rises, holds, then fades away completely before the home appears:
-        // logo + "Starting" + loader on black, a beat, then the status bar and the icon pop.
-        float theaterOut = easeOut(seg(p, 0.50f, 0.64f));
-        float flagA = easeOut(seg(p, 0.00f, 0.18f)) * (1f - theaterOut);
-        float bootTextA = easeOut(seg(p, 0.09f, 0.26f)) * (1f - theaterOut);
-        float loaderA = easeOut(seg(p, 0.36f, 0.52f)) * (1f - easeOut(seg(p, 0.54f, 0.66f)));
-        float statusA = easeOut(seg(p, 0.70f, 0.84f));
+        // flag + FadSecOS wordmark, then "Starting" + loader on black, a beat, then the
+        // status bar and the icon pop.
+        // One composition, one fade: real phones bring the whole boot sheet up together
+        // (emblem, OS name, status line, loader) rather than stacking elements one by one.
+        float theaterIn = easeOut(seg(p, 0.02f, 0.16f));
+        float theaterOut = easeOut(seg(p, 0.60f, 0.72f));
+        float theaterA = theaterIn * (1f - theaterOut);
+        float flagA = theaterA;
+        float osNameA = theaterA;
+        float bootTextA = theaterA;
+        float loaderA = theaterA;
+        float footerA = theaterA;
+        float statusA = easeOut(seg(p, 0.76f, 0.86f));
 
         float cx = screen.centerX();
         float cy = screen.top + screen.height() * 0.34f;
@@ -1053,17 +1065,32 @@ public class BundlePhoneSurfaceView extends View {
                     new float[]{0f, 0.62f, 1f}, Shader.TileMode.CLAMP));
             canvas.drawCircle(cx, cy, flagSize * 0.90f, paint);
             paint.setShader(null);
-            float half = flagSize * (0.94f + 0.06f * flagA) / 2f;
+            float half = flagSize / 2f;
             flag.setBounds(Math.round(cx - half), Math.round(cy - half),
                     Math.round(cx + half), Math.round(cy + half));
             flag.setAlpha(Math.round(255 * flagA));
             flag.draw(canvas);
         }
 
+        // The OS wordmark sits right under the flag: the emblem names the device, this
+        // names the software it boots.
+        if (osNameA > 0.001f) {
+            float osSize = pw * 0.075f;
+            paint.setTypeface(labelBold);
+            paint.setTextSize(osSize);
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setLetterSpacing(0.22f);
+            paint.setColor(withAlpha(0xFFF2F2F4, osNameA));
+            // Letter spacing also trails the last glyph; nudge so the optical centre lands.
+            canvas.drawText(BOOT_OS_NAME, cx + osSize * 0.11f, cy + pw * 0.46f, paint);
+            paint.setLetterSpacing(0f);
+            paint.setTypeface(labelTypeface);
+        }
+
         paint.setTypeface(labelTypeface);
         paint.setTextAlign(Paint.Align.CENTER);
         if (bootTextA > 0.001f) {
-            int dots = (int) (p * 26f) % 4;
+            int dots = (int) (p * 14f) % 4;
             StringBuilder label = new StringBuilder(getContext().getString(R.string.pro_showcase_starting));
             for (int i = 0; i < dots; i++) label.append('.');
             paint.setTextSize(pw * 0.048f);
@@ -1072,7 +1099,7 @@ public class BundlePhoneSurfaceView extends View {
         }
         if (loaderA > 0.001f) {
             float r = screen.width() * 0.062f;
-            float ly = cy + pw * 1.06f;
+            float ly = cy + pw * 0.86f;
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(Math.max(2f, pw * 0.010f));
             paint.setStrokeCap(Paint.Cap.ROUND);
@@ -1084,6 +1111,17 @@ public class BundlePhoneSurfaceView extends View {
             canvas.drawArc(loaderRect, p * 360f * 3.0f, 96f, false, paint);
             paint.setStrokeCap(Paint.Cap.BUTT);
             paint.setStyle(Paint.Style.FILL);
+        }
+        // The quiet stamp at the bottom edge: who makes the software this device runs.
+        if (footerA > 0.001f) {
+            paint.setTypeface(labelTypeface);
+            paint.setTextSize(pw * 0.036f);
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setLetterSpacing(0.06f);
+            paint.setColor(withAlpha(0x99FFFFFF, footerA));
+            canvas.drawText(BOOT_FOOTER, cx, screen.bottom - pw * 0.11f, paint);
+            paint.setLetterSpacing(0f);
+            paint.setTextAlign(Paint.Align.LEFT);
         }
         paint.setTextAlign(Paint.Align.LEFT);
 
@@ -1098,8 +1136,8 @@ public class BundlePhoneSurfaceView extends View {
             // Every segment MUST end at or before p=1: the boot settles at exactly 1, so a
             // segment running past it would freeze the last icon/label at partial opacity
             // forever (the "dull Weather label" bug).
-            float start = 0.74f + i * 0.06f;
-            float a = easeOut(seg(p, start, start + 0.13f)) * easeOut(popProgress);
+            float start = 0.78f + i * 0.05f;
+            float a = easeOut(seg(p, start, start + 0.11f)) * easeOut(popProgress);
             if (a <= 0.001f) continue;
             float s = (0.60f + 0.40f * a) * (pulseIndex == i ? appPulse : 1f);
             float left = iconRects[i].left;
@@ -1114,7 +1152,7 @@ public class BundlePhoneSurfaceView extends View {
             icon.setAlpha(Math.round(255 * a));
             icon.draw(canvas);
             canvas.restore();
-            float labelA = easeOut(seg(p, start + 0.02f, start + 0.13f)) * easeOut(popProgress);
+            float labelA = easeOut(seg(p, start + 0.02f, start + 0.10f)) * easeOut(popProgress);
             if (labelA > 0.001f) {
                 paint.setTypeface(labelTypeface);
                 paint.setTextSize(pw * 0.058f);
@@ -1631,16 +1669,47 @@ public class BundlePhoneSurfaceView extends View {
         paint.setColor(0xFF000000);
         canvas.drawRoundRect(screen, screenR, screenR, paint);
 
-        float shutdownA = easeOut(seg(p, 0.04f, 0.22f)) * (1f - easeOut(seg(p, 0.62f, 0.78f)));
-        if (shutdownA > 0.001f) {
-            paint.setTypeface(labelTypeface);
-            paint.setTextAlign(Paint.Align.CENTER);
-            paint.setTextSize(pw * 0.048f);
-            paint.setColor(withAlpha(0xFF9A9AA0, shutdownA));
-            canvas.drawText(getContext().getString(R.string.pro_showcase_shutting_down),
-                    screen.centerX(), screen.centerY(), paint);
-            paint.setTextAlign(Paint.Align.LEFT);
+        // The shutdown wears the same identity as the boot: emblem, OS name, then the
+        // parting line — one composition, one fade.
+        float in = easeOut(seg(p, 0.04f, 0.20f));
+        float out = 1f - easeOut(seg(p, 0.62f, 0.82f));
+        float alpha = in * out;
+
+        float cx = screen.centerX();
+        float cy = screen.top + screen.height() * 0.40f;
+
+        if (alpha > 0.001f && flag != null) {
+            float flagSize = screen.width() * 0.34f;
+            float half = flagSize / 2f;
+            flag.setBounds(Math.round(cx - half), Math.round(cy - half),
+                    Math.round(cx + half), Math.round(cy + half));
+            flag.setAlpha(Math.round(255 * alpha));
+            flag.draw(canvas);
         }
+        if (alpha > 0.001f) {
+            float osSize = pw * 0.062f;
+            paint.setTypeface(labelBold);
+            paint.setTextSize(osSize);
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setLetterSpacing(0.22f);
+            paint.setColor(withAlpha(0xFFF2F2F4, alpha));
+            canvas.drawText(BOOT_OS_NAME, cx + osSize * 0.11f, cy + pw * 0.36f, paint);
+            paint.setLetterSpacing(0f);
+            paint.setTypeface(labelTypeface);
+
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setTextSize(pw * 0.044f);
+            paint.setColor(withAlpha(0xFF9A9AA0, alpha));
+            canvas.drawText(getContext().getString(R.string.pro_showcase_shutting_down),
+                    cx, cy + pw * 0.56f, paint);
+
+            paint.setTextSize(pw * 0.036f);
+            paint.setLetterSpacing(0.06f);
+            paint.setColor(withAlpha(0x99FFFFFF, alpha));
+            canvas.drawText(BOOT_FOOTER, cx, screen.bottom - pw * 0.11f, paint);
+            paint.setLetterSpacing(0f);
+        }
+        paint.setTextAlign(Paint.Align.LEFT);
         canvas.restore();
     }
 
@@ -1901,11 +1970,11 @@ public class BundlePhoneSurfaceView extends View {
         }
 
         paint.setTypeface(labelTypeface);
-        paint.setTextSize(pw * 0.058f);
+        paint.setTextSize(pw * 0.054f);
         paint.setTextAlign(Paint.Align.CENTER);
-        paint.setLetterSpacing(0.18f);
+        paint.setLetterSpacing(0.14f);
         paint.setColor(0x3AFFFFFF);
-        canvas.drawText("FadSec Lab", face.centerX(), face.top + phone.height() * 0.49f, paint);
+        canvas.drawText("FadSec Phone x1", face.centerX(), face.top + phone.height() * 0.49f, paint);
         paint.setLetterSpacing(0f);
         paint.setTextAlign(Paint.Align.LEFT);
     }
@@ -1932,11 +2001,11 @@ public class BundlePhoneSurfaceView extends View {
             flag.draw(canvas);
         }
         paint.setTypeface(labelTypeface);
-        paint.setTextSize(pw * 0.058f);
+        paint.setTextSize(pw * 0.054f);
         paint.setTextAlign(Paint.Align.CENTER);
-        paint.setLetterSpacing(0.18f);
+        paint.setLetterSpacing(0.14f);
         paint.setColor(0x3AFFFFFF);
-        canvas.drawText("FadSec Lab", face.centerX(), face.top + face.height() * 0.47f, paint);
+        canvas.drawText("FadSec Phone x1", face.centerX(), face.top + face.height() * 0.47f, paint);
         paint.setLetterSpacing(0f);
         paint.setTextAlign(Paint.Align.LEFT);
     }
