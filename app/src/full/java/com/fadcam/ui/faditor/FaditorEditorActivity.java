@@ -214,6 +214,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
     /** Player position we expect after a seek; -1 when no guard is active. */
     private long playbackSeekTargetMs = -1;
     private long playbackSeekDeadlineMs = 0;
+    /** True once the queue/end of a clip has been reached; polling must stay stopped. */
+    private boolean playbackFinished;
 
     // ── Audio extraction ─────────────────────────────────────────────
     private final ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
@@ -1411,9 +1413,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
             public void onPlaybackStateChanged(int playbackState) {
                 if (playbackState == Player.STATE_ENDED && !audioTailActive) {
                     updatePlayPauseButton(false);
-                    // Queue finished: drop back to the idle preview model so a later
-                    // trim/seek behaves like a single-clip edit again.
                     playbackSeekTargetMs = -1;
+                    // Stop polling. playWhenReady stays true at the end of a queue, so
+                    // the updater kept running and re-wrote the playhead to the last
+                    // clip after the user had dragged somewhere else.
+                    playbackFinished = true;
+                    playheadHandler.removeCallbacks(playheadUpdater);
+                    FLog.d(TAG, "playback finished: updater stopped");
+                } else if (playbackState == Player.STATE_READY
+                        || playbackState == Player.STATE_BUFFERING) {
+                    playbackFinished = false;
                 }
                 // Once ExoPlayer is READY, correct the duration if needed.
                 // MediaMetadataRetriever is unreliable for fragmented MP4;
@@ -1442,6 +1451,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private void startPlaybackFromPlayhead() {
         if (project == null || project.getTimeline().isEmpty()) return;
+        playbackFinished = false;
 
         long playheadMs = editorTimeline.getPlayheadPositionMs();
         long videoEndMs = totalEffectiveMs();
@@ -1513,6 +1523,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             return;
         }
 
+        FLog.d(TAG, "play: playlist unavailable (image clip or empty) — single-clip mode");
         if (playerManager.getLoadedClip() != clip) {
             // Different source (or a different trim state): load it before seeking.
             playerManager.loadClip(clip);
@@ -1592,6 +1603,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             controls.addView(toolbarScroll);
         }
         setToolLabelsVisible(true);
+        applyToolRailCompact(false, toolbarRow);
 
         if (!landscape) {
             FLog.d(TAG, "Editor layout: portrait");
@@ -1601,27 +1613,34 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // ── Landscape: preview left, vertical tool column right ──────────────────
         root.removeView(player);
 
-        LinearLayout main = new LinearLayout(this);
+        // The rail floats OVER the preview instead of taking a column away from it, so
+        // the preview keeps its full width and stays where it was. A side-by-side split
+        // shrank the preview and pushed it left.
+        FrameLayout main = new FrameLayout(this);
         main.setId(R.id.editor_main_area);
-        main.setOrientation(LinearLayout.HORIZONTAL);
         LinearLayout.LayoutParams mainLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
         root.addView(main, Math.min(1, root.getChildCount()), mainLp);
 
-        main.addView(player, new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
+        main.addView(player, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
 
         androidx.core.widget.NestedScrollView column = new androidx.core.widget.NestedScrollView(this);
         column.setFillViewport(false);
-        // Rounded rail, matching the editor's top bar and controls section.
+        // Same surface + rounding as the controls section and the top bar.
         column.setBackgroundResource(R.drawable.bg_editor_tool_rail);
         column.setVerticalScrollBarEnabled(false);
-        // A little inner padding keeps the tool icons off the rounded edge.
-        int railPad = dp(6);
+        int railPad = dp(4);
         column.setPadding(0, railPad, 0, railPad);
         column.setClipToPadding(false);
-        LinearLayout.LayoutParams colLp = new LinearLayout.LayoutParams(
-                dp(92), LinearLayout.LayoutParams.MATCH_PARENT);
+        // Compact floating rail, inset from the preview edges like a tool palette.
+        FrameLayout.LayoutParams colLp = new FrameLayout.LayoutParams(
+                dp(60), FrameLayout.LayoutParams.MATCH_PARENT);
+        colLp.gravity = android.view.Gravity.END;
+        colLp.topMargin = dp(8);
+        colLp.bottomMargin = dp(8);
+        colLp.setMarginEnd(dp(8));
         main.addView(column, colLp);
 
         // Move the tool row itself, not the horizontal scroller: a vertical list inside
@@ -1639,7 +1658,26 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Labels cost height in a column that has little of it; the icons are enough and
         // the tool names remain discoverable through the tooltips/content descriptions.
         setToolLabelsVisible(false);
-        FLog.d(TAG, "Editor layout: landscape (preview left, tools right)");
+        applyToolRailCompact(true, toolbarRow);
+        FLog.d(TAG, "Editor layout: landscape (floating compact rail)");
+    }
+
+    /**
+     * Tool buttons are 72dp wide in the horizontal strip. In the compact landscape rail
+     * they must shrink to the rail width, otherwise they are clipped.
+     */
+    private void applyToolRailCompact(boolean compact, @Nullable ViewGroup row) {
+        if (row == null) return;
+        for (int i = 0; i < row.getChildCount(); i++) {
+            View child = row.getChildAt(i);
+            ViewGroup.LayoutParams raw = child.getLayoutParams();
+            if (!(raw instanceof LinearLayout.LayoutParams)) continue;
+            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) raw;
+            lp.width = compact ? LinearLayout.LayoutParams.MATCH_PARENT : dp(72);
+            child.setLayoutParams(lp);
+            int pad = compact ? dp(4) : dp(8);
+            child.setPadding(pad, pad, pad, pad);
+        }
     }
 
     /** Shows/hides the text labels under the tool icons. */
@@ -3341,6 +3379,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void updatePlayheadPosition() {
         if (playerManager == null || project == null || project.getTimeline().isEmpty()) return;
+        // Never let a finished player drive the playhead.
+        if (playbackFinished) return;
 
         // ── Audio-tail mode: playhead continues past video end ───────
         if (audioTailActive) {

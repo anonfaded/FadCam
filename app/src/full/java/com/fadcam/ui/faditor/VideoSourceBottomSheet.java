@@ -259,9 +259,10 @@ public class VideoSourceBottomSheet extends BottomSheetDialogFragment {
         // Arrow
         TextView arrow = new TextView(requireContext());
         arrow.setTypeface(iconFont);
-        arrow.setText("chevron_right");
-        arrow.setTextColor(0xFF555555);
-        arrow.setTextSize(20);
+        // "Open in editor", not a generic next-chevron.
+        arrow.setText("open_in_new");
+        arrow.setTextColor(FaditorPalette.ACCENT_DEEP);
+        arrow.setTextSize(18);
         row.addView(arrow);
 
         return row;

@@ -496,13 +496,15 @@ public class EditorTimelineView extends View {
         float natural = (totalEffectiveMs / 1000f) * BASE_DP_PER_SECOND * zoomLevel * density
                 + Math.max(0, segments.size() - 1) * segmentGapPx
                 + edgePaddingPx * 2;
-        // Leave a little breathing room so the last clip does not touch the edge.
-        float target = viewport * 0.96f;
+        // The strip must span the viewport. The old 3x cap was smaller than a wide
+        // landscape screen needs (a 3s project at 50dp/s is 150dp against a 655dp
+        // viewport), so the content stayed a small block in the middle.
+        float target = viewport * 0.98f;
         if (natural <= 0f || natural >= target) {
             fitScale = 1f;
             return;
         }
-        fitScale = Math.min(target / natural, 3f);
+        fitScale = Math.min(target / natural, 12f);
         FLog.d(TAG, "fitScale=" + fitScale + " natural=" + natural + " viewport=" + viewport);
     }
 
@@ -809,6 +811,8 @@ public class EditorTimelineView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        // A wider screen needs a larger fit: recompute from scratch.
+        fitScale = 1f;
         updateFitScale();
         updateDpPerSecond();
         computeRects();

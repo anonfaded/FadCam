@@ -497,6 +497,11 @@ public class FaditorPlayerManager implements DefaultLifecycleObserver {
      *
      * @return true if the player is at or beyond the trim end
      */
+    /** True only while media is actually advancing (not merely playWhenReady). */
+    public boolean isPlayingNow() {
+        return player != null && player.isPlaying();
+    }
+
     public boolean isAtTrimEnd() {
         if (player == null) return false;
         long pos = player.getCurrentPosition();
