@@ -7,6 +7,7 @@ Central hub for FadCam documentation, guides and development resources.
 ### Setup & Development
 - [Setup Media3 Patched](development/setup/media3-patched.md) — **Essential**: setting up the patched Media3 library (required for compilation).
 - [Fastlane Limits](development/fastlane/limits.md) — Metadata character limits for app store submissions.
+- [Releasing](development/releasing.md) — Versions, tags, the beta flow and signing for FadCam and FadCam Lite.
 - [Logging](development/debugging/logging.md) — How FadCam logs and how to use FLog.
 
 ### Features & Internals

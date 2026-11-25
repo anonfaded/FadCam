@@ -10,6 +10,16 @@ android {
     namespace = "com.fadcam"
     compileSdk = 36
 
+    /**
+     * Version suffix for the Full line's debug/beta channel. Lite does NOT inherit it:
+     * Lite's beta number lives inside liteVersionName (e.g. "1.0.0-beta1") because Lite's
+     * releases themselves are the betas. Appending this to a Lite debug build produced
+     * "1.0.0-beta1-beta10.7.2", which the in-app updater cannot parse — it fell through
+     * to the plain-version pattern and read the app as stable 1.0.0, so beta updates
+     * were never offered. Stripped per-variant in androidComponents below.
+     */
+    val DEBUG_VERSION_SUFFIX = "-beta10.7.2"
+
     val isBundle = gradle.startParameter.taskNames.any { it.lowercase().contains("bundle") }
     // arm64-only ABI policy applies to Full Pro-tier builds only ('pro'/'proPlus' task names).
     // The LITE line ships UNIVERSAL (all ABIs + universal APK) so every device can install —
@@ -69,29 +79,33 @@ android {
     signingConfigs {
         create("release") {
             val props = Properties()
-            rootProject.file("local.properties").takeIf { it.exists() }?.inputStream().use { stream ->
-                stream?.let { props.load(it) }
+            val propsFile = rootProject.file("local.properties")
+            require(propsFile.exists()) {
+                "local.properties is missing. It must define KEYSTORE_FILE, " +
+                    "KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD."
             }
+            propsFile.inputStream().use { props.load(it) }
             val keystoreFile = props.getProperty("KEYSTORE_FILE", "")
-            // Only set storeFile if keystore file path is provided and exists
-            if (keystoreFile.isNotEmpty() && file(keystoreFile).exists()) {
-                storeFile = file(keystoreFile)
-                storePassword = props.getProperty("KEYSTORE_PASSWORD", "")
-                keyAlias = props.getProperty("KEY_ALIAS", "")
-                keyPassword = props.getProperty("KEY_PASSWORD", "")
+            require(keystoreFile.isNotEmpty() && file(keystoreFile).exists()) {
+                "KEYSTORE_FILE in local.properties is missing or points at a file that " +
+                    "does not exist. Release and debug builds are signed with this key."
             }
+            storeFile = file(keystoreFile)
+            storePassword = props.getProperty("KEYSTORE_PASSWORD", "")
+            keyAlias = props.getProperty("KEY_ALIAS", "")
+            keyPassword = props.getProperty("KEY_PASSWORD", "")
         }
     }
-    
-    // Helper: check if release signing config is valid
-    val releaseSigningConfigValid = signingConfigs.getByName("release").storeFile != null
 
     buildTypes {
         debug {
             applicationIdSuffix = ".beta"
             isDebuggable = true
-            versionNameSuffix = "-beta10.7.2" // Increment the beta version suffix for each release. Use `beta1` for the first beta release, then `beta2`, etc.
+            versionNameSuffix = DEBUG_VERSION_SUFFIX // Increment the beta version suffix for each release. Use `beta1` for the first beta release, then `beta2`, etc.
             resValue("string", "app_name", "FadCam Beta")
+            // Debug APKs are signed with the release key too, so a beta install can be
+            // updated in place by a release build. No fallback: see signingConfigs.
+            signingConfig = signingConfigs.getByName("release")
         }
         
         release {
@@ -102,12 +116,7 @@ android {
                 "proguard-rules.pro"
             )
             isDebuggable = false
-            // F-Droid (and any CI without a local keystore) builds an unsigned
-            // release; signing is applied only when local.properties points at a
-            // real keystore. This removes the old F-Droid prebuild patch.
-            if (releaseSigningConfigValid) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            signingConfig = signingConfigs.getByName("release")
         }
         
         create("pro") {
@@ -119,9 +128,7 @@ android {
             )
             applicationIdSuffix = ".pro"
             isDebuggable = false
-            if (releaseSigningConfigValid) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            signingConfig = signingConfigs.getByName("release")
             versionNameSuffix = "-Pro"
             buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
             manifestPlaceholders["proReminderEnabled"] = "false"
@@ -136,9 +143,7 @@ android {
             )
             applicationIdSuffix = ".proplus"
             isDebuggable = false
-            if (releaseSigningConfigValid) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            signingConfig = signingConfigs.getByName("release")
             versionNameSuffix = "-Pro+"
             buildConfigField("String", "TIER", "\"PRO_PLUS\"")
             buildConfigField("boolean", "ENABLE_PRO_REMINDER", "false")
@@ -183,7 +188,7 @@ android {
     // intentionally independent from the Full line (4.x) — each app has its own
     // applicationId, update repo and tag prefix (`lite-v*` for Lite tags).
     val liteVersionCode = 2
-    val liteVersionName = "1.0.0"
+    val liteVersionName = "1.0.0-beta1"
     val liteRepo = "FadCam-Lite"          // Lite (primary/stable) update feed
     val liteProVersionCode = 2
     val liteProVersionName = "1.0.0"
@@ -329,8 +334,19 @@ android {
         // touches the debug variants — all release variants keep their flavor appLabel.
         onVariants { variant ->
             if (variant.buildType == "debug") {
-                val label = if (variant.name.startsWith("lite")) "FadCam Lite Beta" else "FadCam Beta"
+                val isLite = variant.name.startsWith("lite")
+                val label = if (isLite) "FadCam Lite Beta" else "FadCam Beta"
                 variant.manifestPlaceholders.put("appLabel", label)
+                // The "-betaN" debug suffix belongs to the Full line's beta channel. Lite
+                // ships its beta number inside liteVersionName itself (1.0.0-beta1), so
+                // inheriting the suffix would produce "1.0.0-beta1-beta10.7.2" — a string
+                // the in-app updater cannot parse, which makes it read as stable 1.0.0.
+                if (isLite) {
+                    variant.outputs.forEach { output ->
+                        output.versionName.set(
+                            output.versionName.get().removeSuffix(DEBUG_VERSION_SUFFIX))
+                    }
+                }
             }
         }
     }
@@ -338,9 +354,9 @@ android {
     // Dynamic APK output names: FadCam_<flavor>_v<versionName><suffix>-<abi>.apk
     // (default flavor has no <flavor> part; universal APK gets the literal "-universal")
     applicationVariants.all {
-        // Output-name version = the variant's real versionName (per-flavor 0.0.0 /
-        // 4.0.0 + buildType suffix). AGP doesn't allow per-flavor debug suffixes, so
-        // Lite debug carries the same "-beta10.6" suffix as Full debug.
+        // Output-name version = the variant's real versionName. Lite debug has no
+        // "-beta10.7.2" suffix (stripped per-variant above); its beta number is already
+        // part of liteVersionName.
         val displayVersion = versionName
         val flavor = if (flavorName != "default") "${flavorName}_" else ""
         outputs.all {
