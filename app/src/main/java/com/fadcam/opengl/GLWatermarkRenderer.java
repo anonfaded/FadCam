@@ -2,6 +2,7 @@ package com.fadcam.opengl;
 
 import com.fadcam.Log;
 import com.fadcam.FLog;
+import com.fadcam.R;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -1271,8 +1272,7 @@ public class GLWatermarkRenderer {
         // Set Ubuntu font for watermark text — cached to avoid asset I/O every update
         if (cachedUbuntuTypeface == null) {
             try {
-                cachedUbuntuTypeface = android.graphics.Typeface.createFromAsset(
-                        context.getAssets(), "ubuntu_regular.ttf");
+                cachedUbuntuTypeface = ResourcesCompat.getFont(context, R.font.ubuntu_regular);
             } catch (Exception e) {
                 FLog.w(TAG, "Ubuntu font not found, using default bold");
                 cachedUbuntuTypeface = android.graphics.Typeface.create(
@@ -1721,8 +1721,7 @@ public class GLWatermarkRenderer {
 
         if (cachedUbuntuTypeface == null) {
             try {
-                cachedUbuntuTypeface = android.graphics.Typeface.createFromAsset(
-                        context.getAssets(), "ubuntu_regular.ttf");
+                cachedUbuntuTypeface = ResourcesCompat.getFont(context, R.font.ubuntu_regular);
             } catch (Exception ignored) {
                 cachedUbuntuTypeface = android.graphics.Typeface.create(
                         android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD);

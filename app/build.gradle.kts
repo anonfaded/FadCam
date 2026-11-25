@@ -478,7 +478,11 @@ android {
     }
 
     androidResources {
-        noCompress.add("xml")
+        // Resource XML is compiled into resources.arsc / binary XML and never read as
+        // raw files at runtime, so it can be deflated like everything else. The old
+        // noCompress("xml") kept every compiled XML uncompressed and, because the same
+        // list applies APK-wide, bloated res/ by ~1 MB. Only keep extensions that are
+        // genuinely memory-mapped (none here: assets are plain opens).
         additionalParameters.add("--no-version-vectors")
     }
 

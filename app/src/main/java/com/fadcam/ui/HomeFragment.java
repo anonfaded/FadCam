@@ -4750,7 +4750,6 @@ public class HomeFragment extends BaseFragment {
         // on subsequent launches).
         view.post(() -> {
             if (!isAdded()) return;
-            copyFontToInternalStorage();
             updateStorageInfo();
             // Initial stats update
             FLog.d(TAG, "onViewCreated: Triggering initial stats update.");
@@ -9474,44 +9473,6 @@ public class HomeFragment extends BaseFragment {
         vibrateTouch();
     }
 
-    private void copyFontToInternalStorage() {
-        AssetManager assetManager = requireContext().getAssets();
-        InputStream in = null;
-        OutputStream out = null;
-        try {
-            in = assetManager.open("ubuntu_regular.ttf");
-            File outFile = new File(
-                requireContext().getFilesDir(),
-                "ubuntu_regular.ttf"
-            );
-            // One-time copy: skip when the internal file already matches the
-            // asset size, so startup does no I/O on later launches.
-            if (outFile.exists() && outFile.length() == in.available()) {
-                return;
-            }
-            out = new FileOutputStream(outFile);
-            copyFile(in, out);
-            FLog.d(TAG, "Font copied to internal storage.");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    // NO-OP
-                }
-            }
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    // NO-OP
-                }
-            }
-        }
-    }
-
     public void switchCamera() {
         // Prevent multiple simultaneous camera switches
         if (isCameraSwitchInProgress) {
@@ -9613,14 +9574,6 @@ public class HomeFragment extends BaseFragment {
     // return String.format(Locale.getDefault(), "%.2f, %.2f", latitude, longitude);
     // }
     // }
-
-    private void copyFile(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[1024];
-        int read;
-        while ((read = in.read(buffer)) != -1) {
-            out.write(buffer, 0, read);
-        }
-    }
 
     /** Starts observing the real torch state of the device. Idempotent. */
     private void ensureHomeTorchCallback() {

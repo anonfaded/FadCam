@@ -325,7 +325,8 @@ public final class PhotoStorageHelper {
             paint.setShadowLayer(2.5f, 0f, 1.5f, Color.BLACK);
             paint.setFakeBoldText(true);
             try {
-                Typeface ubuntu = Typeface.createFromAsset(context.getAssets(), "ubuntu_regular.ttf");
+                Typeface ubuntu = androidx.core.content.res.ResourcesCompat.getFont(
+                        context, R.font.ubuntu_regular);
                 paint.setTypeface(ubuntu);
             } catch (Exception ignored) {
                 paint.setTypeface(Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD));

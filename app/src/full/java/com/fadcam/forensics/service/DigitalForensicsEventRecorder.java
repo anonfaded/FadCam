@@ -693,8 +693,8 @@ public class DigitalForensicsEventRecorder implements com.fadcam.service.Forensi
             paint.setFakeBoldText(false);
             if (snapshotTypeface == null) {
                 try {
-                    snapshotTypeface = Typeface.createFromAsset(
-                            appContext.getAssets(), "ubuntu_regular.ttf");
+                    snapshotTypeface = androidx.core.content.res.ResourcesCompat.getFont(
+                            appContext, com.fadcam.R.font.ubuntu_regular);
                 } catch (Exception ignored) {
                     snapshotTypeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD);
                 }
