@@ -2049,6 +2049,9 @@ public class RecordsFragment extends BaseFragment implements
         // finishing after this view exists: a rotation destroys and rebuilds the view
         // while the scan is still running, and its callback then hits a null view.
         showRepairBannerIfNeeded();
+
+        // Fit the filter pill on first layout too, before any data arrives.
+        fitFilterPillToChips();
     } // End onViewCreated
 
     /**
@@ -4094,6 +4097,75 @@ public class RecordsFragment extends BaseFragment implements
             }
         }
         chipGroupRecordsFilter.check(getChipIdForActiveFilter(activeFilter));
+        fitFilterPillToChips();
+    }
+
+    /**
+     * Sizes the filter pill to the chips it actually holds, instead of stretching it to
+     * the whole row. The FrameLayout centres the pill, so a short rail reads as centred
+     * rather than left-aligned with a dead strip on the right. When the chips are wider
+     * than the row, the pill takes the maximum width that keeps clear of the checklist
+     * toggle and the rail scrolls as before.
+     */
+    private void fitFilterPillToChips() {
+        if (chipGroupRecordsFilter == null) return;
+        final View card = getView() != null
+                ? getView().findViewById(R.id.records_filter_card) : null;
+        final View row = getView() != null
+                ? getView().findViewById(R.id.records_filter_row) : null;
+        final View checklist = getView() != null
+                ? getView().findViewById(R.id.btn_filter_checklist) : null;
+        if (card == null || row == null) return;
+
+        chipGroupRecordsFilter.post(() -> {
+            if (getView() == null) return;
+            // Measure the chips unconstrained. getMeasuredWidth() is useless here: the
+            // group lives inside a scroll view whose width we keep changing, so the
+            // clamped layout width would feed back in and the pill could never grow
+            // back out to its natural size.
+            int natural = measureUnconstrained(chipGroupRecordsFilter);
+            // The HSV adds its own 8dp side padding around the rail.
+            View hsv = card instanceof android.view.ViewGroup
+                    && ((android.view.ViewGroup) card).getChildCount() > 0
+                    ? ((android.view.ViewGroup) card).getChildAt(0) : null;
+            int chrome = 0;
+            if (hsv != null) {
+                chrome = hsv.getPaddingLeft() + hsv.getPaddingRight();
+            }
+            int rowWidth = row.getWidth() - row.getPaddingLeft() - row.getPaddingRight();
+            if (rowWidth <= 0) return;
+            // The checklist sits at the end of the row, so reserve only its own width
+            // plus one gap; reserving it twice on both sides starved the rail and made
+            // chips clip long before they had to.
+            int toggle = checklist != null && checklist.getVisibility() == View.VISIBLE
+                    ? checklist.getWidth() + Math.round(dpToPx(8)) : 0;
+            int available = Math.max(Math.round(dpToPx(120)), rowWidth - toggle);
+            int target = Math.min(natural + chrome, available);
+
+            // Centre the pill in the space the toggle leaves, not in the raw row: a
+            // pill centred on the row would slide under the toggle once it fills up.
+            // In RTL the toggle is on the left, so the free space shifts the other way.
+            boolean rtl = row.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+            float shift = rtl ? toggle / 2f : -toggle / 2f;
+            if (card.getTranslationX() != shift) card.setTranslationX(shift);
+
+            android.view.ViewGroup.LayoutParams lp = card.getLayoutParams();
+            if (lp.width != target) {
+                lp.width = target;
+                card.setLayoutParams(lp);
+            }
+        });
+    }
+
+    /**
+     * Width the view wants if nothing constrained it. Used for the filter pill, which
+     * must hug its chips rather than inherit whatever width the previous pass gave it.
+     */
+    private int measureUnconstrained(@NonNull View view) {
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        view.measure(widthSpec, heightSpec);
+        return view.getMeasuredWidth();
     }
 
     private int getChipIdForActiveFilter(@NonNull VideoItem.Category filter) {

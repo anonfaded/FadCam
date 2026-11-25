@@ -1685,14 +1685,11 @@ public class EditorTimelineView extends View {
         
         // Handle fling animation
         if (flingScroller.computeScrollOffset()) {
-            float newScrollOffset = flingScroller.getCurrX();
-            
-            // Calculate playhead position from scroll offset
-            float centerX = getWidth() / 2f;
-            float playheadX = centerX + newScrollOffset;
-            
-            // Update playhead position (will trigger seek and centerPlayhead)
-            updatePlayheadFromX(playheadX);
+            // The scroller already stores the scroll offset itself, so assign it and
+            // read the playhead. Do not re-derive it from a snapped time.
+            scrollOffsetPx = flingScroller.getCurrX();
+            clampScroll();
+            updatePlayheadFromCenter();
             
             // Continue animation
             postInvalidateOnAnimation();
@@ -1923,21 +1920,19 @@ public class EditorTimelineView extends View {
             }
         } else if (isUp && downSegIndex >= 0) {
             if (Math.abs(x - downX) < touchSlopPx) {
-                // Toggle selection: deselect if clicking same segment, select if different
-                if (downSegIndex == selectedIndex) {
-                    selectedIndex = -1; // Deselect
-                    invalidate();
-                    if (listener != null) listener.onSegmentSelected(-1);
-                } else {
-                    selectedIndex = downSegIndex; // Select new segment
-                    // Deselect audio when video is selected
-                    if (selectedAudioIndex >= 0) {
-                        selectedAudioIndex = -1;
-                        if (listener != null) listener.onAudioClipSelected(-1);
-                    }
-                    invalidate();
-                    if (listener != null) listener.onSegmentSelected(downSegIndex);
+                // A tap toggles selection only. It must not touch scrollOffsetPx or the
+                // playhead: in every professional editor, selection says *what* an edit
+                // applies to, while the playhead says *where in time* — moving one as a
+                // side effect of the other is what made a tap jump the timeline.
+                boolean wasSelected = downSegIndex == selectedIndex;
+                selectedIndex = wasSelected ? -1 : downSegIndex;
+                if (!wasSelected && selectedAudioIndex >= 0) {
+                    selectedAudioIndex = -1;
+                    if (listener != null) listener.onAudioClipSelected(-1);
                 }
+                lastPlaybackIndex = selectedIndex >= 0 ? selectedIndex : lastPlaybackIndex;
+                invalidate();
+                if (listener != null) listener.onSegmentSelected(selectedIndex);
             }
         }
 
@@ -2147,7 +2142,27 @@ public class EditorTimelineView extends View {
      * CRITICAL: Only changes segments when X visually crosses into a different clip's rectangle.
      * This prevents the "snapping" behavior users experience when dragging near split points.
      */
+    /**
+     * Reads the timeline position under the fixed centre line and notifies the host.
+     *
+     * <p>This is the single scrubbing path. It never writes {@link #scrollOffsetPx}:
+     * the strip is the source of truth for scroll, the centre line for time.</p>
+     */
+    private void updatePlayheadFromCenter() {
+        updatePlayheadFromX(getWidth() / 2f + scrollOffsetPx, false);
+    }
+
     private void updatePlayheadFromX(float x) {
+        updatePlayheadFromX(x, true);
+    }
+
+    /**
+     * @param recenter whether to re-centre the strip on the resulting time. Dragging
+     *                 and flinging must pass {@code false}: re-centring snaps the strip
+     *                 back onto the time that was just derived from it, which is how the
+     *                 scroll used to stall at a clip edge.
+     */
+    private void updatePlayheadFromX(float x, boolean recenter) {
         float playheadX = x;
         FLog.d(TAG, "updatePlayheadFromX: x=" + x);
         
@@ -2215,8 +2230,10 @@ public class EditorTimelineView extends View {
             // The FaditorEditorActivity will only seek within current clip, then load new one on drag end
             listener.onPlayheadSeeked(targetSegment, sourceFrac, true);
         }
-        
-        centerPlayhead();
+
+        if (recenter) {
+            centerPlayhead();
+        }
         invalidate();
     }
 
@@ -2291,15 +2308,19 @@ public class EditorTimelineView extends View {
                 return false;
             }
             
-            // Horizontal drag on timeline = seek playhead
-            float centerX = getWidth() / 2f;
-            float newPlayheadX = centerX + scrollOffsetPx + distanceX;
-            
-            FLog.d(TAG, "GestureListener.onScroll: newPlayheadX=" + newPlayheadX);
-            
-            // Find which segment and position this corresponds to
-            updatePlayheadFromX(newPlayheadX);
-            
+            // Horizontal drag = scrub. Move the filmstrip by the finger delta and let
+            // the fixed centre line read whatever is now under it.
+            //
+            // The old code round-tripped the position through xToTime()/timeToX():
+            // xToTime() snaps a coordinate inside the inter-clip GAP to the exact end
+            // of the previous clip, and timeToX() then maps that back to a pixel LEFT
+            // of the gap. Every move therefore pulled the scroll back to the same clip
+            // boundary — the "stuck at the end of the first clip" bug — and a fast
+            // fling escaped it only because the delta outran the snap.
+            scrollOffsetPx += distanceX;
+            clampScroll();
+            updatePlayheadFromCenter();
+
             getParent().requestDisallowInterceptTouchEvent(true);
             return true;
         }

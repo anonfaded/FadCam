@@ -1030,7 +1030,7 @@ Empfohlen: 192000 bps, 48000 Hz für die meisten Benutzer.</string>
     <string name="records_batch_export_done_title">Standard-MP4-Export abgeschlossen</string>
     <string name="records_batch_merge_done_title">Batch-Zusammenführung abgeschlossen</string>
     <string name="records_hide_thumbnails_row_title">Ausblenden</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
     <string name="nav_lab">Labor</string>
     <string name="button_settings_cam_dual">Dual (PiP)</string>
     <string name="note_cam_dual_unsupported">Dein Gerät unterstützt keine gleichzeitige Dual-Kamera-Aufnahme.</string>

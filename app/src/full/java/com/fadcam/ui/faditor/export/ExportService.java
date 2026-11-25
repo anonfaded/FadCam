@@ -150,6 +150,14 @@ public class ExportService extends Service {
 
     public void setServiceListener(@Nullable ExportServiceListener listener) {
         this.serviceListener = listener;
+        // A listener that binds after the export already started would otherwise never
+        // learn about it: the started event is a one-shot broadcast. Replay it from the
+        // snapshot so the caller always gets exactly one start notification.
+        if (listener != null && isExporting) {
+            String outputPath = snapshotOutputPath;
+            FLog.d(TAG, "Replaying onExportStarted for late listener: " + outputPath);
+            listener.onExportStarted(outputPath != null ? outputPath : "");
+        }
     }
 
     public boolean isExporting() {

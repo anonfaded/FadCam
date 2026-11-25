@@ -174,16 +174,18 @@ public class MainActivity extends AppCompatActivity {
      * @param color Color as integer (e.g., 0xFF000000 for black), or 0 to restore original
      */
     public void setBottomNavColor(int color) {
-        if (bottomNavigationView != null) {
-            if (color == 0) {
-                // Restore original color
-                if (originalBottomNavColor != 0) {
-                    bottomNavigationView.setBackgroundColor(originalBottomNavColor);
-                }
-            } else {
-                // Set custom color
-                bottomNavigationView.setBackgroundColor(color);
-            }
+        int resolved = color;
+        if (color == 0) {
+            // Restore original color
+            resolved = originalBottomNavColor;
+        }
+        if (bottomNavigationView != null && (color != 0 || resolved != 0)) {
+            bottomNavigationView.setBackgroundColor(resolved);
+        }
+        // The landscape rail is the same dock, so it must follow the same colour.
+        View rail = findViewById(R.id.rail_navigation);
+        if (rail != null && (color != 0 || resolved != 0)) {
+            rail.setBackgroundColor(resolved);
         }
     }
 
@@ -2402,6 +2404,13 @@ public class MainActivity extends AppCompatActivity {
     private void restoreBarColorsForCurrentTab() {
         if (currentFragmentPosition == 2) {
             // Remote tab uses black bars
+            setBottomNavColor(0xFF000000);
+            setStatusBarColor(0xFF000000);
+            setNavigationBarColor(0xFF000000);
+        } else if (currentFragmentPosition == 3) {
+            // Faditor keeps the same black chrome as the Remote tab: the champagne is an
+            // accent on type and controls, not a panel colour, so it stays a highlight
+            // instead of washing out the whole chrome.
             setBottomNavColor(0xFF000000);
             setStatusBarColor(0xFF000000);
             setNavigationBarColor(0xFF000000);

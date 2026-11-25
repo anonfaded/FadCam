@@ -1525,7 +1525,7 @@
     <string name="records_batch_export_done_title">Standart MP4 Dışa Aktarma Tamamlandı</string>
     <string name="records_batch_merge_done_title">Toplu Birleştirme Tamamlandı</string>
     <string name="records_hide_thumbnails_row_title">Gizle</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
     <string name="nav_lab">Lab</string>
     <string name="note_cam_dual_unsupported">Cihazınız eşzamanlı çift kamera kaydını desteklemiyor.</string>
     <string name="dual_recording_started">Çift kamera kaydı başladı</string>

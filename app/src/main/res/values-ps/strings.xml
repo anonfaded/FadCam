@@ -1404,7 +1404,7 @@ Intent-based automation support (Tasker, MacroDroid, etc.) da Mini Apps programm
     <string name="mute_playback_subtitle">Video awaz band sara chalao</string>
     <string name="mute_playback_title">Playback khamosh ka</string>
     <string name="name_your_project">Num Your Project</string>
-    <string name="nav_faditor_mini">Faditor</string>
+    <string name="nav_faditor_mini">Faditor Mini</string>
     <string name="nav_lab">Lab</string>
     <string name="nav_remote">Lirai</string>
     <string name="new_project">Nawai Project</string>

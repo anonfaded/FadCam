@@ -2671,6 +2671,52 @@ public class SharedPreferencesManager {
     // interrupted recording was automatically repaired. Only ever written when
     // the file conversion ACTUALLY succeeded — no false positives.
 
+    // ── Persisted Faditor export result ─────────────────────────────
+    // The Faditor tab's export dock used to live only in static memory, so it survived
+    // a rotation but vanished if the process was killed while the export ran. The
+    // Records repair banner already persists its notice; this does the same for exports
+    // so the result is still waiting when the user comes back.
+
+    private static final String PREF_KEY_EXPORT_RESULT = "faditor_export_result_v1";
+
+    /** Records a finished export so the tab can show it after a cold start. */
+    public void setFaditorExportResult(@androidx.annotation.Nullable String outputPath,
+                                       @androidx.annotation.Nullable String errorMessage) {
+        try {
+            if (outputPath == null && errorMessage == null) {
+                sharedPreferences.edit().remove(PREF_KEY_EXPORT_RESULT).apply();
+                return;
+            }
+            org.json.JSONObject obj = new org.json.JSONObject();
+            obj.put("time", System.currentTimeMillis());
+            if (outputPath != null) obj.put("path", outputPath);
+            if (errorMessage != null) obj.put("error", errorMessage);
+            sharedPreferences.edit().putString(PREF_KEY_EXPORT_RESULT, obj.toString()).apply();
+        } catch (Exception ignored) {}
+    }
+
+    /** Drops the persisted export result once its dock has been dismissed. */
+    public void clearFaditorExportResult() {
+        sharedPreferences.edit().remove(PREF_KEY_EXPORT_RESULT).apply();
+    }
+
+    /** @return {timeMs, outputPath, errorMessage} or null when there is nothing pending. */
+    @androidx.annotation.Nullable
+    public String[] getFaditorExportResult() {
+        try {
+            String raw = sharedPreferences.getString(PREF_KEY_EXPORT_RESULT, null);
+            if (raw == null || raw.isEmpty()) return null;
+            org.json.JSONObject obj = new org.json.JSONObject(raw);
+            return new String[]{
+                    String.valueOf(obj.optLong("time", 0L)),
+                    obj.optString("path", null),
+                    obj.optString("error", null)
+            };
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private static final String PREF_KEY_REPAIR_EVENTS = "recording_repair_events_v1";
     private static final int MAX_REPAIR_EVENTS = 5;
 

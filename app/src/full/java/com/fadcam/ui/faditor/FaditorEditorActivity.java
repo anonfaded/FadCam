@@ -133,6 +133,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private TextView btnPlayPause;
     private TextView timeCurrent;
     private TextView timeTotal;
+    /** Project name shown in the top bar; export files are named from it. */
+    private TextView editorTitle;
     private View exportProgressOverlay;
     private TextView exportProgressText;
     private TextView exportProgressPercent;
@@ -179,6 +181,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private View toolAudio;
     private TextView toolAudioIcon;
     private TextView toolAudioLabel;
+    private View toolSplit;
+    private View toolDelete;
+    private View toolDuplicate;
 
     // ── Undo/Redo ────────────────────────────────────────────────────
     private UndoManager undoManager;
@@ -193,7 +198,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     // ── Multi-segment state ──────────────────────────────────────────
     /** Index of the currently selected clip/segment in the timeline. */
-    private int selectedClipIndex = 0;
+    /** Index of the highlighted clip, or -1 when nothing is selected. */
+    private int selectedClipIndex = -1;
 
     // ── Audio extraction ─────────────────────────────────────────────
     private final ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
@@ -265,15 +271,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
     // ── Segment helpers ──────────────────────────────────────────────
 
     /**
-     * Returns the currently selected clip.
-     * Falls back to clip 0 if the index is out of range.
+     * Returns the currently selected clip, or null when nothing is selected.
+     *
+     * <p>Selection is genuine state, not a default: opening an editor with a clip
+     * already highlighted is unlike every professional editor, and it made Delete
+     * silently destroy whatever happened to be first.</p>
      */
-    @NonNull
+    @Nullable
     private Clip getSelectedClip() {
+        if (project == null) return null;
         int count = project.getTimeline().getClipCount();
-        if (selectedClipIndex < 0 || selectedClipIndex >= count) {
-            selectedClipIndex = 0;
-        }
+        if (selectedClipIndex < 0 || selectedClipIndex >= count) return null;
         return project.getTimeline().getClip(selectedClipIndex);
     }
 
@@ -296,23 +304,28 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private void selectSegment(int index) {
         int count = project.getTimeline().getClipCount();
-        
-        // Handle deselection
+
+        // Deselecting keeps whatever clip the player has loaded and leaves the
+        // playhead alone — only the highlight and the clip-specific tools change.
         if (index < 0) {
             selectedClipIndex = -1;
-            editorTimeline.setTimeline(project.getTimeline(), -1);
+            editorTimeline.setSelectedIndex(-1);
+            clearSegmentTools();
+            updateToolAvailability();
+            refreshTotalTimeDisplay();
             FLog.d(TAG, "Deselected all segments");
             return;
         }
-        
+
         // Validate index
         if (index >= count) return;
-        
+
         // Track if this is a reselection of the same segment
         boolean isReselection = (index == selectedClipIndex);
-        
+
         selectedClipIndex = index;
         Clip clip = getSelectedClip();
+        if (clip == null) return;
 
         // Sync timeline view to the selected segment's trim
         editorTimeline.setTrimFromClip(clip);
@@ -380,6 +393,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             updateCurrentTimeDisplay(seekPositionMs);
         }
 
+        updateToolAvailability();
         refreshTotalTimeDisplay();
 
         FLog.d(TAG, "Selected segment " + index + "/" + count
@@ -577,17 +591,21 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
             @Override
             public void onTrimChanged(int segmentIndex, float startFraction, float endFraction, boolean isLeft) {
+                // The handle belongs to a specific segment. Reading "the selected clip"
+                // here silently trimmed the wrong one whenever selection and the drawn
+                // handles had drifted apart (e.g. after scrubbing across a cut).
+                Clip clip = clipAt(segmentIndex);
+                if (clip == null) return;
                 if (!userDragging) {
                     // First drag callback — capture pre-trim values for undo
-                    Clip clip = getSelectedClip();
-                    if (clip != null) {
-                        preTrimInMs = clip.getInPointMs();
-                        preTrimOutMs = clip.getOutPointMs();
-                    }
+                    preTrimInMs = clip.getInPointMs();
+                    preTrimOutMs = clip.getOutPointMs();
                 }
                 userDragging = true;
-                Clip clip = getSelectedClip();
-                if (clip == null) return;
+                if (selectedClipIndex != segmentIndex) {
+                    selectedClipIndex = segmentIndex;
+                    editorTimeline.setSelectedIndex(segmentIndex);
+                }
                 long duration = clip.getSourceDurationMs();
                 clip.setInPointMs((long)(startFraction * duration));
                 clip.setOutPointMs((long)(endFraction * duration));
@@ -600,8 +618,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
             @Override
             public void onTrimFinished(int segmentIndex, float startFraction, float endFraction) {
                 userDragging = false;
-                Clip clip = getSelectedClip();
+                Clip clip = clipAt(segmentIndex);
                 if (clip == null) return;
+                if (selectedClipIndex != segmentIndex) {
+                    selectedClipIndex = segmentIndex;
+                    editorTimeline.setSelectedIndex(segmentIndex);
+                }
                 long duration = clip.getSourceDurationMs();
                 long newIn = (long)(startFraction * duration);
                 long newOut = (long)(endFraction * duration);
@@ -644,6 +666,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 // When the drag ends, onPlayheadDragFinished() will load the new clip.
                 if (segmentIndex != selectedClipIndex && !isDragging) {
                     selectedClipIndex = segmentIndex;
+                    // Keep the drawn selection in step: the toolbar acts on
+                    // selectedClipIndex, so a stale highlight made Delete remove a
+                    // different clip than the one the user saw selected.
+                    editorTimeline.setSelectedIndex(segmentIndex);
                     if (clip.isImageClip()) {
                         // Image clip: show image preview instead of loading into ExoPlayer
                         showImagePreview(clip.getSourceUri());
@@ -692,6 +718,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 int segmentAtPlayhead = editorTimeline.getSegmentAtPlayhead();
                 if (segmentAtPlayhead >= 0 && segmentAtPlayhead != selectedClipIndex) {
                     selectedClipIndex = segmentAtPlayhead;
+                    editorTimeline.setSelectedIndex(segmentAtPlayhead);
                     Clip clip = tl.getClip(segmentAtPlayhead);
                     if (clip != null) {
                         if (clip.isImageClip()) {
@@ -802,6 +829,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
         btnPlayPause = findViewById(R.id.btn_play_pause);
         timeCurrent = findViewById(R.id.time_current);
         timeTotal = findViewById(R.id.time_total);
+        editorTitle = findViewById(R.id.editor_title);
+        View renameGroup = findViewById(R.id.editor_title_group);
+        if (renameGroup != null) {
+            renameGroup.setOnClickListener(v -> showRenameProjectSheet());
+        }
+        bindTitleWidthConstraint();
         exportProgressOverlay = findViewById(R.id.export_progress_overlay);
         exportProgressText = findViewById(R.id.export_progress_text);
         exportProgressPercent = findViewById(R.id.export_progress_percent);
@@ -836,6 +869,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         toolAudio = findViewById(R.id.tool_audio);
         toolAudioIcon = findViewById(R.id.tool_audio_icon);
         toolAudioLabel = findViewById(R.id.tool_audio_label);
+        toolSplit = findViewById(R.id.tool_split);
+        toolDelete = findViewById(R.id.tool_delete);
+        toolDuplicate = findViewById(R.id.tool_duplicate);
 
         // Undo/Redo buttons with count badges
         btnUndo = findViewById(R.id.btn_undo);
@@ -861,9 +897,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         });
 
         // Segment tools
-        findViewById(R.id.tool_split).setOnClickListener(v -> splitAtPlayhead());
-        findViewById(R.id.tool_delete).setOnClickListener(v -> deleteSelectedSegment());
-        findViewById(R.id.tool_duplicate).setOnClickListener(v -> duplicateSelectedSegment());
+        toolSplit.setOnClickListener(v -> splitAtPlayhead());
+        toolDelete.setOnClickListener(v -> deleteSelectedSegment());
+        toolDuplicate.setOnClickListener(v -> duplicateSelectedSegment());
         findViewById(R.id.tool_add_asset).setOnClickListener(v -> showAddAssetPicker());
 
         // Close button — show confirmation bottom sheet
@@ -958,6 +994,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private void continueLoadFromSavedProject(@NonNull Uri playUri) {
         // Project is already set from saved data, refresh time display
+        updateProjectTitle();
         refreshTotalTimeDisplay();
         initPlayer();
         initTimeline();
@@ -1066,6 +1103,181 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Derives a display name from the source video: "FadCam_20261124_043715.mp4"
+     * becomes "FadCam_20261124_043715". Falls back to the untitled label when the
+     * provider gives us nothing usable.
+     */
+    @NonNull
+    private String projectNameFromUri(@NonNull Uri uri) {
+        String displayName = null;
+        try {
+            if ("file".equals(uri.getScheme()) && uri.getPath() != null) {
+                displayName = new File(uri.getPath()).getName();
+            } else {
+                try (android.database.Cursor c = getContentResolver().query(uri,
+                        new String[]{android.provider.OpenableColumns.DISPLAY_NAME},
+                        null, null, null)) {
+                    if (c != null && c.moveToFirst()) {
+                        int idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                        if (idx >= 0) displayName = c.getString(idx);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            FLog.w(TAG, "Could not read source display name", e);
+        }
+        if (displayName == null || displayName.trim().isEmpty()) {
+            return getString(R.string.faditor_project_untitled);
+        }
+        int dot = displayName.lastIndexOf('.');
+        if (dot > 0) displayName = displayName.substring(0, dot);
+        displayName = displayName.trim();
+        return displayName.isEmpty()
+                ? getString(R.string.faditor_project_untitled) : displayName;
+    }
+
+    /**
+     * Caps the title at the width the top bar can spare.
+     *
+     * <p>A long project name used to expand the title TextView until the pencil beside
+     * it was clipped. The pencil is a fixed-size sibling, so the title gets an explicit
+     * {@code maxWidth} derived from the bar: everything except the close button, the
+     * pencil and the export button, minus the gaps. The name ellipsises in the middle,
+     * which keeps both ends readable — exactly how file names are shown elsewhere.</p>
+     */
+    private void bindTitleWidthConstraint() {
+        final View bar = findViewById(R.id.editor_top_bar);
+        final View title = editorTitle;
+        final View pencil = findViewById(R.id.btn_rename_project);
+        if (bar == null || title == null || pencil == null) return;
+
+        bar.post(() -> {
+            int barWidth = bar.getWidth();
+            if (barWidth <= 0) return;
+            int fixed = dp(48)          // close button
+                    + dp(40)            // export button
+                    + dp(28) + dp(6)    // pencil + gap
+                    + dp(12) + dp(4);   // bar end padding + close start padding
+            int available = Math.max(dp(80), barWidth - fixed);
+            if (title instanceof TextView) {
+                ((TextView) title).setMaxWidth(available);
+            }
+        });
+    }
+
+    /** dp → px for layout maths done in code. */
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    /** Reflects {@link #project}'s name in the top bar. */
+    private void updateProjectTitle() {
+        if (editorTitle == null || project == null) return;
+        editorTitle.setText(project.getName());
+    }
+
+    /** Rename sheet: the typed name becomes the project name and the export filename. */
+    private void showRenameProjectSheet() {
+        if (project == null) return;
+        try {
+            InputActionBottomSheetFragment sheet =
+                    InputActionBottomSheetFragment.newFileNameInput(
+                            getString(R.string.faditor_rename_project),
+                            project.getName(),
+                            getString(R.string.faditor_rename_hint),
+                            getString(R.string.faditor_rename_action),
+                            getString(R.string.faditor_rename_subtitle),
+                            R.drawable.ic_rename,
+                            getString(R.string.faditor_rename_helper),
+                            getString(R.string.faditor_export_name_preview));
+            sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
+                @Override
+                public void onImportConfirmed(org.json.JSONObject json) { }
+
+                @Override
+                public void onResetConfirmed() { }
+
+                @Override
+                public void onInputConfirmed(String input) {
+                    applyProjectName(input);
+                }
+            });
+            sheet.show(getSupportFragmentManager(), "rename_project");
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to show rename sheet", e);
+        }
+    }
+
+    /** Applies a user-typed project name, falling back when it is blank. */
+    private void applyProjectName(@Nullable String input) {
+        if (project == null) return;
+        // The same slug the export applies, so the header and the file always agree.
+        String name = com.fadcam.ui.faditor.util.FileNameSlug.slugify(input);
+        if (name.isEmpty()) {
+            name = getString(R.string.faditor_project_untitled);
+        }
+        if (name.equals(project.getName())) return;
+        project.setName(name);
+        updateProjectTitle();
+        saveProjectNow();
+        FLog.d(TAG, "Project renamed to: " + name);
+    }
+
+    /**
+     * Mirrors the contextual-toolbar rule every professional editor uses: with nothing
+     * selected the clip-scoped tools are visibly unavailable, and they come alive on the
+     * first tap.
+     *
+     * <p>Canvas is project-level, so it stays available either way. Trim is driven by the
+     * segment handles rather than a button, so it stays visible but is greyed with the
+     * rest to signal that there is no handle to grab.</p>
+     */
+    private void updateToolAvailability() {
+        boolean hasClip = getSelectedClip() != null;
+        float alpha = hasClip ? 1f : 0.35f;
+        View[] clipTools = {toolTrim, toolSpeed, toolMute, toolRotate, toolFlip,
+                toolCrop, toolAudio, toolSplit, toolDelete, toolDuplicate};
+        for (View tool : clipTools) {
+            if (tool == null) continue;
+            tool.setAlpha(alpha);
+            tool.setEnabled(hasClip);
+            tool.setClickable(hasClip);
+        }
+        // Canvas is a project setting: never disable it.
+        if (toolCanvas != null) {
+            toolCanvas.setAlpha(1f);
+            toolCanvas.setEnabled(true);
+            toolCanvas.setClickable(true);
+        }
+    }
+
+    /**
+     * Resets the clip-specific tools to their neutral state. Used when the selection is
+     * cleared: the toolbar must stop implying an edit target that no longer exists.
+     */
+    private void clearSegmentTools() {
+        updateVolumeUI(1f, false);
+        updateSpeedUI(1f);
+        updateRotateUI(0);
+        updateFlipUI(false, false);
+        updateCropUI("original");
+        if (inCropMode) {
+            exitCropMode(false);
+        } else if (cropOverlay != null && cropOverlay.isActive()) {
+            cropOverlay.deactivate();
+        }
+    }
+
+    /** Clip at {@code index}, or null when it is out of range. */
+    @Nullable
+    private Clip clipAt(int index) {
+        if (project == null) return null;
+        Timeline tl = project.getTimeline();
+        if (index < 0 || index >= tl.getClipCount()) return null;
+        return tl.getClip(index);
+    }
+
     private void initProject(@NonNull Uri videoUri) {
         // Get video duration
         long durationMs = getVideoDuration(videoUri);
@@ -1074,10 +1286,14 @@ public class FaditorEditorActivity extends AppCompatActivity {
             durationMs = 60_000; // Fallback 1 minute
         }
 
-        // Create project with single clip
-        project = new FaditorProject("Untitled");
+        // Create project with a single clip. The name starts as the source file's
+        // name — that is what the user recognises — and can be edited from the top
+        // bar. The export file is named after it.
+        project = new FaditorProject(projectNameFromUri(videoUri));
         Clip clip = new Clip(videoUri, durationMs);
         project.getTimeline().addClip(clip);
+
+        updateProjectTitle();
 
         // Update total time display (project-wide duration)
         refreshTotalTimeDisplay();
@@ -1090,8 +1306,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
         getLifecycle().addObserver(playerManager);
         playerManager.setPlayerView(playerView);
 
-        // Load the clip
+        // Load the clip at the playhead (nothing is selected on open)
         Clip clip = getSelectedClip();
+        if (clip == null) clip = clipAt(0);
+        if (clip == null) return;
         playerManager.loadClip(clip);
 
         // Listen for playback state changes
@@ -1131,8 +1349,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     private void initTimeline() {
-        Clip clip = getSelectedClip();
-        editorTimeline.setTrimFromClip(clip);
+        // Open with no clip highlighted, like any professional editor: the tools come
+        // alive on the first tap. The player still shows clip 0 at the playhead.
         editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
 
         // If audio clips exist (e.g. from a saved project), load them
@@ -1142,14 +1360,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
             updateAudioToolUI();
         }
 
-        FLog.d(TAG, "Timeline initialized: sourceDuration=" + clip.getSourceDurationMs()
-                + "ms, in=" + clip.getInPointMs() + ", out=" + clip.getOutPointMs());
+        FLog.d(TAG, "Timeline initialized with " + project.getTimeline().getClipCount()
+                + " clip(s), selectedIndex=" + selectedClipIndex);
     }
 
     private void initToolbar() {
         // Play/Pause button
         btnPlayPause.setOnClickListener(v -> {
             Clip c = getSelectedClip();
+            if (c == null) c = clipAt(editorTimeline.getSegmentAtPlayhead());
+            if (c == null) c = clipAt(0);
+            if (c == null) return;
             if (c.isImageClip()) {
                 // Image clip: toggle internal timer playback
                 if (imagePlaybackActive) {
@@ -1223,8 +1444,20 @@ public class FaditorEditorActivity extends AppCompatActivity {
         // Audio tool
         toolAudio.setOnClickListener(v -> extractAudioFromCurrentClip());
 
+        // Nothing is selected on open, so start from the disabled state and only
+        // populate the tool read-outs once there is a clip to read.
+        updateToolAvailability();
+        updateCanvasUI(project.getCanvasPreset());
+
         // Sync UI to existing clip state (e.g. reopened project)
         Clip clip = getSelectedClip();
+        if (clip == null) {
+            playerView.post(() -> {
+                updatePreviewTransforms();
+                applyCanvasPreview(project.getCanvasPreset());
+            });
+            return;
+        }
         updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
         updateSpeedUI(clip.getSpeedMultiplier());
         updateRotateUI(clip.getRotationDegrees());
@@ -1282,6 +1515,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         Clip clip = getSelectedClip();
+        if (clip == null) return;
         float oldVol = clip.getVolumeLevel();
         boolean oldMuted = clip.isAudioMuted();
 
@@ -1350,6 +1584,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void showSpeedSlider() {
         Clip clip = getSelectedClip();
+        if (clip == null) return;
         float oldSpeed = clip.getSpeedMultiplier();
         SpeedSliderBottomSheet sheet = SpeedSliderBottomSheet.newInstance(clip.getSpeedMultiplier());
         sheet.setCallback(speed -> {
@@ -1384,6 +1619,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void rotateNext() {
         Clip clip = getSelectedClip();
+        if (clip == null) return;
         int oldDeg = clip.getRotationDegrees();
         int newDeg = (oldDeg + 90) % 360;
         undoManager.recordAction(new EditActions.RotateAction(clip, oldDeg, newDeg));
@@ -1411,6 +1647,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
     private void showFlipPicker() {
         Clip clip = getSelectedClip();
+        if (clip == null) return;
         boolean oldH = clip.isFlipHorizontal();
         boolean oldV = clip.isFlipVertical();
         FlipPickerBottomSheet sheet = FlipPickerBottomSheet.newInstance(
@@ -1507,7 +1744,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 cropOverlay.setVideoContentRect(videoRect);
                 cropOverlay.activate();
                 Clip c = getSelectedClip();
-                c.setCustomCropBounds(0f, 0f, 1f, 1f);
+                if (c != null) c.setCustomCropBounds(0f, 0f, 1f, 1f);
                 highlightActivePresetChip("free");
             }
             Toast.makeText(this, R.string.faditor_crop_reset, Toast.LENGTH_SHORT).show();
@@ -1543,7 +1780,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         Clip clip = getSelectedClip();
 
-        if (apply) {
+        if (apply && clip != null) {
             // Keep current overlay bounds — they were already saved to the clip
             // via the OnCropChangeListener. Determine if user made a meaningful crop.
             boolean isFullFrame = Math.abs(clip.getCropLeft()) < 0.01f
@@ -2041,6 +2278,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
                     project.getTimeline().addAudioClip(audioClip);
                     editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
+                    refreshTotalTimeDisplay();
 
                     // Record undo action for adding audio clip
                     undoManager.recordAction(new EditActions.AddAudioClipAction(
@@ -2357,6 +2595,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void updatePreviewTransforms() {
         if (project == null || project.getTimeline().isEmpty()) return;
         Clip clip = getSelectedClip();
+        if (clip == null) return;
 
         int degrees = clip.getRotationDegrees();
         boolean flipH = clip.isFlipHorizontal();
@@ -2528,9 +2767,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 @Override
                 public void onExportStarted(@NonNull String outputPath) {
                     exportStartTimeMs = System.currentTimeMillis();
-                    // Normally unreachable: startExportViaService() already closed the
-                    // editor. Kept so a late callback can never leave the user staring at
-                    // a full-screen overlay while the export runs elsewhere.
+                    // The export is now owned by the foreground service. Hand the user
+                    // back to the Faditor tab, whose header dock carries live progress.
                     runOnUiThread(() -> {
                         if (!isFinishing()) returnToFaditorOnExportStart();
                     });
@@ -2603,9 +2841,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 public void onExportError(@NonNull Exception error) {
                     runOnUiThread(() -> {
                         hideExportProgress();
-                        Toast.makeText(FaditorEditorActivity.this,
-                                getString(R.string.faditor_export_error, error.getMessage()),
-                                Toast.LENGTH_LONG).show();
+                        // Stay in the editor: the user needs to see why the export did
+                        // not start rather than being dropped on the Faditor tab with
+                        // nothing to show for it.
+                        String detail = error.getMessage() != null
+                                ? error.getMessage() : error.getClass().getSimpleName();
+                        new com.google.android.material.dialog.MaterialAlertDialogBuilder(
+                                FaditorEditorActivity.this)
+                                .setTitle(R.string.faditor_export_failed)
+                                .setMessage(getString(R.string.faditor_export_error, detail))
+                                .setPositiveButton(android.R.string.ok, null)
+                                .show();
                         FLog.e(TAG, "Export failed", error);
                     });
                 }
@@ -2672,6 +2918,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         if (playerDurationMs <= 0) return;
 
         Clip clip = getSelectedClip();
+        if (clip == null) return;
         // Image clips have a fixed duration; no correction needed
         if (clip.isImageClip()) return;
 
@@ -2826,6 +3073,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         Clip clip = getSelectedClip();
+        if (clip == null) return;
         long sourceDuration = clip.getSourceDurationMs();
         if (sourceDuration <= 0) return;
 
@@ -3015,7 +3263,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     getString(R.string.faditor_export_confirm_action),
                     getString(R.string.faditor_export_confirm_subtitle),
                     R.drawable.ic_save,
-                    helperText);
+                    helperText,
+                    false);   // exporting is not destructive: keep the row plain
 
             sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
                 @Override
@@ -3054,19 +3303,22 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 new android.content.Intent(this, ExportService.class);
         serviceIntent.setAction(ExportService.ACTION_START_EXPORT);
 
+        // Bind BEFORE starting: the service emits "started" exactly once, and a late
+        // bind used to miss it, leaving the editor stuck with no reason to close.
+        bindService(new android.content.Intent(this, ExportService.class),
+                exportServiceConnection, BIND_AUTO_CREATE);
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent);
         } else {
             startService(serviceIntent);
         }
 
-        // Bind for real-time UI progress
-        bindService(new android.content.Intent(this, ExportService.class),
-                exportServiceConnection, BIND_AUTO_CREATE);
-
-        // Hand the user back to the Faditor tab right away: the service owns the
-        // export now, and the tab's header dock is where progress belongs.
-        returnToFaditorOnExportStart();
+        // Hold the editor on the progress overlay until the service confirms it has
+        // actually started. Leaving earlier would swallow a start failure; leaving
+        // later traps the user behind a full-screen overlay.
+        showExportInfoOnScreen();
+        showExportProgress();
     }
 
     /**
@@ -3151,7 +3403,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     getString(R.string.faditor_close_confirm_action),
                     getString(R.string.faditor_close_confirm_subtitle),
                     R.drawable.ic_save,
-                    getString(R.string.faditor_close_confirm_helper));
+                    getString(R.string.faditor_close_confirm_helper),
+                    false);   // closing saves the project; nothing is destroyed
 
             sheet.setCallbacks(new InputActionBottomSheetFragment.Callbacks() {
                 @Override
@@ -3676,15 +3929,26 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 return;
             }
 
+            // With nothing highlighted, act on the segment under the playhead. The
+            // toolbar used to do nothing at all in that state, which read as a bug.
+            int deleteIndex = selectedClipIndex >= 0
+                    ? selectedClipIndex : editorTimeline.getSegmentAtPlayhead();
+            if (deleteIndex < 0 || deleteIndex >= timeline.getClipCount()) {
+                Toast.makeText(this, R.string.faditor_select_segment_first,
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             // Record undo action before deletion
-            Clip deletedClip = timeline.getClip(selectedClipIndex);
-            int deletedIndex = selectedClipIndex;
+            Clip deletedClip = timeline.getClip(deleteIndex);
+            int deletedIndex = deleteIndex;
             undoManager.recordAction(new EditActions.DeleteClipAction(
                     timeline, deletedClip, deletedIndex));
 
-            timeline.removeClip(selectedClipIndex);
+            timeline.removeClip(deleteIndex);
 
-            int newIndex = Math.min(selectedClipIndex, timeline.getClipCount() - 1);
+            int newIndex = Math.min(deleteIndex, timeline.getClipCount() - 1);
+            selectedClipIndex = newIndex;
             selectSegment(newIndex);
             saveProjectNow();
             Toast.makeText(this, R.string.faditor_segment_deleted, Toast.LENGTH_SHORT).show();
@@ -3707,6 +3971,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         timeline.removeAudioClip(audioIndex);
         editorTimeline.setAudioClips(timeline.getAudioClips());
+        // An audio clip can be the longest track, so removing it changes the total.
+        refreshTotalTimeDisplay();
         releaseAudioPlayer();
         if (timeline.hasAudioClips()) {
             prepareAudioPlayer();
@@ -3722,7 +3988,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void duplicateSelectedSegment() {
         try {
             Timeline timeline = project.getTimeline();
-            int newIndex = timeline.duplicateClip(selectedClipIndex);
+            int sourceIndex = selectedClipIndex >= 0
+                    ? selectedClipIndex : editorTimeline.getSegmentAtPlayhead();
+            int newIndex = timeline.duplicateClip(sourceIndex);
             if (newIndex < 0) return;
 
             // Record undo action for the duplication

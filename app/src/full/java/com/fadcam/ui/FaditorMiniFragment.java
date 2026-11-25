@@ -72,6 +72,7 @@ public class FaditorMiniFragment extends BaseFragment {
     private ActivityResultLauncher<Intent> editorLauncher;
 
     private ProjectStorage projectStorage;
+    private com.fadcam.SharedPreferencesManager sharedPreferencesManager;
     private LinearLayout recentProjectsSection;
     private LinearLayout recentProjectsList;
     private View emptyStateContainer;
@@ -113,6 +114,8 @@ public class FaditorMiniFragment extends BaseFragment {
         super.onCreate(savedInstanceState);
         FLog.d("FaditorMiniFragment", "✅ onCreate called!");
         projectStorage = new ProjectStorage(requireContext());
+        sharedPreferencesManager =
+                com.fadcam.SharedPreferencesManager.getInstance(requireContext());
 
         // Initialize the broadcast receiver early
         initializeExportProgressReceiver();
@@ -260,6 +263,9 @@ public class FaditorMiniFragment extends BaseFragment {
                     // finished export so a later view rebuild does not resurrect it.
                     hideDockWithAnimation();
                     com.fadcam.ui.faditor.export.ExportService.clearSnapshot();
+                    if (sharedPreferencesManager != null) {
+                        sharedPreferencesManager.clearFaditorExportResult();
+                    }
                 }
             });
         }
@@ -355,7 +361,12 @@ public class FaditorMiniFragment extends BaseFragment {
 
         com.fadcam.ui.faditor.export.ExportService.State state =
                 com.fadcam.ui.faditor.export.ExportService.getStateSnapshot();
-        if (state == com.fadcam.ui.faditor.export.ExportService.State.IDLE) return;
+        if (state == com.fadcam.ui.faditor.export.ExportService.State.IDLE) {
+            // The live snapshot is process-local. After a cold start the result may
+            // still be waiting in prefs — show it until the user dismisses it.
+            restorePersistedExportResult();
+            return;
+        }
 
         String outputPath =
                 com.fadcam.ui.faditor.export.ExportService.getOutputPathSnapshot();
@@ -628,8 +639,10 @@ public class FaditorMiniFragment extends BaseFragment {
         textSection.setLayoutParams(new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        // Display name: extract filename from video URI
-        String displayName = extractDisplayName(summary.videoUri);
+        // Display name: the project name — this is also the export filename, and it
+        // is editable from here.
+        String displayName = summary.name != null && !summary.name.trim().isEmpty()
+                ? summary.name : extractDisplayName(summary.videoUri);
         TextView name = new TextView(requireContext());
         name.setText(displayName);
         name.setTextColor(0xFFFFFFFF);
@@ -707,6 +720,21 @@ public class FaditorMiniFragment extends BaseFragment {
 
         row.addView(textSection);
 
+        // ── Rename (renames the project, which names the export) ──
+        if (!selectionMode) {
+            TextView rename = new TextView(requireContext());
+            rename.setTypeface(iconFont);
+            rename.setText("edit");
+            rename.setTextColor(FaditorPalette.ACCENT_DEEP);
+            rename.setTextSize(16);
+            rename.setGravity(Gravity.CENTER);
+            rename.setPadding((int) (8 * dp), (int) (8 * dp),
+                    (int) (8 * dp), (int) (8 * dp));
+            rename.setContentDescription(getString(R.string.faditor_rename_project));
+            rename.setOnClickListener(v -> showRenameProjectSheet(summary));
+            row.addView(rename);
+        }
+
         // ── Arrow icon ───────────────────────────────────────────
         if (!selectionMode) {
             TextView arrow = new TextView(requireContext());
@@ -749,6 +777,46 @@ public class FaditorMiniFragment extends BaseFragment {
         }
 
         return row;
+    }
+
+    /** Renames a saved project; the export picks the new name up when it runs. */
+    private void showRenameProjectSheet(@NonNull ProjectStorage.ProjectSummary summary) {
+        try {
+            com.fadcam.ui.InputActionBottomSheetFragment sheet =
+                    com.fadcam.ui.InputActionBottomSheetFragment.newFileNameInput(
+                            getString(R.string.faditor_rename_project),
+                            summary.name,
+                            getString(R.string.faditor_rename_hint),
+                            getString(R.string.faditor_rename_action),
+                            getString(R.string.faditor_rename_subtitle),
+                            R.drawable.ic_rename,
+                            getString(R.string.faditor_rename_helper),
+                            getString(R.string.faditor_export_name_preview));
+            sheet.setCallbacks(new com.fadcam.ui.InputActionBottomSheetFragment.Callbacks() {
+                @Override
+                public void onImportConfirmed(org.json.JSONObject json) { }
+
+                @Override
+                public void onResetConfirmed() { }
+
+                @Override
+                public void onInputConfirmed(String input) {
+                    String name = com.fadcam.ui.faditor.util.FileNameSlug.slugify(input);
+                    if (name.isEmpty()) {
+                        name = getString(R.string.faditor_project_untitled);
+                    }
+                    FaditorProject project = projectStorage.load(summary.id);
+                    if (project == null) return;
+                    project.setName(name);
+                    projectStorage.save(project);
+                    FLog.d(TAG, "Renamed project " + summary.id + " → " + name);
+                    refreshRecentProjects();
+                }
+            });
+            sheet.show(getChildFragmentManager(), "rename_project");
+        } catch (Exception e) {
+            FLog.e(TAG, "Failed to show rename sheet", e);
+        }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────
@@ -1122,9 +1190,48 @@ public class FaditorMiniFragment extends BaseFragment {
     /**
      * Handle export completion: show checkmark, hide OK button initially, then show after delay.
      */
+    /** Mirrors the export outcome into prefs so a cold start can still show it. */
+    private void persistExportResult(@Nullable String outputPath, @Nullable String error) {
+        if (sharedPreferencesManager == null && getContext() != null) {
+            sharedPreferencesManager =
+                    com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        }
+        if (sharedPreferencesManager != null) {
+            sharedPreferencesManager.setFaditorExportResult(outputPath, error);
+        }
+    }
+
+    /**
+     * Restores a finished export that outlived the process. The dock stays up until the
+     * user dismisses it, exactly like the Records repair banner.
+     */
+    private void restorePersistedExportResult() {
+        if (exportDock == null || !isAdded()) return;
+        if (sharedPreferencesManager == null && getContext() != null) {
+            sharedPreferencesManager =
+                    com.fadcam.SharedPreferencesManager.getInstance(requireContext());
+        }
+        if (sharedPreferencesManager == null) return;
+        String[] result = sharedPreferencesManager.getFaditorExportResult();
+        if (result == null) return;
+
+        String outputPath = result[1];
+        String error = result[2];
+        exportDock.setVisibility(View.VISIBLE);
+        exportDock.setAlpha(1f);
+        exportDock.setTranslationY(0f);
+        if (error != null && !error.isEmpty()) {
+            showErrorDock(error);
+        } else {
+            showCompletedDock(outputPath);
+        }
+        FLog.d(TAG, "Restored persisted export result: " + outputPath);
+    }
+
     private void handleExportCompleted(String outputPath) {
         if (exportDock == null) return;
         FLog.d(TAG, "Export completed: " + outputPath);
+        persistExportResult(outputPath, null);
         showCompletedDock(outputPath);
     }
 
@@ -1169,6 +1276,7 @@ public class FaditorMiniFragment extends BaseFragment {
     private void handleExportError(String errorMessage) {
         if (exportDock == null) return;
         FLog.d(TAG, "Export error: " + errorMessage);
+        persistExportResult(null, errorMessage);
         showErrorDock(errorMessage);
     }
 

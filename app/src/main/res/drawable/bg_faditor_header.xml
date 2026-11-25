@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Faditor keeps the Pro screen's champagne accent regardless of the app theme, so its
-     header uses the gold theme's top-bar tone instead of the app-wide ?attr/colorTopBar. -->
+<!-- Faditor chrome is black, matching the Remote tab. The champagne accent belongs to
+     the type and controls, so the header surface stays neutral here. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/gold_theme_primary_variant" />
+    <solid android:color="#000000" />
     <corners
         android:bottomLeftRadius="24dp"
         android:bottomRightRadius="24dp" />

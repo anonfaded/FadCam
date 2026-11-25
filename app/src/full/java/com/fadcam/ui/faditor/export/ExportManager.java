@@ -684,7 +684,14 @@ public class ExportManager {
     private String generateOutputPath(@NonNull FaditorProject project) {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
                 .format(new Date());
-        String fileName = "Faditor_" + timestamp + "." + Constants.RECORDING_FILE_EXTENSION;
+        // The project name is user-editable in the editor header, and that name is
+        // what the exported file carries. Only fall back to a timestamp when the name
+        // is empty or sanitises to nothing.
+        String baseName = com.fadcam.ui.faditor.util.FileNameSlug.slugify(project.getName());
+        if (baseName.isEmpty()) {
+            baseName = "Faditor_" + timestamp;
+        }
+        String fileName = baseName + "." + Constants.RECORDING_FILE_EXTENSION;
 
         String storageMode = prefsManager.getStorageMode();
 
@@ -712,7 +719,15 @@ public class ExportManager {
             }
             pendingSafCopy = false;
             safExportFileName = null;
-            return new File(outputDir, fileName).getAbsolutePath();
+            // Re-exporting the same project must not clobber the previous file (and
+            // Transformer refuses to write over an existing output anyway).
+            File target = new File(outputDir, fileName);
+            if (target.exists()) {
+                fileName = baseName + "_" + timestamp + "."
+                        + Constants.RECORDING_FILE_EXTENSION;
+                target = new File(outputDir, fileName);
+            }
+            return target.getAbsolutePath();
         }
     }
 
