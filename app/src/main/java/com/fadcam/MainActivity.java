@@ -174,6 +174,9 @@ public class MainActivity extends AppCompatActivity {
      * @param color Color as integer (e.g., 0xFF000000 for black), or 0 to restore original
      */
     public void setBottomNavColor(int color) {
+        FLog.d("Chrome", "setBottomNavColor(0x" + Integer.toHexString(color)
+                + ") tab=" + currentFragmentPosition
+                + " caller=" + new Throwable().getStackTrace()[1].getMethodName());
         int resolved = color;
         if (color == 0) {
             // Restore original color
@@ -2401,7 +2404,21 @@ public class MainActivity extends AppCompatActivity {
      * Restore status bar, navigation bar, and bottom nav colors based on the current tab.
      * Called from onResume to ensure colors are correct when returning from background.
      */
+    /**
+     * Re-applies the chrome that belongs to the current tab.
+     *
+     * <p>Fragments that recolour the bars while they are visible (Remote is the only
+     * one) must call this instead of restoring "the theme colour": a fragment's
+     * onPause can run *after* the next tab has already set its own chrome, and a blind
+     * restore then repainted the new tab — which is how the Faditor dock turned red
+     * after visiting Remote.</p>
+     */
+    public void refreshChromeForCurrentTab() {
+        restoreBarColorsForCurrentTab();
+    }
+
     private void restoreBarColorsForCurrentTab() {
+        FLog.d("Chrome", "restoreBarColorsForCurrentTab: tab=" + currentFragmentPosition);
         if (currentFragmentPosition == 2) {
             // Remote tab uses black bars
             setBottomNavColor(0xFF000000);

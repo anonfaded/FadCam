@@ -201,6 +201,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
     /** Index of the highlighted clip, or -1 when nothing is selected. */
     private int selectedClipIndex = -1;
 
+    /**
+     * Index of the clip currently loaded in the player.
+     *
+     * <p>Deliberately separate from {@link #selectedClipIndex}: in a professional
+     * editor the preview follows the <em>playhead</em>, while the selection only says
+     * which clip an edit applies to. Coupling them is what made tapping a clip jump the
+     * timeline and made scrubbing silently re-target the toolbar.</p>
+     */
+    private int playbackClipIndex = 0;
+
     // ── Audio extraction ─────────────────────────────────────────────
     private final ExecutorService audioExecutor = Executors.newSingleThreadExecutor();
 
@@ -285,6 +295,18 @@ public class FaditorEditorActivity extends AppCompatActivity {
         return project.getTimeline().getClip(selectedClipIndex);
     }
 
+    /** Clip loaded in the player, mirroring the playhead. Defaults to the first clip. */
+    @Nullable
+    private Clip getPlaybackClip() {
+        if (project == null) return null;
+        Timeline tl = project.getTimeline();
+        if (tl.getClipCount() == 0) return null;
+        if (playbackClipIndex < 0 || playbackClipIndex >= tl.getClipCount()) {
+            playbackClipIndex = 0;
+        }
+        return tl.getClip(playbackClipIndex);
+    }
+
     /**
      * Returns the total effective video duration (sum of all video clips' trimmed durations).
      */
@@ -327,72 +349,33 @@ public class FaditorEditorActivity extends AppCompatActivity {
         Clip clip = getSelectedClip();
         if (clip == null) return;
 
-        // Sync timeline view to the selected segment's trim
-        editorTimeline.setTrimFromClip(clip);
-
-        // Sync toolbar tools to the selected segment's settings
+        // Tools read the selected clip; the preview and the playhead do NOT move.
+        // In every professional editor, selection answers "what will the edit apply
+        // to" and the playhead answers "what moment am I looking at". Tapping a clip
+        // used to call setPlayheadFraction(), which is why the white line jumped to a
+        // clip edge on a tap.
         updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
         updateSpeedUI(clip.getSpeedMultiplier());
         updateRotateUI(clip.getRotationDegrees());
         updateFlipUI(clip.isFlipHorizontal(), clip.isFlipVertical());
         updateCropUI(clip.getCropPreset());
 
-        // Deactivate crop overlay when switching segments (or reselecting)
+        // Leaving crop mode is a selection change, not a preview change.
         if (inCropMode) {
             exitCropMode(false);
         } else if (cropOverlay != null && cropOverlay.isActive()) {
             cropOverlay.deactivate();
         }
 
-        // Only reload and reset playhead if selecting a different segment
-        if (!isReselection) {
-            // Stop any active image playback timer
-            imagePlaybackActive = false;
+        FLog.d(TAG, "selectSegment: index=" + index + "/" + count
+                + " id=" + clip.getId()
+                + " (playhead untouched at "
+                + editorTimeline.getPlayheadPositionMs() + "ms, playbackClip="
+                + playbackClipIndex + ")");
 
-            // Preserve current playhead position within the new segment
-            long currentPlayheadMs = editorTimeline.getPlayheadPositionMs();
-            long segStartMs = editorTimeline.getSegmentStartTimeMs(index);
-            long effectiveMs = clip.getOutPointMs() - clip.getInPointMs();
-            if (clip.getSpeedMultiplier() > 0) {
-                effectiveMs = (long)(effectiveMs / clip.getSpeedMultiplier());
-            }
-            long localMs = Math.max(0, Math.min(currentPlayheadMs - segStartMs, effectiveMs));
-            // Nudge 1ms before trim end to prevent boundary ambiguity
-            // with getSegmentAtPlayhead() after split/delete operations.
-            if (localMs == effectiveMs && effectiveMs > 1) {
-                localMs = effectiveMs - 1;
-            }
-            // Convert local (effective) ms to source position
-            long sourcePositionMs = clip.getInPointMs() + (long)(localMs * clip.getSpeedMultiplier());
-            sourcePositionMs = Math.max(clip.getInPointMs(), Math.min(sourcePositionMs, clip.getOutPointMs()));
-            float sourceFrac = clip.getSourceDurationMs() > 0
-                    ? (float) sourcePositionMs / clip.getSourceDurationMs() : 0f;
-
-            if (clip.isImageClip()) {
-                // Image clip: show image preview, hide video player
-                showImagePreview(clip.getSourceUri());
-            } else {
-                // Video clip: hide image preview, show video player
-                hideImagePreview();
-
-                // Load the selected segment in the player
-                playerManager.loadClip(clip);
-                playerManager.setVolume(clip.isAudioMuted() ? 0f : clip.getVolumeLevel());
-                playerManager.setPlaybackSpeed(clip.getSpeedMultiplier());
-                updatePreviewTransforms();
-            }
-
-            // Set playhead to preserved position (not segment start)
-            editorTimeline.setPlayheadFraction(sourceFrac);
-            
-            long seekPositionMs = sourcePositionMs - clip.getInPointMs();
-            if (!clip.isImageClip()) {
-                // Only seek ExoPlayer for video clips
-                playerManager.seekTo(seekPositionMs);
-            }
-            updateCurrentTimeDisplay(seekPositionMs);
-        }
-
+        // Update only the highlight. setTimeline() would rebuild every segment and call
+        // centerPlayhead(), which silently scrolls the strip under a tap.
+        editorTimeline.setSelectedIndex(index);
         updateToolAvailability();
         refreshTotalTimeDisplay();
 
@@ -400,10 +383,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 + " id=" + clip.getId()
                 + " in=" + clip.getInPointMs() + " out=" + clip.getOutPointMs()
                 + " isReselection=" + isReselection);
-    
-        // Update segment overview
-        editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
-        ;
     }
     // ── Lifecycle ────────────────────────────────────────────────────
 
@@ -664,12 +643,19 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 // load the new clip in the player (needed for correct seek bounds).
                 // During drag, we skip loading to prevent snapping at split points.
                 // When the drag ends, onPlayheadDragFinished() will load the new clip.
-                if (segmentIndex != selectedClipIndex && !isDragging) {
-                    selectedClipIndex = segmentIndex;
-                    // Keep the drawn selection in step: the toolbar acts on
-                    // selectedClipIndex, so a stale highlight made Delete remove a
-                    // different clip than the one the user saw selected.
-                    editorTimeline.setSelectedIndex(segmentIndex);
+                boolean playbackClipChanged = segmentIndex != playbackClipIndex;
+                if (playbackClipChanged) {
+                    playbackClipIndex = segmentIndex;
+                    // Scrubbing follows the playhead: it loads the clip under it so
+                    // seeking has the right bounds. It must never touch the selection —
+                    // dragging across clips used to re-target the toolbar behind the
+                    // user's back.
+                    FLog.d(TAG, "scrub: playbackClipIndex=" + segmentIndex
+                            + " (selection stays " + selectedClipIndex + ")");
+                }
+                // The player is only reloaded once the drag has settled; doing it on
+                // every move made the preview snap between clips mid-gesture.
+                if (!isDragging && playbackClipChanged) {
                     if (clip.isImageClip()) {
                         // Image clip: show image preview instead of loading into ExoPlayer
                         showImagePreview(clip.getSourceUri());
@@ -716,9 +702,10 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 // If so, load that clip now (we skipped it during the drag to avoid snapping)
                 Timeline tl = project.getTimeline();
                 int segmentAtPlayhead = editorTimeline.getSegmentAtPlayhead();
-                if (segmentAtPlayhead >= 0 && segmentAtPlayhead != selectedClipIndex) {
-                    selectedClipIndex = segmentAtPlayhead;
-                    editorTimeline.setSelectedIndex(segmentAtPlayhead);
+                if (segmentAtPlayhead >= 0 && segmentAtPlayhead != playbackClipIndex) {
+                    playbackClipIndex = segmentAtPlayhead;
+                    FLog.d(TAG, "drag finished: playbackClipIndex=" + segmentAtPlayhead
+                            + " (selection stays " + selectedClipIndex + ")");
                     Clip clip = tl.getClip(segmentAtPlayhead);
                     if (clip != null) {
                         if (clip.isImageClip()) {
@@ -734,13 +721,12 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     }
                 }
                 
-                // Update toolbar UI to match the current segment
-                if (selectedClipIndex >= 0 && selectedClipIndex < tl.getClipCount()) {
-                    Clip clip = getSelectedClip();
-                    if (clip != null) {
-                        updateVolumeUI(clip.getVolumeLevel(), clip.isAudioMuted());
-                        updateSpeedUI(clip.getSpeedMultiplier());
-                    }
+                // The toolbar reflects the selection, which scrubbing does not change.
+                // It only needs refreshing if a clip is actually selected.
+                Clip selected = getSelectedClip();
+                if (selected != null) {
+                    updateVolumeUI(selected.getVolumeLevel(), selected.isAudioMuted());
+                    updateSpeedUI(selected.getSpeedMultiplier());
                 }
             }
 
@@ -1412,7 +1398,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     } else {
                         // CRITICAL: Ensure player position matches timeline playhead before play
                         // This fixes the "jumps to start" issue when resuming from a seeked position
-                        long segmentStartMs = editorTimeline.getSegmentStartTimeMs(selectedClipIndex);
+                        long segmentStartMs = editorTimeline.getSegmentStartTimeMs(playbackClipIndex);
                         long relativePlayheadMs = Math.max(0, playheadMs - segmentStartMs);
                         playerManager.seekTo(relativePlayheadMs);
                         
@@ -2974,8 +2960,11 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private long getAbsolutePlayheadMs(long positionInCurrentSegmentMs) {
         Timeline tl = project.getTimeline();
+        // Sum the clips before the one the *player* is showing. Using the selection
+        // here reported the time of whichever clip was highlighted, so the read-out
+        // restarted at each clip instead of tracking the whole timeline.
         long absoluteMs = 0;
-        for (int i = 0; i < selectedClipIndex && i < tl.getClipCount(); i++) {
+        for (int i = 0; i < playbackClipIndex && i < tl.getClipCount(); i++) {
             absoluteMs += tl.getClip(i).getTrimmedDurationMs();
         }
         absoluteMs += positionInCurrentSegmentMs;
@@ -2983,13 +2972,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
     }
 
     /**
-     * Update the current time display with the absolute playhead position.
+     * Update the current time display with the absolute position in the project.
      *
-     * @param positionInCurrentSegmentMs 0-based position within the current clip's trimmed region
+     * @param positionInCurrentSegmentMs 0-based position within the clip the player is
+     *                                   showing; ignored when the timeline already
+     *                                   knows the absolute playhead
      */
     private void updateCurrentTimeDisplay(long positionInCurrentSegmentMs) {
         long absoluteMs = getAbsolutePlayheadMs(positionInCurrentSegmentMs);
         timeCurrent.setText(TimeFormatter.formatAuto(absoluteMs));
+        // Keep the absolute read-out honest even if a caller passes a stale local value.
+        FLog.d(TAG, "timeCurrent=" + absoluteMs + "ms (playbackClip=" + playbackClipIndex + ")");
     }
 
     // ── Image preview helpers ────────────────────────────────────────
@@ -3072,7 +3065,8 @@ public class FaditorEditorActivity extends AppCompatActivity {
             return;
         }
 
-        Clip clip = getSelectedClip();
+        // The playback loop is about the clip under the playhead, not the selection.
+        Clip clip = getPlaybackClip();
         if (clip == null) return;
         long sourceDuration = clip.getSourceDurationMs();
         if (sourceDuration <= 0) return;
@@ -3089,7 +3083,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 // Image clip reached its end — auto-advance or pause
                 stopImagePlayback();
                 Timeline timeline = project.getTimeline();
-                int nextIndex = selectedClipIndex + 1;
+                int nextIndex = playbackClipIndex + 1;
                 if (nextIndex < timeline.getClipCount()) {
                     advanceToSegment(nextIndex, true);
                 } else {
@@ -3138,7 +3132,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             // Enforce trim end — auto-advance to next segment or pause
             if (isAtEnd) {
                 Timeline timeline = project.getTimeline();
-                int nextIndex = selectedClipIndex + 1;
+                int nextIndex = playbackClipIndex + 1;
                 if (nextIndex < timeline.getClipCount()) {
                     advanceToSegment(nextIndex, true);
                 } else {
@@ -3198,17 +3192,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
 
         Timeline timeline = project.getTimeline();
-        selectedClipIndex = nextIndex;
-        Clip nextClip = getSelectedClip();
-        editorTimeline.setTimeline(timeline, selectedClipIndex);
-        editorTimeline.setTrimFromClip(nextClip);
+        playbackClipIndex = nextIndex;
+        Clip nextClip = timeline.getClip(nextIndex);
+        if (nextClip == null) return;
 
-        // Sync toolbar to new segment
-        updateVolumeUI(nextClip.getVolumeLevel(), nextClip.isAudioMuted());
-        updateSpeedUI(nextClip.getSpeedMultiplier());
-        updateRotateUI(nextClip.getRotationDegrees());
-        updateFlipUI(nextClip.isFlipHorizontal(), nextClip.isFlipVertical());
-        updateCropUI(nextClip.getCropPreset());
+        // Restore the trim handles for whichever clip the user has selected; playback
+        // moving on must not clear or move that selection.
+        editorTimeline.setSelectedIndex(selectedClipIndex);
+        if (selectedClipIndex >= 0 && selectedClipIndex < timeline.getClipCount()) {
+            editorTimeline.setTrimFromClip(timeline.getClip(selectedClipIndex));
+        }
 
         if (nextClip.isImageClip()) {
             // Image clip: show image preview and start timer

@@ -321,6 +321,9 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
 
         parent.addView(actionRow(actionIcon, finalActionTitle, finalActionSubtitle, false, v -> {
             String val = input.getText().toString().trim();
+            // Close first, always. The caller may reload a list or save a project, and
+            // the sheet must never be left hovering over a completed action.
+            dismissAllowingStateLoss();
             if (callbacks != null) {
                 callbacks.onInputConfirmed(val);
             }
@@ -618,8 +621,9 @@ public class InputActionBottomSheetFragment extends BottomSheetDialogFragment {
         if (!requireContext().getTheme().resolveAttribute(R.attr.colorHeading, accent, true)) {
             return;
         }
+        // ONLY the selection highlight. Tinting the background made the whole field
+        // look like a red/gold error state; the field keeps its own dark surface.
         input.setHighlightColor((accent.data & 0x00FFFFFF) | 0x4D000000);
-        input.setBackgroundTintList(android.content.res.ColorStateList.valueOf(accent.data));
     }
 
     private int dp(int v) {

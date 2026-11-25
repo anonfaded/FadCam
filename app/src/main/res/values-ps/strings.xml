@@ -3191,4 +3191,16 @@ Da tase da hamisha paara.</string>
     <string name="onboarding_mascot_greeting_casual">Helo!</string>
     <string name="zoom_lens_unavailable_banner">دا تلیفون خپله پراخه کمره اپلیکیشنونو ته نه ښیي. له 1.0x څخه ټیټ زوم به 1.0x پاتې شي.</string>
     <string name="records_display_group_title">Nishodana</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Belta</string>
+    <string name="faditor_rename_project">Da projekt nom</string>
+    <string name="faditor_rename_hint">Da projekt nom</string>
+    <string name="faditor_rename_action">Nom badal kawal</string>
+    <string name="faditor_rename_subtitle">Da export shwy file lara karel kigi</string>
+    <string name="faditor_rename_helper">Export shwy video da nom sara saati kigi.</string>
+    <string name="faditor_export_name_preview">Saaty shwa: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Da playhead laandi hich clip nishta</string>
+    <string name="onboarding_demo_evidence_gallery">DA SANADO GALERI</string>
+    <string name="onboarding_demo_saved">SAATY SHWA</string>
 </resources>

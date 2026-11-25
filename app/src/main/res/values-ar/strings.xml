@@ -4880,4 +4880,14 @@
     <string name="onboarding_mascot_greeting_casual">أهلًا!</string>
     <string name="zoom_lens_unavailable_banner">هذا الهاتف لا يتيح كاميرا واسعة الزاوية للتطبيقات. التقريب أقل من 1.0x سيبقى عند 1.0x.</string>
     <string name="records_display_group_title">العرض</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">بدون عنوان</string>
+    <string name="faditor_rename_project">اسم المشروع</string>
+    <string name="faditor_rename_hint">اسم المشروع</string>
+    <string name="faditor_rename_action">إعادة تسمية</string>
+    <string name="faditor_rename_subtitle">يُستخدم للملف المصدَّر</string>
+    <string name="faditor_rename_helper">يُحفظ الفيديو المصدَّر بهذا الاسم.</string>
+    <string name="faditor_export_name_preview">يُحفظ باسم: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">لا يوجد مقطع تحت مؤشر التشغيل</string>
 </resources>

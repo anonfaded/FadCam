@@ -4804,4 +4804,14 @@ Recommandé : 192000 bps, 48000 Hz pour la plupart des utilisateurs.</string>
     <string name="onboarding_mascot_greeting_casual">Salut !</string>
     <string name="zoom_lens_unavailable_banner">Ce téléphone n\'expose pas son appareil ultra grand-angle aux applications. Un zoom inférieur à 1.0x restera à 1.0x.</string>
     <string name="records_display_group_title">Affichage</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Sans titre</string>
+    <string name="faditor_rename_project">Nom du projet</string>
+    <string name="faditor_rename_hint">Nom du projet</string>
+    <string name="faditor_rename_action">Renommer</string>
+    <string name="faditor_rename_subtitle">Utilisé pour le fichier exporté</string>
+    <string name="faditor_rename_helper">La vidéo exportée est enregistrée sous ce nom.</string>
+    <string name="faditor_export_name_preview">Enregistré sous : %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Aucun clip sous la tête de lecture</string>
 </resources>

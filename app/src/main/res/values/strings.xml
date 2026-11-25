@@ -1175,7 +1175,6 @@
     <string name="faditor_rename_action">Rename</string>
     <string name="faditor_rename_subtitle">Used for the exported file</string>
     <string name="faditor_rename_helper">The exported video is saved with this name.</string>
-    <string name="faditor_rename_preview">Saved as: %1$s</string>
     <string name="faditor_export_name_preview">Saved as: %1$s.mp4</string>
     <string name="faditor_close">Close editor</string>
     <string name="faditor_undo">Undo</string>

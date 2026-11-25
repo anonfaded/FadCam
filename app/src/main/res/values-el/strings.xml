@@ -3248,4 +3248,14 @@ Fun fact: 10/Ιουλ/2024 04:47 ΜΜ είναι όταν κυκλοφόρησε
     <string name="onboarding_mascot_greeting_casual">Γεια!</string>
     <string name="zoom_lens_unavailable_banner">Αυτό το τηλέφωνο δεν εκθέτει την υπερευρυγώνια κάμερα στις εφαρμογές. Το zoom κάτω από 1.0x θα παραμένει στο 1.0x.</string>
     <string name="records_display_group_title">Εμφάνιση</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Χωρίς τίτλο</string>
+    <string name="faditor_rename_project">Όνομα έργου</string>
+    <string name="faditor_rename_hint">Όνομα έργου</string>
+    <string name="faditor_rename_action">Μετονομασία</string>
+    <string name="faditor_rename_subtitle">Χρησιμοποιείται για το εξαγόμενο αρχείο</string>
+    <string name="faditor_rename_helper">Το εξαγόμενο βίντεο αποθηκεύεται με αυτό το όνομα.</string>
+    <string name="faditor_export_name_preview">Αποθηκεύεται ως: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Κανένα κλιπ κάτω από τον δείκτη αναπαραγωγής</string>
 </resources>

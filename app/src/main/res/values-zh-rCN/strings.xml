@@ -5067,4 +5067,14 @@
     <string name="onboarding_mascot_greeting_casual">嗨！</string>
     <string name="zoom_lens_unavailable_banner">此手机未向应用开放超广角摄像头。低于 1.0x 的变焦将保持在 1.0x。</string>
     <string name="records_display_group_title">显示</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">未命名</string>
+    <string name="faditor_rename_project">项目名称</string>
+    <string name="faditor_rename_hint">项目名称</string>
+    <string name="faditor_rename_action">重命名</string>
+    <string name="faditor_rename_subtitle">用于导出的文件</string>
+    <string name="faditor_rename_helper">导出的视频将以该名称保存。</string>
+    <string name="faditor_export_name_preview">保存为：%1$s.mp4</string>
+    <string name="faditor_select_segment_first">播放头下没有剪辑</string>
 </resources>

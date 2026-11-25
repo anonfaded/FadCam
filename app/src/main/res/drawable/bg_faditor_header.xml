@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Faditor chrome is black, matching the Remote tab. The champagne accent belongs to
-     the type and controls, so the header surface stays neutral here. -->
+<!-- Faditor header. Uses the Faded Night theme's card surface (a hair above pure black)
+     so the bar reads as its own layer above the black preview instead of merging into
+     it. The dock below stays pure black. Champagne stays an accent on type/controls. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#000000" />
+    <solid android:color="@color/amoled_card" />
     <corners
         android:bottomLeftRadius="24dp"
         android:bottomRightRadius="24dp" />

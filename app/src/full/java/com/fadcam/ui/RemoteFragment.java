@@ -451,13 +451,17 @@ public class RemoteFragment extends BaseFragment {
         }
     }
     
-    /** Restore original theme bar colors. */
+    /**
+     * Hand the chrome back to whatever tab is current.
+     *
+     * <p>This used to restore "the theme colour" unconditionally. Because this runs from
+     * onPause, it could execute after the next tab had already painted its own chrome,
+     * and it would then overwrite it — the Faditor dock flipped back to red whenever the
+     * user came from Remote.</p>
+     */
     private void restoreOriginalBarColors() {
         if (getActivity() instanceof MainActivity) {
-            MainActivity mainActivity = (MainActivity) getActivity();
-            mainActivity.setBottomNavColor(0);
-            mainActivity.setStatusBarColor(0);
-            mainActivity.setNavigationBarColor(0);
+            ((MainActivity) getActivity()).refreshChromeForCurrentTab();
         }
     }
     

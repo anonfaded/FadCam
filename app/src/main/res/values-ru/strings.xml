@@ -3817,4 +3817,14 @@
     <string name="onboarding_mascot_greeting_casual">Привет!</string>
     <string name="zoom_lens_unavailable_banner">Этот телефон не предоставляет сверхширокоугольную камеру приложениям. Зум ниже 1.0x останется на 1.0x.</string>
     <string name="records_display_group_title">Отображение</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Без названия</string>
+    <string name="faditor_rename_project">Имя проекта</string>
+    <string name="faditor_rename_hint">Имя проекта</string>
+    <string name="faditor_rename_action">Переименовать</string>
+    <string name="faditor_rename_subtitle">Используется для экспортируемого файла</string>
+    <string name="faditor_rename_helper">Экспортируемое видео сохраняется под этим именем.</string>
+    <string name="faditor_export_name_preview">Сохранено как: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Под курсором воспроизведения нет клипа</string>
 </resources>

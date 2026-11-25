@@ -1749,7 +1749,9 @@ public class EditorTimelineView extends View {
     }
 
     private boolean onDown(float x, float y) {
-        FLog.d(TAG, "onDown: x=" + x + " y=" + y);
+        FLog.d(TAG, "onDown: x=" + x + " y=" + y
+                + " selected=" + selectedIndex
+                + " scrollOffset=" + scrollOffsetPx);
         downX = x;
         downY = y;
         downTime = System.currentTimeMillis();
@@ -1909,7 +1911,20 @@ public class EditorTimelineView extends View {
         pendingAudioIndex = -1;
 
         if (last == Drag.LEFT_HANDLE || last == Drag.RIGHT_HANDLE) {
-            if (listener != null) {
+            boolean moved = Math.abs(x - downX) > touchSlopPx
+                    || Math.abs(trimDragStartFrac - trimDragEndFrac) > 0.0001f;
+            if (!moved && isUp) {
+                // The finger landed on a handle but never dragged. Treat it as a tap so
+                // the clip can be deselected instead of committing a no-op trim, which
+                // reloaded the player and flashed the preview.
+                int tapIndex = downSegIndex >= 0 ? downSegIndex : selectedIndex;
+                boolean wasSelected = tapIndex == selectedIndex;
+                selectedIndex = wasSelected ? -1 : tapIndex;
+                invalidate();
+                FLog.d(TAG, "handle tap treated as selection toggle: index=" + tapIndex
+                        + " -> " + selectedIndex);
+                if (listener != null) listener.onSegmentSelected(selectedIndex);
+            } else if (listener != null) {
                 // Use the drag-tracked fractions (segment data was not updated during drag)
                 listener.onTrimFinished(selectedIndex, trimDragStartFrac, trimDragEndFrac);
             }
@@ -1957,12 +1972,18 @@ public class EditorTimelineView extends View {
 
         if (y < hTop - touchSlopPx / 2 || y > hBot + touchSlopPx / 2) return Drag.NONE;
 
+        // Never let the two handle zones swallow the whole clip: on a short clip the
+        // handles would otherwise overlap and every tap would begin a zero-length trim
+        // instead of toggling the selection. A third of the width each leaves a middle
+        // band that always means "tap".
+        float hitWidth = Math.min(handleWidthPx, seg.width() / 3f);
+
         // Left handle zone
-        if (x >= seg.left - touchSlopPx / 2 && x <= seg.left + handleWidthPx + touchSlopPx / 2) {
+        if (x >= seg.left - touchSlopPx / 2 && x <= seg.left + hitWidth + touchSlopPx / 2) {
             return Drag.LEFT_HANDLE;
         }
         // Right handle zone
-        if (x >= seg.right - handleWidthPx - touchSlopPx / 2 && x <= seg.right + touchSlopPx / 2) {
+        if (x >= seg.right - hitWidth - touchSlopPx / 2 && x <= seg.right + touchSlopPx / 2) {
             return Drag.RIGHT_HANDLE;
         }
         return Drag.NONE;

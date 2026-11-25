@@ -3251,4 +3251,14 @@ Tuyas para siempre.</string>
     <string name="onboarding_mascot_greeting_casual">¡Hola!</string>
     <string name="zoom_lens_unavailable_banner">Este teléfono no expone su cámara ultraangular a las apps. El zoom por debajo de 1.0x se quedará en 1.0x.</string>
     <string name="records_display_group_title">Visualización</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Sin título</string>
+    <string name="faditor_rename_project">Nombre del proyecto</string>
+    <string name="faditor_rename_hint">Nombre del proyecto</string>
+    <string name="faditor_rename_action">Renombrar</string>
+    <string name="faditor_rename_subtitle">Se usa para el archivo exportado</string>
+    <string name="faditor_rename_helper">El vídeo exportado se guarda con este nombre.</string>
+    <string name="faditor_export_name_preview">Guardado como: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Ningún clip bajo el cursor de reproducción</string>
 </resources>

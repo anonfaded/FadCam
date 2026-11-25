@@ -3048,4 +3048,14 @@ Sonsuza dek senin.</string>
     <string name="onboarding_mascot_greeting_casual">Merhaba!</string>
     <string name="zoom_lens_unavailable_banner">Bu telefon ultra geniş açılı kamerasını uygulamalara açmıyor. 1.0x altındaki yakınlaştırma 1.0x\'te kalır.</string>
     <string name="records_display_group_title">Görünüm</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Adsız</string>
+    <string name="faditor_rename_project">Proje adı</string>
+    <string name="faditor_rename_hint">Proje adı</string>
+    <string name="faditor_rename_action">Yeniden adlandır</string>
+    <string name="faditor_rename_subtitle">Dışa aktarılan dosya için kullanılır</string>
+    <string name="faditor_rename_helper">Dışa aktarılan video bu adla kaydedilir.</string>
+    <string name="faditor_export_name_preview">Şu adla kaydedilir: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Oynatma başlığının altında klip yok</string>
 </resources>

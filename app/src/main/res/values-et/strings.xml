@@ -3152,4 +3152,14 @@ Igavesti sinu.</string>
     <string name="onboarding_mascot_greeting_casual">Tere!</string>
     <string name="zoom_lens_unavailable_banner">See telefon ei ava rakendustele oma ülilainurkkaamerat. Alla 1.0x suumimine jääb 1.0x peale.</string>
     <string name="records_display_group_title">Kuva</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Nimetu</string>
+    <string name="faditor_rename_project">Projekti nimi</string>
+    <string name="faditor_rename_hint">Projekti nimi</string>
+    <string name="faditor_rename_action">Nimeta ümber</string>
+    <string name="faditor_rename_subtitle">Kasutatakse eksporditava faili jaoks</string>
+    <string name="faditor_rename_helper">Eksporditud video salvestatakse selle nimega.</string>
+    <string name="faditor_export_name_preview">Salvestatakse nimega: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Esituspeal ei ole klippi</string>
 </resources>

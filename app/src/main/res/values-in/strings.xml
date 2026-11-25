@@ -3405,4 +3405,14 @@ Milikmu selamanya.</string>
     <string name="onboarding_mascot_greeting_casual">Halo!</string>
     <string name="zoom_lens_unavailable_banner">Ponsel ini tidak mengekspos kamera ultra-wide ke aplikasi. Zoom di bawah 1.0x akan tetap di 1.0x.</string>
     <string name="records_display_group_title">Tampilan</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Tanpa judul</string>
+    <string name="faditor_rename_project">Nama proyek</string>
+    <string name="faditor_rename_hint">Nama proyek</string>
+    <string name="faditor_rename_action">Ganti nama</string>
+    <string name="faditor_rename_subtitle">Digunakan untuk file yang diekspor</string>
+    <string name="faditor_rename_helper">Video yang diekspor disimpan dengan nama ini.</string>
+    <string name="faditor_export_name_preview">Disimpan sebagai: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Tidak ada klip di bawah playhead</string>
 </resources>

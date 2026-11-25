@@ -3093,4 +3093,14 @@ Für immer dein.</string>
     <string name="onboarding_mascot_greeting_casual">Hallo!</string>
     <string name="zoom_lens_unavailable_banner">Dieses Telefon stellt seine Ultraweitwinkelkamera Apps nicht zur Verfügung. Zoom unter 1.0x bleibt bei 1.0x.</string>
     <string name="records_display_group_title">Anzeige</string>
+
+    <!-- Faditor project naming / export preview -->
+    <string name="faditor_project_untitled">Unbenannt</string>
+    <string name="faditor_rename_project">Projektname</string>
+    <string name="faditor_rename_hint">Projektname</string>
+    <string name="faditor_rename_action">Umbenennen</string>
+    <string name="faditor_rename_subtitle">Wird für die exportierte Datei verwendet</string>
+    <string name="faditor_rename_helper">Das exportierte Video wird unter diesem Namen gespeichert.</string>
+    <string name="faditor_export_name_preview">Gespeichert als: %1$s.mp4</string>
+    <string name="faditor_select_segment_first">Kein Clip unter dem Abspielkopf</string>
 </resources>

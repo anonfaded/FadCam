@@ -59,12 +59,13 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:gravity="center"
+                android:textAlignment="center"
                 android:text="@string/faditor_editor_title"
                 android:textColor="#FFFFFF"
                 android:textSize="17sp"
                 android:textStyle="bold"
-                android:singleLine="true"
-                android:ellipsize="middle" />
+                android:maxLines="2"
+                android:ellipsize="end" />
 
             <TextView
                 android:id="@+id/btn_rename_project"
@@ -331,8 +332,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -365,8 +367,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -399,8 +402,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -433,8 +437,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -467,8 +472,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -501,8 +507,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -535,8 +542,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -569,8 +577,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -603,8 +612,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -637,8 +647,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -671,8 +682,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
 
@@ -705,8 +717,9 @@
                     android:textSize="11sp"
                     android:gravity="center"
                     android:textAlignment="center"
-                    android:singleLine="true"
-                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="0dp"
                     android:layout_marginTop="2dp" />
             </LinearLayout>
         </LinearLayout>
