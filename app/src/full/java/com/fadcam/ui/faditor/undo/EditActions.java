@@ -325,6 +325,24 @@ public final class EditActions {
         }
     }
 
+    /** Audio clip move along the timeline. */
+    public static final class AudioOffsetAction implements EditAction {
+        private final AudioClip clip;
+        private final long oldOffset, newOffset;
+
+        public AudioOffsetAction(@NonNull AudioClip clip, long oldOffset, long newOffset) {
+            this.clip = clip;
+            this.oldOffset = oldOffset;
+            this.newOffset = newOffset;
+        }
+
+        @Override public void execute() { clip.setOffsetMs(newOffset); }
+        @Override public void undo() { clip.setOffsetMs(oldOffset); }
+        @NonNull @Override public String getDescription() {
+            return "Audio move " + oldOffset + " → " + newOffset;
+        }
+    }
+
     /** Audio clip volume change. */
     public static final class AudioVolumeAction implements EditAction {
         private final AudioClip clip;

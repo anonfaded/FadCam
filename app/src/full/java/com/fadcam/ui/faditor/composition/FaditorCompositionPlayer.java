@@ -157,14 +157,6 @@ public final class FaditorCompositionPlayer {
         if (player != null) player.pause();
     }
 
-    /**
-     * Optimises the player for many rapid seeks while the user drags the playhead.
-     * Playback is suppressed during scrubbing; disable it before playing again.
-     */
-    public void setScrubbingModeEnabled(boolean enabled) {
-        if (player != null) player.setScrubbingModeEnabled(enabled);
-    }
-
     /** Seek to a timeline position in ms. */
     public void seekTo(long timelineMs) {
         if (player == null) return;

@@ -351,6 +351,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
         editorTimeline.setTimeline(project.getTimeline(), selectedClipIndex);
         editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
+        if (selectedClipIndex < 0 && editorTimeline.getSelectedAudioIndex() < 0) {
+            clearSegmentTools();
+        }
         clampPlayheadToTimeline();
         rebuildComposition();
         updateToolAvailability();
@@ -574,10 +577,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         super.onPause();
         stopPlayheadUpdates();
         cancelScrubSeek();
-        if (scrubbing && compositionPlayer != null) {
-            compositionPlayer.setScrubbingModeEnabled(false);
-            scrubbing = false;
-        }
+        scrubbing = false;
         if (compositionPlayer != null && compositionPlayer.isPlayingOrBuffering()) {
             compositionPlayer.pause();
             updatePlayPauseButton(false);
@@ -712,7 +712,6 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         scrubbing = true;
                         if (compositionPlayer != null) {
                             compositionPlayer.pause();
-                            compositionPlayer.setScrubbingModeEnabled(true);
                         }
                         updatePlayPauseButton(false);
                     }
@@ -725,10 +724,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                     cancelScrubSeek();
                     if (compositionPlayer != null) {
                         compositionPlayer.pause();
-                        if (scrubbing) {
-                            compositionPlayer.setScrubbingModeEnabled(false);
-                            scrubbing = false;
-                        }
+                        scrubbing = false;
                         if (lastSeekTargetMs != playheadMs) seekCompositionTo(playheadMs);
                     }
                     updatePlayPauseButton(false);
@@ -745,10 +741,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 clampPlayheadToTimeline();
                 if (compositionPlayer != null) {
                     compositionPlayer.pause();
-                    if (scrubbing) {
-                        compositionPlayer.setScrubbingModeEnabled(false);
-                        scrubbing = false;
-                    }
+                    scrubbing = false;
                     long target = editorTimeline.getPlayheadPositionMs();
                     if (lastSeekTargetMs != target) seekCompositionTo(target);
                 }
@@ -803,11 +796,29 @@ public class FaditorEditorActivity extends AppCompatActivity {
             @Override
             public void onAudioClipSelected(int audioIndex) {
                 FLog.d(TAG, "Audio clip selected: " + audioIndex);
-                // Deselect video segment when audio clip is selected
-                if (audioIndex >= 0 && selectedClipIndex >= 0) {
-                    // Keep video segment for player but visual deselection
-                    // is handled in EditorTimelineView
+                if (audioIndex >= 0 && project != null) {
+                    AudioClip ac = project.getTimeline().getAudioClip(audioIndex);
+                    if (ac != null) {
+                        updateVolumeUI(ac.getVolumeLevel(), ac.isMuted());
+                    }
+                } else if (getSelectedClip() == null) {
+                    clearSegmentTools();
                 }
+                updateToolAvailability();
+            }
+
+            @Override
+            public void onAudioClipMoved(int audioIndex, long oldOffsetMs, long newOffsetMs) {
+                if (project == null) return;
+                AudioClip ac = project.getTimeline().getAudioClip(audioIndex);
+                if (ac == null) return;
+                undoManager.recordAction(new EditActions.AudioOffsetAction(
+                        ac, oldOffsetMs, newOffsetMs));
+                clampPlayheadToTimeline();
+                refreshTotalTimeDisplay();
+                rebuildComposition();
+                updateToolAvailability();
+                scheduleAutoSave();
             }
 
             @Override
@@ -844,8 +855,16 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
                     ac.setInPointMs(inPointMs);
                     ac.setOutPointMs(outPointMs);
+                    int selectedAudio = editorTimeline.getSelectedAudioIndex();
                     editorTimeline.setAudioClips(project.getTimeline().getAudioClips());
+                    if (selectedAudio >= 0
+                            && selectedAudio < project.getTimeline().getAudioClipCount()) {
+                        editorTimeline.setSelectedAudioIndex(selectedAudio);
+                    }
+                    clampPlayheadToTimeline();
+                    refreshTotalTimeDisplay();
                     rebuildComposition();
+                    updateToolAvailability();
                     scheduleAutoSave();
                 }
             }
@@ -1261,21 +1280,33 @@ public class FaditorEditorActivity extends AppCompatActivity {
      */
     private void updateToolAvailability() {
         Clip clip = getSelectedClip();
-        boolean hasClip = clip != null;
-        boolean hasAudio = hasClip && !clip.isImageClip();
-        float clipAlpha = hasClip ? 1f : 0.35f;
-        float audioAlpha = hasAudio ? 1f : 0.35f;
+        int audioIndex = editorTimeline != null
+                ? editorTimeline.getSelectedAudioIndex() : -1;
+        boolean hasAudioClip = audioIndex >= 0 && project != null
+                && project.getTimeline().hasAudioClips();
+        boolean hasVideo = clip != null;
+        boolean hasVideoAudio = hasVideo && !clip.isImageClip();
+        float videoAlpha = hasVideo ? 1f : 0.35f;
+        float audioAlpha = (hasVideoAudio || hasAudioClip) ? 1f : 0.35f;
 
-        View[] visualTools = {toolTrim, toolRotate, toolFlip, toolCrop,
-                toolSplit, toolDelete, toolDuplicate};
-        for (View tool : visualTools) {
-            applyToolEnabled(tool, hasClip, clipAlpha);
-        }
-        // A still image has no audio and no meaningful playback-rate change.
-        View[] audioTools = {toolMute, toolSpeed, toolAudio};
-        for (View tool : audioTools) {
-            applyToolEnabled(tool, hasAudio, audioAlpha);
-        }
+        // Trim, split and delete work on the selected audio clip too.
+        applyToolEnabled(toolTrim, hasVideo || hasAudioClip,
+                (hasVideo || hasAudioClip) ? 1f : 0.35f);
+        applyToolEnabled(toolSplit, hasVideo || hasAudioClip,
+                (hasVideo || hasAudioClip) ? 1f : 0.35f);
+        applyToolEnabled(toolDelete, hasVideo || hasAudioClip,
+                (hasVideo || hasAudioClip) ? 1f : 0.35f);
+
+        applyToolEnabled(toolRotate, hasVideo, videoAlpha);
+        applyToolEnabled(toolFlip, hasVideo, videoAlpha);
+        applyToolEnabled(toolCrop, hasVideo, videoAlpha);
+        // Duplicate is video-only.
+        applyToolEnabled(toolDuplicate, hasVideo, videoAlpha);
+
+        // Volume works for both tracks; speed/audio extraction are video-with-audio only.
+        applyToolEnabled(toolMute, hasVideoAudio || hasAudioClip, audioAlpha);
+        applyToolEnabled(toolSpeed, hasVideoAudio, audioAlpha);
+        applyToolEnabled(toolAudio, hasVideoAudio, audioAlpha);
 
         // Canvas is a project setting: never disable it.
         if (toolCanvas != null) {
@@ -1461,10 +1492,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         playbackFinished = false;
         editorTimeline.cancelActiveGesture();
         cancelScrubSeek();
-        if (scrubbing) {
-            compositionPlayer.setScrubbingModeEnabled(false);
-            scrubbing = false;
-        }
+        scrubbing = false;
         long end = compositionDurationMs;
         long playheadMs = editorTimeline.getPlayheadPositionMs();
 
@@ -1685,6 +1713,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         super.onConfigurationChanged(newConfig);
         // The activity handles orientation itself, so re-apply the arrangement here.
         applyEditorOrientationLayout();
+        if (playerSurface != null) playerSurface.post(this::applyPreviewAspect);
     }
 
     private void initTimeline() {
@@ -1875,6 +1904,13 @@ public class FaditorEditorActivity extends AppCompatActivity {
                         clip, oldSpeed, speed));
             }
             clip.setSpeedMultiplier(speed);
+            // Speed changes the clip's presented length: the strip width, total time and
+            // playhead bounds must follow immediately, not only after the next autosave.
+            editorTimeline.setTrimFromClip(clip);
+            refreshTotalTimeDisplay();
+            clampPlayheadToTimeline();
+            updateCurrentTimeDisplay();
+            compositionDurationMs = project.getTimeline().getTotalDurationMs();
             updateSpeedUI(speed);
             scheduleCompositionRebuild();
             scheduleAutoSave();
@@ -1907,7 +1943,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         undoManager.recordAction(new EditActions.RotateAction(clip, oldDeg, newDeg));
         clip.setRotationDegrees(newDeg);
         updateRotateUI(newDeg);
-        scheduleCompositionRebuild();
+        rebuildComposition();
         scheduleAutoSave();
     }
 
@@ -1946,7 +1982,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
             clip.setFlipHorizontal(flipH);
             clip.setFlipVertical(flipV);
             updateFlipUI(flipH, flipV);
-            scheduleCompositionRebuild();
+            rebuildComposition();
             scheduleAutoSave();
         });
         sheet.show(getSupportFragmentManager(), "flipPicker");
@@ -1990,10 +2026,9 @@ public class FaditorEditorActivity extends AppCompatActivity {
      * Cancel, aspect-ratio presets, and Done buttons.
      */
     private void enterCropMode() {
-        if (inCropMode) return;
-        inCropMode = true;
-
         Clip clip = getSelectedClip();
+        if (inCropMode || clip == null) return;
+        inCropMode = true;
 
         // Save current state for cancel restoration
         preCropPreset = clip.getCropPreset();
@@ -3081,6 +3116,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         }
         updateCanvasUI(project.getCanvasPreset());
         updateAudioToolUI();
+        updateToolAvailability();
 
         // The composition carries every transform, so the model change is the preview.
         clampPlayheadToTimeline();
@@ -3263,15 +3299,17 @@ public class FaditorEditorActivity extends AppCompatActivity {
     private void showAddAssetPicker() {
         AddAssetBottomSheet sheet = AddAssetBottomSheet.newInstance();
         sheet.setCallback(isImage -> {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType(isImage ? "image/*" : "video/*");
+            // OPEN_DOCUMENT grants a persistable permission, so the URIs survive an
+            // editor restart. GET_CONTENT does not, which is what made image/video
+            // assets turn into unreadable clips after reopening a project.
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
             if (isImage) {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("image/*");
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
                 imagePickerLauncher.launch(intent);
             } else {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("video/*");
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
                 videoPickerLauncher.launch(intent);
             }
         });
@@ -3342,31 +3380,75 @@ public class FaditorEditorActivity extends AppCompatActivity {
                 return;
             }
 
-            Clip videoClip = new Clip(videoUri, durationMs);
+            File sourceFile = resolveToFile(videoUri);
+            if (sourceFile != null && remuxer.needsRemux(sourceFile)) {
+                if (remuxer.hasRemuxedVersion(sourceFile)) {
+                    insertVideoClip(Uri.fromFile(remuxer.getRemuxedFile(sourceFile)),
+                            durationMs);
+                    return;
+                }
+                // An fMP4 added asset must be converted before it can seek in the
+                // composition; otherwise it is added but play/seek do nothing.
+                showRemuxProgress();
+                remuxer.remuxAsync(sourceFile, new FragmentedMp4Remuxer.RemuxCallback() {
+                    @Override
+                    public void onRemuxComplete(boolean success, @Nullable String outputPath) {
+                        runOnUiThread(() -> {
+                            hideRemuxProgress();
+                            if (success && outputPath != null) {
+                                insertVideoClip(Uri.fromFile(new File(outputPath)), durationMs);
+                            } else {
+                                Toast.makeText(FaditorEditorActivity.this,
+                                        R.string.faditor_asset_error, Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
 
-            // Insert after the selected clip; with nothing selected, after the clip
-            // under the playhead; if that is also unavailable, append.
-            Timeline timeline = project.getTimeline();
-            int insertIndex = insertionIndexForNewClip();
-            timeline.addClip(insertIndex, videoClip);
+                    @Override
+                    public void onRemuxProgress(int percent) {
+                        runOnUiThread(() -> {
+                            if (remuxProgressText != null) {
+                                remuxProgressText.setText(
+                                        getString(R.string.faditor_remuxing_percent, percent));
+                            }
+                        });
+                    }
+                });
+                return;
+            }
 
-            // Record undo action
-            undoManager.recordAction(new EditActions.AddClipAction(
-                    timeline, videoClip, insertIndex));
-
-            // Show the inserted clip, then select it.
-            refreshTimelineAfterStructuralChange();
-            selectSegment(insertIndex);
-            refreshTotalTimeDisplay();
-            saveProjectNow();
-
-            Toast.makeText(this, R.string.faditor_asset_added, Toast.LENGTH_SHORT).show();
-            FLog.d(TAG, "Video asset added at index " + insertIndex
-                    + " duration=" + durationMs + "ms uri=" + videoUri);
+            Uri playableUri = sourceFile != null ? Uri.fromFile(sourceFile) : videoUri;
+            insertVideoClip(playableUri, durationMs);
         } catch (Exception e) {
             FLog.e(TAG, "Failed to add video asset", e);
             Toast.makeText(this, R.string.faditor_asset_error, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /** Adds an already-playable video source to the timeline and selects it. */
+    private void insertVideoClip(@NonNull Uri playableUri, long durationMs) {
+        if (project == null) return;
+        Clip videoClip = new Clip(playableUri, durationMs);
+
+        // Insert after the selected clip; with nothing selected, after the clip
+        // under the playhead; if that is also unavailable, append.
+        Timeline timeline = project.getTimeline();
+        int insertIndex = insertionIndexForNewClip();
+        timeline.addClip(insertIndex, videoClip);
+
+        // Record undo action
+        undoManager.recordAction(new EditActions.AddClipAction(
+                timeline, videoClip, insertIndex));
+
+        // Show the inserted clip, then select it.
+        refreshTimelineAfterStructuralChange();
+        selectSegment(insertIndex);
+        refreshTotalTimeDisplay();
+        saveProjectNow();
+
+        Toast.makeText(this, R.string.faditor_asset_added, Toast.LENGTH_SHORT).show();
+        FLog.d(TAG, "Video asset added at index " + insertIndex
+                + " duration=" + durationMs + "ms uri=" + playableUri);
     }
 
     // ── Segment Operations ──────────────────────────────────────────────────
@@ -3482,6 +3564,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
 
         editorTimeline.setAudioClips(timeline.getAudioClips());
         rebuildComposition();
+        updateToolAvailability();
         scheduleAutoSave();
         Toast.makeText(this, R.string.faditor_split_success, Toast.LENGTH_SHORT).show();
     }
@@ -3552,6 +3635,7 @@ public class FaditorEditorActivity extends AppCompatActivity {
         refreshTotalTimeDisplay();
         rebuildComposition();
         updateAudioToolUI();
+        updateToolAvailability();
         saveProjectNow();
         Toast.makeText(this, R.string.faditor_segment_deleted, Toast.LENGTH_SHORT).show();
     }

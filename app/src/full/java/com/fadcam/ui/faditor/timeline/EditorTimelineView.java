@@ -369,6 +369,7 @@ public class EditorTimelineView extends View {
         void onSegmentReordered(int fromIndex, int toIndex);
         void onReorderModeChanged(boolean entering);
         void onAudioClipSelected(int audioIndex);
+        void onAudioClipMoved(int audioIndex, long oldOffsetMs, long newOffsetMs);
         void onAudioTrimChanged(int audioIndex, long inPointMs, long outPointMs, boolean isLeft);
         void onAudioTrimFinished(int audioIndex, long inPointMs, long outPointMs);
     }
@@ -586,6 +587,14 @@ public class EditorTimelineView extends View {
      */
     public int getSelectedAudioIndex() {
         return selectedAudioIndex;
+    }
+
+    /** Restores the highlighted audio clip after a non-structural refresh. */
+    public void setSelectedAudioIndex(int index) {
+        if (index >= -1 && index < audioClips.size()) {
+            selectedAudioIndex = index;
+            invalidate();
+        }
     }
 
     public void setSelectedIndex(int index) {
@@ -1967,6 +1976,14 @@ public class EditorTimelineView extends View {
 
         // Finish audio drag
         if (isDraggingAudio) {
+            if (listener != null && dragAudioIndex >= 0
+                    && dragAudioIndex < audioClips.size()) {
+                long newOffset = audioClips.get(dragAudioIndex).getOffsetMs();
+                if (newOffset != dragAudioStartOffsetMs) {
+                    listener.onAudioClipMoved(dragAudioIndex,
+                            dragAudioStartOffsetMs, newOffset);
+                }
+            }
             isDraggingAudio = false;
             dragAudioIndex = -1;
             pendingAudioIndex = -1;
