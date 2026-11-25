@@ -49,7 +49,6 @@ public class SettingsHomeFragment extends Fragment {
     private View groupVideoQuick;
     private View groupAudioQuick;
     private View groupWatermarkFrame;   // the FrameLayout wrapping watermark row + badge
-    private View groupWatermarkBadge;
     private View groupScreenRecording;
     private View dividerBeforeScreenRec;
 
@@ -79,7 +78,6 @@ public class SettingsHomeFragment extends Fragment {
         // Apply initial filter
         applyModeFilter(SettingsMode.ALL, root);
         refreshAppInlineValues(root);
-        manageBadgeVisibility(root);
 
         // Request focus on first settings row for D-pad navigation (TV support)
         root.post(() -> {
@@ -355,7 +353,6 @@ public class SettingsHomeFragment extends Fragment {
         addViewAnim(viewAnims, groupAudioQuick, showAudio);
         addViewAnim(viewAnims, dividerAfterAudio, showAudio);
         addViewAnim(viewAnims, groupWatermarkFrame, showWatermark);
-        addViewAnim(viewAnims, groupWatermarkBadge, showWatermark);
         addViewAnim(viewAnims, dividerAfterWatermark, showWatermark);
         addViewAnim(viewAnims, groupScreenRecording, showScreenRec);
         addViewAnim(viewAnims, dividerBeforeScreenRec, showScreenRec);
@@ -444,8 +441,6 @@ public class SettingsHomeFragment extends Fragment {
         if (watermarkRow != null && watermarkRow.getParent() instanceof ViewGroup) {
             groupWatermarkFrame = (View) watermarkRow.getParent();
         }
-        groupWatermarkBadge = root.findViewById(R.id.watermark_new_badge);
-
         groupScreenRecording = root.findViewById(R.id.group_screen_recording);
 
         // Find dividers by position: they are View elements between rows inside the card
@@ -873,19 +868,6 @@ public class SettingsHomeFragment extends Fragment {
                 getString(R.string.setting_debug_title), new java.util.ArrayList<>(), null, resultKey, helper,
                 getString(R.string.setting_debug_title), enabled);
         sheet.show(getParentFragmentManager(), "debug_logging_switch_sheet");
-    }
-
-    /** Show or hide the watermark NEW badge based on whether the feature has been seen. */
-    private void manageBadgeVisibility(View root) {
-        try {
-            TextView watermarkBadge = root.findViewById(R.id.watermark_new_badge);
-            if (watermarkBadge != null) {
-                android.content.SharedPreferences prefs = requireContext()
-                        .getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
-                boolean hasSeen = prefs.getBoolean("seen_watermark", false);
-                watermarkBadge.setVisibility(hasSeen ? View.GONE : View.VISIBLE);
-            }
-        } catch (Exception ignore) {}
     }
 
     /**

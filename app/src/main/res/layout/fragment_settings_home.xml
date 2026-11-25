@@ -350,24 +350,6 @@ app:layout_constraintTop_toTopOf="parent"
                         android:src="@drawable/ic_arrow_right"
                         android:tint="@android:color/darker_gray"/>
                 </LinearLayout>
-                
-                <!-- Watermark NEW badge (top-right) -->
-                <TextView
-                    android:id="@+id/watermark_new_badge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/badge_new"
-                    android:textColor="@color/pro_background"
-                    android:textSize="9sp"
-                    android:textStyle="bold"
-                    android:background="@drawable/new_badge_background"
-                    android:paddingStart="6dp"
-                    android:paddingEnd="6dp"
-                    android:paddingTop="2dp"
-                    android:paddingBottom="2dp"
-                    android:layout_gravity="top|end"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginEnd="20dp" />
             </FrameLayout>
             <View style="@style/SettingsDivider" />
 

@@ -1409,22 +1409,6 @@
                             android:textStyle="bold"
                             android:textAlignment="viewStart"
                             android:layout_marginBottom="2dp" />
-
-                        <!-- What's New Badge -->
-                        <TextView
-                            android:id="@+id/badge_whats_new"
-                            android:layout_width="wrap_content"
-                            android:layout_height="16dp"
-                            android:paddingHorizontal="6dp"
-                            android:text="@string/badge_new"
-                            android:textColor="@color/pro_background"
-                            android:textSize="9sp"
-                            android:textStyle="bold"
-                            android:gravity="center"
-                            android:background="@drawable/new_badge_background"
-                            android:layout_marginStart="0dp"
-                            android:visibility="gone" />
-
                     </LinearLayout>
 
                     <TextView
